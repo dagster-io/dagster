@@ -6429,7 +6429,7 @@ __metadata:
     styled-components: ^5.3.3
     subscriptions-transport-ws: ^0.9.15
     ts-node: 9.1.1
-    ts-prune: 0.8.9
+    ts-prune: 0.10.3
     typescript: 5.0.2
     webpack: ^5.0.0
     worker-loader: ^3.0.8
@@ -6632,16 +6632,6 @@ __metadata:
   version: 0.5.6
   resolution: "@discoveryjs/json-ext@npm:0.5.6"
   checksum: e97df618511fb202dffa2eb0d23e17dfb02943a70e5bc38f6b9603ad1cb1d6b525aa2b07ff9fb00b041abe425b341146ddd9e487f1e35ddadc8c6b8c56358ae0
-  languageName: node
-  linkType: hard
-
-"@dsherret/to-absolute-glob@npm:^2.0.2":
-  version: 2.0.2
-  resolution: "@dsherret/to-absolute-glob@npm:2.0.2"
-  dependencies:
-    is-absolute: ^1.0.0
-    is-negated-glob: ^1.0.0
-  checksum: 2d91148261bcbbdf0dd8176c74348546660607750000c49bb99315777b2dd6d8f0223f1a93ec02486e8e6319ecc0a8342e32efb57b8013f6acb21b8592a3e180
   languageName: node
   linkType: hard
 
@@ -10308,17 +10298,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@ts-morph/common@npm:~0.5.2":
-  version: 0.5.2
-  resolution: "@ts-morph/common@npm:0.5.2"
+"@ts-morph/common@npm:~0.12.3":
+  version: 0.12.3
+  resolution: "@ts-morph/common@npm:0.12.3"
   dependencies:
-    "@dsherret/to-absolute-glob": ^2.0.2
-    fast-glob: ^3.2.2
-    fs-extra: ^9.0.0
-    is-negated-glob: ^1.0.0
-    multimatch: ^4.0.0
-    typescript: ~3.9.7
-  checksum: 4d4ac430f37144a1fbc5e5706190a344bcea3750cc220439c0a95af862d3f01f2dd882498c963236813a47720259913c9c4b655bef1d4e380677b7256148523b
+    fast-glob: ^3.2.7
+    minimatch: ^3.0.4
+    mkdirp: ^1.0.4
+    path-browserify: ^1.0.1
+  checksum: d96ea9805d4f0300cc05c47daa9454438903b86ffb7116f5181a1eba71e881012a1adc2a867b3afbe4429ef29e3e0d6204175cbaf33ecdd7a7d09b5d8a37f12d
   languageName: node
   linkType: hard
 
@@ -10861,13 +10849,6 @@ __metadata:
   version: 3.0.5
   resolution: "@types/minimatch@npm:3.0.5"
   checksum: c41d136f67231c3131cf1d4ca0b06687f4a322918a3a5adddc87ce90ed9dbd175a3610adee36b106ae68c0b92c637c35e02b58c8a56c424f71d30993ea220b92
-  languageName: node
-  linkType: hard
-
-"@types/minimatch@npm:^3.0.3":
-  version: 3.0.4
-  resolution: "@types/minimatch@npm:3.0.4"
-  checksum: 583a174116b56f405e8f45680fd06ee674442543cd875b8570a046bd2695fdcfb84ffd8b7ef4c84e11e2ba0fe7e467fc6fd95e134d389ebcefc2ddefd01ea9c8
   languageName: node
   linkType: hard
 
@@ -12659,13 +12640,6 @@ __metadata:
   version: 3.1.0
   resolution: "arr-union@npm:3.1.0"
   checksum: b5b0408c6eb7591143c394f3be082fee690ddd21f0fdde0a0a01106799e847f67fcae1b7e56b0a0c173290e29c6aca9562e82b300708a268bc8f88f3d6613cb9
-  languageName: node
-  linkType: hard
-
-"array-differ@npm:^3.0.0":
-  version: 3.0.0
-  resolution: "array-differ@npm:3.0.0"
-  checksum: 117edd9df5c1530bd116c6e8eea891d4bd02850fd89b1b36e532b6540e47ca620a373b81feca1c62d1395d9ae601516ba538abe5e8172d41091da2c546b05fb7
   languageName: node
   linkType: hard
 
@@ -14849,10 +14823,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"code-block-writer@npm:^10.1.0":
-  version: 10.1.1
-  resolution: "code-block-writer@npm:10.1.1"
-  checksum: e048037acbcbda19fca62a3a63e4a64226ea6b5dc0fad7632d34a88c1165b29a357e5e19f0497811e9911472e824ab85f68176f40e439da87e051908956eb47c
+"code-block-writer@npm:^11.0.0":
+  version: 11.0.3
+  resolution: "code-block-writer@npm:11.0.3"
+  checksum: f0a2605f19963d7087267c9b0fd0b05a6638a50e7b29b70f97aa01a514f59475b0626f8aa092188df853ee6d96745426dfa132d6a677795df462c6ce32c21639
   languageName: node
   linkType: hard
 
@@ -18013,7 +17987,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"fast-glob@npm:^3.1.1, fast-glob@npm:^3.2.2":
+"fast-glob@npm:^3.1.1":
   version: 3.2.5
   resolution: "fast-glob@npm:3.2.5"
   dependencies:
@@ -20561,13 +20535,6 @@ __metadata:
   version: 1.0.0
   resolution: "is-module@npm:1.0.0"
   checksum: 8cd5390730c7976fb4e8546dd0b38865ee6f7bacfa08dfbb2cc07219606755f0b01709d9361e01f13009bbbd8099fa2927a8ed665118a6105d66e40f1b838c3f
-  languageName: node
-  linkType: hard
-
-"is-negated-glob@npm:^1.0.0":
-  version: 1.0.0
-  resolution: "is-negated-glob@npm:1.0.0"
-  checksum: 2a767da06435b492daa98d3049480f0b7032abd5bfd3930ac01dbe9d6fcae04f2b3d883c6dca6b9c0c3f8a703952643c78540151c3eb1a2fe90fec543d61d241
   languageName: node
   linkType: hard
 
@@ -24267,19 +24234,6 @@ __metadata:
   bin:
     multicast-dns: cli.js
   checksum: f515b49ca964429ab48a4ac8041fcf969c927aeb49ab65288bd982e52c849a870fc3b03565780b0d194a1a02da8821f28b6425e48e95b8107bc9fcc92f571a6f
-  languageName: node
-  linkType: hard
-
-"multimatch@npm:^4.0.0":
-  version: 4.0.0
-  resolution: "multimatch@npm:4.0.0"
-  dependencies:
-    "@types/minimatch": ^3.0.3
-    array-differ: ^3.0.0
-    array-union: ^2.1.0
-    arrify: ^2.0.1
-    minimatch: ^3.0.4
-  checksum: bdb6a98dad4e919d9a1a2a0db872f44fa2337315f2fd5827d91ae005cf22f4425782bdfa97c10b80d567f0cb3c226c31f4e85f8f6a4a4be4facf9af0de1bb0c2
   languageName: node
   linkType: hard
 
@@ -31100,14 +31054,13 @@ resolve@^2.0.0-next.3:
   languageName: node
   linkType: hard
 
-"ts-morph@npm:^7.3.0":
-  version: 7.3.0
-  resolution: "ts-morph@npm:7.3.0"
+"ts-morph@npm:^13.0.1":
+  version: 13.0.3
+  resolution: "ts-morph@npm:13.0.3"
   dependencies:
-    "@dsherret/to-absolute-glob": ^2.0.2
-    "@ts-morph/common": ~0.5.2
-    code-block-writer: ^10.1.0
-  checksum: 65fb627739d413fe4f4c18d1b09ea2e7e83e81045c4a36a713f4bc645f16aaf10cd2bf9166e3fc7a071245ac0df702aaa81f1aae0eaef9e8c177e58cc5391a91
+    "@ts-morph/common": ~0.12.3
+    code-block-writer: ^11.0.0
+  checksum: 0983a7c4e0e1063e3900186bf2e85c5080621e31b754434136d2130a82bda6556985fdf012b766a87b9ae47d6f63732a562bb80854c34644f9352bea9a35b8ee
   languageName: node
   linkType: hard
 
@@ -31180,19 +31133,19 @@ resolve@^2.0.0-next.3:
   languageName: node
   linkType: hard
 
-"ts-prune@npm:0.8.9":
-  version: 0.8.9
-  resolution: "ts-prune@npm:0.8.9"
+"ts-prune@npm:0.10.3":
+  version: 0.10.3
+  resolution: "ts-prune@npm:0.10.3"
   dependencies:
     commander: ^6.2.1
-    cosmiconfig: ^7.0.0
+    cosmiconfig: ^7.0.1
     json5: ^2.1.3
-    lodash: ^4.17.20
+    lodash: ^4.17.21
     true-myth: ^4.1.0
-    ts-morph: ^7.3.0
+    ts-morph: ^13.0.1
   bin:
     ts-prune: lib/index.js
-  checksum: 103017326f81ec15c75ea8a06d8b7592e1fe0cb6fa5757ccc90cbc4805705bd974ba9f0a8e25a67cfeb7e8d8eea3daae69ba1a37eaeea336222aba70ae59d4ba
+  checksum: 2cbc4d64a2e50637d06691e7f962b913d87aba2419ba772a3a1cb6e4b7542412cd77af592ba7b376ed273f5e37d9be180613b479602b9f92693e4d72f0f5a373
   languageName: node
   linkType: hard
 
@@ -31432,26 +31385,6 @@ typescript@*:
     tsc: bin/tsc
     tsserver: bin/tsserver
   checksum: bdbf3d0aac0d6cf010fbe0536753dc19f278eb4aba88140dcd25487dfe1c56ca8b33abc0dcd42078790a939b08ebc4046f3e9bb961d77d3d2c3cfa9829da4d53
-  languageName: node
-  linkType: hard
-
-"typescript@patch:typescript@~3.9.7#~builtin<compat/typescript>":
-  version: 3.9.9
-  resolution: "typescript@patch:typescript@npm%3A3.9.9#~builtin<compat/typescript>::version=3.9.9&hash=3bd3d3"
-  bin:
-    tsc: bin/tsc
-    tsserver: bin/tsserver
-  checksum: 98b833f7767e8773ed3eba0f320e2b2ed716d55a948f04592e437c77783897864c2b82df834dd8821511fd026c0c5607ed43ddc0d91e2021ab02874a061e0f95
-  languageName: node
-  linkType: hard
-
-typescript@~3.9.7:
-  version: 3.9.9
-  resolution: "typescript@npm:3.9.9"
-  bin:
-    tsc: bin/tsc
-    tsserver: bin/tsserver
-  checksum: 0dac8ae4b5ec76a2a5c0148fa718e64318d90d5309216554b3938afc911561860b6e6f95564c650cc5b7baa0360577c8b9a4fda272dd2d1fb376ad805863da06
   languageName: node
   linkType: hard
 

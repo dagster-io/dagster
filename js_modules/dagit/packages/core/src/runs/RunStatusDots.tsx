@@ -1,26 +1,12 @@
-import {Colors, Popover, Spinner} from '@dagster-io/ui';
+import {Popover, Spinner} from '@dagster-io/ui';
 import * as React from 'react';
 import styled, {css, keyframes} from 'styled-components/macro';
 
 import {RunStatus} from '../graphql/types';
 
 import {RunStats} from './RunStats';
+import {RUN_STATUS_COLORS} from './RunStatusTag';
 import {inProgressStatuses, queuedStatuses} from './RunStatuses';
-
-const RUN_STATUS_COLORS = {
-  QUEUED: Colors.Blue200,
-  NOT_STARTED: Colors.Gray600,
-  STARTING: Colors.Gray400,
-  MANAGED: Colors.Gray400,
-  STARTED: Colors.Blue500,
-  SUCCESS: Colors.Green500,
-  FAILURE: Colors.Red500,
-  CANCELING: Colors.Red500,
-  CANCELED: Colors.Red500,
-
-  // Not technically a RunStatus, but useful.
-  SCHEDULED: Colors.Blue200,
-};
 
 export const RunStatusWithStats: React.FC<RunStatusProps & {runId: string}> = React.memo(
   ({runId, ...rest}) => (

@@ -2,12 +2,17 @@ import os
 import signal
 import subprocess
 import tempfile
+import threading
 from contextlib import contextmanager
+from typing import Any, Iterator, Mapping, Optional, Sequence
 
-from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.definitions.reconstruct import ReconstructableJob
+from dagster._core.events import DagsterEvent
+from dagster._core.execution.api import execute_job
+from dagster._core.execution.execution_result import ExecutionResult
 from dagster._core.instance import DagsterInstance
+from dagster._core.instance.ref import InstanceRef
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import execute_pipeline
 
 BUILDKITE = os.getenv("BUILDKITE")
 
@@ -16,7 +21,7 @@ REPO_FILE = os.path.join(os.path.dirname(__file__), "repo.py")
 
 
 @contextmanager
-def tempdir_wrapper(tempdir=None):
+def tempdir_wrapper(tempdir: Optional[str] = None) -> Iterator[str]:
     if tempdir:
         yield tempdir
     else:
@@ -25,7 +30,7 @@ def tempdir_wrapper(tempdir=None):
 
 
 @contextmanager
-def _instance_wrapper(instance):
+def _instance_wrapper(instance: Optional[DagsterInstance]) -> Iterator[DagsterInstance]:
     if instance:
         yield instance
     else:
@@ -34,36 +39,45 @@ def _instance_wrapper(instance):
 
 
 @contextmanager
-def execute_pipeline_on_celery(
-    pipeline_name, instance=None, run_config=None, tempdir=None, tags=None, subset=None
-):
+def execute_job_on_celery(
+    pipeline_name: str,
+    instance: Optional[DagsterInstance] = None,
+    run_config: Optional[Mapping[str, Any]] = None,
+    tempdir: Optional[str] = None,
+    tags: Optional[Mapping[str, str]] = None,
+    subset: Optional[Sequence[str]] = None,
+) -> Iterator[ExecutionResult]:
     with tempdir_wrapper(tempdir) as tempdir:
-        pipeline_def = ReconstructablePipeline.for_file(
-            REPO_FILE, pipeline_name
-        ).subset_for_execution(subset)
+        job_def = ReconstructableJob.for_file(REPO_FILE, pipeline_name).subset_for_execution(subset)
         with _instance_wrapper(instance) as wrapped_instance:
             run_config = run_config or {
                 "resources": {"io_manager": {"config": {"base_dir": tempdir}}},
-                "execution": {"celery": {}},
+                # "execution": {"celery": {}},
             }
-            result = execute_pipeline(
-                pipeline_def,
+            with execute_job(
+                job_def,
                 run_config=run_config,
                 instance=wrapped_instance,
                 tags=tags,
-            )
-            yield result
+            ) as result:
+                yield result
 
 
 @contextmanager
-def execute_eagerly_on_celery(pipeline_name, instance=None, tempdir=None, tags=None, subset=None):
+def execute_eagerly_on_celery(
+    pipeline_name: str,
+    instance: Optional[DagsterInstance] = None,
+    tempdir: Optional[str] = None,
+    tags: Optional[Mapping[str, str]] = None,
+    subset: Optional[Sequence[str]] = None,
+) -> Iterator[ExecutionResult]:
     with tempfile.TemporaryDirectory() as tempdir:
         run_config = {
             "resources": {"io_manager": {"config": {"base_dir": tempdir}}},
-            "execution": {"celery": {"config": {"config_source": {"task_always_eager": True}}}},
+            "execution": {"config": {"config_source": {"task_always_eager": True}}},
         }
 
-        with execute_pipeline_on_celery(
+        with execute_job_on_celery(
             pipeline_name,
             instance=instance,
             run_config=run_config,
@@ -74,16 +88,20 @@ def execute_eagerly_on_celery(pipeline_name, instance=None, tempdir=None, tags=N
             yield result
 
 
-def execute_on_thread(pipeline_name, done, instance_ref, tempdir=None, tags=None):
+def execute_on_thread(
+    pipeline_name: str,
+    done: threading.Event,
+    instance_ref: InstanceRef,
+    tempdir: Optional[str] = None,
+    tags: Optional[Mapping[str, str]] = None,
+) -> None:
     with DagsterInstance.from_ref(instance_ref) as instance:
-        with execute_pipeline_on_celery(
-            pipeline_name, tempdir=tempdir, tags=tags, instance=instance
-        ):
+        with execute_job_on_celery(pipeline_name, tempdir=tempdir, tags=tags, instance=instance):
             done.set()
 
 
 @contextmanager
-def start_celery_worker(queue=None):
+def start_celery_worker(queue: Optional[str] = None) -> Iterator[None]:
     process = subprocess.Popen(
         ["dagster-celery", "worker", "start", "-A", "dagster_celery.app"]
         + (["-q", queue] if queue else [])
@@ -98,5 +116,5 @@ def start_celery_worker(queue=None):
         subprocess.check_output(["dagster-celery", "worker", "terminate"])
 
 
-def events_of_type(result, event_type):
-    return [event for event in result.event_list if event.event_type_value == event_type]
+def events_of_type(result: ExecutionResult, event_type: str) -> Sequence[DagsterEvent]:
+    return [event for event in result.all_events if event.event_type_value == event_type]

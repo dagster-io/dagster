@@ -29,6 +29,7 @@ export const JobMenu = (props: Props) => {
     permissions: {canLaunchPipelineReexecution},
     disabledReasons,
   } = usePermissionsForLocation(repoAddress.location);
+
   const [fetchHasExecutionPlan, {data}] = useLazyQuery<
     RunReExecutionQuery,
     RunReExecutionQueryVariables
@@ -116,6 +117,7 @@ const RUN_RE_EXECUTION_QUERY = gql`
     pipelineRunOrError(runId: $runId) {
       ... on Run {
         id
+        parentPipelineSnapshotId
         ...RunFragment
       }
     }

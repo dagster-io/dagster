@@ -394,7 +394,7 @@ class DagsterEvent(
             step_handle=step_context.step.handle,
             node_handle=step_context.step.node_handle,
             step_kind_value=step_context.step.kind.value,
-            logging_tags=step_context.logging_tags,
+            logging_tags=step_context.event_tags,
             event_specific_data=_validate_event_specific_data(event_type, event_specific_data),
             message=check.opt_str_param(message, "message"),
             pid=os.getpid(),
@@ -1271,7 +1271,7 @@ class DagsterEvent(
             step_handle=step_context.step.handle,
             node_handle=step_context.step.node_handle,
             step_kind_value=step_context.step.kind.value,
-            logging_tags=step_context.logging_tags,
+            logging_tags=step_context.event_tags,
             message=(
                 'Finished the execution of hook "{hook_name}" triggered for "{solid_name}".'
             ).format(hook_name=hook_def.name, solid_name=step_context.solid.name),
@@ -1295,7 +1295,7 @@ class DagsterEvent(
             step_handle=step_context.step.handle,
             node_handle=step_context.step.node_handle,
             step_kind_value=step_context.step.kind.value,
-            logging_tags=step_context.logging_tags,
+            logging_tags=step_context.event_tags,
             event_specific_data=_validate_event_specific_data(
                 event_type,
                 HookErroredData(
@@ -1320,7 +1320,7 @@ class DagsterEvent(
             step_handle=step_context.step.handle,
             node_handle=step_context.step.node_handle,
             step_kind_value=step_context.step.kind.value,
-            logging_tags=step_context.logging_tags,
+            logging_tags=step_context.event_tags,
             message=(
                 'Skipped the execution of hook "{hook_name}". It did not meet its triggering '
                 'condition during the execution of "{solid_name}".'

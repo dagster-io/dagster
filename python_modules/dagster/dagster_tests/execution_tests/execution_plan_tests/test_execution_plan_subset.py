@@ -112,7 +112,7 @@ def test_reentrant_execute_plan():
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline_def, tags={"foo": "bar"}, execution_plan=execution_plan
     )
-    step_events = execute_plan(
+    execute_plan(
         execution_plan,
         InMemoryPipeline(pipeline_def),
         dagster_run=pipeline_run,
@@ -120,8 +120,3 @@ def test_reentrant_execute_plan():
     )
 
     assert called["yup"]
-
-    assert (
-        find_events(step_events, event_type="STEP_OUTPUT")[0].logging_tags["pipeline_tags"]
-        == "{'foo': 'bar'}"
-    )

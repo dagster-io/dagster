@@ -14,7 +14,7 @@ from dagster import (
     op,
 )
 from dagster._check import ParameterCheckError
-from dagster._core.utility_solids import define_stub_solid
+from dagster._core.utility_solids import create_stub_op
 
 
 def solid_a_b_list():
@@ -39,9 +39,7 @@ def test_create_pipeline_with_bad_solids_list():
         ParameterCheckError,
         match=r'Param "node_defs" is not one of \[\'Sequence\'\]',
     ):
-        GraphDefinition(
-            name="a_pipeline", node_defs=define_stub_solid("stub", [{"a key": "a value"}])
-        )
+        GraphDefinition(name="a_pipeline", node_defs=create_stub_op("stub", [{"a key": "a value"}]))
 
 
 def test_circular_dep():

@@ -2,7 +2,7 @@ import {Box, Colors} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-export const HeaderCell: React.FC = ({children}) => (
+export const HeaderCell = ({children}: {children?: React.ReactNode}) => (
   <Box
     padding={{vertical: 8, horizontal: 24}}
     border={{side: 'right', width: 1, color: Colors.KeylineGray}}
@@ -12,7 +12,7 @@ export const HeaderCell: React.FC = ({children}) => (
   </Box>
 );
 
-export const RowCell: React.FC = ({children}) => (
+export const RowCell = ({children}: {children?: React.ReactNode}) => (
   <Box
     padding={{horizontal: 24, vertical: 12}}
     flex={{direction: 'column', justifyContent: 'flex-start'}}

@@ -1,6 +1,7 @@
 from dagster._core.libraries import DagsterLibraryRegistry
 
 from .duckdb_pyspark_type_handler import (
+    DuckDBPySparkIOManager as DuckDBPySparkIOManager,
     DuckDBPySparkTypeHandler as DuckDBPySparkTypeHandler,
     duckdb_pyspark_io_manager as duckdb_pyspark_io_manager,
 )

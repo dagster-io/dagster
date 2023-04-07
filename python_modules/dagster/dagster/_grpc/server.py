@@ -1200,7 +1200,7 @@ class GrpcServerProcess:
         check.bool_param(force_port, "force_port")
         check.int_param(max_retries, "max_retries")
         check.opt_int_param(max_workers, "max_workers")
-        check.bool_param(heartbeat, "heartbeat")
+        self._heartbeat = check.bool_param(heartbeat, "heartbeat")
         check.int_param(heartbeat_timeout, "heartbeat_timeout")
         check.invariant(heartbeat_timeout > 0, "heartbeat_timeout must be greater than 0")
         check.opt_str_param(fixed_server_id, "fixed_server_id")
@@ -1285,12 +1285,12 @@ class GrpcServerProcess:
                     pass
 
     def __del__(self):
-        if not self._shutdown:
+        if not self._shutdown and not self._heartbeat:
             warnings.warn(
-                "GrpcServerProcess is being destroyed without signalling to server that "
-                "it should shut down. This may result in server processes living longer than "
-                "they need to. To fix this, wrap the GrpcServerProcess in a contextmanager or "
-                "call shutdown_server on it."
+                "GrpcServerProcess without a heartbeat is being destroyed without signalling to the"
+                " server that it should shut down. This may result in server processes living"
+                " longer than they need to. To fix this, wrap the GrpcServerProcess in a"
+                " contextmanager or call shutdown_server on it."
             )
 
         if not self._waited and os.getenv("STRICT_GRPC_SERVER_PROCESS_WAIT"):

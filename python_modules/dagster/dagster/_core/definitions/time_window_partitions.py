@@ -707,6 +707,29 @@ class TimeWindowPartitionsDefinition(
     ) -> str:
         return hashlib.sha1(self.__repr__().encode("utf-8")).hexdigest()
 
+    def has_partition_key(
+        self,
+        partition_key: str,
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> bool:
+        try:
+            time_window = self.time_window_for_partition_key(partition_key)
+        except ValueError:
+            return False
+
+        first_partition_window = self.get_first_partition_window(current_time=current_time)
+        last_partition_window = self.get_last_partition_window(current_time=current_time)
+        if (
+            first_partition_window is None
+            or last_partition_window is None
+            or time_window.start < first_partition_window.start
+            or time_window.start > last_partition_window.start
+        ):
+            return False
+
+        return time_window.start.strftime(self.fmt) == partition_key
+
 
 class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):
     """A set of daily partitions.

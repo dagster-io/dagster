@@ -136,7 +136,12 @@ export interface LiveDataForNode {
   lastObservation: AssetNodeLiveObservationFragment | null;
   staleStatus: StaleStatus | null;
   staleCauses: {dependency: Maybe<AssetKey>; key: AssetKey; reason: string}[];
-  partitionStats: {numMaterialized: number; numPartitions: number; numFailed: number} | null;
+  partitionStats: {
+    numMaterialized: number;
+    numMaterializing: number;
+    numPartitions: number;
+    numFailed: number;
+  } | null;
 }
 
 export const MISSING_LIVE_DATA: LiveDataForNode = {
@@ -156,16 +161,6 @@ export const MISSING_LIVE_DATA: LiveDataForNode = {
 
 export interface LiveData {
   [assetId: GraphId]: LiveDataForNode;
-}
-
-export interface AssetDefinitionsForLiveData {
-  [id: string]: {
-    definition: {
-      partitionDefinition: string | null;
-      jobNames: string[];
-      opNames: string[];
-    };
-  };
 }
 
 export const buildLiveData = ({assetNodes, assetsLatestInfo}: AssetGraphLiveQuery) => {

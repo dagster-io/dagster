@@ -2,7 +2,13 @@ import {Box, Tooltip, Colors, useViewport} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {
+  assetPartitionStatusToText,
+  assetPartitionStatusesToStyle,
+} from '../assets/AssetPartitionStatus';
+import {Range} from '../assets/usePartitionHealthData';
 import {RunStatus} from '../graphql/types';
+import {runStatusToBackfillStateString, RUN_STATUS_COLORS} from '../runs/RunStatusTag';
 
 import {assembleIntoSpans} from './SpanRepresentation';
 
@@ -13,27 +19,6 @@ type SelectionRange = {
 
 const MIN_SPAN_WIDTH = 8;
 
-// Todo: Rename this enum to Partition"Status" instead of Partition"State" to
-// match the server-provided RunStatus and others.
-export enum PartitionState {
-  MISSING = 'missing',
-  SUCCESS = 'success',
-  SUCCESS_MISSING = 'success_missing', // states where the run succeeded in the past for a given step, but is missing for the last run
-  FAILURE = 'failure',
-  FAILURE_MISSING = 'failure_missing', // states where the run failed in the past for a given step, but is missing for the last run
-  QUEUED = 'queued',
-  STARTED = 'started',
-}
-
-// This type is similar to a partition health "Range", but this component is also
-// used by backfill UI and backfills can have a wider range of partition states,
-// so this type allows the entire enum.
-export type PartitionStatusRange = {
-  start: {idx: number; key: string};
-  end: {idx: number; key: string};
-  value: PartitionState;
-};
-
 // This component can be wired up to assets, which provide partition status in terms
 // of ranges with a given status. It can also be wired up to backfills, which provide
 // status per-partition.
@@ -41,26 +26,16 @@ export type PartitionStatusRange = {
 // In the latter case, this component will call the getter function you provide
 // and assemble ranges by itself for display.
 //
-export type PartitionStatusHealthSource =
-  | {ranges: PartitionStatusRange[]}
-  | {partitionStateForKey: (partitionKey: string, partitionIdx: number) => PartitionState};
-
-export const runStatusToPartitionState = (runStatus: RunStatus | null) => {
-  switch (runStatus) {
-    case RunStatus.CANCELED:
-    case RunStatus.CANCELING:
-    case RunStatus.FAILURE:
-      return PartitionState.FAILURE;
-    case RunStatus.STARTED:
-      return PartitionState.STARTED;
-    case RunStatus.SUCCESS:
-      return PartitionState.SUCCESS;
-    case RunStatus.QUEUED:
-      return PartitionState.QUEUED;
-    default:
-      return PartitionState.MISSING;
-  }
+type PartitionStatusHealthSourceAssets = {
+  ranges: Range[];
 };
+export type PartitionStatusHealthSourceOps = {
+  runStatusForPartitionKey: (partitionKey: string, partitionIdx: number) => RunStatus;
+};
+
+export type PartitionStatusHealthSource =
+  | PartitionStatusHealthSourceOps
+  | PartitionStatusHealthSourceAssets;
 
 interface PartitionStatusProps {
   partitionNames: string[];
@@ -93,7 +68,7 @@ export const PartitionStatus: React.FC<PartitionStatusProps> = ({
   >();
   const {viewport, containerProps} = useViewport();
 
-  const ranges = useRenderableRanges(health, splitPartitions, partitionNames);
+  const segments = useColorSegments(health, splitPartitions, partitionNames);
 
   const toPartitionName = React.useCallback(
     (e: MouseEvent) => {
@@ -165,7 +140,7 @@ export const PartitionStatus: React.FC<PartitionStatusProps> = ({
     [selectedSet, partitionNames],
   );
 
-  const highestIndex = ranges.map((s) => s.end.idx).reduce((prev, cur) => Math.max(prev, cur), 0);
+  const highestIndex = segments.map((s) => s.end.idx).reduce((prev, cur) => Math.max(prev, cur), 0);
   const indexToPct = (idx: number) => `${((idx * 100) / partitionNames.length).toFixed(3)}%`;
   const showSeparators =
     splitPartitions && viewport.width > MIN_SPAN_WIDTH * (partitionNames.length + 1);
@@ -210,24 +185,20 @@ export const PartitionStatus: React.FC<PartitionStatusProps> = ({
         onClick={_onClick}
         onMouseDown={_onMouseDown}
       >
-        {ranges.map((s) => (
+        {segments.map((s) => (
           <div
             key={s.start.idx}
             style={{
               left: `min(calc(100% - 2px), ${indexToPct(s.start.idx)})`,
               width: indexToPct(s.end.idx - s.start.idx + 1),
-              minWidth: s.value ? 2 : undefined,
+              minWidth: 1,
               position: 'absolute',
               zIndex: s.start.idx === 0 || s.end.idx === highestIndex ? 3 : 2,
               top: 0,
             }}
           >
             {hideStatusTooltip || tooltipMessage ? (
-              <div
-                className="color-span"
-                style={partitionStateToStyle(s.value)}
-                title={tooltipMessage}
-              />
+              <div className="color-span" style={s.style} title={tooltipMessage} />
             ) : (
               <Tooltip
                 display="block"
@@ -236,21 +207,19 @@ export const PartitionStatus: React.FC<PartitionStatusProps> = ({
                   tooltipMessage
                     ? tooltipMessage
                     : s.start.idx === s.end.idx
-                    ? `Partition ${partitionNames[s.start.idx]} is ${partitionStatusToText(
-                        s.value,
-                      ).toLowerCase()}`
+                    ? `Partition ${partitionNames[s.start.idx]} is ${s.label.toLowerCase()}`
                     : `Partitions ${partitionNames[s.start.idx]} through ${
                         partitionNames[s.end.idx]
-                      } are ${partitionStatusToText(s.value).toLowerCase()}`
+                      } are ${s.label.toLowerCase()}`
                 }
               >
-                <div className="color-span" style={partitionStateToStyle(s.value)} />
+                <div className="color-span" style={s.style} />
               </Tooltip>
             )}
           </div>
         ))}
         {showSeparators
-          ? ranges.slice(1).map((s) => (
+          ? segments.slice(1).map((s) => (
               <div
                 className="separator"
                 key={`separator_${s.start.idx}`}
@@ -344,99 +313,83 @@ export const PartitionStatus: React.FC<PartitionStatusProps> = ({
   );
 };
 
-function useRenderableRanges(
+// This type is similar to a partition health "Range", but this component is also
+// used by backfill UI and backfills can have a wider range of partition states,
+// so this type allows the entire enum.
+type ColorSegment = {
+  start: {idx: number; key: string};
+  end: {idx: number; key: string};
+  style: React.CSSProperties;
+  label: string;
+};
+
+function useColorSegments(
   health: PartitionStatusHealthSource,
   splitPartitions: boolean,
   partitionNames: string[],
 ) {
   const _ranges = 'ranges' in health ? health.ranges : null;
-  const _stateForKey = 'partitionStateForKey' in health ? health.partitionStateForKey : null;
+  const _statusForKey =
+    'runStatusForPartitionKey' in health ? health.runStatusForPartitionKey : null;
 
   return React.useMemo(() => {
-    return _stateForKey
-      ? buildRangesFromStateFn(partitionNames, splitPartitions, _stateForKey)
+    return _statusForKey
+      ? opRunStatusToColorRanges(partitionNames, splitPartitions, _statusForKey)
       : _ranges && splitPartitions
-      ? convertToSingleKeyRanges(partitionNames, _ranges)
-      : _ranges!;
-  }, [splitPartitions, partitionNames, _ranges, _stateForKey]);
+      ? splitColorSegments(partitionNames, assetHealthToColorSegments(_ranges))
+      : assetHealthToColorSegments(_ranges!);
+  }, [splitPartitions, partitionNames, _ranges, _statusForKey]);
 }
 
 // If you ask for each partition to be rendered as a separate segment in the UI, we break the
 // provided ranges apart into per-partition ranges so that each partition can have a separate tooltip.
 //
-function convertToSingleKeyRanges(
-  partitionNames: string[],
-  ranges: PartitionStatusRange[],
-): PartitionStatusRange[] {
-  const result: PartitionStatusRange[] = [];
-  for (const range of ranges) {
-    for (let idx = range.start.idx; idx <= range.end.idx; idx++) {
+function splitColorSegments(partitionNames: string[], segments: ColorSegment[]): ColorSegment[] {
+  const result: ColorSegment[] = [];
+  for (const segment of segments) {
+    for (let idx = segment.start.idx; idx <= segment.end.idx; idx++) {
       result.push({
         start: {idx, key: partitionNames[idx]},
         end: {idx, key: partitionNames[idx]},
-        value: range.value,
+        label: segment.label,
+        style: segment.style,
       });
     }
   }
   return result;
 }
 
-function buildRangesFromStateFn(
+function assetHealthToColorSegments(ranges: Range[]) {
+  return ranges.map((range) => ({
+    start: range.start,
+    end: range.end,
+    label: range.value.map((v) => assetPartitionStatusToText(v)).join(', '),
+    style: assetPartitionStatusesToStyle(range.value),
+  }));
+}
+
+function opRunStatusToColorRanges(
   partitionNames: string[],
   splitPartitions: boolean,
-  partitionStateForKey: (partitionKey: string, partitionIdx: number) => PartitionState,
+  runStatusForKey: (partitionKey: string, partitionIdx: number) => RunStatus,
 ) {
   const spans = splitPartitions
     ? partitionNames.map((name, idx) => ({
         startIdx: idx,
         endIdx: idx,
-        status: partitionStateForKey(name, idx),
+        status: runStatusForKey(name, idx),
       }))
-    : assembleIntoSpans(partitionNames, partitionStateForKey);
+    : assembleIntoSpans(partitionNames, runStatusForKey);
 
   return spans.map((s) => ({
-    value: s.status,
+    label: runStatusToBackfillStateString(s.status),
     start: {idx: s.startIdx, key: partitionNames[s.startIdx]},
     end: {idx: s.endIdx, key: partitionNames[s.endIdx]},
+    style: {
+      background: s.status === RunStatus.NOT_STARTED ? Colors.Gray200 : RUN_STATUS_COLORS[s.status],
+    },
   }));
 }
-
-export const partitionStateToStyle = (status: PartitionState): React.CSSProperties => {
-  switch (status) {
-    case PartitionState.SUCCESS:
-      return {background: Colors.Green500};
-    case PartitionState.SUCCESS_MISSING:
-      return {
-        background: `linear-gradient(135deg, ${Colors.Green500} 25%, ${Colors.Gray200} 25%, ${Colors.Gray200} 50%, ${Colors.Green500} 50%, ${Colors.Green500} 75%, ${Colors.Gray200} 75%, ${Colors.Gray200} 100%)`,
-        backgroundSize: '8.49px 8.49px',
-      };
-    case PartitionState.FAILURE:
-      return {background: Colors.Red500};
-    case PartitionState.STARTED:
-      return {background: Colors.Blue500};
-    case PartitionState.QUEUED:
-      return {background: Colors.Blue200};
-    default:
-      return {background: Colors.Gray200};
-  }
-};
-
-export const partitionStatusToText = (status: PartitionState) => {
-  switch (status) {
-    case PartitionState.SUCCESS:
-      return 'Completed';
-    case PartitionState.SUCCESS_MISSING:
-      return 'Partial';
-    case PartitionState.FAILURE:
-      return 'Failed';
-    case PartitionState.STARTED:
-      return 'In progress';
-    case PartitionState.QUEUED:
-      return 'Queued';
-    default:
-      return 'Missing';
-  }
-};
 
 const SelectionSpansContainer = styled.div`
   position: relative;

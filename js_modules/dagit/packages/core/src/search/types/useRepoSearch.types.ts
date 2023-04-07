@@ -46,6 +46,7 @@ export type SearchBootstrapQuery = {
                     name: string;
                     pipelineName: string;
                   }>;
+                  allTopLevelResourceDetails: Array<{__typename: 'ResourceDetails'; name: string}>;
                 }>;
               }
             | null;

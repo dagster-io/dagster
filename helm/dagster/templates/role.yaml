@@ -9,13 +9,13 @@ metadata:
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
 
-# Allow the Dagster service account to read and write Kubernetes jobs and pods.
+# Allow the Dagster service account to read and write Kubernetes jobs, deployments, pods, and events.
 rules:
   - apiGroups: ["batch"]
     resources: ["jobs", "jobs/status"]
     verbs: ["*"]
   # The empty arg "" corresponds to the core API group
   - apiGroups: [""]
-    resources: ["pods", "pods/log", "pods/status"]
+    resources: ["pods", "pods/log", "pods/status", "events"]
     verbs: ["*"]
 {{- end -}}

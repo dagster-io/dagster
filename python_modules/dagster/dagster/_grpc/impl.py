@@ -319,6 +319,7 @@ def get_external_schedule_execution(
             repo_def.name,
             schedule_name,
             resources=resources_to_build,
+            repository_def=repo_def,
         ) as schedule_context:
             with user_code_error_boundary(
                 ScheduleExecutionError,
@@ -416,10 +417,6 @@ def get_partition_config(
         ) = _get_job_partitions_and_config_for_partition_set_name(repo_def, partition_set_name)
 
         with _instance_from_ref_for_dynamic_partitions(instance_ref, partitions_def) as instance:
-            partition = partitions_def.get_partition(
-                partition_key, dynamic_partitions_store=instance
-            )
-
             with user_code_error_boundary(
                 PartitionExecutionError,
                 lambda: f"Error occurred during the evaluation of the `run_config_for_partition` function for partition set {partition_set_name}",
@@ -427,7 +424,7 @@ def get_partition_config(
                 run_config = partitioned_config.get_run_config_for_partition_key(
                     partition_key, dynamic_partitions_store=instance
                 )
-                return ExternalPartitionConfigData(name=partition.name, run_config=run_config)
+                return ExternalPartitionConfigData(name=partition_key, run_config=run_config)
     except Exception:
         return ExternalPartitionExecutionErrorData(
             serializable_error_info_from_exc_info(sys.exc_info())
@@ -473,17 +470,15 @@ def get_partition_tags(
         # the instance when necessary for dynamic partitions: https://github.com/dagster-io/dagster/issues/12440
 
         with _instance_from_ref_for_dynamic_partitions(instance_ref, partitions_def) as instance:
-            partition = partitions_def.get_partition(
-                partition_name, dynamic_partitions_store=instance
-            )
             with user_code_error_boundary(
                 PartitionExecutionError,
                 lambda: f"Error occurred during the evaluation of the `tags_for_partition` function for partitioned config on job '{job_def.name}'",
             ):
                 tags = partitioned_config.get_tags_for_partition_key(
-                    partition.name, job_name=job_def.name, dynamic_partitions_store=instance
+                    partition_name, job_name=job_def.name, dynamic_partitions_store=instance
                 )
-                return ExternalPartitionTagsData(name=partition.name, tags=tags)
+                return ExternalPartitionTagsData(name=partition_name, tags=tags)
+
     except Exception:
         return ExternalPartitionExecutionErrorData(
             serializable_error_info_from_exc_info(sys.exc_info())

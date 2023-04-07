@@ -1595,6 +1595,7 @@ export const SingleDimensionStaticPartitionHealthQuery: MockedResponse<Partition
         ],
         assetPartitionStatuses: {
           materializedPartitions: ['IL', 'VA', 'SC', 'WV', 'OH', 'GA'],
+          materializingPartitions: [],
           failedPartitions: ['PA', 'NC'],
           __typename: 'DefaultPartitions',
         },
@@ -1638,6 +1639,7 @@ export const MultiDimensionStaticPartitionHealthQuery: MockedResponse<PartitionH
               primaryDimEndTime: null,
               secondaryDim: {
                 materializedPartitions: ['IL', 'VA', 'SC'],
+                materializingPartitions: [],
                 failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
@@ -1661,6 +1663,7 @@ export const MultiDimensionStaticPartitionHealthQuery: MockedResponse<PartitionH
                   'NC',
                   'KY',
                 ],
+                materializingPartitions: [],
                 failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
@@ -1725,6 +1728,7 @@ export const MultiDimensionTimeFirstPartitionHealthQuery: MockedResponse<Partiti
                   'NC',
                   'KY',
                 ],
+                materializingPartitions: [],
                 failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
@@ -1737,6 +1741,7 @@ export const MultiDimensionTimeFirstPartitionHealthQuery: MockedResponse<Partiti
               primaryDimEndTime: 1659139200,
               secondaryDim: {
                 materializedPartitions: ['TN', 'VA', 'GA', 'PA', 'KY'],
+                materializingPartitions: [],
                 failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
@@ -1761,6 +1766,7 @@ export const MultiDimensionTimeFirstPartitionHealthQuery: MockedResponse<Partiti
                   'NC',
                   'KY',
                 ],
+                materializingPartitions: [],
                 failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
@@ -1773,6 +1779,7 @@ export const MultiDimensionTimeFirstPartitionHealthQuery: MockedResponse<Partiti
               primaryDimEndTime: 1661731200,
               secondaryDim: {
                 materializedPartitions: ['TN', 'VA'],
+                materializingPartitions: [],
                 failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
@@ -1785,6 +1792,7 @@ export const MultiDimensionTimeFirstPartitionHealthQuery: MockedResponse<Partiti
               primaryDimEndTime: 1663286400,
               secondaryDim: {
                 materializedPartitions: ['IL', 'VA', 'SC', 'PA', 'WV', 'FL'],
+                materializingPartitions: [],
                 failedPartitions: ['TN', 'GA', 'OH', 'NC', 'KY'],
                 __typename: 'DefaultPartitions',
               },
@@ -1797,6 +1805,7 @@ export const MultiDimensionTimeFirstPartitionHealthQuery: MockedResponse<Partiti
               primaryDimEndTime: 1663372800,
               secondaryDim: {
                 materializedPartitions: ['IL', 'VA', 'SC', 'PA', 'FL'],
+                materializingPartitions: [],
                 failedPartitions: ['TN', 'GA', 'OH', 'NC', 'KY'],
                 __typename: 'DefaultPartitions',
               },
@@ -1821,6 +1830,7 @@ export const MultiDimensionTimeFirstPartitionHealthQuery: MockedResponse<Partiti
                   'NC',
                   'KY',
                 ],
+                materializingPartitions: [],
                 failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
@@ -1873,6 +1883,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1626134400,
               secondaryDim: {
                 materializedPartitions: ['TN'],
+                materializingPartitions: [],
                 failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
@@ -1885,6 +1896,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1665100800,
               secondaryDim: {
                 materializedPartitions: ['TN', 'VA'],
+                materializingPartitions: [],
                 failedPartitions: ['OH'],
                 __typename: 'DefaultPartitions',
               },
@@ -1897,6 +1909,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1665273600,
               secondaryDim: {
                 materializedPartitions: ['OH', 'FL', 'TN', 'VA', 'SC', 'PA', 'NC'],
+                materializingPartitions: [],
                 failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
@@ -1909,6 +1922,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1665360000,
               secondaryDim: {
                 materializedPartitions: ['OH', 'FL', 'TN', 'VA', 'PA', 'NC'],
+                materializingPartitions: [],
                 failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
@@ -1921,6 +1935,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1665532800,
               secondaryDim: {
                 materializedPartitions: ['FL', 'TN', 'VA', 'SC', 'PA', 'NC'],
+                materializingPartitions: [],
                 failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
@@ -1933,6 +1948,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1665619200,
               secondaryDim: {
                 materializedPartitions: ['OH', 'VA', 'TN', 'SC', 'PA', 'NC'],
+                materializingPartitions: [],
                 failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
@@ -1945,6 +1961,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1665792000,
               secondaryDim: {
                 materializedPartitions: ['FL', 'PA', 'VA', 'TN', 'SC', 'OH', 'NC'],
+                materializingPartitions: [],
                 failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
@@ -1957,6 +1974,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1665878400,
               secondaryDim: {
                 materializedPartitions: ['FL', 'TN', 'VA', 'SC', 'PA', 'NC'],
+                materializingPartitions: [],
                 failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
@@ -1969,6 +1987,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1665964800,
               secondaryDim: {
                 materializedPartitions: ['PA', 'TN', 'VA', 'OH', 'NC'],
+                materializingPartitions: [],
                 failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
@@ -1981,6 +2000,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1666051200,
               secondaryDim: {
                 materializedPartitions: ['VA', 'SC', 'PA', 'FL', 'TN', 'GA', 'OH', 'NC', 'KY'],
+                materializingPartitions: [],
                 failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
@@ -1993,6 +2013,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1666137600,
               secondaryDim: {
                 materializedPartitions: ['FL', 'TN', 'GA', 'VA', 'SC', 'PA', 'NC', 'KY'],
+                materializingPartitions: [],
                 failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
@@ -2005,6 +2026,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1666396800,
               secondaryDim: {
                 materializedPartitions: ['VA', 'SC', 'PA', 'FL', 'TN', 'GA', 'OH', 'NC', 'KY'],
+                materializingPartitions: [],
                 failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
@@ -2017,6 +2039,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1666483200,
               secondaryDim: {
                 materializedPartitions: ['FL', 'TN', 'GA', 'VA', 'SC', 'PA', 'NC', 'KY'],
+                materializingPartitions: [],
                 failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
@@ -2029,6 +2052,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1666569600,
               secondaryDim: {
                 materializedPartitions: ['VA', 'SC', 'OH', 'FL', 'TN', 'GA', 'PA', 'NC', 'KY'],
+                materializingPartitions: [],
                 failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
@@ -2041,6 +2065,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1666656000,
               secondaryDim: {
                 materializedPartitions: ['VA', 'TN', 'PA', 'SC', 'OH', 'GA', 'NC', 'KY'],
+                materializingPartitions: [],
                 failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
@@ -2053,6 +2078,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1666828800,
               secondaryDim: {
                 materializedPartitions: ['VA', 'SC', 'PA', 'FL', 'TN', 'GA', 'OH', 'NC', 'KY'],
+                materializingPartitions: [],
                 failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
@@ -2065,6 +2091,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1666915200,
               secondaryDim: {
                 materializedPartitions: ['NC', 'VA', 'TN', 'GA', 'SC', 'OH', 'PA', 'KY'],
+                materializingPartitions: [],
                 failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
@@ -2077,6 +2104,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1667260800,
               secondaryDim: {
                 materializedPartitions: ['VA', 'SC', 'PA', 'FL', 'TN', 'GA', 'OH', 'NC', 'KY'],
+                materializingPartitions: [],
                 failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
@@ -2089,6 +2117,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1667347200,
               secondaryDim: {
                 materializedPartitions: ['TN', 'GA', 'VA', 'PA', 'OH', 'SC', 'NC', 'KY'],
+                materializingPartitions: [],
                 failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
@@ -2101,6 +2130,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1667433600,
               secondaryDim: {
                 materializedPartitions: ['FL', 'TN', 'GA', 'VA', 'SC', 'PA', 'NC', 'KY'],
+                materializingPartitions: [],
                 failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
@@ -2113,6 +2143,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1667520000,
               secondaryDim: {
                 materializedPartitions: ['VA', 'SC', 'PA', 'FL', 'TN', 'GA', 'OH', 'NC', 'KY'],
+                materializingPartitions: [],
                 failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
@@ -2125,6 +2156,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1667606400,
               secondaryDim: {
                 materializedPartitions: ['FL', 'VA', 'TN', 'GA', 'SC', 'PA', 'NC', 'KY'],
+                materializingPartitions: [],
                 failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
@@ -2137,6 +2169,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1667692800,
               secondaryDim: {
                 materializedPartitions: ['NC', 'FL', 'VA', 'TN', 'GA', 'OH', 'PA', 'KY'],
+                materializingPartitions: [],
                 failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
@@ -2149,6 +2182,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1667779200,
               secondaryDim: {
                 materializedPartitions: ['FL', 'VA', 'GA', 'TN', 'SC', 'PA', 'NC', 'KY'],
+                materializingPartitions: [],
                 failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
@@ -2161,6 +2195,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1668038400,
               secondaryDim: {
                 materializedPartitions: ['OH', 'FL', 'TN', 'VA', 'SC', 'PA', 'NC'],
+                materializingPartitions: [],
                 failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
@@ -2173,6 +2208,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1668124800,
               secondaryDim: {
                 materializedPartitions: ['TN', 'VA', 'PA', 'SC', 'OH', 'NC'],
+                materializingPartitions: [],
                 failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
@@ -2185,6 +2221,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1668297600,
               secondaryDim: {
                 materializedPartitions: ['FL', 'TN', 'VA', 'PA', 'SC', 'OH', 'NC'],
+                materializingPartitions: [],
                 failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
@@ -2197,6 +2234,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1668384000,
               secondaryDim: {
                 materializedPartitions: ['OH', 'VA', 'TN', 'SC', 'PA', 'NC'],
+                materializingPartitions: [],
                 failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
@@ -2209,6 +2247,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1668556800,
               secondaryDim: {
                 materializedPartitions: ['OH', 'FL', 'TN', 'VA', 'SC', 'PA', 'NC'],
+                materializingPartitions: [],
                 failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
@@ -2221,6 +2260,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1668643200,
               secondaryDim: {
                 materializedPartitions: ['OH', 'FL', 'TN', 'VA', 'SC', 'PA'],
+                materializingPartitions: [],
                 failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
@@ -2233,6 +2273,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1668729600,
               secondaryDim: {
                 materializedPartitions: ['FL', 'PA', 'SC', 'OH', 'NC'],
+                materializingPartitions: [],
                 failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
@@ -2245,6 +2286,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1668816000,
               secondaryDim: {
                 materializedPartitions: ['PA', 'NC', 'FL', 'SC'],
+                materializingPartitions: [],
                 failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
@@ -2257,6 +2299,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1668902400,
               secondaryDim: {
                 materializedPartitions: ['OH', 'PA', 'FL'],
+                materializingPartitions: [],
                 failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
@@ -2281,6 +2324,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
                   'NC',
                   'KY',
                 ],
+                materializingPartitions: [],
                 failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
@@ -2293,6 +2337,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1669075200,
               secondaryDim: {
                 materializedPartitions: ['OH', 'NC', 'FL'],
+                materializingPartitions: [],
                 failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
@@ -2305,6 +2350,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1669161600,
               secondaryDim: {
                 materializedPartitions: ['OH', 'NC', 'FL', 'SC'],
+                materializingPartitions: [],
                 failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
@@ -2317,6 +2363,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1669248000,
               secondaryDim: {
                 materializedPartitions: ['OH', 'NC', 'PA', 'SC'],
+                materializingPartitions: [],
                 failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
@@ -2329,6 +2376,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1669334400,
               secondaryDim: {
                 materializedPartitions: ['FL', 'PA', 'SC', 'OH', 'NC'],
+                materializingPartitions: [],
                 failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
@@ -2341,6 +2389,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1669420800,
               secondaryDim: {
                 materializedPartitions: ['OH', 'NC', 'FL', 'SC'],
+                materializingPartitions: [],
                 failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
@@ -2353,6 +2402,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1669507200,
               secondaryDim: {
                 materializedPartitions: ['FL', 'PA', 'SC', 'OH', 'NC'],
+                materializingPartitions: [],
                 failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
@@ -2365,6 +2415,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1673481600,
               secondaryDim: {
                 materializedPartitions: ['WV'],
+                materializingPartitions: [],
                 failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
@@ -2377,6 +2428,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1673827200,
               secondaryDim: {
                 materializedPartitions: ['IL', 'WV'],
+                materializingPartitions: [],
                 failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
@@ -2389,6 +2441,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1674086400,
               secondaryDim: {
                 materializedPartitions: ['IL', 'WV'],
+                materializingPartitions: [],
                 failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
@@ -2413,6 +2466,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
                   'NC',
                   'KY',
                 ],
+                materializingPartitions: [],
                 failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
@@ -2425,6 +2479,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1675123200,
               secondaryDim: {
                 materializedPartitions: ['WV'],
+                materializingPartitions: [],
                 failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },

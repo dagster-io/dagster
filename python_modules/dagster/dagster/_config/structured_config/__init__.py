@@ -31,7 +31,11 @@ from dagster._core.definitions.definition_config_schema import (
     ConfiguredDefinitionConfigSchema,
     DefinitionConfigSchema,
 )
-from dagster._core.errors import DagsterInvalidConfigError
+from dagster._core.errors import (
+    DagsterInvalidConfigDefinitionError,
+    DagsterInvalidConfigError,
+    DagsterInvalidPythonicConfigDefinitionError,
+)
 from dagster._core.execution.context.init import InitResourceContext
 
 try:
@@ -142,6 +146,11 @@ class Config(MakeConfigCacheable):
             else:
                 output[key] = value
         return output
+
+    @classmethod
+    def to_config_schema(cls) -> DefinitionConfigSchema:
+        """Converts the config structure represented by this class into a DefinitionConfigSchema."""
+        return DefinitionConfigSchema(infer_schema_from_config_class(cls))
 
 
 @experimental
@@ -394,21 +403,51 @@ class ConfigurableResourceFactory(
     Config,
     TypecheckAllowPartialResourceInitParams,
     AllowDelayedDependencies,
+    ABC,
     metaclass=BaseResourceMeta,
 ):
-    """Base class for Dagster resources that utilize structured config.
+    """Base class for creating and managing the lifecycle of Dagster resources that utilize structured config.
+
+    Users should directly inherit from this class when they want the object passed to user-defined
+    code (such as an asset or op) to be different than the object that defines the configuration
+    schema and is passed to the :py:class:`Definitions` object. Cases where this is useful include is
+    when the object passed to user code is:
+
+    * An existing class from a third-party library that the user does not control.
+    * A complex class that requires substantial internal state management or itself requires arguments beyond its config values.
+    * A class with expensive initialization that should not be invoked on code location load, but rather lazily on first use in an op or asset during a run.
+    * A class that you desire to be a plain Python class, rather than a Pydantic class, for whatever reason.
 
     This class is a subclass of both :py:class:`ResourceDefinition` and :py:class:`Config`, and
-    must implement ``create_resource``, which defines the resource value to pass to user code.
+    must implement ``create_resource``, which creates the resource to pass to user code.
 
-    Example:
+    Example definition:
+
     .. code-block:: python
 
-        class DatabseResource(ConfigurableResourceFactory[Database]):
+        class DatabaseResource(ConfigurableResourceFactory[Database]):
             connection_uri: str
 
             def create_resource(self, _init_context) -> Database:
+                # For example Database could be from a third-party library or require expensive setup.
+                # Or you could just prefer to separate the concerns of configuration and runtime representation
                 return Database(self.connection_uri)
+
+    To use a resource created by a factory in a pipeline, you must use the Resource type annotation.
+
+    Example usage:
+
+    .. code-block:: python
+
+        @asset
+        def asset_that_uses_database(database: Resource[Database]):
+            # Database used directly in user code
+            database.query("SELECT * FROM table")
+
+        defs = Definitions(
+            assets=[asset_that_uses_database],
+            resources={"database": DatabaseResource(connection_uri="some_uri")},
+        )
 
     """
 
@@ -446,6 +485,14 @@ class ConfigurableResourceFactory(
         self._schema = schema
 
         self._nested_resources = {k: v for k, v in resource_pointers.items()}
+
+    @abstractmethod
+    def create_resource(self, context: InitResourceContext) -> TResValue:
+        """Returns the object that this resource hands to user code, accessible by ops or assets
+        through the context or resource parameters. This works like the function decorated
+        with @resource when using function-based resources.
+        """
+        raise NotImplementedError()
 
     @property
     def nested_resources(self) -> Mapping[str, ResourceDefinition]:
@@ -529,22 +576,35 @@ class ConfigurableResourceFactory(
     def _create_object_fn(self, context: InitResourceContext) -> TResValue:
         return self.create_resource(context)
 
-    def create_resource(self, context: InitResourceContext) -> TResValue:
-        """Returns the object that this resource hands to user code, accessible by ops or assets
-        through the context or resource parameters. This works like the function decorated
-        with @resource when using function-based resources.
+    @classmethod
+    def from_resource_context(cls, context: InitResourceContext) -> TResValue:
+        """Creates a new instance of this resource from a populated InitResourceContext.
+        Useful when creating a resource from a function-based resource, for backwards
+        compatibility purposes.
+
+        Example usage:
+
+        .. code-block:: python
+
+            class MyResource(ConfigurableResource):
+                my_str: str
+
+            @resource(config_schema=MyResource.to_config_schema())
+            def my_resource(context: InitResourceContext) -> MyResource:
+                return MyResource.from_resource_context(context)
+
         """
-        raise NotImplementedError()
+        return cls(**context.resource_config).create_resource(context)
 
 
 @experimental
 class ConfigurableResource(ConfigurableResourceFactory[TResValue]):
     """Base class for Dagster resources that utilize structured config.
 
-    This class is a subclass of both :py:class:`ResourceDefinition` and :py:class:`Config`, and
-    provides a default implementation of the resource_fn that returns the resource itself.
+    This class is a subclass of both :py:class:`ResourceDefinition` and :py:class:`Config`.
 
-    Example:
+    Example definition:
+
     .. code-block:: python
 
         class WriterResource(ConfigurableResource):
@@ -552,6 +612,21 @@ class ConfigurableResource(ConfigurableResourceFactory[TResValue]):
 
             def output(self, text: str) -> None:
                 print(f"{self.prefix}{text}")
+
+        # which can be used in a pipeline like so:
+
+    Example usage:
+
+    .. code-block:: python
+
+        @asset
+        def asset_that_uses_writer(writer: WriterResource):
+            writer.output("text")
+
+        defs = Definitions(
+            assets=[asset_that_uses_writer],
+            resources={"writer": WriterResource(prefix="a_prefix")},
+        )
 
     """
 
@@ -708,12 +783,17 @@ class ConfigurableIOManagerFactory(
             description=self.__doc__,
         )
 
-    def _create_object_fn(self, context: InitResourceContext) -> TIOManagerValue:
-        return self.create_io_manager(context)
-
     @abstractmethod
     def create_io_manager(self, context) -> TIOManagerValue:
         """Implement as one would implement a @io_manager decorator function."""
+        raise NotImplementedError()
+
+    def _create_object_fn(self, context: InitResourceContext) -> TIOManagerValue:
+        return self.create_io_manager(context)
+
+    def create_resource(self, context: InitResourceContext) -> TIOManagerValue:
+        # I/O manager factories execute a different code path that does not
+        # call create_resource
         raise NotImplementedError()
 
     @classmethod
@@ -783,8 +863,36 @@ def _wrap_config_type(
         raise NotImplementedError(f"Pydantic shape type {shape_type} not supported.")
 
 
-def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
-    """Transforms a Pydantic field into a corresponding Dagster config field."""
+def _get_inner_field_if_exists(
+    shape_type: PydanticShapeType, field: ModelField
+) -> Optional[ModelField]:
+    """Grabs the inner Pydantic field type for a data structure such as a list or dictionary.
+
+    Returns None for types which have no inner field.
+    """
+    # See https://github.com/pydantic/pydantic/blob/v1.10.3/pydantic/fields.py#L758 for
+    # where sub_fields is set.
+    if shape_type == SHAPE_SINGLETON:
+        return None
+    elif shape_type == SHAPE_LIST:
+        # List has a single subfield, which is the type of the list elements.
+        return check.not_none(field.sub_fields)[0]
+    elif shape_type in MAPPING_TYPES:
+        # Mapping has a single subfield, which is the type of the mapping values.
+        return check.not_none(field.sub_fields)[0]
+    else:
+        raise NotImplementedError(f"Pydantic shape type {shape_type} not supported.")
+
+
+def _convert_pydantic_field(pydantic_field: ModelField, model_cls: Optional[Type] = None) -> Field:
+    """Transforms a Pydantic field into a corresponding Dagster config field.
+
+
+    Args:
+        pydantic_field (ModelField): The Pydantic field to convert.
+        model_cls (Optional[Type]): The Pydantic model class that the field belongs to. This is
+            used for error messages.
+    """
     key_type = (
         _config_type_for_pydantic_field(pydantic_field.key_field)
         if pydantic_field.key_field
@@ -806,7 +914,13 @@ def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
 
         return Field(config=wrapped_config_type, description=inferred_field.description)
     else:
-        config_type = _config_type_for_pydantic_field(pydantic_field)
+        # For certain data structure types, we need to grab the inner Pydantic field (e.g. List type)
+        inner_field = _get_inner_field_if_exists(pydantic_field.shape, pydantic_field)
+        if inner_field:
+            config_type = _convert_pydantic_field(inner_field, model_cls=model_cls).config_type
+        else:
+            config_type = _config_type_for_pydantic_field(pydantic_field)
+
         wrapped_config_type = _wrap_config_type(
             shape_type=pydantic_field.shape, config_type=config_type, key_type=key_type
         )
@@ -823,10 +937,24 @@ def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
 
 
 def _config_type_for_pydantic_field(pydantic_field: ModelField) -> ConfigType:
-    return _config_type_for_type_on_pydantic_field(pydantic_field.type_)
+    """Generates a Dagster ConfigType from a Pydantic field.
+
+    Args:
+        pydantic_field (ModelField): The Pydantic field to convert.
+    """
+    return _config_type_for_type_on_pydantic_field(
+        pydantic_field.type_,
+    )
 
 
-def _config_type_for_type_on_pydantic_field(potential_dagster_type: Any) -> ConfigType:
+def _config_type_for_type_on_pydantic_field(
+    potential_dagster_type: Any,
+) -> ConfigType:
+    """Generates a Dagster ConfigType from a Pydantic field's Python type.
+
+    Args:
+        potential_dagster_type (Any): The Python type of the Pydantic field.
+    """
     # special case pydantic constrained types to their source equivalents
     if safe_is_subclass(potential_dagster_type, ConstrainedStr):
         return StringSource
@@ -1000,7 +1128,18 @@ def infer_schema_from_config_class(
     fields = {}
     for pydantic_field in model_cls.__fields__.values():
         if pydantic_field.name not in fields_to_omit:
-            fields[pydantic_field.alias] = _convert_pydantic_field(pydantic_field)
+            try:
+                fields[pydantic_field.alias] = _convert_pydantic_field(
+                    pydantic_field,
+                )
+            except DagsterInvalidConfigDefinitionError as e:
+                raise DagsterInvalidPythonicConfigDefinitionError(
+                    config_class=model_cls,
+                    field_name=pydantic_field.name,
+                    invalid_type=e.current_value,
+                    is_resource=model_cls is not None
+                    and safe_is_subclass(model_cls, ConfigurableResourceFactory),
+                )
 
     shape_cls = Permissive if model_cls.__config__.extra == Extra.allow else Shape
 

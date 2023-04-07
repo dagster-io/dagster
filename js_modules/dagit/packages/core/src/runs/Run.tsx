@@ -28,13 +28,13 @@ import {LogsToolbar, LogType} from './LogsToolbar';
 import {RunActionButtons} from './RunActionButtons';
 import {RunContext} from './RunContext';
 import {ILogCaptureInfo, IRunMetadataDict, RunMetadataProvider} from './RunMetadataProvider';
-import {RunDagsterRunEventFragment, RunFragment} from './types/RunFragments.types';
+import {RunDagsterRunEventFragment, RunPageFragment} from './types/RunFragments.types';
 import {useJobReExecution} from './useJobReExecution';
 import {useQueryPersistedLogFilter} from './useQueryPersistedLogFilter';
 
 interface RunProps {
   runId: string;
-  run?: RunFragment;
+  run?: RunPageFragment;
 }
 
 const runStatusFavicon = (status: RunStatus) => {
@@ -114,7 +114,7 @@ export const Run: React.FC<RunProps> = (props) => {
 };
 
 interface RunWithDataProps {
-  run?: RunFragment;
+  run?: RunPageFragment;
   runId: string;
   selectionQuery: string;
   logs: LogsProviderLogs;

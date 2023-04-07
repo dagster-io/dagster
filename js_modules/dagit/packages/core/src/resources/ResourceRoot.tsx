@@ -57,7 +57,7 @@ const remapName = (inName: string): string => {
   return inName;
 };
 
-const succinctType = (resourceType: string | undefined): string | null => {
+export const succinctType = (resourceType: string | undefined): string | null => {
   return resourceType?.split('.').pop() || null;
 };
 
@@ -72,7 +72,7 @@ const resourceDisplayName = (
     : resource.name;
 };
 
-const SectionHeader: React.FC = (props) => {
+const SectionHeader = (props: {children: React.ReactNode}) => {
   return (
     <Box
       padding={{left: 24, vertical: 16}}
@@ -242,7 +242,7 @@ const ResourceConfig: React.FC<{
           <SectionHeader>
             <Subheading>Resource dependencies</Subheading>
           </SectionHeader>
-          <Table $monospaceFont={false}>
+          <Table>
             <thead>
               <tr>
                 <th style={{width: 120}}>Key</th>
@@ -367,7 +367,7 @@ const ResourceUses: React.FC<{
           <SectionHeader>
             <Subheading>Parent resources</Subheading>
           </SectionHeader>
-          <Table $monospaceFont={false}>
+          <Table>
             <thead>
               <tr>
                 <th>Resource</th>
@@ -398,7 +398,7 @@ const ResourceUses: React.FC<{
           <SectionHeader>
             <Subheading>Assets</Subheading>
           </SectionHeader>
-          <Table $monospaceFont={false}>
+          <Table>
             <thead>
               <tr>
                 <th>Asset key</th>
@@ -423,7 +423,7 @@ const ResourceUses: React.FC<{
           <SectionHeader>
             <Subheading>Jobs</Subheading>
           </SectionHeader>
-          <Table $monospaceFont={false}>
+          <Table>
             <thead>
               <tr>
                 <th>Job name</th>
@@ -499,7 +499,7 @@ const ResourceUses: React.FC<{
   );
 };
 
-export const ResourceEntry: React.FC<{
+const ResourceEntry: React.FC<{
   name: string;
   url?: string;
   description?: string;
@@ -525,7 +525,7 @@ export const ResourceEntry: React.FC<{
   );
 };
 
-export const RightInfoPanel = styled.div`
+const RightInfoPanel = styled.div`
   position: relative;
 
   height: 100%;
@@ -536,11 +536,12 @@ export const RightInfoPanel = styled.div`
   background: ${Colors.White};
 `;
 
-export const RightInfoPanelContent = styled.div`
+const RightInfoPanelContent = styled.div`
   flex: 1;
   overflow-y: auto;
 `;
-export const RESOURCE_DETAILS_FRAGMENT = gql`
+
+const RESOURCE_DETAILS_FRAGMENT = gql`
   fragment ResourceDetailsFragment on ResourceDetails {
     name
     description

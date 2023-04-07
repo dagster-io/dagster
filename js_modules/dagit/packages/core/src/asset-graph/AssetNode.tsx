@@ -6,11 +6,11 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {withMiddleTruncation} from '../app/Util';
+import {AssetPartitionStatus} from '../assets/AssetPartitionStatus';
 import {humanizedLateString, isAssetLate} from '../assets/CurrentMinutesLateTag';
 import {isAssetStale, StaleCausesInfoDot} from '../assets/StaleTag';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetComputeKindTag} from '../graph/OpTags';
-import {PartitionState} from '../partitions/PartitionStatus';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
 
@@ -62,7 +62,10 @@ export const AssetNode: React.FC<{
   );
 }, isEqual);
 
-const AssetNodeStatusBox: React.FC<{background: string}> = ({background, children}) => (
+const AssetNodeStatusBox: React.FC<{background: string; children: React.ReactNode}> = ({
+  background,
+  children,
+}) => (
   <Box
     padding={{horizontal: 8}}
     style={{
@@ -87,17 +90,17 @@ const AssetNodePartitionsRow: React.FC<StatusRowProps> = (props) => {
       padding={{bottom: 8, horizontal: 8}}
     >
       <AssetNodePartitionCountBox
-        state={PartitionState.SUCCESS}
+        status={AssetPartitionStatus.MATERIALIZED}
         value={data?.numMaterialized}
         total={data?.numPartitions}
       />
       <AssetNodePartitionCountBox
-        state={PartitionState.MISSING}
+        status={AssetPartitionStatus.MISSING}
         value={data ? data.numPartitions - data.numFailed - data.numMaterialized : undefined}
         total={data?.numPartitions}
       />
       <AssetNodePartitionCountBox
-        state={PartitionState.FAILURE}
+        status={AssetPartitionStatus.FAILED}
         value={data?.numFailed}
         total={data?.numPartitions}
       />
@@ -105,7 +108,7 @@ const AssetNodePartitionsRow: React.FC<StatusRowProps> = (props) => {
   );
 };
 
-const StyleForPartitionState: {
+const StyleForAssetPartitionStatus: {
   [state: string]: {
     background: string;
     foreground: string;
@@ -114,21 +117,21 @@ const StyleForPartitionState: {
     adjective: string;
   };
 } = {
-  [PartitionState.FAILURE]: {
+  [AssetPartitionStatus.FAILED]: {
     background: Colors.Red50,
     foreground: Colors.Red700,
     border: Colors.Red500,
     icon: 'partition_failure',
     adjective: 'failed',
   },
-  [PartitionState.SUCCESS]: {
+  [AssetPartitionStatus.MATERIALIZED]: {
     background: Colors.Green50,
     foreground: Colors.Green700,
     border: Colors.Green500,
     icon: 'partition_success',
     adjective: 'materialized',
   },
-  [PartitionState.MISSING]: {
+  [AssetPartitionStatus.MISSING]: {
     background: Colors.Gray100,
     foreground: Colors.Gray900,
     border: Colors.Gray500,
@@ -137,17 +140,17 @@ const StyleForPartitionState: {
   },
 };
 
-const partitionStateToString = (count: number | undefined, adjective = '') =>
+const partitionCountString = (count: number | undefined, adjective = '') =>
   `${count === undefined ? '-' : count.toLocaleString()} ${adjective}${adjective ? ' ' : ''}${
     count === 1 ? 'partition' : 'partitions'
   }`;
 
 const AssetNodePartitionCountBox: React.FC<{
-  state: PartitionState;
+  status: AssetPartitionStatus;
   value: number | undefined;
   total: number | undefined;
-}> = ({state, value, total}) => {
-  const style = StyleForPartitionState[state];
+}> = ({status, value, total}) => {
+  const style = StyleForAssetPartitionStatus[status];
   const foreground = value ? style.foreground : Colors.Gray500;
   const background = value ? style.background : Colors.Gray50;
 
@@ -156,7 +159,7 @@ const AssetNodePartitionCountBox: React.FC<{
       display="block"
       position="top"
       canShow={value !== undefined}
-      content={partitionStateToString(value, style.adjective)}
+      content={partitionCountString(value, style.adjective)}
     >
       <AssetNodePartitionCountContainer style={{color: foreground, background}}>
         <Icon name={style.icon} color={foreground} size={16} />
@@ -291,7 +294,11 @@ function buildAssetNodeStatusRow({
         <>
           <AssetLatestRunSpinner liveData={liveData} />
           <Caption style={{flex: 1}} color={Colors.Gray800}>
-            Materializing...
+            {liveData.partitionStats?.numMaterializing === 1
+              ? `Materializing 1 partition...`
+              : liveData.partitionStats?.numMaterializing
+              ? `Materializing ${liveData.partitionStats.numMaterializing} partitions...`
+              : `Materializing...`}
           </Caption>
           <AssetRunLink runId={materializingRunId} />
         </>
@@ -302,12 +309,12 @@ function buildAssetNodeStatusRow({
   if (liveData.partitionStats) {
     const {numPartitions, numMaterialized, numFailed} = liveData.partitionStats;
     const numMissing = numPartitions - numFailed - numMaterialized;
-    const {background, foreground, border} = StyleForPartitionState[
+    const {background, foreground, border} = StyleForAssetPartitionStatus[
       late || numFailed
-        ? PartitionState.FAILURE
+        ? AssetPartitionStatus.FAILED
         : numMissing
-        ? PartitionState.MISSING
-        : PartitionState.SUCCESS
+        ? AssetPartitionStatus.MISSING
+        : AssetPartitionStatus.MATERIALIZED
     ];
 
     return {
@@ -322,7 +329,7 @@ function buildAssetNodeStatusRow({
           >
             {late
               ? humanizedLateString(liveData.freshnessInfo.currentMinutesLate)
-              : partitionStateToString(numPartitions)}
+              : partitionCountString(numPartitions)}
           </Link>
         </Caption>
       ),
@@ -479,6 +486,7 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
     }
     partitionStats {
       numMaterialized
+      numMaterializing
       numPartitions
       numFailed
     }
@@ -537,7 +545,7 @@ const AssetInsetForHoverEffect = styled.div`
   height: 100%;
 `;
 
-export const AssetNodeContainer = styled.div<{$selected: boolean}>`
+const AssetNodeContainer = styled.div<{$selected: boolean}>`
   user-select: none;
   cursor: default;
   padding: 4px;
@@ -547,7 +555,7 @@ const AssetNodeShowOnHover = styled.span`
   display: none;
 `;
 
-export const AssetNodeBox = styled.div<{$isSource: boolean; $selected: boolean}>`
+const AssetNodeBox = styled.div<{$isSource: boolean; $selected: boolean}>`
   ${(p) =>
     p.$isSource
       ? `border: 2px dashed ${p.$selected ? Colors.Gray600 : Colors.Gray300}`

@@ -350,6 +350,7 @@ export const LiveDataForNodePartitionedSomeMissing: LiveDataForNode = {
   freshnessPolicy: null,
   partitionStats: {
     numMaterialized: 6,
+    numMaterializing: 0,
     numPartitions: 1500,
     numFailed: 0,
   },
@@ -373,6 +374,7 @@ export const LiveDataForNodePartitionedSomeFailed: LiveDataForNode = {
   freshnessPolicy: null,
   partitionStats: {
     numMaterialized: 6,
+    numMaterializing: 0,
     numPartitions: 1500,
     numFailed: 849,
   },
@@ -396,6 +398,7 @@ export const LiveDataForNodePartitionedNoneMissing: LiveDataForNode = {
   freshnessPolicy: null,
   partitionStats: {
     numMaterialized: 1500,
+    numMaterializing: 0,
     numPartitions: 1500,
     numFailed: 0,
   },
@@ -415,6 +418,7 @@ export const LiveDataForNodePartitionedNeverMaterialized: LiveDataForNode = {
   freshnessPolicy: null,
   partitionStats: {
     numMaterialized: 0,
+    numMaterializing: 0,
     numPartitions: 1500,
     numFailed: 0,
   },
@@ -434,6 +438,7 @@ export const LiveDataForNodePartitionedMaterializing: LiveDataForNode = {
   freshnessPolicy: null,
   partitionStats: {
     numMaterialized: 0,
+    numMaterializing: 5,
     numPartitions: 1500,
     numFailed: 0,
   },
@@ -457,6 +462,7 @@ export const LiveDataForNodePartitionedStale: LiveDataForNode = {
   freshnessPolicy: null,
   partitionStats: {
     numMaterialized: 1500,
+    numMaterializing: 0,
     numPartitions: 1500,
     numFailed: 0,
   },
@@ -488,6 +494,7 @@ export const LiveDataForNodePartitionedStaleAndLate: LiveDataForNode = {
   },
   partitionStats: {
     numMaterialized: 1500,
+    numMaterializing: 0,
     numPartitions: 1500,
     numFailed: 0,
   },
@@ -519,6 +526,7 @@ export const LiveDataForNodePartitionedStaleAndFresh: LiveDataForNode = {
   },
   partitionStats: {
     numMaterialized: 1500,
+    numMaterializing: 0,
     numPartitions: 1500,
     numFailed: 0,
   },
@@ -543,6 +551,7 @@ export const LiveDataForNodePartitionedLatestRunFailed: LiveDataForNode = {
   freshnessPolicy: null,
   partitionStats: {
     numMaterialized: 1495,
+    numMaterializing: 0,
     numPartitions: 1500,
     numFailed: 1,
   },
@@ -710,7 +719,7 @@ export const AssetNodeScenariosPartitioned = [
     title: 'Materializing...',
     liveData: LiveDataForNodePartitionedMaterializing,
     definition: AssetNodeFragmentPartitioned,
-    expectedText: ['Materializing', 'ABCDEF'],
+    expectedText: ['Materializing 5 partitions', 'ABCDEF'],
   },
 
   {

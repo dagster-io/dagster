@@ -1,5 +1,6 @@
 import uuid
 import warnings
+from typing import Mapping
 
 import pytest
 from dagster import (
@@ -31,9 +32,9 @@ from dagster._core.test_utils import (
     step_output_event_filter,
 )
 from dagster._core.utility_solids import (
-    create_root_solid,
-    create_solid_with_deps,
-    define_stub_solid,
+    create_op_with_deps,
+    create_root_op,
+    create_stub_op,
     input_set,
 )
 from dagster._core.workspace.load import location_origin_from_python_file
@@ -88,7 +89,7 @@ def _do_construct(ops, dependencies):
 
 
 def test_empty_adjacency_lists():
-    solids = [create_root_solid("a_node")]
+    solids = [create_root_op("a_node")]
     forward_edges, backwards_edges = _do_construct(solids, {})
     assert forward_edges == {"a_node": set()}
     assert backwards_edges == {"a_node": set()}
@@ -96,8 +97,8 @@ def test_empty_adjacency_lists():
 
 def test_single_dep_adjacency_lists():
     # A <-- B
-    node_a = create_root_solid("A")
-    node_b = create_solid_with_deps("B", node_a)
+    node_a = create_root_op("A")
+    node_b = create_op_with_deps("B", node_a)
 
     forward_edges, backwards_edges = _do_construct(
         [node_a, node_b], {"B": {"A": DependencyDefinition("A")}}
@@ -138,11 +139,11 @@ def diamond_deps():
 def test_disconnected_graphs_adjaceny_lists():
     # A <-- B
     # C <-- D
-    node_a = create_root_solid("A")
-    node_b = create_solid_with_deps("B", node_a)
+    node_a = create_root_op("A")
+    node_b = create_op_with_deps("B", node_a)
 
-    node_c = create_root_solid("C")
-    node_d = create_solid_with_deps("D", node_c)
+    node_c = create_root_op("C")
+    node_d = create_op_with_deps("D", node_c)
 
     forward_edges, backwards_edges = _do_construct(
         [node_a, node_b, node_c, node_d],
@@ -153,11 +154,11 @@ def test_disconnected_graphs_adjaceny_lists():
 
 
 def create_diamond_solids():
-    a_source = define_stub_solid("A_source", [input_set("A_input")])
-    node_a = create_root_solid("A")
-    node_b = create_solid_with_deps("B", node_a)
-    node_c = create_solid_with_deps("C", node_a)
-    node_d = create_solid_with_deps("D", node_b, node_c)
+    a_source = create_stub_op("A_source", [input_set("A_input")])
+    node_a = create_root_op("A")
+    node_b = create_op_with_deps("B", node_a)
+    node_c = create_op_with_deps("C", node_a)
+    node_d = create_op_with_deps("D", node_b, node_c)
     return [node_d, node_c, node_b, node_a, a_source]
 
 
@@ -197,7 +198,7 @@ def test_external_diamond_toposort():
             ]
 
 
-def compute_called(name):
+def compute_called(name: str) -> Mapping[str, object]:
     return {name: "compute_called"}
 
 
@@ -239,11 +240,11 @@ def test_execute_solid_in_diamond():
 
 
 def test_execute_aliased_solid_in_diamond():
-    a_source = define_stub_solid("A_source", [input_set("A_input")])
+    a_source = create_stub_op("A_source", [input_set("A_input")])
 
     @pipeline
     def aliased_pipeline():
-        create_root_solid("A").alias("aliased")(a_source())
+        create_root_op("A").alias("aliased")(a_source())
 
     solid_result = execute_solid_within_pipeline(
         aliased_pipeline, "aliased", inputs={"A_input": [{"a key": "a value"}]}
@@ -265,7 +266,7 @@ def test_create_pipeline_with_empty_solids_list():
 
 
 def test_singleton_pipeline():
-    stub_solid = define_stub_solid("stub", [{"a key": "a value"}])
+    stub_op = create_stub_op("stub", [{"a key": "a value"}])
 
     # will fail if any warning is emitted
     with warnings.catch_warnings():
@@ -273,14 +274,14 @@ def test_singleton_pipeline():
 
         @pipeline
         def single_solid_pipeline():
-            stub_solid()
+            stub_op()
 
         assert execute_pipeline(single_solid_pipeline).success
 
 
 def test_two_root_solid_pipeline_with_empty_dependency_definition():
-    stub_solid_a = define_stub_solid("stub_a", [{"a key": "a value"}])
-    stub_solid_b = define_stub_solid("stub_b", [{"a key": "a value"}])
+    stub_solid_a = create_stub_op("stub_a", [{"a key": "a value"}])
+    stub_solid_b = create_stub_op("stub_b", [{"a key": "a value"}])
 
     @pipeline
     def pipe():
@@ -291,8 +292,8 @@ def test_two_root_solid_pipeline_with_empty_dependency_definition():
 
 
 def test_two_root_solid_pipeline_with_partial_dependency_definition():
-    stub_solid_a = define_stub_solid("stub_a", [{"a key": "a value"}])
-    stub_solid_b = define_stub_solid("stub_b", [{"a key": "a value"}])
+    stub_solid_a = create_stub_op("stub_a", [{"a key": "a value"}])
+    stub_solid_b = create_stub_op("stub_b", [{"a key": "a value"}])
 
     single_dep_pipe = PipelineDefinition(
         node_defs=[stub_solid_a, stub_solid_b],

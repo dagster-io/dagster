@@ -48,7 +48,7 @@ To designate a more permanent home for your runs and assets, you can set the `DA
 
 ### Local instance
 
-You can optionally use a `dagster.yaml` file to configure your Dagster instance - for example, to configure [run concurrency limits](/deployment/run-coordinator#limiting-run-concurrency) or specify that runs should be stored in a [Postgres database](/deployment/dagster-instance#postgres-storage) instead of on the filesystem.
+You can optionally use a `dagster.yaml` file to configure your Dagster instance - for example, to configure [run concurrency limits](/guides/limiting-concurrency-in-data-pipelines) or specify that runs should be stored in a [Postgres database](/deployment/dagster-instance#postgres-storage) instead of on the filesystem.
 
 If the `DAGSTER_HOME` environment variable is set, `dagster dev` will look for a `dagster.yaml` file in the `DAGSTER_HOME` folder. If `DAGSTER_HOME` is not set, `dagster dev` will look for that file from the folder where the command was run.
 

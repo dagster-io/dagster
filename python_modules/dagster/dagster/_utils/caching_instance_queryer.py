@@ -466,6 +466,9 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             ] = self.instance.get_dynamic_partitions(partitions_def_name)
         return self._dynamic_partitions_cache[partitions_def_name]
 
+    def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
+        return partition_key in self.get_dynamic_partitions(partitions_def_name)
+
     ####################
     # RECONCILIATION
     ####################

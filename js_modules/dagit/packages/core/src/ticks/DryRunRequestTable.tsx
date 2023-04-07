@@ -90,7 +90,7 @@ export const RunRequestTable: React.FC<Props> = ({
 };
 
 // Filter out tags we already display in other ways
-export function filterTags(tags: Array<{key: string; value: any}>) {
+function filterTags(tags: Array<{key: string; value: any}>) {
   return tags.filter(({key}) => {
     // Exclude the tag that specifies the schedule if this is a schedule name
     return !['dagster/schedule_name'].includes(key);

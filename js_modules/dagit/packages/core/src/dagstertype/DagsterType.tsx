@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Box, Colors, FontFamily, Tag} from '@dagster-io/ui';
+import {Box, Colors, FontFamily} from '@dagster-io/ui';
 import {Spacing} from '@dagster-io/ui/src/components/types';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -22,10 +22,6 @@ export const dagsterTypeKind = (type: {metadataEntries: MetadataEntryFragment[]}
   }
 };
 
-export const DagsterTypeKindTag: React.FC<{type: DagsterTypeFragment}> = (kind) => {
-  return <Tag intent="primary">{kind}</Tag>;
-};
-
 const _DagsterTypeName: React.FC<{type: DagsterTypeFragment; className?: string}> = ({
   type,
   className,
@@ -35,7 +31,7 @@ const _DagsterTypeName: React.FC<{type: DagsterTypeFragment; className?: string}
   return <Box className={className}>{displayName}</Box>;
 };
 
-export const DagsterTypeName = styled(_DagsterTypeName)`
+const DagsterTypeName = styled(_DagsterTypeName)`
   font-family: ${FontFamily.monospace};
   font-size: 16px;
   overflow: hidden;

@@ -195,7 +195,7 @@ const buildBuckets = (data?: OverviewJobsQuery): RepoBucket[] => {
   return sortRepoBuckets(buckets);
 };
 
-export const OVERVIEW_JOBS_QUERY = gql`
+const OVERVIEW_JOBS_QUERY = gql`
   query OverviewJobsQuery {
     workspaceOrError {
       ... on Workspace {

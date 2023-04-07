@@ -14,9 +14,9 @@ from dagster._core.definitions.output import Out
 from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
 from dagster._legacy import (
     execute_pipeline,
-    execute_solid,
     pipeline,
 )
+from dagster._utils.test import wrap_op_in_graph_and_execute
 
 
 def test_multiple_outputs():
@@ -200,6 +200,8 @@ def test_warning_for_conditional_output(capsys):
         if context.op_config["return"]:
             return 3
 
-    result = execute_solid(maybe, run_config={"solids": {"maybe": {"config": {"return": False}}}})
+    result = wrap_op_in_graph_and_execute(
+        maybe, run_config={"solids": {"maybe": {"config": {"return": False}}}}
+    )
     assert result.success
     assert "This value will be passed to downstream ops" in capsys.readouterr().err

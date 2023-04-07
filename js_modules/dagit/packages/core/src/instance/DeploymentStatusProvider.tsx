@@ -18,6 +18,7 @@ export const DeploymentStatusContext = React.createContext<DeploymentStatus>({
 });
 
 interface Props {
+  children: React.ReactNode;
   include: Set<DeploymentStatusType>;
 }
 

@@ -16,7 +16,7 @@ from dagster import (
     job,
     op,
 )
-from dagster._core.utility_solids import define_stub_solid
+from dagster._core.utility_solids import create_stub_op
 
 # This file tests a lot of parameter name stuff, so these warnings are spurious
 
@@ -148,7 +148,7 @@ def test_solid_with_input():
 
     the_job = JobDefinition(
         graph_def=GraphDefinition(
-            node_defs=[define_stub_solid("test_value", {"foo": "bar"}), hello_world],
+            node_defs=[create_stub_op("test_value", {"foo": "bar"}), hello_world],
             name="test",
             dependencies={"hello_world": {"foo_to_foo": DependencyDefinition("test_value")}},
         )

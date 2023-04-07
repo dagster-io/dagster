@@ -7,21 +7,10 @@ import {RunStatus} from '../graphql/types';
 import {StepSummaryForRun} from '../instance/StepSummaryForRun';
 
 import {RunStatusIndicator} from './RunStatusDots';
+import {RUN_STATUS_COLORS} from './RunStatusTag';
 import {failedStatuses, inProgressStatuses} from './RunStatuses';
 import {RunStateSummary, RunTime, titleForRun} from './RunUtils';
 import {RunTimeFragment} from './types/RunUtils.types';
-
-const RUN_STATUS_COLORS = {
-  QUEUED: Colors.Blue500,
-  NOT_STARTED: Colors.Blue500,
-  STARTING: Colors.Blue500,
-  MANAGED: Colors.Blue500,
-  STARTED: Colors.Blue500,
-  SUCCESS: Colors.Green500,
-  FAILURE: Colors.Red500,
-  CANCELING: Colors.Red500,
-  CANCELED: Colors.Red500,
-};
 
 const MIN_OPACITY = 0.2;
 const MAX_OPACITY = 1.0;

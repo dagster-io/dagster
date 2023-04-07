@@ -15,7 +15,8 @@ from dagster import (
 from dagster._core.definitions.decorators.graph_decorator import graph
 from dagster._core.definitions.inference import infer_input_props, infer_output_props
 from dagster._core.types.dagster_type import DagsterTypeKind
-from dagster._legacy import execute_pipeline, execute_solid, pipeline
+from dagster._legacy import execute_pipeline, pipeline
+from dagster._utils.test import wrap_op_in_graph_and_execute
 
 
 def test_infer_solid_description_from_docstring():
@@ -190,7 +191,7 @@ def test_emit_dict():
     def emit_dict() -> dict:
         return {"foo": "bar"}
 
-    solid_result = execute_solid(emit_dict)
+    solid_result = wrap_op_in_graph_and_execute(emit_dict)
 
     assert solid_result.output_value() == {"foo": "bar"}
 
@@ -200,7 +201,7 @@ def test_dict_input():
     def intake_dict(inp: dict) -> str:
         return inp["foo"]
 
-    solid_result = execute_solid(intake_dict, input_values={"inp": {"foo": "bar"}})
+    solid_result = wrap_op_in_graph_and_execute(intake_dict, input_values={"inp": {"foo": "bar"}})
     assert solid_result.output_value() == "bar"
 
 
@@ -209,7 +210,7 @@ def test_emit_dagster_dict():
     def emit_dagster_dict() -> Dict:
         return {"foo": "bar"}
 
-    solid_result = execute_solid(emit_dagster_dict)
+    solid_result = wrap_op_in_graph_and_execute(emit_dagster_dict)
 
     assert solid_result.output_value() == {"foo": "bar"}
 
@@ -219,7 +220,9 @@ def test_dict_dagster_input():
     def intake_dagster_dict(inp: Dict) -> str:
         return inp["foo"]
 
-    solid_result = execute_solid(intake_dagster_dict, input_values={"inp": {"foo": "bar"}})
+    solid_result = wrap_op_in_graph_and_execute(
+        intake_dagster_dict, input_values={"inp": {"foo": "bar"}}
+    )
     assert solid_result.output_value() == "bar"
 
 
@@ -228,7 +231,9 @@ def test_python_tuple_input():
     def intake_tuple(inp: tuple) -> int:
         return inp[1]
 
-    assert execute_solid(intake_tuple, input_values={"inp": (3, 4)}).output_value() == 4
+    assert (
+        wrap_op_in_graph_and_execute(intake_tuple, input_values={"inp": (3, 4)}).output_value() == 4
+    )
 
 
 def test_python_tuple_output():
@@ -236,7 +241,7 @@ def test_python_tuple_output():
     def emit_tuple() -> tuple:
         return (4, 5)
 
-    assert execute_solid(emit_tuple).output_value() == (4, 5)
+    assert wrap_op_in_graph_and_execute(emit_tuple).output_value() == (4, 5)
 
 
 def test_nested_kitchen_sink():

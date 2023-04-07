@@ -87,7 +87,7 @@ export const RunTimeline = (props: Props) => {
 
   const observer = React.useRef<ResizeObserver | null>(null);
 
-  const containerRef = React.useCallback((node) => {
+  const containerRef = React.useCallback((node: HTMLDivElement | null) => {
     if (node) {
       observer.current = new ResizeObserver((entries) => {
         const entry = entries[0];

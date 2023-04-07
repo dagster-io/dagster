@@ -1,6 +1,18 @@
 import {MockedResponse} from '@apollo/client/testing';
 
-import {BulkActionStatus, RunStatus} from '../graphql/types';
+import {
+  BulkActionStatus,
+  RunStatus,
+  buildAssetKey,
+  buildErrorChainLink,
+  buildPartitionBackfill,
+  buildPartitionSet,
+  buildPartitionStatus,
+  buildPartitionStatusCounts,
+  buildPartitionStatuses,
+  buildPythonError,
+  buildRepositoryOrigin,
+} from '../graphql/types';
 
 import {
   SINGLE_BACKFILL_STATUS_COUNTS_QUERY,
@@ -18,27 +30,27 @@ function buildTimePartitionNames(start: Date, count: number) {
   return results;
 }
 
-export const BackfillTableFragmentRequested2000AssetsPure: BackfillTableFragment = {
-  backfillId: 'qtpussca',
-  status: BulkActionStatus.REQUESTED,
-  numPartitions: 2000,
-  hasCancelPermission: true,
-  hasResumePermission: true,
-  isValidSerialization: true,
-  timestamp: 1675196684.587724,
-  partitionSetName: null,
-  partitionSet: null,
-  error: null,
-  numCancelable: 0,
-  partitionNames: buildTimePartitionNames(new Date('2020-01-01'), 2000),
-  assetSelection: [
-    {
-      path: ['global_graph_asset'],
-      __typename: 'AssetKey',
-    },
-  ],
-  __typename: 'PartitionBackfill',
-};
+export const BackfillTableFragmentRequested2000AssetsPure: BackfillTableFragment = buildPartitionBackfill(
+  {
+    backfillId: 'qtpussca',
+    status: BulkActionStatus.REQUESTED,
+    numPartitions: 2000,
+    hasCancelPermission: true,
+    hasResumePermission: true,
+    isValidSerialization: true,
+    timestamp: 1675196684.587724,
+    partitionSetName: null,
+    partitionSet: null,
+    error: null,
+    numCancelable: 0,
+    partitionNames: buildTimePartitionNames(new Date('2020-01-01'), 2000),
+    assetSelection: [
+      buildAssetKey({
+        path: ['global_graph_asset'],
+      }),
+    ],
+  },
+);
 
 export const BackfillTableFragmentRequested2000AssetsPureStatus: MockedResponse<SingleBackfillCountsQuery> = {
   request: {
@@ -50,68 +62,62 @@ export const BackfillTableFragmentRequested2000AssetsPureStatus: MockedResponse<
   result: {
     data: {
       __typename: 'DagitQuery',
-      partitionBackfillOrError: {
+      partitionBackfillOrError: buildPartitionBackfill({
         backfillId: 'qtpussca',
+        isAssetBackfill: true,
         partitionStatusCounts: [
-          {
+          buildPartitionStatusCounts({
             runStatus: RunStatus.NOT_STARTED,
             count: 108088,
-            __typename: 'PartitionStatusCounts',
-          },
-          {
+          }),
+          buildPartitionStatusCounts({
             runStatus: RunStatus.SUCCESS,
             count: 71,
-            __typename: 'PartitionStatusCounts',
-          },
-          {
+          }),
+          buildPartitionStatusCounts({
             runStatus: RunStatus.FAILURE,
             count: 10,
-            __typename: 'PartitionStatusCounts',
-          },
+          }),
         ],
-        __typename: 'PartitionBackfill',
-      },
+      }),
     },
   },
 };
 
-export const BackfillTableFragmentCancelledAssetsPartitionSet: BackfillTableFragment = {
-  backfillId: 'tclwoggv',
-  status: BulkActionStatus.CANCELED,
-  isValidSerialization: true,
-  numPartitions: 5000,
-  hasCancelPermission: true,
-  hasResumePermission: true,
-  timestamp: 1675106258.398993,
-  partitionSetName: 'asset_job_partition_set',
-  partitionSet: {
-    id: '74c11a15d5d213176c83a7a71b50be0318103d8b',
-    name: 'asset_job_partition_set',
-    mode: 'default',
-    pipelineName: 'asset_job',
-    repositoryOrigin: {
-      id: 'c22d9677b8089be89b1e014b9de34284962f83a7',
-      repositoryName: 'repo',
-      repositoryLocationName: 'test.py',
-      __typename: 'RepositoryOrigin',
-    },
-    __typename: 'PartitionSet',
+export const BackfillTableFragmentCancelledAssetsPartitionSet: BackfillTableFragment = buildPartitionBackfill(
+  {
+    backfillId: 'tclwoggv',
+    status: BulkActionStatus.CANCELED,
+    isValidSerialization: true,
+    numPartitions: 5000,
+    hasCancelPermission: true,
+    hasResumePermission: true,
+    timestamp: 1675106258.398993,
+    partitionSetName: 'asset_job_partition_set',
+    partitionSet: buildPartitionSet({
+      id: '74c11a15d5d213176c83a7a71b50be0318103d8b',
+      name: 'asset_job_partition_set',
+      mode: 'default',
+      pipelineName: 'asset_job',
+      repositoryOrigin: buildRepositoryOrigin({
+        id: 'c22d9677b8089be89b1e014b9de34284962f83a7',
+        repositoryName: 'repo',
+        repositoryLocationName: 'test.py',
+      }),
+    }),
+    error: null,
+    numCancelable: 0,
+    partitionNames: buildTimePartitionNames(new Date('2020-01-01'), 5000),
+    assetSelection: [
+      buildAssetKey({
+        path: ['whatever5'],
+      }),
+      buildAssetKey({
+        path: ['multipartitioned_asset'],
+      }),
+    ],
   },
-  error: null,
-  numCancelable: 0,
-  partitionNames: buildTimePartitionNames(new Date('2020-01-01'), 5000),
-  assetSelection: [
-    {
-      path: ['whatever5'],
-      __typename: 'AssetKey',
-    },
-    {
-      path: ['multipartitioned_asset'],
-      __typename: 'AssetKey',
-    },
-  ],
-  __typename: 'PartitionBackfill',
-};
+);
 
 export const BackfillTableFragmentCancelledAssetsPartitionSetStatus: MockedResponse<SingleBackfillCountsQuery> = {
   request: {
@@ -123,18 +129,17 @@ export const BackfillTableFragmentCancelledAssetsPartitionSetStatus: MockedRespo
   result: {
     data: {
       __typename: 'DagitQuery',
-      partitionBackfillOrError: {
+      partitionBackfillOrError: buildPartitionBackfill({
         backfillId: 'tclwoggv',
         partitionStatusCounts: [
           {runStatus: RunStatus.NOT_STARTED, count: 6524, __typename: 'PartitionStatusCounts'},
         ],
-        __typename: 'PartitionBackfill',
-      },
+      }),
     },
   },
 };
 
-export const BackfillTableFragmentFailedError: BackfillTableFragment = {
+export const BackfillTableFragmentFailedError: BackfillTableFragment = buildPartitionBackfill({
   backfillId: 'sjqzcfhe',
   status: BulkActionStatus.FAILED,
   isValidSerialization: true,
@@ -144,23 +149,20 @@ export const BackfillTableFragmentFailedError: BackfillTableFragment = {
   timestamp: 1674774274.343382,
   partitionSetName: null,
   partitionSet: null,
-  error: {
-    __typename: 'PythonError',
+  error: buildPythonError({
     message:
       'dagster._core.errors.DagsterLaunchFailedError: Tried to start a run on a server after telling it to shut down\n',
     stack: ['OMITTED FROM MOCKS'],
     errorChain: [],
-  },
+  }),
   numCancelable: 0,
   partitionNames: buildTimePartitionNames(new Date('2020-01-01'), 100),
   assetSelection: [
-    {
+    buildAssetKey({
       path: ['multipartitioned_asset'],
-      __typename: 'AssetKey',
-    },
+    }),
   ],
-  __typename: 'PartitionBackfill',
-};
+});
 
 export const BackfillTableFragmentFailedErrorStatus: MockedResponse<SingleBackfillQuery> = {
   request: {
@@ -172,69 +174,67 @@ export const BackfillTableFragmentFailedErrorStatus: MockedResponse<SingleBackfi
   result: {
     data: {
       __typename: 'DagitQuery',
-      partitionBackfillOrError: {
+      partitionBackfillOrError: buildPartitionBackfill({
         backfillId: 'sjqzcfhe',
-        partitionStatuses: {
-          results: BackfillTableFragmentFailedError.partitionNames!.map((n) => ({
-            id: `__NO_PARTITION_SET__:${n}:ccpbwdbq`,
-            partitionName: n,
-            runId: null,
-            runStatus: null,
-            __typename: 'PartitionStatus',
-          })),
-          __typename: 'PartitionStatuses',
-        },
-        __typename: 'PartitionBackfill',
-      },
+        partitionStatuses: buildPartitionStatuses({
+          results: BackfillTableFragmentFailedError.partitionNames!.map((n) =>
+            buildPartitionStatus({
+              id: `__NO_PARTITION_SET__:${n}:ccpbwdbq`,
+              partitionName: n,
+              runId: null,
+              runStatus: null,
+            }),
+          ),
+        }),
+      }),
     },
   },
 };
 
-export const BackfillTableFragmentCompletedAssetJob: BackfillTableFragment = {
-  backfillId: 'pwgcpiwc',
-  status: BulkActionStatus.COMPLETED,
-  isValidSerialization: true,
-  numPartitions: 11,
-  hasCancelPermission: true,
-  hasResumePermission: true,
-  timestamp: 1674660450.942305,
-  partitionSetName: 'asset_job_partition_set',
-  partitionSet: {
-    id: '74c11a15d5d213176c83a7a71b50be0318103d8b',
-    name: 'asset_job_partition_set',
-    mode: 'default',
-    pipelineName: 'asset_job',
-    repositoryOrigin: {
-      id: 'c22d9677b8089be89b1e014b9de34284962f83a7',
-      repositoryName: 'repo',
-      repositoryLocationName: 'test.py',
-      __typename: 'RepositoryOrigin',
-    },
-    __typename: 'PartitionSet',
+export const BackfillTableFragmentCompletedAssetJob: BackfillTableFragment = buildPartitionBackfill(
+  {
+    backfillId: 'pwgcpiwc',
+    status: BulkActionStatus.COMPLETED,
+    isValidSerialization: true,
+    numPartitions: 11,
+    hasCancelPermission: true,
+    hasResumePermission: true,
+    timestamp: 1674660450.942305,
+    isAssetBackfill: true,
+    partitionSetName: 'asset_job_partition_set',
+    partitionSet: buildPartitionSet({
+      id: '74c11a15d5d213176c83a7a71b50be0318103d8b',
+      name: 'asset_job_partition_set',
+      mode: 'default',
+      pipelineName: 'asset_job',
+      repositoryOrigin: buildRepositoryOrigin({
+        id: 'c22d9677b8089be89b1e014b9de34284962f83a7',
+        repositoryName: 'repo',
+        repositoryLocationName: 'test.py',
+      }),
+    }),
+    error: null,
+    numCancelable: 0,
+    partitionNames: [
+      'TN|2023-01-24',
+      'VA|2023-01-24',
+      'GA|2023-01-24',
+      'KY|2023-01-24',
+      'PA|2023-01-24',
+      'NC|2023-01-24',
+      'SC|2023-01-24',
+      'FL|2023-01-24',
+      'OH|2023-01-24',
+      'IL|2023-01-24',
+      'WV|2023-01-24',
+    ],
+    assetSelection: [
+      buildAssetKey({
+        path: ['multipartitioned_asset'],
+      }),
+    ],
   },
-  error: null,
-  numCancelable: 0,
-  partitionNames: [
-    'TN|2023-01-24',
-    'VA|2023-01-24',
-    'GA|2023-01-24',
-    'KY|2023-01-24',
-    'PA|2023-01-24',
-    'NC|2023-01-24',
-    'SC|2023-01-24',
-    'FL|2023-01-24',
-    'OH|2023-01-24',
-    'IL|2023-01-24',
-    'WV|2023-01-24',
-  ],
-  assetSelection: [
-    {
-      path: ['multipartitioned_asset'],
-      __typename: 'AssetKey',
-    },
-  ],
-  __typename: 'PartitionBackfill',
-};
+);
 
 export const BackfillTableFragmentCompletedAssetJobStatus: MockedResponse<SingleBackfillQuery> = {
   request: {
@@ -336,7 +336,7 @@ export const BackfillTableFragmentCompletedAssetJobStatus: MockedResponse<Single
   },
 };
 
-export const BackfillTableFragmentCompletedOpJob: BackfillTableFragment = {
+export const BackfillTableFragmentCompletedOpJob: BackfillTableFragment = buildPartitionBackfill({
   backfillId: 'pqdiepuf',
   status: BulkActionStatus.COMPLETED,
   isValidSerialization: true,
@@ -345,25 +345,22 @@ export const BackfillTableFragmentCompletedOpJob: BackfillTableFragment = {
   hasResumePermission: true,
   timestamp: 1674660356.340658,
   partitionSetName: 'op_job_partition_set',
-  partitionSet: {
+  partitionSet: buildPartitionSet({
     id: 'a41b026cedcc5f871b4bf10db6e56ec1c63b8df0',
     name: 'op_job_partition_set',
     mode: 'default',
     pipelineName: 'op_job',
-    repositoryOrigin: {
+    repositoryOrigin: buildRepositoryOrigin({
       id: 'c22d9677b8089be89b1e014b9de34284962f83a7',
       repositoryName: 'repo',
       repositoryLocationName: 'test.py',
-      __typename: 'RepositoryOrigin',
-    },
-    __typename: 'PartitionSet',
-  },
+    }),
+  }),
   error: null,
   numCancelable: 0,
   partitionNames: ['2022-07-01', '2022-08-01', '2022-09-01', '2022-10-01'],
   assetSelection: null,
-  __typename: 'PartitionBackfill',
-};
+});
 
 export const BackfillTableFragmentCompletedOpJobStatus: MockedResponse<SingleBackfillQuery> = {
   request: {
@@ -375,74 +372,71 @@ export const BackfillTableFragmentCompletedOpJobStatus: MockedResponse<SingleBac
   result: {
     data: {
       __typename: 'DagitQuery',
-      partitionBackfillOrError: {
+      partitionBackfillOrError: buildPartitionBackfill({
         backfillId: 'pqdiepuf',
-        partitionStatuses: {
+        isAssetBackfill: true,
+        partitionStatuses: buildPartitionStatuses({
           results: [
-            {
+            buildPartitionStatus({
               id: 'op_job_partition_set:2022-07-01:pqdiepuf',
               partitionName: '2022-07-01',
               runId: '5cb9f428-1721-45d5-979e-64e0376aad1a',
               runStatus: RunStatus.FAILURE,
-              __typename: 'PartitionStatus',
-            },
-            {
+            }),
+            buildPartitionStatus({
               id: 'op_job_partition_set:2022-08-01:pqdiepuf',
               partitionName: '2022-08-01',
               runId: '7d76bc38-db6c-4d77-b3c2-38b1a3b69ed9',
               runStatus: RunStatus.FAILURE,
-              __typename: 'PartitionStatus',
-            },
-            {
+            }),
+            buildPartitionStatus({
               id: 'op_job_partition_set:2022-09-01:pqdiepuf',
               partitionName: '2022-09-01',
               runId: 'ca54267a-225c-491a-ad71-f6f3e0e868eb',
               runStatus: RunStatus.SUCCESS,
-              __typename: 'PartitionStatus',
-            },
-            {
+            }),
+            buildPartitionStatus({
               id: 'op_job_partition_set:2022-10-01:pqdiepuf',
               partitionName: '2022-10-01',
               runId: '1baeadb4-7e7d-47e5-aeac-8a5f921cf27c',
               runStatus: RunStatus.QUEUED,
-              __typename: 'PartitionStatus',
-            },
+            }),
           ],
-          __typename: 'PartitionStatuses',
-        },
-        __typename: 'PartitionBackfill',
-      },
+        }),
+      }),
     },
   },
 };
 
-export const BackfillTableFragmentInvalidPartitionSet: BackfillTableFragment = {
-  backfillId: 'jzduiapb',
-  status: BulkActionStatus.COMPLETED,
-  isValidSerialization: false,
-  numPartitions: 0,
-  hasCancelPermission: true,
-  hasResumePermission: true,
-  timestamp: 1676397948.698646,
-  partitionSetName: null,
-  partitionSet: null,
-  error: null,
-  numCancelable: 0,
-  partitionNames: [],
-  assetSelection: [
-    {
-      path: ['asset1'],
-      __typename: 'AssetKey',
-    },
-    {
-      path: ['asset2'],
-      __typename: 'AssetKey',
-    },
-  ],
-  __typename: 'PartitionBackfill',
-};
+export const BackfillTableFragmentInvalidPartitionSet: BackfillTableFragment = buildPartitionBackfill(
+  {
+    backfillId: 'jzduiapb',
+    status: BulkActionStatus.COMPLETED,
+    isValidSerialization: false,
+    numPartitions: 0,
+    hasCancelPermission: true,
+    hasResumePermission: true,
+    timestamp: 1676397948.698646,
+    partitionSetName: null,
+    partitionSet: null,
+    error: null,
+    numCancelable: 0,
+    partitionNames: [],
+    isAssetBackfill: true,
+    assetSelection: [
+      buildAssetKey({
+        path: ['asset1'],
+        __typename: 'AssetKey',
+      }),
+      buildAssetKey({
+        path: ['asset2'],
+        __typename: 'AssetKey',
+      }),
+    ],
+  },
+);
 
-export const BackfillTablePureAssetCountsOnly: BackfillTableFragment = {
+export const BackfillTablePureAssetCountsOnly: BackfillTableFragment = buildPartitionBackfill({
   backfillId: 'likqkgna',
   status: BulkActionStatus.FAILED,
   isValidSerialization: true,
@@ -452,70 +446,64 @@ export const BackfillTablePureAssetCountsOnly: BackfillTableFragment = {
   timestamp: 1677023094.435064,
   partitionSetName: null,
   partitionSet: null,
-  error: {
-    __typename: 'PythonError',
+  isAssetBackfill: true,
+  error: buildPythonError({
     message:
       'dagster._core.errors.DagsterUserCodeUnreachableError: Could not reach user code server. gRPC Error code: UNAVAILABLE\n',
     stack: ['OMITTED FROM MOCKS'],
     errorChain: [
-      {
+      buildErrorChainLink({
         isExplicitLink: true,
-        error: {
+        error: buildPythonError({
           message:
             'grpc._channel._InactiveRpcError: <_InactiveRpcError of RPC that terminated with:\n\tstatus = StatusCode.UNAVAILABLE\n\tdetails = "failed to connect to all addresses"\n\tdebug_error_string = "{"created":"@1677105084.883333000","description":"Failed to pick subchannel","file":"src/core/ext/filters/client_channel/client_channel.cc","file_line":3261,"referenced_errors":[{"created":"@1677105084.883332000","description":"failed to connect to all addresses","file":"src/core/lib/transport/error_utils.cc","file_line":167,"grpc_status":14}]}"\n>\n',
           stack: ['OMITTED FROM MOCKS'],
-          __typename: 'PythonError',
-        },
-        __typename: 'ErrorChainLink',
-      },
+        }),
+      }),
+    ],
+  }),
+  numCancelable: 0,
+  partitionNames: null,
+  assetSelection: [
+    buildAssetKey({
+      path: ['asset_daily'],
+    }),
+    buildAssetKey({
+      path: ['asset_weekly'],
+    }),
+  ],
+});
+
+const BackfillTablePureAssetNoCountsOrPartitionNames: BackfillTableFragment = buildPartitionBackfill(
+  {
+    backfillId: 'vlpmimsl',
+    status: BulkActionStatus.COMPLETED,
+    isValidSerialization: true,
+    numPartitions: null,
+    hasCancelPermission: true,
+    hasResumePermission: true,
+    timestamp: 1677078839.707758,
+    partitionSetName: null,
+    partitionSet: null,
+    isAssetBackfill: true,
+    error: buildPythonError({
+      message:
+        'dagster._core.errors.DagsterLaunchFailedError: Tried to start a run on a server after telling it to shut down\n',
+      stack: ['OMITTED FROM MOCKS'],
+      errorChain: [],
+    }),
+    numCancelable: 0,
+    partitionNames: null,
+    assetSelection: [
+      buildAssetKey({
+        path: ['asset_daily'],
+      }),
+      buildAssetKey({
+        path: ['asset_weekly'],
+      }),
     ],
   },
-  numCancelable: 0,
-  partitionNames: null,
-  assetSelection: [
-    {
-      path: ['asset_daily'],
-      __typename: 'AssetKey',
-    },
-    {
-      path: ['asset_weekly'],
-      __typename: 'AssetKey',
-    },
-  ],
-  __typename: 'PartitionBackfill',
-};
-
-const BackfillTablePureAssetNoCountsOrPartitionNames: BackfillTableFragment = {
-  backfillId: 'vlpmimsl',
-  status: BulkActionStatus.COMPLETED,
-  isValidSerialization: true,
-  numPartitions: null,
-  hasCancelPermission: true,
-  hasResumePermission: true,
-  timestamp: 1677078839.707758,
-  partitionSetName: null,
-  partitionSet: null,
-  error: {
-    __typename: 'PythonError',
-    message:
-      'dagster._core.errors.DagsterLaunchFailedError: Tried to start a run on a server after telling it to shut down\n',
-    stack: ['OMITTED FROM MOCKS'],
-    errorChain: [],
-  },
-  numCancelable: 0,
-  partitionNames: null,
-  assetSelection: [
-    {
-      path: ['asset_daily'],
-      __typename: 'AssetKey',
-    },
-    {
-      path: ['asset_weekly'],
-      __typename: 'AssetKey',
-    },
-  ],
-  __typename: 'PartitionBackfill',
-};
+);
 
 export const BackfillTableFragments: BackfillTableFragment[] = [
   BackfillTableFragmentRequested2000AssetsPure,

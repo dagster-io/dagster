@@ -232,7 +232,9 @@ def schedule_execution_time_iterator(
     after the current execution datetime for each cron string in the sequence, and then choosing
     the earliest among them.
     """
-    check.invariant(is_valid_cron_schedule(cron_schedule))
+    check.invariant(
+        is_valid_cron_schedule(cron_schedule), desc=f"{cron_schedule} must be a valid cron schedule"
+    )
 
     if isinstance(cron_schedule, str):
         yield from cron_string_iterator(

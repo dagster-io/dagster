@@ -13,7 +13,7 @@ import {
   LaunchPipelineReexecutionMutationVariables,
 } from './types/RunUtils.types';
 
-export interface Props {
+interface Props {
   isOpen: boolean;
   onClose: () => void;
   onComplete: (reexecutionState: ReexecutionState) => void;
@@ -62,7 +62,7 @@ const errorText = (error: Error) => {
   }
 };
 
-export type ReexecutionState = {completed: number; errors: {[id: string]: Error}};
+type ReexecutionState = {completed: number; errors: {[id: string]: Error}};
 
 type ReexecutionDialogState = {
   frozenRuns: SelectedRuns;

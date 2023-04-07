@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, Button, ButtonLink, Colors, DialogFooter, Dialog, Table, Tag} from '@dagster-io/ui';
+import {Box, Button, ButtonLink, Colors, DialogFooter, Dialog, Tag} from '@dagster-io/ui';
 import uniq from 'lodash/uniq';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -28,7 +28,7 @@ type JobMetadata = {
   runsForAssetScan: RunMetadataFragment[];
 };
 
-export function useJobNavMetadata(repoAddress: RepoAddress, pipelineName: string) {
+function useJobNavMetadata(repoAddress: RepoAddress, pipelineName: string) {
   const {data} = useQuery<JobMetadataQuery, JobMetadataQueryVariables>(JOB_METADATA_QUERY, {
     variables: {
       runsFilter: {
@@ -154,22 +154,22 @@ const RelatedAssetsTag: React.FC<{relatedAssets: string[]}> = ({relatedAssets}) 
         onClose={() => setOpen(false)}
         style={{maxWidth: '80%', minWidth: '500px', width: 'auto'}}
       >
-        <Box padding={{bottom: 12}}>
-          <Table>
-            <tbody>
-              {relatedAssets.map((key) => (
-                <tr key={key}>
-                  <td>
-                    <Link key={key} to={`/assets/${key}`} style={{wordBreak: 'break-word'}}>
-                      {key}
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
-        </Box>
-        <DialogFooter>
+        {relatedAssets.map((key, ii) => (
+          <Box
+            key={key}
+            padding={{vertical: 12, horizontal: 20}}
+            border={
+              ii < relatedAssets.length - 1
+                ? {side: 'bottom', width: 1, color: Colors.KeylineGray}
+                : null
+            }
+          >
+            <Link key={key} to={`/assets/${key}`} style={{wordBreak: 'break-word'}}>
+              {key}
+            </Link>
+          </Box>
+        ))}
+        <DialogFooter topBorder>
           <Button intent="primary" onClick={() => setOpen(false)}>
             OK
           </Button>

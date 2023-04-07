@@ -82,7 +82,7 @@ export const BackfillTable = ({
 
   return (
     <>
-      <Table $monospaceFont={false}>
+      <Table>
         <thead>
           <tr>
             <th>Backfill ID</th>
@@ -130,6 +130,7 @@ export const BACKFILL_TABLE_FRAGMENT = gql`
   fragment BackfillTableFragment on PartitionBackfill {
     backfillId
     status
+    isAssetBackfill
     hasCancelPermission
     hasResumePermission
     numCancelable

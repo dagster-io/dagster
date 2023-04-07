@@ -2,27 +2,6 @@ import {Colors} from '@dagster-io/ui';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-export const Items = styled.div`
-  flex: 1;
-  overflow: auto;
-  padding: 0 12px;
-  &::-webkit-scrollbar {
-    width: 8px;
-  }
-
-  scrollbar-width: thin;
-  scrollbar-color: ${Colors.Gray200} ${Colors.Gray200};
-
-  &::-webkit-scrollbar-track {
-    background: ${Colors.Gray100};
-  }
-  &::-webkit-scrollbar-thumb {
-    background-color: ${Colors.Gray200};
-    border-radius: 6px;
-    border: 3px solid ${Colors.Gray200};
-  }
-`;
-
 export const Item = styled(Link)<{$active: boolean}>`
   background-color: ${({$active}) => ($active ? Colors.Blue50 : 'transparent')};
   border-radius: 8px;

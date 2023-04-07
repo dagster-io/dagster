@@ -5,7 +5,6 @@ import logging.config
 import os
 import sys
 import time
-import warnings
 import weakref
 from collections import defaultdict
 from enum import Enum
@@ -118,6 +117,7 @@ if TYPE_CHECKING:
     from dagster._core.scheduler import Scheduler, SchedulerDebugInfo
     from dagster._core.scheduler.instigation import (
         InstigatorState,
+        InstigatorStatus,
         InstigatorTick,
         TickData,
         TickStatus,
@@ -270,6 +270,11 @@ class DynamicPartitionsStore(Protocol):
     def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
         return self.get_dynamic_partitions(partitions_def_name=partitions_def_name)
 
+    def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
+        return self.has_dynamic_partition(
+            partitions_def_name=partitions_def_name, partition_key=partition_key
+        )
+
 
 class DagsterInstance(DynamicPartitionsStore):
     """Core abstraction for managing Dagster's access to storage and other resources.
@@ -404,11 +409,6 @@ class DagsterInstance(DynamicPartitionsStore):
         self._subscribers: Dict[str, List[Callable]] = defaultdict(list)
 
         run_monitoring_enabled = self.run_monitoring_settings.get("enabled", False)
-        if run_monitoring_enabled and not self.run_launcher.supports_check_run_worker_health:
-            run_monitoring_enabled = False
-            warnings.warn(
-                "The configured run launcher does not support run monitoring, disabling it.",
-            )
         self._run_monitoring_enabled = run_monitoring_enabled
         if self.run_monitoring_enabled and self.run_monitoring_max_resume_run_attempts:
             check.invariant(
@@ -2313,11 +2313,12 @@ class DagsterInstance(DynamicPartitionsStore):
         repository_origin_id: Optional[str] = None,
         repository_selector_id: Optional[str] = None,
         instigator_type: Optional[InstigatorType] = None,
+        instigator_statuses: Optional[Set[InstigatorStatus]] = None,
     ):
         if not self._schedule_storage:
             check.failed("Schedule storage not available")
         return self._schedule_storage.all_instigator_state(
-            repository_origin_id, repository_selector_id, instigator_type
+            repository_origin_id, repository_selector_id, instigator_type, instigator_statuses
         )
 
     @traced

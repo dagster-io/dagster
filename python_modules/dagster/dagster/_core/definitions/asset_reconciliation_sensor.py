@@ -35,7 +35,6 @@ from dagster._utils.schedules import cron_string_iterator
 from .asset_selection import AssetGraph, AssetSelection
 from .decorators.sensor_decorator import sensor
 from .partition import PartitionsDefinition, PartitionsSubset
-from .repository_definition import RepositoryDefinition
 from .run_request import RunRequest
 from .sensor_definition import DefaultSensorStatus, SensorDefinition
 from .utils import check_valid_name
@@ -243,7 +242,7 @@ def get_active_backfill_target_asset_graph_subset(
 def find_parent_materialized_asset_partitions(
     instance_queryer: "CachingInstanceQueryer",
     latest_storage_id: Optional[int],
-    target_asset_selection: AssetSelection,
+    target_asset_keys: AbstractSet[AssetKey],
     asset_graph: AssetGraph,
     can_reconcile_fn: Callable[[AssetKeyPartitionKey], bool] = lambda _: True,
 ) -> Tuple[AbstractSet[AssetKeyPartitionKey], Optional[int]]:
@@ -258,42 +257,46 @@ def find_parent_materialized_asset_partitions(
     result_asset_partitions: Set[AssetKeyPartitionKey] = set()
     result_latest_storage_id = latest_storage_id
 
-    target_asset_keys = target_asset_selection.resolve(asset_graph)
-
-    target_parent_asset_keys = target_asset_selection.upstream(depth=1).resolve(asset_graph)
+    # set of all parents of all target assets using asset_graph.get_parents(key)
+    target_parent_asset_keys = {
+        parent
+        for target_asset_key in target_asset_keys
+        for parent in asset_graph.get_parents(target_asset_key)
+    }
 
     for asset_key in target_parent_asset_keys:
         if asset_graph.is_source(asset_key):
             continue
 
+        partitions_def = asset_graph.get_partitions_def(asset_key)
         latest_record = instance_queryer.get_latest_materialization_record(
             asset_key, after_cursor=latest_storage_id
         )
         if latest_record is None:
             continue
 
-        for child in asset_graph.get_children_partitions(
-            instance_queryer,
-            asset_key,
-            latest_record.partition_key,
-        ):
-            if (
-                child.asset_key in target_asset_keys
-                and not instance_queryer.is_asset_planned_for_run(latest_record.run_id, child)
-            ):
-                result_asset_partitions.add(child)
-
-        if result_latest_storage_id is None or latest_record.storage_id > result_latest_storage_id:
-            result_latest_storage_id = latest_record.storage_id
-
-        # for partitioned assets, we'll want the set of all asset partitions that have been
-        # materialized since the latest_storage_id, not just the most recent
-        partitions_def = asset_graph.get_partitions_def(asset_key)
-        if partitions_def is not None:
-            partitions_subset = partitions_def.empty_subset().with_partition_keys(
-                instance_queryer.get_materialized_partitions(
+        if partitions_def is None:
+            for child in asset_graph.get_children_partitions(instance_queryer, asset_key):
+                if (
+                    child.asset_key in target_asset_keys
+                    and not instance_queryer.is_asset_planned_for_run(latest_record.run_id, child)
+                ):
+                    result_asset_partitions.add(child)
+        else:
+            # for partitioned assets, we want the set of all asset partitions that have been
+            # materialized since the latest_storage_id, not just the most recent
+            materialized_partitions = [
+                partition_key
+                for partition_key in instance_queryer.get_materialized_partitions(
                     asset_key, after_cursor=latest_storage_id
                 )
+                if partitions_def.has_partition_key(
+                    partition_key, dynamic_partitions_store=instance_queryer
+                )
+            ]
+
+            partitions_subset = partitions_def.empty_subset().with_partition_keys(
+                materialized_partitions
             )
             for child in asset_graph.get_children(asset_key):
                 child_partitions_def = asset_graph.get_partitions_def(child)
@@ -335,13 +338,16 @@ def find_parent_materialized_asset_partitions(
                             ):
                                 result_asset_partitions.add(child_asset_partition)
 
+        if result_latest_storage_id is None or latest_record.storage_id > result_latest_storage_id:
+            result_latest_storage_id = latest_record.storage_id
+
     return (result_asset_partitions, result_latest_storage_id)
 
 
 def find_never_materialized_or_requested_root_asset_partitions(
     instance_queryer: "CachingInstanceQueryer",
     cursor: AssetReconciliationCursor,
-    target_asset_selection: AssetSelection,
+    target_asset_keys: AbstractSet[AssetKey],
     asset_graph: AssetGraph,
     evaluation_time: datetime.datetime,
 ) -> Tuple[
@@ -361,7 +367,7 @@ def find_never_materialized_or_requested_root_asset_partitions(
     newly_materialized_root_asset_keys = set()
     newly_materialized_root_partitions_by_asset_key = defaultdict(set)
 
-    for asset_key in (target_asset_selection & AssetSelection.all().sources()).resolve(asset_graph):
+    for asset_key in target_asset_keys & asset_graph.root_asset_keys:
         if asset_graph.is_partitioned(asset_key):
             for partition_key in cursor.get_never_requested_never_materialized_partitions(
                 asset_key, asset_graph, instance_queryer, evaluation_time
@@ -451,7 +457,7 @@ def candidates_unit_within_allowable_time_window(
 def determine_asset_partitions_to_reconcile(
     instance_queryer: "CachingInstanceQueryer",
     cursor: AssetReconciliationCursor,
-    target_asset_selection: AssetSelection,
+    target_asset_keys: AbstractSet[AssetKey],
     asset_graph: AssetGraph,
     eventual_asset_partitions_to_reconcile_for_freshness: AbstractSet[AssetKeyPartitionKey],
     evaluation_time: datetime.datetime,
@@ -468,7 +474,7 @@ def determine_asset_partitions_to_reconcile(
     ) = find_never_materialized_or_requested_root_asset_partitions(
         instance_queryer=instance_queryer,
         cursor=cursor,
-        target_asset_selection=target_asset_selection,
+        target_asset_keys=target_asset_keys,
         asset_graph=asset_graph,
         evaluation_time=evaluation_time,
     )
@@ -486,12 +492,10 @@ def determine_asset_partitions_to_reconcile(
     stale_candidates, latest_storage_id = find_parent_materialized_asset_partitions(
         instance_queryer=instance_queryer,
         latest_storage_id=cursor.latest_storage_id,
-        target_asset_selection=target_asset_selection,
+        target_asset_keys=target_asset_keys,
         asset_graph=asset_graph,
         can_reconcile_fn=can_reconcile_fn,
     )
-
-    target_asset_keys = target_asset_selection.resolve(asset_graph)
 
     backfill_target_asset_graph_subset = get_active_backfill_target_asset_graph_subset(
         asset_graph=asset_graph,
@@ -626,7 +630,7 @@ def get_execution_period_for_policies(
 def determine_asset_partitions_to_reconcile_for_freshness(
     data_time_resolver: "CachingDataTimeResolver",
     asset_graph: AssetGraph,
-    target_asset_selection: AssetSelection,
+    target_asset_keys: AbstractSet[AssetKey],
     evaluation_time: datetime.datetime,
 ) -> Tuple[AbstractSet[AssetKeyPartitionKey], AbstractSet[AssetKeyPartitionKey]]:
     """Returns a set of AssetKeyPartitionKeys to materialize in order to abide by the given
@@ -635,9 +639,6 @@ def determine_asset_partitions_to_reconcile_for_freshness(
 
     Attempts to minimize the total number of asset executions.
     """
-    # get the set of asset keys we're allowed to execute
-    target_asset_keys = target_asset_selection.resolve(asset_graph)
-
     # now we have a full set of constraints, we can find solutions for them as we move down
     to_materialize: Set[AssetKeyPartitionKey] = set()
     eventually_materialize: Set[AssetKeyPartitionKey] = set()
@@ -717,8 +718,8 @@ def determine_asset_partitions_to_reconcile_for_freshness(
 
 
 def reconcile(
-    repository_def: RepositoryDefinition,
-    asset_selection: AssetSelection,
+    asset_graph: AssetGraph,
+    target_asset_keys: AbstractSet[AssetKey],
     instance: "DagsterInstance",
     cursor: AssetReconciliationCursor,
     run_tags: Optional[Mapping[str, str]],
@@ -728,13 +729,18 @@ def reconcile(
     current_time = pendulum.now("UTC")
 
     instance_queryer = CachingInstanceQueryer(instance=instance)
-    asset_graph = repository_def.asset_graph
 
     # fetch some data in advance to batch together some queries
-    relevant_asset_keys = list(asset_selection.upstream(depth=1).resolve(asset_graph))
-    instance_queryer.prefetch_asset_records(relevant_asset_keys)
+    target_parent_asset_keys = list(
+        {
+            parent
+            for target_asset_key in target_asset_keys
+            for parent in asset_graph.get_parents(target_asset_key)
+        }
+    )
+    instance_queryer.prefetch_asset_records(target_parent_asset_keys)
     instance_queryer.prefetch_asset_partition_counts(
-        relevant_asset_keys, after_cursor=cursor.latest_storage_id
+        target_parent_asset_keys, after_cursor=cursor.latest_storage_id
     )
 
     (
@@ -745,7 +751,7 @@ def reconcile(
             instance_queryer=instance_queryer, asset_graph=asset_graph
         ),
         asset_graph=asset_graph,
-        target_asset_selection=asset_selection,
+        target_asset_keys=target_asset_keys,
         evaluation_time=current_time,
     )
 
@@ -758,7 +764,7 @@ def reconcile(
         instance_queryer=instance_queryer,
         asset_graph=asset_graph,
         cursor=cursor,
-        target_asset_selection=asset_selection,
+        target_asset_keys=target_asset_keys,
         eventual_asset_partitions_to_reconcile_for_freshness=eventual_asset_partitions_to_reconcile_for_freshness,
         evaluation_time=current_time,
     )
@@ -772,7 +778,7 @@ def reconcile(
     return run_requests, cursor.with_updates(
         latest_storage_id=latest_storage_id,
         run_requests=run_requests,
-        asset_graph=repository_def.asset_graph,
+        asset_graph=asset_graph,
         newly_materialized_root_asset_keys=newly_materialized_root_asset_keys,
         newly_materialized_root_partitions_by_asset_key=newly_materialized_root_partitions_by_asset_key,
     )
@@ -938,16 +944,15 @@ def build_asset_reconciliation_sensor(
         default_status=default_status,
     )
     def _sensor(context):
+        asset_graph = context.repository_def.asset_graph
         cursor = (
-            AssetReconciliationCursor.from_serialized(
-                context.cursor, context.repository_def.asset_graph
-            )
+            AssetReconciliationCursor.from_serialized(context.cursor, asset_graph)
             if context.cursor
             else AssetReconciliationCursor.empty()
         )
         run_requests, updated_cursor = reconcile(
-            repository_def=context.repository_def,
-            asset_selection=asset_selection,
+            asset_graph=asset_graph,
+            target_asset_keys=asset_selection.resolve(asset_graph),
             instance=context.instance,
             cursor=cursor,
             run_tags=run_tags,

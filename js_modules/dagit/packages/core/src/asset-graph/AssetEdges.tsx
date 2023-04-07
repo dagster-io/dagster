@@ -24,7 +24,7 @@ export const AssetEdges: React.FC<{
   );
 };
 
-export const AssetEdgeSet: React.FC<{
+const AssetEdgeSet: React.FC<{
   edges: AssetLayoutEdge[];
   color: string;
   strokeWidth: number;

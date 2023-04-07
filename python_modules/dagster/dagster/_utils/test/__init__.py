@@ -3,7 +3,7 @@ import shutil
 import tempfile
 from collections import defaultdict
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, AbstractSet, Any, Dict, Mapping, Optional, Union, cast, overload
+from typing import TYPE_CHECKING, AbstractSet, Any, Dict, Mapping, Optional, Union, cast
 
 # top-level include is dangerous in terms of incurring circular deps
 from dagster import (
@@ -19,10 +19,8 @@ from dagster._core.definitions import (
     OpDefinition,
     OutputMapping,
     PipelineDefinition,
-    op,
 )
 from dagster._core.definitions.logger_definition import LoggerDefinition
-from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
 from dagster._core.execution.api import create_execution_plan, execute_pipeline
@@ -38,7 +36,7 @@ from dagster._core.execution.execute_in_process_result import ExecuteInProcessRe
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler import Scheduler
 from dagster._core.storage.pipeline_run import DagsterRun
-from dagster._core.utility_solids import define_stub_solid
+from dagster._core.utility_solids import create_stub_op
 from dagster._serdes import ConfigurableClass
 
 # re-export
@@ -119,7 +117,7 @@ def build_pipeline_with_input_stubs(
 
         solid = pipeline_def.get_node_named(solid_name)
         for input_name, input_value in input_dict.items():
-            stub_solid_def = define_stub_solid(
+            stub_solid_def = create_stub_op(
                 "__stub_{solid_name}_{input_name}".format(
                     solid_name=solid_name, input_name=input_name
                 ),
@@ -196,7 +194,6 @@ def wrap_op_in_graph(
     do_output_mapping: bool = True,
 ) -> GraphDefinition:
     """Wraps op in a graph with the same inputs/outputs as the original op."""
-    check.inst_param(op_def, "op_def", OpDefinition)
     check.opt_mapping_param(tags, "tags", key_type=str)
 
     if do_input_mapping:
@@ -246,17 +243,45 @@ def wrap_op_in_graph_and_execute(
     raise_on_error: bool = True,
     do_input_mapping: bool = True,
     do_output_mapping: bool = True,
+    logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
 ) -> ExecuteInProcessResult:
-    """Run a dagster op in an actual execution.
-    For internal use.
+    """Execute a single op in an ephemeral, in-process job.
+
+    Intended to support unit tests. Input values may be passed directly, and no job need be
+    specified -- an ephemeral one will be constructed.
+
+    Args:
+        op_def (OpDefinition): The op to execute.
+        resources (Mapping[str, Any]): Resources that will be passed to `execute_in_process`.
+        input_values (Optional[Dict[str, Any]]): A dict of input names to input values, used to
+            pass inputs to the solid directly. You may also use the ``run_config`` to
+            configure any inputs that are configurable.
+        tags (Optional[Dict[str, Any]]): Arbitrary key-value pairs that will be added to pipeline
+            logs.
+        run_config (Optional[dict]): The configuration that parameterized this
+            execution, as a dict.
+        raise_on_error (Optional[bool]): Whether or not to raise exceptions when they occur.
+            Defaults to ``True``, since this is the most useful behavior in test.
+        do_input_mapping (bool): Whether to map the op inputs to the outputs of the graph
+            constructed around it.
+        do_output_mapping (bool): Whether to map the op outputs to the outputs of the graph
+            constructed around it.
+
+    Returns:
+        Union[CompositeSolidExecutionResult, SolidExecutionResult]: The result of executing the
+        solid.
     """
-    return wrap_op_in_graph(
-        op_def, tags, do_input_mapping=do_input_mapping, do_output_mapping=do_output_mapping
-    ).execute_in_process(
-        resources=resources,
-        input_values=input_values,
-        raise_on_error=raise_on_error,
-        run_config=run_config,
+    return (
+        wrap_op_in_graph(
+            op_def, tags, do_input_mapping=do_input_mapping, do_output_mapping=do_output_mapping
+        )
+        .to_job(logger_defs=logger_defs)
+        .execute_in_process(
+            resources=resources,
+            input_values=input_values,
+            raise_on_error=raise_on_error,
+            run_config=run_config,
+        )
     )
 
 
@@ -305,94 +330,6 @@ def execute_solid_within_pipeline(
         tags=tags,
         instance=instance,
     )[solid_name]
-
-
-@overload
-def execute_solid(
-    solid_def: GraphDefinition,
-    mode_def: Optional[ModeDefinition] = ...,
-    input_values: Optional[Mapping[str, object]] = ...,
-    tags: Optional[Mapping[str, Any]] = ...,
-    run_config: Optional[Mapping[str, object]] = ...,
-    raise_on_error: bool = ...,
-) -> "CompositeSolidExecutionResult":
-    ...
-
-
-@overload
-def execute_solid(
-    solid_def: OpDefinition,
-    mode_def: Optional[ModeDefinition] = ...,
-    input_values: Optional[Mapping[str, object]] = ...,
-    tags: Optional[Mapping[str, Any]] = ...,
-    run_config: Optional[Mapping[str, object]] = ...,
-    raise_on_error: bool = ...,
-) -> "OpExecutionResult":
-    ...
-
-
-def execute_solid(
-    solid_def: NodeDefinition,
-    mode_def: Optional[ModeDefinition] = None,
-    input_values: Optional[Mapping[str, object]] = None,
-    tags: Optional[Mapping[str, Any]] = None,
-    run_config: Optional[Mapping[str, object]] = None,
-    raise_on_error: bool = True,
-) -> Union["CompositeSolidExecutionResult", "OpExecutionResult"]:
-    """Execute a single solid in an ephemeral pipeline.
-
-    Intended to support unit tests. Input values may be passed directly, and no pipeline need be
-    specified -- an ephemeral pipeline will be constructed.
-
-    Args:
-        solid_def (SolidDefinition): The solid to execute.
-        mode_def (Optional[ModeDefinition]): The mode within which to execute the solid. Use this
-            if, e.g., custom resources, loggers, or executors are desired.
-        input_values (Optional[Dict[str, Any]]): A dict of input names to input values, used to
-            pass inputs to the solid directly. You may also use the ``run_config`` to
-            configure any inputs that are configurable.
-        tags (Optional[Dict[str, Any]]): Arbitrary key-value pairs that will be added to pipeline
-            logs.
-        run_config (Optional[dict]): The configuration that parameterized this
-            execution, as a dict.
-        raise_on_error (Optional[bool]): Whether or not to raise exceptions when they occur.
-            Defaults to ``True``, since this is the most useful behavior in test.
-
-    Returns:
-        Union[CompositeSolidExecutionResult, SolidExecutionResult]: The result of executing the
-        solid.
-    """
-    check.inst_param(solid_def, "solid_def", NodeDefinition)
-    check.opt_inst_param(mode_def, "mode_def", ModeDefinition)
-    input_values = check.opt_mapping_param(input_values, "input_values", key_type=str)
-    solid_defs = [solid_def]
-
-    def create_value_solid(input_name, input_value):
-        @op(name=input_name)
-        def input_solid():
-            return input_value
-
-        return input_solid
-
-    dependencies: Dict[str, Dict] = defaultdict(dict)
-
-    for input_name, input_value in input_values.items():
-        dependencies[solid_def.name][input_name] = DependencyDefinition(input_name)
-        solid_defs.append(create_value_solid(input_name, input_value))
-
-    result = execute_pipeline(
-        PipelineDefinition(
-            name=f"ephemeral_{solid_def.name}_solid_pipeline",
-            node_defs=solid_defs,
-            dependencies=dependencies,
-            mode_defs=[mode_def] if mode_def else None,
-        ),
-        run_config=run_config,
-        mode=mode_def.name if mode_def else None,
-        tags=tags,
-        raise_on_error=raise_on_error,
-    )
-    return result.result_for_handle(solid_def.name)
 
 
 @contextmanager

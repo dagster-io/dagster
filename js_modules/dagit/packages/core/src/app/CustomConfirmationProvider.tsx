@@ -49,7 +49,7 @@ export const useConfirmation = () => React.useContext(CustomConfirmationContext)
 
 const REMOVAL_DELAY = 500;
 
-export const CustomConfirmationProvider: React.FC = ({children}) => {
+export const CustomConfirmationProvider = ({children}: {children: React.ReactNode}) => {
   const [mounted, setMounted] = React.useState(false);
   const [confirmationState, setConfirmationState] = React.useState<ConfirmationOptions | null>(
     null,

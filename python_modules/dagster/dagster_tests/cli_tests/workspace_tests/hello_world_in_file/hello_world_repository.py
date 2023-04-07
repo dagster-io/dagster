@@ -7,10 +7,10 @@ def hello_world(_):
 
 
 @job
-def hello_world_pipeline():
+def hello_world_job():
     hello_world()
 
 
 @repository
 def hello_world_repository():
-    return [hello_world_pipeline]
+    return [hello_world_job]
