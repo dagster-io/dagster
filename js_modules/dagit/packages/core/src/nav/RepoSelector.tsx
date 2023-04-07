@@ -65,7 +65,7 @@ export const RepoSelector: React.FC<Props> = (props) => {
         />
         {`${selected.length} of ${options.length} selected`}
       </Box>
-      <Table $monospaceFont={false}>
+      <Table>
         <tbody>
           {options.map((option) => {
             const checked = selected.includes(option);
