@@ -27,7 +27,6 @@ interface FilterDropdownProps {
 export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: FilterDropdownProps) => {
   const [menuKey, _] = React.useState(() => uuidv4());
   const [focusedItemIndex, setFocusedItemIndex] = React.useState(-1);
-  const isSearchInputFocused = focusedItemIndex === -1;
   const [search, setSearch] = useState('');
   const [selectedFilter, setSelectedFilter] = useState<FilterObject<any> | null>(null);
 
@@ -72,12 +71,6 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
     },
     [setFocusedItemIndex, setIsOpen, setPortaledElements],
   );
-
-  React.useLayoutEffect(() => {
-    if (isSearchInputFocused) {
-      inputRef.current?.focus();
-    }
-  }, [isSearchInputFocused]);
 
   const allResultsJsx = React.useMemo(() => {
     if (selectedFilter) {
