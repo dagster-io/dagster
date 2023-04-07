@@ -88,7 +88,7 @@ describe('LaunchAssetExecutionButton', () => {
       const launchMock = buildExpectedLaunchSingleRunMutation({
         mode: 'default',
         executionMetadata: {
-          tags: [{key: 'dagster/step_selection', value: 'unpartitioned_asset'}],
+          tags: [],
         },
         runConfigData: '{}',
         selector: {
@@ -111,7 +111,7 @@ describe('LaunchAssetExecutionButton', () => {
       const launchMock = buildExpectedLaunchSingleRunMutation({
         mode: 'default',
         executionMetadata: {
-          tags: [{key: 'dagster/step_selection', value: 'unpartitioned_asset'}],
+          tags: [],
         },
         runConfigData: '{}',
         selector: {
@@ -162,7 +162,6 @@ describe('LaunchAssetExecutionButton', () => {
           tags: [
             {key: 'dagster/partition', value: '2023-02-22'},
             {key: 'dagster/partition_set', value: 'my_asset_job_partition_set'},
-            {key: 'dagster/step_selection', value: 'asset_daily'},
           ],
         },
         mode: 'default',
@@ -217,7 +216,6 @@ describe('LaunchAssetExecutionButton', () => {
           tags: [
             {key: 'dagster/partition', value: '2023-02-22'},
             {key: 'dagster/partition_set', value: '__ASSET_JOB_7_partition_set'},
-            {key: 'dagster/step_selection', value: 'asset_daily'},
           ],
         },
         mode: 'default',
@@ -272,7 +270,6 @@ describe('LaunchAssetExecutionButton', () => {
           tags: [
             {key: 'dagster/asset_partition_range_start', value: '2020-01-02'},
             {key: 'dagster/asset_partition_range_end', value: '2023-02-22'},
-            {key: 'dagster/step_selection', value: 'asset_daily'},
           ],
         },
         runConfigData: '{}\n',
