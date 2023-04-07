@@ -82,7 +82,7 @@ export const BackfillTable = ({
 
   return (
     <>
-      <Table $monospaceFont={false}>
+      <Table>
         <thead>
           <tr>
             <th>Backfill ID</th>

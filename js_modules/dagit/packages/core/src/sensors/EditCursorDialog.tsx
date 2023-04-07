@@ -25,10 +25,11 @@ import {
 } from './types/EditCursorDialog.types';
 
 export const EditCursorDialog: React.FC<{
+  isOpen: boolean;
   cursor: string;
   sensorSelector: SensorSelector;
   onClose: () => void;
-}> = ({sensorSelector, cursor, onClose}) => {
+}> = ({isOpen, sensorSelector, cursor, onClose}) => {
   const [cursorValue, setCursorValue] = React.useState(cursor);
   const [isSaving, setIsSaving] = React.useState(false);
   const [requestSet] = useMutation<SetSensorCursorMutation, SetSensorCursorMutationVariables>(
@@ -75,10 +76,13 @@ export const EditCursorDialog: React.FC<{
 
   return (
     <Dialog
-      isOpen={true}
-      onClose={onClose}
+      isOpen={isOpen}
+      onClose={() => {
+        onClose();
+        setCursorValue(cursor);
+      }}
       style={{
-        width: '50vw',
+        width: '500px',
       }}
       title={`Edit ${sensorSelector.sensorName} cursor`}
     >

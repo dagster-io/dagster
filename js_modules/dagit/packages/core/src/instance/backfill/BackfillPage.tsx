@@ -143,7 +143,7 @@ export const BackfillPage = () => {
           />
           <Detail label="Status" detail={<StatusLabel status={backfill.status} />} />
         </Box>
-        <Table $monospaceFont={false}>
+        <Table>
           <thead>
             <tr>
               <th style={{width: '50%'}}>Asset name</th>

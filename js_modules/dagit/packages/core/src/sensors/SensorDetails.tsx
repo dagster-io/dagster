@@ -7,6 +7,9 @@ import {
   Tag,
   Heading,
   FontFamily,
+  ButtonLink,
+  Icon,
+  Colors,
 } from '@dagster-io/ui';
 import * as React from 'react';
 
@@ -194,19 +197,23 @@ export const SensorDetails: React.FC<{
           <tr>
             <td>Cursor</td>
             <td>
-              {isCursorEditing ? (
-                <EditCursorDialog
-                  sensorSelector={sensorSelector}
-                  cursor={cursor ? cursor : ''}
-                  onClose={() => setCursorEditing(false)}
-                />
-              ) : null}
-              <Box flex={{direction: 'row', alignItems: 'center'}}>
-                <Box style={{fontFamily: FontFamily.monospace, marginRight: 10}}>
+              <Box flex={{direction: 'row', gap: 8}}>
+                <span style={{fontFamily: FontFamily.monospace, fontSize: '16px'}}>
                   {cursor ? cursor : 'None'}
-                </Box>
-                <Button onClick={() => setCursorEditing(true)}>Edit</Button>
+                </span>
+                <ButtonLink onClick={() => setCursorEditing(true)} style={{fontSize: '12px'}}>
+                  <Box flex={{direction: 'row', alignItems: 'flex-end', gap: 4}}>
+                    <Icon name="edit" color={Colors.Blue500} size={12} />
+                    <span>Edit</span>
+                  </Box>
+                </ButtonLink>
               </Box>
+              <EditCursorDialog
+                isOpen={isCursorEditing}
+                sensorSelector={sensorSelector}
+                cursor={cursor ? cursor : ''}
+                onClose={() => setCursorEditing(false)}
+              />
             </td>
           </tr>
           <tr>
@@ -215,7 +222,7 @@ export const SensorDetails: React.FC<{
           </tr>
           {metadata.assetKeys && metadata.assetKeys.length ? (
             <tr>
-              <td>Monitored Assets</td>
+              <td>Monitored assets</td>
               <td>
                 <Box flex={{direction: 'column', gap: 2}}>
                   {metadata.assetKeys.map((key) => (

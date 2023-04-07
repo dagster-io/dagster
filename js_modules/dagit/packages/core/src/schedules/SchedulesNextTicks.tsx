@@ -139,7 +139,7 @@ export const SchedulesNextTicks: React.FC<{
   }
 
   return (
-    <Table $monospaceFont={false}>
+    <Table>
       <thead>
         <tr>
           <th style={{width: '260px'}}>Timestamp</th>

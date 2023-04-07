@@ -29,7 +29,7 @@ export const RepositoryLocationsList = () => {
   }
 
   return (
-    <Table $monospaceFont={false}>
+    <Table>
       <thead>
         <tr>
           <th>Name</th>
