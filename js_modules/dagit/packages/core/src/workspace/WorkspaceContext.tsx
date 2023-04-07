@@ -289,8 +289,7 @@ const useVisibleRepos = (
 export const getRepositoryOptionHash = (a: DagsterRepoOption) =>
   `${a.repository.name}:${a.repositoryLocation.name}`;
 
-export const WorkspaceProvider: React.FC = (props) => {
-  const {children} = props;
+export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
   const workspaceState = useWorkspaceState();
 
   return <WorkspaceContext.Provider value={workspaceState}>{children}</WorkspaceContext.Provider>;

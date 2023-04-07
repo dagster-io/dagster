@@ -17,7 +17,9 @@ export const Slider: React.FC<SliderProps & {fillColor?: string}> = ({
   return <StyledSlider {...rest} intent="none" $fillColor={fillColor} />;
 };
 
-export const MultiSlider: React.FC<MultiSliderProps & {fillColor?: string}> & {
+export const MultiSlider: React.FC<
+  MultiSliderProps & {fillColor?: string; children: React.ReactNode}
+> & {
   Handle: typeof BlueprintMultiSlider.Handle;
 } = ({fillColor = Colors.Gray600, ...rest}) => {
   return <StyledMultiSlider {...rest} intent="none" $fillColor={fillColor} />;

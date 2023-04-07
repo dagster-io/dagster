@@ -102,6 +102,7 @@ export const AssetLatestRunWithNotices: React.FC<{
 };
 
 export const AssetRunLink: React.FC<{
+  children?: React.ReactNode;
   runId: string;
   event?: Parameters<typeof linkToRunEvent>[1];
 }> = ({runId, children, event}) => (

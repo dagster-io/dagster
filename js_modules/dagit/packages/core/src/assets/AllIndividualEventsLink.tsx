@@ -280,6 +280,7 @@ interface PredecessorDialogProps {
   hasLineage: boolean;
   hasPartitions: boolean;
   events: (AssetMaterializationFragment | AssetObservationFragment)[];
+  children: React.ReactNode;
 }
 
 export const AllIndividualEventsLink: React.FC<PredecessorDialogProps> = ({

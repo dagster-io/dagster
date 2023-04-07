@@ -72,7 +72,7 @@ const resourceDisplayName = (
     : resource.name;
 };
 
-const SectionHeader: React.FC = (props) => {
+const SectionHeader = (props: {children: React.ReactNode}) => {
   return (
     <Box
       padding={{left: 24, vertical: 16}}

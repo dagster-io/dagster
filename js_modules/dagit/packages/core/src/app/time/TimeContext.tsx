@@ -27,7 +27,7 @@ const validateHourCycle = (saved: string | undefined) => {
   return 'Automatic';
 };
 
-export const TimeProvider: React.FC = (props) => {
+export const TimeProvider = (props: {children: React.ReactNode}) => {
   const timezone = useStateWithStorage(TimezoneStorageKey, validateTimezone);
   const hourCycle = useStateWithStorage(HourCycleKey, validateHourCycle);
   const state = React.useMemo(

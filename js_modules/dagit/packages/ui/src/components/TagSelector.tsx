@@ -240,7 +240,7 @@ export const TagSelectorWithSearch = (
       setSelectedTags={setSelectedTags}
       dropdownStyles={{width: 'auto'}}
       renderDropdown={React.useCallback(
-        (dropdownContent, dropdownProps) => {
+        (dropdownContent: React.ReactNode, dropdownProps: TagSelectorDropdownProps) => {
           return (
             <Menu style={{width: 'auto'}}>
               <Box flex={{direction: 'column'}}>
