@@ -474,9 +474,7 @@ def execute_asset_backfill_iteration_inner(
         ) = find_parent_materialized_asset_partitions(
             asset_graph=asset_graph,
             instance_queryer=instance_queryer,
-            target_asset_selection=AssetSelection.keys(
-                *asset_backfill_data.target_subset.asset_keys
-            ),
+            target_asset_keys=asset_backfill_data.target_subset.asset_keys,
             latest_storage_id=asset_backfill_data.latest_storage_id,
         )
         initial_candidates.update(parent_materialized_asset_partitions)

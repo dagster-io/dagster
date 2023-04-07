@@ -143,6 +143,11 @@ class Config(MakeConfigCacheable):
                 output[key] = value
         return output
 
+    @classmethod
+    def to_config_schema(cls) -> DefinitionConfigSchema:
+        """Converts the config structure represented by this class into a DefinitionConfigSchema."""
+        return DefinitionConfigSchema(infer_schema_from_config_class(cls))
+
 
 @experimental
 class PermissiveConfig(Config):
@@ -567,6 +572,26 @@ class ConfigurableResourceFactory(
     def _create_object_fn(self, context: InitResourceContext) -> TResValue:
         return self.create_resource(context)
 
+    @classmethod
+    def from_resource_context(cls, context: InitResourceContext) -> TResValue:
+        """Creates a new instance of this resource from a populated InitResourceContext.
+        Useful when creating a resource from a function-based resource, for backwards
+        compatibility purposes.
+
+        Example usage:
+
+        .. code-block:: python
+
+            class MyResource(ConfigurableResource):
+                my_str: str
+
+            @resource(config_schema=MyResource.to_config_schema())
+            def my_resource(context: InitResourceContext) -> MyResource:
+                return MyResource.from_resource_context(context)
+
+        """
+        return cls(**context.resource_config).create_resource(context)
+
 
 @experimental
 class ConfigurableResource(ConfigurableResourceFactory[TResValue]):
@@ -834,6 +859,27 @@ def _wrap_config_type(
         raise NotImplementedError(f"Pydantic shape type {shape_type} not supported.")
 
 
+def _get_inner_field_if_exists(
+    shape_type: PydanticShapeType, field: ModelField
+) -> Optional[ModelField]:
+    """Grabs the inner Pydantic field type for a data structure such as a list or dictionary.
+
+    Returns None for types which have no inner field.
+    """
+    # See https://github.com/pydantic/pydantic/blob/v1.10.3/pydantic/fields.py#L758 for
+    # where sub_fields is set.
+    if shape_type == SHAPE_SINGLETON:
+        return None
+    elif shape_type == SHAPE_LIST:
+        # List has a single subfield, which is the type of the list elements.
+        return check.not_none(field.sub_fields)[0]
+    elif shape_type in MAPPING_TYPES:
+        # Mapping has a single subfield, which is the type of the mapping values.
+        return check.not_none(field.sub_fields)[0]
+    else:
+        raise NotImplementedError(f"Pydantic shape type {shape_type} not supported.")
+
+
 def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
     """Transforms a Pydantic field into a corresponding Dagster config field."""
     key_type = (
@@ -857,7 +903,13 @@ def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
 
         return Field(config=wrapped_config_type, description=inferred_field.description)
     else:
-        config_type = _config_type_for_pydantic_field(pydantic_field)
+        # For certain data structure types, we need to grab the inner Pydantic field (e.g. List type)
+        inner_field = _get_inner_field_if_exists(pydantic_field.shape, pydantic_field)
+        if inner_field:
+            config_type = _convert_pydantic_field(inner_field).config_type
+        else:
+            config_type = _config_type_for_pydantic_field(pydantic_field)
+
         wrapped_config_type = _wrap_config_type(
             shape_type=pydantic_field.shape, config_type=config_type, key_type=key_type
         )

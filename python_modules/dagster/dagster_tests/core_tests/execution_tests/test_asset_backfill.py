@@ -28,7 +28,7 @@ from dagster._core.test_utils import instance_for_test
 from dagster._seven.compat.pendulum import create_pendulum_time
 from dagster._utils import Counter, traced_counter
 
-from dagster_tests.definitions_tests.asset_reconciliation_tests.test_asset_reconciliation_sensor import (
+from dagster_tests.definitions_tests.asset_reconciliation_tests.scenarios import (
     RunSpec,
     do_run,
     non_partitioned_after_partitioned,

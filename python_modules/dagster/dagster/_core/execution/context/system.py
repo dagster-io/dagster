@@ -147,15 +147,19 @@ class IPlanContext(ABC):
 
     @property
     def logging_tags(self) -> Mapping[str, str]:
-        return self.log.logging_metadata.to_tags()
+        return self.log.logging_metadata.all_tags()
+
+    @property
+    def event_tags(self) -> Mapping[str, str]:
+        return self.log.logging_metadata.event_tags()
 
     def has_tag(self, key: str) -> bool:
         check.str_param(key, "key")
-        return key in self.log.logging_metadata.pipeline_tags
+        return key in self.dagster_run.tags
 
     def get_tag(self, key: str) -> Optional[str]:
         check.str_param(key, "key")
-        return self.log.logging_metadata.pipeline_tags.get(key)
+        return self.dagster_run.tags.get(key)
 
 
 class PlanData(NamedTuple):

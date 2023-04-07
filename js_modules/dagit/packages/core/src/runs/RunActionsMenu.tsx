@@ -23,12 +23,11 @@ import {ReexecutionStrategy} from '../graphql/types';
 import {NO_LAUNCH_PERMISSION_MESSAGE} from '../launchpad/LaunchRootExecutionButton';
 import {MenuLink} from '../ui/MenuLink';
 import {isThisThingAJob} from '../workspace/WorkspaceContext';
-import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
+import {useRepositoryForRunWithParentSnapshot} from '../workspace/useRepositoryForRun';
 import {workspacePathFromRunDetails} from '../workspace/workspacePath';
 
 import {DeletionDialog} from './DeletionDialog';
 import {ReexecutionDialog} from './ReexecutionDialog';
-import {RUN_FRAGMENT_FOR_REPOSITORY_MATCH} from './RunFragments';
 import {doneStatuses, failedStatuses} from './RunStatuses';
 import {
   LAUNCH_PIPELINE_REEXECUTION_MUTATION,
@@ -38,14 +37,15 @@ import {
 } from './RunUtils';
 import {TerminationDialog} from './TerminationDialog';
 import {
-  PipelineEnvironmentYamlQuery,
-  PipelineEnvironmentYamlQueryVariables,
+  PipelineEnvironmentQuery,
+  PipelineEnvironmentQueryVariables,
 } from './types/RunActionsMenu.types';
 import {RunTableRunFragment} from './types/RunTable.types';
 import {
   LaunchPipelineReexecutionMutation,
   LaunchPipelineReexecutionMutationVariables,
 } from './types/RunUtils.types';
+import {useJobAvailabilityErrorForRun} from './useJobAvailabilityErrorForRun';
 
 export const RunActionsMenu: React.FC<{
   run: RunTableRunFragment;
@@ -68,9 +68,9 @@ export const RunActionsMenu: React.FC<{
   });
 
   const [loadEnv, {called, loading, data}] = useLazyQuery<
-    PipelineEnvironmentYamlQuery,
-    PipelineEnvironmentYamlQueryVariables
-  >(PIPELINE_ENVIRONMENT_YAML_QUERY, {
+    PipelineEnvironmentQuery,
+    PipelineEnvironmentQueryVariables
+  >(PIPELINE_ENVIRONMENT_QUERY, {
     variables: {runId: run.runId},
   });
 
@@ -86,11 +86,30 @@ export const RunActionsMenu: React.FC<{
     data?.pipelineRunOrError?.__typename === 'Run' ? data?.pipelineRunOrError : null;
   const runConfigYaml = pipelineRun?.runConfigYaml;
 
-  const repoMatch = useRepositoryForRun(pipelineRun);
+  const repoMatch = useRepositoryForRunWithParentSnapshot(pipelineRun);
+  const jobError = useJobAvailabilityErrorForRun({
+    ...run,
+    parentPipelineSnapshotId: pipelineRun?.parentPipelineSnapshotId,
+  });
+
   const isFinished = doneStatuses.has(run.status);
   const isJob = !!(repoMatch && isThisThingAJob(repoMatch?.match, run.pipelineName));
 
   const infoReady = called ? !loading : false;
+
+  const reexecutionDisabledState = React.useMemo(() => {
+    if (!run.hasReExecutePermission) {
+      return {disabled: true, message: DEFAULT_DISABLED_REASON};
+    }
+    if (jobError) {
+      return {disabled: jobError.disabled, message: jobError.tooltip};
+    }
+    if (!infoReady) {
+      return {disabled: true};
+    }
+    return {disabled: false};
+  }, [run.hasReExecutePermission, jobError, infoReady]);
+
   return (
     <>
       <Popover
@@ -127,19 +146,15 @@ export const RunActionsMenu: React.FC<{
                 />
               </Tooltip>
               <Tooltip
-                content={
-                  !run.hasReExecutePermission
-                    ? DEFAULT_DISABLED_REASON
-                    : 'Re-execute is unavailable because the pipeline is not present in the current workspace.'
-                }
-                position="bottom"
-                disabled={infoReady && !!repoMatch && run.hasReExecutePermission}
+                content={reexecutionDisabledState.message || ''}
+                position="left"
+                canShow={reexecutionDisabledState.disabled}
                 targetTagName="div"
               >
                 <MenuItem
                   tagName="button"
                   text="Re-execute"
-                  disabled={!infoReady || !repoMatch || !run.hasReExecutePermission}
+                  disabled={reexecutionDisabledState.disabled}
                   icon="refresh"
                   onClick={async () => {
                     if (repoMatch && runConfigYaml) {
@@ -410,19 +425,23 @@ export const RunBulkActionsMenu: React.FC<{
 const OPEN_LAUNCHPAD_UNKNOWN =
   'Launchpad is unavailable because the pipeline is not present in the current repository.';
 
-// Avoid fetching envYaml on load in Runs page. It is slow.
-const PIPELINE_ENVIRONMENT_YAML_QUERY = gql`
-  query PipelineEnvironmentYamlQuery($runId: ID!) {
+// Avoid fetching envYaml and parentPipelineSnapshotId on load in Runs page, they're slow.
+const PIPELINE_ENVIRONMENT_QUERY = gql`
+  query PipelineEnvironmentQuery($runId: ID!) {
     pipelineRunOrError(runId: $runId) {
       ... on Run {
         id
         pipelineName
         pipelineSnapshotId
         runConfigYaml
-        ...RunFragmentForRepositoryMatch
+        pipelineName
+        parentPipelineSnapshotId
+        repositoryOrigin {
+          id
+          repositoryName
+          repositoryLocationName
+        }
       }
     }
   }
-
-  ${RUN_FRAGMENT_FOR_REPOSITORY_MATCH}
 `;
