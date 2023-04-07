@@ -10,13 +10,6 @@ import {
   TextInput,
 } from '@dagster-io/ui';
 import React, {useState, useRef} from 'react';
-import {
-  useRecoilCallback,
-  atomFamily,
-  selectorFamily,
-  useRecoilValue,
-  useSetRecoilState,
-} from 'recoil';
 import styled, {createGlobalStyle} from 'styled-components/macro';
 import {v4 as uuidv4} from 'uuid';
 
@@ -31,21 +24,20 @@ interface FilterDropdownProps {
   setPortaledElements: React.Dispatch<React.SetStateAction<JSX.Element[]>>;
 }
 
-const focusedIndexAtom = atomFamily<number, string>({
-  key: 'FilterDropdown:focusedIndex',
-  default: -1,
-});
-const isFocusedSelector = selectorFamily<boolean, {key: string; index: number}>({
-  key: 'FilterDropdown:isFocused',
-  get: ({key, index}) => ({get}) => get(focusedIndexAtom(key)) === index,
-});
+window.debug = () => {
+  console.log({stats});
+};
+const stats = {
+  render: 0,
+  renderMenu: 0,
+  renderMenuItem: 0,
+  getResults: 0,
+};
 
 export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: FilterDropdownProps) => {
   const [menuKey, _] = React.useState(() => uuidv4());
-  const setFocusedItemIndex = useSetRecoilState(focusedIndexAtom(menuKey));
-  const isSearchInputFocused = useRecoilValue(
-    isFocusedSelector(React.useMemo(() => ({key: menuKey, index: -1}), [menuKey])),
-  );
+  const [focusedItemIndex, setFocusedItemIndex] = React.useState(-1);
+  const isSearchInputFocused = focusedItemIndex === -1;
   const [search, setSearch] = useState('');
   const [selectedFilter, setSelectedFilter] = useState<FilterObject<any> | null>(null);
 
@@ -108,6 +100,7 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
             text={result.label}
             index={resultIndex}
             menuKey={menuKey}
+            active={focusedItemIndex === resultIndex}
           />
         ));
     }
@@ -130,6 +123,7 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
             }
             index={index}
             menuKey={menuKey}
+            active={focusedItemIndex === index}
           />,
         );
       }
@@ -144,6 +138,7 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
             text={result.label}
             index={index}
             menuKey={menuKey}
+            active={focusedItemIndex === index}
           />,
         );
       });
@@ -157,14 +152,15 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
     selectValue,
     filteredFilters,
     results,
+    focusedItemIndex,
     setFocusedItemIndex,
   ]);
 
   const inputRef = useRef<HTMLInputElement | null>(null);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
 
-  const handleKeyDown = useRecoilCallback(
-    ({snapshot}) => async (event: React.KeyboardEvent) => {
+  const handleKeyDown = React.useCallback(
+    async (event: React.KeyboardEvent) => {
       const maxIndex = allResultsJsx.length - 1;
       if (event.key === 'ArrowDown' || (event.key === 'Tab' && !event.shiftKey)) {
         setFocusedItemIndex((prevIndex) => (prevIndex === maxIndex ? -1 : prevIndex + 1));
@@ -173,7 +169,6 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
         setFocusedItemIndex((prevIndex) => (prevIndex === -1 ? maxIndex : prevIndex - 1));
         event.preventDefault();
       } else if (event.key === 'Enter' || event.key === ' ') {
-        const focusedItemIndex = await snapshot.getPromise(focusedIndexAtom(menuKey));
         if (focusedItemIndex === -1) {
           // They're typing in the search bar
           return;
@@ -191,10 +186,8 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
         setFocusedItemIndex(-1);
       }
     },
-    [allResultsJsx.length, selectedFilter, setFocusedItemIndex, setIsOpen],
+    [selectedFilter, setFocusedItemIndex, setIsOpen, focusedItemIndex, allResultsJsx],
   );
-
-  const focusedItemIndex = useRecoilValue(focusedIndexAtom(menuKey));
 
   return (
     <div>
@@ -364,17 +357,14 @@ type FilterDropdownMenuItemProps = React.ComponentProps<typeof MenuItem> & {
 const FilterDropdownMenuItem = React.memo(
   ({menuKey, index, ...rest}: FilterDropdownMenuItemProps) => {
     const divRef = React.useRef<HTMLDivElement | null>(null);
-    const isFocused = useRecoilValue(
-      isFocusedSelector(React.useMemo(() => ({key: menuKey, index}), [index, menuKey])),
-    );
     return (
       <div
         ref={divRef}
         role="option"
         id={itemId(menuKey, index)}
-        aria-selected={isFocused ? 'true' : 'false'}
+        aria-selected={rest.active ? 'true' : 'false'}
       >
-        <StyledMenuItem {...rest} active={isFocused} />
+        <StyledMenuItem {...rest} />
       </div>
     );
   },
