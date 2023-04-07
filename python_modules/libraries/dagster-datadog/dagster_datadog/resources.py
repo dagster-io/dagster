@@ -94,8 +94,10 @@ class DataDogClientResource(ConfigurableResourceFactory[DataDogClient]):
     description="This resource is for publishing to DataDog",
 )
 def datadog_resource(context) -> DataDogClient:
-    """This resource is a thin wrapper over the
+    """This legacy resource is a thin wrapper over the
     `dogstatsd library <https://datadogpy.readthedocs.io/en/latest/>`_.
+
+    Prefer using :py:class:`DataDogClientResource`.
 
     As such, we directly mirror the public API methods of DogStatsd here; you can refer to the
     `DataDog documentation <https://docs.datadoghq.com/developers/dogstatsd/>`_ for how to use this
