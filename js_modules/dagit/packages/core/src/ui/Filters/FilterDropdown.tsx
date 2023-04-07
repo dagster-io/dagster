@@ -197,13 +197,7 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
   const focusedItemIndex = useRecoilValue(focusedIndexAtom(menuKey));
 
   return (
-    <div
-      aria-activedescendant={
-        focusedItemIndex !== -1 ? itemId(menuKey, focusedItemIndex) : undefined
-      }
-      role="combobox"
-      aria-expanded="true"
-    >
+    <div>
       <TextInputWrapper>
         <TextInput
           type="text"
@@ -213,6 +207,12 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
           placeholder="Search filters..."
           ref={inputRef}
           aria-label="Search filters"
+          aria-activedescendant={
+            focusedItemIndex !== -1 ? itemId(menuKey, focusedItemIndex) : undefined
+          }
+          role="combobox"
+          aria-expanded="true"
+          aria-owns={menuKey}
         />
         <Box
           flex={{justifyContent: 'center', alignItems: 'center'}}
@@ -223,6 +223,7 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
       </TextInputWrapper>
       <Menu>
         <DropdownMenuContainer
+          id={menuKey}
           ref={dropdownRef}
           style={{maxHeight: '500px', overflowY: 'auto'}}
           onKeyDown={handleKeyDown}
@@ -367,7 +368,12 @@ const FilterDropdownMenuItem = React.memo(
       isFocusedSelector(React.useMemo(() => ({key: menuKey, index}), [index, menuKey])),
     );
     return (
-      <div ref={divRef} role="option" id={itemId(menuKey, index)}>
+      <div
+        ref={divRef}
+        role="option"
+        id={itemId(menuKey, index)}
+        aria-selected={isFocused ? 'true' : 'false'}
+      >
         <StyledMenuItem {...rest} active={isFocused} />
       </div>
     );
