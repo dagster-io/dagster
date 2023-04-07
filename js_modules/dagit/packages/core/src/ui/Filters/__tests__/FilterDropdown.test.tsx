@@ -1,7 +1,6 @@
 import {render, fireEvent, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
-import {RecoilRoot} from 'recoil';
 
 import '@testing-library/jest-dom/extend-expect';
 import {FilterDropdown, FilterDropdownButton} from '../FilterDropdown';
@@ -42,13 +41,11 @@ beforeEach(() => {
 describe('FilterDropdown', () => {
   test('displays filter categories initially', () => {
     render(
-      <RecoilRoot>
-        <FilterDropdown
-          filters={mockFilters}
-          setIsOpen={jest.fn()}
-          setPortaledElements={jest.fn()}
-        />
-      </RecoilRoot>,
+      <FilterDropdown
+        filters={mockFilters}
+        setIsOpen={jest.fn()}
+        setPortaledElements={jest.fn()}
+      />,
     );
     expect(screen.getByText(/Type/g)).toBeInTheDocument();
     expect(screen.getByText('Status')).toBeInTheDocument();
@@ -56,13 +53,11 @@ describe('FilterDropdown', () => {
 
   test('searches and displays matching filters', async () => {
     render(
-      <RecoilRoot>
-        <FilterDropdown
-          filters={mockFilters}
-          setIsOpen={jest.fn()}
-          setPortaledElements={jest.fn()}
-        />
-      </RecoilRoot>,
+      <FilterDropdown
+        filters={mockFilters}
+        setIsOpen={jest.fn()}
+        setPortaledElements={jest.fn()}
+      />,
     );
     const searchInput = screen.getByPlaceholderText('Search filters...');
     fireEvent.change(searchInput, {target: {value: 'type'}});
@@ -74,13 +69,11 @@ describe('FilterDropdown', () => {
 
   test('displays no results when no filters match', async () => {
     render(
-      <RecoilRoot>
-        <FilterDropdown
-          filters={mockFilters}
-          setIsOpen={jest.fn()}
-          setPortaledElements={jest.fn()}
-        />
-      </RecoilRoot>,
+      <FilterDropdown
+        filters={mockFilters}
+        setIsOpen={jest.fn()}
+        setPortaledElements={jest.fn()}
+      />,
     );
     const searchInput = screen.getByPlaceholderText('Search filters...');
     fireEvent.change(searchInput, {target: {value: 'nonexistent'}});
@@ -90,11 +83,7 @@ describe('FilterDropdown', () => {
 
 describe('FilterDropdownButton', () => {
   test('opens and closes the dropdown on click', async () => {
-    render(
-      <RecoilRoot>
-        <FilterDropdownButton filters={mockFilters} />
-      </RecoilRoot>,
-    );
+    render(<FilterDropdownButton filters={mockFilters} />);
     const button = screen.getByRole('button');
     userEvent.click(button);
     await waitFor(() => {
@@ -107,11 +96,7 @@ describe('FilterDropdownButton', () => {
   });
 
   test('closes the dropdown when clicking outside', async () => {
-    render(
-      <RecoilRoot>
-        <FilterDropdownButton filters={mockFilters} />
-      </RecoilRoot>,
-    );
+    render(<FilterDropdownButton filters={mockFilters} />);
     const button = screen.getByRole('button');
     userEvent.click(button);
     await waitFor(() => {
@@ -126,11 +111,7 @@ describe('FilterDropdownButton', () => {
 
 describe('FilterDropdown Accessibility', () => {
   const testKeyboardNavigation = async (nextKey: any, prevKey: any, enterKey: any) => {
-    render(
-      <RecoilRoot>
-        <FilterDropdownButton filters={mockFilters} />
-      </RecoilRoot>,
-    );
+    render(<FilterDropdownButton filters={mockFilters} />);
 
     userEvent.click(screen.getByRole('button'));
     expect(screen.getByRole('menu')).toBeInTheDocument();
@@ -207,11 +188,7 @@ describe('FilterDropdown Accessibility', () => {
   });
 
   test('escape key behavior', async () => {
-    render(
-      <RecoilRoot>
-        <FilterDropdownButton filters={mockFilters} />
-      </RecoilRoot>,
-    );
+    render(<FilterDropdownButton filters={mockFilters} />);
 
     userEvent.click(screen.getByRole('button'));
     expect(screen.getByRole('menu')).toBeVisible();
