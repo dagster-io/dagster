@@ -2,7 +2,6 @@ from typing import TYPE_CHECKING, Any, Generic, Optional, Type, TypeVar, Union, 
 
 import pydantic
 from pydantic import Field
-from pydantic.fields import FieldInfo
 from typing_extensions import dataclass_transform, get_origin
 
 from .utils import safe_is_subclass
@@ -51,7 +50,7 @@ class LateBoundTypesForResourceTypeChecking:
         )
 
 
-@dataclass_transform(kw_only_default=True, field_specifiers=(Field, FieldInfo))
+@dataclass_transform(kw_only_default=True, field_specifiers=(Field,))
 class BaseResourceMeta(pydantic.main.ModelMetaclass):
     """Custom metaclass for Resource and PartialResource. This metaclass is responsible for
     transforming the type annotations on the class so that Pydantic constructor-time validation
