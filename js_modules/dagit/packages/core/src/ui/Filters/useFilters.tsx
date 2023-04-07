@@ -1,5 +1,4 @@
 import React from 'react';
-import {RecoilRoot} from 'recoil';
 
 import {FilterDropdownButton} from './FilterDropdown';
 import {FilterObject} from './useFilter';
@@ -16,14 +15,7 @@ export const useFilters = ({filters}: UseFiltersProps) => {
   }, [filters]);
 
   return {
-    button: React.useMemo(
-      () => (
-        <RecoilRoot>
-          <FilterDropdownButton filters={filters} />
-        </RecoilRoot>
-      ),
-      [filters],
-    ),
+    button: React.useMemo(() => <FilterDropdownButton filters={filters} />, [filters]),
     activeFiltersJsx: activeFilterJsx,
   };
 };
