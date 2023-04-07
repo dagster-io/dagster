@@ -1,7 +1,4 @@
 import {gql} from '@apollo/client';
-import {ConfigSchema} from '@dagster-io/ui';
-
-export type {ConfigSchema as ConfigTypeSchema};
 
 export const CONFIG_TYPE_SCHEMA_FRAGMENT = gql`
   fragment ConfigTypeSchemaFragment on ConfigType {

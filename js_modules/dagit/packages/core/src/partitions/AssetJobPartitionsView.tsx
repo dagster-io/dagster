@@ -177,7 +177,7 @@ export const AssetJobPartitionsView: React.FC<{
   );
 };
 
-export const AssetJobPartitionGraphs: React.FC<{
+const AssetJobPartitionGraphs: React.FC<{
   repositorySelector: RepositorySelector;
   pipelineName: string;
   partitionSetName: string;

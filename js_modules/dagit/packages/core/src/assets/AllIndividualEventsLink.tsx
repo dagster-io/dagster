@@ -32,7 +32,7 @@ import {
   AssetObservationFragment,
 } from './types/useRecentAssetEvents.types';
 
-export const AssetEventsTable: React.FC<{
+const AssetEventsTable: React.FC<{
   hasPartitions: boolean;
   hasLineage: boolean;
   groups: AssetEventGroup[];

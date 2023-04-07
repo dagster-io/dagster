@@ -14,7 +14,7 @@ import {
   SidebarOpGraphsQueryVariables,
 } from './types/SidebarOpExecutionGraphs.types';
 
-export const StateColors = {
+const StateColors = {
   SUCCESS: Colors.Green500,
   FAILURE: Colors.Red500,
   SKIPPED: Colors.Gray500,

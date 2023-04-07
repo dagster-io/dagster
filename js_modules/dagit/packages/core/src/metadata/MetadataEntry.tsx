@@ -28,10 +28,6 @@ import {NotebookButton} from '../ui/NotebookButton';
 import {TableSchema, TABLE_SCHEMA_FRAGMENT} from './TableSchema';
 import {MetadataEntryFragment} from './types/MetadataEntry.types';
 
-export interface IMetadataEntries {
-  metadataEntries: MetadataEntryFragment[];
-}
-
 export const LogRowStructuredContentTable: React.FC<{
   rows: {label: string; item: JSX.Element}[];
   styles?: React.CSSProperties;

@@ -163,16 +163,6 @@ export interface LiveData {
   [assetId: GraphId]: LiveDataForNode;
 }
 
-export interface AssetDefinitionsForLiveData {
-  [id: string]: {
-    definition: {
-      partitionDefinition: string | null;
-      jobNames: string[];
-      opNames: string[];
-    };
-  };
-}
-
 export const buildLiveData = ({assetNodes, assetsLatestInfo}: AssetGraphLiveQuery) => {
   const data: LiveData = {};
 

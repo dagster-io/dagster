@@ -100,7 +100,7 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
   );
 };
 
-export const SchedulePreviousRuns: React.FC<{
+const SchedulePreviousRuns: React.FC<{
   repoAddress: RepoAddress;
   schedule: ScheduleFragment;
   tabs?: React.ReactElement;

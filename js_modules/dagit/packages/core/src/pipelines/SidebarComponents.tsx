@@ -39,7 +39,7 @@ export const SidebarSection: React.FC<ISidebarSectionProps> = (props) => {
   );
 };
 
-export const SidebarTitleTextWrap = styled.div`
+const SidebarTitleTextWrap = styled.div`
   overflow: hidden;
   min-width: 0;
   text-overflow: ellipsis;

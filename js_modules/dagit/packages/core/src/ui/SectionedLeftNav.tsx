@@ -138,7 +138,7 @@ interface SectionProps {
   showRepoLocation: boolean;
 }
 
-export const Section: React.FC<SectionProps> = React.memo((props) => {
+const Section: React.FC<SectionProps> = React.memo((props) => {
   const {expanded, collapsible, onToggle, option, match, repoAddress, showRepoLocation} = props;
   const matchRef = React.useRef<HTMLDivElement>(null);
 

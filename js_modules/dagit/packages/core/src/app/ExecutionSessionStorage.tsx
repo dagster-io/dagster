@@ -137,7 +137,7 @@ const buildValidator = (initial: Partial<IExecutionSession> = {}) => (json: any)
   return data;
 };
 
-export const makeKey = (basePath: string, repoAddress: RepoAddress, pipelineOrJobName: string) =>
+const makeKey = (basePath: string, repoAddress: RepoAddress, pipelineOrJobName: string) =>
   `dagit.v2.${basePath}-${repoAddress.location}-${repoAddress.name}-${pipelineOrJobName}`;
 
 export function useExecutionSessionStorage(
@@ -167,7 +167,7 @@ const writeStorageDataForKey = (key: string, data: IStorageData) => {
   window.localStorage.setItem(key, JSON.stringify(data));
 };
 
-export type RepositoryToInvalidate = {
+type RepositoryToInvalidate = {
   locationName: string;
   name: string;
   pipelines: {name: string}[];

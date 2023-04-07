@@ -2,18 +2,6 @@
 
 import * as Types from '../../graphql/types';
 
-export type PartitionStepStatusRunFragment = {
-  __typename: 'Run';
-  id: string;
-  runId: string;
-  tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
-  stepStats: Array<{
-    __typename: 'RunStepStats';
-    stepKey: string;
-    status: Types.StepEventStatus | null;
-  }>;
-};
-
 export type PartitionStepStatusPipelineQueryVariables = Types.Exact<{
   pipelineSelector?: Types.InputMaybe<Types.PipelineSelector>;
 }>;

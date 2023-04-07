@@ -143,7 +143,7 @@ export const RESOURCE_ENTRY_FRAGMENT = gql`
   }
 `;
 
-export const WORKSPACE_RESOURCES_QUERY = gql`
+const WORKSPACE_RESOURCES_QUERY = gql`
   query WorkspaceResourcesQuery($selector: RepositorySelector!) {
     repositoryOrError(repositorySelector: $selector) {
       ... on Repository {

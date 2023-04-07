@@ -124,7 +124,7 @@ interface IScrollContainerProps {
   onScrollDown?: (position: number) => void;
 }
 
-export class ScrollContainer extends React.Component<IScrollContainerProps> {
+class ScrollContainer extends React.Component<IScrollContainerProps> {
   private container = React.createRef<HTMLDivElement>();
   private lastScroll = 0;
 

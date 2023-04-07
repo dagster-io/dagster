@@ -98,10 +98,7 @@ export const ERROR_INVALID_ASSET_SELECTION =
   ` the same code location and share a partition space, or form a connected` +
   ` graph in which root assets share the same partitioning.`;
 
-export function optionsForButton(
-  scope: AssetsInScope,
-  liveDataForStale?: LiveData,
-): LaunchOption[] {
+function optionsForButton(scope: AssetsInScope, liveDataForStale?: LiveData): LaunchOption[] {
   // If you pass a set of selected assets, we always show just one option
   // to materialize that selection.
   if ('selected' in scope) {
@@ -494,9 +491,7 @@ export function getCommonJob(
   return jobsInCommon.find((name) => name === preferredJobName) || jobsInCommon[0] || null;
 }
 
-export function getAnchorAssetForPartitionMappedBackfill(
-  assets: LaunchAssetExecutionAssetNodeFragment[],
-) {
+function getAnchorAssetForPartitionMappedBackfill(assets: LaunchAssetExecutionAssetNodeFragment[]) {
   // We have the ability to launch a pure asset backfill which will infer the partitions
   // of downstream assets IFF the selection's root assets (at the top of the tree) ALL
   // share a partition definition
@@ -616,7 +611,7 @@ export function buildAssetCollisionsAlert(data: LaunchAssetLoaderQuery) {
   };
 }
 
-export const LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT = gql`
+const LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT = gql`
   fragment LaunchAssetExecutionAssetNodeFragment on AssetNode {
     id
     opNames

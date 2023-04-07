@@ -10,7 +10,6 @@ export const inProgressStatuses = new Set([
 
 export const successStatuses = new Set([RunStatus.SUCCESS]);
 export const failedStatuses = new Set([RunStatus.FAILURE, RunStatus.CANCELED]);
-export const canceledStatuses = new Set([RunStatus.CANCELING, RunStatus.CANCELED]);
 
 export const doneStatuses = new Set([RunStatus.FAILURE, RunStatus.SUCCESS, RunStatus.CANCELED]);
 

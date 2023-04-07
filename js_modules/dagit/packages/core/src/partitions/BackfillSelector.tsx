@@ -468,7 +468,7 @@ const BACKFILL_SELECTOR_QUERY = gql`
   ${USING_DEFAULT_LAUNCH_ERALERT_INSTANCE_FRAGMENT}
 `;
 
-export const Section = ({
+const Section = ({
   title,
   children,
 }: {
