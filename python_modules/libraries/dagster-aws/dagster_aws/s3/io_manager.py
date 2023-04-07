@@ -1,6 +1,6 @@
 import io
 import pickle
-from typing import Any, Sequence, Union
+from typing import Sequence, Union
 
 from dagster import (
     ConfigurableIOManagerFactory,
@@ -14,6 +14,8 @@ from dagster import (
 )
 from dagster._utils import PICKLE_PROTOCOL
 from pydantic import Field
+
+from .resources import S3Resource
 
 
 class PickledObjectS3IOManager(MemoizableIOManager):
@@ -121,7 +123,7 @@ class S3PickleIOManager(ConfigurableIOManagerFactory):
 
     .. code-block:: python
 
-        from dagster import asset, repository, with_resources
+        from dagster import asset, Definitions
         from dagster_aws.s3 import S3PickleIOManager, S3Resource
 
 
@@ -134,23 +136,20 @@ class S3PickleIOManager(ConfigurableIOManagerFactory):
         def asset2(asset1):
             return asset1[:5]
 
-        @repository
-        def repo():
-            return with_resources(
-                [asset1, asset2],
-                resource_defs={
-                    "io_manager": S3PickleIOManager(
-                        s3_resource=S3Resource(),
-                        s3_bucket="my-cool-bucket",
-                        s3_prefix="my-cool-prefix",
-                    )
-                },
-            )
-
+        defs = Definitions(
+            assets=[asset1, asset2],
+            resources={
+                "io_manager": S3PickleIOManager(
+                    s3_resource=S3Resource(),
+                    s3_bucket="my-cool-bucket",
+                    s3_prefix="my-cool-prefix",
+                )
+            }
+        )
 
     """
 
-    s3_resource: ResourceDependency[Any]
+    s3_resource: ResourceDependency[S3Resource]
     s3_bucket: str = Field(description="S3 bucket to use for the file manager.")
     s3_prefix: str = Field(
         default="dagster", description="Prefix to use for the S3 bucket for this file manager."

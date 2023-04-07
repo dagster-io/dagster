@@ -13,7 +13,7 @@ from .utils import construct_s3_client
 T = TypeVar("T")
 
 
-class S3ResourceBase(ConfigurableResourceFactory[T]):
+class ResourceWithS3Configuration(ConfigurableResourceFactory[T]):
     use_unsigned_session: bool = Field(
         default=False, description="Specifiesw whether to use an unsigned S3 session."
     )
@@ -55,7 +55,7 @@ class S3ResourceBase(ConfigurableResourceFactory[T]):
     )
 
 
-class S3Resource(S3ResourceBase[Any]):
+class S3Resource(ResourceWithS3Configuration[Any]):
     """Resource that gives access to S3.
 
     The underlying S3 session is created by calling
@@ -65,23 +65,24 @@ class S3Resource(S3ResourceBase[Any]):
     Example:
         .. code-block:: python
 
-            from dagster import build_op_context, job, op
+            from dagster import job, op, Resource, Definitions
             from dagster_aws.s3 import S3Resource
 
-            @op(required_resource_keys={'s3'})
-            def example_s3_op(context):
-                return context.resources.s3.list_objects_v2(
+            @op
+            def example_s3_op(s3: Resource[Any]):
+                return s3.list_objects_v2(
                     Bucket='my-bucket',
                     Prefix='some-key'
                 )
 
-            @job(resource_defs={
-                's3': S3Resource(region_name='us-west-1')
-            })
+            @job
             def example_job():
                 example_s3_op()
 
-            example_job.execute_in_process()
+            defs = Definitions(
+                jobs=[example_job],
+                resources={'s3': S3Resource(region_name='us-west-1')}
+            )
 
     """
 
@@ -173,7 +174,7 @@ def s3_resource(context) -> Any:
     return S3Resource.from_resource_context(context)
 
 
-class S3FileManagerResource(S3ResourceBase[S3FileManager]):
+class S3FileManagerResource(ResourceWithS3Configuration[S3FileManager]):
     s3_bucket: str = Field(description="S3 bucket to use for the file manager.")
     s3_prefix: str = Field(
         default="dagster", description="Prefix to use for the S3 bucket for this file manager."
