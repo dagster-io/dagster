@@ -5,7 +5,7 @@ description: "Define custom prioritization rules for your Dagster instance's run
 
 # Customizing run queue priority
 
-When using a \[run queue]\(/deployment/run-coordinator, you can define custom prioritization rules for your Dagster instance.
+When using a [run queue](/deployment/run-coordinator), you can define custom prioritization rules for your Dagster instance.
 
 By the end of this guide, you’ll:
 
@@ -70,9 +70,14 @@ def less_important_schedule(_):
 
 ### In the Dagster UI
 
-Using the launchpad in the Dagster UI, you can also override priority tag values. For example:
+Using the launchpad in the Dagster UI, you can also override priority tag values. In this example, we clicked the **Edit tags** button to display the following modal:
 
-\[screenshot]
+<Image
+alt="Add tags to run modal in Dagster UI Launchpad"
+src="/images/guides/customizing-run-queue-priority/dagster-priority-in-launchpad.png"
+width={3066}
+height={1520}
+/>
 
 </TabItem>
 </TabGroup>
