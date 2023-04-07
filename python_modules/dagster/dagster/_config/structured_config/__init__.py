@@ -17,7 +17,7 @@ from typing import (
 )
 
 from pydantic import ConstrainedFloat, ConstrainedInt, ConstrainedStr
-from typing_extensions import TypeAlias
+from typing_extensions import TypeAlias, get_args
 
 from dagster import Enum as DagsterEnum
 from dagster._annotations import experimental
@@ -27,6 +27,7 @@ from dagster._config.post_process import resolve_defaults
 from dagster._config.source import BoolSource, IntSource, StringSource
 from dagster._config.structured_config.typing_utils import TypecheckAllowPartialResourceInitParams
 from dagster._config.validate import process_config, validate_config
+from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.definition_config_schema import (
     ConfiguredDefinitionConfigSchema,
     DefinitionConfigSchema,
@@ -1190,3 +1191,45 @@ LateBoundTypesForResourceTypeChecking.set_actual_types_for_type_checking(
     resource_type=ConfigurableResourceFactory,
     partial_resource_type=PartialResource,
 )
+
+
+def validate_resource_annotated_function(fn) -> None:
+    """Validates any parameters on the decorated function that are annotated with
+    :py:class:`dagster.ResourceDefinition`, raising a :py:class:`dagster.DagsterInvalidDefinitionError`
+    if any are not also instances of :py:class:`dagster.ConfigurableResource` (these resources should
+    instead be wrapped in the :py:func:`dagster.Resource` Annotation).
+    """
+    from dagster import DagsterInvalidDefinitionError
+    from dagster._config.structured_config import (
+        ConfigurableResource,
+        ConfigurableResourceFactory,
+        TResValue,
+    )
+    from dagster._config.structured_config.utils import safe_is_subclass
+
+    malformed_params = [
+        param
+        for param in get_function_params(fn)
+        if safe_is_subclass(param.annotation, ResourceDefinition)
+        and not safe_is_subclass(param.annotation, ConfigurableResource)
+    ]
+    if len(malformed_params) > 0:
+        malformed_param = malformed_params[0]
+        output_type = None
+        if safe_is_subclass(malformed_param.annotation, ConfigurableResourceFactory):
+            orig_bases = getattr(malformed_param.annotation, "__orig_bases__", None)
+            output_type = get_args(orig_bases[0])[0] if orig_bases and len(orig_bases) > 0 else None
+            if output_type == TResValue:
+                output_type = None
+
+        output_type_name = getattr(output_type, "__name__", str(output_type))
+        raise DagsterInvalidDefinitionError(
+            """Resource param '{param_name}' is annotated as '{annotation_type}', but '{annotation_type}' outputs {value_message} value to user code such as @ops and @assets. This annotation should instead be {annotation_suggestion}""".format(
+                param_name=malformed_param.name,
+                annotation_type=malformed_param.annotation,
+                value_message=f"a '{output_type}'" if output_type else "an unknown",
+                annotation_suggestion=f"'Resource[{output_type_name}]'"
+                if output_type
+                else "'Resource[Any]' or 'Resource[<output type>]'",
+            )
+        )

@@ -21,7 +21,9 @@ from dagster._core.decorator_utils import get_function_params, get_valid_name_pe
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping, MetadataUserInput
-from dagster._core.definitions.resource_annotation import get_resource_args
+from dagster._core.definitions.resource_annotation import (
+    get_resource_args,
+)
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.types.dagster_type import DagsterType
@@ -277,6 +279,9 @@ class _Asset:
         self.code_version = code_version
 
     def __call__(self, fn: Callable) -> AssetsDefinition:
+        from dagster._config.structured_config import validate_resource_annotated_function
+
+        validate_resource_annotated_function(fn)
         asset_name = self.name or fn.__name__
 
         asset_ins = build_asset_ins(fn, self.ins or {}, self.non_argument_deps)

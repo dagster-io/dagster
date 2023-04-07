@@ -753,7 +753,7 @@ def test_nested_function_resource():
             return output
 
     @asset
-    def my_asset(writer: PostfixWriterResource):
+    def my_asset(writer: Resource[Callable[[str], None]]):
         writer("foo")
         writer("bar")
 
@@ -791,7 +791,7 @@ def test_nested_function_resource_configured():
             return output
 
     @asset
-    def my_asset(writer: PostfixWriterResource):
+    def my_asset(writer: Resource[Callable[[str], None]]):
         writer("foo")
         writer("bar")
 
@@ -843,7 +843,7 @@ def test_nested_function_resource_runtime_config():
             return output
 
     @asset
-    def my_asset(writer: PostfixWriterResource):
+    def my_asset(writer: Resource[Callable[[str], None]]):
         writer("foo")
         writer("bar")
 
