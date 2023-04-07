@@ -183,10 +183,11 @@ To apply separate limits to each unique value of a tag, set a limit for each uni
 
 ```yaml file=/deploying/concurrency_limits/per-unique-value-dagster.yaml
 run_queue:
-  - key: "use-case"
-    value:
-      applyLimitPerUniqueValue: true
-    limit: 3
+  tag_concurrency_limits:
+    - key: "use-case"
+      value:
+        applyLimitPerUniqueValue: true
+      limit: 3
 ```
 
 With this configuration, each unique value of the `use-case` tag will be limited to three concurrent runs. For example, `team: marketing` and `team: sales` will both be limited to three concurrent runs each.
