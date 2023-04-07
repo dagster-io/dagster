@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, Generator, List, Optional
 
 from dagster import (
     resource,
@@ -9,12 +9,12 @@ from dagster._core.test_utils import environ
 from dagster._utils.merger import merge_dicts
 from pydantic import Field
 
-from dagster_aws.utils import Boto3ResourceBase
+from dagster_aws.utils import ResourceWithBoto3Configuration
 
 from .secrets import construct_secretsmanager_client, get_secrets_from_arns, get_tagged_secrets
 
 
-class SecretsManagerResource(Boto3ResourceBase[Any]):
+class SecretsManagerResource(ResourceWithBoto3Configuration[Any]):
     """Resource that gives access to AWS SecretsManager.
 
     The underlying SecretsManager session is created by calling
@@ -24,22 +24,27 @@ class SecretsManagerResource(Boto3ResourceBase[Any]):
     Example:
         .. code-block:: python
 
-            from dagster import build_op_context, job, op
+            from dagster import build_op_context, job, op, Resource
             from dagster_aws.secretsmanager import SecretsManagerResource
 
-            @op(required_resource_keys={'secretsmanager'})
-            def example_secretsmanager_op(context):
-                return context.resources.secretsmanager.get_secret_value(
+            @op
+            def example_secretsmanager_op(secretsmanager: Resource[Any]):
+                return secretsmanager.get_secret_value(
                     SecretId='arn:aws:secretsmanager:region:aws_account_id:secret:appauthexample-AbCdEf'
                 )
 
-            @job(resource_defs={
-                'secretsmanager': SecretsManagerResource(region_name='us-west-1')
-            })
+            @job
             def example_job():
                 example_secretsmanager_op()
 
-            example_job.execute_in_process()
+            defs = Definitions(
+                jobs=[example_job],
+                resources={
+                    'secretsmanager': SecretsManagerResource(
+                        region_name='us-west-1'
+                    )
+                }
+            )
     """
 
     def create_resource(self, context: InitResourceContext) -> Any:
@@ -104,7 +109,7 @@ def secretsmanager_resource(context) -> Any:
     return SecretsManagerResource.from_resource_context(context)
 
 
-class SecretsManagerSecretsResource(Boto3ResourceBase[Dict[str, str]]):
+class SecretsManagerSecretsResource(ResourceWithBoto3Configuration[Dict[str, str]]):
     """Resource that provides a dict which maps selected SecretsManager secrets to
     their string values. Also optionally sets chosen secrets as environment variables.
 
@@ -115,26 +120,29 @@ class SecretsManagerSecretsResource(Boto3ResourceBase[Dict[str, str]]):
             from dagster import build_op_context, job, op
             from dagster_aws.secretsmanager import SecretsManagerSecretsResource
 
-            @op(required_resource_keys={'secrets'})
-            def example_secretsmanager_secrets_op(context):
+            @op
+            def example_secretsmanager_secrets_op(secrets: Resource[Dict[str, str]]):
                 return context.resources.secrets.get("my-secret-name")
 
-            @op(required_resource_keys={'secrets'})
-            def example_secretsmanager_secrets_op_2(context):
+            @op
+            def example_secretsmanager_secrets_op_2(secrets: Resource[Dict[str, str]]):
                 return os.getenv("my-other-secret-name")
 
-            @job(resource_defs={
-                'secrets': SecretsManagerSecretsResource(
-                    region_name='us-west-1',
-                    secrets_tag="dagster",
-                    add_to_environment=True,
-                )}
-            )
+            @job
             def example_job():
                 example_secretsmanager_secrets_op()
                 example_secretsmanager_secrets_op_2()
 
-            example_job.execute_in_process()
+            defs = Definitions(
+                jobs=[example_job],
+                resources={
+                    'secrets': SecretsManagerSecretsResource(
+                        region_name='us-west-1',
+                        secrets_tag="dagster",
+                        add_to_environment=True,
+                    )
+                }
+            )
 
     Note that your ops must also declare that they require this resource with or it will not be initialized
     for the execution of their compute functions.
@@ -151,7 +159,9 @@ class SecretsManagerSecretsResource(Boto3ResourceBase[Dict[str, str]]):
         default=False, description="Whether to mount the secrets as environment variables."
     )
 
-    def create_resource(self, context: InitResourceContext) -> Iterable[Dict[str, str]]:
+    def create_resource(
+        self, context: InitResourceContext
+    ) -> Generator[Dict[str, str], None, None]:
         secrets_manager = construct_secretsmanager_client(
             max_attempts=self.max_attempts,
             region_name=self.region_name,

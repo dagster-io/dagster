@@ -22,7 +22,7 @@ def construct_boto_client_retry_config(max_attempts):
 T = TypeVar("T")
 
 
-class Boto3ResourceBase(ConfigurableResourceFactory[T]):
+class ResourceWithBoto3Configuration(ConfigurableResourceFactory[T]):
     region_name: Optional[str] = Field(
         description="Specifies a custom region for the Boto3 session"
     )
@@ -34,6 +34,3 @@ class Boto3ResourceBase(ConfigurableResourceFactory[T]):
         ),
     )
     profile_name: Optional[str] = Field(description="Specifies a profile to connect that session")
-
-
-BOTO3_SESSION_CONFIG = Boto3ResourceBase.to_config_schema()

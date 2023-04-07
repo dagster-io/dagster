@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Generator, List, Optional
 
 from dagster import (
     Config,
@@ -10,7 +10,7 @@ from dagster._core.test_utils import environ
 from dagster._utils.merger import merge_dicts
 from pydantic import Field
 
-from dagster_aws.utils import Boto3ResourceBase
+from dagster_aws.utils import ResourceWithBoto3Configuration
 
 from .parameters import (
     construct_ssm_client,
@@ -20,7 +20,7 @@ from .parameters import (
 )
 
 
-class SSMResource(Boto3ResourceBase[Any]):
+class SSMResource(ResourceWithBoto3Configuration[Any]):
     """Resource that gives access to AWS Systems Manager Parameter Store.
 
     The underlying Parameter Store session is created by calling
@@ -30,20 +30,28 @@ class SSMResource(Boto3ResourceBase[Any]):
     Example:
         .. code-block:: python
 
-            from dagster import build_op_context, job, op
+            from typing import Any
+            from dagster import build_op_context, job, op, Resource
             from dagster_aws.ssm import SSMResource
 
-            @op(required_resource_keys={'ssm'})
-            def example_ssm_op(context):
-                return context.resources.ssm.get_parameter(
+            @op
+            def example_ssm_op(ssm: Resource[Any]):
+                return ssm.get_parameter(
                     Name="a_parameter"
                 )
 
-            @job(resource_defs={'ssm': SSMResource(region_name='us-west-1')})
+            @job
             def example_job():
                 example_ssm_op()
 
-            example_job.execute_in_process()
+            defs = Definitions(
+                jobs=[example_job],
+                resources={
+                    'ssm': SSMResource(
+                        region_name='us-west-1'
+                    )
+                }
+            )
     """
 
     def create_resource(self, context: InitResourceContext) -> Any:
@@ -110,10 +118,47 @@ def ssm_resource(context) -> Any:
 
 class ParameterStoreTag(Config):
     key: str = Field(description="Tag key to search for.")
-    values: Optional[List[str]] = Field(deafult=None, description="List")
+    values: Optional[List[str]] = Field(default=None, description="List")
 
 
-class ParameterStoreResource(Boto3ResourceBase[Dict[str, str]]):
+class ParameterStoreResource(ResourceWithBoto3Configuration[Dict[str, str]]):
+    """Resource that provides a dict which maps selected SSM Parameter Store parameters to
+    their string values. Optionally sets selected parameters as environment variables.
+
+    Example:
+        .. code-block:: python
+
+            import os
+            from typing import Dict
+            from dagster import build_op_context, job, op, Resource
+            from dagster_aws.ssm import ParameterStoreResource, ParameterStoreTag
+
+            @op
+            def example_parameter_store_op(parameter_store: Resource[Dict[str, str]]):
+                return context.resources.parameter_store.get("my-parameter-name")
+
+            @op
+            def example_parameter_store_op_2(parameter_store: Resource[Dict[str, str]]):
+                return os.getenv("my-other-parameter-name")
+
+            @job
+            def example_job():
+                example_parameter_store_op()
+                example_parameter_store_op_2()
+
+            defs = Definitions(
+                jobs=[example_job],
+                resource_defs={
+                    'parameter_store': ParameterStoreResource(
+                        region_name='us-west-1',
+                        parameter_tags=[ParameterStoreTag(key='my-tag-key', values=['my-tag-value'])],
+                        add_to_environment=True,
+                        with_decryption=True,
+                    )
+                },
+            )
+    """
+
     parameters: List[str] = Field(
         default=[], description="An array of AWS SSM Parameter Store parameter names to fetch."
     )
@@ -137,7 +182,9 @@ class ParameterStoreResource(Boto3ResourceBase[Dict[str, str]]):
         default=False, description="Whether to add the parameters to the environment."
     )
 
-    def create_resource(self, context: InitResourceContext) -> Any:
+    def create_resource(
+        self, context: InitResourceContext
+    ) -> Generator[Dict[str, str], None, None]:
         ssm_manager = construct_ssm_client(
             max_attempts=self.max_attempts,
             region_name=self.region_name,
