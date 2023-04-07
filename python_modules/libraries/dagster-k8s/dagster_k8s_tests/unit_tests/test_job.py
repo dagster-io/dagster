@@ -42,7 +42,7 @@ def test_user_defined_k8s_config_serialization():
         },
         pod_template_spec_metadata={"namespace": "value"},
         pod_spec_config={"dns_policy": "value"},
-        job_config={"status": {"completed_indexes": "value"}},
+        job_config={"status": {"active": 1}},
         job_metadata={"namespace": "value"},
         job_spec_config={"backoff_limit": 120},
     )

@@ -2,7 +2,7 @@ import logging
 import sys
 import time
 from enum import Enum
-from typing import Callable, List, Optional, TypeVar
+from typing import Any, Callable, List, Optional, TypeVar
 
 import kubernetes.client
 import kubernetes.client.rest
@@ -11,7 +11,15 @@ from dagster import (
     _check as check,
 )
 from dagster._core.storage.pipeline_run import DagsterRunStatus
-from kubernetes.client.models import EventsV1Event, V1JobStatus
+from kubernetes.client.models import V1JobStatus
+
+try:
+    from kubernetes.client.models import EventsV1Event  # noqa
+
+    K8S_EVENTS_API_PRESENT = True
+except ImportError:
+    K8S_EVENTS_API_PRESENT = False
+
 
 T = TypeVar("T")
 
@@ -649,7 +657,7 @@ class DagsterKubernetesClient:
         self,
         pod_name: str,
         namespace: str,
-    ) -> List[EventsV1Event]:
+    ) -> List[Any]:
         # https://github.com/kubernetes-client/python/blob/master/kubernetes/docs/EventsV1Event.md
         field_selector = f"involvedObject.name={pod_name}"
         return self.core_api.list_namespaced_event(namespace, field_selector=field_selector).items
@@ -700,21 +708,27 @@ class DagsterKubernetesClient:
             except kubernetes.client.rest.ApiException as e:
                 log_str = f"Failure fetching pod logs: {str(e)}"
 
-        try:
-            pod_events = self.retrieve_pod_events(pod_name, namespace)
-            warning_events = [event for event in pod_events if event.type == "Warning"]
+        if not K8S_EVENTS_API_PRESENT:
+            warning_str = (
+                "Could not fetch pod events: the k8s events API is not available in the current"
+                " version of the Python kubernetes client."
+            )
+        else:
+            try:
+                pod_events = self.retrieve_pod_events(pod_name, namespace)
+                warning_events = [event for event in pod_events if event.type == "Warning"]
 
-            if not warning_events:
-                warning_str = "No warning events for pod."
-            else:
-                event_strs = []
-                for event in warning_events:
-                    count_str = f" (x{event.count})" if event.count > 1 else ""
-                    event_strs.append(f"{event.reason}: {event.message}{count_str}")
-                warning_str = "Warning events for pod:\n" + "\n".join(event_strs)
+                if not warning_events:
+                    warning_str = "No warning events for pod."
+                else:
+                    event_strs = []
+                    for event in warning_events:
+                        count_str = f" (x{event.count})" if event.count > 1 else ""
+                        event_strs.append(f"{event.reason}: {event.message}{count_str}")
+                    warning_str = "Warning events for pod:\n" + "\n".join(event_strs)
 
-        except kubernetes.client.rest.ApiException as e:
-            warning_str = f"Failure fetching pod events: {str(e)}"
+            except kubernetes.client.rest.ApiException as e:
+                warning_str = f"Failure fetching pod events: {str(e)}"
 
         return (
             f"Debug information for pod {pod_name}:"
