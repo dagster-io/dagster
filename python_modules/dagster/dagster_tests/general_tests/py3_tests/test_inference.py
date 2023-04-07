@@ -8,39 +8,39 @@ from dagster import (
     DagsterType,
     In,
     Int,
+    graph,
+    job,
     make_python_type_usable_as_dagster_type,
     op,
     usable_as_dagster_type,
 )
-from dagster._core.definitions.decorators.graph_decorator import graph
 from dagster._core.definitions.inference import infer_input_props, infer_output_props
 from dagster._core.types.dagster_type import DagsterTypeKind
-from dagster._legacy import execute_pipeline, pipeline
 from dagster._utils.test import wrap_op_in_graph_and_execute
 
 
 def test_infer_solid_description_from_docstring():
     @op
-    def my_solid(_):
+    def my_op(_):
         """Here is some docstring."""
 
-    assert my_solid.description == "Here is some docstring."
+    assert my_op.description == "Here is some docstring."
 
 
 def test_infer_solid_description_no_docstring():
     @op
-    def my_solid(_):
+    def my_op(_):
         pass
 
-    assert my_solid.description is None
+    assert my_op.description is None
 
 
 def test_docstring_does_not_override():
     @op(description="abc")
-    def my_solid(_):
+    def my_op(_):
         """Here is some docstring."""
 
-    assert my_solid.description == "abc"
+    assert my_op.description == "abc"
 
 
 def test_single_typed_input():
@@ -264,13 +264,13 @@ def test_infer_input_description_from_docstring_failure():
     # docstring is invalid because has a dash instead of a colon to delimit the argument type and
     # description
     @op
-    def my_solid(_arg1):
+    def my_op(_arg1):
         """
         Args:
             _arg1 - description of arg.
         """  # noqa: D212
 
-    assert my_solid
+    assert my_op
 
 
 def test_infer_input_description_from_docstring_rest():
@@ -409,8 +409,8 @@ def test_infer_output_description_from_docstring_google():
     assert props.annotation == int
 
 
-def test_pipeline_api_stability():
-    @pipeline
+def test_job_api_stability():
+    @job
     def empty() -> None:
         pass
 
@@ -423,17 +423,17 @@ def test_unregistered_type_annotation_output():
         pass
 
     @op
-    def my_solid(_) -> MyClass:
+    def my_op(_) -> MyClass:
         return MyClass()
 
-    assert my_solid.output_defs[0].dagster_type.display_name == "MyClass"
-    assert my_solid.output_defs[0].dagster_type.typing_type == MyClass
+    assert my_op.output_defs[0].dagster_type.display_name == "MyClass"
+    assert my_op.output_defs[0].dagster_type.typing_type == MyClass
 
-    @pipeline
-    def my_pipeline():
-        my_solid()
+    @job
+    def my_job():
+        my_op()
 
-    execute_pipeline(my_pipeline)
+    my_job.execute_in_process()
 
 
 def test_unregistered_type_annotation_input():
@@ -441,19 +441,19 @@ def test_unregistered_type_annotation_input():
         pass
 
     @op
-    def solid1(_):
+    def op1(_):
         return MyClass()
 
     @op
-    def solid2(_, _input1: MyClass):
+    def op2(_, _input1: MyClass):
         pass
 
-    @pipeline
-    def my_pipeline():
-        solid2(solid1())
+    @job
+    def my_job():
+        op2(op1())
 
-    assert solid2.input_defs[0].dagster_type.display_name == "MyClass"
-    execute_pipeline(my_pipeline)
+    assert op2.input_defs[0].dagster_type.display_name == "MyClass"
+    my_job.execute_in_process()
 
 
 def test_unregistered_type_annotation_input_op():
@@ -483,19 +483,19 @@ def test_use_auto_type_twice():
         pass
 
     @op
-    def my_solid(_) -> MyClass:
+    def my_op(_) -> MyClass:
         return MyClass()
 
     @op
-    def my_solid_2(_) -> MyClass:
+    def my_op_2(_) -> MyClass:
         return MyClass()
 
-    @pipeline
-    def my_pipeline():
-        my_solid()
-        my_solid_2()
+    @job
+    def my_job():
+        my_op()
+        my_op_2()
 
-    execute_pipeline(my_pipeline)
+    my_job.execute_in_process()
 
 
 def test_register_after_solid_definition():
@@ -503,7 +503,7 @@ def test_register_after_solid_definition():
         pass
 
     @op
-    def _my_solid(_) -> MyClass:
+    def _my_op(_) -> MyClass:
         return MyClass()
 
     my_dagster_type = DagsterType(name="aaaa", type_check_fn=lambda _, _a: True)
@@ -519,19 +519,19 @@ def test_same_name_different_modules():
     from dagster_tests.general_tests.py3_tests.other_module import MyClass as OtherModuleMyClass
 
     @op
-    def my_solid(_) -> MyClass:
+    def my_op(_) -> MyClass:
         return MyClass()
 
     @op
-    def my_solid_2(_) -> OtherModuleMyClass:
+    def my_op_2(_) -> OtherModuleMyClass:
         return OtherModuleMyClass()
 
-    @pipeline
-    def my_pipeline():
-        my_solid()
-        my_solid_2()
+    @job
+    def my_job():
+        my_op()
+        my_op_2()
 
-    execute_pipeline(my_pipeline)
+    my_job.execute_in_process()
 
 
 def test_fan_in():
@@ -539,21 +539,21 @@ def test_fan_in():
         pass
 
     @op
-    def upstream_solid(_):
+    def upstream_op(_):
         return MyClass()
 
     @op
-    def downstream_solid(_, _input: List[MyClass]):
+    def downstream_op(_, _input: List[MyClass]):
         pass
 
-    @pipeline
-    def my_pipeline():
-        downstream_solid([upstream_solid.alias("a")(), upstream_solid.alias("b")()])
+    @job
+    def my_job():
+        downstream_op([upstream_op.alias("a")(), upstream_op.alias("b")()])
 
-    assert downstream_solid.input_defs[0].dagster_type.display_name == "[MyClass]"
-    assert downstream_solid.input_defs[0].dagster_type.typing_type == List[MyClass]
+    assert downstream_op.input_defs[0].dagster_type.display_name == "[MyClass]"
+    assert downstream_op.input_defs[0].dagster_type.typing_type == List[MyClass]
 
-    execute_pipeline(my_pipeline)
+    my_job.execute_in_process()
 
 
 def test_composites_user_defined_type():

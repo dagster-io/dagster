@@ -620,7 +620,7 @@ def test_load_with_secrets_loader_instance_ref():
                 )
                 run_id = run.run_id
 
-                pipeline_origin = ExternalPipelineOrigin(
+                job_origin = ExternalPipelineOrigin(
                     pipeline_name="needs_env_var_job",
                     external_repository_origin=ExternalRepositoryOrigin(
                         repository_name="needs_env_var_repo",
@@ -631,7 +631,7 @@ def test_load_with_secrets_loader_instance_ref():
                 res = deserialize_value(
                     client.start_run(
                         ExecuteExternalPipelineArgs(
-                            pipeline_origin=pipeline_origin,
+                            pipeline_origin=job_origin,
                             pipeline_run_id=run.run_id,
                             instance_ref=instance.get_ref(),
                         )
@@ -640,11 +640,11 @@ def test_load_with_secrets_loader_instance_ref():
                 )
 
                 assert res.success
-                finished_pipeline_run = poll_for_finished_run(instance, run_id)
+                finished_run = poll_for_finished_run(instance, run_id)
 
-                assert finished_pipeline_run
-                assert finished_pipeline_run.run_id == run_id
-                assert finished_pipeline_run.status == DagsterRunStatus.SUCCESS
+                assert finished_run
+                assert finished_run.run_id == run_id
+                assert finished_run.status == DagsterRunStatus.SUCCESS
 
             finally:
                 client.shutdown_server()
