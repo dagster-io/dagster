@@ -204,7 +204,7 @@ def test_resource_class():
             resource_called["called"] = True
 
     @op
-    def do_something_op(my_resource: MyResource):
+    def do_something_op(my_resource: Resource[MyResource]):
         my_resource.do_something()
 
     @job(resource_defs={"my_resource": MyResource()})
@@ -216,7 +216,7 @@ def test_resource_class():
 
     @asset
     def consumes_nonexistent_resource_class(
-        not_provided: MyResource,
+        not_provided: Resource[MyResource],
     ):
         pass
 

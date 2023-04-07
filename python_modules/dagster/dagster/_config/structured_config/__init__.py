@@ -1221,12 +1221,14 @@ def validate_resource_annotated_function(fn) -> None:
             output_type = get_args(orig_bases[0])[0] if orig_bases and len(orig_bases) > 0 else None
             if output_type == TResValue:
                 output_type = None
+
+        output_type_name = getattr(output_type, "__name__", str(output_type))
         raise DagsterInvalidDefinitionError(
             """Resource param '{param_name}' is annotated as '{annotation_type}', but '{annotation_type}' outputs {value_message} value to user code such as @ops and @assets. This annotation should instead be {annotation_suggestion}""".format(
                 param_name=malformed_param.name,
                 annotation_type=malformed_param.annotation,
                 value_message=f"a '{output_type}'" if output_type else "an unknown",
-                annotation_suggestion=f"'Resource[{output_type.__name__}]'"
+                annotation_suggestion=f"'Resource[{output_type_name}]'"
                 if output_type
                 else "'Resource[Any]' or 'Resource[<output type>]'",
             )
