@@ -3,17 +3,11 @@ from dagster import DagsterInstance
 
 from .scenarios import ASSET_RECONCILIATION_SCENARIOS
 
-AUTO_MATERIALIZE_DAEMON_SCENARIOS = ASSET_RECONCILIATION_SCENARIOS.copy()
-
-# These cases use asset_selections, which the daemon does not support
-AUTO_MATERIALIZE_DAEMON_SCENARIOS.pop("freshness_many_to_one_roots_unselectable")
-AUTO_MATERIALIZE_DAEMON_SCENARIOS.pop("freshness_complex_subsettable")
-
 
 @pytest.mark.parametrize(
     "scenario_item",
-    list(AUTO_MATERIALIZE_DAEMON_SCENARIOS.items()),
-    ids=list(AUTO_MATERIALIZE_DAEMON_SCENARIOS.keys()),
+    list(ASSET_RECONCILIATION_SCENARIOS.items()),
+    ids=list(ASSET_RECONCILIATION_SCENARIOS.keys()),
 )
 def test_daemon(scenario_item):
     scenario_name, scenario = scenario_item

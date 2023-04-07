@@ -410,6 +410,7 @@ class UpstreamAssetSelection(AssetSelection):
                     )
                     for asset_key in selection
                 ],
+                set(),
             ),
             selection if not self.include_self else set(),
         )

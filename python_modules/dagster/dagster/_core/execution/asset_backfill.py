@@ -468,6 +468,14 @@ def execute_asset_backfill_iteration_inner(
         updated_materialized_subset = AssetGraphSubset(asset_graph)
         failed_and_downstream_subset = AssetGraphSubset(asset_graph)
     else:
+        target_parent_asset_keys = {
+            parent
+            for target_asset_key in asset_backfill_data.target_subset.asset_keys
+            for parent in asset_graph.get_parents(target_asset_key)
+        }
+        target_asset_keys_and_parents = (
+            asset_backfill_data.target_subset.asset_keys | target_parent_asset_keys
+        )
         (
             parent_materialized_asset_partitions,
             next_latest_storage_id,
@@ -475,6 +483,7 @@ def execute_asset_backfill_iteration_inner(
             asset_graph=asset_graph,
             instance_queryer=instance_queryer,
             target_asset_keys=asset_backfill_data.target_subset.asset_keys,
+            target_asset_keys_and_parents=target_asset_keys_and_parents,
             latest_storage_id=asset_backfill_data.latest_storage_id,
         )
         initial_candidates.update(parent_materialized_asset_partitions)
