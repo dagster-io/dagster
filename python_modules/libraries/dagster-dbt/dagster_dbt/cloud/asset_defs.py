@@ -38,14 +38,15 @@ from dagster._core.execution.context.init import build_init_resource_context
 from dagster._utils.backcompat import experimental_arg_warning
 from dbt.main import parse_args as dbt_parse_args
 
-from ..asset_defs import (
-    _get_asset_deps,
-    _get_deps,
-    _get_node_asset_key,
-    _get_node_freshness_policy,
-    _get_node_group_name,
-    _get_node_metadata,
+from dagster_dbt.asset_utils import (
+    default_asset_key_fn,
+    default_freshness_policy_fn,
+    default_group_fn,
+    default_metadata_fn,
+    get_asset_deps,
+    get_deps,
 )
+
 from ..errors import DagsterDbtCloudJobInvariantViolationError
 from ..utils import ASSET_RESOURCE_TYPES, result_to_events
 from .resources import DbtCloudResource, DbtCloudRunStatus
@@ -290,7 +291,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             )
 
         # Generate the dependency structure for the executed nodes.
-        dbt_dependencies = _get_deps(
+        dbt_dependencies = get_deps(
             dbt_nodes=dbt_nodes,
             selected_unique_ids=executed_node_ids,
             asset_resource_types=ASSET_RESOURCE_TYPES,
@@ -312,14 +313,14 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             freshness_policies_by_key,
             fqns_by_output_name,
             metadata_by_output_name,
-        ) = _get_asset_deps(
+        ) = get_asset_deps(
             dbt_nodes=dbt_nodes,
             deps=dbt_dependencies,
             node_info_to_asset_key=self._node_info_to_asset_key,
             node_info_to_group_fn=self._node_info_to_group_fn,
             node_info_to_freshness_policy_fn=self._node_info_to_freshness_policy_fn,
             # TODO: In the future, allow this function to be specified
-            node_info_to_definition_metadata_fn=_get_node_metadata,
+            node_info_to_definition_metadata_fn=default_metadata_fn,
             # TODO: In the future, allow the IO manager to be specified.
             io_manager_key=None,
             # We shouldn't display the raw sql. Instead, inspect if dbt docs were generated,
@@ -522,11 +523,11 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
 def load_assets_from_dbt_cloud_job(
     dbt_cloud: ResourceDefinition,
     job_id: int,
-    node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = _get_node_asset_key,
-    node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]] = _get_node_group_name,
+    node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = default_asset_key_fn,
+    node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]] = default_group_fn,
     node_info_to_freshness_policy_fn: Callable[
         [Mapping[str, Any]], Optional[FreshnessPolicy]
-    ] = _get_node_freshness_policy,
+    ] = default_freshness_policy_fn,
     partitions_def: Optional[PartitionsDefinition] = None,
     partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
 ) -> CacheableAssetsDefinition:

@@ -133,6 +133,14 @@ class GrapheneAssetPartitionsStatusCounts(graphene.ObjectType):
     numPartitionsFailed = graphene.NonNull(graphene.Int)
 
 
+class GraphenePartitionKeyRange(graphene.ObjectType):
+    class Meta:
+        name = "PartitionKeyRange"
+
+    start = graphene.NonNull(graphene.String)
+    end = graphene.NonNull(graphene.String)
+
+
 class GraphenePartitionTagsOrError(graphene.Union):
     class Meta:
         types = (GraphenePartitionTags, GraphenePythonError)

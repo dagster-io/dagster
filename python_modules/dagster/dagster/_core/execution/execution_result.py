@@ -121,6 +121,18 @@ class ExecutionResult(ABC):
 
         return self._filter_events_by_handle(NodeHandle.from_string(node_name))
 
+    def is_node_success(self, node_str: str) -> bool:
+        return any(evt.is_step_success for evt in self.events_for_node(node_str))
+
+    def is_node_failed(self, node_str: str) -> bool:
+        return any(evt.is_step_failure for evt in self.events_for_node(node_str))
+
+    def is_node_skipped(self, node_str: str) -> bool:
+        return any(evt.is_step_skipped for evt in self.events_for_node(node_str))
+
+    def is_node_untouched(self, node_str: str) -> bool:
+        return len(self.events_for_node(node_str)) == 0
+
     def get_job_failure_event(self) -> DagsterEvent:
         """Returns a DagsterEvent with type DagsterEventType.PIPELINE_FAILURE if it ocurred during
         execution.
@@ -169,6 +181,9 @@ class ExecutionResult(ABC):
 
     def get_step_skipped_events(self) -> Sequence[DagsterEvent]:
         return [event for event in self.all_events if event.is_step_skipped]
+
+    def get_step_failure_events(self) -> Sequence[DagsterEvent]:
+        return [event for event in self.all_events if event.is_step_failure]
 
     def get_failed_step_keys(self) -> AbstractSet[str]:
         failure_events = self.filter_events(

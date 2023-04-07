@@ -39,6 +39,7 @@ const DEBOUNCE_TIME = 5000;
 const TIME_TO_WAIT_FOR_ACK = 10000;
 
 interface Props {
+  children: React.ReactNode;
   websocketClient: SubscriptionClient;
 }
 

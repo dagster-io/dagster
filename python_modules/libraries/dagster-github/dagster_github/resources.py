@@ -1,17 +1,26 @@
 import time
 from datetime import datetime
+from typing import Optional
 
 import jwt
 import requests
-from dagster import Field, IntSource, StringSource, resource
+from dagster import resource
+from dagster._config.structured_config import (
+    ConfigurableResourceFactory,
+    InitResourceContextWithKeyMapping,
+    infer_schema_from_config_class,
+)
+from pydantic import Field
 
 
 def to_seconds(dt):
     return (dt - datetime(1970, 1, 1)).total_seconds()
 
 
-class GithubResource:
-    def __init__(self, client, app_id, app_private_rsa_key, default_installation_id, hostname=None):
+class GithubClient:
+    def __init__(
+        self, client, app_id, app_private_rsa_key, default_installation_id, hostname=None
+    ) -> None:
         self.client = client
         self.app_private_rsa_key = app_private_rsa_key
         self.app_id = app_id
@@ -151,45 +160,44 @@ class GithubResource:
         )
 
 
+class GithubResource(ConfigurableResourceFactory[GithubClient]):
+    github_app_id: int = Field(
+        description="Github Application ID, for more info see https://developer.github.com/apps/",
+    )
+    github_app_private_rsa_key: str = Field(
+        description=(
+            "Github Application Private RSA key text, for more info see"
+            " https://developer.github.com/apps/"
+        ),
+    )
+    github_installation_id: Optional[int] = Field(
+        default=None,
+        description=(
+            "Github Application Installation ID, for more info see"
+            " https://developer.github.com/apps/"
+        ),
+    )
+    github_hostname: Optional[str] = Field(
+        default=None,
+        description=(
+            "Github hostname. Defaults to `api.github.com`, for more info see"
+            " https://developer.github.com/apps/"
+        ),
+    )
+
+    def create_resource(self, context: InitResourceContextWithKeyMapping) -> GithubClient:
+        return GithubClient(
+            client=requests.Session(),
+            app_id=self.github_app_id,
+            app_private_rsa_key=self.github_app_private_rsa_key,
+            default_installation_id=self.github_installation_id,
+            hostname=self.github_hostname,
+        )
+
+
 @resource(
-    config_schema={
-        "github_app_id": Field(
-            IntSource,
-            description=(
-                "Github Application ID, for more info see https://developer.github.com/apps/"
-            ),
-        ),
-        "github_app_private_rsa_key": Field(
-            StringSource,
-            description=(
-                "Github Application Private RSA key text, for more info see"
-                " https://developer.github.com/apps/"
-            ),
-        ),
-        "github_installation_id": Field(
-            IntSource,
-            is_required=False,
-            description=(
-                "Github Application Installation ID, for more info see"
-                " https://developer.github.com/apps/"
-            ),
-        ),
-        "github_hostname": Field(
-            StringSource,
-            is_required=False,
-            description=(
-                "Github hostname. Defaults to `api.github.com`, for more info see"
-                " https://developer.github.com/apps/"
-            ),
-        ),
-    },
+    config_schema=infer_schema_from_config_class(GithubResource),
     description="This resource is for connecting to Github",
 )
-def github_resource(context):
-    return GithubResource(
-        client=requests.Session(),
-        app_id=context.resource_config["github_app_id"],
-        app_private_rsa_key=context.resource_config["github_app_private_rsa_key"],
-        default_installation_id=context.resource_config["github_installation_id"],
-        hostname=context.resource_config.get("github_hostname", None),
-    )
+def github_resource(context) -> GithubClient:
+    return GithubResource(**context.resource_config).create_resource(context)

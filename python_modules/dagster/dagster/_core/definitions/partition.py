@@ -31,6 +31,10 @@ from dateutil.relativedelta import relativedelta
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.run_request import (
+    AddDynamicPartitionsRequest,
+    DeleteDynamicPartitionsRequest,
+)
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
 from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
 from dagster._serdes import whitelist_for_serdes
@@ -334,6 +338,17 @@ class PartitionsDefinition(ABC, Generic[T_cov]):
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> int:
         return len(self.get_partition_keys(current_time, dynamic_partitions_store))
+
+    def has_partition_key(
+        self,
+        partition_key: str,
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> bool:
+        return partition_key in self.get_partition_keys(
+            current_time=current_time,
+            dynamic_partitions_store=dynamic_partitions_store,
+        )
 
 
 def raise_error_on_invalid_partition_key_substring(partition_keys: Sequence[str]) -> None:
@@ -682,6 +697,33 @@ class DynamicPartitionsDefinition(
             )
             return [Partition(key) for key in partitions]
 
+    def has_partition_key(
+        self,
+        partition_key: str,
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> bool:
+        if dynamic_partitions_store is None:
+            check.failed(
+                "The instance is not available to load partitions. You may be seeing this error"
+                " when using dynamic partitions with a version of dagit or dagster-cloud that"
+                " is older than 1.1.18."
+            )
+
+        return dynamic_partitions_store.has_dynamic_partition(
+            partitions_def_name=self._validated_name(), partition_key=partition_key
+        )
+
+    def build_add_request(self, partition_keys: Sequence[str]) -> AddDynamicPartitionsRequest:
+        check.sequence_param(partition_keys, "partition_keys", of_type=str)
+        validated_name = self._validated_name()
+        return AddDynamicPartitionsRequest(validated_name, partition_keys)
+
+    def build_delete_request(self, partition_keys: Sequence[str]) -> DeleteDynamicPartitionsRequest:
+        check.sequence_param(partition_keys, "partition_keys", of_type=str)
+        validated_name = self._validated_name()
+        return DeleteDynamicPartitionsRequest(validated_name, partition_keys)
+
 
 class PartitionedConfig(Generic[T_cov]):
     """Defines a way of configuring a job where the job can be run on one of a discrete set of
@@ -739,20 +781,28 @@ class PartitionedConfig(Generic[T_cov]):
             partition_key (str): the key for a partition that should be used to generate a run config.
         """
         partition = self._key_to_partition(partition_key, current_time, dynamic_partitions_store)
+        return self.get_run_config_for_partition(partition)
+
+    def get_run_config_for_partition(
+        self,
+        partition: Partition,
+    ) -> Mapping[str, Any]:
+        """Generates the run config corresponding to a partition.
+
+        Args:
+            partition: the partition that should be used to generate a run config.
+        """
         return copy.deepcopy(self.run_config_for_partition_fn(partition))
 
-    def get_tags_for_partition_key(
+    def get_tags_for_partition(
         self,
-        partition_key: str,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-        current_time: Optional[datetime] = None,
+        partition: Partition,
         job_name: Optional[str] = None,
     ) -> Mapping[str, str]:
         from dagster._core.host_representation.external_data import (
             external_partition_set_name_for_job_name,
         )
 
-        partition = self._key_to_partition(partition_key, current_time, dynamic_partitions_store)
         user_tags = (
             validate_tags(self._tags_for_partition_fn(partition), allow_reserved_tags=False)
             if self._tags_for_partition_fn
@@ -769,6 +819,16 @@ class PartitionedConfig(Generic[T_cov]):
         # `PartitionSetDefinition` has been deleted but we still need to attach this special tag in
         # order for reexecution against partitions to work properly.
         return {**user_tags, **system_tags}
+
+    def get_tags_for_partition_key(
+        self,
+        partition_key: str,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+        current_time: Optional[datetime] = None,
+        job_name: Optional[str] = None,
+    ) -> Mapping[str, str]:
+        partition = self._key_to_partition(partition_key, current_time, dynamic_partitions_store)
+        return self.get_tags_for_partition(partition, job_name)
 
     def _key_to_partition(
         self,

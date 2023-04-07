@@ -1,5 +1,5 @@
 import {PartitionDefinitionType, PartitionRangeStatus} from '../../graphql/types';
-import {PartitionState} from '../../partitions/PartitionStatus';
+import {AssetPartitionStatus, emptyAssetPartitionStatusCounts} from '../AssetPartitionStatus';
 import {PartitionHealthQuery} from '../types/usePartitionHealthData.types';
 import {
   Range,
@@ -8,7 +8,7 @@ import {
   partitionStatusGivenRanges,
   rangeClippedToSelection,
   rangesForKeys,
-  partitionStateAtIndex,
+  partitionStatusAtIndex,
   keyCountByStateInSelection,
   PartitionHealthDimension,
   PartitionDimensionSelection,
@@ -16,7 +16,7 @@ import {
   keyCountInSelection,
 } from '../usePartitionHealthData';
 
-const {SUCCESS, MISSING, FAILURE} = PartitionState;
+const {MATERIALIZED, FAILED, MISSING} = AssetPartitionStatus;
 
 const DIMENSION_ONE_KEYS = [
   '2022-01-01',
@@ -38,6 +38,7 @@ const NO_DIMENSIONAL_ASSET: PartitionHealthQuery = {
     assetPartitionStatuses: {
       __typename: 'DefaultPartitions',
       materializedPartitions: [],
+      materializingPartitions: [],
       failedPartitions: [],
     },
   },
@@ -112,6 +113,7 @@ const TWO_DIMENSIONAL_ASSET: PartitionHealthQuery = {
           secondaryDim: {
             __typename: 'DefaultPartitions',
             materializedPartitions: ['NY', 'MN'],
+            materializingPartitions: [],
             failedPartitions: [],
           },
         },
@@ -124,6 +126,7 @@ const TWO_DIMENSIONAL_ASSET: PartitionHealthQuery = {
           secondaryDim: {
             __typename: 'DefaultPartitions',
             materializedPartitions: ['MN'],
+            materializingPartitions: [],
             failedPartitions: [],
           },
         },
@@ -136,6 +139,7 @@ const TWO_DIMENSIONAL_ASSET: PartitionHealthQuery = {
           secondaryDim: {
             __typename: 'DefaultPartitions',
             materializedPartitions: ['TN', 'CA', 'VA', 'NY', 'MN'],
+            materializingPartitions: [],
             failedPartitions: [],
           },
         },
@@ -148,6 +152,7 @@ const TWO_DIMENSIONAL_ASSET: PartitionHealthQuery = {
           secondaryDim: {
             __typename: 'DefaultPartitions',
             materializedPartitions: ['MN'],
+            materializingPartitions: [],
             failedPartitions: ['NY', 'VA'],
           },
         },
@@ -188,6 +193,7 @@ const TWO_DIMENSIONAL_ASSET_BOTH_STATIC: PartitionHealthQuery = {
           secondaryDim: {
             __typename: 'DefaultPartitions',
             materializedPartitions: ['TN', 'CA', 'VA'],
+            materializingPartitions: [],
             failedPartitions: ['MN'],
           },
         },
@@ -200,6 +206,7 @@ const TWO_DIMENSIONAL_ASSET_BOTH_STATIC: PartitionHealthQuery = {
           secondaryDim: {
             __typename: 'DefaultPartitions',
             materializedPartitions: ['CA', 'MN'],
+            materializingPartitions: [],
             failedPartitions: [],
           },
         },
@@ -266,18 +273,18 @@ describe('usePartitionHealthData', () => {
       ]);
 
       expect(assetHealth.stateForKey(['2022-01-01'])).toEqual(MISSING);
-      expect(assetHealth.stateForKey(['2022-01-04'])).toEqual(SUCCESS);
+      expect(assetHealth.stateForKey(['2022-01-04'])).toEqual(MATERIALIZED);
 
       expect(assetHealth.rangesForSingleDimension(0)).toEqual([
         {
           start: {idx: 3, key: '2022-01-04'},
           end: {idx: 4, key: '2022-01-05'},
-          value: PartitionState.SUCCESS,
+          value: [AssetPartitionStatus.MATERIALIZED],
         },
         {
           start: {idx: 4, key: '2022-01-05'},
           end: {idx: 5, key: '2022-01-06'},
-          value: PartitionState.FAILURE,
+          value: [AssetPartitionStatus.FAILED],
         },
       ]);
 
@@ -304,26 +311,30 @@ describe('usePartitionHealthData', () => {
 
       // Ask for the state of a full key (cell)
       expect(assetHealth.stateForKey(['2022-01-01', 'TN'])).toEqual(MISSING);
-      expect(assetHealth.stateForKey(['2022-01-04', 'NY'])).toEqual(SUCCESS);
-      expect(assetHealth.stateForKey(['2022-01-05', 'NY'])).toEqual(FAILURE);
-      expect(assetHealth.stateForKey(['2022-01-05', 'MN'])).toEqual(SUCCESS);
+      expect(assetHealth.stateForKey(['2022-01-04', 'NY'])).toEqual(MATERIALIZED);
+      expect(assetHealth.stateForKey(['2022-01-05', 'NY'])).toEqual(FAILED);
+      expect(assetHealth.stateForKey(['2022-01-05', 'MN'])).toEqual(MATERIALIZED);
 
       // Ask for the ranges of a row
       expect(assetHealth.rangesForSingleDimension(0)).toEqual([
         {
           start: {idx: 0, key: '2022-01-01'},
           end: {idx: 2, key: '2022-01-03'},
-          value: PartitionState.SUCCESS_MISSING,
+          value: [AssetPartitionStatus.MATERIALIZED, AssetPartitionStatus.MISSING],
         },
         {
           start: {idx: 3, key: '2022-01-04'},
           end: {idx: 3, key: '2022-01-04'},
-          value: PartitionState.SUCCESS,
+          value: [AssetPartitionStatus.MATERIALIZED],
         },
         {
           start: {idx: 4, key: '2022-01-05'},
           end: {idx: 5, key: '2022-01-06'},
-          value: PartitionState.FAILURE,
+          value: [
+            AssetPartitionStatus.MATERIALIZED,
+            AssetPartitionStatus.FAILED,
+            AssetPartitionStatus.MISSING,
+          ],
         },
       ]);
 
@@ -339,7 +350,7 @@ describe('usePartitionHealthData', () => {
         {
           start: {idx: 0, key: '2022-01-01'},
           end: {idx: 5, key: '2022-01-06'},
-          value: PartitionState.SUCCESS,
+          value: [AssetPartitionStatus.MATERIALIZED],
         },
       ]);
 
@@ -355,22 +366,22 @@ describe('usePartitionHealthData', () => {
         {
           start: {idx: 0, key: '2022-01-01'},
           end: {idx: 0, key: '2022-01-01'},
-          value: PartitionState.SUCCESS,
+          value: [AssetPartitionStatus.MATERIALIZED],
         },
         {
           start: {idx: 1, key: '2022-01-02'},
           end: {idx: 2, key: '2022-01-03'},
-          value: PartitionState.SUCCESS_MISSING,
+          value: [AssetPartitionStatus.MATERIALIZED, AssetPartitionStatus.MISSING],
         },
         {
           start: {idx: 3, key: '2022-01-04'},
           end: {idx: 3, key: '2022-01-04'},
-          value: PartitionState.SUCCESS,
+          value: [AssetPartitionStatus.MATERIALIZED],
         },
         {
           start: {idx: 4, key: '2022-01-05'},
           end: {idx: 5, key: '2022-01-06'},
-          value: PartitionState.FAILURE,
+          value: [AssetPartitionStatus.MATERIALIZED, AssetPartitionStatus.FAILED],
         },
       ]);
 
@@ -382,17 +393,21 @@ describe('usePartitionHealthData', () => {
         {
           start: {idx: 0, key: 'TN'},
           end: {idx: 1, key: 'CA'},
-          value: PartitionState.SUCCESS_MISSING,
+          value: [AssetPartitionStatus.MATERIALIZED, AssetPartitionStatus.MISSING],
         },
         {
           start: {idx: 2, key: 'VA'},
           end: {idx: 3, key: 'NY'},
-          value: PartitionState.FAILURE,
+          value: [
+            AssetPartitionStatus.FAILED,
+            AssetPartitionStatus.MATERIALIZED,
+            AssetPartitionStatus.MISSING,
+          ],
         },
         {
           start: {idx: 4, key: 'MN'},
           end: {idx: 4, key: 'MN'},
-          value: PartitionState.SUCCESS,
+          value: [AssetPartitionStatus.MATERIALIZED],
         },
       ]);
 
@@ -408,7 +423,7 @@ describe('usePartitionHealthData', () => {
         {
           start: {idx: 3, key: 'NY'},
           end: {idx: 4, key: 'MN'},
-          value: PartitionState.SUCCESS,
+          value: [AssetPartitionStatus.MATERIALIZED],
         },
       ]);
 
@@ -452,7 +467,7 @@ describe('usePartitionHealthData', () => {
         path: ['asset'],
       });
       expect(assetHealth.assetKey).toEqual({path: ['asset']});
-      expect(assetHealth.stateForKey(['TN', 'TN'])).toEqual(SUCCESS);
+      expect(assetHealth.stateForKey(['TN', 'TN'])).toEqual(MATERIALIZED);
       expect(assetHealth.stateForKey(['CA', 'NY'])).toEqual(MISSING);
     });
 
@@ -472,27 +487,27 @@ const KEYS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'];
 const A_F: Range = {
   start: {idx: 0, key: 'A'},
   end: {idx: 5, key: 'F'},
-  value: PartitionState.SUCCESS,
+  value: [AssetPartitionStatus.MATERIALIZED],
 };
 const A_C: Range = {
   start: {idx: 0, key: 'A'},
   end: {key: 'C', idx: 2},
-  value: PartitionState.SUCCESS,
+  value: [AssetPartitionStatus.MATERIALIZED],
 };
 const A_I: Range = {
   start: {idx: 0, key: 'A'},
   end: {idx: 8, key: 'I'},
-  value: PartitionState.SUCCESS,
+  value: [AssetPartitionStatus.MATERIALIZED],
 };
 const B_E: Range = {
   start: {idx: 1, key: 'B'},
   end: {idx: 4, key: 'E'},
-  value: PartitionState.SUCCESS,
+  value: [AssetPartitionStatus.MATERIALIZED],
 };
 const G_I: Range = {
   start: {idx: 6, key: 'G'},
   end: {idx: 8, key: 'I'},
-  value: PartitionState.SUCCESS,
+  value: [AssetPartitionStatus.MATERIALIZED],
 };
 
 const SEL_A_C: PartitionDimensionSelectionRange = [
@@ -519,21 +534,27 @@ const SEL_G_G: PartitionDimensionSelectionRange = [
 describe('usePartitionHealthData utilities', () => {
   describe('partitionStatusGivenRanges', () => {
     it('should return SUCCESS if the ranges span the total key count', () => {
-      expect(partitionStatusGivenRanges([A_I], KEYS.length)).toEqual(PartitionState.SUCCESS);
-      expect(partitionStatusGivenRanges([A_F, G_I], KEYS.length)).toEqual(PartitionState.SUCCESS);
+      expect(partitionStatusGivenRanges([A_I], KEYS.length)).toEqual([
+        AssetPartitionStatus.MATERIALIZED,
+      ]);
+      expect(partitionStatusGivenRanges([A_F, G_I], KEYS.length)).toEqual([
+        AssetPartitionStatus.MATERIALIZED,
+      ]);
     });
 
     it('should return SUCCESS_MISSING if the ranges are not empty', () => {
-      expect(partitionStatusGivenRanges([A_F], KEYS.length)).toEqual(
-        PartitionState.SUCCESS_MISSING,
-      );
-      expect(partitionStatusGivenRanges([G_I], KEYS.length)).toEqual(
-        PartitionState.SUCCESS_MISSING,
-      );
+      expect(partitionStatusGivenRanges([A_F], KEYS.length)).toEqual([
+        AssetPartitionStatus.MATERIALIZED,
+        AssetPartitionStatus.MISSING,
+      ]);
+      expect(partitionStatusGivenRanges([G_I], KEYS.length)).toEqual([
+        AssetPartitionStatus.MATERIALIZED,
+        AssetPartitionStatus.MISSING,
+      ]);
     });
 
     it('should return MISSING if the ranges are empty', () => {
-      expect(partitionStatusGivenRanges([], KEYS.length)).toEqual(PartitionState.MISSING);
+      expect(partitionStatusGivenRanges([], KEYS.length)).toEqual([AssetPartitionStatus.MISSING]);
     });
   });
 
@@ -543,7 +564,7 @@ describe('usePartitionHealthData utilities', () => {
         {
           start: {key: 'C', idx: 2},
           end: {key: 'D', idx: 3},
-          value: PartitionState.SUCCESS,
+          value: [AssetPartitionStatus.MATERIALIZED],
         },
       ]);
     });
@@ -553,7 +574,7 @@ describe('usePartitionHealthData utilities', () => {
         {
           start: {key: 'B', idx: 1},
           end: {key: 'D', idx: 3},
-          value: PartitionState.SUCCESS,
+          value: [AssetPartitionStatus.MATERIALIZED],
         },
       ]);
     });
@@ -563,12 +584,12 @@ describe('usePartitionHealthData utilities', () => {
         {
           start: {key: 'B', idx: 1},
           end: {key: 'C', idx: 2},
-          value: PartitionState.SUCCESS,
+          value: [AssetPartitionStatus.MATERIALIZED],
         },
         {
           start: {key: 'E', idx: 4},
           end: {key: 'E', idx: 4},
-          value: PartitionState.SUCCESS,
+          value: [AssetPartitionStatus.MATERIALIZED],
         },
       ]);
     });
@@ -617,7 +638,11 @@ describe('usePartitionHealthData utilities', () => {
       expect(rangesForKeys(['B', 'C', 'D', 'E'], KEYS)).toEqual([B_E]);
       expect(rangesForKeys(['A', 'B', 'C', 'G', 'H', 'I'], KEYS)).toEqual([A_C, G_I]);
       expect(rangesForKeys(['G'], KEYS)).toEqual([
-        {start: {idx: 6, key: 'G'}, end: {idx: 6, key: 'G'}, value: PartitionState.SUCCESS},
+        {
+          start: {idx: 6, key: 'G'},
+          end: {idx: 6, key: 'G'},
+          value: [AssetPartitionStatus.MATERIALIZED],
+        },
       ]);
     });
     it('should return no ranges if no keys are provided', () => {
@@ -625,35 +650,35 @@ describe('usePartitionHealthData utilities', () => {
     });
   });
 
-  describe('partitionStateAtIndex', () => {
+  describe('partitionStatusAtIndex', () => {
     it('should return range.value if the index is within one of the ranges, missing otherwise', () => {
-      expect(partitionStateAtIndex([A_C, G_I], 0)).toEqual(PartitionState.SUCCESS);
-      expect(partitionStateAtIndex([A_C, G_I], 6)).toEqual(PartitionState.SUCCESS);
-      expect(partitionStateAtIndex([A_C, G_I], 3)).toEqual(PartitionState.MISSING);
-      expect(partitionStateAtIndex([A_C, G_I], -1)).toEqual(PartitionState.MISSING);
-      expect(partitionStateAtIndex([A_C, G_I], 100)).toEqual(PartitionState.MISSING);
-      expect(partitionStateAtIndex([], 3)).toEqual(PartitionState.MISSING);
-      expect(partitionStateAtIndex([], -1)).toEqual(PartitionState.MISSING);
-      expect(partitionStateAtIndex([], 100)).toEqual(PartitionState.MISSING);
+      expect(partitionStatusAtIndex([A_C, G_I], 0)).toEqual([AssetPartitionStatus.MATERIALIZED]);
+      expect(partitionStatusAtIndex([A_C, G_I], 6)).toEqual([AssetPartitionStatus.MATERIALIZED]);
+      expect(partitionStatusAtIndex([A_C, G_I], 3)).toEqual([AssetPartitionStatus.MISSING]);
+      expect(partitionStatusAtIndex([A_C, G_I], -1)).toEqual([AssetPartitionStatus.MISSING]);
+      expect(partitionStatusAtIndex([A_C, G_I], 100)).toEqual([AssetPartitionStatus.MISSING]);
+      expect(partitionStatusAtIndex([], 3)).toEqual([AssetPartitionStatus.MISSING]);
+      expect(partitionStatusAtIndex([], -1)).toEqual([AssetPartitionStatus.MISSING]);
+      expect(partitionStatusAtIndex([], 100)).toEqual([AssetPartitionStatus.MISSING]);
       expect(
-        partitionStateAtIndex(
+        partitionStatusAtIndex(
           [
             {
               start: {idx: 0, key: 'A'},
               end: {idx: 8, key: 'G'},
-              value: PartitionState.SUCCESS_MISSING,
+              value: [AssetPartitionStatus.MATERIALIZED, AssetPartitionStatus.MISSING],
             },
           ],
           2,
         ),
-      ).toEqual(PartitionState.SUCCESS_MISSING);
+      ).toEqual([AssetPartitionStatus.MATERIALIZED, AssetPartitionStatus.MISSING]);
     });
   });
 
   describe('keyCountByStateInSelection', () => {
     it('should return nothing when passed an empty selection array (invalid use)', () => {
       const one = buildPartitionHealthData(ONE_DIMENSIONAL_ASSET, {path: ['asset']});
-      expect(keyCountByStateInSelection(one, [])).toEqual({failure: 0, missing: 0, success: 0});
+      expect(keyCountByStateInSelection(one, [])).toEqual(emptyAssetPartitionStatusCounts());
     });
 
     it('should return correct counts in the one dimensional case', () => {
@@ -661,11 +686,19 @@ describe('usePartitionHealthData utilities', () => {
 
       expect(
         keyCountByStateInSelection(one, [selectionWithSlice(one.dimensions[0], 0, 5)]),
-      ).toEqual({failure: 2, missing: 2, success: 2});
+      ).toEqual({
+        ...emptyAssetPartitionStatusCounts(),
+        [AssetPartitionStatus.FAILED]: 2,
+        [AssetPartitionStatus.MISSING]: 2,
+        [AssetPartitionStatus.MATERIALIZED]: 2,
+      });
 
       expect(
         keyCountByStateInSelection(one, [selectionWithSlice(one.dimensions[0], 0, 2)]),
-      ).toEqual({failure: 0, missing: 3, success: 0});
+      ).toEqual({
+        ...emptyAssetPartitionStatusCounts(),
+        [AssetPartitionStatus.MISSING]: 3,
+      });
     });
 
     it('should return correct counts in the two dimensional case', () => {
@@ -676,21 +709,33 @@ describe('usePartitionHealthData utilities', () => {
           selectionWithSlice(two.dimensions[0], 0, 5),
           selectionWithSlice(two.dimensions[1], 0, 4),
         ]),
-      ).toEqual({failure: 4, missing: 15, success: 11});
+      ).toEqual({
+        ...emptyAssetPartitionStatusCounts(),
+        [AssetPartitionStatus.FAILED]: 4,
+        [AssetPartitionStatus.MISSING]: 15,
+        [AssetPartitionStatus.MATERIALIZED]: 11,
+      });
 
       expect(
         keyCountByStateInSelection(two, [
           selectionWithSlice(two.dimensions[0], 0, 3),
           selectionWithSlice(two.dimensions[1], 0, 3),
         ]),
-      ).toEqual({failure: 0, missing: 11, success: 5});
+      ).toEqual({
+        ...emptyAssetPartitionStatusCounts(),
+        [AssetPartitionStatus.MISSING]: 11,
+        [AssetPartitionStatus.MATERIALIZED]: 5,
+      });
 
       expect(
         keyCountByStateInSelection(two, [
           selectionWithSlice(two.dimensions[0], 0, 5),
           selectionWithSlice(two.dimensions[1], 4, 4),
         ]),
-      ).toEqual({failure: 0, missing: 0, success: 6});
+      ).toEqual({
+        ...emptyAssetPartitionStatusCounts(),
+        [AssetPartitionStatus.MATERIALIZED]: 6,
+      });
     });
 
     it('should return correct counts in the empty case', () => {
@@ -701,7 +746,10 @@ describe('usePartitionHealthData utilities', () => {
           selectionWithSlice(twoEmpty.dimensions[0], 0, 5),
           selectionWithSlice(twoEmpty.dimensions[1], 0, 4),
         ]),
-      ).toEqual({failure: 0, missing: 30, success: 0});
+      ).toEqual({
+        ...emptyAssetPartitionStatusCounts(),
+        [AssetPartitionStatus.MISSING]: 30,
+      });
     });
   });
 });

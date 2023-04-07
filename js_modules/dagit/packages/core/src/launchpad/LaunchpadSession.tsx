@@ -134,10 +134,10 @@ const reducer = (state: ILaunchpadSessionState, action: Action) => {
   }
 };
 
-const LaunchButtonContainer: React.FC<{launchpadType: LaunchpadType}> = ({
-  launchpadType,
-  children,
-}) => {
+const LaunchButtonContainer: React.FC<{
+  launchpadType: LaunchpadType;
+  children: React.ReactNode;
+}> = ({launchpadType, children}) => {
   if (launchpadType === 'asset') {
     return (
       <Box

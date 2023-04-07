@@ -453,7 +453,7 @@ def execute_job(
 
     `execute_job` expects a persistent :py:class:`DagsterInstance` for
     execution, meaning the `$DAGSTER_HOME` environment variable must be set.
-    It als expects a reconstructable pointer to a :py:class:`JobDefinition` so
+    It also expects a reconstructable pointer to a :py:class:`JobDefinition` so
     that it can be reconstructed in separate processes. This can be done by
     wrapping the ``JobDefinition`` in a call to :py:func:`dagster.
     reconstructable`.
@@ -1035,6 +1035,12 @@ def pipeline_execution_iterator(
                         "Execution was interrupted unexpectedly. No user initiated termination"
                         " request was found, not treating as failure because run will be resumed."
                     ),
+                    EngineEventData(),
+                )
+            elif reloaded_run and reloaded_run.status == DagsterRunStatus.FAILURE:
+                event = DagsterEvent.engine_event(
+                    pipeline_context,
+                    "Execution was interrupted for a run that was already in a failure state.",
                     EngineEventData(),
                 )
             else:

@@ -1,4 +1,5 @@
 import tempfile
+from typing import Any, Mapping, Sequence
 
 import pytest
 from dagster import (
@@ -11,21 +12,25 @@ from dagster import (
     resource,
     root_input_manager,
 )
+from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.reconstruct import reconstructable
 from dagster._core.definitions.version_strategy import VersionStrategy
-from dagster._core.execution.api import create_execution_plan
+from dagster._core.execution.api import create_execution_plan, execute_job
+from dagster._core.instance import DagsterInstance
 from dagster._core.storage.memoizable_io_manager import versioned_filesystem_io_manager
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import execute_pipeline, reexecute_pipeline
+from dagster._legacy import reexecute_pipeline
 
-from .memoized_dev_loop_pipeline import asset_pipeline
+from .memoized_dev_loop_job import op_job
 
 
-def get_step_keys_to_execute(pipeline, run_config, mode, instance):
+def get_step_keys_to_execute(
+    job_def: JobDefinition, run_config: Mapping[str, Any], instance: DagsterInstance
+) -> Sequence[str]:
     return create_execution_plan(
-        pipeline,
+        job_def,
         run_config,
-        mode,
         instance_ref=instance.get_ref(),
         tags={MEMOIZED_RUN_TAG: "true"},
     ).step_keys_to_execute
@@ -35,55 +40,53 @@ def test_dev_loop_changing_versions():
     with tempfile.TemporaryDirectory() as temp_dir:
         with instance_for_test(temp_dir=temp_dir) as instance:
             run_config = {
-                "solids": {
-                    "create_string_1_asset": {"config": {"input_str": "apple"}},
-                    "take_string_1_asset": {"config": {"input_str": "apple"}},
+                "ops": {
+                    "create_string_1_asset_op": {"config": {"input_str": "apple"}},
+                    "take_string_1_asset_op": {"config": {"input_str": "apple"}},
                 },
                 "resources": {"io_manager": {"config": {"base_dir": temp_dir}}},
             }
 
-            result = execute_pipeline(
-                asset_pipeline,
+            with execute_job(
+                reconstructable(op_job),
                 run_config=run_config,
-                mode="only_mode",
                 tags={MEMOIZED_RUN_TAG: "true"},
                 instance=instance,
-            )
-            assert result.success
+            ) as result:
+                assert result.success
+
             # Ensure that after one memoized execution, with no change to run config, that upon the next
             # computation, there are no step keys to execute.
-            assert not get_step_keys_to_execute(asset_pipeline, run_config, "only_mode", instance)
+            assert not get_step_keys_to_execute(op_job, run_config, instance)
 
-            run_config["solids"]["take_string_1_asset"]["config"]["input_str"] = "banana"
+            run_config["ops"]["take_string_1_asset_op"]["config"]["input_str"] = "banana"
 
             # Ensure that after changing run config that affects only the `take_string_1_asset` step, we
             # only need to execute that step.
-            assert get_step_keys_to_execute(asset_pipeline, run_config, "only_mode", instance) == [
-                "take_string_1_asset"
+            assert get_step_keys_to_execute(op_job, run_config, instance) == [
+                "take_string_1_asset_op"
             ]
             result = reexecute_pipeline(
-                asset_pipeline,
+                reconstructable(op_job),
                 parent_run_id=result.run_id,
                 run_config=run_config,
-                mode="only_mode",
                 tags={MEMOIZED_RUN_TAG: "true"},
                 instance=instance,
             )
             assert result.success
 
             # After executing with the updated run config, ensure that there are no unmemoized steps.
-            assert not get_step_keys_to_execute(asset_pipeline, run_config, "only_mode", instance)
+            assert not get_step_keys_to_execute(op_job, run_config, instance)
 
             # Ensure that the pipeline runs, but with no steps.
-            result = execute_pipeline(
-                asset_pipeline,
+            result = execute_job(
+                reconstructable(op_job),
                 run_config=run_config,
-                mode="only_mode",
                 tags={MEMOIZED_RUN_TAG: "true"},
                 instance=instance,
             )
             assert result.success
-            assert len(result.step_event_list) == 0
+            assert len(result.all_node_events) == 0
 
 
 def test_memoization_with_default_strategy():

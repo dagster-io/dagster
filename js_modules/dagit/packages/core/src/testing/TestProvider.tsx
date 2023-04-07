@@ -48,13 +48,14 @@ const websocketValue: WebSocketContextType = {
 };
 
 interface Props {
+  children: React.ReactNode;
   apolloProps?: ApolloTestProps;
   appContextProps?: Partial<AppContextValue>;
   permissionOverrides?: {[permission: string]: {enabled: boolean; disabledReason: string | null}};
   routerProps?: MemoryRouterProps;
 }
 
-export const TestProvider: React.FC<Props> = (props) => {
+export const TestProvider = (props: Props) => {
   const {apolloProps, appContextProps, permissionOverrides, routerProps} = props;
   const permissions: PermissionFragment[] = React.useMemo(() => {
     return Object.keys(PERMISSIONS_ALLOW_ALL).map((permission) => {

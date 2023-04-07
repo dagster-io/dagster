@@ -1,7 +1,7 @@
 from dagster import AssetMaterialization, Output
 from dagster._annotations import experimental
 from dagster._core.definitions.decorators import op
-from dagster._legacy import execute_solid
+from dagster._utils.test import wrap_op_in_graph_and_execute
 
 
 def test_generator_return_solid():
@@ -12,7 +12,7 @@ def test_generator_return_solid():
     def gen_ret_solid(_):
         return _gen()
 
-    result = execute_solid(gen_ret_solid)
+    result = wrap_op_in_graph_and_execute(gen_ret_solid)
     assert result.output_value() == "done"
 
 
@@ -25,7 +25,7 @@ def test_generator_yield_solid():
         for event in _gen():
             yield event
 
-    result = execute_solid(gen_yield_solid)
+    result = wrap_op_in_graph_and_execute(gen_yield_solid)
     assert result.output_value() == "done"
 
 
@@ -37,7 +37,7 @@ def test_generator_yield_from_solid():
     def gen_yield_solid(_):
         yield from _gen()
 
-    result = execute_solid(gen_yield_solid)
+    result = wrap_op_in_graph_and_execute(gen_yield_solid)
     assert result.output_value() == "done"
 
 
@@ -56,7 +56,7 @@ def test_nested_generator_solid():
     def gen_return_solid(_):
         return _gen()
 
-    result = execute_solid(gen_return_solid)
+    result = wrap_op_in_graph_and_execute(gen_return_solid)
     assert result.output_value() == "done"
 
 
@@ -66,5 +66,5 @@ def test_experimental_generator_solid():
     def gen_solid():
         yield Output("done")
 
-    result = execute_solid(gen_solid)
+    result = wrap_op_in_graph_and_execute(gen_solid)
     assert result.output_value() == "done"

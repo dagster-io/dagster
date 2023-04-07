@@ -14,6 +14,7 @@ from dagster import (
     DagsterRunStatus,
     DagsterUnknownPartitionError,
     DailyPartitionsDefinition,
+    Definitions,
     EventRecordsFilter,
     FreshnessPolicy,
     Output,
@@ -543,18 +544,19 @@ def test_multi_asset_sensor():
             context.advance_all_cursors()
             return RunRequest(run_key=context.cursor, run_config={})
 
-    @repository
-    def my_repo():
-        return [asset_a, asset_b, a_and_b_sensor]
+    defs = Definitions(assets=[asset_a, asset_b], sensors=[a_and_b_sensor])
+    my_repo = defs.get_repository_def()
 
-    with instance_for_test() as instance:
-        materialize([asset_a, asset_b], instance=instance)
-        ctx = build_multi_asset_sensor_context(
-            monitored_assets=[AssetKey("asset_a"), AssetKey("asset_b")],
-            instance=instance,
-            repository_def=my_repo,
-        )
-        assert a_and_b_sensor(ctx).run_config == {}
+    for definitions, repository_def in [(defs, None), (None, my_repo)]:
+        with instance_for_test() as instance:
+            materialize([asset_a, asset_b], instance=instance)
+            ctx = build_multi_asset_sensor_context(
+                monitored_assets=[AssetKey("asset_a"), AssetKey("asset_b")],
+                instance=instance,
+                repository_def=repository_def,
+                definitions=definitions,
+            )
+            assert a_and_b_sensor(ctx).run_config == {}
 
 
 def test_multi_asset_sensor_selection():

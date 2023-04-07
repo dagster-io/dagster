@@ -1,18 +1,27 @@
 import string
 import time
 
-from dagster import Int, ScheduleDefinition, job, op, repository, usable_as_dagster_type
+from dagster import (
+    DynamicPartitionsDefinition,
+    In,
+    Int,
+    Out,
+    ScheduleDefinition,
+    asset,
+    define_asset_job,
+    job,
+    op,
+    repository,
+    schedule,
+    usable_as_dagster_type,
+)
 from dagster._core.definitions.decorators.sensor_decorator import sensor
-from dagster._core.definitions.input import In
-from dagster._core.definitions.output import Out
 from dagster._core.definitions.partition import (
     PartitionedConfig,
     StaticPartitionsDefinition,
 )
 from dagster._core.definitions.sensor_definition import RunRequest
 from dagster._core.errors import DagsterError
-from dagster._core.test_utils import default_mode_def_for_test
-from dagster._legacy import pipeline
 
 
 @op
@@ -25,20 +34,20 @@ def do_input(x):
     return x
 
 
-@pipeline(name="foo", mode_defs=[default_mode_def_for_test])
-def foo_pipeline():
+@job(name="foo")
+def foo_job():
     do_input(do_something())
 
 
 @op
-def forever_solid():
+def forever_op():
     while True:
         time.sleep(10)
 
 
-@pipeline(name="forever", mode_defs=[default_mode_def_for_test])
-def forever_pipeline():
-    forever_solid()
+@job(name="forever")
+def forever_job():
+    forever_op()
 
 
 @op
@@ -46,8 +55,8 @@ def do_fail():
     raise Exception("I have failed")
 
 
-@pipeline
-def fail_pipeline():
+@job
+def fail_job():
     do_fail()
 
 
@@ -67,25 +76,33 @@ def baz_job():
     do_input()
 
 
+dynamic_partitions_def = DynamicPartitionsDefinition(name="dynamic_partitions")
+
+
+@asset(partitions_def=dynamic_partitions_def)
+def dynamic_asset():
+    return 1
+
+
 def throw_error(_):
     raise Exception("womp womp")
 
 
-def define_foo_pipeline():
-    return foo_pipeline
+def define_foo_job():
+    return foo_job
 
 
-@pipeline(name="other_foo")
-def other_foo_pipeline():
+@job(name="other_foo")
+def other_foo_job():
     do_input(do_something())
 
 
-def define_other_foo_pipeline():
-    return other_foo_pipeline
+def define_other_foo_job():
+    return other_foo_job
 
 
-@pipeline(name="bar")
-def bar_pipeline():
+@job(name="bar")
+def bar_job():
     @usable_as_dagster_type(name="InputTypeWithoutHydration")
     class InputTypeWithoutHydration(int):
         pass
@@ -101,7 +118,12 @@ def bar_pipeline():
     def fail_subset(_, some_input):
         return some_input
 
-    return fail_subset(one())
+    fail_subset(one())
+
+
+@schedule(job_name="baz", cron_schedule="* * * * *")
+def partitioned_run_request_schedule():
+    return RunRequest(partition_key="a")
 
 
 def define_bar_schedules():
@@ -129,6 +151,7 @@ def define_bar_schedules():
                 else ""
             },
         ),
+        "partitioned_run_request_schedule": partitioned_run_request_schedule,
     }
 
 
@@ -151,13 +174,16 @@ def sensor_raises_dagster_error(_):
 @repository
 def bar_repo():
     return {
-        "pipelines": {
-            "foo": define_foo_pipeline,
-            "bar": lambda: bar_pipeline,
-            "fail": fail_pipeline,
-            "forever": forever_pipeline,
+        "jobs": {
+            "bar": lambda: bar_job,
+            "baz": lambda: baz_job,
+            "dynamic_job": define_asset_job(
+                "dynamic_job", [dynamic_asset], partitions_def=dynamic_partitions_def
+            ).resolve([dynamic_asset], []),
+            "fail": fail_job,
+            "foo": foo_job,
+            "forever": forever_job,
         },
-        "jobs": {"baz": lambda: baz_job},
         "schedules": define_bar_schedules(),
         "sensors": {
             "sensor_foo": sensor_foo,
@@ -169,4 +195,4 @@ def bar_repo():
 
 @repository
 def other_repo():
-    return {"pipelines": {"other_foo": define_other_foo_pipeline}}
+    return {"jobs": {"other_foo": define_other_foo_job}}

@@ -2,17 +2,14 @@ import json
 import os
 from unittest.mock import MagicMock
 
-import psycopg2
 import pytest
 from dagster import (
     AssetIn,
     AssetKey,
     DailyPartitionsDefinition,
     FreshnessPolicy,
-    IOManager,
     ResourceDefinition,
     asset,
-    io_manager,
     materialize_to_memory,
     repository,
 )
@@ -24,11 +21,13 @@ from dagster_dbt import dbt_cli_resource
 from dagster_dbt.asset_defs import load_assets_from_dbt_manifest, load_assets_from_dbt_project
 from dagster_dbt.errors import DagsterDbtCliFatalRuntimeError, DagsterDbtCliHandledRuntimeError
 from dagster_dbt.types import DbtOutput
+from dagster_duckdb import build_duckdb_io_manager
+from dagster_duckdb_pandas import DuckDBPandasTypeHandler
 
 from .utils import assert_assets_match_project
 
 
-def test_custom_resource_key_asset_load(dbt_seed, test_project_dir, dbt_config_dir, conn_string):
+def test_custom_resource_key_asset_load(dbt_seed, test_project_dir, dbt_config_dir):
     dbt_assets = load_assets_from_dbt_project(
         test_project_dir, dbt_config_dir, dbt_resource_key="my_custom_dbt"
     )
@@ -82,7 +81,6 @@ def test_load_from_manifest_json(prefix):
 
 def test_runtime_metadata_fn(
     dbt_seed,
-    conn_string,
     test_project_dir,
     dbt_config_dir,
 ):
@@ -125,7 +123,7 @@ def test_runtime_metadata_fn(
     )
 
 
-def test_fail_immediately(dbt_seed, conn_string, test_project_dir, dbt_config_dir):
+def test_fail_immediately(dbt_seed, test_project_dir, dbt_config_dir):
     from dagster import build_init_resource_context
 
     dbt_assets = load_assets_from_dbt_project(test_project_dir, dbt_config_dir)
@@ -174,7 +172,6 @@ def test_fail_immediately(dbt_seed, conn_string, test_project_dir, dbt_config_di
 def test_basic(
     capsys,
     dbt_seed,
-    conn_string,
     test_project_dir,
     dbt_config_dir,
     use_build,
@@ -245,7 +242,7 @@ def test_basic(
             assert "{" not in line
 
 
-def test_custom_groups(dbt_seed, conn_string, test_project_dir, dbt_config_dir):
+def test_custom_groups(dbt_seed, test_project_dir, dbt_config_dir):
     def _node_info_to_group(node_info):
         return node_info["tags"][0]
 
@@ -305,7 +302,7 @@ def test_custom_definition_metadata():
     assert has_some_schema
 
 
-def test_partitions(dbt_seed, conn_string, test_project_dir, dbt_config_dir):
+def test_partitions(dbt_seed, test_project_dir, dbt_config_dir):
     def _partition_key_to_vars(partition_key: str):
         if partition_key == "2022-01-02":
             return {"fail_test": True}
@@ -354,9 +351,7 @@ def test_partitions(dbt_seed, conn_string, test_project_dir, dbt_config_dir):
     ],
 )
 @pytest.mark.parametrize("use_build", [True, False])
-def test_select_from_project(
-    dbt_seed, conn_string, test_project_dir, dbt_config_dir, use_build, prefix
-):
+def test_select_from_project(dbt_seed, test_project_dir, dbt_config_dir, use_build, prefix):
     dbt_assets = load_assets_from_dbt_project(
         test_project_dir,
         dbt_config_dir,
@@ -404,7 +399,7 @@ def test_select_from_project(
         assert len(observations) == 0
 
 
-def test_multiple_select_from_project(dbt_seed, conn_string, test_project_dir, dbt_config_dir):
+def test_multiple_select_from_project(dbt_seed, test_project_dir, dbt_config_dir):
     dbt_assets_a = load_assets_from_dbt_project(
         test_project_dir, dbt_config_dir, select="sort_by_calories subdir.least_caloric"
     )
@@ -429,7 +424,7 @@ def test_dbt_ls_fail_fast():
 
 
 @pytest.mark.parametrize("use_build", [True, False])
-def test_select_from_manifest(dbt_seed, conn_string, test_project_dir, dbt_config_dir, use_build):
+def test_select_from_manifest(dbt_seed, test_project_dir, dbt_config_dir, use_build):
     manifest_path = file_relative_path(__file__, "sample_manifest.json")
     with open(manifest_path, "r", encoding="utf8") as f:
         manifest_json = json.load(f)
@@ -471,7 +466,7 @@ def test_select_from_manifest(dbt_seed, conn_string, test_project_dir, dbt_confi
 
 
 @pytest.mark.parametrize("use_build", [True, False])
-def test_node_info_to_asset_key(dbt_seed, conn_string, test_project_dir, dbt_config_dir, use_build):
+def test_node_info_to_asset_key(dbt_seed, test_project_dir, dbt_config_dir, use_build):
     dbt_assets = load_assets_from_dbt_project(
         test_project_dir,
         dbt_config_dir,
@@ -541,7 +536,6 @@ def test_node_info_to_asset_key(dbt_seed, conn_string, test_project_dir, dbt_con
 )
 def test_subsetting(
     dbt_build,
-    conn_string,
     test_project_dir,
     dbt_config_dir,
     job_selection,
@@ -592,9 +586,7 @@ def test_subsetting(
         ({"vars": {"my_var": "my_value", "another_var": 3, "a_third_var": True}}, "ALL"),
     ],
 )
-def test_op_config(
-    config, expected_asset_names, dbt_seed, conn_string, test_project_dir, dbt_config_dir
-):
+def test_op_config(config, expected_asset_names, dbt_seed, test_project_dir, dbt_config_dir):
     if expected_asset_names == "ALL":
         expected_asset_names = (
             "sort_by_calories,cold_schema/sort_cold_cereals_by_calories,"
@@ -692,7 +684,6 @@ def test_op_config(
 )
 def test_dbt_selections(
     dbt_build,
-    conn_string,
     test_project_dir,
     dbt_config_dir,
     load_from_manifest,
@@ -755,7 +746,7 @@ def test_static_select_invalid_selection(select, error_match):
         load_assets_from_dbt_manifest(manifest_json, select=select)
 
 
-def test_source_key_prefix(conn_string, test_python_project_dir, dbt_python_config_dir):
+def test_source_key_prefix(test_python_project_dir, dbt_python_config_dir):
     dbt_assets = load_assets_from_dbt_project(
         test_python_project_dir,
         dbt_python_config_dir,
@@ -777,7 +768,7 @@ def test_source_key_prefix(conn_string, test_python_project_dir, dbt_python_conf
     assert dbt_assets[0].keys_by_output_name["cleaned_users"] == AssetKey(["dbt", "cleaned_users"])
 
 
-def test_source_tag_selection(conn_string, test_python_project_dir, dbt_python_config_dir):
+def test_source_tag_selection(test_python_project_dir, dbt_python_config_dir):
     dbt_assets = load_assets_from_dbt_project(
         test_python_project_dir, dbt_python_config_dir, select="tag:events"
     )
@@ -793,67 +784,28 @@ def test_source_tag_selection(conn_string, test_python_project_dir, dbt_python_c
     assert len(dbt_assets[0].keys) == 2
 
 
-def test_python_interleaving(
-    conn_string, dbt_python_sources, test_python_project_dir, dbt_python_config_dir
-):
+def test_python_interleaving(dbt_seed_python, test_python_project_dir, dbt_python_config_dir):
     dbt_assets = load_assets_from_dbt_project(
-        test_python_project_dir, dbt_python_config_dir, key_prefix="dbt"
+        test_python_project_dir, dbt_python_config_dir, key_prefix="test_python_schema"
     )
 
-    @io_manager
-    def test_io_manager(_context):
-        class TestIOManager(IOManager):
-            def handle_output(self, context, obj):
-                # handling dbt output
-                if obj is None:
-                    return
-                table = context.asset_key.path[-1]
-                try:
-                    conn = psycopg2.connect(conn_string)
-                    cur = conn.cursor()
-                    cur.execute(
-                        f'CREATE TABLE IF NOT EXISTS "test-python-schema"."{table}" (user_id'
-                        " integer, is_bot bool)"
-                    )
-                    cur.executemany(
-                        f'INSERT INTO "test-python-schema"."{table}"' + " VALUES(%s,%s)",
-                        obj,
-                    )
-                    conn.commit()
-                    cur.close()
-                except (Exception, psycopg2.DatabaseError) as error:
-                    raise (error)
-                finally:
-                    if conn is not None:
-                        conn.close()
+    duckdb_io_manager = build_duckdb_io_manager([DuckDBPandasTypeHandler()])
 
-            def load_input(self, context):
-                table = context.asset_key.path[-1]
-                result = None
-                conn = None
-                try:
-                    conn = psycopg2.connect(conn_string)
-                    cur = conn.cursor()
-                    cur.execute(f'SELECT * FROM "test-python-schema"."{table}"')
-                    result = cur.fetchall()
-                except (Exception, psycopg2.DatabaseError) as error:
-                    raise error
-                finally:
-                    if conn is not None:
-                        conn.close()
-                return result
-
-        return TestIOManager()
-
-    @asset(key_prefix="dagster", ins={"cleaned_users": AssetIn(key_prefix="dbt")})
+    @asset(key_prefix="dagster", ins={"cleaned_users": AssetIn(key_prefix="test_python_schema")})
     def bot_labeled_users(cleaned_users):
         # super advanced bot labeling algorithm
-        return [(uid, uid % 5 == 0) for _, uid in cleaned_users]
+        bot_labeled_users_df = cleaned_users.copy()
+        bot_labeled_users_df["is_bot"] = bot_labeled_users_df["user_id"].apply(lambda x: x % 5 == 0)
+        bot_labeled_users_df = bot_labeled_users_df.drop(columns=["day"])
+
+        return bot_labeled_users_df
 
     job = AssetGroup(
         [*dbt_assets, bot_labeled_users],
         resource_defs={
-            "io_manager": test_io_manager,
+            "io_manager": duckdb_io_manager.configured(
+                {"database": os.path.join(test_python_project_dir, "test.duckdb")}
+            ),
             "dbt": dbt_cli_resource.configured(
                 {
                     "project_dir": test_python_project_dir,
@@ -871,12 +823,12 @@ def test_python_interleaving(
         if event.event_type_value == "ASSET_MATERIALIZATION"
     }
     expected_asset_names = [
-        "dbt.cleaned_events",
-        "dbt.cleaned_users",
-        "dbt.daily_aggregated_events",
-        "dbt.daily_aggregated_users",
+        "test_python_schema.cleaned_events",
+        "test_python_schema.cleaned_users",
+        "test_python_schema.daily_aggregated_events",
+        "test_python_schema.daily_aggregated_users",
         "dagster.bot_labeled_users",
-        "dbt.bot_labeled_events",
+        "test_python_schema.bot_labeled_events",
     ]
     expected_keys = {AssetKey(name.split(".")) for name in expected_asset_names}
     assert all_keys == expected_keys

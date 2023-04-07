@@ -1,12 +1,17 @@
+from typing import Any, Mapping, Sequence
+
 from dagster import (
     Output,
     _check as check,
 )
-from dagster._core.definitions import In, InputDefinition, OpDefinition, op
+from dagster._core.definitions import In, OpDefinition, op
 from dagster._core.definitions.output import Out
+from dagster._core.execution.context.compute import OpExecutionContext
 
 
-def _compute_fn(context, inputs):
+def _compute_fn(
+    context: OpExecutionContext, inputs: Mapping[str, Sequence[Mapping[str, object]]]
+) -> Any:
     passed_rows = []
     seen = set()
     for row in inputs.values():
@@ -18,11 +23,11 @@ def _compute_fn(context, inputs):
 
     result = []
     result.extend(passed_rows)
-    result.append({context.solid.name: "compute_called"})
+    result.append({context.op.name: "compute_called"})
     yield Output(result)
 
 
-def define_stub_solid(name, value):
+def create_stub_op(name: str, value: object) -> OpDefinition:
     check.str_param(name, "name")
 
     @op(name=name)
@@ -32,28 +37,23 @@ def define_stub_solid(name, value):
     return _stub
 
 
-def create_root_solid(name):
-    input_name = name + "_input"
-    inp = InputDefinition(input_name)
-
+def create_root_op(name: str) -> OpDefinition:
     return OpDefinition(
         name=name,
-        ins={inp.name: In.from_definition(inp)},
+        ins={f"{name}_input": In()},
         compute_fn=_compute_fn,
         outs={"result": Out()},
     )
 
 
-def create_solid_with_deps(name, *solid_deps):
-    inputs = [InputDefinition(solid_dep.name) for solid_dep in solid_deps]
-
+def create_op_with_deps(name: str, *op_deps: OpDefinition):
     return OpDefinition(
         name=name,
-        ins={input_def.name: In.from_definition(input_def) for input_def in inputs},
+        ins={dep.name: In() for dep in op_deps},
         compute_fn=_compute_fn,
         outs={"result": Out()},
     )
 
 
-def input_set(name):
+def input_set(name: str) -> Mapping[str, str]:
     return {name: "input_set"}

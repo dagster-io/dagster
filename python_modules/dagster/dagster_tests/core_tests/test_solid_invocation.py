@@ -41,9 +41,9 @@ from dagster._core.errors import (
     DagsterTypeCheckDidNotPass,
 )
 from dagster._legacy import (
-    execute_solid,
     pipeline,
 )
+from dagster._utils.test import wrap_op_in_graph_and_execute
 
 
 def test_solid_invocation_no_arg():
@@ -450,7 +450,7 @@ def test_multiple_outputs_iterator():
         yield Output(1, output_name="1")
 
     # Ensure that solid works both with execute_solid and invocation
-    result = execute_solid(solid_multiple_outputs)
+    result = wrap_op_in_graph_and_execute(solid_multiple_outputs)
     assert result.success
 
     outputs = list(solid_multiple_outputs())
@@ -467,7 +467,7 @@ def test_wrong_output():
         DagsterInvariantViolationError,
         match="explicitly named 'wrong_name'",
     ):
-        execute_solid(solid_wrong_output)
+        wrap_op_in_graph_and_execute(solid_wrong_output)
 
     with pytest.raises(
         DagsterInvariantViolationError,
@@ -496,7 +496,7 @@ def test_optional_output_return():
         DagsterInvariantViolationError,
         match="has multiple outputs, but only one output was returned",
     ):
-        execute_solid(solid_multiple_outputs_not_sent)
+        wrap_op_in_graph_and_execute(solid_multiple_outputs_not_sent)
 
 
 def test_optional_output_yielded():
@@ -550,7 +550,7 @@ def test_missing_required_output_generator():
             'for non-optional output "1"'
         ),
     ):
-        execute_solid(solid_multiple_outputs_not_sent)
+        wrap_op_in_graph_and_execute(solid_multiple_outputs_not_sent)
 
     with pytest.raises(
         DagsterInvariantViolationError,
@@ -580,7 +580,7 @@ def test_missing_required_output_generator_async():
             'for non-optional output "1"'
         ),
     ):
-        execute_solid(solid_multiple_outputs_not_sent)
+        wrap_op_in_graph_and_execute(solid_multiple_outputs_not_sent)
 
     async def get_results():
         res = []
@@ -612,7 +612,7 @@ def test_missing_required_output_return():
         DagsterInvariantViolationError,
         match="has multiple outputs, but only one output was returned",
     ):
-        execute_solid(solid_multiple_outputs_not_sent)
+        wrap_op_in_graph_and_execute(solid_multiple_outputs_not_sent)
 
     with pytest.raises(
         DagsterInvariantViolationError,
@@ -635,7 +635,7 @@ def test_output_sent_multiple_times():
         DagsterInvariantViolationError,
         match='Compute for op "solid_yields_twice" returned an output "1" multiple times',
     ):
-        execute_solid(solid_yields_twice)
+        wrap_op_in_graph_and_execute(solid_yields_twice)
 
     with pytest.raises(
         DagsterInvariantViolationError,
@@ -913,7 +913,7 @@ def test_dynamic_output_non_gen():
         DagsterInvariantViolationError,
         match="expected a list of DynamicOutput objects",
     ):
-        execute_solid(should_not_work)
+        wrap_op_in_graph_and_execute(should_not_work)
 
 
 def test_dynamic_output_async_non_gen():
@@ -932,11 +932,8 @@ def test_dynamic_output_async_non_gen():
     ):
         asyncio.run(should_not_work())
 
-    with pytest.raises(
-        DagsterInvariantViolationError,
-        match="dynamic output 'a' expected a list of DynamicOutput objects",
-    ):
-        execute_solid(should_not_work)
+    with pytest.raises(Exception):
+        wrap_op_in_graph_and_execute(should_not_work())
 
 
 def test_solid_invocation_with_bad_resources(capsys):

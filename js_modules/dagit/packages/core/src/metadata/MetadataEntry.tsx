@@ -177,7 +177,26 @@ export const MetadataEntry: React.FC<{
       return <TableMetadataEntryComponent entry={entry} />;
 
     case 'TableSchemaMetadataEntry':
-      return <TableSchema schema={entry.schema} />;
+      return expandSmallValues && entry.schema.columns.length < 5 ? (
+        <TableSchema schema={entry.schema} />
+      ) : (
+        <MetadataEntryModalAction
+          label={entry.label}
+          copyContent={() => JSON.stringify(entry.schema, null, 2)}
+          content={() => (
+            <Box
+              padding={{vertical: 16, horizontal: 20}}
+              background={Colors.White}
+              style={{overflow: 'auto'}}
+              margin={{bottom: 12}}
+            >
+              <TableSchema schema={entry.schema} />
+            </Box>
+          )}
+        >
+          [Show Table Schema]
+        </MetadataEntryModalAction>
+      );
     case 'NotebookMetadataEntry':
       if (repoLocation) {
         return <NotebookButton path={entry.path} repoLocation={repoLocation} />;
@@ -298,6 +317,7 @@ const PythonArtifactLink = ({
 );
 
 const MetadataEntryModalAction: React.FC<{
+  children: React.ReactNode;
   label: string;
   content: () => React.ReactNode;
   copyContent: () => string;

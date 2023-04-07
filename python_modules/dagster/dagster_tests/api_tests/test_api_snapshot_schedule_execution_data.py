@@ -51,3 +51,21 @@ def test_include_execution_time_grpc():
             to_launch = execution_data.run_requests[0]
             assert to_launch.run_config == {"passed_in_time": execution_time.isoformat()}
             assert to_launch.tags == {"dagster/schedule_name": "foo_schedule_echo_time"}
+
+
+def test_run_request_partition_key_schedule_grpc():
+    with instance_for_test() as instance:
+        with get_bar_repo_handle(instance) as repository_handle:
+            execution_time = get_current_datetime_in_utc()
+            execution_data = sync_get_external_schedule_execution_data_ephemeral_grpc(
+                instance,
+                repository_handle,
+                "partitioned_run_request_schedule",
+                execution_time,
+            )
+
+            assert isinstance(execution_data, ScheduleExecutionData)
+            assert len(execution_data.run_requests) == 1
+            to_launch = execution_data.run_requests[0]
+            assert to_launch.tags["dagster/schedule_name"] == "partitioned_run_request_schedule"
+            assert to_launch.tags["dagster/partition"] == "a"

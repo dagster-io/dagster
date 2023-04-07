@@ -43,7 +43,7 @@ export const LayoutContext = React.createContext<LayoutContextValue>({
 
 const STORAGE_KEY = 'large-screen-nav-open';
 
-export const LayoutProvider: React.FC = (props) => {
+export const LayoutProvider = (props: {children: React.ReactNode}) => {
   const [navOpenIfLargeScreen, setNavOpenIfLargeScreen] = useStateWithStorage(
     STORAGE_KEY,
     (json: any) => {

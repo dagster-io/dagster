@@ -1,13 +1,13 @@
 import time
 
 from dagster import op
-from dagster._legacy import ModeDefinition, execute_solid
+from dagster._utils.test import wrap_op_in_graph_and_execute
 from dagster_prometheus import prometheus_resource
 from prometheus_client import Counter, Enum, Gauge, Histogram, Info, Summary
 
 EPS = 0.001
 ENV = {"resources": {"prometheus": {"config": {"gateway": "localhost:9091"}}}}
-MODE = ModeDefinition(resource_defs={"prometheus": prometheus_resource})
+RESOURCES = {"prometheus": prometheus_resource}
 
 
 def test_prometheus_counter():
@@ -25,7 +25,9 @@ def test_prometheus_counter():
         )
         assert abs(2.6 - recorded) < EPS
 
-    assert execute_solid(prometheus_solid, run_config=ENV, mode_def=MODE).success
+    assert wrap_op_in_graph_and_execute(
+        prometheus_solid, run_config=ENV, resources=RESOURCES
+    ).success
 
 
 def test_prometheus_gauge():
@@ -42,7 +44,9 @@ def test_prometheus_gauge():
         )
         assert abs(time.time() - recorded) < 10.0
 
-    assert execute_solid(prometheus_solid, run_config=ENV, mode_def=MODE).success
+    assert wrap_op_in_graph_and_execute(
+        prometheus_solid, run_config=ENV, resources=RESOURCES
+    ).success
 
 
 def test_prometheus_summary():
@@ -73,7 +77,9 @@ def test_prometheus_summary():
         )
         assert abs(1.0 - recorded) < 1.0
 
-    assert execute_solid(prometheus_solid, run_config=ENV, mode_def=MODE).success
+    assert wrap_op_in_graph_and_execute(
+        prometheus_solid, run_config=ENV, resources=RESOURCES
+    ).success
 
 
 def test_prometheus_histogram():
@@ -90,7 +96,9 @@ def test_prometheus_histogram():
         )
         assert abs(4.7 - recorded) < EPS
 
-    assert execute_solid(prometheus_solid, run_config=ENV, mode_def=MODE).success
+    assert wrap_op_in_graph_and_execute(
+        prometheus_solid, run_config=ENV, resources=RESOURCES
+    ).success
 
 
 def test_prometheus_info():
@@ -109,7 +117,9 @@ def test_prometheus_info():
                 break
         assert metric and metric.samples[0].labels == info_labels
 
-    assert execute_solid(prometheus_solid, run_config=ENV, mode_def=MODE).success
+    assert wrap_op_in_graph_and_execute(
+        prometheus_solid, run_config=ENV, resources=RESOURCES
+    ).success
 
 
 def test_prometheus_enum():
@@ -130,4 +140,6 @@ def test_prometheus_enum():
                 break
         assert metric and metric.samples[0].labels == {"my_task_state": "starting"}
 
-    assert execute_solid(prometheus_solid, run_config=ENV, mode_def=MODE).success
+    assert wrap_op_in_graph_and_execute(
+        prometheus_solid, run_config=ENV, resources=RESOURCES
+    ).success

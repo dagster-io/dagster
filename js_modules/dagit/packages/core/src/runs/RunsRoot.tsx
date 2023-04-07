@@ -198,7 +198,7 @@ export const RunsRoot = () => {
                             {filterTokens
                               .filter((token) => token.token === 'status')
                               .map(({token, value}) => (
-                                <Tag key={token}>{`${token}:${value}`}</Tag>
+                                <Tag key={`${token}:${value}`}>{`${token}:${value}`}</Tag>
                               ))}
                           </Box>
                         ) : null}

@@ -15,25 +15,32 @@ def scope_load_assets_from_dbt_manifest():
 
     from dagster_dbt import load_assets_from_dbt_manifest
 
-    dbt_assets = load_assets_from_dbt_manifest(
-        json.load("path/to/dbt/manifest.json", encoding="utf8"),
-    )
+    with open("path/to/dbt/manifest.json") as f:
+        manifest_json = json.load(f)
+
+    dbt_assets = load_assets_from_dbt_manifest(manifest_json)
     # end_load_assets_from_dbt_manifest
 
 
 def scope_dbt_cli_resource_config():
     # start_dbt_cli_resource
+    import os
+
     from dagster_dbt import dbt_cli_resource, load_assets_from_dbt_project
 
     from dagster import with_resources
 
     DBT_PROJECT_PATH = "path/to/dbt_project"
+    DBT_TARGET = "hive" if os.getenv("EXECUTION_ENV") == "prod" else "duckdb"
 
     dbt_assets = with_resources(
         load_assets_from_dbt_project(DBT_PROJECT_PATH),
         {
             "dbt": dbt_cli_resource.configured(
-                {"project_dir": DBT_PROJECT_PATH},
+                {
+                    "project_dir": DBT_PROJECT_PATH,
+                    "target": DBT_TARGET,
+                },
             )
         },
     )

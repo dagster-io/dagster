@@ -16,7 +16,7 @@ import {
   useRepositoryOptions,
 } from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
-import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
+import {useRepositoryForRunWithoutSnapshot} from '../workspace/useRepositoryForRun';
 import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
 
 import {AssetKeyTagCollection} from './AssetKeyTagCollection';
@@ -181,7 +181,6 @@ export const RUN_TABLE_RUN_FRAGMENT = gql`
     rootRunId
     parentRunId
     pipelineSnapshotId
-    parentPipelineSnapshotId
     pipelineName
     repositoryOrigin {
       id
@@ -223,7 +222,7 @@ const RunRow: React.FC<{
   isHighlighted,
 }) => {
   const {pipelineName} = run;
-  const repo = useRepositoryForRun(run);
+  const repo = useRepositoryForRunWithoutSnapshot(run);
 
   const isJob = React.useMemo(() => {
     if (repo) {
@@ -244,7 +243,7 @@ const RunRow: React.FC<{
   };
 
   return (
-    <Row key={run.runId} highlighted={!!isHighlighted}>
+    <Row highlighted={!!isHighlighted}>
       <td>
         {canTerminateOrDelete && onToggleChecked ? (
           <Checkbox checked={!!checked} onChange={onChange} />

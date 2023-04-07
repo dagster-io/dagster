@@ -2,7 +2,7 @@ import logging
 import sys
 import time
 from enum import Enum
-from typing import Callable, Optional, TypeVar
+from typing import Callable, List, Optional, TypeVar
 
 import kubernetes.client
 import kubernetes.client.rest
@@ -11,7 +11,7 @@ from dagster import (
     _check as check,
 )
 from dagster._core.storage.pipeline_run import DagsterRunStatus
-from kubernetes.client.models import V1JobStatus
+from kubernetes.client.models import EventsV1Event, V1JobStatus
 
 T = TypeVar("T")
 
@@ -144,10 +144,10 @@ class DagsterKubernetesClient:
         self.timer = timer
 
     @staticmethod
-    def production_client(batch_api_override=None):
+    def production_client(batch_api_override=None, core_api_override=None):
         return DagsterKubernetesClient(
             batch_api=batch_api_override or kubernetes.client.BatchV1Api(),
-            core_api=kubernetes.client.CoreV1Api(),
+            core_api=core_api_override or kubernetes.client.CoreV1Api(),
             logger=logging.info,
             sleeper=time.sleep,
             timer=time.time,
@@ -578,7 +578,11 @@ class DagsterKubernetesClient:
                 raise DagsterK8sError("Should not get here, unknown pod state")
 
     def retrieve_pod_logs(
-        self, pod_name: str, namespace: str, container_name: Optional[str] = None
+        self,
+        pod_name: str,
+        namespace: str,
+        container_name: Optional[str] = None,
+        **kwargs,
     ) -> str:
         """Retrieves the raw pod logs for the pod named `pod_name` from Kubernetes.
 
@@ -598,5 +602,124 @@ class DagsterKubernetesClient:
         #
         # https://github.com/kubernetes-client/python/issues/811
         return self.core_api.read_namespaced_pod_log(
-            name=pod_name, namespace=namespace, container=container_name, _preload_content=False
+            name=pod_name,
+            namespace=namespace,
+            container=container_name,
+            _preload_content=False,
+            **kwargs,
         ).data.decode("utf-8")
+
+    def _get_container_status_str(self, container_status):
+        state = container_status.state
+        # https://github.com/kubernetes-client/python/blob/master/kubernetes/docs/V1ContainerState.md
+        if state.running:
+            return "Ready" if container_status.ready else "Running but not ready"
+        elif state.terminated:
+            return f"Terminated with exit code {state.terminated.exit_code}: " + (
+                f"{state.terminated.reason}: {state.terminated.message}"
+                if state.terminated.message
+                else f"{state.terminated.reason}"
+            )
+        elif state.waiting:
+            return (
+                f"Waiting: {state.waiting.reason}: {state.waiting.message}"
+                if state.waiting.message
+                else f"Waiting: {state.waiting.reason}"
+            )
+
+    def _get_pod_status_str(self, pod):
+        if not pod.status:
+            return "Could not determine pod status."
+
+        pod_status = [
+            f"Pod status: {pod.status.phase}"
+            + (f": {pod.status.message}" if pod.status.message else "")
+        ]
+
+        if pod.status.container_statuses:
+            pod_status.extend(
+                [
+                    f"Container '{status.name}' status: {self._get_container_status_str(status)}"
+                    for status in pod.status.container_statuses
+                ]
+            )
+        return "\n".join(pod_status)
+
+    def retrieve_pod_events(
+        self,
+        pod_name: str,
+        namespace: str,
+    ) -> List[EventsV1Event]:
+        # https://github.com/kubernetes-client/python/blob/master/kubernetes/docs/EventsV1Event.md
+        field_selector = f"involvedObject.name={pod_name}"
+        return self.core_api.list_namespaced_event(namespace, field_selector=field_selector).items
+
+    def get_pod_debug_info(self, pod_name, namespace, container_name: Optional[str] = None) -> str:
+        pods = self.core_api.list_namespaced_pod(
+            namespace=namespace, field_selector="metadata.name=%s" % pod_name
+        ).items
+        pod = pods[0] if pods else None
+
+        pod_status_str = self._get_pod_status_str(pod) if pod else f"Could not find pod {pod_name}"
+
+        specific_warning = ""
+
+        log_str = ""
+        if (
+            pod is not None
+            and pod.status
+            and pod.status.container_statuses
+            and any(
+                [
+                    container_status.name == container_name
+                    and container_status.state.running
+                    or container_status.state.terminated
+                    for container_status in pod.status.container_statuses
+                ]
+            )
+        ):
+            try:
+                pod_logs = self.retrieve_pod_logs(
+                    pod_name,
+                    namespace,
+                    container_name,
+                    tail_lines=25,
+                    timestamps=True,
+                )
+                # Remove trailing newline if present
+                pod_logs = pod_logs[:-1] if pod_logs.endswith("\n") else pod_logs
+
+                if "exec format error" in pod_logs:
+                    specific_warning = (
+                        "Pod logs contained `exec format error`, which usually means that your"
+                        " Docker image was built using the wrong architecture.\nTry rebuilding your"
+                        " docker image with the `--platform linux/amd64` flag set."
+                    )
+                log_str = f"Last 25 log lines:\n{pod_logs}" if pod_logs else "No logs in pod."
+
+            except kubernetes.client.rest.ApiException as e:
+                log_str = f"Failure fetching pod logs: {str(e)}"
+
+        try:
+            pod_events = self.retrieve_pod_events(pod_name, namespace)
+            warning_events = [event for event in pod_events if event.type == "Warning"]
+
+            if not warning_events:
+                warning_str = "No warning events for pod."
+            else:
+                event_strs = []
+                for event in warning_events:
+                    count_str = f" (x{event.count})" if event.count > 1 else ""
+                    event_strs.append(f"{event.reason}: {event.message}{count_str}")
+                warning_str = "Warning events for pod:\n" + "\n".join(event_strs)
+
+        except kubernetes.client.rest.ApiException as e:
+            warning_str = f"Failure fetching pod events: {str(e)}"
+
+        return (
+            f"Debug information for pod {pod_name}:"
+            + f"\n{pod_status_str}"
+            + (f"\n{specific_warning}" if specific_warning else "")
+            + (f"\n{log_str}" if log_str else "")
+            + f"\n{warning_str}"
+        )

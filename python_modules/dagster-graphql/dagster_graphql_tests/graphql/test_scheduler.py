@@ -51,6 +51,26 @@ query SchedulesQuery($repositorySelector: RepositorySelector!) {
 }
 """
 
+GET_SCHEDULES_BY_STATUS_QUERY = """
+query SchedulesByStatusQuery($repositorySelector: RepositorySelector!, $status: InstigationStatus) {
+  schedulesOrError(repositorySelector: $repositorySelector, scheduleStatus: $status) {
+    __typename
+    ... on PythonError {
+      message
+      stack
+    }
+    ... on Schedules {
+      results {
+        name
+        scheduleState {
+          status
+        }
+      }
+    }
+  }
+}
+"""
+
 GET_SCHEDULE_QUERY = """
 query getSchedule($scheduleSelector: ScheduleSelector!, $ticksAfter: Float) {
   scheduleOrError(scheduleSelector: $scheduleSelector) {
@@ -445,6 +465,38 @@ def test_get_schedule_definitions_for_repository(graphql_context):
     for schedule in results:
         if schedule["name"] == "timezone_schedule":
             assert schedule["executionTimezone"] == "US/Central"
+
+
+def test_get_filtered_schedule_definitions(graphql_context):
+    selector = infer_repository_selector(graphql_context)
+    result = execute_dagster_graphql(
+        graphql_context,
+        GET_SCHEDULES_BY_STATUS_QUERY,
+        variables={"repositorySelector": selector, "status": "RUNNING"},
+    )
+
+    assert result.data
+    assert result.data["schedulesOrError"]
+    assert result.data["schedulesOrError"]["__typename"] == "Schedules"
+
+    # running status includes automatically running schedules
+    assert "running_in_code_schedule" in {
+        schedule["name"] for schedule in result.data["schedulesOrError"]["results"]
+    }
+
+    result = execute_dagster_graphql(
+        graphql_context,
+        GET_SCHEDULES_BY_STATUS_QUERY,
+        variables={"repositorySelector": selector, "status": "STOPPED"},
+    )
+
+    assert result.data
+    assert result.data["schedulesOrError"]
+    assert result.data["schedulesOrError"]["__typename"] == "Schedules"
+
+    assert "running_in_code_schedule" not in {
+        schedule["name"] for schedule in result.data["schedulesOrError"]["results"]
+    }
 
 
 def test_start_and_stop_schedule(graphql_context):

@@ -83,7 +83,7 @@ def test_run_monitoring_fails_on_interrupt(
         get_celery_job_engine_config(dagster_docker_image=dagster_docker_image),
     )
 
-    pipeline_name = "demo_job_celery"
+    pipeline_name = "demo_job_celery_k8s"
 
     try:
         run_id = launch_run_over_graphql(
@@ -122,7 +122,7 @@ def test_run_monitoring_startup_fail(
         ),
     )
 
-    pipeline_name = "demo_job_celery"
+    pipeline_name = "demo_job_celery_k8s"
 
     try:
         run_id = launch_run_over_graphql(

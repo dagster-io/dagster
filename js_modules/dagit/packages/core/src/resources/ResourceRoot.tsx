@@ -57,7 +57,7 @@ const remapName = (inName: string): string => {
   return inName;
 };
 
-const succinctType = (resourceType: string | undefined): string | null => {
+export const succinctType = (resourceType: string | undefined): string | null => {
   return resourceType?.split('.').pop() || null;
 };
 
@@ -72,7 +72,7 @@ const resourceDisplayName = (
     : resource.name;
 };
 
-const SectionHeader: React.FC = (props) => {
+const SectionHeader = (props: {children: React.ReactNode}) => {
   return (
     <Box
       padding={{left: 24, vertical: 16}}

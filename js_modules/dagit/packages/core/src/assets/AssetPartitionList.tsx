@@ -2,22 +2,22 @@ import {Box, Colors} from '@dagster-io/ui';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 
-import {PartitionState, partitionStateToStyle} from '../partitions/PartitionStatus';
 import {Inner} from '../ui/VirtualizedTable';
 
 import {AssetListRow, AssetListContainer} from './AssetEventList';
+import {AssetPartitionStatus, assetPartitionStatusesToStyle} from './AssetPartitionStatus';
 
 export interface AssetPartitionListProps {
   partitions: string[];
-  stateForPartition: (dimensionKey: string) => PartitionState;
+  statusForPartition: (dimensionKey: string) => AssetPartitionStatus[];
   focusedDimensionKey?: string;
   setFocusedDimensionKey?: (dimensionKey: string | undefined) => void;
 }
 export const AssetPartitionList: React.FC<AssetPartitionListProps> = ({
   focusedDimensionKey,
   setFocusedDimensionKey,
+  statusForPartition,
   partitions,
-  stateForPartition,
 }) => {
   const parentRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -60,7 +60,7 @@ export const AssetPartitionList: React.FC<AssetPartitionListProps> = ({
       <Inner $totalHeight={totalHeight}>
         {items.map(({index, key, size, start}) => {
           const dimensionKey = partitions[index];
-          const state = stateForPartition(dimensionKey);
+          const state = statusForPartition(dimensionKey);
           return (
             <AssetListRow
               key={key}
@@ -88,15 +88,19 @@ export const AssetPartitionList: React.FC<AssetPartitionListProps> = ({
                 <Box flex={{gap: 4, direction: 'row', alignItems: 'center'}}>
                   {dimensionKey}
                   <div style={{flex: 1}} />
-                  {(state === PartitionState.SUCCESS_MISSING ||
-                    state === PartitionState.SUCCESS) && (
-                    <StateDot state={PartitionState.SUCCESS} />
+                  {/* Note: we could just state.map, but we want these in a particular order*/}
+                  {state.includes(AssetPartitionStatus.MISSING) && (
+                    <AssetPartitionStatusDot status={[AssetPartitionStatus.MISSING]} />
                   )}
-                  {(state === PartitionState.SUCCESS_MISSING ||
-                    state === PartitionState.MISSING) && (
-                    <StateDot state={PartitionState.MISSING} />
+                  {state.includes(AssetPartitionStatus.FAILED) && (
+                    <AssetPartitionStatusDot status={[AssetPartitionStatus.FAILED]} />
                   )}
-                  {state === PartitionState.FAILURE && <StateDot state={PartitionState.FAILURE} />}
+                  {state.includes(AssetPartitionStatus.MATERIALIZING) && (
+                    <AssetPartitionStatusDot status={[AssetPartitionStatus.MATERIALIZING]} />
+                  )}
+                  {state.includes(AssetPartitionStatus.MATERIALIZED) && (
+                    <AssetPartitionStatusDot status={[AssetPartitionStatus.MATERIALIZED]} />
+                  )}
                 </Box>
               </Box>
             </AssetListRow>
@@ -107,14 +111,13 @@ export const AssetPartitionList: React.FC<AssetPartitionListProps> = ({
   );
 };
 
-export const StateDot = ({state}: {state: PartitionState}) => (
+export const AssetPartitionStatusDot = ({status}: {status: AssetPartitionStatus[]}) => (
   <div
-    key={state}
     style={{
       width: 10,
       height: 10,
       borderRadius: '100%',
-      ...partitionStateToStyle(state),
+      ...assetPartitionStatusesToStyle(status),
     }}
   />
 );

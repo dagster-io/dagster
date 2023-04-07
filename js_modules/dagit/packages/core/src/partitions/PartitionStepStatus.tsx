@@ -16,10 +16,11 @@ import styled from 'styled-components/macro';
 
 import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {tokenForAssetKey} from '../asset-graph/Utils';
+import {AssetPartitionStatus} from '../assets/AssetPartitionStatus';
 import {
   PartitionHealthData,
   PartitionHealthDimension,
-  partitionStateAtIndex,
+  partitionStatusAtIndex,
   Range,
 } from '../assets/usePartitionHealthData';
 import {GanttChartMode} from '../gantt/Constants';
@@ -32,7 +33,6 @@ import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
 import {PartitionRunList} from './PartitionRunList';
-import {PartitionState} from './PartitionStatus';
 import {
   BOX_SIZE,
   GridColumn,
@@ -53,6 +53,7 @@ import {
   useMatrixData,
   MatrixData,
   PARTITION_MATRIX_SOLID_HANDLE_FRAGMENT,
+  StatusSquareColor,
 } from './useMatrixData';
 
 const BUFFER = 3;
@@ -126,8 +127,8 @@ export const PartitionPerAssetStatus: React.FC<
       steps: layoutBoxesWithRangeDimension.map((box) => ({
         name: box.node.name,
         unix: 0,
-        color: partitionStateToStatusSquareColor(
-          partitionStateAtIndex(rangesByAssetKey[box.node.name], partitionKeyIdx),
+        color: assetPartitionStatusToSquareColor(
+          partitionStatusAtIndex(rangesByAssetKey[box.node.name], partitionKeyIdx),
         ),
       })),
     })),
@@ -143,12 +144,17 @@ export const PartitionPerAssetStatus: React.FC<
   );
 };
 
-export const partitionStateToStatusSquareColor = (state: PartitionState) => {
-  return state === PartitionState.SUCCESS
-    ? 'SUCCESS'
-    : state === PartitionState.SUCCESS_MISSING
+export const assetPartitionStatusToSquareColor = (
+  state: AssetPartitionStatus[],
+): StatusSquareColor => {
+  return state.includes(AssetPartitionStatus.MATERIALIZED) &&
+    state.includes(AssetPartitionStatus.MISSING)
     ? 'SUCCESS-MISSING'
-    : state === PartitionState.FAILURE
+    : state.includes(AssetPartitionStatus.MATERIALIZED)
+    ? 'SUCCESS'
+    : state.includes(AssetPartitionStatus.FAILED) && state.includes(AssetPartitionStatus.MISSING)
+    ? 'FAILURE-MISSING'
+    : state.includes(AssetPartitionStatus.FAILED)
     ? 'FAILURE'
     : 'MISSING';
 };

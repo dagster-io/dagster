@@ -50,7 +50,7 @@ def define_demo_execution_repo():
         return [
             with_resources([foo], {"s3": s3_resource, "io_manager": s3_pickle_io_manager}),
             MyCacheableAssetsDefinition("xyz"),
-            define_asset_job("demo_pipeline_docker", executor_def=docker_executor),
+            define_asset_job("demo_job_docker", executor_def=docker_executor),
         ]
 
     return demo_execution_repo

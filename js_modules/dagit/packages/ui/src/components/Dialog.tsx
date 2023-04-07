@@ -14,11 +14,12 @@ interface Props
     React.ComponentProps<typeof BlueprintDialog>,
     'title' | 'icon' | 'backdropClassName'
   > {
+  children: React.ReactNode;
   title?: React.ReactNode;
   icon?: IconName;
 }
 
-export const Dialog: React.FC<Props> = (props) => {
+export const Dialog = (props: Props) => {
   const {icon, title, children, ...rest} = props;
   return (
     <BlueprintDialog
@@ -54,7 +55,11 @@ export const DialogHeader: React.FC<HeaderProps> = (props) => {
   );
 };
 
-export const DialogBody: React.FC = ({children, ...rest}) => {
+interface BodyProps {
+  children: React.ReactNode;
+}
+
+export const DialogBody = ({children, ...rest}: BodyProps) => {
   return (
     <Box padding={{vertical: 16, horizontal: 20}} background={Colors.White} {...rest}>
       {children}
@@ -63,11 +68,16 @@ export const DialogBody: React.FC = ({children, ...rest}) => {
 };
 
 interface DialogFooterProps {
+  children: React.ReactNode;
   topBorder?: boolean;
-  left?: React.ReactFragment;
+  left?: React.ReactNode;
 }
 
-export const DialogFooter: React.FC<DialogFooterProps> = ({children, left, topBorder}) => {
+export const DialogFooter: React.FC<DialogFooterProps> = ({
+  children,
+  left,
+  topBorder,
+}: DialogFooterProps) => {
   return (
     <Box
       padding={{bottom: 16, top: topBorder ? 16 : 8, horizontal: 20}}

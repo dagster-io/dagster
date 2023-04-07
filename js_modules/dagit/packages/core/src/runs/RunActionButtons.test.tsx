@@ -164,6 +164,7 @@ const RUN_ACTION_BUTTONS_TEST_QUERY = gql`
     pipelineRunOrError(runId: "foo") {
       ... on Run {
         id
+        parentPipelineSnapshotId
         ...RunFragment
       }
     }

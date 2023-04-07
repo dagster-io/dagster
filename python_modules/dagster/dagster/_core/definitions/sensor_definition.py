@@ -1,5 +1,6 @@
 import inspect
 import logging
+from collections import defaultdict
 from contextlib import ExitStack
 from enum import Enum
 from typing import (
@@ -41,9 +42,10 @@ from dagster._core.errors import (
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
 from dagster._serdes import whitelist_for_serdes
+from dagster._utils import normalize_to_repository
 
 from ..decorator_utils import (
-    get_function_params,  # pylint: disable=unused-import
+    get_function_params,
 )
 from .asset_selection import AssetSelection
 from .graph_definition import GraphDefinition
@@ -51,6 +53,8 @@ from .job_definition import JobDefinition
 from .mode import DEFAULT_MODE_NAME
 from .pipeline_definition import PipelineDefinition
 from .run_request import (
+    AddDynamicPartitionsRequest,
+    DeleteDynamicPartitionsRequest,
     PipelineRunReaction,
     RunRequest,
     SensorResult,
@@ -62,6 +66,7 @@ from .utils import check_valid_name
 
 if TYPE_CHECKING:
     from dagster import ResourceDefinition
+    from dagster._core.definitions.definitions_class import Definitions
     from dagster._core.definitions.repository_definition import RepositoryDefinition
 
 
@@ -99,8 +104,14 @@ class SensorEvaluationContext:
         last_run_key (str): DEPRECATED The run key of the RunRequest most recently created by this
             sensor. Use the preferred `cursor` attribute instead.
         repository_name (Optional[str]): The name of the repository that the sensor belongs to.
+        repository_def (Optional[RepositoryDefinition]): The repository or that
+            the sensor belongs to. If needed by the sensor top-level resource definitions will be
+            pulled from this repository. You can provide either this or `definitions`.
         instance (Optional[DagsterInstance]): The deserialized instance can also be passed in
             directly (primarily useful in testing contexts).
+        definitions (Optional[Definitions]): `Definitions` object that the sensor is defined in.
+            If needed by the sensor, top-level resource definitions will be pulled from these
+            definitions. You can provide either this or `repository_def`.
 
     Example:
         .. code-block:: python
@@ -124,7 +135,11 @@ class SensorEvaluationContext:
         instance: Optional[DagsterInstance] = None,
         sensor_name: Optional[str] = None,
         resources: Optional[Mapping[str, "ResourceDefinition"]] = None,
+        definitions: Optional["Definitions"] = None,
     ):
+        from dagster._core.definitions.definitions_class import Definitions
+        from dagster._core.definitions.repository_definition import RepositoryDefinition
+
         self._exit_stack = ExitStack()
         self._instance_ref = check.opt_inst_param(instance_ref, "instance_ref", InstanceRef)
         self._last_completion_time = check.opt_float_param(
@@ -133,7 +148,11 @@ class SensorEvaluationContext:
         self._last_run_key = check.opt_str_param(last_run_key, "last_run_key")
         self._cursor = check.opt_str_param(cursor, "cursor")
         self._repository_name = check.opt_str_param(repository_name, "repository_name")
-        self._repository_def = repository_def
+        self._repository_def = normalize_to_repository(
+            check.opt_inst_param(definitions, "definitions", Definitions),
+            check.opt_inst_param(repository_def, "repository_def", RepositoryDefinition),
+            error_on_none=False,
+        )
         self._instance = check.opt_inst_param(instance, "instance", DagsterInstance)
         self._sensor_name = sensor_name
 
@@ -373,6 +392,56 @@ def get_or_create_sensor_context(
     return context or build_sensor_context()
 
 
+def _check_dynamic_partitions_requests(
+    dynamic_partitions_requests: Sequence[
+        Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]
+    ],
+) -> None:
+    req_keys_to_add_by_partitions_def_name = defaultdict(set)
+    req_keys_to_delete_by_partitions_def_name = defaultdict(set)
+
+    for req in dynamic_partitions_requests:
+        duplicate_req_keys_to_delete = req_keys_to_delete_by_partitions_def_name.get(
+            req.partitions_def_name, set()
+        ).intersection(req.partition_keys)
+        duplicate_req_keys_to_add = req_keys_to_add_by_partitions_def_name.get(
+            req.partitions_def_name, set()
+        ).intersection(req.partition_keys)
+        if isinstance(req, AddDynamicPartitionsRequest):
+            if duplicate_req_keys_to_delete:
+                raise DagsterInvariantViolationError(
+                    "Dynamic partition requests cannot contain both add and delete requests for"
+                    " the same partition keys.Invalid request: partitions_def_name"
+                    f" '{req.partitions_def_name}', partition_keys: {duplicate_req_keys_to_delete}"
+                )
+            elif duplicate_req_keys_to_add:
+                raise DagsterInvariantViolationError(
+                    "Cannot request to add duplicate dynamic partition keys: \npartitions_def_name"
+                    f" '{req.partitions_def_name}', partition_keys: {duplicate_req_keys_to_add}"
+                )
+            req_keys_to_add_by_partitions_def_name[req.partitions_def_name].update(
+                req.partition_keys
+            )
+        elif isinstance(req, DeleteDynamicPartitionsRequest):
+            if duplicate_req_keys_to_delete:
+                raise DagsterInvariantViolationError(
+                    "Cannot request to add duplicate dynamic partition keys: \npartitions_def_name"
+                    f" '{req.partitions_def_name}', partition_keys:"
+                    f" {req_keys_to_add_by_partitions_def_name}"
+                )
+            elif duplicate_req_keys_to_add:
+                raise DagsterInvariantViolationError(
+                    "Dynamic partition requests cannot contain both add and delete requests for"
+                    " the same partition keys.Invalid request: partitions_def_name"
+                    f" '{req.partitions_def_name}', partition_keys: {duplicate_req_keys_to_add}"
+                )
+            req_keys_to_delete_by_partitions_def_name[req.partitions_def_name].update(
+                req.partition_keys
+            )
+        else:
+            check.failed(f"Unexpected dynamic partition request type: {req}")
+
+
 class SensorDefinition:
     """Define a sensor that initiates a set of runs based on some external state.
 
@@ -573,6 +642,9 @@ class SensorDefinition:
         skip_message: Optional[str] = None
         run_requests: List[RunRequest] = []
         pipeline_run_reactions: List[PipelineRunReaction] = []
+        dynamic_partitions_requests: Optional[
+            Sequence[Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]]
+        ] = []
         updated_cursor = context.cursor
 
         if not result or result == [None]:
@@ -588,6 +660,11 @@ class SensorDefinition:
                     if item.skip_reason
                     else (None if run_requests else "Sensor function returned an empty result")
                 )
+
+                _check_dynamic_partitions_requests(
+                    item.dynamic_partitions_requests or [],
+                )
+                dynamic_partitions_requests = item.dynamic_partitions_requests or []
 
                 if item.cursor and context.cursor_updated:
                     raise DagsterInvariantViolationError(
@@ -635,8 +712,9 @@ class SensorDefinition:
                 else:
                     check.failed("Expected a single SkipReason: received multiple SkipReasons")
 
+        _check_dynamic_partitions_requests(dynamic_partitions_requests)
         resolved_run_requests = self.resolve_run_requests(
-            run_requests, context, self._asset_selection
+            run_requests, context, self._asset_selection, dynamic_partitions_requests
         )
 
         return SensorExecutionData(
@@ -645,6 +723,7 @@ class SensorDefinition:
             updated_cursor,
             pipeline_run_reactions,
             captured_log_key=context.log_key if context.has_captured_logs() else None,
+            dynamic_partitions_requests=dynamic_partitions_requests,
         )
 
     def has_loadable_targets(self) -> bool:
@@ -670,6 +749,9 @@ class SensorDefinition:
         run_requests: Sequence[RunRequest],
         context: SensorEvaluationContext,
         asset_selection: Optional[AssetSelection],
+        dynamic_partitions_requests: Sequence[
+            Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]
+        ],
     ) -> Sequence[RunRequest]:
         def _get_repo_job_by_name(context: SensorEvaluationContext, job_name: str) -> JobDefinition:
             if context.repository_def is None:
@@ -728,6 +810,7 @@ class SensorDefinition:
                         target_definition=selected_job,
                         current_time=None,
                         dynamic_partitions_store=dynamic_partitions_store,
+                        dynamic_partitions_requests=dynamic_partitions_requests,
                     )
                 )
             else:
@@ -769,6 +852,12 @@ class SensorExecutionData(
             ("cursor", Optional[str]),
             ("pipeline_run_reactions", Optional[Sequence[PipelineRunReaction]]),
             ("captured_log_key", Optional[Sequence[str]]),
+            (
+                "dynamic_partitions_requests",
+                Optional[
+                    Sequence[Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]]
+                ],
+            ),
         ],
     )
 ):
@@ -779,6 +868,9 @@ class SensorExecutionData(
         cursor: Optional[str] = None,
         pipeline_run_reactions: Optional[Sequence[PipelineRunReaction]] = None,
         captured_log_key: Optional[Sequence[str]] = None,
+        dynamic_partitions_requests: Optional[
+            Sequence[Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]]
+        ] = None,
     ):
         check.opt_sequence_param(run_requests, "run_requests", RunRequest)
         check.opt_str_param(skip_message, "skip_message")
@@ -787,6 +879,11 @@ class SensorExecutionData(
             pipeline_run_reactions, "pipeline_run_reactions", PipelineRunReaction
         )
         check.opt_list_param(captured_log_key, "captured_log_key", str)
+        check.opt_sequence_param(
+            dynamic_partitions_requests,
+            "dynamic_partitions_requests",
+            (AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest),
+        )
         check.invariant(
             not (run_requests and skip_message), "Found both skip data and run request data"
         )
@@ -797,6 +894,7 @@ class SensorExecutionData(
             cursor=cursor,
             pipeline_run_reactions=pipeline_run_reactions,
             captured_log_key=captured_log_key,
+            dynamic_partitions_requests=dynamic_partitions_requests,
         )
 
 
@@ -842,6 +940,7 @@ def build_sensor_context(
     repository_def: Optional["RepositoryDefinition"] = None,
     sensor_name: Optional[str] = None,
     resources: Optional[Mapping[str, "ResourceDefinition"]] = None,
+    definitions: Optional["Definitions"] = None,
 ) -> SensorEvaluationContext:
     """Builds sensor execution context using the provided parameters.
 
@@ -855,9 +954,13 @@ def build_sensor_context(
         repository_name (Optional[str]): The name of the repository that the sensor belongs to.
         repository_def (Optional[RepositoryDefinition]): The repository that the sensor belongs to.
             If needed by the sensor top-level resource definitions will be pulled from this repository.
+            You can provide either this or `definitions`.
         resources (Optional[Mapping[str, ResourceDefinition]]): A set of resource definitions
             to provide to the sensor. If passed, these will override any resource definitions
             provided by the repository.
+        definitions (Optional[Definitions]): `Definitions` object that the sensor is defined in.
+            If needed by the sensor, top-level resource definitions will be pulled from these
+            definitions. You can provide either this or `repository_def`.
 
     Examples:
         .. code-block:: python
@@ -866,9 +969,17 @@ def build_sensor_context(
             my_sensor(context)
 
     """
+    from dagster._core.definitions.definitions_class import Definitions
+    from dagster._core.definitions.repository_definition import RepositoryDefinition
+
     check.opt_inst_param(instance, "instance", DagsterInstance)
     check.opt_str_param(cursor, "cursor")
     check.opt_str_param(repository_name, "repository_name")
+    repository_def = normalize_to_repository(
+        check.opt_inst_param(definitions, "definitions", Definitions),
+        check.opt_inst_param(repository_def, "repository_def", RepositoryDefinition),
+        error_on_none=False,
+    )
 
     return SensorEvaluationContext(
         instance_ref=None,
