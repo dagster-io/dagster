@@ -31,6 +31,7 @@ from dagster._core.definitions.asset_reconciliation_sensor import (
     AssetReconciliationCursor,
     reconcile,
 )
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.partition import (
@@ -268,6 +269,7 @@ def asset_def(
     deps: Optional[Union[List[str], Mapping[str, PartitionMapping]]] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     freshness_policy: Optional[FreshnessPolicy] = None,
+    auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
 ) -> AssetsDefinition:
     if deps is None:
         non_argument_deps = set()
@@ -289,6 +291,7 @@ def asset_def(
         ins=ins,
         config_schema={"fail": Field(bool, default_value=False)},
         freshness_policy=freshness_policy,
+        auto_materialize_policy=auto_materialize_policy,
     )
     def _asset(context, **kwargs):
         del kwargs

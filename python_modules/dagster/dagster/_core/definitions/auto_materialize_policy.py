@@ -40,13 +40,13 @@ class AutoMaterializePolicy(NamedTuple):
     on_missing: bool
     on_upstream_data_newer: bool
     for_freshness: bool
-    time_window_partition_scope_minutes: Optional[int]
+    time_window_partition_scope_minutes: Optional[float]
 
     @property
     def time_window_partition_scope(self) -> Optional[datetime.timedelta]:
         if self.time_window_partition_scope_minutes is None:
             return None
-        return datetime.timedelta(seconds=self.time_window_partition_scope_minutes)
+        return datetime.timedelta(minutes=self.time_window_partition_scope_minutes)
 
     @staticmethod
     def eager(
@@ -56,9 +56,7 @@ class AutoMaterializePolicy(NamedTuple):
             on_missing=True,
             on_upstream_data_newer=True,
             for_freshness=True,
-            time_window_partition_scope_minutes=int(
-                time_window_partition_scope.total_seconds() / 60
-            )
+            time_window_partition_scope_minutes=time_window_partition_scope.total_seconds() / 60
             if time_window_partition_scope is not None
             else None,
         )
@@ -71,9 +69,7 @@ class AutoMaterializePolicy(NamedTuple):
             on_missing=True,
             on_upstream_data_newer=False,
             for_freshness=True,
-            time_window_partition_scope_minutes=int(
-                time_window_partition_scope.total_seconds() / 60
-            )
+            time_window_partition_scope_minutes=time_window_partition_scope.total_seconds() / 60
             if time_window_partition_scope is not None
             else None,
         )
