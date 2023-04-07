@@ -28,16 +28,20 @@ from dagster._core.test_utils import instance_for_test
 from dagster._seven.compat.pendulum import create_pendulum_time
 from dagster._utils import Counter, traced_counter
 
-from dagster_tests.definitions_tests.asset_reconciliation_tests.scenarios import (
+from dagster_tests.definitions_tests.asset_reconciliation_tests.asset_reconciliation_scenario import (
     RunSpec,
     do_run,
-    non_partitioned_after_partitioned,
-    one_asset_one_partition,
+)
+from dagster_tests.definitions_tests.asset_reconciliation_tests.exotic_partition_mapping_scenarios import (
     one_asset_self_dependency,
-    one_asset_two_partitions,
-    partitioned_after_non_partitioned,
     two_assets_in_sequence_fan_in_partitions,
     two_assets_in_sequence_fan_out_partitions,
+)
+from dagster_tests.definitions_tests.asset_reconciliation_tests.partition_scenarios import (
+    non_partitioned_after_partitioned,
+    one_asset_one_partition,
+    one_asset_two_partitions,
+    partitioned_after_non_partitioned,
     two_assets_in_sequence_one_partition,
     two_assets_in_sequence_two_partitions,
     two_dynamic_assets,
