@@ -62,37 +62,37 @@ def workspace_fixture(instance):
 
 
 @pytest.fixture(scope="module")
-def pipeline_handle() -> Iterator[JobHandle]:
+def job_handle() -> Iterator[JobHandle]:
     with get_foo_job_handle() as handle:
         yield handle
 
 
 @pytest.fixture(scope="module")
-def other_location_pipeline_handle(pipeline_handle: JobHandle) -> JobHandle:
-    code_location_origin = pipeline_handle.repository_handle.code_location_origin
+def other_location_job_handle(job_handle: JobHandle) -> JobHandle:
+    code_location_origin = job_handle.repository_handle.code_location_origin
     assert isinstance(code_location_origin, ManagedGrpcPythonEnvCodeLocationOrigin)
-    return pipeline_handle._replace(
-        repository_handle=pipeline_handle.repository_handle._replace(
+    return job_handle._replace(
+        repository_handle=job_handle.repository_handle._replace(
             code_location_origin=code_location_origin._replace(location_name="other_location_name")
         )
     )
 
 
-def create_run(instance, pipeline_handle, **kwargs):
+def create_run(instance, job_handle, **kwargs):
     create_run_for_test(
         instance,
-        external_pipeline_origin=pipeline_handle.get_external_origin(),
-        pipeline_code_origin=pipeline_handle.get_python_origin(),
+        external_pipeline_origin=job_handle.get_external_origin(),
+        pipeline_code_origin=job_handle.get_python_origin(),
         pipeline_name="foo",
         **kwargs,
     )
 
 
-def create_queued_run(instance, pipeline_handle, **kwargs):
+def create_queued_run(instance, job_handle, **kwargs):
     run = create_run_for_test(
         instance,
-        external_pipeline_origin=pipeline_handle.get_external_origin(),
-        pipeline_code_origin=pipeline_handle.get_python_origin(),
+        external_pipeline_origin=job_handle.get_external_origin(),
+        pipeline_code_origin=job_handle.get_python_origin(),
         pipeline_name="foo",
         status=DagsterRunStatus.NOT_STARTED,
         **kwargs,
@@ -109,15 +109,15 @@ def get_run_ids(runs_queue):
     return [run.run_id for run in runs_queue]
 
 
-def test_attempt_to_launch_runs_filter(instance, workspace_context, daemon, pipeline_handle):
+def test_attempt_to_launch_runs_filter(instance, workspace_context, daemon, job_handle):
     create_queued_run(
         instance,
-        pipeline_handle,
+        job_handle,
         run_id="queued-run",
     )
     create_run(
         instance,
-        pipeline_handle,
+        job_handle,
         run_id="non-queued-run",
         status=DagsterRunStatus.NOT_STARTED,
     )
@@ -127,16 +127,16 @@ def test_attempt_to_launch_runs_filter(instance, workspace_context, daemon, pipe
     assert get_run_ids(instance.run_launcher.queue()) == ["queued-run"]
 
 
-def test_attempt_to_launch_runs_no_queued(instance, pipeline_handle, workspace_context, daemon):
+def test_attempt_to_launch_runs_no_queued(instance, job_handle, workspace_context, daemon):
     create_run(
         instance,
-        pipeline_handle,
+        job_handle,
         run_id="queued-run",
         status=DagsterRunStatus.STARTED,
     )
     create_run(
         instance,
-        pipeline_handle,
+        job_handle,
         run_id="non-queued-run",
         status=DagsterRunStatus.NOT_STARTED,
     )
@@ -157,7 +157,7 @@ def test_attempt_to_launch_runs_no_queued(instance, pipeline_handle, workspace_c
 def test_get_queued_runs_max_runs(
     num_in_progress_runs,
     use_threads,
-    pipeline_handle,
+    job_handle,
     workspace_context,
     daemon,
 ):
@@ -173,7 +173,7 @@ def test_get_queued_runs_max_runs(
             status = IN_PROGRESS_RUN_STATUSES[i % len(IN_PROGRESS_RUN_STATUSES)]
             create_run(
                 instance,
-                pipeline_handle,
+                job_handle,
                 run_id=run_id,
                 status=status,
             )
@@ -183,7 +183,7 @@ def test_get_queued_runs_max_runs(
         for run_id in queued_run_ids:
             create_queued_run(
                 instance,
-                pipeline_handle,
+                job_handle,
                 run_id=run_id,
             )
 
@@ -196,7 +196,7 @@ def test_get_queued_runs_max_runs(
     "use_threads",
     [False, True],
 )
-def test_disable_max_concurrent_runs_limit(use_threads, workspace_context, pipeline_handle, daemon):
+def test_disable_max_concurrent_runs_limit(use_threads, workspace_context, job_handle, daemon):
     with instance_for_queued_run_coordinator(
         max_concurrent_runs=-1, dequeue_use_threads=use_threads
     ) as instance:
@@ -209,7 +209,7 @@ def test_disable_max_concurrent_runs_limit(use_threads, workspace_context, pipel
             status = IN_PROGRESS_RUN_STATUSES[i % len(IN_PROGRESS_RUN_STATUSES)]
             create_run(
                 instance,
-                pipeline_handle,
+                job_handle,
                 run_id=run_id,
                 status=status,
             )
@@ -219,7 +219,7 @@ def test_disable_max_concurrent_runs_limit(use_threads, workspace_context, pipel
         for run_id in queued_run_ids:
             create_queued_run(
                 instance,
-                pipeline_handle,
+                job_handle,
                 run_id=run_id,
             )
 
@@ -228,17 +228,17 @@ def test_disable_max_concurrent_runs_limit(use_threads, workspace_context, pipel
         assert len(instance.run_launcher.queue()) == 6
 
 
-def test_priority(instance, workspace_context, pipeline_handle, daemon):
-    create_run(instance, pipeline_handle, run_id="default-pri-run", status=DagsterRunStatus.QUEUED)
+def test_priority(instance, workspace_context, job_handle, daemon):
+    create_run(instance, job_handle, run_id="default-pri-run", status=DagsterRunStatus.QUEUED)
     create_queued_run(
         instance,
-        pipeline_handle,
+        job_handle,
         run_id="low-pri-run",
         tags={PRIORITY_TAG: "-1"},
     )
     create_queued_run(
         instance,
-        pipeline_handle,
+        job_handle,
         run_id="hi-pri-run",
         tags={PRIORITY_TAG: "3"},
     )
@@ -252,10 +252,10 @@ def test_priority(instance, workspace_context, pipeline_handle, daemon):
     ]
 
 
-def test_priority_on_malformed_tag(instance, workspace_context, pipeline_handle, daemon):
+def test_priority_on_malformed_tag(instance, workspace_context, job_handle, daemon):
     create_queued_run(
         instance,
-        pipeline_handle,
+        job_handle,
         run_id="bad-pri-run",
         tags={PRIORITY_TAG: "foobar"},
     )
@@ -269,7 +269,7 @@ def test_priority_on_malformed_tag(instance, workspace_context, pipeline_handle,
     "use_threads",
     [False, True],
 )
-def test_tag_limits(use_threads, workspace_context, pipeline_handle, daemon):
+def test_tag_limits(use_threads, workspace_context, job_handle, daemon):
     with instance_for_queued_run_coordinator(
         max_concurrent_runs=10,
         tag_concurrency_limits=[{"key": "database", "value": "tiny", "limit": 1}],
@@ -279,19 +279,19 @@ def test_tag_limits(use_threads, workspace_context, pipeline_handle, daemon):
 
         create_queued_run(
             instance,
-            pipeline_handle,
+            job_handle,
             run_id="tiny-1",
             tags={"database": "tiny"},
         )
         create_queued_run(
             instance,
-            pipeline_handle,
+            job_handle,
             run_id="tiny-2",
             tags={"database": "tiny"},
         )
         create_queued_run(
             instance,
-            pipeline_handle,
+            job_handle,
             run_id="large-1",
             tags={"database": "large"},
         )
@@ -306,7 +306,7 @@ def test_tag_limits(use_threads, workspace_context, pipeline_handle, daemon):
     "use_threads",
     [False, True],
 )
-def test_tag_limits_just_key(use_threads, workspace_context, pipeline_handle, daemon):
+def test_tag_limits_just_key(use_threads, workspace_context, job_handle, daemon):
     with instance_for_queued_run_coordinator(
         max_concurrent_runs=10,
         tag_concurrency_limits=[
@@ -318,19 +318,19 @@ def test_tag_limits_just_key(use_threads, workspace_context, pipeline_handle, da
 
         create_queued_run(
             instance,
-            pipeline_handle,
+            job_handle,
             run_id="tiny-1",
             tags={"database": "tiny"},
         )
         create_queued_run(
             instance,
-            pipeline_handle,
+            job_handle,
             run_id="tiny-2",
             tags={"database": "tiny"},
         )
         create_queued_run(
             instance,
-            pipeline_handle,
+            job_handle,
             run_id="large-1",
             tags={"database": "large"},
         )
@@ -349,7 +349,7 @@ def test_multiple_tag_limits(
     use_threads,
     workspace_context,
     daemon,
-    pipeline_handle,
+    job_handle,
 ):
     with instance_for_queued_run_coordinator(
         max_concurrent_runs=10,
@@ -363,25 +363,25 @@ def test_multiple_tag_limits(
 
         create_queued_run(
             instance,
-            pipeline_handle,
+            job_handle,
             run_id="run-1",
             tags={"database": "tiny", "user": "johann"},
         )
         create_queued_run(
             instance,
-            pipeline_handle,
+            job_handle,
             run_id="run-2",
             tags={"database": "tiny"},
         )
         create_queued_run(
             instance,
-            pipeline_handle,
+            job_handle,
             run_id="run-3",
             tags={"user": "johann"},
         )
         create_queued_run(
             instance,
-            pipeline_handle,
+            job_handle,
             run_id="run-4",
             tags={"user": "johann"},
         )
@@ -396,7 +396,7 @@ def test_multiple_tag_limits(
     "use_threads",
     [False, True],
 )
-def test_overlapping_tag_limits(use_threads, workspace_context, daemon, pipeline_handle):
+def test_overlapping_tag_limits(use_threads, workspace_context, daemon, job_handle):
     with instance_for_queued_run_coordinator(
         max_concurrent_runs=10,
         tag_concurrency_limits=[
@@ -409,25 +409,25 @@ def test_overlapping_tag_limits(use_threads, workspace_context, daemon, pipeline
 
         create_queued_run(
             instance,
-            pipeline_handle,
+            job_handle,
             run_id="run-1",
             tags={"foo": "bar"},
         )
         create_queued_run(
             instance,
-            pipeline_handle,
+            job_handle,
             run_id="run-2",
             tags={"foo": "bar"},
         )
         create_queued_run(
             instance,
-            pipeline_handle,
+            job_handle,
             run_id="run-3",
             tags={"foo": "other"},
         )
         create_queued_run(
             instance,
-            pipeline_handle,
+            job_handle,
             run_id="run-4",
             tags={"foo": "other"},
         )
@@ -442,7 +442,7 @@ def test_overlapping_tag_limits(use_threads, workspace_context, daemon, pipeline
     "use_threads",
     [False, True],
 )
-def test_limits_per_unique_value(use_threads, workspace_context, pipeline_handle, daemon):
+def test_limits_per_unique_value(use_threads, workspace_context, job_handle, daemon):
     with instance_for_queued_run_coordinator(
         max_concurrent_runs=10,
         tag_concurrency_limits=[
@@ -454,13 +454,13 @@ def test_limits_per_unique_value(use_threads, workspace_context, pipeline_handle
 
         create_queued_run(
             instance,
-            pipeline_handle,
+            job_handle,
             run_id="run-1",
             tags={"foo": "bar"},
         )
         create_queued_run(
             instance,
-            pipeline_handle,
+            job_handle,
             run_id="run-2",
             tags={"foo": "bar"},
         )
@@ -468,13 +468,13 @@ def test_limits_per_unique_value(use_threads, workspace_context, pipeline_handle
 
         create_queued_run(
             instance,
-            pipeline_handle,
+            job_handle,
             run_id="run-3",
             tags={"foo": "other"},
         )
         create_queued_run(
             instance,
-            pipeline_handle,
+            job_handle,
             run_id="run-4",
             tags={"foo": "other"},
         )
@@ -493,7 +493,7 @@ def test_limits_per_unique_value_overlapping_limits(
     use_threads,
     workspace_context,
     daemon,
-    pipeline_handle,
+    job_handle,
 ):
     with instance_for_queued_run_coordinator(
         max_concurrent_runs=10,
@@ -507,25 +507,25 @@ def test_limits_per_unique_value_overlapping_limits(
 
         create_queued_run(
             instance,
-            pipeline_handle,
+            job_handle,
             run_id="run-1",
             tags={"foo": "bar"},
         )
         create_queued_run(
             instance,
-            pipeline_handle,
+            job_handle,
             run_id="run-2",
             tags={"foo": "bar"},
         )
         create_queued_run(
             instance,
-            pipeline_handle,
+            job_handle,
             run_id="run-3",
             tags={"foo": "other"},
         )
         create_queued_run(
             instance,
-            pipeline_handle,
+            job_handle,
             run_id="run-4",
             tags={"foo": "other-2"},
         )
@@ -547,31 +547,31 @@ def test_limits_per_unique_value_overlapping_limits(
 
         create_queued_run(
             instance,
-            pipeline_handle,
+            job_handle,
             run_id="run-1",
             tags={"foo": "bar"},
         )
         create_queued_run(
             instance,
-            pipeline_handle,
+            job_handle,
             run_id="run-2",
             tags={"foo": "baz"},
         )
         create_queued_run(
             instance,
-            pipeline_handle,
+            job_handle,
             run_id="run-3",
             tags={"foo": "bar"},
         )
         create_queued_run(
             instance,
-            pipeline_handle,
+            job_handle,
             run_id="run-4",
             tags={"foo": "baz"},
         )
         create_queued_run(
             instance,
-            pipeline_handle,
+            job_handle,
             run_id="run-5",
             tags={"foo": "baz"},
         )
@@ -582,17 +582,17 @@ def test_limits_per_unique_value_overlapping_limits(
         assert set(get_run_ids(instance.run_launcher.queue())) == {"run-1", "run-2", "run-4"}
 
 
-def test_locations_not_created(instance, monkeypatch, workspace_context, daemon, pipeline_handle):
+def test_locations_not_created(instance, monkeypatch, workspace_context, daemon, job_handle):
     """Verifies that no repository location is created when runs are dequeued."""
     create_queued_run(
         instance,
-        pipeline_handle,
+        job_handle,
         run_id="queued-run",
     )
 
     create_queued_run(
         instance,
-        pipeline_handle,
+        job_handle,
         run_id="queued-run-2",
     )
 
@@ -640,7 +640,7 @@ def test_locations_not_created(instance, monkeypatch, workspace_context, daemon,
     "use_threads",
     [False, True],
 )
-def test_skip_error_runs(pipeline_handle, daemon, use_threads):
+def test_skip_error_runs(job_handle, daemon, use_threads):
     with instance_for_queued_run_coordinator(
         max_concurrent_runs=10, dequeue_use_threads=use_threads
     ) as instance:
@@ -649,19 +649,19 @@ def test_skip_error_runs(pipeline_handle, daemon, use_threads):
         ) as workspace_context:
             create_queued_run(
                 instance,
-                pipeline_handle,
+                job_handle,
                 run_id="bad-run",
             )
 
             create_queued_run(
                 instance,
-                pipeline_handle,
+                job_handle,
                 run_id="good-run",
             )
 
             create_queued_run(
                 instance,
-                pipeline_handle,
+                job_handle,
                 run_id="bad-user-code-run",
             )
 
@@ -676,9 +676,7 @@ def test_skip_error_runs(pipeline_handle, daemon, use_threads):
     "use_threads",
     [False, True],
 )
-def test_retry_user_code_error_run(
-    pipeline_handle, other_location_pipeline_handle, daemon, use_threads
-):
+def test_retry_user_code_error_run(job_handle, other_location_job_handle, daemon, use_threads):
     with instance_for_queued_run_coordinator(
         max_concurrent_runs=10,
         dequeue_use_threads=use_threads,
@@ -690,11 +688,11 @@ def test_retry_user_code_error_run(
         ) as workspace_context:
             fixed_iteration_time = time.time() - 3600 * 24 * 365
 
-            create_queued_run(instance, pipeline_handle, run_id="bad-run")
-            create_queued_run(instance, pipeline_handle, run_id="good-run")
+            create_queued_run(instance, job_handle, run_id="bad-run")
+            create_queued_run(instance, job_handle, run_id="good-run")
             create_queued_run(
                 instance,
-                pipeline_handle,
+                job_handle,
                 run_id="bad-user-code-run",
             )
 
@@ -709,7 +707,7 @@ def test_retry_user_code_error_run(
             # Other runs in the same location are skipped
             create_queued_run(
                 instance,
-                pipeline_handle,
+                job_handle,
                 run_id="good-run-same-location",
                 tags={
                     "dagster/priority": "5",
@@ -717,7 +715,7 @@ def test_retry_user_code_error_run(
             )
             create_queued_run(
                 instance,
-                other_location_pipeline_handle,
+                other_location_job_handle,
                 run_id="good-run-other-location",
             )
             list(daemon.run_iteration(workspace_context, fixed_iteration_time=fixed_iteration_time))
@@ -769,7 +767,7 @@ def test_retry_user_code_error_run(
     "use_threads",
     [False, True],
 )
-def test_retry_user_code_error_recovers(pipeline_handle, daemon, use_threads):
+def test_retry_user_code_error_recovers(job_handle, daemon, use_threads):
     with instance_for_queued_run_coordinator(
         max_concurrent_runs=10,
         dequeue_use_threads=use_threads,
@@ -783,7 +781,7 @@ def test_retry_user_code_error_recovers(pipeline_handle, daemon, use_threads):
 
             create_queued_run(
                 instance,
-                pipeline_handle,
+                job_handle,
                 run_id="bad-user-code-run",
             )
 
@@ -810,7 +808,7 @@ def test_retry_user_code_error_recovers(pipeline_handle, daemon, use_threads):
     "use_threads",
     [False, True],
 )
-def test_key_limit_with_extra_tags(use_threads, workspace_context, daemon, pipeline_handle):
+def test_key_limit_with_extra_tags(use_threads, workspace_context, daemon, job_handle):
     with instance_for_queued_run_coordinator(
         max_concurrent_runs=2,
         tag_concurrency_limits=[
@@ -822,14 +820,14 @@ def test_key_limit_with_extra_tags(use_threads, workspace_context, daemon, pipel
 
         create_queued_run(
             instance,
-            pipeline_handle,
+            job_handle,
             run_id="run-1",
             tags={"other-tag": "value", "test": "value"},
         )
 
         create_queued_run(
             instance,
-            pipeline_handle,
+            job_handle,
             run_id="run-2",
             tags={"other-tag": "value", "test": "value"},
         )
