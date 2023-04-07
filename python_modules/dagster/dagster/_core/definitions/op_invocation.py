@@ -1,10 +1,20 @@
 import inspect
-from typing import TYPE_CHECKING, Any, Mapping, Optional, TypeVar, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Tuple,
+    TypeVar,
+    Union,
+    cast,
+)
 
 import dagster._check as check
-from dagster._core.definitions.resource_definition import ResourceDefinition
+from dagster._core.decorator_utils import get_function_params
 from dagster._core.errors import (
-    DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
     DagsterTypeCheckDidNotPass,
@@ -27,6 +37,47 @@ if TYPE_CHECKING:
     from .output import OutputDefinition
 
 T = TypeVar("T")
+
+
+class ExtractedOutputs(NamedTuple):
+    args: Tuple[Any, ...]
+    kwargs: Dict[str, Any]
+    resource_inputs: Dict[str, Any]
+
+
+def _extract_resource_args(
+    compute_fn: "DecoratedOpFunction",
+    args: Tuple[Any, ...],
+    kwargs: Dict[str, Any],
+    resource_arg_mapping: Dict[str, Any],
+) -> ExtractedOutputs:
+    resource_inputs_from_args_and_kwargs = {}
+    params = get_function_params(compute_fn.decorated_fn)
+
+    adjusted_args = []
+
+    params_without_context = params[1:] if compute_fn.has_context_arg() else params
+    for param, arg in zip(params_without_context, args):
+        if param.kind != inspect.Parameter.KEYWORD_ONLY:
+            if param.name in resource_arg_mapping:
+                resource_inputs_from_args_and_kwargs[param.name] = arg
+                continue
+
+        adjusted_args.append(arg)
+
+    for resource_arg in resource_arg_mapping:
+        if resource_arg in kwargs:
+            resource_inputs_from_args_and_kwargs[resource_arg] = kwargs[resource_arg]
+
+    adjusted_kwargs = {
+        k: v for k, v in kwargs.items() if k not in resource_inputs_from_args_and_kwargs
+    }
+
+    return ExtractedOutputs(
+        args=tuple(adjusted_args),
+        kwargs=adjusted_kwargs,
+        resource_inputs=resource_inputs_from_args_and_kwargs,
+    )
 
 
 def op_invocation_result(
@@ -59,31 +110,21 @@ def op_invocation_result(
     context = context or build_op_context()
 
     resource_arg_mapping = {arg.name: arg.name for arg in compute_fn.get_resource_args()}
-    resource_args_from_kwargs = {}
-    for resource_arg in resource_arg_mapping:
-        if resource_arg in kwargs:
-            resource_args_from_kwargs[resource_arg] = kwargs[resource_arg]
-            del kwargs[resource_arg]
+    extracted = _extract_resource_args(compute_fn, args, kwargs, resource_arg_mapping)
+    adjusted_args = extracted.args
+    adjusted_kwargs = extracted.kwargs
+    resource_inputs_from_args = extracted.resource_inputs
 
-    resources_provided_in_multiple_places = (resource_args_from_kwargs) and (context.resource_keys)
+    resources_provided_in_multiple_places = (resource_inputs_from_args) and (context.resource_keys)
     if resources_provided_in_multiple_places:
         raise DagsterInvalidInvocationError("Cannot provide resources in both context and kwargs")
 
-    if resource_args_from_kwargs:
-        context = context.replace_resources(resource_args_from_kwargs)
+    if resource_inputs_from_args:
+        context = context.replace_resources(resource_inputs_from_args)
 
-    try:
-        bound_context = context.bind(op_def_or_invocation)
-    except DagsterInvalidDefinitionError as e:
-        if any(isinstance(arg, ResourceDefinition) for arg in args):
-            raise DagsterInvalidInvocationError(
-                str(e)
-                + "\n\nIf directly invoking an op/asset, you may not provide resources as"
-                " positional"
-                " arguments, only as keyword arguments."
-            ) from e
-        raise
-    input_dict = _resolve_inputs(op_def, args, kwargs, bound_context)
+    bound_context = context.bind(op_def_or_invocation)
+
+    input_dict = _resolve_inputs(op_def, adjusted_args, adjusted_kwargs, bound_context)
 
     result = invoke_compute_fn(
         fn=compute_fn.decorated_fn,
