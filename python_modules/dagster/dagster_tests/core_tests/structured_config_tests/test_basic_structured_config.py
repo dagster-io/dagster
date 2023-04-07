@@ -25,7 +25,10 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.run_config import RunConfig
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
-from dagster._core.errors import DagsterInvalidConfigDefinitionError, DagsterInvalidConfigError
+from dagster._core.errors import (
+    DagsterInvalidConfigError,
+    DagsterInvalidPythonicConfigDefinitionError,
+)
 from dagster._core.execution.context.invocation import build_op_context
 from dagster._utils.cached_method import cached_method
 from pydantic import (
@@ -262,7 +265,7 @@ def test_primitive_struct_config():
 
 def test_invalid_struct_config():
     # Config should extend Config, not BaseModel
-    with pytest.raises(DagsterInvalidConfigDefinitionError):
+    with pytest.raises(DagsterInvalidPythonicConfigDefinitionError):
 
         class BaseModelExtendingConfig(BaseModel):
             a_string: str
