@@ -911,8 +911,13 @@ def _convert_pydantic_field(pydantic_field: ModelField, model_cls: Optional[Type
             config_type=inferred_field.config_type,
             key_type=key_type,
         )
-
-        return Field(config=wrapped_config_type, description=inferred_field.description)
+        return Field(
+            config=Noneable(wrapped_config_type)
+            if pydantic_field.allow_none
+            else wrapped_config_type,
+            description=inferred_field.description,
+            is_required=_is_pydantic_field_required(pydantic_field),
+        )
     else:
         # For certain data structure types, we need to grab the inner Pydantic field (e.g. List type)
         inner_field = _get_inner_field_if_exists(pydantic_field.shape, pydantic_field)
@@ -924,10 +929,10 @@ def _convert_pydantic_field(pydantic_field: ModelField, model_cls: Optional[Type
         wrapped_config_type = _wrap_config_type(
             shape_type=pydantic_field.shape, config_type=config_type, key_type=key_type
         )
-        if pydantic_field.allow_none:
-            wrapped_config_type = Noneable(wrapped_config_type)
         return Field(
-            config=wrapped_config_type,
+            config=Noneable(wrapped_config_type)
+            if pydantic_field.allow_none
+            else wrapped_config_type,
             description=pydantic_field.field_info.description,
             is_required=_is_pydantic_field_required(pydantic_field),
             default_value=pydantic_field.default
