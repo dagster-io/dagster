@@ -8,6 +8,7 @@ from dagster import (
     _check as check,
     resource,
 )
+from dagster._annotations import deprecated
 from dagster._config.structured_config import (
     ConfigurableResourceFactory,
 )
@@ -20,6 +21,18 @@ class RedshiftError(Exception):
 
 
 class BaseRedshiftClient(abc.ABC):
+    @abc.abstractmethod
+    def execute_query(self, query, fetch_results=False, cursor_factory=None, error_callback=None):
+        pass
+
+    @abc.abstractmethod
+    def execute_queries(
+        self, queries, fetch_results=False, cursor_factory=None, error_callback=None
+    ):
+        pass
+
+
+class RedshiftClient(BaseRedshiftClient):
     def __init__(self, context: InitResourceContext):
         # Extract parameters from resource config
         self.conn_args = {
@@ -39,18 +52,6 @@ class BaseRedshiftClient(abc.ABC):
         self.autocommit = context.resource_config.get("autocommit")
         self.log = context.log
 
-    @abc.abstractmethod
-    def execute_query(self, query, fetch_results=False, cursor_factory=None, error_callback=None):
-        pass
-
-    @abc.abstractmethod
-    def execute_queries(
-        self, queries, fetch_results=False, cursor_factory=None, error_callback=None
-    ):
-        pass
-
-
-class RedshiftClient(BaseRedshiftClient):
     def execute_query(self, query, fetch_results=False, cursor_factory=None, error_callback=None):
         """Synchronously execute a single query against Redshift. Will return a list of rows, where
         each row is a tuple of values, e.g. SELECT 1 will return [(1,)].
@@ -206,8 +207,32 @@ class RedshiftClient(BaseRedshiftClient):
                 conn.commit()
 
 
+@deprecated
+class RedshiftResource(RedshiftClient):
+    pass
+
+
 class FakeRedshiftClient(BaseRedshiftClient):
     QUERY_RESULT = [(1,)]
+
+    def __init__(self, context: InitResourceContext):
+        # Extract parameters from resource config
+        self.conn_args = {
+            k: context.resource_config.get(k)
+            for k in (
+                "host",
+                "port",
+                "user",
+                "password",
+                "database",
+                "connect_timeout",
+                "sslmode",
+            )
+            if context.resource_config.get(k) is not None
+        }
+
+        self.autocommit = context.resource_config.get("autocommit")
+        self.log = context.log
 
     def execute_query(self, query, fetch_results=False, cursor_factory=None, error_callback=None):
         """Fake for execute_query; returns [self.QUERY_RESULT].
@@ -275,7 +300,12 @@ class FakeRedshiftClient(BaseRedshiftClient):
             return [self.QUERY_RESULT] * 3
 
 
-class RedshiftResource(ConfigurableResourceFactory[RedshiftClient]):
+@deprecated
+class FakeRedshiftResource(FakeRedshiftClient):
+    pass
+
+
+class RedshiftClientResource(ConfigurableResourceFactory[RedshiftClient]):
     """This resource enables connecting to a Redshift cluster and issuing queries against that
     cluster.
 
@@ -328,13 +358,13 @@ class RedshiftResource(ConfigurableResourceFactory[RedshiftClient]):
         return RedshiftClient(context)
 
 
-class FakeRedshiftResource(RedshiftResource):
+class FakeRedshiftClientResource(RedshiftClientResource):
     def create_resource(self, context: InitResourceContext) -> FakeRedshiftClient:
         return FakeRedshiftClient(context)
 
 
 @resource(
-    config_schema=RedshiftResource.to_config_schema(),
+    config_schema=RedshiftClientResource.to_config_schema(),
     description="Resource for connecting to the Redshift data warehouse",
 )
 def redshift_resource(context) -> RedshiftClient:
@@ -362,11 +392,11 @@ def redshift_resource(context) -> RedshiftClient:
             assert example_redshift_op(context) == [(1,)]
 
     """
-    return RedshiftResource.from_resource_context(context)
+    return RedshiftClientResource.from_resource_context(context)
 
 
 @resource(
-    config_schema=FakeRedshiftResource.to_config_schema(),
+    config_schema=FakeRedshiftClientResource.to_config_schema(),
     description=(
         "Fake resource for connecting to the Redshift data warehouse. Usage is identical "
         "to the real redshift_resource. Will always return [(1,)] for the single query case and "
@@ -374,4 +404,4 @@ def redshift_resource(context) -> RedshiftClient:
     ),
 )
 def fake_redshift_resource(context) -> FakeRedshiftClient:
-    return cast(FakeRedshiftClient, FakeRedshiftResource.from_resource_context(context))
+    return cast(FakeRedshiftClient, FakeRedshiftClientResource.from_resource_context(context))

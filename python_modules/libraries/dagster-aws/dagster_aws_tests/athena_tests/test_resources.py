@@ -64,12 +64,12 @@ def test_execute_query_succeeds_on_last_poll(mock_athena_client):
 
 @pytest.fixture(name="athena_resource", params=[True, False])
 def athena_resource_fixture(request) -> ResourceDefinition:
-    from dagster_aws.athena import FakeAthenaResource, fake_athena_resource
+    from dagster_aws.athena import FakeAthenaClientResource, fake_athena_resource
 
     if request.param:
         return fake_athena_resource
     else:
-        return FakeAthenaResource.configure_at_launch()
+        return FakeAthenaClientResource.configure_at_launch()
 
 
 def test_op(mock_athena_client, athena_resource):

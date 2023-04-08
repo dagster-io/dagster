@@ -10,8 +10,8 @@ from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._utils.test import wrap_op_in_graph_and_execute
 from dagster_aws.redshift import (
     FakeRedshiftClient,
-    FakeRedshiftResource,
-    RedshiftResource,
+    FakeRedshiftClientResource,
+    RedshiftClientResource,
     fake_redshift_resource,
     redshift_resource,
 )
@@ -38,7 +38,7 @@ def redshift_resource_type_fixture(request) -> ResourceDefinition:
     if request.param:
         return redshift_resource
     else:
-        return RedshiftResource.configure_at_launch()
+        return RedshiftClientResource.configure_at_launch()
 
 
 @pytest.fixture(name="fake_redshift_resource_type", params=[True, False])
@@ -46,7 +46,7 @@ def fake_redshift_resource_type_fixture(request) -> ResourceDefinition:
     if request.param:
         return fake_redshift_resource
     else:
-        return FakeRedshiftResource.configure_at_launch()
+        return FakeRedshiftClientResource.configure_at_launch()
 
 
 def mock_execute_query_conn(*_args, **_kwargs):
