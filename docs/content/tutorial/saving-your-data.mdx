@@ -25,13 +25,6 @@ They manage **input** by reading an asset from where it’s stored and loading i
 
 I/O managers control \*_output_ by writing the asset's to the location configured. By the end of this section, you’ll configure an I/O manager to write the `hackernews_topstories` DataFrame into a database as a table.
 
-<Note>
-  In-memory processing means the data is transformed on a computer's RAM (Random
-  access memory). This is different from disk storage, which is slower but
-  likely you have more of. In-memory processing is faster, but it can only be
-  done on a computer's RAM and you likely have less RAM on your machines.
-</Note>
-
 ---
 
 ## Step 1: Writing files to storage
@@ -40,30 +33,38 @@ Now, you’ll write your files to a more permanent location. For this tutorial, 
 
 In `__init__.py`, add the following snippet anywhere above the `def = Definitions(...)` line:
 
-```python
+```python file=/tutorial/saving/add_fs_io_manager.py startafter=start_imports_and_definitions endbefore=end_imports_and_definitions
 from dagster import (
     AssetSelection,
     Definitions,
     ScheduleDefinition,
     define_asset_job,
     load_assets_from_modules,
-    fs_io_manager # Update the imports at the top of the file to also include this
+    fs_io_manager,  # Update the imports at the top of the file to also include this
 )
 
-io_manager = fs_io_manager.configured({
-    "base_dir": "data", # Path is built relative to where `dagster dev` is run
-})
+hackernews_job = define_asset_job("hackernews_job", selection=AssetSelection.all())
+
+hackernews_schedule = ScheduleDefinition(
+    job=hackernews_job, cron_schedule="0 * * * *"  # every hour
+)
+
+io_manager = fs_io_manager.configured(
+    {
+        "base_dir": "data",  # Path is built relative to where `dagster dev` is run
+    }
+)
 ```
 
 Next, update your `Definitions` (shown below) to attach the I/O manager to your code location by defining it as a **resource**.
 
-```python
+```python file=/tutorial/saving/add_fs_io_manager.py startafter=start_update_defs endbefore=end_update_defs
 defs = Definitions(
     assets=hackernews_assets,
     schedules=[hackernews_schedule],
     resources={
         "io_manager": io_manager,
-    }
+    },
 )
 ```
 
@@ -101,15 +102,16 @@ Adding an I/O manager for a database is similar to connecting it to file storage
 
 Update your `__init__.py` to reflect the changes below:
 
-```python
+```python file=/tutorial/saving/add_db_io_manager.py startafter=start_imports_and_definitions endbefore=end_imports_and_definitions
 from dagster_duckdb_pandas import duckdb_pandas_io_manager
+
 # Add the imports to the top
 # These imports let you define how Dagster communicates with DuckDB
 
 # Insert this section anywhere above your `defs = Definitions(...)`
-database_io_manager = duckdb_pandas_io_manager.configured({
-    "database": "analytics.hackernews"
-})
+database_io_manager = duckdb_pandas_io_manager.configured(
+    {"database": "analytics.hackernews"}
+)
 
 # Update your Definitions
 defs = Definitions(
@@ -117,8 +119,8 @@ defs = Definitions(
     schedules=[hackernews_schedule],
     resources={
         "io_manager": io_manager,
-        "database_io_manager": database_io_manager # Define the I/O manager here
-    }
+        "database_io_manager": database_io_manager,  # Define the I/O manager here
+    },
 )
 ```
 
@@ -134,10 +136,10 @@ You now have two I/O managers configured within a code location. By default, all
 
 To have the `topstories` asset store its data in DuckDB, modify its asset function in `assets.py` by specifying the asset’s `io_manager_key` to be `"database_io_manager"`, as shown below:
 
-```python
+```python file=/tutorial/saving/assets.py startafter=start_update_asset endbefore=end_update_asset
 @asset(
     group_name="hackernews",
-    io_manager_key="database_io_manager", # Addition: `io_manager_key` specified
+    io_manager_key="database_io_manager",  # Addition: `io_manager_key` specified
 )
 def topstories(topstory_ids):
     logger = get_dagster_logger()
@@ -159,7 +161,7 @@ def topstories(topstory_ids):
         metadata={
             "num_records": len(df),
             "preview": MetadataValue.md(df.head().to_markdown()),
-        }
+        },
     )
 ```
 
