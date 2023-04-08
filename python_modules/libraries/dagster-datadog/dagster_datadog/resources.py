@@ -85,7 +85,7 @@ class DataDogClientResource(FactoryResource[DataDogClient]):
         )
     )
 
-    def create_resource(self, _init_context) -> DataDogClient:
+    def provide_object_for_execution(self, _init_context) -> DataDogClient:
         return DataDogClient(self.api_key, self.app_key)
 
 

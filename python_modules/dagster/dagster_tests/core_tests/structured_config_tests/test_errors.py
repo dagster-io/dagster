@@ -181,7 +181,7 @@ This config type can be a:
 
 def test_annotate_with_resource_factory() -> None:
     class MyStringFactory(FactoryResource[str]):
-        def create_resource(self, context: None) -> str:
+        def provide_object_for_execution(self, context: None) -> str:
             return "hello"
 
     with pytest.raises(
@@ -215,7 +215,7 @@ def test_annotate_with_resource_factory() -> None:
             pass
 
     class MyUnspecifiedFactory(FactoryResource):
-        def create_resource(self, context: None) -> str:
+        def provide_object_for_execution(self, context: None) -> str:
             return "hello"
 
     with pytest.raises(
@@ -253,7 +253,7 @@ def test_annotate_with_resource_factory() -> None:
 
 def test_annotate_with_resource_factory_schedule_sensor() -> None:
     class MyStringFactory(FactoryResource[str]):
-        def create_resource(self, context: None) -> str:
+        def provide_object_for_execution(self, context: None) -> str:
             return "hello"
 
     with pytest.raises(

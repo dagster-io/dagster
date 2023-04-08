@@ -21,7 +21,7 @@ class TwilioResource(FactoryResource[Client]):
         ),
     )
 
-    def create_resource(self, context) -> Client:
+    def provide_object_for_execution(self, context) -> Client:
         return Client(self.account_sid, self.auth_token)
 
 

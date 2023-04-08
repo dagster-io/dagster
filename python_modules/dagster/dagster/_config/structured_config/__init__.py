@@ -421,7 +421,7 @@ class FactoryResource(
     * A class that you desire to be a plain Python class, rather than a Pydantic class, for whatever reason.
 
     This class is a subclass of both :py:class:`ResourceDefinition` and :py:class:`Config`, and
-    must implement ``create_resource``, which creates the resource to pass to user code.
+    must implement ``provide_object_for_execution``, which creates the resource to pass to user code.
 
     Example definition:
 
@@ -430,7 +430,7 @@ class FactoryResource(
         class DatabaseResource(FactoryResource[Database]):
             connection_uri: str
 
-            def create_resource(self, _init_context) -> Database:
+            def provide_object_for_execution(self, _init_context) -> Database:
                 # For example Database could be from a third-party library or require expensive setup.
                 # Or you could just prefer to separate the concerns of configuration and runtime representation
                 return Database(self.connection_uri)
@@ -487,9 +487,9 @@ class FactoryResource(
         self._schema = schema
 
         self._nested_resources = {k: v for k, v in resource_pointers.items()}
-
+    
     @abstractmethod
-    def create_resource(self, context: InitResourceContext) -> TResValue:
+    def provide_object_for_execution(self, context: InitResourceContext) -> TResValue:
         """Returns the object that this resource hands to user code, accessible by ops or assets
         through the context or resource parameters. This works like the function decorated
         with @resource when using function-based resources.
@@ -574,7 +574,7 @@ class FactoryResource(
         return with_env_vars._create_object_fn(context)  # noqa: SLF001
 
     def _create_object_fn(self, context: InitResourceContext) -> TResValue:
-        return self.create_resource(context)
+        return self.provide_object_for_execution(context)
 
     @classmethod
     def from_resource_context(cls, context: InitResourceContext) -> TResValue:
@@ -594,7 +594,7 @@ class FactoryResource(
                 return MyResource.from_resource_context(context)
 
         """
-        return cls(**context.resource_config).create_resource(context)
+        return cls(**context.resource_config).provide_object_for_execution(context)
 
 
 @experimental
@@ -630,7 +630,7 @@ class Resource(FactoryResource[TResValue]):
 
     """
 
-    def create_resource(self, context: InitResourceContext) -> TResValue:
+    def provide_object_for_execution(self, context: InitResourceContext) -> TResValue:
         """Returns the object that this resource hands to user code, accessible by ops or assets
         through the context or resource parameters. This works like the function decorated
         with @resource when using function-based resources.
@@ -777,17 +777,11 @@ class ConfigurableIOManagerFactory(FactoryResource[TIOManagerValue], IOManagerDe
             description=self.__doc__,
         )
 
-    @abstractmethod
-    def create_io_manager(self, context) -> TIOManagerValue:
-        """Implement as one would implement a @io_manager decorator function."""
-        raise NotImplementedError()
-
     def _create_object_fn(self, context: InitResourceContext) -> TIOManagerValue:
-        return self.create_io_manager(context)
+        return self.provide_object_for_execution(context)
 
-    def create_resource(self, context: InitResourceContext) -> TIOManagerValue:
-        # I/O manager factories execute a different code path that does not
-        # call create_resource
+    @abstractmethod
+    def provide_object_for_execution(self, context: InitResourceContext) -> TIOManagerValue:
         raise NotImplementedError()
 
     @classmethod
@@ -818,7 +812,7 @@ class ConfigurableIOManager(ConfigurableIOManagerFactory, IOManager):
     :py:meth:`handle_output` and :py:meth:`load_input` methods.
     """
 
-    def create_io_manager(self, context) -> IOManager:
+    def provide_object_for_execution(self, context) -> IOManager:
         return self
 
 
@@ -1027,7 +1021,7 @@ class ConfigurableLegacyIOManagerAdapter(ConfigurableIOManagerFactory):
     def wrapped_io_manager(self) -> IOManagerDefinition:
         raise NotImplementedError()
 
-    def create_io_manager(self, context) -> IOManager:
+    def provide_object_for_execution(self, context) -> IOManager:
         raise NotImplementedError(
             "Because we override resource_fn in the adapter, this is never called."
         )

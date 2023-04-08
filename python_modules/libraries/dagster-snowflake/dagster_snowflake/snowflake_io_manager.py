@@ -243,7 +243,7 @@ class SnowflakeIOManager(ConfigurableIOManagerFactory):
         """
         return None
 
-    def create_io_manager(self, context) -> DbIOManager:
+    def provide_object_for_execution(self, context) -> DbIOManager:
         return DbIOManager(
             db_client=SnowflakeDbClient(),
             io_manager_name="SnowflakeIOManager",

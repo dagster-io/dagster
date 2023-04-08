@@ -224,7 +224,7 @@ def test_yield_in_resource_function():
     class ResourceWithCleanup(FactoryResource[bool]):
         idx: int
 
-        def create_resource(self, context):
+        def provide_object_for_execution(self, context):
             called.append(f"creation_{self.idx}")
             yield True
             called.append(f"cleanup_{self.idx}")
@@ -335,7 +335,7 @@ def test_io_manager_factory_class():
     class AnIOManagerFactory(ConfigurableIOManagerFactory):
         a_config_value: str
 
-        def create_io_manager(self, _) -> IOManager:
+        def provide_object_for_execution(self, _) -> IOManager:
             """Implement as one would implement a @io_manager decorator function."""
             return AnIOManagerImplementation(self.a_config_value)
 
@@ -677,7 +677,7 @@ def test_resources_which_return():
     class StringResource(FactoryResource[str]):
         a_string: str
 
-        def create_resource(self, context) -> str:
+        def provide_object_for_execution(self, context) -> str:
             return self.a_string
 
     class MyResource(Resource):
@@ -746,7 +746,7 @@ def test_nested_function_resource():
         writer: ResourceDependency[Callable[[str], None]]
         postfix: str
 
-        def create_resource(self, context) -> Callable[[str], None]:
+        def provide_object_for_execution(self, context) -> Callable[[str], None]:
             def output(text: str):
                 self.writer(f"{text}{self.postfix}")
 
@@ -784,7 +784,7 @@ def test_nested_function_resource_configured():
         writer: ResourceDependency[Callable[[str], None]]
         postfix: str
 
-        def create_resource(self, context) -> Callable[[str], None]:
+        def provide_object_for_execution(self, context) -> Callable[[str], None]:
             def output(text: str):
                 self.writer(f"{text}{self.postfix}")
 
@@ -836,7 +836,7 @@ def test_nested_function_resource_runtime_config():
         writer: ResourceDependency[Callable[[str], None]]
         postfix: str
 
-        def create_resource(self, context) -> Callable[[str], None]:
+        def provide_object_for_execution(self, context) -> Callable[[str], None]:
             def output(text: str):
                 self.writer(f"{text}{self.postfix}")
 
@@ -2267,7 +2267,7 @@ def test_from_resource_context_and_to_config_field() -> None:
     class StringResource(FactoryResource[str]):
         a_string: str
 
-        def create_resource(self, context) -> str:
+        def provide_object_for_execution(self, context) -> str:
             return self.a_string + "bar"
 
     @resource(config_schema=StringResource.to_config_schema())

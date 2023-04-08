@@ -185,7 +185,9 @@ class GithubResource(FactoryResource[GithubClient]):
         ),
     )
 
-    def create_resource(self, context: InitResourceContextWithKeyMapping) -> GithubClient:
+    def provide_object_for_execution(
+        self, context: InitResourceContextWithKeyMapping
+    ) -> GithubClient:
         return GithubClient(
             client=requests.Session(),
             app_id=self.github_app_id,
@@ -200,4 +202,4 @@ class GithubResource(FactoryResource[GithubClient]):
     description="This resource is for connecting to Github",
 )
 def github_resource(context) -> GithubClient:
-    return GithubResource(**context.resource_config).create_resource(context)
+    return GithubResource(**context.resource_config).provide_object_for_execution(context)

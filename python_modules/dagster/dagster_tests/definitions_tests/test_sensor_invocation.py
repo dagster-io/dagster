@@ -160,7 +160,7 @@ def test_sensor_invocation_resources_context_manager() -> None:
 
 def test_sensor_invocation_resources_deferred() -> None:
     class MyResource(Resource):
-        def create_resource(self, context) -> None:
+        def provide_object_for_execution(self, context) -> None:
             raise Exception()
 
     @sensor(job_name="foo_pipeline", required_resource_keys={"my_resource"})

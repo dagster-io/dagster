@@ -250,7 +250,7 @@ class BigQueryIOManager(ConfigurableIOManagerFactory):
     def default_load_type() -> Optional[Type]:
         return None
 
-    def create_io_manager(self, context) -> Generator:
+    def provide_object_for_execution(self, context) -> Generator:
         mgr = DbIOManager(
             db_client=BigQueryClient(),
             io_manager_name="BigQueryIOManager",
