@@ -354,7 +354,7 @@ def resource_adapter() -> None:
         Definitions,
         ResourceDefinition,
         asset,
-        ConfigurableLegacyResourceAdapter,
+        LegacyResourceAdapter,
     )
 
     # Old code, interface cannot be changed for back-compat purposes
@@ -371,7 +371,7 @@ def resource_adapter() -> None:
         return Writer(prefix)
 
     # New adapter layer
-    class WriterResource(ConfigurableLegacyResourceAdapter):
+    class WriterResource(LegacyResourceAdapter):
         prefix: str
 
         @property

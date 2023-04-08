@@ -29,8 +29,8 @@ from dagster._config.structured_config import (
     ConfigurableIOManager,
     ConfigurableIOManagerFactory,
     ConfigurableLegacyIOManagerAdapter,
-    ConfigurableLegacyResourceAdapter,
     FactoryResource,
+    LegacyResourceAdapter,
     Resource,
     ResourceDependency,
 )
@@ -263,7 +263,7 @@ def test_wrapping_function_resource():
 
         return output
 
-    class WriterResource(ConfigurableLegacyResourceAdapter):
+    class WriterResource(LegacyResourceAdapter):
         prefix: str
 
         @property

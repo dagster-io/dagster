@@ -717,7 +717,7 @@ class ResourceDependency(Generic[V]):
 
 
 @experimental
-class ConfigurableLegacyResourceAdapter(Resource, ABC):
+class LegacyResourceAdapter(Resource, ABC):
     """Adapter base class for wrapping a decorated, function-style resource
     with structured config.
 
