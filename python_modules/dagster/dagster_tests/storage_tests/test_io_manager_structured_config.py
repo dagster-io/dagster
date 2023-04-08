@@ -1,5 +1,5 @@
 from dagster import Definitions, In, asset, job, op
-from dagster._config.structured_config import ConfigurableIOManager, ConfigurableResource
+from dagster._config.structured_config import ConfigurableIOManager, Resource
 
 
 def test_load_input_handle_output():
@@ -85,7 +85,7 @@ def test_runtime_config():
 def test_nested_resources():
     out_txt = []
 
-    class IOConfigResource(ConfigurableResource):
+    class IOConfigResource(Resource):
         prefix: str
 
     class MyIOManager(ConfigurableIOManager):
@@ -115,7 +115,7 @@ def test_nested_resources():
 def test_nested_resources_runtime_config():
     out_txt = []
 
-    class IOConfigResource(ConfigurableResource):
+    class IOConfigResource(Resource):
         prefix: str
 
     class MyIOManager(ConfigurableIOManager):

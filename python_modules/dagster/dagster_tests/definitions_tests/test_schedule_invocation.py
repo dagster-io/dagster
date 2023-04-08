@@ -12,7 +12,7 @@ from dagster import (
     repository,
     schedule,
 )
-from dagster._config.structured_config import ConfigurableResource
+from dagster._config.structured_config import Resource
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._core.test_utils import instance_for_test
@@ -78,7 +78,7 @@ def test_instance_access():
 
 
 def test_schedule_invocation_resources() -> None:
-    class MyResource(ConfigurableResource):
+    class MyResource(Resource):
         a_str: str
 
     @schedule(job_name="foo_pipeline", cron_schedule="* * * * *")

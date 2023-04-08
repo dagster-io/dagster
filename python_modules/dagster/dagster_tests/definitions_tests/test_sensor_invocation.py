@@ -43,10 +43,10 @@ from dagster import (
     sensor,
     static_partitioned_config,
 )
-from dagster._config.structured_config import ConfigurableResource
+from dagster._config.structured_config import Resource
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.partition import DynamicPartitionsDefinition
-from dagster._core.definitions.resource_annotation import Resource
+from dagster._core.definitions.resource_annotation import FromResources
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._core.test_utils import instance_for_test
@@ -110,7 +110,7 @@ def test_sensor_invocation_args():
 
 
 def test_sensor_invocation_resources() -> None:
-    class MyResource(ConfigurableResource):
+    class MyResource(Resource):
         a_str: str
 
     # Test no arg invocation
@@ -138,7 +138,7 @@ def test_sensor_invocation_resources() -> None:
 
 def test_sensor_invocation_resources_context_manager() -> None:
     @sensor(job_name="foo_pipeline")
-    def basic_sensor_str_resource_req(my_resource: Resource[str]):
+    def basic_sensor_str_resource_req(my_resource: FromResources[str]):
         return RunRequest(run_key=None, run_config={"foo": my_resource}, tags={})
 
     @resource
@@ -159,7 +159,7 @@ def test_sensor_invocation_resources_context_manager() -> None:
 
 
 def test_sensor_invocation_resources_deferred() -> None:
-    class MyResource(ConfigurableResource):
+    class MyResource(Resource):
         def create_resource(self, context) -> None:
             raise Exception()
 

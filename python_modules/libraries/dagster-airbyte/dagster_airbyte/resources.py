@@ -8,8 +8,8 @@ from typing import Any, Dict, List, Mapping, Optional, cast
 
 import requests
 from dagster import (
-    ConfigurableResource,
     Failure,
+    Resource,
     _check as check,
     get_dagster_logger,
     resource,
@@ -35,7 +35,7 @@ class AirbyteState:
     INCOMPLETE = "incomplete"
 
 
-class AirbyteResource(ConfigurableResource):
+class AirbyteResource(Resource):
     """This class exposes methods on top of the Airbyte REST API."""
 
     _log: logging.Logger

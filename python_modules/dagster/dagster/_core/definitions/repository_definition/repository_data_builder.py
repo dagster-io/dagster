@@ -15,8 +15,8 @@ from typing import (
 
 import dagster._check as check
 from dagster._config.structured_config import (
-    ConfigurableResource,
     PartialResource,
+    Resource,
     ResourceWithKeyMapping,
     separate_resource_params,
 )
@@ -78,7 +78,7 @@ def _env_vars_from_resource_defaults(resource_def: ResourceDefinition) -> Set[st
     env_vars = _find_env_vars(config_schema_default)
 
     if isinstance(resource_def, ResourceWithKeyMapping) and isinstance(
-        resource_def.inner_resource, (ConfigurableResource, PartialResource)
+        resource_def.inner_resource, (Resource, PartialResource)
     ):
         nested_resources = separate_resource_params(resource_def.inner_resource.__dict__).resources
         for nested_resource in nested_resources.values():

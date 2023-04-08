@@ -24,7 +24,7 @@ from dagster import (
     with_resources,
 )
 from dagster._check import CheckError
-from dagster._config.structured_config import ConfigurableResource
+from dagster._config.structured_config import Resource
 from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
@@ -162,10 +162,10 @@ def test_with_resource_binding():
 
 
 def test_nested_resources() -> None:
-    class MyInnerResource(ConfigurableResource):
+    class MyInnerResource(Resource):
         a_str: str
 
-    class MyOuterResource(ConfigurableResource):
+    class MyOuterResource(Resource):
         inner: MyInnerResource
 
     inner = MyInnerResource(a_str="wrapped")

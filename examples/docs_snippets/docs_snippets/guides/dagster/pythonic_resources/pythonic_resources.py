@@ -4,9 +4,9 @@
 
 def new_resource_testing() -> None:
     # start_new_resource_testing
-    from dagster import ConfigurableResource
+    from dagster import Resource
 
-    class MyResource(ConfigurableResource):
+    class MyResource(Resource):
         value: str
 
         def get_value(self) -> str:
@@ -20,12 +20,12 @@ def new_resource_testing() -> None:
 
 def new_resource_testing_with_context() -> None:
     # start_new_resource_testing_with_context
-    from dagster import ConfigurableResource
+    from dagster import Resource
 
-    class StringHolderResource(ConfigurableResource):
+    class StringHolderResource(Resource):
         value: str
 
-    class MyResourceRequiresAnother(ConfigurableResource):
+    class MyResourceRequiresAnother(Resource):
         foo: StringHolderResource
         bar: str
 
@@ -45,13 +45,13 @@ def new_resources_assets_defs() -> None:
     # start_new_resources_assets_defs
 
     from dagster import asset, Definitions
-    from dagster import Resource
+    from dagster import FromResources
     import requests
 
     from typing import Dict, Any
 
     @asset
-    def data_from_url(data_url: Resource[str]) -> Dict[str, Any]:
+    def data_from_url(data_url: FromResources[str]) -> Dict[str, Any]:
         return requests.get(data_url).json()
 
     defs = Definitions(
@@ -65,11 +65,11 @@ def new_resources_assets_defs() -> None:
 def new_resources_ops_defs() -> None:
     # start_new_resources_ops_defs
 
-    from dagster import op, Definitions, job, Resource
+    from dagster import op, Definitions, job, FromResources
     import requests
 
     @op
-    def print_data_from_resource(data_url: Resource[str]):
+    def print_data_from_resource(data_url: FromResources[str]):
         print(requests.get(data_url).json())
 
     @job
@@ -87,11 +87,11 @@ def new_resources_ops_defs() -> None:
 def new_resources_configurable_defs() -> None:
     # start_new_resources_configurable_defs
 
-    from dagster import asset, Definitions, ConfigurableResource
+    from dagster import asset, Definitions, Resource
     import requests
     from requests import Response
 
-    class MyConnectionResource(ConfigurableResource):
+    class MyConnectionResource(Resource):
         username: str
 
         def request(self, endpoint: str) -> Response:
@@ -117,11 +117,11 @@ def new_resources_configurable_defs() -> None:
 def new_resources_configurable_defs_ops() -> None:
     # start_new_resources_configurable_defs_ops
 
-    from dagster import Definitions, job, op, ConfigurableResource
+    from dagster import Definitions, job, op, Resource
     import requests
     from requests import Response
 
-    class MyConnectionResource(ConfigurableResource):
+    class MyConnectionResource(Resource):
         username: str
 
         def request(self, endpoint: str) -> Response:
@@ -150,9 +150,9 @@ def new_resources_configurable_defs_ops() -> None:
 
 def new_resource_runtime() -> None:
     # start_new_resource_runtime
-    from dagster import ConfigurableResource, Definitions, asset
+    from dagster import Resource, Definitions, asset
 
-    class DatabaseResource(ConfigurableResource):
+    class DatabaseResource(Resource):
         table: str
 
         def read(self):
@@ -197,13 +197,13 @@ def get_filestore_client(*args, **kwargs):
 
 def new_resources_nesting() -> None:
     # start_new_resources_nesting
-    from dagster import Definitions, ConfigurableResource
+    from dagster import Definitions, Resource
 
-    class CredentialsResource(ConfigurableResource):
+    class CredentialsResource(Resource):
         username: str
         password: str
 
-    class FileStoreBucket(ConfigurableResource):
+    class FileStoreBucket(Resource):
         credentials: CredentialsResource
         region: str
 
@@ -246,9 +246,9 @@ def new_resources_nesting() -> None:
 def new_resources_env_vars() -> None:
     # start_new_resources_env_vars
 
-    from dagster import EnvVar, Definitions, ConfigurableResource
+    from dagster import EnvVar, Definitions, Resource
 
-    class CredentialsResource(ConfigurableResource):
+    class CredentialsResource(Resource):
         username: str
         password: str
 
@@ -283,7 +283,7 @@ class GitHub:
 def raw_github_resource() -> None:
     # start_raw_github_resource
 
-    from dagster import Definitions, asset, Resource
+    from dagster import Definitions, asset, FromResources
 
     # `Resource[GitHub]` is treated exactly like `GitHub` for type checking purposes,
     # and the runtime type of the github parameter is `GitHub`. The purpose of the
@@ -291,7 +291,7 @@ def raw_github_resource() -> None:
     # upstream asset.
 
     @asset
-    def public_github_repos(github: Resource[GitHub]):
+    def public_github_repos(github: FromResources[GitHub]):
         return github.organization("dagster-io").repositories()
 
     defs = Definitions(
@@ -328,9 +328,9 @@ def create_engine(*args, **kwargs):
 def raw_github_resource_dep() -> None:
     # start_raw_github_resource_dep
 
-    from dagster import ConfigurableResource, ResourceDependency, Definitions
+    from dagster import Resource, ResourceDependency, Definitions
 
-    class DBResource(ConfigurableResource):
+    class DBResource(Resource):
         engine: ResourceDependency[Engine]
 
         def query(self, query: str):
@@ -451,13 +451,13 @@ def io_adapter() -> None:
 def impl_details_resolve() -> None:
     # start_impl_details_resolve
 
-    from dagster import ConfigurableResource
+    from dagster import Resource
 
-    class CredentialsResource(ConfigurableResource):
+    class CredentialsResource(Resource):
         username: str
         password: str
 
-    class FileStoreBucket(ConfigurableResource):
+    class FileStoreBucket(Resource):
         credentials: CredentialsResource
         region: str
 

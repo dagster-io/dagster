@@ -30,8 +30,8 @@ from dagster._config.structured_config import (
     ConfigurableIOManagerFactory,
     ConfigurableLegacyIOManagerAdapter,
     ConfigurableLegacyResourceAdapter,
-    ConfigurableResource,
-    ConfigurableResourceFactory,
+    FactoryResource,
+    Resource,
     ResourceDependency,
 )
 from dagster._core.definitions.assets_job import build_assets_job
@@ -39,7 +39,7 @@ from dagster._core.definitions.definitions_class import BindResourcesToJobs, Def
 from dagster._core.definitions.repository_definition.repository_data_builder import (
     build_caching_repository_data_from_dict,
 )
-from dagster._core.definitions.resource_annotation import Resource
+from dagster._core.definitions.resource_annotation import FromResources
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.run_config import RunConfig
 from dagster._core.errors import (
@@ -62,7 +62,7 @@ from pydantic import (
 def test_basic_structured_resource():
     out_txt = []
 
-    class WriterResource(ConfigurableResource):
+    class WriterResource(Resource):
         prefix: str
 
         def output(self, text: str) -> None:
@@ -90,7 +90,7 @@ def test_basic_structured_resource():
 
 
 def test_invalid_config() -> None:
-    class MyResource(ConfigurableResource):
+    class MyResource(Resource):
         foo: int
 
     with pytest.raises(
@@ -106,7 +106,7 @@ def test_caching_within_resource():
 
     from functools import cached_property
 
-    class GreetingResource(ConfigurableResource):
+    class GreetingResource(Resource):
         name: str
 
         @cached_property
@@ -176,7 +176,7 @@ def test_caching_within_resource():
 def test_abc_resource():
     out_txt = []
 
-    class Writer(ConfigurableResource, ABC):
+    class Writer(Resource, ABC):
         @abstractmethod
         def output(self, text: str) -> None:
             pass
@@ -221,7 +221,7 @@ def test_abc_resource():
 def test_yield_in_resource_function():
     called = []
 
-    class ResourceWithCleanup(ConfigurableResourceFactory[bool]):
+    class ResourceWithCleanup(FactoryResource[bool]):
         idx: int
 
         def create_resource(self, context):
@@ -231,7 +231,7 @@ def test_yield_in_resource_function():
 
     @op
     def check_resource_created(
-        resource_with_cleanup_1: Resource[bool], resource_with_cleanup_2: Resource[bool]
+        resource_with_cleanup_1: FromResources[bool], resource_with_cleanup_2: FromResources[bool]
     ):
         assert resource_with_cleanup_1 is True
         assert resource_with_cleanup_2 is True
@@ -271,7 +271,7 @@ def test_wrapping_function_resource():
             return writer_resource
 
     @op
-    def hello_world_op(writer: Resource[Callable[[str], None]]):
+    def hello_world_op(writer: FromResources[Callable[[str], None]]):
         writer("hello, world!")
 
     @job(resource_defs={"writer": WriterResource(prefix="")})
@@ -358,7 +358,7 @@ def test_io_manager_factory_class():
 def test_structured_resource_runtime_config():
     out_txt = []
 
-    class WriterResource(ConfigurableResource):
+    class WriterResource(Resource):
         prefix: str
 
         def output(self, text: str) -> None:
@@ -396,7 +396,7 @@ def test_runtime_config_run_config_obj():
 
     out_txt = []
 
-    class WriterResource(ConfigurableResource):
+    class WriterResource(Resource):
         prefix: str
 
         def output(self, text: str) -> None:
@@ -422,7 +422,7 @@ def test_runtime_config_run_config_obj():
 def test_nested_resources():
     out_txt = []
 
-    class Writer(ConfigurableResource, ABC):
+    class Writer(Resource, ABC):
         @abstractmethod
         def output(self, text: str) -> None:
             pass
@@ -491,15 +491,15 @@ def test_nested_resources():
 
 
 def test_nested_resources_multiuse():
-    class AWSCredentialsResource(ConfigurableResource):
+    class AWSCredentialsResource(Resource):
         username: str
         password: str
 
-    class S3Resource(ConfigurableResource):
+    class S3Resource(Resource):
         aws_credentials: AWSCredentialsResource
         bucket_name: str
 
-    class EC2Resource(ConfigurableResource):
+    class EC2Resource(Resource):
         aws_credentials: AWSCredentialsResource
 
     completed = {}
@@ -529,15 +529,15 @@ def test_nested_resources_multiuse():
 
 
 def test_nested_resources_runtime_config():
-    class AWSCredentialsResource(ConfigurableResource):
+    class AWSCredentialsResource(Resource):
         username: str
         password: str
 
-    class S3Resource(ConfigurableResource):
+    class S3Resource(Resource):
         aws_credentials: AWSCredentialsResource
         bucket_name: str
 
-    class EC2Resource(ConfigurableResource):
+    class EC2Resource(Resource):
         aws_credentials: AWSCredentialsResource
 
     completed = {}
@@ -583,16 +583,16 @@ def test_nested_resources_runtime_config():
 
 
 def test_nested_resources_runtime_config_complex():
-    class CredentialsResource(ConfigurableResource):
+    class CredentialsResource(Resource):
         username: str
         password: str
 
-    class DBConfigResource(ConfigurableResource):
+    class DBConfigResource(Resource):
         creds: CredentialsResource
         host: str
         database: str
 
-    class DBResource(ConfigurableResource):
+    class DBResource(Resource):
         config: DBConfigResource
 
     completed = {}
@@ -674,13 +674,13 @@ def test_nested_resources_runtime_config_complex():
 
 
 def test_resources_which_return():
-    class StringResource(ConfigurableResourceFactory[str]):
+    class StringResource(FactoryResource[str]):
         a_string: str
 
         def create_resource(self, context) -> str:
             return self.a_string
 
-    class MyResource(ConfigurableResource):
+    class MyResource(Resource):
         string_from_resource: ResourceDependency[str]
 
     completed = {}
@@ -742,7 +742,7 @@ def test_nested_function_resource():
 
         return output
 
-    class PostfixWriterResource(ConfigurableResourceFactory[Callable[[str], None]]):
+    class PostfixWriterResource(FactoryResource[Callable[[str], None]]):
         writer: ResourceDependency[Callable[[str], None]]
         postfix: str
 
@@ -753,7 +753,7 @@ def test_nested_function_resource():
             return output
 
     @asset
-    def my_asset(writer: Resource[Callable[[str], None]]):
+    def my_asset(writer: FromResources[Callable[[str], None]]):
         writer("foo")
         writer("bar")
 
@@ -780,7 +780,7 @@ def test_nested_function_resource_configured():
 
         return output
 
-    class PostfixWriterResource(ConfigurableResourceFactory[Callable[[str], None]]):
+    class PostfixWriterResource(FactoryResource[Callable[[str], None]]):
         writer: ResourceDependency[Callable[[str], None]]
         postfix: str
 
@@ -791,7 +791,7 @@ def test_nested_function_resource_configured():
             return output
 
     @asset
-    def my_asset(writer: Resource[Callable[[str], None]]):
+    def my_asset(writer: FromResources[Callable[[str], None]]):
         writer("foo")
         writer("bar")
 
@@ -832,7 +832,7 @@ def test_nested_function_resource_runtime_config():
 
         return output
 
-    class PostfixWriterResource(ConfigurableResourceFactory[Callable[[str], None]]):
+    class PostfixWriterResource(FactoryResource[Callable[[str], None]]):
         writer: ResourceDependency[Callable[[str], None]]
         postfix: str
 
@@ -843,7 +843,7 @@ def test_nested_function_resource_runtime_config():
             return output
 
     @asset
-    def my_asset(writer: Resource[Callable[[str], None]]):
+    def my_asset(writer: FromResources[Callable[[str], None]]):
         writer("foo")
         writer("bar")
 
@@ -910,12 +910,12 @@ def test_type_signatures_constructor_nested_resource():
         with open(filename, "w") as f:
             f.write(
                 """
-from dagster._config.structured_config import ConfigurableResource
+from dagster._config.structured_config import Resource
 
-class InnerResource(ConfigurableResource):
+class InnerResource(Resource):
     a_string: str
 
-class OuterResource(ConfigurableResource):
+class OuterResource(Resource):
     inner: InnerResource
     a_bool: bool
 
@@ -951,9 +951,9 @@ def test_type_signatures_config_at_launch():
         with open(filename, "w") as f:
             f.write(
                 """
-from dagster._config.structured_config import ConfigurableResource
+from dagster._config.structured_config import Resource
 
-class MyResource(ConfigurableResource):
+class MyResource(Resource):
     a_string: str
 
 reveal_type(MyResource.configure_at_launch())
@@ -976,9 +976,9 @@ def test_type_signatures_constructor_resource_dependency():
         with open(filename, "w") as f:
             f.write(
                 """
-from dagster._config.structured_config import ConfigurableResource, ResourceDependency
+from dagster._config.structured_config import Resource, ResourceDependency
 
-class StringDependentResource(ConfigurableResource):
+class StringDependentResource(Resource):
     a_string: ResourceDependency[str]
 
 reveal_type(StringDependentResource.__init__)
@@ -995,7 +995,7 @@ reveal_type(my_str_resource.a_string)
         # resource function that returns a str
         assert (
             pyright_out[0]
-            == "(self: StringDependentResource, *, a_string: ConfigurableResourceFactory[str] |"
+            == "(self: StringDependentResource, *, a_string: FactoryResource[str] |"
             " PartialResource[str] | ResourceDefinition | str) -> None"
         )
 
@@ -1037,7 +1037,7 @@ def test_nested_config_class() -> None:
         name: str
         age: int
 
-    class UsersResource(ConfigurableResource):
+    class UsersResource(Resource):
         users: List[User]
 
     executed = {}
@@ -1075,7 +1075,7 @@ def test_env_var():
         }
     ):
 
-        class ResourceWithString(ConfigurableResource):
+        class ResourceWithString(Resource):
             a_str: str
 
         executed = {}
@@ -1106,7 +1106,7 @@ def test_env_var_data_structure() -> None:
         }
     ):
 
-        class ResourceWithString(ConfigurableResource):
+        class ResourceWithString(Resource):
             my_list: List[str]
             my_dict: Mapping[str, str]
 
@@ -1142,7 +1142,7 @@ def test_env_var_data_structure() -> None:
 def test_runtime_config_env_var():
     out_txt = []
 
-    class WriterResource(ConfigurableResource):
+    class WriterResource(Resource):
         prefix: str
 
         def output(self, text: str) -> None:
@@ -1175,7 +1175,7 @@ def test_env_var_err():
     if "UNSET_ENV_VAR" in os.environ:
         del os.environ["UNSET_ENV_VAR"]
 
-    class ResourceWithString(ConfigurableResource):
+    class ResourceWithString(Resource):
         a_str: str
 
     @asset
@@ -1217,10 +1217,10 @@ def test_env_var_err():
 
 
 def test_env_var_nested_resources() -> None:
-    class ResourceWithString(ConfigurableResource):
+    class ResourceWithString(Resource):
         a_str: str
 
-    class OuterResource(ConfigurableResource):
+    class OuterResource(Resource):
         inner: ResourceWithString
 
     executed = {}
@@ -1254,7 +1254,7 @@ def test_env_var_nested_config() -> None:
     class NestedWithString(Config):
         a_str: str
 
-    class OuterResource(ConfigurableResource):
+    class OuterResource(Resource):
         inner: NestedWithString
 
     executed = {}
@@ -1291,7 +1291,7 @@ def test_using_enum() -> None:
         FOO = "foo"
         BAR = "bar"
 
-    class MyResource(ConfigurableResource):
+    class MyResource(Resource):
         an_enum: MyEnum
 
     @asset
@@ -1336,7 +1336,7 @@ def test_using_enum_complex() -> None:
         FOO = "foo"
         BAR = "bar"
 
-    class MyResource(ConfigurableResource):
+    class MyResource(Resource):
         list_of_enums: List[MyEnum]
         optional_enum: Optional[MyEnum] = None
 
@@ -1363,7 +1363,7 @@ def test_using_enum_complex() -> None:
 def test_resource_defs_on_asset() -> None:
     executed = {}
 
-    class MyResource(ConfigurableResource):
+    class MyResource(Resource):
         a_str: str
 
     @asset(resource_defs={"my_resource": MyResource(a_str="foo")})
@@ -1389,7 +1389,7 @@ def test_resource_defs_on_asset() -> None:
 def test_extending_resource() -> None:
     executed = {}
 
-    class BaseResource(ConfigurableResource):
+    class BaseResource(Resource):
         a_str: str = "bar"
         an_int: int = 1
 
@@ -1414,10 +1414,10 @@ def test_extending_resource() -> None:
 def test_extending_resource_nesting() -> None:
     executed = {}
 
-    class NestedResource(ConfigurableResource):
+    class NestedResource(Resource):
         a_str: str
 
-    class BaseResource(ConfigurableResource):
+    class BaseResource(Resource):
         nested: NestedResource
         a_str: str = "bar"
         an_int: int = 1
@@ -1464,7 +1464,7 @@ def test_extending_resource_nesting() -> None:
 def test_bind_resource_to_job_at_defn_time_err() -> None:
     out_txt = []
 
-    class WriterResource(ConfigurableResource):
+    class WriterResource(Resource):
         prefix: str
 
         def output(self, text: str) -> None:
@@ -1507,7 +1507,7 @@ def test_bind_resource_to_job_at_defn_time_err() -> None:
 def test_bind_resource_to_job_at_defn_time() -> None:
     out_txt = []
 
-    class WriterResource(ConfigurableResource):
+    class WriterResource(Resource):
         prefix: str
 
         def output(self, text: str) -> None:
@@ -1548,7 +1548,7 @@ def test_bind_resource_to_job_at_defn_time() -> None:
 def test_bind_resource_to_job_with_job_config() -> None:
     out_txt = []
 
-    class WriterResource(ConfigurableResource):
+    class WriterResource(Resource):
         prefix: str
 
         def output(self, text: str) -> None:
@@ -1596,7 +1596,7 @@ def test_bind_resource_to_job_with_job_config() -> None:
 def test_execute_in_process() -> None:
     out_txt = []
 
-    class WriterResource(ConfigurableResource):
+    class WriterResource(Resource):
         prefix: str
 
         def output(self, text: str) -> None:
@@ -1628,7 +1628,7 @@ def test_execute_in_process() -> None:
 def test_bind_resource_to_job_at_defn_time_override() -> None:
     out_txt = []
 
-    class WriterResource(ConfigurableResource):
+    class WriterResource(Resource):
         prefix: str
 
         def output(self, text: str) -> None:
@@ -1669,7 +1669,7 @@ def test_bind_resource_to_job_at_defn_time_override() -> None:
 def test_bind_resource_to_instigator() -> None:
     out_txt = []
 
-    class WriterResource(ConfigurableResource):
+    class WriterResource(Resource):
         prefix: str
 
         def output(self, text: str) -> None:
@@ -1723,7 +1723,7 @@ def test_bind_resource_to_instigator() -> None:
 def test_bind_resource_to_instigator_by_name() -> None:
     out_txt = []
 
-    class WriterResource(ConfigurableResource):
+    class WriterResource(Resource):
         prefix: str
 
         def output(self, text: str) -> None:
@@ -1948,7 +1948,7 @@ def test_bind_io_manager_override() -> None:
 def test_aliased_field_structured_resource():
     out_txt = []
 
-    class WriterResource(ConfigurableResource):
+    class WriterResource(Resource):
         prefix_: str = PyField(..., alias="prefix")
 
         def output(self, text: str) -> None:
@@ -1987,7 +1987,7 @@ def test_aliased_field_structured_resource():
 
 
 def test_direct_op_invocation() -> None:
-    class MyResource(ConfigurableResource):
+    class MyResource(Resource):
         a_str: str
 
     @op
@@ -2041,7 +2041,7 @@ def test_direct_op_invocation() -> None:
 
 
 def test_direct_op_invocation_multiple_resources() -> None:
-    class MyResource(ConfigurableResource):
+    class MyResource(Resource):
         a_str: str
 
     @op
@@ -2102,7 +2102,7 @@ def test_direct_op_invocation_multiple_resources() -> None:
 
 
 def test_direct_op_invocation_with_inputs() -> None:
-    class MyResource(ConfigurableResource):
+    class MyResource(Resource):
         z: int
 
     @op
@@ -2155,7 +2155,7 @@ def test_direct_op_invocation_with_inputs() -> None:
 
 
 def test_direct_asset_invocation() -> None:
-    class MyResource(ConfigurableResource):
+    class MyResource(Resource):
         a_str: str
 
     @asset
@@ -2209,7 +2209,7 @@ def test_direct_asset_invocation() -> None:
 
 
 def test_direct_asset_invocation_with_inputs() -> None:
-    class MyResource(ConfigurableResource):
+    class MyResource(Resource):
         z: int
 
     @asset
@@ -2264,7 +2264,7 @@ def test_direct_asset_invocation_with_inputs() -> None:
 
 
 def test_from_resource_context_and_to_config_field() -> None:
-    class StringResource(ConfigurableResourceFactory[str]):
+    class StringResource(FactoryResource[str]):
         a_string: str
 
         def create_resource(self, context) -> str:
@@ -2280,7 +2280,7 @@ def test_from_resource_context_and_to_config_field() -> None:
 
 
 def test_from_resource_context_and_to_config_field_complex() -> None:
-    class MyComplexConfigResource(ConfigurableResource):
+    class MyComplexConfigResource(Resource):
         a_string: str
         a_list_of_ints: List[int]
         a_map_of_lists_of_maps_of_floats: Mapping[str, List[Mapping[str, float]]]
@@ -2313,7 +2313,7 @@ def test_from_resource_context_and_to_config_field_complex() -> None:
 
 @pytest.mark.xfail(reason="https://github.com/dagster-io/dagster/issues/13384")
 def test_direct_op_invocation_plain_arg_with_resource_definition_no_inputs_no_context() -> None:
-    class NumResource(ConfigurableResource):
+    class NumResource(Resource):
         num: int
 
     executed = {}
@@ -2329,7 +2329,7 @@ def test_direct_op_invocation_plain_arg_with_resource_definition_no_inputs_no_co
 
 
 def test_direct_op_invocation_kwarg_with_resource_definition_no_inputs_no_context() -> None:
-    class NumResource(ConfigurableResource):
+    class NumResource(Resource):
         num: int
 
     executed = {}
@@ -2346,7 +2346,7 @@ def test_direct_op_invocation_kwarg_with_resource_definition_no_inputs_no_contex
 
 @pytest.mark.xfail(reason="https://github.com/dagster-io/dagster/issues/13384")
 def test_direct_asset_invocation_plain_arg_with_resource_definition_no_inputs_no_context() -> None:
-    class NumResource(ConfigurableResource):
+    class NumResource(Resource):
         num: int
 
     executed = {}
@@ -2362,7 +2362,7 @@ def test_direct_asset_invocation_plain_arg_with_resource_definition_no_inputs_no
 
 
 def test_direct_asset_invocation_kwarg_with_resource_definition_no_inputs_no_context() -> None:
-    class NumResource(ConfigurableResource):
+    class NumResource(Resource):
         num: int
 
     executed = {}

@@ -1,10 +1,10 @@
-from dagster import ConfigurableResourceFactory, resource
+from dagster import FactoryResource, resource
 from dagster._core.execution.context.init import InitResourceContext
 from pydantic import Field
 from twilio.rest import Client
 
 
-class TwilioResource(ConfigurableResourceFactory[Client]):
+class TwilioResource(FactoryResource[Client]):
     """This resource is for connecting to Twilio."""
 
     account_sid: str = Field(

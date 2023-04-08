@@ -73,7 +73,7 @@ from dagster._core.storage.io_manager import IOManager, IOManagerDefinition
 from .typing_utils import BaseResourceMeta, LateBoundTypesForResourceTypeChecking
 from .utils import safe_is_subclass
 
-Self = TypeVar("Self", bound="ConfigurableResourceFactory")
+Self = TypeVar("Self", bound="FactoryResource")
 
 
 class MakeConfigCacheable(BaseModel):
@@ -389,7 +389,7 @@ class IOManagerWithKeyMapping(ResourceWithKeyMapping, IOManagerDefinition):
 def attach_resource_id_to_key_mapping(
     resource_def: Any, resource_id_to_key_mapping: Dict[ResourceId, str]
 ) -> Any:
-    if isinstance(resource_def, (ConfigurableResourceFactory, PartialResource)):
+    if isinstance(resource_def, (FactoryResource, PartialResource)):
         return (
             IOManagerWithKeyMapping(resource_def, resource_id_to_key_mapping)
             if isinstance(resource_def, IOManagerDefinition)
@@ -399,7 +399,7 @@ def attach_resource_id_to_key_mapping(
 
 
 @experimental
-class ConfigurableResourceFactory(
+class FactoryResource(
     Generic[TResValue],
     ResourceDefinition,
     Config,
@@ -427,7 +427,7 @@ class ConfigurableResourceFactory(
 
     .. code-block:: python
 
-        class DatabaseResource(ConfigurableResourceFactory[Database]):
+        class DatabaseResource(FactoryResource[Database]):
             connection_uri: str
 
             def create_resource(self, _init_context) -> Database:
@@ -442,7 +442,7 @@ class ConfigurableResourceFactory(
     .. code-block:: python
 
         @asset
-        def asset_that_uses_database(database: Resource[Database]):
+        def asset_that_uses_database(database: FromResources[Database]):
             # Database used directly in user code
             database.query("SELECT * FROM table")
 
@@ -507,9 +507,7 @@ class ConfigurableResourceFactory(
         """
         return PartialResource(cls, data=kwargs)
 
-    def _with_updated_values(
-        self, values: Mapping[str, Any]
-    ) -> "ConfigurableResourceFactory[TResValue]":
+    def _with_updated_values(self, values: Mapping[str, Any]) -> "FactoryResource[TResValue]":
         """Returns a new instance of the resource with the given values.
         Used when initializing a resource at runtime.
         """
@@ -518,7 +516,7 @@ class ConfigurableResourceFactory(
         # of this class. We can therefore safely pass in the values as kwargs.
         return self.__class__(**{**self._as_config_dict(), **values})
 
-    def _resolve_and_update_env_vars(self) -> "ConfigurableResourceFactory[TResValue]":
+    def _resolve_and_update_env_vars(self) -> "FactoryResource[TResValue]":
         """Processes the config dictionary to resolve any EnvVar values. This is called at runtime
         when the resource is initialized, so the user is only shown the error if they attempt to
         kick off a run relying on this resource.
@@ -532,7 +530,7 @@ class ConfigurableResourceFactory(
 
     def _resolve_and_update_nested_resources(
         self, context: InitResourceContext
-    ) -> "ConfigurableResourceFactory[TResValue]":
+    ) -> "FactoryResource[TResValue]":
         """Updates any nested resources with the resource values from the context.
         In this case, populating partially configured resources or
         resources that return plain Python types.
@@ -588,7 +586,7 @@ class ConfigurableResourceFactory(
 
         .. code-block:: python
 
-            class MyResource(ConfigurableResource):
+            class MyResource(Resource):
                 my_str: str
 
             @resource(config_schema=MyResource.to_config_schema())
@@ -600,7 +598,7 @@ class ConfigurableResourceFactory(
 
 
 @experimental
-class ConfigurableResource(ConfigurableResourceFactory[TResValue]):
+class Resource(FactoryResource[TResValue]):
     """Base class for Dagster resources that utilize structured config.
 
     This class is a subclass of both :py:class:`ResourceDefinition` and :py:class:`Config`.
@@ -609,7 +607,7 @@ class ConfigurableResource(ConfigurableResourceFactory[TResValue]):
 
     .. code-block:: python
 
-        class WriterResource(ConfigurableResource):
+        class WriterResource(Resource):
             prefix: str
 
             def output(self, text: str) -> None:
@@ -637,8 +635,8 @@ class ConfigurableResource(ConfigurableResourceFactory[TResValue]):
         through the context or resource parameters. This works like the function decorated
         with @resource when using function-based resources.
 
-        For ConfigurableResource, this function will return itself, passing
-        the actual ConfigurableResource object to user code.
+        For Resource, this function will return itself, passing
+        the actual Resource object to user code.
         """
         return cast(TResValue, self)
 
@@ -659,11 +657,9 @@ class PartialResource(
     Generic[TResValue], ResourceDefinition, AllowDelayedDependencies, MakeConfigCacheable
 ):
     data: Dict[str, Any]
-    resource_cls: Type[ConfigurableResourceFactory[TResValue]]
+    resource_cls: Type[FactoryResource[TResValue]]
 
-    def __init__(
-        self, resource_cls: Type[ConfigurableResourceFactory[TResValue]], data: Dict[str, Any]
-    ):
+    def __init__(self, resource_cls: Type[FactoryResource[TResValue]], data: Dict[str, Any]):
         resource_pointers, data_without_resources = separate_resource_params(data)
 
         MakeConfigCacheable.__init__(self, data=data, resource_cls=resource_cls)  # type: ignore  # extends BaseModel, takes kwargs
@@ -696,11 +692,9 @@ class PartialResource(
         return self._nested_resources
 
 
-ResourceOrPartial: TypeAlias = Union[
-    ConfigurableResourceFactory[TResValue], PartialResource[TResValue]
-]
+ResourceOrPartial: TypeAlias = Union[FactoryResource[TResValue], PartialResource[TResValue]]
 ResourceOrPartialOrValue: TypeAlias = Union[
-    ConfigurableResourceFactory[TResValue],
+    FactoryResource[TResValue],
     PartialResource[TResValue],
     ResourceDefinition,
     TResValue,
@@ -715,7 +709,7 @@ class ResourceDependency(Generic[V]):
     def __set_name__(self, _owner, name):
         self._name = name
 
-    def __get__(self, obj: "ConfigurableResourceFactory", __owner: Any) -> V:
+    def __get__(self, obj: "FactoryResource", __owner: Any) -> V:
         return getattr(obj, self._name)
 
     def __set__(self, obj: Optional[object], value: ResourceOrPartialOrValue[V]) -> None:
@@ -723,7 +717,7 @@ class ResourceDependency(Generic[V]):
 
 
 @experimental
-class ConfigurableLegacyResourceAdapter(ConfigurableResource, ABC):
+class ConfigurableLegacyResourceAdapter(Resource, ABC):
     """Adapter base class for wrapping a decorated, function-style resource
     with structured config.
 
@@ -764,9 +758,7 @@ class ConfigurableLegacyResourceAdapter(ConfigurableResource, ABC):
 
 
 @experimental
-class ConfigurableIOManagerFactory(
-    ConfigurableResourceFactory[TIOManagerValue], IOManagerDefinition
-):
+class ConfigurableIOManagerFactory(FactoryResource[TIOManagerValue], IOManagerDefinition):
     """Base class for Dagster IO managers that utilize structured config. This base class
     is useful for cases in which the returned IO manager is not the same as the class itself
     (e.g. when it is a wrapper around the actual IO manager implementation).
@@ -777,7 +769,7 @@ class ConfigurableIOManagerFactory(
     """
 
     def __init__(self, **data: Any):
-        ConfigurableResourceFactory.__init__(self, **data)
+        FactoryResource.__init__(self, **data)
         IOManagerDefinition.__init__(
             self,
             resource_fn=self.initialize_and_run,
@@ -807,9 +799,7 @@ class ConfigurableIOManagerFactory(
 
 
 class PartialIOManager(Generic[TResValue], PartialResource[TResValue], IOManagerDefinition):
-    def __init__(
-        self, resource_cls: Type[ConfigurableResourceFactory[TResValue]], data: Dict[str, Any]
-    ):
+    def __init__(self, resource_cls: Type[FactoryResource[TResValue]], data: Dict[str, Any]):
         PartialResource.__init__(self, resource_cls, data)
         IOManagerDefinition.__init__(
             self,
@@ -1157,7 +1147,7 @@ def infer_schema_from_config_class(
                     field_name=pydantic_field.name,
                     invalid_type=e.current_value,
                     is_resource=model_cls is not None
-                    and safe_is_subclass(model_cls, ConfigurableResourceFactory),
+                    and safe_is_subclass(model_cls, FactoryResource),
                 )
 
     shape_cls = Permissive if model_cls.__config__.extra == Extra.allow else Shape
@@ -1195,7 +1185,7 @@ def _call_resource_fn_with_default(obj: ResourceDefinition, context: InitResourc
 
 LateBoundTypesForResourceTypeChecking.set_actual_types_for_type_checking(
     resource_dep_type=ResourceDependency,
-    resource_type=ConfigurableResourceFactory,
+    resource_type=FactoryResource,
     partial_resource_type=PartialResource,
 )
 
@@ -1203,13 +1193,13 @@ LateBoundTypesForResourceTypeChecking.set_actual_types_for_type_checking(
 def validate_resource_annotated_function(fn) -> None:
     """Validates any parameters on the decorated function that are annotated with
     :py:class:`dagster.ResourceDefinition`, raising a :py:class:`dagster.DagsterInvalidDefinitionError`
-    if any are not also instances of :py:class:`dagster.ConfigurableResource` (these resources should
+    if any are not also instances of :py:class:`dagster.Resource` (these resources should
     instead be wrapped in the :py:func:`dagster.Resource` Annotation).
     """
     from dagster import DagsterInvalidDefinitionError
     from dagster._config.structured_config import (
-        ConfigurableResource,
-        ConfigurableResourceFactory,
+        FactoryResource,
+        Resource,
         TResValue,
     )
     from dagster._config.structured_config.utils import safe_is_subclass
@@ -1218,12 +1208,12 @@ def validate_resource_annotated_function(fn) -> None:
         param
         for param in get_function_params(fn)
         if safe_is_subclass(param.annotation, ResourceDefinition)
-        and not safe_is_subclass(param.annotation, ConfigurableResource)
+        and not safe_is_subclass(param.annotation, Resource)
     ]
     if len(malformed_params) > 0:
         malformed_param = malformed_params[0]
         output_type = None
-        if safe_is_subclass(malformed_param.annotation, ConfigurableResourceFactory):
+        if safe_is_subclass(malformed_param.annotation, FactoryResource):
             orig_bases = getattr(malformed_param.annotation, "__orig_bases__", None)
             output_type = get_args(orig_bases[0])[0] if orig_bases and len(orig_bases) > 0 else None
             if output_type == TResValue:
@@ -1235,8 +1225,8 @@ def validate_resource_annotated_function(fn) -> None:
                 param_name=malformed_param.name,
                 annotation_type=malformed_param.annotation,
                 value_message=f"a '{output_type}'" if output_type else "an unknown",
-                annotation_suggestion=f"'Resource[{output_type_name}]'"
+                annotation_suggestion=f"'FromResources[{output_type_name}]'"
                 if output_type
-                else "'Resource[Any]' or 'Resource[<output type>]'",
+                else "'FromResources[Any]' or 'FromResources[<output type>]'",
             )
         )

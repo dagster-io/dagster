@@ -13,9 +13,9 @@ def get_engine(connection_url: str) -> Engine:
 def basic_resource_config() -> None:
     # start_basic_resource_config
 
-    from dagster import op, ConfigurableResource
+    from dagster import op, Resource
 
-    class MyDatabaseResource(ConfigurableResource):
+    class MyDatabaseResource(Resource):
         connection_url: str
 
         def query(self, query: str):

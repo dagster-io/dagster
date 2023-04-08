@@ -30,4 +30,4 @@ def _is_resource_annotated(param: Parameter) -> bool:
 
 
 T = TypeVar("T")
-Resource = Annotated[T, "resource_output"]
+FromResources = Annotated[T, "resource_output"]

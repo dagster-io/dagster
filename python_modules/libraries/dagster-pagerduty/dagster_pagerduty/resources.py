@@ -1,13 +1,13 @@
 from typing import Dict, Optional, cast
 
 import pypd
-from dagster import ConfigurableResource, resource
+from dagster import Resource, resource
 from dagster._annotations import quiet_experimental_warnings
 from dagster._config.structured_config import infer_schema_from_config_class
 from pydantic import Field as PyField
 
 
-class PagerDutyService(ConfigurableResource):
+class PagerDutyService(Resource):
     """This resource is for posting events to PagerDuty."""
 
     """Integrates with PagerDuty via the pypd library.

@@ -9,7 +9,7 @@ from dagster import (
     schedule,
     sensor,
 )
-from dagster._config.structured_config import ConfigurableResource, ConfigurableResourceFactory
+from dagster._config.structured_config import FactoryResource, Resource
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
@@ -76,7 +76,7 @@ def test_invalid_resource_basic() -> None:
     class MyUnsupportedType:
         pass
 
-    class MyBadResource(ConfigurableResource):
+    class MyBadResource(Resource):
         unsupported_param: MyUnsupportedType
 
     with pytest.raises(
@@ -94,7 +94,7 @@ This config type can be a:
 
 
 If this config type represents a resource dependency, its annotation must either:
-    - Extend dagster.ConfigurableResource, dagster.ConfigurableIOManager, or
+    - Extend dagster.Resource, dagster.ConfigurableIOManager, or
     - Be wrapped in a ResourceDependency annotation, e.g. ResourceDependency\\[MyUnsupportedType\\]""",
     ):
         MyBadResource(unsupported_param=MyUnsupportedType())
@@ -180,7 +180,7 @@ This config type can be a:
 
 
 def test_annotate_with_resource_factory() -> None:
-    class MyStringFactory(ConfigurableResourceFactory[str]):
+    class MyStringFactory(FactoryResource[str]):
         def create_resource(self, context: None) -> str:
             return "hello"
 
@@ -191,7 +191,7 @@ def test_annotate_with_resource_factory() -> None:
             " 'test_errors.test_annotate_with_resource_factory.<locals>.MyStringFactory'>', but"
             " '<class 'test_errors.test_annotate_with_resource_factory.<locals>.MyStringFactory'>'"
             " outputs a '<class 'str'>' value to user code such as @ops and @assets. This"
-            " annotation should instead be 'Resource\\[str\\]'"
+            " annotation should instead be 'FromResources\\[str\\]'"
         ),
     ):
 
@@ -206,7 +206,7 @@ def test_annotate_with_resource_factory() -> None:
             " 'test_errors.test_annotate_with_resource_factory.<locals>.MyStringFactory'>', but"
             " '<class 'test_errors.test_annotate_with_resource_factory.<locals>.MyStringFactory'>'"
             " outputs a '<class 'str'>' value to user code such as @ops and @assets. This"
-            " annotation should instead be 'Resource\\[str\\]'"
+            " annotation should instead be 'FromResources\\[str\\]'"
         ),
     ):
 
@@ -214,7 +214,7 @@ def test_annotate_with_resource_factory() -> None:
         def my_asset(my_string: MyStringFactory):
             pass
 
-    class MyUnspecifiedFactory(ConfigurableResourceFactory):
+    class MyUnspecifiedFactory(FactoryResource):
         def create_resource(self, context: None) -> str:
             return "hello"
 
@@ -225,8 +225,8 @@ def test_annotate_with_resource_factory() -> None:
             " 'test_errors.test_annotate_with_resource_factory.<locals>.MyUnspecifiedFactory'>',"
             " but '<class"
             " 'test_errors.test_annotate_with_resource_factory.<locals>.MyUnspecifiedFactory'>'"
-            " outputs an unknown value to user code such as @ops and @assets. This"
-            " annotation should instead be 'Resource\\[Any\\]' or 'Resource\\[<output type>\\]'"
+            " outputs an unknown value to user code such as @ops and @assets. This annotation"
+            " should instead be 'FromResources\\[Any\\]' or 'FromResources\\[<output type>\\]'"
         ),
     ):
 
@@ -241,8 +241,8 @@ def test_annotate_with_resource_factory() -> None:
             " 'test_errors.test_annotate_with_resource_factory.<locals>.MyUnspecifiedFactory'>',"
             " but '<class"
             " 'test_errors.test_annotate_with_resource_factory.<locals>.MyUnspecifiedFactory'>'"
-            " outputs an unknown value to user code such as @ops and @assets. This"
-            " annotation should instead be 'Resource\\[Any\\]' or 'Resource\\[<output type>\\]'"
+            " outputs an unknown value to user code such as @ops and @assets. This annotation"
+            " should instead be 'FromResources\\[Any\\]' or 'FromResources\\[<output type>\\]'"
         ),
     ):
 
@@ -252,7 +252,7 @@ def test_annotate_with_resource_factory() -> None:
 
 
 def test_annotate_with_resource_factory_schedule_sensor() -> None:
-    class MyStringFactory(ConfigurableResourceFactory[str]):
+    class MyStringFactory(FactoryResource[str]):
         def create_resource(self, context: None) -> str:
             return "hello"
 
@@ -264,7 +264,7 @@ def test_annotate_with_resource_factory_schedule_sensor() -> None:
             " but '<class"
             " 'test_errors.test_annotate_with_resource_factory_schedule_sensor.<locals>.MyStringFactory'>'"
             " outputs a '<class 'str'>' value to user code such as @ops and @assets. This"
-            " annotation should instead be 'Resource\\[str\\]'"
+            " annotation should instead be 'FromResources\\[str\\]'"
         ),
     ):
 
@@ -280,7 +280,7 @@ def test_annotate_with_resource_factory_schedule_sensor() -> None:
             " but '<class"
             " 'test_errors.test_annotate_with_resource_factory_schedule_sensor.<locals>.MyStringFactory'>'"
             " outputs a '<class 'str'>' value to user code such as @ops and @assets. This"
-            " annotation should instead be 'Resource\\[str\\]'"
+            " annotation should instead be 'FromResources\\[str\\]'"
         ),
     ):
 
@@ -299,8 +299,8 @@ def test_annotate_with_bare_resource_def() -> None:
             "Resource param 'my_resource' is annotated as '<class"
             " 'test_errors.test_annotate_with_bare_resource_def.<locals>.MyResourceDef'>', but"
             " '<class 'test_errors.test_annotate_with_bare_resource_def.<locals>.MyResourceDef'>'"
-            " outputs an unknown value to user code such as @ops and @assets. This"
-            " annotation should instead be 'Resource\\[Any\\]' or 'Resource\\[<output type>\\]'"
+            " outputs an unknown value to user code such as @ops and @assets. This annotation"
+            " should instead be 'FromResources\\[Any\\]' or 'FromResources\\[<output type>\\]'"
         ),
     ):
 
@@ -314,8 +314,8 @@ def test_annotate_with_bare_resource_def() -> None:
             "Resource param 'my_resource' is annotated as '<class"
             " 'test_errors.test_annotate_with_bare_resource_def.<locals>.MyResourceDef'>', but"
             " '<class 'test_errors.test_annotate_with_bare_resource_def.<locals>.MyResourceDef'>'"
-            " outputs an unknown value to user code such as @ops and @assets. This"
-            " annotation should instead be 'Resource\\[Any\\]' or 'Resource\\[<output type>\\]'"
+            " outputs an unknown value to user code such as @ops and @assets. This annotation"
+            " should instead be 'FromResources\\[Any\\]' or 'FromResources\\[<output type>\\]'"
         ),
     ):
 
@@ -343,7 +343,7 @@ def test_using_dagster_field_by_mistake_config() -> None:
 
 
 def test_using_dagster_field_by_mistake_resource() -> None:
-    class MyResource(ConfigurableResource):
+    class MyResource(Resource):
         my_str: str = DagsterField(str, description="This is a string")  # type: ignore
 
     with pytest.raises(

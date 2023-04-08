@@ -7,7 +7,7 @@ from dagster import (
     asset,
 )
 from dagster._config.field_utils import EnvVar
-from dagster._config.structured_config import ConfigurableResource
+from dagster._config.structured_config import Resource
 from dagster._core.test_utils import environ
 from dagster_graphql.test.utils import define_out_of_process_context
 
@@ -17,18 +17,18 @@ def my_asset():
     pass
 
 
-class MyResource(ConfigurableResource):
+class MyResource(Resource):
     """My description."""
 
     a_string: str = "baz"
     an_unset_string: str = "defaulted"
 
 
-class MyInnerResource(ConfigurableResource):
+class MyInnerResource(Resource):
     a_str: str
 
 
-class MyOuterResource(ConfigurableResource):
+class MyOuterResource(Resource):
     inner: MyInnerResource
 
 

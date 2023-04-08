@@ -60,7 +60,7 @@ class BaseResourceMeta(pydantic.main.ModelMetaclass):
 
     .. code-block:: python
 
-        class FooResource(ConfigurableResource):
+        class FooResource(Resource):
             bar: BarResource
 
         # Types as PartialResource[BarResource]

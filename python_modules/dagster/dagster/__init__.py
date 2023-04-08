@@ -103,9 +103,9 @@ from dagster._config.structured_config import (
     ConfigurableIOManagerFactory as ConfigurableIOManagerFactory,
     ConfigurableLegacyIOManagerAdapter as ConfigurableLegacyIOManagerAdapter,
     ConfigurableLegacyResourceAdapter as ConfigurableLegacyResourceAdapter,
-    ConfigurableResource as ConfigurableResource,
-    ConfigurableResourceFactory as ConfigurableResourceFactory,
+    FactoryResource as FactoryResource,
     PermissiveConfig as PermissiveConfig,
+    Resource as Resource,
     ResourceDependency as ResourceDependency,
 )
 from dagster._core.definitions.asset_in import AssetIn as AssetIn
@@ -291,7 +291,7 @@ from dagster._core.definitions.repository_definition import (
     RepositoryDefinition as RepositoryDefinition,
 )
 from dagster._core.definitions.resource_annotation import (
-    Resource as Resource,
+    FromResources as FromResources,
 )
 from dagster._core.definitions.resource_definition import (
     ResourceDefinition as ResourceDefinition,

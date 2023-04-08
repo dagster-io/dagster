@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
 
 import requests
-from dagster._config.structured_config import ConfigurableResource
+from dagster._config.structured_config import Resource
 from dagster._utils import file_relative_path
 from dagster._utils.cached_method import cached_method
 
@@ -13,7 +13,7 @@ HNItemRecord = Dict[str, Any]
 HN_BASE_URL = "https://hacker-news.firebaseio.com/v0"
 
 
-class HNClient(ConfigurableResource, ABC):
+class HNClient(Resource, ABC):
     @abstractmethod
     def fetch_item_by_id(self, item_id: int) -> Optional[HNItemRecord]:
         pass

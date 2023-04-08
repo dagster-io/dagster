@@ -2,14 +2,14 @@ from typing import Dict, List
 
 from dagster import Definitions, asset, graph, job, op, repository, resource
 from dagster._config.field_utils import EnvVar
-from dagster._config.structured_config import Config, ConfigurableResource
+from dagster._config.structured_config import Config, Resource
 from dagster._core.definitions.definitions_class import BindResourcesToJobs
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.repository_definition import (
     PendingRepositoryDefinition,
     RepositoryDefinition,
 )
-from dagster._core.definitions.resource_annotation import Resource
+from dagster._core.definitions.resource_annotation import FromResources
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.execution.context.init import InitResourceContext
 from dagster._core.host_representation import (
@@ -61,7 +61,7 @@ def resolve_pending_repo_if_required(definitions: Definitions) -> RepositoryDefi
 
 def test_repository_snap_definitions_resources_basic():
     @asset
-    def my_asset(foo: Resource[str]):
+    def my_asset(foo: FromResources[str]):
         pass
 
     defs = Definitions(
@@ -80,10 +80,10 @@ def test_repository_snap_definitions_resources_basic():
 
 
 def test_repository_snap_definitions_resources_nested() -> None:
-    class MyInnerResource(ConfigurableResource):
+    class MyInnerResource(Resource):
         a_str: str
 
-    class MyOuterResource(ConfigurableResource):
+    class MyOuterResource(Resource):
         inner: MyInnerResource
 
     inner = MyInnerResource(a_str="wrapped")
@@ -109,10 +109,10 @@ def test_repository_snap_definitions_resources_nested() -> None:
 
 
 def test_repository_snap_definitions_resources_nested_top_level() -> None:
-    class MyInnerResource(ConfigurableResource):
+    class MyInnerResource(Resource):
         a_str: str
 
-    class MyOuterResource(ConfigurableResource):
+    class MyOuterResource(Resource):
         inner: MyInnerResource
 
     inner = MyInnerResource(a_str="wrapped")
@@ -176,13 +176,13 @@ def test_repository_snap_definitions_function_style_resources_nested() -> None:
 
 
 def test_repository_snap_definitions_resources_nested_many() -> None:
-    class MyInnerResource(ConfigurableResource):
+    class MyInnerResource(Resource):
         a_str: str
 
-    class MyOuterResource(ConfigurableResource):
+    class MyOuterResource(Resource):
         inner: MyInnerResource
 
-    class MyOutermostResource(ConfigurableResource):
+    class MyOutermostResource(Resource):
         inner: MyOuterResource
 
     inner = MyInnerResource(a_str="wrapped")
@@ -222,7 +222,7 @@ def test_repository_snap_definitions_resources_nested_many() -> None:
 
 
 def test_repository_snap_definitions_resources_complex():
-    class MyStringResource(ConfigurableResource):
+    class MyStringResource(Resource):
         """My description."""
 
         my_string: str = "bar"
@@ -276,23 +276,23 @@ def test_repository_snap_empty():
 
 
 def test_repository_snap_definitions_env_vars() -> None:
-    class MyStringResource(ConfigurableResource):
+    class MyStringResource(Resource):
         my_string: str
 
-    class MyInnerResource(ConfigurableResource):
+    class MyInnerResource(Resource):
         my_string: str
 
-    class MyOuterResource(ConfigurableResource):
+    class MyOuterResource(Resource):
         inner: MyInnerResource
 
     class MyInnerConfig(Config):
         my_string: str
 
-    class MyDataStructureResource(ConfigurableResource):
+    class MyDataStructureResource(Resource):
         str_list: List[str]
         str_dict: Dict[str, str]
 
-    class MyResourceWithConfig(ConfigurableResource):
+    class MyResourceWithConfig(Resource):
         config: MyInnerConfig
         config_list: List[MyInnerConfig]
 
@@ -354,7 +354,7 @@ def test_repository_snap_definitions_env_vars() -> None:
 
 
 def test_repository_snap_definitions_resources_assets_usage() -> None:
-    class MyResource(ConfigurableResource):
+    class MyResource(Resource):
         a_str: str
 
     @asset
@@ -411,11 +411,11 @@ def test_repository_snap_definitions_function_style_resources_assets_usage() -> 
         return "foo"
 
     @asset
-    def my_asset(foo: Resource[str]):
+    def my_asset(foo: FromResources[str]):
         pass
 
     @asset
-    def my_other_asset(foo: Resource[str]):
+    def my_other_asset(foo: FromResources[str]):
         pass
 
     @asset
@@ -449,7 +449,7 @@ def _to_dict(entries: List[ResourceJobUsageEntry]) -> Dict[str, List[str]]:
 
 
 def test_repository_snap_definitions_resources_job_op_usage() -> None:
-    class MyResource(ConfigurableResource):
+    class MyResource(Resource):
         a_str: str
 
     @op
@@ -508,7 +508,7 @@ def test_repository_snap_definitions_resources_job_op_usage() -> None:
 
 
 def test_repository_snap_definitions_resources_job_op_usage_graph() -> None:
-    class MyResource(ConfigurableResource):
+    class MyResource(Resource):
         a_str: str
 
     @op

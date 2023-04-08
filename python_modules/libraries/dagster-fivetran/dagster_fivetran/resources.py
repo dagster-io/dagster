@@ -15,7 +15,7 @@ from dagster import (
     get_dagster_logger,
     resource,
 )
-from dagster._config.structured_config import ConfigurableResource
+from dagster._config.structured_config import Resource
 from dagster._utils.cached_method import cached_method
 from dateutil import parser
 from pydantic import Field
@@ -33,7 +33,7 @@ FIVETRAN_CONNECTOR_PATH = "connectors/"
 DEFAULT_POLL_INTERVAL = 10
 
 
-class FivetranResource(ConfigurableResource):
+class FivetranResource(Resource):
     """This class exposes methods on top of the Fivetran REST API."""
 
     api_key: str = Field(description="The Fivetran API key to use for this resource.")

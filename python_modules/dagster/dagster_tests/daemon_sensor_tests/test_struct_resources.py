@@ -13,12 +13,12 @@ from dagster import (
     sensor,
 )
 from dagster._check import ParameterCheckError
-from dagster._config.structured_config import ConfigurableResource
+from dagster._config.structured_config import Resource
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.repository_definition.valid_definitions import (
     SINGLETON_REPOSITORY_NAME,
 )
-from dagster._core.definitions.resource_annotation import Resource
+from dagster._core.definitions.resource_annotation import FromResources
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.sensor_definition import RunRequest
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus, TickStatus
@@ -43,7 +43,7 @@ def the_job():
     the_op()
 
 
-class MyResource(ConfigurableResource):
+class MyResource(Resource):
     a_str: str
 
 
@@ -70,7 +70,7 @@ def my_cm_resource(_) -> Iterator[str]:
 
 
 @sensor(job_name="the_job")
-def sensor_with_cm(context: SensorEvaluationContext, my_cm_resource: Resource[str]):
+def sensor_with_cm(context: SensorEvaluationContext, my_cm_resource: FromResources[str]):
     assert is_in_cm
     return RunRequest(my_cm_resource, run_config={}, tags={})
 

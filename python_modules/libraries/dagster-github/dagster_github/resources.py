@@ -6,7 +6,7 @@ import jwt
 import requests
 from dagster import resource
 from dagster._config.structured_config import (
-    ConfigurableResourceFactory,
+    FactoryResource,
     InitResourceContextWithKeyMapping,
     infer_schema_from_config_class,
 )
@@ -160,7 +160,7 @@ class GithubClient:
         )
 
 
-class GithubResource(ConfigurableResourceFactory[GithubClient]):
+class GithubResource(FactoryResource[GithubClient]):
     github_app_id: int = Field(
         description="Github Application ID, for more info see https://developer.github.com/apps/",
     )
