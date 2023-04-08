@@ -250,7 +250,8 @@ class AssetGraph:
 
         if parent_partitions_def is None:
             raise DagsterInvalidInvocationError(
-                "Parent partition key provided, but parent asset is not partitioned."
+                f"Parent partition key {parent_asset_key} provided, but parent asset is not"
+                " partitioned."
             )
 
         partition_mapping = self.get_partition_mapping(child_asset_key, parent_asset_key)
