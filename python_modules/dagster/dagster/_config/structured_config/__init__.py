@@ -487,7 +487,7 @@ class FactoryResource(
         self._schema = schema
 
         self._nested_resources = {k: v for k, v in resource_pointers.items()}
-    
+
     @abstractmethod
     def provide_object_for_execution(self, context: InitResourceContext) -> TResValue:
         """Returns the object that this resource hands to user code, accessible by ops or assets
