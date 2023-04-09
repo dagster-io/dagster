@@ -446,7 +446,7 @@ def run_failure_sensor(
             request_jobs=request_jobs,
         )
         def _run_failure_sensor(context: RunStatusSensorContext):
-            return fn(context.for_run_failure())  # type: ignore  # fmt: skip
+            return fn(context.for_run_failure())  # fmt: skip
 
         return _run_failure_sensor
 

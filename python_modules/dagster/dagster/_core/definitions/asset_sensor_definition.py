@@ -24,7 +24,7 @@ class AssetSensorParamNames(NamedTuple):
     event_log_entry_param_name: Optional[str]
 
 
-def get_context_and_event_log_entry_param_names(fn: Callable) -> AssetSensorParamNames:
+def get_asset_sensor_param_names(fn: Callable) -> AssetSensorParamNames:
     """Determines the names of the context and event log entry parameters for an asset sensor function.
     These are assumed to be the first two non-resource params, in order (context param before event log entry).
     """
@@ -127,7 +127,7 @@ class AssetSensorDefinition(SensorDefinition):
                 (
                     context_param_name,
                     event_log_entry_param_name,
-                ) = get_context_and_event_log_entry_param_names(materialization_fn)
+                ) = get_asset_sensor_param_names(materialization_fn)
 
                 resource_args_populated = validate_and_get_resource_dict(
                     context.resources, name, resource_arg_names
