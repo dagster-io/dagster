@@ -39,10 +39,11 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 
 
-class InputsAndResources(NamedTuple):
+class SeparatedArgsKwargs(NamedTuple):
     input_args: Tuple[Any, ...]
     input_kwargs: Dict[str, Any]
     resources_by_param_name: Dict[str, Any]
+    config_input: Any
 
 
 def _separate_args_and_kwargs(
@@ -50,7 +51,7 @@ def _separate_args_and_kwargs(
     args: Tuple[Any, ...],
     kwargs: Dict[str, Any],
     resource_arg_mapping: Dict[str, Any],
-) -> InputsAndResources:
+) -> SeparatedArgsKwargs:
     """Given a decorated compute function, a set of args and kwargs, and set of resource param names,
     separates the set of resource inputs from op/asset inputs returns a tuple of the categorized
     args and kwargs.
@@ -65,12 +66,17 @@ def _separate_args_and_kwargs(
 
     params_without_context = params[1:] if compute_fn.has_context_arg() else params
 
+    config_input = kwargs.get("config")
+
     # Get any (non-kw) args that correspond to resource inputs & strip them from the args list
     for i, arg in enumerate(args):
         param = params_without_context[i] if i < len(params_without_context) else None
         if param and param.kind != inspect.Parameter.KEYWORD_ONLY:
             if param.name in resource_arg_mapping:
                 resource_inputs_from_args_and_kwargs[param.name] = arg
+                continue
+            if param.name == "config":
+                config_input = arg
                 continue
 
         adjusted_args.append(arg)
@@ -81,13 +87,16 @@ def _separate_args_and_kwargs(
             resource_inputs_from_args_and_kwargs[resource_arg] = kwargs[resource_arg]
 
     adjusted_kwargs = {
-        k: v for k, v in kwargs.items() if k not in resource_inputs_from_args_and_kwargs
+        k: v
+        for k, v in kwargs.items()
+        if k not in resource_inputs_from_args_and_kwargs and k != "config"
     }
 
-    return InputsAndResources(
+    return SeparatedArgsKwargs(
         input_args=tuple(adjusted_args),
         input_kwargs=adjusted_kwargs,
         resources_by_param_name=resource_inputs_from_args_and_kwargs,
+        config_input=config_input, 
     )
 
 
@@ -107,8 +116,6 @@ def op_invocation_result(
         if isinstance(op_def_or_invocation, PendingNodeInvocation)
         else op_def_or_invocation
     )
-
-    _check_invocation_requirements(op_def, context)
 
     compute_fn = op_def.compute_fn
     if not isinstance(compute_fn, DecoratedOpFunction):
@@ -137,6 +144,7 @@ def op_invocation_result(
     input_args = extracted.input_args
     input_kwargs = extracted.input_kwargs
     resources_by_param_name = extracted.resources_by_param_name
+    config_input = extracted.config_input
 
     resources_provided_in_multiple_places = resources_by_param_name and context.resource_keys
     if resources_provided_in_multiple_places:
@@ -144,6 +152,18 @@ def op_invocation_result(
 
     if resources_by_param_name:
         context = context.replace_resources(resources_by_param_name)
+
+    config_provided_in_multiple_places = config_input and context.op_config
+    if config_provided_in_multiple_places:
+        raise DagsterInvalidInvocationError("Cannot provide config in both context and kwargs")
+    if config_input:
+        from dagster._config.structured_config import Config
+
+        if isinstance(config_input, Config):
+            config_input = config_input._as_config_dict()  # noqa: SLF001
+        context = context.replace_config(config_input)
+
+    _check_invocation_requirements(op_def, context)
 
     bound_context = context.bind(op_def_or_invocation)
 

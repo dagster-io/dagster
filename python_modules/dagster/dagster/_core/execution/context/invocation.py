@@ -344,6 +344,17 @@ class UnboundOpExecutionContext(OpExecutionContext):
             assets_def=self._assets_def,
         )
 
+    def replace_config(self, config: Mapping[str, Any]) -> "UnboundOpExecutionContext":
+        return UnboundOpExecutionContext(
+            op_config=config,
+            resources_dict=self._resource_defs,
+            resources_config=self._resources_config,
+            instance=self._instance,
+            partition_key=self._partition_key,
+            mapping_key=self._mapping_key,
+            assets_def=self._assets_def,
+        )
+
 
 def _validate_resource_requirements(
     resource_defs: Mapping[str, ResourceDefinition], op_def: OpDefinition
