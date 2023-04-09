@@ -931,10 +931,10 @@ reveal_type(my_outer.inner)
         mypy_out = get_mypy_type_output(filename)
 
         # Ensure constructor signature is correct (mypy doesn't yet support Pydantic model constructor type hints)
-        assert pyright_out[0] == "(self: InnerResource, a_string: str) -> None"
+        assert pyright_out[0] == "(self: InnerResource, *, a_string: str) -> None"
         assert (
             pyright_out[1]
-            == "(self: OuterResource, inner: InnerResource | PartialResource[InnerResource],"
+            == "(self: OuterResource, *, inner: InnerResource | PartialResource[InnerResource],"
             " a_bool: bool) -> None"
         )
 
@@ -995,13 +995,39 @@ reveal_type(my_str_resource.a_string)
         # resource function that returns a str
         assert (
             pyright_out[0]
-            == "(self: StringDependentResource, a_string: ConfigurableResourceFactory[str] |"
+            == "(self: StringDependentResource, *, a_string: ConfigurableResourceFactory[str] |"
             " PartialResource[str] | ResourceDefinition | str) -> None"
         )
 
         # Ensure that the retrieved type is str
         assert pyright_out[1] == "str"
         assert mypy_out[1] == "builtins.str"
+
+
+@pytest.mark.typesignature
+def test_type_signatures_alias():
+    with tempfile.TemporaryDirectory() as tempdir:
+        filename = os.path.join(tempdir, "test.py")
+
+        with open(filename, "w") as f:
+            f.write(
+                """
+from dagster._config.structured_config import ConfigurableResource
+from pydantic import Field
+
+class ResourceWithAlias(ConfigurableResource):
+    _schema: str = Field(alias="schema")
+
+reveal_type(ResourceWithAlias.__init__)
+
+my_resource = ResourceWithAlias(schema="foo")
+"""
+            )
+
+        pyright_out = get_pyright_reveal_type_output(filename)
+
+        # Ensure constructor signature shows schema as the alias
+        assert pyright_out[0] == "(self: ResourceWithAlias, *, schema: str) -> None"
 
 
 def test_nested_config_class() -> None:
