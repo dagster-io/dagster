@@ -51,20 +51,31 @@ def _extract_resource_args(
     kwargs: Dict[str, Any],
     resource_arg_mapping: Dict[str, Any],
 ) -> ExtractedOutputs:
+    """Given a decorated compute function, a set of args and kwargs, and set of resource param names,
+    extracts any resource inputs from the args and kwargs and returns a tuple of the remaining
+    args and kwargs, along with a dict of the extracted resource inputs.
+
+    We use the remaining args and kwargs to cleanly invoke the compute function, and we use the
+    extracted resource inputs to populate the execution context.
+    """
     resource_inputs_from_args_and_kwargs = {}
     params = get_function_params(compute_fn.decorated_fn)
 
     adjusted_args = []
 
     params_without_context = params[1:] if compute_fn.has_context_arg() else params
-    for param, arg in zip(params_without_context, args):
-        if param.kind != inspect.Parameter.KEYWORD_ONLY:
+
+    # Get any (non-kw) args that correspond to resource inputs & strip them from the args list
+    for i, arg in enumerate(args):
+        param = params_without_context[i] if i < len(params_without_context) else None
+        if param and param.kind != inspect.Parameter.KEYWORD_ONLY:
             if param.name in resource_arg_mapping:
                 resource_inputs_from_args_and_kwargs[param.name] = arg
                 continue
 
         adjusted_args.append(arg)
 
+    # Get any kwargs that correspond to resource inputs & strip them from the kwargs dict
     for resource_arg in resource_arg_mapping:
         if resource_arg in kwargs:
             resource_inputs_from_args_and_kwargs[resource_arg] = kwargs[resource_arg]
@@ -110,7 +121,10 @@ def op_invocation_result(
     context = context or build_op_context()
 
     resource_arg_mapping = {arg.name: arg.name for arg in compute_fn.get_resource_args()}
+
+    # Extract any resource inputs from the args and kwargs
     extracted = _extract_resource_args(compute_fn, args, kwargs, resource_arg_mapping)
+
     adjusted_args = extracted.args
     adjusted_kwargs = extracted.kwargs
     resource_inputs_from_args = extracted.resource_inputs
