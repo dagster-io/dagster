@@ -1,7 +1,7 @@
 from typing import Any, Optional, TypeVar
 
 from dagster import (
-    ConfigurableResourceFactory,
+    FactoryResource,
     InitResourceContext,
     resource,
 )
@@ -13,7 +13,7 @@ from .utils import construct_s3_client
 T = TypeVar("T")
 
 
-class ResourceWithS3Configuration(ConfigurableResourceFactory[T]):
+class ResourceWithS3Configuration(FactoryResource[T]):
     use_unsigned_session: bool = Field(
         default=False, description="Specifiesw whether to use an unsigned S3 session."
     )
@@ -86,7 +86,7 @@ class S3Resource(ResourceWithS3Configuration[Any]):
 
     """
 
-    def create_resource(self, context: InitResourceContext) -> Any:
+    def provide_object_for_execution(self, context: InitResourceContext) -> Any:
         return construct_s3_client(
             max_attempts=self.max_attempts,
             region_name=self.region_name,
@@ -180,7 +180,7 @@ class S3FileManagerResource(ResourceWithS3Configuration[S3FileManager]):
         default="dagster", description="Prefix to use for the S3 bucket for this file manager."
     )
 
-    def create_resource(self, context: InitResourceContext) -> S3FileManager:
+    def provide_object_for_execution(self, context: InitResourceContext) -> S3FileManager:
         return S3FileManager(
             s3_session=construct_s3_client(
                 max_attempts=self.max_attempts,

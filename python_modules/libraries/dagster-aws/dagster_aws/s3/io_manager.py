@@ -3,8 +3,8 @@ import pickle
 from typing import Sequence, Union
 
 from dagster import (
-    ConfigurableIOManagerFactory,
     InputContext,
+    IOManagerFactoryResource,
     MemoizableIOManager,
     MetadataValue,
     OutputContext,
@@ -103,7 +103,7 @@ class PickledObjectS3IOManager(MemoizableIOManager):
         context.add_output_metadata({"uri": MetadataValue.path(path)})
 
 
-class S3IOManagerResource(ConfigurableIOManagerFactory):
+class S3IOManagerResource(IOManagerFactoryResource[PickledObjectS3IOManager]):
     """Persistent IO manager using S3 for storage.
 
     Serializes objects via pickling. Suitable for objects storage for distributed executors, so long
@@ -155,7 +155,7 @@ class S3IOManagerResource(ConfigurableIOManagerFactory):
         default="dagster", description="Prefix to use for the S3 bucket for this file manager."
     )
 
-    def create_io_manager(self, context) -> PickledObjectS3IOManager:
+    def provide_object_for_execution(self, context) -> PickledObjectS3IOManager:
         return PickledObjectS3IOManager(
             s3_bucket=self.s3_bucket,
             s3_session=self.s3_resource,
