@@ -6,7 +6,6 @@ import duckdb
 from dagster import IOManagerDefinition, OutputContext, io_manager
 from dagster._config.structured_config import (
     ConfigurableIOManagerFactory,
-    infer_schema_from_config_class,
 )
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.storage.db_io_manager import (
@@ -84,7 +83,7 @@ def build_duckdb_io_manager(
 
     """
 
-    @io_manager(config_schema=infer_schema_from_config_class(DuckDBIOManager))
+    @io_manager(config_schema=DuckDBIOManager.to_config_schema())
     def duckdb_io_manager(init_context):
         """IO Manager for storing outputs in a DuckDB database.
 
