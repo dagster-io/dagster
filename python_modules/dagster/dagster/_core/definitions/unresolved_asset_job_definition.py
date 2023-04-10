@@ -194,11 +194,6 @@ class UnresolvedAssetJobDefinition(
             if partitions_def is not None:
                 asset_keys_by_partitions_def[partitions_def].add(asset_key)
 
-        if len(asset_keys_by_partitions_def) == 0 and self.partitions_def:
-            raise DagsterInvalidDefinitionError(
-                "Tried to build a partitioned job, but none of the selected assets are partitioned."
-            )
-
         if len(asset_keys_by_partitions_def) > 1:
             keys_by_partitions_def_str = "\n".join(
                 f"{partitions_def}: {asset_keys}"
