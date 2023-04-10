@@ -103,7 +103,7 @@ class PickledObjectS3IOManager(MemoizableIOManager):
         context.add_output_metadata({"uri": MetadataValue.path(path)})
 
 
-class S3PickleIOManager(ConfigurableIOManagerFactory):
+class S3IOManagerResource(ConfigurableIOManagerFactory):
     """Persistent IO manager using S3 for storage.
 
     Serializes objects via pickling. Suitable for objects storage for distributed executors, so long
@@ -164,7 +164,7 @@ class S3PickleIOManager(ConfigurableIOManagerFactory):
 
 
 @io_manager(
-    config_schema=S3PickleIOManager.to_config_schema(),
+    config_schema=S3IOManagerResource.to_config_schema(),
     required_resource_keys={"s3"},
 )
 def s3_pickle_io_manager(init_context):

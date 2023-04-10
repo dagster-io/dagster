@@ -5,7 +5,7 @@ from .file_manager import (
 )
 from .io_manager import (
     PickledObjectS3IOManager as PickledObjectS3IOManager,
-    S3PickleIOManager as S3PickleIOManager,
+    S3IOManagerResource as S3IOManagerResource,
     s3_pickle_io_manager as s3_pickle_io_manager,
 )
 from .ops import (
