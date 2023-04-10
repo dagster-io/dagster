@@ -6,7 +6,6 @@ from dagster import IOManagerDefinition, OutputContext, io_manager
 from dagster._annotations import experimental
 from dagster._config.structured_config import (
     ConfigurableIOManagerFactory,
-    infer_schema_from_config_class,
 )
 from dagster._core.storage.db_io_manager import (
     DbClient,
@@ -102,7 +101,7 @@ def build_bigquery_io_manager(
         the base64 encoded with this shell command: cat $GOOGLE_APPLICATION_CREDENTIALS | base64
     """
 
-    @io_manager(config_schema=infer_schema_from_config_class(BigQueryIOManager))
+    @io_manager(config_schema=BigQueryIOManager.to_config_schema())
     def bigquery_io_manager(init_context):
         """I/O Manager for storing outputs in a BigQuery database.
 
