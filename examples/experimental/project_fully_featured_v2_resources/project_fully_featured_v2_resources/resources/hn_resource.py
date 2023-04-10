@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
 
 import requests
-from dagster._config.structured_config import Resource
+from dagster import Resource
 from dagster._utils import file_relative_path
 from dagster._utils.cached_method import cached_method
 

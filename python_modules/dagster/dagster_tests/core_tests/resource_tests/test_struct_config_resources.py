@@ -1012,10 +1012,10 @@ def test_type_signatures_alias():
         with open(filename, "w") as f:
             f.write(
                 """
-from dagster._config.structured_config import ConfigurableResource
+from dagster._config.structured_config import Resource
 from pydantic import Field
 
-class ResourceWithAlias(ConfigurableResource):
+class ResourceWithAlias(Resource):
     _schema: str = Field(alias="schema")
 
 reveal_type(ResourceWithAlias.__init__)
