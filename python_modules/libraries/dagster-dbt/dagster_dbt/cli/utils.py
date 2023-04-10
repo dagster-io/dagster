@@ -11,8 +11,11 @@ from ..errors import (
     DagsterDbtCliHandledRuntimeError,
     DagsterDbtCliOutputsNotFoundError,
 )
-from .constants import DBT_RUN_RESULTS_COMMANDS, DEFAULT_DBT_TARGET_PATH
 from .types import DbtCliOutput
+
+DEFAULT_DBT_TARGET_PATH = "target"
+
+DBT_RUN_RESULTS_COMMANDS = ["run", "test", "seed", "snapshot", "docs generate", "build"]
 
 
 class DbtCliEvent(NamedTuple):
