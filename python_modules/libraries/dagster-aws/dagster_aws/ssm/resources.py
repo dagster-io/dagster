@@ -55,7 +55,7 @@ class SSMResource(ResourceWithBoto3Configuration["botocore.client.ssm"]):
             )
     """
 
-    def create_resource(self, context: InitResourceContext) -> Any:
+    def provide_object_for_execution(self, context: InitResourceContext) -> Any:
         return construct_ssm_client(
             max_attempts=self.max_attempts,
             region_name=self.region_name,
@@ -183,7 +183,7 @@ class ParameterStoreResource(ResourceWithBoto3Configuration[Dict[str, str]]):
         default=False, description="Whether to add the parameters to the environment."
     )
 
-    def create_resource(
+    def provide_object_for_execution(
         self, context: InitResourceContext
     ) -> Generator[Dict[str, str], None, None]:
         ssm_manager = construct_ssm_client(

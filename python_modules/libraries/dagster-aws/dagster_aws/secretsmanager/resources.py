@@ -48,7 +48,7 @@ class SecretsManagerResource(ResourceWithBoto3Configuration["botocore.client.Sec
             )
     """
 
-    def create_resource(self, context: InitResourceContext) -> Any:
+    def provide_object_for_execution(self, context: InitResourceContext) -> Any:
         return construct_secretsmanager_client(
             max_attempts=self.max_attempts,
             region_name=self.region_name,
@@ -160,7 +160,7 @@ class SecretsManagerSecretsResource(ResourceWithBoto3Configuration[Dict[str, str
         default=False, description="Whether to mount the secrets as environment variables."
     )
 
-    def create_resource(
+    def provide_object_for_execution(
         self, context: InitResourceContext
     ) -> Generator[Dict[str, str], None, None]:
         secrets_manager = construct_secretsmanager_client(

@@ -3,7 +3,7 @@ from typing import Dict
 
 import pytest
 from dagster import (
-    Resource,
+    FromResources,
     ResourceDefinition,
     asset,
     build_init_resource_context,
@@ -54,7 +54,7 @@ def test_parameter_store_resource_structured_tags(mock_ssm_client) -> None:
     )
 
     @asset
-    def my_parameter_store_asset(parameter_store: Resource[Dict[str, str]]):
+    def my_parameter_store_asset(parameter_store: FromResources[Dict[str, str]]):
         assert parameter_store == {"foo_param1": "foo_value1", "foo_param2": "foo_value2"}
 
     result = materialize(
