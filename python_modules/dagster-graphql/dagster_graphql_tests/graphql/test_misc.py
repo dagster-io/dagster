@@ -4,12 +4,15 @@ from collections import OrderedDict
 from dagster import (
     DependencyDefinition,
     In,
+    JobDefinition,
     OpDefinition,
     dagster_type_loader,
     repository,
 )
+from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.types.dagster_type import PythonObjectDagsterType
-from dagster._legacy import OutputDefinition, PipelineDefinition
+from dagster._core.workspace.context import WorkspaceRequestContext
+from dagster._legacy import OutputDefinition
 from dagster_graphql.schema.roots.mutation import execution_params_from_graphql
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 
@@ -29,8 +32,8 @@ PoorMansDataFrame = PythonObjectDagsterType(
 )
 
 
-def test_enum_query(graphql_context):
-    selector = infer_pipeline_selector(graphql_context, "pipeline_with_enum_config")
+def test_enum_query(graphql_context: WorkspaceRequestContext):
+    selector = infer_pipeline_selector(graphql_context, "job_with_enum_config")
 
     ENUM_QUERY = """
     query EnumQuery($selector: PipelineSelector!) {
@@ -122,34 +125,36 @@ query TypeRenderQuery($selector: PipelineSelector!) {
 """
 
 
-def test_type_rendering(graphql_context):
+def test_type_rendering(graphql_context: WorkspaceRequestContext):
     selector = infer_pipeline_selector(graphql_context, "more_complicated_nested_config")
     result = execute_dagster_graphql(graphql_context, TYPE_RENDER_QUERY, {"selector": selector})
     assert not result.errors
     assert result.data
 
 
-def define_circular_dependency_pipeline():
-    return PipelineDefinition(
-        name="circular_dependency_pipeline",
-        node_defs=[
-            OpDefinition(
-                name="csolid",
-                ins={"num": In("num", PoorMansDataFrame)},
-                outs={"result": OutputDefinition(PoorMansDataFrame)},
-                compute_fn=lambda *_args: None,
-            )
-        ],
-        dependencies={"csolid": {"num": DependencyDefinition("csolid")}},
+def define_circular_dependency_job():
+    return JobDefinition(
+        graph_def=GraphDefinition(
+            name="circular_dependency_job",
+            node_defs=[
+                OpDefinition(
+                    name="csolid",
+                    ins={"num": In("num", PoorMansDataFrame)},
+                    outs={"result": OutputDefinition(PoorMansDataFrame)},
+                    compute_fn=lambda *_args: None,
+                )
+            ],
+            dependencies={"csolid": {"num": DependencyDefinition("csolid")}},
+        )
     )
 
 
 @repository
 def test_repository():
-    return {"pipelines": {"pipeline": define_circular_dependency_pipeline}}
+    return {"pipelines": {"pipeline": define_circular_dependency_job}}
 
 
-def test_pipeline_or_error_by_name(graphql_context):
+def test_pipeline_or_error_by_name(graphql_context: WorkspaceRequestContext):
     selector = infer_pipeline_selector(graphql_context, "csv_hello_world_two")
     result = execute_dagster_graphql(
         graphql_context,
@@ -169,7 +174,7 @@ def test_pipeline_or_error_by_name(graphql_context):
     assert result.data["pipelineOrError"]["name"] == "csv_hello_world_two"
 
 
-def test_pipeline_or_error_by_name_not_found(graphql_context):
+def test_pipeline_or_error_by_name_not_found(graphql_context: WorkspaceRequestContext):
     selector = infer_pipeline_selector(graphql_context, "foobar")
     result = execute_dagster_graphql(
         graphql_context,
@@ -190,7 +195,7 @@ def test_pipeline_or_error_by_name_not_found(graphql_context):
     assert result.data["pipelineOrError"]["__typename"] == "PipelineNotFoundError"
 
 
-def test_production_query(graphql_context):
+def test_production_query(graphql_context: WorkspaceRequestContext):
     result = execute_dagster_graphql(graphql_context, PRODUCTION_QUERY)
 
     assert not result.errors
