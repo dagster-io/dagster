@@ -1,24 +1,59 @@
-from dagster import Field, StringSource, resource
+from dagster import ConfigurableResourceFactory, resource
+from pydantic import Field as PyField
 from slack_sdk.web.client import WebClient
 
 
+class SlackResource(ConfigurableResourceFactory[WebClient]):
+    """This resource is for connecting to Slack.
+
+    The resource object is a `slack_sdk.WebClient`.
+
+    By configuring this Slack resource, you can post messages to Slack from any Dagster op:
+
+    Examples:
+        .. code-block:: python
+
+            import os
+
+            from dagster import EnvVar, job, op, Resource
+            from dagster_slack import SlackResource
+            from slack_sdk.web.client import WebClient
+
+
+            @op
+            def slack_op(slack: Resource[WebClient]):
+                slack.chat_postMessage(channel='#noise', text=':wave: hey there!')
+
+            @job
+            def slack_job():
+                slack_op()
+
+            defs = Definitions(
+                jobs=[slack_job],
+                resources={
+                    "slack": SlackResource(token=EnvVar("MY_SLACK_TOKEN")),
+                },
+            )
+    """
+
+    token: str = PyField(
+        description=(
+            "To configure access to the Slack API, you'll need an access"
+            " token provisioned with access to your Slack workspace."
+            " Tokens are typically either user tokens or bot tokens. For programmatic posting"
+            " to Slack from this resource, you probably want to provision and use a bot token."
+            " More in the Slack API documentation here: https://api.slack.com/docs/token-types"
+        ),
+    )
+
+    def create_resource(self, context) -> WebClient:
+        return WebClient(self.token)
+
+
 @resource(
-    {
-        "token": Field(
-            StringSource,
-            description="""To configure access to the Slack API, you'll need an access
-                    token provisioned with access to your Slack workspace.
-
-                    Tokens are typically either user tokens or bot tokens. For programmatic posting
-                    to Slack from this resource, you probably want to provision and use a bot token.
-
-                    More in the Slack API documentation here: https://api.slack.com/docs/token-types
-                    """,
-        )
-    },
-    description="This resource is for connecting to Slack",
+    config_schema=SlackResource.to_config_schema(),
 )
-def slack_resource(context):
+def slack_resource(context) -> WebClient:
     """This resource is for connecting to Slack.
 
     The resource object is a `slack_sdk.WebClient`.
@@ -46,4 +81,4 @@ def slack_resource(context):
                 run_config={'resources': {'slack': {'config': {'token': os.getenv('SLACK_TOKEN')}}}}
             )
     """
-    return WebClient(context.resource_config.get("token"))
+    return SlackResource.from_resource_context(context)
