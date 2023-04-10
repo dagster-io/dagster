@@ -1,11 +1,14 @@
 from abc import abstractmethod
 from contextlib import contextmanager
-from typing import Optional, Sequence, Type, cast
+from typing import Any, Optional, Sequence, Type, cast
 
 import duckdb
-from dagster import IOManagerDefinition, OutputContext, io_manager
-from dagster._config.structured_config import (
-    ConfigurableIOManagerFactory,
+from dagster import (
+    ConfigurableIOManager,
+    InputContext,
+    IOManagerDefinition,
+    OutputContext,
+    io_manager,
 )
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.storage.db_io_manager import (
@@ -16,6 +19,7 @@ from dagster._core.storage.db_io_manager import (
     TableSlice,
 )
 from dagster._utils.backoff import backoff
+from dagster._utils.cached_method import cached_method
 from pydantic import Field
 
 DUCKDB_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
@@ -104,7 +108,7 @@ def build_duckdb_io_manager(
     return duckdb_io_manager
 
 
-class DuckDBIOManager(ConfigurableIOManagerFactory):
+class DuckDBIOManager(ConfigurableIOManager):
     """Base class for an IO manager definition that reads inputs from and writes outputs to DuckDB.
 
     Examples:
@@ -170,7 +174,8 @@ class DuckDBIOManager(ConfigurableIOManagerFactory):
     def default_load_type() -> Optional[Type]:
         return None
 
-    def create_io_manager(self, context) -> DbIOManager:
+    @cached_method
+    def inner_db_io_manager(self) -> DbIOManager:
         return DbIOManager(
             db_client=DuckDbClient(),
             database=self.database,
@@ -179,6 +184,12 @@ class DuckDBIOManager(ConfigurableIOManagerFactory):
             default_load_type=self.default_load_type(),
             io_manager_name="DuckDBIOManager",
         )
+
+    def load_input(self, context: InputContext) -> Any:
+        return self.inner_db_io_manager().load_input(context)
+
+    def handle_output(self, context: OutputContext, obj: Any) -> None:
+        return self.inner_db_io_manager().handle_output(context, obj)
 
 
 class DuckDbClient(DbClient):

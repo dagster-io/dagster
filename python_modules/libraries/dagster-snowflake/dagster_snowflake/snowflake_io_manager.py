@@ -1,10 +1,13 @@
 from abc import abstractmethod
 from contextlib import contextmanager
-from typing import Mapping, Optional, Sequence, Type, cast
+from typing import Any, Mapping, Optional, Sequence, Type, cast
 
-from dagster import IOManagerDefinition, OutputContext, io_manager
-from dagster._config.structured_config import (
-    ConfigurableIOManagerFactory,
+from dagster import (
+    ConfigurableIOManager,
+    InputContext,
+    IOManagerDefinition,
+    OutputContext,
+    io_manager,
 )
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.storage.db_io_manager import (
@@ -14,6 +17,7 @@ from dagster._core.storage.db_io_manager import (
     TablePartitionDimension,
     TableSlice,
 )
+from dagster._utils.cached_method import cached_method
 from pydantic import Field
 from sqlalchemy.exc import ProgrammingError
 
@@ -105,7 +109,7 @@ def build_snowflake_io_manager(
     return snowflake_io_manager
 
 
-class SnowflakeIOManager(ConfigurableIOManagerFactory):
+class SnowflakeIOManager(ConfigurableIOManager):
     """Base class for an IO manager definition that reads inputs from and writes outputs to Snowflake.
 
     Examples:
@@ -242,7 +246,8 @@ class SnowflakeIOManager(ConfigurableIOManagerFactory):
         """
         return None
 
-    def create_io_manager(self, context) -> DbIOManager:
+    @cached_method
+    def inner_db_io_manager(self) -> DbIOManager:
         return DbIOManager(
             db_client=SnowflakeDbClient(),
             io_manager_name="SnowflakeIOManager",
@@ -251,6 +256,12 @@ class SnowflakeIOManager(ConfigurableIOManagerFactory):
             type_handlers=self.type_handlers(),
             default_load_type=self.default_load_type(),
         )
+
+    def load_input(self, context: InputContext) -> Any:
+        return self.inner_db_io_manager().load_input(context)
+
+    def handle_output(self, context: OutputContext, obj: Any) -> None:
+        return self.inner_db_io_manager().handle_output(context, obj)
 
 
 class SnowflakeDbClient(DbClient):
