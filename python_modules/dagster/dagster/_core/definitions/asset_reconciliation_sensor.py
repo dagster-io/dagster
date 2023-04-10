@@ -782,17 +782,6 @@ def reconcile(
 
     instance_queryer = CachingInstanceQueryer(instance=instance)
 
-    # if there is a auto materialize policy set in the selection, use that
-    if any(
-        asset_graph.get_auto_materialize_policy(target_key) is not None
-        for target_key in target_asset_keys
-    ):
-        target_asset_keys = {
-            target_key
-            for target_key in target_asset_keys
-            if asset_graph.get_auto_materialize_policy(target_key) is not None
-        }
-
     target_parent_asset_keys = {
         parent
         for target_asset_key in target_asset_keys
@@ -1014,9 +1003,23 @@ def build_asset_reconciliation_sensor(
             if context.cursor
             else AssetReconciliationCursor.empty()
         )
+
+        # if there is a auto materialize policy set in the selection, filter down to that. Otherwise, use the
+        # whole selection
+        target_asset_keys = asset_selection.resolve(asset_graph)
+        if any(
+            asset_graph.get_auto_materialize_policy(target_key) is not None
+            for target_key in target_asset_keys
+        ):
+            target_asset_keys = {
+                target_key
+                for target_key in target_asset_keys
+                if asset_graph.get_auto_materialize_policy(target_key) is not None
+            }
+
         run_requests, updated_cursor = reconcile(
             asset_graph=asset_graph,
-            target_asset_keys=asset_selection.resolve(asset_graph),
+            target_asset_keys=target_asset_keys,
             instance=context.instance,
             cursor=cursor,
             run_tags=run_tags,

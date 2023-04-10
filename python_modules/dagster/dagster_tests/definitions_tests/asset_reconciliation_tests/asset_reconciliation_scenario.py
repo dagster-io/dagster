@@ -49,6 +49,7 @@ from dagster._core.test_utils import (
     create_test_daemon_workspace_context,
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._daemon.auto_materialize_daemon import AutoMaterializeDaemon
 
 
 class RunSpec(NamedTuple):
@@ -69,7 +70,7 @@ class AssetReconciliationScenario(NamedTuple):
     active_backfill_targets: Optional[Sequence[Mapping[AssetKey, PartitionsSubset]]] = None
     expected_run_requests: Optional[Sequence[RunRequest]] = None
 
-    def do_scenario(self, instance, scenario_name=None, with_daemon=False):
+    def do_scenario(self, instance, scenario_name=None, with_external_asset_graph=False):
         test_time = self.current_time or pendulum.now()
 
         with pendulum.test(test_time) if self.current_time else contextlib.nullcontext():
@@ -117,7 +118,9 @@ class AssetReconciliationScenario(NamedTuple):
                     return self.cursor_from.assets
 
                 run_requests, cursor = self.cursor_from.do_scenario(
-                    instance, scenario_name=scenario_name, with_daemon=with_daemon
+                    instance,
+                    scenario_name=scenario_name,
+                    with_external_asset_graph=with_external_asset_graph,
                 )
                 for run_request in run_requests:
                     instance.create_run_for_pipeline(
@@ -183,7 +186,7 @@ class AssetReconciliationScenario(NamedTuple):
             test_time += self.evaluation_delta
         with pendulum.test(test_time):
             # get asset_graph
-            if not with_daemon:
+            if not with_external_asset_graph:
                 asset_graph = repo.asset_graph
             else:
                 assert scenario_name is not None, "scenario_name must be provided for daemon runs"
@@ -226,6 +229,113 @@ class AssetReconciliationScenario(NamedTuple):
             assert base_job is not None
 
         return run_requests, cursor
+
+    def do_daemon_scenario(self, instance, scenario_name=None):
+        test_time = self.current_time or pendulum.now()
+
+        with pendulum.test(test_time) if self.current_time else contextlib.nullcontext():
+
+            @repository
+            def repo():
+                return self.assets
+
+            # add any backfills to the instance
+            for i, target in enumerate(self.active_backfill_targets or []):
+                target_subset = AssetGraphSubset(
+                    asset_graph=repo.asset_graph,
+                    partitions_subsets_by_asset_key=target,
+                    non_partitioned_asset_keys=set(),
+                )
+                empty_subset = AssetGraphSubset(
+                    asset_graph=repo.asset_graph,
+                    partitions_subsets_by_asset_key={},
+                    non_partitioned_asset_keys=set(),
+                )
+                asset_backfill_data = AssetBackfillData(
+                    latest_storage_id=0,
+                    target_subset=target_subset,
+                    requested_runs_for_target_roots=False,
+                    materialized_subset=empty_subset,
+                    requested_subset=empty_subset,
+                    failed_and_downstream_subset=empty_subset,
+                )
+                backfill = PartitionBackfill(
+                    backfill_id=f"backfill{i}",
+                    status=BulkActionStatus.REQUESTED,
+                    from_failure=False,
+                    tags={},
+                    backfill_timestamp=test_time.timestamp(),
+                    serialized_asset_backfill_data=asset_backfill_data.serialize(
+                        dynamic_partitions_store=instance
+                    ),
+                )
+                instance.add_backfill(backfill)
+
+            if self.cursor_from is not None:
+                self.cursor_from.do_daemon_scenario(
+                    instance,
+                    scenario_name=scenario_name,
+                )
+
+        start = datetime.datetime.now()
+
+        def test_time_fn():
+            return (test_time + (datetime.datetime.now() - start)).timestamp()
+
+        for run in self.unevaluated_runs:
+            if self.between_runs_delta is not None:
+                test_time += self.between_runs_delta
+
+            with pendulum.test(test_time), mock.patch("time.time", new=test_time_fn):
+                assets_in_run = []
+                run_keys = set(run.asset_keys)
+                for a in self.assets:
+                    if isinstance(a, SourceAsset):
+                        assets_in_run.append(a)
+                    else:
+                        selected_keys = run_keys.intersection(a.keys)
+                        if selected_keys == a.keys:
+                            assets_in_run.append(a)
+                        elif not selected_keys:
+                            assets_in_run.extend(a.to_source_assets())
+                        else:
+                            assets_in_run.append(a.subset_for(run_keys))
+                            assets_in_run.extend(
+                                a.subset_for(a.keys - selected_keys).to_source_assets()
+                            )
+
+                do_run(
+                    asset_keys=run.asset_keys,
+                    partition_key=run.partition_key,
+                    all_assets=self.assets,
+                    instance=instance,
+                    failed_asset_keys=run.failed_asset_keys,
+                )
+
+        if self.evaluation_delta is not None:
+            test_time += self.evaluation_delta
+        with pendulum.test(test_time):
+            assert scenario_name is not None, "scenario_name must be provided for daemon runs"
+            with create_test_daemon_workspace_context(
+                workspace_load_target=InProcessTestWorkspaceLoadTarget(
+                    InProcessCodeLocationOrigin(
+                        loadable_target_origin=LoadableTargetOrigin(
+                            executable_path=sys.executable,
+                            module_name="dagster_tests.definitions_tests.asset_reconciliation_tests.scenarios",
+                            working_directory=os.getcwd(),
+                            attribute="hacky_daemon_repo_" + scenario_name,
+                        ),
+                        location_name="test_location",
+                    ),
+                ),
+                instance=instance,
+            ) as workspace_context:
+                workspace = workspace_context.create_request_context()
+                assert (
+                    workspace.get_code_location_error("test_location") is None
+                ), workspace.get_code_location_error("test_location")
+
+                list(AutoMaterializeDaemon(interval_seconds=2).run_iteration(workspace_context))
 
 
 def do_run(
