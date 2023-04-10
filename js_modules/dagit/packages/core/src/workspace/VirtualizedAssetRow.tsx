@@ -177,7 +177,10 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
           ) : (
             <Box flex={{direction: 'column', alignItems: 'flex-start', gap: 4}}>
               {asset?.definition ? (
-                <Box flex={{direction: 'row', alignItems: 'baseline', gap: 8}}>
+                <Box
+                  style={{whiteSpace: 'nowrap'}}
+                  flex={{direction: 'row', alignItems: 'center', gap: 8}}
+                >
                   {
                     buildAssetNodeStatusContent({
                       definition: asset.definition,

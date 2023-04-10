@@ -207,7 +207,14 @@ export function buildAssetNodeStatusContent({
         border: Colors.Gray300,
         content: (
           <>
-            {expanded && <Icon name="partition_missing" color={Colors.Gray300} size={16} />}
+            {expanded && (
+              <Icon
+                name="partition_missing"
+                color={Colors.Gray300}
+                style={{marginRight: -2}}
+                size={12}
+              />
+            )}
             <span>Never observed</span>
             {!expanded && <span>–</span>}
           </>
@@ -293,7 +300,14 @@ export function buildAssetNodeStatusContent({
       border: Colors.Red500,
       content: (
         <>
-          {expanded && <AssetPartitionStatusDot status={[AssetPartitionStatus.FAILED]} />}
+          {expanded && (
+            <Icon
+              name="partition_failure"
+              color={Colors.Red500}
+              style={{marginRight: -2}}
+              size={12}
+            />
+          )}
 
           <span style={{color: Colors.Red700}}>
             {runWhichFailedToMaterialize && late
@@ -328,7 +342,14 @@ export function buildAssetNodeStatusContent({
       border: Colors.Yellow500,
       content: (
         <>
-          {expanded && <Icon name="partition_missing" color={Colors.Yellow500} size={16} />}
+          {expanded && (
+            <Icon
+              name="partition_missing"
+              color={Colors.Yellow500}
+              style={{marginRight: -2}}
+              size={12}
+            />
+          )}
           <span style={{color: Colors.Yellow700}}>Never materialized</span>
         </>
       ),

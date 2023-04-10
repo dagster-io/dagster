@@ -103,6 +103,7 @@ export const SingleAssetQueryMaterializedWithLatestRun: MockedResponse<SingleAss
           __typename: 'AssetNode',
           groupName: 'GROUP2',
           isSource: false,
+          isObservable: false,
           partitionDefinition: null,
           description:
             'This is a super long description that could involve some level of SQL and is just generally very long',
@@ -194,6 +195,7 @@ export const SingleAssetQueryMaterializedStaleAndLate: MockedResponse<SingleAsse
           __typename: 'AssetNode',
           groupName: 'GROUP2',
           isSource: false,
+          isObservable: false,
           partitionDefinition: null,
           description: null,
         },
@@ -282,6 +284,7 @@ export const SingleAssetQueryLastRunFailed: MockedResponse<SingleAssetQuery> = {
           __typename: 'AssetNode',
           groupName: 'default',
           isSource: false,
+          isObservable: false,
           partitionDefinition: {
             description:
               "Multi-partitioned, with dimensions: \nAstate: 'TN', 'VA', 'GA', 'KY', 'PA', 'NC', 'SC', 'FL', 'OH', 'IL', 'WV' \nDate: Daily, starting 2021-05-05 UTC.",
@@ -355,6 +358,7 @@ export const AssetCatalogTableMock: MockedResponse<AssetCatalogTableQuery> = {
               id: 'test.py.repo.["good_asset"]',
               groupName: 'GROUP2',
               isSource: false,
+              isObservable: false,
               partitionDefinition: null,
               hasMaterializePermission: true,
               description:
@@ -383,6 +387,7 @@ export const AssetCatalogTableMock: MockedResponse<AssetCatalogTableQuery> = {
               id: 'test.py.repo.["late_asset"]',
               groupName: 'GROUP2',
               isSource: false,
+              isObservable: false,
               partitionDefinition: null,
               description: null,
               hasMaterializePermission: true,
@@ -410,6 +415,7 @@ export const AssetCatalogTableMock: MockedResponse<AssetCatalogTableQuery> = {
               id: 'test.py.repo.["run_failing_asset"]',
               groupName: 'GROUP4',
               isSource: false,
+              isObservable: false,
               partitionDefinition: null,
               description: null,
               hasMaterializePermission: true,
@@ -437,6 +443,7 @@ export const AssetCatalogTableMock: MockedResponse<AssetCatalogTableQuery> = {
               id: 'test.py.repo.["asset_with_a_very_long_key_that_will_require_truncation"]',
               groupName: 'GROUP4',
               isSource: false,
+              isObservable: false,
               partitionDefinition: null,
               description: null,
               hasMaterializePermission: true,

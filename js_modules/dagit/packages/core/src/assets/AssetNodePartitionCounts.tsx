@@ -101,7 +101,7 @@ const PartitionCountTag: React.FC<{
       content={partitionCountString(value, style.adjective)}
     >
       <PartitionCountContainer style={{color: foreground, background}}>
-        <Icon name={style.icon} color={foreground} size={16} />
+        <Icon name={style.icon} color={foreground} size={12} />
         {value === undefined ? '—' : value === total ? 'All' : value > 1000 ? '999+' : value}
       </PartitionCountContainer>
     </Tooltip>
@@ -112,7 +112,7 @@ export const PartitionCountLabels: React.FC<{
   partitionStats: LiveDataForNode['partitionStats'] | null | undefined;
 }> = ({partitionStats}) => {
   return (
-    <Box style={{display: 'flex', gap: 8, marginLeft: -4}}>
+    <Box style={{display: 'flex', gap: 8}}>
       <PartitionCountLabel
         status={AssetPartitionStatus.MATERIALIZED}
         value={partitionStats?.numMaterialized}
@@ -151,8 +151,11 @@ const PartitionCountLabel: React.FC<{
       canShow={value !== undefined}
       content={partitionCountString(value, style.adjective)}
     >
-      <Box flex={{gap: 2, alignItems: 'center'}}>
-        <Icon name={style.icon} color={value ? style.border : Colors.Gray500} size={20} />
+      <Box
+        flex={{gap: 4, alignItems: 'center'}}
+        style={{color: value === undefined || value === 0 ? Colors.Gray300 : Colors.Dark}}
+      >
+        <Icon name={style.icon} color={value ? style.border : Colors.Gray300} size={12} />
         {value === undefined ? '—' : value === total ? 'All' : value.toLocaleString()}
       </Box>
     </Tooltip>
