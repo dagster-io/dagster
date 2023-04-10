@@ -1,11 +1,22 @@
+import datetime
 import os
 import sys
 import time
 from unittest import mock
 
-from dagster import AssetKey, DailyPartitionsDefinition, Definitions, SourceAsset, asset
+from dagster import (
+    AssetIn,
+    AssetKey,
+    DailyPartitionsDefinition,
+    Definitions,
+    IdentityPartitionMapping,
+    SourceAsset,
+    StaticPartitionMapping,
+    StaticPartitionsDefinition,
+    asset,
+)
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
-from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.host_representation import InProcessCodeLocationOrigin
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceRequestContext
@@ -57,6 +68,9 @@ partitioned_source = SourceAsset(
 @asset(
     partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"),
     non_argument_deps={"partitioned_source"},
+    auto_materialize_policy=AutoMaterializePolicy.eager(
+        time_window_partition_scope=datetime.timedelta(days=1, hours=7)
+    ),
 )
 def downstream_of_partitioned_source():
     pass
@@ -237,4 +251,45 @@ def test_get_implicit_job_name_for_assets():
             ]
         )
         is None
+    )
+
+
+def test_auto_materialize_policy():
+    asset_graph = ExternalAssetGraph.from_workspace(make_context(["partitioned_defs"]))
+
+    assert asset_graph.get_auto_materialize_policy(
+        AssetKey("downstream_of_partitioned_source")
+    ) == AutoMaterializePolicy.eager(
+        time_window_partition_scope=datetime.timedelta(days=1, hours=7)
+    )
+
+
+@asset(
+    ins={
+        "static_partitioned_asset": AssetIn(
+            partition_mapping=StaticPartitionMapping({"foo": "1", "bar": "2"})
+        )
+    },
+    partitions_def=StaticPartitionsDefinition(["1", "2"]),
+)
+def partition_mapping_asset(static_partitioned_asset):
+    pass
+
+
+partition_mapping_defs = Definitions(assets=[static_partitioned_asset, partition_mapping_asset])
+
+
+def test_partition_mapping():
+    asset_graph = ExternalAssetGraph.from_workspace(make_context(["partition_mapping_defs"]))
+    assert isinstance(
+        asset_graph.get_partition_mapping(
+            AssetKey("partition_mapping_asset"), AssetKey("static_partitioned_asset")
+        ),
+        StaticPartitionMapping,
+    )
+    assert isinstance(
+        asset_graph.get_partition_mapping(
+            AssetKey("static_partitioned_asset"), AssetKey("partition_mapping_asset")
+        ),
+        IdentityPartitionMapping,
     )

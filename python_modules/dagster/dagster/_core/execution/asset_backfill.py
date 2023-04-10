@@ -27,6 +27,7 @@ from dagster._core.definitions.assets_job import is_base_asset_job_name
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.mode import DEFAULT_MODE_NAME
+from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import PipelineSelector
 from dagster._core.errors import DagsterBackfillFailedError
@@ -89,6 +90,23 @@ class AssetBackfillData(NamedTuple):
         return list(
             self.target_subset.filter_asset_keys(root_asset_keys).iterate_asset_partitions()
         )
+
+    def get_target_root_partitions_subset(self) -> PartitionsSubset:
+        """Returns the most upstream partitions subset that was targeted by the backfill."""
+        partitioned_asset_keys = {
+            asset_key
+            for asset_key in self.target_subset.asset_keys
+            if self.target_subset.asset_graph.get_partitions_def(asset_key) is not None
+        }
+
+        root_partitioned_asset_keys = (
+            AssetSelection.keys(*partitioned_asset_keys)
+            .sources()
+            .resolve(self.target_subset.asset_graph)
+        )
+
+        # Return the targeted partitions for the root partitioned asset keys
+        return self.target_subset.get_partitions_subset(next(iter(root_partitioned_asset_keys)))
 
     def get_num_partitions(self) -> Optional[int]:
         """Only valid when the same number of partitions are targeted in every asset.
@@ -450,15 +468,22 @@ def execute_asset_backfill_iteration_inner(
         updated_materialized_subset = AssetGraphSubset(asset_graph)
         failed_and_downstream_subset = AssetGraphSubset(asset_graph)
     else:
+        target_parent_asset_keys = {
+            parent
+            for target_asset_key in asset_backfill_data.target_subset.asset_keys
+            for parent in asset_graph.get_parents(target_asset_key)
+        }
+        target_asset_keys_and_parents = (
+            asset_backfill_data.target_subset.asset_keys | target_parent_asset_keys
+        )
         (
             parent_materialized_asset_partitions,
             next_latest_storage_id,
         ) = find_parent_materialized_asset_partitions(
             asset_graph=asset_graph,
             instance_queryer=instance_queryer,
-            target_asset_selection=AssetSelection.keys(
-                *asset_backfill_data.target_subset.asset_keys
-            ),
+            target_asset_keys=asset_backfill_data.target_subset.asset_keys,
+            target_asset_keys_and_parents=target_asset_keys_and_parents,
             latest_storage_id=asset_backfill_data.latest_storage_id,
         )
         initial_candidates.update(parent_materialized_asset_partitions)

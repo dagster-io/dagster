@@ -9,16 +9,16 @@ from dagster import (
     Shape,
     job,
     op,
-    resource,
 )
 from dagster._config import ConfigTypeKind, Map, resolve_to_config_type
 from dagster._config.snap import ConfigSchemaSnapshot, ConfigTypeSnap
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.snap import (
     ConfigEnumValueSnap,
     build_config_schema_snapshot,
     snap_from_config_type,
 )
-from dagster._legacy import ModeDefinition, pipeline
+from dagster._core.types.dagster_type import DagsterType
 from dagster._serdes import (
     deserialize_value,
     serialize_pp,
@@ -26,8 +26,8 @@ from dagster._serdes import (
 )
 
 
-def snap_from_dagster_type(dagster_type):
-    return snap_from_config_type(resolve_to_config_type(dagster_type))
+def snap_from_dagster_type(dagster_type: DagsterType) -> ConfigTypeSnap:
+    return snap_from_config_type(resolve_to_config_type(dagster_type))  # type: ignore  # (bool func return)
 
 
 def test_enum_snap():
@@ -228,10 +228,10 @@ def test_simple_pipeline_smoke_test():
         pass
 
     @job
-    def single_solid_job():
+    def single_op_job():
         op_without_config()
 
-    config_schema_snapshot = build_config_schema_snapshot(single_solid_job)
+    config_schema_snapshot = build_config_schema_snapshot(single_op_job)
     assert config_schema_snapshot.all_config_snaps_by_key
 
     serialized = serialize_value(config_schema_snapshot)
@@ -239,51 +239,51 @@ def test_simple_pipeline_smoke_test():
     assert config_schema_snapshot == rehydrated_config_schema_snapshot
 
 
-def test_check_solid_config_correct():
+def test_check_op_config_correct():
     @op(config_schema={"foo": str})
     def op_with_config(_):
         pass
 
     @job
-    def single_solid_job():
+    def single_op_job():
         op_with_config()
 
-    solid_config_key = op_with_config.config_schema.config_type.key
+    op_config_key = op_with_config.config_schema.config_type.key
 
-    config_snaps = build_config_schema_snapshot(single_solid_job).all_config_snaps_by_key
+    config_snaps = build_config_schema_snapshot(single_op_job).all_config_snaps_by_key
 
-    assert solid_config_key in config_snaps
+    assert op_config_key in config_snaps
 
-    solid_config_snap = config_snaps[solid_config_key]
+    op_config_snap = config_snaps[op_config_key]
 
-    assert solid_config_snap.kind == ConfigTypeKind.STRICT_SHAPE
-    assert len(solid_config_snap.fields) == 1
+    assert op_config_snap.kind == ConfigTypeKind.STRICT_SHAPE
+    assert len(op_config_snap.fields) == 1
 
-    foo_field = solid_config_snap.fields[0]
+    foo_field = op_config_snap.fields[0]
 
     assert foo_field.name == "foo"
     assert foo_field.type_key == "String"
 
 
-def test_check_solid_list_list_config_correct():
+def test_check_op_list_list_config_correct():
     @op(config_schema={"list_list_int": [[{"bar": int}]]})
     def op_with_config(_):
         pass
 
     @job
-    def single_solid_job():
+    def single_op_job():
         op_with_config()
 
-    solid_config_key = op_with_config.config_schema.config_type.key
+    op_config_key = op_with_config.config_schema.config_type.key
 
-    config_snaps = build_config_schema_snapshot(single_solid_job).all_config_snaps_by_key
-    assert solid_config_key in config_snaps
-    solid_config_snap = config_snaps[solid_config_key]
+    config_snaps = build_config_schema_snapshot(single_op_job).all_config_snaps_by_key
+    assert op_config_key in config_snaps
+    op_config_snap = config_snaps[op_config_key]
 
-    assert solid_config_snap.kind == ConfigTypeKind.STRICT_SHAPE
-    assert len(solid_config_snap.fields) == 1
+    assert op_config_snap.kind == ConfigTypeKind.STRICT_SHAPE
+    assert len(op_config_snap.fields) == 1
 
-    list_list_field = solid_config_snap.fields[0]
+    list_list_field = op_config_snap.fields[0]
 
     list_list_type_key = list_list_field.type_key
 
@@ -318,18 +318,18 @@ def test_kitchen_sink_break_out():
         pass
 
     @job
-    def single_solid_job():
+    def single_op_job():
         op_with_kitchen_sink_config()
 
-    config_snaps = build_config_schema_snapshot(single_solid_job).all_config_snaps_by_key
+    config_snaps = build_config_schema_snapshot(single_op_job).all_config_snaps_by_key
 
-    solid_config_key = op_with_kitchen_sink_config.config_schema.config_type.key
-    assert solid_config_key in config_snaps
-    solid_config_snap = config_snaps[solid_config_key]
+    op_config_key = op_with_kitchen_sink_config.config_schema.config_type.key
+    assert op_config_key in config_snaps
+    op_config_snap = config_snaps[op_config_key]
 
-    assert solid_config_snap.kind == ConfigTypeKind.ARRAY
+    assert op_config_snap.kind == ConfigTypeKind.ARRAY
 
-    dict_within_list = config_snaps[solid_config_snap.inner_type_key]
+    dict_within_list = config_snaps[op_config_snap.inner_type_key]
 
     assert len(dict_within_list.fields) == 3
 
@@ -354,39 +354,8 @@ def test_kitchen_sink_break_out():
     assert map_a.kind == ConfigTypeKind.SCALAR
 
 
-def test_multiple_modes():
-    @op
-    def noop_op(_):
-        pass
-
-    @resource(config_schema={"a": int})
-    def a_resource(_):
-        pass
-
-    @resource(config_schema={"b": int})
-    def b_resource(_):
-        pass
-
-    @pipeline(
-        mode_defs=[
-            ModeDefinition(name="mode_a", resource_defs={"resource": a_resource}),
-            ModeDefinition(name="mode_b", resource_defs={"resource": b_resource}),
-        ]
-    )
-    def modez():
-        noop_op()
-
-    config_snaps = build_config_schema_snapshot(modez).all_config_snaps_by_key
-
-    assert a_resource.config_schema.config_type.key in config_snaps
-    assert b_resource.config_schema.config_type.key in config_snaps
-
-    assert get_config_snap(modez, a_resource.config_schema.config_type.key)
-    assert get_config_snap(modez, b_resource.config_schema.config_type.key)
-
-
-def get_config_snap(pipeline_def, key):
-    return pipeline_def.get_pipeline_snapshot().config_schema_snapshot.get_config_snap(key)
+def get_config_snap(job_def: JobDefinition, key: str) -> ConfigTypeSnap:
+    return job_def.get_pipeline_snapshot().config_schema_snapshot.get_config_snap(key)
 
 
 def test_scalar_union():
@@ -398,10 +367,10 @@ def test_scalar_union():
         pass
 
     @job
-    def single_solid_job():
+    def single_op_job():
         op_with_config()
 
-    config_snaps = build_config_schema_snapshot(single_solid_job).all_config_snaps_by_key
+    config_snaps = build_config_schema_snapshot(single_op_job).all_config_snaps_by_key
 
     scalar_union_key = op_with_config.config_schema.config_type.key
 

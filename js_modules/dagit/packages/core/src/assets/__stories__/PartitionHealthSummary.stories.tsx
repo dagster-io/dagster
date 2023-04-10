@@ -34,12 +34,7 @@ const PartitionHealthSummaryWithData: React.FC<{
           return {
             dimension: dim,
             selectedKeys: dim.partitionKeys.slice(idx0, idx1 + 1),
-            selectedRanges: [
-              [
-                {idx: idx0, key: range[0]},
-                {idx: idx1, key: range[1]},
-              ],
-            ],
+            selectedRanges: [{start: {idx: idx0, key: range[0]}, end: {idx: idx1, key: range[1]}}],
           } as PartitionDimensionSelection;
         })
       : undefined;

@@ -62,7 +62,10 @@ export const AssetNode: React.FC<{
   );
 }, isEqual);
 
-const AssetNodeStatusBox: React.FC<{background: string}> = ({background, children}) => (
+const AssetNodeStatusBox: React.FC<{background: string; children: React.ReactNode}> = ({
+  background,
+  children,
+}) => (
   <Box
     padding={{horizontal: 8}}
     style={{
@@ -542,7 +545,7 @@ const AssetInsetForHoverEffect = styled.div`
   height: 100%;
 `;
 
-export const AssetNodeContainer = styled.div<{$selected: boolean}>`
+const AssetNodeContainer = styled.div<{$selected: boolean}>`
   user-select: none;
   cursor: default;
   padding: 4px;
@@ -552,7 +555,7 @@ const AssetNodeShowOnHover = styled.span`
   display: none;
 `;
 
-export const AssetNodeBox = styled.div<{$isSource: boolean; $selected: boolean}>`
+const AssetNodeBox = styled.div<{$isSource: boolean; $selected: boolean}>`
   ${(p) =>
     p.$isSource
       ? `border: 2px dashed ${p.$selected ? Colors.Gray600 : Colors.Gray300}`

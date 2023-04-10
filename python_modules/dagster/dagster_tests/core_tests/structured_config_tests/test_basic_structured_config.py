@@ -25,7 +25,10 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.run_config import RunConfig
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
-from dagster._core.errors import DagsterInvalidConfigDefinitionError, DagsterInvalidConfigError
+from dagster._core.errors import (
+    DagsterInvalidConfigError,
+    DagsterInvalidPythonicConfigDefinitionError,
+)
 from dagster._core.execution.context.invocation import build_op_context
 from dagster._utils.cached_method import cached_method
 from pydantic import (
@@ -262,7 +265,7 @@ def test_primitive_struct_config():
 
 def test_invalid_struct_config():
     # Config should extend Config, not BaseModel
-    with pytest.raises(DagsterInvalidConfigDefinitionError):
+    with pytest.raises(DagsterInvalidPythonicConfigDefinitionError):
 
         class BaseModelExtendingConfig(BaseModel):
             a_string: str
@@ -401,11 +404,11 @@ def test_validate_run_config():
         pass
 
     @job
-    def pipeline_requires_config():
+    def job_requires_config():
         requires_config()
 
     result = validate_run_config(
-        pipeline_requires_config, {"ops": {"requires_config": {"config": {"foo": "bar"}}}}
+        job_requires_config, {"ops": {"requires_config": {"config": {"foo": "bar"}}}}
     )
 
     assert result == {
@@ -420,17 +423,17 @@ def test_validate_run_config():
     }
 
     result_with_runconfig = validate_run_config(
-        pipeline_requires_config, RunConfig(ops={"requires_config": {"foo": "bar"}})
+        job_requires_config, RunConfig(ops={"requires_config": {"foo": "bar"}})
     )
     assert result_with_runconfig == result
 
     result_with_structured_in = validate_run_config(
-        pipeline_requires_config, RunConfig(ops={"requires_config": MyBasicOpConfig(foo="bar")})
+        job_requires_config, RunConfig(ops={"requires_config": MyBasicOpConfig(foo="bar")})
     )
     assert result_with_structured_in == result
 
     result_with_dict_config = validate_run_config(
-        pipeline_requires_config,
+        job_requires_config,
         {"ops": {"requires_config": {"config": {"foo": "bar"}}}},
     )
 
@@ -446,7 +449,7 @@ def test_validate_run_config():
     }
 
     with pytest.raises(DagsterInvalidConfigError):
-        validate_run_config(pipeline_requires_config)
+        validate_run_config(job_requires_config)
 
 
 @pytest.mark.skipif(sys.version_info < (3, 8), reason="requires python3.8")

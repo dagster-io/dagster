@@ -7,11 +7,10 @@ import objgraph
 import pytest
 from dagit.graphql import GraphQLWS
 from dagit.webserver import DagitWebserver
-from dagster._core.definitions.decorators import op
+from dagster import job, op
 from dagster._core.test_utils import environ, instance_for_test
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import WorkspaceFileTarget
-from dagster._legacy import execute_pipeline, pipeline
 from dagster._utils import file_relative_path
 from starlette.testclient import TestClient
 
@@ -74,18 +73,18 @@ def end_subscription(ws):
 
 
 @op
-def example_solid():
+def example_op():
     return 1
 
 
-@pipeline
-def example_pipeline():
-    example_solid()
+@job
+def example_job():
+    example_op()
 
 
 def test_event_log_subscription():
     with instance_for_test() as instance:
-        run = execute_pipeline(example_pipeline, instance=instance)
+        run = example_job.execute_in_process(instance=instance)
         assert run.success
         assert run.run_id
 
@@ -106,7 +105,7 @@ def test_event_log_subscription():
 )
 def test_event_log_subscription_chunked():
     with instance_for_test() as instance, environ({"DAGIT_EVENT_LOAD_CHUNK_SIZE": "2"}):
-        run = execute_pipeline(example_pipeline, instance=instance)
+        run = example_job.execute_in_process(instance=instance)
         assert run.success
         assert run.run_id
 
@@ -129,7 +128,7 @@ def test_compute_log_subscription(mock_watch_completed):
     mock_watch_completed.return_value = False
 
     with instance_for_test() as instance:
-        run = execute_pipeline(example_pipeline, instance=instance)
+        run = example_job.execute_in_process(instance=instance)
         assert run.success
         assert run.run_id
 
@@ -140,7 +139,7 @@ def test_compute_log_subscription(mock_watch_completed):
                     COMPUTE_LOG_SUBSCRIPTION,
                     {
                         "runId": run.run_id,
-                        "stepKey": "example_solid",
+                        "stepKey": "example_op",
                         "ioType": "STDERR",
                     },
                 )

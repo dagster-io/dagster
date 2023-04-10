@@ -9,8 +9,8 @@ snapshots = Snapshot()
 
 snapshots['test_basic_ops_config 1'] = {
     'execution': {
-        'in_process': {
-            'config': {
+        'config': {
+            'in_process': {
                 'marker_to_close': '',
                 'retries': {
                     'disabled': {
@@ -18,10 +18,8 @@ snapshots['test_basic_ops_config 1'] = {
                     'enabled': {
                     }
                 }
-            }
-        },
-        'multiprocess': {
-            'config': {
+            },
+            'multiprocess': {
                 'max_concurrent': 0,
                 'retries': {
                     'disabled': {
@@ -50,16 +48,16 @@ snapshots['test_basic_ops_config 1'] = {
             }
         }
     },
-    'resources': {
-        'io_manager': {
-            'config': 'AnyType'
-        }
-    },
-    'solids': {
-        'required_field_solid': {
+    'ops': {
+        'required_field_op': {
             'config': {
                 'required_int': 0
             }
+        }
+    },
+    'resources': {
+        'io_manager': {
+            'config': 'AnyType'
         }
     }
 }

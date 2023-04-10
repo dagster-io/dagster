@@ -64,7 +64,7 @@ interface ContentProps {
   onClose: () => void;
 }
 
-export const BackfillStepStatusDialogContent = ({
+const BackfillStepStatusDialogContent = ({
   backfill,
   partitionSet,
   partitionNames,

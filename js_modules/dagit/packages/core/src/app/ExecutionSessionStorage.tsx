@@ -1,3 +1,4 @@
+import memoize from 'lodash/memoize';
 import * as React from 'react';
 
 import {AssetKeyInput} from '../graphql/types';
@@ -136,13 +137,9 @@ const buildValidator = (initial: Partial<IExecutionSession> = {}) => (json: any)
   return data;
 };
 
-export const makeKey = (basePath: string, repoAddress: RepoAddress, pipelineOrJobName: string) =>
+const makeKey = (basePath: string, repoAddress: RepoAddress, pipelineOrJobName: string) =>
   `dagit.v2.${basePath}-${repoAddress.location}-${repoAddress.name}-${pipelineOrJobName}`;
 
-export const makeOldKey = (repoAddress: RepoAddress, pipelineOrJobName: string) =>
-  `dagit.v2.${repoAddress.name}.${pipelineOrJobName}`;
-
-// todo DPE: Clean up the migration logic.
 export function useExecutionSessionStorage(
   repoAddress: RepoAddress,
   pipelineOrJobName: string,
@@ -151,7 +148,6 @@ export function useExecutionSessionStorage(
   const {basePath} = React.useContext(AppContext);
 
   const key = makeKey(basePath, repoAddress, pipelineOrJobName);
-  const oldKey = makeOldKey(repoAddress, pipelineOrJobName);
 
   // Bind the validator function to the provided `initial` value. Convert to a JSON string
   // because we can't trust that the `initial` object is memoized.
@@ -160,30 +156,18 @@ export function useExecutionSessionStorage(
     () => buildValidator(JSON.parse(initialAsJSON) as Partial<IExecutionSession>),
     [initialAsJSON],
   );
-  const [newState, setNewState] = useStateWithStorage(key, validator);
 
-  // Read stored value for the old key. If a value is present, we will use it
-  // for the new key, then remove the old key entirely.
-  const oldValidator = React.useCallback((json: any) => json, []);
-  const [oldState, setOldState] = useStateWithStorage(oldKey, oldValidator);
+  const [state, setState] = useStateWithStorage(key, validator);
+  const wrappedSetState = writeLaunchpadSessionToStorage(setState);
 
-  React.useEffect(() => {
-    if (oldState) {
-      setNewState(oldState);
-
-      // Delete data at old key.
-      setOldState(undefined);
-    }
-  }, [oldState, setNewState, setOldState]);
-
-  return [newState, setNewState];
+  return [state, wrappedSetState];
 }
 
 const writeStorageDataForKey = (key: string, data: IStorageData) => {
   window.localStorage.setItem(key, JSON.stringify(data));
 };
 
-export type RepositoryToInvalidate = {
+type RepositoryToInvalidate = {
   locationName: string;
   name: string;
   pipelines: {name: string}[];
@@ -255,4 +239,96 @@ export const useInitialDataForMode = (
 
     return {};
   }, [isAssetJob, isJob, partitionSetsForMode, presets]);
+};
+
+export const allStoredSessions = () => {
+  const storedSessions: [sessionID: string, jobKey: string][] = [];
+  for (let ii = 0; ii < window.localStorage.length; ii++) {
+    const key = window.localStorage.key(ii);
+    if (key) {
+      const value = window.localStorage.getItem(key);
+      if (value) {
+        let parsed;
+
+        // If it's not a parseable object, it's not a launchpad session.
+        try {
+          parsed = JSON.parse(value);
+        } catch (e) {
+          continue;
+        }
+
+        if (
+          parsed &&
+          typeof parsed === 'object' &&
+          parsed.hasOwnProperty('current') &&
+          parsed.hasOwnProperty('sessions')
+        ) {
+          const sessionIDs = Object.keys(parsed.sessions);
+          storedSessions.push(
+            ...sessionIDs.map((sessionID) => [key, sessionID] as [string, string]),
+          );
+        }
+      }
+    }
+  }
+
+  // Order the list of sessions by timestamp.
+  storedSessions.sort(([_aKey, sessionA], [_bKey, sessionB]) => {
+    const timeA = parseInt(sessionA.slice(1), 10);
+    const timeB = parseInt(sessionB.slice(1), 10);
+    return timeA - timeB;
+  });
+
+  return storedSessions;
+};
+
+export const removeSession = (jobKey: string, sessionID: string) => {
+  const item = window.localStorage.getItem(jobKey);
+  if (item) {
+    const data = JSON.parse(item);
+    const updated = applyRemoveSession(data, sessionID);
+    window.localStorage.setItem(jobKey, JSON.stringify(updated));
+  }
+};
+
+export const MAX_SESSION_WRITE_ATTEMPTS = 10;
+
+/**
+ * Try to write this launchpad session to storage. If a quota error occurs because the
+ * user has too much data already in localStorage, clear out old sessions until the
+ * write is successful or we run out of retries.
+ */
+export const writeLaunchpadSessionToStorage = (
+  setState: React.Dispatch<React.SetStateAction<IStorageData | undefined>>,
+) => (data: IStorageData) => {
+  const tryWrite = (data: IStorageData) => {
+    try {
+      setState(data);
+      return true;
+    } catch (e) {
+      // The data could not be written to localStorage. This is probably due to
+      // a QuotaExceededError, but since different browsers use slightly different
+      // objects for this, we don't try to get clever detecting it.
+      return false;
+    }
+  };
+
+  const getInitiallyStoredSessions = memoize(() => allStoredSessions());
+
+  // Track the number of attempts at writing this session to localStorage so that
+  // we eventually give up and don't loop endlessly.
+  let attempts = 1;
+
+  // Attempt to write the session to storage. If an error occurs, delete the oldest
+  // session and try again.
+  while (!tryWrite(data) && attempts < MAX_SESSION_WRITE_ATTEMPTS) {
+    attempts++;
+
+    // Remove the oldest session and try again.
+    const toRemove = getInitiallyStoredSessions().shift();
+    if (toRemove) {
+      const [jobKey, sessionID] = toRemove;
+      removeSession(jobKey, sessionID);
+    }
+  }
 };

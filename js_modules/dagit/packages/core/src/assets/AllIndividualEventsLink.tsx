@@ -32,7 +32,7 @@ import {
   AssetObservationFragment,
 } from './types/useRecentAssetEvents.types';
 
-export const AssetEventsTable: React.FC<{
+const AssetEventsTable: React.FC<{
   hasPartitions: boolean;
   hasLineage: boolean;
   groups: AssetEventGroup[];
@@ -280,6 +280,7 @@ interface PredecessorDialogProps {
   hasLineage: boolean;
   hasPartitions: boolean;
   events: (AssetMaterializationFragment | AssetObservationFragment)[];
+  children: React.ReactNode;
 }
 
 export const AllIndividualEventsLink: React.FC<PredecessorDialogProps> = ({

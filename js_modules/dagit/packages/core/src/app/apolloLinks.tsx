@@ -2,7 +2,7 @@ import {ApolloLink} from '@apollo/client';
 
 import {formatElapsedTime, debugLog} from './Util';
 
-export const getCalls = (response: any) => {
+const getCalls = (response: any) => {
   try {
     return JSON.parse(response.headers.get('x-dagster-call-counts'));
   } catch {

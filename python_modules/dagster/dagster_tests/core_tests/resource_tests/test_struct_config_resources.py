@@ -48,7 +48,7 @@ from dagster._core.errors import (
     DagsterInvalidInvocationError,
 )
 from dagster._core.execution.context.compute import OpExecutionContext
-from dagster._core.execution.context.init import InitResourceContext
+from dagster._core.execution.context.init import InitResourceContext, build_init_resource_context
 from dagster._core.execution.context.invocation import build_op_context
 from dagster._core.storage.io_manager import IOManagerDefinition, io_manager
 from dagster._core.test_utils import environ
@@ -753,7 +753,7 @@ def test_nested_function_resource():
             return output
 
     @asset
-    def my_asset(writer: PostfixWriterResource):
+    def my_asset(writer: Resource[Callable[[str], None]]):
         writer("foo")
         writer("bar")
 
@@ -791,7 +791,7 @@ def test_nested_function_resource_configured():
             return output
 
     @asset
-    def my_asset(writer: PostfixWriterResource):
+    def my_asset(writer: Resource[Callable[[str], None]]):
         writer("foo")
         writer("bar")
 
@@ -843,7 +843,7 @@ def test_nested_function_resource_runtime_config():
             return output
 
     @asset
-    def my_asset(writer: PostfixWriterResource):
+    def my_asset(writer: Resource[Callable[[str], None]]):
         writer("foo")
         writer("bar")
 
@@ -931,10 +931,10 @@ reveal_type(my_outer.inner)
         mypy_out = get_mypy_type_output(filename)
 
         # Ensure constructor signature is correct (mypy doesn't yet support Pydantic model constructor type hints)
-        assert pyright_out[0] == "(self: InnerResource, a_string: str) -> None"
+        assert pyright_out[0] == "(self: InnerResource, *, a_string: str) -> None"
         assert (
             pyright_out[1]
-            == "(self: OuterResource, inner: InnerResource | PartialResource[InnerResource],"
+            == "(self: OuterResource, *, inner: InnerResource | PartialResource[InnerResource],"
             " a_bool: bool) -> None"
         )
 
@@ -995,13 +995,39 @@ reveal_type(my_str_resource.a_string)
         # resource function that returns a str
         assert (
             pyright_out[0]
-            == "(self: StringDependentResource, a_string: ConfigurableResourceFactory[str] |"
+            == "(self: StringDependentResource, *, a_string: ConfigurableResourceFactory[str] |"
             " PartialResource[str] | ResourceDefinition | str) -> None"
         )
 
         # Ensure that the retrieved type is str
         assert pyright_out[1] == "str"
         assert mypy_out[1] == "builtins.str"
+
+
+@pytest.mark.typesignature
+def test_type_signatures_alias():
+    with tempfile.TemporaryDirectory() as tempdir:
+        filename = os.path.join(tempdir, "test.py")
+
+        with open(filename, "w") as f:
+            f.write(
+                """
+from dagster._config.structured_config import ConfigurableResource
+from pydantic import Field
+
+class ResourceWithAlias(ConfigurableResource):
+    _schema: str = Field(alias="schema")
+
+reveal_type(ResourceWithAlias.__init__)
+
+my_resource = ResourceWithAlias(schema="foo")
+"""
+            )
+
+        pyright_out = get_pyright_reveal_type_output(filename)
+
+        # Ensure constructor signature shows schema as the alias
+        assert pyright_out[0] == "(self: ResourceWithAlias, *, schema: str) -> None"
 
 
 def test_nested_config_class() -> None:
@@ -2235,3 +2261,117 @@ def test_direct_asset_invocation_with_inputs() -> None:
     assert my_wacky_addition_asset_no_context(10, 20, my_resource=MyResource(z=30)) == 60
     # We can also input x and y as kwargs in this case
     assert my_wacky_addition_asset_no_context(y=1, x=2, my_resource=MyResource(z=3)) == 6
+
+
+def test_from_resource_context_and_to_config_field() -> None:
+    class StringResource(ConfigurableResourceFactory[str]):
+        a_string: str
+
+        def create_resource(self, context) -> str:
+            return self.a_string + "bar"
+
+    @resource(config_schema=StringResource.to_config_schema())
+    def string_resource_function_style(context: InitResourceContext) -> str:
+        return StringResource.from_resource_context(context)
+
+    assert (
+        string_resource_function_style(build_init_resource_context({"a_string": "foo"})) == "foobar"
+    )
+
+
+def test_from_resource_context_and_to_config_field_complex() -> None:
+    class MyComplexConfigResource(ConfigurableResource):
+        a_string: str
+        a_list_of_ints: List[int]
+        a_map_of_lists_of_maps_of_floats: Mapping[str, List[Mapping[str, float]]]
+
+    @resource(config_schema=MyComplexConfigResource.to_config_schema())
+    def complex_config_resource_function_style(
+        context: InitResourceContext,
+    ) -> MyComplexConfigResource:
+        return MyComplexConfigResource.from_resource_context(context)
+
+    complex_config_resource = complex_config_resource_function_style(
+        build_init_resource_context(
+            {
+                "a_string": "foo",
+                "a_list_of_ints": [1, 2, 3],
+                "a_map_of_lists_of_maps_of_floats": {
+                    "a": [{"b": 1.0}, {"c": 2.0}],
+                    "d": [{"e": 3.0}, {"f": 4.0}],
+                },
+            }
+        )
+    )
+    assert complex_config_resource.a_string == "foo"
+    assert complex_config_resource.a_list_of_ints == [1, 2, 3]
+    assert complex_config_resource.a_map_of_lists_of_maps_of_floats == {
+        "a": [{"b": 1.0}, {"c": 2.0}],
+        "d": [{"e": 3.0}, {"f": 4.0}],
+    }
+
+
+@pytest.mark.xfail(reason="https://github.com/dagster-io/dagster/issues/13384")
+def test_direct_op_invocation_plain_arg_with_resource_definition_no_inputs_no_context() -> None:
+    class NumResource(ConfigurableResource):
+        num: int
+
+    executed = {}
+
+    @op
+    def an_op(my_resource: NumResource) -> None:
+        assert my_resource.num == 1
+        executed["yes"] = True
+
+    an_op(NumResource(num=1))
+
+    assert executed["yes"]
+
+
+def test_direct_op_invocation_kwarg_with_resource_definition_no_inputs_no_context() -> None:
+    class NumResource(ConfigurableResource):
+        num: int
+
+    executed = {}
+
+    @op
+    def an_op(my_resource: NumResource) -> None:
+        assert my_resource.num == 1
+        executed["yes"] = True
+
+    an_op(my_resource=NumResource(num=1))
+
+    assert executed["yes"]
+
+
+@pytest.mark.xfail(reason="https://github.com/dagster-io/dagster/issues/13384")
+def test_direct_asset_invocation_plain_arg_with_resource_definition_no_inputs_no_context() -> None:
+    class NumResource(ConfigurableResource):
+        num: int
+
+    executed = {}
+
+    @asset
+    def an_asset(my_resource: NumResource) -> None:
+        assert my_resource.num == 1
+        executed["yes"] = True
+
+    an_asset(NumResource(num=1))
+
+    assert executed["yes"]
+
+
+def test_direct_asset_invocation_kwarg_with_resource_definition_no_inputs_no_context() -> None:
+    class NumResource(ConfigurableResource):
+        num: int
+
+    executed = {}
+
+    @asset
+    def an_asset(my_resource: NumResource) -> None:
+        assert my_resource.num == 1
+        executed["yes"] = True
+
+    an_asset(my_resource=NumResource(num=1))
+
+    assert executed["yes"]

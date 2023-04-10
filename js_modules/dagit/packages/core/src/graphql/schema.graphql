@@ -803,8 +803,15 @@ enum StaleStatus {
 
 type StaleCause {
   key: AssetKey!
+  category: StaleCauseCategory!
   reason: String!
   dependency: AssetKey
+}
+
+enum StaleCauseCategory {
+  CODE
+  DATA
+  DEPENDENCIES
 }
 
 enum EvaluationErrorReason {
@@ -2390,13 +2397,15 @@ type PartitionBackfill {
   assetSelection: [AssetKey!]
   partitionSetName: String
   timestamp: Float!
+  endTimestamp: Float
   partitionSet: PartitionSet
   runs(limit: Int): [Run!]!
   unfinishedRuns(limit: Int): [Run!]!
   error: PythonError
   partitionStatuses: PartitionStatuses!
   partitionStatusCounts: [PartitionStatusCounts!]!
-  assetPartitionsStatusCounts: [AssetPartitionsStatusCounts!]!
+  isAssetBackfill: Boolean!
+  assetBackfillData: AssetBackfillData
   hasCancelPermission: Boolean!
   hasResumePermission: Boolean!
 }
@@ -2408,12 +2417,23 @@ enum BulkActionStatus {
   CANCELED
 }
 
+type AssetBackfillData {
+  assetPartitionsStatusCounts: [AssetPartitionsStatusCounts!]!
+  rootAssetTargetedRanges: [PartitionKeyRange!]
+  rootAssetTargetedPartitions: [String!]
+}
+
 type AssetPartitionsStatusCounts {
   assetKey: AssetKey!
   numPartitionsTargeted: Int!
   numPartitionsRequested: Int!
   numPartitionsCompleted: Int!
   numPartitionsFailed: Int!
+}
+
+type PartitionKeyRange {
+  start: String!
+  end: String!
 }
 
 union PartitionSetOrError = PartitionSet | PartitionSetNotFoundError | PythonError
@@ -2771,12 +2791,18 @@ type DagitQuery {
   graphOrError(selector: GraphSelector): GraphOrError!
   scheduler: SchedulerOrError!
   scheduleOrError(scheduleSelector: ScheduleSelector!): ScheduleOrError!
-  schedulesOrError(repositorySelector: RepositorySelector!): SchedulesOrError!
+  schedulesOrError(
+    repositorySelector: RepositorySelector!
+    scheduleStatus: InstigationStatus
+  ): SchedulesOrError!
   topLevelResourceDetailsOrError(resourceSelector: ResourceSelector!): ResourceDetailsOrError!
   allTopLevelResourceDetailsOrError(repositorySelector: RepositorySelector!): ResourcesOrError!
   utilizedEnvVarsOrError(repositorySelector: RepositorySelector!): EnvVarWithConsumersOrError!
   sensorOrError(sensorSelector: SensorSelector!): SensorOrError!
-  sensorsOrError(repositorySelector: RepositorySelector!): SensorsOrError!
+  sensorsOrError(
+    repositorySelector: RepositorySelector!
+    sensorStatus: InstigationStatus
+  ): SensorsOrError!
   instigationStateOrError(instigationSelector: InstigationSelector!): InstigationStateOrError!
   unloadableInstigationStatesOrError(instigationType: InstigationType): InstigationStatesOrError!
   partitionSetsOrError(

@@ -17,10 +17,13 @@ from dagster import (
 from dagster._config import Permissive
 from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 from dagster._core.definitions.executor_definition import multiple_process_executor_requirements
-from dagster._core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
+from dagster._core.definitions.reconstruct import (
+    ReconstructableJob,
+    ReconstructableRepository,
+)
 from dagster._core.definitions.repository_definition import AssetsDefinitionCacheableData
 from dagster._core.events import DagsterEventType
-from dagster._core.execution.api import execute_pipeline, reexecute_pipeline
+from dagster._core.execution.api import ReexecutionOptions, execute_job
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.step_delegating import (
     CheckStepHealthResult,
@@ -118,7 +121,7 @@ def foo_job():
 def test_execute():
     TestStepHandler.reset()
     with instance_for_test() as instance:
-        result = execute_pipeline(
+        result = execute_job(
             reconstructable(foo_job),
             instance=instance,
             run_config={"execution": {"config": {}}},
@@ -128,10 +131,10 @@ def test_execute():
     assert any(
         [
             "Starting execution with step handler TestStepHandler" in event.message
-            for event in result.event_list
+            for event in result.all_events
         ]
     )
-    assert any(["STEP_START" in event for event in result.event_list])
+    assert any(["STEP_START" in event for event in result.all_events])
     assert result.success
     assert TestStepHandler.saw_baz_op
     assert TestStepHandler.verify_step_count == 0
@@ -142,7 +145,7 @@ def test_skip_execute():
 
     TestStepHandler.reset()
     with instance_for_test() as instance:
-        result = execute_pipeline(
+        result = execute_job(
             reconstructable(define_dynamic_skipping_job),
             instance=instance,
         )
@@ -156,7 +159,7 @@ def test_dynamic_execute():
 
     TestStepHandler.reset()
     with instance_for_test() as instance:
-        result = execute_pipeline(
+        result = execute_job(
             reconstructable(define_dynamic_job),
             instance=instance,
         )
@@ -167,7 +170,7 @@ def test_dynamic_execute():
         len(
             [
                 e
-                for e in result.event_list
+                for e in result.all_events
                 if e.event_type_value == DagsterEventType.STEP_START.value
             ]
         )
@@ -180,7 +183,7 @@ def test_skipping():
 
     TestStepHandler.reset()
     with instance_for_test() as instance:
-        result = execute_pipeline(
+        result = execute_job(
             reconstructable(define_skpping_job),
             instance=instance,
         )
@@ -192,7 +195,7 @@ def test_skipping():
 def test_execute_intervals():
     TestStepHandler.reset()
     with instance_for_test() as instance:
-        result = execute_pipeline(
+        result = execute_job(
             reconstructable(foo_job),
             instance=instance,
             run_config={"execution": {"config": {"check_step_health_interval_seconds": 60}}},
@@ -207,7 +210,7 @@ def test_execute_intervals():
 
     TestStepHandler.reset()
     with instance_for_test() as instance:
-        result = execute_pipeline(
+        result = execute_job(
             reconstructable(foo_job),
             instance=instance,
             run_config={"execution": {"config": {"check_step_health_interval_seconds": 0}}},
@@ -237,7 +240,7 @@ def three_op_job():
 def test_max_concurrent():
     TestStepHandler.reset()
     with instance_for_test() as instance:
-        result = execute_pipeline(
+        result = execute_job(
             reconstructable(three_op_job),
             instance=instance,
             run_config={"execution": {"config": {"max_concurrent": 1}}},
@@ -247,7 +250,7 @@ def test_max_concurrent():
 
     # test that all the steps run serially, since max_concurrent is 1
     active_step = None
-    for event in result.event_list:
+    for event in result.all_events:
         if event.event_type_value == DagsterEventType.STEP_START.value:
             assert active_step is None, "A second step started before the first finished!"
             active_step = event.step_key
@@ -261,7 +264,7 @@ def test_max_concurrent():
 def test_tag_concurrency_limits():
     TestStepHandler.reset()
     with instance_for_test() as instance:
-        result = execute_pipeline(
+        with execute_job(
             reconstructable(three_op_job),
             instance=instance,
             run_config={
@@ -274,21 +277,21 @@ def test_tag_concurrency_limits():
                     }
                 }
             },
-        )
-        TestStepHandler.wait_for_processes()
-    assert result.success
+        ) as result:
+            TestStepHandler.wait_for_processes()
+            assert result.success
 
-    # test that all the steps run serially, since database=tiny can only run one at a time
-    active_step = None
-    for event in result.event_list:
-        if event.event_type_value == DagsterEventType.STEP_START.value:
-            assert active_step is None, "A second step started before the first finished!"
-            active_step = event.step_key
-        elif event.event_type_value == DagsterEventType.STEP_SUCCESS.value:
-            assert (
-                active_step == event.step_key
-            ), "A step finished that wasn't supposed to be active!"
+            # test that all the steps run serially, since database=tiny can only run one at a time
             active_step = None
+            for event in result.all_events:
+                if event.event_type_value == DagsterEventType.STEP_START.value:
+                    assert active_step is None, "A second step started before the first finished!"
+                    active_step = event.step_key
+                elif event.event_type_value == DagsterEventType.STEP_SUCCESS.value:
+                    assert (
+                        active_step == event.step_key
+                    ), "A step finished that wasn't supposed to be active!"
+                    active_step = None
 
 
 @executor(
@@ -317,7 +320,7 @@ def foo_job_verify_step():
 def test_execute_verify_step():
     TestStepHandler.reset()
     with instance_for_test() as instance:
-        result = execute_pipeline(
+        result = execute_job(
             reconstructable(foo_job_verify_step),
             instance=instance,
             run_config={"execution": {"config": {}}},
@@ -327,7 +330,7 @@ def test_execute_verify_step():
     assert any(
         [
             "Starting execution with step handler TestStepHandler" in event.message
-            for event in result.event_list
+            for event in result.all_events
         ]
     )
     assert result.success
@@ -341,48 +344,50 @@ def test_execute_using_repository_data():
             "dagster_tests.execution_tests.engine_tests.test_step_delegating_executor",
             fn_name="pending_repo",
         )
-        recon_pipeline = ReconstructablePipeline(
-            repository=recon_repo, pipeline_name="all_asset_job"
-        )
+        recon_job = ReconstructableJob(repository=recon_repo, pipeline_name="all_asset_job")
 
-        result = execute_pipeline(
-            recon_pipeline,
+        with execute_job(
+            recon_job,
             instance=instance,
-            run_config={"execution": {"config": {}}},
-        )
-        call_counts = instance.run_storage.kvs_get(
-            {"compute_cacheable_data_called", "get_definitions_called"}
-        )
-        assert call_counts.get("compute_cacheable_data_called") == "1"
-        assert call_counts.get("get_definitions_called") == "4"
-        TestStepHandler.wait_for_processes()
+        ) as result:
+            call_counts = instance.run_storage.kvs_get(
+                {"compute_cacheable_data_called", "get_definitions_called"}
+            )
+            assert call_counts.get("compute_cacheable_data_called") == "1"
+            assert call_counts.get("get_definitions_called") == "5"
+            TestStepHandler.wait_for_processes()
 
-        assert any(
-            [
-                "Starting execution with step handler TestStepHandler" in (event.message or "")
-                for event in result.event_list
-            ]
-        )
-        assert result.success
+            assert any(
+                [
+                    "Starting execution with step handler TestStepHandler" in (event.message or "")
+                    for event in result.all_events
+                ]
+            )
+            assert result.success
+            parent_run_id = result.run_id
 
-        result = reexecute_pipeline(recon_pipeline, result.run_id, instance=instance)
-        TestStepHandler.wait_for_processes()
+        with execute_job(
+            recon_job,
+            reexecution_options=ReexecutionOptions(parent_run_id=parent_run_id),
+            instance=instance,
+        ) as result:
+            TestStepHandler.wait_for_processes()
 
-        assert any(
-            [
-                "Starting execution with step handler TestStepHandler" in (event.message or "")
-                for event in result.event_list
-            ]
-        )
-        assert result.success
-        # we do not attempt to fetch the previous repository load data off of the execution plan
-        # from the previous run, so the reexecution will require us to fetch the metadata again
-        call_counts = instance.run_storage.kvs_get(
-            {"compute_cacheable_data_called", "get_definitions_called"}
-        )
-        assert call_counts.get("compute_cacheable_data_called") == "2"
+            assert any(
+                [
+                    "Starting execution with step handler TestStepHandler" in (event.message or "")
+                    for event in result.all_events
+                ]
+            )
+            assert result.success
+            # we do not attempt to fetch the previous repository load data off of the execution plan
+            # from the previous run, so the reexecution will require us to fetch the metadata again
+            call_counts = instance.run_storage.kvs_get(
+                {"compute_cacheable_data_called", "get_definitions_called"}
+            )
+            assert call_counts.get("compute_cacheable_data_called") == "2"
 
-        assert call_counts.get("get_definitions_called") == "7"
+            assert call_counts.get("get_definitions_called") == "9"
 
 
 class MyCacheableAssetsDefinition(CacheableAssetsDefinition):

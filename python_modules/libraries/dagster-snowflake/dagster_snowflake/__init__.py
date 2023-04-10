@@ -1,7 +1,10 @@
 from dagster._core.libraries import DagsterLibraryRegistry
 
 from .resources import SnowflakeConnection, snowflake_resource
-from .snowflake_io_manager import build_snowflake_io_manager
+from .snowflake_io_manager import (
+    SnowflakeIOManager as SnowflakeIOManager,
+    build_snowflake_io_manager as build_snowflake_io_manager,
+)
 from .solids import snowflake_op_for_query
 from .version import __version__
 

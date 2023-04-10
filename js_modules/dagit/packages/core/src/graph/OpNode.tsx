@@ -317,7 +317,7 @@ export const OP_NODE_DEFINITION_FRAGMENT = gql`
   }
 `;
 
-export const NodeHighlightColors = {
+const NodeHighlightColors = {
   Border: Colors.Blue500,
   Background: Colors.Blue50,
 };

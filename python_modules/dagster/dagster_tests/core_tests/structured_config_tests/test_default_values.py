@@ -96,7 +96,7 @@ def test_default_values_nested():
     class AnOpConfig(Config):
         a_string: str = "bar"
         a_nested: ANestedOpConfig
-        another_nested: AnotherNestedOpConfig
+        another_nested: AnotherNestedOpConfig = AnotherNestedOpConfig()
 
     executed = {}
 

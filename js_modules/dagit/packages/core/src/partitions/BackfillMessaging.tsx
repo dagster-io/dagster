@@ -7,6 +7,7 @@ import {showCustomAlert} from '../app/CustomAlertProvider';
 import {SharedToaster} from '../app/DomUtils';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {LaunchPartitionBackfillMutation} from '../instance/types/BackfillUtils.types';
+import {runsPathWithFilters} from '../runs/RunsFilterInput';
 
 import {
   DaemonNotRunningAlertInstanceFragment,
@@ -63,7 +64,11 @@ export function showBackfillErrorToast(data: LaunchPartitionBackfillMutation | n
   });
 }
 
-export function showBackfillSuccessToast(history: History<unknown>, backfillId: string) {
+export function showBackfillSuccessToast(
+  history: History<unknown>,
+  backfillId: string,
+  isPureAssetBackfill: boolean,
+) {
   SharedToaster.show({
     intent: 'success',
     message: (
@@ -73,7 +78,15 @@ export function showBackfillSuccessToast(history: History<unknown>, backfillId: 
     ),
     action: {
       text: 'View',
-      onClick: () => history.push('/overview/backfills'),
+      onClick: () =>
+        isPureAssetBackfill
+          ? history.push(`/overview/backfills/${backfillId}`)
+          : runsPathWithFilters([
+              {
+                token: 'tag',
+                value: `dagster/backfill=${backfillId}`,
+              },
+            ]),
     },
   });
 }

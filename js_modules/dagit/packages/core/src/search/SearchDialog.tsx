@@ -75,7 +75,7 @@ export const SearchDialog: React.FC<{searchPlaceholder: string}> = ({searchPlace
     dispatch({type: 'show-dialog'});
   }, [performBootstrapQuery, trackEvent]);
 
-  const onChange = React.useCallback((e) => {
+  const onChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     dispatch({type: 'change-query', queryString: e.target.value});
   }, []);
 

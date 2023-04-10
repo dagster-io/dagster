@@ -144,9 +144,7 @@ export const PartitionPerAssetStatus: React.FC<
   );
 };
 
-export const assetPartitionStatusToSquareColor = (
-  state: AssetPartitionStatus[],
-): StatusSquareColor => {
+const assetPartitionStatusToSquareColor = (state: AssetPartitionStatus[]): StatusSquareColor => {
   return state.includes(AssetPartitionStatus.MATERIALIZED) &&
     state.includes(AssetPartitionStatus.MISSING)
     ? 'SUCCESS-MISSING'
@@ -396,22 +394,6 @@ const Divider = styled.div`
   width: 100%;
   margin-top: 5px;
   border-top: 1px solid ${Colors.KeylineGray};
-`;
-
-export const PARTITION_STEP_STATUS_RUN_FRAGMENT = gql`
-  fragment PartitionStepStatusRun on Run {
-    id
-    runId
-    tags {
-      key
-      value
-    }
-    stepStats {
-      __typename
-      stepKey
-      status
-    }
-  }
 `;
 
 // add in the explorer fragment, so we can reconstruct the faux-plan steps from the exploded plan

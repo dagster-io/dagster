@@ -22,34 +22,34 @@ from dagster._core.utility_solids import (
 from dagster._utils.test import wrap_op_in_graph_and_execute
 
 
-def test_single_solid_in_isolation():
+def test_single_op_in_isolation():
     @op
-    def solid_one():
+    def op_one():
         return 1
 
-    result = wrap_op_in_graph_and_execute(solid_one)
+    result = wrap_op_in_graph_and_execute(op_one)
     assert result.success
     assert result.output_value() == 1
 
 
-def test_single_solid_with_single():
+def test_single_op_with_single():
     @op(ins={"num": In()})
-    def add_one_solid(num):
+    def add_one_op(num):
         return num + 1
 
-    result = wrap_op_in_graph_and_execute(add_one_solid, input_values={"num": 2})
+    result = wrap_op_in_graph_and_execute(add_one_op, input_values={"num": 2})
 
     assert result.success
     assert result.output_value() == 3
 
 
-def test_single_solid_with_multiple_inputs():
+def test_single_op_with_multiple_inputs():
     @op(ins={"num_one": In(), "num_two": In()})
-    def add_solid(num_one, num_two):
+    def add_op(num_one, num_two):
         return num_one + num_two
 
     result = wrap_op_in_graph_and_execute(
-        add_solid,
+        add_op,
         input_values={"num_one": 2, "num_two": 3},
         run_config={"loggers": {"console": {"config": {"log_level": "DEBUG"}}}},
     )
@@ -58,7 +58,7 @@ def test_single_solid_with_multiple_inputs():
     assert result.output_value() == 5
 
 
-def test_single_solid_with_config():
+def test_single_op_with_config():
     ran = {}
 
     @op(config_schema=Int)
@@ -68,14 +68,14 @@ def test_single_solid_with_config():
 
     result = wrap_op_in_graph_and_execute(
         check_config_for_two,
-        run_config={"solids": {"check_config_for_two": {"config": 2}}},
+        run_config={"ops": {"check_config_for_two": {"config": 2}}},
     )
 
     assert result.success
     assert ran["check_config_for_two"]
 
 
-def test_single_solid_with_context_config():
+def test_single_op_with_context_config():
     @resource(config_schema=Field(Int, is_required=False, default_value=2))
     def num_resource(init_context):
         return init_context.resource_config
@@ -105,7 +105,7 @@ def test_single_solid_with_context_config():
     assert ran["count"] == 2
 
 
-def test_single_solid_error():
+def test_single_op_error():
     class SomeError(Exception):
         pass
 
@@ -119,7 +119,7 @@ def test_single_solid_error():
     assert isinstance(e_info.value, SomeError)
 
 
-def test_single_solid_type_checking_output_error():
+def test_single_op_type_checking_output_error():
     @op(out=Out(Int))
     def return_string():
         return "ksjdfkjd"
@@ -128,7 +128,7 @@ def test_single_solid_type_checking_output_error():
         wrap_op_in_graph_and_execute(return_string)
 
 
-def test_failing_solid_in_isolation():
+def test_failing_op_in_isolation():
     class ThisException(Exception):
         pass
 
@@ -222,20 +222,20 @@ def test_execute_nested_graphs():
     assert res.output_for_node("layer_0_node_1.layer_1_node_1.layer_2_node_1") == 1
 
 
-def test_single_solid_with_bad_inputs():
+def test_single_op_with_bad_inputs():
     @op(ins={"num_one": In(int), "num_two": In(int)})
-    def add_solid(num_one, num_two):
+    def add_op(num_one, num_two):
         return num_one + num_two
 
     result = wrap_op_in_graph_and_execute(
-        add_solid,
+        add_op,
         input_values={"num_one": 2, "num_two": "three"},
         run_config={"loggers": {"console": {"config": {"log_level": "DEBUG"}}}},
         raise_on_error=False,
     )
 
     assert not result.success
-    failure_data = result.failure_data_for_node("add_solid")
+    failure_data = result.failure_data_for_node("add_op")
     assert failure_data.error.cls_name == "DagsterTypeCheckDidNotPass"
     assert (
         'Type check failed for step input "num_two" - expected type "Int"'

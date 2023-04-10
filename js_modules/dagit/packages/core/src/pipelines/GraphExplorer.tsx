@@ -376,7 +376,7 @@ export const OptionsOverlay = styled.div`
   gap: 8px;
 `;
 
-export const HighlightOverlay = styled.div`
+const HighlightOverlay = styled.div`
   background-color: ${Color(Colors.White).fade(0.6).toString()};
   z-index: 2;
   padding: 8px 12px 0 0;
@@ -397,7 +397,7 @@ export const QueryOverlay = styled.div`
   gap: 10px;
 `;
 
-export const BreadcrumbsOverlay = styled.div`
+const BreadcrumbsOverlay = styled.div`
   background-color: ${Color(Colors.White).fade(0.6).toString()};
   z-index: 2;
   padding: 12px 0 0 20px;

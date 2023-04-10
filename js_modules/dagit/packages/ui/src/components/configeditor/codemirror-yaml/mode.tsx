@@ -738,7 +738,7 @@ export type YamlModeValidationResult =
 
 export type YamlModeValidateFunction = (configYaml: string) => Promise<YamlModeValidationResult>;
 
-export type YamlModeValidationError = {
+type YamlModeValidationError = {
   message: string;
   path: string[];
   reason: string;
@@ -835,7 +835,7 @@ const registerYamlLint = () => {
   );
 };
 
-export function validationErrorToCodemirrorError(
+function validationErrorToCodemirrorError(
   error: YamlModeValidationError,
   yamlDoc: yaml.Document,
   codeMirrorDoc: any,

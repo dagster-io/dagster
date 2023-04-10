@@ -22,13 +22,13 @@ from dagster import (
     define_asset_job,
     fs_io_manager,
     graph,
+    job,
     op,
     repository,
 )
 from dagster._core.definitions import (
     StaticPartitionsDefinition,
 )
-from dagster._core.definitions.decorators.job_decorator import job
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.partition import PartitionedConfig
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
@@ -48,12 +48,11 @@ from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.backfill import execute_backfill_iteration
-from dagster._legacy import ModeDefinition
 from dagster._seven import IS_WINDOWS, get_system_temp_directory
 from dagster._utils import touch_file
 from dagster._utils.error import SerializableErrorInfo
 
-default_mode_def = ModeDefinition(resource_defs={"io_manager": fs_io_manager})
+default_resource_defs = resource_defs = {"io_manager": fs_io_manager}
 
 
 def _failure_flag_file():

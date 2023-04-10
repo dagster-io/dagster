@@ -3,7 +3,7 @@ import * as React from 'react';
 import {useHistory} from 'react-router';
 
 import {showLaunchError} from '../launchpad/showLaunchError';
-import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
+import {useRepositoryForRunWithParentSnapshot} from '../workspace/useRepositoryForRun';
 
 import {
   getReexecutionVariables,
@@ -11,19 +11,20 @@ import {
   LAUNCH_PIPELINE_REEXECUTION_MUTATION,
   ReExecutionStyle,
 } from './RunUtils';
-import {RunFragment} from './types/RunFragments.types';
+import {RunPageFragment} from './types/RunFragments.types';
 import {
   LaunchPipelineReexecutionMutation,
   LaunchPipelineReexecutionMutationVariables,
 } from './types/RunUtils.types';
 
-export const useJobReExecution = (run: RunFragment | undefined | null) => {
+export const useJobReExecution = (run: RunPageFragment | undefined | null) => {
   const history = useHistory();
   const [launchPipelineReexecution] = useMutation<
     LaunchPipelineReexecutionMutation,
     LaunchPipelineReexecutionMutationVariables
   >(LAUNCH_PIPELINE_REEXECUTION_MUTATION);
-  const repoMatch = useRepositoryForRun(run);
+
+  const repoMatch = useRepositoryForRunWithParentSnapshot(run);
 
   return React.useCallback(
     async (style: ReExecutionStyle) => {

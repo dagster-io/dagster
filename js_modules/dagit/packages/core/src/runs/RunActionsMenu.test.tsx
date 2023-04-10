@@ -34,7 +34,6 @@ describe('RunActionsMenu', () => {
     rootRunId: 'abcdef12',
     parentRunId: null,
     pipelineSnapshotId: 'snapshotID',
-    parentPipelineSnapshotId: 'snapshotID',
     pipelineName: 'job-bar',
     repositoryOrigin: {
       __typename: 'RepositoryOrigin',

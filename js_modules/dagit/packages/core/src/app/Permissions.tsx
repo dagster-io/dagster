@@ -95,10 +95,10 @@ export const extractPermissions = (
   };
 };
 
-export type PermissionsMap = ReturnType<typeof extractPermissions>;
+type PermissionsMap = ReturnType<typeof extractPermissions>;
 
-export type PermissionBooleans = Record<keyof PermissionsMap, boolean>;
-export type PermissionDisabledReasons = Record<keyof PermissionsMap, string>;
+type PermissionBooleans = Record<keyof PermissionsMap, boolean>;
+type PermissionDisabledReasons = Record<keyof PermissionsMap, string>;
 export type PermissionsState = {
   permissions: PermissionBooleans;
   disabledReasons: PermissionDisabledReasons;
@@ -120,7 +120,7 @@ export const PermissionsContext = React.createContext<PermissionsContextType>({
   rawUnscopedData: [],
 });
 
-export const PermissionsProvider: React.FC = (props) => {
+export const PermissionsProvider = (props: {children: React.ReactNode}) => {
   const {data, loading} = useQuery<PermissionsQuery, PermissionsQueryVariables>(PERMISSIONS_QUERY, {
     fetchPolicy: 'cache-first', // Not expected to change after initial load.
   });

@@ -1,7 +1,4 @@
-from dagster import List, Optional
-from dagster._core.definitions.decorators import op
-from dagster._core.definitions.input import In
-from dagster._legacy import execute_pipeline, pipeline
+from dagster import In, List, Optional, job, op
 
 
 def test_from_intermediates_from_multiple_outputs():
@@ -17,22 +14,24 @@ def test_from_intermediates_from_multiple_outputs():
     def gather(stuff):
         return "{} and {}".format(*stuff)
 
-    @pipeline
+    @job
     def pipe():
         gather([x(), y()])
 
-    result = execute_pipeline(pipe)
+    result = pipe.execute_in_process()
 
     assert result
     assert result.success
-    assert (
-        result.result_for_node("gather")
-        .compute_input_event_dict["stuff"]
-        .event_specific_data[1]
-        .label
-        == "stuff"
+    step_input_event = next(
+        (
+            evt
+            for evt in result.events_for_node("gather")
+            if evt.event_type_value == "STEP_INPUT"
+            and evt.event_specific_data.input_name == "stuff"
+        )
     )
-    assert result.result_for_node("gather").output_value() == "x and y"
+    assert step_input_event.event_specific_data[1].label == "stuff"
+    assert result.output_for_node("gather") == "x and y"
 
 
 def test_from_intermediates_from_config():
@@ -42,19 +41,21 @@ def test_from_intermediates_from_config():
     def x(string_input):
         return string_input
 
-    @pipeline
+    @job
     def pipe():
         x()
 
-    result = execute_pipeline(pipe, run_config=run_config)
+    result = pipe.execute_in_process(run_config=run_config)
 
     assert result
     assert result.success
-    assert (
-        result.result_for_node("x")
-        .compute_input_event_dict["string_input"]
-        .event_specific_data[1]
-        .label
-        == "string_input"
+    step_input_event = next(
+        (
+            evt
+            for evt in result.events_for_node("x")
+            if evt.event_type_value == "STEP_INPUT"
+            and evt.event_specific_data.input_name == "string_input"
+        )
     )
-    assert result.result_for_node("x").output_value() == "Dagster is great!"
+    assert step_input_event.event_specific_data[1].label == "string_input"
+    assert result.output_for_node("x") == "Dagster is great!"

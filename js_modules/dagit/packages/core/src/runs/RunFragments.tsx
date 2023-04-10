@@ -6,26 +6,17 @@ import {LOGS_SCROLLING_TABLE_MESSAGE_FRAGMENT} from './LogsScrollingTable';
 import {RUN_DETAILS_FRAGMENT} from './RunDetails';
 import {RUN_METADATA_PROVIDER_MESSAGE_FRAGMENT} from './RunMetadataProvider';
 
-export const RUN_FRAGMENT_FOR_REPOSITORY_MATCH = gql`
-  fragment RunFragmentForRepositoryMatch on Run {
-    id
-    pipelineName
-    pipelineSnapshotId
-    parentPipelineSnapshotId
-    repositoryOrigin {
-      id
-      repositoryName
-      repositoryLocationName
-    }
-  }
-`;
-
 export const RUN_FRAGMENT = gql`
   fragment RunFragment on Run {
     id
     runConfigYaml
     runId
     canTerminate
+    repositoryOrigin {
+      id
+      repositoryName
+      repositoryLocationName
+    }
     hasReExecutePermission
     hasTerminatePermission
     hasDeletePermission
@@ -51,7 +42,6 @@ export const RUN_FRAGMENT = gql`
       }
     }
     pipelineSnapshotId
-    parentPipelineSnapshotId
     executionPlan {
       artifactsPersisted
       ...ExecutionPlanToGraphFragment
@@ -72,12 +62,10 @@ export const RUN_FRAGMENT = gql`
         endTime
       }
     }
-    ...RunFragmentForRepositoryMatch
     ...RunDetailsFragment
   }
 
   ${EXECUTION_PLAN_TO_GRAPH_FRAGMENT}
-  ${RUN_FRAGMENT_FOR_REPOSITORY_MATCH}
   ${RUN_DETAILS_FRAGMENT}
 `;
 
@@ -96,4 +84,14 @@ export const RUN_DAGSTER_RUN_EVENT_FRAGMENT = gql`
 
   ${LOGS_SCROLLING_TABLE_MESSAGE_FRAGMENT}
   ${RUN_METADATA_PROVIDER_MESSAGE_FRAGMENT}
+`;
+
+export const RUN_PAGE_FRAGMENT = gql`
+  fragment RunPageFragment on Run {
+    id
+    parentPipelineSnapshotId
+    ...RunFragment
+  }
+
+  ${RUN_FRAGMENT}
 `;

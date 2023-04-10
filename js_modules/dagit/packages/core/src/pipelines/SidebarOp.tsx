@@ -155,7 +155,7 @@ export const SidebarOp: React.FC<SidebarOpProps> = ({
   );
 };
 
-export const SIDEBAR_OP_FRAGMENT = gql`
+const SIDEBAR_OP_FRAGMENT = gql`
   fragment SidebarOpFragment on SolidContainer {
     id
     name

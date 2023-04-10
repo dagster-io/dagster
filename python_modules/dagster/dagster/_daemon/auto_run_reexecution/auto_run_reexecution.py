@@ -2,6 +2,7 @@ import sys
 from typing import Iterator, Optional, Sequence, Tuple, cast
 
 from dagster._core.definitions.metadata import MetadataValue
+from dagster._core.definitions.selector import PipelineSelector
 from dagster._core.events import EngineEventData
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.instance import DagsterInstance
@@ -119,7 +120,17 @@ def retry_run(
         )
         return
 
-    external_pipeline = external_repo.get_full_external_job(failed_run.pipeline_name)
+    external_pipeline = code_location.get_external_pipeline(
+        PipelineSelector(
+            location_name=origin.code_location_origin.location_name,
+            repository_name=repo_name,
+            pipeline_name=failed_run.pipeline_name,
+            solid_selection=failed_run.solid_selection,
+            asset_selection=None
+            if failed_run.asset_selection is None
+            else list(failed_run.asset_selection),
+        )
+    )
 
     strategy = get_reexecution_strategy(failed_run, instance) or DEFAULT_REEXECUTION_POLICY
 

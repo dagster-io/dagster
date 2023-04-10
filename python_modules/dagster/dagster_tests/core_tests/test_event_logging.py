@@ -1,39 +1,48 @@
 import logging
 from collections import defaultdict
+from typing import Callable, Mapping, Sequence
 
-from dagster import DagsterEvent
-from dagster._core.definitions.decorators import op
+from dagster import DagsterEvent, job, op
+from dagster._core.definitions.graph_definition import GraphDefinition
+from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.events import DagsterEventType
 from dagster._core.events.log import EventLogEntry, construct_event_logger
-from dagster._legacy import ModeDefinition, PipelineDefinition, execute_pipeline, pipeline
 from dagster._loggers import colored_console_logger
 from dagster._serdes import deserialize_value
 
 
-def mode_def(event_callback):
-    return ModeDefinition(
-        logger_defs={
-            "callback": construct_event_logger(event_callback),
-            "console": colored_console_logger,
-        }
-    )
+def get_loggers(event_callback):
+    return {
+        "callback": construct_event_logger(event_callback),
+        "console": colored_console_logger,
+    }
 
 
-def single_dagster_event(events, event_type):
+def single_dagster_event(
+    events: Mapping[DagsterEventType, Sequence[DagsterEvent]], event_type: DagsterEventType
+) -> DagsterEvent:
     assert event_type in events
     return events[event_type][0]
 
 
-def define_event_logging_pipeline(name, solids, event_callback, deps=None):
-    return PipelineDefinition(
-        name=name,
-        node_defs=solids,
-        description=deps,
-        mode_defs=[mode_def(event_callback)],
+def define_event_logging_job(
+    name: str,
+    node_defs: Sequence[NodeDefinition],
+    event_callback: Callable[[EventLogEntry], None],
+    deps=None,
+) -> JobDefinition:
+    return JobDefinition(
+        graph_def=GraphDefinition(
+            name=name,
+            node_defs=node_defs,
+            dependencies=deps,
+        ),
+        logger_defs=get_loggers(event_callback),
     )
 
 
-def test_empty_pipeline():
+def test_empty_job():
     events = defaultdict(list)
 
     def _event_callback(record):
@@ -41,91 +50,102 @@ def test_empty_pipeline():
         if record.is_dagster_event:
             events[record.dagster_event.event_type].append(record)
 
-    pipeline_def = PipelineDefinition(
-        name="empty_pipeline", node_defs=[], mode_defs=[mode_def(_event_callback)]
+    job_def = JobDefinition(
+        graph_def=GraphDefinition(
+            name="empty_job",
+            node_defs=[],
+        ),
+        logger_defs=get_loggers(_event_callback),
     )
 
-    result = execute_pipeline(pipeline_def, {"loggers": {"callback": {}, "console": {}}})
+    result = job_def.execute_in_process({"loggers": {"callback": {}, "console": {}}})
     assert result.success
     assert events
 
     assert (
-        single_dagster_event(events, DagsterEventType.PIPELINE_START).pipeline_name
-        == "empty_pipeline"
+        single_dagster_event(events, DagsterEventType.PIPELINE_START).pipeline_name == "empty_job"
     )
     assert (
-        single_dagster_event(events, DagsterEventType.PIPELINE_SUCCESS).pipeline_name
-        == "empty_pipeline"
+        single_dagster_event(events, DagsterEventType.PIPELINE_SUCCESS).pipeline_name == "empty_job"
     )
 
 
-def test_single_solid_pipeline_success():
+def test_single_op_job_success():
     events = defaultdict(list)
 
     @op
-    def solid_one():
+    def op_one():
         return 1
 
     def _event_callback(record):
         if record.is_dagster_event:
             events[record.dagster_event.event_type].append(record)
 
-    pipeline_def = PipelineDefinition(
-        name="single_solid_pipeline",
-        node_defs=[solid_one],
-        mode_defs=[mode_def(_event_callback)],
+    job_def = JobDefinition(
+        graph_def=GraphDefinition(
+            name="single_op_job",
+            node_defs=[op_one],
+        ),
+        logger_defs=get_loggers(_event_callback),
+        tags={"foo": "bar"},
     )
 
-    result = execute_pipeline(pipeline_def, {"loggers": {"callback": {}}})
+    result = job_def.execute_in_process({"loggers": {"callback": {}}})
     assert result.success
     assert events
 
     start_event = single_dagster_event(events, DagsterEventType.STEP_START)
-    assert start_event.pipeline_name == "single_solid_pipeline"
-    assert start_event.dagster_event.solid_name == "solid_one"
+    assert start_event.pipeline_name == "single_op_job"
+    assert start_event.dagster_event.solid_name == "op_one"
+
+    # persisted logging tags contain pipeline_name but not pipeline_tags
+    assert start_event.dagster_event.logging_tags["pipeline_name"] == "single_op_job"
+    assert "pipeline_tags" not in start_event.dagster_event.logging_tags
 
     output_event = single_dagster_event(events, DagsterEventType.STEP_OUTPUT)
     assert output_event
     assert output_event.dagster_event.step_output_data.output_name == "result"
 
     success_event = single_dagster_event(events, DagsterEventType.STEP_SUCCESS)
-    assert success_event.pipeline_name == "single_solid_pipeline"
-    assert success_event.dagster_event.solid_name == "solid_one"
+    assert success_event.pipeline_name == "single_op_job"
+    assert success_event.dagster_event.solid_name == "op_one"
 
     assert isinstance(success_event.dagster_event.step_success_data.duration_ms, float)
     assert success_event.dagster_event.step_success_data.duration_ms > 0.0
 
 
-def test_single_solid_pipeline_failure():
+def test_single_op_job_failure():
     events = defaultdict(list)
 
     @op
-    def solid_one():
+    def op_one():
         raise Exception("nope")
 
     def _event_callback(record):
         if record.is_dagster_event:
             events[record.dagster_event.event_type].append(record)
 
-    pipeline_def = PipelineDefinition(
-        name="single_solid_pipeline",
-        node_defs=[solid_one],
-        mode_defs=[mode_def(_event_callback)],
+    single_op_job = JobDefinition(
+        graph_def=GraphDefinition(
+            name="single_op_job",
+            node_defs=[op_one],
+        ),
+        logger_defs=get_loggers(_event_callback),
     )
 
-    result = execute_pipeline(pipeline_def, {"loggers": {"callback": {}}}, raise_on_error=False)
+    result = single_op_job.execute_in_process({"loggers": {"callback": {}}}, raise_on_error=False)
     assert not result.success
 
     start_event = single_dagster_event(events, DagsterEventType.STEP_START)
-    assert start_event.pipeline_name == "single_solid_pipeline"
+    assert start_event.pipeline_name == "single_op_job"
 
-    assert start_event.dagster_event.solid_name == "solid_one"
+    assert start_event.dagster_event.solid_name == "op_one"
     assert start_event.level == logging.DEBUG
 
     failure_event = single_dagster_event(events, DagsterEventType.STEP_FAILURE)
-    assert failure_event.pipeline_name == "single_solid_pipeline"
+    assert failure_event.pipeline_name == "single_op_job"
 
-    assert failure_event.dagster_event.solid_name == "solid_one"
+    assert failure_event.dagster_event.solid_name == "op_one"
     assert failure_event.level == logging.ERROR
 
 
@@ -134,7 +154,7 @@ def define_simple():
     def yes():
         return "yes"
 
-    @pipeline
+    @job
     def simple():
         yes()
 

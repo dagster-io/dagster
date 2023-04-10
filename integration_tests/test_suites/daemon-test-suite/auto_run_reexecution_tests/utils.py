@@ -16,9 +16,15 @@ def do_something():
     pass
 
 
+@op
+def do_something_else():
+    pass
+
+
 @job
 def foo():
     do_something()
+    do_something_else()
 
 
 @repository

@@ -1,6 +1,4 @@
-from dagster import In, Out, job, op
-from dagster._core.definitions.decorators.graph_decorator import graph
-from dagster._core.definitions.output import GraphOut
+from dagster import GraphOut, In, Out, graph, job, op
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.snap import create_pipeline_snapshot_id, snapshot_from_execution_plan
 from dagster._serdes import serialize_pp

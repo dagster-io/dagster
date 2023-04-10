@@ -127,12 +127,12 @@ def test_graph_with_required_resources():
 def test_executor_config_ignored_by_execute_in_process():
     # Ensure that execute_in_process is able to properly ignore provided executor config.
     @op
-    def my_solid():
+    def my_op():
         return 0
 
     @graph
     def my_graph():
-        my_solid()
+        my_op()
 
     my_job = my_graph.to_job(
         config={"execution": {"config": {"multiprocess": {"max_concurrent": 5}}}}
@@ -182,7 +182,8 @@ def test_output_for_node_not_found():
         result.output_for_node("op_exists", "name_doesnt_exist")
 
     with pytest.raises(
-        DagsterInvariantViolationError, match="Could not find top-level output 'name_doesnt_exist'"
+        DagsterInvariantViolationError,
+        match="Could not find top-level output 'name_doesnt_exist'",
     ):
         result.output_value("name_doesnt_exist")
 
@@ -335,8 +336,16 @@ def test_dynamic_output_for_node():
     result = myjob.execute_in_process()
 
     # assertions
-    assert result.output_for_node("return_as_tuple", "output1") == {"0": 0, "1": 1, "2": 2}
-    assert result.output_for_node("return_as_tuple", "output2") == {"0": 5, "1": 5, "2": 5}
+    assert result.output_for_node("return_as_tuple", "output1") == {
+        "0": 0,
+        "1": 1,
+        "2": 2,
+    }
+    assert result.output_for_node("return_as_tuple", "output2") == {
+        "0": 5,
+        "1": 5,
+        "2": 5,
+    }
 
 
 def test_execute_in_process_input_values():

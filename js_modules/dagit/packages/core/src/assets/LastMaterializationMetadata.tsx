@@ -7,7 +7,7 @@ import styled from 'styled-components/macro';
 import {Timestamp} from '../app/time/Timestamp';
 import {isHiddenAssetGroupJob, LiveDataForNode} from '../asset-graph/Utils';
 import {StaleTag} from '../assets/StaleTag';
-import {MetadataEntry, METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
+import {METADATA_ENTRY_FRAGMENT, MetadataEntry} from '../metadata/MetadataEntry';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {linkToRunEvent, titleForRun} from '../runs/RunUtils';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';

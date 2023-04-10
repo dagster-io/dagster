@@ -102,9 +102,13 @@ class TestScheduleStorage:
     def test_add_multiple_schedules(self, storage):
         assert storage
 
-        schedule = self.build_schedule("my_schedule", "* * * * *")
-        schedule_2 = self.build_schedule("my_schedule_2", "* * * * *")
-        schedule_3 = self.build_schedule("my_schedule_3", "* * * * *")
+        schedule = self.build_schedule("my_schedule", "* * * * *", status=InstigatorStatus.RUNNING)
+        schedule_2 = self.build_schedule(
+            "my_schedule_2", "* * * * *", status=InstigatorStatus.STOPPED
+        )
+        schedule_3 = self.build_schedule(
+            "my_schedule_3", "* * * * *", status=InstigatorStatus.AUTOMATICALLY_RUNNING
+        )
 
         storage.add_instigator_state(schedule)
         storage.add_instigator_state(schedule_2)
@@ -120,6 +124,25 @@ class TestScheduleStorage:
         assert any(s.instigator_name == "my_schedule" for s in schedules)
         assert any(s.instigator_name == "my_schedule_2" for s in schedules)
         assert any(s.instigator_name == "my_schedule_3" for s in schedules)
+
+        running = storage.all_instigator_state(
+            self.fake_repo_target().get_id(),
+            self.fake_repo_target().get_selector_id(),
+            InstigatorType.SCHEDULE,
+            {InstigatorStatus.RUNNING, InstigatorStatus.AUTOMATICALLY_RUNNING},
+        )
+        assert len(running) == 2
+        assert "my_schedule" in [state.instigator_name for state in running]
+        assert "my_schedule_3" in [state.instigator_name for state in running]
+
+        stopped = storage.all_instigator_state(
+            self.fake_repo_target().get_id(),
+            self.fake_repo_target().get_selector_id(),
+            InstigatorType.SCHEDULE,
+            {InstigatorStatus.STOPPED},
+        )
+        assert len(stopped) == 1
+        assert stopped[0].instigator_name == "my_schedule_2"
 
     def test_get_schedule_state(self, storage):
         assert storage

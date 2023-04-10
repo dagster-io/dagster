@@ -216,10 +216,10 @@ export const TicksTable = ({
                 {instigationType === InstigationType.SENSOR ? (
                   <td style={{width: 120}}>
                     {tick.cursor ? (
-                      <Box flex={{direction: 'row', alignItems: 'center'}}>
-                        <Box style={{fontFamily: FontFamily.monospace, marginRight: 10}}>
-                          <>{truncate(tick.cursor || '')}</>
-                        </Box>
+                      <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+                        <div style={{fontFamily: FontFamily.monospace, fontSize: '16px'}}>
+                          {truncate(tick.cursor || '')}
+                        </div>
                         <CopyButton
                           onClick={() => {
                             copyToClipboard(tick.cursor || '');
@@ -435,5 +435,3 @@ const CopyButton = styled.button`
     background-color: ${Colors.Link};
   }
 `;
-
-export type Test = React.SyntheticEvent<HTMLElement>;

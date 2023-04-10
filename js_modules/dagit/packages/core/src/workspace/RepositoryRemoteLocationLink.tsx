@@ -1,6 +1,3 @@
-import {Colors, Icon} from '@dagster-io/ui';
-import React from 'react';
-
 export const formatRepositoryUrl = (url: string): string => {
   try {
     const urlObj = new URL(url);
@@ -17,21 +14,4 @@ export const formatRepositoryUrl = (url: string): string => {
     return url;
   }
   return url;
-};
-
-export const RepositoryRemoteLocationLink: React.FC<{repositoryUrl: string}> = ({
-  repositoryUrl,
-}) => {
-  const formattedUrl = formatRepositoryUrl(repositoryUrl);
-
-  return (
-    <a href={repositoryUrl} target="_blank" rel="noopener noreferrer">
-      <Icon
-        color={Colors.Link}
-        name="link"
-        style={{display: 'inline-block', verticalAlign: 'middle'}}
-      />{' '}
-      {formattedUrl}
-    </a>
-  );
 };

@@ -1037,6 +1037,12 @@ def pipeline_execution_iterator(
                     ),
                     EngineEventData(),
                 )
+            elif reloaded_run and reloaded_run.status == DagsterRunStatus.FAILURE:
+                event = DagsterEvent.engine_event(
+                    pipeline_context,
+                    "Execution was interrupted for a run that was already in a failure state.",
+                    EngineEventData(),
+                )
             else:
                 event = DagsterEvent.pipeline_failure(
                     pipeline_context,

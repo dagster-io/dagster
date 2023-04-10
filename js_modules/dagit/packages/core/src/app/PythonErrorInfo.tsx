@@ -96,7 +96,7 @@ const CauseHeader = styled.h3`
   margin: 1em 0 1em;
 `;
 
-export const ErrorHeader = styled.h3`
+const ErrorHeader = styled.h3`
   color: #b05c47;
   font-weight: 400;
   margin: 0.5em 0 0.25em;

@@ -17,7 +17,7 @@ from typing import (
 )
 
 from pydantic import ConstrainedFloat, ConstrainedInt, ConstrainedStr
-from typing_extensions import TypeAlias
+from typing_extensions import TypeAlias, get_args
 
 from dagster import Enum as DagsterEnum
 from dagster._annotations import experimental
@@ -27,11 +27,17 @@ from dagster._config.post_process import resolve_defaults
 from dagster._config.source import BoolSource, IntSource, StringSource
 from dagster._config.structured_config.typing_utils import TypecheckAllowPartialResourceInitParams
 from dagster._config.validate import process_config, validate_config
+from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.definition_config_schema import (
     ConfiguredDefinitionConfigSchema,
     DefinitionConfigSchema,
 )
-from dagster._core.errors import DagsterInvalidConfigError
+from dagster._core.errors import (
+    DagsterInvalidConfigDefinitionError,
+    DagsterInvalidConfigError,
+    DagsterInvalidDefinitionError,
+    DagsterInvalidPythonicConfigDefinitionError,
+)
 from dagster._core.execution.context.init import InitResourceContext
 
 try:
@@ -142,6 +148,11 @@ class Config(MakeConfigCacheable):
             else:
                 output[key] = value
         return output
+
+    @classmethod
+    def to_config_schema(cls) -> DefinitionConfigSchema:
+        """Converts the config structure represented by this class into a DefinitionConfigSchema."""
+        return DefinitionConfigSchema(infer_schema_from_config_class(cls))
 
 
 @experimental
@@ -567,6 +578,26 @@ class ConfigurableResourceFactory(
     def _create_object_fn(self, context: InitResourceContext) -> TResValue:
         return self.create_resource(context)
 
+    @classmethod
+    def from_resource_context(cls, context: InitResourceContext) -> TResValue:
+        """Creates a new instance of this resource from a populated InitResourceContext.
+        Useful when creating a resource from a function-based resource, for backwards
+        compatibility purposes.
+
+        Example usage:
+
+        .. code-block:: python
+
+            class MyResource(ConfigurableResource):
+                my_str: str
+
+            @resource(config_schema=MyResource.to_config_schema())
+            def my_resource(context: InitResourceContext) -> MyResource:
+                return MyResource.from_resource_context(context)
+
+        """
+        return cls(**context.resource_config).create_resource(context)
+
 
 @experimental
 class ConfigurableResource(ConfigurableResourceFactory[TResValue]):
@@ -834,8 +865,36 @@ def _wrap_config_type(
         raise NotImplementedError(f"Pydantic shape type {shape_type} not supported.")
 
 
-def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
-    """Transforms a Pydantic field into a corresponding Dagster config field."""
+def _get_inner_field_if_exists(
+    shape_type: PydanticShapeType, field: ModelField
+) -> Optional[ModelField]:
+    """Grabs the inner Pydantic field type for a data structure such as a list or dictionary.
+
+    Returns None for types which have no inner field.
+    """
+    # See https://github.com/pydantic/pydantic/blob/v1.10.3/pydantic/fields.py#L758 for
+    # where sub_fields is set.
+    if shape_type == SHAPE_SINGLETON:
+        return None
+    elif shape_type == SHAPE_LIST:
+        # List has a single subfield, which is the type of the list elements.
+        return check.not_none(field.sub_fields)[0]
+    elif shape_type in MAPPING_TYPES:
+        # Mapping has a single subfield, which is the type of the mapping values.
+        return check.not_none(field.sub_fields)[0]
+    else:
+        raise NotImplementedError(f"Pydantic shape type {shape_type} not supported.")
+
+
+def _convert_pydantic_field(pydantic_field: ModelField, model_cls: Optional[Type] = None) -> Field:
+    """Transforms a Pydantic field into a corresponding Dagster config field.
+
+
+    Args:
+        pydantic_field (ModelField): The Pydantic field to convert.
+        model_cls (Optional[Type]): The Pydantic model class that the field belongs to. This is
+            used for error messages.
+    """
     key_type = (
         _config_type_for_pydantic_field(pydantic_field.key_field)
         if pydantic_field.key_field
@@ -854,17 +913,28 @@ def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
             config_type=inferred_field.config_type,
             key_type=key_type,
         )
-
-        return Field(config=wrapped_config_type, description=inferred_field.description)
+        return Field(
+            config=Noneable(wrapped_config_type)
+            if pydantic_field.allow_none
+            else wrapped_config_type,
+            description=inferred_field.description,
+            is_required=_is_pydantic_field_required(pydantic_field),
+        )
     else:
-        config_type = _config_type_for_pydantic_field(pydantic_field)
+        # For certain data structure types, we need to grab the inner Pydantic field (e.g. List type)
+        inner_field = _get_inner_field_if_exists(pydantic_field.shape, pydantic_field)
+        if inner_field:
+            config_type = _convert_pydantic_field(inner_field, model_cls=model_cls).config_type
+        else:
+            config_type = _config_type_for_pydantic_field(pydantic_field)
+
         wrapped_config_type = _wrap_config_type(
             shape_type=pydantic_field.shape, config_type=config_type, key_type=key_type
         )
-        if pydantic_field.allow_none:
-            wrapped_config_type = Noneable(wrapped_config_type)
         return Field(
-            config=wrapped_config_type,
+            config=Noneable(wrapped_config_type)
+            if pydantic_field.allow_none
+            else wrapped_config_type,
             description=pydantic_field.field_info.description,
             is_required=_is_pydantic_field_required(pydantic_field),
             default_value=pydantic_field.default
@@ -874,10 +944,24 @@ def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
 
 
 def _config_type_for_pydantic_field(pydantic_field: ModelField) -> ConfigType:
-    return _config_type_for_type_on_pydantic_field(pydantic_field.type_)
+    """Generates a Dagster ConfigType from a Pydantic field.
+
+    Args:
+        pydantic_field (ModelField): The Pydantic field to convert.
+    """
+    return _config_type_for_type_on_pydantic_field(
+        pydantic_field.type_,
+    )
 
 
-def _config_type_for_type_on_pydantic_field(potential_dagster_type: Any) -> ConfigType:
+def _config_type_for_type_on_pydantic_field(
+    potential_dagster_type: Any,
+) -> ConfigType:
+    """Generates a Dagster ConfigType from a Pydantic field's Python type.
+
+    Args:
+        potential_dagster_type (Any): The Python type of the Pydantic field.
+    """
     # special case pydantic constrained types to their source equivalents
     if safe_is_subclass(potential_dagster_type, ConstrainedStr):
         return StringSource
@@ -1026,7 +1110,12 @@ def infer_schema_from_config_annotation(model_cls: Any, config_arg_default: Any)
 
     # If were are here config is annotated with a primitive type
     # We do a conversion to a type as if it were a type on a pydantic field
-    inner_config_type = _config_type_for_type_on_pydantic_field(model_cls)
+    try:
+        inner_config_type = _config_type_for_type_on_pydantic_field(model_cls)
+    except (DagsterInvalidDefinitionError, DagsterInvalidConfigDefinitionError):
+        raise DagsterInvalidPythonicConfigDefinitionError(
+            invalid_type=model_cls, config_class=None, field_name=None
+        )
     return Field(
         config=inner_config_type,
         default_value=FIELD_NO_DEFAULT_PROVIDED
@@ -1051,7 +1140,25 @@ def infer_schema_from_config_class(
     fields = {}
     for pydantic_field in model_cls.__fields__.values():
         if pydantic_field.name not in fields_to_omit:
-            fields[pydantic_field.alias] = _convert_pydantic_field(pydantic_field)
+            if isinstance(pydantic_field.default, Field):
+                raise DagsterInvalidDefinitionError(
+                    "Using 'dagster.Field' is not supported within a Pythonic config or resource"
+                    " definition. 'dagster.Field' should only be used in legacy Dagster config"
+                    " schemas. Did you mean to use 'pydantic.Field' instead?"
+                )
+
+            try:
+                fields[pydantic_field.alias] = _convert_pydantic_field(
+                    pydantic_field,
+                )
+            except DagsterInvalidConfigDefinitionError as e:
+                raise DagsterInvalidPythonicConfigDefinitionError(
+                    config_class=model_cls,
+                    field_name=pydantic_field.name,
+                    invalid_type=e.current_value,
+                    is_resource=model_cls is not None
+                    and safe_is_subclass(model_cls, ConfigurableResourceFactory),
+                )
 
     shape_cls = Permissive if model_cls.__config__.extra == Extra.allow else Shape
 
@@ -1091,3 +1198,45 @@ LateBoundTypesForResourceTypeChecking.set_actual_types_for_type_checking(
     resource_type=ConfigurableResourceFactory,
     partial_resource_type=PartialResource,
 )
+
+
+def validate_resource_annotated_function(fn) -> None:
+    """Validates any parameters on the decorated function that are annotated with
+    :py:class:`dagster.ResourceDefinition`, raising a :py:class:`dagster.DagsterInvalidDefinitionError`
+    if any are not also instances of :py:class:`dagster.ConfigurableResource` (these resources should
+    instead be wrapped in the :py:func:`dagster.Resource` Annotation).
+    """
+    from dagster import DagsterInvalidDefinitionError
+    from dagster._config.structured_config import (
+        ConfigurableResource,
+        ConfigurableResourceFactory,
+        TResValue,
+    )
+    from dagster._config.structured_config.utils import safe_is_subclass
+
+    malformed_params = [
+        param
+        for param in get_function_params(fn)
+        if safe_is_subclass(param.annotation, ResourceDefinition)
+        and not safe_is_subclass(param.annotation, ConfigurableResource)
+    ]
+    if len(malformed_params) > 0:
+        malformed_param = malformed_params[0]
+        output_type = None
+        if safe_is_subclass(malformed_param.annotation, ConfigurableResourceFactory):
+            orig_bases = getattr(malformed_param.annotation, "__orig_bases__", None)
+            output_type = get_args(orig_bases[0])[0] if orig_bases and len(orig_bases) > 0 else None
+            if output_type == TResValue:
+                output_type = None
+
+        output_type_name = getattr(output_type, "__name__", str(output_type))
+        raise DagsterInvalidDefinitionError(
+            """Resource param '{param_name}' is annotated as '{annotation_type}', but '{annotation_type}' outputs {value_message} value to user code such as @ops and @assets. This annotation should instead be {annotation_suggestion}""".format(
+                param_name=malformed_param.name,
+                annotation_type=malformed_param.annotation,
+                value_message=f"a '{output_type}'" if output_type else "an unknown",
+                annotation_suggestion=f"'Resource[{output_type_name}]'"
+                if output_type
+                else "'Resource[Any]' or 'Resource[<output type>]'",
+            )
+        )

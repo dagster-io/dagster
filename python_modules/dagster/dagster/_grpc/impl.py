@@ -319,6 +319,7 @@ def get_external_schedule_execution(
             repo_def.name,
             schedule_name,
             resources=resources_to_build,
+            repository_def=repo_def,
         ) as schedule_context:
             with user_code_error_boundary(
                 ScheduleExecutionError,

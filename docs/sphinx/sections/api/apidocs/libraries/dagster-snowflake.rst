@@ -20,6 +20,9 @@ Related Guides:
 
 I/O Manager
 ===========
+.. autoconfigurable:: SnowflakeIOManager
+  :annotation: IOManagerDefinition
+
 .. autoconfigurable:: build_snowflake_io_manager
   :annotation: IOManagerDefinition
 
