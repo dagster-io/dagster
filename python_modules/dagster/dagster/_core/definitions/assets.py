@@ -327,7 +327,7 @@ class AssetsDefinition(ResourceAddable):
                 be associated with each of the output assets for this node. Keys are names of the
                 outputs, and values are dictionaries of metadata to be associated with the related
                 asset.
-            freshness_policies_by_output_name_ouptut_name (Optional[Mapping[str, Optional[FreshnessPolicy]]]): Defines a
+            freshness_policies_by_output_name (Optional[Mapping[str, Optional[FreshnessPolicy]]]): Defines a
                 FreshnessPolicy to be associated with some or all of the output assets for this node.
                 Keys are the names of the outputs, and values are the FreshnessPolicies to be attached
                 to the associated asset.
@@ -407,7 +407,7 @@ class AssetsDefinition(ResourceAddable):
                 be associated with each of the output assets for this node. Keys are names of the
                 outputs, and values are dictionaries of metadata to be associated with the related
                 asset.
-            freshness_policies_by_output_name_ouptut_name (Optional[Mapping[str, Optional[FreshnessPolicy]]]): Defines a
+            freshness_policies_by_output_name (Optional[Mapping[str, Optional[FreshnessPolicy]]]): Defines a
                 FreshnessPolicy to be associated with some or all of the output assets for this node.
                 Keys are the names of the outputs, and values are the FreshnessPolicies to be attached
                 to the associated asset.
@@ -526,21 +526,21 @@ class AssetsDefinition(ResourceAddable):
             if partition_mappings
             else None,
             metadata_by_key={
-                keys_by_output_name[output_name]: metadata
+                keys_by_output_name_with_prefix[output_name]: metadata
                 for output_name, metadata in metadata_by_output_name.items()
                 if metadata is not None
             }
             if metadata_by_output_name
             else None,
             freshness_policies_by_key={
-                keys_by_output_name[output_name]: freshness_policy
+                keys_by_output_name_with_prefix[output_name]: freshness_policy
                 for output_name, freshness_policy in freshness_policies_by_output_name.items()
                 if freshness_policy is not None
             }
             if freshness_policies_by_output_name
             else None,
             descriptions_by_key={
-                keys_by_output_name[output_name]: description
+                keys_by_output_name_with_prefix[output_name]: description
                 for output_name, description in descriptions_by_output_name.items()
                 if description is not None
             }
