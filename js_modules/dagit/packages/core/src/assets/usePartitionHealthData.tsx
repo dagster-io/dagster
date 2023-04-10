@@ -61,10 +61,7 @@ export interface PartitionHealthDimension {
   partitionKeys: string[];
 }
 
-export type PartitionDimensionSelectionRange = [
-  {idx: number; key: string},
-  {idx: number; key: string},
-];
+export type PartitionDimensionSelectionRange = Pick<Range, 'start' | 'end'>;
 
 export type PartitionDimensionSelection = {
   dimension: PartitionHealthDimension;
@@ -149,7 +146,7 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
     if (dimensionIdx === 0 && !otherDimensionSelectedRanges) {
       return removeSubrangesAndJoin(ranges);
     } else if (dimensionIdx === 0 && otherDimensionSelectedRanges) {
-      const otherDimensionKeyCount = keyCountInSelection(otherDimensionSelectedRanges);
+      const otherDimensionKeyCount = keyCountInRanges(otherDimensionSelectedRanges);
       if (otherDimensionKeyCount === 0) {
         return [];
       }
@@ -172,7 +169,7 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
       const [d0, d1] = dimensions;
       const allKeys = d1.partitionKeys;
       const d0KeyCount = otherDimensionSelectedRanges
-        ? keyCountInSelection(otherDimensionSelectedRanges)
+        ? keyCountInRanges(otherDimensionSelectedRanges)
         : d0.partitionKeys.length;
       if (d0KeyCount === 0) {
         return [];
@@ -271,9 +268,9 @@ export function rangeClippedToSelection(
   selection: PartitionDimensionSelectionRange[],
 ) {
   const intersecting = selection.filter(
-    ([start, end]) => range.start.idx <= end.idx && range.end.idx >= start.idx,
+    ({start, end}) => range.start.idx <= end.idx && range.end.idx >= start.idx,
   );
-  return intersecting.map(([start, end]) => {
+  return intersecting.map(({start, end}) => {
     return {
       value: range.value,
       start: range.start.idx > start.idx ? range.start : start,
@@ -309,25 +306,15 @@ export function selectionRangeWithSingleKey(
   dim: PartitionHealthDimension,
 ): PartitionDimensionSelectionRange {
   const idx = dim.partitionKeys.indexOf(key);
-  return [
-    {key, idx},
-    {key, idx},
-  ];
+  return {start: {key, idx}, end: {key, idx}};
 }
 
 // In a follow-up, maybe we make these two data structures share a signature
 
-export function keyCountInRanges(ranges: Range[]) {
+export function keyCountInRanges(ranges: Range[] | PartitionDimensionSelectionRange[]) {
   let count = 0;
   for (const range of ranges) {
     count += range.end.idx - range.start.idx + 1;
-  }
-  return count;
-}
-export function keyCountInSelection(selections: PartitionDimensionSelectionRange[]) {
-  let count = 0;
-  for (const [start, end] of selections) {
-    count += end.idx - start.idx + 1;
   }
   return count;
 }
@@ -350,7 +337,7 @@ export function keyCountByStateInSelection(
   const selections = assetHealth?.isRangeDataInverted ? [..._selections].reverse() : _selections;
 
   const total = selections
-    .map((s) => keyCountInSelection(s.selectedRanges))
+    .map((s) => keyCountInRanges(s.selectedRanges))
     .reduce((a, b) => (a ? a * b : b), 0);
 
   const rangesInSelection = rangesClippedToSelection(
@@ -359,7 +346,7 @@ export function keyCountByStateInSelection(
   );
 
   const secondDimensionKeyCount =
-    selections.length > 1 ? keyCountInSelection(selections[1].selectedRanges) : 1;
+    selections.length > 1 ? keyCountInRanges(selections[1].selectedRanges) : 1;
 
   const sumWithStatus = (status: AssetPartitionStatus) => {
     return rangesInSelection.reduce(

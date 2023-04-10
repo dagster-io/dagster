@@ -13,7 +13,6 @@ import {
   PartitionHealthDimension,
   PartitionDimensionSelection,
   keyCountInRanges,
-  keyCountInSelection,
 } from '../usePartitionHealthData';
 
 const {MATERIALIZED, FAILED, MISSING} = AssetPartitionStatus;
@@ -251,10 +250,10 @@ function selectionWithSlice(
     dimension: dim,
     selectedKeys: dim.partitionKeys.slice(start, end + 1),
     selectedRanges: [
-      [
-        {idx: start, key: dim.partitionKeys[start]},
-        {idx: end, key: dim.partitionKeys[end]},
-      ],
+      {
+        start: {idx: start, key: dim.partitionKeys[start]},
+        end: {idx: end, key: dim.partitionKeys[end]},
+      },
     ],
   };
 }
@@ -341,10 +340,7 @@ describe('usePartitionHealthData', () => {
       // Ask for ranges of a row, clipped to a column selection
       expect(
         assetHealth.rangesForSingleDimension(0, [
-          [
-            {key: 'MN', idx: 4},
-            {key: 'MN', idx: 4},
-          ],
+          {start: {key: 'MN', idx: 4}, end: {key: 'MN', idx: 4}},
         ]),
       ).toEqual([
         {
@@ -357,10 +353,7 @@ describe('usePartitionHealthData', () => {
       // Ask for ranges of a row, clipped to a column selection
       expect(
         assetHealth.rangesForSingleDimension(0, [
-          [
-            {key: 'NY', idx: 3},
-            {key: 'MN', idx: 4},
-          ],
+          {start: {key: 'NY', idx: 3}, end: {key: 'MN', idx: 4}},
         ]),
       ).toEqual([
         {
@@ -414,10 +407,10 @@ describe('usePartitionHealthData', () => {
       // Ask for ranges of a column, clipped to a row selection
       expect(
         assetHealth.rangesForSingleDimension(1, [
-          [
-            {key: '2022-01-01', idx: 0},
-            {key: '2022-01-01', idx: 0},
-          ],
+          {
+            start: {key: '2022-01-01', idx: 0},
+            end: {key: '2022-01-01', idx: 0},
+          },
         ]),
       ).toEqual([
         {
@@ -444,20 +437,20 @@ describe('usePartitionHealthData', () => {
       expect(assetHealth.rangesForSingleDimension(0)).toEqual([]);
       expect(
         assetHealth.rangesForSingleDimension(0, [
-          [
-            {key: 'NY', idx: 3},
-            {key: 'MN', idx: 4},
-          ],
+          {
+            start: {key: 'NY', idx: 3},
+            end: {key: 'MN', idx: 4},
+          },
         ]),
       ).toEqual([]);
 
       expect(assetHealth.rangesForSingleDimension(1)).toEqual([]);
       expect(
         assetHealth.rangesForSingleDimension(1, [
-          [
-            {key: '2022-01-01', idx: 0},
-            {key: '2022-01-01', idx: 0},
-          ],
+          {
+            start: {key: '2022-01-01', idx: 0},
+            end: {key: '2022-01-01', idx: 0},
+          },
         ]),
       ).toEqual([]);
     });
@@ -510,26 +503,26 @@ const G_I: Range = {
   value: [AssetPartitionStatus.MATERIALIZED],
 };
 
-const SEL_A_C: PartitionDimensionSelectionRange = [
-  {key: 'A', idx: 0},
-  {key: 'C', idx: 2},
-];
-const SEL_A_D: PartitionDimensionSelectionRange = [
-  {key: 'A', idx: 0},
-  {key: 'D', idx: 3},
-];
-const SEL_C_D: PartitionDimensionSelectionRange = [
-  {key: 'C', idx: 2},
-  {key: 'D', idx: 3},
-];
-const SEL_E_G: PartitionDimensionSelectionRange = [
-  {key: 'E', idx: 4},
-  {key: 'G', idx: 6},
-];
-const SEL_G_G: PartitionDimensionSelectionRange = [
-  {key: 'G', idx: 6},
-  {key: 'G', idx: 6},
-];
+const SEL_A_C: PartitionDimensionSelectionRange = {
+  start: {key: 'A', idx: 0},
+  end: {key: 'C', idx: 2},
+};
+const SEL_A_D: PartitionDimensionSelectionRange = {
+  start: {key: 'A', idx: 0},
+  end: {key: 'D', idx: 3},
+};
+const SEL_C_D: PartitionDimensionSelectionRange = {
+  start: {key: 'C', idx: 2},
+  end: {key: 'D', idx: 3},
+};
+const SEL_E_G: PartitionDimensionSelectionRange = {
+  start: {key: 'E', idx: 4},
+  end: {key: 'G', idx: 6},
+};
+const SEL_G_G: PartitionDimensionSelectionRange = {
+  start: {key: 'G', idx: 6},
+  end: {key: 'G', idx: 6},
+};
 
 describe('usePartitionHealthData utilities', () => {
   describe('partitionStatusGivenRanges', () => {
@@ -611,15 +604,6 @@ describe('usePartitionHealthData utilities', () => {
     });
     it('should return the sum of the lengths of the ranges', () => {
       expect(keyCountInRanges([A_C, G_I])).toEqual(6);
-    });
-  });
-
-  describe('keyCountInSelection', () => {
-    it('should return 0 if passed no selections', () => {
-      expect(keyCountInSelection([])).toEqual(0);
-    });
-    it('should return the sum of the lengths of the selections', () => {
-      expect(keyCountInSelection([SEL_A_C, SEL_E_G])).toEqual(6);
     });
   });
 
