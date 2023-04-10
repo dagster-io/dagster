@@ -1,4 +1,4 @@
-from dagster import ConfigurableResourceFactory, resource
+from dagster import ConfigurableResource, resource
 from datadog import DogStatsd, initialize, statsd
 from pydantic import Field
 
@@ -33,7 +33,7 @@ class DataDogClient:
             setattr(self, method, getattr(statsd, method))
 
 
-class DataDogClientResource(ConfigurableResourceFactory[DataDogClient]):
+class DataDogClientResource(ConfigurableResource):
     """This resource is a thin wrapper over the
     `dogstatsd library <https://datadogpy.readthedocs.io/en/latest/>`_.
 
@@ -85,7 +85,7 @@ class DataDogClientResource(ConfigurableResourceFactory[DataDogClient]):
         )
     )
 
-    def create_resource(self, _init_context) -> DataDogClient:
+    def get_client(self) -> DataDogClient:
         return DataDogClient(self.api_key, self.app_key)
 
 
@@ -136,4 +136,4 @@ def datadog_resource(context) -> DataDogClient:
             )
 
     """
-    return DataDogClientResource.from_resource_context(context)
+    return DataDogClientResource.from_resource_context(context).get_client()
