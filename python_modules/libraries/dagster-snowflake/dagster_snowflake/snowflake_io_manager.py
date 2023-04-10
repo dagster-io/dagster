@@ -94,7 +94,7 @@ def build_snowflake_io_manager(
 
     @io_manager(config_schema=SnowflakeIOManager.to_config_schema())
     def snowflake_io_manager(init_context):
-        if init_context.resource_config["store_timestamps_as_strings"]:
+        if init_context.resource_config.get("store_timestamps_as_strings", False):
             deprecation_warning(
                 "Snowflake I/O manager config store_timestamps_as_strings",
                 "2.0.0",
@@ -262,6 +262,15 @@ class SnowflakeIOManager(ConfigurableIOManagerFactory):
         return None
 
     def create_io_manager(self, context) -> DbIOManager:
+        if self.store_timestamps_as_strings:
+            deprecation_warning(
+                "Snowflake I/O manager config store_timestamps_as_strings",
+                "2.0.0",
+                (
+                    "Convert existing tables to use timestamps and remove"
+                    " store_timestamps_as_strings configuration instead."
+                ),
+            )
         return DbIOManager(
             db_client=SnowflakeDbClient(),
             io_manager_name="SnowflakeIOManager",
