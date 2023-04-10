@@ -1,8 +1,7 @@
 from typing import Any, Optional, TypeVar
 
 from dagster import (
-    FactoryResource,
-    InitResourceContext,
+    ConfigurableResource,
     resource,
 )
 from pydantic import Field
@@ -13,7 +12,7 @@ from .utils import construct_s3_client
 T = TypeVar("T")
 
 
-class ResourceWithS3Configuration(FactoryResource[T]):
+class ResourceWithS3Configuration(ConfigurableResource):
     use_unsigned_session: bool = Field(
         default=False, description="Specifiesw whether to use an unsigned S3 session."
     )
@@ -55,7 +54,7 @@ class ResourceWithS3Configuration(FactoryResource[T]):
     )
 
 
-class S3Resource(ResourceWithS3Configuration[Any]):
+class S3Resource(ResourceWithS3Configuration):
     """Resource that gives access to S3.
 
     The underlying S3 session is created by calling
@@ -86,7 +85,7 @@ class S3Resource(ResourceWithS3Configuration[Any]):
 
     """
 
-    def provide_object_for_execution(self, context: InitResourceContext) -> Any:
+    def create_client(self) -> Any:
         return construct_s3_client(
             max_attempts=self.max_attempts,
             region_name=self.region_name,
@@ -171,16 +170,16 @@ def s3_resource(context) -> Any:
               aws_session_token: None
               # Optional[str]:  The session token to use when creating the client.
     """
-    return S3Resource.from_resource_context(context)
+    return S3Resource.from_resource_context(context).create_client()
 
 
-class S3FileManagerResource(ResourceWithS3Configuration[S3FileManager]):
+class S3FileManagerResource(ResourceWithS3Configuration):
     s3_bucket: str = Field(description="S3 bucket to use for the file manager.")
     s3_prefix: str = Field(
         default="dagster", description="Prefix to use for the S3 bucket for this file manager."
     )
 
-    def provide_object_for_execution(self, context: InitResourceContext) -> S3FileManager:
+    def create_client(self) -> S3FileManager:
         return S3FileManager(
             s3_session=construct_s3_client(
                 max_attempts=self.max_attempts,
@@ -207,4 +206,4 @@ def s3_file_manager(context) -> S3FileManager:
 
     Implements the :py:class:`~dagster._core.storage.file_manager.FileManager` API.
     """
-    return S3FileManagerResource.from_resource_context(context)
+    return S3FileManagerResource.from_resource_context(context).create_client()

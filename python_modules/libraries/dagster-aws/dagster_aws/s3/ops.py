@@ -1,4 +1,4 @@
-from typing import Mapping
+from typing import Any, Generator, Mapping
 
 from dagster import (
     AssetMaterialization,
@@ -66,12 +66,25 @@ def last_key(key: str) -> str:
     description="""Take a file handle and upload it to s3. Returns an S3FileHandle.""",
     required_resource_keys={"s3", "file_manager"},
 )
-def file_handle_to_s3(context, file_handle):
+def file_handle_to_s3(context, file_handle) -> Generator[Any, None, None]:
+    from .resources import S3FileManager, S3FileManagerResource, S3Resource
+
     bucket = context.op_config["Bucket"]
     key = context.op_config["Key"]
 
-    with context.resources.file_manager.read(file_handle, "rb") as fileobj:
-        context.resources.s3.upload_fileobj(fileobj, bucket, key)
+    file_manager_resource = context.resources.file_manager
+    s3_resource = context.resources.s3
+
+    # Extract clients from new Pythonic resource types, if needed
+    file_manager: S3FileManager = file_manager_resource
+    if isinstance(file_manager_resource, S3FileManagerResource):
+        file_manager = file_manager_resource.create_client()
+    s3 = s3_resource
+    if isinstance(s3_resource, S3Resource):
+        s3 = s3_resource.create_client()
+
+    with file_manager.read(file_handle, "rb") as fileobj:
+        s3.upload_fileobj(fileobj, bucket, key)
         s3_file_handle = S3FileHandle(bucket, key)
 
         yield AssetMaterialization(

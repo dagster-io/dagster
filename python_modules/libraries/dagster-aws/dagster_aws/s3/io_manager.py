@@ -1,10 +1,10 @@
 import io
 import pickle
-from typing import Sequence, Union
+from typing import Any, Sequence, Union
 
 from dagster import (
+    ConfigurableIOManager,
     InputContext,
-    IOManagerFactoryResource,
     MemoizableIOManager,
     MetadataValue,
     OutputContext,
@@ -13,6 +13,7 @@ from dagster import (
     io_manager,
 )
 from dagster._utils import PICKLE_PROTOCOL
+from dagster._utils.cached_method import cached_method
 from pydantic import Field
 
 from .resources import S3Resource
@@ -103,7 +104,7 @@ class PickledObjectS3IOManager(MemoizableIOManager):
         context.add_output_metadata({"uri": MetadataValue.path(path)})
 
 
-class S3IOManagerResource(IOManagerFactoryResource[PickledObjectS3IOManager]):
+class S3IOManagerResource(ConfigurableIOManager):
     """Persistent IO manager using S3 for storage.
 
     Serializes objects via pickling. Suitable for objects storage for distributed executors, so long
@@ -155,12 +156,19 @@ class S3IOManagerResource(IOManagerFactoryResource[PickledObjectS3IOManager]):
         default="dagster", description="Prefix to use for the S3 bucket for this file manager."
     )
 
-    def provide_object_for_execution(self, context) -> PickledObjectS3IOManager:
+    @cached_method
+    def inner_db_io_manager(self) -> PickledObjectS3IOManager:
         return PickledObjectS3IOManager(
             s3_bucket=self.s3_bucket,
             s3_session=self.s3_resource,
             s3_prefix=self.s3_prefix,
         )
+
+    def load_input(self, context: InputContext) -> Any:
+        return self.inner_db_io_manager().load_input(context)
+
+    def handle_output(self, context: OutputContext, obj: Any) -> None:
+        return self.inner_db_io_manager().handle_output(context, obj)
 
 
 @io_manager(
