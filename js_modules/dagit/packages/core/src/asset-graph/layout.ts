@@ -186,7 +186,7 @@ export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
 
     // Ignore the coordinates from dagre and use the top left + bottom left of the
     edges.push({
-      from: {x: v.x - v.width / 2 + vXInset, y: v.y - 40 + v.height / 2},
+      from: {x: v.x - v.width / 2 + vXInset, y: v.y - 30 + v.height / 2},
       fromId: e.v,
       to: {x: w.x - w.width / 2 + wXInset, y: w.y + 20 - w.height / 2},
       toId: e.w,
@@ -205,7 +205,7 @@ export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
 export const ASSET_LINK_NAME_MAX_LENGTH = 10;
 
 export const getAssetLinkDimensions = () => {
-  return {width: 106, height: 40};
+  return {width: 106, height: 90};
 };
 
 export const padBounds = (a: IBounds, padding: {x: number; top: number; bottom: number}) => {

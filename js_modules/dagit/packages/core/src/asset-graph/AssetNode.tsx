@@ -297,7 +297,7 @@ export function buildAssetNodeStatusContent({
 
           <span style={{color: Colors.Red700}}>
             {runWhichFailedToMaterialize && late
-              ? `Failed (Late)`
+              ? `Failed (Overdue)`
               : late
               ? humanizedLateString(liveData.freshnessInfo.currentMinutesLate)
               : 'Failed'}

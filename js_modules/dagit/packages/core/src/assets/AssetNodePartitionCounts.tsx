@@ -42,6 +42,13 @@ export const StyleForAssetPartitionStatus: {
     icon: 'partition_success',
     adjective: 'materialized',
   },
+  [AssetPartitionStatus.MATERIALIZING]: {
+    background: Colors.Blue50,
+    foreground: Colors.Blue700,
+    border: Colors.Blue500,
+    icon: 'partition_success',
+    adjective: 'materializing',
+  },
   [AssetPartitionStatus.MISSING]: {
     background: Colors.Gray100,
     foreground: Colors.Gray900,
