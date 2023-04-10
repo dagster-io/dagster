@@ -1,6 +1,7 @@
 from contextlib import contextmanager
 from typing import Any, Dict, Generator, List, Optional
 
+import botocore
 from dagster import (
     Config,
     InitResourceContext,
@@ -20,7 +21,7 @@ from .parameters import (
 )
 
 
-class SSMResource(ResourceWithBoto3Configuration[Any]):
+class SSMResource(ResourceWithBoto3Configuration["botocore.client.ssm"]):
     """Resource that gives access to AWS Systems Manager Parameter Store.
 
     The underlying Parameter Store session is created by calling
@@ -63,7 +64,7 @@ class SSMResource(ResourceWithBoto3Configuration[Any]):
 
 
 @resource(config_schema=SSMResource.to_config_schema())
-def ssm_resource(context) -> Any:
+def ssm_resource(context) -> "botocore.client.ssm":
     """Resource that gives access to AWS Systems Manager Parameter Store.
 
     The underlying Parameter Store session is created by calling

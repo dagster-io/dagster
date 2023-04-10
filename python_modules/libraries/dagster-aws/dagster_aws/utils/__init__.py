@@ -24,7 +24,7 @@ T = TypeVar("T")
 
 class ResourceWithBoto3Configuration(ConfigurableResourceFactory[T]):
     region_name: Optional[str] = Field(
-        description="Specifies a custom region for the Boto3 session"
+        default=None, description="Specifies a custom region for the Boto3 session"
     )
     max_attempts: int = Field(
         default=5,
@@ -33,4 +33,6 @@ class ResourceWithBoto3Configuration(ConfigurableResourceFactory[T]):
             " initial call counts toward the max_attempts value that you provide"
         ),
     )
-    profile_name: Optional[str] = Field(description="Specifies a profile to connect that session")
+    profile_name: Optional[str] = Field(
+        default=None, description="Specifies a profile to connect that session"
+    )

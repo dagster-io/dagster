@@ -1,6 +1,7 @@
 from contextlib import contextmanager
 from typing import Any, Dict, Generator, List, Optional
 
+import botocore
 from dagster import (
     resource,
 )
@@ -14,7 +15,7 @@ from dagster_aws.utils import ResourceWithBoto3Configuration
 from .secrets import construct_secretsmanager_client, get_secrets_from_arns, get_tagged_secrets
 
 
-class SecretsManagerResource(ResourceWithBoto3Configuration[Any]):
+class SecretsManagerResource(ResourceWithBoto3Configuration["botocore.client.SecretsManager"]):
     """Resource that gives access to AWS SecretsManager.
 
     The underlying SecretsManager session is created by calling
@@ -56,7 +57,7 @@ class SecretsManagerResource(ResourceWithBoto3Configuration[Any]):
 
 
 @resource(SecretsManagerResource.to_config_schema())
-def secretsmanager_resource(context) -> Any:
+def secretsmanager_resource(context) -> "botocore.client.SecretsManager":
     """Resource that gives access to AWS SecretsManager.
 
     The underlying SecretsManager session is created by calling
