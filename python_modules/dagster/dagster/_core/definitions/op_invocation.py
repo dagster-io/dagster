@@ -138,7 +138,7 @@ def op_invocation_result(
     input_kwargs = extracted.input_kwargs
     resources_by_param_name = extracted.resources_by_param_name
 
-    resources_provided_in_multiple_places = resources_by_param_name and (context.resource_keys)
+    resources_provided_in_multiple_places = resources_by_param_name and context.resource_keys
     if resources_provided_in_multiple_places:
         raise DagsterInvalidInvocationError("Cannot provide resources in both context and kwargs")
 
