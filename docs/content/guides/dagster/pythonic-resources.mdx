@@ -287,10 +287,10 @@ from dagster import (
     AssetKey,
     OutputContext,
     InputContext,
-    ConfigurableIOManager,
+    IOManagerResource,
 )
 
-class MyIOManager(ConfigurableIOManager):
+class MyIOManager(IOManagerResource):
     root_path: str
 
     def _get_path(self, asset_key: AssetKey) -> str:
@@ -374,7 +374,7 @@ from dagster import (
     io_manager,
     IOManager,
     InputContext,
-    ConfigurableLegacyIOManagerAdapter,
+    LegacyIOManagerAdapter,
     OutputContext,
 )
 import os
@@ -407,7 +407,7 @@ def old_file_io_manager(context):
     return OldFileIOManager(base_path)
 
 # New adapter layer
-class MyIOManager(ConfigurableLegacyIOManagerAdapter):
+class MyIOManager(LegacyIOManagerAdapter):
     base_path: str
 
     @property
