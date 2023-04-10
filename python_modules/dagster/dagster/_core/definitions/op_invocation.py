@@ -39,21 +39,21 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 
 
-class ExtractedOutputs(NamedTuple):
-    args: Tuple[Any, ...]
-    kwargs: Dict[str, Any]
-    resource_inputs: Dict[str, Any]
+class InputsAndResources(NamedTuple):
+    input_args: Tuple[Any, ...]
+    input_kwargs: Dict[str, Any]
+    resources_by_param_name: Dict[str, Any]
 
 
-def _extract_resource_args(
+def _separate_args_and_kwargs(
     compute_fn: "DecoratedOpFunction",
     args: Tuple[Any, ...],
     kwargs: Dict[str, Any],
     resource_arg_mapping: Dict[str, Any],
-) -> ExtractedOutputs:
+) -> InputsAndResources:
     """Given a decorated compute function, a set of args and kwargs, and set of resource param names,
-    extracts any resource inputs from the args and kwargs and returns a tuple of the remaining
-    args and kwargs, along with a dict of the extracted resource inputs.
+    separates the set of resource inputs from op/asset inputs returns a tuple of the categorized
+    args and kwargs.
 
     We use the remaining args and kwargs to cleanly invoke the compute function, and we use the
     extracted resource inputs to populate the execution context.
@@ -84,10 +84,10 @@ def _extract_resource_args(
         k: v for k, v in kwargs.items() if k not in resource_inputs_from_args_and_kwargs
     }
 
-    return ExtractedOutputs(
-        args=tuple(adjusted_args),
-        kwargs=adjusted_kwargs,
-        resource_inputs=resource_inputs_from_args_and_kwargs,
+    return InputsAndResources(
+        input_args=tuple(adjusted_args),
+        input_kwargs=adjusted_kwargs,
+        resources_by_param_name=resource_inputs_from_args_and_kwargs,
     )
 
 
@@ -122,23 +122,32 @@ def op_invocation_result(
 
     resource_arg_mapping = {arg.name: arg.name for arg in compute_fn.get_resource_args()}
 
-    # Extract any resource inputs from the args and kwargs
-    extracted = _extract_resource_args(compute_fn, args, kwargs, resource_arg_mapping)
+    # The user is allowed to invoke an op with an arbitrary mix of args and kwargs.
+    # We ensure that these args and kwargs are correctly categorized as inputs, config, or resource objects and then validated.
+    #
+    # Depending on arg/kwarg type, we do various things:
+    # - Any resources passed as parameters are also made available to user-defined code as part of the op execution context
+    # - Provide high-quality error messages (e.g. if something tried to pass a value to an input typed Nothing)
+    # - Default values are applied appropriately
+    # - Inputs are type checked
+    #
+    # We recollect all the varying args/kwargs into a dictionary and invoke the user-defined function with kwargs only.
+    extracted = _separate_args_and_kwargs(compute_fn, args, kwargs, resource_arg_mapping)
 
-    adjusted_args = extracted.args
-    adjusted_kwargs = extracted.kwargs
-    resource_inputs_from_args = extracted.resource_inputs
+    input_args = extracted.input_args
+    input_kwargs = extracted.input_kwargs
+    resources_by_param_name = extracted.resources_by_param_name
 
-    resources_provided_in_multiple_places = (resource_inputs_from_args) and (context.resource_keys)
+    resources_provided_in_multiple_places = resources_by_param_name and (context.resource_keys)
     if resources_provided_in_multiple_places:
         raise DagsterInvalidInvocationError("Cannot provide resources in both context and kwargs")
 
-    if resource_inputs_from_args:
-        context = context.replace_resources(resource_inputs_from_args)
+    if resources_by_param_name:
+        context = context.replace_resources(resources_by_param_name)
 
     bound_context = context.bind(op_def_or_invocation)
 
-    input_dict = _resolve_inputs(op_def, adjusted_args, adjusted_kwargs, bound_context)
+    input_dict = _resolve_inputs(op_def, input_args, input_kwargs, bound_context)
 
     result = invoke_compute_fn(
         fn=compute_fn.decorated_fn,
