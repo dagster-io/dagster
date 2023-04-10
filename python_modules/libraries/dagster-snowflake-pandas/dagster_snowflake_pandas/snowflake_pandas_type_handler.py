@@ -19,13 +19,15 @@ def _table_exists(table_slice: TableSlice, connection):
     return len(tables) > 0
 
 
-def _get_table_column_types(table_slice: TableSlice, connection):
+def _get_table_column_types(table_slice: TableSlice, connection) -> Optional[Mapping[str, str]]:
     if _table_exists(table_slice, connection):
         schema_list = connection.execute(f"DESCRIBE TABLE {table_slice.table}").fetchall()
         return {item[0]: item[1] for item in schema_list}
 
 
-def _convert_timestamp_to_string(s: pd.Series, column_types: Mapping[str, str]) -> pd.Series:
+def _convert_timestamp_to_string(
+    s: pd.Series, column_types: Optional[Mapping[str, str]]
+) -> pd.Series:
     """Converts columns of data of type pd.Timestamp to string so that it can be stored in
     snowflake.
     """
@@ -61,7 +63,7 @@ def _convert_string_to_timestamp(s: pd.Series) -> pd.Series:
         return s
 
 
-def _add_missing_timezone(s: pd.Series, column_types: Mapping[str, str]) -> pd.Series:
+def _add_missing_timezone(s: pd.Series, column_types: Optional[Mapping[str, str]]) -> pd.Series:
     column_name = str(s.name)
     if pd_core_dtypes_common.is_datetime_or_timedelta_dtype(s):
         if column_types:
@@ -114,7 +116,9 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
         connector.paramstyle = "pyformat"
         with_uppercase_cols = obj.rename(str.upper, copy=False, axis="columns")
         column_types = _get_table_column_types(table_slice, connection)
-        if context.resource_config and context.resource_config["store_timestamps_as_strings"]:
+        if context.resource_config and context.resource_config.get(
+            "store_timestamps_as_strings", False
+        ):
             with_uppercase_cols = with_uppercase_cols.apply(
                 lambda x: _convert_timestamp_to_string(x, column_types),
                 axis="index",
@@ -151,7 +155,9 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
         result = pd.read_sql(
             sql=SnowflakeDbClient.get_select_statement(table_slice), con=connection
         )
-        if context.resource_config and context.resource_config["store_timestamps_as_strings"]:
+        if context.resource_config and context.resource_config.get(
+            "store_timestamps_as_strings", False
+        ):
             result = result.apply(_convert_string_to_timestamp, axis="index")
         result.columns = map(str.lower, result.columns)  # type: ignore  # (bad stubs)
         return result

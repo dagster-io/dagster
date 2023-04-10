@@ -14,9 +14,8 @@ from dagster._core.storage.db_io_manager import (
     TablePartitionDimension,
     TableSlice,
 )
-from pydantic import Field
-from sqlalchemy.exc import ProgrammingError
 from dagster._utils.backcompat import deprecation_warning
+from pydantic import Field
 from sqlalchemy.exc import ProgrammingError
 
 from .resources import SnowflakeConnection
@@ -205,13 +204,13 @@ class SnowflakeIOManager(ConfigurableIOManagerFactory):
             " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details."
         ),
     )
-    store_timestamps_as_strings: bool =  Field(
+    store_timestamps_as_strings: bool = Field(
         default=False,
         description=(
-            "If using Pandas DataFrames, whether to convert time data to strings. If True,"
-            " time data will be converted to strings when storing the DataFrame and"
-            " converted back to time data when loading the DataFrame. If False, time data"
-            " without a timezone will be set to UTC timezone to avoid a Snowflake bug. Defaults to False."
+            "If using Pandas DataFrames, whether to convert time data to strings. If True, time"
+            " data will be converted to strings when storing the DataFrame and converted back to"
+            " time data when loading the DataFrame. If False, time data without a timezone will be"
+            " set to UTC timezone to avoid a Snowflake bug. Defaults to False."
         ),
     )
 
