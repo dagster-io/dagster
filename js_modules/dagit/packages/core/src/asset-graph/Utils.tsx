@@ -1,6 +1,6 @@
 import {pathVerticalDiagonal} from '@vx/shape';
 
-import {Maybe, RunStatus, StaleStatus} from '../graphql/types';
+import {Maybe, RunStatus, StaleCauseCategory, StaleStatus} from '../graphql/types';
 
 import {
   AssetNodeKeyFragment,
@@ -135,7 +135,12 @@ export interface LiveDataForNode {
   freshnessInfo: AssetNodeLiveFreshnessInfoFragment | null;
   lastObservation: AssetNodeLiveObservationFragment | null;
   staleStatus: StaleStatus | null;
-  staleCauses: {dependency: Maybe<AssetKey>; key: AssetKey; reason: string}[];
+  staleCauses: {
+    dependency: Maybe<AssetKey>;
+    category: StaleCauseCategory;
+    key: AssetKey;
+    reason: string;
+  }[];
   partitionStats: {
     numMaterialized: number;
     numMaterializing: number;

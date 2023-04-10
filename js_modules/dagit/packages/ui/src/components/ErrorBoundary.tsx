@@ -36,6 +36,8 @@ interface ErrorBoundaryState {
 export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
   state: ErrorBoundaryState = {error: null, errorResetPropsValue: null};
 
+  static contextType = ErrorCollectionContext;
+
   componentDidUpdate() {
     if (
       this.state.error &&

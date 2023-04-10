@@ -25,6 +25,7 @@ export type AssetNodeLiveFragment = {
   staleCauses: Array<{
     __typename: 'StaleCause';
     reason: string;
+    category: Types.StaleCauseCategory;
     key: {__typename: 'AssetKey'; path: Array<string>};
     dependency: {__typename: 'AssetKey'; path: Array<string>} | null;
   }>;
