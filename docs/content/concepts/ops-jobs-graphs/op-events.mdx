@@ -26,9 +26,9 @@ It is also possible to raise Dagster-specific exceptions, which will indicate to
 
 ### Event Metadata
 
-Often, it may be useful to attach some arbitrary information to an event or exception that is not captured by its basic parameters. Through the <PyObject object="MetadataEntry"/> and <PyObject object="MetadataValue"/> classes, we provide a consistent interface for specifying this metadata as a set of "entries". Individual entries are instances of the `MetadataEntry` class, which is a simple container for a string `label` and a typed `value`. The available value types are accessible through a static API defined on `MetadataValue`. These include simple datatypes (`MetadataValue.float`, `MetadataValue.int`, `MetadataValue.text`), as well as more complex information such as markdown and json (`MetadataValue.md`, `MetadataValue.json`). Depending on the type of its `value`, a `MetadataEntry` will be rendered in Dagit in a more useful format than a simple unstructured string.
+Often, it may be useful to attach some arbitrary information to an event or exception that is not captured by its basic parameters. Through the <PyObject object="MetadataValue"/> class, we provide a consistent interface for specifying this metadata. The available value types are accessible through a static API defined on `MetadataValue`. These include simple datatypes (`MetadataValue.float`, `MetadataValue.int`, `MetadataValue.text`), as well as more complex types such as markdown and json (`MetadataValue.md`, `MetadataValue.json`). Depending on the type of its `value`, metadata will be rendered in the UI in a more useful format than a simple unstructured string.
 
-Metadata is attached to events at construction time. There are currently two available metadata specification keyword arguments on all event constructors: (1) `metadata` takes a dictionary mapping string `labels` to `MetadataValue` objects. Under the hood, this is resolved to a list of `MetadataEntry` objects. (2) `metadata_entries` takes a list of `MetadataEntry` objects directly. The `metadata_entries` argument is deprecated-- new code should use the `metadata` dictionary form.
+Metadata is attached to events at construction time, using the `metadata` argument, which takes a dictionary mapping string `labels` to primitive types or `MetadataValue` objects.
 
 ## Events
 
@@ -228,7 +228,7 @@ def my_expectation_op(context, df):
 
 #### Attaching Metadata to Expectation Results
 
-Like many other event types in Dagster, there are a variety of types of metadata that can be associated with an expectation result event, all through the <PyObject object="MetadataEntry"/> class. Each expectation event optionally takes a list of metadata entries that are then displayed in the event log.
+Like many other event types in Dagster, there are a variety of types of metadata that can be associated with an expectation result event, all through the <PyObject object="MetadataValue"/> class. Each expectation event optionally takes a dictionary of metadata that is then displayed in the event log.
 
 This example shows metadata entries of different types attached to the same expectation result:
 
@@ -288,7 +288,7 @@ def my_failure_op():
 
 #### Attaching Metadata to Failures
 
-As is the case with many Dagster-provided classes, you can attach a list <PyObject object="MetadataEntry"/> denoting an arbitrary set of metadata relevant to the failure.
+As is the case with many Dagster-provided classes, you can attach a dictionary with <PyObject object="MetadataValue"/> values, denoting an arbitrary set of metadata relevant to the failure.
 
 ```python file=/concepts/ops_jobs_graphs/op_events.py startafter=start_failure_metadata_op endbefore=end_failure_metadata_op
 from dagster import Failure, op
