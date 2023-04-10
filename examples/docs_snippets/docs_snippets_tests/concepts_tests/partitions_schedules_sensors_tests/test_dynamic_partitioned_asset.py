@@ -2,7 +2,7 @@ import os
 import tempfile
 from unittest import mock
 
-from dagster import RunRequest, build_sensor_context, materialize
+from dagster import RunRequest, SensorResult, build_sensor_context, materialize
 from dagster._core.test_utils import instance_for_test
 from docs_snippets.concepts.partitions_schedules_sensors.dynamic_partitioned_asset import (
     image_sensor,
@@ -25,20 +25,14 @@ def test():
             mockenv.start()
             with instance_for_test() as instance:
                 with build_sensor_context(instance=instance) as context:
-                    result = list(image_sensor(context))
-                    assert len(result) == 1
-                    assert isinstance(result[0], RunRequest)
-                    assert result[0].partition_key == partition_key
+                    result = image_sensor(context)
+                    assert isinstance(result, SensorResult)
+                    assert len(result.run_requests) == 1
+                    assert result.run_requests[0].partition_key == partition_key
+                    assert len(result.dynamic_partitions_requests) == 1
+                    assert result.dynamic_partitions_requests[0].partition_keys == [
+                        partition_key
+                    ]
 
-                assert instance.has_dynamic_partition("images", partition_key)
-
-                result = materialize(
-                    [images], instance=instance, partition_key=partition_key
-                )
-                assert result.success
-                assert (
-                    result.asset_materializations_for_node("images")[0].partition
-                    == partition_key
-                )
         finally:
             mockenv.stop()
