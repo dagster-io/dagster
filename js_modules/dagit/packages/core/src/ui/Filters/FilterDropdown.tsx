@@ -9,8 +9,9 @@ import {
   Popover,
   TextInput,
 } from '@dagster-io/ui';
-import React, {useState} from 'react';
+import React, {useState, useRef} from 'react';
 import styled, {createGlobalStyle} from 'styled-components/macro';
+import {v4 as uuidv4} from 'uuid';
 
 import {ShortcutHandler} from '../../app/ShortcutHandler';
 import {useSetStateUpdateCallback} from '../../hooks/useSetStateUpdateCallback';
@@ -24,6 +25,8 @@ interface FilterDropdownProps {
 }
 
 export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: FilterDropdownProps) => {
+  const [menuKey, _] = React.useState(() => uuidv4());
+  const [focusedItemIndex, setFocusedItemIndex] = React.useState(-1);
   const [search, setSearch] = useState('');
   const [selectedFilter, setSelectedFilter] = useState<FilterObject<any> | null>(null);
 
@@ -50,6 +53,7 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
         close: () => {
           setSearch('');
           setSelectedFilter(null);
+          setFocusedItemIndex(-1);
           setIsOpen(false);
         },
         createPortal: (portaledElement) => {
@@ -65,29 +69,34 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
         },
       });
     },
-    [setIsOpen, setPortaledElements],
+    [setFocusedItemIndex, setIsOpen, setPortaledElements],
   );
 
   const allResultsJsx = React.useMemo(() => {
     if (selectedFilter) {
       return selectedFilter
         .getResults(search)
-        .map((result) => (
-          <MenuItem
+        .map((result, resultIndex) => (
+          <FilterDropdownMenuItem
             key={`filter:${selectedFilter.name}:${result.key}`}
             onClick={() => selectValue(selectedFilter, result.value)}
             text={result.label}
+            index={resultIndex}
+            menuKey={menuKey}
+            active={focusedItemIndex === resultIndex}
           />
         ));
     }
     const jsxResults: JSX.Element[] = [];
     filters.forEach((filter) => {
       if (filteredFilters.includes(filter)) {
+        const index = jsxResults.length;
         jsxResults.push(
-          <MenuItem
+          <FilterDropdownMenuItem
             key={`filter:${filter.name}`}
             onClick={() => {
               setSelectedFilter(filter);
+              setFocusedItemIndex(-1);
             }}
             text={
               <Box flex={{direction: 'row', gap: 12}}>
@@ -95,33 +104,94 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
                 {filter.name}
               </Box>
             }
+            index={index}
+            menuKey={menuKey}
+            active={focusedItemIndex === index}
           />,
         );
       }
       results[filter.name]?.forEach((result) => {
+        const index = jsxResults.length;
         jsxResults.push(
-          <MenuItem
-            key={`filter:${filter.name}:${result.key}`}
-            onClick={() => selectValue(filter, result.value)}
+          <FilterDropdownMenuItem
+            key={`filter-result:${filter.name}:${result.key}`}
+            onClick={() => {
+              selectValue(filter, result.value);
+            }}
             text={result.label}
+            index={index}
+            menuKey={menuKey}
+            active={focusedItemIndex === index}
           />,
         );
       });
     });
     return jsxResults;
-  }, [filteredFilters, filters, results, search, selectValue, selectedFilter]);
+  }, [
+    selectedFilter,
+    filters,
+    search,
+    menuKey,
+    selectValue,
+    filteredFilters,
+    results,
+    focusedItemIndex,
+    setFocusedItemIndex,
+  ]);
+
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const dropdownRef = useRef<HTMLDivElement | null>(null);
+
+  const handleKeyDown = React.useCallback(
+    async (event: React.KeyboardEvent) => {
+      const maxIndex = allResultsJsx.length - 1;
+      if (event.key === 'ArrowDown' || (event.key === 'Tab' && !event.shiftKey)) {
+        setFocusedItemIndex((prevIndex) => (prevIndex === maxIndex ? -1 : prevIndex + 1));
+        event.preventDefault();
+      } else if (event.key === 'ArrowUp' || (event.key === 'Tab' && event.shiftKey)) {
+        setFocusedItemIndex((prevIndex) => (prevIndex === -1 ? maxIndex : prevIndex - 1));
+        event.preventDefault();
+      } else if (event.key === 'Enter' || event.key === ' ') {
+        if (focusedItemIndex === -1) {
+          // They're typing in the search bar
+          return;
+        }
+        event.preventDefault();
+        allResultsJsx[focusedItemIndex]?.props.onClick?.();
+      } else if (event.key === 'Escape') {
+        if (selectedFilter) {
+          setSelectedFilter(null);
+          setFocusedItemIndex(-1);
+        } else {
+          setIsOpen(false);
+        }
+      } else if (event.target === inputRef.current) {
+        setFocusedItemIndex(-1);
+      }
+    },
+    [selectedFilter, setFocusedItemIndex, setIsOpen, focusedItemIndex, allResultsJsx],
+  );
 
   return (
-    <>
+    <div>
       <TextInputWrapper>
         <TextInput
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
+          onKeyDown={handleKeyDown}
           placeholder="Search filters..."
-          ref={(element) => {
-            element?.focus();
+          ref={(el) => {
+            inputRef.current = el;
+            el?.focus();
           }}
+          aria-label="Search filters"
+          aria-activedescendant={
+            focusedItemIndex !== -1 ? itemId(menuKey, focusedItemIndex) : undefined
+          }
+          role="combobox"
+          aria-expanded="true"
+          aria-owns={menuKey}
         />
         <Box
           flex={{justifyContent: 'center', alignItems: 'center'}}
@@ -131,7 +201,12 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
         </Box>
       </TextInputWrapper>
       <Menu>
-        <DropdownMenuContainer style={{maxHeight: '500px', overflowY: 'auto'}}>
+        <DropdownMenuContainer
+          id={menuKey}
+          ref={dropdownRef}
+          style={{maxHeight: '500px', overflowY: 'auto'}}
+          onKeyDown={handleKeyDown}
+        >
           {allResultsJsx.length ? (
             allResultsJsx
           ) : (
@@ -139,7 +214,7 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
           )}
         </DropdownMenuContainer>
       </Menu>
-    </>
+    </div>
   );
 };
 
@@ -261,6 +336,27 @@ const TextInputWrapper = styled.div`
   }
 `;
 
+type FilterDropdownMenuItemProps = React.ComponentProps<typeof MenuItem> & {
+  menuKey: string;
+  index: number;
+};
+const FilterDropdownMenuItem = React.memo(
+  ({menuKey, index, ...rest}: FilterDropdownMenuItemProps) => {
+    return (
+      <div role="option" id={itemId(menuKey, index)} aria-selected={rest.active ? 'true' : 'false'}>
+        <StyledMenuItem {...rest} />
+      </div>
+    );
+  },
+);
+
+const StyledMenuItem = styled(MenuItem)`
+  &:focus {
+    color: white;
+    box-shadow: initial;
+  }
+`;
+
 const SlashShortcut = styled.div`
   border-radius: 4px;
   padding: 0px 6px;
@@ -284,3 +380,7 @@ const PopoverStyle = createGlobalStyle`
     max-width: 100%;
   }
 `;
+
+function itemId(menuKey: string, index: number) {
+  return `item-${menuKey}-${index}`;
+}
