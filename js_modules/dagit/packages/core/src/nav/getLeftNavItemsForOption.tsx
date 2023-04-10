@@ -38,7 +38,7 @@ export const getAssetGroupItemsForOption = (option: DagsterRepoOption) => {
   return items.sort((a, b) => a.name.localeCompare(b.name));
 };
 
-export const gettopLevelResourceDetailsItemsForOption = (option: DagsterRepoOption) => {
+export const getTopLevelResourceDetailsItemsForOption = (option: DagsterRepoOption) => {
   const items: LeftNavItemType[] = [];
 
   const {repository, repositoryLocation} = option;

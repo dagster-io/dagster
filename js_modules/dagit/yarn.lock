@@ -6425,6 +6425,7 @@ __metadata:
     remark: ^14.0.2
     remark-gfm: 3.0.1
     remark-plain-text: ^0.2.0
+    resize-observer-polyfill: ^1.5.1
     rgb-hex: ^4.0.0
     styled-components: ^5.3.3
     subscriptions-transport-ws: ^0.9.15
@@ -28448,6 +28449,13 @@ __metadata:
   version: 1.0.0
   resolution: "requires-port@npm:1.0.0"
   checksum: eee0e303adffb69be55d1a214e415cf42b7441ae858c76dfc5353148644f6fd6e698926fc4643f510d5c126d12a705e7c8ed7e38061113bdf37547ab356797ff
+  languageName: node
+  linkType: hard
+
+"resize-observer-polyfill@npm:^1.5.1":
+  version: 1.5.1
+  resolution: "resize-observer-polyfill@npm:1.5.1"
+  checksum: 57e7f79489867b00ba43c9c051524a5c8f162a61d5547e99333549afc23e15c44fd43f2f318ea0261ea98c0eb3158cca261e6f48d66e1ed1cd1f340a43977094
   languageName: node
   linkType: hard
 
