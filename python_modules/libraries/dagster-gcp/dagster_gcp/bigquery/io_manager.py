@@ -249,6 +249,7 @@ class BigQueryIOManager(ConfigurableIOManagerFactory):
     def default_load_type() -> Optional[Type]:
         return None
 
+    # NOTE to reviewers. This is where having the factory comes in hand to do the with block.
     def create_io_manager(self, context) -> Generator:
         mgr = DbIOManager(
             db_client=BigQueryClient(),
