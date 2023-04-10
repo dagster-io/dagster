@@ -1,7 +1,12 @@
 import boto3
 import pytest
-from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster_aws.athena.resources import AthenaError, AthenaTimeout, FakeAthenaClient
+from dagster_aws.athena.resources import (
+    AthenaError,
+    AthenaTimeout,
+    FakeAthenaClient,
+    FakeAthenaClientResource,
+    fake_athena_resource,
+)
 from moto import mock_athena
 
 
@@ -62,22 +67,23 @@ def test_execute_query_succeeds_on_last_poll(mock_athena_client):
     athena.execute_query("SELECT 1", expected_states=["SUCCEEDED"])
 
 
-@pytest.fixture(name="athena_resource", params=[True, False])
-def athena_resource_fixture(request) -> ResourceDefinition:
-    from dagster_aws.athena import FakeAthenaClientResource, fake_athena_resource
-
-    if request.param:
-        return fake_athena_resource
-    else:
-        return FakeAthenaClientResource.configure_at_launch()
-
-
-def test_op(mock_athena_client, athena_resource):
+def test_op(mock_athena_client) -> None:
     from dagster import build_op_context, op
 
     @op(required_resource_keys={"athena"})
     def example_athena_op(context):
         return context.resources.athena.execute_query("SELECT 1", fetch_results=True)
 
-    context = build_op_context(resources={"athena": athena_resource})
+    context = build_op_context(resources={"athena": fake_athena_resource})
+    assert example_athena_op(context) == [("1",)]
+
+
+def test_op_pythonic_resource(mock_athena_client) -> None:
+    from dagster import build_op_context, op
+
+    @op
+    def example_athena_op(athena: FakeAthenaClientResource):
+        return athena.create_athena_client().execute_query("SELECT 1", fetch_results=True)
+
+    context = build_op_context(resources={"athena": FakeAthenaClientResource.configure_at_launch()})
     assert example_athena_op(context) == [("1",)]

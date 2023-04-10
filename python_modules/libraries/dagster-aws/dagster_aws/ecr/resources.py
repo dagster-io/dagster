@@ -3,7 +3,7 @@ import datetime
 import boto3
 from botocore.stub import Stubber
 from dagster import resource
-from dagster._config.structured_config import FactoryResource
+from dagster._config.structured_config import ConfigurableResource
 
 
 class ECRPublicClient:
@@ -34,21 +34,21 @@ class FakeECRPublicClient(ECRPublicClient):
         return result
 
 
-class ECRPublicResource(FactoryResource[ECRPublicClient]):
+class ECRPublicResource(ConfigurableResource):
     """This resource enables connecting to AWS Public and getting a login password from it.
     Similar to the AWS CLI's `aws ecr-public get-login-password` command.
     """
 
-    def provide_object_for_execution(self, context) -> ECRPublicClient:
+    def create_ecr_client(self) -> ECRPublicClient:
         return ECRPublicClient()
 
 
-class FakeECRPublicResource(FactoryResource[FakeECRPublicClient]):
+class FakeECRPublicResource(ConfigurableResource):
     """This resource behaves like ecr_public_resource except it stubs out the real AWS API
     requests and always returns `'token'` as its login password.
     """
 
-    def provide_object_for_execution(self, context) -> FakeECRPublicClient:
+    def create_ecr_client(self) -> FakeECRPublicClient:
         return FakeECRPublicClient()
 
 
@@ -59,7 +59,7 @@ class FakeECRPublicResource(FactoryResource[FakeECRPublicClient]):
     )
 )
 def ecr_public_resource(context) -> ECRPublicClient:
-    return ECRPublicResource.from_resource_context(context)
+    return ECRPublicResource.from_resource_context(context).create_ecr_client()
 
 
 @resource(
@@ -69,4 +69,4 @@ def ecr_public_resource(context) -> ECRPublicClient:
     )
 )
 def fake_ecr_public_resource(context) -> FakeECRPublicClient:
-    return FakeECRPublicResource.from_resource_context(context)
+    return FakeECRPublicResource.from_resource_context(context).create_ecr_client()

@@ -6,7 +6,6 @@ import boto3
 import psycopg2
 import pytest
 from dagster._core.definitions.decorators import op
-from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._utils.test import wrap_op_in_graph_and_execute
 from dagster_aws.redshift import (
     FakeRedshiftClient,
@@ -33,22 +32,6 @@ REDSHIFT_ENV = {
 QUERY_RESULT = [(1,)]
 
 
-@pytest.fixture(name="redshift_resource_type", params=[True, False])
-def redshift_resource_type_fixture(request) -> ResourceDefinition:
-    if request.param:
-        return redshift_resource
-    else:
-        return RedshiftClientResource.configure_at_launch()
-
-
-@pytest.fixture(name="fake_redshift_resource_type", params=[True, False])
-def fake_redshift_resource_type_fixture(request) -> ResourceDefinition:
-    if request.param:
-        return fake_redshift_resource
-    else:
-        return FakeRedshiftClientResource.configure_at_launch()
-
-
 def mock_execute_query_conn(*_args, **_kwargs):
     cursor_mock = mock.MagicMock(rowcount=1)
     cursor_mock.fetchall.return_value = QUERY_RESULT
@@ -66,6 +49,11 @@ def single_redshift_solid(context):
     return context.resources.redshift.execute_query("SELECT 1", fetch_results=True)
 
 
+@op
+def single_redshift_solid_pythonic(redshift: RedshiftClientResource):
+    return redshift.create_redshift_client().execute_query("SELECT 1", fetch_results=True)
+
+
 @op(required_resource_keys={"redshift"})
 def multi_redshift_solid(context):
     assert context.resources.redshift
@@ -74,12 +62,19 @@ def multi_redshift_solid(context):
     )
 
 
+@op
+def multi_redshift_solid_pythonic(redshift: RedshiftClientResource):
+    return redshift.create_redshift_client().execute_queries(
+        ["SELECT 1", "SELECT 1", "SELECT 1"], fetch_results=True
+    )
+
+
 @mock.patch("psycopg2.connect", new_callable=mock_execute_query_conn)
-def test_single_select(redshift_connect, redshift_resource_type):
+def test_single_select(redshift_connect):
     result = wrap_op_in_graph_and_execute(
         single_redshift_solid,
         run_config=REDSHIFT_ENV,
-        resources={"redshift": redshift_resource_type},
+        resources={"redshift": redshift_resource},
     )
     redshift_connect.assert_called_once_with(
         host="foo",
@@ -96,18 +91,50 @@ def test_single_select(redshift_connect, redshift_resource_type):
 
 
 @mock.patch("psycopg2.connect", new_callable=mock_execute_query_conn)
-def test_multi_select(_redshift_connect, redshift_resource_type):
+def test_single_select_pythonic_resource(redshift_connect) -> None:
+    result = wrap_op_in_graph_and_execute(
+        single_redshift_solid_pythonic,
+        run_config=REDSHIFT_ENV,
+        resources={"redshift": RedshiftClientResource.configure_at_launch()},
+    )
+    redshift_connect.assert_called_once_with(
+        host="foo",
+        port=5439,
+        user="dagster",
+        password="baz",
+        database="dev",
+        connect_timeout=5,
+        sslmode="require",
+    )
+
+    assert result.success
+    assert result.output_value() == QUERY_RESULT
+
+
+@mock.patch("psycopg2.connect", new_callable=mock_execute_query_conn)
+def test_multi_select(_redshift_connect):
     result = wrap_op_in_graph_and_execute(
         multi_redshift_solid,
         run_config=REDSHIFT_ENV,
-        resources={"redshift": redshift_resource_type},
+        resources={"redshift": redshift_resource},
     )
     assert result.success
     assert result.output_value() == [QUERY_RESULT] * 3
 
 
-def test_fake_redshift(fake_redshift_resource_type):
-    fake_resources = {"redshift": fake_redshift_resource_type}
+@mock.patch("psycopg2.connect", new_callable=mock_execute_query_conn)
+def test_multi_select_pythonic(_redshift_connect) -> None:
+    result = wrap_op_in_graph_and_execute(
+        multi_redshift_solid_pythonic,
+        run_config=REDSHIFT_ENV,
+        resources={"redshift": RedshiftClientResource.configure_at_launch()},
+    )
+    assert result.success
+    assert result.output_value() == [QUERY_RESULT] * 3
+
+
+def test_fake_redshift() -> None:
+    fake_resources = {"redshift": fake_redshift_resource}
 
     result = wrap_op_in_graph_and_execute(
         single_redshift_solid, run_config=REDSHIFT_ENV, resources=fake_resources
@@ -117,6 +144,22 @@ def test_fake_redshift(fake_redshift_resource_type):
 
     result = wrap_op_in_graph_and_execute(
         multi_redshift_solid, run_config=REDSHIFT_ENV, resources=fake_resources
+    )
+    assert result.success
+    assert result.output_value() == [FakeRedshiftClient.QUERY_RESULT] * 3
+
+
+def test_fake_redshift_pythonic() -> None:
+    fake_resources = {"redshift": FakeRedshiftClientResource.configure_at_launch()}
+
+    result = wrap_op_in_graph_and_execute(
+        single_redshift_solid_pythonic, run_config=REDSHIFT_ENV, resources=fake_resources
+    )
+    assert result.success
+    assert result.output_value() == FakeRedshiftClient.QUERY_RESULT
+
+    result = wrap_op_in_graph_and_execute(
+        multi_redshift_solid_pythonic, run_config=REDSHIFT_ENV, resources=fake_resources
     )
     assert result.success
     assert result.output_value() == [FakeRedshiftClient.QUERY_RESULT] * 3

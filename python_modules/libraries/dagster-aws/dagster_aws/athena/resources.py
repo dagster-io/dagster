@@ -9,7 +9,7 @@ from urllib.parse import urlparse
 import boto3
 from botocore.stub import Stubber
 from dagster import (
-    FactoryResource,
+    ConfigurableResource,
     _check as check,
     resource,
 )
@@ -209,7 +209,7 @@ class FakeAthenaResource(FakeAthenaClient):
     pass
 
 
-class ResourceWithAthenaConfig(FactoryResource[AthenaClient]):
+class ResourceWithAthenaConfig(ConfigurableResource):
     workgroup: str = Field(
         default="primary",
         description=(
@@ -249,16 +249,17 @@ class AthenaClientResource(ResourceWithAthenaConfig):
                 from dagster import build_op_context, op
                 from dagster_aws.athena import AthenaClientResource
 
-                @op(required_resource_keys={"athena"})
-                def example_athena_op(context):
-                    return context.resources.athena.execute_query("SELECT 1", fetch_results=True)
+                @op
+                def example_athena_op(athena: AthenaClientResource):
+                    return athena.create_athena_client().execute_query("SELECT 1", fetch_results=True)
 
-                context = build_op_context(resources={"athena": AthenaClientResource})
+                context = build_op_context(resources={"athena": AthenaClientResource()})
                 assert example_athena_op(context) == [("1",)]
 
     """
 
-    def provide_object_for_execution(self, context: InitResourceContext) -> AthenaClient:
+    def create_athena_client(self) -> AthenaClient:
+        """Returns an Athena client object."""
         client = boto3.client(
             "athena",
             aws_access_key_id=self.aws_access_key_id,
@@ -273,7 +274,7 @@ class AthenaClientResource(ResourceWithAthenaConfig):
 
 
 class FakeAthenaClientResource(ResourceWithAthenaConfig):
-    def provide_object_for_execution(self, context: InitResourceContext) -> FakeAthenaClient:
+    def create_athena_client(self) -> FakeAthenaClient:
         return FakeAthenaClient(
             client=boto3.client("athena", region_name="us-east-1"),
             workgroup=self.workgroup,
@@ -303,7 +304,7 @@ def athena_resource(context: InitResourceContext) -> AthenaClient:
                 assert example_athena_op(context) == [("1",)]
 
     """
-    return AthenaClientResource.from_resource_context(context)
+    return AthenaClientResource.from_resource_context(context).create_athena_client()
 
 
 @resource(
@@ -311,4 +312,4 @@ def athena_resource(context: InitResourceContext) -> AthenaClient:
     description="Fake resource for connecting to AWS Athena",
 )
 def fake_athena_resource(context: InitResourceContext) -> AthenaClient:
-    return FakeAthenaClientResource.from_resource_context(context)
+    return FakeAthenaClientResource.from_resource_context(context).create_athena_client()

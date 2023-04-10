@@ -1,18 +1,19 @@
 import abc
 from contextlib import contextmanager
-from typing import Optional, cast
+from logging import Logger
+from typing import Any, Dict, Optional, cast
 
 import psycopg2
 import psycopg2.extensions
 from dagster import (
     _check as check,
+    get_dagster_logger,
     resource,
 )
 from dagster._annotations import deprecated
 from dagster._config.structured_config import (
-    FactoryResource,
+    ConfigurableResource,
 )
-from dagster._core.execution.context.init import InitResourceContext
 from pydantic import Field
 
 
@@ -33,24 +34,12 @@ class BaseRedshiftClient(abc.ABC):
 
 
 class RedshiftClient(BaseRedshiftClient):
-    def __init__(self, context: InitResourceContext):
+    def __init__(self, conn_args: Dict[str, Any], autocommit: Optional[bool], log: Logger):
         # Extract parameters from resource config
-        self.conn_args = {
-            k: context.resource_config.get(k)
-            for k in (
-                "host",
-                "port",
-                "user",
-                "password",
-                "database",
-                "connect_timeout",
-                "sslmode",
-            )
-            if context.resource_config.get(k) is not None
-        }
+        self.conn_args = conn_args
 
-        self.autocommit = context.resource_config.get("autocommit")
-        self.log = context.log
+        self.autocommit = autocommit
+        self.log = log
 
     def execute_query(self, query, fetch_results=False, cursor_factory=None, error_callback=None):
         """Synchronously execute a single query against Redshift. Will return a list of rows, where
@@ -215,24 +204,12 @@ class RedshiftResource(RedshiftClient):
 class FakeRedshiftClient(BaseRedshiftClient):
     QUERY_RESULT = [(1,)]
 
-    def __init__(self, context: InitResourceContext):
+    def __init__(self, conn_args: Dict[str, Any], autocommit: Optional[bool], log: Logger):
         # Extract parameters from resource config
-        self.conn_args = {
-            k: context.resource_config.get(k)
-            for k in (
-                "host",
-                "port",
-                "user",
-                "password",
-                "database",
-                "connect_timeout",
-                "sslmode",
-            )
-            if context.resource_config.get(k) is not None
-        }
+        self.conn_args = conn_args
 
-        self.autocommit = context.resource_config.get("autocommit")
-        self.log = context.log
+        self.autocommit = autocommit
+        self.log = log
 
     def execute_query(self, query, fetch_results=False, cursor_factory=None, error_callback=None):
         """Fake for execute_query; returns [self.QUERY_RESULT].
@@ -305,7 +282,7 @@ class FakeRedshiftResource(FakeRedshiftClient):
     pass
 
 
-class RedshiftClientResource(FactoryResource[RedshiftClient]):
+class RedshiftClientResource(ConfigurableResource):
     """This resource enables connecting to a Redshift cluster and issuing queries against that
     cluster.
 
@@ -354,13 +331,41 @@ class RedshiftClientResource(FactoryResource[RedshiftClient]):
         ),
     )
 
-    def provide_object_for_execution(self, context: InitResourceContext) -> RedshiftClient:
-        return RedshiftClient(context)
+    def create_redshift_client(self) -> RedshiftClient:
+        conn_args = {
+            k: getattr(self, k, None)
+            for k in (
+                "host",
+                "port",
+                "user",
+                "password",
+                "database",
+                "connect_timeout",
+                "sslmode",
+            )
+            if getattr(self, k, None) is not None
+        }
+
+        return RedshiftClient(conn_args, self.autocommit, get_dagster_logger())
 
 
 class FakeRedshiftClientResource(RedshiftClientResource):
-    def provide_object_for_execution(self, context: InitResourceContext) -> FakeRedshiftClient:
-        return FakeRedshiftClient(context)
+    def create_redshift_client(self) -> FakeRedshiftClient:
+        conn_args = {
+            k: getattr(self, k, None)
+            for k in (
+                "host",
+                "port",
+                "user",
+                "password",
+                "database",
+                "connect_timeout",
+                "sslmode",
+            )
+            if getattr(self, k, None) is not None
+        }
+
+        return FakeRedshiftClient(conn_args, self.autocommit, get_dagster_logger())
 
 
 @resource(
@@ -392,7 +397,7 @@ def redshift_resource(context) -> RedshiftClient:
             assert example_redshift_op(context) == [(1,)]
 
     """
-    return RedshiftClientResource.from_resource_context(context)
+    return RedshiftClientResource.from_resource_context(context).create_redshift_client()
 
 
 @resource(
@@ -404,4 +409,7 @@ def redshift_resource(context) -> RedshiftClient:
     ),
 )
 def fake_redshift_resource(context) -> FakeRedshiftClient:
-    return cast(FakeRedshiftClient, FakeRedshiftClientResource.from_resource_context(context))
+    return cast(
+        FakeRedshiftClient,
+        FakeRedshiftClientResource.from_resource_context(context).create_redshift_client(),
+    )
