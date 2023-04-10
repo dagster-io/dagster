@@ -10,6 +10,9 @@ import 'highlight.js/styles/github.css';
 
 const sanitizeConfig = {
   ...defaultSchema,
+  protocols: {
+    src: [...(defaultSchema.protocols?.src ?? []), 'data'],
+  },
   attributes: {
     ...defaultSchema.attributes,
     span: [
