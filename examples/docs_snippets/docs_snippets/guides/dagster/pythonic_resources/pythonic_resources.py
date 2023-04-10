@@ -45,13 +45,13 @@ def new_resources_assets_defs() -> None:
     # start_new_resources_assets_defs
 
     from dagster import asset, Definitions
-    from dagster import Resource
+    from dagster import ResourceParam
     import requests
 
     from typing import Dict, Any
 
     @asset
-    def data_from_url(data_url: Resource[str]) -> Dict[str, Any]:
+    def data_from_url(data_url: ResourceParam[str]) -> Dict[str, Any]:
         return requests.get(data_url).json()
 
     defs = Definitions(
@@ -65,11 +65,11 @@ def new_resources_assets_defs() -> None:
 def new_resources_ops_defs() -> None:
     # start_new_resources_ops_defs
 
-    from dagster import op, Definitions, job, Resource
+    from dagster import op, Definitions, job, ResourceParam
     import requests
 
     @op
-    def print_data_from_resource(data_url: Resource[str]):
+    def print_data_from_resource(data_url: ResourceParam[str]):
         print(requests.get(data_url).json())
 
     @job
@@ -283,7 +283,7 @@ class GitHub:
 def raw_github_resource() -> None:
     # start_raw_github_resource
 
-    from dagster import Definitions, asset, Resource
+    from dagster import Definitions, asset, ResourceParam
 
     # `Resource[GitHub]` is treated exactly like `GitHub` for type checking purposes,
     # and the runtime type of the github parameter is `GitHub`. The purpose of the
@@ -291,7 +291,7 @@ def raw_github_resource() -> None:
     # upstream asset.
 
     @asset
-    def public_github_repos(github: Resource[GitHub]):
+    def public_github_repos(github: ResourceParam[GitHub]):
         return github.organization("dagster-io").repositories()
 
     defs = Definitions(

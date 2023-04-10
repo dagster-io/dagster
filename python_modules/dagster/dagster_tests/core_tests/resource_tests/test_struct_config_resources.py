@@ -39,7 +39,7 @@ from dagster._core.definitions.definitions_class import BindResourcesToJobs, Def
 from dagster._core.definitions.repository_definition.repository_data_builder import (
     build_caching_repository_data_from_dict,
 )
-from dagster._core.definitions.resource_annotation import Resource
+from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.run_config import RunConfig
 from dagster._core.errors import (
@@ -231,7 +231,7 @@ def test_yield_in_resource_function():
 
     @op
     def check_resource_created(
-        resource_with_cleanup_1: Resource[bool], resource_with_cleanup_2: Resource[bool]
+        resource_with_cleanup_1: ResourceParam[bool], resource_with_cleanup_2: ResourceParam[bool]
     ):
         assert resource_with_cleanup_1 is True
         assert resource_with_cleanup_2 is True
@@ -271,7 +271,7 @@ def test_wrapping_function_resource():
             return writer_resource
 
     @op
-    def hello_world_op(writer: Resource[Callable[[str], None]]):
+    def hello_world_op(writer: ResourceParam[Callable[[str], None]]):
         writer("hello, world!")
 
     @job(resource_defs={"writer": WriterResource(prefix="")})
@@ -753,7 +753,7 @@ def test_nested_function_resource():
             return output
 
     @asset
-    def my_asset(writer: Resource[Callable[[str], None]]):
+    def my_asset(writer: ResourceParam[Callable[[str], None]]):
         writer("foo")
         writer("bar")
 
@@ -791,7 +791,7 @@ def test_nested_function_resource_configured():
             return output
 
     @asset
-    def my_asset(writer: Resource[Callable[[str], None]]):
+    def my_asset(writer: ResourceParam[Callable[[str], None]]):
         writer("foo")
         writer("bar")
 
@@ -843,7 +843,7 @@ def test_nested_function_resource_runtime_config():
             return output
 
     @asset
-    def my_asset(writer: Resource[Callable[[str], None]]):
+    def my_asset(writer: ResourceParam[Callable[[str], None]]):
         writer("foo")
         writer("bar")
 

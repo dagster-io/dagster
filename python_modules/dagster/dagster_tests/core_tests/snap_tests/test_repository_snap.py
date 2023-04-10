@@ -9,7 +9,7 @@ from dagster._core.definitions.repository_definition import (
     PendingRepositoryDefinition,
     RepositoryDefinition,
 )
-from dagster._core.definitions.resource_annotation import Resource
+from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.execution.context.init import InitResourceContext
 from dagster._core.host_representation import (
@@ -61,7 +61,7 @@ def resolve_pending_repo_if_required(definitions: Definitions) -> RepositoryDefi
 
 def test_repository_snap_definitions_resources_basic():
     @asset
-    def my_asset(foo: Resource[str]):
+    def my_asset(foo: ResourceParam[str]):
         pass
 
     defs = Definitions(
@@ -411,11 +411,11 @@ def test_repository_snap_definitions_function_style_resources_assets_usage() -> 
         return "foo"
 
     @asset
-    def my_asset(foo: Resource[str]):
+    def my_asset(foo: ResourceParam[str]):
         pass
 
     @asset
-    def my_other_asset(foo: Resource[str]):
+    def my_other_asset(foo: ResourceParam[str]):
         pass
 
     @asset

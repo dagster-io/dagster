@@ -1,6 +1,6 @@
 from unittest import mock
 
-from dagster import OpExecutionContext, Resource, build_op_context, job, op
+from dagster import OpExecutionContext, ResourceParam, build_op_context, job, op
 from dagster_datadog import datadog_resource
 from dagster_datadog.resources import DataDogClient, DataDogClientResource
 
@@ -133,7 +133,7 @@ def test_datadog_pythonic_resource_standalone_op(
     executed = {}
 
     @op
-    def datadog_op(datadog_client: Resource[DataDogClient]):
+    def datadog_op(datadog_client: ResourceParam[DataDogClient]):
         assert datadog_client
         assert_datadog_client_class(
             datadog_client,
@@ -182,7 +182,7 @@ def test_datadog_pythonic_resource_factory_op_in_job(
     executed = {}
 
     @op
-    def datadog_op(datadog_client: Resource[DataDogClient]):
+    def datadog_op(datadog_client: ResourceParam[DataDogClient]):
         assert datadog_client
         assert datadog_client.api_key == "FOO"
         assert datadog_client.app_key == "BAR"
