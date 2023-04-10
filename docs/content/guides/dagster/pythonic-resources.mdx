@@ -44,11 +44,11 @@ Here, we define a subclass of <PyObject object="ConfigurableResource"/> represen
 We can define methods on the resource class which depend on config values. These methods can be used by assets and ops.
 
 ```python file=/guides/dagster/pythonic_resources/pythonic_resources.py startafter=start_new_resources_configurable_defs endbefore=end_new_resources_configurable_defs dedent=4
-from dagster import asset, Definitions, ConfigurableResource
+from dagster import asset, Definitions, Resource
 import requests
 from requests import Response
 
-class MyConnectionResource(ConfigurableResource):
+class MyConnectionResource(Resource):
     username: str
 
     def request(self, endpoint: str) -> Response:
@@ -79,11 +79,11 @@ Here, we define a subclass of <PyObject object="ConfigurableResource"/> represen
 We can define methods on the resource class which depend on config values. These methods can be used by assets and ops.
 
 ```python file=/guides/dagster/pythonic_resources/pythonic_resources.py startafter=start_new_resources_configurable_defs_ops endbefore=end_new_resources_configurable_defs_ops dedent=4
-from dagster import Definitions, job, op, ConfigurableResource
+from dagster import Definitions, job, op, Resource
 import requests
 from requests import Response
 
-class MyConnectionResource(ConfigurableResource):
+class MyConnectionResource(Resource):
     username: str
 
     def request(self, endpoint: str) -> Response:
@@ -118,9 +118,9 @@ Resources can be configured using environment variables, which is useful for sec
 To use environment variables, pass an <PyObject object="EnvVar" /> when constructing your resource.
 
 ```python file=/guides/dagster/pythonic_resources/pythonic_resources.py startafter=start_new_resources_env_vars endbefore=end_new_resources_env_vars dedent=4
-from dagster import EnvVar, Definitions, ConfigurableResource
+from dagster import EnvVar, Definitions, Resource
 
-class CredentialsResource(ConfigurableResource):
+class CredentialsResource(Resource):
     username: str
     password: str
 
@@ -142,9 +142,9 @@ In some cases, you may want to specify configuration for a resource at runtime, 
 You can use the `configure_at_launch()` method to defer the construction of a configurable resource until runtime.
 
 ```python file=/guides/dagster/pythonic_resources/pythonic_resources.py startafter=start_new_resource_runtime endbefore=end_new_resource_runtime dedent=4
-from dagster import ConfigurableResource, Definitions, asset
+from dagster import Resource, Definitions, asset
 
-class DatabaseResource(ConfigurableResource):
+class DatabaseResource(Resource):
     table: str
 
     def read(self):
@@ -191,13 +191,13 @@ In some situations, you may want to define a resource which depends on other res
 In this case, you can list that nested resource as an attribute of your resource class.
 
 ```python file=/guides/dagster/pythonic_resources/pythonic_resources.py startafter=start_new_resources_nesting endbefore=end_new_resources_nesting dedent=4
-from dagster import Definitions, ConfigurableResource
+from dagster import Definitions, Resource
 
-class CredentialsResource(ConfigurableResource):
+class CredentialsResource(Resource):
     username: str
     password: str
 
-class FileStoreBucket(ConfigurableResource):
+class FileStoreBucket(Resource):
     credentials: CredentialsResource
     region: str
 
@@ -244,9 +244,9 @@ defs = Definitions(
 You can test the initialization of a <PyObject object="ConfigurableResource"/> by constructing it manually. In most cases, you can construct your resource directly:
 
 ```python file=/guides/dagster/pythonic_resources/pythonic_resources.py startafter=start_new_resource_testing endbefore=end_new_resource_testing dedent=4
-from dagster import ConfigurableResource
+from dagster import Resource
 
-class MyResource(ConfigurableResource):
+class MyResource(Resource):
     value: str
 
     def get_value(self) -> str:
@@ -259,12 +259,12 @@ def test_my_resource():
 If your resource requires other resources, then you can pass them as constructor arguments.
 
 ```python file=/guides/dagster/pythonic_resources/pythonic_resources.py startafter=start_new_resource_testing_with_context endbefore=end_new_resource_testing_with_context dedent=4
-from dagster import ConfigurableResource
+from dagster import Resource
 
-class StringHolderResource(ConfigurableResource):
+class StringHolderResource(Resource):
     value: str
 
-class MyResourceRequiresAnother(ConfigurableResource):
+class MyResourceRequiresAnother(Resource):
     foo: StringHolderResource
     bar: str
 
@@ -328,7 +328,7 @@ from dagster import (
     Definitions,
     ResourceDefinition,
     asset,
-    ConfigurableLegacyResourceAdapter,
+    LegacyResourceAdapter,
 )
 
 # Old code, interface cannot be changed for back-compat purposes
@@ -345,7 +345,7 @@ def writer_resource(context):
     return Writer(prefix)
 
 # New adapter layer
-class WriterResource(ConfigurableLegacyResourceAdapter):
+class WriterResource(LegacyResourceAdapter):
     prefix: str
 
     @property
@@ -429,7 +429,7 @@ In some cases, you may want to use a bare Python object as a resource which is n
 For example, you may want to directly pass a third-party API client into your assets or ops. This follows a similar pattern to using a <PyObject object="ConfigurableResource"/> subclass, however assets and ops which use these resources must [annotate](https://docs.python.org/3/library/typing.html#typing.Annotated) them with <PyObject object="Resource"/>.
 
 ```python file=/guides/dagster/pythonic_resources/pythonic_resources.py startafter=start_raw_github_resource endbefore=end_raw_github_resource dedent=4
-from dagster import Definitions, asset, Resource
+from dagster import Definitions, asset, FromResources
 
 # `Resource[GitHub]` is treated exactly like `GitHub` for type checking purposes,
 # and the runtime type of the github parameter is `GitHub`. The purpose of the
@@ -437,7 +437,7 @@ from dagster import Definitions, asset, Resource
 # upstream asset.
 
 @asset
-def public_github_repos(github: Resource[GitHub]):
+def public_github_repos(github: FromResources[GitHub]):
     return github.organization("dagster-io").repositories()
 
 defs = Definitions(
@@ -449,9 +449,9 @@ defs = Definitions(
 If you would like a Pythonic resource to depend on a bare Python object, you can use the <PyObject object="ResourceDependency"/> annotation to annotate the attribute in question. This indicates to Dagster that the attribute should be treated as a resource dependency.
 
 ```python file=/guides/dagster/pythonic_resources/pythonic_resources.py startafter=start_raw_github_resource_dep endbefore=end_raw_github_resource_dep dedent=4
-from dagster import ConfigurableResource, ResourceDependency, Definitions
+from dagster import Resource, ResourceDependency, Definitions
 
-class DBResource(ConfigurableResource):
+class DBResource(Resource):
     engine: ResourceDependency[Engine]
 
     def query(self, query: str):
@@ -478,13 +478,13 @@ Between construction time and runtime, the <PyObject object="ConfigurableResourc
 In the following example, the `FileStoreBucket` constructor will accept the still-unconfigured `unconfigured_credentials_resource`, which will be resolved once the resource is configured at runtime.
 
 ```python file=/guides/dagster/pythonic_resources/pythonic_resources.py startafter=start_impl_details_resolve endbefore=end_impl_details_resolve dedent=4
-from dagster import ConfigurableResource
+from dagster import Resource
 
-class CredentialsResource(ConfigurableResource):
+class CredentialsResource(Resource):
     username: str
     password: str
 
-class FileStoreBucket(ConfigurableResource):
+class FileStoreBucket(Resource):
     credentials: CredentialsResource
     region: str
 

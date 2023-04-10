@@ -67,9 +67,9 @@ def print_greeting(config: MyOpConfig):
 Configurable parameters for a resource are defined by specifying attributes for a resource class, which subclasses <PyObject object="ConfigurableResource"/>. The below resource defines a configurable connection URL, which can be accessed in any methods defined on the resource.
 
 ```python file=/guides/dagster/pythonic_config/pythonic_config.py startafter=start_basic_resource_config endbefore=end_basic_resource_config dedent=4
-from dagster import op, ConfigurableResource
+from dagster import op, Resource
 
-class MyDatabaseResource(ConfigurableResource):
+class MyDatabaseResource(Resource):
     connection_url: str
 
     def query(self, query: str):

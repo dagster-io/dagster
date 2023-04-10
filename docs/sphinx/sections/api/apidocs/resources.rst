@@ -3,9 +3,9 @@
 Resources
 =========
 
-.. autoclass:: ConfigurableResource
+.. autoclass:: Resource
 
-.. autoclass:: ConfigurableResourceFactory
+.. autoclass:: FactoryResource
 
 .. autodecorator:: resource
 
