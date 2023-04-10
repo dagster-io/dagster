@@ -526,21 +526,21 @@ class AssetsDefinition(ResourceAddable):
             if partition_mappings
             else None,
             metadata_by_key={
-                keys_by_output_name[output_name]: metadata
+                keys_by_output_name_with_prefix[output_name]: metadata
                 for output_name, metadata in metadata_by_output_name.items()
                 if metadata is not None
             }
             if metadata_by_output_name
             else None,
             freshness_policies_by_key={
-                keys_by_output_name[output_name]: freshness_policy
+                keys_by_output_name_with_prefix[output_name]: freshness_policy
                 for output_name, freshness_policy in freshness_policies_by_output_name.items()
                 if freshness_policy is not None
             }
             if freshness_policies_by_output_name
             else None,
             descriptions_by_key={
-                keys_by_output_name[output_name]: description
+                keys_by_output_name_with_prefix[output_name]: description
                 for output_name, description in descriptions_by_output_name.items()
                 if description is not None
             }
