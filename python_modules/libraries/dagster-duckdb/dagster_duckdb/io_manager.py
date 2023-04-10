@@ -5,7 +5,7 @@ from typing import Optional, Sequence, Type, cast
 import duckdb
 from dagster import IOManagerDefinition, OutputContext, io_manager
 from dagster._config.structured_config import (
-    IOManagerFactoryResource,
+    FactoryResource,
     infer_schema_from_config_class,
 )
 from dagster._core.definitions.time_window_partitions import TimeWindow
@@ -105,7 +105,7 @@ def build_duckdb_io_manager(
     return duckdb_io_manager
 
 
-class DuckDBIOManager(IOManagerFactoryResource):
+class DuckDBIOManager(FactoryResource[DbIOManager]):
     """Base class for an IO manager definition that reads inputs from and writes outputs to DuckDB.
 
     Examples:

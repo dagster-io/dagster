@@ -233,7 +233,7 @@ def _curry_config_schema(schema_field: Field, data: Any) -> DefinitionConfigSche
 
 
 TResValue = TypeVar("TResValue")
-TIOManagerValue = TypeVar("TIOManagerValue", bound=IOManager)
+TIOManagerValue = TypeVar("TIOManagerValue", bound="IOManagerResource")
 
 ResourceId: TypeAlias = int
 
@@ -393,6 +393,10 @@ def attach_resource_id_to_key_mapping(
         return (
             IOManagerWithKeyMapping(resource_def, resource_id_to_key_mapping)
             if isinstance(resource_def, IOManagerDefinition)
+            or (
+                isinstance(resource_def, FactoryResource)
+                and is_wrapping_io_manager(resource_def.__class__)
+            )
             else ResourceWithKeyMapping(resource_def, resource_id_to_key_mapping)
         )
     return resource_def
@@ -505,6 +509,8 @@ class FactoryResource(
         """Returns a partially initialized copy of the resource, with remaining config fields
         set at runtime.
         """
+        if is_wrapping_io_manager(cls):
+            return PartialIOManager(cls, data=kwargs)
         return PartialResource(cls, data=kwargs)
 
     def _with_updated_values(self, values: Mapping[str, Any]) -> "FactoryResource[TResValue]":
@@ -595,6 +601,18 @@ class FactoryResource(
 
         """
         return cls(**context.resource_config).provide_object_for_execution(context)
+
+
+def is_wrapping_io_manager(resource_def: Type[FactoryResource]) -> bool:
+    if safe_is_subclass(resource_def, IOManagerResource):
+        return True
+
+    orig_bases = getattr(resource_def, "__orig_bases__", None)
+    output_type = get_args(orig_bases[0])[0] if orig_bases and len(orig_bases) > 0 else None
+
+    if output_type and safe_is_subclass(output_type, IOManager):
+        return True
+    return False
 
 
 @experimental
@@ -757,15 +775,25 @@ class LegacyResourceAdapter(Resource, ABC):
         return self.wrapped_resource(*args, **kwargs)
 
 
-@experimental
-class IOManagerFactoryResource(FactoryResource[TIOManagerValue], IOManagerDefinition):
-    """Base class for Dagster IO managers that utilize structured config. This base class
-    is useful for cases in which the returned IO manager is not the same as the class itself
-    (e.g. when it is a wrapper around the actual IO manager implementation).
+class PartialIOManager(Generic[TResValue], PartialResource[TResValue], IOManagerDefinition):
+    def __init__(self, resource_cls: Type[FactoryResource[TResValue]], data: Dict[str, Any]):
+        PartialResource.__init__(self, resource_cls, data)
+        IOManagerDefinition.__init__(
+            self,
+            resource_fn=self._resource_fn,
+            config_schema=self._config_schema,
+            description=resource_cls.__doc__,
+        )
 
-    This class is a subclass of both :py:class:`IOManagerDefinition` and :py:class:`Config`.
-    Implementers should provide an implementation of the :py:meth:`resource_function` method,
-    which should return an instance of :py:class:`IOManager`.
+
+@experimental
+class IOManagerResource(FactoryResource[TIOManagerValue], IOManagerDefinition, IOManager):
+    """Base class for Dagster resources which are also IO managers, and which utilize
+    Pythonic config.
+
+    This class is a subclass of both :py:class:`IOManagerDefinition`, :py:class:`Resource`,
+    and :py:class:`IOManager`. Implementers must provide an implementation of the
+    :py:meth:`handle_output` and :py:meth:`load_input` methods.
     """
 
     def __init__(self, **data: Any):
@@ -780,41 +808,8 @@ class IOManagerFactoryResource(FactoryResource[TIOManagerValue], IOManagerDefini
     def _create_object_fn(self, context: InitResourceContext) -> TIOManagerValue:
         return self.provide_object_for_execution(context)
 
-    @abstractmethod
-    def provide_object_for_execution(self, context: InitResourceContext) -> TIOManagerValue:
-        raise NotImplementedError()
-
-    @classmethod
-    def configure_at_launch(cls: "Type[Self]", **kwargs) -> "PartialIOManager[Self]":
-        """Returns a partially initialized copy of the IO manager, with remaining config fields
-        set at runtime.
-        """
-        return PartialIOManager(cls, data=kwargs)
-
-
-class PartialIOManager(Generic[TResValue], PartialResource[TResValue], IOManagerDefinition):
-    def __init__(self, resource_cls: Type[FactoryResource[TResValue]], data: Dict[str, Any]):
-        PartialResource.__init__(self, resource_cls, data)
-        IOManagerDefinition.__init__(
-            self,
-            resource_fn=self._resource_fn,
-            config_schema=self._config_schema,
-            description=resource_cls.__doc__,
-        )
-
-
-@experimental
-class IOManagerResource(IOManagerFactoryResource, IOManager):
-    """Base class for Dagster resources which are also IO managers, and which utilize
-    Pythonic config.
-
-    This class is a subclass of both :py:class:`IOManagerDefinition`, :py:class:`Resource`,
-    and :py:class:`IOManager`. Implementers must provide an implementation of the
-    :py:meth:`handle_output` and :py:meth:`load_input` methods.
-    """
-
-    def provide_object_for_execution(self, context) -> IOManager:
-        return self
+    def provide_object_for_execution(self, context) -> TIOManagerValue:
+        return cast(TIOManagerValue, self)
 
 
 PydanticShapeType: TypeAlias = int
@@ -989,7 +984,7 @@ def _is_pydantic_field_required(pydantic_field: ModelField) -> bool:
 
 
 @experimental
-class LegacyIOManagerAdapter(IOManagerFactoryResource):
+class LegacyIOManagerAdapter(FactoryResource[IOManager]):
     """Adapter base class for wrapping a decorated, function-style I/O manager
     with structured config.
 

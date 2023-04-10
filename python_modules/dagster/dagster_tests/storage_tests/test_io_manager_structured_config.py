@@ -1,10 +1,10 @@
 from dagster import (
     Definitions,
+    FactoryResource,
     In,
     InitResourceContext,
     IOManager,
     IOManagerDefinition,
-    IOManagerFactoryResource,
     IOManagerResource,
     LegacyIOManagerAdapter,
     OpExecutionContext,
@@ -185,7 +185,7 @@ def test_io_manager_factory_class() -> None:
         def handle_output(self, _, obj) -> None:
             outputs.append(obj)
 
-    class AnIOManagerFactory(IOManagerFactoryResource[AnIOManagerImplementation]):
+    class AnIOManagerFactory(FactoryResource[AnIOManagerImplementation]):
         a_config_value: str
 
         def provide_object_for_execution(self, _) -> IOManager:
@@ -203,6 +203,37 @@ def test_io_manager_factory_class() -> None:
     defs = Definitions(
         assets=[another_asset],
         resources={"io_manager": AnIOManagerFactory(a_config_value="passed-in-factory")},
+    )
+    defs.get_implicit_global_asset_job_def().execute_in_process()
+
+    assert executed["yes"]
+    assert outputs == ["foo"]
+
+
+def test_io_manager_factory_class_ruintime_config() -> None:
+    outputs = []
+
+    class AnIOManagerImplementation(IOManager):
+        def load_input(self, _) -> None:
+            pass
+
+        def handle_output(self, _, obj) -> None:
+            outputs.append(obj)
+
+    class AnIOManagerFactory(FactoryResource[AnIOManagerImplementation]):
+        def provide_object_for_execution(self, _) -> IOManager:
+            """Implement as one would implement a @io_manager decorator function."""
+            return AnIOManagerImplementation()
+
+    executed = {}
+
+    @asset
+    def another_asset(context: OpExecutionContext) -> str:
+        executed["yes"] = True
+        return "foo"
+
+    defs = Definitions(
+        assets=[another_asset], resources={"io_manager": AnIOManagerFactory.configure_at_launch()}
     )
     defs.get_implicit_global_asset_job_def().execute_in_process()
 

@@ -100,7 +100,6 @@ from dagster._config.source import (
 from dagster._config.structured_config import (
     Config as Config,
     FactoryResource as FactoryResource,
-    IOManagerFactoryResource as IOManagerFactoryResource,
     IOManagerResource as IOManagerResource,
     LegacyIOManagerAdapter as LegacyIOManagerAdapter,
     LegacyResourceAdapter as LegacyResourceAdapter,
