@@ -3,7 +3,7 @@ from typing import Optional, TypeVar
 import dagster._check as check
 from botocore import __version__ as botocore_version
 from botocore.config import Config
-from dagster._config.structured_config import FactoryResource
+from dagster._config.structured_config import ConfigurableResource
 from packaging import version
 from pydantic import Field
 
@@ -22,7 +22,7 @@ def construct_boto_client_retry_config(max_attempts):
 T = TypeVar("T")
 
 
-class ResourceWithBoto3Configuration(FactoryResource[T]):
+class ResourceWithBoto3Configuration(ConfigurableResource):
     region_name: Optional[str] = Field(
         default=None, description="Specifies a custom region for the Boto3 session"
     )

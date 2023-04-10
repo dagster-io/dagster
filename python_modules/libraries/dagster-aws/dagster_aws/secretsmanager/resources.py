@@ -1,11 +1,12 @@
 from contextlib import contextmanager
-from typing import Any, Dict, Generator, List, Optional
+from typing import Dict, Generator, List, Optional, cast
 
 import botocore
 from dagster import (
+    Field as DagsterField,
     resource,
 )
-from dagster._core.execution.context.init import InitResourceContext
+from dagster._config.field_utils import Shape
 from dagster._core.test_utils import environ
 from dagster._utils.merger import merge_dicts
 from pydantic import Field
@@ -15,7 +16,7 @@ from dagster_aws.utils import ResourceWithBoto3Configuration
 from .secrets import construct_secretsmanager_client, get_secrets_from_arns, get_tagged_secrets
 
 
-class SecretsManagerResource(ResourceWithBoto3Configuration["botocore.client.SecretsManager"]):
+class SecretsManagerResource(ResourceWithBoto3Configuration):
     """Resource that gives access to AWS SecretsManager.
 
     The underlying SecretsManager session is created by calling
@@ -48,7 +49,7 @@ class SecretsManagerResource(ResourceWithBoto3Configuration["botocore.client.Sec
             )
     """
 
-    def provide_object_for_execution(self, context: InitResourceContext) -> Any:
+    def create_client(self) -> "botocore.client.SecretsManager":
         return construct_secretsmanager_client(
             max_attempts=self.max_attempts,
             region_name=self.region_name,
@@ -107,10 +108,10 @@ def secretsmanager_resource(context) -> "botocore.client.SecretsManager":
               # profile as specified in ~/.aws/credentials file
 
     """
-    return SecretsManagerResource.from_resource_context(context)
+    return SecretsManagerResource.from_resource_context(context).create_client()
 
 
-class SecretsManagerSecretsResource(ResourceWithBoto3Configuration[Dict[str, str]]):
+class SecretsManagerSecretsResource(ResourceWithBoto3Configuration):
     """Resource that provides a dict which maps selected SecretsManager secrets to
     their string values. Also optionally sets chosen secrets as environment variables.
 
@@ -156,33 +157,77 @@ class SecretsManagerSecretsResource(ResourceWithBoto3Configuration[Dict[str, str
         default=None,
         description="AWS Secrets Manager secrets with this tag will be fetched and made available.",
     )
-    add_to_environment: bool = Field(
-        default=False, description="Whether to mount the secrets as environment variables."
-    )
 
-    def provide_object_for_execution(
-        self, context: InitResourceContext
+    @contextmanager
+    def secrets_in_environment(
+        self,
+        secrets: Optional[List[str]] = None,
+        secrets_tag: Optional[str] = None,
     ) -> Generator[Dict[str, str], None, None]:
+        """Yields a dict which maps selected SecretsManager secrets to their string values. Also
+        sets chosen secrets as environment variables.
+
+        Args:
+            secrets (Optional[List[str]]): An array of AWS Secrets Manager secrets arns to fetch.
+                Note that this will override the secrets specified in the resource config.
+            secrets_tag (Optional[str]): AWS Secrets Manager secrets with this tag will be fetched
+                and made available. Note that this will override the secrets_tag specified in the
+                resource config.
+        """
         secrets_manager = construct_secretsmanager_client(
             max_attempts=self.max_attempts,
             region_name=self.region_name,
             profile_name=self.profile_name,
         )
 
+        secrets_tag_to_fetch = secrets_tag if secrets_tag is not None else self.secrets_tag
+        secrets_to_fetch = secrets if secrets is not None else self.secrets
+
         secret_arns = merge_dicts(
-            (get_tagged_secrets(secrets_manager, [self.secrets_tag]) if self.secrets_tag else {}),
-            get_secrets_from_arns(secrets_manager, self.secrets),
+            (
+                get_tagged_secrets(secrets_manager, [secrets_tag_to_fetch])
+                if secrets_tag_to_fetch
+                else {}
+            ),
+            get_secrets_from_arns(secrets_manager, secrets_to_fetch),
         )
 
         secrets_map = {
             name: secrets_manager.get_secret_value(SecretId=arn).get("SecretString")
             for name, arn in secret_arns.items()
         }
-        with environ(secrets_map if self.add_to_environment else {}):
+        with environ(secrets_map):
             yield secrets_map
 
+    def fetch_secrets(
+        self,
+        secrets: Optional[List[str]] = None,
+        secrets_tag: Optional[str] = None,
+    ) -> Dict[str, str]:
+        """Fetches secrets from AWS Secrets Manager and returns them as a dict.
 
-@resource(config_schema=SecretsManagerSecretsResource.to_config_schema())
+        Args:
+            secrets (Optional[List[str]]): An array of AWS Secrets Manager secrets arns to fetch.
+                Note that this will override the secrets specified in the resource config.
+            secrets_tag (Optional[str]): AWS Secrets Manager secrets with this tag will be fetched
+                and made available. Note that this will override the secrets_tag specified in the
+                resource config.
+        """
+        with self.secrets_in_environment(secrets=secrets, secrets_tag=secrets_tag) as secret_values:
+            return secret_values
+
+
+LEGACY_SECRETSMANAGER_SECRETS_SCHEMA = {
+    **cast(Shape, SecretsManagerSecretsResource.to_config_schema().as_field().config_type).fields,
+    "add_to_environment": DagsterField(
+        bool,
+        default_value=False,
+        description="Whether to add the secrets to the environment. Defaults to False.",
+    ),
+}
+
+
+@resource(config_schema=LEGACY_SECRETSMANAGER_SECRETS_SCHEMA)
 @contextmanager
 def secretsmanager_secrets_resource(context):
     """Resource that provides a dict which maps selected SecretsManager secrets to
@@ -249,4 +294,11 @@ def secretsmanager_secrets_resource(context):
               # to false.
 
     """
-    return SecretsManagerSecretsResource.from_resource_context(context)
+    add_to_environment = context.resource_config.get("add_to_environment", False)
+    if add_to_environment:
+        with SecretsManagerSecretsResource.from_resource_context(
+            context
+        ).secrets_in_environment() as secrets:
+            yield secrets
+    else:
+        yield SecretsManagerSecretsResource.from_resource_context(context).fetch_secrets()

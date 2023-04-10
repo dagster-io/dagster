@@ -1,12 +1,13 @@
 from contextlib import contextmanager
-from typing import Any, Dict, Generator, List, Optional
+from typing import Any, Dict, Generator, List, Optional, cast
 
 import botocore
 from dagster import (
     Config,
-    InitResourceContext,
+    Field as DagsterField,
     resource,
 )
+from dagster._config.field_utils import Shape
 from dagster._core.test_utils import environ
 from dagster._utils.merger import merge_dicts
 from pydantic import Field
@@ -21,7 +22,7 @@ from .parameters import (
 )
 
 
-class SSMResource(ResourceWithBoto3Configuration["botocore.client.ssm"]):
+class SSMResource(ResourceWithBoto3Configuration):
     """Resource that gives access to AWS Systems Manager Parameter Store.
 
     The underlying Parameter Store session is created by calling
@@ -55,7 +56,7 @@ class SSMResource(ResourceWithBoto3Configuration["botocore.client.ssm"]):
             )
     """
 
-    def provide_object_for_execution(self, context: InitResourceContext) -> Any:
+    def create_client(self) -> "botocore.client.ssm":
         return construct_ssm_client(
             max_attempts=self.max_attempts,
             region_name=self.region_name,
@@ -114,7 +115,7 @@ def ssm_resource(context) -> "botocore.client.ssm":
               # profile as specified in ~/.aws/credentials file
 
     """
-    return SSMResource.from_resource_context(context)
+    return SSMResource.from_resource_context(context).create_client()
 
 
 class ParameterStoreTag(Config):
@@ -122,7 +123,7 @@ class ParameterStoreTag(Config):
     values: Optional[List[str]] = Field(default=None, description="List")
 
 
-class ParameterStoreResource(ResourceWithBoto3Configuration[Dict[str, str]]):
+class ParameterStoreResource(ResourceWithBoto3Configuration):
     """Resource that provides a dict which maps selected SSM Parameter Store parameters to
     their string values. Optionally sets selected parameters as environment variables.
 
@@ -179,35 +180,55 @@ class ParameterStoreResource(ResourceWithBoto3Configuration[Dict[str, str]]):
             " String or StringList"
         ),
     )
-    add_to_environment: bool = Field(
-        default=False, description="Whether to add the parameters to the environment."
-    )
 
-    def provide_object_for_execution(
-        self, context: InitResourceContext
+    @contextmanager
+    def parameters_in_environment(
+        self,
+        parameters: Optional[List[str]] = None,
+        parameter_tags: Optional[List[ParameterStoreTag]] = None,
+        parameter_paths: Optional[List[str]] = None,
     ) -> Generator[Dict[str, str], None, None]:
+        """Yields a dict which maps selected Parameter Store parameters to their string values. Also
+        sets chosen parameters as environment variables.
+
+        Args:
+            parameters (Optional[List[str]]):   An array of AWS SSM Parameter Store parameter names to fetch.
+                Note that this will override the parameters specified in the resource config.
+            parameter_tags (Optional[List[ParameterStoreTag]]): AWS SSM Parameter store parameters with this tag
+                will be fetched and made available. Note that this will override the parameter_tags specified
+                in the resource config.
+            parameter_paths (Optional[List[str]]): List of path prefixes to pull parameters from. Note that this
+                will override the parameter_paths specified in the resource config.
+        """
         ssm_manager = construct_ssm_client(
             max_attempts=self.max_attempts,
             region_name=self.region_name,
             profile_name=self.profile_name,
         )
+        parameters_to_fetch = parameters if parameters is not None else self.parameters
+        parameter_tags_to_fetch = (
+            parameter_tags if parameter_tags is not None else self.parameter_tags
+        )
+        parameter_paths_to_fetch = (
+            parameter_paths if parameter_paths is not None else self.parameter_paths
+        )
 
         results = []
-        if self.parameters:
+        if parameters_to_fetch:
             results.append(
-                get_parameters_by_name(ssm_manager, self.parameters, self.with_decryption)
+                get_parameters_by_name(ssm_manager, parameters_to_fetch, self.with_decryption)
             )
-        if self.parameter_tags:
+        if parameter_tags_to_fetch:
             parameter_tag_inputs = [
-                {"key": tag.key, "values": tag.values} for tag in self.parameter_tags
+                {"key": tag.key, "values": tag.values} for tag in parameter_tags_to_fetch
             ]
             results.append(
                 get_parameters_by_tags(ssm_manager, parameter_tag_inputs, self.with_decryption)
             )
-        if self.parameter_paths:
+        if parameter_paths_to_fetch:
             results.append(
                 get_parameters_by_paths(
-                    ssm_manager, self.parameter_paths, self.with_decryption, recursive=True  # type: ignore
+                    ssm_manager, parameter_paths_to_fetch, self.with_decryption, recursive=True  # type: ignore
                 )
             )
         if not results:
@@ -218,11 +239,43 @@ class ParameterStoreResource(ResourceWithBoto3Configuration[Dict[str, str]]):
             else:
                 parameter_values = results[0]
 
-        with environ(parameter_values if self.add_to_environment else {}):
+        with environ(parameter_values):
             yield parameter_values
 
+    def fetch_parameters(
+        self,
+        parameters: Optional[List[str]] = None,
+        parameter_tags: Optional[List[ParameterStoreTag]] = None,
+        parameter_paths: Optional[List[str]] = None,
+    ) -> Dict[str, str]:
+        """Fetches parameters from SSM Parameter Store and returns them as a dict.
 
-@resource(config_schema=ParameterStoreResource.to_config_schema())
+        Args:
+            parameters (Optional[List[str]]):   An array of AWS SSM Parameter Store parameter names to fetch.
+                Note that this will override the parameters specified in the resource config.
+            parameter_tags (Optional[List[ParameterStoreTag]]): AWS SSM Parameter store parameters with this tag
+                will be fetched and made available. Note that this will override the parameter_tags specified
+                in the resource config.
+            parameter_paths (Optional[List[str]]): List of path prefixes to pull parameters from. Note that this
+                will override the parameter_paths specified in the resource config.
+        """
+        with self.parameters_in_environment(
+            parameters=parameters, parameter_tags=parameter_tags, parameter_paths=parameter_paths
+        ) as parameter_values:
+            return parameter_values
+
+
+LEGACY_PARAMETERSTORE_SCHEMA = {
+    **cast(Shape, ParameterStoreResource.to_config_schema().as_field().config_type).fields,
+    "add_to_environment": DagsterField(
+        bool,
+        default_value=False,
+        description="Whether to add the paramters to the environment. Defaults to False.",
+    ),
+}
+
+
+@resource(config_schema=LEGACY_PARAMETERSTORE_SCHEMA)
 @contextmanager
 def parameter_store_resource(context) -> Any:
     """Resource that provides a dict which maps selected SSM Parameter Store parameters to
@@ -291,4 +344,11 @@ def parameter_store_resource(context) -> Any:
               # to false.
 
     """
-    return ParameterStoreResource.from_resource_context(context)
+    add_to_environment = context.resource_config.get("add_to_environment", False)
+    if add_to_environment:
+        with ParameterStoreResource.from_resource_context(
+            context
+        ).parameters_in_environment() as secrets:
+            yield secrets
+    else:
+        yield ParameterStoreResource.from_resource_context(context).fetch_parameters()
