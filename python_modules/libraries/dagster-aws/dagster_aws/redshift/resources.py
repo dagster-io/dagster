@@ -10,7 +10,7 @@ from dagster import (
 )
 from dagster._annotations import deprecated
 from dagster._config.structured_config import (
-    ConfigurableResourceFactory,
+    FactoryResource,
 )
 from dagster._core.execution.context.init import InitResourceContext
 from pydantic import Field
@@ -305,7 +305,7 @@ class FakeRedshiftResource(FakeRedshiftClient):
     pass
 
 
-class RedshiftClientResource(ConfigurableResourceFactory[RedshiftClient]):
+class RedshiftClientResource(FactoryResource[RedshiftClient]):
     """This resource enables connecting to a Redshift cluster and issuing queries against that
     cluster.
 
@@ -354,12 +354,12 @@ class RedshiftClientResource(ConfigurableResourceFactory[RedshiftClient]):
         ),
     )
 
-    def create_resource(self, context: InitResourceContext) -> RedshiftClient:
+    def provide_object_for_execution(self, context: InitResourceContext) -> RedshiftClient:
         return RedshiftClient(context)
 
 
 class FakeRedshiftClientResource(RedshiftClientResource):
-    def create_resource(self, context: InitResourceContext) -> FakeRedshiftClient:
+    def provide_object_for_execution(self, context: InitResourceContext) -> FakeRedshiftClient:
         return FakeRedshiftClient(context)
 
 

@@ -9,7 +9,7 @@ from urllib.parse import urlparse
 import boto3
 from botocore.stub import Stubber
 from dagster import (
-    ConfigurableResourceFactory,
+    FactoryResource,
     _check as check,
     resource,
 )
@@ -209,7 +209,7 @@ class FakeAthenaResource(FakeAthenaClient):
     pass
 
 
-class ResourceWithAthenaConfig(ConfigurableResourceFactory[AthenaClient]):
+class ResourceWithAthenaConfig(FactoryResource[AthenaClient]):
     workgroup: str = Field(
         default="primary",
         description=(
@@ -258,7 +258,7 @@ class AthenaClientResource(ResourceWithAthenaConfig):
 
     """
 
-    def create_resource(self, context: InitResourceContext) -> AthenaClient:
+    def provide_object_for_execution(self, context: InitResourceContext) -> AthenaClient:
         client = boto3.client(
             "athena",
             aws_access_key_id=self.aws_access_key_id,
@@ -273,7 +273,7 @@ class AthenaClientResource(ResourceWithAthenaConfig):
 
 
 class FakeAthenaClientResource(ResourceWithAthenaConfig):
-    def create_resource(self, context: InitResourceContext) -> FakeAthenaClient:
+    def provide_object_for_execution(self, context: InitResourceContext) -> FakeAthenaClient:
         return FakeAthenaClient(
             client=boto3.client("athena", region_name="us-east-1"),
             workgroup=self.workgroup,
