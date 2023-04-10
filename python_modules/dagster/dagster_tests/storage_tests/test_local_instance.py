@@ -113,14 +113,14 @@ def test_get_run_by_id():
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
 
         assert instance.get_runs() == []
-        pipeline_run = DagsterRun("foo_pipeline", "new_run")
-        assert instance.get_run_by_id(pipeline_run.run_id) is None
+        dagster_run = DagsterRun("foo_pipeline", "new_run")
+        assert instance.get_run_by_id(dagster_run.run_id) is None
 
-        instance.add_run(pipeline_run)
+        instance.add_run(dagster_run)
 
-        assert instance.get_runs() == [pipeline_run]
+        assert instance.get_runs() == [dagster_run]
 
-        assert instance.get_run_by_id(pipeline_run.run_id) == pipeline_run
+        assert instance.get_run_by_id(dagster_run.run_id) == dagster_run
 
     # Run is created after we check whether it exists
     with tempfile.TemporaryDirectory() as tmpdir_path:

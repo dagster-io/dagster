@@ -186,9 +186,9 @@ def _stats_records(run_id):
     ]
 
 
-def _event_record(run_id, solid_name, timestamp, event_type, event_specific_data=None):
+def _event_record(run_id, op_name, timestamp, event_type, event_specific_data=None):
     pipeline_name = "pipeline_name"
-    node_handle = NodeHandle(solid_name, None)
+    node_handle = NodeHandle(op_name, None)
     step_handle = StepHandle(node_handle)
     return EventLogEntry(
         error_info=None,
@@ -298,7 +298,7 @@ def asset_op_two(_):
     yield Output(1)
 
 
-def one_asset_solid():
+def one_asset_op():
     asset_op_one()
 
 
@@ -312,7 +312,7 @@ def return_one_op(_):
     return 1
 
 
-def return_one_solid_func():
+def return_one_op_func():
     return_one_op()
 
 
@@ -650,7 +650,7 @@ class TestEventLogStorage:
         if not isinstance(storage, SqlEventLogStorage):
             pytest.skip("This test is for SQL-backed Event Log behavior")
 
-        events, _result = _synthesize_events(return_one_solid_func, run_id=test_run_id)
+        events, _result = _synthesize_events(return_one_op_func, run_id=test_run_id)
 
         for event in events:
             storage.store_event(event)
@@ -667,7 +667,7 @@ class TestEventLogStorage:
         )
 
     def test_basic_get_logs_for_run(self, test_run_id, storage):
-        events, result = _synthesize_events(return_one_solid_func, run_id=test_run_id)
+        events, result = _synthesize_events(return_one_op_func, run_id=test_run_id)
 
         for event in events:
             storage.store_event(event)
@@ -676,7 +676,7 @@ class TestEventLogStorage:
         assert _event_types(out_events) == _event_types(events)
 
     def test_get_logs_for_run_cursor_limit(self, test_run_id, storage):
-        events, result = _synthesize_events(return_one_solid_func, run_id=test_run_id)
+        events, result = _synthesize_events(return_one_op_func, run_id=test_run_id)
 
         for event in events:
             storage.store_event(event)
@@ -698,7 +698,7 @@ class TestEventLogStorage:
         assert _event_types(out_events) == _event_types(events)
 
     def test_wipe_sql_backed_event_log(self, test_run_id, storage):
-        events, result = _synthesize_events(return_one_solid_func, run_id=test_run_id)
+        events, result = _synthesize_events(return_one_op_func, run_id=test_run_id)
 
         for event in events:
             storage.store_event(event)
@@ -713,7 +713,7 @@ class TestEventLogStorage:
             assert storage.get_logs_for_run(result.run_id) == []
 
     def test_delete_sql_backed_event_log(self, test_run_id, storage):
-        events, result = _synthesize_events(return_one_solid_func, run_id=test_run_id)
+        events, result = _synthesize_events(return_one_op_func, run_id=test_run_id)
 
         for event in events:
             storage.store_event(event)
@@ -727,7 +727,7 @@ class TestEventLogStorage:
         assert storage.get_logs_for_run(result.run_id) == []
 
     def test_get_logs_for_run_of_type(self, test_run_id, storage):
-        events, result = _synthesize_events(return_one_solid_func, run_id=test_run_id)
+        events, result = _synthesize_events(return_one_op_func, run_id=test_run_id)
 
         for event in events:
             storage.store_event(event)
@@ -751,7 +751,7 @@ class TestEventLogStorage:
         ) == [DagsterEventType.STEP_SUCCESS, DagsterEventType.RUN_SUCCESS]
 
     def test_basic_get_logs_for_run_cursor(self, test_run_id, storage):
-        events, result = _synthesize_events(return_one_solid_func, run_id=test_run_id)
+        events, result = _synthesize_events(return_one_op_func, run_id=test_run_id)
 
         for event in events:
             storage.store_event(event)
@@ -761,8 +761,8 @@ class TestEventLogStorage:
         )
 
     def test_basic_get_logs_for_run_multiple_runs(self, instance, storage):
-        events_one, result_one = _synthesize_events(return_one_solid_func)
-        events_two, result_two = _synthesize_events(return_one_solid_func)
+        events_one, result_one = _synthesize_events(return_one_op_func)
+        events_two, result_two = _synthesize_events(return_one_op_func)
 
         with create_and_delete_test_runs(instance, [result_one.run_id, result_two.run_id]):
             for event in events_one:
@@ -792,8 +792,8 @@ class TestEventLogStorage:
             assert stats_two.steps_succeeded == 1
 
     def test_basic_get_logs_for_run_multiple_runs_cursors(self, instance, storage):
-        events_one, result_one = _synthesize_events(return_one_solid_func)
-        events_two, result_two = _synthesize_events(return_one_solid_func)
+        events_one, result_one = _synthesize_events(return_one_op_func)
+        events_two, result_two = _synthesize_events(return_one_op_func)
 
         with create_and_delete_test_runs(instance, [result_one.run_id, result_two.run_id]):
             for event in events_one:
@@ -823,7 +823,7 @@ class TestEventLogStorage:
 
         storage.watch(test_run_id, None, lambda x, _y: event_list.append(x))
 
-        events, _ = _synthesize_events(return_one_solid_func, run_id=test_run_id)
+        events, _ = _synthesize_events(return_one_op_func, run_id=test_run_id)
         for event in events:
             storage.store_event(event)
 
@@ -846,11 +846,11 @@ class TestEventLogStorage:
             event_list = []
             storage.watch(run_id_two, None, lambda x, _y: event_list.append(x))
 
-            events_one, _result_one = _synthesize_events(return_one_solid_func, run_id=run_id_one)
+            events_one, _result_one = _synthesize_events(return_one_op_func, run_id=run_id_one)
             for event in events_one:
                 storage.store_event(event)
 
-            events_two, _result_two = _synthesize_events(return_one_solid_func, run_id=run_id_two)
+            events_two, _result_two = _synthesize_events(return_one_op_func, run_id=run_id_two)
             for event in events_two:
                 storage.store_event(event)
 
@@ -875,11 +875,11 @@ class TestEventLogStorage:
             storage.watch(run_id_one, None, lambda x, _y: event_list_one.append(x))
             storage.watch(run_id_two, None, lambda x, _y: event_list_two.append(x))
 
-            events_one, _result_one = _synthesize_events(return_one_solid_func, run_id=run_id_one)
+            events_one, _result_one = _synthesize_events(return_one_op_func, run_id=run_id_one)
             for event in events_one:
                 storage.store_event(event)
 
-            events_two, _result_two = _synthesize_events(return_one_solid_func, run_id=run_id_two)
+            events_two, _result_two = _synthesize_events(return_one_op_func, run_id=run_id_two)
             for event in events_two:
                 storage.store_event(event)
 
@@ -1453,8 +1453,8 @@ class TestEventLogStorage:
         def _throw(_x, _y):
             raise CBException("problem in watch callback")
 
-        err_events, _ = _synthesize_events(return_one_solid_func, run_id=err_run_id)
-        safe_events, _ = _synthesize_events(return_one_solid_func, run_id=safe_run_id)
+        err_events, _ = _synthesize_events(return_one_op_func, run_id=err_run_id)
+        safe_events, _ = _synthesize_events(return_one_op_func, run_id=safe_run_id)
 
         event_list = []
 
@@ -1490,8 +1490,8 @@ class TestEventLogStorage:
         def _unsub(_x, _y):
             storage.end_watch(err_run_id, _unsub)
 
-        err_events, _ = _synthesize_events(return_one_solid_func, run_id=err_run_id)
-        safe_events, _ = _synthesize_events(return_one_solid_func, run_id=safe_run_id)
+        err_events, _ = _synthesize_events(return_one_op_func, run_id=err_run_id)
+        safe_events, _ = _synthesize_events(return_one_op_func, run_id=safe_run_id)
 
         event_list = []
 
@@ -1616,7 +1616,7 @@ class TestEventLogStorage:
                 storage.register_instance(created_instance)
 
             events_one, result1 = _synthesize_events(
-                lambda: one_asset_solid(), instance=created_instance
+                lambda: one_asset_op(), instance=created_instance
             )
             events_two, result2 = _synthesize_events(
                 lambda: two_asset_ops(), instance=created_instance
@@ -1638,7 +1638,7 @@ class TestEventLogStorage:
                 storage.register_instance(created_instance)
 
             events_one, result_1 = _synthesize_events(
-                lambda: one_asset_solid(), instance=created_instance
+                lambda: one_asset_op(), instance=created_instance
             )
             events_two, result_2 = _synthesize_events(
                 lambda: two_asset_ops(), instance=created_instance
@@ -1660,7 +1660,7 @@ class TestEventLogStorage:
             two_run_id = "two"
 
             one_events, _ = _synthesize_events(
-                lambda: one_asset_solid(), run_id=one_run_id, instance=created_instance
+                lambda: one_asset_op(), run_id=one_run_id, instance=created_instance
             )
             two_events, _ = _synthesize_events(
                 lambda: two_asset_ops(), run_id=two_run_id, instance=created_instance
@@ -1703,7 +1703,7 @@ class TestEventLogStorage:
             one_run_id = "one_run_id"
             two_run_id = "two_run_id"
             events_one, _ = _synthesize_events(
-                lambda: one_asset_solid(), run_id=one_run_id, instance=created_instance
+                lambda: one_asset_op(), run_id=one_run_id, instance=created_instance
             )
             events_two, _ = _synthesize_events(
                 lambda: two_asset_ops(), run_id=two_run_id, instance=created_instance
@@ -1733,7 +1733,7 @@ class TestEventLogStorage:
 
                     one_run_id = "one_run_id_2"
                     events_one, _ = _synthesize_events(
-                        lambda: one_asset_solid(),
+                        lambda: one_asset_op(),
                         run_id=one_run_id,
                         instance=created_instance,
                     )
@@ -1753,7 +1753,7 @@ class TestEventLogStorage:
                 storage.register_instance(created_instance)
 
             events_one, result = _synthesize_events(
-                lambda: one_asset_solid(), instance=created_instance
+                lambda: one_asset_op(), instance=created_instance
             )
 
             with create_and_delete_test_runs(instance, [result.run_id]):

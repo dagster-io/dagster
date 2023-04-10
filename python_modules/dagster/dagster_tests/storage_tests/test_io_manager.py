@@ -339,7 +339,7 @@ def execute_job_with_steps(
     plan = create_execution_plan(
         recon_job, step_keys_to_execute=step_keys_to_execute, run_config=run_config
     )
-    pipeline_run = instance.create_run_for_pipeline(
+    dagster_run = instance.create_run_for_pipeline(
         pipeline_def=recon_job.get_definition(),
         run_id=run_id,
         # the backfill flow can inject run group info
@@ -347,7 +347,7 @@ def execute_job_with_steps(
         root_run_id=root_run_id,
         run_config=run_config,
     )
-    return execute_plan(plan, recon_job, instance, pipeline_run, run_config=run_config)
+    return execute_plan(plan, recon_job, instance, dagster_run, run_config=run_config)
 
 
 def define_metadata_job():
@@ -596,7 +596,7 @@ def test_io_manager_resources_on_context():
     assert result.success
 
 
-def test_mem_io_managers_result_for_solid():
+def test_mem_io_managers_result_for_op():
     @op
     def one():
         return 1
@@ -679,10 +679,10 @@ def test_error_boundary_with_gen():
         return 5
 
     @job(resource_defs={"io_manager": error_io_manager})
-    def single_solid_job():
+    def single_op_job():
         basic_op()
 
-    result = single_solid_job.execute_in_process(raise_on_error=False)
+    result = single_op_job.execute_in_process(raise_on_error=False)
     step_failure = [
         event for event in result.all_events if event.event_type_value == "STEP_FAILURE"
     ][0]
