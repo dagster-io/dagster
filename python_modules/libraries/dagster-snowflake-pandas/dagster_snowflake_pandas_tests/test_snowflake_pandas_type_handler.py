@@ -271,7 +271,7 @@ def test_io_manager_with_snowflake_pandas_timestamp_data(io_manager):
                 "resources": {
                     "snowflake": {
                         "config": {
-                            "time_data_as_string": True,
+                            "store_timestamps_as_strings": True,
                         }
                     }
                 }
