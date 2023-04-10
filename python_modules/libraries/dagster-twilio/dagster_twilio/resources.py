@@ -1,10 +1,10 @@
-from dagster import ConfigurableResourceFactory, resource
+from dagster import ConfigurableResource, resource
 from dagster._core.execution.context.init import InitResourceContext
 from pydantic import Field
 from twilio.rest import Client
 
 
-class TwilioResource(ConfigurableResourceFactory[Client]):
+class TwilioResource(ConfigurableResource):
     """This resource is for connecting to Twilio."""
 
     account_sid: str = Field(
@@ -21,7 +21,7 @@ class TwilioResource(ConfigurableResourceFactory[Client]):
         ),
     )
 
-    def create_resource(self, context) -> Client:
+    def create_client(self) -> Client:
         return Client(self.account_sid, self.auth_token)
 
 
@@ -30,4 +30,4 @@ class TwilioResource(ConfigurableResourceFactory[Client]):
     description="This resource is for connecting to Twilio",
 )
 def twilio_resource(context: InitResourceContext) -> Client:
-    return TwilioResource.from_resource_context(context)
+    return TwilioResource.from_resource_context(context).create_client()
