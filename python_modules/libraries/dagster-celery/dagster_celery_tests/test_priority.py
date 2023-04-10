@@ -7,13 +7,9 @@ from collections import OrderedDict
 
 from dagster._core.storage.pipeline_run import RunsFilter
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import ModeDefinition, default_executors
-from dagster_celery import celery_executor
 from dagster_celery.tags import DAGSTER_CELERY_RUN_PRIORITY_TAG
 
 from .utils import execute_eagerly_on_celery, execute_on_thread, start_celery_worker
-
-celery_mode_defs = [ModeDefinition(executor_defs=[*default_executors, celery_executor])]
 
 
 def test_eager_priority_pipeline():

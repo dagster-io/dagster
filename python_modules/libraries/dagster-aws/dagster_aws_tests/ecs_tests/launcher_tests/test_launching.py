@@ -62,9 +62,7 @@ def test_default_launcher(
     assert not container_definition.get("dependsOn")
     # But other stuff is inherited from the parent task definition
     assert all(item in container_definition["environment"] for item in environment)
-    assert {"name": "DAGSTER_RUN_JOB_NAME", "value": "pipeline"} in container_definition[
-        "environment"
-    ]
+    assert {"name": "DAGSTER_RUN_JOB_NAME", "value": "job"} in container_definition["environment"]
 
     # A new task is launched
     tasks = ecs.list_tasks()["taskArns"]
@@ -236,9 +234,7 @@ def test_launcher_dont_use_current_task(
 
     # It does not take in the environment configured on the calling task definition
     assert not any(item in container_definition["environment"] for item in environment)
-    assert {"name": "DAGSTER_RUN_JOB_NAME", "value": "pipeline"} in container_definition[
-        "environment"
-    ]
+    assert {"name": "DAGSTER_RUN_JOB_NAME", "value": "job"} in container_definition["environment"]
 
     # A new task is launched
     tasks = ecs.list_tasks(cluster=cluster)["taskArns"]

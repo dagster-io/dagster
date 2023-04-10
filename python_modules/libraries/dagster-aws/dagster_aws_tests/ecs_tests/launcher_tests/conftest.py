@@ -239,14 +239,14 @@ def other_workspace(instance, other_image):
 
 @pytest.fixture
 def pipeline():
-    return repo.pipeline
+    return repo.job
 
 
 @pytest.fixture
 def external_pipeline(workspace):
     location = workspace.get_code_location(workspace.code_location_names[0])
     return location.get_repository(repo.repository.__name__).get_full_external_job(
-        repo.pipeline.__name__
+        repo.job.__name__
     )
 
 
@@ -254,7 +254,7 @@ def external_pipeline(workspace):
 def other_external_pipeline(other_workspace):
     location = other_workspace.get_code_location(other_workspace.code_location_names[0])
     return location.get_repository(repo.repository.__name__).get_full_external_job(
-        repo.pipeline.__name__
+        repo.job.__name__
     )
 
 
