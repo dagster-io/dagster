@@ -172,7 +172,7 @@ fastjsonschema==2.16.3
 -e examples/feature_graph_backed_assets
 filelock==3.10.1
 Flask==1.1.2
-Flask-AppBuilder==3.4.5
+Flask-AppBuilder==4.3.0
 Flask-Babel==2.0.0
 Flask-Caching==1.11.1
 Flask-JWT-Extended==3.25.1
