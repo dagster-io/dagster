@@ -10,7 +10,6 @@ from dagster import resource
 from dagster._annotations import public
 from dagster._config.structured_config import (
     ConfigurableResourceFactory,
-    infer_schema_from_config_class,
 )
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.storage.event_log.sql_event_log import SqlDbConnection
@@ -344,7 +343,7 @@ class SnowflakeConnection:
         self.execute_queries(sql_queries)
 
 
-class SnowflakeResource(ConfigurableResourceFactory):
+class SnowflakeResource(ConfigurableResourceFactory[SnowflakeConnection]):
     """A resource for connecting to the Snowflake data warehouse. The returned resource object is an
     instance of :py:class:`SnowflakeConnection`.
 
@@ -572,7 +571,7 @@ class SnowflakeResource(ConfigurableResourceFactory):
 
 
 @resource(
-    config_schema=infer_schema_from_config_class(SnowflakeResource),
+    config_schema=SnowflakeResource.to_config_schema(),
     description="This resource is for connecting to the Snowflake data warehouse",
 )
 def snowflake_resource(context) -> SnowflakeConnection:
