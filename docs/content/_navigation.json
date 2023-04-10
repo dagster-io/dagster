@@ -49,6 +49,10 @@
         "path": "/tutorial/scheduling-your-pipeline"
       },
       {
+        "title": "Saving your data",
+        "path": "/tutorial/saving-your-data"
+      },
+      {
         "title": "Next steps",
         "path": "/tutorial/next-steps"
       }
