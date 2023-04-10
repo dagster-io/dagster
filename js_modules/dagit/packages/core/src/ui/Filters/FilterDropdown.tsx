@@ -181,7 +181,10 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
           onChange={(e) => setSearch(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Search filters..."
-          ref={inputRef}
+          ref={(el) => {
+            inputRef.current = el;
+            el?.focus();
+          }}
           aria-label="Search filters"
           aria-activedescendant={
             focusedItemIndex !== -1 ? itemId(menuKey, focusedItemIndex) : undefined
