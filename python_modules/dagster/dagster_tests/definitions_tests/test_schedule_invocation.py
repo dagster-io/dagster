@@ -5,6 +5,7 @@ import pytest
 from dagster import (
     DagsterInstance,
     DagsterInvariantViolationError,
+    DynamicPartitionsDefinition,
     RunRequest,
     StaticPartitionsDefinition,
     build_schedule_context,
@@ -139,3 +140,26 @@ def test_partition_key_run_request_schedule():
         assert len(run_requests) == 1
         run_request = run_requests[0]
         assert run_request.tags.get(PARTITION_NAME_TAG) == "a"
+
+
+def test_dynamic_partition_run_request_schedule():
+    @job(partitions_def=DynamicPartitionsDefinition(lambda _: ["1"]))
+    def my_job():
+        pass
+
+    @schedule(cron_schedule="* * * * *", job_name="my_job")
+    def my_schedule():
+        yield RunRequest(partition_key="1", run_key="1")
+        yield my_job.run_request_for_partition(partition_key="1", run_key="2")
+
+    @repository
+    def my_repo():
+        return [my_job, my_schedule]
+
+    with build_schedule_context(
+        repository_def=my_repo, scheduled_execution_time=datetime.datetime(2023, 1, 1)
+    ) as context:
+        run_requests = my_schedule.evaluate_tick(context).run_requests
+        assert len(run_requests) == 2
+        for request in run_requests:
+            assert request.tags.get(PARTITION_NAME_TAG) == "1"

@@ -120,7 +120,11 @@ class UnresolvedAssetJobDefinition(
             self.config, self.partitions_def
         )
 
-        if isinstance(self.partitions_def, DynamicPartitionsDefinition) and not instance:
+        if (
+            isinstance(self.partitions_def, DynamicPartitionsDefinition)
+            and self.partitions_def.name
+            and not instance
+        ):
             check.failed(
                 "Must provide a dagster instance when calling run_request_for_partition on a "
                 "dynamic partition set"

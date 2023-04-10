@@ -614,7 +614,11 @@ class JobDefinition(PipelineDefinition):
         if not (self.partitions_def and self.partitioned_config):
             check.failed("Called run_request_for_partition on a non-partitioned job")
 
-        if isinstance(self.partitions_def, DynamicPartitionsDefinition) and not instance:
+        if (
+            isinstance(self.partitions_def, DynamicPartitionsDefinition)
+            and self.partitions_def.name
+            and not instance
+        ):
             check.failed(
                 "Must provide a dagster instance when calling run_request_for_partition on a "
                 "dynamic partition set"
