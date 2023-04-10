@@ -1,9 +1,23 @@
-from dagster import Definitions, In, asset, job, op
-from dagster._config.structured_config import ConfigurableIOManager, Resource
+from dagster import (
+    Definitions,
+    In,
+    InitResourceContext,
+    IOManager,
+    IOManagerDefinition,
+    IOManagerFactoryResource,
+    IOManagerResource,
+    LegacyIOManagerAdapter,
+    OpExecutionContext,
+    Resource,
+    asset,
+    io_manager,
+    job,
+    op,
+)
 
 
 def test_load_input_handle_output():
-    class MyIOManager(ConfigurableIOManager):
+    class MyIOManager(IOManagerResource):
         def handle_output(self, context, obj):
             pass
 
@@ -47,7 +61,7 @@ def test_load_input_handle_output():
 def test_runtime_config():
     out_txt = []
 
-    class MyIOManager(ConfigurableIOManager):
+    class MyIOManager(IOManagerResource):
         prefix: str
 
         def handle_output(self, context, obj):
@@ -88,7 +102,7 @@ def test_nested_resources():
     class IOConfigResource(Resource):
         prefix: str
 
-    class MyIOManager(ConfigurableIOManager):
+    class MyIOManager(IOManagerResource):
         config: IOConfigResource
 
         def handle_output(self, context, obj):
@@ -118,7 +132,7 @@ def test_nested_resources_runtime_config():
     class IOConfigResource(Resource):
         prefix: str
 
-    class MyIOManager(ConfigurableIOManager):
+    class MyIOManager(IOManagerResource):
         config: IOConfigResource
 
         def handle_output(self, context, obj):
@@ -156,3 +170,83 @@ def test_nested_resources_runtime_config():
         .success
     )
     assert out_txt == ["greeting: hello, world!"]
+
+
+def test_io_manager_factory_class() -> None:
+    outputs = []
+
+    class AnIOManagerImplementation(IOManager):
+        def __init__(self, a_config_value: str):
+            self.a_config_value = a_config_value
+
+        def load_input(self, _) -> None:
+            pass
+
+        def handle_output(self, _, obj) -> None:
+            outputs.append(obj)
+
+    class AnIOManagerFactory(IOManagerFactoryResource[AnIOManagerImplementation]):
+        a_config_value: str
+
+        def provide_object_for_execution(self, _) -> IOManager:
+            """Implement as one would implement a @io_manager decorator function."""
+            return AnIOManagerImplementation(self.a_config_value)
+
+    executed = {}
+
+    @asset
+    def another_asset(context: OpExecutionContext) -> str:
+        assert context.resources.io_manager.a_config_value == "passed-in-factory"
+        executed["yes"] = True
+        return "foo"
+
+    defs = Definitions(
+        assets=[another_asset],
+        resources={"io_manager": AnIOManagerFactory(a_config_value="passed-in-factory")},
+    )
+    defs.get_implicit_global_asset_job_def().execute_in_process()
+
+    assert executed["yes"]
+    assert outputs == ["foo"]
+
+
+def test_io_manager_adapter() -> None:
+    outputs = []
+
+    class AnIOManagerImplementation(IOManager):
+        def __init__(self, a_config_value: str):
+            self.a_config_value = a_config_value
+
+        def load_input(self, _) -> None:
+            pass
+
+        def handle_output(self, _, obj) -> None:
+            outputs.append(obj)
+
+    @io_manager(config_schema={"a_config_value": str})
+    def an_io_manager(context: InitResourceContext) -> AnIOManagerImplementation:
+        return AnIOManagerImplementation(context.resource_config["a_config_value"])
+
+    class AdapterForIOManager(LegacyIOManagerAdapter):
+        a_config_value: str
+
+        @property
+        def wrapped_io_manager(self) -> IOManagerDefinition:
+            return an_io_manager
+
+    executed = {}
+
+    @asset
+    def an_asset(context: OpExecutionContext):
+        assert context.resources.io_manager.a_config_value == "passed-in-configured"
+        executed["yes"] = True
+        return "foo"
+
+    defs = Definitions(
+        assets=[an_asset],
+        resources={"io_manager": AdapterForIOManager(a_config_value="passed-in-configured")},
+    )
+    defs.get_implicit_global_asset_job_def().execute_in_process()
+
+    assert executed["yes"]
+    assert outputs == ["foo"]

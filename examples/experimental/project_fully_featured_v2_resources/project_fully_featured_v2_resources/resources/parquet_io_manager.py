@@ -7,13 +7,13 @@ from dagster import (
     OutputContext,
     _check as check,
 )
-from dagster._config.structured_config import ConfigurableIOManager, ResourceDependency
+from dagster._config.structured_config import IOManagerResource, ResourceDependency
 from dagster._seven.temp_dir import get_system_temp_directory
 from dagster_pyspark.resources import PySparkResource
 from pyspark.sql import DataFrame as PySparkDataFrame
 
 
-class PartitionedParquetIOManager(ConfigurableIOManager):
+class PartitionedParquetIOManager(IOManagerResource):
     """This IOManager will take in a pandas or pyspark dataframe and store it in parquet at the
     specified path.
 

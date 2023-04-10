@@ -398,7 +398,7 @@ def io_adapter() -> None:
         io_manager,
         IOManager,
         InputContext,
-        ConfigurableLegacyIOManagerAdapter,
+        LegacyIOManagerAdapter,
         OutputContext,
     )
     import os
@@ -431,7 +431,7 @@ def io_adapter() -> None:
         return OldFileIOManager(base_path)
 
     # New adapter layer
-    class MyIOManager(ConfigurableLegacyIOManagerAdapter):
+    class MyIOManager(LegacyIOManagerAdapter):
         base_path: str
 
         @property
@@ -501,10 +501,10 @@ def new_io_manager() -> None:
         AssetKey,
         OutputContext,
         InputContext,
-        ConfigurableIOManager,
+        IOManagerResource,
     )
 
-    class MyIOManager(ConfigurableIOManager):
+    class MyIOManager(IOManagerResource):
         root_path: str
 
         def _get_path(self, asset_key: AssetKey) -> str:

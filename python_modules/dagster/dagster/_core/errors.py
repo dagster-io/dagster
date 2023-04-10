@@ -80,7 +80,7 @@ This config type can be a:
 PYTHONIC_RESOURCE_ADDITIONAL_TYPES = """
 
 If this config type represents a resource dependency, its annotation must either:
-    - Extend dagster.Resource, dagster.ConfigurableIOManager, or
+    - Extend dagster.Resource, dagster.IOManagerResource, or
     - Be wrapped in a ResourceDependency annotation, e.g. ResourceDependency[{invalid_type_str}]
 """
 

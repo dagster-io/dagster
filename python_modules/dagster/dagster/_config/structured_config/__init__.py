@@ -758,7 +758,7 @@ class LegacyResourceAdapter(Resource, ABC):
 
 
 @experimental
-class ConfigurableIOManagerFactory(FactoryResource[TIOManagerValue], IOManagerDefinition):
+class IOManagerFactoryResource(FactoryResource[TIOManagerValue], IOManagerDefinition):
     """Base class for Dagster IO managers that utilize structured config. This base class
     is useful for cases in which the returned IO manager is not the same as the class itself
     (e.g. when it is a wrapper around the actual IO manager implementation).
@@ -804,10 +804,11 @@ class PartialIOManager(Generic[TResValue], PartialResource[TResValue], IOManager
 
 
 @experimental
-class ConfigurableIOManager(ConfigurableIOManagerFactory, IOManager):
-    """Base class for Dagster IO managers that utilize structured config.
+class IOManagerResource(IOManagerFactoryResource, IOManager):
+    """Base class for Dagster resources which are also IO managers, and which utilize
+    Pythonic config.
 
-    This class is a subclass of both :py:class:`IOManagerDefinition`, :py:class:`Config`,
+    This class is a subclass of both :py:class:`IOManagerDefinition`, :py:class:`Resource`,
     and :py:class:`IOManager`. Implementers must provide an implementation of the
     :py:meth:`handle_output` and :py:meth:`load_input` methods.
     """
@@ -988,7 +989,7 @@ def _is_pydantic_field_required(pydantic_field: ModelField) -> bool:
 
 
 @experimental
-class ConfigurableLegacyIOManagerAdapter(ConfigurableIOManagerFactory):
+class LegacyIOManagerAdapter(IOManagerFactoryResource):
     """Adapter base class for wrapping a decorated, function-style I/O manager
     with structured config.
 
@@ -1008,7 +1009,7 @@ class ConfigurableLegacyIOManagerAdapter(ConfigurableIOManagerFactory):
 
             return OldIOManager(base_path)
 
-        class MyIOManager(ConfigurableLegacyIOManagerAdapter):
+        class MyIOManager(LegacyIOManagerAdapter):
             base_path: str
 
             @property

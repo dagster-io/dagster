@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Any, Mapping, Optional, Sequence, Tuple, Union
 
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
-from dagster._config.structured_config import ConfigurableIOManager
+from dagster._config.structured_config import IOManagerResource
 from pandas import (
     DataFrame as PandasDataFrame,
     read_sql,
@@ -37,7 +37,7 @@ def connect_snowflake(config, schema="public"):
             conn.close()
 
 
-class SnowflakeIOManager(ConfigurableIOManager):
+class SnowflakeIOManager(IOManagerResource):
     """This IOManager can handle outputs that are either Spark or Pandas DataFrames. In either case,
     the data will be written to a Snowflake table specified by metadata on the relevant Out.
     """
@@ -70,7 +70,10 @@ class SnowflakeIOManager(ConfigurableIOManager):
                 df = read_sql(f"SELECT * FROM {context.name} LIMIT 5", con=con)
                 num_rows = con.execute(f"SELECT COUNT(*) FROM {context.name}").fetchone()
 
-            metadata = {"data_sample": MetadataValue.md(df.to_markdown()), "rows": num_rows}
+            metadata = {
+                "data_sample": MetadataValue.md(df.to_markdown()),
+                "rows": num_rows,
+            }
         else:
             raise Exception(
                 "SnowflakeIOManager only supports pandas DataFrames and spark DataFrames"

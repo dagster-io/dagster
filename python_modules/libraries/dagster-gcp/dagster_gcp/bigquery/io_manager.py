@@ -5,7 +5,7 @@ from typing import Generator, Optional, Sequence, Type, cast
 from dagster import IOManagerDefinition, OutputContext, io_manager
 from dagster._annotations import experimental
 from dagster._config.structured_config import (
-    ConfigurableIOManagerFactory,
+    IOManagerFactoryResource,
     infer_schema_from_config_class,
 )
 from dagster._core.storage.db_io_manager import (
@@ -134,7 +134,7 @@ def build_bigquery_io_manager(
     return bigquery_io_manager
 
 
-class BigQueryIOManager(ConfigurableIOManagerFactory):
+class BigQueryIOManager(IOManagerFactoryResource):
     """Base class for an I/O manager definition that reads inputs from and writes outputs to BigQuery.
 
     Examples:

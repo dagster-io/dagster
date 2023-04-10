@@ -99,10 +99,10 @@ from dagster._config.source import (
 )
 from dagster._config.structured_config import (
     Config as Config,
-    ConfigurableIOManager as ConfigurableIOManager,
-    ConfigurableIOManagerFactory as ConfigurableIOManagerFactory,
-    ConfigurableLegacyIOManagerAdapter as ConfigurableLegacyIOManagerAdapter,
     FactoryResource as FactoryResource,
+    IOManagerFactoryResource as IOManagerFactoryResource,
+    IOManagerResource as IOManagerResource,
+    LegacyIOManagerAdapter as LegacyIOManagerAdapter,
     LegacyResourceAdapter as LegacyResourceAdapter,
     PermissiveConfig as PermissiveConfig,
     Resource as Resource,

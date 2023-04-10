@@ -4,7 +4,7 @@ from typing import Mapping, Optional, Sequence, Type, cast
 
 from dagster import IOManagerDefinition, OutputContext, io_manager
 from dagster._config.structured_config import (
-    ConfigurableIOManagerFactory,
+    IOManagerFactoryResource,
     infer_schema_from_config_class,
 )
 from dagster._core.definitions.time_window_partitions import TimeWindow
@@ -106,7 +106,7 @@ def build_snowflake_io_manager(
     return snowflake_io_manager
 
 
-class SnowflakeIOManager(ConfigurableIOManagerFactory):
+class SnowflakeIOManager(IOManagerFactoryResource):
     """Base class for an IO manager definition that reads inputs from and writes outputs to Snowflake.
 
     Examples:
