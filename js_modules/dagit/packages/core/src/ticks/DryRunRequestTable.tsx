@@ -62,6 +62,7 @@ export const RunRequestTable: React.FC<Props> = ({
                   `/pipeline_or_job/${jobName}/playground/setup?${qs.stringify({
                     mode,
                     config: request.runConfigYaml,
+                    tags: request.tags,
                   })}`,
                 )}
               >
