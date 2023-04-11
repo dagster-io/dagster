@@ -698,12 +698,12 @@ def log_action(
         )
 
 
-def log_dagster_event(event: DagsterEvent, pipeline_context: PlanOrchestrationContext) -> None:
+def log_dagster_event(event: DagsterEvent, job_context: PlanOrchestrationContext) -> None:
     if not any((event.is_step_start, event.is_step_success, event.is_step_failure)):
         return
 
     metadata = {
-        "run_id_hash": hash_name(pipeline_context.run_id),
+        "run_id_hash": hash_name(job_context.run_id),
         "step_key_hash": hash_name(event.step_key),  # type: ignore
     }
 
@@ -717,7 +717,7 @@ def log_dagster_event(event: DagsterEvent, pipeline_context: PlanOrchestrationCo
         action = STEP_FAILURE_EVENT
 
     log_action(
-        instance=pipeline_context.instance,
+        instance=job_context.instance,
         action=action,
         client_time=datetime.datetime.now(),
         metadata=metadata,
