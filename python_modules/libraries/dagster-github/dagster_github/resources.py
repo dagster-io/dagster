@@ -4,12 +4,7 @@ from typing import Optional
 
 import jwt
 import requests
-from dagster import resource
-from dagster._config.pythonic_config import (
-    ConfigurableResourceFactory,
-    InitResourceContextWithKeyMapping,
-    infer_schema_from_config_class,
-)
+from dagster import ConfigurableResource, resource
 from pydantic import Field
 
 
@@ -160,7 +155,7 @@ class GithubClient:
         )
 
 
-class GithubResource(ConfigurableResourceFactory[GithubClient]):
+class GithubClientResource(ConfigurableResource):
     github_app_id: int = Field(
         description="Github Application ID, for more info see https://developer.github.com/apps/",
     )
@@ -185,7 +180,7 @@ class GithubResource(ConfigurableResourceFactory[GithubClient]):
         ),
     )
 
-    def create_resource(self, context: InitResourceContextWithKeyMapping) -> GithubClient:
+    def get_client(self) -> GithubClient:
         return GithubClient(
             client=requests.Session(),
             app_id=self.github_app_id,
@@ -196,8 +191,8 @@ class GithubResource(ConfigurableResourceFactory[GithubClient]):
 
 
 @resource(
-    config_schema=infer_schema_from_config_class(GithubResource),
+    config_schema=GithubClientResource.to_config_schema(),
     description="This resource is for connecting to Github",
 )
 def github_resource(context) -> GithubClient:
-    return GithubResource(**context.resource_config).create_resource(context)
+    return GithubClientResource(**context.resource_config).get_client()
