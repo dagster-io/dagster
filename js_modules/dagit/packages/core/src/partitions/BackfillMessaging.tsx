@@ -67,7 +67,7 @@ export function showBackfillErrorToast(data: LaunchPartitionBackfillMutation | n
 export function showBackfillSuccessToast(
   history: History<unknown>,
   backfillId: string,
-  isPureAssetBackfill: boolean,
+  isAssetBackfill: boolean,
 ) {
   SharedToaster.show({
     intent: 'success',
@@ -79,14 +79,16 @@ export function showBackfillSuccessToast(
     action: {
       text: 'View',
       onClick: () =>
-        isPureAssetBackfill
+        isAssetBackfill
           ? history.push(`/overview/backfills/${backfillId}`)
-          : runsPathWithFilters([
-              {
-                token: 'tag',
-                value: `dagster/backfill=${backfillId}`,
-              },
-            ]),
+          : history.push(
+              runsPathWithFilters([
+                {
+                  token: 'tag',
+                  value: `dagster/backfill=${backfillId}`,
+                },
+              ]),
+            ),
     },
   });
 }

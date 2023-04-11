@@ -33,7 +33,11 @@ export interface QueryRefreshState {
  *   or the default cache-first fetchPolicy.
  *
  */
-export function useQueryRefreshAtInterval(queryResult: QueryResult<any, any>, intervalMs: number) {
+export function useQueryRefreshAtInterval(
+  queryResult: QueryResult<any, any>,
+  intervalMs: number,
+  enabled = true,
+) {
   const timer = React.useRef<number>();
   const loadingStartMs = React.useRef<number>();
   const [nextFireMs, setNextFireMs] = React.useState<number | null>();
@@ -55,14 +59,20 @@ export function useQueryRefreshAtInterval(queryResult: QueryResult<any, any>, in
   const documentVisible = useDocumentVisibility();
 
   React.useEffect(() => {
+    if (!enabled) {
+      return;
+    }
     if (documentVisible && documentVisiblityDidInterrupt.current) {
       queryResultRef.current?.refetch();
       documentVisiblityDidInterrupt.current = false;
     }
-  }, [documentVisible]);
+  }, [documentVisible, enabled]);
 
   React.useEffect(() => {
     clearTimeout(timer.current);
+    if (!enabled) {
+      return;
+    }
 
     // If the query has just transitioned to a `loading` state, capture the current
     // time so we can compute the elapsed time when the query completes, and exit.
@@ -97,7 +107,7 @@ export function useQueryRefreshAtInterval(queryResult: QueryResult<any, any>, in
     return () => {
       clearTimeout(timer.current);
     };
-  }, [queryResult.loading, intervalMs]);
+  }, [queryResult.loading, intervalMs, enabled]);
 
   // Expose the next fire time both as a unix timstamp and as a "seconds" interval
   // so the <QueryRefreshCountdown> can display the number easily.
