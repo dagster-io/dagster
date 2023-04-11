@@ -225,7 +225,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         repository_def: Optional["RepositoryDefinition"],
         monitored_assets: Union[Sequence[AssetKey], AssetSelection],
         instance: Optional[DagsterInstance] = None,
-        resources: Optional[Mapping[str, ResourceDefinition]] = None,
+        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         definitions: Optional["Definitions"] = None,
     ):
         from dagster._core.definitions.definitions_class import Definitions
@@ -274,7 +274,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
             repository_name=repository_name,
             instance=instance,
             repository_def=repository_def,
-            resources=resources,
+            resources=resource_defs,
         )
 
     def _cache_initial_unconsumed_events(self) -> None:
@@ -1025,7 +1025,7 @@ def build_multi_asset_sensor_context(
         instance=instance,
         monitored_assets=monitored_assets,
         repository_def=repository_def,
-        resources=resources,
+        resource_defs=resources,
     )
 
 
@@ -1111,7 +1111,11 @@ class MultiAssetSensorDefinition(SensorDefinition):
                             " based on the latest materialization for each monitored asset."
                         )
 
-                multi_asset_sensor_context = MultiAssetSensorEvaluationContext(
+                resource_args_populated = validate_and_get_resource_dict(
+                    context.resources, name, resource_arg_names
+                )
+
+                with MultiAssetSensorEvaluationContext(
                     instance_ref=context.instance_ref,
                     last_completion_time=context.last_completion_time,
                     last_run_key=context.last_run_key,
@@ -1121,12 +1125,7 @@ class MultiAssetSensorDefinition(SensorDefinition):
                     monitored_assets=monitored_assets,
                     instance=context.instance,
                     resources=context.resource_defs,
-                )
-                resource_args_populated = validate_and_get_resource_dict(
-                    context.resources, name, resource_arg_names
-                )
-
-                with multi_asset_sensor_context:
+                ) as multi_asset_sensor_context:
                     context_param_name = get_context_param_name(materialization_fn)
                     context_param = (
                         {context_param_name: multi_asset_sensor_context}

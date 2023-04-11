@@ -129,7 +129,8 @@ class RunStatusSensorContext:
         dagster_event,
         instance,
         context=None,
-        resources: Optional[Mapping[str, "ResourceDefinition"]] = None,
+        resource_defs: Optional[Mapping[str, "ResourceDefinition"]] = None,
+        logger: Optional[logging.Logger] = None,
     ) -> None:
         self._exit_stack = ExitStack()
         self._sensor_name = check.str_param(sensor_name, "sensor_name")
@@ -139,16 +140,10 @@ class RunStatusSensorContext:
         self._context: Optional[SensorEvaluationContext] = check.opt_inst_param(
             context, "context", SensorEvaluationContext
         )
-        self._logger: Optional[logging.Logger] = None
-
-        if self._context and self._context.resource_defs:
-            resources = {
-                **(self._context.resource_defs),
-                **(resources or {}),
-            }
+        self._logger: Optional[logging.Logger] = logger
 
         # Wait to set resources unless they're accessed
-        self._resource_defs = resources
+        self._resource_defs = resource_defs
         self._resources = None
         self._cm_scope_entered = False
 
@@ -228,9 +223,6 @@ class RunStatusSensorContext:
     @public
     @property
     def log(self) -> logging.Logger:
-        if self._context:
-            return self._context.log
-
         if not self._logger:
             self._logger = InstigationLogger()
 
@@ -309,8 +301,8 @@ def build_run_status_sensor_context(
         instance=dagster_instance,
         dagster_run=dagster_run,
         dagster_event=dagster_event,
-        context=context,
-        resources=resources,
+        resource_defs=resources,
+        logger=context.log if context else None,
     )
 
 
@@ -709,8 +701,8 @@ class RunStatusSensorDefinition(SensorDefinition):
                         dagster_run=pipeline_run,
                         dagster_event=event_log_entry.dagster_event,
                         instance=context.instance,
-                        context=context,
-                        resources=context.resource_defs,
+                        resource_defs=context.resource_defs,
+                        logger=context.log,
                     ) as sensor_context, user_code_error_boundary(
                         RunStatusSensorExecutionError,
                         lambda: f'Error occurred during the execution sensor "{name}".',
