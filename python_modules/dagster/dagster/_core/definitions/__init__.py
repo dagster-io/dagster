@@ -97,8 +97,11 @@ from .run_config_schema import (
     create_run_config_schema as create_run_config_schema,
 )
 from .run_request import (
+    AddDynamicPartitionsRequest as AddDynamicPartitionsRequest,
+    DeleteDynamicPartitionsRequest as DeleteDynamicPartitionsRequest,
     InstigatorType as InstigatorType,
     RunRequest as RunRequest,
+    SensorResult as SensorResult,
     SkipReason as SkipReason,
 )
 from .schedule_definition import (
