@@ -30,11 +30,11 @@ def get_job_snapshot_or_error_from_snapshot_id(
     graphene_info: ResolveInfo, snapshot_id: str
 ) -> "GraphenePipelineSnapshot":
     check.str_param(snapshot_id, "snapshot_id")
-    return _get_pipeline_snapshot_from_instance(graphene_info.context.instance, snapshot_id)
+    return _get_job_snapshot_from_instance(graphene_info.context.instance, snapshot_id)
 
 
 # extracted this out to test
-def _get_pipeline_snapshot_from_instance(
+def _get_job_snapshot_from_instance(
     instance: DagsterInstance, snapshot_id: str
 ) -> "GraphenePipelineSnapshot":
     from ..schema.errors import GraphenePipelineSnapshotNotFoundError
@@ -58,9 +58,7 @@ def get_job_or_error(graphene_info: ResolveInfo, selector: JobSubsetSelector) ->
     return get_job_from_selector(graphene_info, selector)
 
 
-def get_pipeline_or_raise(
-    graphene_info: ResolveInfo, selector: JobSubsetSelector
-) -> "GraphenePipeline":
+def get_job_or_raise(graphene_info: ResolveInfo, selector: JobSubsetSelector) -> "GraphenePipeline":
     """Returns a Pipeline or raises a UserFacingGraphQLError if one cannot be retrieved
     from the selector, e.g., the pipeline is not present in the loaded repository.
     """
@@ -82,7 +80,7 @@ def get_job_reference_or_raise(
     if dagster_run.job_snapshot_id is None:
         return GrapheneUnknownPipeline(dagster_run.job_name, solid_selection)
 
-    return _get_pipeline_snapshot_from_instance(
+    return _get_job_snapshot_from_instance(
         graphene_info.context.instance, dagster_run.job_snapshot_id
     )
 
