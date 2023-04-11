@@ -111,11 +111,8 @@ def invoke_compute_fn(
             args_to_pass["config"] = context.op_config
     if resource_args:
         for resource_name, arg_name in resource_args.items():
-            args_to_pass[arg_name] = getattr(context.resources, resource_name)
+            args_to_pass[arg_name] = context.resources._unmodified_resource_dict[resource_name] # pylint: disable=protected-access
 
-    from dagster._config.structured_config import resolve_iattach_bare_object_to_context
-    context = context.with_resources_override(resolve_iattach_bare_object_to_context(context.resources))
-    
     return fn(context, **args_to_pass) if context_arg_provided else fn(**args_to_pass)
 
 

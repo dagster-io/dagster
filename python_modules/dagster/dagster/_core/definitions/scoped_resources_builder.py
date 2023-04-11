@@ -28,6 +28,10 @@ class Resources:
     def __getattr__(self, name: str) -> Any:
         raise DagsterUnknownResourceError(name)
 
+    @property
+    def _unmodified_resource_dict(self) -> Mapping[str, object]:
+        raise NotImplementedError()
+
 
 class ScopedResourcesBuilder(
     NamedTuple(
@@ -55,6 +59,8 @@ class ScopedResourcesBuilder(
         )
 
     def build(self, required_resource_keys: Optional[AbstractSet[str]]) -> Resources:
+        from dagster._config.structured_config import IAttachBareObjectToContext
+
         """We dynamically create a type that has the resource keys as properties, to enable dotting into
         the resources from a context.
 
@@ -78,6 +84,14 @@ class ScopedResourcesBuilder(
             for key in required_resource_keys
             if key in self.resource_instance_dict
         }
+        processed_resource_instance_dict = {
+            k: (
+                v.get_object_to_set_on_execution_context()
+                if isinstance(v, IAttachBareObjectToContext)
+                else v
+            )
+            for k, v in resource_instance_dict.items()
+        }
 
         # If any of the resources are generators, add the IContainsGenerator subclass to flag that
         # this is the case.
@@ -85,21 +99,26 @@ class ScopedResourcesBuilder(
 
             class _ScopedResourcesContainsGenerator(
                 namedtuple(
-                    "_ScopedResourcesContainsGenerator", list(resource_instance_dict.keys())
+                    "_ScopedResourcesContainsGenerator",
+                    list(processed_resource_instance_dict.keys()),
                 ),
                 Resources,
                 IContainsGenerator,
             ):
-                ...
+                @property
+                def _unmodified_resource_dict(self) -> Mapping[str, object]:
+                    return resource_instance_dict
 
-            return _ScopedResourcesContainsGenerator(**resource_instance_dict)  # type: ignore[call-arg]
+            return _ScopedResourcesContainsGenerator(**processed_resource_instance_dict)  # type: ignore[call-arg]
 
         else:
 
             class _ScopedResources(
-                namedtuple("_ScopedResources", list(resource_instance_dict.keys())),
+                namedtuple("_ScopedResources", list(processed_resource_instance_dict.keys())),
                 Resources,
             ):
-                ...
+                @property
+                def _unmodified_resource_dict(self) -> Mapping[str, object]:
+                    return resource_instance_dict
 
-            return _ScopedResources(**resource_instance_dict)  # type: ignore[call-arg]
+            return _ScopedResources(**processed_resource_instance_dict)  # type: ignore[call-arg]

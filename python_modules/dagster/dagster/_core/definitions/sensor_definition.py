@@ -353,7 +353,9 @@ def _validate_and_get_resource_dict(
                 f"Resource with key '{k}' required by sensor '{sensor_name}' was not provided."
             )
 
-    return {k: getattr(context.resources, k) for k in required_resource_keys}
+    return {
+        k: context.resources._unmodified_resource_dict[k] for k in required_resource_keys
+    }  # pylint: disable=protected-access
 
 
 def get_or_create_sensor_context(
