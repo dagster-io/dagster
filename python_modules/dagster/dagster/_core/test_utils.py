@@ -95,7 +95,7 @@ def step_output_event_filter(pipe_iterator: Iterator[DagsterEvent]):
 
 
 def nesting_graph(depth: int, num_children: int, name: Optional[str] = None) -> GraphDefinition:
-    """Creates a pipeline of nested composite solids up to "depth" layers, with a fan-out of
+    """Creates a job of nested graphs up to "depth" layers, with a fan-out of
     num_children at each layer.
 
     Total number of solids will be num_children ^ depth
@@ -126,12 +126,12 @@ def nesting_graph(depth: int, num_children: int, name: Optional[str] = None) -> 
     return nested_graph
 
 
-TEST_PIPELINE_NAME = "_test_pipeline_"
+TEST_JOB_NAME = "_test_job_"
 
 
 def create_run_for_test(
     instance: DagsterInstance,
-    job_name: str = TEST_PIPELINE_NAME,
+    job_name: str = TEST_JOB_NAME,
     run_id=None,
     run_config=None,
     solids_to_execute=None,
@@ -170,7 +170,7 @@ def create_run_for_test(
 
 def register_managed_run_for_test(
     instance,
-    pipeline_name=TEST_PIPELINE_NAME,
+    job_name=TEST_JOB_NAME,
     run_id=None,
     run_config=None,
     solids_to_execute=None,
@@ -178,12 +178,12 @@ def register_managed_run_for_test(
     tags=None,
     root_run_id=None,
     parent_run_id=None,
-    pipeline_snapshot=None,
+    job_snapshot=None,
     execution_plan_snapshot=None,
-    parent_pipeline_snapshot=None,
+    parent_job_snapshot=None,
 ):
     return instance.register_managed_run(
-        pipeline_name,
+        job_name,
         run_id,
         run_config,
         solids_to_execute,
@@ -191,9 +191,9 @@ def register_managed_run_for_test(
         tags,
         root_run_id,
         parent_run_id,
-        pipeline_snapshot,
+        job_snapshot,
         execution_plan_snapshot,
-        parent_pipeline_snapshot,
+        parent_job_snapshot,
     )
 
 

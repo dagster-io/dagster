@@ -5,9 +5,9 @@ from dagster._core.execution.context.hook import HookContext
 
 
 def _default_status_message(context: HookContext, status: str) -> str:
-    return "Op {op_name} on job {pipeline_name} {status}!\nRun ID: {run_id}".format(
+    return "Op {op_name} on job {job_name} {status}!\nRun ID: {run_id}".format(
         op_name=context.op.name,
-        pipeline_name=context.job_name,
+        job_name=context.job_name,
         run_id=context.run_id,
         status=status,
     )
@@ -33,7 +33,7 @@ def slack_on_failure(
         message_fn (Optional(Callable[[HookContext], str])): Function which takes in the HookContext
             outputs the message you want to send.
         dagit_base_url: (Optional[str]): The base url of your Dagit instance. Specify this to allow
-            messages to include deeplinks to the specific pipeline run that triggered the hook.
+            messages to include deeplinks to the specific run that triggered the hook.
 
     Examples:
         .. code-block:: python
