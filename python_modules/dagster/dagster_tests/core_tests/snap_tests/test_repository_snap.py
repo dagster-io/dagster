@@ -2,7 +2,7 @@ from typing import Dict, List
 
 from dagster import Definitions, asset, graph, job, op, repository, resource
 from dagster._config.field_utils import EnvVar
-from dagster._config.structured_config import Config, ConfigurableResource
+from dagster._config.pythonic_config import Config, ConfigurableResource
 from dagster._core.definitions.definitions_class import BindResourcesToJobs
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.repository_definition import (

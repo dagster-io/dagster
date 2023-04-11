@@ -279,7 +279,7 @@ class _Asset:
         self.code_version = code_version
 
     def __call__(self, fn: Callable) -> AssetsDefinition:
-        from dagster._config.structured_config import validate_resource_annotated_function
+        from dagster._config.pythonic_config import validate_resource_annotated_function
 
         validate_resource_annotated_function(fn)
         asset_name = self.name or fn.__name__

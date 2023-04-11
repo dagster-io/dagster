@@ -43,7 +43,7 @@ from dagster import (
     sensor,
     static_partitioned_config,
 )
-from dagster._config.structured_config import ConfigurableResource
+from dagster._config.pythonic_config import ConfigurableResource
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.partition import DynamicPartitionsDefinition
 from dagster._core.definitions.resource_annotation import ResourceParam

@@ -14,7 +14,7 @@ from typing import (
 
 import dagster._check as check
 from dagster._annotations import experimental, public
-from dagster._config.structured_config import (
+from dagster._config.pythonic_config import (
     attach_resource_id_to_key_mapping,
 )
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey

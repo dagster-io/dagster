@@ -15,7 +15,7 @@ from dagster._config.config_type import (
     Noneable,
     ScalarUnion,
 )
-from dagster._config.structured_config import (
+from dagster._config.pythonic_config import (
     ConfigurableResource,
     ConfigurableResourceFactory,
     infer_schema_from_config_class,

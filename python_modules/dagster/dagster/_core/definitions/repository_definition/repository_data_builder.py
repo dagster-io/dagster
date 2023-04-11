@@ -14,7 +14,7 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._config.structured_config import (
+from dagster._config.pythonic_config import (
     ConfigurableResource,
     PartialResource,
     ResourceWithKeyMapping,

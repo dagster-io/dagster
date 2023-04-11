@@ -1,7 +1,7 @@
 from typing import List
 
 import pytest
-from dagster._config.structured_config import Config
+from dagster._config.pythonic_config import Config
 from pydantic import Field, ValidationError, conlist, constr
 
 

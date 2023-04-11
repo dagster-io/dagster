@@ -24,7 +24,7 @@ from dagster import (
     with_resources,
 )
 from dagster._check import CheckError
-from dagster._config.structured_config import ConfigurableResource
+from dagster._config.pythonic_config import ConfigurableResource
 from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,

@@ -27,8 +27,8 @@ from dagster._annotations import experimental
 from dagster._config.config_type import Array, ConfigFloatInstance, ConfigType, EnumValue, Noneable
 from dagster._config.field_utils import config_dictionary_from_values
 from dagster._config.post_process import resolve_defaults
+from dagster._config.pythonic_config.typing_utils import TypecheckAllowPartialResourceInitParams
 from dagster._config.source import BoolSource, IntSource, StringSource
-from dagster._config.structured_config.typing_utils import TypecheckAllowPartialResourceInitParams
 from dagster._config.validate import process_config, validate_config
 from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.definition_config_schema import (
@@ -1145,7 +1145,7 @@ def infer_schema_from_config_class(
 
     check.param_invariant(
         safe_is_subclass(model_cls, Config),
-        "Config type annotation must inherit from dagster._config.structured_config.Config",
+        "Config type annotation must inherit from dagster.Config",
     )
 
     fields = {}
@@ -1218,12 +1218,12 @@ def validate_resource_annotated_function(fn) -> None:
     instead be wrapped in the :py:func:`dagster.Resource` Annotation).
     """
     from dagster import DagsterInvalidDefinitionError
-    from dagster._config.structured_config import (
+    from dagster._config.pythonic_config import (
         ConfigurableResource,
         ConfigurableResourceFactory,
         TResValue,
     )
-    from dagster._config.structured_config.utils import safe_is_subclass
+    from dagster._config.pythonic_config.utils import safe_is_subclass
 
     malformed_params = [
         param

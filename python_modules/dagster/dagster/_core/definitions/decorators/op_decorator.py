@@ -75,7 +75,7 @@ class _Op:
         self.out = out
 
     def __call__(self, fn: Callable[..., Any]) -> "OpDefinition":
-        from dagster._config.structured_config import validate_resource_annotated_function
+        from dagster._config.pythonic_config import validate_resource_annotated_function
 
         from ..op_definition import OpDefinition
 
@@ -96,7 +96,7 @@ class _Op:
                 "If the @op has a config arg, you cannot specify a config schema",
             )
 
-            from dagster._config.structured_config import infer_schema_from_config_annotation
+            from dagster._config.pythonic_config import infer_schema_from_config_annotation
 
             # Parse schema from the type annotation of the config arg
             config_arg = compute_fn.get_config_arg()

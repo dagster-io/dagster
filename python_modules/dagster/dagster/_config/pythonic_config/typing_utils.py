@@ -7,7 +7,7 @@ from typing_extensions import dataclass_transform, get_origin
 from .utils import safe_is_subclass
 
 if TYPE_CHECKING:
-    from dagster._config.structured_config import PartialResource
+    from dagster._config.pythonic_config import PartialResource
 
 
 # Since a metaclass is invoked by Resource before Resource or PartialResource is defined, we need to
