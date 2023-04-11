@@ -28,7 +28,7 @@ def get_job_snapshot_or_error_from_job_selector(
 
 
 @capture_error
-def get_pipeline_snapshot_or_error_from_snapshot_id(
+def get_job_snapshot_or_error_from_snapshot_id(
     graphene_info: ResolveInfo, snapshot_id: str
 ) -> "GraphenePipelineSnapshot":
     check.str_param(snapshot_id, "snapshot_id")
