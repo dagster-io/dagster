@@ -255,6 +255,11 @@ def test_complex_config_schema() -> None:
     )
     assert executed["yes"]
 
+    a_struct_config_op(AnOpConfig(a_complex_thing={5: [{"foo": 1, "bar": 2, "baz": None}]}))
+    a_struct_config_op(config=AnOpConfig(a_complex_thing={5: [{"foo": 1, "bar": 2, "baz": None}]}))
+    a_struct_config_op({"a_complex_thing": {5: [{"foo": 1, "bar": 2, "baz": None}]}})
+    a_struct_config_op(config={"a_complex_thing": {5: [{"foo": 1, "bar": 2, "baz": None}]}})
+
 
 @pytest.mark.skip(reason="not yet supported")
 def test_struct_config_optional_nested() -> None:
@@ -277,6 +282,9 @@ def test_struct_config_optional_nested() -> None:
 
     a_job.execute_in_process({"ops": {"a_struct_config_op": {"config": {}}}})
     assert executed["yes"]
+
+    a_struct_config_op(AnOpConfig(an_optional_nested=None))
+    a_struct_config_op(config=AnOpConfig(an_optional_nested=None))
 
 
 def test_struct_config_nested_in_list() -> None:
