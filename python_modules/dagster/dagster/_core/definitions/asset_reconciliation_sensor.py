@@ -252,9 +252,16 @@ class AssetReconciliationCursor(NamedTuple):
             serialized_subset,
         ) in serialized_materialized_or_requested_root_partitions_by_asset_key.items():
             key = AssetKey.from_user_string(key_str)
-            materialized_or_requested_root_partitions_by_asset_key[key] = cast(
-                PartitionsDefinition, asset_graph.get_partitions_def(key)
-            ).deserialize_subset(serialized_subset)
+            if key not in asset_graph.non_source_asset_keys:
+                continue
+
+            partitions_def = asset_graph.get_partitions_def(key)
+            if partitions_def is None:
+                continue
+
+            materialized_or_requested_root_partitions_by_asset_key[
+                key
+            ] = partitions_def.deserialize_subset(serialized_subset)
         return cls(
             latest_storage_id=latest_storage_id,
             materialized_or_requested_root_asset_keys={
