@@ -3,7 +3,7 @@ from typing import Tuple
 import pytest
 from dagster import (
     Config,
-    Field as DagsterField,
+    Field as LegacyDagsterField,
     asset,
     op,
     schedule,
@@ -326,7 +326,7 @@ def test_annotate_with_bare_resource_def() -> None:
 
 def test_using_dagster_field_by_mistake_config() -> None:
     class MyConfig(Config):
-        my_str: str = DagsterField(str, description="This is a string")  # type: ignore
+        my_str: str = LegacyDagsterField(str, description="This is a string")  # type: ignore
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
@@ -344,7 +344,7 @@ def test_using_dagster_field_by_mistake_config() -> None:
 
 def test_using_dagster_field_by_mistake_resource() -> None:
     class MyResource(ConfigurableResource):
-        my_str: str = DagsterField(str, description="This is a string")  # type: ignore
+        my_str: str = LegacyDagsterField(str, description="This is a string")  # type: ignore
 
     with pytest.raises(
         DagsterInvalidDefinitionError,

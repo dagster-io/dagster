@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Mapping, Optional, Type, Union
 
 import pytest
 from dagster import (
-    Field as DagsterField,
+    Field as LegacyDagsterField,
     IntSource,
     Map,
     Shape,
@@ -568,7 +568,7 @@ def test_struct_config_optional_map() -> None:
     assert print_config_type_to_string(
         a_struct_config_op.config_schema.config_type
     ) == print_config_type_to_string(
-        Shape(fields={"an_optional_dict": DagsterField(Noneable(Map(str, IntSource)))})
+        Shape(fields={"an_optional_dict": LegacyDagsterField(Noneable(Map(str, IntSource)))})
     )
 
     @job
