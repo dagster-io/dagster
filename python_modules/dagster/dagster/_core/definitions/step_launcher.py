@@ -19,7 +19,7 @@ class StepRunRef(
             ("run_id", str),
             ("retry_mode", RetryMode),
             ("step_key", str),
-            ("recon_pipeline", ReconstructableJob),
+            ("recon_job", ReconstructableJob),
             ("known_state", Optional["KnownExecutionState"]),
         ],
     )

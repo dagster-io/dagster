@@ -205,7 +205,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
 
         pod_name = job_name
 
-        job_origin = run.job_code_origin
+        job_origin = check.not_none(run.job_code_origin)
         user_defined_k8s_config = container_context.get_run_user_defined_k8s_config()
         repository_origin = job_origin.repository_origin
 

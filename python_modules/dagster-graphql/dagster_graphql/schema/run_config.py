@@ -3,6 +3,7 @@ from typing import Any, Optional
 import dagster._check as check
 import graphene
 from dagster._core.host_representation import RepresentedJob
+from dagster._core.host_representation.external_data import DEFAULT_MODE_NAME
 
 from ..implementation.run_config_schema import resolve_is_run_config_valid
 from .config_types import GrapheneConfigType, to_config_type
@@ -69,7 +70,9 @@ class GrapheneRunConfigSchema(graphene.ObjectType):
     def resolve_rootConfigType(self, _graphene_info: ResolveInfo):
         return to_config_type(
             self._represented_job.config_schema_snapshot,
-            self._represented_job.get_mode_def_snap(self._mode).root_config_key,
+            self._represented_job.get_mode_def_snap(  # type: ignore  # (possible none)
+                self._mode or DEFAULT_MODE_NAME
+            ).root_config_key,
         )
 
     def resolve_isRunConfigValid(

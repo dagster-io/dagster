@@ -53,9 +53,9 @@ class DebugRunPayload(
             version=dagster_version,
             dagster_run=run,
             event_list=instance.all_logs(run.run_id),
-            job_snapshot=instance.get_job_snapshot(run.job_snapshot_id),
+            job_snapshot=instance.get_job_snapshot(run.job_snapshot_id),  # type: ignore  # (possible none)
             execution_plan_snapshot=instance.get_execution_plan_snapshot(
-                run.execution_plan_snapshot_id
+                run.execution_plan_snapshot_id  # type: ignore  # (possible none)
             ),
         )
 

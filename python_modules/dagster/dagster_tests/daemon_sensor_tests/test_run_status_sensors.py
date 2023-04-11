@@ -944,8 +944,8 @@ def test_cross_repo_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
             external_job = the_other_repo.get_full_external_job("the_job")
             run = instance.create_run_for_job(
                 the_job,
-                external_pipeline_origin=external_job.get_external_origin(),
-                pipeline_code_origin=external_job.get_python_origin(),
+                external_job_origin=external_job.get_external_origin(),
+                job_code_origin=external_job.get_python_origin(),
             )
             instance.submit_run(run.run_id, workspace_context.create_request_context())
             wait_for_all_runs_to_finish(instance)
@@ -1223,8 +1223,8 @@ def test_instance_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
             external_job = the_other_repo.get_full_external_job("the_job")
             run = instance.create_run_for_job(
                 the_job,
-                external_pipeline_origin=external_job.get_external_origin(),
-                pipeline_code_origin=external_job.get_python_origin(),
+                external_job_origin=external_job.get_external_origin(),
+                job_code_origin=external_job.get_python_origin(),
             )
             instance.submit_run(run.run_id, workspace_context.create_request_context())
             wait_for_all_runs_to_finish(instance)

@@ -124,8 +124,10 @@ def test_defer_snapshots(instance: DagsterInstance):
             return deserialize_value(reply.serialized_job_data, ExternalJobData)
 
         external_repository_data = deserialize_value(ser_repo_data, ExternalRepositoryData)
-
-        assert len(external_repository_data.external_job_refs) == 6
+        assert (
+            external_repository_data.external_job_refs
+            and len(external_repository_data.external_job_refs) == 6
+        )
         assert external_repository_data.external_job_datas is None
 
         repo = ExternalRepository(

@@ -1022,7 +1022,7 @@ class DagsterInstance(DynamicPartitionsStore):
                 job_def.get_job_snapshot_id(),
             ),
             parent_job_snapshot=job_def.get_parent_job_snapshot(),
-            external_job_origin=external_pipeline_origin,
+            external_job_origin=external_job_origin,
             job_code_origin=job_code_origin,
         )
 

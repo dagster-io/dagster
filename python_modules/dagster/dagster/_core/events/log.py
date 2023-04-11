@@ -3,7 +3,6 @@ from typing import Mapping, NamedTuple, Optional, Union
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.events import AssetMaterialization, AssetObservation
-from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.utils import coerce_valid_log_level
 from dagster._serdes.serdes import (
@@ -78,13 +77,6 @@ class EventLogEntry(
         job_name=None,
         dagster_event=None,
     ):
-        if job_name and job_name:
-            raise DagsterInvariantViolationError(
-                "Provided both `pipeline_name` and `job_name` parameters to `EventLogEntry` "
-                "initialization. Please provide only one or the other."
-            )
-
-        job_name = job_name or job_name
         return super(EventLogEntry, cls).__new__(
             cls,
             check.opt_inst_param(error_info, "error_info", SerializableErrorInfo),

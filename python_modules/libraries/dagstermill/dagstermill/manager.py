@@ -160,7 +160,7 @@ class Manager:
         resolved_run_config = ResolvedRunConfig.build(job_def, run_config)
 
         execution_plan = ExecutionPlan.build(
-            self.pipeline,
+            self.job,
             resolved_run_config,
             step_keys_to_execute=dagster_run.step_keys_to_execute,
         )

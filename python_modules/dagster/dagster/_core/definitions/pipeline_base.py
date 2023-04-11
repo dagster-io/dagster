@@ -88,7 +88,7 @@ class InMemoryJob(IJob, object):
                 self._job_def.get_job_def_for_subset_selection(asset_selection=asset_selection),
                 asset_selection=asset_selection,
             )
-        if self._pipeline_def.is_subset_job:
+        if self._job_def.is_subset_job:
             return InMemoryJob(
                 self._job_def.parent_job_def.get_pipeline_subset_def(solids_to_execute),  # type: ignore  # (possible none)
                 solid_selection=solid_selection,

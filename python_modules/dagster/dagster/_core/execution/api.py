@@ -884,7 +884,7 @@ class ExecuteRunWithPlanIterable:
                 if self.job_context:  # False if we had a pipeline init failure
                     yield from self.iterator(
                         execution_plan=self.execution_plan,
-                        pipeline_context=self.job_context,
+                        job_context=self.job_context,
                     )
             except GeneratorExit:
                 # Shouldn't happen, but avoid runtime-exception in case this generator gets GC-ed

@@ -30,9 +30,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
         node_handle: NodeHandle,
         op_config: Any = None,
     ):
-        self._job_context = check.inst_param(
-            job_context, "job_context", PlanExecutionContext
-        )
+        self._job_context = check.inst_param(job_context, "job_context", PlanExecutionContext)
         self._job_def = check.inst_param(job_def, "job_def", JobDefinition)
         self._resource_keys_to_init = check.set_param(
             resource_keys_to_init, "resource_keys_to_init", of_type=str
@@ -147,7 +145,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
             "0.17.0",
             "use the 'op_def' property instead.",
         )
-        return self.pipeline_def.get_node(self.node_handle)
+        return self.job_def.get_node(self.node_handle)
 
     @public
     @property

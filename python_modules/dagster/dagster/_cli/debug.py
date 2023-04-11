@@ -77,12 +77,12 @@ def import_command(input_files: Tuple[str, ...]):
         for debug_payload in debug_payloads:
             run = debug_payload.dagster_run
             click.echo(f"Importing run {run.run_id} (Dagster: {debug_payload.version})")
-            if not instance.has_snapshot(run.execution_plan_snapshot_id):
+            if not instance.has_snapshot(run.execution_plan_snapshot_id):  # type: ignore  # (possible none)
                 instance.add_snapshot(
                     debug_payload.execution_plan_snapshot,
                     run.execution_plan_snapshot_id,
                 )
-            if not instance.has_snapshot(run.job_snapshot_id):
+            if not instance.has_snapshot(run.job_snapshot_id):  # type: ignore  # (possible none)
                 instance.add_snapshot(
                     debug_payload.job_snapshot,
                     run.job_snapshot_id,

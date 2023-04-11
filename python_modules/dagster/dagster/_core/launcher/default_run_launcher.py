@@ -80,12 +80,12 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         res = deserialize_value(
             grpc_client.start_run(
                 ExecuteExternalJobArgs(
-                    job_origin=run.external_job_origin,
+                    job_origin=run.external_job_origin,  # type: ignore  # (possible none)
                     run_id=run.run_id,
                     instance_ref=instance.get_ref(),
                 )
             ),
-            StartRunResult,
+            StartRunResult,  # type: ignore
         )
         if not res.success:
             raise (

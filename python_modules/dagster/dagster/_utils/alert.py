@@ -18,11 +18,13 @@ if TYPE_CHECKING:
 
 
 def _default_failure_email_body(context: "RunFailureSensorContext") -> str:
+    from dagster._core.host_representation.external_data import DEFAULT_MODE_NAME
+
     return "<br>".join(
         [
             f"Pipeline {context.dagster_run.job_name} failed!",
             f"Run ID: {context.dagster_run.run_id}",
-            f"Mode: {context.dagster_run.mode}",
+            f"Mode: {DEFAULT_MODE_NAME}",
             f"Error: {context.failure_event.message}",
         ]
     )

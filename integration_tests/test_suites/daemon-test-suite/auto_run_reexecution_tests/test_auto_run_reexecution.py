@@ -291,13 +291,13 @@ def test_subset_run(instance: DagsterInstance, workspace_context):
 
     dagster_event = DagsterEvent(
         event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
-        pipeline_name="foo",
+        job_name="foo",
         message="",
     )
     event_record = EventLogEntry(
         user_message="",
         level=logging.ERROR,
-        pipeline_name="foo",
+        job_name="foo",
         run_id=run.run_id,
         error_info=None,
         timestamp=time.time(),
@@ -317,6 +317,4 @@ def test_subset_run(instance: DagsterInstance, workspace_context):
     assert instance.get_execution_plan_snapshot(
         auto_run.execution_plan_snapshot_id
     ).step_keys_to_execute == ["do_something"]
-    assert instance.get_pipeline_snapshot(auto_run.job_snapshot_id).node_names == [
-        "do_something"
-    ]
+    assert instance.get_job_snapshot(auto_run.job_snapshot_id).node_names == ["do_something"]
