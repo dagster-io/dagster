@@ -26,12 +26,12 @@ class SecretsManagerResource(ResourceWithBoto3Configuration):
     Example:
         .. code-block:: python
 
-            from dagster import build_op_context, job, op, Resource
+            from dagster import build_op_context, job, op
             from dagster_aws.secretsmanager import SecretsManagerResource
 
             @op
-            def example_secretsmanager_op(secretsmanager: Resource[Any]):
-                return secretsmanager.get_secret_value(
+            def example_secretsmanager_op(secretsmanager: SecretsManagerResource):
+                return secretsmanager.create_client().get_secret_value(
                     SecretId='arn:aws:secretsmanager:region:aws_account_id:secret:appauthexample-AbCdEf'
                 )
 
@@ -119,16 +119,17 @@ class SecretsManagerSecretsResource(ResourceWithBoto3Configuration):
         .. code-block:: python
 
             import os
-            from dagster import build_op_context, job, op
+            from dagster import build_op_context, job, op, ResourceParam
             from dagster_aws.secretsmanager import SecretsManagerSecretsResource
 
             @op
-            def example_secretsmanager_secrets_op(secrets: Resource[Dict[str, str]]):
-                return context.resources.secrets.get("my-secret-name")
+            def example_secretsmanager_secrets_op(secrets: SecretsManagerSecretsResource):
+                return secrets.fetch_secrets().get("my-secret-name")
 
             @op
-            def example_secretsmanager_secrets_op_2(secrets: Resource[Dict[str, str]]):
-                return os.getenv("my-other-secret-name")
+            def example_secretsmanager_secrets_op_2(secrets: SecretsManagerSecretsResource):
+                with secrets.secrets_in_environment():
+                    return os.getenv("my-other-secret-name")
 
             @job
             def example_job():

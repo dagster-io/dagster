@@ -33,12 +33,12 @@ class SSMResource(ResourceWithBoto3Configuration):
         .. code-block:: python
 
             from typing import Any
-            from dagster import build_op_context, job, op, Resource
+            from dagster import build_op_context, job, op
             from dagster_aws.ssm import SSMResource
 
             @op
-            def example_ssm_op(ssm: Resource[Any]):
-                return ssm.get_parameter(
+            def example_ssm_op(ssm: SSMResource):
+                return ssm.create_client().get_parameter(
                     Name="a_parameter"
                 )
 
@@ -132,16 +132,17 @@ class ParameterStoreResource(ResourceWithBoto3Configuration):
 
             import os
             from typing import Dict
-            from dagster import build_op_context, job, op, Resource
+            from dagster import build_op_context, job, op
             from dagster_aws.ssm import ParameterStoreResource, ParameterStoreTag
 
             @op
-            def example_parameter_store_op(parameter_store: Resource[Dict[str, str]]):
-                return context.resources.parameter_store.get("my-parameter-name")
+            def example_parameter_store_op(parameter_store: ParameterStoreResource):
+                return parameter_store.fetch_parameters().get("my-parameter-name")
 
             @op
-            def example_parameter_store_op_2(parameter_store: Resource[Dict[str, str]]):
-                return os.getenv("my-other-parameter-name")
+            def example_parameter_store_op_2(parameter_store: ParameterStoreResource):
+                with parameter_store.parameters_in_environment():
+                    return os.getenv("my-other-parameter-name")
 
             @job
             def example_job():
