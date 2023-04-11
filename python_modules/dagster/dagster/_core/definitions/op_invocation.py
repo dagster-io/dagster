@@ -66,7 +66,7 @@ def _separate_args_and_kwargs(
 
     params_without_context = params[1:] if compute_fn.has_context_arg() else params
 
-    config_input = kwargs.get("config")
+    config_arg = kwargs.get("config")
 
     # Get any (non-kw) args that correspond to resource inputs & strip them from the args list
     for i, arg in enumerate(args):
@@ -76,7 +76,7 @@ def _separate_args_and_kwargs(
                 resources_from_args_and_kwargs[param.name] = arg
                 continue
             if param.name == "config":
-                config_input = arg
+                config_arg = arg
                 continue
 
         adjusted_args.append(arg)
@@ -94,7 +94,7 @@ def _separate_args_and_kwargs(
         input_args=tuple(adjusted_args),
         input_kwargs=adjusted_kwargs,
         resources_by_param_name=resources_from_args_and_kwargs,
-        config_arg=config_input,
+        config_arg=config_arg,
     )
 
 
@@ -123,8 +123,6 @@ def op_invocation_result(
 
     from ..execution.plan.compute_generator import invoke_compute_fn
 
-    context = context or build_op_context()
-
     resource_arg_mapping = {arg.name: arg.name for arg in compute_fn.get_resource_args()}
 
     # The user is allowed to invoke an op with an arbitrary mix of args and kwargs.
@@ -144,20 +142,22 @@ def op_invocation_result(
     resources_by_param_name = extracted.resources_by_param_name
     config_input = extracted.config_arg
 
-    resources_provided_in_multiple_places = resources_by_param_name and context.resource_keys
+    resources_provided_in_multiple_places = (
+        resources_by_param_name and context and context.resource_keys
+    )
     if resources_provided_in_multiple_places:
         raise DagsterInvalidInvocationError("Cannot provide resources in both context and kwargs")
 
     if resources_by_param_name:
-        context = context.replace_resources(resources_by_param_name)
+        context = (context or build_op_context()).replace_resources(resources_by_param_name)
 
-    config_provided_in_multiple_places = config_input and context.op_config
+    config_provided_in_multiple_places = config_input and context and context.op_config
     if config_provided_in_multiple_places:
         raise DagsterInvalidInvocationError("Cannot provide config in both context and kwargs")
     if config_input:
         from dagster._config.structured_config import Config
 
-        context = context.replace_config(
+        context = (context or build_op_context()).replace_config(
             config_input._as_config_dict()  # noqa: SLF001
             if isinstance(config_input, Config)
             else config_input
@@ -165,7 +165,7 @@ def op_invocation_result(
 
     _check_invocation_requirements(op_def, context)
 
-    bound_context = context.bind(op_def_or_invocation)
+    bound_context = (context or build_op_context()).bind(op_def_or_invocation)
 
     input_dict = _resolve_inputs(op_def, input_args, input_kwargs, bound_context)
 
