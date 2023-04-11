@@ -5,7 +5,7 @@ from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.pipeline_base import InMemoryJob
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.api import create_execution_plan
-from dagster._core.execution.context_creation_pipeline import scoped_pipeline_context
+from dagster._core.execution.context_creation_pipeline import scoped_job_context
 from dagster._core.instance import DagsterInstance
 from dagster._core.types.dagster_type import resolve_dagster_type
 
@@ -47,7 +47,7 @@ def check_dagster_type(dagster_type: Any, value: Any) -> TypeCheck:
     instance = DagsterInstance.ephemeral()
     execution_plan = create_execution_plan(pipeline)
     pipeline_run = instance.create_run_for_job(pipeline_def)
-    with scoped_pipeline_context(execution_plan, pipeline, {}, pipeline_run, instance) as context:
+    with scoped_job_context(execution_plan, pipeline, {}, pipeline_run, instance) as context:
         type_check_context = context.for_type(dagster_type)
         try:
             type_check = dagster_type.type_check(type_check_context, value)

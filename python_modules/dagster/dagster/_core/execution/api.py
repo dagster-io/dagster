@@ -44,7 +44,7 @@ from .context_creation_pipeline import (
     PlanExecutionContextManager,
     PlanOrchestrationContextManager,
     orchestration_context_event_generator,
-    scoped_pipeline_context,
+    scoped_job_context,
 )
 from .execute_job_result import ExecuteJobResult
 from .results import PipelineExecutionResult
@@ -254,7 +254,7 @@ def execute_run(
         job.get_definition(),
         dagster_run.run_id,
         event_list,
-        lambda: scoped_pipeline_context(  # type: ignore
+        lambda: scoped_job_context(  # type: ignore
             execution_plan,
             job,
             dagster_run.run_config,

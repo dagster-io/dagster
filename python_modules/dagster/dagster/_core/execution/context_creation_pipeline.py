@@ -397,7 +397,7 @@ def create_executor(context_creation_data: ContextCreationData) -> "Executor":
 
 
 @contextmanager
-def scoped_pipeline_context(
+def scoped_job_context(
     execution_plan: ExecutionPlan,
     job: IJob,
     run_config: Mapping[str, object],

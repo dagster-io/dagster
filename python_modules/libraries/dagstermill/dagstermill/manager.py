@@ -24,7 +24,7 @@ from dagster._core.definitions.pipeline_base import InMemoryJob
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
 from dagster._core.events import DagsterEvent
-from dagster._core.execution.api import scoped_pipeline_context
+from dagster._core.execution.api import scoped_job_context
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.plan.step import ExecutionStep
@@ -165,7 +165,7 @@ class Manager:
             step_keys_to_execute=dagster_run.step_keys_to_execute,
         )
 
-        with scoped_pipeline_context(
+        with scoped_job_context(
             execution_plan,
             pipeline,
             run_config,
@@ -267,7 +267,7 @@ class Manager:
         job = InMemoryJob(pipeline_def)
         execution_plan = ExecutionPlan.build(job, resolved_run_config)
 
-        with scoped_pipeline_context(
+        with scoped_job_context(
             execution_plan,
             job,
             run_config,
