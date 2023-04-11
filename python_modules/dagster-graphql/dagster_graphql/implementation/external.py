@@ -30,17 +30,17 @@ def get_full_external_job_or_raise(
     selector: JobSubsetSelector,
 ) -> ExternalJob:
     check.inst_param(selector, "selector", JobSubsetSelector)
-    return _get_external_pipeline_or_raise(graphene_info, selector, ignore_subset=True)
+    return _get_external_job_or_raise(graphene_info, selector, ignore_subset=True)
 
 
 def get_external_job_or_raise(
     graphene_info: "ResolveInfo", selector: JobSubsetSelector
 ) -> ExternalJob:
     check.inst_param(selector, "selector", JobSubsetSelector)
-    return _get_external_pipeline_or_raise(graphene_info, selector)
+    return _get_external_job_or_raise(graphene_info, selector)
 
 
-def _get_external_pipeline_or_raise(
+def _get_external_job_or_raise(
     graphene_info: "ResolveInfo", selector: JobSubsetSelector, ignore_subset: bool = False
 ) -> ExternalJob:
     from ..schema.errors import GrapheneInvalidSubsetError, GraphenePipelineNotFoundError
@@ -50,11 +50,11 @@ def _get_external_pipeline_or_raise(
     if not ctx.has_external_job(selector):
         raise UserFacingGraphQLError(GraphenePipelineNotFoundError(selector=selector))
     elif ignore_subset:
-        external_pipeline = ctx.get_full_external_job(selector)
+        external_job = ctx.get_full_external_job(selector)
     else:
         code_location = ctx.get_code_location(selector.location_name)
         try:
-            external_pipeline = code_location.get_external_job(selector)
+            external_job = code_location.get_external_job(selector)
         except Exception:
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
             raise UserFacingGraphQLError(
@@ -67,25 +67,25 @@ def _get_external_pipeline_or_raise(
                 )
             )
 
-    return external_pipeline
+    return external_job
 
 
-def ensure_valid_config(external_pipeline: ExternalJob, run_config: object) -> object:
+def ensure_valid_config(external_job: ExternalJob, run_config: object) -> object:
     from ..schema.pipelines.config import GrapheneRunConfigValidationInvalid
 
-    check.inst_param(external_pipeline, "external_pipeline", ExternalJob)
+    check.inst_param(external_job, "external_job", ExternalJob)
     # do not type check run_config so that validate_config_from_snap throws
 
     validated_config = validate_config_from_snap(
-        config_schema_snapshot=external_pipeline.config_schema_snapshot,
-        config_type_key=check.not_none(external_pipeline.root_config_key),
+        config_schema_snapshot=external_job.config_schema_snapshot,
+        config_type_key=check.not_none(external_job.root_config_key),
         config_value=run_config,
     )
 
     if not validated_config.success:
         raise UserFacingGraphQLError(
             GrapheneRunConfigValidationInvalid.for_validation_errors(
-                external_pipeline, validated_config.errors
+                external_job, validated_config.errors
             )
         )
 
