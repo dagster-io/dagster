@@ -18,6 +18,8 @@ from typing import (
     Optional,
     Sequence,
     TypeVar,
+    Union,
+    cast,
 )
 
 import pendulum
@@ -470,11 +472,16 @@ def get_mocked_system_timezone() -> Optional[str]:
 
 # Test utility for creating a test workspace for a function
 class InProcessTestWorkspaceLoadTarget(WorkspaceLoadTarget):
-    def __init__(self, origin: InProcessCodeLocationOrigin):
-        self._origin = origin
+    def __init__(
+        self, origin: Union[InProcessCodeLocationOrigin, Sequence[InProcessCodeLocationOrigin]]
+    ):
+        self._origins = cast(
+            Sequence[InProcessCodeLocationOrigin],
+            origin if isinstance(origin, list) else [origin],
+        )
 
     def create_origins(self) -> Sequence[InProcessCodeLocationOrigin]:
-        return [self._origin]
+        return self._origins
 
 
 @contextmanager

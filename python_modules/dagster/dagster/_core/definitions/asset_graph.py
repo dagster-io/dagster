@@ -529,6 +529,11 @@ class AssetGraph:
 
         return result
 
+    def split_asset_keys_by_repository(
+        self, asset_keys: AbstractSet[AssetKey]
+    ) -> Sequence[AbstractSet[AssetKey]]:
+        return [asset_keys]
+
     def __hash__(self) -> int:
         return id(self)
 
