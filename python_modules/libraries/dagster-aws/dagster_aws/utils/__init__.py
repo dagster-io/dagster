@@ -3,7 +3,7 @@ from typing import Optional, TypeVar
 import dagster._check as check
 from botocore import __version__ as botocore_version
 from botocore.config import Config
-from dagster._config.structured_config import ConfigurableResource
+from dagster import ConfigurableResource
 from packaging import version
 from pydantic import Field
 
