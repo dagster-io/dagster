@@ -216,9 +216,7 @@ def trigger_daily_asset_if_both_upstream_partitions_materialized(context):
         materializations_by_asset,
     ) in context.latest_materialization_records_by_partition_and_asset().items():
         if set(materializations_by_asset.keys()) == set(context.asset_keys):
-            run_requests.append(
-                downstream_daily_job.run_request_for_partition(partition)
-            )
+            run_requests.append(RunRequest(partition_key=partition))
             for asset_key, materialization in materializations_by_asset.items():
                 context.advance_cursor({asset_key: materialization})
     return run_requests
@@ -257,9 +255,7 @@ def trigger_daily_asset_when_any_upstream_partitions_have_new_materializations(c
                 for asset_key in context.asset_keys
             ]
         ):
-            run_requests.append(
-                downstream_daily_job.run_request_for_partition(partition)
-            )
+            run_requests.append(RunRequest(partition_key=partition))
             for asset_key, materialization in materializations_by_asset.items():
                 if asset_key in context.asset_keys:
                     context.advance_cursor({asset_key: materialization})
@@ -392,9 +388,9 @@ def trigger_weekly_asset_from_daily_asset(context):
             if context.all_partitions_materialized(
                 AssetKey("upstream_daily_1"), daily_partitions_in_week
             ):
-                run_requests_by_partition[
-                    weekly_partitions[0]
-                ] = weekly_asset_job.run_request_for_partition(weekly_partitions[0])
+                run_requests_by_partition[weekly_partitions[0]] = RunRequest(
+                    partition_key=weekly_partitions[0]
+                )
                 # Advance the cursor so we only check event log records past the cursor
                 context.advance_cursor({AssetKey("upstream_daily_1"): materialization})
     return list(run_requests_by_partition.values())

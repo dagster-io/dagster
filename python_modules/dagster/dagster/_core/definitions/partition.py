@@ -608,7 +608,7 @@ class DynamicPartitionsDefinition(
             @sensor(job=my_job)
             def my_sensor(context):
                 context.instance.add_dynamic_partitions(fruits.name, [partition_key])
-                return my_job.run_request_for_partition(partition_key, instance=context.instance)
+                return RunRequest(partition_key=partition_key)
 
     """
 

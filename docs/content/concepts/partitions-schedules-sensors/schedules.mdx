@@ -188,14 +188,13 @@ def continent_job():
 We can write a schedule that will run this partition:
 
 ```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_static_partition endbefore=end_static_partition
-from dagster import schedule
+from dagster import schedule, RunRequest
 
 
 @schedule(cron_schedule="0 0 * * *", job=continent_job)
 def continent_schedule():
     for c in CONTINENTS:
-        request = continent_job.run_request_for_partition(partition_key=c, run_key=c)
-        yield request
+        yield RunRequest(run_key=c, partition_key=c)
 ```
 
 Or a schedule that will run a subselection of the partition:
@@ -203,10 +202,7 @@ Or a schedule that will run a subselection of the partition:
 ```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_single_partition endbefore=end_single_partition
 @schedule(cron_schedule="0 0 * * *", job=continent_job)
 def antarctica_schedule():
-    request = continent_job.run_request_for_partition(
-        partition_key="Antarctica", run_key=None
-    )
-    yield request
+    return RunRequest(partition_key="Antarctica")
 ```
 
 ### Customizing execution times
