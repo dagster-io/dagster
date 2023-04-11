@@ -354,8 +354,9 @@ def _validate_and_get_resource_dict(
             )
 
     return {
-        k: context.resources._original_resource_dict[k] for k in required_resource_keys
-    }  # pylint: disable=protected-access
+        k: context.resources._original_resource_dict[k]  # noqa: SLF001
+        for k in required_resource_keys
+    }
 
 
 def get_or_create_sensor_context(

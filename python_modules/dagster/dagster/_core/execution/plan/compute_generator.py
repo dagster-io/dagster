@@ -111,9 +111,9 @@ def invoke_compute_fn(
             args_to_pass["config"] = context.op_config
     if resource_args:
         for resource_name, arg_name in resource_args.items():
-            args_to_pass[arg_name] = context.resources._original_resource_dict[
+            args_to_pass[arg_name] = context.resources._original_resource_dict[  # noqa: SLF001
                 resource_name
-            ]  # pylint: disable=protected-access
+            ]
 
     return fn(context, **args_to_pass) if context_arg_provided else fn(**args_to_pass)
 
