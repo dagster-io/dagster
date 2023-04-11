@@ -4,7 +4,6 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {useFeatureFlags} from '../app/Flags';
 import {ASSET_NODE_CONFIG_FRAGMENT} from '../assets/AssetConfig';
 import {AssetDefinedInMultipleReposNotice} from '../assets/AssetDefinedInMultipleReposNotice';
 import {

@@ -3,7 +3,6 @@ import {Body, Box, Caption, Colors, ConfigTypeSchema, Icon, Mono, Subheading} fr
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {useFeatureFlags} from '../app/Flags';
 import {ASSET_NODE_FRAGMENT} from '../asset-graph/AssetNode';
 import {
   displayNameForAssetKey,
@@ -163,7 +162,7 @@ export const AssetNodeDefinition: React.FC<{
                   {assetNode.requiredResources.map((resource) => (
                     <ResourceContainer key={resource.resourceKey}>
                       <Icon name="resource" color={Colors.Gray700} />
-                      { repoAddress ? (
+                      {repoAddress ? (
                         <Link
                           to={workspacePathFromAddress(
                             repoAddress,

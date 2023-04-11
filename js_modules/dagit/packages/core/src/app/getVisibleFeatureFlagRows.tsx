@@ -13,7 +13,7 @@ export const getVisibleFeatureFlagRows = () => [
     flagType: FeatureFlag.flagDisableWebsockets,
   },
   {
-    key: 'Display resources in sidebar',
+    key: 'Display resources in navigation sidebar',
     flagType: FeatureFlag.flagSidebarResources,
   },
   {
