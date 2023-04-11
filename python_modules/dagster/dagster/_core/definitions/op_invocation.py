@@ -155,7 +155,7 @@ def op_invocation_result(
     if config_provided_in_multiple_places:
         raise DagsterInvalidInvocationError("Cannot provide config in both context and kwargs")
     if config_input:
-        from dagster._config.structured_config import Config
+        from dagster._config.pythonic_config import Config
 
         context = (context or build_op_context()).replace_config(
             config_input._as_config_dict()  # noqa: SLF001

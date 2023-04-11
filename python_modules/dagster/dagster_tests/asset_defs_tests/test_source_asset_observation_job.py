@@ -2,7 +2,7 @@ from typing import Optional
 
 import pytest
 from dagster._check import CheckError
-from dagster._config.structured_config import ConfigurableResource
+from dagster._config.pythonic_config import ConfigurableResource
 from dagster._core.definitions.data_version import (
     DataVersion,
     extract_data_version_from_entry,
