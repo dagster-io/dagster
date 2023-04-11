@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from dagster_graphql.schema.util import ResolveInfo
 
 
-def get_full_external_pipeline_or_raise(
+def get_full_external_job_or_raise(
     graphene_info: "ResolveInfo",
     selector: JobSubsetSelector,
 ) -> ExternalJob:
