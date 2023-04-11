@@ -758,3 +758,29 @@ def test_struct_config_non_optional_none_input_errors() -> None:
                 }
             }
         )
+
+
+def test_conversion_to_fields() -> None:
+    class ConfigClassToConvert(Config):
+        a_string: str
+        an_int: str
+        with_description: str = Field(description="a description")
+        with_default_value: int = Field(default=12)
+        optional_str: Optional[str] = None
+
+    fields = ConfigClassToConvert.to_fields_dict()
+
+    assert isinstance(fields, dict)
+    assert set(fields.keys()) == {
+        "a_string",
+        "an_int",
+        "with_description",
+        "with_default_value",
+        "optional_str",
+    }
+    assert fields["with_description"].description == "a description"
+    assert fields["with_description"].is_required is True
+    assert fields["with_default_value"].default_value == 12
+    assert not fields["with_default_value"].is_required
+    assert fields["optional_str"]
+    assert fields["optional_str"].is_required is False
