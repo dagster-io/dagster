@@ -1,13 +1,23 @@
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING, Dict, Iterator, Mapping, Optional, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Callable,
+    Dict,
+    Iterator,
+    Mapping,
+    Optional,
+    cast,
+)
 
-from typing_extensions import Protocol, TypeAlias
+from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
-from dagster._core.decorator_utils import has_at_least_one_parameter
+from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.data_version import DATA_VERSION_TAG, DataVersion
 from dagster._core.definitions.events import AssetKey, AssetObservation, CoercibleToAssetKey
 from dagster._core.definitions.metadata import (
@@ -17,11 +27,13 @@ from dagster._core.definitions.metadata import (
 )
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.resource_requirement import (
     ResourceAddable,
     ResourceRequirement,
     SourceAssetIOManagerRequirement,
+    ensure_requirements_satisfied,
     get_resource_key_conflicts,
 )
 from dagster._core.definitions.utils import (
@@ -37,31 +49,11 @@ from dagster._utils.merger import merge_dicts
 if TYPE_CHECKING:
     from dagster._core.execution.context.compute import (
         OpExecutionContext,
-        SourceAssetObserveContext,
     )
 
 
-class SourceAssetObserveFunctionWithContext(Protocol):
-    @property
-    def __name__(self) -> str:
-        ...
-
-    def __call__(self, context: "SourceAssetObserveContext") -> DataVersion:
-        ...
-
-
-class SourceAssetObserveFunctionNoContext(Protocol):
-    @property
-    def __name__(self) -> str:
-        ...
-
-    def __call__(self) -> DataVersion:
-        ...
-
-
-SourceAssetObserveFunction: TypeAlias = Union[
-    SourceAssetObserveFunctionWithContext, SourceAssetObserveFunctionNoContext
-]
+# Going with this catch-all for the time-being to permit pythonic resources
+SourceAssetObserveFunction: TypeAlias = Callable[..., Any]
 
 
 class SourceAsset(ResourceAddable):
@@ -104,6 +96,12 @@ class SourceAsset(ResourceAddable):
         group_name: Optional[str] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         observe_fn: Optional[SourceAssetObserveFunction] = None,
+        # This is currently private because it is necessary for source asset observation functions,
+        # but we have not yet decided on a final API for associated one or more ops with a source
+        # asset. If we were to make this public, then we would have a canonical public
+        # `required_resource_keys` used for observation that might end up conflicting with a set of
+        # required resource keys for a different operation.
+        _required_resource_keys: Optional[AbstractSet[str]] = None,
         # Add additional fields to with_resources and with_group below
     ):
         if resource_defs is not None:
@@ -142,6 +140,9 @@ class SourceAsset(ResourceAddable):
         self.group_name = validate_group_name(group_name)
         self.description = check.opt_str_param(description, "description")
         self.observe_fn = check.opt_callable_param(observe_fn, "observe_fn")
+        self._required_resource_keys = check.opt_set_param(
+            _required_resource_keys, "_required_resource_keys", of_type=str
+        )
         self._node_def = None
 
     def get_io_manager_key(self) -> str:
@@ -170,12 +171,21 @@ class SourceAsset(ResourceAddable):
         return self.node_def is not None
 
     def _get_op_def_compute_fn(self, observe_fn: SourceAssetObserveFunction):
-        from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
+        from dagster._core.definitions.decorators.op_decorator import (
+            DecoratedOpFunction,
+            is_context_provided,
+        )
 
-        observe_fn_has_context = has_at_least_one_parameter(observe_fn)
+        observe_fn_has_context = is_context_provided(get_function_params(observe_fn))
 
         def fn(context: OpExecutionContext):
-            data_version = observe_fn(context) if observe_fn_has_context else observe_fn()  # type: ignore
+            resource_kwarg_keys = [param.name for param in get_resource_args(observe_fn)]
+            resource_kwargs = {key: getattr(context.resources, key) for key in resource_kwarg_keys}
+            data_version = (
+                observe_fn(context, **resource_kwargs)
+                if observe_fn_has_context
+                else observe_fn(**resource_kwargs)
+            )
 
             check.inst(
                 data_version,
@@ -193,6 +203,10 @@ class SourceAsset(ResourceAddable):
         return DecoratedOpFunction(fn)
 
     @property
+    def required_resource_keys(self) -> AbstractSet[str]:
+        return {requirement.key for requirement in self.get_resource_requirements()}
+
+    @property
     def node_def(self) -> Optional[OpDefinition]:
         """Op that generates observation metadata for a source asset."""
         if self.observe_fn is None:
@@ -203,6 +217,7 @@ class SourceAsset(ResourceAddable):
                 compute_fn=self._get_op_def_compute_fn(self.observe_fn),
                 name=self.key.to_python_identifier(),
                 description=self.description,
+                required_resource_keys=self._required_resource_keys,
             )
         return self._node_def
 
@@ -221,6 +236,10 @@ class SourceAsset(ResourceAddable):
 
         merged_resource_defs = merge_dicts(resource_defs, self.resource_defs)
 
+        # Ensure top-level resource requirements are met - except for
+        # io_manager, since that is a default it can be resolved later.
+        ensure_requirements_satisfied(merged_resource_defs, list(self.get_resource_requirements()))
+
         io_manager_def = merged_resource_defs.get(self.get_io_manager_key())
         if not io_manager_def and self.get_io_manager_key() != DEFAULT_IO_MANAGER_KEY:
             raise DagsterInvalidDefinitionError(
@@ -228,7 +247,7 @@ class SourceAsset(ResourceAddable):
                 f" '{self.get_io_manager_key()}', but none was provided."
             )
         relevant_keys = get_transitive_required_resource_keys(
-            {self.get_io_manager_key()}, merged_resource_defs
+            {*self._required_resource_keys, self.get_io_manager_key()}, merged_resource_defs
         )
 
         relevant_resource_defs = {
@@ -254,6 +273,7 @@ class SourceAsset(ResourceAddable):
                 resource_defs=relevant_resource_defs,
                 group_name=self.group_name,
                 observe_fn=self.observe_fn,
+                _required_resource_keys=self._required_resource_keys,
             )
 
     def with_group_name(self, group_name: str) -> "SourceAsset":
@@ -276,9 +296,12 @@ class SourceAsset(ResourceAddable):
                 group_name=group_name,
                 resource_defs=self.resource_defs,
                 observe_fn=self.observe_fn,
+                _required_resource_keys=self._required_resource_keys,
             )
 
     def get_resource_requirements(self) -> Iterator[ResourceRequirement]:
+        if self.node_def is not None:
+            yield from self.node_def.get_resource_requirements()
         yield SourceAssetIOManagerRequirement(
             key=self.get_io_manager_key(), asset_key=self.key.to_string()
         )
