@@ -42,6 +42,10 @@ from dagster._core.errors import (
 )
 from dagster._core.execution.context.init import InitResourceContext
 
+from .attach_other_object_to_context import (
+    IAttachDifferentObjectToOpContext as IAttachDifferentObjectToOpContext,
+)
+
 try:
     from functools import cached_property  # type: ignore  # (py37 compat)
 except ImportError:
