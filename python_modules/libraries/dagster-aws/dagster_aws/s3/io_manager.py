@@ -104,7 +104,7 @@ class PickledObjectS3IOManager(MemoizableIOManager):
         context.add_output_metadata({"uri": MetadataValue.path(path)})
 
 
-class PickledObjectS3IOManagerResource(ConfigurableIOManager):
+class ConfigurablePickledObjectS3IOManager(ConfigurableIOManager):
     """Persistent IO manager using S3 for storage.
 
     Serializes objects via pickling. Suitable for objects storage for distributed executors, so long
@@ -125,7 +125,7 @@ class PickledObjectS3IOManagerResource(ConfigurableIOManager):
     .. code-block:: python
 
         from dagster import asset, Definitions
-        from dagster_aws.s3 import PickledObjectS3IOManagerResource, S3Resource
+        from dagster_aws.s3 import ConfigurablePickledObjectS3IOManager, S3Resource
 
 
         @asset
@@ -140,7 +140,7 @@ class PickledObjectS3IOManagerResource(ConfigurableIOManager):
         defs = Definitions(
             assets=[asset1, asset2],
             resources={
-                "io_manager": PickledObjectS3IOManagerResource(
+                "io_manager": ConfigurablePickledObjectS3IOManager(
                     s3_resource=S3Resource(),
                     s3_bucket="my-cool-bucket",
                     s3_prefix="my-cool-prefix",
@@ -172,7 +172,7 @@ class PickledObjectS3IOManagerResource(ConfigurableIOManager):
 
 
 @io_manager(
-    config_schema=PickledObjectS3IOManagerResource.to_config_schema(),
+    config_schema=ConfigurablePickledObjectS3IOManager.to_config_schema(),
     required_resource_keys={"s3"},
 )
 def s3_pickle_io_manager(init_context):
