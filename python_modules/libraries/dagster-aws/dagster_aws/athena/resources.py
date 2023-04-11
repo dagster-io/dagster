@@ -102,7 +102,9 @@ class AthenaClient:
 
 @deprecated
 class AthenaResource(AthenaClient):
-    pass
+    """Deprecated. This class was used by the function-style Athena resource. New code should instead
+    use the Pythonic, class-style AthenaClientResource.
+    """
 
 
 class FakeAthenaClient(AthenaClient):
@@ -206,7 +208,9 @@ class FakeAthenaClient(AthenaClient):
 
 @deprecated
 class FakeAthenaResource(FakeAthenaClient):
-    pass
+    """Deprecated. This class was used by the function-style fake Athena resource. New code should instead
+    use the Pythonic, class-style FakeAthenaClientResource.
+    """
 
 
 class ResourceWithAthenaConfig(ConfigurableResource):
@@ -273,16 +277,6 @@ class AthenaClientResource(ResourceWithAthenaConfig):
         )
 
 
-class FakeAthenaClientResource(ResourceWithAthenaConfig):
-    def create_athena_client(self) -> FakeAthenaClient:
-        return FakeAthenaClient(
-            client=boto3.client("athena", region_name="us-east-1"),
-            workgroup=self.workgroup,
-            polling_interval=self.polling_interval,
-            max_polls=self.max_polls,
-        )
-
-
 @resource(
     config_schema=ResourceWithAthenaConfig.to_config_schema(),
     description="Resource for connecting to AWS Athena",
@@ -312,4 +306,9 @@ def athena_resource(context: InitResourceContext) -> AthenaClient:
     description="Fake resource for connecting to AWS Athena",
 )
 def fake_athena_resource(context: InitResourceContext) -> AthenaClient:
-    return FakeAthenaClientResource.from_resource_context(context).create_athena_client()
+    return FakeAthenaClient(
+        client=boto3.client("athena", region_name="us-east-1"),
+        workgroup=context.resource_config.get("workgroup"),
+        polling_interval=context.resource_config.get("polling_interval"),
+        max_polls=context.resource_config.get("max_polls"),
+    )

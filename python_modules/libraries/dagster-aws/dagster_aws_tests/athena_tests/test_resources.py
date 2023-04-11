@@ -4,10 +4,20 @@ from dagster_aws.athena.resources import (
     AthenaError,
     AthenaTimeout,
     FakeAthenaClient,
-    FakeAthenaClientResource,
+    ResourceWithAthenaConfig,
     fake_athena_resource,
 )
 from moto import mock_athena
+
+
+class TestAthenaClientResource(ResourceWithAthenaConfig):
+    def create_athena_client(self) -> FakeAthenaClient:
+        return FakeAthenaClient(
+            client=boto3.client("athena", region_name="us-east-1"),
+            workgroup=self.workgroup,
+            polling_interval=self.polling_interval,
+            max_polls=self.max_polls,
+        )
 
 
 @pytest.fixture
@@ -82,8 +92,8 @@ def test_op_pythonic_resource(mock_athena_client) -> None:
     from dagster import build_op_context, op
 
     @op
-    def example_athena_op(athena: FakeAthenaClientResource):
+    def example_athena_op(athena: TestAthenaClientResource):
         return athena.create_athena_client().execute_query("SELECT 1", fetch_results=True)
 
-    context = build_op_context(resources={"athena": FakeAthenaClientResource.configure_at_launch()})
+    context = build_op_context(resources={"athena": TestAthenaClientResource.configure_at_launch()})
     assert example_athena_op(context) == [("1",)]

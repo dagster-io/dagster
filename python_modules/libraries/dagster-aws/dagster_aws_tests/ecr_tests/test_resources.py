@@ -5,11 +5,11 @@ from dagster_aws.ecr import FakeECRPublicResource, fake_ecr_public_resource
 
 def test_ecr_public_get_login_password() -> None:
     @op(required_resource_keys={"ecr_public"})
-    def ecr_public_solid(context):
+    def ecr_public_op(context):
         return context.resources.ecr_public.get_login_password()
 
     result = wrap_op_in_graph_and_execute(
-        ecr_public_solid,
+        ecr_public_op,
         resources={"ecr_public": fake_ecr_public_resource},
     )
 
@@ -18,11 +18,11 @@ def test_ecr_public_get_login_password() -> None:
 
 def test_ecr_public_get_login_password_pythonic() -> None:
     @op
-    def ecr_public_solid(ecr_public: FakeECRPublicResource):
+    def ecr_public_op(ecr_public: FakeECRPublicResource):
         return ecr_public.create_ecr_client().get_login_password()
 
     result = wrap_op_in_graph_and_execute(
-        ecr_public_solid,
+        ecr_public_op,
         resources={"ecr_public": FakeECRPublicResource.configure_at_launch()},
     )
 

@@ -204,11 +204,9 @@ class RedshiftResource(RedshiftClient):
 class FakeRedshiftClient(BaseRedshiftClient):
     QUERY_RESULT = [(1,)]
 
-    def __init__(self, conn_args: Dict[str, Any], autocommit: Optional[bool], log: Logger):
+    def __init__(self, log: Logger):
         # Extract parameters from resource config
-        self.conn_args = conn_args
 
-        self.autocommit = autocommit
         self.log = log
 
     def execute_query(self, query, fetch_results=False, cursor_factory=None, error_callback=None):
@@ -290,13 +288,13 @@ class RedshiftClientResource(ConfigurableResource):
         .. code-block:: python
 
             from dagster import build_op_context, op
-            from dagster_aws.redshift import RedshiftResource
+            from dagster_aws.redshift import RedshiftClientResource
 
             @op(required_resource_keys={'redshift'})
             def example_redshift_op(context):
                 return context.resources.redshift.execute_query('SELECT 1', fetch_results=True)
 
-            redshift_configured = RedshiftResource(
+            redshift_configured = RedshiftClientResource(
                 host='my-redshift-cluster.us-east-1.redshift.amazonaws.com',
                 port=5439,
                 user='dagster',
@@ -351,21 +349,7 @@ class RedshiftClientResource(ConfigurableResource):
 
 class FakeRedshiftClientResource(RedshiftClientResource):
     def create_redshift_client(self) -> FakeRedshiftClient:
-        conn_args = {
-            k: getattr(self, k, None)
-            for k in (
-                "host",
-                "port",
-                "user",
-                "password",
-                "database",
-                "connect_timeout",
-                "sslmode",
-            )
-            if getattr(self, k, None) is not None
-        }
-
-        return FakeRedshiftClient(conn_args, self.autocommit, get_dagster_logger())
+        return FakeRedshiftClient(get_dagster_logger())
 
 
 @resource(
