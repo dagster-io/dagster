@@ -19,7 +19,10 @@ from typing import (
 from pydantic import ConstrainedFloat, ConstrainedInt, ConstrainedStr
 from typing_extensions import TypeAlias, get_args
 
-from dagster import Enum as DagsterEnum
+from dagster import (
+    Enum as DagsterEnum,
+    Field as DagsterField,
+)
 from dagster._annotations import experimental
 from dagster._config.config_type import Array, ConfigFloatInstance, ConfigType, EnumValue, Noneable
 from dagster._config.field_utils import config_dictionary_from_values
@@ -154,6 +157,13 @@ class Config(MakeConfigCacheable):
         """Converts the config structure represented by this class into a DefinitionConfigSchema."""
         return DefinitionConfigSchema(infer_schema_from_config_class(cls))
 
+    @classmethod
+    def to_fields_dict(cls) -> Dict[str, DagsterField]:
+        """Converts the config structure represented by this class into a dictionary of dagster.Fields.
+        This is useful when interacting with legacy code that expects a dictionary of fields but you
+        want the source of truth to be a config class.
+        """
+        return cast(Shape, cls.to_config_schema().as_field().config_type).fields
 
 @experimental
 class PermissiveConfig(Config):
