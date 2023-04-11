@@ -60,7 +60,7 @@ export const AssetLaunchpad: React.FC<{
   );
 };
 
-export const JobLaunchpad: React.FC<{repoAddress: RepoAddress}> = (props) => {
+export const JobOrAssetLaunchpad: React.FC<{repoAddress: RepoAddress}> = (props) => {
   const {repoAddress} = props;
   const {pipelinePath, repoPath} = useParams<{repoPath: string; pipelinePath: string}>();
   const {
@@ -69,6 +69,16 @@ export const JobLaunchpad: React.FC<{repoAddress: RepoAddress}> = (props) => {
 
   if (!canLaunchPipelineExecution) {
     return <Redirect to={`/locations/${repoPath}/pipeline_or_job/${pipelinePath}`} />;
+  }
+
+  if (pipelinePath.includes('__ASSET_JOB')) {
+    return (
+      <LaunchpadAllowedRoot
+        launchpadType="asset"
+        pipelinePath={pipelinePath}
+        repoAddress={repoAddress}
+      />
+    );
   }
 
   return (

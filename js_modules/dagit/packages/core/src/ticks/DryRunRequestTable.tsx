@@ -63,6 +63,9 @@ export const RunRequestTable: React.FC<Props> = ({
                     mode,
                     config: request.runConfigYaml,
                     tags: request.tags,
+                    assetSelection: request.assetSelection?.map(({path}) => ({
+                      assetKey: {path},
+                    })),
                   })}`,
                 )}
               >

@@ -367,6 +367,9 @@ export const EVALUATE_SENSOR_MUTATION = gql`
               value
             }
             runKey
+            assetSelection {
+              path
+            }
           }
           skipReason
           error {
