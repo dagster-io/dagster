@@ -672,6 +672,24 @@ def test_launching_with_task_definition_dict(
         ],
     }
     log_group = "my-log-group"
+
+    mount_points = [
+        {
+            "sourceVolume": "myEfsVolume",
+            "containerPath": "/mount/efs",
+            "readOnly": True,
+        }
+    ]
+    volumes = [
+        {
+            "name": "myEfsVolume",
+            "efsVolumeConfiguration": {
+                "fileSystemId": "fs-1234",
+                "rootDirectory": "/path/to/my/data",
+            },
+        }
+    ]
+
     # You can provide a family or a task definition ARN
     with instance_cm(
         {
@@ -682,6 +700,8 @@ def test_launching_with_task_definition_dict(
                 "sidecar_containers": [sidecar],
                 "requires_compatibilities": ["FARGATE"],
                 "runtime_platform": {"operatingSystemFamily": "WINDOWS_SERVER_2019_FULL"},
+                "mount_points": mount_points,
+                "volumes": volumes,
             },
             "container_name": container_name,
         }
@@ -713,11 +733,15 @@ def test_launching_with_task_definition_dict(
             "taskDefinition"
         ]
 
+        assert task_definition["volumes"] == volumes
         assert task_definition["taskRoleArn"] == task_role_arn
         assert task_definition["executionRoleArn"] == execution_role_arn
         assert task_definition["runtimePlatform"] == {
             "operatingSystemFamily": "WINDOWS_SERVER_2019_FULL"
         }
+
+        container_definition = task_definition["containerDefinitions"][0]
+        assert container_definition["mountPoints"] == mount_points
 
         assert [container["name"] for container in task_definition["containerDefinitions"]] == [
             container_name,
@@ -921,6 +945,8 @@ def test_launch_run_with_container_context(
         "taskDefinition"
     ]
 
+    container_definition = task_definition["containerDefinitions"][0]
+
     assert task_definition["taskRoleArn"] == container_context_config["ecs"]["task_role_arn"]
     assert (
         task_definition["executionRoleArn"] == container_context_config["ecs"]["execution_role_arn"]
@@ -932,6 +958,9 @@ def test_launch_run_with_container_context(
         task_definition["ephemeralStorage"]["sizeInGiB"]
         == container_context_config["ecs"]["run_resources"]["ephemeral_storage"]
     )
+    assert task_definition["volumes"] == container_context_config["ecs"]["volumes"]
+
+    assert container_definition["mountPoints"] == container_context_config["ecs"]["mount_points"]
 
 
 def test_memory_and_cpu(ecs, instance, workspace, run, task_definition):
