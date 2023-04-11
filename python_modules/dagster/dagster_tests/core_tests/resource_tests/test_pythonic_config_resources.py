@@ -31,7 +31,7 @@ from dagster._config.pythonic_config import (
     ConfigurableLegacyIOManagerAdapter,
     ConfigurableResource,
     ConfigurableResourceFactory,
-    IAttachDifferentObjectToContext,
+    IAttachDifferentObjectToOpContext,
     ResourceDependency,
 )
 from dagster._core.definitions.assets_job import build_assets_job
@@ -257,7 +257,7 @@ def test_migration_attach_bare_object_to_context() -> None:
         def foo(self) -> str:
             return "foo"
 
-    class MyClientResource(ConfigurableResource, IAttachDifferentObjectToContext):
+    class MyClientResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
         def get_client(self) -> MyClient:
             return MyClient()
 

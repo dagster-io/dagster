@@ -396,7 +396,7 @@ def validate_and_get_schedule_resource_dict(
                 f"Resource with key '{k}' required by schedule '{schedule_name}' was not provided."
             )
 
-    return {k: resources._original_resource_dict[k] for k in required_resource_keys}  # noqa: SLF001
+    return {k: getattr(resources, k) for k in required_resource_keys}
 
 
 class ScheduleDefinition:
@@ -624,14 +624,14 @@ class ScheduleDefinition:
             default_status, "default_status", DefaultScheduleStatus
         )
 
-        self._resource_arg_names: Set[str] = (
+        resource_arg_names: Set[str] = (
             {arg.name for arg in get_resource_args(self._execution_fn.decorated_fn)}
             if isinstance(self._execution_fn, DecoratedScheduleFunction)
             else set()
         )
 
         check.param_invariant(
-            len(required_resource_keys or []) == 0 or len(self._resource_arg_names) == 0,
+            len(required_resource_keys or []) == 0 or len(resource_arg_names) == 0,
             (
                 "Cannot specify resource requirements in both @sensor decorator and as arguments to"
                 " the decorated function"
@@ -640,7 +640,7 @@ class ScheduleDefinition:
 
         self._required_resource_keys = (
             check.opt_set_param(required_resource_keys, "required_resource_keys", of_type=str)
-            or self._resource_arg_names
+            or resource_arg_names
         )
 
     def __call__(self, *args, **kwargs) -> ScheduleEvaluationFunctionReturn:
@@ -658,13 +658,9 @@ class ScheduleDefinition:
         context = get_or_create_schedule_context(self._execution_fn.decorated_fn, *args, **kwargs)
         context_param = {context_param_name: context} if context_param_name else {}
 
-        resources = {
-            k: v
-            for k, v in validate_and_get_schedule_resource_dict(
-                context.resources, self._name, self._required_resource_keys
-            ).items()
-            if k in self._resource_arg_names
-        }
+        resources = validate_and_get_schedule_resource_dict(
+            context.resources, self._name, self._required_resource_keys
+        )
         result = self._execution_fn.decorated_fn(**context_param, **resources)
 
         if isinstance(result, dict):

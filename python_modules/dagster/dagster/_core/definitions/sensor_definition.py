@@ -353,10 +353,7 @@ def _validate_and_get_resource_dict(
                 f"Resource with key '{k}' required by sensor '{sensor_name}' was not provided."
             )
 
-    return {
-        k: context.resources._original_resource_dict[k]  # noqa: SLF001
-        for k in required_resource_keys
-    }
+    return {k: getattr(context.resources, k) for k in required_resource_keys}
 
 
 def get_or_create_sensor_context(
@@ -566,10 +563,10 @@ class SensorDefinition:
             asset_selection, "asset_selection", AssetSelection
         )
         validate_resource_annotated_function(self._raw_fn)
-        self._resource_arg_names: Set[str] = {arg.name for arg in get_resource_args(self._raw_fn)}
+        resource_arg_names: Set[str] = {arg.name for arg in get_resource_args(self._raw_fn)}
 
         check.param_invariant(
-            len(required_resource_keys or []) == 0 or len(self._resource_arg_names) == 0,
+            len(required_resource_keys or []) == 0 or len(resource_arg_names) == 0,
             (
                 "Cannot specify resource requirements in both @sensor decorator and as arguments to"
                 " the decorated function"
@@ -577,7 +574,7 @@ class SensorDefinition:
         )
         self._required_resource_keys = (
             check.opt_set_param(required_resource_keys, "required_resource_keys", of_type=str)
-            or self._resource_arg_names
+            or resource_arg_names
         )
 
     def __call__(self, *args, **kwargs) -> RawSensorEvaluationFunctionReturn:
@@ -588,13 +585,9 @@ class SensorDefinition:
             {context_param_name_if_present: context} if context_param_name_if_present else {}
         )
 
-        resources = {
-            k: v
-            for k, v in _validate_and_get_resource_dict(
-                context, self.name, self._required_resource_keys
-            ).items()
-            if k in self._resource_arg_names
-        }
+        resources = _validate_and_get_resource_dict(
+            context, self.name, self._required_resource_keys
+        )
         return self._raw_fn(**context_param, **resources)
 
     @public

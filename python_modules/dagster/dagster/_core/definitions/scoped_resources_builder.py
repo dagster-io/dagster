@@ -59,7 +59,7 @@ class ScopedResourcesBuilder(
         )
 
     def build(self, required_resource_keys: Optional[AbstractSet[str]]) -> Resources:
-        from dagster._config.pythonic_config import IAttachDifferentObjectToContext
+        from dagster._config.pythonic_config import IAttachDifferentObjectToOpContext
 
         """We dynamically create a type that has the resource keys as properties, to enable dotting into
         the resources from a context.
@@ -87,7 +87,7 @@ class ScopedResourcesBuilder(
         resources_to_attach_to_context = {
             k: (
                 v.get_object_to_set_on_execution_context()
-                if isinstance(v, IAttachDifferentObjectToContext)
+                if isinstance(v, IAttachDifferentObjectToOpContext)
                 else v
             )
             for k, v in resource_instance_dict.items()

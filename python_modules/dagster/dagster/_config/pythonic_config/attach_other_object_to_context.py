@@ -3,7 +3,7 @@ from typing import (
 )
 
 
-class IAttachDifferentObjectToContext:
+class IAttachDifferentObjectToOpContext:
     """Utility interface which adjusts the type of the bare object attached to the execution context
     by a resource. Useful when migrating function-style resources to class-style ConfigurableResources.
 
@@ -24,7 +24,7 @@ class IAttachDifferentObjectToContext:
 
     .. code-block:: python
 
-        class MyStringResource(ConfigurableResource, IAttachDifferentObjectToContext):
+        class MyStringResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
             inner_string: str
 
             def get_object_to_set_on_execution_context(self) -> str:

@@ -43,7 +43,7 @@ from dagster._core.errors import (
 from dagster._core.execution.context.init import InitResourceContext
 
 from .attach_other_object_to_context import (
-    IAttachDifferentObjectToContext as IAttachDifferentObjectToContext,
+    IAttachDifferentObjectToOpContext as IAttachDifferentObjectToOpContext,
 )
 
 try:

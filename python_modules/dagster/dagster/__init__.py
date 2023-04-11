@@ -98,12 +98,7 @@ from dagster._config.pythonic_config import (
     ConfigurableIOManagerFactory as ConfigurableIOManagerFactory,
     ConfigurableLegacyIOManagerAdapter as ConfigurableLegacyIOManagerAdapter,
     ConfigurableResource as ConfigurableResource,
-<<<<<<< HEAD
-    IAttachBareObjectToContext as IAttachBareObjectToContext,
-=======
-    ConfigurableResourceFactory as ConfigurableResourceFactory,
-    IAttachDifferentObjectToContext as IAttachDifferentObjectToContext,
->>>>>>> fadb9d7ffd (cleanup impl, add schedule and sensor tests)
+    IAttachDifferentObjectToOpContext as IAttachDifferentObjectToOpContext,
     PermissiveConfig as PermissiveConfig,
     ResourceDependency as ResourceDependency,
 )
