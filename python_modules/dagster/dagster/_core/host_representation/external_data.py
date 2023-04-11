@@ -29,15 +29,15 @@ from dagster import (
     StaticPartitionsDefinition,
     _check as check,
 )
+from dagster._config.pythonic_config import (
+    ConfigurableResource,
+    PartialResource,
+    ResourceWithKeyMapping,
+)
 from dagster._config.snap import (
     ConfigFieldSnap,
     ConfigSchemaSnapshot,
     snap_from_config_type,
-)
-from dagster._config.structured_config import (
-    ConfigurableResource,
-    PartialResource,
-    ResourceWithKeyMapping,
 )
 from dagster._core.definitions import (
     JobDefinition,

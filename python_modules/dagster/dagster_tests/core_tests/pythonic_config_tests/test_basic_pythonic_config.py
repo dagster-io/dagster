@@ -17,8 +17,8 @@ from dagster import (
 )
 from dagster._config.config_type import ConfigTypeKind, Noneable
 from dagster._config.field_utils import convert_potential_field
+from dagster._config.pythonic_config import Config, infer_schema_from_config_class
 from dagster._config.source import BoolSource, IntSource, StringSource
-from dagster._config.structured_config import Config, infer_schema_from_config_class
 from dagster._config.type_printer import print_config_type_to_string
 from dagster._core.definitions.assets_job import build_assets_job
 from dagster._core.definitions.definitions_class import Definitions

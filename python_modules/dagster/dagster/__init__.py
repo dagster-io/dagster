@@ -92,12 +92,7 @@ from dagster._config.field_utils import (
     Selector as Selector,
     Shape as Shape,
 )
-from dagster._config.source import (
-    BoolSource as BoolSource,
-    IntSource as IntSource,
-    StringSource as StringSource,
-)
-from dagster._config.structured_config import (
+from dagster._config.pythonic_config import (
     Config as Config,
     ConfigurableIOManager as ConfigurableIOManager,
     ConfigurableIOManagerFactory as ConfigurableIOManagerFactory,
@@ -107,6 +102,11 @@ from dagster._config.structured_config import (
     ConfigurableResourceFactory as ConfigurableResourceFactory,
     PermissiveConfig as PermissiveConfig,
     ResourceDependency as ResourceDependency,
+)
+from dagster._config.source import (
+    BoolSource as BoolSource,
+    IntSource as IntSource,
+    StringSource as StringSource,
 )
 from dagster._core.definitions.asset_in import AssetIn as AssetIn
 from dagster._core.definitions.asset_out import AssetOut as AssetOut

@@ -3,7 +3,7 @@ from typing import Dict, Optional, cast
 import pypd
 from dagster import ConfigurableResource, resource
 from dagster._annotations import quiet_experimental_warnings
-from dagster._config.structured_config import infer_schema_from_config_class
+from dagster._config.pythonic_config import infer_schema_from_config_class
 from pydantic import Field as PyField
 
 

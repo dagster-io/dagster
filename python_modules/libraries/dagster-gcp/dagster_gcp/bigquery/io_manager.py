@@ -4,7 +4,7 @@ from typing import Generator, Optional, Sequence, Type, cast
 
 from dagster import IOManagerDefinition, OutputContext, io_manager
 from dagster._annotations import experimental
-from dagster._config.structured_config import (
+from dagster._config.pythonic_config import (
     ConfigurableIOManagerFactory,
 )
 from dagster._core.storage.db_io_manager import (

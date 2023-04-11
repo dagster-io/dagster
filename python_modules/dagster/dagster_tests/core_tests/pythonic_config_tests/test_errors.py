@@ -9,7 +9,7 @@ from dagster import (
     schedule,
     sensor,
 )
-from dagster._config.structured_config import ConfigurableResource, ConfigurableResourceFactory
+from dagster._config.pythonic_config import ConfigurableResource, ConfigurableResourceFactory
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,

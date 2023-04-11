@@ -7,7 +7,7 @@ from dagster import (
     asset,
 )
 from dagster._config.field_utils import EnvVar
-from dagster._config.structured_config import ConfigurableResource
+from dagster._config.pythonic_config import ConfigurableResource
 from dagster._core.test_utils import environ
 from dagster_graphql.test.utils import define_out_of_process_context
 

@@ -11,7 +11,7 @@ from dagster import (
     op,
 )
 from dagster._config.config_type import ConfigTypeKind, Noneable
-from dagster._config.structured_config import Config, PermissiveConfig
+from dagster._config.pythonic_config import Config, PermissiveConfig
 from dagster._config.type_printer import print_config_type_to_string
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._utils.cached_method import cached_method

@@ -4,7 +4,7 @@ from typing import Any
 import pytest
 from dagster import AssetsDefinition, ResourceDefinition, asset, job, op, resource, with_resources
 from dagster._check import ParameterCheckError
-from dagster._config.structured_config import Config
+from dagster._config.pythonic_config import Config
 from dagster._core.definitions.asset_out import AssetOut
 from dagster._core.definitions.assets_job import build_assets_job
 from dagster._core.definitions.decorators.asset_decorator import multi_asset

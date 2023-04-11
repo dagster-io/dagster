@@ -4,7 +4,7 @@ from typing import Optional, Sequence, Type, cast
 
 import duckdb
 from dagster import IOManagerDefinition, OutputContext, io_manager
-from dagster._config.structured_config import (
+from dagster._config.pythonic_config import (
     ConfigurableIOManagerFactory,
 )
 from dagster._core.definitions.time_window_partitions import TimeWindow

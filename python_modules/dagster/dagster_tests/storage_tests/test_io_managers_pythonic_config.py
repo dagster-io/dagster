@@ -1,5 +1,5 @@
 from dagster import Definitions, In, asset, job, op
-from dagster._config.structured_config import ConfigurableIOManager, ConfigurableResource
+from dagster._config.pythonic_config import ConfigurableIOManager, ConfigurableResource
 
 
 def test_load_input_handle_output():
