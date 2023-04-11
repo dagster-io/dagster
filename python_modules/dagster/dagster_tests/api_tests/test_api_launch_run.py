@@ -39,7 +39,7 @@ def test_launch_run_with_unloadable_pipeline_grpc():
             res = deserialize_value(
                 api_client.start_run(
                     ExecuteExternalJobArgs(
-                        job_origin=original_origin._replace(pipeline_name="i_am_fake_pipeline"),
+                        job_origin=original_origin._replace(job_name="i_am_fake_pipeline"),
                         run_id=run_id,
                         instance_ref=instance.get_ref(),
                     )

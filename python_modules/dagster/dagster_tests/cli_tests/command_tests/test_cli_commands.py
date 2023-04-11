@@ -3,7 +3,7 @@ import string
 import sys
 import tempfile
 from contextlib import contextmanager
-from typing import ContextManager, NoReturn, Tuple
+from typing import ContextManager, NoReturn, Optional, Tuple
 
 import mock
 import pytest
@@ -307,7 +307,7 @@ def args_with_default_cli_test_instance(*args):
 
 
 @contextmanager
-def grpc_server_bar_kwargs(instance, pipeline_name=None):
+def grpc_server_bar_kwargs(instance, job_name: Optional[str] = None):
     with GrpcServerProcess(
         instance_ref=instance.get_ref(),
         loadable_target_origin=LoadableTargetOrigin(
@@ -319,7 +319,7 @@ def grpc_server_bar_kwargs(instance, pipeline_name=None):
     ) as server_process:
         client = server_process.create_client()
         args = {"grpc_host": client.host}
-        if pipeline_name:
+        if job_name:
             args["job_name"] = "foo"
         if client.port:
             args["grpc_port"] = client.port

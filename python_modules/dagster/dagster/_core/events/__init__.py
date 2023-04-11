@@ -938,9 +938,7 @@ class DagsterEvent(
         return DagsterEvent.from_job(
             DagsterEventType.RUN_START,
             job_context,
-            message='Started execution of run for "{pipeline_name}".'.format(
-                pipeline_name=job_context.job_name
-            ),
+            message=f'Started execution of run for "{job_context.job_name}".',
         )
 
     @staticmethod
@@ -948,9 +946,7 @@ class DagsterEvent(
         return DagsterEvent.from_job(
             DagsterEventType.RUN_SUCCESS,
             job_context,
-            message='Finished execution of run for "{pipeline_name}".'.format(
-                pipeline_name=job_context.job_name
-            ),
+            message=f'Finished execution of run for "{job_context.job_name}".',
         )
 
     @staticmethod
@@ -964,9 +960,8 @@ class DagsterEvent(
             return DagsterEvent.from_job(
                 DagsterEventType.RUN_FAILURE,
                 job_context_or_name,
-                message='Execution of run for "{pipeline_name}" failed. {context_msg}'.format(
-                    pipeline_name=job_context_or_name.job_name,
-                    context_msg=context_msg,
+                message=(
+                    f'Execution of run for "{job_context_or_name.job_name}" failed. {context_msg}'
                 ),
                 event_specific_data=JobFailureData(error_info),
             )
@@ -978,10 +973,7 @@ class DagsterEvent(
                 event_type_value=DagsterEventType.RUN_FAILURE.value,
                 job_name=job_context_or_name,
                 event_specific_data=JobFailureData(error_info),
-                message='Execution of run for "{pipeline_name}" failed. {context_msg}'.format(
-                    pipeline_name=job_context_or_name,
-                    context_msg=context_msg,
-                ),
+                message=f'Execution of run for "{job_context_or_name}" failed. {context_msg}',
                 pid=os.getpid(),
             )
             return event
@@ -993,9 +985,7 @@ class DagsterEvent(
         return DagsterEvent.from_job(
             DagsterEventType.RUN_CANCELED,
             job_context,
-            message='Execution of run for "{pipeline_name}" canceled.'.format(
-                pipeline_name=job_context.job_name
-            ),
+            message=f'Execution of run for "{job_context.job_name}" canceled.',
             event_specific_data=JobCanceledData(
                 check.opt_inst_param(error_info, "error_info", SerializableErrorInfo)
             ),
