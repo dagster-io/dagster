@@ -89,6 +89,16 @@ class AssetDaemon(IntervalDaemon):
                 CREATED_BY_TAG: "auto_materialize",
             }
 
+            external_execution_plan = code_location.get_external_execution_plan(
+                external_pipeline,
+                run_request.run_config,
+                DEFAULT_MODE_NAME,
+                step_keys_to_execute=None,
+                known_state=None,
+                instance=instance,
+            )
+            execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
+
             run = instance.create_run(
                 pipeline_name=external_pipeline.name,
                 run_id=None,
@@ -102,7 +112,7 @@ class AssetDaemon(IntervalDaemon):
                 parent_run_id=None,
                 tags=tags,
                 pipeline_snapshot=external_pipeline.pipeline_snapshot,
-                execution_plan_snapshot=None,
+                execution_plan_snapshot=execution_plan_snapshot,
                 parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
                 external_pipeline_origin=external_pipeline.get_external_origin(),
                 pipeline_code_origin=external_pipeline.get_python_origin(),

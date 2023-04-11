@@ -11,7 +11,7 @@ from .asset_reconciliation_scenario import (
     run,
     run_request,
 )
-from .freshness_policy_scenarios import overlapping_freshness_inf
+from .freshness_policy_scenarios import diamond_freshness, overlapping_freshness_inf
 
 
 def with_auto_materialize_policy(
@@ -111,5 +111,69 @@ multi_code_location_scenarios = {
         expected_run_requests=[
             run_request(asset_keys=["asset6"]),
         ],
+    ),
+    "multi_code_freshness_blank_slate": AssetReconciliationScenario(
+        assets=None,
+        code_locations={
+            "foo": with_auto_materialize_policy(
+                diamond_freshness[:-1], AutoMaterializePolicy.lazy()
+            ),
+            "bar": with_auto_materialize_policy(
+                diamond_freshness[-1:], AutoMaterializePolicy.lazy()
+            ),
+        },
+        unevaluated_runs=[],
+        # asset4 is in a separate location, can't be reconciled yet
+        expected_run_requests=[run_request(asset_keys=["asset1", "asset2", "asset3"])],
+    ),
+    "multi_code_freshness_blank_slate_cross_code_location": AssetReconciliationScenario(
+        assets=None,
+        code_locations={
+            "foo": with_auto_materialize_policy(
+                diamond_freshness[:-1],
+                AutoMaterializePolicy(
+                    for_freshness=True,
+                    on_missing=False,
+                    on_upstream_data_newer=False,
+                    time_window_partition_scope_minutes=0,
+                ),
+            ),
+            "bar": with_auto_materialize_policy(
+                diamond_freshness[-1:],
+                AutoMaterializePolicy(
+                    for_freshness=True,
+                    on_missing=False,
+                    on_upstream_data_newer=False,
+                    time_window_partition_scope_minutes=0,
+                ),
+            ),
+        },
+        unevaluated_runs=[run(["asset1", "asset2", "asset3"])],
+        expected_run_requests=[run_request(asset_keys=["asset4"])],
+    ),
+    "multi_code_freshness_blank_slate_cross_code_location_2": AssetReconciliationScenario(
+        assets=None,
+        code_locations={
+            "foo": with_auto_materialize_policy(
+                diamond_freshness[:1],
+                AutoMaterializePolicy(
+                    for_freshness=True,
+                    on_missing=False,
+                    on_upstream_data_newer=False,
+                    time_window_partition_scope_minutes=0,
+                ),
+            ),
+            "bar": with_auto_materialize_policy(
+                diamond_freshness[1:],
+                AutoMaterializePolicy(
+                    for_freshness=True,
+                    on_missing=False,
+                    on_upstream_data_newer=False,
+                    time_window_partition_scope_minutes=0,
+                ),
+            ),
+        },
+        unevaluated_runs=[],
+        expected_run_requests=[run_request(asset_keys=["asset1"])],
     ),
 }

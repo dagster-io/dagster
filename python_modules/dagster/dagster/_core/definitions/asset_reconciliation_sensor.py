@@ -708,18 +708,40 @@ def determine_asset_partitions_to_reconcile_for_freshness(
 
     Attempts to minimize the total number of asset executions.
     """
+    from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+
     # now we have a full set of constraints, we can find solutions for them as we move down
     to_materialize: Set[AssetKeyPartitionKey] = set()
+    waiting_to_materialize: Set[AssetKey] = set()
     expected_data_time_by_key: Dict[AssetKey, Optional[datetime.datetime]] = {}
 
     for level in asset_graph.toposort_asset_keys():
         for key in level:
             if (
                 key not in target_asset_keys_and_parents
-                or key not in asset_graph.all_asset_keys
+                or key not in asset_graph.non_source_asset_keys
                 or not asset_graph.get_downstream_freshness_policies(asset_key=key)
             ):
                 continue
+
+            parents = asset_graph.get_parents(key)
+
+            if any(p in waiting_to_materialize for p in parents):
+                # we can't materialize this asset yet, because we're waiting on a parent
+                waiting_to_materialize.add(key)
+                continue
+
+            # if we're going to materialize a parent of this asset that's in a different repository,
+            # then we need to wait
+            if isinstance(asset_graph, ExternalAssetGraph):
+                repo = asset_graph.get_repository_handle(key)
+                if any(
+                    AssetKeyPartitionKey(p, None) in to_materialize
+                    and asset_graph.get_repository_handle(p) is not repo
+                    for p in parents
+                ):
+                    waiting_to_materialize.add(key)
+                    continue
 
             # figure out the current contents of this asset with respect to its constraints
             current_data_time = data_time_resolver.get_current_data_time(key, current_time)
@@ -728,7 +750,7 @@ def determine_asset_partitions_to_reconcile_for_freshness(
             expected_data_time = min(
                 (
                     cast(datetime.datetime, expected_data_time_by_key[k])
-                    for k in asset_graph.get_parents(key)
+                    for k in parents
                     if k in expected_data_time_by_key and expected_data_time_by_key[k] is not None
                 ),
                 default=current_time,
