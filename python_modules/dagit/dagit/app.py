@@ -15,6 +15,7 @@ from .webserver import DagitWebserver
 def create_app_from_workspace_process_context(
     workspace_process_context: WorkspaceProcessContext,
     path_prefix: str = "",
+    **kwargs,
 ) -> Starlette:
     check.inst_param(
         workspace_process_context, "workspace_process_context", WorkspaceProcessContext
@@ -36,7 +37,7 @@ def create_app_from_workspace_process_context(
     return DagitWebserver(
         workspace_process_context,
         path_prefix,
-    ).create_asgi_app()
+    ).create_asgi_app(**kwargs)
 
 
 def default_app(debug=False):

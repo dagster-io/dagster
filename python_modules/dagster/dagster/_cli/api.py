@@ -739,6 +739,9 @@ def grpc_command(
 
         try:
             server.serve()
+        except KeyboardInterrupt:
+            # Terminate cleanly on interrupt
+            logger.info("Code server was interrupted")
         finally:
             logger.info("Shutting down %s", server_desc)
 
