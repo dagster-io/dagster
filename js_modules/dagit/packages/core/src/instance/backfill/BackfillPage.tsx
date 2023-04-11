@@ -22,6 +22,7 @@ import styled from 'styled-components/macro';
 
 import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
+import {useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {useTrackPageView} from '../../app/analytics';
 import {BulkActionStatus, RunStatus} from '../../graphql/types';
 import {useDocumentTitle} from '../../hooks/useDocumentTitle';
@@ -43,17 +44,24 @@ export const BackfillPage = () => {
   useTrackPageView();
   useDocumentTitle(`Backfill | ${backfillId}`);
 
-  const {data, loading} = useQuery<
-    BackfillStatusesByAssetQuery,
-    BackfillStatusesByAssetQueryVariables
-  >(BACKFILL_DETAILS_QUERY, {
-    variables: {backfillId},
-  });
+  const queryResult = useQuery<BackfillStatusesByAssetQuery, BackfillStatusesByAssetQueryVariables>(
+    BACKFILL_DETAILS_QUERY,
+    {
+      variables: {backfillId},
+    },
+  );
+  const {data} = queryResult;
 
   const backfill = data?.partitionBackfillOrError;
+  let isInProgress = true;
+  if (backfill && backfill.__typename === 'PartitionBackfill') {
+    // for asset backfills, all of the requested runs have concluded in order for the status to be BulkActionStatus.COMPLETED
+    isInProgress = backfill.status === BulkActionStatus.REQUESTED;
+  }
+  useQueryRefreshAtInterval(queryResult, 5000, isInProgress);
 
   function content() {
-    if (!backfill || loading) {
+    if (!backfill || !data) {
       return (
         <Box padding={64} data-testid={testId('page-loading-indicator')}>
           <Spinner purpose="page" />
