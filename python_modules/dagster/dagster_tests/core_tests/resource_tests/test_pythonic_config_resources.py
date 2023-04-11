@@ -2438,12 +2438,12 @@ def test_direct_asset_invocation_many_resource_args_context() -> None:
 
 
 def test_from_resource_context_and_to_config_empty() -> None:
-    class NoConfigResource(ConfigurableResourceFactory[str]):
-        def provide_object_for_execution(self, context) -> str:
+    class NoConfigResource(ConfigurableResource[str]):
+        def get_string(self) -> str:
             return "foo"
 
     @resource(config_schema=NoConfigResource.to_config_schema())
     def string_resource_function_style(context: InitResourceContext) -> str:
-        return NoConfigResource.from_resource_context(context)
+        return NoConfigResource.from_resource_context(context).get_string()
 
     assert string_resource_function_style(build_init_resource_context()) == "foo"
