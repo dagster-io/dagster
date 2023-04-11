@@ -50,7 +50,7 @@ export const BackfillPage = () => {
       variables: {backfillId},
     },
   );
-  const {data, loading} = queryResult;
+  const {data} = queryResult;
 
   const backfill = data?.partitionBackfillOrError;
   let isInProgress = true;
