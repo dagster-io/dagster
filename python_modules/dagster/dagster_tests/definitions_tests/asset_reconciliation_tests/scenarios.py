@@ -2,6 +2,7 @@ from dagster import Definitions
 
 from .auto_materialize_policy_scenarios import auto_materialize_policy_scenarios
 from .basic_scenarios import basic_scenarios
+from .definition_change_scenarios import definition_change_scenarios
 from .exotic_partition_mapping_scenarios import exotic_partition_mapping_scenarios
 from .freshness_policy_scenarios import freshness_policy_scenarios
 from .observable_source_asset_scenarios import observable_source_asset_scenarios
@@ -14,6 +15,7 @@ ASSET_RECONCILIATION_SCENARIOS = {
     **freshness_policy_scenarios,
     **auto_materialize_policy_scenarios,
     **observable_source_asset_scenarios,
+    **definition_change_scenarios,
 }
 
 # put repos in the global namespace so that the daemon can load them with LoadableTargetOrigin
