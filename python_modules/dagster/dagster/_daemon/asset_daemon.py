@@ -95,7 +95,7 @@ class AssetDaemon(IntervalDaemon):
             job_name = check.not_none(asset_graph.get_implicit_job_name_for_assets(asset_keys))
 
             code_location = workspace.get_code_location(location_name)
-            external_pipeline = code_location.get_external_job(
+            external_job = code_location.get_external_job(
                 JobSubsetSelector(
                     location_name=location_name,
                     repository_name=repository_name,
@@ -112,7 +112,7 @@ class AssetDaemon(IntervalDaemon):
             }
 
             external_execution_plan = code_location.get_external_execution_plan(
-                external_pipeline,
+                external_job,
                 run_request.run_config,
                 step_keys_to_execute=None,
                 known_state=None,
@@ -121,7 +121,7 @@ class AssetDaemon(IntervalDaemon):
             execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
 
             run = instance.create_run(
-                pipeline_name=external_pipeline.name,
+                job_name=external_job.name,
                 run_id=None,
                 run_config=None,
                 solids_to_execute=None,
@@ -131,11 +131,11 @@ class AssetDaemon(IntervalDaemon):
                 root_run_id=None,
                 parent_run_id=None,
                 tags=tags,
-                pipeline_snapshot=external_pipeline.pipeline_snapshot,
+                job_snapshot=external_job.job_snapshot,
                 execution_plan_snapshot=execution_plan_snapshot,
-                parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
-                external_pipeline_origin=external_pipeline.get_external_origin(),
-                pipeline_code_origin=external_pipeline.get_python_origin(),
+                parent_job_snapshot=external_job.parent_job_snapshot,
+                external_job_origin=external_job.get_external_origin(),
+                job_code_origin=external_job.get_python_origin(),
                 asset_selection=frozenset(asset_keys),
             )
             instance.submit_run(run.run_id, workspace)

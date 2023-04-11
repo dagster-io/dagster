@@ -1499,7 +1499,7 @@ def external_job_ref_from_def(job_def: JobDefinition) -> ExternalJobRef:
     return ExternalJobRef(
         name=job_def.name,
         snapshot_id=job_def.get_job_snapshot_id(),
-        parent_snapshot_id=parent_snapshot_id,
+        parent_snapshot_id=None,
         active_presets=active_presets_from_job_def(job_def),
     )
 
