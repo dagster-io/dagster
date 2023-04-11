@@ -181,3 +181,10 @@ def conditional_assets_repository():
     from . import conditional_assets
 
     return load_assets_from_modules([conditional_assets])
+
+
+@repository
+def data_versions_repository():
+    from . import data_versions
+
+    return load_assets_from_modules([data_versions])
