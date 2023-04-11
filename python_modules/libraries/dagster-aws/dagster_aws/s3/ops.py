@@ -67,21 +67,11 @@ def last_key(key: str) -> str:
     required_resource_keys={"s3", "file_manager"},
 )
 def file_handle_to_s3(context, file_handle) -> Generator[Any, None, None]:
-    from .resources import S3FileManager, S3FileManagerResource, S3Resource
-
     bucket = context.op_config["Bucket"]
     key = context.op_config["Key"]
 
-    file_manager_resource = context.resources.file_manager
-    s3_resource = context.resources.s3
-
-    # Extract clients from new Pythonic resource types, if needed
-    file_manager: S3FileManager = file_manager_resource
-    if isinstance(file_manager_resource, S3FileManagerResource):
-        file_manager = file_manager_resource.create_client()
-    s3 = s3_resource
-    if isinstance(s3_resource, S3Resource):
-        s3 = s3_resource.create_client()
+    file_manager = context.resources.file_manager
+    s3 = context.resources.s3
 
     with file_manager.read(file_handle, "rb") as fileobj:
         s3.upload_fileobj(fileobj, bucket, key)

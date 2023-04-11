@@ -1,9 +1,6 @@
 from typing import Any, Optional, TypeVar
 
-from dagster import (
-    ConfigurableResource,
-    resource,
-)
+from dagster import ConfigurableResource, IAttachDifferentObjectToOpContext, resource
 from pydantic import Field
 
 from .file_manager import S3FileManager
@@ -54,7 +51,7 @@ class ResourceWithS3Configuration(ConfigurableResource):
     )
 
 
-class S3Resource(ResourceWithS3Configuration):
+class S3Resource(ResourceWithS3Configuration, IAttachDifferentObjectToOpContext):
     """Resource that gives access to S3.
 
     The underlying S3 session is created by calling
@@ -98,6 +95,9 @@ class S3Resource(ResourceWithS3Configuration):
             aws_secret_access_key=self.aws_secret_access_key,
             aws_session_token=self.aws_session_token,
         )
+
+    def get_object_to_set_on_execution_context(self) -> Any:
+        return self.create_client()
 
 
 @resource(config_schema=S3Resource.to_config_schema())
@@ -173,7 +173,7 @@ def s3_resource(context) -> Any:
     return S3Resource.from_resource_context(context).create_client()
 
 
-class S3FileManagerResource(ResourceWithS3Configuration):
+class S3FileManagerResource(ResourceWithS3Configuration, IAttachDifferentObjectToOpContext):
     s3_bucket: str = Field(description="S3 bucket to use for the file manager.")
     s3_prefix: str = Field(
         default="dagster", description="Prefix to use for the S3 bucket for this file manager."
@@ -196,6 +196,9 @@ class S3FileManagerResource(ResourceWithS3Configuration):
             s3_bucket=self.s3_bucket,
             s3_base_key=self.s3_prefix,
         )
+
+    def get_object_to_set_on_execution_context(self) -> Any:
+        return self.create_client()
 
 
 @resource(
