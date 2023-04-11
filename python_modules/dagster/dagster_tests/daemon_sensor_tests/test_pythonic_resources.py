@@ -131,7 +131,7 @@ the_repo = Definitions(
 
 def create_workspace_load_target(attribute: Optional[str] = SINGLETON_REPOSITORY_NAME):
     return ModuleTarget(
-        module_name="dagster_tests.daemon_sensor_tests.test_struct_resources",
+        module_name="dagster_tests.daemon_sensor_tests.test_pythonic_resources",
         attribute=None,
         working_directory=os.path.dirname(__file__),
         location_name="test_location",
@@ -163,7 +163,7 @@ def external_repo_fixture(workspace_context_struct_resources: WorkspaceProcessCo
 def loadable_target_origin() -> LoadableTargetOrigin:
     return LoadableTargetOrigin(
         executable_path=sys.executable,
-        module_name="dagster_tests.daemon_sensor_tests.test_struct_resources",
+        module_name="dagster_tests.daemon_sensor_tests.test_pythonic_resources",
         working_directory=os.getcwd(),
         attribute=None,
     )
