@@ -408,7 +408,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
 
     @public
     def materialization_records_for_key(
-        self, asset_key: AssetKey, limit: int
+        self, asset_key: AssetKey, limit: Optional[int] = None
     ) -> Iterable["EventLogRecord"]:
         """Fetches asset materialization event records for asset_key, with the earliest event first.
 
@@ -416,7 +416,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
 
         Args:
             asset_key (AssetKey): The asset to fetch materialization events for
-            limit (int): The number of events to fetch
+            limit (Optional[int]): The number of events to fetch
         """
         from dagster._core.events import DagsterEventType
         from dagster._core.storage.event_log.base import EventRecordsFilter
