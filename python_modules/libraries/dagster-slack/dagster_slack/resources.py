@@ -16,7 +16,7 @@ class SlackResource(ConfigurableResource):
 
             import os
 
-            from dagster import EnvVar, FromResources, job, op
+            from dagster import EnvVar, job, op
             from dagster_slack import SlackResource
 
 

@@ -38,7 +38,7 @@ Copy this bot token and put it somewhere safe; see `Safely Storing Credentials
 
 .. currentmodule:: dagster_slack
 
-.. autodata:: slack_resource
+.. autodata:: SlackResource
   :annotation: ResourceDefinition
 
 .. autodata:: slack_on_failure
@@ -50,3 +50,9 @@ Copy this bot token and put it somewhere safe; see `Safely Storing Credentials
 .. autofunction:: make_slack_on_run_failure_sensor
 
 .. autofunction:: make_slack_on_freshness_policy_status_change_sensor
+
+
+Legacy
+=========
+.. autodata:: slack_resource
+  :annotation: ResourceDefinition
