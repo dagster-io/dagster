@@ -1,9 +1,10 @@
-from dagster import ConfigurableResourceFactory, resource
+from dagster import resource
+from dagster._config.structured_config import ConfigurableResource
 from pydantic import Field as PyField
 from slack_sdk.web.client import WebClient
 
 
-class SlackResource(ConfigurableResourceFactory[WebClient]):
+class SlackResource(ConfigurableResource):
     """This resource is for connecting to Slack.
 
     The resource object is a `slack_sdk.WebClient`.
@@ -15,14 +16,13 @@ class SlackResource(ConfigurableResourceFactory[WebClient]):
 
             import os
 
-            from dagster import EnvVar, job, op, Resource
+            from dagster import EnvVar, FromResources, job, op
             from dagster_slack import SlackResource
-            from slack_sdk.web.client import WebClient
 
 
             @op
-            def slack_op(slack: Resource[WebClient]):
-                slack.chat_postMessage(channel='#noise', text=':wave: hey there!')
+            def slack_op(slack: SlackResource):
+                slack.get_client().chat_postMessage(channel='#noise', text=':wave: hey there!')
 
             @job
             def slack_job():
@@ -46,7 +46,7 @@ class SlackResource(ConfigurableResourceFactory[WebClient]):
         ),
     )
 
-    def create_resource(self, context) -> WebClient:
+    def get_client(self) -> WebClient:
         return WebClient(self.token)
 
 
@@ -81,4 +81,4 @@ def slack_resource(context) -> WebClient:
                 run_config={'resources': {'slack': {'config': {'token': os.getenv('SLACK_TOKEN')}}}}
             )
     """
-    return SlackResource.from_resource_context(context)
+    return SlackResource.from_resource_context(context).get_client()
