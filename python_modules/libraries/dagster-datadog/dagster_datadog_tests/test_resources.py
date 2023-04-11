@@ -1,8 +1,8 @@
 from unittest import mock
 
-from dagster import OpExecutionContext, ResourceParam, build_op_context, job, op
+from dagster import OpExecutionContext, build_op_context, job, op
 from dagster_datadog import datadog_resource
-from dagster_datadog.resources import DataDogClient, DataDogClientResource
+from dagster_datadog.resources import DataDogClientResource
 
 
 def assert_datadog_client_class(
@@ -133,7 +133,8 @@ def test_datadog_pythonic_resource_standalone_op(
     executed = {}
 
     @op
-    def datadog_op(datadog_client: ResourceParam[DataDogClient]):
+    def datadog_op(datadog_resource: DataDogClientResource):
+        datadog_client = datadog_resource.get_client()
         assert datadog_client
         assert_datadog_client_class(
             datadog_client,
@@ -153,7 +154,9 @@ def test_datadog_pythonic_resource_standalone_op(
 
     # https://github.com/dagster-io/dagster/issues/13384
     # assert datadog_op(DataDogClient(api_key="NOT_USED", app_key="NOT_USED")) # does not work
-    assert datadog_op(datadog_client=DataDogClient(api_key="NOT_USED", app_key="NOT_USED"))
+    assert datadog_op(
+        datadog_resource=DataDogClientResource(api_key="NOT_USED", app_key="NOT_USED")
+    )
     assert executed["yes"]
 
 
@@ -182,7 +185,8 @@ def test_datadog_pythonic_resource_factory_op_in_job(
     executed = {}
 
     @op
-    def datadog_op(datadog_client: ResourceParam[DataDogClient]):
+    def datadog_op(datadog_resource: DataDogClientResource):
+        datadog_client = datadog_resource.get_client()
         assert datadog_client
         assert datadog_client.api_key == "FOO"
         assert datadog_client.app_key == "BAR"
@@ -207,7 +211,7 @@ def test_datadog_pythonic_resource_factory_op_in_job(
         datadog_op()
 
     job_for_datadog_op.execute_in_process(
-        resources={"datadog_client": DataDogClientResource(api_key="FOO", app_key="BAR")}
+        resources={"datadog_resource": DataDogClientResource(api_key="FOO", app_key="BAR")}
     )
 
     assert executed["yes"]
