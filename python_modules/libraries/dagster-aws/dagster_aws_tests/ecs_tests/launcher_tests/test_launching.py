@@ -1,4 +1,5 @@
 import copy
+import json
 import time
 from concurrent.futures import ThreadPoolExecutor
 
@@ -61,9 +62,7 @@ def test_default_launcher(
     assert not container_definition.get("dependsOn")
     # But other stuff is inherited from the parent task definition
     assert all(item in container_definition["environment"] for item in environment)
-    assert {"name": "DAGSTER_RUN_JOB_NAME", "value": "pipeline"} in container_definition[
-        "environment"
-    ]
+    assert {"name": "DAGSTER_RUN_JOB_NAME", "value": "job"} in container_definition["environment"]
 
     # A new task is launched
     tasks = ecs.list_tasks()["taskArns"]
@@ -73,6 +72,7 @@ def test_default_launcher(
     task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
     assert subnet.id in str(task)
     assert task["taskDefinitionArn"] == task_definition["taskDefinitionArn"]
+    assert task["launchType"] == "FARGATE"
 
     # The run is tagged with info about the ECS task
     assert instance.get_run_by_id(run.run_id).tags["ecs/task_arn"] == task_arn
@@ -107,6 +107,82 @@ def test_default_launcher(
     # check status and stop task
     assert instance.run_launcher.check_run_worker_health(run).status == WorkerStatus.RUNNING
     ecs.stop_task(task=task_arn)
+
+
+def test_launcher_fargate_spot(
+    ecs,
+    instance_fargate_spot,
+    workspace,
+    external_pipeline,
+    pipeline,
+    subnet,
+    image,
+    environment,
+):
+    instance = instance_fargate_spot
+    run = instance.create_run_for_pipeline(
+        pipeline,
+        external_pipeline_origin=external_pipeline.get_external_origin(),
+        pipeline_code_origin=external_pipeline.get_python_origin(),
+    )
+    initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
+    initial_tasks = ecs.list_tasks()["taskArns"]
+
+    instance.launch_run(run.run_id, workspace)
+
+    # A new task definition is still created
+    task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
+    assert len(task_definitions) == len(initial_task_definitions) + 1
+    task_definition_arn = list(set(task_definitions).difference(initial_task_definitions))[0]
+    task_definition = ecs.describe_task_definition(taskDefinition=task_definition_arn)
+    task_definition = task_definition["taskDefinition"]
+
+    # A new task is launched
+    tasks = ecs.list_tasks()["taskArns"]
+
+    assert len(tasks) == len(initial_tasks) + 1
+    task_arn = list(set(tasks).difference(initial_tasks))[0]
+    task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
+
+    assert task["capacityProviderName"] == "FARGATE_SPOT"
+
+    # Override capacity provider strategy with tags
+    run = instance.create_run_for_pipeline(
+        pipeline,
+        external_pipeline_origin=external_pipeline.get_external_origin(),
+        pipeline_code_origin=external_pipeline.get_python_origin(),
+    )
+    instance.add_run_tags(
+        run.run_id,
+        {
+            "ecs/run_task_kwargs": json.dumps(
+                {
+                    "capacityProviderStrategy": [
+                        {
+                            "capacityProvider": "CUSTOM",
+                        },
+                    ],
+                }
+            )
+        },
+    )
+    instance.launch_run(run.run_id, workspace)
+
+    # A new task definition is still created
+    task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
+    assert len(task_definitions) == len(initial_task_definitions) + 1
+    task_definition_arn = list(set(task_definitions).difference(initial_task_definitions))[0]
+    task_definition = ecs.describe_task_definition(taskDefinition=task_definition_arn)
+    task_definition = task_definition["taskDefinition"]
+
+    # A new task is launched
+    second_tasks = ecs.list_tasks()["taskArns"]
+
+    assert len(second_tasks) == len(tasks) + 1
+    task_arn = list(set(second_tasks).difference(tasks))[0]
+    task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
+
+    assert task["capacityProviderName"] == "CUSTOM"
 
 
 def test_launcher_dont_use_current_task(
@@ -155,11 +231,10 @@ def test_launcher_dont_use_current_task(
     assert container_definition["image"] == image
     assert not container_definition.get("entryPoint")
     assert not container_definition.get("dependsOn")
-    # It takes in the environment configured on the instance
-    assert all(item in container_definition["environment"] for item in environment)
-    assert {"name": "DAGSTER_RUN_JOB_NAME", "value": "pipeline"} in container_definition[
-        "environment"
-    ]
+
+    # It does not take in the environment configured on the calling task definition
+    assert not any(item in container_definition["environment"] for item in environment)
+    assert {"name": "DAGSTER_RUN_JOB_NAME", "value": "job"} in container_definition["environment"]
 
     # A new task is launched
     tasks = ecs.list_tasks(cluster=cluster)["taskArns"]
@@ -554,7 +629,7 @@ def test_default_task_definition_resources(
                 "task_role_arn": task_role_arn,
                 "execution_role_arn": execution_role_arn,
             },
-            "run_resources": {"cpu": "2048", "memory": "4096"},
+            "run_resources": {"cpu": "2048", "memory": "4096", "ephemeral_storage": 36},
         }
     ) as instance:
         run = instance.create_run_for_pipeline(
@@ -579,6 +654,7 @@ def test_default_task_definition_resources(
 
         assert task_definition["cpu"] == "2048"
         assert task_definition["memory"] == "4096"
+        assert task_definition["ephemeralStorage"]["sizeInGiB"] == 36
 
 
 def test_launching_with_task_definition_dict(
@@ -596,6 +672,24 @@ def test_launching_with_task_definition_dict(
         ],
     }
     log_group = "my-log-group"
+
+    mount_points = [
+        {
+            "sourceVolume": "myEfsVolume",
+            "containerPath": "/mount/efs",
+            "readOnly": True,
+        }
+    ]
+    volumes = [
+        {
+            "name": "myEfsVolume",
+            "efsVolumeConfiguration": {
+                "fileSystemId": "fs-1234",
+                "rootDirectory": "/path/to/my/data",
+            },
+        }
+    ]
+
     # You can provide a family or a task definition ARN
     with instance_cm(
         {
@@ -606,6 +700,8 @@ def test_launching_with_task_definition_dict(
                 "sidecar_containers": [sidecar],
                 "requires_compatibilities": ["FARGATE"],
                 "runtime_platform": {"operatingSystemFamily": "WINDOWS_SERVER_2019_FULL"},
+                "mount_points": mount_points,
+                "volumes": volumes,
             },
             "container_name": container_name,
         }
@@ -637,11 +733,15 @@ def test_launching_with_task_definition_dict(
             "taskDefinition"
         ]
 
+        assert task_definition["volumes"] == volumes
         assert task_definition["taskRoleArn"] == task_role_arn
         assert task_definition["executionRoleArn"] == execution_role_arn
         assert task_definition["runtimePlatform"] == {
             "operatingSystemFamily": "WINDOWS_SERVER_2019_FULL"
         }
+
+        container_definition = task_definition["containerDefinitions"][0]
+        assert container_definition["mountPoints"] == mount_points
 
         assert [container["name"] for container in task_definition["containerDefinitions"]] == [
             container_name,
@@ -834,12 +934,18 @@ def test_launch_run_with_container_context(
     assert (
         task.get("overrides").get("cpu") == container_context_config["ecs"]["run_resources"]["cpu"]
     )
+    assert (
+        task.get("overrides").get("ephemeralStorage").get("sizeInGiB")
+        == container_context_config["ecs"]["run_resources"]["ephemeral_storage"]
+    )
 
     task_definition_arn = task["taskDefinitionArn"]
 
     task_definition = ecs.describe_task_definition(taskDefinition=task_definition_arn)[
         "taskDefinition"
     ]
+
+    container_definition = task_definition["containerDefinitions"][0]
 
     assert task_definition["taskRoleArn"] == container_context_config["ecs"]["task_role_arn"]
     assert (
@@ -848,6 +954,13 @@ def test_launch_run_with_container_context(
     assert task_definition["runtimePlatform"] == container_context_config["ecs"]["runtime_platform"]
     assert task_definition["cpu"] == container_context_config["ecs"]["run_resources"]["cpu"]
     assert task_definition["memory"] == container_context_config["ecs"]["run_resources"]["memory"]
+    assert (
+        task_definition["ephemeralStorage"]["sizeInGiB"]
+        == container_context_config["ecs"]["run_resources"]["ephemeral_storage"]
+    )
+    assert task_definition["volumes"] == container_context_config["ecs"]["volumes"]
+
+    assert container_definition["mountPoints"] == container_context_config["ecs"]["mount_points"]
 
 
 def test_memory_and_cpu(ecs, instance, workspace, run, task_definition):

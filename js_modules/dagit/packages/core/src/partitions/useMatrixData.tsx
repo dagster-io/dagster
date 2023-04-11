@@ -28,7 +28,7 @@ export interface PartitionRuns {
   runs: PartitionMatrixStepRunFragment[];
 }
 
-export interface DisplayOptions {
+interface DisplayOptions {
   showFailuresAndGapsOnly: boolean;
   showPrevious: boolean;
   colorizeByAge: boolean;
@@ -56,7 +56,7 @@ function byStartTimeAsc(a: PartitionMatrixStepRunFragment, b: PartitionMatrixSte
 // BG Note: Dagit 0.10.0 removed the .compute step key suffix, but the Run Matrix takes the current
 // step tree and looks up data for each step in historical runs. For continuity across 0.10.0, we
 // match historical step keys with the .compute format as well. We can remove safely after 120 days?
-export function isStepKeyForNode(nodeName: string, stepKey: string) {
+function isStepKeyForNode(nodeName: string, stepKey: string) {
   const dynamicRegex = new RegExp(nodeName + DYNAMIC_STEP_REGEX_SUFFIX);
   return stepKey === nodeName || stepKey === `${nodeName}.compute` || stepKey.match(dynamicRegex);
 }

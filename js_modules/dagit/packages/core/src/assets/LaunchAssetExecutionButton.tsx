@@ -16,7 +16,6 @@ import {
 } from '../asset-graph/Utils';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {AssetLaunchpad} from '../launchpad/LaunchpadRoot';
-import {DagsterTag} from '../runs/RunTag';
 import {LaunchPipelineExecutionMutationVariables} from '../runs/types/RunUtils.types';
 import {testId} from '../testing/testId';
 import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
@@ -28,7 +27,7 @@ import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
 import {MULTIPLE_DEFINITIONS_WARNING} from './AssetDefinedInMultipleReposNotice';
 import {LaunchAssetChoosePartitionsDialog} from './LaunchAssetChoosePartitionsDialog';
 import {partitionDefinitionsEqual} from './MultipartitioningSupport';
-import {isAssetMissing, isAssetStale} from './StaleTag';
+import {isAssetMissing, isAssetStale} from './Stale';
 import {AssetKey} from './types';
 import {
   LaunchAssetExecutionAssetNodeFragment,
@@ -84,7 +83,12 @@ type Asset =
 
 export type AssetsInScope = {all: Asset[]; skipAllTerm?: boolean} | {selected: Asset[]};
 
-type LaunchOption = {assetKeys: AssetKey[]; label: string; hasMaterializePermission: boolean};
+type LaunchOption = {
+  assetKeys: AssetKey[];
+  label: string;
+  hasMaterializePermission: boolean;
+  icon?: JSX.Element;
+};
 
 const isAnyPartitioned = (assets: Asset[]) =>
   assets.some(
@@ -98,10 +102,7 @@ export const ERROR_INVALID_ASSET_SELECTION =
   ` the same code location and share a partition space, or form a connected` +
   ` graph in which root assets share the same partitioning.`;
 
-export function optionsForButton(
-  scope: AssetsInScope,
-  liveDataForStale?: LiveData,
-): LaunchOption[] {
+function optionsForButton(scope: AssetsInScope, liveDataForStale?: LiveData): LaunchOption[] {
   // If you pass a set of selected assets, we always show just one option
   // to materialize that selection.
   if ('selected' in scope) {
@@ -141,8 +142,9 @@ export function optionsForButton(
 
     options.push({
       assetKeys: missingOrStale.map((a) => a.assetKey),
-      label: `Materialize stale and missing${countOrBlank(missingOrStale)}`,
+      label: `Propagate changes${countOrBlank(missingOrStale)}`,
       hasMaterializePermission,
+      icon: <Icon name="changes_present" />,
     });
   }
 
@@ -209,16 +211,17 @@ export const LaunchAssetExecutionButton: React.FC<{
           content={
             <Menu>
               <MenuItem
+                text="Open in launchpad"
+                icon={<Icon name="open_in_new" />}
                 onClick={(e: React.MouseEvent<any>) => {
                   onClick(firstOption.assetKeys, e, true);
                 }}
-                text="Open in launchpad"
               />
               {options.slice(1).map((option) => (
                 <MenuItem
                   key={option.label}
                   text={option.label}
-                  icon="materialization"
+                  icon={option.icon || 'materialization'}
                   disabled={option.assetKeys.length === 0}
                   onClick={(e) => onClick(option.assetKeys, e)}
                 />
@@ -494,9 +497,7 @@ export function getCommonJob(
   return jobsInCommon.find((name) => name === preferredJobName) || jobsInCommon[0] || null;
 }
 
-export function getAnchorAssetForPartitionMappedBackfill(
-  assets: LaunchAssetExecutionAssetNodeFragment[],
-) {
+function getAnchorAssetForPartitionMappedBackfill(assets: LaunchAssetExecutionAssetNodeFragment[]) {
   // We have the ability to launch a pure asset backfill which will infer the partitions
   // of downstream assets IFF the selection's root assets (at the top of the tree) ALL
   // share a partition definition
@@ -570,13 +571,7 @@ export function executionParamsForAssetJob(
   return {
     mode: 'default',
     executionMetadata: {
-      tags: [
-        ...tags.map((t) => pick(t, ['key', 'value'])),
-        {
-          key: DagsterTag.StepSelection,
-          value: assets.flatMap((o) => o.opNames).join(','),
-        },
-      ],
+      tags: tags.map((t) => pick(t, ['key', 'value'])),
     },
     runConfigData: '{}',
     selector: {
@@ -616,7 +611,7 @@ export function buildAssetCollisionsAlert(data: LaunchAssetLoaderQuery) {
   };
 }
 
-export const LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT = gql`
+const LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT = gql`
   fragment LaunchAssetExecutionAssetNodeFragment on AssetNode {
     id
     opNames

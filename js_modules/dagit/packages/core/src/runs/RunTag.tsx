@@ -33,7 +33,7 @@ export type TagType = {
 
 export type TagAction = {
   label: React.ReactNode;
-  onClick: (tag: TagType) => void;
+  onClick: (tag: TagType) => any;
 };
 
 interface IRunTagProps {

@@ -27,6 +27,7 @@ export interface ApolloTestProps {
 }
 
 interface Props extends ApolloTestProps {
+  children: React.ReactNode;
   typeDefs: DocumentNode;
 }
 

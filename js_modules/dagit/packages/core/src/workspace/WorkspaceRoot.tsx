@@ -1,6 +1,6 @@
 import {Box, MainContent, NonIdealState} from '@dagster-io/ui';
 import * as React from 'react';
-import {Route, Switch, useParams} from 'react-router-dom';
+import {Redirect, Route, Switch, useParams} from 'react-router-dom';
 
 import {AssetGroupRoot} from '../assets/AssetGroupRoot';
 import {PipelineRoot} from '../pipelines/PipelineRoot';
@@ -16,11 +16,11 @@ import {WorkspaceGraphsRoot} from './WorkspaceGraphsRoot';
 import {WorkspaceJobsRoot} from './WorkspaceJobsRoot';
 import {WorkspaceOpsRoot} from './WorkspaceOpsRoot';
 import {WorkspacePipelineRoot} from './WorkspacePipelineRoot';
-import {WorkspaceRepoRoot} from './WorkspaceRepoRoot';
 import {WorkspaceSchedulesRoot} from './WorkspaceSchedulesRoot';
 import {WorkspaceSensorsRoot} from './WorkspaceSensorsRoot';
 import {repoAddressAsHumanString} from './repoAddressAsString';
 import {repoAddressFromPath} from './repoAddressFromPath';
+import {workspacePathFromAddress} from './workspacePath';
 
 const RepoRouteContainer = () => {
   const {repoPath} = useParams<{repoPath: string}>();
@@ -135,8 +135,8 @@ const RepoRouteContainer = () => {
       >
         <AssetGroupRoot repoAddress={addressForPath} tab="lineage" />
       </Route>
-      <Route path="/locations/:repoPath/:tab?">
-        <WorkspaceRepoRoot repoAddress={addressForPath} />
+      <Route path="/locations/:repoPath/*">
+        <Redirect to={workspacePathFromAddress(addressForPath, '/assets')} />
       </Route>
     </Switch>
   );

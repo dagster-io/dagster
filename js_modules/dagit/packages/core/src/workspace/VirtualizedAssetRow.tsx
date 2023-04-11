@@ -4,14 +4,15 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {ASSET_NODE_LIVE_FRAGMENT} from '../asset-graph/AssetNode';
-import {AssetLatestRunWithNotices, AssetRunLink} from '../asset-graph/AssetRunLinking';
+import {ASSET_NODE_LIVE_FRAGMENT, buildAssetNodeStatusContent} from '../asset-graph/AssetNode';
+import {AssetRunLink} from '../asset-graph/AssetRunLinking';
 import {buildLiveDataForNode} from '../asset-graph/Utils';
 import {ASSET_LATEST_INFO_FRAGMENT} from '../asset-graph/useLiveDataForAssetKeys';
 import {AssetActionMenu} from '../assets/AssetActionMenu';
 import {AssetLink} from '../assets/AssetLink';
+import {PartitionCountLabels} from '../assets/AssetNodePartitionCounts';
 import {ASSET_TABLE_FRAGMENT} from '../assets/AssetTableFragment';
-import {StaleTag} from '../assets/StaleTag';
+import {StaleReasonsLabel} from '../assets/Stale';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetTableFragment} from '../assets/types/AssetTableFragment.types';
 import {AssetViewType} from '../assets/useAssetView';
@@ -25,8 +26,8 @@ import {RepoAddress} from './types';
 import {SingleAssetQuery, SingleAssetQueryVariables} from './types/VirtualizedAssetRow.types';
 import {workspacePathFromAddress} from './workspacePath';
 
-const TEMPLATE_COLUMNS = '1.3fr 1fr 1fr 80px';
-const TEMPLATE_COLUMNS_FOR_CATALOG = '76px 1.3fr 1.3fr 1fr 1fr 80px';
+const TEMPLATE_COLUMNS = '1.3fr 1.3fr 80px';
+const TEMPLATE_COLUMNS_FOR_CATALOG = '76px 1.3fr 1.3fr 1.3fr 80px';
 
 interface AssetRowProps {
   checked: boolean;
@@ -166,9 +167,29 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
           </RowCell>
         ) : null}
         <RowCell>
-          {liveData?.lastMaterialization ? (
-            <Box flex={{direction: 'column'}}>
-              <Box flex={{gap: 4, alignItems: 'flex-start', justifyContent: 'space-between'}}>
+          {asset?.definition?.partitionDefinition ? (
+            <Box flex={{direction: 'column', alignItems: 'flex-start', gap: 4}}>
+              <PartitionCountLabels partitionStats={liveData?.partitionStats} />
+              <Caption>{`${liveData?.partitionStats?.numPartitions.toLocaleString()} ${
+                liveData?.partitionStats?.numPartitions === 1 ? 'partition' : 'partitions'
+              }`}</Caption>
+            </Box>
+          ) : (
+            <Box flex={{direction: 'column', alignItems: 'flex-start', gap: 4}}>
+              {asset?.definition ? (
+                <Box
+                  style={{whiteSpace: 'nowrap'}}
+                  flex={{direction: 'row', alignItems: 'center', gap: 8}}
+                >
+                  {
+                    buildAssetNodeStatusContent({
+                      definition: asset.definition,
+                      expanded: true,
+                      liveData,
+                    }).content
+                  }
+                </Box>
+              ) : liveData?.lastMaterialization ? (
                 <AssetRunLink
                   runId={liveData.lastMaterialization.runId}
                   event={{
@@ -181,23 +202,13 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
                     timeFormat={{showSeconds: false, showTimezone: false}}
                   />
                 </AssetRunLink>
-                <div style={{marginTop: '-2px'}}>
-                  <StaleTag liveData={liveData} />
-                </div>
-              </Box>
-              {liveData.partitionStats && (
-                <AssetPartitionStatsText stats={liveData.partitionStats} />
+              ) : (
+                <LoadingOrNone queryResult={queryResult} noneString={'\u2013'} />
+              )}
+              {liveData && (
+                <StaleReasonsLabel assetKey={{path}} liveData={liveData} include="all" />
               )}
             </Box>
-          ) : (
-            <LoadingOrNone queryResult={queryResult} noneString={'\u2013'} />
-          )}
-        </RowCell>
-        <RowCell>
-          {liveData ? (
-            <AssetLatestRunWithNotices liveData={liveData} includeFreshness includeRunStatus />
-          ) : (
-            <LoadingOrNone queryResult={queryResult} noneString={'\u2013'} />
           )}
         </RowCell>
         <RowCell>
@@ -207,20 +218,6 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
         </RowCell>
       </RowGrid>
     </Row>
-  );
-};
-
-const AssetPartitionStatsText: React.FC<{
-  stats: {numMaterialized: number; numPartitions: number};
-}> = ({stats}) => {
-  const {numMaterialized, numPartitions} = stats;
-  const numMissing = numPartitions - numMaterialized;
-  return (
-    <span>
-      {numMissing > 0
-        ? `${numPartitions.toLocaleString()} Partitions (${numMissing.toLocaleString()} missing)`
-        : `${numPartitions.toLocaleString()} Partitions`}
-    </span>
   );
 };
 
@@ -242,8 +239,7 @@ export const VirtualizedAssetCatalogHeader: React.FC<{
       <HeaderCell>{headerCheckbox}</HeaderCell>
       <HeaderCell>{view === 'flat' ? 'Asset name' : 'Asset key prefix'}</HeaderCell>
       <HeaderCell>Repository / Asset group</HeaderCell>
-      <HeaderCell>Materialized</HeaderCell>
-      <HeaderCell>Latest run</HeaderCell>
+      <HeaderCell>Status</HeaderCell>
       <HeaderCell></HeaderCell>
     </Box>
   );

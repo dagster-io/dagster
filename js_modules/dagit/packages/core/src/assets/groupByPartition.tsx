@@ -23,10 +23,7 @@ const sortByEventTimestamp = (a: Event, b: Event) => Number(b?.timestamp) - Numb
  * A hook that can bucket a list of materializations by partition, if any, with the `latest`
  * materialization separated from predecessor materializations.
  */
-export const groupByPartition = (
-  events: Event[],
-  definedPartitionKeys: string[],
-): AssetEventGroup[] => {
+const groupByPartition = (events: Event[], definedPartitionKeys: string[]): AssetEventGroup[] => {
   const grouped = groupBy(events, (m) => m.partition || NO_PARTITION_KEY);
   const orderedPartitionKeys = [...definedPartitionKeys].reverse();
 

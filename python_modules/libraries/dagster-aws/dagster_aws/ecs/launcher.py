@@ -3,7 +3,7 @@ import logging
 import os
 import warnings
 from collections import namedtuple
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional, Sequence
 
 import boto3
 from botocore.exceptions import ClientError
@@ -13,7 +13,6 @@ from dagster import (
     Noneable,
     Permissive,
     ScalarUnion,
-    Shape,
     StringSource,
     _check as check,
 )
@@ -33,7 +32,7 @@ from dagster._utils.backoff import backoff
 from typing_extensions import Self
 
 from ..secretsmanager import get_secrets_from_arns
-from .container_context import SHARED_ECS_SCHEMA, EcsContainerContext
+from .container_context import SHARED_ECS_SCHEMA, SHARED_TASK_DEFINITION_FIELDS, EcsContainerContext
 from .tasks import (
     DagsterEcsTaskDefinitionConfig,
     get_current_ecs_task,
@@ -75,7 +74,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         include_sidecars=False,
         use_current_ecs_task_config: bool = True,
         run_task_kwargs: Optional[Mapping[str, Any]] = None,
-        run_resources: Optional[Dict[str, str]] = None,
+        run_resources: Optional[Dict[str, Any]] = None,
     ):
         self._inst_data = inst_data
         self.ecs = boto3.client("ecs")
@@ -84,7 +83,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         self.logs = boto3.client("logs")
 
         self.task_definition = None
-        self.task_definition_dict = None
+        self.task_definition_dict = {}
         if isinstance(task_definition, str):
             self.task_definition = task_definition
         elif task_definition and "env" in task_definition:
@@ -103,7 +102,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                     " set."
                 )
         else:
-            self.task_definition_dict = task_definition
+            self.task_definition_dict = task_definition or {}
 
         self.container_name = container_name
 
@@ -196,6 +195,18 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
             return None
         return self.task_definition_dict.get("runtime_platform")
 
+    @property
+    def mount_points(self) -> Optional[Sequence[Mapping[str, Any]]]:
+        if not self.task_definition_dict:
+            return None
+        return self.task_definition_dict.get("mount_points")
+
+    @property
+    def volumes(self) -> Optional[Sequence[Mapping[str, Any]]]:
+        if not self.task_definition_dict:
+            return None
+        return self.task_definition_dict.get("volumes")
+
     @classmethod
     def config_type(cls):
         return {
@@ -205,8 +216,6 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                     non_scalar_schema={
                         "log_group": Field(StringSource, is_required=False),
                         "sidecar_containers": Field(Array(Permissive({})), is_required=False),
-                        "execution_role_arn": Field(StringSource, is_required=False),
-                        "task_role_arn": Field(StringSource, is_required=False),
                         "requires_compatibilities": Field(Array(str), is_required=False),
                         "env": Field(
                             str,
@@ -217,20 +226,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                                 " from an environment variable."
                             ),
                         ),
-                        "runtime_platform": Field(
-                            Shape(
-                                {
-                                    "cpuArchitecture": Field(StringSource, is_required=False),
-                                    "operatingSystemFamily": Field(StringSource, is_required=False),
-                                }
-                            ),
-                            is_required=False,
-                            description=(
-                                "The operating system that the task definition is running on. See"
-                                " https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ecs.html#ECS.Client.register_task_definition"
-                                " for the available options."
-                            ),
-                        ),
+                        **SHARED_TASK_DEFINITION_FIELDS,
                     },
                 ),
                 is_required=False,
@@ -373,7 +369,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html
         cpu_and_memory_overrides = self.get_cpu_and_memory_overrides(container_context, run)
 
-        task_overrides = self._get_task_overrides(run)
+        task_overrides = self._get_task_overrides(container_context, run)
 
         container_overrides: List[Dict[str, Any]] = [
             {
@@ -395,8 +391,14 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
             *self.build_ecs_tags_for_run_task(run),
         ]
 
-        # Run a task using the same network configuration as this processes's
-        # task.
+        run_task_kwargs_from_run = self._get_run_task_kwargs_from_run(run)
+        run_task_kwargs.update(run_task_kwargs_from_run)
+
+        # launchType and capacityProviderStrategy are incompatible - prefer the latter if it is set
+        if "launchType" in run_task_kwargs and run_task_kwargs.get("capacityProviderStrategy"):
+            del run_task_kwargs["launchType"]
+
+        # Run a task using the same network configuration as this processes's task.
         response = self.ecs.run_task(**run_task_kwargs)
 
         tasks = response["tasks"]
@@ -450,10 +452,28 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
 
         return overrides
 
-    def _get_task_overrides(self, run: DagsterRun) -> Mapping[str, Any]:
-        overrides = run.tags.get("ecs/task_overrides")
-        if overrides:
-            return json.loads(overrides)
+    def _get_task_overrides(
+        self, container_context: EcsContainerContext, run: DagsterRun
+    ) -> Mapping[str, Any]:
+        tag_overrides = run.tags.get("ecs/task_overrides")
+
+        overrides = {}
+
+        if tag_overrides:
+            overrides = json.loads(tag_overrides)
+
+        ephemeral_storage = run.tags.get(
+            "ecs/ephemeral_storage", container_context.run_resources.get("ephemeral_storage")
+        )
+        if ephemeral_storage:
+            overrides["ephemeralStorage"] = {"sizeInGiB": int(ephemeral_storage)}
+
+        return overrides
+
+    def _get_run_task_kwargs_from_run(self, run: DagsterRun) -> Mapping[str, Any]:
+        run_task_kwargs = run.tags.get("ecs/run_task_kwargs")
+        if run_task_kwargs:
+            return json.loads(run_task_kwargs)
         return {}
 
     def terminate(self, run_id):
@@ -509,7 +529,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         else:
             family = self._get_run_task_definition_family(run)
 
-            if self.task_definition_dict:
+            if self.task_definition_dict or not self.use_current_ecs_task_config:
                 runtime_platform = container_context.runtime_platform
                 is_windows = container_context.runtime_platform.get(
                     "operatingSystemFamily"
@@ -547,7 +567,10 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                     memory=container_context.run_resources.get(
                         "memory", default_resources["memory"]
                     ),
+                    ephemeral_storage=container_context.run_resources.get("ephemeral_storage"),
                     runtime_platform=runtime_platform,
+                    volumes=container_context.volumes,
+                    mount_points=container_context.mount_points,
                 )
                 task_definition_dict = task_definition_config.task_definition_dict()
             else:
@@ -565,6 +588,9 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                     cpu=container_context.run_resources.get("cpu"),
                     memory=container_context.run_resources.get("memory"),
                     runtime_platform=container_context.runtime_platform,
+                    ephemeral_storage=container_context.run_resources.get("ephemeral_storage"),
+                    volumes=container_context.volumes,
+                    mount_points=container_context.mount_points,
                 )
 
                 task_definition_config = DagsterEcsTaskDefinitionConfig.from_task_definition_dict(

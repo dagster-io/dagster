@@ -4,7 +4,7 @@ import styled from 'styled-components/macro';
 
 export const BOX_SIZE = 32;
 
-export const STEP_STATUS_COLORS = {
+const STEP_STATUS_COLORS = {
   SUCCESS: Colors.Green500,
   SUCCESS_SKIPPED: Colors.Green200,
   FAILURE: Colors.Red500,
@@ -223,34 +223,4 @@ export const GridFloatingContainer = styled.div<{floating: boolean}>`
   width: ${GRID_FLOATING_CONTAINER_WIDTH}px;
   z-index: 1;
   ${({floating}) => (floating ? 'box-shadow: 1px 0 4px rgba(0, 0, 0, 0.15)' : '')};
-`;
-
-export const GridScrollContainer = styled.div`
-  padding-right: 60px;
-  padding-bottom: 16px;
-  overflow-x: scroll;
-  overscroll-behavior-x: contain;
-  z-index: 0;
-  background: ${Colors.White};
-  flex: 1;
-  scrollbar-color: ${Colors.Gray500} ${Colors.Gray100};
-  scrollbar-width: thin;
-
-  ::-webkit-scrollbar {
-    -webkit-appearance: none;
-  }
-  &::-webkit-scrollbar:vertical {
-    width: 11px;
-  }
-  &::-webkit-scrollbar:horizontal {
-    height: 11px;
-  }
-  &::-webkit-scrollbar-thumb {
-    border-radius: 8px;
-    border: 2px solid ${Colors.Gray100};
-    background-color: ${Colors.Gray500};
-  }
-  &::-webkit-scrollbar-track {
-    background-color: ${Colors.Gray100};
-  }
 `;

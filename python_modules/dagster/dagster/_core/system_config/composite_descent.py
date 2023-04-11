@@ -334,7 +334,7 @@ def raise_top_level_config_error(
     pipeline_def: PipelineDefinition, failed_config_value: object, evr: EvaluateValueResult
 ) -> NoReturn:
     message = (
-        f"In pipeline '{pipeline_def.name}', top level graph '{pipeline_def.graph.name}' has a "
+        f"In job '{pipeline_def.name}', top level graph '{pipeline_def.graph.name}' has a "
         "configuration error."
     )
 
@@ -348,8 +348,8 @@ def raise_composite_descent_config_error(
     check.inst_param(evr, "evr", EvaluateValueResult)
 
     solid = descent_stack.current_node
-    message = "In pipeline {pipeline_name} at stack {stack}: \n".format(
-        pipeline_name=descent_stack.pipeline_def.name,
+    message = "In job {job_name} at stack {stack}: \n".format(
+        job_name=descent_stack.pipeline_def.name,
         stack=":".join(descent_stack.handle.path),
     )
     message += (

@@ -15,9 +15,10 @@ from dagster import (
     PythonArtifactMetadataValue,
     TextMetadataValue,
     UrlMetadataValue,
+    job,
+    op,
 )
 from dagster._check import CheckError
-from dagster._core.definitions.decorators import op
 from dagster._core.definitions.metadata import (
     DagsterInvalidMetadata,
     TableMetadataValue,
@@ -30,26 +31,21 @@ from dagster._core.definitions.metadata.table import (
     TableRecord,
     TableSchema,
 )
-from dagster._core.execution.results import OpExecutionResult, PipelineExecutionResult
-from dagster._legacy import execute_pipeline, pipeline
+from dagster._core.execution.execution_result import ExecutionResult
 from dagster._serdes.serdes import deserialize_value, serialize_value
 
 
-def solid_events_for_type(
-    result: PipelineExecutionResult, solid_name: str, event_type: DagsterEventType
-):
-    solid_result = result.result_for_node(solid_name)
-    assert isinstance(solid_result, OpExecutionResult)
+def step_events_of_type(result: ExecutionResult, node_name: str, event_type: DagsterEventType):
     return [
         compute_step_event
-        for compute_step_event in solid_result.compute_step_events
+        for compute_step_event in result.events_for_node(node_name)
         if compute_step_event.event_type == event_type
     ]
 
 
 def test_metadata_asset_materialization():
     @op(out={})
-    def the_solid(_context):
+    def the_op(_context):
         yield AssetMaterialization(
             asset_key="foo",
             metadata={
@@ -62,17 +58,17 @@ def test_metadata_asset_materialization():
             },
         )
 
-    @pipeline
-    def the_pipeline():
-        the_solid()
+    @job
+    def the_job():
+        the_op()
 
-    result = execute_pipeline(the_pipeline)
+    result = the_job.execute_in_process()
 
     assert result
     assert result.success
 
-    materialization_events = solid_events_for_type(
-        result, "the_solid", DagsterEventType.ASSET_MATERIALIZATION
+    materialization_events = step_events_of_type(
+        result, "the_op", DagsterEventType.ASSET_MATERIALIZATION
     )
     assert len(materialization_events) == 1
     materialization = materialization_events[0].event_specific_data.materialization
@@ -88,7 +84,7 @@ def test_metadata_asset_materialization():
 
 def test_metadata_asset_observation():
     @op(out={})
-    def the_solid(_context):
+    def the_op(_context):
         yield AssetObservation(
             asset_key="foo",
             metadata={
@@ -100,18 +96,16 @@ def test_metadata_asset_observation():
             },
         )
 
-    @pipeline
-    def the_pipeline():
-        the_solid()
+    @job
+    def the_job():
+        the_op()
 
-    result = execute_pipeline(the_pipeline)
+    result = the_job.execute_in_process()
 
     assert result
     assert result.success
 
-    observation_events = solid_events_for_type(
-        result, "the_solid", DagsterEventType.ASSET_OBSERVATION
-    )
+    observation_events = step_events_of_type(result, "the_op", DagsterEventType.ASSET_OBSERVATION)
     assert len(observation_events) == 1
     observation = observation_events[0].event_specific_data.asset_observation
     assert len(observation.metadata) == 5
@@ -124,19 +118,19 @@ def test_metadata_asset_observation():
 
 
 def test_unknown_metadata_value():
-    @op
-    def the_solid(context):
+    @op(out={})
+    def the_op(context):
         yield AssetMaterialization(
             asset_key="foo",
             metadata={"bad": context.instance},
         )
 
-    @pipeline
-    def the_pipeline():
-        the_solid()
+    @job
+    def the_job():
+        the_op()
 
     with pytest.raises(DagsterInvalidMetadata) as exc_info:
-        execute_pipeline(the_pipeline)
+        the_job.execute_in_process()
 
     assert (
         str(exc_info.value)
@@ -175,19 +169,19 @@ def test_parse_path_metadata():
 
 
 def test_bad_json_metadata_value():
-    @op
-    def the_solid(context):
+    @op(out={})
+    def the_op(context):
         yield AssetMaterialization(
             asset_key="foo",
             metadata={"bad": {"nested": context.instance}},
         )
 
-    @pipeline
-    def the_pipeline():
-        the_solid()
+    @job
+    def the_job():
+        the_op()
 
     with pytest.raises(DagsterInvalidMetadata) as exc_info:
-        execute_pipeline(the_pipeline)
+        the_job.execute_in_process()
 
     assert (
         str(exc_info.value)
@@ -350,23 +344,23 @@ def test_table_serialization():
 
 def test_bool_metadata_value():
     @op(out={})
-    def the_solid():
+    def the_op():
         yield AssetMaterialization(
             asset_key="foo",
             metadata={"first_bool": True, "second_bool": BoolMetadataValue(False)},
         )
 
-    @pipeline
-    def the_pipeline():
-        the_solid()
+    @job
+    def the_job():
+        the_op()
 
-    result = execute_pipeline(the_pipeline)
+    result = the_job.execute_in_process()
 
     assert result
     assert result.success
 
-    materialization_events = solid_events_for_type(
-        result, "the_solid", DagsterEventType.ASSET_MATERIALIZATION
+    materialization_events = step_events_of_type(
+        result, "the_op", DagsterEventType.ASSET_MATERIALIZATION
     )
     assert len(materialization_events) == 1
     materialization = materialization_events[0].event_specific_data.materialization

@@ -7,17 +7,13 @@ from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
-snapshots[
-    "test_fetch_snapshot_or_error_by_active_pipeline_name_not_found 1"
-] = """{
+snapshots['test_fetch_snapshot_or_error_by_active_pipeline_name_not_found 1'] = '''{
   "pipelineSnapshotOrError": {
     "__typename": "PipelineNotFoundError"
   }
-}"""
+}'''
 
-snapshots[
-    "test_fetch_snapshot_or_error_by_active_pipeline_name_success 1"
-] = """{
+snapshots['test_fetch_snapshot_or_error_by_active_pipeline_name_success 1'] = '''{
   "pipelineSnapshotOrError": {
     "__typename": "PipelineSnapshot",
     "dagsterTypes": [
@@ -50,39 +46,35 @@ snapshots[
       }
     ],
     "name": "csv_hello_world",
-    "pipelineSnapshotId": "30ae63a1cef05f91067eaf8720b14f2e44535b66",
+    "pipelineSnapshotId": "7b00119a72d6eee0e56272eeae130f3794d49c41",
     "solidHandles": [
       {
-        "handleID": "sum_solid"
+        "handleID": "sum_op"
       },
       {
-        "handleID": "sum_sq_solid"
+        "handleID": "sum_sq_op"
       }
     ],
     "solids": [
       {
-        "name": "sum_solid"
+        "name": "sum_op"
       },
       {
-        "name": "sum_sq_solid"
+        "name": "sum_sq_op"
       }
     ],
     "tags": []
   }
-}"""
+}'''
 
-snapshots[
-    "test_fetch_snapshot_or_error_by_snapshot_id_snapshot_not_found 1"
-] = """{
+snapshots['test_fetch_snapshot_or_error_by_snapshot_id_snapshot_not_found 1'] = '''{
   "pipelineSnapshotOrError": {
     "__typename": "PipelineSnapshotNotFoundError",
     "snapshotId": "notthere"
   }
-}"""
+}'''
 
-snapshots[
-    "test_fetch_snapshot_or_error_by_snapshot_id_success 1"
-] = """{
+snapshots['test_fetch_snapshot_or_error_by_snapshot_id_success 1'] = '''{
   "pipelineSnapshotOrError": {
     "__typename": "PipelineSnapshot",
     "dagsterTypes": [
@@ -111,18 +103,18 @@ snapshots[
         "name": "default"
       }
     ],
-    "name": "noop_pipeline",
-    "pipelineSnapshotId": "a38f5dd465a9b07f9d116f7c6962502e581f03f8",
+    "name": "noop_job",
+    "pipelineSnapshotId": "df3268d8df147690b83b139db3255d7055556039",
     "solidHandles": [
       {
-        "handleID": "noop_solid"
+        "handleID": "noop_op"
       }
     ],
     "solids": [
       {
-        "name": "noop_solid"
+        "name": "noop_op"
       }
     ],
     "tags": []
   }
-}"""
+}'''

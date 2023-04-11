@@ -134,10 +134,10 @@ const reducer = (state: ILaunchpadSessionState, action: Action) => {
   }
 };
 
-const LaunchButtonContainer: React.FC<{launchpadType: LaunchpadType}> = ({
-  launchpadType,
-  children,
-}) => {
+const LaunchButtonContainer: React.FC<{
+  launchpadType: LaunchpadType;
+  children: React.ReactNode;
+}> = ({launchpadType, children}) => {
   if (launchpadType === 'asset') {
     return (
       <Box
@@ -313,15 +313,6 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
                     {
                       key: DagsterTag.PresetName,
                       value: (currentSession?.base as any)['presetName'],
-                    },
-                  ]
-                : []),
-
-              ...(currentSession.assetSelection
-                ? [
-                    {
-                      key: DagsterTag.StepSelection,
-                      value: currentSession.assetSelection.flatMap((o) => o.opNames).join(','),
                     },
                   ]
                 : []),
@@ -793,7 +784,7 @@ const SessionSettingsSpacer = styled.div`
   width: 5px;
 `;
 
-export const PIPELINE_EXECUTION_CONFIG_SCHEMA_QUERY = gql`
+const PIPELINE_EXECUTION_CONFIG_SCHEMA_QUERY = gql`
   query PipelineExecutionConfigSchemaQuery($selector: PipelineSelector!, $mode: String) {
     runConfigSchemaOrError(selector: $selector, mode: $mode) {
       ...LaunchpadSessionRunConfigSchemaFragment

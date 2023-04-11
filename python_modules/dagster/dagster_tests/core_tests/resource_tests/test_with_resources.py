@@ -230,7 +230,10 @@ def test_source_asset_no_manager_def():
     # Ensure error when io manager key is provided and resources don't satisfy.
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="requires IO manager with key 'foo', but none was provided.",
+        match=(
+            "io manager with key 'foo' required by SourceAsset with key \\[\"my_source_asset\"\\]"
+            " was not provided"
+        ),
     ):
         with_resources([the_source_asset], {})
 
@@ -323,10 +326,10 @@ def test_source_asset_partial_resources():
     my_source_asset = SourceAsset(key=AssetKey("my_source_asset"), io_manager_def=the_manager)
 
     with pytest.raises(
-        DagsterInvariantViolationError,
+        DagsterInvalidDefinitionError,
         match=(
-            "Resource with key 'foo' required by resource with key 'my_source_asset__io_manager',"
-            " but not provided."
+            "resource with key 'foo' required by resource with key 'my_source_asset__io_manager'"
+            " was not provided"
         ),
     ):
         with_resources([my_source_asset], resource_defs={})

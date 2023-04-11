@@ -69,14 +69,13 @@ def _build_fivetran_assets(
             )
             for table, key in tracked_asset_keys.items()
         },
-        required_resource_keys={"fivetran"},
         compute_kind="fivetran",
         resource_defs=resource_defs,
         group_name=group_name,
         op_tags=op_tags,
     )
-    def _assets(context: OpExecutionContext) -> Any:
-        fivetran_output = context.resources.fivetran.sync_and_poll(
+    def _assets(context: OpExecutionContext, fivetran: FivetranResource) -> Any:
+        fivetran_output = fivetran.sync_and_poll(
             connector_id=connector_id,
             poll_interval=poll_interval,
             poll_timeout=poll_timeout,

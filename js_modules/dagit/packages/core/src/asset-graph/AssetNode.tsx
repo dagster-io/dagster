@@ -1,16 +1,23 @@
 import {gql} from '@apollo/client';
-import {Colors, Icon, FontFamily, Box, Caption, Spinner, Tooltip, IconName} from '@dagster-io/ui';
+import {Colors, Icon, FontFamily, Box, Spinner, Tooltip, Body} from '@dagster-io/ui';
 import isEqual from 'lodash/isEqual';
 import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {withMiddleTruncation} from '../app/Util';
+import {
+  PartitionCountTags,
+  StyleForAssetPartitionStatus,
+  partitionCountString,
+} from '../assets/AssetNodePartitionCounts';
+import {AssetPartitionStatusDot} from '../assets/AssetPartitionList';
 import {AssetPartitionStatus} from '../assets/AssetPartitionStatus';
 import {humanizedLateString, isAssetLate} from '../assets/CurrentMinutesLateTag';
-import {isAssetStale, StaleCausesInfoDot} from '../assets/StaleTag';
+import {StaleReasonsTags} from '../assets/Stale';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetComputeKindTag} from '../graph/OpTags';
+import {AssetKey} from '../graphql/types';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
 
@@ -29,6 +36,7 @@ export const AssetNode: React.FC<{
 
   return (
     <AssetInsetForHoverEffect>
+      <AssetTopTags definition={definition} liveData={liveData} />
       <AssetNodeContainer $selected={selected}>
         <AssetNodeBox $selected={selected} $isSource={isSource}>
           <Name $isSource={isSource}>
@@ -42,16 +50,24 @@ export const AssetNode: React.FC<{
             </div>
             <div style={{flex: 1}} />
           </Name>
-          {definition.description ? (
-            <Description $color={Colors.Gray800}>
-              {markdownToPlaintext(definition.description).split('\n')[0]}
-            </Description>
-          ) : (
-            <Description $color={Colors.Gray400}>No description</Description>
-          )}
-          {definition.isPartitioned && (
-            <AssetNodePartitionsRow definition={definition} liveData={liveData} />
-          )}
+          <Box
+            style={{padding: '6px 8px'}}
+            flex={{direction: 'column', gap: 4}}
+            border={{side: 'top', width: 1, color: Colors.KeylineGray}}
+          >
+            {definition.description ? (
+              <Description $color={Colors.Gray800}>
+                {markdownToPlaintext(definition.description).split('\n')[0]}
+              </Description>
+            ) : (
+              <Description $color={Colors.Gray400}>No description</Description>
+            )}
+            {definition.isPartitioned && (
+              <PartitionCountTags definition={definition} liveData={liveData} />
+            )}
+            <StaleReasonsTags liveData={liveData} assetKey={definition.assetKey} include="self" />
+          </Box>
+
           {isSource && !definition.isObservable ? null : (
             <AssetNodeStatusRow definition={definition} liveData={liveData} />
           )}
@@ -62,7 +78,19 @@ export const AssetNode: React.FC<{
   );
 }, isEqual);
 
-const AssetNodeStatusBox: React.FC<{background: string}> = ({background, children}) => (
+const AssetTopTags: React.FC<{
+  definition: AssetNodeFragment;
+  liveData?: LiveDataForNode;
+}> = ({definition, liveData}) => (
+  <Box flex={{gap: 4}} padding={{left: 4}} style={{height: 24}}>
+    <StaleReasonsTags liveData={liveData} assetKey={definition.assetKey} include="upstream" />
+  </Box>
+);
+
+const AssetNodeStatusBox: React.FC<{background: string; children: React.ReactNode}> = ({
+  background,
+  children,
+}) => (
   <Box
     padding={{horizontal: 8}}
     style={{
@@ -70,6 +98,7 @@ const AssetNodeStatusBox: React.FC<{background: string}> = ({background, childre
       borderBottomRightRadius: 6,
       whiteSpace: 'nowrap',
       lineHeight: '12px',
+      fontSize: 12,
       height: 24,
     }}
     flex={{justifyContent: 'space-between', alignItems: 'center', gap: 6}}
@@ -79,131 +108,31 @@ const AssetNodeStatusBox: React.FC<{background: string}> = ({background, childre
   </Box>
 );
 
-const AssetNodePartitionsRow: React.FC<StatusRowProps> = (props) => {
-  const data = props.liveData?.partitionStats;
-  return (
-    <Box
-      style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 2}}
-      padding={{bottom: 8, horizontal: 8}}
-    >
-      <AssetNodePartitionCountBox
-        status={AssetPartitionStatus.MATERIALIZED}
-        value={data?.numMaterialized}
-        total={data?.numPartitions}
-      />
-      <AssetNodePartitionCountBox
-        status={AssetPartitionStatus.MISSING}
-        value={data ? data.numPartitions - data.numFailed - data.numMaterialized : undefined}
-        total={data?.numPartitions}
-      />
-      <AssetNodePartitionCountBox
-        status={AssetPartitionStatus.FAILED}
-        value={data?.numFailed}
-        total={data?.numPartitions}
-      />
-    </Box>
-  );
-};
-
-const StyleForAssetPartitionStatus: {
-  [state: string]: {
-    background: string;
-    foreground: string;
-    border: string;
-    icon: IconName;
-    adjective: string;
-  };
-} = {
-  [AssetPartitionStatus.FAILED]: {
-    background: Colors.Red50,
-    foreground: Colors.Red700,
-    border: Colors.Red500,
-    icon: 'partition_failure',
-    adjective: 'failed',
-  },
-  [AssetPartitionStatus.MATERIALIZED]: {
-    background: Colors.Green50,
-    foreground: Colors.Green700,
-    border: Colors.Green500,
-    icon: 'partition_success',
-    adjective: 'materialized',
-  },
-  [AssetPartitionStatus.MISSING]: {
-    background: Colors.Gray100,
-    foreground: Colors.Gray900,
-    border: Colors.Gray500,
-    icon: 'partition_missing',
-    adjective: 'missing',
-  },
-};
-
-const partitionCountString = (count: number | undefined, adjective = '') =>
-  `${count === undefined ? '-' : count.toLocaleString()} ${adjective}${adjective ? ' ' : ''}${
-    count === 1 ? 'partition' : 'partitions'
-  }`;
-
-const AssetNodePartitionCountBox: React.FC<{
-  status: AssetPartitionStatus;
-  value: number | undefined;
-  total: number | undefined;
-}> = ({status, value, total}) => {
-  const style = StyleForAssetPartitionStatus[status];
-  const foreground = value ? style.foreground : Colors.Gray500;
-  const background = value ? style.background : Colors.Gray50;
-
-  return (
-    <Tooltip
-      display="block"
-      position="top"
-      canShow={value !== undefined}
-      content={partitionCountString(value, style.adjective)}
-    >
-      <AssetNodePartitionCountContainer style={{color: foreground, background}}>
-        <Icon name={style.icon} color={foreground} size={16} />
-        {value === undefined ? '—' : value === total ? 'All' : value > 1000 ? '999+' : value}
-      </AssetNodePartitionCountContainer>
-    </Tooltip>
-  );
-};
-
-// Necessary to remove the outline we get with the tooltip applying a tabIndex
-const AssetNodePartitionCountContainer = styled.div`
-  width: 100%;
-  border-radius: 6px;
-  font-size: 12px;
-  gap: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 4px;
-  &:focus {
-    outline: 0;
-  }
-`;
-
 interface StatusRowProps {
   definition: AssetNodeFragment;
   liveData: LiveDataForNode | undefined;
 }
 
 const AssetNodeStatusRow: React.FC<StatusRowProps> = (props) => {
-  const info = buildAssetNodeStatusRow(props);
-  return <AssetNodeStatusBox background={info.background}>{info.content}</AssetNodeStatusBox>;
+  const {content, background} = buildAssetNodeStatusContent(props);
+  return <AssetNodeStatusBox background={background}>{content}</AssetNodeStatusBox>;
 };
 
-function getStepKey(definition: AssetNodeFragment) {
+function getStepKey(definition: {opNames: string[]}) {
   // Used for linking to the run with this step highlighted. We only support highlighting
   // a single step, so just use the first one.
   const firstOp = definition.opNames.length ? definition.opNames[0] : null;
   return firstOp || '';
 }
 
-function buildAssetNodeStatusRow({
+export function buildAssetNodeStatusContent({
   definition,
   liveData,
+  expanded,
 }: {
-  definition: AssetNodeFragment;
-  liveData: LiveDataForNode | undefined;
+  definition: {assetKey: AssetKey; opNames: string[]; isSource: boolean; isObservable: boolean};
+  liveData: LiveDataForNode | null | undefined;
+  expanded?: boolean;
 }) {
   if (!liveData) {
     return {
@@ -212,9 +141,7 @@ function buildAssetNodeStatusRow({
       content: (
         <>
           <Spinner purpose="caption-text" />
-          <Caption style={{flex: 1}} color={Colors.Gray800}>
-            Loading...
-          </Caption>
+          <span style={{flex: 1, color: Colors.Gray800}}>Loading...</span>
         </>
       ),
     };
@@ -238,9 +165,10 @@ function buildAssetNodeStatusRow({
         content: (
           <>
             <AssetLatestRunSpinner liveData={liveData} />
-            <Caption style={{flex: 1}} color={Colors.Gray800}>
+            <span style={{flex: 1}} color={Colors.Gray800}>
               Observing...
-            </Caption>
+            </span>
+            {expanded && <SpacerDot />}
             <AssetRunLink runId={materializingRunId} />
           </>
         ),
@@ -252,8 +180,10 @@ function buildAssetNodeStatusRow({
         border: Colors.Gray300,
         content: (
           <>
-            <Caption>Observed</Caption>
-            <Caption style={{textAlign: 'right'}}>
+            {expanded && <AssetPartitionStatusDot status={[AssetPartitionStatus.MISSING]} />}
+            <span>Observed</span>
+            {expanded && <SpacerDot />}
+            <span style={{textAlign: 'right'}}>
               <AssetRunLink
                 runId={liveData.lastObservation.runId}
                 event={{
@@ -266,20 +196,36 @@ function buildAssetNodeStatusRow({
                   timeFormat={{showSeconds: false, showTimezone: false}}
                 />
               </AssetRunLink>
-            </Caption>
+            </span>
           </>
         ),
       };
     }
+    if (definition.isObservable) {
+      return {
+        background: Colors.Gray100,
+        border: Colors.Gray300,
+        content: (
+          <>
+            {expanded && (
+              <Icon
+                name="partition_missing"
+                color={Colors.Gray300}
+                style={{marginRight: -2}}
+                size={12}
+              />
+            )}
+            <span>Never observed</span>
+            {!expanded && <span>–</span>}
+          </>
+        ),
+      };
+    }
+
     return {
       background: Colors.Gray100,
       border: Colors.Gray300,
-      content: (
-        <>
-          <Caption>Never observed</Caption>
-          <Caption>–</Caption>
-        </>
-      ),
+      content: <span>–</span>,
     };
   }
 
@@ -290,13 +236,14 @@ function buildAssetNodeStatusRow({
       content: (
         <>
           <AssetLatestRunSpinner liveData={liveData} />
-          <Caption style={{flex: 1}} color={Colors.Gray800}>
+          <span style={{flex: 1}} color={Colors.Gray800}>
             {liveData.partitionStats?.numMaterializing === 1
               ? `Materializing 1 partition...`
               : liveData.partitionStats?.numMaterializing
               ? `Materializing ${liveData.partitionStats.numMaterializing} partitions...`
               : `Materializing...`}
-          </Caption>
+          </span>
+          {expanded && <SpacerDot />}
           <AssetRunLink runId={materializingRunId} />
         </>
       ),
@@ -318,7 +265,7 @@ function buildAssetNodeStatusRow({
       background,
       border,
       content: (
-        <Caption color={foreground}>
+        <span style={{color: foreground}}>
           <Link
             to={assetDetailsPathForKey(definition.assetKey, {view: 'partitions'})}
             target="_blank"
@@ -328,13 +275,13 @@ function buildAssetNodeStatusRow({
               ? humanizedLateString(liveData.freshnessInfo.currentMinutesLate)
               : partitionCountString(numPartitions)}
           </Link>
-        </Caption>
+        </span>
       ),
     };
   }
 
   const lastMaterializationLink = lastMaterialization ? (
-    <Caption>
+    <span>
       <AssetRunLink
         runId={lastMaterialization.runId}
         event={{stepKey: getStepKey(definition), timestamp: lastMaterialization.timestamp}}
@@ -344,7 +291,7 @@ function buildAssetNodeStatusRow({
           timeFormat={{showSeconds: false, showTimezone: false}}
         />
       </AssetRunLink>
-    </Caption>
+    </span>
   ) : undefined;
 
   if (runWhichFailedToMaterialize || late) {
@@ -353,23 +300,34 @@ function buildAssetNodeStatusRow({
       border: Colors.Red500,
       content: (
         <>
-          <Caption color={Colors.Red700}>
+          {expanded && (
+            <Icon
+              name="partition_failure"
+              color={Colors.Red500}
+              style={{marginRight: -2}}
+              size={12}
+            />
+          )}
+
+          <span style={{color: Colors.Red700}}>
             {runWhichFailedToMaterialize && late
-              ? `Failed (Late)`
+              ? `Failed (Overdue)`
               : late
               ? humanizedLateString(liveData.freshnessInfo.currentMinutesLate)
               : 'Failed'}
-          </Caption>
+          </span>
+
+          {expanded && <SpacerDot />}
 
           {runWhichFailedToMaterialize ? (
-            <Caption>
+            <span>
               <AssetRunLink runId={runWhichFailedToMaterialize.id}>
                 <TimestampDisplay
                   timestamp={Number(runWhichFailedToMaterialize.endTime)}
                   timeFormat={{showSeconds: false, showTimezone: false}}
                 />
               </AssetRunLink>
-            </Caption>
+            </span>
           ) : (
             lastMaterializationLink
           )}
@@ -382,31 +340,30 @@ function buildAssetNodeStatusRow({
     return {
       background: Colors.Yellow50,
       border: Colors.Yellow500,
-      content: <Caption color={Colors.Yellow700}>Never materialized</Caption>,
-    };
-  }
-
-  if (!liveData.freshnessPolicy && isAssetStale(liveData)) {
-    return {
-      background: Colors.Yellow50,
-      border: Colors.Yellow500,
       content: (
         <>
-          <Box flex={{gap: 4, alignItems: 'center'}}>
-            <Caption color={Colors.Yellow700}>Stale</Caption>
-            <StaleCausesInfoDot causes={liveData.staleCauses} />
-          </Box>
-          {lastMaterializationLink}
+          {expanded && (
+            <Icon
+              name="partition_missing"
+              color={Colors.Yellow500}
+              style={{marginRight: -2}}
+              size={12}
+            />
+          )}
+          <span style={{color: Colors.Yellow700}}>Never materialized</span>
         </>
       ),
     };
   }
+
   return {
     background: Colors.Green50,
     border: Colors.Green500,
     content: (
       <>
-        <Caption color={Colors.Green700}>Materialized</Caption>
+        {expanded && <AssetPartitionStatusDot status={[AssetPartitionStatus.MATERIALIZED]} />}
+        <span style={{color: Colors.Green700}}>Materialized</span>
+        {expanded && <SpacerDot />}
         {lastMaterializationLink}
       </>
     ),
@@ -419,7 +376,7 @@ export const AssetNodeMinimal: React.FC<{
   definition: AssetNodeFragment;
 }> = ({selected, definition, liveData}) => {
   const {isSource, assetKey} = definition;
-  const {border, background} = buildAssetNodeStatusRow({definition, liveData});
+  const {border, background} = buildAssetNodeStatusContent({definition, liveData});
   const displayName = assetKey.path[assetKey.path.length - 1];
   return (
     <AssetInsetForHoverEffect>
@@ -477,6 +434,7 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
         path
       }
       reason
+      category
       dependency {
         path
       }
@@ -540,9 +498,13 @@ export const ASSET_NODE_FRAGMENT = gql`
 const AssetInsetForHoverEffect = styled.div`
   padding: 10px 4px 2px 4px;
   height: 100%;
+
+  & *:focus {
+    outline: 0;
+  }
 `;
 
-export const AssetNodeContainer = styled.div<{$selected: boolean}>`
+const AssetNodeContainer = styled.div<{$selected: boolean}>`
   user-select: none;
   cursor: default;
   padding: 4px;
@@ -552,7 +514,7 @@ const AssetNodeShowOnHover = styled.span`
   display: none;
 `;
 
-export const AssetNodeBox = styled.div<{$isSource: boolean; $selected: boolean}>`
+const AssetNodeBox = styled.div<{$isSource: boolean; $selected: boolean}>`
   ${(p) =>
     p.$isSource
       ? `border: 2px dashed ${p.$selected ? Colors.Gray600 : Colors.Gray300}`
@@ -586,6 +548,8 @@ const Name = styled.div<{$isSource: boolean}>`
 `;
 
 const MinimalAssetNodeContainer = styled(AssetNodeContainer)`
+  padding-top: 30px;
+  padding-bottom: 42px;
   height: 100%;
 `;
 
@@ -627,16 +591,19 @@ const MinimalName = styled(Name)`
 `;
 
 const Description = styled.div<{$color: string}>`
-  padding: 6px 8px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   color: ${(p) => p.$color};
-  border-top: 1px solid ${Colors.Blue50};
-  background: ${Colors.White};
   font-size: 12px;
 `;
 
 const TooltipStyled = styled(Tooltip)`
   height: 100%;
 `;
+
+const SpacerDot = () => (
+  <Body color={Colors.KeylineGray} style={{marginLeft: -3, marginRight: -3}}>
+    •
+  </Body>
+);

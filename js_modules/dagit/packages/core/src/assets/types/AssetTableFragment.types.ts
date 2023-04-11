@@ -7,6 +7,7 @@ export type AssetTableDefinitionFragment = {
   id: string;
   groupName: string | null;
   isSource: boolean;
+  isObservable: boolean;
   hasMaterializePermission: boolean;
   description: string | null;
   partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
@@ -27,6 +28,7 @@ export type AssetTableFragment = {
     id: string;
     groupName: string | null;
     isSource: boolean;
+    isObservable: boolean;
     hasMaterializePermission: boolean;
     description: string | null;
     partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;

@@ -1,5 +1,54 @@
 # Changelog
 
+# 1.2.6 (core) / 0.18.6 (libraries)
+
+### Bugfixes
+
+- Fixed a GraphQL resolution error which occurred when retrieving metadata for step failures in the event log.
+
+# 1.2.5 (core) / 0.18.5 (libraries)
+
+### New
+
+- `materialize` and `materialize_to_memory` now both accept a `selection` argument that allows specifying a subset of assets to materialize.
+- `MultiPartitionsDefinition` is no longer marked experimental.
+- Context methods to access time window partition information now work for `MultiPartitionsDefinition`s with a time dimension.
+- Improved the performance of the asset reconciliation sensor when a non-partitioned asset depends on a partitioned asset.
+- `load_assets_from_package_module` and similar methods now accept a `freshness_policy`, which will be applied to all loaded assets.
+- When the asset reconciliation sensor is scheduling based on freshness policies, and there are observable source assets, the observed versions now inform the data time of the assets.
+- `build_sensor_context` and `build_multi_asset_sensor_context` can now take a `Definitions` object in place of a `RepositoryDefinition`
+- [UI] Performance improvement for loading asset partition statuses.
+- [dagster-aws] `s3_resource` now accepts `use_ssl` and `verify` configurations.
+
+### Bugfixes
+
+- Fixed a bug that caused an error to be raised when passing a multi-asset into the `selection` argument on `define_asset_job`.
+- Fixes a graphQL error that displays on Dagit load when an asset’s partitions definition is change from a single-dimensional partitions definition to a `MultiPartitionsDefinition`.
+- Fixed a bug that caused backfills to fail when spanning assets that live in different code locations.
+- Fixed an error that displays when a code location with a `MultiPartitionsMapping` (experimental) is loaded.
+- Fixed a bug that caused errors with invalid `TimeWindowPartitionMapping`s to not be bubbled up to the UI.
+- Fixed an issue where the scheduler would sometimes incorrectly handle spring Daylight Savings Time transitions for schedules running at 2AM in a timezone other than UTC.
+- Fixed an issue introduced in the 1.2.4 release where running `pdb` stopped working when using dagster dev.
+- Fixed an issue where it is was possible to create `AssetMaterialization` objects with a null `AssetKey`.
+- Previously, if you had a `TimeWindowPartitionsDefinition` with a non-standard cron schedule, and also provided a `minute_of_hour` or similar argument in `build_schedule_from_partitioned_job`. Dagster would silently create the wrong cron expression. It now raises an error.
+- The asset reconciliation sensor now no longer fails when the event log contains materializations that contain partitions that aren’t contained in the asset’s `PartitionsDefinition`. These partitions are now ignored.
+- Fixed a regression that prevented materializing dynamically partitioned assets from the UI (thanks [@planvin](https://github.com/planvin)!)
+- [UI] On the asset graph, the asset health displayed in the sidebar for the selected asset updates as materializations and failures occur.
+- [UI] The asset partitions page has been adjusted to make materialization and observation event metadata more clear.
+- [UI] Large table schema metadata entries now display within a modal rather than taking up considerable space on the page.
+- [UI] Launching a backfill of a partitioned asset with unpartitioned assets immediately upstream no longer shows the “missing partitions” warning.
+- [dagster-airflow] fixed a bug in the `PersistentAirflowDatabase` where versions of airflow from 2.0.0 till 2.3.0 would not use the correct connection environment variable name.
+- [dagster-census] fixed a bug with the `poll_sync_run` function of`dagster-census` that prevented polling from working correctly (thanks [@ldincolasmay](https://github.com/ldnicolasmay)!)
+
+### Deprecations
+
+- The `run_request_for_partition` method on `JobDefinition` and `UnresolvedAssetJobDefinition` is now deprecated and will be removed in 2.0.0. Instead, directly instantiate a run request with a partition key via `RunRequest(partition_key=...)`.
+
+### Documentation
+
+- Added a missing link to next tutorial section  (Thanks Mike Kutzma!)
+
+
 # 1.2.4 (core) / 0.18.4 (libraries)
 
 ### New

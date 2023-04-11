@@ -780,6 +780,7 @@ class ScheduleDefinition:
                 scheduled_target = context.repository_def.get_job(self._target.pipeline_name)
                 resolved_request = run_request.with_resolved_tags_and_config(
                     target_definition=scheduled_target,
+                    dynamic_partitions_requests=[],
                     current_time=context.scheduled_execution_time,
                     dynamic_partitions_store=dynamic_partitions_store,
                 )

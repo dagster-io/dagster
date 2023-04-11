@@ -3,8 +3,7 @@ from datetime import datetime
 from unittest import mock
 
 import pendulum
-from dagster import daily_partitioned_config, job, repository
-from dagster._core.definitions import op
+from dagster import daily_partitioned_config, job, op, repository
 from dagster._core.definitions.decorators.schedule_decorator import schedule
 from dagster._core.host_representation import (
     external_pipeline_data_from_def,

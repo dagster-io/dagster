@@ -1,4 +1,4 @@
-from typing import Any, Mapping, Optional, Sequence
+from typing import Any, Mapping, Optional, Sequence, cast
 
 from dagster import (
     AssetIn,
@@ -14,6 +14,8 @@ from dagster._core.test_utils import instance_for_test, wait_for_runs_to_finish
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
 from dagster_graphql.test.utils import (
+    GqlAssetKey,
+    GqlResult,
     define_out_of_process_context,
     execute_dagster_graphql,
     infer_job_or_pipeline_selector,
@@ -82,6 +84,22 @@ def test_stale_status():
             assert foo["staleStatus"] == "FRESH"
             assert foo["staleCauses"] == []
 
+            assert _materialize_assets(context, repo, asset_selection=[AssetKey(["foo"])])
+            wait_for_runs_to_finish(context.instance)
+
+            result = _fetch_data_versions(context, repo)
+            bar = _get_asset_node("bar", result)
+            assert bar["currentDataVersion"] is not None
+            assert bar["staleStatus"] == "STALE"
+            assert bar["staleCauses"] == [
+                {
+                    "key": {"path": ["foo"]},
+                    "category": "DATA",
+                    "reason": "updated data version",
+                    "dependency": None,
+                }
+            ]
+
 
 def test_data_version_from_tags():
     repo_v1 = get_repo_v1()
@@ -136,9 +154,14 @@ def _materialize_assets(
     context: WorkspaceRequestContext,
     repo: RepositoryDefinition,
     asset_selection: Optional[Sequence[AssetKey]] = None,
-):
+) -> GqlResult:
+    gql_asset_selection = (
+        cast(Sequence[GqlAssetKey], [key.to_graphql_input() for key in asset_selection])
+        if asset_selection
+        else None
+    )
     selector = infer_job_or_pipeline_selector(
-        context, repo.get_implicit_asset_job_names()[0], asset_selection=asset_selection
+        context, repo.get_implicit_asset_job_names()[0], asset_selection=gql_asset_selection
     )
     return execute_dagster_graphql(
         context,

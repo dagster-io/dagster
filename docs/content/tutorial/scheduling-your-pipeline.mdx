@@ -14,7 +14,7 @@ By the end of this part of the tutorial, you'll be able to:
 
 ---
 
-## Defining what assets to update
+## Step 1: Defining what assets to update
 
 A _job_ lets you target a selection of assets to materialize them together as a single action. Assets can belong to multiple jobs.
 
@@ -58,9 +58,7 @@ width={1146}
 height={640}
 />
 
----
-
-## About definitions
+### About definitions
 
 Up until this point, you defined assets using the <PyObject object="asset" decorator /> decorator. Dagster definitions are entities that Dagster learns about by importing your code. Just now, you used a different kind of definition: a job definition.
 
@@ -68,7 +66,7 @@ Managing one type of definition, such as assets, is easy. However, it can quickl
 
 ---
 
-## Scheduling the materializations
+## Step 2: Scheduling the materializations
 
 After defining a job, it can be attached to a schedule. A schedule's responsibility is to start a run of the assigned job at a specified time. Schedules are added with the <PyObject object="ScheduleDefinition" /> class.
 
@@ -92,10 +90,14 @@ hackernews_job = define_asset_job("hackernews_job", selection=AssetSelection.all
 
 # Addition: a ScheduleDefinition the job it should run and a cron schedule of how frequently to run it
 hackernews_schedule = ScheduleDefinition(
-    job=hackernews_job, cron_schedule="0 * * * *"  # every hour
+    job=hackernews_job,
+    cron_schedule="0 * * * *",  # every hour
 )
 
-defs = Definitions(assets=all_assets, schedules=[hackernews_schedule])
+defs = Definitions(
+    assets=all_assets,
+    schedules=[hackernews_schedule],
+)
 ```
 
 Go to the Dagster UI, click **Overview > Schedules tab**, and observe your new schedule with the attached job.
@@ -139,4 +141,4 @@ By now, you've:
 - Defined a sequence of materializations with a job
 - Run the job on a schedule
 
-Move on to find out what to do now that you've completed the tutorial in the [next steps](/tutorial/next-steps) section.
+In the next section, you'll learn how to use [I/O managers to save your data](/tutorial/saving-your-data).

@@ -69,7 +69,11 @@ export const GlobalPopoverStyle = createGlobalStyle`
 // Overwrite arrays instead of concatting them.
 const overwriteMerge = (destination: any[], source: any[]) => source;
 
-export const Popover: React.FC<Popover2Props> = (props) => {
+interface Props extends Popover2Props {
+  children: React.ReactNode;
+}
+
+export const Popover = (props: Props) => {
   return (
     <Popover2
       minimal

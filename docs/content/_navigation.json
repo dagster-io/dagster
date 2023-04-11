@@ -49,6 +49,10 @@
         "path": "/tutorial/scheduling-your-pipeline"
       },
       {
+        "title": "Saving your data",
+        "path": "/tutorial/saving-your-data"
+      },
+      {
         "title": "Next steps",
         "path": "/tutorial/next-steps"
       }
@@ -709,10 +713,6 @@
             "path": "/guides/dagster/re-execution"
           },
           {
-            "title": "Validating data",
-            "path": "/guides/dagster/dagster_type_factories"
-          },
-          {
             "title": "Intro to ops and jobs",
             "path": "/guides/dagster/intro-to-ops-jobs",
             "children": [
@@ -772,28 +772,50 @@
         ]
       },
       {
-        "title": "Experimental features",
+        "title": "Advanced & experimental",
         "path": "/guides/experimental-features",
         "children": [
           {
-            "title": "Using custom run coordinators",
-            "path": "/guides/dagster/run-attribution"
+            "title": "Advanced features",
+            "children": [
+              {
+                "title": "Limiting concurrency in data pipelines",
+                "path": "/guides/limiting-concurrency-in-data-pipelines"
+              },
+              {
+                "title": "Customizing run queue priority",
+                "path": "/guides/customizing-run-queue-priority"
+              },
+              {
+                "title": "Validating data",
+                "path": "/guides/dagster/dagster_type_factories"
+              }
+            ]
           },
           {
-            "title": "Airbyte ingestion as code",
-            "path": "/guides/dagster/airbyte-ingestion-as-code"
-          },
-          {
-            "title": "Asset versioning and caching",
-            "path": "/guides/dagster/asset-versioning-and-caching"
-          },
-          {
-            "title": "Pythonic config",
-            "path": "/guides/dagster/pythonic-config"
-          },
-          {
-            "title": "Pythonic resources",
-            "path": "/guides/dagster/pythonic-resources"
+            "title": "Experimental features",
+            "children": [
+              {
+                "title": "Using custom run coordinators",
+                "path": "/guides/dagster/run-attribution"
+              },
+              {
+                "title": "Airbyte ingestion as code",
+                "path": "/guides/dagster/airbyte-ingestion-as-code"
+              },
+              {
+                "title": "Asset versioning and caching",
+                "path": "/guides/dagster/asset-versioning-and-caching"
+              },
+              {
+                "title": "Pythonic config",
+                "path": "/guides/dagster/pythonic-config"
+              },
+              {
+                "title": "Pythonic resources",
+                "path": "/guides/dagster/pythonic-resources"
+              }
+            ]
           }
         ]
       }

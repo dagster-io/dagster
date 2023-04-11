@@ -22,6 +22,7 @@ import styled from 'styled-components/macro';
 
 import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
+import {useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {useTrackPageView} from '../../app/analytics';
 import {BulkActionStatus, RunStatus} from '../../graphql/types';
 import {useDocumentTitle} from '../../hooks/useDocumentTitle';
@@ -34,7 +35,6 @@ import {
   BackfillStatusesByAssetQueryVariables,
   PartitionBackfillFragment,
 } from './types/BackfillPage.types';
-import {useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 
 dayjs.extend(duration);
 dayjs.extend(relativeTime);

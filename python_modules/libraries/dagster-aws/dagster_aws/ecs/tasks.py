@@ -24,7 +24,10 @@ class DagsterEcsTaskDefinitionConfig(
             ("requires_compatibilities", Sequence[str]),
             ("cpu", str),
             ("memory", str),
+            ("ephemeral_storage", Optional[int]),
             ("runtime_platform", Mapping[str, Any]),
+            ("mount_points", Sequence[Mapping[str, Any]]),
+            ("volumes", Sequence[Mapping[str, Any]]),
         ],
     )
 ):
@@ -47,7 +50,10 @@ class DagsterEcsTaskDefinitionConfig(
         requires_compatibilities: Optional[Sequence[str]],
         cpu: Optional[str] = None,
         memory: Optional[str] = None,
+        ephemeral_storage: Optional[int] = None,
         runtime_platform: Optional[Mapping[str, Any]] = None,
+        mount_points: Optional[Sequence[Mapping[str, Any]]] = None,
+        volumes: Optional[Sequence[Mapping[str, Any]]] = None,
     ):
         return super(DagsterEcsTaskDefinitionConfig, cls).__new__(
             cls,
@@ -64,7 +70,10 @@ class DagsterEcsTaskDefinitionConfig(
             check.opt_sequence_param(requires_compatibilities, "requires_compatibilities"),
             check.opt_str_param(cpu, "cpu", default="256"),
             check.opt_str_param(memory, "memory", default="512"),
+            check.opt_int_param(ephemeral_storage, "ephemeral_storage"),
             check.opt_mapping_param(runtime_platform, "runtime_platform"),
+            check.opt_sequence_param(mount_points, "mount_points"),
+            check.opt_sequence_param(volumes, "volumes"),
         )
 
     def task_definition_dict(self):
@@ -86,6 +95,7 @@ class DagsterEcsTaskDefinitionConfig(
                     ({"command": self.command} if self.command else {}),
                     ({"secrets": self.secrets} if self.secrets else {}),
                     ({"environment": self.environment} if self.environment else {}),
+                    ({"mountPoints": self.mount_points} if self.mount_points else {}),
                 ),
                 *self.sidecars,
             ],
@@ -101,6 +111,12 @@ class DagsterEcsTaskDefinitionConfig(
 
         if self.runtime_platform:
             kwargs.update(dict(runtimePlatform=self.runtime_platform))
+
+        if self.ephemeral_storage:
+            kwargs.update(dict(ephemeralStorage={"sizeInGiB": self.ephemeral_storage}))
+
+        if self.volumes:
+            kwargs.update(dict(volumes=self.volumes))
 
         return kwargs
 
@@ -137,7 +153,10 @@ class DagsterEcsTaskDefinitionConfig(
             requires_compatibilities=task_definition_dict.get("requiresCompatibilities"),
             cpu=task_definition_dict.get("cpu"),
             memory=task_definition_dict.get("memory"),
+            ephemeral_storage=task_definition_dict.get("ephemeralStorage", {}).get("sizeInGiB"),
             runtime_platform=task_definition_dict.get("runtimePlatform"),
+            mount_points=container_definition.get("mountPoints"),
+            volumes=task_definition_dict.get("volumes"),
         )
 
 
@@ -171,6 +190,9 @@ def get_task_definition_dict_from_current_task(
     runtime_platform=None,
     cpu=None,
     memory=None,
+    ephemeral_storage=None,
+    mount_points=None,
+    volumes=None,
 ):
     current_container_name = current_ecs_container_name()
 
@@ -224,6 +246,11 @@ def get_task_definition_dict_from_current_task(
             *environment,
         ]
 
+    if mount_points:
+        new_container_definition["mountPoints"] = (
+            new_container_definition.get("mountPoints", []) + mount_points
+        )
+
     if include_sidecars:
         container_definitions = current_task_definition_dict.get("containerDefinitions")
         container_definitions.remove(container_definition)
@@ -240,7 +267,11 @@ def get_task_definition_dict_from_current_task(
         **({"runtimePlatform": runtime_platform} if runtime_platform else {}),
         **({"cpu": cpu} if cpu else {}),
         **({"memory": memory} if memory else {}),
+        **({"ephemeralStorage": {"sizeInGiB": ephemeral_storage}} if ephemeral_storage else {}),
     }
+
+    if volumes:
+        task_definition["volumes"] = task_definition.get("volumes", []) + volumes
 
     return task_definition
 
@@ -319,7 +350,7 @@ def get_task_kwargs_from_current_task(
         for group in eni.groups:
             security_groups.append(group["GroupId"])
 
-    return {
+    run_task_kwargs = {
         "cluster": cluster,
         "networkConfiguration": {
             "awsvpcConfiguration": {
@@ -328,5 +359,11 @@ def get_task_kwargs_from_current_task(
                 "securityGroups": security_groups,
             },
         },
-        "launchType": task.get("launchType") or "FARGATE",
     }
+
+    if not task.get("capacityProviderStrategy"):
+        run_task_kwargs["launchType"] = task.get("launchType") or "FARGATE"
+    else:
+        run_task_kwargs["capacityProviderStrategy"] = task.get("capacityProviderStrategy")
+
+    return run_task_kwargs

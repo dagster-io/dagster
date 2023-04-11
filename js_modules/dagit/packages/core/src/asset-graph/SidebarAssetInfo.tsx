@@ -30,6 +30,7 @@ import {ResourceContainer, ResourceHeader} from '../pipelines/SidebarOpHelpers';
 import {pluginForMetadata} from '../plugins';
 import {Version} from '../versions/Version';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
+import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {LiveDataForNode, displayNameForAssetKey, GraphNode, nodeDependsOnSelf} from './Utils';
@@ -46,7 +47,6 @@ export const SidebarAssetInfo: React.FC<{
     partitionHealthRefreshHint,
     'background',
   );
-
   const {data} = useQuery<SidebarAssetQuery, SidebarAssetQueryVariables>(SIDEBAR_ASSET_QUERY, {
     variables: {assetKey: {path: assetKey.path}},
   });
@@ -57,7 +57,7 @@ export const SidebarAssetInfo: React.FC<{
   if (!asset) {
     return (
       <>
-        <Header assetKey={assetKey} />
+        <Header assetKey={assetKey} repoAddress={null} />
         <Box padding={{vertical: 64}}>
           <Spinner purpose="section" />
         </Box>
@@ -74,7 +74,7 @@ export const SidebarAssetInfo: React.FC<{
 
   return (
     <>
-      <Header assetKey={assetKey} opName={asset.op?.name} />
+      <Header assetKey={assetKey} opName={asset.op?.name} repoAddress={repoAddress} />
 
       <AssetDefinedInMultipleReposNotice
         assetKey={assetKey}
@@ -176,7 +176,11 @@ const TypeSidebarSection: React.FC<{
   );
 };
 
-const Header: React.FC<{assetKey: AssetKey; opName?: string}> = ({assetKey, opName}) => {
+const Header: React.FC<{assetKey: AssetKey; opName?: string; repoAddress?: RepoAddress | null}> = ({
+  assetKey,
+  opName,
+  repoAddress,
+}) => {
   const displayName = displayNameForAssetKey(assetKey);
 
   return (
@@ -197,10 +201,20 @@ const Header: React.FC<{assetKey: AssetKey; opName?: string}> = ({assetKey, opNa
           </Box>
         ) : undefined}
       </SidebarTitle>
-      <AssetCatalogLink to={assetDetailsPathForKey(assetKey)}>
-        {'View in Asset Catalog '}
-        <Icon name="open_in_new" color={Colors.Link} />
-      </AssetCatalogLink>
+      <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
+        <AssetCatalogLink to={assetDetailsPathForKey(assetKey)}>
+          {'View in Asset Catalog '}
+          <Icon name="open_in_new" color={Colors.Link} />
+        </AssetCatalogLink>
+        {repoAddress ? (
+          <AssetCatalogLink
+            to={workspacePathFromAddress(repoAddress, `/graphs/${opName}/${displayName}/`)}
+          >
+            {'View Graph '}
+            <Icon name="open_in_new" color={Colors.Link} />
+          </AssetCatalogLink>
+        ) : null}
+      </Box>
     </Box>
   );
 };
@@ -213,7 +227,7 @@ const AssetCatalogLink = styled(Link)`
   white-space: nowrap;
 `;
 
-export const SIDEBAR_ASSET_FRAGMENT = gql`
+const SIDEBAR_ASSET_FRAGMENT = gql`
   fragment SidebarAssetFragment on AssetNode {
     id
     description

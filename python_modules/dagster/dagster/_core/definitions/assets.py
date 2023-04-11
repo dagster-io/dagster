@@ -20,6 +20,7 @@ import dagster._check as check
 from dagster._annotations import public
 from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.asset_layer import get_dep_node_handles_of_graph_backed_asset
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
@@ -84,6 +85,7 @@ class AssetsDefinition(ResourceAddable):
     _can_subset: bool
     _metadata_by_key: Mapping[AssetKey, ArbitraryMetadataMapping]
     _freshness_policies_by_key: Mapping[AssetKey, FreshnessPolicy]
+    _auto_materialize_policies_by_key: Mapping[AssetKey, AutoMaterializePolicy]
     _code_versions_by_key: Mapping[AssetKey, Optional[str]]
     _descriptions_by_key: Mapping[AssetKey, str]
 
@@ -102,6 +104,7 @@ class AssetsDefinition(ResourceAddable):
         group_names_by_key: Optional[Mapping[AssetKey, str]] = None,
         metadata_by_key: Optional[Mapping[AssetKey, ArbitraryMetadataMapping]] = None,
         freshness_policies_by_key: Optional[Mapping[AssetKey, FreshnessPolicy]] = None,
+        auto_materialize_policies_by_key: Optional[Mapping[AssetKey, AutoMaterializePolicy]] = None,
         descriptions_by_key: Optional[Mapping[AssetKey, str]] = None,
         # if adding new fields, make sure to handle them in the with_attributes
         # and from_graph methods
@@ -221,6 +224,13 @@ class AssetsDefinition(ResourceAddable):
             value_type=FreshnessPolicy,
         )
 
+        self._auto_materialize_policies_by_key = check.opt_mapping_param(
+            auto_materialize_policies_by_key,
+            "auto_materialize_policies_by_key",
+            key_type=AssetKey,
+            value_type=AutoMaterializePolicy,
+        )
+
         _validate_self_deps(
             input_keys=self._keys_by_input_name.values(),
             output_keys=self._keys_by_output_name.values(),
@@ -317,7 +327,7 @@ class AssetsDefinition(ResourceAddable):
                 be associated with each of the output assets for this node. Keys are names of the
                 outputs, and values are dictionaries of metadata to be associated with the related
                 asset.
-            freshness_policies_by_output_name_ouptut_name (Optional[Mapping[str, Optional[FreshnessPolicy]]]): Defines a
+            freshness_policies_by_output_name (Optional[Mapping[str, Optional[FreshnessPolicy]]]): Defines a
                 FreshnessPolicy to be associated with some or all of the output assets for this node.
                 Keys are the names of the outputs, and values are the FreshnessPolicies to be attached
                 to the associated asset.
@@ -397,7 +407,7 @@ class AssetsDefinition(ResourceAddable):
                 be associated with each of the output assets for this node. Keys are names of the
                 outputs, and values are dictionaries of metadata to be associated with the related
                 asset.
-            freshness_policies_by_output_name_ouptut_name (Optional[Mapping[str, Optional[FreshnessPolicy]]]): Defines a
+            freshness_policies_by_output_name (Optional[Mapping[str, Optional[FreshnessPolicy]]]): Defines a
                 FreshnessPolicy to be associated with some or all of the output assets for this node.
                 Keys are the names of the outputs, and values are the FreshnessPolicies to be attached
                 to the associated asset.
@@ -516,21 +526,21 @@ class AssetsDefinition(ResourceAddable):
             if partition_mappings
             else None,
             metadata_by_key={
-                keys_by_output_name[output_name]: metadata
+                keys_by_output_name_with_prefix[output_name]: metadata
                 for output_name, metadata in metadata_by_output_name.items()
                 if metadata is not None
             }
             if metadata_by_output_name
             else None,
             freshness_policies_by_key={
-                keys_by_output_name[output_name]: freshness_policy
+                keys_by_output_name_with_prefix[output_name]: freshness_policy
                 for output_name, freshness_policy in freshness_policies_by_output_name.items()
                 if freshness_policy is not None
             }
             if freshness_policies_by_output_name
             else None,
             descriptions_by_key={
-                keys_by_output_name[output_name]: description
+                keys_by_output_name_with_prefix[output_name]: description
                 for output_name, description in descriptions_by_output_name.items()
                 if description is not None
             }
@@ -646,6 +656,10 @@ class AssetsDefinition(ResourceAddable):
     @property
     def freshness_policies_by_key(self) -> Mapping[AssetKey, FreshnessPolicy]:
         return self._freshness_policies_by_key
+
+    @property
+    def auto_materialize_policies_by_key(self) -> Mapping[AssetKey, AutoMaterializePolicy]:
+        return self._auto_materialize_policies_by_key
 
     @public
     @property
@@ -765,6 +779,11 @@ class AssetsDefinition(ResourceAddable):
                     output_asset_key_replacements.get(key, key)
                 ] = replaced_freshness_policy
 
+        replaced_auto_materialize_policies_by_key = {
+            output_asset_key_replacements.get(key, key): policy
+            for key, policy in self._auto_materialize_policies_by_key.items()
+        }
+
         replaced_descriptions_by_key = {
             output_asset_key_replacements.get(key, key): description
             for key, description in self._descriptions_by_key.items()
@@ -810,6 +829,7 @@ class AssetsDefinition(ResourceAddable):
                 for key, value in self.metadata_by_key.items()
             },
             freshness_policies_by_key=replaced_freshness_policies_by_key,
+            auto_materialize_policies_by_key=replaced_auto_materialize_policies_by_key,
             descriptions_by_key=replaced_descriptions_by_key,
         )
 
@@ -922,6 +942,7 @@ class AssetsDefinition(ResourceAddable):
                 group_names_by_key=self.group_names_by_key,
                 metadata_by_key=self.metadata_by_key,
                 freshness_policies_by_key=self.freshness_policies_by_key,
+                auto_materialize_policies_by_key=self.auto_materialize_policies_by_key,
             )
         else:
             # multi_asset subsetting
@@ -939,6 +960,7 @@ class AssetsDefinition(ResourceAddable):
                 group_names_by_key=self.group_names_by_key,
                 metadata_by_key=self.metadata_by_key,
                 freshness_policies_by_key=self.freshness_policies_by_key,
+                auto_materialize_policies_by_key=self.auto_materialize_policies_by_key,
             )
 
     @public
@@ -1082,6 +1104,7 @@ class AssetsDefinition(ResourceAddable):
             group_names_by_key=self.group_names_by_key,
             metadata_by_key=self.metadata_by_key,
             freshness_policies_by_key=self.freshness_policies_by_key,
+            auto_materialize_policies_by_key=self.auto_materialize_policies_by_key,
         )
 
 

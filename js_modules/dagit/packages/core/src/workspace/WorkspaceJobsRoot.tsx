@@ -127,7 +127,7 @@ export const WorkspaceJobsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => 
   );
 };
 
-export const WORKSPACE_JOBS_QUERY = gql`
+const WORKSPACE_JOBS_QUERY = gql`
   query WorkspaceJobsQuery($selector: RepositorySelector!) {
     repositoryOrError(repositorySelector: $selector) {
       ... on Repository {

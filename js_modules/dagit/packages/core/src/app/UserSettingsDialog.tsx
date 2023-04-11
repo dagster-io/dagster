@@ -51,10 +51,7 @@ interface DialogContentProps {
  * Separate the content from the `Dialog` so that we don't prepare its state before
  * we want to render it.
  */
-export const UserSettingsDialogContent: React.FC<DialogContentProps> = ({
-  onClose,
-  visibleFlags,
-}) => {
+const UserSettingsDialogContent: React.FC<DialogContentProps> = ({onClose, visibleFlags}) => {
   const [flags, setFlags] = React.useState<FeatureFlagType[]>(() => getFeatureFlags());
   const [reloading, setReloading] = React.useState(false);
 

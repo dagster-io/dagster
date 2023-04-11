@@ -33,9 +33,8 @@ export type AssetGraphLayout = {
   groups: {[name: string]: GroupLayout};
 };
 
-const opts: {margin: number; mini: boolean} = {
+const opts: {margin: number} = {
   margin: 100,
-  mini: false,
 };
 
 // Prefix group nodes in the Dagre layout so that an asset and an asset
@@ -49,9 +48,9 @@ export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
     rankdir: 'TB',
     marginx: opts.margin,
     marginy: opts.margin,
-    nodesep: opts.mini ? 20 : 50,
-    edgesep: opts.mini ? 10 : 10,
-    ranksep: opts.mini ? 20 : 50,
+    nodesep: 40,
+    edgesep: 10,
+    ranksep: 10,
   });
   g.setDefaultEdgeLabel(() => ({}));
 
@@ -90,14 +89,13 @@ export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
 
   // Add all the nodes to the graph
   renderedNodes.forEach((node) => {
-    const {width, height} = getAssetNodeDimensions(node.definition);
-    g.setNode(node.id, {width: opts.mini ? 230 : width, height});
+    g.setNode(node.id, getAssetNodeDimensions(node.definition));
     if (showGroups && node.definition.groupName) {
       g.setParent(node.id, parentNodeIdForNode(node));
     }
   });
 
-  const linksToAssetsOutsideGraphedSet = {};
+  const linksToAssetsOutsideGraphedSet: {[id: string]: true} = {};
 
   // Add the edges to the graph, and accumulate a set of "foreign nodes" (for which
   // we have an inbound/outbound edge, but we don't have the `node` in the graphData).
@@ -181,11 +179,16 @@ export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
   const edges: AssetLayoutEdge[] = [];
 
   g.edges().forEach((e) => {
-    const points = g.edge(e).points;
+    const v = g.node(e.v);
+    const vXInset = !!linksToAssetsOutsideGraphedSet[e.v] ? 16 : 24;
+    const w = g.node(e.w);
+    const wXInset = !!linksToAssetsOutsideGraphedSet[e.w] ? 16 : 24;
+
+    // Ignore the coordinates from dagre and use the top left + bottom left of the
     edges.push({
-      from: points[0],
+      from: {x: v.x - v.width / 2 + vXInset, y: v.y - 30 + v.height / 2},
       fromId: e.v,
-      to: points[points.length - 1],
+      to: {x: w.x - w.width / 2 + wXInset, y: w.y + 20 - w.height / 2},
       toId: e.w,
     });
   });
@@ -202,7 +205,7 @@ export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
 export const ASSET_LINK_NAME_MAX_LENGTH = 10;
 
 export const getAssetLinkDimensions = () => {
-  return {width: 106, height: 40};
+  return {width: 106, height: 90};
 };
 
 export const padBounds = (a: IBounds, padding: {x: number; top: number; bottom: number}) => {
@@ -237,9 +240,9 @@ export const getAssetNodeDimensions = (def: {
   const width = 255;
 
   if (def.isSource && !def.isObservable) {
-    return {width, height: 72};
+    return {width, height: 102};
   } else {
-    let height = 70; // name + description
+    let height = 100; // top tags area + name + description
 
     if (def.isPartitioned) {
       height += 40;
@@ -249,9 +252,9 @@ export const getAssetNodeDimensions = (def: {
     } else {
       height += 26; // status row
     }
-    if (def.computeKind) {
-      height += 30; // tag
-    }
+
+    height += 30; // tag
+
     return {width, height};
   }
 };

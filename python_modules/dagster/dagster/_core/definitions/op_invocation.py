@@ -1,10 +1,20 @@
 import inspect
-from typing import TYPE_CHECKING, Any, Mapping, Optional, TypeVar, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Tuple,
+    TypeVar,
+    Union,
+    cast,
+)
 
 import dagster._check as check
-from dagster._core.definitions.resource_definition import ResourceDefinition
+from dagster._core.decorator_utils import get_function_params
 from dagster._core.errors import (
-    DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
     DagsterTypeCheckDidNotPass,
@@ -29,6 +39,65 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 
 
+class SeparatedArgsKwargs(NamedTuple):
+    input_args: Tuple[Any, ...]
+    input_kwargs: Dict[str, Any]
+    resources_by_param_name: Dict[str, Any]
+    config_arg: Any
+
+
+def _separate_args_and_kwargs(
+    compute_fn: "DecoratedOpFunction",
+    args: Tuple[Any, ...],
+    kwargs: Dict[str, Any],
+    resource_arg_mapping: Dict[str, Any],
+) -> SeparatedArgsKwargs:
+    """Given a decorated compute function, a set of args and kwargs, and set of resource param names,
+    separates the set of resource inputs from op/asset inputs returns a tuple of the categorized
+    args and kwargs.
+
+    We use the remaining args and kwargs to cleanly invoke the compute function, and we use the
+    extracted resource inputs to populate the execution context.
+    """
+    resources_from_args_and_kwargs = {}
+    params = get_function_params(compute_fn.decorated_fn)
+
+    adjusted_args = []
+
+    params_without_context = params[1:] if compute_fn.has_context_arg() else params
+
+    config_arg = kwargs.get("config")
+
+    # Get any (non-kw) args that correspond to resource inputs & strip them from the args list
+    for i, arg in enumerate(args):
+        param = params_without_context[i] if i < len(params_without_context) else None
+        if param and param.kind != inspect.Parameter.KEYWORD_ONLY:
+            if param.name in resource_arg_mapping:
+                resources_from_args_and_kwargs[param.name] = arg
+                continue
+            if param.name == "config":
+                config_arg = arg
+                continue
+
+        adjusted_args.append(arg)
+
+    # Get any kwargs that correspond to resource inputs & strip them from the kwargs dict
+    for resource_arg in resource_arg_mapping:
+        if resource_arg in kwargs:
+            resources_from_args_and_kwargs[resource_arg] = kwargs[resource_arg]
+
+    adjusted_kwargs = {
+        k: v for k, v in kwargs.items() if k not in resources_from_args_and_kwargs and k != "config"
+    }
+
+    return SeparatedArgsKwargs(
+        input_args=tuple(adjusted_args),
+        input_kwargs=adjusted_kwargs,
+        resources_by_param_name=resources_from_args_and_kwargs,
+        config_arg=config_arg,
+    )
+
+
 def op_invocation_result(
     op_def_or_invocation: Union["OpDefinition", "PendingNodeInvocation[OpDefinition]"],
     context: Optional["UnboundOpExecutionContext"],
@@ -46,8 +115,6 @@ def op_invocation_result(
         else op_def_or_invocation
     )
 
-    _check_invocation_requirements(op_def, context)
-
     compute_fn = op_def.compute_fn
     if not isinstance(compute_fn, DecoratedOpFunction):
         check.failed("op invocation only works with decorated op fns")
@@ -56,34 +123,51 @@ def op_invocation_result(
 
     from ..execution.plan.compute_generator import invoke_compute_fn
 
-    context = context or build_op_context()
-
     resource_arg_mapping = {arg.name: arg.name for arg in compute_fn.get_resource_args()}
-    resource_args_from_kwargs = {}
-    for resource_arg in resource_arg_mapping:
-        if resource_arg in kwargs:
-            resource_args_from_kwargs[resource_arg] = kwargs[resource_arg]
-            del kwargs[resource_arg]
 
-    resources_provided_in_multiple_places = (resource_args_from_kwargs) and (context.resource_keys)
+    # The user is allowed to invoke an op with an arbitrary mix of args and kwargs.
+    # We ensure that these args and kwargs are correctly categorized as inputs, config, or resource objects and then validated.
+    #
+    # Depending on arg/kwarg type, we do various things:
+    # - Any resources passed as parameters are also made available to user-defined code as part of the op execution context
+    # - Provide high-quality error messages (e.g. if something tried to pass a value to an input typed Nothing)
+    # - Default values are applied appropriately
+    # - Inputs are type checked
+    #
+    # We recollect all the varying args/kwargs into a dictionary and invoke the user-defined function with kwargs only.
+    extracted = _separate_args_and_kwargs(compute_fn, args, kwargs, resource_arg_mapping)
+
+    input_args = extracted.input_args
+    input_kwargs = extracted.input_kwargs
+    resources_by_param_name = extracted.resources_by_param_name
+    config_input = extracted.config_arg
+
+    resources_provided_in_multiple_places = (
+        resources_by_param_name and context and context.resource_keys
+    )
     if resources_provided_in_multiple_places:
         raise DagsterInvalidInvocationError("Cannot provide resources in both context and kwargs")
 
-    if resource_args_from_kwargs:
-        context = context.replace_resources(resource_args_from_kwargs)
+    if resources_by_param_name:
+        context = (context or build_op_context()).replace_resources(resources_by_param_name)
 
-    try:
-        bound_context = context.bind(op_def_or_invocation)
-    except DagsterInvalidDefinitionError as e:
-        if any(isinstance(arg, ResourceDefinition) for arg in args):
-            raise DagsterInvalidInvocationError(
-                str(e)
-                + "\n\nIf directly invoking an op/asset, you may not provide resources as"
-                " positional"
-                " arguments, only as keyword arguments."
-            ) from e
-        raise
-    input_dict = _resolve_inputs(op_def, args, kwargs, bound_context)
+    config_provided_in_multiple_places = config_input and context and context.op_config
+    if config_provided_in_multiple_places:
+        raise DagsterInvalidInvocationError("Cannot provide config in both context and kwargs")
+    if config_input:
+        from dagster._config.pythonic_config import Config
+
+        context = (context or build_op_context()).replace_config(
+            config_input._as_config_dict()  # noqa: SLF001
+            if isinstance(config_input, Config)
+            else config_input
+        )
+
+    _check_invocation_requirements(op_def, context)
+
+    bound_context = (context or build_op_context()).bind(op_def_or_invocation)
+
+    input_dict = _resolve_inputs(op_def, input_args, input_kwargs, bound_context)
 
     result = invoke_compute_fn(
         fn=compute_fn.decorated_fn,

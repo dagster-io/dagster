@@ -386,7 +386,7 @@ ReconstructableJob = ReconstructablePipeline
 def reconstructable(target: Callable[..., "PipelineDefinition"]) -> ReconstructablePipeline:
     """Create a :py:class:`~dagster._core.definitions.reconstructable.ReconstructablePipeline` from a
     function that returns a :py:class:`~dagster.PipelineDefinition`/:py:class:`~dagster.JobDefinition`,
-    or a function decorated with :py:func:`@pipeline <dagster.pipeline>`/:py:func:`@job <dagster.job>`.
+    or a function decorated with :py:func:`@job <dagster.job>`.
 
     When your pipeline/job must cross process boundaries, e.g., for execution on multiple nodes or
     in different systems (like ``dagstermill``), Dagster must know how to reconstruct the pipeline/job

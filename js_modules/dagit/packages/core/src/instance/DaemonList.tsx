@@ -46,7 +46,7 @@ export const DaemonList: React.FC<Props> = ({daemonStatuses, showTimestampColumn
   }
 
   return (
-    <Table $monospaceFont={false}>
+    <Table>
       <thead>
         <tr>
           <th style={{width: '25%'}}>Daemon</th>

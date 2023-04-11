@@ -92,21 +92,19 @@ from dagster._config.field_utils import (
     Selector as Selector,
     Shape as Shape,
 )
-from dagster._config.source import (
-    BoolSource as BoolSource,
-    IntSource as IntSource,
-    StringSource as StringSource,
-)
-from dagster._config.structured_config import (
+from dagster._config.pythonic_config import (
     Config as Config,
     ConfigurableIOManager as ConfigurableIOManager,
     ConfigurableIOManagerFactory as ConfigurableIOManagerFactory,
     ConfigurableLegacyIOManagerAdapter as ConfigurableLegacyIOManagerAdapter,
-    ConfigurableLegacyResourceAdapter as ConfigurableLegacyResourceAdapter,
     ConfigurableResource as ConfigurableResource,
-    ConfigurableResourceFactory as ConfigurableResourceFactory,
     PermissiveConfig as PermissiveConfig,
     ResourceDependency as ResourceDependency,
+)
+from dagster._config.source import (
+    BoolSource as BoolSource,
+    IntSource as IntSource,
+    StringSource as StringSource,
 )
 from dagster._core.definitions.asset_in import AssetIn as AssetIn
 from dagster._core.definitions.asset_out import AssetOut as AssetOut
@@ -291,7 +289,7 @@ from dagster._core.definitions.repository_definition import (
     RepositoryDefinition as RepositoryDefinition,
 )
 from dagster._core.definitions.resource_annotation import (
-    Resource as Resource,
+    ResourceParam as ResourceParam,
 )
 from dagster._core.definitions.resource_definition import (
     ResourceDefinition as ResourceDefinition,
@@ -300,7 +298,10 @@ from dagster._core.definitions.resource_definition import (
 )
 from dagster._core.definitions.run_config import RunConfig as RunConfig
 from dagster._core.definitions.run_request import (
+    AddDynamicPartitionsRequest as AddDynamicPartitionsRequest,
+    DeleteDynamicPartitionsRequest as DeleteDynamicPartitionsRequest,
     RunRequest as RunRequest,
+    SensorResult as SensorResult,
     SkipReason as SkipReason,
 )
 from dagster._core.definitions.run_status_sensor_definition import (

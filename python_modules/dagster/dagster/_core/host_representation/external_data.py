@@ -29,15 +29,15 @@ from dagster import (
     StaticPartitionsDefinition,
     _check as check,
 )
+from dagster._config.pythonic_config import (
+    ConfigurableResource,
+    PartialResource,
+    ResourceWithKeyMapping,
+)
 from dagster._config.snap import (
     ConfigFieldSnap,
     ConfigSchemaSnapshot,
     snap_from_config_type,
-)
-from dagster._config.structured_config import (
-    ConfigurableResource,
-    PartialResource,
-    ResourceWithKeyMapping,
 )
 from dagster._core.definitions import (
     JobDefinition,
@@ -50,7 +50,8 @@ from dagster._core.definitions import (
 )
 from dagster._core.definitions.asset_layer import AssetOutputInfo
 from dagster._core.definitions.asset_sensor_definition import AssetSensorDefinition
-from dagster._core.definitions.assets_job import ASSET_BASE_JOB_PREFIX, is_base_asset_job_name
+from dagster._core.definitions.assets_job import is_base_asset_job_name
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.definition_config_schema import ConfiguredDefinitionConfigSchema
 from dagster._core.definitions.dependency import (
     GraphNode,
@@ -1059,6 +1060,7 @@ class ExternalAssetNode(
             # unique deployment-wide.
             ("atomic_execution_unit_id", Optional[str]),
             ("required_top_level_resources", Optional[Sequence[str]]),
+            ("auto_materialize_policy", Optional[AutoMaterializePolicy]),
         ],
     )
 ):
@@ -1090,6 +1092,7 @@ class ExternalAssetNode(
         is_observable: bool = False,
         atomic_execution_unit_id: Optional[str] = None,
         required_top_level_resources: Optional[Sequence[str]] = None,
+        auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
     ):
         # backcompat logic to handle ExternalAssetNodes serialized without op_names/graph_name
         if not op_names:
@@ -1139,6 +1142,11 @@ class ExternalAssetNode(
             ),
             required_top_level_resources=check.opt_sequence_param(
                 required_top_level_resources, "required_top_level_resources", of_type=str
+            ),
+            auto_materialize_policy=check.opt_inst_param(
+                auto_materialize_policy,
+                "auto_materialize_policy",
+                AutoMaterializePolicy,
             ),
         )
 
@@ -1293,6 +1301,7 @@ def external_asset_graph_from_defs(
     asset_info_by_asset_key: Dict[AssetKey, AssetOutputInfo] = dict()
     freshness_policy_by_asset_key: Dict[AssetKey, FreshnessPolicy] = dict()
     metadata_by_asset_key: Dict[AssetKey, MetadataUserInput] = dict()
+    auto_materialize_policy_by_asset_key: Dict[AssetKey, AutoMaterializePolicy] = dict()
 
     deps: Dict[AssetKey, Dict[AssetKey, ExternalAssetDependency]] = defaultdict(dict)
     dep_by: Dict[AssetKey, Dict[AssetKey, ExternalAssetDependedBy]] = defaultdict(dict)
@@ -1342,6 +1351,7 @@ def external_asset_graph_from_defs(
         for assets_def in asset_layer.assets_defs_by_key.values():
             metadata_by_asset_key.update(assets_def.metadata_by_key)
             freshness_policy_by_asset_key.update(assets_def.freshness_policies_by_key)
+            auto_materialize_policy_by_asset_key.update(assets_def.auto_materialize_policies_by_key)
             descriptions_by_asset_key.update(assets_def.descriptions_by_key)
             if len(assets_def.keys) > 1 and not assets_def.can_subset:
                 atomic_execution_unit_id = assets_def.unique_id
@@ -1369,12 +1379,21 @@ def external_asset_graph_from_defs(
 
     for source_asset in source_assets_by_key.values():
         if source_asset.key not in node_defs_by_asset_key:
+            job_names = (
+                [
+                    job_def.name
+                    for job_def in pipelines
+                    if source_asset.key in job_def.asset_layer.source_assets_by_key
+                ]
+                if source_asset.node_def is not None
+                else []
+            )
             asset_nodes.append(
                 ExternalAssetNode(
                     asset_key=source_asset.key,
                     dependencies=list(deps[source_asset.key].values()),
                     depended_by=list(dep_by[source_asset.key].values()),
-                    job_names=[ASSET_BASE_JOB_PREFIX] if source_asset.node_def is not None else [],
+                    job_names=job_names,
                     op_description=source_asset.description,
                     metadata=source_asset.metadata,
                     group_name=source_asset.group_name,
@@ -1448,6 +1467,7 @@ def external_asset_graph_from_defs(
                 # such assets are part of the default group
                 group_name=group_name_by_asset_key.get(asset_key, DEFAULT_GROUP_NAME),
                 freshness_policy=freshness_policy_by_asset_key.get(asset_key),
+                auto_materialize_policy=auto_materialize_policy_by_asset_key.get(asset_key),
                 atomic_execution_unit_id=atomic_execution_unit_ids_by_asset_key.get(asset_key),
                 required_top_level_resources=required_top_level_resources,
             )

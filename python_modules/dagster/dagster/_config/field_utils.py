@@ -461,7 +461,7 @@ def _convert_potential_field(
 
 
 def _config_dictionary_from_values_inner(obj: Any):
-    from dagster._config.structured_config import Config
+    from dagster._config.pythonic_config import Config
 
     if isinstance(obj, dict):
         return {k: _config_dictionary_from_values_inner(v) for k, v in obj.items() if v is not None}

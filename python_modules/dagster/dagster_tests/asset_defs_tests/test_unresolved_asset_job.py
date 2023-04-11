@@ -709,3 +709,17 @@ def test_job_run_request():
     assert my_job_hardcoded_config.run_request_for_partition(
         partition_key="a", run_config={"a": 5}
     ).run_config == {"a": 5}
+
+
+def test_job_partitions_def_unpartitioned_assets():
+    @asset
+    def my_asset():
+        pass
+
+    my_job = define_asset_job(
+        "my_job", partitions_def=DailyPartitionsDefinition(start_date="2020-01-01")
+    )
+
+    @repository
+    def my_repo():
+        return [my_asset, my_job]

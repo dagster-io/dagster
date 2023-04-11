@@ -6,6 +6,7 @@ from dagster import (
     DagsterInvariantViolationError,
     Field,
     StringSource,
+    execute_job,
     graph,
     job,
     op,
@@ -14,7 +15,6 @@ from dagster import (
 )
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._core.test_utils import environ, instance_for_test
-from dagster._legacy import execute_pipeline
 
 
 def define_the_job():
@@ -40,14 +40,13 @@ def test_simple_job_no_warnings():
 
 def test_job_execution_multiprocess_config():
     with instance_for_test() as instance:
-        result = execute_pipeline(
+        with execute_job(
             reconstructable(define_the_job),
             instance=instance,
             run_config={"execution": {"config": {"multiprocess": {"max_concurrent": 4}}}},
-        )
-
-        assert result.success
-        assert result.output_for_node("my_op") == 5
+        ) as result:
+            assert result.success
+            assert result.output_for_node("my_op") == 5
 
 
 results_lst = []
@@ -67,8 +66,7 @@ def define_in_process_job():
 
 
 def test_switch_to_in_process_execution():
-    result = execute_pipeline(
-        define_in_process_job(),
+    result = define_in_process_job().execute_in_process(
         run_config={"execution": {"config": {"in_process": {}}}},
     )
     assert result.success
@@ -102,8 +100,7 @@ def my_namespace_job():
 
 def test_reconstructable_job_namespace():
     with instance_for_test() as instance:
-        result = execute_pipeline(reconstructable(my_namespace_job), instance=instance)
-
+        result = execute_job(reconstructable(my_namespace_job), instance=instance)
         assert result.success
 
 
@@ -192,7 +189,7 @@ def test_job_input_values_out_of_process():
     assert pass_from_job.execute_in_process().success
 
     with instance_for_test() as instance:
-        result = execute_pipeline(reconstructable(pass_from_job), instance=instance)
+        result = execute_job(reconstructable(pass_from_job), instance=instance)
         assert result.success
 
 

@@ -18,13 +18,13 @@ from dagster import (
 from dagster._utils.test import get_temp_file_name
 
 
-def _execute_pipeline_with_subset(pipeline, run_config, op_selection):
-    return pipeline.get_job_def_for_subset_selection(op_selection).execute_in_process(
+def _execute_job_with_subset(job_def, run_config, op_selection):
+    return job_def.get_job_def_for_subset_selection(op_selection).execute_in_process(
         run_config=run_config
     )
 
 
-def define_test_all_scalars_pipeline():
+def define_test_all_scalars_job():
     @op(ins={"num": In(Int)})
     def take_int(num):
         return num
@@ -74,7 +74,7 @@ def define_test_all_scalars_pipeline():
         return nullable_string
 
     return GraphDefinition(
-        name="test_all_scalars_pipeline",
+        name="test_all_scalars_job",
         node_defs=[
             produce_any,
             produce_bool,
@@ -97,8 +97,8 @@ def single_input_env(solid_name, input_name, input_spec):
 
 
 def test_int_input_schema_value():
-    result = _execute_pipeline_with_subset(
-        define_test_all_scalars_pipeline(),
+    result = _execute_job_with_subset(
+        define_test_all_scalars_job(),
         run_config={"ops": {"take_int": {"inputs": {"num": {"value": 2}}}}},
         op_selection=["take_int"],
     )
@@ -108,8 +108,8 @@ def test_int_input_schema_value():
 
 
 def test_int_input_schema_raw_value():
-    result = _execute_pipeline_with_subset(
-        define_test_all_scalars_pipeline(),
+    result = _execute_job_with_subset(
+        define_test_all_scalars_job(),
         run_config={"ops": {"take_int": {"inputs": {"num": 2}}}},
         op_selection=["take_int"],
     )
@@ -122,8 +122,8 @@ def test_int_input_schema_failure_wrong_value_type():
     with pytest.raises(
         DagsterInvalidConfigError, match="Invalid scalar at path root:ops:take_int:inputs:num:value"
     ):
-        _execute_pipeline_with_subset(
-            define_test_all_scalars_pipeline(),
+        _execute_job_with_subset(
+            define_test_all_scalars_job(),
             run_config=single_input_env("take_int", "num", {"value": "dkjdfkdj"}),
             op_selection=["take_int"],
         )
@@ -131,8 +131,8 @@ def test_int_input_schema_failure_wrong_value_type():
 
 def test_int_input_schema_failure_wrong_key():
     with pytest.raises(DagsterInvalidConfigError) as exc_info:
-        _execute_pipeline_with_subset(
-            define_test_all_scalars_pipeline(),
+        _execute_job_with_subset(
+            define_test_all_scalars_job(),
             run_config=single_input_env("take_int", "num", {"wrong_key": "dkjdfkdj"}),
             op_selection=["take_int"],
         )
@@ -144,8 +144,8 @@ def test_int_input_schema_failure_wrong_key():
 
 def test_int_input_schema_failure_raw_string():
     with pytest.raises(DagsterInvalidConfigError) as exc_info:
-        _execute_pipeline_with_subset(
-            define_test_all_scalars_pipeline(),
+        _execute_job_with_subset(
+            define_test_all_scalars_job(),
             run_config=single_input_env("take_int", "num", "dkjdfkdj"),
             op_selection=["take_int"],
         )
@@ -161,8 +161,8 @@ def test_int_input_schema_json():
         with open(tmp_file, "w") as ff:
             ff.write('{"value": 2}')
 
-        source_result = _execute_pipeline_with_subset(
-            define_test_all_scalars_pipeline(),
+        source_result = _execute_job_with_subset(
+            define_test_all_scalars_job(),
             run_config=single_input_env("take_int", "num", {"json": {"path": tmp_file}}),
             op_selection=["take_int"],
         )
@@ -175,8 +175,8 @@ def test_int_input_schema_pickle():
         with open(tmp_file, "wb") as ff:
             pickle.dump(2, ff)
 
-        source_result = _execute_pipeline_with_subset(
-            define_test_all_scalars_pipeline(),
+        source_result = _execute_job_with_subset(
+            define_test_all_scalars_job(),
             run_config=single_input_env("take_int", "num", {"pickle": {"path": tmp_file}}),
             op_selection=["take_int"],
         )
@@ -185,8 +185,8 @@ def test_int_input_schema_pickle():
 
 
 def test_string_input_schema_value():
-    result = _execute_pipeline_with_subset(
-        define_test_all_scalars_pipeline(),
+    result = _execute_job_with_subset(
+        define_test_all_scalars_job(),
         run_config=single_input_env("take_string", "string", {"value": "dkjkfd"}),
         op_selection=["take_string"],
     )
@@ -197,8 +197,8 @@ def test_string_input_schema_value():
 
 def test_string_input_schema_failure():
     with pytest.raises(DagsterInvalidConfigError) as exc_info:
-        _execute_pipeline_with_subset(
-            define_test_all_scalars_pipeline(),
+        _execute_job_with_subset(
+            define_test_all_scalars_job(),
             run_config=single_input_env("take_string", "string", {"value": 3343}),
             op_selection=["take_string"],
         )
@@ -207,8 +207,8 @@ def test_string_input_schema_failure():
 
 
 def test_float_input_schema_value():
-    result = _execute_pipeline_with_subset(
-        define_test_all_scalars_pipeline(),
+    result = _execute_job_with_subset(
+        define_test_all_scalars_job(),
         run_config=single_input_env("take_float", "float_number", {"value": 3.34}),
         op_selection=["take_float"],
     )
@@ -219,8 +219,8 @@ def test_float_input_schema_value():
 
 def test_float_input_schema_failure():
     with pytest.raises(DagsterInvalidConfigError) as exc_info:
-        _execute_pipeline_with_subset(
-            define_test_all_scalars_pipeline(),
+        _execute_job_with_subset(
+            define_test_all_scalars_job(),
             run_config=single_input_env("take_float", "float_number", {"value": "3343"}),
             op_selection=["take_float"],
         )
@@ -231,8 +231,8 @@ def test_float_input_schema_failure():
 
 
 def test_bool_input_schema_value():
-    result = _execute_pipeline_with_subset(
-        define_test_all_scalars_pipeline(),
+    result = _execute_job_with_subset(
+        define_test_all_scalars_job(),
         run_config=single_input_env("take_bool", "bool_value", {"value": True}),
         op_selection=["take_bool"],
     )
@@ -243,8 +243,8 @@ def test_bool_input_schema_value():
 
 def test_bool_input_schema_failure():
     with pytest.raises(DagsterInvalidConfigError) as exc_info:
-        _execute_pipeline_with_subset(
-            define_test_all_scalars_pipeline(),
+        _execute_job_with_subset(
+            define_test_all_scalars_job(),
             run_config=single_input_env("take_bool", "bool_value", {"value": "3343"}),
             op_selection=["take_bool"],
         )
@@ -255,8 +255,8 @@ def test_bool_input_schema_failure():
 
 
 def test_any_input_schema_value():
-    result = _execute_pipeline_with_subset(
-        define_test_all_scalars_pipeline(),
+    result = _execute_job_with_subset(
+        define_test_all_scalars_job(),
         run_config=single_input_env("take_any", "any_value", {"value": "ff"}),
         op_selection=["take_any"],
     )
@@ -264,8 +264,8 @@ def test_any_input_schema_value():
     assert result.success
     assert result.output_for_node("take_any") == "ff"
 
-    result = _execute_pipeline_with_subset(
-        define_test_all_scalars_pipeline(),
+    result = _execute_job_with_subset(
+        define_test_all_scalars_job(),
         run_config=single_input_env("take_any", "any_value", {"value": 3843}),
         op_selection=["take_any"],
     )
@@ -276,8 +276,8 @@ def test_any_input_schema_value():
 
 def test_none_string_input_schema_failure():
     with pytest.raises(DagsterInvalidConfigError) as exc_info:
-        _execute_pipeline_with_subset(
-            define_test_all_scalars_pipeline(),
+        _execute_job_with_subset(
+            define_test_all_scalars_job(),
             run_config=single_input_env("take_string", "string", None),
             op_selection=["take_string"],
         )
@@ -291,8 +291,8 @@ def test_none_string_input_schema_failure():
 
 def test_value_none_string_input_schema_failure():
     with pytest.raises(DagsterInvalidConfigError) as exc_info:
-        _execute_pipeline_with_subset(
-            define_test_all_scalars_pipeline(),
+        _execute_job_with_subset(
+            define_test_all_scalars_job(),
             run_config=single_input_env("take_string", "string", {"value": None}),
             op_selection=["take_string"],
         )
@@ -307,8 +307,8 @@ def test_string_input_schema_json():
         with open(tmp_file, "w") as ff:
             ff.write('{"value": "foo"}')
 
-        source_result = _execute_pipeline_with_subset(
-            define_test_all_scalars_pipeline(),
+        source_result = _execute_job_with_subset(
+            define_test_all_scalars_job(),
             run_config=single_input_env("take_string", "string", {"json": {"path": tmp_file}}),
             op_selection=["take_string"],
         )
@@ -321,8 +321,8 @@ def test_string_input_schema_pickle():
         with open(tmp_file, "wb") as ff:
             pickle.dump("foo", ff)
 
-        source_result = _execute_pipeline_with_subset(
-            define_test_all_scalars_pipeline(),
+        source_result = _execute_job_with_subset(
+            define_test_all_scalars_job(),
             run_config=single_input_env("take_string", "string", {"pickle": {"path": tmp_file}}),
             op_selection=["take_string"],
         )
@@ -331,8 +331,8 @@ def test_string_input_schema_pickle():
 
 
 def test_string_list_input():
-    result = _execute_pipeline_with_subset(
-        define_test_all_scalars_pipeline(),
+    result = _execute_job_with_subset(
+        define_test_all_scalars_job(),
         run_config=single_input_env("take_string_list", "string_list", [{"value": "foobar"}]),
         op_selection=["take_string_list"],
     )
@@ -343,8 +343,8 @@ def test_string_list_input():
 
 
 def test_nullable_string_input_with_value():
-    result = _execute_pipeline_with_subset(
-        define_test_all_scalars_pipeline(),
+    result = _execute_job_with_subset(
+        define_test_all_scalars_job(),
         run_config=single_input_env("take_nullable_string", "nullable_string", {"value": "foobar"}),
         op_selection=["take_nullable_string"],
     )
@@ -358,8 +358,8 @@ def test_nullable_string_input_with_none_value():
     # Perhaps a confusing test case. Optional makes the entire enclosing structure nullable,
     # rather than the "value" value embedded within it
     with pytest.raises(DagsterInvalidConfigError) as exc_info:
-        _execute_pipeline_with_subset(
-            define_test_all_scalars_pipeline(),
+        _execute_job_with_subset(
+            define_test_all_scalars_job(),
             run_config=single_input_env("take_nullable_string", "nullable_string", {"value": None}),
             op_selection=["take_nullable_string"],
         )
@@ -371,8 +371,8 @@ def test_nullable_string_input_with_none_value():
 
 
 def test_nullable_string_input_without_value():
-    result = _execute_pipeline_with_subset(
-        define_test_all_scalars_pipeline(),
+    result = _execute_job_with_subset(
+        define_test_all_scalars_job(),
         run_config=single_input_env("take_nullable_string", "nullable_string", None),
         op_selection=["take_nullable_string"],
     )

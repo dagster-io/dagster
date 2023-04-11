@@ -719,11 +719,18 @@ def test_from_graph_w_key_prefix():
     def silly_graph():
         return bar(foo())
 
+    freshness_policy = FreshnessPolicy(maximum_lag_minutes=60)
+    description = "This is a description!"
+    metadata = {"test_metadata": "This is some metadata"}
+
     the_asset = AssetsDefinition.from_graph(
         graph_def=silly_graph,
         keys_by_input_name={},
         keys_by_output_name={"result": AssetKey(["the", "asset"])},
         key_prefix=["this", "is", "a", "prefix"],
+        freshness_policies_by_output_name={"result": freshness_policy},
+        descriptions_by_output_name={"result": description},
+        metadata_by_output_name={"result": metadata},
         group_name="abc",
     )
     assert the_asset.keys_by_output_name["result"].path == [
@@ -737,6 +744,18 @@ def test_from_graph_w_key_prefix():
 
     assert the_asset.group_names_by_key == {
         AssetKey(["this", "is", "a", "prefix", "the", "asset"]): "abc"
+    }
+
+    assert the_asset.freshness_policies_by_key == {
+        AssetKey(["this", "is", "a", "prefix", "the", "asset"]): freshness_policy
+    }
+
+    assert the_asset.descriptions_by_key == {
+        AssetKey(["this", "is", "a", "prefix", "the", "asset"]): description
+    }
+
+    assert the_asset.metadata_by_key == {
+        AssetKey(["this", "is", "a", "prefix", "the", "asset"]): metadata
     }
 
     str_prefix = AssetsDefinition.from_graph(
@@ -758,11 +777,18 @@ def test_from_op_w_key_prefix():
     def foo():
         return 1
 
+    freshness_policy = FreshnessPolicy(maximum_lag_minutes=60)
+    description = "This is a description!"
+    metadata = {"test_metadata": "This is some metadata"}
+
     the_asset = AssetsDefinition.from_op(
         op_def=foo,
         keys_by_input_name={},
         keys_by_output_name={"result": AssetKey(["the", "asset"])},
         key_prefix=["this", "is", "a", "prefix"],
+        freshness_policies_by_output_name={"result": freshness_policy},
+        descriptions_by_output_name={"result": description},
+        metadata_by_output_name={"result": metadata},
         group_name="abc",
     )
 
@@ -777,6 +803,18 @@ def test_from_op_w_key_prefix():
 
     assert the_asset.group_names_by_key == {
         AssetKey(["this", "is", "a", "prefix", "the", "asset"]): "abc"
+    }
+
+    assert the_asset.freshness_policies_by_key == {
+        AssetKey(["this", "is", "a", "prefix", "the", "asset"]): freshness_policy
+    }
+
+    assert the_asset.descriptions_by_key == {
+        AssetKey(["this", "is", "a", "prefix", "the", "asset"]): description
+    }
+
+    assert the_asset.metadata_by_key == {
+        AssetKey(["this", "is", "a", "prefix", "the", "asset"]): metadata
     }
 
     str_prefix = AssetsDefinition.from_op(

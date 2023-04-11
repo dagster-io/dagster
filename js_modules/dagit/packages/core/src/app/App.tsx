@@ -5,7 +5,7 @@ import {LeftNav, LEFT_NAV_WIDTH} from '../nav/LeftNav';
 
 import {LayoutContext} from './LayoutProvider';
 
-export const App: React.FC = (props) => {
+export const App = (props: {children: React.ReactNode}) => {
   const {nav} = React.useContext(LayoutContext);
 
   const onClickMain = React.useCallback(() => {

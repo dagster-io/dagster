@@ -9,6 +9,7 @@ import {
   MenuDivider,
   MenuItem,
   TagSelectorWithSearch,
+  TagSelectorDropdownItemProps,
 } from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -161,7 +162,7 @@ const OrdinalPartitionSelector: React.FC<{
         setSelectedTags={setSelectedPartitions}
         placeholder="Select a partition or create one"
         renderDropdownItem={React.useCallback(
-          (tag, dropdownItemProps) => {
+          (tag: string, dropdownItemProps: TagSelectorDropdownItemProps) => {
             return (
               <label>
                 <MenuItem
@@ -183,7 +184,7 @@ const OrdinalPartitionSelector: React.FC<{
           [dotForPartitionKey],
         )}
         renderDropdown={React.useCallback(
-          (dropdown, {width, allTags}: TagSelectorDropdownProps) => {
+          (dropdown: React.ReactNode, {width, allTags}: TagSelectorDropdownProps) => {
             const isAllSelected = allTags.every((t) => selectedPartitions.includes(t));
             return (
               <Menu style={{width}}>

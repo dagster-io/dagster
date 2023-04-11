@@ -124,7 +124,7 @@ export const AssetPartitions: React.FC<Props> = ({
     const sort = selectionSorts[idx] || defaultSort(selections[idx].dimension.type);
 
     const getSelectionKeys = () =>
-      uniq(selectedRanges.flatMap(([start, end]) => allKeys.slice(start.idx, end.idx + 1)));
+      uniq(selectedRanges.flatMap(({start, end}) => allKeys.slice(start.idx, end.idx + 1)));
 
     if (isEqual(DISPLAYED_STATUSES, statusFilters)) {
       const result = getSelectionKeys();

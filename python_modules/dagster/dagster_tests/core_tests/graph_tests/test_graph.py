@@ -30,12 +30,12 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._core.definitions.graph_definition import GraphDefinition
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.partition import (
     Partition,
     PartitionedConfig,
     StaticPartitionsDefinition,
 )
-from dagster._core.definitions.pipeline_definition import PipelineSubsetDefinition
 from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition, TimeWindow
 from dagster._core.errors import (
     DagsterConfigMappingFunctionError,
@@ -695,7 +695,7 @@ def test_job_subset():
 
     the_job = basic.to_job()
 
-    assert isinstance(the_job.get_pipeline_subset_def({"my_op"}), PipelineSubsetDefinition)
+    assert isinstance(the_job.get_job_def_for_subset_selection(["my_op"]), JobDefinition)
 
 
 def test_tags():
@@ -862,8 +862,7 @@ def test_top_level_graph_config_mapping_failure():
     with pytest.raises(
         DagsterInvalidConfigError,
         match=(
-            "In pipeline 'my_nested_graph', top level graph 'my_nested_graph' has a configuration"
-            " error."
+            "In job 'my_nested_graph', top level graph 'my_nested_graph' has a configuration error."
         ),
     ):
         my_nested_graph.execute_in_process()

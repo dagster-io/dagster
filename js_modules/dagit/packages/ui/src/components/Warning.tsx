@@ -4,7 +4,12 @@ import styled from 'styled-components/macro';
 import {Colors} from './Colors';
 import {Icon} from './Icon';
 
-export const Warning: React.FC<{errorBackground?: boolean}> = ({errorBackground, children}) => {
+interface Props {
+  children: React.ReactNode;
+  errorBackground?: boolean;
+}
+
+export const Warning = ({errorBackground, children}: Props) => {
   return (
     <ErrorContainer errorBackground={errorBackground}>
       <Icon name="warning" size={16} color={Colors.Gray700} style={{marginRight: 8}} />

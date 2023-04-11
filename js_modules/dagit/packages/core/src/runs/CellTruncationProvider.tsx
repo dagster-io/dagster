@@ -52,6 +52,7 @@ const OverflowButton = styled.button`
 
 export class CellTruncationProvider extends React.Component<
   {
+    children: React.ReactNode;
     style: React.CSSProperties;
     onExpand?: () => void;
     forceExpandability?: boolean;

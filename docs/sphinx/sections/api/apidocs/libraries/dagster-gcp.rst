@@ -16,6 +16,9 @@ Related Guides:
 .. autoconfigurable:: bigquery_resource
   :annotation: ResourceDefinition
 
+.. autoconfigurable:: BigQueryIOManager
+  :annotation: IOManagerDefinition
+
 .. autoconfigurable:: build_bigquery_io_manager
   :annotation: IOManagerDefinition
 

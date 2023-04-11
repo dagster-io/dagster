@@ -97,8 +97,11 @@ from .run_config_schema import (
     create_run_config_schema as create_run_config_schema,
 )
 from .run_request import (
+    AddDynamicPartitionsRequest as AddDynamicPartitionsRequest,
+    DeleteDynamicPartitionsRequest as DeleteDynamicPartitionsRequest,
     InstigatorType as InstigatorType,
     RunRequest as RunRequest,
+    SensorResult as SensorResult,
     SkipReason as SkipReason,
 )
 from .schedule_definition import (
@@ -129,7 +132,6 @@ from .decorators import (
     job as job,
     multi_asset as multi_asset,
     op as op,
-    pipeline as pipeline,
     repository as repository,
     schedule as schedule,
     sensor as sensor,

@@ -6,20 +6,22 @@ import styled from 'styled-components/macro';
 
 import {Timestamp} from '../app/time/Timestamp';
 import {isHiddenAssetGroupJob, LiveDataForNode} from '../asset-graph/Utils';
-import {StaleTag} from '../assets/StaleTag';
-import {MetadataEntry, METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
+import {AssetKeyInput} from '../graphql/types';
+import {METADATA_ENTRY_FRAGMENT, MetadataEntry} from '../metadata/MetadataEntry';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {linkToRunEvent, titleForRun} from '../runs/RunUtils';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {AssetLineageElements} from './AssetLineageElements';
+import {StaleReasonsTags} from './Stale';
 import {LatestMaterializationMetadataFragment} from './types/LastMaterializationMetadata.types';
 
 export const LatestMaterializationMetadata: React.FC<{
+  assetKey: AssetKeyInput;
   latest: LatestMaterializationMetadataFragment | undefined;
   liveData: LiveDataForNode | undefined;
-}> = ({latest, liveData}) => {
+}> = ({assetKey, latest, liveData}) => {
   const latestRun = latest?.runOrError.__typename === 'Run' ? latest?.runOrError : null;
   const repositoryOrigin = latestRun?.repositoryOrigin;
   const repoAddress = repositoryOrigin
@@ -96,7 +98,9 @@ export const LatestMaterializationMetadata: React.FC<{
               ) : (
                 'No materialization events'
               )}
-              {liveData && <StaleTag liveData={liveData} />}
+              {liveData && (
+                <StaleReasonsTags assetKey={assetKey} liveData={liveData} include="all" />
+              )}
             </Box>
           </td>
           <td />

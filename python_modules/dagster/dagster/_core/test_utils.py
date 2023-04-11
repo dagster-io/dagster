@@ -18,6 +18,8 @@ from typing import (
     Optional,
     Sequence,
     TypeVar,
+    Union,
+    cast,
 )
 
 import pendulum
@@ -145,6 +147,8 @@ def create_run_for_test(
     parent_pipeline_snapshot=None,
     external_pipeline_origin=None,
     pipeline_code_origin=None,
+    asset_selection=None,
+    solid_selection=None,
 ):
     return instance.create_run(
         pipeline_name=pipeline_name,
@@ -162,8 +166,8 @@ def create_run_for_test(
         parent_pipeline_snapshot=parent_pipeline_snapshot,
         external_pipeline_origin=external_pipeline_origin,
         pipeline_code_origin=pipeline_code_origin,
-        asset_selection=None,
-        solid_selection=None,
+        asset_selection=asset_selection,
+        solid_selection=solid_selection,
     )
 
 
@@ -468,11 +472,16 @@ def get_mocked_system_timezone() -> Optional[str]:
 
 # Test utility for creating a test workspace for a function
 class InProcessTestWorkspaceLoadTarget(WorkspaceLoadTarget):
-    def __init__(self, origin: InProcessCodeLocationOrigin):
-        self._origin = origin
+    def __init__(
+        self, origin: Union[InProcessCodeLocationOrigin, Sequence[InProcessCodeLocationOrigin]]
+    ):
+        self._origins = cast(
+            Sequence[InProcessCodeLocationOrigin],
+            origin if isinstance(origin, list) else [origin],
+        )
 
     def create_origins(self) -> Sequence[InProcessCodeLocationOrigin]:
-        return [self._origin]
+        return self._origins
 
 
 @contextmanager
@@ -530,6 +539,7 @@ def remove_none_recursively(obj: T) -> T:
 
 
 default_mode_def_for_test = ModeDefinition(resource_defs={"io_manager": fs_io_manager})
+default_resources_for_test = {"io_manager": fs_io_manager}
 
 
 def strip_ansi(input_str: str) -> str:

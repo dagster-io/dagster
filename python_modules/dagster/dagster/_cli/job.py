@@ -27,14 +27,14 @@ from dagster._cli.workspace.cli_target import (
     python_job_config_argument,
     python_job_target_argument,
 )
-from dagster._core.definitions.pipeline_base import IPipeline
+from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.selector import PipelineSelector
 from dagster._core.definitions.utils import validate_tags
 from dagster._core.errors import DagsterBackfillFailedError, DagsterInvariantViolationError
-from dagster._core.execution.api import create_execution_plan
+from dagster._core.execution.api import create_execution_plan, execute_job
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster._core.execution.execution_result import ExecutionResult
 from dagster._core.execution.job_backfill import create_backfill_run
-from dagster._core.execution.results import PipelineExecutionResult
 from dagster._core.host_representation import (
     CodeLocation,
     ExternalPipeline,
@@ -52,7 +52,7 @@ from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.telemetry import log_external_repo_stats, telemetry_wrapper
 from dagster._core.utils import make_new_backfill_id
 from dagster._core.workspace.workspace import IWorkspace
-from dagster._legacy import PipelineDefinition, execute_pipeline
+from dagster._legacy import PipelineDefinition
 from dagster._seven import IS_WINDOWS, JSONDecodeError, json
 from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME, PrintFn
 from dagster._utils.error import serializable_error_info_from_exc_info
@@ -317,16 +317,14 @@ def job_execute_command(**kwargs: ClickArgValue):
 
 
 @telemetry_wrapper
-def execute_execute_command(
-    instance: DagsterInstance, kwargs: ClickArgMapping
-) -> PipelineExecutionResult:
+def execute_execute_command(instance: DagsterInstance, kwargs: ClickArgMapping) -> ExecutionResult:
     check.inst_param(instance, "instance", DagsterInstance)
 
     config = list(
         check.opt_tuple_param(cast(Tuple[str, ...], kwargs.get("config")), "config", of_type=str)
     )
     preset = cast(Optional[str], kwargs.get("preset"))
-    mode = cast(Optional[str], kwargs.get("mode"))
+    cast(Optional[str], kwargs.get("mode"))
 
     if preset and config:
         raise click.UsageError("Can not use --preset with --config.")
@@ -336,7 +334,7 @@ def execute_execute_command(
     pipeline_origin = get_job_python_origin_from_kwargs(kwargs)
     pipeline = recon_pipeline_from_origin(pipeline_origin)
     solid_selection = get_solid_selection_from_args(kwargs)
-    result = do_execute_command(pipeline, instance, config, mode, tags, solid_selection, preset)
+    result = do_execute_command(pipeline, instance, config, tags, solid_selection)
 
     if not result.success:
         raise click.ClickException(f"Pipeline run {result.run_id} resulted in failure.")
@@ -398,28 +396,25 @@ def get_solid_selection_from_args(kwargs: ClickArgMapping) -> Optional[Sequence[
 
 
 def do_execute_command(
-    pipeline: IPipeline,
+    recon_job: ReconstructableJob,
     instance: DagsterInstance,
     config: Optional[Sequence[str]],
-    mode: Optional[str] = None,
     tags: Optional[Mapping[str, str]] = None,
-    solid_selection: Optional[Sequence[str]] = None,
-    preset: Optional[str] = None,
-) -> PipelineExecutionResult:
-    check.inst_param(pipeline, "pipeline", IPipeline)
+    op_selection: Optional[Sequence[str]] = None,
+) -> ExecutionResult:
+    check.inst_param(recon_job, "recon_job", ReconstructableJob)
     check.inst_param(instance, "instance", DagsterInstance)
     check.opt_sequence_param(config, "config", of_type=str)
 
-    return execute_pipeline(
-        pipeline,
+    with execute_job(
+        recon_job,
         run_config=get_run_config_from_file_list(config),
-        mode=mode,
         tags=tags,
         instance=instance,
         raise_on_error=False,
-        solid_selection=solid_selection,
-        preset=preset,
-    )
+        op_selection=op_selection,
+    ) as result:
+        return result
 
 
 @job_cli.command(

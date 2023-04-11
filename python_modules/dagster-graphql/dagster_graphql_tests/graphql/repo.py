@@ -23,6 +23,7 @@ from dagster import (
     DailyPartitionsDefinition,
     DefaultScheduleStatus,
     DefaultSensorStatus,
+    DynamicOut,
     DynamicOutput,
     DynamicPartitionsDefinition,
     Enum,
@@ -30,6 +31,7 @@ from dagster import (
     ExpectationResult,
     Field,
     HourlyPartitionsDefinition,
+    In,
     Int,
     IOManager,
     IOManagerDefinition,
@@ -37,6 +39,7 @@ from dagster import (
     Noneable,
     Nothing,
     OpExecutionContext,
+    Out,
     Output,
     PythonObjectDagsterType,
     ScheduleDefinition,
@@ -71,13 +74,11 @@ from dagster import (
     usable_as_dagster_type,
 )
 from dagster._core.definitions.decorators.sensor_decorator import sensor
+from dagster._core.definitions.events import Failure
 from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._core.definitions.input import In
-from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
-from dagster._core.definitions.output import DynamicOut, Out
 from dagster._core.definitions.partition import PartitionedConfig
 from dagster._core.definitions.reconstruct import ReconstructableRepository
 from dagster._core.definitions.sensor_definition import RunRequest, SkipReason
@@ -86,15 +87,11 @@ from dagster._core.log_manager import coerce_valid_log_level
 from dagster._core.storage.fs_io_manager import fs_io_manager
 from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.storage.tags import RESUME_RETRY_TAG
-from dagster._core.test_utils import default_mode_def_for_test
 from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
 from dagster._core.workspace.load_target import PythonFileTarget
 from dagster._legacy import (
     AssetGroup,
-    ModeDefinition,
-    PresetDefinition,
     build_assets_job,
-    pipeline,
 )
 from dagster._seven import get_system_temp_directory
 from dagster._utils import file_relative_path, segfault
@@ -162,7 +159,7 @@ def get_main_external_repo(instance: DagsterInstance) -> Iterator[ExternalReposi
     ins={"num": In(PoorMansDataFrame)},
     out=Out(PoorMansDataFrame),
 )
-def sum_solid(num):
+def sum_op(num):
     sum_df = deepcopy(num)
     for x in sum_df:
         x["sum"] = int(x["num1"]) + int(x["num2"])
@@ -173,7 +170,7 @@ def sum_solid(num):
     ins={"sum_df": In(PoorMansDataFrame)},
     out=Out(PoorMansDataFrame),
 )
-def sum_sq_solid(sum_df):
+def sum_sq_op(sum_df):
     sum_sq_df = deepcopy(sum_df)
     for x in sum_sq_df:
         x["sum_sq"] = int(x["sum"]) ** 2
@@ -184,18 +181,14 @@ def sum_sq_solid(sum_df):
     ins={"sum_df": In(PoorMansDataFrame)},
     out=Out(PoorMansDataFrame),
 )
-def df_expectations_solid(_context, sum_df):
+def df_expectations_op(_context, sum_df):
     yield ExpectationResult(label="some_expectation", success=True)
     yield ExpectationResult(label="other_expectation", success=True)
     yield Output(sum_df)
 
 
-def csv_hello_world_solids_config():
-    return {
-        "solids": {
-            "sum_solid": {"inputs": {"num": file_relative_path(__file__, "../data/num.csv")}}
-        }
-    }
+def csv_hello_world_ops_config():
+    return {"ops": {"sum_op": {"inputs": {"num": file_relative_path(__file__, "../data/num.csv")}}}}
 
 
 @op(config_schema={"file": Field(String)})
@@ -207,29 +200,30 @@ def loop(context):
         time.sleep(0.1)
 
 
-@pipeline
-def infinite_loop_pipeline():
+@job
+def infinite_loop_job():
     loop()
 
 
 @op
-def noop_solid(_):
+def noop_op(_):
     pass
 
 
-@pipeline
-def noop_pipeline():
-    noop_solid()
+# Won't pass cloud-dagit test suite without `in_process_executor`.
+@job(executor_def=in_process_executor)
+def noop_job():
+    noop_op()
 
 
 @op
-def solid_asset_a(_):
+def op_asset_a(_):
     yield AssetMaterialization(asset_key="a")
     yield Output(1)
 
 
 @op
-def solid_asset_b(_, num):
+def op_asset_b(_, num):
     yield AssetMaterialization(asset_key="b")
     time.sleep(0.1)
     yield AssetMaterialization(asset_key="c")
@@ -237,39 +231,39 @@ def solid_asset_b(_, num):
 
 
 @op
-def solid_partitioned_asset(_):
+def op_partitioned_asset(_):
     yield AssetMaterialization(asset_key="a", partition="partition_1")
     yield Output(1)
 
 
 @op
-def tag_asset_solid(_):
+def tag_asset_op(_):
     yield AssetMaterialization(asset_key="a")
     yield Output(1)
 
 
-@pipeline
-def single_asset_pipeline():
-    solid_asset_a()
+@job
+def single_asset_job():
+    op_asset_a()
 
 
-@pipeline
-def multi_asset_pipeline():
-    solid_asset_b(solid_asset_a())
+@job
+def multi_asset_job():
+    op_asset_b(op_asset_a())
 
 
-@pipeline
-def partitioned_asset_pipeline():
-    solid_partitioned_asset()
+@job
+def partitioned_asset_job():
+    op_partitioned_asset()
 
 
-@pipeline
-def asset_tag_pipeline():
-    tag_asset_solid()
+@job
+def asset_tag_job():
+    tag_asset_op()
 
 
-@pipeline
-def pipeline_with_expectations():
+@job
+def job_with_expectations():
     @op(out={})
     def emit_successful_expectation(_context):
         yield ExpectationResult(
@@ -297,7 +291,7 @@ def pipeline_with_expectations():
     emit_successful_expectation_no_metadata()
 
 
-@pipeline
+@job
 def more_complicated_config():
     @op(
         config_schema={
@@ -306,14 +300,14 @@ def more_complicated_config():
             "field_three": Field(String, is_required=False, default_value="some_value"),
         }
     )
-    def a_solid_with_three_field_config(_context):
+    def op_with_three_field_config(_context):
         return None
 
-    noop_solid()
-    a_solid_with_three_field_config()
+    noop_op()
+    op_with_three_field_config()
 
 
-@pipeline
+@job
 def config_with_map():
     @op(
         config_schema={
@@ -326,17 +320,17 @@ def config_with_map():
             ),
         }
     )
-    def a_solid_with_map_config(_context):
+    def op_with_map_config(_context):
         return None
 
-    noop_solid()
-    a_solid_with_map_config()
+    noop_op()
+    op_with_map_config()
 
 
-@pipeline
+@job
 def more_complicated_nested_config():
     @op(
-        name="a_solid_with_multilayered_config",
+        name="op_with_multilayered_config",
         config_schema={
             "field_any": Any,
             "field_one": String,
@@ -350,90 +344,64 @@ def more_complicated_nested_config():
         },
         out={},
     )
-    def a_solid_with_multilayered_config(_):
+    def op_with_multilayered_config(_):
         return None
 
-    a_solid_with_multilayered_config()
+    op_with_multilayered_config()
 
 
-@pipeline(
-    mode_defs=[default_mode_def_for_test],
-    preset_defs=[
-        PresetDefinition.from_files(
-            name="prod",
-            config_files=[
-                file_relative_path(__file__, "../environments/csv_hello_world_prod.yaml")
-            ],
-        ),
-        PresetDefinition.from_files(
-            name="test",
-            config_files=[
-                file_relative_path(__file__, "../environments/csv_hello_world_test.yaml")
-            ],
-        ),
-        PresetDefinition(
-            name="test_inline",
-            run_config={
-                "solids": {
-                    "sum_solid": {
-                        "inputs": {"num": file_relative_path(__file__, "../data/num.csv")}
-                    }
-                }
-            },
-        ),
-    ],
-)
+@job(executor_def=in_process_executor)
 def csv_hello_world():
-    sum_sq_solid(sum_df=sum_solid())
+    sum_sq_op(sum_df=sum_op())
 
 
-@pipeline(mode_defs=[default_mode_def_for_test])
+@job
 def csv_hello_world_with_expectations():
-    ss = sum_solid()
-    sum_sq_solid(sum_df=ss)
-    df_expectations_solid(sum_df=ss)
+    ss = sum_op()
+    sum_sq_op(sum_df=ss)
+    df_expectations_op(sum_df=ss)
 
 
-@pipeline(mode_defs=[default_mode_def_for_test])
+@job
 def csv_hello_world_two():
-    sum_solid()
+    sum_op()
 
 
 @op
-def solid_that_gets_tags(context):
-    return context.pipeline_run.tags
+def op_that_gets_tags(context):
+    return context.run.tags
 
 
-@pipeline(mode_defs=[default_mode_def_for_test], tags={"tag_key": "tag_value"})
+@job(tags={"tag_key": "tag_value"})
 def hello_world_with_tags():
-    solid_that_gets_tags()
+    op_that_gets_tags()
 
 
-@op(name="solid_with_list", config_schema=[int], out={})
+@op(name="op_with_list", ins={}, out={}, config_schema=[int])
 def op_def(_):
     return None
 
 
-@pipeline
-def pipeline_with_input_output_metadata():
+@job
+def job_with_input_output_metadata():
     @op(
-        ins={"foo": In(int, metadata={"a": "b"})},
-        out={"bar": Out(int, metadata={"c": "d"})},
+        ins={"foo": In(Int, metadata={"a": "b"})},
+        out={"bar": Out(Int, metadata={"c": "d"})},
     )
-    def solid_with_input_output_metadata(foo):
+    def op_with_input_output_metadata(foo):
         return foo + 1
 
-    solid_with_input_output_metadata()
+    op_with_input_output_metadata()
 
 
-@pipeline
-def pipeline_with_list():
+@job
+def job_with_list():
     op_def()
 
 
-@pipeline(mode_defs=[default_mode_def_for_test])
+@job
 def csv_hello_world_df_input():
-    sum_sq_solid(sum_solid())
+    sum_sq_op(sum_op())
 
 
 integers_partitions = StaticPartitionsDefinition([str(i) for i in range(10)])
@@ -458,7 +426,7 @@ alpha_partitions = StaticPartitionsDefinition(list(string.ascii_lowercase))
 
 
 @job(partitions_def=alpha_partitions)
-def no_config_pipeline():
+def no_config_job():
     @op
     def return_hello():
         return "Hello"
@@ -466,8 +434,8 @@ def no_config_pipeline():
     return_hello()
 
 
-@pipeline
-def no_config_chain_pipeline():
+@job
+def no_config_chain_job():
     @op
     def return_foo():
         return "foo"
@@ -479,18 +447,18 @@ def no_config_chain_pipeline():
     return_hello_world(return_foo())
 
 
-@pipeline
-def scalar_output_pipeline():
-    @op
-    def return_str() -> str:
+@job
+def scalar_output_job():
+    @op(out=Out(String))
+    def return_str():
         return "foo"
 
-    @op
-    def return_int() -> int:
+    @op(out=Out(Int))
+    def return_int():
         return 34234
 
-    @op
-    def return_bool() -> bool:
+    @op(out=Out(Bool))
+    def return_bool():
         return True
 
     @op(out=Out(Any))
@@ -503,8 +471,8 @@ def scalar_output_pipeline():
     return_any()
 
 
-@pipeline
-def pipeline_with_enum_config():
+@job
+def job_with_enum_config():
     @op(
         config_schema=Enum(
             "TestEnum",
@@ -521,8 +489,8 @@ def pipeline_with_enum_config():
     takes_an_enum()
 
 
-@pipeline
-def naughty_programmer_pipeline():
+@job
+def naughty_programmer_job():
     @op
     def throw_a_thing():
         try:
@@ -534,13 +502,14 @@ def naughty_programmer_pipeline():
             except Exception as e:
                 raise Exception("Outer exception") from e
         except Exception as e:
-            raise Exception("Even more outer exception") from e
+            # throw a Failure here so we can test metadata
+            raise Failure("Even more outer exception", metadata={"top_level": True}) from e
 
     throw_a_thing()
 
 
-@pipeline
-def pipeline_with_invalid_definition_error():
+@job
+def job_with_invalid_definition_error():
     @usable_as_dagster_type(name="InputTypeWithoutHydration")
     class InputTypeWithoutHydration(int):
         pass
@@ -578,46 +547,29 @@ def double_adder_resource(init_context):
     )
 
 
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            name="add_mode",
-            resource_defs={"op": adder_resource},
-            description="Mode that adds things",
-        ),
-        ModeDefinition(
-            name="mult_mode",
-            resource_defs={"op": multer_resource},
-            description="Mode that multiplies things",
-        ),
-        ModeDefinition(
-            name="double_adder",
-            resource_defs={"op": double_adder_resource},
-            description="Mode that adds two numbers to thing",
-        ),
-    ],
-    preset_defs=[PresetDefinition.from_files("add", mode="add_mode")],
-)
-def multi_mode_with_resources():
-    @op(required_resource_keys={"op"})
-    def apply_to_three(context):
-        return context.resources.op(3)
-
-    apply_to_three()
-
-
 @resource(config_schema=Field(Int, is_required=False))
 def req_resource(_):
     return 1
 
 
-@pipeline(mode_defs=[ModeDefinition(resource_defs={"R1": req_resource})])
-def required_resource_pipeline():
-    @op(required_resource_keys={"R1"})
-    def solid_with_required_resource(_):
-        return 1
+@op(required_resource_keys={"R1"})
+def op_with_required_resource(_):
+    return 1
 
-    solid_with_required_resource()
+
+@job(resource_defs={"R1": req_resource})
+def required_resource_job():
+    op_with_required_resource()
+
+
+@resource(config_schema=Field(Int))
+def req_resource_config(_):
+    return 1
+
+
+@job(resource_defs={"R1": req_resource_config})
+def required_resource_config_job():
+    op_with_required_resource()
 
 
 @logger(config_schema=Field(str))
@@ -642,29 +594,10 @@ def bar_logger(init_context):
     logger_.setLevel(coerce_valid_log_level(init_context.logger_config["log_level"]))
 
 
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            name="foo_mode",
-            resource_defs={"io_manager": fs_io_manager},
-            logger_defs={"foo": foo_logger},
-            description="Mode with foo logger",
-        ),
-        ModeDefinition(
-            name="bar_mode",
-            resource_defs={"io_manager": fs_io_manager},
-            logger_defs={"bar": bar_logger},
-            description="Mode with bar logger",
-        ),
-        ModeDefinition(
-            name="foobar_mode",
-            resource_defs={"io_manager": fs_io_manager},
-            logger_defs={"foo": foo_logger, "bar": bar_logger},
-            description="Mode with multiple loggers",
-        ),
-    ]
+@job(
+    logger_defs={"foo": foo_logger, "bar": bar_logger},
 )
-def multi_mode_with_loggers():
+def loggers_job():
     @op
     def return_six(context):
         context.log.critical("OMG!")
@@ -673,13 +606,13 @@ def multi_mode_with_loggers():
     return_six()
 
 
-@pipeline
-def composites_pipeline():
-    @op
-    def add_one(num: int) -> int:
+@job
+def composites_job():
+    @op(ins={"num": In(Int)}, out=Out(Int))
+    def add_one(num):
         return num + 1
 
-    @op
+    @op(ins={"num": In()})
     def div_two(num):
         return num / 2
 
@@ -698,8 +631,8 @@ def composites_pipeline():
     div_four(add_four())
 
 
-@pipeline
-def materialization_pipeline():
+@job
+def materialization_job():
     @op
     def materialize(_):
         yield AssetMaterialization(
@@ -744,8 +677,8 @@ def materialization_pipeline():
     materialize()
 
 
-@pipeline
-def spew_pipeline():
+@job
+def spew_job():
     @op
     def spew(_):
         print("HELLO WORLD")  # noqa: T201
@@ -764,15 +697,11 @@ def retry_config_resource(context):
     return context.resource_config["count"]
 
 
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            resource_defs={
-                "io_manager": fs_io_manager,
-                "retry_count": retry_config_resource,
-            }
-        )
-    ]
+@job(
+    resource_defs={
+        "io_manager": fs_io_manager,
+        "retry_count": retry_config_resource,
+    }
 )
 def eventually_successful():
     @op
@@ -805,7 +734,8 @@ def eventually_successful():
     collect([f1, f2, f3])
 
 
-@pipeline
+# The tests that use this rely on it using in-process execution.
+@job(executor_def=in_process_executor)
 def hard_failer():
     @op(
         config_schema={"fail": Field(Bool, is_required=False, default_value=False)},
@@ -844,18 +774,14 @@ def will_fail(context, num):
     raise Exception("fail")
 
 
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            resource_defs={
-                "a": resource_a,
-                "b": resource_b,
-                "io_manager": fs_io_manager,
-            }
-        )
-    ]
+@job(
+    resource_defs={
+        "a": resource_a,
+        "b": resource_b,
+        "io_manager": fs_io_manager,
+    }
 )
-def retry_resource_pipeline():
+def retry_resource_job():
     will_fail(start())
 
 
@@ -894,8 +820,8 @@ def no_output(_):
     yield ExpectationResult(True)
 
 
-@pipeline(mode_defs=[default_mode_def_for_test])
-def retry_multi_output_pipeline():
+@job
+def retry_multi_output_job():
     multi_success, multi_skip = multi()
     fail, skip = can_fail(multi_success)
     no_output.alias("child_multi_skip")(multi_skip)
@@ -903,13 +829,13 @@ def retry_multi_output_pipeline():
     no_output.alias("grandchild_fail")(passthrough.alias("child_fail")(fail))
 
 
-@pipeline(tags={"foo": "bar"}, mode_defs=[default_mode_def_for_test])
-def tagged_pipeline():
+@job(tags={"foo": "bar"})
+def tagged_job():
     @op
-    def simple_solid():
+    def simple_op():
         return "Hello"
 
-    simple_solid()
+    simple_op()
 
 
 @resource
@@ -925,14 +851,14 @@ def disable_gc(_context):
         gc.enable()
 
 
-@pipeline(
-    mode_defs=[
-        ModeDefinition(resource_defs={"io_manager": fs_io_manager, "disable_gc": disable_gc})
-    ]
+# Using in-process executor prevents test flaking
+@job(
+    resource_defs={"io_manager": fs_io_manager, "disable_gc": disable_gc},
+    executor_def=in_process_executor,
 )
-def retry_multi_input_early_terminate_pipeline():
-    @op
-    def return_one() -> int:
+def retry_multi_input_early_terminate_job():
+    @op(out=Out(Int))
+    def return_one():
         return 1
 
     @op(
@@ -963,8 +889,8 @@ def retry_multi_input_early_terminate_pipeline():
     sum_inputs(input_one=get_input_one(step_one), input_two=get_input_two(step_one))
 
 
-@pipeline(mode_defs=[default_mode_def_for_test])
-def dynamic_pipeline():
+@job
+def dynamic_job():
     @op
     def multiply_by_two(context, y):
         context.log.info("multiply_by_two is returning " + str(y * 2))
@@ -1011,7 +937,7 @@ def basic_job():
 def get_retry_multi_execution_params(
     graphql_context: WorkspaceRequestContext, should_fail: bool, retry_id: Optional[str] = None
 ) -> Mapping[str, Any]:
-    selector = infer_pipeline_selector(graphql_context, "retry_multi_output_pipeline")
+    selector = infer_pipeline_selector(graphql_context, "retry_multi_output_job")
     return {
         "mode": "default",
         "selector": selector,
@@ -1027,29 +953,29 @@ def get_retry_multi_execution_params(
 
 
 def define_schedules():
-    no_config_pipeline_hourly_schedule = ScheduleDefinition(
-        name="no_config_pipeline_hourly_schedule",
+    no_config_job_hourly_schedule = ScheduleDefinition(
+        name="no_config_job_hourly_schedule",
         cron_schedule="0 0 * * *",
-        job_name="no_config_pipeline",
+        job_name="no_config_job",
     )
 
-    no_config_pipeline_hourly_schedule_with_config_fn = ScheduleDefinition(
-        name="no_config_pipeline_hourly_schedule_with_config_fn",
+    no_config_job_hourly_schedule_with_config_fn = ScheduleDefinition(
+        name="no_config_job_hourly_schedule_with_config_fn",
         cron_schedule="0 0 * * *",
-        job_name="no_config_pipeline",
+        job_name="no_config_job",
     )
 
     no_config_should_execute = ScheduleDefinition(
         name="no_config_should_execute",
         cron_schedule="0 0 * * *",
-        job_name="no_config_pipeline",
+        job_name="no_config_job",
         should_execute=lambda _context: False,
     )
 
     dynamic_config = ScheduleDefinition(
         name="dynamic_config",
         cron_schedule="0 0 * * *",
-        job_name="no_config_pipeline",
+        job_name="no_config_job",
     )
 
     def get_cron_schedule(
@@ -1064,7 +990,7 @@ def define_schedules():
 
     @schedule(
         cron_schedule=get_cron_schedule(datetime.timedelta(hours=2)),
-        job_name="no_config_pipeline",
+        job_name="no_config_job",
         default_status=DefaultScheduleStatus.RUNNING,
     )
     def running_in_code_schedule(_context):
@@ -1073,7 +999,7 @@ def define_schedules():
     # Schedules for testing the user error boundary
     @schedule(
         cron_schedule="@daily",
-        job_name="no_config_pipeline",
+        job_name="no_config_job",
         should_execute=lambda _: throw_error(),
     )
     def should_execute_error_schedule(_context):
@@ -1081,7 +1007,7 @@ def define_schedules():
 
     @schedule(
         cron_schedule="@daily",
-        job_name="no_config_pipeline",
+        job_name="no_config_job",
         tags_fn=lambda _: throw_error(),
     )
     def tags_error_schedule(_context):
@@ -1089,36 +1015,36 @@ def define_schedules():
 
     @schedule(
         cron_schedule="@daily",
-        job_name="no_config_pipeline",
+        job_name="no_config_job",
     )
     def run_config_error_schedule(_context):
         throw_error()
 
     @schedule(
         cron_schedule="@daily",
-        job_name="no_config_pipeline",
+        job_name="no_config_job",
         execution_timezone="US/Central",
     )
     def timezone_schedule(_context):
         return {}
 
-    tagged_pipeline_schedule = ScheduleDefinition(
-        name="tagged_pipeline_schedule",
+    tagged_job_schedule = ScheduleDefinition(
+        name="tagged_job_schedule",
         cron_schedule="0 0 * * *",
-        job_name="tagged_pipeline",
+        job_name="tagged_job",
     )
 
-    tagged_pipeline_override_schedule = ScheduleDefinition(
-        name="tagged_pipeline_override_schedule",
+    tagged_job_override_schedule = ScheduleDefinition(
+        name="tagged_job_override_schedule",
         cron_schedule="0 0 * * *",
-        job_name="tagged_pipeline",
+        job_name="tagged_job",
         tags={"foo": "notbar"},
     )
 
     invalid_config_schedule = ScheduleDefinition(
         name="invalid_config_schedule",
         cron_schedule="0 0 * * *",
-        job_name="pipeline_with_enum_config",
+        job_name="job_with_enum_config",
         run_config={"solids": {"takes_an_enum": {"config": "invalid"}}},
     )
 
@@ -1145,13 +1071,13 @@ def define_schedules():
 
     return [
         run_config_error_schedule,
-        no_config_pipeline_hourly_schedule,
-        no_config_pipeline_hourly_schedule_with_config_fn,
+        no_config_job_hourly_schedule,
+        no_config_job_hourly_schedule_with_config_fn,
         no_config_should_execute,
         dynamic_config,
         should_execute_error_schedule,
-        tagged_pipeline_schedule,
-        tagged_pipeline_override_schedule,
+        tagged_job_schedule,
+        tagged_job_override_schedule,
         tags_error_schedule,
         timezone_schedule,
         invalid_config_schedule,
@@ -1164,18 +1090,18 @@ def define_schedules():
 
 
 def define_sensors():
-    @sensor(job_name="no_config_pipeline")
+    @sensor(job_name="no_config_job")
     def always_no_config_sensor(_):
         return RunRequest(
             run_key=None,
             tags={"test": "1234"},
         )
 
-    @sensor(job_name="no_config_pipeline")
+    @sensor(job_name="no_config_job")
     def always_error_sensor(_):
         raise Exception("OOPS")
 
-    @sensor(job_name="no_config_pipeline")
+    @sensor(job_name="no_config_job")
     def update_cursor_sensor(context):
         if not context.cursor:
             cursor = 0
@@ -1184,50 +1110,50 @@ def define_sensors():
         cursor += 1
         context.update_cursor(str(cursor))
 
-    @sensor(job_name="no_config_pipeline")
+    @sensor(job_name="no_config_job")
     def once_no_config_sensor(_):
         return RunRequest(
             run_key="once",
             tags={"test": "1234"},
         )
 
-    @sensor(job_name="no_config_pipeline")
+    @sensor(job_name="no_config_job")
     def never_no_config_sensor(_):
         return SkipReason("never")
 
-    @sensor(job_name="no_config_pipeline")
+    @sensor(job_name="no_config_job")
     def multi_no_config_sensor(_):
         yield RunRequest(run_key="A")
         yield RunRequest(run_key="B")
 
-    @sensor(job_name="no_config_pipeline", minimum_interval_seconds=60)
+    @sensor(job_name="no_config_job", minimum_interval_seconds=60)
     def custom_interval_sensor(_):
         return RunRequest(
             run_key=None,
             tags={"test": "1234"},
         )
 
-    @sensor(job_name="no_config_pipeline", default_status=DefaultSensorStatus.RUNNING)
+    @sensor(job_name="no_config_job", default_status=DefaultSensorStatus.RUNNING)
     def running_in_code_sensor(_):
         return RunRequest(
             run_key=None,
             tags={"test": "1234"},
         )
 
-    @sensor(job_name="no_config_pipeline")
+    @sensor(job_name="no_config_job")
     def logging_sensor(context):
         context.log.info("hello hello")
         return SkipReason()
 
-    @run_status_sensor(run_status=DagsterRunStatus.SUCCESS, request_job=no_config_pipeline)
+    @run_status_sensor(run_status=DagsterRunStatus.SUCCESS, request_job=no_config_job)
     def run_status(_):
         return SkipReason("always skip")
 
-    @asset_sensor(asset_key=AssetKey("foo"), job=single_asset_pipeline)
+    @asset_sensor(asset_key=AssetKey("foo"), job=single_asset_job)
     def single_asset_sensor():
         pass
 
-    @multi_asset_sensor(monitored_assets=[], job=single_asset_pipeline)
+    @multi_asset_sensor(monitored_assets=[], job=single_asset_job)
     def many_asset_sensor(_):
         pass
 
@@ -1257,7 +1183,8 @@ def define_sensors():
     ]
 
 
-@job(partitions_def=integers_partitions)
+# The tests that use this rely on it using in-process execution.
+@job(executor_def=in_process_executor, partitions_def=integers_partitions)
 def chained_failure_job():
     @op
     def always_succeed():
@@ -1268,7 +1195,7 @@ def chained_failure_job():
         if os.path.isfile(
             os.path.join(
                 get_system_temp_directory(),
-                "chained_failure_pipeline_conditionally_fail",
+                "chained_failure_job_conditionally_fail",
             )
         ):
             raise Exception("blah")
@@ -1284,7 +1211,7 @@ def chained_failure_job():
 
 @graph
 def simple_graph():
-    noop_solid()
+    noop_op()
 
 
 @graph
@@ -1292,13 +1219,13 @@ def composed_graph():
     simple_graph()
 
 
-@job(config={"ops": {"a_solid_with_config": {"config": {"one": "hullo"}}}})
+@job(config={"ops": {"op_with_config": {"config": {"one": "hullo"}}}})
 def job_with_default_config():
     @op(config_schema={"one": Field(String)})
-    def a_solid_with_config(context):
+    def op_with_config(context):
         return context.op_config["one"]
 
-    a_solid_with_config()
+    op_with_config()
 
 
 @resource(config_schema={"file": Field(String)})
@@ -1786,11 +1713,11 @@ def empty_repo():
     return []
 
 
-def define_pipelines():
+def define_jobs():
     return [
-        asset_tag_pipeline,
+        asset_tag_job,
         basic_job,
-        composites_pipeline,
+        composites_job,
         csv_hello_world_df_input,
         csv_hello_world_two,
         csv_hello_world_with_expectations,
@@ -1799,37 +1726,37 @@ def define_pipelines():
         eventually_successful,
         hard_failer,
         hello_world_with_tags,
-        infinite_loop_pipeline,
+        infinite_loop_job,
         integers,
-        materialization_pipeline,
+        materialization_job,
         more_complicated_config,
         more_complicated_nested_config,
         config_with_map,
-        multi_asset_pipeline,
-        multi_mode_with_loggers,
-        multi_mode_with_resources,
-        naughty_programmer_pipeline,
+        multi_asset_job,
+        loggers_job,
+        naughty_programmer_job,
         nested_job,
-        no_config_chain_pipeline,
-        no_config_pipeline,
-        noop_pipeline,
-        partitioned_asset_pipeline,
-        pipeline_with_enum_config,
-        pipeline_with_expectations,
-        pipeline_with_input_output_metadata,
-        pipeline_with_invalid_definition_error,
-        pipeline_with_list,
-        required_resource_pipeline,
-        retry_multi_input_early_terminate_pipeline,
-        retry_multi_output_pipeline,
-        retry_resource_pipeline,
-        scalar_output_pipeline,
-        single_asset_pipeline,
-        spew_pipeline,
+        no_config_chain_job,
+        no_config_job,
+        noop_job,
+        partitioned_asset_job,
+        job_with_enum_config,
+        job_with_expectations,
+        job_with_input_output_metadata,
+        job_with_invalid_definition_error,
+        job_with_list,
+        required_resource_job,
+        required_resource_config_job,
+        retry_multi_input_early_terminate_job,
+        retry_multi_output_job,
+        retry_resource_job,
+        scalar_output_job,
+        single_asset_job,
+        spew_job,
         static_partitioned_job,
-        tagged_pipeline,
+        tagged_job,
         chained_failure_job,
-        dynamic_pipeline,
+        dynamic_job,
         simple_graph.to_job("simple_job_a"),
         simple_graph.to_job("simple_job_b"),
         composed_graph.to_job(),
@@ -1903,22 +1830,13 @@ def define_asset_jobs():
 
 @repository
 def test_repo():
-    return define_pipelines() + define_schedules() + define_sensors() + define_asset_jobs()
+    return [*define_jobs(), *define_schedules(), *define_sensors(), *define_asset_jobs()]
 
 
 @repository
 def test_dict_repo():
     return {
-        "pipelines": {
-            pipeline.name: pipeline
-            for pipeline in define_pipelines()
-            if not isinstance(pipeline, JobDefinition)
-        },
-        "jobs": {
-            pipeline.name: pipeline
-            for pipeline in define_pipelines()
-            if isinstance(pipeline, JobDefinition)
-        },
+        "jobs": {job.name: job for job in define_jobs()},
         "schedules": {schedule.name: schedule for schedule in define_schedules()},
         "sensors": {sensor.name: sensor for sensor in define_sensors()},
     }

@@ -4,78 +4,53 @@ from __future__ import unicode_literals
 
 from snapshottest import Snapshot
 
+
 snapshots = Snapshot()
 
-snapshots["test_mode_fetch_resources 1"] = {
-    "pipelineOrError": {
-        "__typename": "Pipeline",
-        "modes": [
+snapshots['test_mode_fetch_resources 1'] = {
+    'pipelineOrError': {
+        '__typename': 'Pipeline',
+        'modes': [
             {
-                "name": "add_mode",
-                "resources": [
+                'name': 'default',
+                'resources': [
                     {
-                        "configField": {"configType": {"key": "Any"}},
-                        "description": (
-                            "Built-in IO manager that stores and retrieves values in memory."
-                        ),
-                        "name": "io_manager",
-                    },
-                    {
-                        "configField": {"configType": {"key": "Int"}},
-                        "description": None,
-                        "name": "op",
-                    },
-                ],
-            },
-            {
-                "name": "double_adder",
-                "resources": [
-                    {
-                        "configField": {"configType": {"key": "Any"}},
-                        "description": (
-                            "Built-in IO manager that stores and retrieves values in memory."
-                        ),
-                        "name": "io_manager",
-                    },
-                    {
-                        "configField": {
-                            "configType": {
-                                "fields": [
-                                    {"configType": {"key": "Int"}, "name": "num_one"},
-                                    {"configType": {"key": "Int"}, "name": "num_two"},
-                                ],
-                                "key": "Shape.fc3adbbf54d7ee8b03e7f0116e13d34e253c5bcf",
+                        'configField': {
+                            'configType': {
+                                'key': 'Int'
                             }
                         },
-                        "description": None,
-                        "name": "op",
-                    },
-                ],
-            },
-            {
-                "name": "mult_mode",
-                "resources": [
-                    {
-                        "configField": {"configType": {"key": "Any"}},
-                        "description": (
-                            "Built-in IO manager that stores and retrieves values in memory."
-                        ),
-                        "name": "io_manager",
+                        'description': None,
+                        'name': 'R1'
                     },
                     {
-                        "configField": {"configType": {"key": "Int"}},
-                        "description": None,
-                        "name": "op",
-                    },
-                ],
-            },
-        ],
+                        'configField': {
+                            'configType': {
+                                'key': 'Any'
+                            }
+                        },
+                        'description': 'Built-in filesystem IO manager that stores and retrieves values using pickling.',
+                        'name': 'io_manager'
+                    }
+                ]
+            }
+        ]
     }
 }
 
-snapshots["test_required_resources 1"] = {
-    "pipelineOrError": {
-        "name": "required_resource_pipeline",
-        "solids": [{"definition": {"requiredResources": [{"resourceKey": "R1"}]}}],
+snapshots['test_required_resources 1'] = {
+    'pipelineOrError': {
+        'name': 'required_resource_job',
+        'solids': [
+            {
+                'definition': {
+                    'requiredResources': [
+                        {
+                            'resourceKey': 'R1'
+                        }
+                    ]
+                }
+            }
+        ]
     }
 }

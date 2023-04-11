@@ -11,12 +11,12 @@ import {PipelineReference} from '../pipelines/PipelineReference';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {isThisThingAJob} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
-import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
+import {useRepositoryForRunWithParentSnapshot} from '../workspace/useRepositoryForRun';
 
 import {AssetKeyTagCollection} from './AssetKeyTagCollection';
 import {Run} from './Run';
 import {RunConfigDialog, RunDetails} from './RunDetails';
-import {RUN_FRAGMENT} from './RunFragments';
+import {RUN_PAGE_FRAGMENT} from './RunFragments';
 import {RunStatusTag} from './RunStatusTag';
 import {assetKeysForRun} from './RunUtils';
 import {RunRootQuery, RunRootQueryVariables} from './types/RunRoot.types';
@@ -35,7 +35,7 @@ export const RunRoot = () => {
   const run = data?.pipelineRunOrError.__typename === 'Run' ? data.pipelineRunOrError : null;
   const snapshotID = run?.pipelineSnapshotId;
 
-  const repoMatch = useRepositoryForRun(run);
+  const repoMatch = useRepositoryForRunWithParentSnapshot(run);
   const repoAddress = repoMatch?.match
     ? buildRepoAddress(repoMatch.match.repository.name, repoMatch.match.repositoryLocation.name)
     : null;
@@ -178,13 +178,12 @@ const RunById: React.FC<{data: RunRootQuery | undefined; runId: string}> = (prop
 const RUN_ROOT_QUERY = gql`
   query RunRootQuery($runId: ID!) {
     pipelineRunOrError(runId: $runId) {
-      __typename
       ... on Run {
         id
-        ...RunFragment
+        ...RunPageFragment
       }
     }
   }
 
-  ${RUN_FRAGMENT}
+  ${RUN_PAGE_FRAGMENT}
 `;

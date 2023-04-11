@@ -108,3 +108,111 @@ describe('FilterDropdownButton', () => {
     });
   });
 });
+
+describe('FilterDropdown Accessibility', () => {
+  const testKeyboardNavigation = async (nextKey: any, prevKey: any, enterKey: any) => {
+    render(<FilterDropdownButton filters={mockFilters} />);
+
+    userEvent.click(screen.getByRole('button'));
+    expect(screen.getByRole('menu')).toBeInTheDocument();
+
+    const input = screen.getByLabelText('Search filters');
+    expect(input).toHaveFocus();
+
+    fireEvent.keyDown(document.activeElement!, nextKey);
+    await waitFor(() => {
+      expect(screen.getByText('Type').closest('a')).toHaveClass('bp4-active');
+    });
+
+    fireEvent.keyDown(document.activeElement!, nextKey);
+    await waitFor(() => {
+      expect(screen.getByText('Status').closest('a')).toHaveClass('bp4-active');
+    });
+
+    fireEvent.keyDown(document.activeElement!, prevKey);
+    await waitFor(() => {
+      expect(screen.getByText('Type').closest('a')).toHaveClass('bp4-active');
+    });
+
+    fireEvent.keyDown(document.activeElement!, nextKey);
+    await waitFor(() => {
+      expect(screen.getByText('Status').closest('a')).toHaveClass('bp4-active');
+    });
+
+    fireEvent.keyDown(document.activeElement!, nextKey);
+    expect(input).toHaveFocus();
+
+    fireEvent.keyDown(document.activeElement!, nextKey);
+    await waitFor(() => {
+      expect(screen.getByText('Type').closest('a')).toHaveClass('bp4-active');
+    });
+
+    fireEvent.keyDown(document.activeElement!, nextKey);
+    await waitFor(() => {
+      expect(screen.getByText('Status').closest('a')).toHaveClass('bp4-active');
+    });
+
+    fireEvent.keyDown(document.activeElement!, enterKey);
+
+    await waitFor(() => {
+      expect(input).toHaveFocus();
+    });
+
+    fireEvent.keyDown(document.activeElement!, nextKey);
+    fireEvent.keyDown(document.activeElement!, nextKey);
+
+    expect(screen.getByText('Inactive').closest('a')).toHaveClass('bp4-active');
+    fireEvent.keyDown(document.activeElement!, enterKey);
+
+    await waitFor(() => {
+      expect(mockFilters[1].onSelect).toHaveBeenCalled();
+    });
+  };
+
+  // eslint-disable-next-line jest/expect-expect
+  test('keyboard navigation and selection with arrow keys', async () => {
+    await testKeyboardNavigation(
+      {key: 'ArrowDown', code: 'ArrowDown'},
+      {key: 'ArrowUp', code: 'ArrowUp'},
+      {key: 'Enter', code: 'Enter'},
+    );
+  });
+
+  // eslint-disable-next-line jest/expect-expect
+  test('keyboard navigation and selection with Tab and Shift+Tab keys', async () => {
+    await testKeyboardNavigation(
+      {key: 'Tab', code: 'Tab'},
+      {key: 'Tab', code: 'Tab', shiftKey: true},
+      {key: ' ', code: ' '},
+    );
+  });
+
+  test('escape key behavior', async () => {
+    render(<FilterDropdownButton filters={mockFilters} />);
+
+    userEvent.click(screen.getByRole('button'));
+    expect(screen.getByRole('menu')).toBeVisible();
+
+    const input = screen.getByLabelText('Search filters');
+    expect(input).toHaveFocus();
+
+    expect(screen.queryByText('Type 1')).toBeNull();
+
+    fireEvent.keyDown(document.activeElement!, {key: 'ArrowDown', code: 'ArrowDown'});
+
+    fireEvent.keyDown(document.activeElement!, {key: 'Enter', code: 'Enter'});
+
+    await waitFor(() => {
+      expect(screen.getByText('Type 1')).toBeVisible();
+    });
+
+    fireEvent.keyDown(document.activeElement!, {key: 'Escape', code: 'Escape'});
+
+    expect(screen.queryByText('Type 1')).toBeNull();
+
+    fireEvent.keyDown(document.activeElement!, {key: 'Escape', code: 'Escape'});
+    await waitFor(() => {
+      expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    });
+  });
+});

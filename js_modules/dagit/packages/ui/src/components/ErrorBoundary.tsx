@@ -23,6 +23,7 @@ export const ErrorCollectionContext = React.createContext<ErrorCollectionContext
 });
 
 interface ErrorBoundaryProps {
+  children: React.ReactNode;
   region: string;
   resetErrorOnChange?: any[];
 }
@@ -47,7 +48,10 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   }
 
   componentDidCatch(error: Error, info: any) {
-    this.context.onReportError(error, {info, region: this.props.region});
+    this.context.onReportError(error, {
+      info,
+      region: this.props.region,
+    });
     this.setState({error, errorResetPropsValue: JSON.stringify(this.props.resetErrorOnChange)});
   }
 

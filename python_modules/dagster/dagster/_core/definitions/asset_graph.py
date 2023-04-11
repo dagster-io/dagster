@@ -21,6 +21,7 @@ from typing import (
 import toposort
 
 import dagster._check as check
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvariantViolationError
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.selector.subset_selector import DependencyGraph, generate_asset_dep_graph
@@ -47,6 +48,7 @@ class AssetGraph:
         partition_mappings_by_key: Mapping[AssetKey, Optional[Mapping[AssetKey, PartitionMapping]]],
         group_names_by_key: Mapping[AssetKey, Optional[str]],
         freshness_policies_by_key: Mapping[AssetKey, Optional[FreshnessPolicy]],
+        auto_materialize_policies_by_key: Mapping[AssetKey, Optional[AutoMaterializePolicy]],
         required_multi_asset_sets_by_key: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]],
         code_versions_by_key: Mapping[AssetKey, Optional[str]],
         is_observable_by_key: Mapping[AssetKey, bool],
@@ -57,6 +59,7 @@ class AssetGraph:
         self._partition_mappings_by_key = partition_mappings_by_key
         self._group_names_by_key = group_names_by_key
         self._freshness_policies_by_key = freshness_policies_by_key
+        self._auto_materialize_policies_by_key = auto_materialize_policies_by_key
         self._required_multi_asset_sets_by_key = required_multi_asset_sets_by_key
         self._code_versions_by_key = code_versions_by_key
         self._is_observable_by_key = is_observable_by_key
@@ -84,6 +87,12 @@ class AssetGraph:
     def freshness_policies_by_key(self) -> Mapping[AssetKey, Optional[FreshnessPolicy]]:
         return self._freshness_policies_by_key
 
+    @property
+    def auto_materialize_policies_by_key(
+        self,
+    ) -> Mapping[AssetKey, Optional[AutoMaterializePolicy]]:
+        return self._auto_materialize_policies_by_key
+
     @staticmethod
     def from_assets(
         all_assets: Iterable[Union[AssetsDefinition, SourceAsset]]
@@ -96,6 +105,7 @@ class AssetGraph:
         ] = {}
         group_names_by_key: Dict[AssetKey, Optional[str]] = {}
         freshness_policies_by_key: Dict[AssetKey, Optional[FreshnessPolicy]] = {}
+        auto_materialize_policies_by_key: Dict[AssetKey, Optional[AutoMaterializePolicy]] = {}
         required_multi_asset_sets_by_key: Dict[AssetKey, AbstractSet[AssetKey]] = {}
         code_versions_by_key: Dict[AssetKey, Optional[str]] = {}
         is_observable_by_key: Dict[AssetKey, bool] = {}
@@ -114,6 +124,7 @@ class AssetGraph:
                 partitions_defs_by_key.update({key: asset.partitions_def for key in asset.keys})
                 group_names_by_key.update(asset.group_names_by_key)
                 freshness_policies_by_key.update(asset.freshness_policies_by_key)
+                auto_materialize_policies_by_key.update(asset.auto_materialize_policies_by_key)
                 if len(asset.keys) > 1 and not asset.can_subset:
                     for key in asset.keys:
                         required_multi_asset_sets_by_key[key] = asset.keys
@@ -126,6 +137,7 @@ class AssetGraph:
             partition_mappings_by_key=partition_mappings_by_key,
             group_names_by_key=group_names_by_key,
             freshness_policies_by_key=freshness_policies_by_key,
+            auto_materialize_policies_by_key=auto_materialize_policies_by_key,
             required_multi_asset_sets_by_key=required_multi_asset_sets_by_key,
             assets=assets_defs,
             source_assets=source_assets,
@@ -238,7 +250,8 @@ class AssetGraph:
 
         if parent_partitions_def is None:
             raise DagsterInvalidInvocationError(
-                "Parent partition key provided, but parent asset is not partitioned."
+                f"Parent partition key '{parent_partition_key}' provided, but parent asset"
+                f" '{parent_asset_key}' is not partitioned."
             )
 
         partition_mapping = self.get_partition_mapping(child_asset_key, parent_asset_key)
@@ -374,6 +387,9 @@ class AssetGraph:
         return [
             {key for key in level} for level in toposort.toposort(self._asset_dep_graph["upstream"])
         ]
+
+    def get_auto_materialize_policy(self, asset_key: AssetKey) -> Optional[AutoMaterializePolicy]:
+        return self.auto_materialize_policies_by_key.get(asset_key)
 
     @cached_method
     def get_downstream_freshness_policies(
@@ -513,6 +529,11 @@ class AssetGraph:
 
         return result
 
+    def split_asset_keys_by_repository(
+        self, asset_keys: AbstractSet[AssetKey]
+    ) -> Sequence[AbstractSet[AssetKey]]:
+        return [asset_keys]
+
     def __hash__(self) -> int:
         return id(self)
 
@@ -529,6 +550,7 @@ class InternalAssetGraph(AssetGraph):
         partition_mappings_by_key: Mapping[AssetKey, Optional[Mapping[AssetKey, PartitionMapping]]],
         group_names_by_key: Mapping[AssetKey, Optional[str]],
         freshness_policies_by_key: Mapping[AssetKey, Optional[FreshnessPolicy]],
+        auto_materialize_policies_by_key: Mapping[AssetKey, Optional[AutoMaterializePolicy]],
         required_multi_asset_sets_by_key: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]],
         assets: Sequence[AssetsDefinition],
         source_assets: Sequence[SourceAsset],
@@ -542,6 +564,7 @@ class InternalAssetGraph(AssetGraph):
             partition_mappings_by_key=partition_mappings_by_key,
             group_names_by_key=group_names_by_key,
             freshness_policies_by_key=freshness_policies_by_key,
+            auto_materialize_policies_by_key=auto_materialize_policies_by_key,
             required_multi_asset_sets_by_key=required_multi_asset_sets_by_key,
             code_versions_by_key=code_versions_by_key,
             is_observable_by_key=is_observable_by_key,
@@ -623,7 +646,10 @@ class ToposortedPriorityQueue:
                     cast(str, asset_partition.partition_key)
                 ).start.timestamp()
             else:
-                check.failed("Assets with self-dependencies must have time-window partitions")
+                check.failed(
+                    "Assets with self-dependencies must have time-window partitions, but"
+                    f" {asset_key} does not."
+                )
         else:
             partition_sort_key = None
 

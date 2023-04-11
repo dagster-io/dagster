@@ -419,9 +419,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     ),
     PackageSpec(
         "python_modules/libraries/dagster-dbt",
-        # dbt-core does not yet support python 3.10
         unsupported_python_versions=[
-            AvailablePythonVersion.V3_10,
             AvailablePythonVersion.V3_11,
         ],
         pytest_tox_factors=[
@@ -553,6 +551,10 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "AWS_ACCESS_KEY_ID",
             "AWS_SECRET_ACCESS_KEY",
             "BUILDKITE_SECRETS_BUCKET",
+        ],
+        pytest_tox_factors=[
+            "default",
+            "old_kubernetes",
         ],
         pytest_extra_cmds=k8s_extra_cmds,
         pytest_step_dependencies=test_project_depends_fn,

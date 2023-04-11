@@ -2,17 +2,34 @@ import json
 import os
 import tempfile
 from difflib import SequenceMatcher
+from unittest.mock import MagicMock
 
 from click.testing import CliRunner
-from dagster import DynamicPartitionsDefinition, asset, define_asset_job, repository
+from dagster import (
+    DailyPartitionsDefinition,
+    Definitions,
+    DynamicPartitionsDefinition,
+    FreshnessPolicy,
+    MultiPartitionsDefinition,
+    SourceAsset,
+    StaticPartitionsDefinition,
+    asset,
+    define_asset_job,
+    observable_source_asset,
+    repository,
+)
 from dagster._cli.job import job_execute_command
 from dagster._core.definitions.reconstruct import get_ephemeral_repository_name
+from dagster._core.host_representation.external import ExternalRepository
+from dagster._core.host_representation.external_data import external_repository_data_from_def
+from dagster._core.host_representation.handle import RepositoryHandle
 from dagster._core.telemetry import (
     TELEMETRY_STR,
     UPDATE_REPO_STATS,
     cleanup_telemetry_logger,
     get_or_create_dir_from_dagster_home,
     get_or_set_instance_id,
+    get_stats_from_external_repo,
     hash_name,
     log_workspace_stats,
     write_telemetry_log_line,
@@ -173,6 +190,148 @@ def test_update_repo_stats_dynamic_partitions(caplog):
         cleanup_telemetry_logger()
 
 
+def test_get_stats_from_external_repo_partitions():
+    @asset(partitions_def=StaticPartitionsDefinition(["foo", "bar"]))
+    def asset1():
+        ...
+
+    @asset(partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"))
+    def asset2():
+        ...
+
+    @asset
+    def asset3():
+        ...
+
+    external_repo = ExternalRepository(
+        external_repository_data_from_def(
+            Definitions(assets=[asset1, asset2, asset3]).get_repository_def()
+        ),
+        repository_handle=MagicMock(spec=RepositoryHandle),
+    )
+    stats = get_stats_from_external_repo(external_repo)
+    assert stats["num_partitioned_assets_in_repo"] == "2"
+
+
+def test_get_stats_from_external_repo_multi_partitions():
+    @asset(
+        partitions_def=MultiPartitionsDefinition(
+            {
+                "dim1": StaticPartitionsDefinition(["foo", "bar"]),
+                "dim2": DailyPartitionsDefinition(start_date="2022-01-01"),
+            }
+        )
+    )
+    def multi_partitioned_asset():
+        ...
+
+    external_repo = ExternalRepository(
+        external_repository_data_from_def(
+            Definitions(assets=[multi_partitioned_asset]).get_repository_def()
+        ),
+        repository_handle=MagicMock(spec=RepositoryHandle),
+    )
+    stats = get_stats_from_external_repo(external_repo)
+    assert stats["num_multi_partitioned_assets_in_repo"] == "1"
+    assert stats["num_partitioned_assets_in_repo"] == "1"
+
+
+def test_get_stats_from_external_repo_source_assets():
+    source_asset1 = SourceAsset("source_asset1")
+
+    @asset
+    def asset1():
+        ...
+
+    external_repo = ExternalRepository(
+        external_repository_data_from_def(
+            Definitions(assets=[source_asset1, asset1]).get_repository_def()
+        ),
+        repository_handle=MagicMock(spec=RepositoryHandle),
+    )
+    stats = get_stats_from_external_repo(external_repo)
+    assert stats["num_source_assets_in_repo"] == "1"
+
+
+def test_get_stats_from_external_repo_observable_source_assets():
+    source_asset1 = SourceAsset("source_asset1")
+
+    @observable_source_asset
+    def source_asset2():
+        ...
+
+    @asset
+    def asset1():
+        ...
+
+    external_repo = ExternalRepository(
+        external_repository_data_from_def(
+            Definitions(assets=[source_asset1, source_asset2, asset1]).get_repository_def()
+        ),
+        repository_handle=MagicMock(spec=RepositoryHandle),
+    )
+    stats = get_stats_from_external_repo(external_repo)
+    assert stats["num_source_assets_in_repo"] == "2"
+    assert stats["num_observable_source_assets_in_repo"] == "1"
+
+
+def test_get_stats_from_external_repo_freshness_policies():
+    @asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=30))
+    def asset1():
+        ...
+
+    @asset
+    def asset2():
+        ...
+
+    external_repo = ExternalRepository(
+        external_repository_data_from_def(
+            Definitions(assets=[asset1, asset2]).get_repository_def()
+        ),
+        repository_handle=MagicMock(spec=RepositoryHandle),
+    )
+    stats = get_stats_from_external_repo(external_repo)
+    assert stats["num_assets_with_freshness_policies_in_repo"] == "1"
+
+
+def test_get_stats_from_external_repo_code_versions():
+    @asset(code_version="hello")
+    def asset1():
+        ...
+
+    @asset
+    def asset2():
+        ...
+
+    external_repo = ExternalRepository(
+        external_repository_data_from_def(
+            Definitions(assets=[asset1, asset2]).get_repository_def()
+        ),
+        repository_handle=MagicMock(spec=RepositoryHandle),
+    )
+    stats = get_stats_from_external_repo(external_repo)
+    assert stats["num_assets_with_code_versions_in_repo"] == "1"
+
+
+def test_get_stats_from_external_repo_dbt():
+    @asset(compute_kind="dbt")
+    def asset1():
+        ...
+
+    @asset
+    def asset2():
+        ...
+
+    external_repo = ExternalRepository(
+        external_repository_data_from_def(
+            Definitions(assets=[asset1, asset2]).get_repository_def()
+        ),
+        repository_handle=MagicMock(spec=RepositoryHandle),
+    )
+    stats = get_stats_from_external_repo(external_repo)
+    assert stats["num_dbt_assets_in_repo"] == "1"
+
+
 # TODO - not sure what this test is testing for, so unclear as to how to update it to jobs
 def test_repo_stats(caplog):
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -238,8 +397,8 @@ def test_log_workspace_stats(caplog):
 # sequences are close matches`
 # Other than above, 0.4 was picked arbitrarily.
 def test_hash_name():
-    pipelines = ["pipeline_1", "pipeline_2", "pipeline_3"]
-    hashes = [hash_name(p) for p in pipelines]
+    jobs = ["job_1", "job_2", "job_3"]
+    hashes = [hash_name(p) for p in jobs]
     for h in hashes:
         assert len(h) == 64
 

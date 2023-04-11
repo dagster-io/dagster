@@ -1,4 +1,5 @@
 from dagster._core.storage.tags import RESUME_RETRY_TAG
+from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster_graphql.client.query import (
     LAUNCH_PIPELINE_EXECUTION_MUTATION,
     LAUNCH_PIPELINE_REEXECUTION_MUTATION,
@@ -17,8 +18,8 @@ from .utils import (
 )
 
 
-def test_dynamic_resume_reexecution(graphql_context):
-    selector = infer_pipeline_selector(graphql_context, "dynamic_pipeline")
+def test_dynamic_resume_reexecution(graphql_context: WorkspaceRequestContext):
+    selector = infer_pipeline_selector(graphql_context, "dynamic_job")
     result = execute_dagster_graphql_and_finish_runs(
         graphql_context,
         LAUNCH_PIPELINE_EXECUTION_MUTATION,
@@ -26,9 +27,8 @@ def test_dynamic_resume_reexecution(graphql_context):
             "executionParams": {
                 "selector": selector,
                 "runConfigData": {
-                    "solids": {"multiply_inputs": {"inputs": {"should_fail": {"value": True}}}},
+                    "ops": {"multiply_inputs": {"inputs": {"should_fail": {"value": True}}}},
                 },
-                "mode": "default",
             }
         },
     )
@@ -36,7 +36,7 @@ def test_dynamic_resume_reexecution(graphql_context):
     assert not result.errors
     assert result.data
     assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
-    assert result.data["launchPipelineExecution"]["run"]["pipeline"]["name"] == "dynamic_pipeline"
+    assert result.data["launchPipelineExecution"]["run"]["pipeline"]["name"] == "dynamic_job"
 
     parent_run_id = result.data["launchPipelineExecution"]["run"]["runId"]
 
@@ -56,11 +56,9 @@ def test_dynamic_resume_reexecution(graphql_context):
         LAUNCH_PIPELINE_REEXECUTION_MUTATION,
         variables={
             "executionParams": {
-                "mode": "default",
                 "selector": selector,
                 "runConfigData": {
-                    "solids": {"multiply_inputs": {"inputs": {"should_fail": {"value": True}}}},
-                    "execution": {"multiprocess": {}},
+                    "ops": {"multiply_inputs": {"inputs": {"should_fail": {"value": True}}}},
                 },
                 "executionMetadata": {
                     "rootRunId": parent_run_id,
@@ -93,8 +91,8 @@ def test_dynamic_resume_reexecution(graphql_context):
     assert step_did_succeed(logs, "double_total")
 
 
-def test_dynamic_full_reexecution(graphql_context):
-    selector = infer_pipeline_selector(graphql_context, "dynamic_pipeline")
+def test_dynamic_full_reexecution(graphql_context: WorkspaceRequestContext):
+    selector = infer_pipeline_selector(graphql_context, "dynamic_job")
     result = execute_dagster_graphql_and_finish_runs(
         graphql_context,
         LAUNCH_PIPELINE_EXECUTION_MUTATION,
@@ -102,9 +100,8 @@ def test_dynamic_full_reexecution(graphql_context):
             "executionParams": {
                 "selector": selector,
                 "runConfigData": {
-                    "solids": {"multiply_inputs": {"inputs": {"should_fail": {"value": True}}}},
+                    "ops": {"multiply_inputs": {"inputs": {"should_fail": {"value": True}}}},
                 },
-                "mode": "default",
             }
         },
     )
@@ -112,7 +109,7 @@ def test_dynamic_full_reexecution(graphql_context):
     assert not result.errors
     assert result.data
     assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
-    assert result.data["launchPipelineExecution"]["run"]["pipeline"]["name"] == "dynamic_pipeline"
+    assert result.data["launchPipelineExecution"]["run"]["pipeline"]["name"] == "dynamic_job"
 
     parent_run_id = result.data["launchPipelineExecution"]["run"]["runId"]
 
@@ -132,11 +129,9 @@ def test_dynamic_full_reexecution(graphql_context):
         LAUNCH_PIPELINE_REEXECUTION_MUTATION,
         variables={
             "executionParams": {
-                "mode": "default",
                 "selector": selector,
                 "runConfigData": {
-                    "solids": {"multiply_inputs": {"inputs": {"should_fail": {"value": True}}}},
-                    "execution": {"multiprocess": {}},
+                    "ops": {"multiply_inputs": {"inputs": {"should_fail": {"value": True}}}},
                 },
                 "executionMetadata": {
                     "rootRunId": parent_run_id,
@@ -169,8 +164,8 @@ def test_dynamic_full_reexecution(graphql_context):
     assert step_did_succeed(logs, "double_total")
 
 
-def test_dynamic_subset(graphql_context):
-    selector = infer_pipeline_selector(graphql_context, "dynamic_pipeline")
+def test_dynamic_subset(graphql_context: WorkspaceRequestContext):
+    selector = infer_pipeline_selector(graphql_context, "dynamic_job")
     result = execute_dagster_graphql_and_finish_runs(
         graphql_context,
         LAUNCH_PIPELINE_EXECUTION_MUTATION,
@@ -178,9 +173,8 @@ def test_dynamic_subset(graphql_context):
             "executionParams": {
                 "selector": selector,
                 "runConfigData": {
-                    "solids": {"multiply_inputs": {"inputs": {"should_fail": {"value": True}}}},
+                    "ops": {"multiply_inputs": {"inputs": {"should_fail": {"value": True}}}},
                 },
-                "mode": "default",
             }
         },
     )
@@ -188,7 +182,7 @@ def test_dynamic_subset(graphql_context):
     assert not result.errors
     assert result.data
     assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
-    assert result.data["launchPipelineExecution"]["run"]["pipeline"]["name"] == "dynamic_pipeline"
+    assert result.data["launchPipelineExecution"]["run"]["pipeline"]["name"] == "dynamic_job"
 
     parent_run_id = result.data["launchPipelineExecution"]["run"]["runId"]
 
@@ -208,11 +202,9 @@ def test_dynamic_subset(graphql_context):
         LAUNCH_PIPELINE_REEXECUTION_MUTATION,
         variables={
             "executionParams": {
-                "mode": "default",
                 "selector": selector,
                 "runConfigData": {
-                    "solids": {"multiply_inputs": {"inputs": {"should_fail": {"value": True}}}},
-                    "execution": {"multiprocess": {}},
+                    "ops": {"multiply_inputs": {"inputs": {"should_fail": {"value": True}}}},
                 },
                 "executionMetadata": {
                     "rootRunId": parent_run_id,
@@ -279,23 +271,23 @@ query PresetsQuery($selector: PipelineSelector!) {
 
 
 def test_dynamic_dep_fields(graphql_context):
-    selector = infer_pipeline_selector(graphql_context, "dynamic_pipeline")
+    selector = infer_pipeline_selector(graphql_context, "dynamic_job")
     result = execute_dagster_graphql(graphql_context, DEP_QUERY, variables={"selector": selector})
     assert not result.errors
-    solids = {solid["name"]: solid for solid in result.data["pipelineOrError"]["solids"]}
+    ops = {op["name"]: op for op in result.data["pipelineOrError"]["solids"]}
 
-    assert solids["emit_ten"]["isDynamicMapped"] is False
-    assert solids["emit_ten"]["outputs"][0]["definition"]["isDynamic"] is False
+    assert ops["emit_ten"]["isDynamicMapped"] is False
+    assert ops["emit_ten"]["outputs"][0]["definition"]["isDynamic"] is False
 
-    assert solids["emit"]["isDynamicMapped"] is False
-    assert solids["emit"]["outputs"][0]["definition"]["isDynamic"] is True
+    assert ops["emit"]["isDynamicMapped"] is False
+    assert ops["emit"]["outputs"][0]["definition"]["isDynamic"] is True
 
-    assert solids["multiply_inputs"]["isDynamicMapped"] is True
+    assert ops["multiply_inputs"]["isDynamicMapped"] is True
 
-    assert solids["multiply_by_two"]["isDynamicMapped"] is True
+    assert ops["multiply_by_two"]["isDynamicMapped"] is True
 
-    assert solids["sum_numbers"]["isDynamicMapped"] is False
-    assert solids["sum_numbers"]["inputs"][0]["isDynamicCollect"] is True
+    assert ops["sum_numbers"]["isDynamicMapped"] is False
+    assert ops["sum_numbers"]["inputs"][0]["isDynamicCollect"] is True
 
-    assert solids["double_total"]["isDynamicMapped"] is False
-    assert solids["double_total"]["inputs"][0]["isDynamicCollect"] is False
+    assert ops["double_total"]["isDynamicMapped"] is False
+    assert ops["double_total"]["inputs"][0]["isDynamicCollect"] is False

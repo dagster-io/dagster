@@ -70,20 +70,12 @@ interface ItemProps
 export const MenuItem: React.FC<ItemProps> = (props) => {
   const {icon, intent, ...rest} = props;
   return (
-    <div
-      onKeyUp={(e: React.KeyboardEvent<HTMLDivElement>) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.currentTarget.querySelector('a')?.click();
-        }
-      }}
-    >
-      <StyledMenuItem
-        {...rest}
-        $textColor={intentToTextColor(intent)}
-        icon={iconWithColor(icon, intent)}
-        tabIndex={0}
-      />
-    </div>
+    <StyledMenuItem
+      {...rest}
+      $textColor={intentToTextColor(intent)}
+      icon={iconWithColor(icon, intent)}
+      tabIndex={0}
+    />
   );
 };
 

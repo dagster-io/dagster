@@ -8,7 +8,7 @@ from dagster._core.errors import DagsterInvalidDefinitionError
 
 
 @contextmanager
-def setup_gcp_creds(context):
+def setup_gcp_creds(gcp_creds: str):
     if os.getenv("GOOGLE_APPLICATION_CREDENTIALS") is not None:
         raise DagsterInvalidDefinitionError(
             "Resource config error: gcp_credentials config for BigQuery resource cannot"
@@ -17,7 +17,7 @@ def setup_gcp_creds(context):
     with tempfile.NamedTemporaryFile("w+") as f:
         temp_file_name = f.name
         json.dump(
-            json.loads(base64.b64decode(context.resource_config.get("gcp_credentials"))),
+            json.loads(base64.b64decode(gcp_creds)),
             f,
         )
         f.flush()

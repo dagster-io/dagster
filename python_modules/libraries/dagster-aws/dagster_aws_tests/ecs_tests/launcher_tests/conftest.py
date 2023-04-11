@@ -167,6 +167,7 @@ def instance_with_resources(instance_cm):
             "run_resources": {
                 "cpu": "1024",
                 "memory": "2048",
+                "ephemeral_storage": 50,
             }
         }
     ) as dagster_instance:
@@ -174,7 +175,7 @@ def instance_with_resources(instance_cm):
 
 
 @pytest.fixture
-def instance_dont_use_current_task(instance_cm, subnet):
+def instance_dont_use_current_task(instance_cm, subnet, monkeypatch):
     with instance_cm(
         config={
             "use_current_ecs_task_config": False,
@@ -186,6 +187,24 @@ def instance_dont_use_current_task(instance_cm, subnet):
                         "assignPublicIp": "ENABLED",
                     },
                 },
+            },
+        }
+    ) as dagster_instance:
+        # Not running in an ECS task
+        monkeypatch.setenv("ECS_CONTAINER_METADATA_URI_V4", None)
+        yield dagster_instance
+
+
+@pytest.fixture
+def instance_fargate_spot(instance_cm):
+    with instance_cm(
+        config={
+            "run_task_kwargs": {
+                "capacityProviderStrategy": [
+                    {
+                        "capacityProvider": "FARGATE_SPOT",
+                    }
+                ],
             },
         }
     ) as dagster_instance:
@@ -220,14 +239,14 @@ def other_workspace(instance, other_image):
 
 @pytest.fixture
 def pipeline():
-    return repo.pipeline
+    return repo.job
 
 
 @pytest.fixture
 def external_pipeline(workspace):
     location = workspace.get_code_location(workspace.code_location_names[0])
     return location.get_repository(repo.repository.__name__).get_full_external_job(
-        repo.pipeline.__name__
+        repo.job.__name__
     )
 
 
@@ -235,7 +254,7 @@ def external_pipeline(workspace):
 def other_external_pipeline(other_workspace):
     location = other_workspace.get_code_location(other_workspace.code_location_names[0])
     return location.get_repository(repo.repository.__name__).get_full_external_job(
-        repo.pipeline.__name__
+        repo.job.__name__
     )
 
 
@@ -379,16 +398,34 @@ def container_context_config(configured_secret):
             "run_resources": {
                 "cpu": "4096",
                 "memory": "8192",
+                "ephemeral_storage": 100,
             },
             "server_resources": {
                 "cpu": "1024",
                 "memory": "2048",
+                "ephemeral_storage": 25,
             },
             "task_role_arn": "fake-task-role",
             "execution_role_arn": "fake-execution-role",
             "runtime_platform": {
                 "operatingSystemFamily": "WINDOWS_SERVER_2019_FULL",
             },
+            "mount_points": [
+                {
+                    "sourceVolume": "myEfsVolume",
+                    "containerPath": "/mount/efs",
+                    "readOnly": True,
+                }
+            ],
+            "volumes": [
+                {
+                    "name": "myEfsVolume",
+                    "efsVolumeConfiguration": {
+                        "fileSystemId": "fs-1234",
+                        "rootDirectory": "/path/to/my/data",
+                    },
+                }
+            ],
         },
     }
 
@@ -416,6 +453,22 @@ def other_container_context_config(other_configured_secret):
             },
             "task_role_arn": "other-task-role",
             "execution_role_arn": "other-fake-execution-role",
+            "mount_points": [
+                {
+                    "sourceVolume": "myOtherEfsVolume",
+                    "containerPath": "/mount/other/efs",
+                    "readOnly": True,
+                }
+            ],
+            "volumes": [
+                {
+                    "name": "myOtherEfsVolume",
+                    "efsVolumeConfiguration": {
+                        "fileSystemId": "fs-5678",
+                        "rootDirectory": "/path/to/my/other/data",
+                    },
+                }
+            ],
         },
     }
 

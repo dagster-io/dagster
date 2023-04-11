@@ -84,7 +84,7 @@ def graphql_postgres_instance(overrides=None):
 class MarkedManager:
     """MarkedManagers are passed to GraphQLContextVariants. They contain
     a contextmanager function "manager_fn" that yield the relevant
-    instace, and it includes marks that will be applied to any
+    instance, and it includes marks that will be applied to any
     context-variant-driven test case that includes this MarkedManager.
 
     See InstanceManagers for an example construction.

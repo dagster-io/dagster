@@ -42,9 +42,9 @@ export const UnloadableSensors: React.FC<{
         <thead>
           <tr>
             <th style={{maxWidth: '60px'}}></th>
-            <th>Sensor Name</th>
-            <th style={{width: '100px'}}>Last Tick</th>
-            <th>Last Run</th>
+            <th>Sensor name</th>
+            <th style={{width: '100px'}}>Last tick</th>
+            <th>Last run</th>
           </tr>
         </thead>
         <tbody>
@@ -74,11 +74,11 @@ export const UnloadableSchedules: React.FC<{
         <thead>
           <tr>
             <th style={{maxWidth: '60px'}}></th>
-            <th>Schedule Name</th>
+            <th>Schedule name</th>
             <th style={{width: '150px'}}>Schedule</th>
-            <th style={{width: '100px'}}>Last Tick</th>
-            <th>Last Run</th>
-            <th>Partition Set Status</th>
+            <th style={{width: '100px'}}>Last tick</th>
+            <th>Last run</th>
+            <th>Partition set status</th>
           </tr>
         </thead>
         <tbody>

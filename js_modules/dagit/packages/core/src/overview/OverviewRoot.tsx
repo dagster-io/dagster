@@ -2,8 +2,10 @@ import * as React from 'react';
 import {Redirect, Route, Switch} from 'react-router-dom';
 
 import {InstanceBackfills} from '../instance/InstanceBackfills';
+import {BackfillPage} from '../instance/backfill/BackfillPage';
 
 import {OverviewJobsRoot} from './OverviewJobsRoot';
+import {OverviewResourcesRoot} from './OverviewResourcesRoot';
 import {OverviewSchedulesRoot} from './OverviewSchedulesRoot';
 import {OverviewSensorsRoot} from './OverviewSensorsRoot';
 import {OverviewTimelineRoot} from './OverviewTimelineRoot';
@@ -23,8 +25,14 @@ export const OverviewRoot = () => {
       <Route path="/overview/sensors">
         <OverviewSensorsRoot />
       </Route>
-      <Route path="/overview/backfills">
+      <Route path="/overview/backfills/:backfillId">
+        <BackfillPage />
+      </Route>
+      <Route path="/overview/backfills" exact>
         <InstanceBackfills />
+      </Route>
+      <Route path="/overview/resources">
+        <OverviewResourcesRoot />
       </Route>
       <Route path="*" render={() => <Redirect to="/overview/timeline" />} />
     </Switch>

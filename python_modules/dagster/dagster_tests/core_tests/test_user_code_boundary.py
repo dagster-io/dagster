@@ -1,15 +1,11 @@
 from dagster import (
+    In,
     String,
     dagster_type_loader,
+    job,
+    op,
     resource,
     usable_as_dagster_type,
-)
-from dagster._core.definitions.decorators import op
-from dagster._core.definitions.input import In
-from dagster._legacy import (
-    ModeDefinition,
-    execute_pipeline,
-    pipeline,
 )
 
 
@@ -23,12 +19,12 @@ def test_user_error_boundary_solid_compute():
     def throws_user_error(_):
         raise UserError()
 
-    @pipeline
-    def pipeline_def():
+    @job
+    def job_def():
         throws_user_error()
 
-    pipeline_result = execute_pipeline(pipeline_def, raise_on_error=False)
-    assert not pipeline_result.success
+    result = job_def.execute_in_process(raise_on_error=False)
+    assert not result.success
 
 
 def test_user_error_boundary_input_hydration():
@@ -41,19 +37,18 @@ def test_user_error_boundary_input_hydration():
         pass
 
     @op(ins={"custom_type": In(CustomType)})
-    def input_hydration_solid(context, custom_type):
+    def input_hydration_op(context, custom_type):
         context.log.info(custom_type)
 
-    @pipeline
-    def input_hydration_pipeline():
-        input_hydration_solid()
+    @job
+    def input_hydration_job():
+        input_hydration_op()
 
-    pipeline_result = execute_pipeline(
-        input_hydration_pipeline,
-        {"solids": {"input_hydration_solid": {"inputs": {"custom_type": "hello"}}}},
+    result = input_hydration_job.execute_in_process(
+        {"ops": {"input_hydration_op": {"inputs": {"custom_type": "hello"}}}},
         raise_on_error=False,
     )
-    assert not pipeline_result.success
+    assert not result.success
 
 
 def test_user_error_boundary_resource_init():
@@ -62,12 +57,12 @@ def test_user_error_boundary_resource_init():
         raise UserError()
 
     @op(required_resource_keys={"a"})
-    def resource_solid(_context):
+    def resource_op(_context):
         return "hello"
 
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={"a": resource_a})])
-    def resource_pipeline():
-        resource_solid()
+    @job(resource_defs={"a": resource_a})
+    def resource_job():
+        resource_op()
 
-    pipeline_result = execute_pipeline(resource_pipeline, raise_on_error=False)
-    assert not pipeline_result.success
+    result = resource_job.execute_in_process(raise_on_error=False)
+    assert not result.success

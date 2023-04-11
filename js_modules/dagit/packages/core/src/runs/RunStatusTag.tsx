@@ -28,7 +28,7 @@ const statusToIntent = (status: RunStatus) => {
   }
 };
 
-export const runStatusToString = (status: RunStatus) => {
+const runStatusToString = (status: RunStatus) => {
   switch (status) {
     case RunStatus.QUEUED:
       return 'Queued';

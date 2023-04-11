@@ -7,6 +7,7 @@ import {AlignItems, DirectionalSpacing, FlexProperties, FlexWrap, Spacing} from 
 type Direction = 'row' | 'column';
 
 interface Props {
+  children: React.ReactNode;
   alignItems?: AlignItems;
   background?: string;
   direction: Direction;
@@ -19,7 +20,7 @@ interface Props {
 const flexDirection = (direction: Direction) => (direction === 'row' ? 'row' : 'column');
 const childMargin = (direction: Direction, spacing: Spacing) => ({left: spacing, top: spacing});
 
-export const Group: React.FC<Props> = (props) => {
+export const Group = (props: Props) => {
   const {alignItems, children, direction, spacing, wrap, ...rest} = props;
   const wrappedChildren = React.Children.map(children, (child) => {
     const margin = childMargin(direction, spacing);

@@ -24,7 +24,7 @@ from dagster import (
     with_resources,
 )
 from dagster._check import CheckError
-from dagster._config.structured_config import ConfigurableResource
+from dagster._config.pythonic_config import ConfigurableResource
 from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
@@ -619,8 +619,7 @@ def test_asset_missing_resources():
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match=re.escape(
-            "SourceAsset with asset key AssetKey(['foo']) requires IO manager with key 'foo', but"
-            " none was provided."
+            "io manager with key 'foo' required by SourceAsset with key [\"foo\"] was not provided"
         ),
     ):
         Definitions(assets=[source_asset_io_req])

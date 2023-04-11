@@ -47,7 +47,7 @@ const LaunchpadSetupAllowedRoot: React.FC<Props> = (props) => {
   const queryString = qs.parse(window.location.search, {ignoreQueryPrefix: true});
 
   React.useEffect(() => {
-    if (queryString.config || queryString.mode || queryString.solidSelection) {
+    if (queryString.config || queryString.mode || queryString.solidSelection || queryString.tags) {
       const newSession: Partial<IExecutionSession> = {};
       if (typeof queryString.config === 'string') {
         newSession.runConfigYaml = queryString.config;
@@ -62,6 +62,10 @@ const LaunchpadSetupAllowedRoot: React.FC<Props> = (props) => {
       }
       if (typeof queryString.solidSelectionQuery === 'string') {
         newSession.solidSelectionQuery = queryString.solidSelectionQuery;
+      }
+
+      if (queryString.tags instanceof Array) {
+        newSession.tags = queryString.tags as any;
       }
 
       onSave(applyCreateSession(data, newSession));

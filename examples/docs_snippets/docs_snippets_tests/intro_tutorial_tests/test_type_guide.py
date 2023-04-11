@@ -8,7 +8,6 @@ import pytest
 import yaml
 
 from dagster import (
-    AssetMaterialization,
     DagsterType,
     DagsterTypeCheckDidNotPass,
     In,
@@ -16,12 +15,11 @@ from dagster import (
     Out,
     PythonObjectDagsterType,
     dagster_type_loader,
+    job,
     make_python_type_usable_as_dagster_type,
     op,
     usable_as_dagster_type,
 )
-from dagster._legacy import execute_pipeline, pipeline
-from dagster._utils import safe_tempfile_path
 from dagster._utils.test import wrap_op_in_graph_and_execute
 
 
@@ -182,11 +180,11 @@ def test_nothing_type():
     def after_cleanup():  # Argument not required for Nothing types
         return "worked"
 
-    @pipeline
-    def nothing_pipeline():
+    @job
+    def nothing_job():
         after_cleanup(do_cleanup())
 
-    result = execute_pipeline(nothing_pipeline)
+    result = nothing_job.execute_in_process()
     assert result.success
     assert result.output_for_node("after_cleanup") == "worked"
 
@@ -195,7 +193,7 @@ def test_nothing_fanin_actually_test():
     ordering = {"counter": 0}
 
     @op(out=Out(Nothing))
-    def start_first_pipeline_section(context):
+    def start_first_job_section(context):
         ordering["counter"] += 1
         ordering[context.op.name] = ordering["counter"]
 
@@ -208,31 +206,31 @@ def test_nothing_fanin_actually_test():
         ordering[context.op.name] = ordering["counter"]
 
     @op(ins={"on_cleanup_tasks_done": In(Nothing)})
-    def start_next_pipeline_section(context):
+    def start_next_job_section(context):
         ordering["counter"] += 1
         ordering[context.op.name] = ordering["counter"]
         return "worked"
 
-    @pipeline
-    def fanin_pipeline():
-        first_section_done = start_first_pipeline_section()
-        start_next_pipeline_section(
+    @job
+    def fanin_job():
+        first_section_done = start_first_job_section()
+        start_next_job_section(
             on_cleanup_tasks_done=[
                 perform_clean_up.alias("cleanup_task_one")(first_section_done),
                 perform_clean_up.alias("cleanup_task_two")(first_section_done),
             ]
         )
 
-    result = execute_pipeline(fanin_pipeline)
+    result = fanin_job.execute_in_process()
     assert result.success
 
-    assert ordering["start_first_pipeline_section"] == 1
-    assert ordering["start_next_pipeline_section"] == 4
+    assert ordering["start_first_job_section"] == 1
+    assert ordering["start_next_job_section"] == 4
 
 
 def test_nothing_fanin_empty_body_for_guide():
     @op(out=Out(Nothing))
-    def start_first_pipeline_section():
+    def start_first_job_section():
         pass
 
     @op(
@@ -245,20 +243,20 @@ def test_nothing_fanin_empty_body_for_guide():
     @op(
         ins={"on_cleanup_tasks_done": In(Nothing)},
     )
-    def start_next_pipeline_section():
+    def start_next_job_section():
         pass
 
-    @pipeline
-    def fanin_pipeline():
-        first_section_done = start_first_pipeline_section()
-        start_next_pipeline_section(
+    @job
+    def fanin_job():
+        first_section_done = start_first_job_section()
+        start_next_job_section(
             on_cleanup_tasks_done=[
                 perform_clean_up.alias("cleanup_task_one")(first_section_done),
                 perform_clean_up.alias("cleanup_task_two")(first_section_done),
             ]
         )
 
-    result = execute_pipeline(fanin_pipeline)
+    result = fanin_job.execute_in_process()
     assert result.success
 
 

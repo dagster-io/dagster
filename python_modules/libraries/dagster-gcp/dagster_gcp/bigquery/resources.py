@@ -14,7 +14,7 @@ def bigquery_resource(context):
     }
 
     if context.resource_config.get("gcp_credentials"):
-        with setup_gcp_creds(context):
+        with setup_gcp_creds(context.resource_config.get("gcp_credentials")):
             yield bigquery.Client(**no_creds_config)
     else:
         yield bigquery.Client(**no_creds_config)

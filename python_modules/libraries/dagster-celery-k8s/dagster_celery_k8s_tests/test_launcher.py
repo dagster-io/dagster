@@ -4,6 +4,7 @@ from unittest import mock
 import pytest
 from dagster import reconstructable
 from dagster._check import CheckError
+from dagster._core.definitions.decorators.job_decorator import job
 from dagster._core.host_representation import RepositoryHandle
 from dagster._core.launcher import LaunchRunContext
 from dagster._core.storage.tags import DOCKER_IMAGE_TAG
@@ -15,7 +16,6 @@ from dagster._core.test_utils import (
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.types import ExecuteRunArgs
-from dagster._legacy import pipeline
 from dagster._utils.hosted_user_process import external_pipeline_from_recon_pipeline
 from dagster._utils.merger import merge_dicts
 from dagster_celery_k8s.config import get_celery_engine_config, get_celery_engine_job_config
@@ -327,7 +327,7 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
     tags = {"dagster-k8s/config": user_defined_k8s_config_json}
 
     # Create fake external pipeline.
-    recon_pipeline = reconstructable(fake_pipeline)
+    recon_pipeline = reconstructable(fake_job)
     recon_repo = recon_pipeline.repository
     loadable_target_origin = LoadableTargetOrigin(python_file=__file__)
 
@@ -402,7 +402,7 @@ def test_raise_on_error(kubeconfig_file):
         fail_pod_on_run_failure=True,
     )
     # Create fake external pipeline.
-    recon_pipeline = reconstructable(fake_pipeline)
+    recon_pipeline = reconstructable(fake_job)
     recon_repo = recon_pipeline.repository
     loadable_target_origin = LoadableTargetOrigin(
         python_file=__file__,
@@ -514,6 +514,6 @@ def test_k8s_executor_config_override(kubeconfig_file):
         assert kwargs["body"].spec.template.spec.containers[0].image == "fake-image-name"
 
 
-@pipeline
-def fake_pipeline():
+@job
+def fake_job():
     pass

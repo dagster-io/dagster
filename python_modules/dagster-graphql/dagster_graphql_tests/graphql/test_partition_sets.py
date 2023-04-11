@@ -156,7 +156,7 @@ class TestPartitionSets(NonLaunchableGraphQLContextTestMatrix):
         invalid_pipeline_result = execute_dagster_graphql(
             graphql_context,
             GET_PARTITION_SETS_FOR_PIPELINE_QUERY,
-            variables={"repositorySelector": selector, "pipelineName": "invalid_pipeline"},
+            variables={"repositorySelector": selector, "pipelineName": "invalid_job"},
         )
 
         assert invalid_pipeline_result.data

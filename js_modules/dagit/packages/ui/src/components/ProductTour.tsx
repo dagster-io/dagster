@@ -25,6 +25,7 @@ type ObjectType =
   | {img?: undefined; video?: undefined; object?: undefined};
 
 type Props = {
+  children: React.ReactNode;
   title: React.ReactNode;
   description?: React.ReactNode;
   actions?: {
