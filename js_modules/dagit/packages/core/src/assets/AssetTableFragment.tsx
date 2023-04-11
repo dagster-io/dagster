@@ -5,6 +5,7 @@ export const ASSET_TABLE_DEFINITION_FRAGMENT = gql`
     id
     groupName
     isSource
+    isObservable
     hasMaterializePermission
     partitionDefinition {
       description

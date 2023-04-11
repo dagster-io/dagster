@@ -25,9 +25,9 @@ export const AssetNodeLink: React.FC<{
 const AssetNodeLinkContainer = styled.div`
   display: flex;
   padding: 4px 8px 6px;
+  margin-top: 26px;
   line-height: 30px;
   font-family: ${FontFamily.monospace};
-  justify-content: center;
   color: ${Colors.Link};
   align-items: center;
   font-weight: 600;

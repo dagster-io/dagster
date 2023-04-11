@@ -52,7 +52,7 @@ export const AssetEventSystemTags: React.FC<{
               ))
           ) : (
             <tr>
-              <td>No tags to display.</td>
+              <td style={{paddingLeft}}>No tags to display.</td>
             </tr>
           )}
         </tbody>
