@@ -2,10 +2,12 @@ import datetime
 import os
 import time
 import uuid
+from typing import Any, Mapping
 
 import dagster._check as check
 import pytest
 from dagster._core.events import DagsterEventType
+from dagster._core.instance import DagsterInstance
 from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.storage.tags import DOCKER_IMAGE_TAG
 from dagster._utils.merger import deep_merge_dicts, merge_dicts
@@ -98,7 +100,7 @@ def test_k8s_run_launcher_volume_mounts(
         run_config,
         dagster_instance_for_k8s_run_launcher,
         user_code_namespace_for_k8s_run_launcher,
-        pipeline_name="volume_mount_job_k8s",
+        job_name="volume_mount_job_k8s",
         num_steps=1,
     )
 
@@ -206,14 +208,14 @@ def _get_step_execution_events(events):
 
 
 def _launch_executor_run(
-    dagit_url,
-    run_config,
-    dagster_instance_for_k8s_run_launcher,
-    user_code_namespace_for_k8s_run_launcher,
-    pipeline_name="demo_job_k8s",
-    num_steps=2,
+    dagit_url: str,
+    run_config: Mapping[str, Any],
+    dagster_instance_for_k8s_run_launcher: DagsterInstance,
+    user_code_namespace_for_k8s_run_launcher: str,
+    job_name: str = "demo_job_k8s",
+    num_steps: int = 2,
 ):
-    run_id = launch_run_over_graphql(dagit_url, run_config=run_config, job_name=pipeline_name)
+    run_id = launch_run_over_graphql(dagit_url, run_config=run_config, job_name=job_name)
 
     result = wait_for_job_and_get_raw_logs(
         job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
@@ -378,7 +380,7 @@ def test_k8s_executor_resource_requirements(
 
 
 @pytest.mark.integration
-def test_execute_on_k8s_retry_pipeline(
+def test_execute_on_k8s_retry_job(
     dagster_instance_for_k8s_run_launcher,
     user_code_namespace_for_k8s_run_launcher,
     dagster_docker_image,
