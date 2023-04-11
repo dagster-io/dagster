@@ -35,8 +35,12 @@ from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.types.dagster_type import resolve_dagster_type
 from dagster._core.utils import make_new_run_id
 from dagster_azure.adls2 import create_adls2_client
-from dagster_azure.adls2.fake_adls2_resource import fake_adls2_resource
-from dagster_azure.adls2.io_manager import PickledObjectADLS2IOManager, adls2_pickle_io_manager
+from dagster_azure.adls2.fake_adls2_resource import FakeADLS2Resource, fake_adls2_resource
+from dagster_azure.adls2.io_manager import (
+    PickledObjectADLS2IOManager,
+    PickledObjectADLS2IOManagerResource,
+    adls2_pickle_io_manager,
+)
 from dagster_azure.adls2.resources import adls2_resource
 from dagster_azure.blob import create_blob_client
 from upath import UPath
@@ -349,6 +353,34 @@ def test_nothing():
                     {"adls2_file_system": "fake_file_system"}
                 ),
                 "adls2": fake_adls2_resource.configured({"account_name": "my_account"}),
+            },
+        )
+    )
+
+    handled_output_events = list(filter(lambda evt: evt.is_handled_output, result.all_node_events))
+    assert len(handled_output_events) == 2
+
+    for event in handled_output_events:
+        assert len(event.event_specific_data.metadata) == 0
+
+
+def test_nothing_pythonic() -> None:
+    @asset
+    def asset1() -> None:
+        ...
+
+    @asset(non_argument_deps={"asset1"})
+    def asset2() -> None:
+        ...
+
+    result = materialize(
+        with_resources(
+            [asset1, asset2],
+            resource_defs={
+                "io_manager": PickledObjectADLS2IOManagerResource(
+                    adls2=FakeADLS2Resource(account_name="my_account"),  # type: ignore[arg-type]
+                    adls2_file_system="fake_file_system",
+                )
             },
         )
     )

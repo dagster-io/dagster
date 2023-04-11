@@ -9,9 +9,15 @@ from .file_manager import (
 )
 from .io_manager import (
     PickledObjectADLS2IOManager as PickledObjectADLS2IOManager,
+    PickledObjectADLS2IOManagerResource as PickledObjectADLS2IOManagerResource,
     adls2_pickle_io_manager as adls2_pickle_io_manager,
 )
 from .resources import (
+    ADLS2DefaultAzureCredential as ADLS2DefaultAzureCredential,
+    ADLS2FileManager as ADLS2FileManager,
+    ADLS2Key as ADLS2Key,
+    ADLS2Resource as ADLS2Resource,
+    ADLS2SASToken as ADLS2SASToken,
     adls2_file_manager as adls2_file_manager,
     adls2_resource as adls2_resource,
 )
