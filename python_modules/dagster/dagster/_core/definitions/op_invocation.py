@@ -43,7 +43,7 @@ class SeparatedArgsKwargs(NamedTuple):
     input_args: Tuple[Any, ...]
     input_kwargs: Dict[str, Any]
     resources_by_param_name: Dict[str, Any]
-    config_input: Any
+    config_arg: Any
 
 
 def _separate_args_and_kwargs(
@@ -59,7 +59,7 @@ def _separate_args_and_kwargs(
     We use the remaining args and kwargs to cleanly invoke the compute function, and we use the
     extracted resource inputs to populate the execution context.
     """
-    resource_inputs_from_args_and_kwargs = {}
+    resources_from_args_and_kwargs = {}
     params = get_function_params(compute_fn.decorated_fn)
 
     adjusted_args = []
@@ -73,7 +73,7 @@ def _separate_args_and_kwargs(
         param = params_without_context[i] if i < len(params_without_context) else None
         if param and param.kind != inspect.Parameter.KEYWORD_ONLY:
             if param.name in resource_arg_mapping:
-                resource_inputs_from_args_and_kwargs[param.name] = arg
+                resources_from_args_and_kwargs[param.name] = arg
                 continue
             if param.name == "config":
                 config_input = arg
@@ -84,19 +84,17 @@ def _separate_args_and_kwargs(
     # Get any kwargs that correspond to resource inputs & strip them from the kwargs dict
     for resource_arg in resource_arg_mapping:
         if resource_arg in kwargs:
-            resource_inputs_from_args_and_kwargs[resource_arg] = kwargs[resource_arg]
+            resources_from_args_and_kwargs[resource_arg] = kwargs[resource_arg]
 
     adjusted_kwargs = {
-        k: v
-        for k, v in kwargs.items()
-        if k not in resource_inputs_from_args_and_kwargs and k != "config"
+        k: v for k, v in kwargs.items() if k not in resources_from_args_and_kwargs and k != "config"
     }
 
     return SeparatedArgsKwargs(
         input_args=tuple(adjusted_args),
         input_kwargs=adjusted_kwargs,
-        resources_by_param_name=resource_inputs_from_args_and_kwargs,
-        config_input=config_input, 
+        resources_by_param_name=resources_from_args_and_kwargs,
+        config_arg=config_input,
     )
 
 
@@ -144,7 +142,7 @@ def op_invocation_result(
     input_args = extracted.input_args
     input_kwargs = extracted.input_kwargs
     resources_by_param_name = extracted.resources_by_param_name
-    config_input = extracted.config_input
+    config_input = extracted.config_arg
 
     resources_provided_in_multiple_places = resources_by_param_name and context.resource_keys
     if resources_provided_in_multiple_places:
@@ -159,9 +157,11 @@ def op_invocation_result(
     if config_input:
         from dagster._config.structured_config import Config
 
-        if isinstance(config_input, Config):
-            config_input = config_input._as_config_dict()  # noqa: SLF001
-        context = context.replace_config(config_input)
+        context = context.replace_config(
+            config_input._as_config_dict()  # noqa: SLF001
+            if isinstance(config_input, Config)
+            else config_input
+        )
 
     _check_invocation_requirements(op_def, context)
 
