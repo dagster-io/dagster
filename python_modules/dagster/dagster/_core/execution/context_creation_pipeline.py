@@ -377,10 +377,8 @@ class PlanExecutionContextManager(ExecutionContextManager[PlanExecutionContext])
 
 
 # perform any plan validation that is dependent on access to the pipeline context
-def _validate_plan_with_context(
-    pipeline_context: IPlanContext, execution_plan: ExecutionPlan
-) -> None:
-    validate_reexecution_memoization(pipeline_context, execution_plan)
+def _validate_plan_with_context(job_context: IPlanContext, execution_plan: ExecutionPlan) -> None:
+    validate_reexecution_memoization(job_context, execution_plan)
 
 
 def create_executor(context_creation_data: ContextCreationData) -> "Executor":
