@@ -371,7 +371,7 @@ def grpc_server_bar_cli_args(instance, job_name=None):
 @contextmanager
 def grpc_server_bar_pipeline_args():
     with default_cli_test_instance() as instance:
-        with grpc_server_bar_kwargs(instance, pipeline_name="foo") as kwargs:
+        with grpc_server_bar_kwargs(instance, job_name="foo") as kwargs:
             yield kwargs, instance
 
 
