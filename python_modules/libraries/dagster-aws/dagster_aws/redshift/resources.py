@@ -6,14 +6,12 @@ from typing import Any, Dict, Optional, cast
 import psycopg2
 import psycopg2.extensions
 from dagster import (
+    ConfigurableResource,
     _check as check,
     get_dagster_logger,
     resource,
 )
 from dagster._annotations import deprecated
-from dagster._config.structured_config import (
-    ConfigurableResource,
-)
 from pydantic import Field
 
 

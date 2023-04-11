@@ -2,8 +2,7 @@ import datetime
 
 import boto3
 from botocore.stub import Stubber
-from dagster import resource
-from dagster._config.structured_config import ConfigurableResource
+from dagster import ConfigurableResource, resource
 
 
 class ECRPublicClient:
