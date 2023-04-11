@@ -3,7 +3,6 @@ import {Body, Box, Caption, Colors, ConfigTypeSchema, Icon, Mono, Subheading} fr
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {useFeatureFlags} from '../app/Flags';
 import {ASSET_NODE_FRAGMENT} from '../asset-graph/AssetNode';
 import {
   displayNameForAssetKey,
@@ -41,7 +40,6 @@ export const AssetNodeDefinition: React.FC<{
   dependsOnSelf: boolean;
 }> = ({assetNode, upstream, downstream, liveDataByNode, dependsOnSelf}) => {
   const {assetMetadata, assetType} = metadataForAssetNode(assetNode);
-  const {flagSidebarResources} = useFeatureFlags();
   const liveDataForNode = liveDataByNode[toGraphId(assetNode.assetKey)];
 
   const assetConfigSchema = assetNode.configField?.configType;
@@ -164,7 +162,7 @@ export const AssetNodeDefinition: React.FC<{
                   {assetNode.requiredResources.map((resource) => (
                     <ResourceContainer key={resource.resourceKey}>
                       <Icon name="resource" color={Colors.Gray700} />
-                      {flagSidebarResources && repoAddress ? (
+                      {repoAddress ? (
                         <Link
                           to={workspacePathFromAddress(
                             repoAddress,
