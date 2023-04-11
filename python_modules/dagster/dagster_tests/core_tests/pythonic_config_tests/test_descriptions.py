@@ -1,6 +1,6 @@
 from dagster import op
 from dagster._config.config_type import ConfigTypeKind
-from dagster._config.structured_config import Config
+from dagster._config.pythonic_config import Config
 from pydantic import Field
 from typing_extensions import Annotated
 

@@ -5,7 +5,7 @@ from typing import Optional
 import jwt
 import requests
 from dagster import resource
-from dagster._config.structured_config import (
+from dagster._config.pythonic_config import (
     ConfigurableResourceFactory,
     InitResourceContextWithKeyMapping,
     infer_schema_from_config_class,

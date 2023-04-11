@@ -1,6 +1,6 @@
 import pytest
 from dagster import job, op
-from dagster._config.structured_config import Config
+from dagster._config.pythonic_config import Config
 from pydantic import ValidationError, validator
 
 

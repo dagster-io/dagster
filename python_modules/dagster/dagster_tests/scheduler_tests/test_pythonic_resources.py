@@ -12,7 +12,7 @@ from dagster import (
     resource,
     schedule,
 )
-from dagster._config.structured_config import ConfigurableResource
+from dagster._config.pythonic_config import ConfigurableResource
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.repository_definition.valid_definitions import (
     SINGLETON_REPOSITORY_NAME,

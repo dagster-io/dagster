@@ -24,7 +24,7 @@ from dagster import (
 from dagster._check import CheckError
 from dagster._config.field import Field
 from dagster._config.field_utils import EnvVar
-from dagster._config.structured_config import (
+from dagster._config.pythonic_config import (
     Config,
     ConfigurableIOManager,
     ConfigurableIOManagerFactory,
@@ -910,7 +910,7 @@ def test_type_signatures_constructor_nested_resource():
         with open(filename, "w") as f:
             f.write(
                 """
-from dagster._config.structured_config import ConfigurableResource
+from dagster import ConfigurableResource
 
 class InnerResource(ConfigurableResource):
     a_string: str
@@ -951,7 +951,7 @@ def test_type_signatures_config_at_launch():
         with open(filename, "w") as f:
             f.write(
                 """
-from dagster._config.structured_config import ConfigurableResource
+from dagster import ConfigurableResource
 
 class MyResource(ConfigurableResource):
     a_string: str
@@ -976,7 +976,7 @@ def test_type_signatures_constructor_resource_dependency():
         with open(filename, "w") as f:
             f.write(
                 """
-from dagster._config.structured_config import ConfigurableResource, ResourceDependency
+from dagster import ConfigurableResource, ResourceDependency
 
 class StringDependentResource(ConfigurableResource):
     a_string: ResourceDependency[str]
@@ -1012,7 +1012,7 @@ def test_type_signatures_alias():
         with open(filename, "w") as f:
             f.write(
                 """
-from dagster._config.structured_config import ConfigurableResource
+from dagster import ConfigurableResource
 from pydantic import Field
 
 class ResourceWithAlias(ConfigurableResource):

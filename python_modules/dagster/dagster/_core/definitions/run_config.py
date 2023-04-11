@@ -25,7 +25,7 @@ from dagster._config import (
     Selector,
     Shape,
 )
-from dagster._config.structured_config import Config
+from dagster._config.pythonic_config import Config
 from dagster._core.definitions.asset_layer import AssetLayer
 from dagster._core.definitions.executor_definition import (
     ExecutorDefinition,

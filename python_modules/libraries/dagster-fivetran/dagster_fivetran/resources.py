@@ -15,7 +15,7 @@ from dagster import (
     get_dagster_logger,
     resource,
 )
-from dagster._config.structured_config import ConfigurableResource
+from dagster._config.pythonic_config import ConfigurableResource
 from dagster._utils.cached_method import cached_method
 from dateutil import parser
 from pydantic import Field

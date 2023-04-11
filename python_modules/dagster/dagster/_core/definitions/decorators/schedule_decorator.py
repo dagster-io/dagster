@@ -101,7 +101,7 @@ def schedule(
     """
 
     def inner(fn: RawScheduleEvaluationFunction) -> ScheduleDefinition:
-        from dagster._config.structured_config import validate_resource_annotated_function
+        from dagster._config.pythonic_config import validate_resource_annotated_function
 
         check.callable_param(fn, "fn")
         validate_resource_annotated_function(fn)
