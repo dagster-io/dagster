@@ -226,3 +226,14 @@ class ExternalAssetGraph(AssetGraph):
             if all(asset_key in self._asset_keys_by_job_name[job_name] for asset_key in asset_keys):
                 return job_name
         return None
+
+    def split_asset_keys_by_repository(
+        self, asset_keys: AbstractSet[AssetKey]
+    ) -> Sequence[AbstractSet[AssetKey]]:
+        asset_keys_by_repo = defaultdict(set)
+        for asset_key in asset_keys:
+            repo_handle = self.get_repository_handle(asset_key)
+            asset_keys_by_repo[(repo_handle.location_name, repo_handle.repository_name)].add(
+                asset_key
+            )
+        return list(asset_keys_by_repo.values())

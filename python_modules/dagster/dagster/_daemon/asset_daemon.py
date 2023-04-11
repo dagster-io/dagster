@@ -4,15 +4,22 @@ from dagster._core.definitions.asset_reconciliation_sensor import (
     reconcile,
 )
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+from dagster._core.definitions.mode import DEFAULT_MODE_NAME
 from dagster._core.definitions.selector import PipelineSelector
 from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.tags import CREATED_BY_TAG
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._daemon.daemon import DaemonIterator, IntervalDaemon
 
-CURSOR_NAME = "ASSET_RECONCILIATION_DAEMON_CURSOR"
+CURSOR_NAME = "ASSET_DAEMON_CURSOR"
+
+ASSET_DAEMON_INTERVAL_SECONDS = 30
 
 
-class AutoMaterializeDaemon(IntervalDaemon):
+class AssetDaemon(IntervalDaemon):
+    def __init__(self):
+        super().__init__(interval_seconds=ASSET_DAEMON_INTERVAL_SECONDS)
+
     @classmethod
     def daemon_type(cls) -> str:
         return "ASSET"
@@ -21,8 +28,6 @@ class AutoMaterializeDaemon(IntervalDaemon):
         self,
         workspace_process_context: IWorkspaceProcessContext,
     ) -> DaemonIterator:
-        yield
-
         instance = workspace_process_context.instance
         workspace = workspace_process_context.create_request_context()
         asset_graph = ExternalAssetGraph.from_workspace(workspace)
@@ -34,6 +39,7 @@ class AutoMaterializeDaemon(IntervalDaemon):
         }
 
         if not target_asset_keys:
+            yield
             return
 
         raw_cursor = instance.run_storage.kvs_get({CURSOR_NAME}).get(CURSOR_NAME)
@@ -52,6 +58,8 @@ class AutoMaterializeDaemon(IntervalDaemon):
         )
 
         for run_request in run_requests:
+            yield
+
             asset_keys = check.not_none(run_request.asset_selection)
             check.invariant(len(asset_keys) > 0)
 
@@ -76,18 +84,23 @@ class AutoMaterializeDaemon(IntervalDaemon):
                 )
             )
 
+            tags = {
+                **run_request.tags,
+                CREATED_BY_TAG: "auto_materialize",
+            }
+
             run = instance.create_run(
                 pipeline_name=external_pipeline.name,
                 run_id=None,
-                run_config={"execution": {"config": {"in_process": {}}}},
-                mode=None,
+                run_config=None,
+                mode=DEFAULT_MODE_NAME,
                 solids_to_execute=None,
                 step_keys_to_execute=None,
                 status=DagsterRunStatus.NOT_STARTED,
                 solid_selection=None,
                 root_run_id=None,
                 parent_run_id=None,
-                tags=run_request.tags,
+                tags=tags,
                 pipeline_snapshot=external_pipeline.pipeline_snapshot,
                 execution_plan_snapshot=None,
                 parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,

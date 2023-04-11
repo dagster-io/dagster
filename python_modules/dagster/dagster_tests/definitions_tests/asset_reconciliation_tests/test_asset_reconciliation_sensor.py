@@ -25,7 +25,7 @@ from .scenarios import ASSET_RECONCILIATION_SCENARIOS
 )
 def test_reconciliation(scenario):
     instance = DagsterInstance.ephemeral()
-    run_requests, _ = scenario.do_scenario(instance)
+    run_requests, _ = scenario.do_sensor_scenario(instance)
 
     assert len(run_requests) == len(scenario.expected_run_requests)
 
@@ -52,7 +52,7 @@ def test_reconciliation_no_tags(scenario):
     # simulates an environment where asset_event_tags cannot be added
     instance = DagsterInstance.ephemeral()
 
-    run_requests, _ = scenario.do_scenario(instance)
+    run_requests, _ = scenario.do_sensor_scenario(instance)
 
     assert len(run_requests) == len(scenario.expected_run_requests)
 
@@ -120,5 +120,5 @@ def test_bad_partition_key():
     scenario = AssetReconciliationScenario(
         assets=assets, unevaluated_runs=[], asset_selection=AssetSelection.keys("hourly2")
     )
-    run_requests, _ = scenario.do_scenario(instance)
+    run_requests, _ = scenario.do_sensor_scenario(instance)
     assert len(run_requests) == 0

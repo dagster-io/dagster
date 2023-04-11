@@ -4,6 +4,7 @@ from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 
 from .auto_materialize_policy_scenarios import auto_materialize_policy_scenarios
+from .multi_code_location_scenarios import multi_code_location_scenarios
 from .scenarios import ASSET_RECONCILIATION_SCENARIOS
 
 
@@ -15,7 +16,7 @@ from .scenarios import ASSET_RECONCILIATION_SCENARIOS
 def test_reconcile_with_external_asset_graph(scenario_item):
     scenario_name, scenario = scenario_item
     instance = DagsterInstance.ephemeral()
-    run_requests, _ = scenario.do_scenario(
+    run_requests, _ = scenario.do_sensor_scenario(
         instance, scenario_name=scenario_name, with_external_asset_graph=True
     )
 
@@ -34,10 +35,13 @@ def test_reconcile_with_external_asset_graph(scenario_item):
         assert run_request.partition_key == expected_run_request.partition_key
 
 
+daemon_scenarios = {**auto_materialize_policy_scenarios, **multi_code_location_scenarios}
+
+
 @pytest.mark.parametrize(
     "scenario_item",
-    list(auto_materialize_policy_scenarios.items()),
-    ids=list(auto_materialize_policy_scenarios.keys()),
+    list(daemon_scenarios.items()),
+    ids=list(daemon_scenarios.keys()),
 )
 def test_daemon(scenario_item):
     scenario_name, scenario = scenario_item
