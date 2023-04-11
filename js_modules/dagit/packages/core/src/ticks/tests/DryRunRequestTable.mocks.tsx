@@ -1,269 +1,238 @@
+import {buildInstigationState, buildPipeline, buildSchedule} from '../../graphql/types';
+
 export const mockRepository = {
   repository: {
     __typename: 'Repository',
     id: '343870956dd1f7d356e4ea564a099f360cf330b4',
     name: 'toys_repository',
     pipelines: [
-      {
-        __typename: 'Pipeline',
+      buildPipeline({
         id: '04c9d0aa6ac1191a86a1a456010c78d722b1eb4e',
         name: '__ASSET_JOB',
         isJob: true,
         isAssetJob: true,
         pipelineSnapshotId: '49ff60a4dbadd5bcebbd618a227714c055c74e9b',
-      },
-      {
-        __typename: 'Pipeline',
+      }),
+      buildPipeline({
         id: 'f4e9f4d98ce371b60135a923188cf70eba2ae767',
         name: 'branch',
         isJob: true,
         isAssetJob: false,
         pipelineSnapshotId: '568373150c336232cc6381746e72b50c70007f00',
-      },
-      {
-        __typename: 'Pipeline',
+      }),
+      buildPipeline({
         id: '4a70048bb58120d78ccb5c07dd1a33199c92638f',
         name: 'branch_failed',
         isJob: true,
         isAssetJob: false,
         pipelineSnapshotId: '2f3b5a3e1ffa84624fd5f7c1391b7c1f0c52de88',
-      },
-      {
-        __typename: 'Pipeline',
+      }),
+      buildPipeline({
         id: '964a67440359e7aa3e634d3507ee6244632bec56',
         name: 'composition',
         isJob: true,
         isAssetJob: false,
         pipelineSnapshotId: '9ff0cd43202505f55ceae233f6d32f589382195f',
-      },
-      {
-        __typename: 'Pipeline',
+      }),
+      buildPipeline({
         id: 'ee37cb819efe9239c8c3f923dad048131f4918b9',
         name: 'df_stats_job',
         isJob: true,
         isAssetJob: false,
         pipelineSnapshotId: '6c78672ff3c920500d1a83758e1eb7be0cf8ec07',
-      },
-      {
-        __typename: 'Pipeline',
+      }),
+      buildPipeline({
         id: '6c3b1ca2f20418d443e07ec1d1f3c93a5ffd7ac3',
         name: 'dynamic',
         isJob: true,
         isAssetJob: false,
         pipelineSnapshotId: '9893b2d21b513fd8326d33cad5127f6ae610054f',
-      },
-      {
-        __typename: 'Pipeline',
+      }),
+      buildPipeline({
         id: '7ee2c407859ec47344b3234ecebb8720f1836fc6',
         name: 'error_monster_failing_job',
         isJob: true,
         isAssetJob: false,
         pipelineSnapshotId: '650a0b1d2e615b18783880feac67816b441276b5',
-      },
-      {
-        __typename: 'Pipeline',
+      }),
+      buildPipeline({
         id: '9cd2bc8439964b05d33a719e8bc54e99309f52b5',
         name: 'error_monster_passing_job',
         isJob: true,
         isAssetJob: false,
         pipelineSnapshotId: '58587ba9860b5803be0b3ee94dc0b5bcfdf6e8d9',
-      },
-      {
-        __typename: 'Pipeline',
+      }),
+      buildPipeline({
         id: 'ba49d6d36a6494fe2f288d03d62d72492ac6808d',
         name: 'fails_job',
         isJob: true,
         isAssetJob: false,
         pipelineSnapshotId: 'd48cdd81c79e197856b7886737b0f44a804079dc',
-      },
-      {
-        __typename: 'Pipeline',
+      }),
+      buildPipeline({
         id: '2b6ab2ee559733aaf5a7ec6f4345ff4cd3aafcc0',
         name: 'hammer',
         isJob: true,
         isAssetJob: false,
         pipelineSnapshotId: '97bc0aff9f3f33f18442eb568d0c4895f42780e2',
-      },
-      {
-        __typename: 'Pipeline',
+      }),
+      buildPipeline({
         id: 'c624b82351920833a77e64772685efabf87b849e',
         name: 'hello_world_notebook_pipeline',
         isJob: false,
         isAssetJob: false,
         pipelineSnapshotId: '2bf5e7b9bdafe93423c0090a928e0240a80fe1ff',
-      },
-      {
-        __typename: 'Pipeline',
+      }),
+      buildPipeline({
         id: '5733e8d0f44dc830ebb4b2708ca3b040d8d89bf3',
         name: 'log_asset',
         isJob: true,
         isAssetJob: false,
         pipelineSnapshotId: 'e81d385c707872156b764ee8457ea59fff6dc5ea',
-      },
-      {
-        __typename: 'Pipeline',
+      }),
+      buildPipeline({
         id: '7f04867edd33611ebf73257aaaed60de47572720',
         name: 'log_file',
         isJob: true,
         isAssetJob: false,
         pipelineSnapshotId: '308942bb930c4c1955abaf3187f2a4eaf9c747c8',
-      },
-      {
-        __typename: 'Pipeline',
+      }),
+      buildPipeline({
         id: '4f45dfe35920b54ad1dab69e18007fd9e8b16bc5',
         name: 'log_s3',
         isJob: true,
         isAssetJob: false,
         pipelineSnapshotId: '7acb7d5376ce3139998cd3d1c30ee84c6dd081d2',
-      },
-      {
-        __typename: 'Pipeline',
+      }),
+      buildPipeline({
         id: 'f67e4358eb8ce761017115f3bd3cc0661460ad51',
         name: 'log_spew',
         isJob: true,
         isAssetJob: false,
         pipelineSnapshotId: '759bbe468087f037941ea09e315da56c0e2ffc2e',
-      },
-      {
-        __typename: 'Pipeline',
+      }),
+      buildPipeline({
         id: 'd80b7a96edb0789aa4416f7585387b1485b287c2',
         name: 'longitudinal',
         isJob: true,
         isAssetJob: false,
         pipelineSnapshotId: 'cb0c0e842f2d2ae9d29aa96bfb398485e63aeb50',
-      },
-      {
-        __typename: 'Pipeline',
+      }),
+      buildPipeline({
         id: '7ef931fd50f680dfc377e78cd2ca69eac7e37c4f',
         name: 'longitudinal_no_schedule',
         isJob: true,
         isAssetJob: false,
         pipelineSnapshotId: 'f2e554fe22525db4dcec5ff581bb24cc3b0a025f',
-      },
-      {
-        __typename: 'Pipeline',
+      }),
+      buildPipeline({
         id: 'c42481e60f0ffb1a1751bf289887b3999849cc17',
         name: 'many_events',
         isJob: true,
         isAssetJob: false,
         pipelineSnapshotId: '35dc52a2d49542472a029e4021237d6b0164fe73',
-      },
-      {
-        __typename: 'Pipeline',
+      }),
+      buildPipeline({
         id: 'a8730a18921e74d9eda86146115fee7373f5273f',
         name: 'many_events_daily',
         isJob: true,
         isAssetJob: false,
         pipelineSnapshotId: '025f0588188b15a2b0a83938b80bb2005c01766a',
-      },
-      {
-        __typename: 'Pipeline',
+      }),
+      buildPipeline({
         id: '189ff40e257421fb3e89f40d682a422588366786',
         name: 'many_events_hourly',
         isJob: true,
         isAssetJob: false,
         pipelineSnapshotId: '389bc7201770934b4d588ce0da521fe99a5c3001',
-      },
-      {
-        __typename: 'Pipeline',
+      }),
+      buildPipeline({
         id: 'faae1720f15a9f91710aba619dea43900d9c1f53',
         name: 'many_events_monthly',
         isJob: true,
         isAssetJob: false,
         pipelineSnapshotId: 'e17a9e445209d8a70b7809eff980e9eed327111f',
-      },
-      {
-        __typename: 'Pipeline',
+      }),
+      buildPipeline({
         id: 'aba1482a323c4649725e8fe18a089c943fd1c41e',
         name: 'many_events_subset_job',
         isJob: true,
         isAssetJob: false,
         pipelineSnapshotId: '3810bb1dba8be9abf8dc4eec5193f6ae27e12cc3',
-      },
-      {
-        __typename: 'Pipeline',
+      }),
+      buildPipeline({
         id: '2ab3620a41d9f88c64d0c4d8456d0972a394de89',
         name: 'many_events_weekly',
         isJob: true,
         isAssetJob: false,
         pipelineSnapshotId: 'b0fe6a1258dd83616b0289cd9c9ff4cd28c6f98a',
-      },
-      {
-        __typename: 'Pipeline',
+      }),
+      buildPipeline({
         id: '2a8313af150af2c7081e0ccfa0569de8bd91f812',
         name: 'model',
         isJob: true,
         isAssetJob: false,
         pipelineSnapshotId: '97b7dbfb6f9f2fd456048d30489742c3e9368c2b',
-      },
-      {
-        __typename: 'Pipeline',
+      }),
+      buildPipeline({
         id: 'ec4cef2efc3a587d386994a6ea195be517c65955',
         name: 'multi_inputs_outputs',
         isJob: true,
         isAssetJob: false,
         pipelineSnapshotId: 'a010ab79823c2ea9f8226735c72dcabdc24b0092',
-      },
-      {
-        __typename: 'Pipeline',
+      }),
+      buildPipeline({
         id: '06acd7cee1f9dd1b5932fd4cf2452a2ff1097d3a',
         name: 'retry',
         isJob: true,
         isAssetJob: false,
         pipelineSnapshotId: '1930376b96846ce7a7b25c871c813d7b42aaafa9',
-      },
-      {
-        __typename: 'Pipeline',
+      }),
+      buildPipeline({
         id: 'e0efa1835695902fc2c1b73cde61eeec2d1b872c',
         name: 'sleepy',
         isJob: true,
         isAssetJob: false,
         pipelineSnapshotId: '383333ddaa0317ee4ff17a3099892602c748ee40',
-      },
-      {
-        __typename: 'Pipeline',
+      }),
+      buildPipeline({
         id: 'd7f5fd2cc24dc0a293cfa9e08c906b1412b1e08b',
         name: 'status_job',
         isJob: true,
         isAssetJob: false,
         pipelineSnapshotId: 'ae480898abd9d299baa5fdbc517e75196b7c365e',
-      },
-      {
-        __typename: 'Pipeline',
+      }),
+      buildPipeline({
         id: '15eb549832b9c7548a636efda293afffd2dec98d',
         name: 'succeeds_job',
         isJob: true,
         isAssetJob: false,
         pipelineSnapshotId: '6398711483a448398bce2b84f1ed3d9426bac5f7',
-      },
-      {
-        __typename: 'Pipeline',
+      }),
+      buildPipeline({
         id: '426045161087b5e8fcb574298120031f9d123270',
         name: 'unreliable',
         isJob: true,
         isAssetJob: false,
         pipelineSnapshotId: '20c150e1346acf5d286fbc422a3e4624a682eaa3',
-      },
-      {
-        __typename: 'Pipeline',
+      }),
+      buildPipeline({
         id: 'efd0f68c921f573196d1db585e0d6d5b8d521ba0',
         name: 'unreliable_job_no_schedule',
         isJob: true,
         isAssetJob: false,
         pipelineSnapshotId: 'e8ecf99043fe3cd028fe2e8aafcf43825f617c81',
-      },
-      {
-        __typename: 'Pipeline',
+      }),
+      buildPipeline({
         id: 'ab37f9702c04cb8994b1049fbfab01bb2b9aa632',
         name: 'with_metadata',
         isJob: true,
         isAssetJob: false,
         pipelineSnapshotId: '65e8ff34807bfa135eed94521674788646548cf2',
-      },
+      }),
     ],
     schedules: [
-      {
-        __typename: 'Schedule',
+      buildSchedule({
         id: 'dd62db7c3796270bd1a7df9f66669cb7d705d753',
         cronSchedule: '0 0 * * *',
         executionTimezone: 'US/Pacific',
@@ -276,9 +245,8 @@ export const mockRepository = {
           selectorId: '961c5e90078ffcc98f80bfff921d224d9372584c',
           status: 'RUNNING',
         },
-      },
-      {
-        __typename: 'Schedule',
+      }),
+      buildSchedule({
         id: '7dd25324a1b300bc1d708ec0601fa04db4a3193f',
         cronSchedule: '0 0 * * *',
         executionTimezone: 'US/Pacific',
@@ -291,24 +259,21 @@ export const mockRepository = {
           selectorId: 'dd67d4f142832380879652783bbde38582ba3f18',
           status: 'RUNNING',
         },
-      },
-      {
-        __typename: 'Schedule',
+      }),
+      buildSchedule({
         id: 'a50b45795084a665a749a82261321ed4b78de261',
         cronSchedule: '0 * * * *',
         executionTimezone: 'US/Pacific',
         mode: 'default',
         name: 'many_events_hourly_schedule',
         pipelineName: 'many_events_hourly',
-        scheduleState: {
-          __typename: 'InstigationState',
+        scheduleState: buildInstigationState({
           id: '12cde9267c6b0b9d797a14dbae5ac377e43deea9',
           selectorId: 'c9289ad3243f0afdd28b9d4f4d8ac583a80d9b5c',
           status: 'RUNNING',
-        },
-      },
-      {
-        __typename: 'Schedule',
+        }),
+      }),
+      buildSchedule({
         id: 'bb0f48e0cb32866888e85334b8f3b158282bd530',
         cronSchedule: '0 0 1 * *',
         executionTimezone: 'US/Pacific',
@@ -321,9 +286,8 @@ export const mockRepository = {
           selectorId: '333126d759b37be434cb4365fd449570e363a2ae',
           status: 'RUNNING',
         },
-      },
-      {
-        __typename: 'Schedule',
+      }),
+      buildSchedule({
         id: '56c794dbf06f169acb4b0a5b9737e20710c39dd3',
         cronSchedule: '0 0 * * 0',
         executionTimezone: 'US/Pacific',
@@ -336,9 +300,8 @@ export const mockRepository = {
           selectorId: 'de0b0739480731543bd5705e7d150e51a318287e',
           status: 'RUNNING',
         },
-      },
-      {
-        __typename: 'Schedule',
+      }),
+      buildSchedule({
         id: '9c4fc8b26e7b514d2ceb40c91efb37fca7914cf3',
         cronSchedule: '0 0 * * 0',
         executionTimezone: 'US/Pacific',
@@ -351,7 +314,7 @@ export const mockRepository = {
           selectorId: '017d8fa0e5b6a759105830b7dbfab1f27f4501c2',
           status: 'RUNNING',
         },
-      },
+      }),
     ],
     sensors: [
       {
