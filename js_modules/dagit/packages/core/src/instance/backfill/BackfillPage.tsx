@@ -60,7 +60,7 @@ export const BackfillPage = () => {
   useQueryRefreshAtInterval(queryResult, 5000, isInProgress);
 
   function content() {
-    if (!backfill || loading) {
+    if (!backfill || !data) {
       return (
         <Box padding={64} data-testid={testId('page-loading-indicator')}>
           <Spinner purpose="page" />
