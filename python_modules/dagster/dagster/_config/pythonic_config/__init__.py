@@ -607,7 +607,7 @@ class ConfigurableResourceFactory(
                 return MyResource.from_resource_context(context)
 
         """
-        return cls(**context.resource_config).create_resource(context)
+        return cls(**context.resource_config or {}).create_resource(context)
 
 
 @experimental
