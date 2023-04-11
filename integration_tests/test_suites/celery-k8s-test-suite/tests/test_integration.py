@@ -70,7 +70,7 @@ def test_execute_on_celery_k8s_default(
     )
 
     run_id = launch_run_over_graphql(
-        dagit_url, run_config=run_config, pipeline_name="demo_job_celery_k8s"
+        dagit_url, run_config=run_config, job_name="demo_job_celery_k8s"
     )
 
     result = wait_for_job_and_get_raw_logs(
@@ -100,7 +100,7 @@ def test_execute_on_celery_k8s_job_api(
     )
 
     run_id = launch_run_over_graphql(
-        dagit_url, run_config=run_config, pipeline_name="demo_job_celery_k8s"
+        dagit_url, run_config=run_config, job_name="demo_job_celery_k8s"
     )
 
     result = wait_for_job_and_get_raw_logs(
@@ -134,7 +134,7 @@ def test_execute_on_celery_k8s_job_api_with_legacy_configmap_set(
     )
 
     run_id = launch_run_over_graphql(
-        dagit_url, run_config=run_config, pipeline_name="demo_job_celery_k8s"
+        dagit_url, run_config=run_config, job_name="demo_job_celery_k8s"
     )
 
     result = wait_for_job_and_get_raw_logs(
@@ -163,7 +163,7 @@ def test_execute_on_celery_k8s_image_from_origin(
     )
 
     run_id = launch_run_over_graphql(
-        dagit_url, run_config=run_config, pipeline_name="demo_job_celery_k8s"
+        dagit_url, run_config=run_config, job_name="demo_job_celery_k8s"
     )
 
     result = wait_for_job_and_get_raw_logs(
@@ -192,7 +192,7 @@ def test_execute_subset_on_celery_k8s(dagster_docker_image, helm_namespace, dagi
     run_id = launch_run_over_graphql(
         dagit_url,
         run_config=run_config,
-        pipeline_name="demo_job_celery_k8s",
+        job_name="demo_job_celery_k8s",
         solid_selection=["count_letters"],
     )
 
@@ -214,7 +214,7 @@ def test_execute_on_celery_k8s_retry_pipeline(
     )
 
     run_id = launch_run_over_graphql(
-        dagit_url, run_config=run_config, pipeline_name="retry_job_celery_k8s"
+        dagit_url, run_config=run_config, job_name="retry_job_celery_k8s"
     )
 
     result = wait_for_job_and_get_raw_logs(
@@ -266,7 +266,7 @@ def test_execute_on_celery_k8s_with_resource_requirements(
     )
 
     run_id = launch_run_over_graphql(
-        dagit_url, run_config=run_config, pipeline_name="resources_limit_job_celery_k8s"
+        dagit_url, run_config=run_config, job_name="resources_limit_job_celery_k8s"
     )
 
     result = wait_for_job_and_get_raw_logs(
@@ -278,7 +278,7 @@ def test_execute_on_celery_k8s_with_resource_requirements(
 
 def _test_termination(dagit_url, dagster_instance, run_config):
     run_id = launch_run_over_graphql(
-        dagit_url, run_config=run_config, pipeline_name="resource_job_celery_k8s"
+        dagit_url, run_config=run_config, job_name="resource_job_celery_k8s"
     )
 
     # Wait for pipeline run to start
@@ -439,7 +439,7 @@ def test_execute_on_celery_k8s_with_hard_failure(
     )
 
     run_id = launch_run_over_graphql(
-        dagit_url, run_config=run_config, pipeline_name="hard_failer_job_celery_k8s"
+        dagit_url, run_config=run_config, job_name="hard_failer_job_celery_k8s"
     )
 
     # Check that pipeline run is marked as failed
@@ -501,7 +501,7 @@ def test_memoization_on_celery_k8s(
             run_id = launch_run_over_graphql(
                 dagit_url,
                 run_config=run_config,
-                pipeline_name="memoization_job_celery_k8s",
+                job_name="memoization_job_celery_k8s",
             )
 
             result = wait_for_job_and_get_raw_logs(
@@ -538,7 +538,7 @@ def test_volume_mounts(dagster_docker_image, dagster_instance, helm_namespace, d
     run_id = launch_run_over_graphql(
         dagit_url,
         run_config=run_config,
-        pipeline_name="volume_mount_job_celery_k8s",
+        job_name="volume_mount_job_celery_k8s",
     )
 
     result = wait_for_job_and_get_raw_logs(

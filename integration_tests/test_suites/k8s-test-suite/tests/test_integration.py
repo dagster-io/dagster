@@ -41,7 +41,7 @@ def test_k8s_run_launcher_default(
     job_name = "demo_job"
 
     run_id = launch_run_over_graphql(
-        dagit_url_for_k8s_run_launcher, run_config=run_config, pipeline_name=job_name
+        dagit_url_for_k8s_run_launcher, run_config=run_config, job_name=job_name
     )
 
     result = wait_for_job_and_get_raw_logs(
@@ -91,7 +91,7 @@ def test_k8s_run_launcher_with_celery_executor_fails(
     job_name = "demo_job_celery_k8s"
 
     run_id = launch_run_over_graphql(
-        dagit_url_for_k8s_run_launcher, run_config=run_config, pipeline_name=job_name
+        dagit_url_for_k8s_run_launcher, run_config=run_config, job_name=job_name
     )
 
     timeout = datetime.timedelta(0, 120)
@@ -130,7 +130,7 @@ def test_failing_k8s_run_launcher(
     job_name = "always_fail_job"
 
     run_id = launch_run_over_graphql(
-        dagit_url_for_k8s_run_launcher, run_config=run_config, pipeline_name=job_name
+        dagit_url_for_k8s_run_launcher, run_config=run_config, job_name=job_name
     )
 
     result = wait_for_job_and_get_raw_logs(
@@ -157,7 +157,7 @@ def test_k8s_run_launcher_terminate(
     )
 
     run_id = launch_run_over_graphql(
-        dagit_url_for_k8s_run_launcher, run_config=run_config, pipeline_name=job_name
+        dagit_url_for_k8s_run_launcher, run_config=run_config, job_name=job_name
     )
 
     DagsterKubernetesClient.production_client().wait_for_job(
@@ -203,7 +203,7 @@ def test_k8s_run_launcher_secret_from_deployment(
     job_name = "demo_job"
 
     run_id = launch_run_over_graphql(
-        dagit_url_for_k8s_run_launcher, run_config=run_config, pipeline_name=job_name
+        dagit_url_for_k8s_run_launcher, run_config=run_config, job_name=job_name
     )
 
     result = wait_for_job_and_get_raw_logs(

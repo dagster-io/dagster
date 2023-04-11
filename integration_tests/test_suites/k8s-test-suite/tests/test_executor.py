@@ -213,7 +213,7 @@ def _launch_executor_run(
     pipeline_name="demo_job_k8s",
     num_steps=2,
 ):
-    run_id = launch_run_over_graphql(dagit_url, run_config=run_config, pipeline_name=pipeline_name)
+    run_id = launch_run_over_graphql(dagit_url, run_config=run_config, job_name=pipeline_name)
 
     result = wait_for_job_and_get_raw_logs(
         job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
@@ -260,7 +260,7 @@ def test_k8s_run_launcher_image_from_origin(
     job_name = "demo_job_k8s"
 
     run_id = launch_run_over_graphql(
-        dagit_url_for_k8s_run_launcher, run_config=run_config, pipeline_name=job_name
+        dagit_url_for_k8s_run_launcher, run_config=run_config, job_name=job_name
     )
 
     result = wait_for_job_and_get_raw_logs(
@@ -298,7 +298,7 @@ def test_k8s_run_launcher_terminate(
     run_id = launch_run_over_graphql(
         dagit_url_for_k8s_run_launcher,
         run_config=run_config,
-        pipeline_name=job_name,
+        job_name=job_name,
     )
 
     DagsterKubernetesClient.production_client().wait_for_job(
@@ -364,7 +364,7 @@ def test_k8s_executor_resource_requirements(
     run_id = launch_run_over_graphql(
         dagit_url_for_k8s_run_launcher,
         run_config=run_config,
-        pipeline_name=job_name,
+        job_name=job_name,
     )
 
     result = wait_for_job_and_get_raw_logs(
@@ -402,7 +402,7 @@ def test_execute_on_k8s_retry_pipeline(
     run_id = launch_run_over_graphql(
         dagit_url_for_k8s_run_launcher,
         run_config=run_config,
-        pipeline_name=job_name,
+        job_name=job_name,
     )
 
     result = wait_for_job_and_get_raw_logs(
@@ -468,7 +468,7 @@ def test_memoization_k8s_executor(
             run_id = launch_run_over_graphql(
                 dagit_url_for_k8s_run_launcher,
                 run_config=run_config,
-                pipeline_name=job_name,
+                job_name=job_name,
             )
 
             result = wait_for_job_and_get_raw_logs(
