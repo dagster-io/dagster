@@ -13,11 +13,11 @@ export const getVisibleFeatureFlagRows = () => [
     flagType: FeatureFlag.flagDisableWebsockets,
   },
   {
-    key: 'Experimental schedule/sensor logging view',
-    flagType: FeatureFlag.flagSensorScheduleLogging,
+    key: 'Display resources in sidebar',
+    flagType: FeatureFlag.flagSidebarResources,
   },
   {
-    key: 'Experimental resource view',
-    flagType: FeatureFlag.flagSidebarResources,
+    key: 'Experimental schedule/sensor logging view',
+    flagType: FeatureFlag.flagSensorScheduleLogging,
   },
 ];
