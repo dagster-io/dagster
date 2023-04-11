@@ -16,14 +16,14 @@ if TYPE_CHECKING:
 
 
 @capture_error
-def get_pipeline_snapshot_or_error_from_pipeline_selector(
-    graphene_info: ResolveInfo, pipeline_selector: JobSubsetSelector
+def get_job_snapshot_or_error_from_job_selector(
+    graphene_info: ResolveInfo, job_selector: JobSubsetSelector
 ) -> "GraphenePipelineSnapshot":
     from ..schema.pipelines.snapshot import GraphenePipelineSnapshot
 
-    check.inst_param(pipeline_selector, "pipeline_selector", JobSubsetSelector)
+    check.inst_param(job_selector, "pipeline_selector", JobSubsetSelector)
     return GraphenePipelineSnapshot(
-        get_full_external_pipeline_or_raise(graphene_info, pipeline_selector)
+        get_full_external_pipeline_or_raise(graphene_info, job_selector)
     )
 
 

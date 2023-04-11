@@ -41,8 +41,8 @@ from ...implementation.fetch_instigators import (
 )
 from ...implementation.fetch_partition_sets import get_partition_set, get_partition_sets_or_error
 from ...implementation.fetch_pipelines import (
+    get_job_snapshot_or_error_from_job_selector,
     get_pipeline_or_error,
-    get_pipeline_snapshot_or_error_from_pipeline_selector,
     get_pipeline_snapshot_or_error_from_snapshot_id,
 )
 from ...implementation.fetch_resources import (
@@ -501,9 +501,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
 
         if activePipelineSelector:
             pipeline_selector = pipeline_selector_from_graphql(activePipelineSelector)
-            return get_pipeline_snapshot_or_error_from_pipeline_selector(
-                graphene_info, pipeline_selector
-            )
+            return get_job_snapshot_or_error_from_job_selector(graphene_info, pipeline_selector)
         elif snapshotId:
             return get_pipeline_snapshot_or_error_from_snapshot_id(graphene_info, snapshotId)
         else:
