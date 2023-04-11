@@ -47,6 +47,14 @@ export type OverviewSchedulesQuery = {
                     id: string;
                     name: string;
                     description: string | null;
+                    scheduleState: {
+                      __typename: 'InstigationState';
+                      id: string;
+                      selectorId: string;
+                      status: Types.InstigationStatus;
+                      hasStartPermission: boolean;
+                      hasStopPermission: boolean;
+                    };
                   }>;
                 }>;
               }
