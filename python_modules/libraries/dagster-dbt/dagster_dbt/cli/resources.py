@@ -2,14 +2,12 @@ from typing import Any, Iterator, Mapping, Optional, Sequence, Set
 
 import dagster._check as check
 from dagster import (
-    Config,
-    Permissive,
+    PermissiveConfig,
     resource,
 )
 from dagster._annotations import public
-from dagster._config.structured_config import infer_schema_from_config_class
 from dagster._utils.merger import merge_dicts
-from pydantic import Field, Extra
+from pydantic import Extra, Field
 
 from ..dbt_resource import DbtResource
 from .types import DbtCliOutput
@@ -29,7 +27,7 @@ DEFAULT_DBT_EXECUTABLE = "dbt"
 DBT_RUN_RESULTS_COMMANDS = ["run", "test", "seed", "snapshot", "docs generate", "build"]
 
 
-class DbtCliConfig(Config):
+class DbtCliConfig(PermissiveConfig):
     # The following config fields correspond to flags that apply to all dbt CLI commands. For details
     # on dbt CLI flags, see
     # https://github.com/fishtown-analytics/dbt/blob/1f8e29276e910c697588c43f08bc881379fff178/core/dbt/main.py#L260-L329
