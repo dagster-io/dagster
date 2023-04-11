@@ -68,6 +68,7 @@ def test_extract_data_version_and_provenance_from_materialization_entry():
             AssetKey(["assetgroup", "bar"]): DataVersion("2"),
             AssetKey(["baz"]): DataVersion("3"),
         },
+        is_user_provided=False,
     )
 
 
