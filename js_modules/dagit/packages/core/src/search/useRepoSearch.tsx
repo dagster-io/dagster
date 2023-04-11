@@ -2,7 +2,6 @@ import {gql, useLazyQuery} from '@apollo/client';
 import Fuse from 'fuse.js';
 import * as React from 'react';
 
-import {useFeatureFlags} from '../app/Flags';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
@@ -19,11 +18,8 @@ const fuseOptions = {
   useExtendedSearch: true,
 };
 
-const bootstrapDataToSearchResults = (input: {
-  data?: SearchBootstrapQuery;
-  includeResources: boolean;
-}) => {
-  const {data, includeResources} = input;
+const bootstrapDataToSearchResults = (input: {data?: SearchBootstrapQuery}) => {
+  const {data} = input;
 
   if (!data?.workspaceOrError || data?.workspaceOrError?.__typename !== 'Workspace') {
     return new Fuse([]);
@@ -90,15 +86,12 @@ const bootstrapDataToSearchResults = (input: {
           type: SearchResultType.Sensor,
         }));
 
-        const allResources: SearchResult[] = includeResources
-          ? allTopLevelResourceDetails.map((resource) => ({
-              label: resource.name,
-              description: manyRepos ? `Resource in ${repoPath}` : 'Resource',
-              href: workspacePath(repoName, locationName, `/resources/${resource.name}`),
-              type: SearchResultType.Resource,
-            }))
-          : [];
-
+        const allResources: SearchResult[] = allTopLevelResourceDetails.map((resource) => ({
+          label: resource.name,
+          description: manyRepos ? `Resource in ${repoPath}` : 'Resource',
+          href: workspacePath(repoName, locationName, `/resources/${resource.name}`),
+          type: SearchResultType.Resource,
+        }));
         const allPartitionSets: SearchResult[] = partitionSets
           .filter((item) => !isHiddenAssetGroupJob(item.pipelineName))
           .map((partitionSet) => ({
@@ -157,13 +150,9 @@ export const useRepoSearch = () => {
     {data: secondaryData, loading: secondaryLoading, called: secondaryQueryCalled},
   ] = useLazyQuery<SearchSecondaryQuery>(SEARCH_SECONDARY_QUERY);
 
-  const {flagSidebarResources} = useFeatureFlags();
-
-  const bootstrapFuse = React.useMemo(
-    () =>
-      bootstrapDataToSearchResults({data: bootstrapData, includeResources: flagSidebarResources}),
-    [bootstrapData, flagSidebarResources],
-  );
+  const bootstrapFuse = React.useMemo(() => bootstrapDataToSearchResults({data: bootstrapData}), [
+    bootstrapData,
+  ]);
   const secondaryFuse = React.useMemo(() => secondaryDataToSearchResults(secondaryData), [
     secondaryData,
   ]);
