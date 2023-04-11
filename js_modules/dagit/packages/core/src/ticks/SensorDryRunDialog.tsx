@@ -33,6 +33,7 @@ import {testId} from '../testing/testId';
 import {RepoAddress} from '../workspace/types';
 
 import {RunRequestTable} from './DryRunRequestTable';
+import {RUN_REQUEST_FRAGMENT} from './RunRequestFragment';
 import {
   SensorDryRunMutation,
   SensorDryRunMutationVariables,
@@ -361,15 +362,7 @@ export const EVALUATE_SENSOR_MUTATION = gql`
         evaluationResult {
           cursor
           runRequests {
-            runConfigYaml
-            tags {
-              key
-              value
-            }
-            runKey
-            assetSelection {
-              path
-            }
+            ...RunRequestFragment
           }
           skipReason
           error {
@@ -380,6 +373,7 @@ export const EVALUATE_SENSOR_MUTATION = gql`
       ...PythonErrorFragment
     }
   }
+  ${RUN_REQUEST_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
 `;
 

@@ -2,7 +2,6 @@ import {Box, Icon, Table, Tag} from '@dagster-io/ui';
 import qs from 'qs';
 import React from 'react';
 
-import {RunRequest} from '../graphql/types';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {testId} from '../testing/testId';
 import {AnchorButton} from '../ui/AnchorButton';
@@ -10,9 +9,11 @@ import {useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
+import {RunRequestFragment} from './types/RunRequestFragment.types';
+
 type Props = {
   name: string;
-  runRequests: RunRequest[];
+  runRequests: RunRequestFragment[];
   repoAddress: RepoAddress;
   isJob: boolean;
   jobName: string;

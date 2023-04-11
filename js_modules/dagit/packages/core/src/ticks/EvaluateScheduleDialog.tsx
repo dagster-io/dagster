@@ -29,6 +29,7 @@ import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
 import {RunRequestTable} from './DryRunRequestTable';
+import {RUN_REQUEST_FRAGMENT} from './RunRequestFragment';
 import {
   GetScheduleQuery,
   GetScheduleQueryVariables,
@@ -363,12 +364,7 @@ export const SCHEDULE_DRY_RUN_MUTATION = gql`
         timestamp
         evaluationResult {
           runRequests {
-            runConfigYaml
-            tags {
-              key
-              value
-            }
-            runKey
+            ...RunRequestFragment
           }
           skipReason
           error {
@@ -382,6 +378,7 @@ export const SCHEDULE_DRY_RUN_MUTATION = gql`
     }
   }
   ${PYTHON_ERROR_FRAGMENT}
+  ${RUN_REQUEST_FRAGMENT}
 `;
 
 const SelectWrapper = styled.div`
