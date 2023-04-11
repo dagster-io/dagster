@@ -453,6 +453,7 @@ class InstanceRef(
             "sensors",
             "schedules",
             "nux",
+            "auto_materialize",
         }
         settings = {key: config_value.get(key) for key in settings_keys if config_value.get(key)}
 
