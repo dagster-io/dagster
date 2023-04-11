@@ -89,11 +89,10 @@ def test_op(mock_athena_client) -> None:
 
 
 def test_op_pythonic_resource(mock_athena_client) -> None:
-    from dagster import build_op_context, op
+    from dagster import op
 
     @op
     def example_athena_op(athena: TestAthenaClientResource):
         return athena.create_athena_client().execute_query("SELECT 1", fetch_results=True)
 
-    context = build_op_context(resources={"athena": TestAthenaClientResource.configure_at_launch()})
-    assert example_athena_op(context) == [("1",)]
+    assert example_athena_op(athena=TestAthenaClientResource.configure_at_launch()) == [("1",)]

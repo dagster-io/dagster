@@ -198,7 +198,9 @@ class RedshiftClient(BaseRedshiftClient):
 
 @deprecated
 class RedshiftResource(RedshiftClient):
-    pass
+    """Deprecated. This class was used by the function-style Redshift resource. New code should instead
+    use the Pythonic, class-style RedshiftClientResource.
+    """
 
 
 class FakeRedshiftClient(BaseRedshiftClient):
@@ -277,7 +279,9 @@ class FakeRedshiftClient(BaseRedshiftClient):
 
 @deprecated
 class FakeRedshiftResource(FakeRedshiftClient):
-    pass
+    """Deprecated. This class was used by the function-style fake Redshift resource. New code should instead
+    use the Pythonic, class-style FakeRedshiftClientResource.
+    """
 
 
 class RedshiftClientResource(ConfigurableResource):
@@ -287,22 +291,25 @@ class RedshiftClientResource(ConfigurableResource):
     Example:
         .. code-block:: python
 
-            from dagster import build_op_context, op
+            from dagster import Definitions, asset, EnvVar
             from dagster_aws.redshift import RedshiftClientResource
 
-            @op(required_resource_keys={'redshift'})
-            def example_redshift_op(context):
+            @asset(required_resource_keys={'redshift'})
+            def example_redshift_asset(context):
                 return context.resources.redshift.execute_query('SELECT 1', fetch_results=True)
 
             redshift_configured = RedshiftClientResource(
                 host='my-redshift-cluster.us-east-1.redshift.amazonaws.com',
                 port=5439,
                 user='dagster',
-                password='dagster',
+                password=EnvVar("DAGSTER_REDSHIFT_PASSWORD"),
                 database='dev',
             )
-            context = build_op_context(resources={'redshift': redshift_configured})
-            assert example_redshift_op(context) == [(1,)]
+
+            defs = Definitions(
+                assets=[example_redshift_asset],
+                resources={'redshift': redshift_configured},
+            )
 
     """
 

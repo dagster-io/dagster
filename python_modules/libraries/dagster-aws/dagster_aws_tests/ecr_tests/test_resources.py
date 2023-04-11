@@ -23,7 +23,7 @@ def test_ecr_public_get_login_password_pythonic() -> None:
 
     result = wrap_op_in_graph_and_execute(
         ecr_public_op,
-        resources={"ecr_public": FakeECRPublicResource.configure_at_launch()},
+        resources={"ecr_public": FakeECRPublicResource()},
     )
 
     assert result.output_value() == "token"
