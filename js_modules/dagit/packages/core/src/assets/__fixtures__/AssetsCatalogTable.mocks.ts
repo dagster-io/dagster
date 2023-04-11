@@ -1,6 +1,6 @@
 import {MockedResponse} from '@apollo/client/testing';
 
-import {MockStaleReason} from '../../asset-graph/AssetNode.mocks';
+import {MockStaleReasonData} from '../../asset-graph/AssetNode.mocks';
 import {
   StaleStatus,
   RunStatus,
@@ -190,7 +190,7 @@ export const SingleAssetQueryMaterializedStaleAndLate: MockedResponse<SingleAsse
           },
           assetObservations: [],
           staleStatus: StaleStatus.STALE,
-          staleCauses: [MockStaleReason],
+          staleCauses: [MockStaleReasonData],
           __typename: 'AssetNode',
           groupName: 'GROUP2',
           isSource: false,
