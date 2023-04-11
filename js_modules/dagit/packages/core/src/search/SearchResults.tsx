@@ -10,6 +10,8 @@ const iconForType = (type: SearchResultType): IconName => {
   switch (type) {
     case SearchResultType.Asset:
       return 'asset';
+    case SearchResultType.AssetGroup:
+      return 'asset_group';
     case SearchResultType.PartitionSet:
     case SearchResultType.Schedule:
       return 'schedule';

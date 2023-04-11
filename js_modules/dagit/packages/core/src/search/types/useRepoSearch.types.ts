@@ -32,6 +32,7 @@ export type SearchBootstrapQuery = {
                   __typename: 'Repository';
                   id: string;
                   name: string;
+                  assetGroups: Array<{__typename: 'AssetGroup'; groupName: string}>;
                   pipelines: Array<{
                     __typename: 'Pipeline';
                     id: string;
