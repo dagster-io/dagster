@@ -7,9 +7,11 @@ from dagster_msteams.client import TeamsClient
 class MSTeamsResource(ConfigurableResource):
     """This resource is for connecting to Microsoft Teams.
 
-    The resource object is a `dagster_msteams.TeamsClient`.
+    Provides a `dagster_msteams.TeamsClient` which can be used to
+    interface with the MS Teams API.
 
-    By configuring this resource, you can post messages to MS Teams from any Dagster solid:
+    By configuring this resource, you can post messages to MS Teams from any Dagster op,
+    asset, schedule, or sensor:
 
     Examples:
         .. code-block:: python
@@ -46,7 +48,9 @@ class MSTeamsResource(ConfigurableResource):
         description=(
             "To send messages to MS Teams channel, an incoming webhook has to be created. The"
             " incoming webhook url must be given as a part of the resource config to the"
-            " msteams_resource in Dagster."
+            " MSTeamsResource in Dagster. For more information on how to create an incoming"
+            " webhook, see"
+            " https://docs.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook"
         ),
     )
     http_proxy: str = Field(default=None, description="HTTP proxy URL")
