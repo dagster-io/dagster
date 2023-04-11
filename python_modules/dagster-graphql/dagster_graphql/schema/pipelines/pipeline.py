@@ -24,7 +24,7 @@ from dagster_graphql.schema.metadata import GrapheneMetadataEntry
 
 from ...implementation.events import from_event_record
 from ...implementation.fetch_assets import get_assets_for_run_id, get_unique_asset_id
-from ...implementation.fetch_pipelines import get_pipeline_reference_or_raise
+from ...implementation.fetch_pipelines import get_job_reference_or_raise
 from ...implementation.fetch_runs import get_runs, get_stats, get_step_stats
 from ...implementation.fetch_schedules import get_schedules_for_pipeline
 from ...implementation.fetch_sensors import get_sensors_for_pipeline
@@ -419,7 +419,7 @@ class GrapheneRun(graphene.ObjectType):
         )
 
     def resolve_pipeline(self, graphene_info: ResolveInfo):
-        return get_pipeline_reference_or_raise(graphene_info, self._pipeline_run)
+        return get_job_reference_or_raise(graphene_info, self._pipeline_run)
 
     def resolve_pipelineName(self, _graphene_info: ResolveInfo):
         return self._pipeline_run.job_name
