@@ -250,7 +250,8 @@ class AssetGraph:
 
         if parent_partitions_def is None:
             raise DagsterInvalidInvocationError(
-                "Parent partition key provided, but parent asset is not partitioned."
+                f"Parent partition key '{parent_partition_key}' provided, but parent asset"
+                f" '{parent_asset_key}' is not partitioned."
             )
 
         partition_mapping = self.get_partition_mapping(child_asset_key, parent_asset_key)
@@ -640,7 +641,10 @@ class ToposortedPriorityQueue:
                     cast(str, asset_partition.partition_key)
                 ).start.timestamp()
             else:
-                check.failed("Assets with self-dependencies must have time-window partitions")
+                check.failed(
+                    "Assets with self-dependencies must have time-window partitions, but"
+                    f" {asset_key} does not."
+                )
         else:
             partition_sort_key = None
 

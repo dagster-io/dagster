@@ -216,7 +216,7 @@ def test_user_defined_config_from_tags():
         },
         "pod_template_spec_metadata": {"namespace": "pod_template_spec_value"},
         "pod_spec_config": {"dns_policy": "pod_spec_config_value"},
-        "job_config": {"status": {"completed_indexes": "job_config_value"}},
+        "job_config": {"status": {"active": 1}},
         "job_metadata": {"namespace": "job_metadata_value"},
         "job_spec_config": {"backoff_limit": 120},
     }

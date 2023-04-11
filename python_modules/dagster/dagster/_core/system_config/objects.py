@@ -152,7 +152,6 @@ class ResolvedRunConfig(
 
         mode = mode or pipeline_def.get_default_mode_name()
         run_config_schema = pipeline_def.get_run_config_schema(mode)
-
         if run_config_schema.config_mapping:
             # add user code boundary
             run_config = run_config_schema.config_mapping.resolve_from_unvalidated_config(

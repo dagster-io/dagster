@@ -39,7 +39,7 @@ from dagster._core.definitions.definitions_class import BindResourcesToJobs, Def
 from dagster._core.definitions.repository_definition.repository_data_builder import (
     build_caching_repository_data_from_dict,
 )
-from dagster._core.definitions.resource_annotation import Resource
+from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.run_config import RunConfig
 from dagster._core.errors import (
@@ -231,7 +231,7 @@ def test_yield_in_resource_function():
 
     @op
     def check_resource_created(
-        resource_with_cleanup_1: Resource[bool], resource_with_cleanup_2: Resource[bool]
+        resource_with_cleanup_1: ResourceParam[bool], resource_with_cleanup_2: ResourceParam[bool]
     ):
         assert resource_with_cleanup_1 is True
         assert resource_with_cleanup_2 is True
@@ -271,7 +271,7 @@ def test_wrapping_function_resource():
             return writer_resource
 
     @op
-    def hello_world_op(writer: Resource[Callable[[str], None]]):
+    def hello_world_op(writer: ResourceParam[Callable[[str], None]]):
         writer("hello, world!")
 
     @job(resource_defs={"writer": WriterResource(prefix="")})
@@ -753,7 +753,7 @@ def test_nested_function_resource():
             return output
 
     @asset
-    def my_asset(writer: Resource[Callable[[str], None]]):
+    def my_asset(writer: ResourceParam[Callable[[str], None]]):
         writer("foo")
         writer("bar")
 
@@ -791,7 +791,7 @@ def test_nested_function_resource_configured():
             return output
 
     @asset
-    def my_asset(writer: Resource[Callable[[str], None]]):
+    def my_asset(writer: ResourceParam[Callable[[str], None]]):
         writer("foo")
         writer("bar")
 
@@ -843,7 +843,7 @@ def test_nested_function_resource_runtime_config():
             return output
 
     @asset
-    def my_asset(writer: Resource[Callable[[str], None]]):
+    def my_asset(writer: ResourceParam[Callable[[str], None]]):
         writer("foo")
         writer("bar")
 
@@ -2014,16 +2014,8 @@ def test_direct_op_invocation() -> None:
     # Providing resource only as kwarg is ok, we'll use that (we still need a context though)
     assert my_op(context=build_op_context(), my_resource=MyResource(a_str="foo")) == "foo"
 
-    # We don't allow providing resources as args, this adds too much complexity
-    # They must be kwargs, and we will error accordingly
-    with pytest.raises(
-        DagsterInvalidInvocationError,
-        match=(
-            "If directly invoking an op/asset, you may not provide resources as positional"
-            " arguments, only as keyword arguments."
-        ),
-    ):
-        assert my_op(build_op_context(), MyResource(a_str="foo")) == "foo"
+    # Providing resource only as positional arg is ok, we'll use that (we still need a context though)
+    assert my_op(build_op_context(), MyResource(a_str="foo")) == "foo"
 
     @op
     def my_op_no_context(my_resource: MyResource) -> str:
@@ -2106,7 +2098,7 @@ def test_direct_op_invocation_with_inputs() -> None:
         z: int
 
     @op
-    def my_wacky_addition_op(context, my_resource: MyResource, x: int, y: int) -> int:
+    def my_wacky_addition_op(context, x: int, y: int, my_resource: MyResource) -> int:
         return x + y + my_resource.z
 
     # Just providing context is ok, we'll use the resource from the context
@@ -2128,7 +2120,7 @@ def test_direct_op_invocation_with_inputs() -> None:
     assert my_wacky_addition_op(build_op_context(), y=1, x=2, my_resource=MyResource(z=3)) == 6
 
     @op
-    def my_wacky_addition_op_no_context(my_resource: MyResource, x: int, y: int) -> int:
+    def my_wacky_addition_op_no_context(x: int, y: int, my_resource: MyResource) -> int:
         return x + y + my_resource.z
 
     # Providing context is ok, we just discard it and use the resource from the context
@@ -2152,6 +2144,23 @@ def test_direct_op_invocation_with_inputs() -> None:
     assert my_wacky_addition_op_no_context(10, 20, my_resource=MyResource(z=30)) == 60
     # We can also input x and y as kwargs in this case
     assert my_wacky_addition_op_no_context(y=1, x=2, my_resource=MyResource(z=3)) == 6
+
+    # Direct invocation is a little weird if the resource comes before an input,
+    # but it still works as long as you use kwargs for the inputs or provide the resource explicitly
+    @op
+    def my_wacky_addition_op_resource_first(my_resource: MyResource, x: int, y: int) -> int:
+        return x + y + my_resource.z
+
+    # Here we have to use kwargs for x and y because we're not providing the resource explicitly
+    assert (
+        my_wacky_addition_op_resource_first(
+            build_op_context(resources={"my_resource": MyResource(z=2)}), x=4, y=5
+        )
+        == 11
+    )
+
+    # Here we can just use args for x and y because we're providing the resource explicitly as an arg
+    assert my_wacky_addition_op_resource_first(MyResource(z=2), 45, 53) == 100
 
 
 def test_direct_asset_invocation() -> None:
@@ -2182,16 +2191,8 @@ def test_direct_asset_invocation() -> None:
     # Providing resource only as kwarg is ok, we'll use that (we still need a context though)
     assert my_asset(context=build_op_context(), my_resource=MyResource(a_str="foo")) == "foo"
 
-    # We don't allow providing resources as args, this adds too much complexity
-    # They must be kwargs, and we will error accordingly
-    with pytest.raises(
-        DagsterInvalidInvocationError,
-        match=(
-            "If directly invoking an op/asset, you may not provide resources as positional"
-            " arguments, only as keyword arguments."
-        ),
-    ):
-        assert my_asset(build_op_context(), MyResource(a_str="foo")) == "foo"
+    # Providing resource  as arg is ok, we'll use that (we still need a context though)
+    assert my_asset(build_op_context(), MyResource(a_str="foo")) == "foo"
 
     @asset
     def my_asset_no_context(my_resource: MyResource) -> str:
@@ -2213,7 +2214,7 @@ def test_direct_asset_invocation_with_inputs() -> None:
         z: int
 
     @asset
-    def my_wacky_addition_asset(context, my_resource: MyResource, x: int, y: int) -> int:
+    def my_wacky_addition_asset(context, x: int, y: int, my_resource: MyResource) -> int:
         return x + y + my_resource.z
 
     # Just providing context is ok, we'll use the resource from the context
@@ -2237,7 +2238,7 @@ def test_direct_asset_invocation_with_inputs() -> None:
     assert my_wacky_addition_asset(build_op_context(), y=1, x=2, my_resource=MyResource(z=3)) == 6
 
     @asset
-    def my_wacky_addition_asset_no_context(my_resource: MyResource, x: int, y: int) -> int:
+    def my_wacky_addition_asset_no_context(x: int, y: int, my_resource: MyResource) -> int:
         return x + y + my_resource.z
 
     # Providing context is ok, we just discard it and use the resource from the context
@@ -2311,7 +2312,6 @@ def test_from_resource_context_and_to_config_field_complex() -> None:
     }
 
 
-@pytest.mark.xfail(reason="https://github.com/dagster-io/dagster/issues/13384")
 def test_direct_op_invocation_plain_arg_with_resource_definition_no_inputs_no_context() -> None:
     class NumResource(ConfigurableResource):
         num: int
@@ -2344,7 +2344,6 @@ def test_direct_op_invocation_kwarg_with_resource_definition_no_inputs_no_contex
     assert executed["yes"]
 
 
-@pytest.mark.xfail(reason="https://github.com/dagster-io/dagster/issues/13384")
 def test_direct_asset_invocation_plain_arg_with_resource_definition_no_inputs_no_context() -> None:
     class NumResource(ConfigurableResource):
         num: int
@@ -2375,3 +2374,64 @@ def test_direct_asset_invocation_kwarg_with_resource_definition_no_inputs_no_con
     an_asset(my_resource=NumResource(num=1))
 
     assert executed["yes"]
+
+
+def test_direct_asset_invocation_many_resource_args() -> None:
+    class NumResource(ConfigurableResource):
+        num: int
+
+    executed = {}
+
+    @asset
+    def an_asset(my_resource: NumResource, my_other_resource: NumResource) -> None:
+        assert my_resource.num == 1
+        assert my_other_resource.num == 2
+        executed["yes"] = True
+
+    an_asset(NumResource(num=1), NumResource(num=2))
+    assert executed["yes"]
+    executed.clear()
+
+    an_asset(my_resource=NumResource(num=1), my_other_resource=NumResource(num=2))
+    assert executed["yes"]
+    executed.clear()
+
+    an_asset(my_other_resource=NumResource(num=2), my_resource=NumResource(num=1))
+    assert executed["yes"]
+    executed.clear()
+
+    an_asset(NumResource(num=1), my_other_resource=NumResource(num=2))
+    assert executed["yes"]
+
+
+def test_direct_asset_invocation_many_resource_args_context() -> None:
+    class NumResource(ConfigurableResource):
+        num: int
+
+    executed = {}
+
+    @asset
+    def an_asset(context, my_resource: NumResource, my_other_resource: NumResource) -> None:
+        assert context.resources.my_resource.num == 1
+        assert context.resources.my_other_resource.num == 2
+        assert my_resource.num == 1
+        assert my_other_resource.num == 2
+        executed["yes"] = True
+
+    an_asset(build_op_context(), NumResource(num=1), NumResource(num=2))
+    assert executed["yes"]
+    executed.clear()
+
+    an_asset(
+        build_op_context(), my_resource=NumResource(num=1), my_other_resource=NumResource(num=2)
+    )
+    assert executed["yes"]
+    executed.clear()
+
+    an_asset(
+        my_other_resource=NumResource(num=2),
+        my_resource=NumResource(num=1),
+        context=build_op_context(),
+    )
+    assert executed["yes"]
+    executed.clear()

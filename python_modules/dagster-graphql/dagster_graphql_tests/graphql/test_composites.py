@@ -1,3 +1,4 @@
+from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 
 from .composites_query import (
@@ -29,8 +30,8 @@ from .graphql_context_test_suite import NonLaunchableGraphQLContextTestMatrix
 
 # this only needs non_launchable variants since they never execute anything
 class TestComposites(NonLaunchableGraphQLContextTestMatrix):
-    def test_composites(self, graphql_context, snapshot):
-        selector = infer_pipeline_selector(graphql_context, "composites_pipeline")
+    def test_composites(self, graphql_context: WorkspaceRequestContext, snapshot):
+        selector = infer_pipeline_selector(graphql_context, "composites_job")
         result = execute_dagster_graphql(graphql_context, COMPOSITES_QUERY, {"selector": selector})
         handle_map = {}
         for obj in result.data["pipelineOrError"]["solidHandles"]:
@@ -40,8 +41,8 @@ class TestComposites(NonLaunchableGraphQLContextTestMatrix):
 
         snapshot.assert_match(result.data)
 
-    def test_parent_id_arg(self, graphql_context):
-        selector = infer_pipeline_selector(graphql_context, "composites_pipeline")
+    def test_parent_id_arg(self, graphql_context: WorkspaceRequestContext):
+        selector = infer_pipeline_selector(graphql_context, "composites_job")
         result = execute_dagster_graphql(graphql_context, PARENT_ID_QUERY, {"selector": selector})
         assert len(result.data["pipelineOrError"]["solidHandles"]) == 10
 
@@ -69,8 +70,8 @@ class TestComposites(NonLaunchableGraphQLContextTestMatrix):
         )
         assert len(result.data["pipelineOrError"]["solidHandles"]) == 0
 
-    def test_solid_id(self, graphql_context):
-        selector = infer_pipeline_selector(graphql_context, "composites_pipeline")
+    def test_solid_id(self, graphql_context: WorkspaceRequestContext):
+        selector = infer_pipeline_selector(graphql_context, "composites_job")
         result = execute_dagster_graphql(
             graphql_context, SOLID_ID_QUERY, {"selector": selector, "id": "add_four"}
         )
@@ -90,8 +91,8 @@ class TestComposites(NonLaunchableGraphQLContextTestMatrix):
         )
         assert result.data["pipelineOrError"]["solidHandle"] is None
 
-    def test_recurse_composites_depends(self, graphql_context):
-        selector = infer_pipeline_selector(graphql_context, "composites_pipeline")
+    def test_recurse_composites_depends(self, graphql_context: WorkspaceRequestContext):
+        selector = infer_pipeline_selector(graphql_context, "composites_job")
         execute_dagster_graphql(
             graphql_context,
             COMPOSITES_QUERY_NESTED_DEPENDS_ON_DEPENDS_BY_CORE + NESTED_INPUT_DEPENDS_ON,
@@ -104,7 +105,7 @@ class TestComposites(NonLaunchableGraphQLContextTestMatrix):
             {"selector": selector},
         )
 
-    def test_composed_graph(self, graphql_context):
+    def test_composed_graph(self, graphql_context: WorkspaceRequestContext):
         selector = infer_pipeline_selector(graphql_context, "composed_graph")
         result = execute_dagster_graphql(graphql_context, COMPOSITES_QUERY, {"selector": selector})
         handle_map = {}

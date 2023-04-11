@@ -49,7 +49,7 @@ class TestNextTickRepository(NonLaunchableGraphQLContextTestMatrix):
             repository_selector["repositoryLocationName"]
         ).get_repository(repository_selector["repositoryName"])
 
-        schedule_name = "no_config_pipeline_hourly_schedule"
+        schedule_name = "no_config_job_hourly_schedule"
         external_schedule = external_repository.get_external_schedule(schedule_name)
         selector = infer_instigation_selector(graphql_context, schedule_name)
 

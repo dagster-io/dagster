@@ -442,7 +442,7 @@ class ConfigurableResourceFactory(
     .. code-block:: python
 
         @asset
-        def asset_that_uses_database(database: Resource[Database]):
+        def asset_that_uses_database(database: ResourceParam[Database]):
             # Database used directly in user code
             database.query("SELECT * FROM table")
 
@@ -1235,8 +1235,8 @@ def validate_resource_annotated_function(fn) -> None:
                 param_name=malformed_param.name,
                 annotation_type=malformed_param.annotation,
                 value_message=f"a '{output_type}'" if output_type else "an unknown",
-                annotation_suggestion=f"'Resource[{output_type_name}]'"
+                annotation_suggestion=f"'ResourceParam[{output_type_name}]'"
                 if output_type
-                else "'Resource[Any]' or 'Resource[<output type>]'",
+                else "'ResourceParam[Any]' or 'ResourceParam[<output type>]'",
             )
         )

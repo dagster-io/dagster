@@ -10,6 +10,7 @@ import {
   Spinner,
   MiddleTruncate,
 } from '@dagster-io/ui';
+import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -18,14 +19,16 @@ import {RunStatus} from '../graphql/types';
 import {OVERVIEW_COLLAPSED_KEY} from '../overview/OverviewExpansionKey';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {AnchorButton} from '../ui/AnchorButton';
+import {Container, Inner} from '../ui/VirtualizedTable';
 import {findDuplicateRepoNames} from '../ui/findDuplicateRepoNames';
 import {useFormatDateTime} from '../ui/useFormatDateTime';
 import {useRepoExpansionState} from '../ui/useRepoExpansionState';
+import {RepoRow} from '../workspace/VirtualizedWorkspaceTable';
 import {repoAddressAsURLString} from '../workspace/repoAddressAsString';
 import {repoAddressFromPath} from '../workspace/repoAddressFromPath';
 import {RepoAddress} from '../workspace/types';
 
-import {RepoSectionHeader, SECTION_HEADER_HEIGHT} from './RepoSectionHeader';
+import {SECTION_HEADER_HEIGHT} from './RepoSectionHeader';
 import {RunStatusDot} from './RunStatusDots';
 import {failedStatuses, inProgressStatuses, successStatuses} from './RunStatuses';
 import {TimeElapsed} from './TimeElapsed';
@@ -58,6 +61,10 @@ export type TimelineJob = {
   runs: TimelineRun[];
 };
 
+type RowType =
+  | {type: 'header'; repoAddress: RepoAddress; jobCount: number}
+  | {type: 'job'; repoAddress: RepoAddress; job: TimelineJob};
+
 interface Props {
   loading?: boolean;
   jobs: TimelineJob[];
@@ -67,6 +74,7 @@ interface Props {
 export const RunTimeline = (props: Props) => {
   const {loading = false, jobs, range} = props;
   const [width, setWidth] = React.useState<number | null>(null);
+  const parentRef = React.useRef<HTMLDivElement | null>(null);
 
   const now = Date.now();
   const [_, end] = range;
@@ -84,6 +92,36 @@ export const RunTimeline = (props: Props) => {
     OVERVIEW_COLLAPSED_KEY,
     allKeys,
   );
+
+  const flattened: RowType[] = React.useMemo(() => {
+    const flat: RowType[] = [];
+    for (const repoKey in buckets) {
+      const bucket = buckets[repoKey];
+      const repoAddress = repoAddressFromPath(repoKey);
+      if (!repoAddress) {
+        continue;
+      }
+
+      flat.push({type: 'header', repoAddress, jobCount: bucket.length});
+      if (expandedKeys.includes(repoKey)) {
+        bucket.forEach((job) => {
+          flat.push({type: 'job', repoAddress, job});
+        });
+      }
+    }
+
+    return flat;
+  }, [buckets, expandedKeys]);
+
+  const rowVirtualizer = useVirtualizer({
+    count: flattened.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: (_: number) => 32,
+    overscan: 40,
+  });
+
+  const totalHeight = rowVirtualizer.getTotalSize();
+  const items = rowVirtualizer.getVirtualItems();
 
   const observer = React.useRef<ResizeObserver | null>(null);
 
@@ -109,7 +147,6 @@ export const RunTimeline = (props: Props) => {
 
   const repoOrder = Object.keys(buckets).sort((a, b) => a.localeCompare(b));
 
-  let nextTop = DATE_TIME_HEIGHT;
   const expandedRepos = repoOrder.filter((repoKey) => expandedKeys.includes(repoKey));
   const expandedJobCount = expandedRepos.reduce(
     (accum, repoKey) => accum + buckets[repoKey].length,
@@ -120,111 +157,100 @@ export const RunTimeline = (props: Props) => {
     repoOrder.map((repoKey) => repoAddressFromPath(repoKey)?.name || ''),
   );
   const anyJobs = repoOrder.length > 0;
-  const timelineHeight = DATE_TIME_HEIGHT + (anyJobs ? height : EMPTY_STATE_HEIGHT);
 
   return (
-    <Timeline $height={timelineHeight} ref={containerRef}>
+    <>
       <Box
         padding={{left: 24}}
         flex={{direction: 'column', justifyContent: 'center'}}
-        style={{fontSize: '16px', height: DATE_TIME_HEIGHT}}
-        border={{side: 'top', width: 1, color: Colors.KeylineGray}}
+        style={{fontSize: '16px', flex: `0 0 ${DATE_TIME_HEIGHT}px`}}
+        border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
       >
         Jobs
       </Box>
-      <TimeDividers interval={ONE_HOUR_MSEC} range={range} height={anyJobs ? height : 0} />
+      <div style={{position: 'relative'}}>
+        <TimeDividers interval={ONE_HOUR_MSEC} range={range} height={anyJobs ? height : 0} />
+      </div>
       {repoOrder.length ? (
-        repoOrder.map((repoKey) => {
-          const name = repoAddressFromPath(repoKey)?.name;
-          const jobs = buckets[repoKey];
-          const top = nextTop;
-          const expanded = expandedKeys.includes(repoKey);
-          nextTop = top + SECTION_HEADER_HEIGHT + (expanded ? jobs.length * ROW_HEIGHT : 0);
-          return (
-            <TimelineSection
-              expanded={expanded}
-              range={range}
-              top={top}
-              key={repoKey}
-              repoKey={repoKey}
-              isDuplicateRepoName={!!(name && duplicateRepoNames.has(name))}
-              jobs={buckets[repoKey]}
-              onToggle={onToggle}
-              onToggleAll={onToggleAll}
-              width={width}
-            />
-          );
-        })
+        <div style={{overflow: 'hidden', position: 'relative'}}>
+          <Container ref={parentRef}>
+            <Inner $totalHeight={totalHeight}>
+              {items.map(({index, key, size, start}) => {
+                const row: RowType = flattened[index];
+                const type = row!.type;
+                if (type === 'header') {
+                  const repoKey = repoAddressAsURLString(row.repoAddress);
+                  const repoName = row.repoAddress.name;
+                  return (
+                    <TimelineHeaderRow
+                      expanded={expandedKeys.includes(repoKey)}
+                      key={repoKey}
+                      height={size}
+                      top={start}
+                      repoAddress={row.repoAddress}
+                      isDuplicateRepoName={!!(repoName && duplicateRepoNames.has(repoName))}
+                      jobs={buckets[repoKey]}
+                      onToggle={onToggle}
+                      onToggleAll={onToggleAll}
+                    />
+                  );
+                }
+
+                return (
+                  <RunTimelineRow
+                    job={row.job}
+                    key={key}
+                    height={size}
+                    top={start}
+                    range={range}
+                    width={width}
+                  />
+                );
+              })}
+            </Inner>
+          </Container>
+        </div>
       ) : (
         <RunsEmptyOrLoading loading={loading} includesTicks={includesTicks} />
       )}
-    </Timeline>
+    </>
   );
 };
 
-interface TimelineSectionProps {
+interface TimelineHeaderRowProps {
   expanded: boolean;
-  repoKey: string;
+  repoAddress: RepoAddress;
   isDuplicateRepoName: boolean;
   jobs: TimelineJob[];
+  height: number;
   top: number;
-  range: [number, number];
-  width: number;
   onToggle: (repoAddress: RepoAddress) => void;
   onToggleAll: (expanded: boolean) => void;
 }
 
-const TimelineSection = (props: TimelineSectionProps) => {
+const TimelineHeaderRow = (props: TimelineHeaderRowProps) => {
   const {
     expanded,
     onToggle,
     onToggleAll,
-    repoKey,
+    repoAddress,
     isDuplicateRepoName,
     jobs,
-    range,
+    height,
     top,
-    width,
   } = props;
-  const repoAddress = repoAddressFromPath(repoKey);
-  const repoName = repoAddress?.name || 'Unknown repo';
-  const repoLocation = repoAddress?.location || 'Unknown location';
-
-  const onClick = React.useCallback(
-    (e: React.MouseEvent) => {
-      if (e.getModifierState('Shift')) {
-        onToggleAll(!expanded);
-      } else {
-        repoAddress && onToggle(repoAddress);
-      }
-    },
-    [expanded, onToggle, onToggleAll, repoAddress],
-  );
 
   return (
-    <div>
-      <SectionHeaderContainer $top={top}>
-        <RepoSectionHeader
-          expanded={expanded}
-          repoName={repoName}
-          repoLocation={repoLocation}
-          onClick={onClick}
-          showLocation={isDuplicateRepoName}
-          rightElement={<RunStatusTags jobs={jobs} />}
-        />
-      </SectionHeaderContainer>
-      {expanded
-        ? jobs.map((job, ii) => (
-            <RunTimelineRow
-              key={job.key}
-              job={job}
-              top={top + SECTION_HEADER_HEIGHT + ii * ROW_HEIGHT}
-              range={range}
-              width={width}
-            />
-          ))
-        : null}
-    </div>
+    <RepoRow
+      expanded={expanded}
+      height={height}
+      start={top}
+      repoAddress={repoAddress}
+      showLocation={isDuplicateRepoName}
+      onToggle={onToggle}
+      onToggleAll={onToggleAll}
+      rightElement={<RunStatusTags jobs={jobs} />}
+    />
   );
 };
 
@@ -292,15 +318,6 @@ export const RunStatusTagsWithCounts = ({
 
 const StatusSpan = styled.span`
   white-space: nowrap;
-`;
-
-const SectionHeaderContainer = styled.div<{$top: number}>`
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-
-  ${({$top}) => `transform: translateY(${$top}px);`}
 `;
 
 type DateMarker = {
@@ -406,7 +423,7 @@ const TimeDividers = (props: TimeDividersProps) => {
   const nowLeft = `${(((now - start) / (end - start)) * 100).toPrecision(3)}%`;
 
   return (
-    <DividerContainer style={{height: `${height}px`}}>
+    <DividerContainer style={{height: `${height}px`, top: `-${DATE_TIME_HEIGHT}px`}}>
       <DividerLabels>
         {dateMarkers.map((marker) => (
           <DateLabel
@@ -516,11 +533,13 @@ const MIN_WIDTH_FOR_MULTIPLE = 12;
 const RunTimelineRow = ({
   job,
   top,
+  height,
   range,
   width: containerWidth,
 }: {
   job: TimelineJob;
   top: number;
+  height: number;
   range: [number, number];
   width: number;
 }) => {
@@ -547,7 +566,7 @@ const RunTimelineRow = ({
   }
 
   return (
-    <Row $top={top}>
+    <Row $height={height} $start={top}>
       <JobName>
         <Icon name={job.jobType === 'asset' ? 'asset' : 'job'} />
         <div style={{width: LABEL_WIDTH}}>
@@ -647,23 +666,25 @@ const Timeline = styled.div<{$height: number}>`
   position: relative;
 `;
 
-const Row = styled.div<{$top: number}>`
+type RowProps = {$height: number; $start: number};
+
+const Row = styled.div.attrs<RowProps>(({$height, $start}) => ({
+  style: {
+    height: `${$height}px`,
+    transform: `translateY(${$start}px)`,
+  },
+}))<RowProps>`
   align-items: center;
   box-shadow: inset 0 -1px 0 ${Colors.KeylineGray};
   display: flex;
   flex-direction: row;
   width: 100%;
-  height: ${ROW_HEIGHT + 1}px;
   padding: 1px 0;
-  position: absolute;
   left: 0;
+  position: absolute;
+  right: 0;
   top: 0;
-
-  ${({$top}) => `transform: translateY(${$top}px);`}
-
-  :first-child, :hover {
-    box-shadow: inset 0 1px 0 ${Colors.KeylineGray}, inset 0 -1px 0 ${Colors.KeylineGray};
-  }
+  overflow: hidden;
 
   :hover {
     background-color: ${Colors.Gray10};

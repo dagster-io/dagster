@@ -239,14 +239,14 @@ def other_workspace(instance, other_image):
 
 @pytest.fixture
 def pipeline():
-    return repo.pipeline
+    return repo.job
 
 
 @pytest.fixture
 def external_pipeline(workspace):
     location = workspace.get_code_location(workspace.code_location_names[0])
     return location.get_repository(repo.repository.__name__).get_full_external_job(
-        repo.pipeline.__name__
+        repo.job.__name__
     )
 
 
@@ -254,7 +254,7 @@ def external_pipeline(workspace):
 def other_external_pipeline(other_workspace):
     location = other_workspace.get_code_location(other_workspace.code_location_names[0])
     return location.get_repository(repo.repository.__name__).get_full_external_job(
-        repo.pipeline.__name__
+        repo.job.__name__
     )
 
 
@@ -410,6 +410,22 @@ def container_context_config(configured_secret):
             "runtime_platform": {
                 "operatingSystemFamily": "WINDOWS_SERVER_2019_FULL",
             },
+            "mount_points": [
+                {
+                    "sourceVolume": "myEfsVolume",
+                    "containerPath": "/mount/efs",
+                    "readOnly": True,
+                }
+            ],
+            "volumes": [
+                {
+                    "name": "myEfsVolume",
+                    "efsVolumeConfiguration": {
+                        "fileSystemId": "fs-1234",
+                        "rootDirectory": "/path/to/my/data",
+                    },
+                }
+            ],
         },
     }
 
@@ -437,6 +453,22 @@ def other_container_context_config(other_configured_secret):
             },
             "task_role_arn": "other-task-role",
             "execution_role_arn": "other-fake-execution-role",
+            "mount_points": [
+                {
+                    "sourceVolume": "myOtherEfsVolume",
+                    "containerPath": "/mount/other/efs",
+                    "readOnly": True,
+                }
+            ],
+            "volumes": [
+                {
+                    "name": "myOtherEfsVolume",
+                    "efsVolumeConfiguration": {
+                        "fileSystemId": "fs-5678",
+                        "rootDirectory": "/path/to/my/other/data",
+                    },
+                }
+            ],
         },
     }
 

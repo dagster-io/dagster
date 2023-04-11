@@ -5,8 +5,9 @@ import pytest
 from dagster import AssetKey, DagsterEventType
 from dagster._core.definitions.metadata import NotebookMetadataValue, PathMetadataValue
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.execution.api import execute_job
+from dagster._core.execution.execution_result import ExecutionResult
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import execute_pipeline
 from dagstermill.compat import ExecutionError
 from dagstermill.examples.repository import custom_io_mgr_key_asset
 
@@ -17,11 +18,11 @@ def get_path(materialization_event):
             return value.path
 
 
-def cleanup_result_notebook(result):
+def cleanup_result_notebook(result: ExecutionResult):
     if not result:
         return
     materialization_events = [
-        x for x in result.step_event_list if x.event_type_value == "ASSET_MATERIALIZATION"
+        x for x in result.all_node_events if x.event_type_value == "ASSET_MATERIALIZATION"
     ]
     for materialization_event in materialization_events:
         result_path = get_path(materialization_event)
@@ -36,14 +37,14 @@ def exec_for_test(job_name, env=None, raise_on_error=True, **kwargs):
 
     with instance_for_test() as instance:
         try:
-            result = execute_pipeline(
+            with execute_job(
                 recon_pipeline,
-                env,
+                run_config=env,
                 instance=instance,
                 raise_on_error=raise_on_error,
                 **kwargs,
-            )
-            yield result
+            ) as result:
+                yield result
         finally:
             if result:
                 cleanup_result_notebook(result)
@@ -77,7 +78,7 @@ def test_yield_event():
     with exec_for_test("yield_event_asset_job") as result:
         assert result.success
         event_found = False
-        for event in result.event_list:
+        for event in result.all_events:
             if event.event_type == DagsterEventType.ASSET_MATERIALIZATION:
                 if event.asset_key == AssetKey("my_asset"):
                     event_found = True
@@ -122,23 +123,24 @@ def test_error_notebook_saved_asset():
     )
 
     with instance_for_test() as instance:
+        outer_result = None
         try:
-            result = execute_pipeline(
+            with execute_job(
                 recon_pipeline,
-                {},
+                run_config={},
                 instance=instance,
                 raise_on_error=False,
-            )
+            ) as result:
+                storage_dir = instance.storage_directory()
+                files = os.listdir(storage_dir)
+                notebook_found = (False,)
+                for f in files:
+                    if "-out.ipynb" in f:
+                        notebook_found = True
+                outer_result = result
 
-            storage_dir = instance.storage_directory()
-            files = os.listdir(storage_dir)
-            notebook_found = (False,)
-            for f in files:
-                if "-out.ipynb" in f:
-                    notebook_found = True
-
-            assert notebook_found
+                assert notebook_found
 
         finally:
-            if result:
-                cleanup_result_notebook(result)
+            if outer_result:
+                cleanup_result_notebook(outer_result)

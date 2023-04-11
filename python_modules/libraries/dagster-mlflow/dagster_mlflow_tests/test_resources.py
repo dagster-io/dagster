@@ -13,7 +13,7 @@ import mlflow
 import pandas as pd
 import pytest
 from dagster import op
-from dagster._legacy import ModeDefinition, execute_pipeline, pipeline
+from dagster._core.definitions.decorators.job_decorator import job
 from dagster_mlflow.resources import MlFlow, mlflow_tracking
 
 
@@ -30,7 +30,7 @@ def string_maker():
 def basic_run_config() -> Mapping[str, Any]:
     return {
         "resources": {"mlflow": {"config": {"experiment_name": "testing"}}},
-        "solids": {},
+        "ops": {},
     }
 
 
@@ -59,17 +59,17 @@ def context(request):
 
 
 @pytest.fixture
-def pipeline_run():
+def dagster_run():
     return MagicMock(pipeline_name="test")
 
 
 @pytest.fixture
-def basic_context(mlflow_run_config, pipeline_run):
+def basic_context(mlflow_run_config, dagster_run):
     return MagicMock(
         resource_config=mlflow_run_config["resources"]["mlflow"]["config"],
         log=logging.getLogger(),
         run_id=str(uuid.uuid4()),
-        pipeline_run=pipeline_run,
+        pipeline_run=dagster_run,
     )
 
 
@@ -355,27 +355,26 @@ def test_chunks(context, num_of_params, string_maker, chunk):
     assert {k: v for d in param_chunks_list for k, v in d.items()} == D
 
 
-def test_execute_solid_with_mlflow_resource():
+def test_execute_op_with_mlflow_resource():
     run_id_holder = {}
 
     params = {"learning_rate": "0.01", "n_estimators": "10"}
     extra_tags = {"super": "experiment"}
 
     @op(required_resource_keys={"mlflow"})
-    def solid1(_):
+    def op1(_):
         mlflow.log_params(params)
-        run_id_holder["solid1_run_id"] = mlflow.active_run().info.run_id
+        run_id_holder["op1_run_id"] = mlflow.active_run().info.run_id
 
     @op(required_resource_keys={"mlflow"})
-    def solid2(_, _arg1):
-        run_id_holder["solid2_run_id"] = mlflow.active_run().info.run_id
+    def op2(_, _arg1):
+        run_id_holder["op2_run_id"] = mlflow.active_run().info.run_id
 
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={"mlflow": mlflow_tracking})])
+    @job(resource_defs={"mlflow": mlflow_tracking})
     def mlf_pipeline():
-        solid2(solid1())
+        op2(op1())
 
-    result = execute_pipeline(
-        mlf_pipeline,
+    result = mlf_pipeline.execute_in_process(
         run_config={
             "resources": {
                 "mlflow": {
@@ -389,8 +388,8 @@ def test_execute_solid_with_mlflow_resource():
     )
     assert result.success
 
-    assert run_id_holder["solid1_run_id"] == run_id_holder["solid2_run_id"]
-    run = mlflow.get_run(run_id_holder["solid1_run_id"])
+    assert run_id_holder["op1_run_id"] == run_id_holder["op2_run_id"]
+    run = mlflow.get_run(run_id_holder["op1_run_id"])
     assert run.data.params == params
     assert set(extra_tags.items()).issubset(run.data.tags.items())
 

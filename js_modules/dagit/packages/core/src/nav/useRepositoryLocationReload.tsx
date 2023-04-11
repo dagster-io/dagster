@@ -208,11 +208,12 @@ export const useRepositoryLocationReload = ({
   const {mutating, pollStartTime, error, errorLocationId} = state;
   const reloading = mutating || pollStartTime !== null;
 
-  return React.useMemo(() => ({reloading, error, errorLocationId, tryReload}), [
+  return React.useMemo(() => ({reloading, error, errorLocationId, tryReload, mutating}), [
     reloading,
     error,
     errorLocationId,
     tryReload,
+    mutating,
   ]);
 };
 
@@ -314,7 +315,6 @@ export const buildReloadFnForLocation = (location: string) => {
     >({
       mutation: RELOAD_REPOSITORY_LOCATION_MUTATION,
       variables: {location},
-      fetchPolicy: 'no-cache',
     });
 
     if (data?.reloadRepositoryLocation.__typename === 'WorkspaceLocationEntry') {
@@ -340,6 +340,7 @@ const RELOAD_REPOSITORY_LOCATION_MUTATION = gql`
       __typename
       ... on WorkspaceLocationEntry {
         id
+        loadStatus
       }
       ... on UnauthorizedError {
         message

@@ -118,5 +118,9 @@ export type ReloadRepositoryLocationMutation = {
     | {__typename: 'ReloadNotSupported'; message: string}
     | {__typename: 'RepositoryLocationNotFound'; message: string}
     | {__typename: 'UnauthorizedError'; message: string}
-    | {__typename: 'WorkspaceLocationEntry'; id: string};
+    | {
+        __typename: 'WorkspaceLocationEntry';
+        id: string;
+        loadStatus: Types.RepositoryLocationLoadStatus;
+      };
 };

@@ -11,6 +11,9 @@ def get_resource_args(fn) -> Sequence[Parameter]:
     return [param for param in get_function_params(fn) if _is_resource_annotated(param)]
 
 
+RESOURCE_PARAM_METADATA = "resource_param"
+
+
 def _is_resource_annotated(param: Parameter) -> bool:
     extends_resource_definition = False
     try:
@@ -25,9 +28,9 @@ def _is_resource_annotated(param: Parameter) -> bool:
 
     return (extends_resource_definition) or (
         hasattr(param.annotation, "__metadata__")
-        and getattr(param.annotation, "__metadata__") == ("resource_output",)
+        and getattr(param.annotation, "__metadata__") == (RESOURCE_PARAM_METADATA,)
     )
 
 
 T = TypeVar("T")
-Resource = Annotated[T, "resource_output"]
+ResourceParam = Annotated[T, RESOURCE_PARAM_METADATA]

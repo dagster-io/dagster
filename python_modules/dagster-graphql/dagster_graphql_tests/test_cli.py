@@ -138,8 +138,7 @@ def test_start_execution_text():
                     "repositoryName": "test",
                     "pipelineName": "math",
                 },
-                "runConfigData": {"solids": {"add_one": {"inputs": {"num": {"value": 123}}}}},
-                "mode": "default",
+                "runConfigData": {"ops": {"add_one": {"inputs": {"num": {"value": 123}}}}},
             }
         }
     )
@@ -171,8 +170,7 @@ def test_start_execution_file():
                     "repositoryLocationName": "test_cli_location",
                     "repositoryName": "test",
                 },
-                "runConfigData": {"solids": {"add_one": {"inputs": {"num": {"value": 123}}}}},
-                "mode": "default",
+                "runConfigData": {"ops": {"add_one": {"inputs": {"num": {"value": 123}}}}},
             }
         }
     )
@@ -206,8 +204,7 @@ def test_start_execution_save_output():
                     "repositoryName": "test",
                     "pipelineName": "math",
                 },
-                "runConfigData": {"solids": {"add_one": {"inputs": {"num": {"value": 123}}}}},
-                "mode": "default",
+                "runConfigData": {"ops": {"add_one": {"inputs": {"num": {"value": 123}}}}},
             }
         }
     )
@@ -253,8 +250,7 @@ def test_start_execution_predefined():
                     "repositoryName": "test",
                     "pipelineName": "math",
                 },
-                "runConfigData": {"solids": {"add_one": {"inputs": {"num": {"value": 123}}}}},
-                "mode": "default",
+                "runConfigData": {"ops": {"add_one": {"inputs": {"num": {"value": 123}}}}},
             }
         }
     )
@@ -281,8 +277,7 @@ def test_logs_in_start_execution_predefined():
                     "repositoryName": "test",
                     "pipelineName": "math",
                 },
-                "runConfigData": {"solids": {"add_one": {"inputs": {"num": {"value": 123}}}}},
-                "mode": "default",
+                "runConfigData": {"ops": {"add_one": {"inputs": {"num": {"value": 123}}}}},
             }
         }
     )

@@ -2,6 +2,7 @@ import contextlib
 import datetime
 import itertools
 import os
+import random
 import sys
 from typing import Iterable, List, Mapping, NamedTuple, Optional, Sequence, Set, Union
 
@@ -14,6 +15,7 @@ from dagster import (
     AssetsDefinition,
     AssetSelection,
     DagsterInstance,
+    DataVersion,
     Field,
     Nothing,
     Output,
@@ -24,6 +26,7 @@ from dagster import (
     asset,
     materialize_to_memory,
     multi_asset,
+    observable_source_asset,
     repository,
 )
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
@@ -34,6 +37,7 @@ from dagster._core.definitions.asset_reconciliation_sensor import (
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.observe import observe
 from dagster._core.definitions.partition import (
     PartitionsSubset,
 )
@@ -51,6 +55,7 @@ class RunSpec(NamedTuple):
     asset_keys: Sequence[AssetKey]
     partition_key: Optional[str] = None
     failed_asset_keys: Optional[Sequence[AssetKey]] = None
+    is_observation: bool = False
 
 
 class AssetReconciliationScenario(NamedTuple):
@@ -128,30 +133,40 @@ class AssetReconciliationScenario(NamedTuple):
                 test_time += self.between_runs_delta
 
             with pendulum.test(test_time), mock.patch("time.time", new=test_time_fn):
-                assets_in_run = []
-                run_keys = set(run.asset_keys)
-                for a in self.assets:
-                    if isinstance(a, SourceAsset):
-                        assets_in_run.append(a)
-                    else:
-                        selected_keys = run_keys.intersection(a.keys)
-                        if selected_keys == a.keys:
+                if run.is_observation:
+                    observe(
+                        instance=instance,
+                        source_assets=[
+                            a
+                            for a in self.assets
+                            if isinstance(a, SourceAsset) and a.key in run.asset_keys
+                        ],
+                    )
+                else:
+                    assets_in_run = []
+                    run_keys = set(run.asset_keys)
+                    for a in self.assets:
+                        if isinstance(a, SourceAsset):
                             assets_in_run.append(a)
-                        elif not selected_keys:
-                            assets_in_run.extend(a.to_source_assets())
                         else:
-                            assets_in_run.append(a.subset_for(run_keys))
-                            assets_in_run.extend(
-                                a.subset_for(a.keys - selected_keys).to_source_assets()
-                            )
+                            selected_keys = run_keys.intersection(a.keys)
+                            if selected_keys == a.keys:
+                                assets_in_run.append(a)
+                            elif not selected_keys:
+                                assets_in_run.extend(a.to_source_assets())
+                            else:
+                                assets_in_run.append(a.subset_for(run_keys))
+                                assets_in_run.extend(
+                                    a.subset_for(a.keys - selected_keys).to_source_assets()
+                                )
 
-                do_run(
-                    asset_keys=run.asset_keys,
-                    partition_key=run.partition_key,
-                    all_assets=self.assets,
-                    instance=instance,
-                    failed_asset_keys=run.failed_asset_keys,
-                )
+                    do_run(
+                        asset_keys=run.asset_keys,
+                        partition_key=run.partition_key,
+                        all_assets=self.assets,
+                        instance=instance,
+                        failed_asset_keys=run.failed_asset_keys,
+                    )
 
         if self.evaluation_delta is not None:
             test_time += self.evaluation_delta
@@ -247,6 +262,7 @@ def run(
     asset_keys: Iterable[str],
     partition_key: Optional[str] = None,
     failed_asset_keys: Optional[Iterable[str]] = None,
+    is_observation: bool = False,
 ):
     return RunSpec(
         asset_keys=list(
@@ -254,6 +270,7 @@ def run(
         ),
         failed_asset_keys=list(map(AssetKey.from_coerceable, failed_asset_keys or [])),
         partition_key=partition_key,
+        is_observation=is_observation,
     )
 
 
@@ -337,3 +354,11 @@ def multi_asset_def(
                 yield Output(output, output)
 
     return _assets
+
+
+def observable_source_asset_def(key: str):
+    @observable_source_asset(name=key)
+    def _observable():
+        return DataVersion(str(random.random()))
+
+    return _observable

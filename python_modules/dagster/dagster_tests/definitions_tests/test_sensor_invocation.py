@@ -46,7 +46,7 @@ from dagster import (
 from dagster._config.structured_config import ConfigurableResource
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.partition import DynamicPartitionsDefinition
-from dagster._core.definitions.resource_annotation import Resource
+from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._core.test_utils import instance_for_test
@@ -138,7 +138,7 @@ def test_sensor_invocation_resources() -> None:
 
 def test_sensor_invocation_resources_context_manager() -> None:
     @sensor(job_name="foo_pipeline")
-    def basic_sensor_str_resource_req(my_resource: Resource[str]):
+    def basic_sensor_str_resource_req(my_resource: ResourceParam[str]):
         return RunRequest(run_key=None, run_config={"foo": my_resource}, tags={})
 
     @resource

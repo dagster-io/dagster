@@ -291,7 +291,7 @@ from dagster._core.definitions.repository_definition import (
     RepositoryDefinition as RepositoryDefinition,
 )
 from dagster._core.definitions.resource_annotation import (
-    Resource as Resource,
+    ResourceParam as ResourceParam,
 )
 from dagster._core.definitions.resource_definition import (
     ResourceDefinition as ResourceDefinition,

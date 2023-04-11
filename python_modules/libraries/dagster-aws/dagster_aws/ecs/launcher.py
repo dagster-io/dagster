@@ -3,7 +3,7 @@ import logging
 import os
 import warnings
 from collections import namedtuple
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional, Sequence
 
 import boto3
 from botocore.exceptions import ClientError
@@ -13,7 +13,6 @@ from dagster import (
     Noneable,
     Permissive,
     ScalarUnion,
-    Shape,
     StringSource,
     _check as check,
 )
@@ -33,7 +32,7 @@ from dagster._utils.backoff import backoff
 from typing_extensions import Self
 
 from ..secretsmanager import get_secrets_from_arns
-from .container_context import SHARED_ECS_SCHEMA, EcsContainerContext
+from .container_context import SHARED_ECS_SCHEMA, SHARED_TASK_DEFINITION_FIELDS, EcsContainerContext
 from .tasks import (
     DagsterEcsTaskDefinitionConfig,
     get_current_ecs_task,
@@ -196,6 +195,18 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
             return None
         return self.task_definition_dict.get("runtime_platform")
 
+    @property
+    def mount_points(self) -> Optional[Sequence[Mapping[str, Any]]]:
+        if not self.task_definition_dict:
+            return None
+        return self.task_definition_dict.get("mount_points")
+
+    @property
+    def volumes(self) -> Optional[Sequence[Mapping[str, Any]]]:
+        if not self.task_definition_dict:
+            return None
+        return self.task_definition_dict.get("volumes")
+
     @classmethod
     def config_type(cls):
         return {
@@ -205,8 +216,6 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                     non_scalar_schema={
                         "log_group": Field(StringSource, is_required=False),
                         "sidecar_containers": Field(Array(Permissive({})), is_required=False),
-                        "execution_role_arn": Field(StringSource, is_required=False),
-                        "task_role_arn": Field(StringSource, is_required=False),
                         "requires_compatibilities": Field(Array(str), is_required=False),
                         "env": Field(
                             str,
@@ -217,20 +226,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                                 " from an environment variable."
                             ),
                         ),
-                        "runtime_platform": Field(
-                            Shape(
-                                {
-                                    "cpuArchitecture": Field(StringSource, is_required=False),
-                                    "operatingSystemFamily": Field(StringSource, is_required=False),
-                                }
-                            ),
-                            is_required=False,
-                            description=(
-                                "The operating system that the task definition is running on. See"
-                                " https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ecs.html#ECS.Client.register_task_definition"
-                                " for the available options."
-                            ),
-                        ),
+                        **SHARED_TASK_DEFINITION_FIELDS,
                     },
                 ),
                 is_required=False,
@@ -573,6 +569,8 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                     ),
                     ephemeral_storage=container_context.run_resources.get("ephemeral_storage"),
                     runtime_platform=runtime_platform,
+                    volumes=container_context.volumes,
+                    mount_points=container_context.mount_points,
                 )
                 task_definition_dict = task_definition_config.task_definition_dict()
             else:
@@ -591,6 +589,8 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                     memory=container_context.run_resources.get("memory"),
                     runtime_platform=container_context.runtime_platform,
                     ephemeral_storage=container_context.run_resources.get("ephemeral_storage"),
+                    volumes=container_context.volumes,
+                    mount_points=container_context.mount_points,
                 )
 
                 task_definition_config = DagsterEcsTaskDefinitionConfig.from_task_definition_dict(

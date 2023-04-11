@@ -329,6 +329,15 @@ def find_parent_materialized_asset_partitions(
 
     for asset_key in target_asset_keys_and_parents:
         if asset_graph.is_source(asset_key):
+            if asset_graph.is_observable(asset_key) and instance_queryer.new_version_exists(
+                observable_source_asset_key=asset_key, after_cursor=latest_storage_id
+            ):
+                for child in asset_graph.get_children_partitions(
+                    instance_queryer, asset_key, partition_key=None
+                ):
+                    if child.asset_key in target_asset_keys:
+                        result_asset_partitions.add(child)
+
             continue
 
         partitions_def = asset_graph.get_partitions_def(asset_key)

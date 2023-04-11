@@ -45,7 +45,7 @@ class DataDogClientResource(ConfigurableResourceFactory[DataDogClient]):
         .. code-block:: python
 
             @op
-            def datadog_op(datadog_client: Resource[DataDogClient]):
+            def datadog_op(datadog_client: ResourceParam[DataDogClient]):
                 datadog_client.event('Man down!', 'This server needs assistance.')
                 datadog_client.gauge('users.online', 1001, tags=["protocol:http"])
                 datadog_client.increment('page.views')

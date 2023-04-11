@@ -990,12 +990,12 @@ class DagsterInstance(DynamicPartitionsStore):
                 pipeline_def = pipeline_def.get_pipeline_subset_def(
                     nodes_to_execute=solids_to_execute
                 )
-        if asset_selection and isinstance(pipeline_def, JobDefinition):
+        if isinstance(pipeline_def, JobDefinition) and (asset_selection or solid_selection):
             # for cases when `create_run_for_pipeline` is directly called
             pipeline_def = pipeline_def.get_job_def_for_subset_selection(
-                asset_selection=asset_selection
+                asset_selection=asset_selection,
+                op_selection=solid_selection,
             )
-
         step_keys_to_execute = None
 
         if execution_plan:
@@ -1342,7 +1342,7 @@ class DagsterInstance(DynamicPartitionsStore):
         # The "python origin" arguments exist so a job can be reconstructed in memory
         # after a DagsterRun has been fetched from the database.
         #
-        # There are cases (notably in _logged_execute_pipeline with Reconstructable pipelines)
+        # There are cases (notably in _logged_execute_job with Reconstructable jobs)
         # where pipeline_code_origin and is not. In some cloud test cases only
         # external_pipeline_origin is passed But they are almost always passed together.
         # If these are not set the created run will never be able to be relaunched from
@@ -2121,7 +2121,6 @@ class DagsterInstance(DynamicPartitionsStore):
             event_type_value=DagsterEventType.PIPELINE_STARTING.value,
             pipeline_name=run.pipeline_name,
         )
-
         self.report_dagster_event(launch_started_event, run_id=run.run_id)
 
         run = self.get_run_by_id(run_id)

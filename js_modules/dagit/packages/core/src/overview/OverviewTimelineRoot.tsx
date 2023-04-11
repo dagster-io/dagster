@@ -1,5 +1,4 @@
 import {
-  Page,
   PageHeader,
   Heading,
   Box,
@@ -105,7 +104,7 @@ export const OverviewTimelineRoot = () => {
   ]);
 
   return (
-    <Page>
+    <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
       <PageHeader
         title={<Heading>Overview</Heading>}
         tabs={<OverviewTabs tab="timeline" refreshState={refreshState} />}
@@ -145,6 +144,6 @@ export const OverviewTimelineRoot = () => {
       <ErrorBoundary region="timeline">
         <RunTimeline loading={initialLoading} range={range} jobs={visibleJobs} />
       </ErrorBoundary>
-    </Page>
+    </Box>
   );
 };

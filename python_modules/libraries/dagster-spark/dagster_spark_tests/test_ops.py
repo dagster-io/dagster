@@ -3,7 +3,6 @@ import os
 import pytest
 import yaml
 from dagster import job
-from dagster._legacy import ModeDefinition, execute_pipeline, pipeline
 from dagster_spark import create_spark_op, spark_resource
 
 CONFIG = """
@@ -45,8 +44,8 @@ ops:
 
 @pytest.mark.skip("for local testing only, we don't have $SPARK_HOME on buildkite yet")
 def test_multiple_spark_jobs():
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={"spark": spark_resource})])
-    def pipe():
+    @job(resource_defs={"spark": spark_resource})
+    def job_def():
         for op_name in ["first_pi", "second_pi", "third_pi"]:
             create_spark_op(op_name, main_class="org.apache.spark.examples.SparkPi")()
 
@@ -57,7 +56,7 @@ def test_multiple_spark_jobs():
         if fname.startswith("spark-examples"):
             jar_path = os.path.join(base_path, fname)
 
-    result = execute_pipeline(pipe, yaml.safe_load(CONFIG.format(jar_path=jar_path)))
+    result = job_def.execute_in_process(yaml.safe_load(CONFIG.format(jar_path=jar_path)))
     assert result.success
 
 

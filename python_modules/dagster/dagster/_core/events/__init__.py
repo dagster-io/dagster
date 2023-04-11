@@ -1684,13 +1684,13 @@ class ComputeLogsCaptureData(
     NamedTuple(
         "_ComputeLogsCaptureData",
         [
-            ("file_key", Sequence[str]),  # renamed log_key => file_key to avoid confusion
+            ("file_key", str),  # renamed log_key => file_key to avoid confusion
             ("step_keys", Sequence[str]),
             ("external_url", Optional[str]),
         ],
     )
 ):
-    def __new__(cls, file_key, step_keys, external_url=None):
+    def __new__(cls, file_key: str, step_keys: Sequence[str], external_url: Optional[str] = None):
         return super(ComputeLogsCaptureData, cls).__new__(
             cls,
             file_key=check.str_param(file_key, "file_key"),

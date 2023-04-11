@@ -55,13 +55,11 @@ from .results import PipelineExecutionResult
 # | function name               | operates over      | sync  | supports    | creates new DagsterRun  |
 # |                             |                    |       | reexecution | in instance             |
 # | --------------------------- | ------------------ | ----- | ----------- | ----------------------- |
-# | execute_pipeline_iterator   | IPipeline          | async | no          | yes                     |
-# | execute_pipeline            | IPipeline          | sync  | no          | yes                     |
+# | execute_job                 | ReconstructableJob | sync  | yes         | yes                     |
 # | execute_run_iterator        | DagsterRun         | async | (1)         | no                      |
 # | execute_run                 | DagsterRun         | sync  | (1)         | no                      |
 # | execute_plan_iterator       | ExecutionPlan      | async | (2)         | no                      |
 # | execute_plan                | ExecutionPlan      | sync  | (2)         | no                      |
-# | reexecute_pipeline          | IPipeline          | sync  | yes         | yes                     |
 #
 # Notes on reexecution support:
 # (1) The appropriate bits must be set on the DagsterRun passed to this function. Specifically,
@@ -300,81 +298,6 @@ def execute_run(
     )
 
 
-def execute_pipeline_iterator(
-    pipeline: Union[PipelineDefinition, IPipeline],
-    run_config: Optional[Mapping[str, object]] = None,
-    mode: Optional[str] = None,
-    preset: Optional[str] = None,
-    tags: Optional[Mapping[str, str]] = None,
-    solid_selection: Optional[Sequence[str]] = None,
-    instance: Optional[DagsterInstance] = None,
-) -> Iterator[DagsterEvent]:
-    """Execute a pipeline iteratively.
-
-    Rather than package up the result of running a pipeline into a single object, like
-    :py:func:`execute_pipeline`, this function yields the stream of events resulting from pipeline
-    execution.
-
-    This is intended to allow the caller to handle these events on a streaming basis in whatever
-    way is appropriate.
-
-    Parameters:
-        pipeline (Union[IPipeline, PipelineDefinition]): The pipeline to execute.
-        run_config (Optional[dict]): The configuration that parametrizes this run,
-            as a dict.
-        mode (Optional[str]): The name of the pipeline mode to use. You may not set both ``mode``
-            and ``preset``.
-        preset (Optional[str]): The name of the pipeline preset to use. You may not set both
-            ``mode`` and ``preset``.
-        tags (Optional[Dict[str, Any]]): Arbitrary key-value pairs that will be added to pipeline
-            logs.
-        solid_selection (Optional[List[str]]): A list of solid selection queries (including single
-            solid names) to execute. For example:
-
-            - ``['some_solid']``: selects ``some_solid`` itself.
-            - ``['*some_solid']``: select ``some_solid`` and all its ancestors (upstream dependencies).
-            - ``['*some_solid+++']``: select ``some_solid``, all its ancestors, and its descendants
-              (downstream dependencies) within 3 levels down.
-            - ``['*some_solid', 'other_solid_a', 'other_solid_b+']``: select ``some_solid`` and all its
-              ancestors, ``other_solid_a`` itself, and ``other_solid_b`` and its direct child solids.
-        instance (Optional[DagsterInstance]): The instance to execute against. If this is ``None``,
-            an ephemeral instance will be used, and no artifacts will be persisted from the run.
-
-    Returns:
-      Iterator[DagsterEvent]: The stream of events resulting from pipeline execution.
-    """
-    with ephemeral_instance_if_missing(instance) as execute_instance:
-        pipeline, repository_load_data = _pipeline_with_repository_load_data(pipeline)
-
-        (
-            pipeline,
-            run_config,
-            mode,
-            tags,
-            solids_to_execute,
-            solid_selection,
-        ) = _check_execute_pipeline_args(
-            pipeline=pipeline,
-            run_config=run_config,
-            mode=mode,
-            preset=preset,
-            tags=tags,
-            solid_selection=solid_selection,
-        )
-
-        dagster_run = execute_instance.create_run_for_pipeline(
-            pipeline_def=pipeline.get_definition(),
-            run_config=run_config,
-            mode=mode,
-            solid_selection=solid_selection,
-            solids_to_execute=solids_to_execute,
-            tags=tags,
-            repository_load_data=repository_load_data,
-        )
-
-        return execute_run_iterator(pipeline, dagster_run, execute_instance)
-
-
 @contextmanager
 def ephemeral_instance_if_missing(
     instance: Optional[DagsterInstance],
@@ -540,7 +463,7 @@ def execute_job(
     check.opt_sequence_param(asset_selection, "asset_selection", of_type=AssetKey)
 
     # get the repository load data here because we call job.get_definition() later in this fn
-    job_def, _ = _pipeline_with_repository_load_data(job)
+    job_def, _ = _job_with_repository_load_data(job)
 
     if reexecution_options is not None and op_selection is not None:
         raise DagsterInvariantViolationError(
@@ -551,26 +474,22 @@ def execute_job(
         if run_config is None:
             run = check.not_none(instance.get_run_by_id(reexecution_options.parent_run_id))
             run_config = run.run_config
-        result = reexecute_pipeline(
-            pipeline=job_def,
+        result = _reexecute_job(
+            job_arg=job_def,
             parent_run_id=reexecution_options.parent_run_id,
             run_config=run_config,
             step_selection=list(reexecution_options.step_selection),
-            mode=None,
-            preset=None,
             tags=tags,
             instance=instance,
             raise_on_error=raise_on_error,
         )
     else:
-        result = _logged_execute_pipeline(
-            pipeline=job_def,
+        result = _logged_execute_job(
+            job_arg=job_def,
             instance=instance,
             run_config=run_config,
-            mode=None,
-            preset=None,
             tags=tags,
-            solid_selection=op_selection,
+            op_selection=op_selection,
             raise_on_error=raise_on_error,
             asset_selection=asset_selection,
         )
@@ -584,177 +503,78 @@ def execute_job(
     )
 
 
-def execute_pipeline(
-    pipeline: Union[PipelineDefinition, IPipeline],
-    run_config: Optional[Mapping[str, object]] = None,
-    mode: Optional[str] = None,
-    preset: Optional[str] = None,
-    tags: Optional[Mapping[str, str]] = None,
-    solid_selection: Optional[Sequence[str]] = None,
-    instance: Optional[DagsterInstance] = None,
-    raise_on_error: bool = True,
-) -> PipelineExecutionResult:
-    """Execute a pipeline synchronously.
-
-    Users will typically call this API when testing pipeline execution, or running standalone
-    scripts.
-
-    Parameters:
-        pipeline (Union[IPipeline, PipelineDefinition]): The pipeline to execute.
-        run_config (Optional[dict]): The configuration that parametrizes this run,
-            as a dict.
-        mode (Optional[str]): The name of the pipeline mode to use. You may not set both ``mode``
-            and ``preset``.
-        preset (Optional[str]): The name of the pipeline preset to use. You may not set both
-            ``mode`` and ``preset``.
-        tags (Optional[Dict[str, Any]]): Arbitrary key-value pairs that will be added to pipeline
-            logs.
-        instance (Optional[DagsterInstance]): The instance to execute against. If this is ``None``,
-            an ephemeral instance will be used, and no artifacts will be persisted from the run.
-        raise_on_error (Optional[bool]): Whether or not to raise exceptions when they occur.
-            Defaults to ``True``, since this is the most useful behavior in test.
-        solid_selection (Optional[List[str]]): A list of solid selection queries (including single
-            solid names) to execute. For example:
-
-            - ``['some_solid']``: selects ``some_solid`` itself.
-            - ``['*some_solid']``: select ``some_solid`` and all its ancestors (upstream dependencies).
-            - ``['*some_solid+++']``: select ``some_solid``, all its ancestors, and its descendants
-              (downstream dependencies) within 3 levels down.
-            - ``['*some_solid', 'other_solid_a', 'other_solid_b+']``: select ``some_solid`` and all its
-              ancestors, ``other_solid_a`` itself, and ``other_solid_b`` and its direct child solids.
-
-    Returns:
-      :py:class:`PipelineExecutionResult`: The result of pipeline execution.
-
-    For the asynchronous version, see :py:func:`execute_pipeline_iterator`.
-    """
-    with ephemeral_instance_if_missing(instance) as execute_instance:
-        return _logged_execute_pipeline(
-            pipeline,
-            instance=execute_instance,
-            run_config=run_config,
-            mode=mode,
-            preset=preset,
-            tags=tags,
-            solid_selection=solid_selection,
-            raise_on_error=raise_on_error,
-        )
-
-
 @telemetry_wrapper
-def _logged_execute_pipeline(
-    pipeline: Union[IPipeline, PipelineDefinition],
+def _logged_execute_job(
+    job_arg: Union[IPipeline, PipelineDefinition],
     instance: DagsterInstance,
     run_config: Optional[Mapping[str, object]] = None,
-    mode: Optional[str] = None,
-    preset: Optional[str] = None,
     tags: Optional[Mapping[str, str]] = None,
-    solid_selection: Optional[Sequence[str]] = None,
+    op_selection: Optional[Sequence[str]] = None,
     raise_on_error: bool = True,
     asset_selection: Optional[Sequence[AssetKey]] = None,
 ) -> PipelineExecutionResult:
     check.inst_param(instance, "instance", DagsterInstance)
 
-    pipeline, repository_load_data = _pipeline_with_repository_load_data(pipeline)
+    job_arg, repository_load_data = _job_with_repository_load_data(job_arg)
 
     (
-        pipeline,
+        job_arg,
         run_config,
         mode,
         tags,
         solids_to_execute,
-        solid_selection,
-    ) = _check_execute_pipeline_args(
-        pipeline=pipeline,
+        op_selection,
+    ) = _check_execute_job_args(
+        job_arg=job_arg,
         run_config=run_config,
-        mode=mode,
-        preset=preset,
         tags=tags,
-        solid_selection=solid_selection,
+        op_selection=op_selection,
     )
 
-    log_repo_stats(instance=instance, pipeline=pipeline, source="execute_pipeline")
+    log_repo_stats(instance=instance, pipeline=job_arg, source="execute_pipeline")
 
     dagster_run = instance.create_run_for_pipeline(
-        pipeline_def=pipeline.get_definition(),
+        pipeline_def=job_arg.get_definition(),
         run_config=run_config,
         mode=mode,
-        solid_selection=solid_selection,
+        solid_selection=op_selection,
         solids_to_execute=solids_to_execute,
         tags=tags,
         pipeline_code_origin=(
-            pipeline.get_python_origin() if isinstance(pipeline, ReconstructablePipeline) else None
+            job_arg.get_python_origin() if isinstance(job_arg, ReconstructableJob) else None
         ),
         repository_load_data=repository_load_data,
         asset_selection=frozenset(asset_selection) if asset_selection else None,
     )
 
     return execute_run(
-        pipeline,
+        job_arg,
         dagster_run,
         instance,
         raise_on_error=raise_on_error,
     )
 
 
-def reexecute_pipeline(
-    pipeline: Union[IPipeline, PipelineDefinition],
+def _reexecute_job(
+    job_arg: Union[IPipeline, PipelineDefinition],
     parent_run_id: str,
     run_config: Optional[Mapping[str, object]] = None,
     step_selection: Optional[Sequence[str]] = None,
-    mode: Optional[str] = None,
-    preset: Optional[str] = None,
     tags: Optional[Mapping[str, str]] = None,
     instance: Optional[DagsterInstance] = None,
     raise_on_error: bool = True,
 ) -> PipelineExecutionResult:
-    """Reexecute an existing pipeline run.
-
-    Users will typically call this API when testing pipeline reexecution, or running standalone
-    scripts.
-
-    Parameters:
-        pipeline (Union[IPipeline, PipelineDefinition]): The pipeline to execute.
-        parent_run_id (str): The id of the previous run to reexecute. The run must exist in the
-            instance.
-        run_config (Optional[dict]): The configuration that parametrizes this run,
-            as a dict.
-        solid_selection (Optional[List[str]]): A list of solid selection queries (including single
-            solid names) to execute. For example:
-
-            - ``['some_solid']``: selects ``some_solid`` itself.
-            - ``['*some_solid']``: select ``some_solid`` and all its ancestors (upstream dependencies).
-            - ``['*some_solid+++']``: select ``some_solid``, all its ancestors, and its descendants
-              (downstream dependencies) within 3 levels down.
-            - ``['*some_solid', 'other_solid_a', 'other_solid_b+']``: select ``some_solid`` and all its
-              ancestors, ``other_solid_a`` itself, and ``other_solid_b`` and its direct child solids.
-
-        mode (Optional[str]): The name of the pipeline mode to use. You may not set both ``mode``
-            and ``preset``.
-        preset (Optional[str]): The name of the pipeline preset to use. You may not set both
-            ``mode`` and ``preset``.
-        tags (Optional[Dict[str, Any]]): Arbitrary key-value pairs that will be added to pipeline
-            logs.
-        instance (Optional[DagsterInstance]): The instance to execute against. If this is ``None``,
-            an ephemeral instance will be used, and no artifacts will be persisted from the run.
-        raise_on_error (Optional[bool]): Whether or not to raise exceptions when they occur.
-            Defaults to ``True``, since this is the most useful behavior in test.
-
-    Returns:
-      :py:class:`PipelineExecutionResult`: The result of pipeline execution.
-    """
+    """Reexecute an existing job run."""
     check.opt_sequence_param(step_selection, "step_selection", of_type=str)
 
     check.str_param(parent_run_id, "parent_run_id")
 
     with ephemeral_instance_if_missing(instance) as execute_instance:
-        pipeline, repository_load_data = _pipeline_with_repository_load_data(pipeline)
+        job_arg, repository_load_data = _job_with_repository_load_data(job_arg)
 
-        (pipeline, run_config, mode, tags, _, _) = _check_execute_pipeline_args(
-            pipeline=pipeline,
+        (job_arg, run_config, mode, tags, _, _) = _check_execute_job_args(
+            job_arg=job_arg,
             run_config=run_config,
-            mode=mode,
-            preset=preset,
             tags=tags,
         )
 
@@ -771,7 +591,7 @@ def reexecute_pipeline(
         if step_selection:
             execution_plan = _resolve_reexecute_step_selection(
                 execute_instance,
-                pipeline,
+                job_arg,
                 mode,
                 run_config,
                 cast(DagsterRun, parent_dagster_run),
@@ -779,12 +599,12 @@ def reexecute_pipeline(
             )
 
         if parent_dagster_run.asset_selection:
-            pipeline = pipeline.subset_for_execution(
+            job_arg = job_arg.subset_for_execution(
                 solid_selection=None, asset_selection=parent_dagster_run.asset_selection
             )
 
         dagster_run = execute_instance.create_run_for_pipeline(
-            pipeline_def=pipeline.get_definition(),
+            pipeline_def=job_arg.get_definition(),
             execution_plan=execution_plan,
             run_config=run_config,
             mode=mode,
@@ -795,15 +615,13 @@ def reexecute_pipeline(
             root_run_id=parent_dagster_run.root_run_id or parent_dagster_run.run_id,
             parent_run_id=parent_dagster_run.run_id,
             pipeline_code_origin=(
-                pipeline.get_python_origin()
-                if isinstance(pipeline, ReconstructablePipeline)
-                else None
+                job_arg.get_python_origin() if isinstance(job_arg, ReconstructableJob) else None
             ),
             repository_load_data=repository_load_data,
         )
 
         return execute_run(
-            pipeline,
+            job_arg,
             dagster_run,
             execute_instance,
             raise_on_error=raise_on_error,
@@ -875,13 +693,13 @@ def execute_plan(
     )
 
 
-def _check_pipeline(pipeline: Union[PipelineDefinition, IPipeline]) -> IPipeline:
+def _check_pipeline(job_arg: Union[PipelineDefinition, IPipeline]) -> IPipeline:
     # backcompat
-    if isinstance(pipeline, PipelineDefinition):
-        pipeline = InMemoryPipeline(pipeline)
+    if isinstance(job_arg, PipelineDefinition):
+        job_arg = InMemoryPipeline(job_arg)
 
-    check.inst_param(pipeline, "pipeline", IPipeline)
-    return pipeline
+    check.inst_param(job_arg, "job_arg", IPipeline)
+    return job_arg
 
 
 def _get_execution_plan_from_run(
@@ -1119,13 +937,11 @@ class ExecuteRunWithPlanIterable:
                         yield event
 
 
-def _check_execute_pipeline_args(
-    pipeline: Union[PipelineDefinition, IPipeline],
+def _check_execute_job_args(
+    job_arg: Union[PipelineDefinition, IPipeline],
     run_config: Optional[Mapping[str, object]],
-    mode: Optional[str],
-    preset: Optional[str],
     tags: Optional[Mapping[str, str]],
-    solid_selection: Optional[Sequence[str]] = None,
+    op_selection: Optional[Sequence[str]] = None,
 ) -> Tuple[
     IPipeline,
     Optional[Mapping],
@@ -1134,94 +950,30 @@ def _check_execute_pipeline_args(
     Optional[AbstractSet[str]],
     Optional[Sequence[str]],
 ]:
-    pipeline = _check_pipeline(pipeline)
-    pipeline_def = pipeline.get_definition()
-    check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
+    job_arg = _check_pipeline(job_arg)
+    job_def = job_arg.get_definition()
+    check.inst_param(job_def, "job_def", JobDefinition)
 
     run_config = check.opt_mapping_param(run_config, "run_config")
-    check.opt_str_param(mode, "mode")
-    check.opt_str_param(preset, "preset")
-    check.invariant(
-        not (mode is not None and preset is not None),
-        "You may set only one of `mode` (got {mode}) or `preset` (got {preset}).".format(
-            mode=mode, preset=preset
-        ),
-    )
 
     tags = check.opt_mapping_param(tags, "tags", key_type=str)
-    check.opt_sequence_param(solid_selection, "solid_selection", of_type=str)
+    check.opt_sequence_param(op_selection, "solid_selection", of_type=str)
 
-    if preset is not None:
-        pipeline_preset = pipeline_def.get_preset(preset)
+    mode = job_def.get_default_mode_name()
 
-        if pipeline_preset.run_config is not None:
-            check.invariant(
-                (not run_config) or (pipeline_preset.run_config == run_config),
-                "The environment set in preset '{preset}' does not agree with the environment "
-                "passed in the `run_config` argument.".format(preset=preset),
-            )
-
-            run_config = pipeline_preset.run_config
-
-        # load solid_selection from preset
-        if pipeline_preset.solid_selection is not None:
-            check.invariant(
-                solid_selection is None or solid_selection == pipeline_preset.solid_selection,
-                "The solid_selection set in preset '{preset}', {preset_subset}, does not agree with"
-                " the `solid_selection` argument: {solid_selection}".format(
-                    preset=preset,
-                    preset_subset=pipeline_preset.solid_selection,
-                    solid_selection=solid_selection,
-                ),
-            )
-            solid_selection = pipeline_preset.solid_selection
-
-        check.invariant(
-            mode is None or mode == pipeline_preset.mode,
-            "Mode {mode} does not agree with the mode set in preset '{preset}': "
-            "('{preset_mode}')".format(preset=preset, preset_mode=pipeline_preset.mode, mode=mode),
-        )
-
-        mode = pipeline_preset.mode
-
-        tags = merge_dicts(pipeline_preset.tags, tags)
-
-    if mode is not None:
-        if not pipeline_def.has_mode_definition(mode):
-            raise DagsterInvariantViolationError(
-                (
-                    "You have attempted to execute pipeline {name} with mode {mode}. "
-                    "Available modes: {modes}"
-                ).format(
-                    name=pipeline_def.name,
-                    mode=mode,
-                    modes=pipeline_def.available_modes,
-                )
-            )
-    else:
-        if pipeline_def.is_multi_mode:
-            raise DagsterInvariantViolationError(
-                (
-                    "Pipeline {name} has multiple modes (Available modes: {modes}) and you have "
-                    "attempted to execute it without specifying a mode. Set "
-                    "mode property on the DagsterRun object."
-                ).format(name=pipeline_def.name, modes=pipeline_def.available_modes)
-            )
-        mode = pipeline_def.get_default_mode_name()
-
-    tags = merge_dicts(pipeline_def.tags, tags)
+    tags = merge_dicts(job_def.tags, tags)
 
     # generate pipeline subset from the given solid_selection
-    if solid_selection:
-        pipeline = pipeline.subset_for_execution(solid_selection)
+    if op_selection:
+        job_arg = job_arg.subset_for_execution(op_selection)
 
     return (
-        pipeline,
+        job_arg,
         run_config,
         mode,
         tags,
-        pipeline.solids_to_execute,
-        solid_selection,
+        job_arg.solids_to_execute,
+        op_selection,
     )
 
 
@@ -1256,15 +1008,15 @@ def _resolve_reexecute_step_selection(
     return execution_plan
 
 
-def _pipeline_with_repository_load_data(
-    pipeline: Union[PipelineDefinition, IPipeline],
+def _job_with_repository_load_data(
+    job_arg: Union[PipelineDefinition, IPipeline],
 ) -> Tuple[Union[PipelineDefinition, IPipeline], Optional[RepositoryLoadData]]:
     """For ReconstructablePipeline, generate and return any required RepositoryLoadData, alongside
     a ReconstructablePipeline with this repository load data baked in.
     """
-    if isinstance(pipeline, ReconstructablePipeline):
+    if isinstance(job_arg, ReconstructablePipeline):
         # Unless this ReconstructablePipeline alread has repository_load_data attached, this will
         # force the repository_load_data to be computed from scratch.
-        repository_load_data = pipeline.repository.get_definition().repository_load_data
-        return pipeline.with_repository_load_data(repository_load_data), repository_load_data
-    return pipeline, None
+        repository_load_data = job_arg.repository.get_definition().repository_load_data
+        return job_arg.with_repository_load_data(repository_load_data), repository_load_data
+    return job_arg, None

@@ -92,6 +92,36 @@ def test_merge(
     assert merged.task_role_arn == "other-task-role"
     assert merged.execution_role_arn == "other-fake-execution-role"
 
+    assert merged.mount_points == [
+        {
+            "sourceVolume": "myOtherEfsVolume",
+            "containerPath": "/mount/other/efs",
+            "readOnly": True,
+        },
+        {
+            "sourceVolume": "myEfsVolume",
+            "containerPath": "/mount/efs",
+            "readOnly": True,
+        },
+    ]
+
+    assert merged.volumes == [
+        {
+            "name": "myOtherEfsVolume",
+            "efsVolumeConfiguration": {
+                "fileSystemId": "fs-5678",
+                "rootDirectory": "/path/to/my/other/data",
+            },
+        },
+        {
+            "name": "myEfsVolume",
+            "efsVolumeConfiguration": {
+                "fileSystemId": "fs-1234",
+                "rootDirectory": "/path/to/my/data",
+            },
+        },
+    ]
+
     with pytest.raises(
         Exception, match="Tried to load environment variable OTHER_FOO_ENV_VAR, but it was not set"
     ):

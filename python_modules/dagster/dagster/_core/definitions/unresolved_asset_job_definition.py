@@ -120,7 +120,11 @@ class UnresolvedAssetJobDefinition(
             self.config, self.partitions_def
         )
 
-        if isinstance(self.partitions_def, DynamicPartitionsDefinition) and not instance:
+        if (
+            isinstance(self.partitions_def, DynamicPartitionsDefinition)
+            and self.partitions_def.name
+            and not instance
+        ):
             check.failed(
                 "Must provide a dagster instance when calling run_request_for_partition on a "
                 "dynamic partition set"
@@ -193,11 +197,6 @@ class UnresolvedAssetJobDefinition(
             partitions_def = asset_graph.get_partitions_def(asset_key)
             if partitions_def is not None:
                 asset_keys_by_partitions_def[partitions_def].add(asset_key)
-
-        if len(asset_keys_by_partitions_def) == 0 and self.partitions_def:
-            raise DagsterInvalidDefinitionError(
-                "Tried to build a partitioned job, but none of the selected assets are partitioned."
-            )
 
         if len(asset_keys_by_partitions_def) > 1:
             keys_by_partitions_def_str = "\n".join(

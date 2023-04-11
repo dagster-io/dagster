@@ -1,5 +1,6 @@
 import os
 import runpy
+from urllib.parse import urlencode
 
 import pytest
 from dagit.app import create_app_from_workspace_process_context
@@ -107,11 +108,8 @@ def load_dagit_for_workspace_cli_args(n_pipelines=1, **kwargs):
                 create_app_from_workspace_process_context(workspace_process_context)
             )
 
-            res = client.get(
-                "/graphql?query={query_string}".format(
-                    query_string=PIPELINES_OR_ERROR_QUERY
-                )
-            )
+            url_query = urlencode({"query": PIPELINES_OR_ERROR_QUERY})
+            res = client.get(f"/graphql?{url_query}")
             json_res = res.json()
             assert "data" in json_res
             assert "repositoriesOrError" in json_res["data"]
