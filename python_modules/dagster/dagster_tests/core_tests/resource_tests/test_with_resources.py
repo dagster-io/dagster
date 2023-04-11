@@ -231,8 +231,8 @@ def test_source_asset_no_manager_def():
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match=(
-            "io manager with key 'foo' required by SourceAsset with key \[\"my_source_asset\"\] was"
-            " not provided"
+            "io manager with key 'foo' required by SourceAsset with key \\[\"my_source_asset\"\\]"
+            " was not provided"
         ),
     ):
         with_resources([the_source_asset], {})

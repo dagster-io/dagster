@@ -108,6 +108,7 @@ def test_mixed_source_asset_observation_job():
             jobs=[define_asset_job("mixed_job", [foo, bar])],
         )
 
+
 @pytest.mark.parametrize(
     "is_valid,resource_defs",
     [(True, {"bar": ResourceDefinition.hardcoded_resource("bar")}), (False, {})],
@@ -125,7 +126,6 @@ def test_source_asset_observation_job_with_resource(is_valid, resource_defs):
     instance = DagsterInstance.ephemeral()
 
     if is_valid:
-        print("RESOURCE DEFS", resource_defs)
         result = (
             Definitions(
                 assets=[foo],

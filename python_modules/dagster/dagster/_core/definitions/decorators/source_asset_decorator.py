@@ -73,7 +73,7 @@ def observable_source_asset(
             compose the source asset.
         group_name (Optional[str]): A string name used to organize multiple assets into groups. If not provided,
             the name "default" is used.
-        required_resource_keys (Optional[Set[str]]): Set of resource handles required by the observe op.
+        required_resource_keys (Optional[Set[str]]): Set of resource keys required by the observe op.
         resource_defs (Optional[Mapping[str, ResourceDefinition]]): (Experimental) resource
             definitions that may be required by the :py:class:`dagster.IOManagerDefinition` provided in
             the `io_manager_def` argument.
@@ -137,7 +137,7 @@ class _ObservableSourceAsset:
             description=self.description,
             partitions_def=self.partitions_def,
             group_name=self.group_name,
-            required_resource_keys=self.required_resource_keys,
+            _required_resource_keys=self.required_resource_keys,
             resource_defs=self.resource_defs,
             observe_fn=observe_fn,
         )

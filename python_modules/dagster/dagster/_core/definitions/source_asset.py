@@ -115,7 +115,7 @@ class SourceAsset(ResourceAddable):
         group_name: Optional[str] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         observe_fn: Optional[SourceAssetObserveFunction] = None,
-        required_resource_keys: Optional[AbstractSet[str]] = None,
+        _required_resource_keys: Optional[AbstractSet[str]] = None,
         # Add additional fields to with_resources and with_group below
     ):
         if resource_defs is not None:
@@ -155,7 +155,7 @@ class SourceAsset(ResourceAddable):
         self.description = check.opt_str_param(description, "description")
         self.observe_fn = check.opt_callable_param(observe_fn, "observe_fn")
         self._required_resource_keys = check.opt_set_param(
-            required_resource_keys, "required_resource_keys", of_type=str
+            _required_resource_keys, "_required_resource_keys", of_type=str
         )
         self._node_def = None
 
@@ -279,7 +279,7 @@ class SourceAsset(ResourceAddable):
                 resource_defs=relevant_resource_defs,
                 group_name=self.group_name,
                 observe_fn=self.observe_fn,
-                required_resource_keys=self._required_resource_keys,
+                _required_resource_keys=self._required_resource_keys,
             )
 
     def with_group_name(self, group_name: str) -> "SourceAsset":
@@ -302,7 +302,7 @@ class SourceAsset(ResourceAddable):
                 group_name=group_name,
                 resource_defs=self.resource_defs,
                 observe_fn=self.observe_fn,
-                required_resource_keys=self._required_resource_keys,
+                _required_resource_keys=self._required_resource_keys,
             )
 
     def get_resource_requirements(self) -> Iterator[ResourceRequirement]:

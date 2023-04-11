@@ -1,10 +1,10 @@
 from typing import Optional
 
+import pytest
 from dagster._core.definitions.data_version import (
     DataVersion,
     extract_data_version_from_entry,
 )
-import pytest
 from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.observe import observe
@@ -60,16 +60,14 @@ def test_observe_resource(is_valid, resource_defs):
         required_resource_keys={"bar"},
         resource_defs=resource_defs,
     )
-    def foo(context) -> LogicalVersion:
-        return LogicalVersion(f"{context.resources.bar}-alpha")
+    def foo(context) -> DataVersion:
+        return DataVersion(f"{context.resources.bar}-alpha")
 
     instance = DagsterInstance.ephemeral()
 
     if is_valid:
         observe([foo], instance=instance)
-        assert _get_current_logical_version(AssetKey("foo"), instance) == LogicalVersion(
-            "bar-alpha"
-        )
+        assert _get_current_data_version(AssetKey("foo"), instance) == DataVersion("bar-alpha")
     else:
         with pytest.raises(
             DagsterInvalidDefinitionError,
@@ -88,16 +86,14 @@ def test_observe_config(is_valid, config_value):
         return context.resource_config["baz"]
 
     @observable_source_asset(required_resource_keys={"bar"}, resource_defs={"bar": bar})
-    def foo(context) -> LogicalVersion:
-        return LogicalVersion(f"{context.resources.bar}-alpha")
+    def foo(context) -> DataVersion:
+        return DataVersion(f"{context.resources.bar}-alpha")
 
     instance = DagsterInstance.ephemeral()
 
     if is_valid:
         observe([foo], instance=instance, run_config=config_value)
-        assert _get_current_logical_version(AssetKey("foo"), instance) == LogicalVersion(
-            "baz-alpha"
-        )
+        assert _get_current_data_version(AssetKey("foo"), instance) == DataVersion("baz-alpha")
     else:
         with pytest.raises(DagsterInvalidConfigError, match="Error in config for job"):
             observe([foo], instance=instance, run_config=config_value)
