@@ -3,7 +3,7 @@ from typing import Dict, Generator, List, Optional, cast
 
 import botocore
 from dagster import (
-    Field as DagsterField,
+    Field as LegacyDagsterField,
     resource,
 )
 from dagster._config.field_utils import Shape
@@ -220,7 +220,7 @@ class SecretsManagerSecretsResource(ResourceWithBoto3Configuration):
 
 LEGACY_SECRETSMANAGER_SECRETS_SCHEMA = {
     **cast(Shape, SecretsManagerSecretsResource.to_config_schema().as_field().config_type).fields,
-    "add_to_environment": DagsterField(
+    "add_to_environment": LegacyDagsterField(
         bool,
         default_value=False,
         description="Whether to add the secrets to the environment. Defaults to False.",

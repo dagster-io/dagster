@@ -4,7 +4,7 @@ from typing import Any, Dict, Generator, List, Optional, cast
 import botocore
 from dagster import (
     Config,
-    Field as DagsterField,
+    Field as LegacyDagsterField,
     resource,
 )
 from dagster._config.field_utils import Shape
@@ -268,7 +268,7 @@ class ParameterStoreResource(ResourceWithBoto3Configuration):
 
 LEGACY_PARAMETERSTORE_SCHEMA = {
     **cast(Shape, ParameterStoreResource.to_config_schema().as_field().config_type).fields,
-    "add_to_environment": DagsterField(
+    "add_to_environment": LegacyDagsterField(
         bool,
         default_value=False,
         description="Whether to add the paramters to the environment. Defaults to False.",
