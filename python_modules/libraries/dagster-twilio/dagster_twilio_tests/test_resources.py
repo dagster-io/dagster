@@ -1,12 +1,11 @@
 import os
 
 import pytest
-from dagster import ResourceParam, op
+from dagster import op
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._utils.test import wrap_op_in_graph_and_execute
 from dagster_twilio import TwilioResource, twilio_resource
 from twilio.base.exceptions import TwilioRestException
-from twilio.rest import Client
 
 
 @pytest.fixture(name="twilio_resource_option", params=[True, False])
@@ -25,10 +24,11 @@ def test_twilio_resource(twilio_resource_option) -> None:
     assert auth_token, "TWILIO_TEST_AUTH_TOKEN not set"
 
     @op
-    def twilio_op(twilio: ResourceParam[Client]):
+    def twilio_op(twilio_resource: TwilioResource):
         # These tests are against the live SMS APIs using test creds/numbers; see
         # https://www.twilio.com/docs/iam/test-credentials#test-sms-messages
 
+        twilio = twilio_resource.create_client()
         twilio.messages.create(body="test message", from_="+15005550006", to="+15005550006")
 
         with pytest.raises(TwilioRestException) as exc_info:
@@ -37,11 +37,8 @@ def test_twilio_resource(twilio_resource_option) -> None:
 
     result = wrap_op_in_graph_and_execute(
         twilio_op,
-        run_config={
-            "resources": {
-                "twilio": {"config": {"account_sid": account_sid, "auth_token": auth_token}}
-            }
+        resources={
+            "twilio_resource": TwilioResource(account_sid=account_sid, auth_token=auth_token)
         },
-        resources={"twilio": twilio_resource_option},
     )
     assert result.success
