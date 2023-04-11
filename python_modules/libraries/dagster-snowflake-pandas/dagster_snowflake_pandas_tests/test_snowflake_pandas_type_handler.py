@@ -230,7 +230,7 @@ def test_io_manager_with_snowflake_pandas(io_manager):
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
 @pytest.mark.parametrize(
-    "io_manager", [(old_snowflake_io_manager), (pythonic_snowflake_io_manager)]
+    "io_manager", [(snowflake_pandas_io_manager), (SnowflakePandasIOManager.configure_at_launch())]
 )
 def test_io_manager_with_snowflake_pandas_timestamp_data(io_manager):
     with temporary_snowflake_table(
@@ -258,6 +258,13 @@ def test_io_manager_with_snowflake_pandas_timestamp_data(io_manager):
 
         @job(
             resource_defs={"snowflake": io_manager},
+            config={
+                "resources": {
+                    "snowflake": {
+                        "config": {**SHARED_BUILDKITE_SNOWFLAKE_CONF, "database": DATABASE}
+                    }
+                }
+            },
         )
         def io_manager_timestamp_test_job():
             read_time_df(emit_time_df())
@@ -271,6 +278,8 @@ def test_io_manager_with_snowflake_pandas_timestamp_data(io_manager):
                 "resources": {
                     "snowflake": {
                         "config": {
+                            **SHARED_BUILDKITE_SNOWFLAKE_CONF,
+                            "database": DATABASE,
                             "store_timestamps_as_strings": True,
                         }
                     }

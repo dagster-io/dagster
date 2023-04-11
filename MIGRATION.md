@@ -32,11 +32,6 @@ RENAME COLUMN time_copy TO time
 
 ```
 
-<Note>
-The <code>time_data_to_string</code> configuration value will be deprecated in version X.Y.Z of the <code>dagster-snowflake</code> library. At that point, all timestamp data will be stored as TIMESTAMP_NTZ(9) type.
-</Note>
-
-
 ## Migrating to 1.2.0
 
 ### Database migration
