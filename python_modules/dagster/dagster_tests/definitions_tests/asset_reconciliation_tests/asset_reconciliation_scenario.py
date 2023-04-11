@@ -49,6 +49,7 @@ from dagster._core.test_utils import (
     create_test_daemon_workspace_context,
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._daemon.asset_daemon import AssetDaemon
 
 
 class RunSpec(NamedTuple):
@@ -60,7 +61,7 @@ class RunSpec(NamedTuple):
 
 class AssetReconciliationScenario(NamedTuple):
     unevaluated_runs: Sequence[RunSpec]
-    assets: Sequence[Union[SourceAsset, AssetsDefinition]]
+    assets: Optional[Sequence[Union[SourceAsset, AssetsDefinition]]]
     between_runs_delta: Optional[datetime.timedelta] = None
     evaluation_delta: Optional[datetime.timedelta] = None
     cursor_from: Optional["AssetReconciliationScenario"] = None
@@ -68,8 +69,26 @@ class AssetReconciliationScenario(NamedTuple):
     asset_selection: Optional[AssetSelection] = None
     active_backfill_targets: Optional[Sequence[Mapping[AssetKey, PartitionsSubset]]] = None
     expected_run_requests: Optional[Sequence[RunRequest]] = None
+    code_locations: Optional[Mapping[str, Sequence[Union[SourceAsset, AssetsDefinition]]]] = None
 
-    def do_scenario(self, instance, scenario_name=None, with_daemon=False):
+    def _get_code_location_origin(
+        self, scenario_name, location_name=None
+    ) -> InProcessCodeLocationOrigin:
+        return InProcessCodeLocationOrigin(
+            loadable_target_origin=LoadableTargetOrigin(
+                executable_path=sys.executable,
+                module_name="dagster_tests.definitions_tests.asset_reconciliation_tests.scenarios",
+                working_directory=os.getcwd(),
+                attribute="hacky_daemon_repo_"
+                + scenario_name
+                + (f"_{location_name}" if location_name else ""),
+            ),
+            location_name=location_name or "test_location",
+        )
+
+    def do_sensor_scenario(self, instance, scenario_name=None, with_external_asset_graph=False):
+        assert not self.code_locations, "setting code_locations not supported for sensor tests"
+
         test_time = self.current_time or pendulum.now()
 
         with pendulum.test(test_time) if self.current_time else contextlib.nullcontext():
@@ -116,8 +135,10 @@ class AssetReconciliationScenario(NamedTuple):
                 def prior_repo():
                     return self.cursor_from.assets
 
-                run_requests, cursor = self.cursor_from.do_scenario(
-                    instance, scenario_name=scenario_name, with_daemon=with_daemon
+                run_requests, cursor = self.cursor_from.do_sensor_scenario(
+                    instance,
+                    scenario_name=scenario_name,
+                    with_external_asset_graph=with_external_asset_graph,
                 )
                 for run_request in run_requests:
                     instance.create_run_for_pipeline(
@@ -154,23 +175,6 @@ class AssetReconciliationScenario(NamedTuple):
                         ],
                     )
                 else:
-                    assets_in_run = []
-                    run_keys = set(run.asset_keys)
-                    for a in self.assets:
-                        if isinstance(a, SourceAsset):
-                            assets_in_run.append(a)
-                        else:
-                            selected_keys = run_keys.intersection(a.keys)
-                            if selected_keys == a.keys:
-                                assets_in_run.append(a)
-                            elif not selected_keys:
-                                assets_in_run.extend(a.to_source_assets())
-                            else:
-                                assets_in_run.append(a.subset_for(run_keys))
-                                assets_in_run.extend(
-                                    a.subset_for(a.keys - selected_keys).to_source_assets()
-                                )
-
                     do_run(
                         asset_keys=run.asset_keys,
                         partition_key=run.partition_key,
@@ -183,21 +187,13 @@ class AssetReconciliationScenario(NamedTuple):
             test_time += self.evaluation_delta
         with pendulum.test(test_time):
             # get asset_graph
-            if not with_daemon:
+            if not with_external_asset_graph:
                 asset_graph = repo.asset_graph
             else:
                 assert scenario_name is not None, "scenario_name must be provided for daemon runs"
                 with create_test_daemon_workspace_context(
                     workspace_load_target=InProcessTestWorkspaceLoadTarget(
-                        InProcessCodeLocationOrigin(
-                            loadable_target_origin=LoadableTargetOrigin(
-                                executable_path=sys.executable,
-                                module_name="dagster_tests.definitions_tests.asset_reconciliation_tests.scenarios",
-                                working_directory=os.getcwd(),
-                                attribute="hacky_daemon_repo_" + scenario_name,
-                            ),
-                            location_name="test_location",
-                        ),
+                        self._get_code_location_origin(scenario_name)
                     ),
                     instance=instance,
                 ) as workspace_context:
@@ -226,6 +222,83 @@ class AssetReconciliationScenario(NamedTuple):
             assert base_job is not None
 
         return run_requests, cursor
+
+    def do_daemon_scenario(self, instance, scenario_name):
+        assert bool(self.assets) != bool(
+            self.code_locations
+        ), "Must specify either assets or code_locations"
+
+        assert (
+            not self.active_backfill_targets
+        ), "setting active_backfill_targets not supported for daemon tests"
+
+        test_time = self.current_time or pendulum.now()
+
+        with pendulum.test(test_time) if self.current_time else contextlib.nullcontext():
+            if self.cursor_from is not None:
+                self.cursor_from.do_daemon_scenario(
+                    instance,
+                    scenario_name=scenario_name,
+                )
+
+        start = datetime.datetime.now()
+
+        def test_time_fn():
+            return (test_time + (datetime.datetime.now() - start)).timestamp()
+
+        for run in self.unevaluated_runs:
+            if self.between_runs_delta is not None:
+                test_time += self.between_runs_delta
+
+            with pendulum.test(test_time), mock.patch("time.time", new=test_time_fn):
+                assert not run.is_observation, "Observations not supported for daemon tests"
+                if self.assets:
+                    do_run(
+                        asset_keys=run.asset_keys,
+                        partition_key=run.partition_key,
+                        all_assets=self.assets,
+                        instance=instance,
+                        failed_asset_keys=run.failed_asset_keys,
+                    )
+                else:
+                    all_assets = [
+                        asset for assets in self.code_locations.values() for asset in assets
+                    ]
+                    do_run(
+                        asset_keys=run.asset_keys,
+                        partition_key=run.partition_key,
+                        all_assets=all_assets,  # This isn't quite right, it should be filtered to just the assets for the location
+                        instance=instance,
+                        failed_asset_keys=run.failed_asset_keys,
+                    )
+
+        if self.evaluation_delta is not None:
+            test_time += self.evaluation_delta
+        with pendulum.test(test_time):
+            assert scenario_name is not None, "scenario_name must be provided for daemon runs"
+
+            if self.code_locations:
+                target = InProcessTestWorkspaceLoadTarget(
+                    [
+                        self._get_code_location_origin(scenario_name, location_name)
+                        for location_name in self.code_locations.keys()
+                    ]
+                )
+            else:
+                target = InProcessTestWorkspaceLoadTarget(
+                    self._get_code_location_origin(scenario_name)
+                )
+
+            with create_test_daemon_workspace_context(
+                workspace_load_target=target,
+                instance=instance,
+            ) as workspace_context:
+                workspace = workspace_context.create_request_context()
+                assert (
+                    workspace.get_code_location_error("test_location") is None
+                ), workspace.get_code_location_error("test_location")
+
+                list(AssetDaemon().run_iteration(workspace_context))
 
 
 def do_run(

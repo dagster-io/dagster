@@ -55,6 +55,18 @@ auto_materialize_policy_scenarios = {
             run_request(asset_keys=["asset2", "asset3", "asset4", "asset5", "asset6"])
         ],
     ),
+    "auto_materialize_policy_lazy_with_freshness_policies": AssetReconciliationScenario(
+        assets=with_auto_materialize_policy(
+            overlapping_freshness_inf, AutoMaterializePolicy.lazy()
+        ),
+        cursor_from=AssetReconciliationScenario(
+            assets=overlapping_freshness_inf,
+            unevaluated_runs=[run(["asset1", "asset2", "asset3", "asset4", "asset5", "asset6"])],
+        ),
+        # change at the top, should be immediately propagated as all assets have eager reconciliation
+        unevaluated_runs=[run(["asset1"])],
+        expected_run_requests=[],
+    ),
     "auto_materialize_policy_with_default_scope_hourly_to_daily_partitions_never_materialized": AssetReconciliationScenario(
         assets=with_auto_materialize_policy(
             hourly_to_daily_partitions,

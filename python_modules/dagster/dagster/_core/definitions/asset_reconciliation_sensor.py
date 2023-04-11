@@ -546,27 +546,39 @@ def determine_asset_partitions_to_reconcile(
     )
 
     def parents_will_be_reconciled(
+        asset_graph: AssetGraph,
         candidate: AssetKeyPartitionKey,
         to_reconcile: AbstractSet[AssetKeyPartitionKey],
     ) -> bool:
-        return all(
-            (
-                (
-                    parent in to_reconcile
-                    # if they don't have the same partitioning, then we can't launch a run that
-                    # targets both, so we need to wait until the parent is reconciled before
-                    # launching a run for the child
-                    and asset_graph.have_same_partitioning(parent.asset_key, candidate.asset_key)
-                    and parent.partition_key == candidate.partition_key
-                )
-                or (instance_queryer.is_reconciled(asset_partition=parent, asset_graph=asset_graph))
-            )
-            for parent in asset_graph.get_parents_partitions(
-                instance_queryer,
-                candidate.asset_key,
-                candidate.partition_key,
-            )
-        )
+        from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+
+        for parent in asset_graph.get_parents_partitions(
+            instance_queryer,
+            candidate.asset_key,
+            candidate.partition_key,
+        ):
+            if instance_queryer.is_reconciled(asset_partition=parent, asset_graph=asset_graph):
+                continue
+
+            if not (
+                parent in to_reconcile
+                # if they don't have the same partitioning, then we can't launch a run that
+                # targets both, so we need to wait until the parent is reconciled before
+                # launching a run for the child
+                and asset_graph.have_same_partitioning(parent.asset_key, candidate.asset_key)
+                and parent.partition_key == candidate.partition_key
+            ):
+                return False
+
+            if isinstance(asset_graph, ExternalAssetGraph):
+                # if the parent is in a different repository, we can't launch a run that targets both,
+                # so we need to wait
+                if asset_graph.get_repository_handle(
+                    candidate.asset_key
+                ) is not asset_graph.get_repository_handle(parent.asset_key):
+                    return False
+
+        return True
 
     def should_reconcile_candidate(candidate: AssetKeyPartitionKey) -> bool:
         auto_materialize_policy = get_implicit_auto_materialize_policy(
@@ -586,6 +598,7 @@ def determine_asset_partitions_to_reconcile(
         )
 
     def should_reconcile(
+        asset_graph: AssetGraph,
         candidates_unit: Iterable[AssetKeyPartitionKey],
         to_reconcile: AbstractSet[AssetKeyPartitionKey],
     ) -> bool:
@@ -601,12 +614,15 @@ def determine_asset_partitions_to_reconcile(
             return False
 
         return all(
-            parents_will_be_reconciled(candidate, to_reconcile) for candidate in candidates_unit
+            parents_will_be_reconciled(asset_graph, candidate, to_reconcile)
+            for candidate in candidates_unit
         ) and any(should_reconcile_candidate(candidate) for candidate in candidates_unit)
 
     to_reconcile = asset_graph.bfs_filter_asset_partitions(
         instance_queryer,
-        should_reconcile,
+        lambda candidates_unit, to_reconcile: should_reconcile(
+            asset_graph, candidates_unit, to_reconcile
+        ),
         set(itertools.chain(never_materialized_or_requested_roots, stale_candidates)),
     )
 
@@ -692,18 +708,40 @@ def determine_asset_partitions_to_reconcile_for_freshness(
 
     Attempts to minimize the total number of asset executions.
     """
+    from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+
     # now we have a full set of constraints, we can find solutions for them as we move down
     to_materialize: Set[AssetKeyPartitionKey] = set()
+    waiting_to_materialize: Set[AssetKey] = set()
     expected_data_time_by_key: Dict[AssetKey, Optional[datetime.datetime]] = {}
 
     for level in asset_graph.toposort_asset_keys():
         for key in level:
             if (
                 key not in target_asset_keys_and_parents
-                or key not in asset_graph.all_asset_keys
+                or key not in asset_graph.non_source_asset_keys
                 or not asset_graph.get_downstream_freshness_policies(asset_key=key)
             ):
                 continue
+
+            parents = asset_graph.get_parents(key)
+
+            if any(p in waiting_to_materialize for p in parents):
+                # we can't materialize this asset yet, because we're waiting on a parent
+                waiting_to_materialize.add(key)
+                continue
+
+            # if we're going to materialize a parent of this asset that's in a different repository,
+            # then we need to wait
+            if isinstance(asset_graph, ExternalAssetGraph):
+                repo = asset_graph.get_repository_handle(key)
+                if any(
+                    AssetKeyPartitionKey(p, None) in to_materialize
+                    and asset_graph.get_repository_handle(p) is not repo
+                    for p in parents
+                ):
+                    waiting_to_materialize.add(key)
+                    continue
 
             # figure out the current contents of this asset with respect to its constraints
             current_data_time = data_time_resolver.get_current_data_time(key, current_time)
@@ -712,7 +750,7 @@ def determine_asset_partitions_to_reconcile_for_freshness(
             expected_data_time = min(
                 (
                     cast(datetime.datetime, expected_data_time_by_key[k])
-                    for k in asset_graph.get_parents(key)
+                    for k in parents
                     if k in expected_data_time_by_key and expected_data_time_by_key[k] is not None
                 ),
                 default=current_time,
@@ -781,17 +819,6 @@ def reconcile(
     current_time = pendulum.now("UTC")
 
     instance_queryer = CachingInstanceQueryer(instance=instance)
-
-    # if there is a auto materialize policy set in the selection, use that
-    if any(
-        asset_graph.get_auto_materialize_policy(target_key) is not None
-        for target_key in target_asset_keys
-    ):
-        target_asset_keys = {
-            target_key
-            for target_key in target_asset_keys
-            if asset_graph.get_auto_materialize_policy(target_key) is not None
-        }
 
     target_parent_asset_keys = {
         parent
@@ -874,17 +901,18 @@ def build_run_requests(
                 check.failed("Partition key provided for unpartitioned asset")
             tags.update({**partitions_def.get_tags_for_partition_key(partition_key)})
 
-        # Do not call run_request.with_resolved_tags_and_config as the partition key is
-        # valid and there is no config.
-        # Calling with_resolved_tags_and_config is costly in asset reconciliation as it
-        # checks for valid partition keys.
-        run_requests.append(
-            RunRequest(
-                asset_selection=list(asset_keys),
-                partition_key=partition_key,
-                tags=tags,
+        for asset_keys_in_repo in asset_graph.split_asset_keys_by_repository(asset_keys):
+            run_requests.append(
+                # Do not call run_request.with_resolved_tags_and_config as the partition key is
+                # valid and there is no config.
+                # Calling with_resolved_tags_and_config is costly in asset reconciliation as it
+                # checks for valid partition keys.
+                RunRequest(
+                    asset_selection=list(asset_keys_in_repo),
+                    partition_key=partition_key,
+                    tags=tags,
+                )
             )
-        )
 
     return run_requests
 
@@ -1014,9 +1042,23 @@ def build_asset_reconciliation_sensor(
             if context.cursor
             else AssetReconciliationCursor.empty()
         )
+
+        # if there is a auto materialize policy set in the selection, filter down to that. Otherwise, use the
+        # whole selection
+        target_asset_keys = asset_selection.resolve(asset_graph)
+        if any(
+            asset_graph.get_auto_materialize_policy(target_key) is not None
+            for target_key in target_asset_keys
+        ):
+            target_asset_keys = {
+                target_key
+                for target_key in target_asset_keys
+                if asset_graph.get_auto_materialize_policy(target_key) is not None
+            }
+
         run_requests, updated_cursor = reconcile(
             asset_graph=asset_graph,
-            target_asset_keys=asset_selection.resolve(asset_graph),
+            target_asset_keys=target_asset_keys,
             instance=context.instance,
             cursor=cursor,
             run_tags=run_tags,
