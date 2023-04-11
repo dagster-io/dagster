@@ -48,7 +48,7 @@ def test_cli_execute():
         os.chdir(file_relative_path(__file__, "../.."))
         with instance_for_test() as instance:
             do_execute_command(
-                pipeline=ReconstructablePipeline.for_module(
+                recon_job=ReconstructablePipeline.for_module(
                     "dagster_pandas.examples", "pandas_hello_world_test"
                 ),
                 instance=instance,
@@ -73,7 +73,7 @@ def test_cli_execute_failure():
         os.chdir(file_relative_path(__file__, "../.."))
         with instance_for_test() as instance:
             result = do_execute_command(
-                pipeline=ReconstructablePipeline.for_module(
+                recon_job=ReconstructablePipeline.for_module(
                     "dagster_pandas.examples",
                     "pandas_hello_world_fails_test",
                 ),
@@ -85,7 +85,7 @@ def test_cli_execute_failure():
                     )
                 ],
             )
-        failures = [event for event in result.step_event_list if event.is_failure]
+        failures = [event for event in result.all_node_events if event.is_failure]
     finally:
         # restore cwd
         os.chdir(cwd)

@@ -75,7 +75,7 @@ OS_PLATFORM = platform.system()
 
 
 TELEMETRY_WHITELISTED_FUNCTIONS = {
-    "_logged_execute_pipeline",
+    "_logged_execute_job",
     "execute_execute_command",
     "execute_launch_command",
     "_daemon_run_command",
@@ -217,7 +217,7 @@ class TelemetryEntry(
     Currently, log entries are coerced to the same schema to enable storing all entries in one DB
     table with unified schema.
 
-    action - Name of function called i.e. `execute_pipeline_started` (see: fn telemetry_wrapper)
+    action - Name of function called i.e. `execute_job_started` (see: fn telemetry_wrapper)
     client_time - Client time
     elapsed_time - Time elapsed between start of function and end of function call
     event_id - Unique id for the event

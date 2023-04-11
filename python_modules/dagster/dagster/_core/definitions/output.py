@@ -209,8 +209,8 @@ class DynamicOutputDefinition(OutputDefinition):
     """Variant of :py:class:`OutputDefinition <dagster.OutputDefinition>` for an
     output that will dynamically alter the graph at runtime.
 
-    When using in a composition function such as :py:func:`@pipeline <dagster.pipeline>`,
-    dynamic outputs must be used with either
+    When using in a composition function such as :py:func:`@job <dagster.job>`,
+    dynamic outputs must be used with either:
 
     * ``map`` - clone downstream nodes for each separate :py:class:`DynamicOutput`
     * ``collect`` - gather across all :py:class:`DynamicOutput` in to a list
@@ -231,7 +231,7 @@ class DynamicOutputDefinition(OutputDefinition):
                 for file in filenames:
                     yield DynamicOutput(os.path.join(dirname, file), mapping_key=_clean(file))
 
-            @pipeline
+            @job
             def process_directory():
                 files = files_in_directory()
 
