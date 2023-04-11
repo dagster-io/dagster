@@ -42,7 +42,7 @@ def in_job_manager(
                 "dagstermill.examples.repository", "hello_world_job"
             ).to_dict()
 
-        pipeline_run_dict = pack_value(
+        dagster_run_dict = pack_value(
             DagsterRun(
                 job_name=job_name,
                 run_id=run_id,
@@ -55,7 +55,7 @@ def in_job_manager(
         try:
             with safe_tempfile_path() as output_log_file_path:
                 context_dict = {
-                    "job_run_dict": pipeline_run_dict,
+                    "job_run_dict": dagster_run_dict,
                     "node_handle_kwargs": node_handle._asdict(),
                     "executable_dict": executable_dict,
                     "marshal_dir": marshal_dir,
@@ -109,7 +109,7 @@ def test_yield_unserializable_result():
     assert manager.yield_result(threading.Lock())
 
     with in_job_manager(
-        pipeline_name="hello_world_output_job",
+        job_name="hello_world_output_job",
         node_handle=NodeHandle("hello_world_output", None),
         executable_dict=ReconstructableJob.for_module(
             "dagstermill.examples.repository",
@@ -155,7 +155,7 @@ def test_in_job_manager_op_config():
         assert manager.context.op_config is None
 
     with in_job_manager(
-        pipeline_name="hello_world_config_job",
+        job_name="hello_world_config_job",
         node_handle=NodeHandle("hello_world_config", None),
         executable_dict=ReconstructableJob.for_module(
             "dagstermill.examples.repository",
@@ -166,7 +166,7 @@ def test_in_job_manager_op_config():
         assert manager.context.op_config == {"greeting": "hello"}
 
     with in_job_manager(
-        pipeline_name="hello_world_config_job",
+        job_name="hello_world_config_job",
         node_handle=NodeHandle("hello_world_config", None),
         run_config={
             "ops": {
@@ -183,7 +183,7 @@ def test_in_job_manager_op_config():
         assert manager.context.op_config == {"greeting": "bonjour"}
 
     with in_job_manager(
-        pipeline_name="hello_world_config_job",
+        job_name="hello_world_config_job",
         node_handle=NodeHandle("goodbye_config", None),
         run_config={
             "ops": {
@@ -208,7 +208,7 @@ def test_in_job_manager_with_resources():
 
     try:
         with in_job_manager(
-            pipeline_name="resource_job",
+            job_name="resource_job",
             executable_dict=ReconstructableJob.for_module(
                 "dagstermill.examples.repository",
                 "resource_job",
