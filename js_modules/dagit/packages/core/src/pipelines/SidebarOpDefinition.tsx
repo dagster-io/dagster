@@ -48,8 +48,6 @@ const DEFAULT_INVOCATIONS_SHOWN = 20;
 export const SidebarOpDefinition: React.FC<SidebarOpDefinitionProps> = (props) => {
   const {definition, getInvocations, showingSubgraph, onClickInvocation, repoAddress} = props;
 
-  const {flagSidebarResources} = useFeatureFlags();
-
   const Plugin = pluginForMetadata(definition.metadata);
   const isComposite = definition.__typename === 'CompositeSolidDefinition';
   const configField = definition.__typename === 'SolidDefinition' ? definition.configField : null;
@@ -118,7 +116,7 @@ export const SidebarOpDefinition: React.FC<SidebarOpDefinitionProps> = (props) =
             {[...requiredResources].sort().map((requirement) => (
               <ResourceContainer key={requirement.resourceKey}>
                 <Icon name="resource" color={Colors.Gray700} />
-                {flagSidebarResources && repoAddress ? (
+                {repoAddress ? (
                   <Link
                     to={workspacePathFromAddress(
                       repoAddress,

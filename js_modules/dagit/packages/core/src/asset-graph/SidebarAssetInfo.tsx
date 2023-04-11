@@ -50,7 +50,6 @@ export const SidebarAssetInfo: React.FC<{
   const {data} = useQuery<SidebarAssetQuery, SidebarAssetQueryVariables>(SIDEBAR_ASSET_QUERY, {
     variables: {assetKey: {path: assetKey.path}},
   });
-  const {flagSidebarResources} = useFeatureFlags();
 
   const {lastMaterialization} = liveData || {};
   const asset = data?.assetNodeOrError.__typename === 'AssetNode' ? data.assetNodeOrError : null;
@@ -131,7 +130,7 @@ export const SidebarAssetInfo: React.FC<{
             {asset.requiredResources.map((resource) => (
               <ResourceContainer key={resource.resourceKey}>
                 <Icon name="resource" color={Colors.Gray700} />
-                {flagSidebarResources && repoAddress ? (
+                {repoAddress ? (
                   <Link
                     to={workspacePathFromAddress(repoAddress, `/resources/${resource.resourceKey}`)}
                   >

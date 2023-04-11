@@ -41,7 +41,6 @@ export const AssetNodeDefinition: React.FC<{
   dependsOnSelf: boolean;
 }> = ({assetNode, upstream, downstream, liveDataByNode, dependsOnSelf}) => {
   const {assetMetadata, assetType} = metadataForAssetNode(assetNode);
-  const {flagSidebarResources} = useFeatureFlags();
   const liveDataForNode = liveDataByNode[toGraphId(assetNode.assetKey)];
 
   const assetConfigSchema = assetNode.configField?.configType;
@@ -164,7 +163,7 @@ export const AssetNodeDefinition: React.FC<{
                   {assetNode.requiredResources.map((resource) => (
                     <ResourceContainer key={resource.resourceKey}>
                       <Icon name="resource" color={Colors.Gray700} />
-                      {flagSidebarResources && repoAddress ? (
+                      { repoAddress ? (
                         <Link
                           to={workspacePathFromAddress(
                             repoAddress,

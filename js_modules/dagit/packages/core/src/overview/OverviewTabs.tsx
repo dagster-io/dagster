@@ -14,7 +14,6 @@ interface Props<TData> {
 
 export const OverviewTabs = <TData extends Record<string, any>>(props: Props<TData>) => {
   const {refreshState, tab} = props;
-  const {flagSidebarResources} = useFeatureFlags();
 
   return (
     <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}>
@@ -23,9 +22,7 @@ export const OverviewTabs = <TData extends Record<string, any>>(props: Props<TDa
         <TabLink id="jobs" title="Jobs" to="/overview/jobs" />
         <TabLink id="schedules" title="Schedules" to="/overview/schedules" />
         <TabLink id="sensors" title="Sensors" to="/overview/sensors" />
-        {flagSidebarResources && (
-          <TabLink id="resources" title="Resources" to="/overview/resources" />
-        )}
+        <TabLink id="resources" title="Resources" to="/overview/resources" />
         <TabLink id="backfills" title="Backfills" to="/overview/backfills" />
       </Tabs>
       {refreshState ? (
