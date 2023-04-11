@@ -23,7 +23,6 @@ from dagster import (
     Enum as DagsterEnum,
     Field as DagsterField,
 )
-from dagster._annotations import experimental
 from dagster._config.config_type import Array, ConfigFloatInstance, ConfigType, EnumValue, Noneable
 from dagster._config.field_utils import config_dictionary_from_values
 from dagster._config.post_process import resolve_defaults
@@ -108,7 +107,6 @@ class MakeConfigCacheable(BaseModel):
         return super().__setattr__(name, value)
 
 
-@experimental
 class Config(MakeConfigCacheable):
     """Base class for Dagster configuration models."""
 
@@ -166,7 +164,6 @@ class Config(MakeConfigCacheable):
         return cast(Shape, cls.to_config_schema().as_field().config_type).fields
 
 
-@experimental
 class PermissiveConfig(Config):
     # Pydantic config for this class
     # Cannot use kwargs for base class as this is not support for pydantic<1.8
@@ -409,7 +406,6 @@ def attach_resource_id_to_key_mapping(
     return resource_def
 
 
-@experimental
 class ConfigurableResourceFactory(
     Generic[TResValue],
     ResourceDefinition,
@@ -610,7 +606,6 @@ class ConfigurableResourceFactory(
         return cls(**context.resource_config or {}).create_resource(context)
 
 
-@experimental
 class ConfigurableResource(ConfigurableResourceFactory[TResValue]):
     """Base class for Dagster resources that utilize structured config.
 
@@ -721,7 +716,6 @@ ResourceOrPartialOrValue: TypeAlias = Union[
 V = TypeVar("V")
 
 
-@experimental
 class ResourceDependency(Generic[V]):
     def __set_name__(self, _owner, name):
         self._name = name
@@ -733,7 +727,6 @@ class ResourceDependency(Generic[V]):
         setattr(obj, self._name, value)
 
 
-@experimental
 class ConfigurableLegacyResourceAdapter(ConfigurableResource, ABC):
     """Adapter base class for wrapping a decorated, function-style resource
     with structured config.
@@ -774,7 +767,6 @@ class ConfigurableLegacyResourceAdapter(ConfigurableResource, ABC):
         return self.wrapped_resource(*args, **kwargs)
 
 
-@experimental
 class ConfigurableIOManagerFactory(
     ConfigurableResourceFactory[TIOManagerValue], IOManagerDefinition
 ):
@@ -830,7 +822,6 @@ class PartialIOManager(Generic[TResValue], PartialResource[TResValue], IOManager
         )
 
 
-@experimental
 class ConfigurableIOManager(ConfigurableIOManagerFactory, IOManager):
     """Base class for Dagster IO managers that utilize structured config.
 
@@ -1014,7 +1005,6 @@ def _is_pydantic_field_required(pydantic_field: ModelField) -> bool:
     )
 
 
-@experimental
 class ConfigurableLegacyIOManagerAdapter(ConfigurableIOManagerFactory):
     """Adapter base class for wrapping a decorated, function-style I/O manager
     with structured config.
