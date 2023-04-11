@@ -289,7 +289,16 @@ def test_io_manager_with_snowflake_pandas_timestamp_data(io_manager):
         def io_manager_timestamp_as_string_test_job():
             read_time_df(emit_time_df())
 
-        with pytest.raises(DagsterInvariantViolationError):
+        with pytest.raises(
+            DagsterInvariantViolationError,
+            match=(
+                "Snowflake I/O manager: Snowflake I/O manager configured to convert time data in"
+                " DataFrame column date to strings, but the corresponding DATE column in table"
+                f" {table_name} is not of type VARCHAR, it is of type TIMESTAMP_NTZ(9). Please set"
+                " store_timestamps_as_strings=False in the Snowflake I/O manager configuration to"
+                " store time data as TIMESTAMP types."
+            ),
+        ):
             io_manager_timestamp_as_string_test_job.execute_in_process()
 
 
