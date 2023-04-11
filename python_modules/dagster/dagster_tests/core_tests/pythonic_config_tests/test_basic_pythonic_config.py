@@ -27,6 +27,7 @@ from dagster._core.definitions.run_config import RunConfig
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.errors import (
     DagsterInvalidConfigError,
+    DagsterInvalidInvocationError,
     DagsterInvalidPythonicConfigDefinitionError,
 )
 from dagster._core.execution.context.invocation import build_op_context
@@ -859,3 +860,99 @@ def test_structured_run_config_assets_optional() -> None:
     )
     assert asset_result.success
     assert executed["yes"]
+
+
+def test_direct_op_invocation_plain_arg_with_config() -> None:
+    class MyConfig(Config):
+        num: int
+
+    executed = {}
+
+    @op
+    def an_op(config: MyConfig) -> None:
+        assert config.num == 1
+        executed["yes"] = True
+
+    an_op(MyConfig(num=1))
+
+    assert executed["yes"]
+
+
+def test_direct_op_invocation_kwarg_with_config() -> None:
+    class MyConfig(Config):
+        num: int
+
+    executed = {}
+
+    @op
+    def an_op(config: MyConfig) -> None:
+        assert config.num == 1
+        executed["yes"] = True
+
+    an_op(config=MyConfig(num=1))
+
+    assert executed["yes"]
+
+
+def test_direct_asset_invocation_plain_arg_with_config() -> None:
+    class MyConfig(Config):
+        num: int
+
+    executed = {}
+
+    @asset
+    def an_asset(config: MyConfig) -> None:
+        assert config.num == 1
+        executed["yes"] = True
+
+    an_asset(MyConfig(num=1))
+
+    assert executed["yes"]
+
+
+def test_direct_asset_invocation_kwarg_with_config() -> None:
+    class MyConfig(Config):
+        num: int
+
+    executed = {}
+
+    @asset
+    def an_asset(config: MyConfig) -> None:
+        assert config.num == 1
+        executed["yes"] = True
+
+    an_asset(config=MyConfig(num=1))
+
+    assert executed["yes"]
+
+
+def test_direct_op_invocation_kwarg_with_config_and_context() -> None:
+    class MyConfig(Config):
+        num: int
+
+    executed = {}
+
+    @op
+    def an_op(context, config: MyConfig) -> None:
+        assert config.num == 1
+        executed["yes"] = True
+
+    an_op(context=build_op_context(), config=MyConfig(num=1))
+    assert executed["yes"]
+
+
+def test_direct_op_invocation_kwarg_with_config_and_context_err() -> None:
+    class MyConfig(Config):
+        num: int
+
+    executed = {}
+
+    @op
+    def an_op(context, config: MyConfig) -> None:
+        assert config.num == 1
+        executed["yes"] = True
+
+    with pytest.raises(
+        DagsterInvalidInvocationError, match="Cannot provide config in both context and kwargs"
+    ):
+        an_op(context=build_op_context(config={"num": 2}), config=MyConfig(num=1))
