@@ -420,7 +420,6 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
       <div data-testid={testId('choose-partitions-dialog')}>
         <Warnings
           launchAsBackfill={launchAsBackfill}
-          isPureAssetBackfill={target.type === 'pureWithAnchorAsset'}
           upstreamAssetKeys={upstreamAssetKeys}
           selections={selections}
           setSelections={setSelections}
@@ -429,6 +428,16 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
           title={<Subheading>Partition selection</Subheading>}
           isInitiallyOpen={true}
         >
+          {target.type === 'pureWithAnchorAsset' && (
+            <Box
+              flex={{alignItems: 'center', gap: 8}}
+              padding={{top: 12, horizontal: 24}}
+              data-testid={testId('anchor-asset-label')}
+            >
+              <Icon name="asset" />
+              <Subheading>{displayNameForAssetKey(target.anchorAssetKey)}</Subheading>
+            </Box>
+          )}
           {selections.map((range, idx) => (
             <Box
               key={range.dimension.name}
@@ -439,12 +448,6 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
               }}
               padding={{vertical: 12, horizontal: 24}}
             >
-              {target.type === 'pureWithAnchorAsset' && (
-                <Box flex={{gap: 8}} data-testid={testId('anchor-asset-label')}>
-                  <Icon name="asset" size={20} />
-                  <Subheading>{displayNameForAssetKey(target.anchorAssetKey)}</Subheading>
-                </Box>
-              )}
               <Box as={Subheading} flex={{alignItems: 'center', gap: 8}}>
                 <Icon name="partition" />
                 {range.dimension.name}
@@ -481,6 +484,14 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
                 repoAddress={repoAddress}
                 refetch={refetch}
               />
+
+              {target.type === 'pureWithAnchorAsset' && (
+                <Alert
+                  key="alert"
+                  intent="info"
+                  title="Dagster will materialize all partitions downstream of the selected partitions for the selected assets, using separate runs as needed."
+                />
+              )}
             </Box>
           ))}
         </ToggleableSection>
@@ -719,14 +730,12 @@ export const LAUNCH_ASSET_CHOOSE_PARTITIONS_QUERY = gql`
 `;
 
 const Warnings = ({
-  isPureAssetBackfill,
   launchAsBackfill,
   upstreamAssetKeys,
   selections,
   setSelections,
 }: {
   launchAsBackfill: boolean;
-  isPureAssetBackfill: boolean;
   upstreamAssetKeys: AssetKey[];
   selections: PartitionDimensionSelection[];
   setSelections: (next: PartitionDimensionSelection[]) => void;
@@ -738,13 +747,6 @@ const Warnings = ({
   const instance = instanceResult.data?.instance;
 
   const alerts = [
-    isPureAssetBackfill ? (
-      <Alert
-        key="alert"
-        intent="info"
-        title="Dagster will materialize all partitions downstream of the selected partitions for the selected assets, using separate runs as needed."
-      />
-    ) : null,
     UpstreamUnavailableWarning({
       upstreamAssetKeys,
       selections,
