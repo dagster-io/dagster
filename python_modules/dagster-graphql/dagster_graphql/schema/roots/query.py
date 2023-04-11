@@ -41,9 +41,9 @@ from ...implementation.fetch_instigators import (
 )
 from ...implementation.fetch_partition_sets import get_partition_set, get_partition_sets_or_error
 from ...implementation.fetch_pipelines import (
+    get_job_or_error,
     get_job_snapshot_or_error_from_job_selector,
     get_job_snapshot_or_error_from_snapshot_id,
-    get_pipeline_or_error,
 )
 from ...implementation.fetch_resources import (
     get_resource_or_error,
@@ -602,7 +602,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
         return get_unloadable_instigator_states_or_error(graphene_info, instigation_type)
 
     def resolve_pipelineOrError(self, graphene_info: ResolveInfo, params: GraphenePipelineSelector):
-        return get_pipeline_or_error(
+        return get_job_or_error(
             graphene_info,
             pipeline_selector_from_graphql(params),
         )

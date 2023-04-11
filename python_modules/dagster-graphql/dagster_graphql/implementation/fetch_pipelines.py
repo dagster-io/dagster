@@ -55,9 +55,7 @@ def _get_pipeline_snapshot_from_instance(
 
 
 @capture_error
-def get_pipeline_or_error(
-    graphene_info: ResolveInfo, selector: JobSubsetSelector
-) -> "GraphenePipeline":
+def get_job_or_error(graphene_info: ResolveInfo, selector: JobSubsetSelector) -> "GraphenePipeline":
     """Returns a PipelineOrError."""
     return get_job_from_selector(graphene_info, selector)
 
