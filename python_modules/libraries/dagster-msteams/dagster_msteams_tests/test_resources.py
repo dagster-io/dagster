@@ -52,6 +52,8 @@ def test_msteams_resource_pythonic(mock_teams_post_message, json_message, teams_
 
     result = wrap_op_in_graph_and_execute(
         msteams_op,
-        resources={"msteams": MSTeamsResource(hook_url="https://some_url_here/", http_proxy="some_proxy")},
+        resources={
+            "msteams": MSTeamsResource(hook_url="https://some_url_here/", http_proxy="some_proxy")
+        },
     )
     assert result.success
