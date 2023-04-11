@@ -98,6 +98,7 @@ from dagster._config.pythonic_config import (
     ConfigurableIOManagerFactory as ConfigurableIOManagerFactory,
     ConfigurableLegacyIOManagerAdapter as ConfigurableLegacyIOManagerAdapter,
     ConfigurableResource as ConfigurableResource,
+    IAttachBareObjectToContext as IAttachBareObjectToContext,
     PermissiveConfig as PermissiveConfig,
     ResourceDependency as ResourceDependency,
 )

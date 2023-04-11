@@ -29,9 +29,9 @@ from dagster._config.pythonic_config import (
     ConfigurableIOManager,
     ConfigurableIOManagerFactory,
     ConfigurableLegacyIOManagerAdapter,
-    ConfigurableLegacyResourceAdapter,
     ConfigurableResource,
     ConfigurableResourceFactory,
+    IAttachBareObjectToContext,
     ResourceDependency,
 )
 from dagster._core.definitions.assets_job import build_assets_job
@@ -40,7 +40,6 @@ from dagster._core.definitions.repository_definition.repository_data_builder imp
     build_caching_repository_data_from_dict,
 )
 from dagster._core.definitions.resource_annotation import ResourceParam
-from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.run_config import RunConfig
 from dagster._core.errors import (
     DagsterInvalidConfigError,
@@ -251,44 +250,44 @@ def test_yield_in_resource_function():
     assert called == ["creation_1", "creation_2", "op", "cleanup_2", "cleanup_1"]
 
 
-def test_wrapping_function_resource():
-    out_txt = []
+def test_migration_IAttachBareObjectToContext() -> None:
+    executed = {}
 
-    @resource(config_schema={"prefix": str})
-    def writer_resource(context):
-        prefix = context.resource_config["prefix"]
+    class MyClient:
+        def foo(self) -> str:
+            return "foo"
 
-        def output(text: str) -> None:
-            out_txt.append(f"{prefix}{text}")
+    class MyClientResource(ConfigurableResource, IAttachBareObjectToContext):
+        def get_client(self) -> MyClient:
+            return MyClient()
 
-        return output
+        def get_object_to_set_on_execution_context(self) -> MyClient:
+            return self.get_client()
 
-    class WriterResource(ConfigurableLegacyResourceAdapter):
-        prefix: str
+    @asset(required_resource_keys={"my_client"})
+    def uses_client_asset_unmigrated(context) -> str:
+        assert context.resources.my_client
+        assert context.resources.my_client.foo() == "foo"
+        executed["unmigrated"] = True
+        return "foo"
 
-        @property
-        def wrapped_resource(self) -> ResourceDefinition:
-            return writer_resource
+    @asset
+    def uses_client_asset_migrated(my_client: MyClientResource) -> str:
+        assert my_client
+        assert my_client.get_client().foo() == "foo"
+        executed["migrated"] = True
+        return "foo"
 
-    @op
-    def hello_world_op(writer: ResourceParam[Callable[[str], None]]):
-        writer("hello, world!")
+    defs = Definitions(
+        assets=[uses_client_asset_migrated, uses_client_asset_unmigrated],
+        resources={"my_client": MyClientResource()},
+    )
 
-    @job(resource_defs={"writer": WriterResource(prefix="")})
-    def no_prefix_job():
-        hello_world_op()
-
-    assert no_prefix_job.execute_in_process().success
-    assert out_txt == ["hello, world!"]
-
-    out_txt.clear()
-
-    @job(resource_defs={"writer": WriterResource(prefix="greeting: ")})
-    def prefix_job():
-        hello_world_op()
-
-    assert prefix_job.execute_in_process().success
-    assert out_txt == ["greeting: hello, world!"]
+    asset_job = defs.get_implicit_global_asset_job_def()
+    assert asset_job
+    assert asset_job.execute_in_process().success
+    assert executed["unmigrated"]
+    assert executed["migrated"]
 
 
 class AnIOManagerImplementation(IOManager):

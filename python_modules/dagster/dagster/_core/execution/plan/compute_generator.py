@@ -113,6 +113,9 @@ def invoke_compute_fn(
         for resource_name, arg_name in resource_args.items():
             args_to_pass[arg_name] = getattr(context.resources, resource_name)
 
+    from dagster._config.structured_config import resolve_iattach_bare_object_to_context
+    context = context.with_resources_override(resolve_iattach_bare_object_to_context(context.resources))
+    
     return fn(context, **args_to_pass) if context_arg_provided else fn(**args_to_pass)
 
 

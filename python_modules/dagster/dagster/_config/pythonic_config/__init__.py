@@ -34,6 +34,7 @@ from dagster._core.definitions.definition_config_schema import (
     ConfiguredDefinitionConfigSchema,
     DefinitionConfigSchema,
 )
+from dagster._core.definitions.scoped_resources_builder import Resources
 from dagster._core.errors import (
     DagsterInvalidConfigDefinitionError,
     DagsterInvalidConfigError,
@@ -1241,3 +1242,61 @@ def validate_resource_annotated_function(fn) -> None:
                 else "'ResourceParam[Any]' or 'ResourceParam[<output type>]'",
             )
         )
+
+
+class IAttachBareObjectToContext:
+    """Utility interface which adjusts the type of the bare object attached to the execution context
+    by a resource. Useful when migrating function-style resources to class-style ConfigurableResources.
+
+    For example, the following function-style resource is consumed by an asset:
+
+    .. code-block:: python
+
+        @resource(config_schema={"inner_string": str})
+        def my_string_resource(context) -> str:
+            return context.resource_config["inner_string"]
+
+        @asset(required_resource_keys={"my_string"})
+        def my_unconverted_asset(context: OpExecutionContext) -> str:
+            return context.resources.my_string
+
+    Adapted to a class-style resource, we can ensure our new ConfigurableResource is compatible
+    with the asset by implementing this interface:
+
+    .. code-block:: python
+
+        class MyStringResource(ConfigurableResource, IAttachBareObjectToContext):
+            inner_string: str
+
+            def get_object_to_set_on_execution_context(self) -> str:
+                return self.inner_string
+
+        @asset(required_resource_keys={"my_string"})
+        def my_unconverted_asset(context: OpExecutionContext) -> str:
+            return context.resources.my_string
+
+        @asset
+        def my_converted_asset(my_string: MyStringResource) -> str:
+            return my_string.inner_string
+    """
+
+    def get_object_to_set_on_execution_context(self) -> Any:
+        """Override to return the object to be attached to the execution context by this resource.
+        """
+        raise NotImplementedError()
+
+
+def resolve_iattach_bare_object_to_context(resource_obj: Resources) -> Any:
+    """Utility function which resolves the object to be attached to the execution context by a
+    resource which implements :py:class:`IAttachBareObjectToContext`.
+    """
+    return resource_obj.__class__(
+        **{
+            k: (
+                v.get_object_to_set_on_execution_context()
+                if isinstance(v, IAttachBareObjectToContext)
+                else v
+            )
+            for k, v in resource_obj._asdict().items()
+        }
+    )
