@@ -6,12 +6,9 @@ from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence, Union
 import dagster._check as check
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
-from dagster import resource
+from dagster import ConfigurableResource, get_dagster_logger, resource
 from dagster._annotations import public
-from dagster._config.structured_config import (
-    ConfigurableResourceFactory,
-)
-from dagster._core.errors import DagsterInvalidConfigError
+from dagster._core.errors import DagsterError
 from dagster._core.storage.event_log.sql_event_log import SqlDbConnection
 from pydantic import Field, validator
 
@@ -343,7 +340,7 @@ class SnowflakeConnection:
         self.execute_queries(sql_queries)
 
 
-class SnowflakeResource(ConfigurableResourceFactory[SnowflakeConnection]):
+class SnowflakeResource(ConfigurableResource):
     """A resource for connecting to the Snowflake data warehouse. The returned resource object is an
     instance of :py:class:`SnowflakeConnection`.
 
@@ -356,8 +353,8 @@ class SnowflakeResource(ConfigurableResourceFactory[SnowflakeConnection]):
             from dagster_snowflake import SnowflakeResource
 
             @op
-            def get_one(snowflake_resource: Resource[SnowflakeConnection]):
-                snowflake_resource.execute_query('SELECT 1')
+            def get_one(snowflake_resource: SnowflakeResource):
+                snowflake_resource.get_client().execute_query('SELECT 1')
 
             @job(resource_defs={
                 'snowflake_resource': SnowflakeResource(
@@ -549,25 +546,25 @@ class SnowflakeResource(ConfigurableResourceFactory[SnowflakeConnection]):
     )
 
     @validator("paramstyle")
-    def validate_paramstyle(cls, v):
+    def validate_paramstyle(cls, v: Optional[str]) -> Optional[str]:
         valid_config = ["pyformat", "qmark", "numeric"]
         if v is not None and v not in valid_config:
-            raise DagsterInvalidConfigError(
+            raise DagsterError(
                 "Snowflake Resource: 'paramstyle' configuration value must be one of:"
                 f" {','.join(valid_config)}"
             )
         return v
 
     @validator("connector")
-    def validate_connector(cls, v):
+    def validate_connector(cls, v: Optional[str]) -> Optional[str]:
         if v is not None and v != "sqlalchemy":
-            raise DagsterInvalidConfigError(
+            raise DagsterError(
                 "Snowflake Resource: 'connector' configuration value must be None or sqlalchemy"
             )
         return v
 
-    def create_resource(self, context) -> SnowflakeConnection:
-        return SnowflakeConnection(context.resource_config, context.log)
+    def get_client(self) -> SnowflakeConnection:
+        return SnowflakeConnection(self._as_config_dict(), get_dagster_logger())
 
 
 @resource(
@@ -611,7 +608,7 @@ def snowflake_resource(context) -> SnowflakeConnection:
                 }
             )
     """
-    return SnowflakeResource.from_resource_context(context)
+    return SnowflakeResource.from_resource_context(context).get_client()
 
 
 def _filter_password(args):
