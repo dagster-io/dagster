@@ -1,10 +1,15 @@
+from typing import Iterator
+
 import pytest
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.events import DagsterEventType
+from dagster._core.host_representation.external import ExternalJob
+from dagster._core.instance import DagsterInstance
 from dagster._core.run_coordinator import SubmitRunContext
 from dagster._core.run_coordinator.queued_run_coordinator import QueuedRunCoordinator
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
 from dagster._core.test_utils import create_run_for_test, environ, instance_for_test
+from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._utils.merger import merge_dicts
 
 from dagster_tests.api_tests.utils import get_bar_workspace
@@ -28,7 +33,7 @@ class TestQueuedRunCoordinator:
     """
 
     @pytest.fixture
-    def instance(self):
+    def instance(self) -> Iterator[DagsterInstance]:
         overrides = {
             "run_launcher": {"module": "dagster._core.test_utils", "class": "MockedRunLauncher"}
         }
@@ -36,27 +41,29 @@ class TestQueuedRunCoordinator:
             yield inst
 
     @pytest.fixture
-    def coordinator(self, instance):
+    def coordinator(self, instance: DagsterInstance) -> Iterator[QueuedRunCoordinator]:
         run_coordinator = QueuedRunCoordinator()
         run_coordinator.register_instance(instance)
         yield run_coordinator
 
     @pytest.fixture(name="workspace")
-    def workspace_fixture(self, instance):
+    def workspace_fixture(self, instance: DagsterInstance) -> Iterator[WorkspaceRequestContext]:
         with get_bar_workspace(instance) as workspace:
             yield workspace
 
     @pytest.fixture(name="external_pipeline")
-    def external_pipeline_fixture(self, workspace):
+    def external_job_fixture(self, workspace: WorkspaceRequestContext) -> ExternalJob:
         location = workspace.get_code_location("bar_code_location")
         return location.get_repository("bar_repo").get_full_external_job("foo")
 
-    def create_run_for_test(self, instance, external_pipeline, **kwargs):
+    def create_run_for_test(
+        self, instance: DagsterInstance, external_pipeline: ExternalJob, **kwargs: object
+    ) -> DagsterRun:
         job_args = merge_dicts(
             {
-                "pipeline_name": "foo",
-                "external_pipeline_origin": external_pipeline.get_external_origin(),
-                "pipeline_code_origin": external_pipeline.get_python_origin(),
+                "job_name": "foo",
+                "external_job_origin": external_pipeline.get_external_origin(),
+                "job_code_origin": external_pipeline.get_python_origin(),
             },
             kwargs,
         )
