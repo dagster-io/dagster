@@ -196,9 +196,9 @@ class DbIOManager(IOManager):
                 if partition_expr is None:
                     raise ValueError(
                         f"Asset '{context.asset_key}' has partitions, but no 'partition_expr'"
-                        " metadata value, so we don't know what column to filter it on. Specify"
-                        " which column(s) of the database contains partitioned data as the"
-                        " 'partition_expr' metadata."
+                        " metadata value, so we don't know what column it's partitioned on. To"
+                        " specify a column, set this metadata value. E.g."
+                        ' @asset(metadata={"partition_expr": "your_partition_column"}).'
                     )
 
                 if isinstance(context.asset_partitions_def, MultiPartitionsDefinition):
