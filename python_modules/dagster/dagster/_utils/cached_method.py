@@ -18,6 +18,8 @@ class _Sentinel:
 NO_VALUE_IN_CACHE_SENTINEL: Final = _Sentinel()
 NO_ARGS_HASH_VALUE = 0
 
+CACHED_METHOD_FIELD_SUFFIX = "_cached_method_cache"
+
 
 def cached_method(method: Callable[Concatenate[S, P], T]) -> Callable[Concatenate[S, P], T]:
     """Caches the results of a method call.
@@ -57,7 +59,7 @@ def cached_method(method: Callable[Concatenate[S, P], T]) -> Callable[Concatenat
 
     @wraps(method)
     def helper(self: S, *args: P.args, **kwargs: P.kwargs) -> T:
-        cache_attr_name = method.__name__ + "_cache"
+        cache_attr_name = method.__name__ + CACHED_METHOD_FIELD_SUFFIX
         if not hasattr(self, cache_attr_name):
             cache: Dict[Hashable, T] = {}
             setattr(self, cache_attr_name, cache)
