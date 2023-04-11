@@ -107,7 +107,6 @@ class MakeConfigCacheable(BaseModel):
         return super().__setattr__(name, value)
 
 
-
 class Config(MakeConfigCacheable):
     """Base class for Dagster configuration models."""
 
@@ -163,7 +162,6 @@ class Config(MakeConfigCacheable):
         want the source of truth to be a config class.
         """
         return cast(Shape, cls.to_config_schema().as_field().config_type).fields
-
 
 
 class PermissiveConfig(Config):
@@ -408,7 +406,6 @@ def attach_resource_id_to_key_mapping(
     return resource_def
 
 
-
 class ConfigurableResourceFactory(
     Generic[TResValue],
     ResourceDefinition,
@@ -609,7 +606,6 @@ class ConfigurableResourceFactory(
         return cls(**context.resource_config or {}).create_resource(context)
 
 
-
 class ConfigurableResource(ConfigurableResourceFactory[TResValue]):
     """Base class for Dagster resources that utilize structured config.
 
@@ -720,7 +716,6 @@ ResourceOrPartialOrValue: TypeAlias = Union[
 V = TypeVar("V")
 
 
-
 class ResourceDependency(Generic[V]):
     def __set_name__(self, _owner, name):
         self._name = name
@@ -730,7 +725,6 @@ class ResourceDependency(Generic[V]):
 
     def __set__(self, obj: Optional[object], value: ResourceOrPartialOrValue[V]) -> None:
         setattr(obj, self._name, value)
-
 
 
 class ConfigurableLegacyResourceAdapter(ConfigurableResource, ABC):
@@ -771,7 +765,6 @@ class ConfigurableLegacyResourceAdapter(ConfigurableResource, ABC):
 
     def __call__(self, *args, **kwargs):
         return self.wrapped_resource(*args, **kwargs)
-
 
 
 class ConfigurableIOManagerFactory(
@@ -827,7 +820,6 @@ class PartialIOManager(Generic[TResValue], PartialResource[TResValue], IOManager
             config_schema=self._config_schema,
             description=resource_cls.__doc__,
         )
-
 
 
 class ConfigurableIOManager(ConfigurableIOManagerFactory, IOManager):
@@ -1011,7 +1003,6 @@ def _is_pydantic_field_required(pydantic_field: ModelField) -> bool:
         "do not fully understand the semantics of right now. For the time being going "
         "to throw an error to figure see when we actually encounter this state."
     )
-
 
 
 class ConfigurableLegacyIOManagerAdapter(ConfigurableIOManagerFactory):
