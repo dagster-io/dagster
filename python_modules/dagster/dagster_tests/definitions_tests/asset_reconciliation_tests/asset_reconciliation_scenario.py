@@ -111,15 +111,26 @@ class AssetReconciliationScenario(NamedTuple):
                 instance.add_backfill(backfill)
 
             if self.cursor_from is not None:
+
+                @repository
+                def prior_repo():
+                    return self.cursor_from.assets
+
                 run_requests, cursor = self.cursor_from.do_scenario(
                     instance, scenario_name=scenario_name, with_daemon=with_daemon
                 )
                 for run_request in run_requests:
                     instance.create_run_for_pipeline(
-                        repo.get_implicit_job_def_for_assets(run_request.asset_selection),
+                        prior_repo.get_implicit_job_def_for_assets(run_request.asset_selection),
                         asset_selection=set(run_request.asset_selection),
                         tags=run_request.tags,
                     )
+
+                # make sure we can deserialize it using the new asset graph
+                cursor = AssetReconciliationCursor.from_serialized(
+                    cursor.serialize(), repo.asset_graph
+                )
+
             else:
                 cursor = AssetReconciliationCursor.empty()
 
