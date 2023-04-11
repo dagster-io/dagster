@@ -191,7 +191,7 @@ def test_annotate_with_resource_factory() -> None:
             " 'test_errors.test_annotate_with_resource_factory.<locals>.MyStringFactory'>', but"
             " '<class 'test_errors.test_annotate_with_resource_factory.<locals>.MyStringFactory'>'"
             " outputs a '<class 'str'>' value to user code such as @ops and @assets. This"
-            " annotation should instead be 'Resource\\[str\\]'"
+            " annotation should instead be 'ResourceParam\\[str\\]'"
         ),
     ):
 
@@ -206,7 +206,7 @@ def test_annotate_with_resource_factory() -> None:
             " 'test_errors.test_annotate_with_resource_factory.<locals>.MyStringFactory'>', but"
             " '<class 'test_errors.test_annotate_with_resource_factory.<locals>.MyStringFactory'>'"
             " outputs a '<class 'str'>' value to user code such as @ops and @assets. This"
-            " annotation should instead be 'Resource\\[str\\]'"
+            " annotation should instead be 'ResourceParam\\[str\\]'"
         ),
     ):
 
@@ -225,8 +225,8 @@ def test_annotate_with_resource_factory() -> None:
             " 'test_errors.test_annotate_with_resource_factory.<locals>.MyUnspecifiedFactory'>',"
             " but '<class"
             " 'test_errors.test_annotate_with_resource_factory.<locals>.MyUnspecifiedFactory'>'"
-            " outputs an unknown value to user code such as @ops and @assets. This"
-            " annotation should instead be 'Resource\\[Any\\]' or 'Resource\\[<output type>\\]'"
+            " outputs an unknown value to user code such as @ops and @assets. This annotation"
+            " should instead be 'ResourceParam\\[Any\\]' or 'ResourceParam\\[<output type>\\]'"
         ),
     ):
 
@@ -241,8 +241,8 @@ def test_annotate_with_resource_factory() -> None:
             " 'test_errors.test_annotate_with_resource_factory.<locals>.MyUnspecifiedFactory'>',"
             " but '<class"
             " 'test_errors.test_annotate_with_resource_factory.<locals>.MyUnspecifiedFactory'>'"
-            " outputs an unknown value to user code such as @ops and @assets. This"
-            " annotation should instead be 'Resource\\[Any\\]' or 'Resource\\[<output type>\\]'"
+            " outputs an unknown value to user code such as @ops and @assets. This annotation"
+            " should instead be 'ResourceParam\\[Any\\]' or 'ResourceParam\\[<output type>\\]'"
         ),
     ):
 
@@ -264,7 +264,7 @@ def test_annotate_with_resource_factory_schedule_sensor() -> None:
             " but '<class"
             " 'test_errors.test_annotate_with_resource_factory_schedule_sensor.<locals>.MyStringFactory'>'"
             " outputs a '<class 'str'>' value to user code such as @ops and @assets. This"
-            " annotation should instead be 'Resource\\[str\\]'"
+            " annotation should instead be 'ResourceParam\\[str\\]'"
         ),
     ):
 
@@ -280,7 +280,7 @@ def test_annotate_with_resource_factory_schedule_sensor() -> None:
             " but '<class"
             " 'test_errors.test_annotate_with_resource_factory_schedule_sensor.<locals>.MyStringFactory'>'"
             " outputs a '<class 'str'>' value to user code such as @ops and @assets. This"
-            " annotation should instead be 'Resource\\[str\\]'"
+            " annotation should instead be 'ResourceParam\\[str\\]'"
         ),
     ):
 
@@ -299,8 +299,8 @@ def test_annotate_with_bare_resource_def() -> None:
             "Resource param 'my_resource' is annotated as '<class"
             " 'test_errors.test_annotate_with_bare_resource_def.<locals>.MyResourceDef'>', but"
             " '<class 'test_errors.test_annotate_with_bare_resource_def.<locals>.MyResourceDef'>'"
-            " outputs an unknown value to user code such as @ops and @assets. This"
-            " annotation should instead be 'Resource\\[Any\\]' or 'Resource\\[<output type>\\]'"
+            " outputs an unknown value to user code such as @ops and @assets. This annotation"
+            " should instead be 'ResourceParam\\[Any\\]' or 'ResourceParam\\[<output type>\\]'"
         ),
     ):
 
@@ -314,8 +314,8 @@ def test_annotate_with_bare_resource_def() -> None:
             "Resource param 'my_resource' is annotated as '<class"
             " 'test_errors.test_annotate_with_bare_resource_def.<locals>.MyResourceDef'>', but"
             " '<class 'test_errors.test_annotate_with_bare_resource_def.<locals>.MyResourceDef'>'"
-            " outputs an unknown value to user code such as @ops and @assets. This"
-            " annotation should instead be 'Resource\\[Any\\]' or 'Resource\\[<output type>\\]'"
+            " outputs an unknown value to user code such as @ops and @assets. This annotation"
+            " should instead be 'ResourceParam\\[Any\\]' or 'ResourceParam\\[<output type>\\]'"
         ),
     ):
 
