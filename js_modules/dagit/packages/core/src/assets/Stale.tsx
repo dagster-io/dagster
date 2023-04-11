@@ -1,4 +1,4 @@
-import {Colors, Box, BaseTag, Tooltip, Icon, Body} from '@dagster-io/ui';
+import {Colors, Box, BaseTag, Tooltip, Icon, Body, ButtonLink} from '@dagster-io/ui';
 import groupBy from 'lodash/groupBy';
 import isEqual from 'lodash/isEqual';
 import React from 'react';
@@ -22,7 +22,7 @@ const LABELS = {
   },
   upstream: {
     [StaleCauseCategory.CODE]: 'Upstream code version',
-    [StaleCauseCategory.DATA]: 'Upstream data version',
+    [StaleCauseCategory.DATA]: 'Upstream data',
     [StaleCauseCategory.DEPENDENCIES]: 'Upstream dependencies',
   },
 };
@@ -31,8 +31,7 @@ export const StaleReasonsLabel: React.FC<{
   assetKey: AssetKeyInput;
   include: 'all' | 'upstream' | 'self';
   liveData?: LiveDataForNode;
-  onClick?: () => void;
-}> = ({liveData, include, assetKey, onClick}) => {
+}> = ({liveData, include, assetKey}) => {
   if (!isAssetStale(liveData) || !liveData?.staleCauses.length) {
     return null;
   }
@@ -40,9 +39,7 @@ export const StaleReasonsLabel: React.FC<{
   return (
     <Body color={Colors.Yellow700}>
       <Tooltip position="top" content={<StaleCausesSummary causes={liveData.staleCauses} />}>
-        <Box onClick={onClick} flex={{gap: 4}}>
-          {Object.keys(groupedCauses(assetKey, include, liveData)).join(', ')}
-        </Box>
+        {Object.keys(groupedCauses(assetKey, include, liveData)).join(', ')}
       </Tooltip>
     </Body>
   );
@@ -62,15 +59,21 @@ export const StaleReasonsTags: React.FC<{
     <>
       {Object.entries(groupedCauses(assetKey, include, liveData)).map(([label, causes]) => (
         <Tooltip key={label} position="top" content={<StaleCausesSummary causes={causes} />}>
-          <Box onClick={onClick} flex={{gap: 4}}>
-            <BaseTag
-              fillColor={Colors.Yellow50}
-              textColor={Colors.Yellow700}
-              interactive={!!onClick}
-              icon={<Icon name="changes_present" color={Colors.Yellow700} />}
-              label={label}
-            />
-          </Box>
+          <BaseTag
+            fillColor={Colors.Yellow50}
+            textColor={Colors.Yellow700}
+            interactive={!!onClick}
+            icon={<Icon name="changes_present" color={Colors.Yellow700} />}
+            label={
+              onClick ? (
+                <ButtonLink underline="never" onClick={onClick} color={Colors.Yellow700}>
+                  {label}
+                </ButtonLink>
+              ) : (
+                label
+              )
+            }
+          />
         </Tooltip>
       ))}
     </>
