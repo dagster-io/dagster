@@ -2283,6 +2283,7 @@ export type PartitionBackfill = {
   status: BulkActionStatus;
   timestamp: Scalars['Float'];
   unfinishedRuns: Array<Run>;
+  user: Maybe<Scalars['String']>;
 };
 
 export type PartitionBackfillRunsArgs = {
@@ -8849,6 +8850,7 @@ export const buildPartitionBackfill = (
       overrides && overrides.hasOwnProperty('unfinishedRuns')
         ? overrides.unfinishedRuns!
         : [relationshipsToOmit.has('Run') ? ({} as Run) : buildRun({}, relationshipsToOmit)],
+    user: overrides && overrides.hasOwnProperty('user') ? overrides.user! : 'eius',
   };
 };
 

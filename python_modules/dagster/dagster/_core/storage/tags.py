@@ -68,6 +68,10 @@ USER_EDITABLE_SYSTEM_TAGS = [
     MAX_RUNTIME_SECONDS_TAG,
 ]
 
+# In cloud, we tag runs with the email of the user who triggered the run
+# This is used to display the user in the UI
+USER_TAG = "user"
+
 
 class TagType(Enum):
     # Custom tag provided by a user
