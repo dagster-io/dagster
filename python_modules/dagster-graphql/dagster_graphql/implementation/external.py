@@ -33,7 +33,7 @@ def get_full_external_job_or_raise(
     return _get_external_pipeline_or_raise(graphene_info, selector, ignore_subset=True)
 
 
-def get_external_pipeline_or_raise(
+def get_external_job_or_raise(
     graphene_info: "ResolveInfo", selector: JobSubsetSelector
 ) -> ExternalJob:
     check.inst_param(selector, "selector", JobSubsetSelector)

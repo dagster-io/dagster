@@ -24,7 +24,7 @@ from dagster._core.execution.stats import RunStepKeyStatsSnapshot, StepEventStat
 from dagster._core.storage.pipeline_run import DagsterRunStatus, RunRecord, RunsFilter
 from dagster._core.storage.tags import TagType, get_tag_type
 
-from .external import ensure_valid_config, get_external_pipeline_or_raise
+from .external import ensure_valid_config, get_external_job_or_raise
 from .utils import capture_error
 
 if TYPE_CHECKING:
@@ -340,7 +340,7 @@ def validate_pipeline_config(
 
     check.inst_param(selector, "selector", JobSubsetSelector)
 
-    external_pipeline = get_external_pipeline_or_raise(graphene_info, selector)
+    external_pipeline = get_external_job_or_raise(graphene_info, selector)
     ensure_valid_config(external_pipeline, run_config)
     return GraphenePipelineConfigValidationValid(pipeline_name=external_pipeline.name)
 
@@ -355,7 +355,7 @@ def get_execution_plan(
 
     check.inst_param(selector, "selector", JobSubsetSelector)
 
-    external_pipeline = get_external_pipeline_or_raise(graphene_info, selector)
+    external_pipeline = get_external_job_or_raise(graphene_info, selector)
     ensure_valid_config(external_pipeline, run_config)
     return GrapheneExecutionPlan(
         graphene_info.context.get_external_execution_plan(

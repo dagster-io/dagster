@@ -8,7 +8,7 @@ from dagster._core.host_representation.external_data import DEFAULT_MODE_NAME
 from dagster_graphql.schema.errors import GrapheneModeNotFoundError
 from dagster_graphql.schema.util import ResolveInfo
 
-from .external import get_external_pipeline_or_raise
+from .external import get_external_job_or_raise
 from .utils import JobSubsetSelector, UserFacingGraphQLError, capture_error
 
 if TYPE_CHECKING:
@@ -32,7 +32,7 @@ def resolve_run_config_schema_or_error(
     if mode and mode != DEFAULT_MODE_NAME:
         return GrapheneModeNotFoundError(selector=selector, mode=mode)
 
-    external_pipeline = get_external_pipeline_or_raise(graphene_info, selector)
+    external_pipeline = get_external_job_or_raise(graphene_info, selector)
 
     return GrapheneRunConfigSchema(
         represented_pipeline=external_pipeline,

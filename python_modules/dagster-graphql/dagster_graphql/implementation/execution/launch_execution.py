@@ -7,7 +7,7 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.storage.pipeline_run import DagsterRun, RunsFilter
 from dagster._core.workspace.permissions import Permissions
 
-from ..external import get_external_pipeline_or_raise
+from ..external import get_external_job_or_raise
 from ..utils import (
     ExecutionMetadata,
     ExecutionParams,
@@ -48,7 +48,7 @@ def do_launch(
         )
         check.str_param(execution_metadata.root_run_id, "root_run_id")
         check.str_param(execution_metadata.parent_run_id, "parent_run_id")
-    external_pipeline = get_external_pipeline_or_raise(graphene_info, execution_params.selector)
+    external_pipeline = get_external_job_or_raise(graphene_info, execution_params.selector)
     pipeline_run = create_valid_pipeline_run(graphene_info, external_pipeline, execution_params)
 
     return graphene_info.context.instance.submit_run(
@@ -101,7 +101,7 @@ def launch_reexecution_from_parent_run(
     )
 
     repo_location = graphene_info.context.get_code_location(selector.location_name)
-    external_pipeline = get_external_pipeline_or_raise(graphene_info, selector)
+    external_pipeline = get_external_job_or_raise(graphene_info, selector)
 
     run = instance.create_reexecuted_run(
         parent_run=cast(DagsterRun, parent_run),
