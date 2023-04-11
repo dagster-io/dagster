@@ -165,6 +165,7 @@ class Config(MakeConfigCacheable):
         """
         return cast(Shape, cls.to_config_schema().as_field().config_type).fields
 
+
 @experimental
 class PermissiveConfig(Config):
     # Pydantic config for this class
