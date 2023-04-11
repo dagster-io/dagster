@@ -59,7 +59,7 @@ def get_pipeline_or_error(
     graphene_info: ResolveInfo, selector: JobSubsetSelector
 ) -> "GraphenePipeline":
     """Returns a PipelineOrError."""
-    return get_pipeline_from_selector(graphene_info, selector)
+    return get_job_from_selector(graphene_info, selector)
 
 
 def get_pipeline_or_raise(
@@ -68,7 +68,7 @@ def get_pipeline_or_raise(
     """Returns a Pipeline or raises a UserFacingGraphQLError if one cannot be retrieved
     from the selector, e.g., the pipeline is not present in the loaded repository.
     """
-    return get_pipeline_from_selector(graphene_info, selector)
+    return get_job_from_selector(graphene_info, selector)
 
 
 def get_job_reference_or_raise(
@@ -91,7 +91,7 @@ def get_job_reference_or_raise(
     )
 
 
-def get_pipeline_from_selector(
+def get_job_from_selector(
     graphene_info: ResolveInfo, selector: JobSubsetSelector
 ) -> "GraphenePipeline":
     from ..schema.pipelines.pipeline import GraphenePipeline
