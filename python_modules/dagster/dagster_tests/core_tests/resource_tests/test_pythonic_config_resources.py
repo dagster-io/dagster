@@ -31,7 +31,7 @@ from dagster._config.pythonic_config import (
     ConfigurableLegacyIOManagerAdapter,
     ConfigurableResource,
     ConfigurableResourceFactory,
-    IAttachBareObjectToContext,
+    IAttachDifferentObjectToContext,
     ResourceDependency,
 )
 from dagster._core.definitions.assets_job import build_assets_job
@@ -250,14 +250,14 @@ def test_yield_in_resource_function():
     assert called == ["creation_1", "creation_2", "op", "cleanup_2", "cleanup_1"]
 
 
-def test_migration_IAttachBareObjectToContext() -> None:
+def test_migration_attach_bare_object_to_context() -> None:
     executed = {}
 
     class MyClient:
         def foo(self) -> str:
             return "foo"
 
-    class MyClientResource(ConfigurableResource, IAttachBareObjectToContext):
+    class MyClientResource(ConfigurableResource, IAttachDifferentObjectToContext):
         def get_client(self) -> MyClient:
             return MyClient()
 

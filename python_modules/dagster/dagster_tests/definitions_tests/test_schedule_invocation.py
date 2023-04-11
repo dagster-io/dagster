@@ -6,6 +6,7 @@ from dagster import (
     DagsterInstance,
     DagsterInvariantViolationError,
     DynamicPartitionsDefinition,
+    IAttachDifferentObjectToContext,
     RunRequest,
     StaticPartitionsDefinition,
     build_schedule_context,
@@ -115,6 +116,40 @@ def test_schedule_invocation_resources() -> None:
     assert cast(
         RunRequest,
         basic_schedule_resource_req(
+            build_schedule_context(resources={"my_resource": MyResource(a_str="foo")})
+        ),
+    ).run_config == {"foo": "foo"}
+
+
+def test_migration_attach_bare_object_to_context() -> None:
+    class MyResource(ConfigurableResource, IAttachDifferentObjectToContext):
+        a_str: str
+
+        def get_object_to_set_on_execution_context(self) -> str:
+            return self.a_str
+
+    @schedule(
+        job_name="foo_pipeline", required_resource_keys={"my_resource"}, cron_schedule="* * * * *"
+    )
+    def basic_schedule_unmigrated(context) -> RunRequest:
+        assert context.resources.my_resource
+        return RunRequest(run_key=None, run_config={"foo": context.resources.my_resource}, tags={})
+
+    @schedule(job_name="foo_pipeline", cron_schedule="* * * * *")
+    def basic_schedule_migrated(my_resource: MyResource) -> RunRequest:
+        assert my_resource
+        return RunRequest(run_key=None, run_config={"foo": my_resource.a_str}, tags={})
+
+    assert cast(
+        RunRequest,
+        basic_schedule_unmigrated(
+            build_schedule_context(resources={"my_resource": MyResource(a_str="foo")})
+        ),
+    ).run_config == {"foo": "foo"}
+
+    assert cast(
+        RunRequest,
+        basic_schedule_migrated(
             build_schedule_context(resources={"my_resource": MyResource(a_str="foo")})
         ),
     ).run_config == {"foo": "foo"}

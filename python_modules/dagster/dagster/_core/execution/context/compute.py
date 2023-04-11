@@ -109,11 +109,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
     __slots__ = ["_step_execution_context"]
 
-    def __init__(
-        self,
-        step_execution_context: StepExecutionContext,
-        _resources_override: Optional[Any] = None,
-    ):
+    def __init__(self, step_execution_context: StepExecutionContext):
         self._step_execution_context = check.inst_param(
             step_execution_context,
             "step_execution_context",
@@ -122,10 +118,6 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         self._pdb: Optional[ForkedPdb] = None
         self._events: List[DagsterEvent] = []
         self._output_metadata: Dict[str, Any] = {}
-        self._resources_override = _resources_override
-
-    def with_resources_override(self, resources: Any) -> "OpExecutionContext":
-        return self.__class__(self._step_execution_context, _resources_override=resources)
 
     @public
     @property
@@ -180,7 +172,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @property
     def resources(self) -> Any:
         """Resources: The currently available resources."""
-        return self._resources_override or self._step_execution_context.resources
+        return self._step_execution_context.resources
 
     @property
     def step_launcher(self) -> Optional[StepLauncher]:

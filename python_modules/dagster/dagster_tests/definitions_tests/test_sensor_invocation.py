@@ -17,6 +17,7 @@ from dagster import (
     Definitions,
     EventRecordsFilter,
     FreshnessPolicy,
+    IAttachDifferentObjectToContext,
     Output,
     PartitionKeyRange,
     PartitionMapping,
@@ -131,6 +132,38 @@ def test_sensor_invocation_resources() -> None:
     assert cast(
         RunRequest,
         basic_sensor_resource_req(
+            build_sensor_context(resources={"my_resource": MyResource(a_str="foo")})
+        ),
+    ).run_config == {"foo": "foo"}
+
+
+def test_migration_attach_bare_object_to_context() -> None:
+    class MyResource(ConfigurableResource, IAttachDifferentObjectToContext):
+        a_str: str
+
+        def get_object_to_set_on_execution_context(self) -> str:
+            return self.a_str
+
+    @sensor(job_name="foo_pipeline", required_resource_keys={"my_resource"})
+    def basic_sensor_unmigrated(context) -> RunRequest:
+        assert context.resources.my_resource
+        return RunRequest(run_key=None, run_config={"foo": context.resources.my_resource}, tags={})
+
+    @sensor(job_name="foo_pipeline")
+    def basic_sensor_migrated(my_resource: MyResource) -> RunRequest:
+        assert my_resource
+        return RunRequest(run_key=None, run_config={"foo": my_resource.a_str}, tags={})
+
+    assert cast(
+        RunRequest,
+        basic_sensor_unmigrated(
+            build_sensor_context(resources={"my_resource": MyResource(a_str="foo")})
+        ),
+    ).run_config == {"foo": "foo"}
+
+    assert cast(
+        RunRequest,
+        basic_sensor_migrated(
             build_sensor_context(resources={"my_resource": MyResource(a_str="foo")})
         ),
     ).run_config == {"foo": "foo"}

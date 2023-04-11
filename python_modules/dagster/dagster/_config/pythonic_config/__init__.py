@@ -34,7 +34,6 @@ from dagster._core.definitions.definition_config_schema import (
     ConfiguredDefinitionConfigSchema,
     DefinitionConfigSchema,
 )
-from dagster._core.definitions.scoped_resources_builder import Resources
 from dagster._core.errors import (
     DagsterInvalidConfigDefinitionError,
     DagsterInvalidConfigError,
@@ -1244,7 +1243,7 @@ def validate_resource_annotated_function(fn) -> None:
         )
 
 
-class IAttachBareObjectToContext:
+class IAttachDifferentObjectToContext:
     """Utility interface which adjusts the type of the bare object attached to the execution context
     by a resource. Useful when migrating function-style resources to class-style ConfigurableResources.
 
@@ -1265,7 +1264,7 @@ class IAttachBareObjectToContext:
 
     .. code-block:: python
 
-        class MyStringResource(ConfigurableResource, IAttachBareObjectToContext):
+        class MyStringResource(ConfigurableResource, IAttachDifferentObjectToContext):
             inner_string: str
 
             def get_object_to_set_on_execution_context(self) -> str:
@@ -1284,19 +1283,3 @@ class IAttachBareObjectToContext:
         """Override to return the object to be attached to the execution context by this resource.
         """
         raise NotImplementedError()
-
-
-def resolve_iattach_bare_object_to_context(resource_obj: Resources) -> Any:
-    """Utility function which resolves the object to be attached to the execution context by a
-    resource which implements :py:class:`IAttachBareObjectToContext`.
-    """
-    return resource_obj.__class__(
-        **{
-            k: (
-                v.get_object_to_set_on_execution_context()
-                if isinstance(v, IAttachBareObjectToContext)
-                else v
-            )
-            for k, v in resource_obj._asdict().items()
-        }
-    )
