@@ -149,7 +149,7 @@ def test_load_input():
 def test_type_conversions():
     # no timestamp data
     no_time = pandas.Series([1, 2, 3, 4, 5])
-    converted = _convert_string_to_timestamp(_convert_timestamp_to_string(no_time, None))
+    converted = _convert_string_to_timestamp(_convert_timestamp_to_string(no_time, None, "foo"))
     assert (converted == no_time).all()
 
     # timestamp data
@@ -160,7 +160,9 @@ def test_type_conversions():
             pandas.Timestamp("2017-03-01T12:30:45.35"),
         ]
     )
-    time_converted = _convert_string_to_timestamp(_convert_timestamp_to_string(with_time, None))
+    time_converted = _convert_string_to_timestamp(
+        _convert_timestamp_to_string(with_time, None, "foo")
+    )
 
     assert (with_time == time_converted).all()
 
@@ -173,7 +175,7 @@ def test_type_conversions():
 def test_timezone_conversions():
     # no timestamp data
     no_time = pandas.Series([1, 2, 3, 4, 5])
-    converted = _add_missing_timezone(no_time, None)
+    converted = _add_missing_timezone(no_time, None, "foo")
     assert (converted == no_time).all()
 
     # timestamp data
@@ -184,7 +186,7 @@ def test_timezone_conversions():
             pandas.Timestamp("2017-03-01T12:30:45.35"),
         ]
     )
-    time_converted = _add_missing_timezone(with_time, None)
+    time_converted = _add_missing_timezone(with_time, None, "foo")
 
     assert (with_time.dt.tz_localize("UTC") == time_converted).all()
 
@@ -293,7 +295,7 @@ def test_io_manager_with_snowflake_pandas_timestamp_data(io_manager):
             DagsterInvariantViolationError,
             match=(
                 "Snowflake I/O manager: Snowflake I/O manager configured to convert time data in"
-                " DataFrame column date to strings, but the corresponding DATE column in table"
+                " DataFrame column DATE to strings, but the corresponding DATE column in table"
                 f" {table_name} is not of type VARCHAR, it is of type TIMESTAMP_NTZ(9). Please set"
                 " store_timestamps_as_strings=False in the Snowflake I/O manager configuration to"
                 " store time data as TIMESTAMP types."
