@@ -25,6 +25,7 @@ export type SingleAssetQuery = {
           staleStatus: Types.StaleStatus | null;
           groupName: string | null;
           isSource: boolean;
+          isObservable: boolean;
           hasMaterializePermission: boolean;
           description: string | null;
           repository: {
@@ -57,6 +58,7 @@ export type SingleAssetQuery = {
           staleCauses: Array<{
             __typename: 'StaleCause';
             reason: string;
+            category: Types.StaleCauseCategory;
             key: {__typename: 'AssetKey'; path: Array<string>};
             dependency: {__typename: 'AssetKey'; path: Array<string>} | null;
           }>;

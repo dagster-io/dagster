@@ -27,7 +27,7 @@ import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
 import {MULTIPLE_DEFINITIONS_WARNING} from './AssetDefinedInMultipleReposNotice';
 import {LaunchAssetChoosePartitionsDialog} from './LaunchAssetChoosePartitionsDialog';
 import {partitionDefinitionsEqual} from './MultipartitioningSupport';
-import {isAssetMissing, isAssetStale} from './StaleTag';
+import {isAssetMissing, isAssetStale} from './Stale';
 import {AssetKey} from './types';
 import {
   LaunchAssetExecutionAssetNodeFragment,
@@ -83,7 +83,12 @@ type Asset =
 
 export type AssetsInScope = {all: Asset[]; skipAllTerm?: boolean} | {selected: Asset[]};
 
-type LaunchOption = {assetKeys: AssetKey[]; label: string; hasMaterializePermission: boolean};
+type LaunchOption = {
+  assetKeys: AssetKey[];
+  label: string;
+  hasMaterializePermission: boolean;
+  icon?: JSX.Element;
+};
 
 const isAnyPartitioned = (assets: Asset[]) =>
   assets.some(
@@ -137,8 +142,9 @@ function optionsForButton(scope: AssetsInScope, liveDataForStale?: LiveData): La
 
     options.push({
       assetKeys: missingOrStale.map((a) => a.assetKey),
-      label: `Materialize stale and missing${countOrBlank(missingOrStale)}`,
+      label: `Propagate changes${countOrBlank(missingOrStale)}`,
       hasMaterializePermission,
+      icon: <Icon name="changes_present" />,
     });
   }
 
@@ -205,16 +211,17 @@ export const LaunchAssetExecutionButton: React.FC<{
           content={
             <Menu>
               <MenuItem
+                text="Open in launchpad"
+                icon={<Icon name="open_in_new" />}
                 onClick={(e: React.MouseEvent<any>) => {
                   onClick(firstOption.assetKeys, e, true);
                 }}
-                text="Open in launchpad"
               />
               {options.slice(1).map((option) => (
                 <MenuItem
                   key={option.label}
                   text={option.label}
-                  icon="materialization"
+                  icon={option.icon || 'materialization'}
                   disabled={option.assetKeys.length === 0}
                   onClick={(e) => onClick(option.assetKeys, e)}
                 />

@@ -117,6 +117,7 @@ export const AssetPartitionStatusDot = ({status}: {status: AssetPartitionStatus[
       width: 10,
       height: 10,
       borderRadius: '100%',
+      flexShrink: 0,
       ...assetPartitionStatusesToStyle(status),
     }}
   />

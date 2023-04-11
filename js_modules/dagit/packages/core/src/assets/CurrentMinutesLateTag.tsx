@@ -25,7 +25,7 @@ export function isAssetLate(liveData?: LiveDataForNode): liveData is LiveDataWit
 }
 
 export const humanizedLateString = (minLate: number) =>
-  `${dayjs.duration(minLate, 'minutes').humanize(false)} late`;
+  `${dayjs.duration(minLate, 'minutes').humanize(false)} overdue`;
 
 export const CurrentMinutesLateTag: React.FC<{
   liveData: LiveDataForNode;
@@ -44,7 +44,7 @@ export const CurrentMinutesLateTag: React.FC<{
         content={<div style={{maxWidth: 400}}>{`${STALE_UNMATERIALIZED_MSG} ${description}`}</div>}
       >
         <Tag intent="danger" icon="warning">
-          Late
+          Overdue
         </Tag>
       </Tooltip>
     );
