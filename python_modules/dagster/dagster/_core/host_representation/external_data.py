@@ -50,7 +50,7 @@ from dagster._core.definitions import (
 )
 from dagster._core.definitions.asset_layer import AssetOutputInfo
 from dagster._core.definitions.asset_sensor_definition import AssetSensorDefinition
-from dagster._core.definitions.assets_job import ASSET_BASE_JOB_PREFIX, is_base_asset_job_name
+from dagster._core.definitions.assets_job import is_base_asset_job_name
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.definition_config_schema import ConfiguredDefinitionConfigSchema
 from dagster._core.definitions.dependency import (
@@ -1379,12 +1379,21 @@ def external_asset_graph_from_defs(
 
     for source_asset in source_assets_by_key.values():
         if source_asset.key not in node_defs_by_asset_key:
+            job_names = (
+                [
+                    job_def.name
+                    for job_def in pipelines
+                    if source_asset.key in job_def.asset_layer.source_assets_by_key
+                ]
+                if source_asset.node_def is not None
+                else []
+            )
             asset_nodes.append(
                 ExternalAssetNode(
                     asset_key=source_asset.key,
                     dependencies=list(deps[source_asset.key].values()),
                     depended_by=list(dep_by[source_asset.key].values()),
-                    job_names=[ASSET_BASE_JOB_PREFIX] if source_asset.node_def is not None else [],
+                    job_names=job_names,
                     op_description=source_asset.description,
                     metadata=source_asset.metadata,
                     group_name=source_asset.group_name,

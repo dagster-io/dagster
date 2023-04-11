@@ -10,8 +10,10 @@ from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.instance import DagsterInstance
+from dagster._core.instance_for_test import instance_for_test
 
 
 def _get_current_data_version(key: AssetKey, instance: DagsterInstance) -> Optional[DataVersion]:
@@ -49,6 +51,42 @@ def test_execute_source_asset_observation_job():
     assert _get_current_data_version(AssetKey("foo"), instance) == DataVersion("alpha")
     assert executed["bar"]
     assert _get_current_data_version(AssetKey("bar"), instance) == DataVersion("beta")
+
+
+def test_partitioned_observable_source_asset():
+    partitions_def_a = StaticPartitionsDefinition(["A"])
+    partitions_def_b = StaticPartitionsDefinition(["B"])
+
+    called = set()
+
+    @observable_source_asset(partitions_def=partitions_def_a)
+    def foo(context):
+        called.add("foo")
+        return DataVersion(context.partition_key)
+
+    @asset(partitions_def=partitions_def_a)
+    def bar():
+        called.add("bar")
+        return 1
+
+    @asset(partitions_def=partitions_def_b)
+    def baz():
+        return 1
+
+    with instance_for_test() as instance:
+        job_def = Definitions(assets=[foo, bar, baz]).get_implicit_job_def_for_assets([foo.key])
+
+        # If the asset selection contains any materializable assets, source assets observations will not run
+        job_def.execute_in_process(partition_key="A", instance=instance)
+        assert called == {"bar"}
+
+        # If the asset selection contains only observable source assets, source assets are observed
+        job_def.execute_in_process(partition_key="A", asset_selection=[foo.key], instance=instance)
+        assert called == {"bar", "foo"}
+        record = instance.get_latest_data_version_record(AssetKey(["foo"]))
+        assert record and extract_data_version_from_entry(record.event_log_entry) == DataVersion(
+            "A"
+        )
 
 
 def test_mixed_source_asset_observation_job():
