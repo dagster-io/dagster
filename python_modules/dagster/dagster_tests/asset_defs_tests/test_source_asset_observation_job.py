@@ -2,6 +2,7 @@ from typing import Optional
 
 import pytest
 from dagster._check import CheckError
+from dagster._config.structured_config import ConfigurableResource
 from dagster._core.definitions.data_version import (
     DataVersion,
     extract_data_version_from_entry,
@@ -152,4 +153,48 @@ def test_source_asset_observation_job_with_resource(is_valid, resource_defs):
                 )
                 .get_job_def("source_asset_job")
                 .execute_in_process(instance=instance)
+            )
+
+
+class Bar(ConfigurableResource):
+    data_version: str
+
+
+@pytest.mark.parametrize(
+    "is_valid,resource_defs",
+    [(True, {"bar": Bar(data_version="bar")}), (False, {})],
+)
+def test_source_asset_observation_job_with_pythonic_resource(is_valid, resource_defs):
+    executed = {}
+
+    @observable_source_asset
+    def foo(bar: Bar) -> DataVersion:
+        executed["foo"] = True
+        return DataVersion(f"{bar.data_version}")
+
+    instance = DagsterInstance.ephemeral()
+
+    if is_valid:
+        result = (
+            Definitions(
+                assets=[foo],
+                jobs=[define_asset_job("source_asset_job", [foo])],
+                resources=resource_defs,
+            )
+            .get_job_def("source_asset_job")
+            .execute_in_process(instance=instance)
+        )
+
+        assert result.success
+        assert executed["foo"]
+        assert _get_current_data_version(AssetKey("foo"), instance) == DataVersion("bar")
+    else:
+        with pytest.raises(
+            DagsterInvalidDefinitionError,
+            match="resource with key 'bar' required by op 'foo' was not provided",
+        ):
+            Definitions(
+                assets=[foo],
+                jobs=[define_asset_job("source_asset_job", [foo])],
+                resources=resource_defs,
             )

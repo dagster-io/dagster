@@ -4,19 +4,20 @@ import warnings
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
+    Any,
+    Callable,
     Dict,
     Iterator,
     Mapping,
     Optional,
-    Union,
     cast,
 )
 
-from typing_extensions import Protocol, TypeAlias
+from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
-from dagster._core.decorator_utils import has_at_least_one_parameter
+from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.data_version import DATA_VERSION_TAG, DataVersion
 from dagster._core.definitions.events import AssetKey, AssetObservation, CoercibleToAssetKey
 from dagster._core.definitions.metadata import (
@@ -26,6 +27,7 @@ from dagster._core.definitions.metadata import (
 )
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.resource_requirement import (
     ResourceAddable,
@@ -47,31 +49,11 @@ from dagster._utils.merger import merge_dicts
 if TYPE_CHECKING:
     from dagster._core.execution.context.compute import (
         OpExecutionContext,
-        SourceAssetObserveContext,
     )
 
 
-class SourceAssetObserveFunctionWithContext(Protocol):
-    @property
-    def __name__(self) -> str:
-        ...
-
-    def __call__(self, context: "SourceAssetObserveContext") -> DataVersion:
-        ...
-
-
-class SourceAssetObserveFunctionNoContext(Protocol):
-    @property
-    def __name__(self) -> str:
-        ...
-
-    def __call__(self) -> DataVersion:
-        ...
-
-
-SourceAssetObserveFunction: TypeAlias = Union[
-    SourceAssetObserveFunctionWithContext, SourceAssetObserveFunctionNoContext
-]
+# Going with this catch-all for the time-being to permit pythonic resources
+SourceAssetObserveFunction: TypeAlias = Callable[..., Any]
 
 
 class SourceAsset(ResourceAddable):
@@ -84,7 +66,6 @@ class SourceAsset(ResourceAddable):
             the asset when it's used as an input to other assets inside a job.
         io_manager_def (Optional[IOManagerDefinition]): (Experimental) The definition of the IOManager that will be used to load the contents of
             the asset when it's used as an input to other assets inside a job.
-        required_resource_keys (Optional[Set[str]]): Set of resource handles required by the observe op.
         resource_defs (Optional[Mapping[str, ResourceDefinition]]): (Experimental) resource definitions that may be required by the :py:class:`dagster.IOManagerDefinition` provided in the `io_manager_def` argument.
         description (Optional[str]): The description of the asset.
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
@@ -115,6 +96,11 @@ class SourceAsset(ResourceAddable):
         group_name: Optional[str] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         observe_fn: Optional[SourceAssetObserveFunction] = None,
+        # This is currently private because it is necessary for source asset observation functions,
+        # but we have not yet decided on a final API for associated one or more ops with a source
+        # asset. If we were to make this public, then we would have a canonical public
+        # `required_resource_keys` used for observation that might end up conflicting with a set of
+        # required resource keys for a different operation.
         _required_resource_keys: Optional[AbstractSet[str]] = None,
         # Add additional fields to with_resources and with_group below
     ):
@@ -185,12 +171,21 @@ class SourceAsset(ResourceAddable):
         return self.node_def is not None
 
     def _get_op_def_compute_fn(self, observe_fn: SourceAssetObserveFunction):
-        from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
+        from dagster._core.definitions.decorators.op_decorator import (
+            DecoratedOpFunction,
+            is_context_provided,
+        )
 
-        observe_fn_has_context = has_at_least_one_parameter(observe_fn)
+        observe_fn_has_context = is_context_provided(get_function_params(observe_fn))
 
         def fn(context: OpExecutionContext):
-            data_version = observe_fn(context) if observe_fn_has_context else observe_fn()  # type: ignore
+            resource_kwarg_keys = [param.name for param in get_resource_args(observe_fn)]
+            resource_kwargs = {key: getattr(context.resources, key) for key in resource_kwarg_keys}
+            data_version = (
+                observe_fn(context, **resource_kwargs)
+                if observe_fn_has_context
+                else observe_fn(**resource_kwargs)
+            )
 
             check.inst(
                 data_version,
@@ -207,7 +202,6 @@ class SourceAsset(ResourceAddable):
 
         return DecoratedOpFunction(fn)
 
-    @public
     @property
     def required_resource_keys(self) -> AbstractSet[str]:
         return {requirement.key for requirement in self.get_resource_requirements()}

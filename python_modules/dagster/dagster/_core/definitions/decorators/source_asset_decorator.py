@@ -1,11 +1,13 @@
 from typing import AbstractSet, Mapping, Optional, Union, overload
 
+import dagster._check as check
 from dagster._annotations import experimental
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKeyPrefix
 from dagster._core.definitions.metadata import (
     MetadataUserInput,
 )
 from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.source_asset import SourceAsset, SourceAssetObserveFunction
 from dagster._core.storage.io_manager import IOManagerDefinition
@@ -129,6 +131,17 @@ class _ObservableSourceAsset:
         source_asset_name = self.name or observe_fn.__name__
         source_asset_key = AssetKey([*self.key_prefix, source_asset_name])
 
+        arg_resource_keys = {arg.name for arg in get_resource_args(observe_fn)}
+        decorator_resource_keys = set(self.required_resource_keys or [])
+        check.param_invariant(
+            len(decorator_resource_keys) == 0 or len(arg_resource_keys) == 0,
+            (
+                "Cannot specify resource requirements in both @op decorator and as arguments to the"
+                " decorated function"
+            ),
+        )
+        resolved_resource_keys = decorator_resource_keys.union(arg_resource_keys)
+
         return SourceAsset(
             key=source_asset_key,
             metadata=self.metadata,
@@ -137,7 +150,7 @@ class _ObservableSourceAsset:
             description=self.description,
             partitions_def=self.partitions_def,
             group_name=self.group_name,
-            _required_resource_keys=self.required_resource_keys,
+            _required_resource_keys=resolved_resource_keys,
             resource_defs=self.resource_defs,
             observe_fn=observe_fn,
         )
