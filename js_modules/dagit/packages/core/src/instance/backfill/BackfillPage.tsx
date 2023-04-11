@@ -50,10 +50,14 @@ export const BackfillPage = () => {
       variables: {backfillId},
     },
   );
-  useQueryRefreshAtInterval(queryResult, 5000);
   const {data, loading} = queryResult;
 
   const backfill = data?.partitionBackfillOrError;
+  let isInProgress = true;
+  if (backfill && backfill.__typename === 'PartitionBackfill') {
+    isInProgress = backfill.status === BulkActionStatus.REQUESTED;
+  }
+  useQueryRefreshAtInterval(queryResult, 5000, isInProgress);
 
   function content() {
     if (!backfill || loading) {
