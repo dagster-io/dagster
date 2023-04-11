@@ -26,6 +26,7 @@ import op_selector from '../icon-svgs/bp-send-to-graph.svg';
 import cached from '../icon-svgs/cached.svg';
 import calendar from '../icon-svgs/calendar.svg';
 import cancel from '../icon-svgs/cancel.svg';
+import changes_present from '../icon-svgs/changes-present.svg';
 import chat_support from '../icon-svgs/chat-support.svg';
 import check_circle from '../icon-svgs/check_circle.svg';
 import checklist from '../icon-svgs/checklist.svg';
@@ -182,6 +183,7 @@ export const Icons = {
   copy_to_clipboard: assignment,
   copy_to_clipboard_done: assignment_turned_in,
   chat_support,
+  changes_present,
   concept_book,
   open_in_new,
   folder,

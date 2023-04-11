@@ -1,7 +1,13 @@
 import {MockedResponse} from '@apollo/client/testing';
 
-import {MockStaleReason} from '../../asset-graph/AssetNode.mocks';
-import {StaleStatus, RunStatus} from '../../graphql/types';
+import {MockStaleReasonData} from '../../asset-graph/AssetNode.mocks';
+import {
+  StaleStatus,
+  RunStatus,
+  buildAssetNode,
+  buildRepositoryLocation,
+  buildRepository,
+} from '../../graphql/types';
 import {SINGLE_ASSET_QUERY} from '../../workspace/VirtualizedAssetRow';
 import {SingleAssetQuery} from '../../workspace/types/VirtualizedAssetRow.types';
 import {ASSET_CATALOG_GROUP_TABLE_QUERY, ASSET_CATALOG_TABLE_QUERY} from '../AssetsCatalogTable';
@@ -45,6 +51,17 @@ export const SingleAssetQueryTrafficDashboard: MockedResponse<SingleAssetQuery> 
   },
 };
 
+const repository = buildRepository({
+  id: 'c22d9677b8089be89b1e014b9de34284962f83a7',
+  name: 'repo',
+  location: buildRepositoryLocation({
+    id: 'test.py',
+    name: 'test.py',
+    __typename: 'RepositoryLocation',
+  }),
+  __typename: 'Repository',
+});
+
 export const SingleAssetQueryMaterializedWithLatestRun: MockedResponse<SingleAssetQuery> = {
   request: {
     query: SINGLE_ASSET_QUERY,
@@ -67,16 +84,7 @@ export const SingleAssetQueryMaterializedWithLatestRun: MockedResponse<SingleAss
           computeKind: 'duckdb',
           opNames: ['good_asset'],
           hasMaterializePermission: true,
-          repository: {
-            id: 'c22d9677b8089be89b1e014b9de34284962f83a7',
-            __typename: 'Repository',
-            name: 'repo',
-            location: {
-              id: 'test.py',
-              name: 'test.py',
-              __typename: 'RepositoryLocation',
-            },
-          },
+          repository,
           partitionStats: null,
           assetKey: {
             path: ['good_asset'],
@@ -103,6 +111,7 @@ export const SingleAssetQueryMaterializedWithLatestRun: MockedResponse<SingleAss
           __typename: 'AssetNode',
           groupName: 'GROUP2',
           isSource: false,
+          isObservable: false,
           partitionDefinition: null,
           description:
             'This is a super long description that could involve some level of SQL and is just generally very long',
@@ -156,16 +165,7 @@ export const SingleAssetQueryMaterializedStaleAndLate: MockedResponse<SingleAsse
           computeKind: null,
           opNames: ['late_asset'],
           hasMaterializePermission: true,
-          repository: {
-            id: 'c22d9677b8089be89b1e014b9de34284962f83a7',
-            __typename: 'Repository',
-            name: 'repo',
-            location: {
-              id: 'test.py',
-              name: 'test.py',
-              __typename: 'RepositoryLocation',
-            },
-          },
+          repository,
           partitionStats: null,
           assetKey: {
             path: ['late_asset'],
@@ -190,10 +190,11 @@ export const SingleAssetQueryMaterializedStaleAndLate: MockedResponse<SingleAsse
           },
           assetObservations: [],
           staleStatus: StaleStatus.STALE,
-          staleCauses: [MockStaleReason],
+          staleCauses: [MockStaleReasonData],
           __typename: 'AssetNode',
           groupName: 'GROUP2',
           isSource: false,
+          isObservable: false,
           partitionDefinition: null,
           description: null,
         },
@@ -246,16 +247,7 @@ export const SingleAssetQueryLastRunFailed: MockedResponse<SingleAssetQuery> = {
           computeKind: 'snowflake',
           opNames: ['run_failing_asset'],
           hasMaterializePermission: true,
-          repository: {
-            id: 'c22d9677b8089be89b1e014b9de34284962f83a7',
-            __typename: 'Repository',
-            name: 'repo',
-            location: {
-              id: 'test.py',
-              name: 'test.py',
-              __typename: 'RepositoryLocation',
-            },
-          },
+          repository,
           partitionStats: {
             __typename: 'PartitionStats',
             numMaterialized: 8,
@@ -282,6 +274,7 @@ export const SingleAssetQueryLastRunFailed: MockedResponse<SingleAssetQuery> = {
           __typename: 'AssetNode',
           groupName: 'default',
           isSource: false,
+          isObservable: false,
           partitionDefinition: {
             description:
               "Multi-partitioned, with dimensions: \nAstate: 'TN', 'VA', 'GA', 'KY', 'PA', 'NC', 'SC', 'FL', 'OH', 'IL', 'WV' \nDate: Daily, starting 2021-05-05 UTC.",
@@ -351,26 +344,16 @@ export const AssetCatalogTableMock: MockedResponse<AssetCatalogTableQuery> = {
               path: ['good_asset'],
               __typename: 'AssetKey',
             },
-            definition: {
+            definition: buildAssetNode({
               id: 'test.py.repo.["good_asset"]',
               groupName: 'GROUP2',
-              isSource: false,
               partitionDefinition: null,
               hasMaterializePermission: true,
               description:
                 'This is a super long description that could involve some level of SQL and is just generally very long',
-              repository: {
-                id: 'c22d9677b8089be89b1e014b9de34284962f83a7',
-                name: 'repo',
-                location: {
-                  id: 'test.py',
-                  name: 'test.py',
-                  __typename: 'RepositoryLocation',
-                },
-                __typename: 'Repository',
-              },
+              repository,
               __typename: 'AssetNode',
-            },
+            }),
           },
           {
             id: 'test.py.repo.["late_asset"]',
@@ -379,25 +362,14 @@ export const AssetCatalogTableMock: MockedResponse<AssetCatalogTableQuery> = {
               path: ['late_asset'],
               __typename: 'AssetKey',
             },
-            definition: {
+            definition: buildAssetNode({
               id: 'test.py.repo.["late_asset"]',
               groupName: 'GROUP2',
-              isSource: false,
               partitionDefinition: null,
-              description: null,
               hasMaterializePermission: true,
-              repository: {
-                id: 'c22d9677b8089be89b1e014b9de34284962f83a7',
-                name: 'repo',
-                location: {
-                  id: 'test.py',
-                  name: 'test.py',
-                  __typename: 'RepositoryLocation',
-                },
-                __typename: 'Repository',
-              },
-              __typename: 'AssetNode',
-            },
+              description: null,
+              repository,
+            }),
           },
           {
             id: 'test.py.repo.["run_failing_asset"]',
@@ -406,25 +378,15 @@ export const AssetCatalogTableMock: MockedResponse<AssetCatalogTableQuery> = {
               path: ['run_failing_asset'],
               __typename: 'AssetKey',
             },
-            definition: {
+            definition: buildAssetNode({
               id: 'test.py.repo.["run_failing_asset"]',
               groupName: 'GROUP4',
-              isSource: false,
               partitionDefinition: null,
               description: null,
               hasMaterializePermission: true,
-              repository: {
-                id: 'c22d9677b8089be89b1e014b9de34284962f83a7',
-                name: 'repo',
-                location: {
-                  id: 'test.py',
-                  name: 'test.py',
-                  __typename: 'RepositoryLocation',
-                },
-                __typename: 'Repository',
-              },
+              repository,
               __typename: 'AssetNode',
-            },
+            }),
           },
           {
             id: 'test.py.repo.["asset_with_a_very_long_key_that_will_require_truncation"]',
@@ -433,25 +395,14 @@ export const AssetCatalogTableMock: MockedResponse<AssetCatalogTableQuery> = {
               path: ['asset_with_a_very_long_key_that_will_require_truncation'],
               __typename: 'AssetKey',
             },
-            definition: {
+            definition: buildAssetNode({
               id: 'test.py.repo.["asset_with_a_very_long_key_that_will_require_truncation"]',
               groupName: 'GROUP4',
-              isSource: false,
               partitionDefinition: null,
               description: null,
               hasMaterializePermission: true,
-              repository: {
-                id: 'c22d9677b8089be89b1e014b9de34284962f83a7',
-                name: 'repo',
-                location: {
-                  id: 'test.py',
-                  name: 'test.py',
-                  __typename: 'RepositoryLocation',
-                },
-                __typename: 'Repository',
-              },
-              __typename: 'AssetNode',
-            },
+              repository,
+            }),
           },
         ],
       },
