@@ -7,7 +7,7 @@ from dagster import (
 )
 from dagster._annotations import public
 from dagster._utils.merger import merge_dicts
-from pydantic import Extra, Field
+from pydantic import Field
 
 from ..dbt_resource import DbtResource
 from .types import DbtCliOutput
@@ -31,9 +31,6 @@ class DbtCliConfig(PermissiveConfig):
     # The following config fields correspond to flags that apply to all dbt CLI commands. For details
     # on dbt CLI flags, see
     # https://github.com/fishtown-analytics/dbt/blob/1f8e29276e910c697588c43f08bc881379fff178/core/dbt/main.py#L260-L329
-
-    class Config:
-        extra = Extra.allow
 
     ## BEGIN COMMON FLAGS
 
