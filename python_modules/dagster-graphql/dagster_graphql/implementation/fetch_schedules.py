@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Optional, Sequence, Set
 import dagster._check as check
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.selector import (
-    PipelineSelector,
+    JobSubsetSelector,
     RepositorySelector,
     ScheduleSelector,
 )
@@ -140,11 +140,11 @@ def get_schedules_or_error(
 
 
 def get_schedules_for_pipeline(
-    graphene_info: ResolveInfo, pipeline_selector: PipelineSelector
+    graphene_info: ResolveInfo, pipeline_selector: JobSubsetSelector
 ) -> Sequence["GrapheneSchedule"]:
     from ..schema.schedules import GrapheneSchedule
 
-    check.inst_param(pipeline_selector, "pipeline_selector", PipelineSelector)
+    check.inst_param(pipeline_selector, "pipeline_selector", JobSubsetSelector)
 
     location = graphene_info.context.get_code_location(pipeline_selector.location_name)
     repository = location.get_repository(pipeline_selector.repository_name)

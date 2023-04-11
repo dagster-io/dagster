@@ -6,7 +6,7 @@ from dagster._core.definitions.repository_definition import SINGLETON_REPOSITORY
 from dagster._serdes import create_snapshot_id, whitelist_for_serdes
 
 
-class PipelineSelector(
+class JobSubsetSelector(
     NamedTuple(
         "_PipelineSelector",
         [
@@ -28,7 +28,7 @@ class PipelineSelector(
         solid_selection: Optional[Sequence[str]],
         asset_selection: Optional[Sequence[AssetKey]] = None,
     ):
-        return super(PipelineSelector, cls).__new__(
+        return super(JobSubsetSelector, cls).__new__(
             cls,
             location_name=check.str_param(location_name, "location_name"),
             repository_name=check.str_param(repository_name, "repository_name"),
@@ -56,7 +56,7 @@ class PipelineSelector(
                 solid_selection
             ),
         )
-        return PipelineSelector(
+        return JobSubsetSelector(
             self.location_name, self.repository_name, self.job_name, solid_selection
         )
 

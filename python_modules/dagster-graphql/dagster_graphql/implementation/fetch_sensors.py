@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Optional, Sequence, Set
 
 import dagster._check as check
 from dagster._core.definitions.run_request import InstigatorType
-from dagster._core.definitions.selector import PipelineSelector, RepositorySelector, SensorSelector
+from dagster._core.definitions.selector import JobSubsetSelector, RepositorySelector, SensorSelector
 from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
@@ -182,11 +182,11 @@ def get_unloadable_sensor_states_or_error(
 
 
 def get_sensors_for_pipeline(
-    graphene_info: ResolveInfo, pipeline_selector: PipelineSelector
+    graphene_info: ResolveInfo, pipeline_selector: JobSubsetSelector
 ) -> Sequence["GrapheneSensor"]:
     from ..schema.sensors import GrapheneSensor
 
-    check.inst_param(pipeline_selector, "pipeline_selector", PipelineSelector)
+    check.inst_param(pipeline_selector, "pipeline_selector", JobSubsetSelector)
 
     location = graphene_info.context.get_code_location(pipeline_selector.location_name)
     repository = location.get_repository(pipeline_selector.repository_name)

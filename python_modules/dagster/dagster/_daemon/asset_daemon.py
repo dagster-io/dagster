@@ -4,7 +4,7 @@ from dagster._core.definitions.asset_reconciliation_sensor import (
     reconcile,
 )
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
-from dagster._core.definitions.selector import PipelineSelector
+from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.storage.tags import CREATED_BY_TAG
@@ -96,10 +96,10 @@ class AssetDaemon(IntervalDaemon):
 
             code_location = workspace.get_code_location(location_name)
             external_pipeline = code_location.get_external_job(
-                PipelineSelector(
+                JobSubsetSelector(
                     location_name=location_name,
                     repository_name=repository_name,
-                    pipeline_name=job_name,
+                    job_name=job_name,
                     solid_selection=None,
                     asset_selection=asset_keys,
                 )

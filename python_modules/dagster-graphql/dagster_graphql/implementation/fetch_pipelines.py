@@ -7,7 +7,7 @@ from dagster._core.storage.pipeline_run import DagsterRun
 from dagster_graphql.schema.util import ResolveInfo
 
 from .external import get_external_pipeline_or_raise, get_full_external_pipeline_or_raise
-from .utils import PipelineSelector, UserFacingGraphQLError, capture_error
+from .utils import JobSubsetSelector, UserFacingGraphQLError, capture_error
 
 if TYPE_CHECKING:
     from ..schema.pipelines.pipeline import GraphenePipeline
@@ -17,11 +17,11 @@ if TYPE_CHECKING:
 
 @capture_error
 def get_pipeline_snapshot_or_error_from_pipeline_selector(
-    graphene_info: ResolveInfo, pipeline_selector: PipelineSelector
+    graphene_info: ResolveInfo, pipeline_selector: JobSubsetSelector
 ) -> "GraphenePipelineSnapshot":
     from ..schema.pipelines.snapshot import GraphenePipelineSnapshot
 
-    check.inst_param(pipeline_selector, "pipeline_selector", PipelineSelector)
+    check.inst_param(pipeline_selector, "pipeline_selector", JobSubsetSelector)
     return GraphenePipelineSnapshot(
         get_full_external_pipeline_or_raise(graphene_info, pipeline_selector)
     )
@@ -56,14 +56,14 @@ def _get_pipeline_snapshot_from_instance(
 
 @capture_error
 def get_pipeline_or_error(
-    graphene_info: ResolveInfo, selector: PipelineSelector
+    graphene_info: ResolveInfo, selector: JobSubsetSelector
 ) -> "GraphenePipeline":
     """Returns a PipelineOrError."""
     return get_pipeline_from_selector(graphene_info, selector)
 
 
 def get_pipeline_or_raise(
-    graphene_info: ResolveInfo, selector: PipelineSelector
+    graphene_info: ResolveInfo, selector: JobSubsetSelector
 ) -> "GraphenePipeline":
     """Returns a Pipeline or raises a UserFacingGraphQLError if one cannot be retrieved
     from the selector, e.g., the pipeline is not present in the loaded repository.
@@ -94,10 +94,10 @@ def get_pipeline_reference_or_raise(
 
 
 def get_pipeline_from_selector(
-    graphene_info: ResolveInfo, selector: PipelineSelector
+    graphene_info: ResolveInfo, selector: JobSubsetSelector
 ) -> "GraphenePipeline":
     from ..schema.pipelines.pipeline import GraphenePipeline
 
-    check.inst_param(selector, "selector", PipelineSelector)
+    check.inst_param(selector, "selector", JobSubsetSelector)
 
     return GraphenePipeline(get_external_pipeline_or_raise(graphene_info, selector))

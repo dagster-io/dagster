@@ -198,10 +198,10 @@ class GraphenePipelineNotFoundError(graphene.ObjectType):
     repository_location_name = graphene.NonNull(graphene.String)
 
     def __init__(self, selector):
-        from ..implementation.utils import PipelineSelector
+        from ..implementation.utils import JobSubsetSelector
 
         super().__init__()
-        check.inst_param(selector, "selector", PipelineSelector)
+        check.inst_param(selector, "selector", JobSubsetSelector)
         self.pipeline_name = selector.pipeline_name
         self.repository_name = selector.repository_name
         self.repository_location_name = selector.location_name

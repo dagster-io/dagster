@@ -29,7 +29,7 @@ from dagster._cli.workspace.cli_target import (
 )
 from dagster._core.definitions import JobDefinition
 from dagster._core.definitions.reconstruct import ReconstructableJob
-from dagster._core.definitions.selector import PipelineSelector
+from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.definitions.utils import validate_tags
 from dagster._core.errors import DagsterBackfillFailedError
 from dagster._core.execution.api import create_execution_plan, execute_job
@@ -507,7 +507,7 @@ def _create_external_pipeline_run(
     )
 
     pipeline_name = external_pipeline.name
-    pipeline_selector = PipelineSelector(
+    pipeline_selector = JobSubsetSelector(
         location_name=code_location.name,
         repository_name=external_repo.name,
         job_name=pipeline_name,

@@ -18,7 +18,7 @@ from dagster import (
     AssetKey,
     _check as check,
 )
-from dagster._core.definitions.selector import PipelineSelector
+from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.errors import DagsterRunNotFoundError
 from dagster._core.execution.stats import RunStepKeyStatsSnapshot, StepEventStatus
 from dagster._core.storage.pipeline_run import DagsterRunStatus, RunRecord, RunsFilter
@@ -333,12 +333,12 @@ def get_run_groups(
 @capture_error
 def validate_pipeline_config(
     graphene_info: "ResolveInfo",
-    selector: PipelineSelector,
+    selector: JobSubsetSelector,
     run_config: Union[str, Mapping[str, object]],
 ) -> "GraphenePipelineConfigValidationValid":
     from ..schema.pipelines.config import GraphenePipelineConfigValidationValid
 
-    check.inst_param(selector, "selector", PipelineSelector)
+    check.inst_param(selector, "selector", JobSubsetSelector)
 
     external_pipeline = get_external_pipeline_or_raise(graphene_info, selector)
     ensure_valid_config(external_pipeline, run_config)
@@ -348,12 +348,12 @@ def validate_pipeline_config(
 @capture_error
 def get_execution_plan(
     graphene_info: "ResolveInfo",
-    selector: PipelineSelector,
+    selector: JobSubsetSelector,
     run_config: Mapping[str, Any],
 ) -> "GrapheneExecutionPlan":
     from ..schema.execution import GrapheneExecutionPlan
 
-    check.inst_param(selector, "selector", PipelineSelector)
+    check.inst_param(selector, "selector", JobSubsetSelector)
 
     external_pipeline = get_external_pipeline_or_raise(graphene_info, selector)
     ensure_valid_config(external_pipeline, run_config)

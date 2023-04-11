@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Sequence, Set, T
 from typing_extensions import Self
 
 import dagster._check as check
-from dagster._core.definitions.selector import PipelineSelector
+from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.errors import (
     DagsterCodeLocationLoadError,
     DagsterCodeLocationNotFoundError,
@@ -205,8 +205,8 @@ class BaseWorkspaceRequestContext(IWorkspace):
         self.process_context.reload_workspace()
         return self.process_context.create_request_context()
 
-    def has_external_job(self, selector: PipelineSelector) -> bool:
-        check.inst_param(selector, "selector", PipelineSelector)
+    def has_external_job(self, selector: JobSubsetSelector) -> bool:
+        check.inst_param(selector, "selector", JobSubsetSelector)
         if not self.has_code_location(selector.location_name):
             return False
 
@@ -215,7 +215,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
             selector.repository_name
         ).has_external_job(selector.job_name)
 
-    def get_full_external_job(self, selector: PipelineSelector) -> ExternalJob:
+    def get_full_external_job(self, selector: JobSubsetSelector) -> ExternalJob:
         return (
             self.get_code_location(selector.location_name)
             .get_repository(selector.repository_name)

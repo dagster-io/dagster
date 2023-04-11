@@ -22,7 +22,7 @@ from dagster._api.snapshot_schedule import sync_get_external_schedule_execution_
 from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.repository_definition import RepositoryDefinition
-from dagster._core.definitions.selector import PipelineSelector
+from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.errors import DagsterInvariantViolationError, DagsterUserCodeProcessError
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.plan.state import KnownExecutionState
@@ -123,7 +123,7 @@ class CodeLocation(AbstractContextManager):
     ) -> ExternalExecutionPlan:
         pass
 
-    def get_external_job(self, selector: PipelineSelector) -> ExternalJob:
+    def get_external_job(self, selector: JobSubsetSelector) -> ExternalJob:
         """Return the ExternalPipeline for a specific pipeline. Subclasses only
         need to implement get_subset_external_pipeline_result to handle the case where
         a solid selection is specified, which requires access to the underlying PipelineDefinition
@@ -147,7 +147,9 @@ class CodeLocation(AbstractContextManager):
         return ExternalJob(external_data, repo_handle)
 
     @abstractmethod
-    def get_subset_external_job_result(self, selector: PipelineSelector) -> ExternalJobSubsetResult:
+    def get_subset_external_job_result(
+        self, selector: JobSubsetSelector
+    ) -> ExternalJobSubsetResult:
         """Returns a snapshot about an ExternalPipeline with a solid selection, which requires
         access to the underlying PipelineDefinition. Callsites should likely use
         `get_external_pipeline` instead.
@@ -350,8 +352,10 @@ class InProcessCodeLocation(CodeLocation):
     def get_repositories(self) -> Mapping[str, ExternalRepository]:
         return self._repositories
 
-    def get_subset_external_job_result(self, selector: PipelineSelector) -> ExternalJobSubsetResult:
-        check.inst_param(selector, "selector", PipelineSelector)
+    def get_subset_external_job_result(
+        self, selector: JobSubsetSelector
+    ) -> ExternalJobSubsetResult:
+        check.inst_param(selector, "selector", JobSubsetSelector)
         check.invariant(
             selector.location_name == self.name,
             "PipelineSelector location_name mismatch, got {selector.location_name} expected"
@@ -743,9 +747,9 @@ class GrpcServerCodeLocation(CodeLocation):
         return ExternalExecutionPlan(execution_plan_snapshot=execution_plan_snapshot_or_error)
 
     def get_subset_external_job_result(
-        self, selector: PipelineSelector
+        self, selector: JobSubsetSelector
     ) -> "ExternalJobSubsetResult":
-        check.inst_param(selector, "selector", PipelineSelector)
+        check.inst_param(selector, "selector", JobSubsetSelector)
         check.invariant(
             selector.location_name == self.name,
             "PipelineSelector location_name mismatch, got {selector.location_name} expected"

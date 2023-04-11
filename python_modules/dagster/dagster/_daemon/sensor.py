@@ -32,7 +32,7 @@ from dagster._core.definitions.run_request import (
     InstigatorType,
     RunRequest,
 )
-from dagster._core.definitions.selector import PipelineSelector
+from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus, SensorExecutionData
 from dagster._core.definitions.utils import validate_tags
 from dagster._core.errors import DagsterError
@@ -690,7 +690,7 @@ def _evaluate_sensor(
             external_sensor.get_target_data(run_request.job_name)
         )
 
-        pipeline_selector = PipelineSelector(
+        pipeline_selector = JobSubsetSelector(
             location_name=code_location.name,
             repository_name=sensor_origin.external_repository_origin.repository_name,
             job_name=target_data.job_name,

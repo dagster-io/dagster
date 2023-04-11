@@ -9,7 +9,7 @@ from dagster_graphql.schema.errors import GrapheneModeNotFoundError
 from dagster_graphql.schema.util import ResolveInfo
 
 from .external import get_external_pipeline_or_raise
-from .utils import PipelineSelector, UserFacingGraphQLError, capture_error
+from .utils import JobSubsetSelector, UserFacingGraphQLError, capture_error
 
 if TYPE_CHECKING:
     from ..schema.pipelines.config import (
@@ -20,11 +20,11 @@ if TYPE_CHECKING:
 
 @capture_error
 def resolve_run_config_schema_or_error(
-    graphene_info: ResolveInfo, selector: PipelineSelector, mode: Optional[str] = None
+    graphene_info: ResolveInfo, selector: JobSubsetSelector, mode: Optional[str] = None
 ) -> "GrapheneRunConfigSchema":
     from ..schema.run_config import GrapheneRunConfigSchema
 
-    check.inst_param(selector, "selector", PipelineSelector)
+    check.inst_param(selector, "selector", JobSubsetSelector)
 
     # Mode has been eliminated from the definitions layer, so we perform a "shallow" check for
     # invalid mode. This is temporary and will be removed when the GQL API transitions to

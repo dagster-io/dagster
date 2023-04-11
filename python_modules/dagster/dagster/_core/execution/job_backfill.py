@@ -4,7 +4,7 @@ import time
 from typing import Callable, Iterable, Mapping, Optional, Sequence, Tuple, cast
 
 import dagster._check as check
-from dagster._core.definitions.selector import PipelineSelector
+from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.errors import DagsterBackfillFailedError
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.execution.plan.state import KnownExecutionState
@@ -202,7 +202,7 @@ def submit_backfill_runs(
     if backfill_job.asset_selection:
         # need to make another call to the user code location to properly subset
         # for an asset selection
-        pipeline_selector = PipelineSelector(
+        pipeline_selector = JobSubsetSelector(
             location_name=code_location.name,
             repository_name=repo_name,
             job_name=external_partition_set.job_name,

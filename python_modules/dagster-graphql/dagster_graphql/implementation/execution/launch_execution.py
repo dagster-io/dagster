@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, cast
 
 import dagster._check as check
-from dagster._core.definitions.selector import PipelineSelector
+from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.pipeline_run import DagsterRun, RunsFilter
@@ -87,7 +87,7 @@ def launch_reexecution_from_parent_run(
         instance.get_run_by_id(parent_run_id), f"Could not find parent run with id: {parent_run_id}"
     )
     origin = check.not_none(parent_run.external_job_origin)
-    selector = PipelineSelector(
+    selector = JobSubsetSelector(
         location_name=origin.external_repository_origin.code_location_origin.location_name,
         repository_name=origin.external_repository_origin.repository_name,
         job_name=parent_run.job_name,

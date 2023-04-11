@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Mapping, NamedTuple
 
 import dagster._check as check
-from dagster._core.definitions.selector import PipelineSelector
+from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.host_representation.origin import (
     CodeLocationOrigin,
     ExternalRepositoryOrigin,
@@ -77,7 +77,7 @@ class JobHandle(
         return self.repository_handle.get_python_origin().get_job_origin(self.job_name)
 
     def to_selector(self):
-        return PipelineSelector(self.location_name, self.repository_name, self.job_name, None)
+        return JobSubsetSelector(self.location_name, self.repository_name, self.job_name, None)
 
 
 class InstigatorHandle(

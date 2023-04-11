@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Mapping, Optional, Sequence, Union
 
 import dagster._check as check
 from dagster._config import validate_config_from_snap
-from dagster._core.definitions.selector import PipelineSelector, RepositorySelector
+from dagster._core.definitions.selector import JobSubsetSelector, RepositorySelector
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.host_representation import ExternalJob
 from dagster._core.host_representation.external import ExternalExecutionPlan
@@ -27,21 +27,21 @@ if TYPE_CHECKING:
 
 def get_full_external_pipeline_or_raise(
     graphene_info: "ResolveInfo",
-    selector: PipelineSelector,
+    selector: JobSubsetSelector,
 ) -> ExternalJob:
-    check.inst_param(selector, "selector", PipelineSelector)
+    check.inst_param(selector, "selector", JobSubsetSelector)
     return _get_external_pipeline_or_raise(graphene_info, selector, ignore_subset=True)
 
 
 def get_external_pipeline_or_raise(
-    graphene_info: "ResolveInfo", selector: PipelineSelector
+    graphene_info: "ResolveInfo", selector: JobSubsetSelector
 ) -> ExternalJob:
-    check.inst_param(selector, "selector", PipelineSelector)
+    check.inst_param(selector, "selector", JobSubsetSelector)
     return _get_external_pipeline_or_raise(graphene_info, selector)
 
 
 def _get_external_pipeline_or_raise(
-    graphene_info: "ResolveInfo", selector: PipelineSelector, ignore_subset: bool = False
+    graphene_info: "ResolveInfo", selector: JobSubsetSelector, ignore_subset: bool = False
 ) -> ExternalJob:
     from ..schema.errors import GrapheneInvalidSubsetError, GraphenePipelineNotFoundError
     from ..schema.pipelines.pipeline import GraphenePipeline
