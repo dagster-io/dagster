@@ -44,7 +44,7 @@ def test_slack_resource(mock_api_call):
             "headers": "",
         }
 
-        slack.get_client().chat_postMessage(channel="#random", text=":wave: hey there!")
+        slack.get_web_client().chat_postMessage(channel="#random", text=":wave: hey there!")
 
         assert mock_api_call.called
 

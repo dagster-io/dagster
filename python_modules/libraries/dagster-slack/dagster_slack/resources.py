@@ -1,15 +1,14 @@
-from dagster import resource
-from dagster._config.structured_config import ConfigurableResource
-from pydantic import Field as PyField
+from dagster import ConfigurableResource, resource
+from pydantic import Field
 from slack_sdk.web.client import WebClient
 
 
 class SlackResource(ConfigurableResource):
     """This resource is for connecting to Slack.
 
-    The resource object is a `slack_sdk.WebClient`.
+    The resource interacts with Slack via `slack_sdk.WebClient`.
 
-    By configuring this Slack resource, you can post messages to Slack from any Dagster op:
+    By configuring this Slack resource, you can post messages to Slack from any Dagster op, asset, schedule or sensor.
 
     Examples:
         .. code-block:: python
@@ -22,7 +21,7 @@ class SlackResource(ConfigurableResource):
 
             @op
             def slack_op(slack: SlackResource):
-                slack.get_client().chat_postMessage(channel='#noise', text=':wave: hey there!')
+                slack.get_web_client().chat_postMessage(channel='#noise', text=':wave: hey there!')
 
             @job
             def slack_job():
@@ -36,7 +35,7 @@ class SlackResource(ConfigurableResource):
             )
     """
 
-    token: str = PyField(
+    token: str = Field(
         description=(
             "To configure access to the Slack API, you'll need an access"
             " token provisioned with access to your Slack workspace."
@@ -46,7 +45,7 @@ class SlackResource(ConfigurableResource):
         ),
     )
 
-    def get_client(self) -> WebClient:
+    def get_web_client(self) -> WebClient:
         return WebClient(self.token)
 
 
@@ -58,7 +57,7 @@ def slack_resource(context) -> WebClient:
 
     The resource object is a `slack_sdk.WebClient`.
 
-    By configuring this Slack resource, you can post messages to Slack from any Dagster op:
+    By configuring this Slack resource, you can post messages to Slack from any Dagster op, asset, schedule or sensor.
 
     Examples:
         .. code-block:: python
@@ -81,4 +80,4 @@ def slack_resource(context) -> WebClient:
                 run_config={'resources': {'slack': {'config': {'token': os.getenv('SLACK_TOKEN')}}}}
             )
     """
-    return SlackResource.from_resource_context(context).get_client()
+    return SlackResource.from_resource_context(context).get_web_client()
