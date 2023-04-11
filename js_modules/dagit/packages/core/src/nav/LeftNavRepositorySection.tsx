@@ -16,7 +16,11 @@ const LoadedRepositorySection: React.FC<{
 }> = ({allRepos, visibleRepos, toggleVisible}) => {
   const listContent = () => {
     if (visibleRepos.length) {
-      return <SectionedLeftNav />;
+      return (
+        <div style={{overflow: 'hidden'}}>
+          <SectionedLeftNav />
+        </div>
+      );
     }
 
     if (allRepos.length > 0) {
