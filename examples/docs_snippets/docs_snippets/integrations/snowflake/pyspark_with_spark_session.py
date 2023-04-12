@@ -25,11 +25,11 @@ def iris_dataset() -> DataFrame:
 
     schema = StructType(
         [
-            StructField("Sepal length (cm)", DoubleType()),
-            StructField("Sepal width (cm)", DoubleType()),
-            StructField("Petal length (cm)", DoubleType()),
-            StructField("Petal width (cm)", DoubleType()),
-            StructField("Species", StringType()),
+            StructField("sepal_length_cm", DoubleType()),
+            StructField("sepal_width_cm", DoubleType()),
+            StructField("petal_length_cm", DoubleType()),
+            StructField("petal_width_cm", DoubleType()),
+            StructField("species", StringType()),
         ]
     )
 
