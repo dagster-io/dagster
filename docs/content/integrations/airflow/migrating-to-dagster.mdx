@@ -221,7 +221,7 @@ In this step, you'll set up your project for use with Dagster Cloud.
 
 Your Airflow instance likely had specific IAM or Kubernetes permissions that allowed it to successfully run your Airflow DAGs. To run the migrated Dagster jobs, you'll need to duplicate these permissions for Dagster.
 
-- **We recommend using [Airflow connections](https://airflow.apache.org/docs/apache-airflow/stable/howto/connection.html) or [environment variables](/dagster-cloud/developing-testing/environment-variables-and-secrets)** to define permissions whenever possible.
+- **We recommend using [Airflow connections](https://airflow.apache.org/docs/apache-airflow/stable/howto/connection.html) or [environment variables](/dagster-cloud/managing-deployments/environment-variables-and-secrets)** to define permissions whenever possible.
 
 - **If you're unable to use Airflow connections or environment variables,** you can attach permissions directly to the infrastructure where you're deploying Dagster.
 
