@@ -114,7 +114,7 @@ def build_resources(
 
 def wrap_resources_for_execution(
     resources: Optional[Mapping[str, Any]] = None
-) -> Mapping[str, ResourceDefinition]:
+) -> Dict[str, ResourceDefinition]:
     resources = check.opt_mapping_param(resources, "resources", key_type=str)
     resource_defs = {}
     # Wrap instantiated resource values in a resource definition.
