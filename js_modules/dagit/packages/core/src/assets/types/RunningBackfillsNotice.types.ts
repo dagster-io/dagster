@@ -11,8 +11,8 @@ export type RunningBackfillsNoticeQuery = {
         __typename: 'PartitionBackfills';
         results: Array<{
           __typename: 'PartitionBackfill';
+          id: string;
           partitionSetName: string | null;
-          backfillId: string;
         }>;
       }
     | {__typename: 'PythonError'};

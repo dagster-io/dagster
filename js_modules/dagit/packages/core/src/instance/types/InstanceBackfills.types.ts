@@ -46,7 +46,7 @@ export type InstanceBackfillsQuery = {
         __typename: 'PartitionBackfills';
         results: Array<{
           __typename: 'PartitionBackfill';
-          backfillId: string;
+          id: string;
           status: Types.BulkActionStatus;
           isValidSerialization: boolean;
           numPartitions: number | null;

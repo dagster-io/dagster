@@ -50,7 +50,7 @@ export const Canceled = () => {
 const CompletedResponse = buildBackfillDetailsQuery(
   '1',
   buildPartitionBackfill({
-    backfillId: '1',
+    id: '1',
     status: BulkActionStatus.COMPLETED,
     timestamp: Date.now() / 1000 - 10000,
     assetBackfillData: buildAssetBackfillData({
@@ -87,7 +87,7 @@ const CompletedResponse = buildBackfillDetailsQuery(
 const InProgressResponse = buildBackfillDetailsQuery(
   '1',
   buildPartitionBackfill({
-    backfillId: '1',
+    id: '1',
     status: BulkActionStatus.REQUESTED,
     timestamp: Date.now() / 1000 - 10000,
     endTimestamp: Date.now() / 1000 - 10,
@@ -125,7 +125,7 @@ const InProgressResponse = buildBackfillDetailsQuery(
 const CanceledResponse = buildBackfillDetailsQuery(
   '1',
   buildPartitionBackfill({
-    backfillId: '1',
+    id: '1',
     status: BulkActionStatus.CANCELED,
     timestamp: Date.now() / 1000 - 10000,
     endTimestamp: Date.now() / 1000 - 10,
@@ -145,7 +145,7 @@ const CanceledResponse = buildBackfillDetailsQuery(
 const FailedResponse = buildBackfillDetailsQuery(
   '1',
   buildPartitionBackfill({
-    backfillId: '1',
+    id: '1',
     status: BulkActionStatus.FAILED,
     timestamp: Date.now() / 1000 - 10000,
     endTimestamp: Date.now() / 1000 - 10,

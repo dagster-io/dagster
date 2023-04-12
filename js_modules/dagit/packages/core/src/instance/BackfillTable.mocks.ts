@@ -32,7 +32,7 @@ function buildTimePartitionNames(start: Date, count: number) {
 
 export const BackfillTableFragmentRequested2000AssetsPure: BackfillTableFragment = buildPartitionBackfill(
   {
-    backfillId: 'qtpussca',
+    id: 'qtpussca',
     status: BulkActionStatus.REQUESTED,
     numPartitions: 2000,
     hasCancelPermission: true,
@@ -63,7 +63,7 @@ export const BackfillTableFragmentRequested2000AssetsPureStatus: MockedResponse<
     data: {
       __typename: 'DagitQuery',
       partitionBackfillOrError: buildPartitionBackfill({
-        backfillId: 'qtpussca',
+        id: 'qtpussca',
         isAssetBackfill: true,
         partitionStatusCounts: [
           buildPartitionStatusCounts({
@@ -86,7 +86,7 @@ export const BackfillTableFragmentRequested2000AssetsPureStatus: MockedResponse<
 
 export const BackfillTableFragmentCancelledAssetsPartitionSet: BackfillTableFragment = buildPartitionBackfill(
   {
-    backfillId: 'tclwoggv',
+    id: 'tclwoggv',
     status: BulkActionStatus.CANCELED,
     isValidSerialization: true,
     numPartitions: 5000,
@@ -130,7 +130,7 @@ export const BackfillTableFragmentCancelledAssetsPartitionSetStatus: MockedRespo
     data: {
       __typename: 'DagitQuery',
       partitionBackfillOrError: buildPartitionBackfill({
-        backfillId: 'tclwoggv',
+        id: 'tclwoggv',
         partitionStatusCounts: [
           {runStatus: RunStatus.NOT_STARTED, count: 6524, __typename: 'PartitionStatusCounts'},
         ],
@@ -140,7 +140,7 @@ export const BackfillTableFragmentCancelledAssetsPartitionSetStatus: MockedRespo
 };
 
 export const BackfillTableFragmentFailedError: BackfillTableFragment = buildPartitionBackfill({
-  backfillId: 'sjqzcfhe',
+  id: 'sjqzcfhe',
   status: BulkActionStatus.FAILED,
   isValidSerialization: true,
   numPartitions: 100,
@@ -175,7 +175,7 @@ export const BackfillTableFragmentFailedErrorStatus: MockedResponse<SingleBackfi
     data: {
       __typename: 'DagitQuery',
       partitionBackfillOrError: buildPartitionBackfill({
-        backfillId: 'sjqzcfhe',
+        id: 'sjqzcfhe',
         partitionStatuses: buildPartitionStatuses({
           results: BackfillTableFragmentFailedError.partitionNames!.map((n) =>
             buildPartitionStatus({
@@ -193,7 +193,7 @@ export const BackfillTableFragmentFailedErrorStatus: MockedResponse<SingleBackfi
 
 export const BackfillTableFragmentCompletedAssetJob: BackfillTableFragment = buildPartitionBackfill(
   {
-    backfillId: 'pwgcpiwc',
+    id: 'pwgcpiwc',
     status: BulkActionStatus.COMPLETED,
     isValidSerialization: true,
     numPartitions: 11,
@@ -247,7 +247,7 @@ export const BackfillTableFragmentCompletedAssetJobStatus: MockedResponse<Single
     data: {
       __typename: 'DagitQuery',
       partitionBackfillOrError: {
-        backfillId: 'pwgcpiwc',
+        id: 'pwgcpiwc',
         partitionStatuses: {
           results: [
             {
@@ -337,7 +337,7 @@ export const BackfillTableFragmentCompletedAssetJobStatus: MockedResponse<Single
 };
 
 export const BackfillTableFragmentCompletedOpJob: BackfillTableFragment = buildPartitionBackfill({
-  backfillId: 'pqdiepuf',
+  id: 'pqdiepuf',
   status: BulkActionStatus.COMPLETED,
   isValidSerialization: true,
   numPartitions: 4,
@@ -373,7 +373,7 @@ export const BackfillTableFragmentCompletedOpJobStatus: MockedResponse<SingleBac
     data: {
       __typename: 'DagitQuery',
       partitionBackfillOrError: buildPartitionBackfill({
-        backfillId: 'pqdiepuf',
+        id: 'pqdiepuf',
         isAssetBackfill: true,
         partitionStatuses: buildPartitionStatuses({
           results: [
@@ -410,7 +410,7 @@ export const BackfillTableFragmentCompletedOpJobStatus: MockedResponse<SingleBac
 
 export const BackfillTableFragmentInvalidPartitionSet: BackfillTableFragment = buildPartitionBackfill(
   {
-    backfillId: 'jzduiapb',
+    id: 'jzduiapb',
     status: BulkActionStatus.COMPLETED,
     isValidSerialization: false,
     numPartitions: 0,
@@ -437,7 +437,7 @@ export const BackfillTableFragmentInvalidPartitionSet: BackfillTableFragment = b
 );
 
 export const BackfillTablePureAssetCountsOnly: BackfillTableFragment = buildPartitionBackfill({
-  backfillId: 'likqkgna',
+  id: 'likqkgna',
   status: BulkActionStatus.FAILED,
   isValidSerialization: true,
   numPartitions: 30,
@@ -476,7 +476,7 @@ export const BackfillTablePureAssetCountsOnly: BackfillTableFragment = buildPart
 
 const BackfillTablePureAssetNoCountsOrPartitionNames: BackfillTableFragment = buildPartitionBackfill(
   {
-    backfillId: 'vlpmimsl',
+    id: 'vlpmimsl',
     status: BulkActionStatus.COMPLETED,
     isValidSerialization: true,
     numPartitions: null,

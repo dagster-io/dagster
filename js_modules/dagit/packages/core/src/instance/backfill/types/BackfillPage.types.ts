@@ -11,6 +11,7 @@ export type BackfillStatusesByAssetQuery = {
   partitionBackfillOrError:
     | {
         __typename: 'PartitionBackfill';
+        id: string;
         status: Types.BulkActionStatus;
         timestamp: number;
         endTimestamp: number | null;
@@ -47,6 +48,7 @@ export type BackfillStatusesByAssetQuery = {
 
 export type PartitionBackfillFragment = {
   __typename: 'PartitionBackfill';
+  id: string;
   status: Types.BulkActionStatus;
   timestamp: number;
   endTimestamp: number | null;

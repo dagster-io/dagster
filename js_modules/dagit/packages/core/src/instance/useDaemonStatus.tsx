@@ -102,7 +102,7 @@ const INSTANCE_WARNING_QUERY = gql`
       __typename
       ... on PartitionBackfills {
         results {
-          backfillId
+          id
         }
       }
     }
