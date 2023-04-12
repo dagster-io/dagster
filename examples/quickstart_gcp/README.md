@@ -17,7 +17,6 @@ This guide covers:
   - [Step 3: Scheduling a daily job](#step-3-scheduling-a-daily-job)
   - [Learning more](#learning-more)
     - [Changing the code locally](#changing-the-code-locally)
-    - [Writing a custom I/O manager](#writing-a-custom-io-manager)
     - [Adding new Python dependencies](#adding-new-python-dependencies)
     - [Testing](#testing)
 
@@ -27,7 +26,6 @@ This guide covers:
 This starter kit includes:
 - Basics of creating, connecting, and testing [assets](https://docs.dagster.io/concepts/assets/software-defined-assets) in Dagster.
 - Convenient ways to organize and monitor assets, e.g. [grouping assets](https://docs.dagster.io/concepts/assets/software-defined-assets#grouping-assets), [recording asset metadata](https://docs.dagster.io/concepts/assets/software-defined-assets#recording-materialization-metadata), etc.
-- A custom I/O Manager that stores Pandas DataFrames to BigQuery Tables and reads the tables into DataFrames, which [uses environment variables](https://docs.dagster.io/guides/dagster/using-environment-variables-and-secrets) to handle the Google service account credentials.
 - A [schedule](https://docs.dagster.io/concepts/partitions-schedules-sensors/schedules) defined to run a job that generates assets daily.
 - [Scaffolded project layout](https://docs.dagster.io/getting-started/create-new-project) that helps you to quickly get started with everything set up.
 
@@ -228,10 +226,6 @@ Or from the left nav or on each job page:
 </p>
 
 </details>
-
-### Writing a custom I/O manager
-
-This example comes with a custom I/O manager. To learn more about I/O managers and see more examples, check out the [I/O Manager concept page](https://docs.dagster.io/concepts/io-management/io-managers#a-custom-io-manager-that-stores-pandas-dataframes-in-tables).
 
 ### Adding new Python dependencies
 
