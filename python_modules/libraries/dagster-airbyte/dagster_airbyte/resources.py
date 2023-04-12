@@ -15,7 +15,6 @@ from dagster import (
     resource,
 )
 from dagster._annotations import quiet_experimental_warnings
-from dagster._config.pythonic_config import infer_schema_from_config_class
 from dagster._utils.cached_method import cached_method
 from dagster._utils.merger import deep_merge_dicts
 from pydantic import Field
@@ -371,7 +370,7 @@ class AirbyteResource(ConfigurableResource):
         return AirbyteOutput(job_details=job_details, connection_details=connection_details)
 
 
-@resource(config_schema=infer_schema_from_config_class(AirbyteResource))
+@resource(config_schema=AirbyteResource.to_config_schema())
 @quiet_experimental_warnings
 def airbyte_resource(context) -> AirbyteResource:
     """This resource allows users to programatically interface with the Airbyte REST API to launch
@@ -406,4 +405,4 @@ def airbyte_resource(context) -> AirbyteResource:
             ...
 
     """
-    return AirbyteResource(**context.resource_config).resource_fn(context)  # type: ignore
+    return AirbyteResource.from_resource_context(context)

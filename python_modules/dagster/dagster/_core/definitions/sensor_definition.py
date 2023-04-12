@@ -201,6 +201,8 @@ class SensorEvaluationContext:
         check.invariant(
             self._resources is None, "Cannot merge resources in context that has been initialized."
         )
+        from dagster._core.execution.build_resources import wrap_resources_for_execution
+
         return SensorEvaluationContext(
             instance_ref=self._instance_ref,
             last_completion_time=self._last_completion_time,
@@ -210,7 +212,10 @@ class SensorEvaluationContext:
             repository_def=self._repository_def,
             instance=self._instance,
             sensor_name=self._sensor_name,
-            resources={**(self._resource_defs or {}), **resources_dict},
+            resources={
+                **(self._resource_defs or {}),
+                **wrap_resources_for_execution(resources_dict),
+            },
         )
 
     @property
@@ -936,7 +941,7 @@ def build_sensor_context(
     repository_name: Optional[str] = None,
     repository_def: Optional["RepositoryDefinition"] = None,
     sensor_name: Optional[str] = None,
-    resources: Optional[Mapping[str, "ResourceDefinition"]] = None,
+    resources: Optional[Mapping[str, object]] = None,
     definitions: Optional["Definitions"] = None,
 ) -> SensorEvaluationContext:
     """Builds sensor execution context using the provided parameters.
@@ -968,6 +973,7 @@ def build_sensor_context(
     """
     from dagster._core.definitions.definitions_class import Definitions
     from dagster._core.definitions.repository_definition import RepositoryDefinition
+    from dagster._core.execution.build_resources import wrap_resources_for_execution
 
     check.opt_inst_param(instance, "instance", DagsterInstance)
     check.opt_str_param(cursor, "cursor")
@@ -987,7 +993,7 @@ def build_sensor_context(
         instance=instance,
         repository_def=repository_def,
         sensor_name=sensor_name,
-        resources=resources,
+        resources=wrap_resources_for_execution(resources),
     )
 
 
@@ -1000,7 +1006,7 @@ def get_sensor_context_from_args_or_kwargs(
     kwargs: Dict[str, Any],
     context_type: Type[T],
 ) -> Optional[T]:
-    from dagster import ResourceDefinition
+    from dagster._config.pythonic_config import is_coercible_to_resource
 
     context_param_name = get_context_param_name(fn)
 
@@ -1011,7 +1017,7 @@ def get_sensor_context_from_args_or_kwargs(
             "positional context parameter should be provided when invoking."
         )
 
-    if any(isinstance(arg, ResourceDefinition) for arg in args):
+    if any(is_coercible_to_resource(arg) for arg in args):
         raise DagsterInvalidInvocationError(
             "If directly invoking a sensor, you may not provide resources as"
             " positional"

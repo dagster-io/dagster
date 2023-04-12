@@ -264,7 +264,7 @@ def build_run_status_sensor_context(
     dagster_instance: DagsterInstance,
     dagster_run: DagsterRun,
     context: Optional[SensorEvaluationContext] = None,
-    resources: Optional[Mapping[str, "ResourceDefinition"]] = None,
+    resources: Optional[Mapping[str, object]] = None,
 ) -> RunStatusSensorContext:
     """Builds run status sensor context from provided parameters.
 
@@ -277,6 +277,8 @@ def build_run_status_sensor_context(
             triggers the run_status_sensor
         dagster_instance (DagsterInstance): The dagster instance configured for the context.
         dagster_run (DagsterRun): DagsterRun object from running a job
+        resources (Optional[Mapping[str, object]]): A dictionary of resources to be made available
+            to the sensor.
 
     Examples:
         .. code-block:: python
@@ -295,12 +297,14 @@ def build_run_status_sensor_context(
             )
             run_status_sensor_to_invoke(context)
     """
+    from dagster._core.execution.build_resources import wrap_resources_for_execution
+
     return RunStatusSensorContext(
         sensor_name=sensor_name,
         instance=dagster_instance,
         dagster_run=dagster_run,
         dagster_event=dagster_event,
-        resource_defs=resources,
+        resource_defs=wrap_resources_for_execution(resources),
         logger=context.log if context else None,
     )
 

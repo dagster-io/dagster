@@ -30,8 +30,8 @@ from dagster import (
     _check as check,
 )
 from dagster._config.pythonic_config import (
-    ConfigurableResource,
-    PartialResource,
+    ConfigurableIOManagerFactoryResourceDefinition,
+    ConfigurableResourceFactoryResourceDefinition,
     ResourceWithKeyMapping,
 )
 from dagster._config.snap import (
@@ -1532,8 +1532,16 @@ def _get_nested_resources(
     if isinstance(resource_def, ResourceWithKeyMapping):
         resource_def = resource_def.wrapped_resource
 
-    return (
-        {
+    # ConfigurableResources may have "anonymous" nested resources, which are not
+    # explicitly specified as top-level resources
+    if isinstance(
+        resource_def,
+        (
+            ConfigurableResourceFactoryResourceDefinition,
+            ConfigurableIOManagerFactoryResourceDefinition,
+        ),
+    ):
+        return {
             k: (
                 NestedResource(
                     NestedResourceType.TOP_LEVEL, resource_key_mapping[id(nested_resource)]
@@ -1545,12 +1553,11 @@ def _get_nested_resources(
             )
             for k, nested_resource in resource_def.nested_resources.items()
         }
-        if isinstance(resource_def, (ConfigurableResource, PartialResource))
-        else {
+    else:
+        return {
             k: NestedResource(NestedResourceType.TOP_LEVEL, k)
             for k in resource_def.required_resource_keys
         }
-    )
 
 
 def external_resource_data_from_def(
