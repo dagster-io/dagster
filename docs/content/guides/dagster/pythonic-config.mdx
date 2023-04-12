@@ -107,7 +107,9 @@ Ops and assets can be configured using environment variables by passing an <PyOb
 from dagster import job, materialize, op, RunConfig, EnvVar
 
 job_result = greeting_job.execute_in_process(
-    run_config=RunConfig({"print_greeting": MyOpConfig(person_name=EnvVar("PERSON_NAME"))})
+    run_config=RunConfig(
+        {"print_greeting": MyOpConfig(person_name=EnvVar("PERSON_NAME"))}
+    )
 )
 
 asset_result = materialize(

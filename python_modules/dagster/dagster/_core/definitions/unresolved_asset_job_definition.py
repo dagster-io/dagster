@@ -24,6 +24,7 @@ if TYPE_CHECKING:
     )
     from dagster._core.definitions.asset_graph import InternalAssetGraph
     from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
+    from dagster._core.definitions.run_config import RunConfig
 
 
 class UnresolvedAssetJobDefinition(
@@ -47,7 +48,9 @@ class UnresolvedAssetJobDefinition(
         cls,
         name: str,
         selection: "AssetSelection",
-        config: Optional[Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig"]] = None,
+        config: Optional[
+            Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig", "RunConfig"]
+        ] = None,
         description: Optional[str] = None,
         tags: Optional[Mapping[str, Any]] = None,
         partitions_def: Optional["PartitionsDefinition"] = None,
@@ -241,7 +244,9 @@ class UnresolvedAssetJobDefinition(
 def define_asset_job(
     name: str,
     selection: Optional["CoercibleToAssetSelection"] = None,
-    config: Optional[Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig[object]"]] = None,
+    config: Optional[
+        Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig[object]", "RunConfig"]
+    ] = None,
     description: Optional[str] = None,
     tags: Optional[Mapping[str, Any]] = None,
     partitions_def: Optional["PartitionsDefinition[Any]"] = None,
