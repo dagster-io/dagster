@@ -31,10 +31,6 @@ class OutputNotebookIOManager(IOManager):
         raise NotImplementedError
 
 
-WRITE_MODE = "wb"
-READ_MODE = "rb"
-
-
 class LocalOutputNotebookIOManager(OutputNotebookIOManager):
     def __init__(self, base_dir: str, asset_key_prefix: Optional[Sequence[str]] = None):
         super(LocalOutputNotebookIOManager, self).__init__(asset_key_prefix=asset_key_prefix)
@@ -57,7 +53,7 @@ class LocalOutputNotebookIOManager(OutputNotebookIOManager):
         # the output notebook itself is stored at output_file_path
         output_notebook_path = self._get_path(context)
         mkdir_p(os.path.dirname(output_notebook_path))
-        with open(output_notebook_path, WRITE_MODE) as dest_file_obj:
+        with open(output_notebook_path, self.write_mode) as dest_file_obj:
             dest_file_obj.write(obj)
 
         metadata = {
@@ -82,7 +78,7 @@ class LocalOutputNotebookIOManager(OutputNotebookIOManager):
         check.inst_param(context, "context", InputContext)
         # pass output notebook to downstream ops as File Object
         output_context = check.not_none(context.upstream_output)
-        with open(self._get_path(output_context), READ_MODE) as file_obj:
+        with open(self._get_path(output_context), self.read_mode) as file_obj:
             return file_obj.read()
 
 
