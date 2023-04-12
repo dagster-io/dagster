@@ -792,3 +792,16 @@ def test_conversion_to_fields() -> None:
     assert not fields["with_default_value"].is_required
     assert fields["optional_str"]
     assert fields["optional_str"].is_required is False
+
+
+def test_to_config_dict_combined_with_cached_method() -> None:
+    class ConfigWithCachedMethod(Config):
+        a_string: str
+
+        @cached_method
+        def a_string_cached(self) -> str:
+            return "foo"
+
+    obj = ConfigWithCachedMethod(a_string="bar")
+    obj.a_string_cached()
+    assert obj._as_config_dict() == {"a_string": "bar"}  # noqa: SLF001
