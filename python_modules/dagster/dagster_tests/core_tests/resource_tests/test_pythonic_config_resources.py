@@ -58,7 +58,7 @@ from pydantic import (
 )
 
 
-def test_basic_structured_resource_defs():
+def test_basic_structured_resource():
     out_txt = []
 
     class WriterResource(ConfigurableResource):
@@ -88,7 +88,7 @@ def test_basic_structured_resource_defs():
     assert out_txt == ["greeting: hello, world!"]
 
 
-def test_basic_structured_resource_defs_asset() -> None:
+def test_basic_structured_resource_assets() -> None:
     out_txt = []
 
     class WriterResource(ConfigurableResource):

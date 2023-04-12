@@ -112,11 +112,9 @@ class JobDefinition(PipelineDefinition):
         _was_explicitly_provided_resources: Optional[bool] = None,
     ):
         from dagster._core.definitions.run_config import RunConfig, convert_config_input
-        from dagster._core.execution.build_resources import wrap_resources_for_execution
         from dagster._loggers import default_loggers
 
         check.inst_param(graph_def, "graph_def", GraphDefinition)
-        resource_defs = wrap_resources_for_execution(resource_defs)
         resource_defs = check.opt_mapping_param(
             resource_defs, "resource_defs", key_type=str, value_type=ResourceDefinition
         )

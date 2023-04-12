@@ -16,6 +16,7 @@ RESOURCE_PARAM_METADATA = "resource_param"
 
 def _is_resource_annotated(param: Parameter) -> bool:
     from dagster._config.pythonic_config import ConfigurableResourceFactory
+
     extends_resource_definition = False
     try:
         extends_resource_definition = isinstance(param.annotation, type) and issubclass(

@@ -115,14 +115,14 @@ def build_resources(
 def wrap_resources_for_execution(
     resources: Optional[Mapping[str, Any]] = None
 ) -> Dict[str, ResourceDefinition]:
-    from dagster._config.pythonic_config import ConfigurableResourceFactory
+    from dagster._config.pythonic_config import ConfigurableResourceFactory, PartialResource
 
     resources = check.opt_mapping_param(resources, "resources", key_type=str)
     resource_defs = {}
     # Wrap instantiated resource values in a resource definition.
     # If an instantiated IO manager is provided, wrap it in an IO manager definition.
     for resource_key, resource in resources.items():
-        if isinstance(resource, ConfigurableResourceFactory):
+        if isinstance(resource, (ConfigurableResourceFactory, PartialResource)):
             resource_defs[resource_key] = resource.get_resource_definition()
         elif isinstance(resource, ResourceDefinition):
             resource_defs[resource_key] = resource

@@ -147,7 +147,6 @@ def build_assets_job(
     )
     check.opt_str_param(description, "description")
     check.opt_inst_param(_asset_selection_data, "_asset_selection_data", AssetSelectionData)
-    from dagster._core.execution.build_resources import wrap_resources_for_execution
 
     # figure out what partitions (if any) exist for this job
     partitions_def = partitions_def or build_job_partitions_from_assets(assets)
