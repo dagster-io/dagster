@@ -241,7 +241,6 @@ def _create_repository_using_definitions_args(
         schedules_with_resources,
         sensors_with_resources,
     ) = _attach_resources_to_jobs_and_instigator_jobs(jobs, schedules, sensors, resource_defs)
-   
 
     @repository(
         name=name,

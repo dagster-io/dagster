@@ -5,12 +5,12 @@ import re
 import subprocess
 import sys
 import tempfile
-import warnings
 from abc import ABC, abstractmethod
 from typing import Any, Callable, List, Mapping, Optional, cast
 
 import pytest
 from dagster import (
+    BindResourcesToJobs,
     IOManager,
     JobDefinition,
     ScheduleDefinition,
@@ -35,7 +35,7 @@ from dagster._config.pythonic_config import (
     ResourceDependency,
 )
 from dagster._core.definitions.assets_job import build_assets_job
-from dagster._core.definitions.definitions_class import BindResourcesToJobs, Definitions
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.repository_definition.repository_data_builder import (
     build_caching_repository_data_from_dict,
 )
@@ -1520,7 +1520,7 @@ def test_bind_resource_to_job_at_defn_time_err() -> None:
         match="resource with key 'writer' required by op 'hello_world_op' was not provided",
     ):
         Definitions(
-            jobs=BindResourcesToJobs([hello_world_job]),
+            jobs=[hello_world_job],
         )
 
 
@@ -1543,6 +1543,47 @@ def test_bind_resource_to_job_at_defn_time() -> None:
 
     # Bind the resource to the job at definition time and validate that it works
     defs = Definitions(
+        jobs=[hello_world_job],
+        resources={
+            "writer": WriterResource(prefix=""),
+        },
+    )
+
+    assert defs.get_job_def("hello_world_job").execute_in_process().success
+    assert out_txt == ["hello, world!"]
+
+    out_txt.clear()
+
+    defs = Definitions(
+        jobs=[hello_world_job],
+        resources={
+            "writer": WriterResource(prefix="msg: "),
+        },
+    )
+
+    assert defs.get_job_def("hello_world_job").execute_in_process().success
+    assert out_txt == ["msg: hello, world!"]
+
+
+def test_bind_resource_to_job_at_defn_time_bind_resources_to_jobs() -> None:
+    out_txt = []
+
+    class WriterResource(ConfigurableResource):
+        prefix: str
+
+        def output(self, text: str) -> None:
+            out_txt.append(f"{self.prefix}{text}")
+
+    @op
+    def hello_world_op(writer: WriterResource):
+        writer.output("hello, world!")
+
+    @job
+    def hello_world_job():
+        hello_world_op()
+
+    # BindResourcesToJobs is a no-op now
+    defs = Definitions(
         jobs=BindResourcesToJobs([hello_world_job]),
         resources={
             "writer": WriterResource(prefix=""),
@@ -1554,6 +1595,7 @@ def test_bind_resource_to_job_at_defn_time() -> None:
 
     out_txt.clear()
 
+    # BindResourcesToJobs is a no-op now
     defs = Definitions(
         jobs=BindResourcesToJobs([hello_world_job]),
         resources={
@@ -1590,7 +1632,7 @@ def test_bind_resource_to_job_with_job_config() -> None:
         hello_world_op()
 
     defs = Definitions(
-        jobs=BindResourcesToJobs([hello_world_job, hello_earth_job]),
+        jobs=[hello_world_job, hello_earth_job],
         resources={
             "writer": WriterResource(prefix="msg: "),
         },
@@ -1609,7 +1651,7 @@ def test_bind_resource_to_job_with_job_config() -> None:
         match="resource with key 'writer' required by op 'hello_world_op' was not provided",
     ):
         Definitions(
-            jobs=BindResourcesToJobs([hello_world_job]),
+            jobs=[hello_world_job],
         )
 
 
@@ -1672,7 +1714,7 @@ def test_bind_resource_to_job_at_defn_time_override() -> None:
         hello_world_op()
 
     defs = Definitions(
-        jobs=BindResourcesToJobs([hello_world_job_with_override, hello_world_job_no_override]),
+        jobs=[hello_world_job_with_override, hello_world_job_no_override],
         resources={
             "writer": WriterResource(prefix="definitions says: "),
         },
@@ -1713,7 +1755,7 @@ def test_bind_resource_to_instigator() -> None:
 
     # Bind the resource to the job at definition time and validate that it works
     defs = Definitions(
-        jobs=BindResourcesToJobs([hello_world_job]),
+        jobs=[hello_world_job],
         schedules=[hello_world_schedule],
         sensors=[hello_world_sensor],
         resources={
@@ -1767,7 +1809,7 @@ def test_bind_resource_to_instigator_by_name() -> None:
 
     # Bind the resource to the job at definition time and validate that it works
     defs = Definitions(
-        jobs=BindResourcesToJobs([hello_world_job]),
+        jobs=[hello_world_job],
         schedules=[hello_world_schedule],
         sensors=[hello_world_sensor],
         resources={
@@ -1794,109 +1836,6 @@ def test_bind_resource_to_instigator_by_name() -> None:
     out_txt.clear()
 
 
-def test_bind_io_manager_default_warning() -> None:
-    outputs = []
-
-    class MyIOManager(ConfigurableIOManager):
-        def load_input(self, _) -> None:
-            pass
-
-        def handle_output(self, _, obj) -> None:
-            outputs.append(obj)
-
-    @op
-    def hello_world_op() -> str:
-        return "foo"
-
-    @job
-    def hello_world_job() -> None:
-        hello_world_op()
-
-    # Bind the I/O manager to the job at definition time, validate that the
-    # user is warned bc this will change with 1.3
-    with warnings.catch_warnings(record=True) as w:
-        warnings.simplefilter("always")
-
-        defs = Definitions(
-            jobs=[hello_world_job],
-            resources={
-                "io_manager": MyIOManager(),
-            },
-        )
-        binding_warning = [
-            warning
-            for warning in w
-            if "You have overridden the default `io_manager`" in str(warning.message)
-        ]
-        assert len(binding_warning) == 1
-        assert "`hello_world_job`" in str(binding_warning[0].message)
-
-    assert defs.get_job_def("hello_world_job").execute_in_process().success
-    assert outputs == []
-
-    # Ensure no warning if there is no top level IO manager
-    with warnings.catch_warnings(record=True) as w:
-        warnings.simplefilter("always")
-
-        defs = Definitions(
-            jobs=[hello_world_job],
-        )
-        binding_warning = [
-            warning
-            for warning in w
-            if "You have overridden the default `io_manager`" in str(warning.message)
-        ]
-        assert len(binding_warning) == 0
-
-    # Ensure no warning if the job has an IO manager bound
-    @job(resource_defs={"io_manager": MyIOManager()})
-    def hello_world_job_bound() -> None:
-        hello_world_op()
-
-    with warnings.catch_warnings(record=True) as w:
-        warnings.simplefilter("always")
-
-        defs = Definitions(
-            jobs=[hello_world_job_bound],
-            resources={
-                "io_manager": MyIOManager(),
-            },
-        )
-        binding_warning = [
-            warning
-            for warning in w
-            if "You have overridden the default `io_manager`" in str(warning.message)
-        ]
-        assert len(binding_warning) == 0
-
-    # Ensure many jobs works and truncates the warning
-    my_jobs = []
-    for i in range(20):
-
-        @job(name=f"hello_world_job_{i}")
-        def hello_world_job_list() -> None:
-            hello_world_op()
-
-        my_jobs.append(hello_world_job_list)
-
-    with warnings.catch_warnings(record=True) as w:
-        warnings.simplefilter("always")
-
-        defs = Definitions(
-            jobs=my_jobs,
-            resources={
-                "io_manager": MyIOManager(),
-            },
-        )
-        binding_warning = [
-            warning
-            for warning in w
-            if "You have overridden the default `io_manager`" in str(warning.message)
-        ]
-        assert len(binding_warning) == 1
-        assert "and 10 others" in str(binding_warning[0].message)
-
-
 def test_bind_io_manager_default() -> None:
     outputs = []
 
@@ -1917,7 +1856,7 @@ def test_bind_io_manager_default() -> None:
 
     # Bind the I/O manager to the job at definition time and validate that it works
     defs = Definitions(
-        jobs=BindResourcesToJobs([hello_world_job]),
+        jobs=[hello_world_job],
         resources={
             "io_manager": MyIOManager(),
         },
@@ -1955,7 +1894,7 @@ def test_bind_io_manager_override() -> None:
     # Bind the I/O manager to the job at definition time and validate that it does
     # not take precedence over the one defined on the job
     defs = Definitions(
-        jobs=BindResourcesToJobs([hello_world_job]),
+        jobs=[hello_world_job],
         resources={
             "io_manager": MyOtherIOManager(),
         },
