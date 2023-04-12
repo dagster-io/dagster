@@ -70,20 +70,20 @@ from dagster import AssetIn, asset
     ins={
         "iris_sepal": AssetIn(
             key="iris_data",
-            metadata={"columns": ["Sepal length (cm)", "Sepal width (cm)"]},
+            metadata={"columns": ["sepal_length_cm", "sepal_width_cm"]},
         )
     }
 )
 def sepal_data(iris_sepal: pd.DataFrame) -> pd.DataFrame:
-    iris_sepal["Sepal area (cm2)"] = (
-        iris_sepal["Sepal length (cm)"] * iris_sepal["Sepal width (cm)"]
+    iris_sepal["sepal_area_cm2"] = (
+        iris_sepal["sepal_length_cm"] * iris_sepal["sepal_width_cm"]
     )
     return iris_sepal
 ```
 
 In this example, we only use the columns containing sepal data from the `IRIS_DATA` table created in [Step 2: Create tables in BigQuery](/integrations/bigquery/using-bigquery-with-dagster#store-a-dagster-asset-as-a-table-in-bigquery) of the [Using Dagster with BigQuery tutorial](/integrations/bigquery/using-bigquery-with-dagster). Fetching the entire table would be unnecessarily costly, so to select specific columns, we can add metadata to the input asset. We do this in the `metadata` parameter of the `AssetIn` that loads the `iris_data` asset in the `ins` parameter. We supply the key `columns` with a list of names of the columns we want to fetch.
 
-When Dagster materializes `sepal_data` and loads the `iris_data` asset using the BigQuery I/O manager, it will only fetch the `Sepal length (cm)` and `Sepal width (cm)` columns of the `IRIS.IRIS_DATA` table and pass them to `sepal_data` as a Pandas DataFrame.
+When Dagster materializes `sepal_data` and loads the `iris_data` asset using the BigQuery I/O manager, it will only fetch the `sepal_length_cm` and `sepal_width_cm` columns of the `IRIS.IRIS_DATA` table and pass them to `sepal_data` as a Pandas DataFrame.
 
 ---
 
@@ -116,15 +116,15 @@ def iris_data_partitioned(context) -> pd.DataFrame:
     full_df = pd.read_csv(
         "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data",
         names=[
-            "Sepal length (cm)",
-            "Sepal width (cm)",
-            "Petal length (cm)",
-            "Petal width (cm)",
-            "Species",
+            "sepal_length_cm",
+            "sepal_width_cm",
+            "petal_length_cm",
+            "petal_width_cm",
+            "species",
         ],
     )
 
-    return full_df[full_df["Species"] == species]
+    return full_df[full_df["species"] == species]
 
 
 @asset
@@ -240,7 +240,7 @@ def iris_data_partitioned(context) -> pd.DataFrame:
     # the time of the row as an integer of seconds since epoch
     full_df = get_iris_data_for_date(date)
 
-    return full_df[full_df["Species"] == species]
+    return full_df[full_df["species"] == species]
 
 
 @asset
@@ -285,11 +285,11 @@ def iris_data() -> pd.DataFrame:
     return pd.read_csv(
         "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data",
         names=[
-            "Sepal length (cm)",
-            "Sepal width (cm)",
-            "Petal length (cm)",
-            "Petal width (cm)",
-            "Species",
+            "sepal_length_cm",
+            "sepal_width_cm",
+            "petal_length_cm",
+            "petal_width_cm",
+            "species",
         ],
     )
 ```
@@ -323,11 +323,11 @@ def iris_data() -> pd.DataFrame:
     return pd.read_csv(
         "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data",
         names=[
-            "Sepal length (cm)",
-            "Sepal width (cm)",
-            "Petal length (cm)",
-            "Petal width (cm)",
-            "Species",
+            "sepal_length_cm",
+            "sepal_width_cm",
+            "petal_length_cm",
+            "petal_width_cm",
+            "species",
         ],
     )
 
@@ -427,11 +427,11 @@ def iris_data(context) -> DataFrame:
 
     schema = StructType(
         [
-            StructField("Sepal length (cm)", DoubleType()),
-            StructField("Sepal width (cm)", DoubleType()),
-            StructField("Petal length (cm)", DoubleType()),
-            StructField("Petal width (cm)", DoubleType()),
-            StructField("Species", StringType()),
+            StructField("sepal_length_cm", DoubleType()),
+            StructField("sepal_width_cm", DoubleType()),
+            StructField("petal_length_cm", DoubleType()),
+            StructField("petal_width_cm", DoubleType()),
+            StructField("species", StringType()),
         ]
     )
 
@@ -486,11 +486,11 @@ def iris_data() -> DataFrame:
 
     schema = StructType(
         [
-            StructField("Sepal length (cm)", DoubleType()),
-            StructField("Sepal width (cm)", DoubleType()),
-            StructField("Petal length (cm)", DoubleType()),
-            StructField("Petal width (cm)", DoubleType()),
-            StructField("Species", StringType()),
+            StructField("sepal_length_cm", DoubleType()),
+            StructField("sepal_width_cm", DoubleType()),
+            StructField("petal_length_cm", DoubleType()),
+            StructField("petal_width_cm", DoubleType()),
+            StructField("species", StringType()),
         ]
     )
 
@@ -589,8 +589,8 @@ from dagster import Definitions, asset
 def small_petals(context):
     return context.resources.bigquery.query(
         (
-            'SELECT * FROM IRIS.IRIS_DATA WHERE "Petal length (cm)" < 1 AND "Petal'
-            ' width (cm)" < 1'
+            'SELECT * FROM IRIS.IRIS_DATA WHERE "petal_length_cm" < 1 AND'
+            ' "petal_width_cm" < 1'
         ),
     ).result()
 
