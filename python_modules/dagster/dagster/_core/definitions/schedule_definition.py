@@ -94,7 +94,7 @@ def get_or_create_schedule_context(
     Raises an exception if the user passes more than one argument or if the user-provided
     function requires a context parameter but none is passed.
     """
-    from dagster import ResourceDefinition
+    from dagster._config.pythonic_config import is_coercible_to_resource
     from dagster._core.definitions.sensor_definition import get_context_param_name
 
     context_param_name = get_context_param_name(fn)
@@ -106,7 +106,7 @@ def get_or_create_schedule_context(
             "positional context parameter should be provided when invoking."
         )
 
-    if any(isinstance(arg, ResourceDefinition) for arg in args):
+    if any(is_coercible_to_resource(arg) for arg in args):
         raise DagsterInvalidInvocationError(
             "If directly invoking a schedule, you may not provide resources as"
             " positional arguments, only as keyword arguments."
@@ -272,12 +272,17 @@ class ScheduleEvaluationContext:
         check.invariant(
             self._resources is None, "Cannot merge resources in context that has been initialized."
         )
+        from dagster._core.execution.build_resources import wrap_resources_for_execution
+
         return ScheduleEvaluationContext(
             instance_ref=self._instance_ref,
             scheduled_execution_time=self._scheduled_execution_time,
             repository_name=self._repository_name,
             schedule_name=self._schedule_name,
-            resources={**(self._resource_defs or {}), **resources_dict},
+            resources={
+                **(self._resource_defs or {}),
+                **wrap_resources_for_execution(resources_dict),
+            },
             repository_def=self._repository_def,
         )
 
@@ -364,7 +369,7 @@ class DecoratedScheduleFunction(NamedTuple):
 def build_schedule_context(
     instance: Optional[DagsterInstance] = None,
     scheduled_execution_time: Optional[datetime] = None,
-    resources: Optional[Mapping[str, "ResourceDefinition"]] = None,
+    resources: Optional[Mapping[str, object]] = None,
     repository_def: Optional["RepositoryDefinition"] = None,
 ) -> ScheduleEvaluationContext:
     """Builds schedule execution context using the provided parameters.
@@ -384,6 +389,8 @@ def build_schedule_context(
             context = build_schedule_context(instance)
 
     """
+    from dagster._core.execution.build_resources import wrap_resources_for_execution
+
     check.opt_inst_param(instance, "instance", DagsterInstance)
 
     return ScheduleEvaluationContext(
@@ -391,7 +398,7 @@ def build_schedule_context(
         scheduled_execution_time=check.opt_inst_param(
             scheduled_execution_time, "scheduled_execution_time", datetime
         ),
-        resources=resources,
+        resources=wrap_resources_for_execution(resources),
         repository_def=repository_def,
     )
 
