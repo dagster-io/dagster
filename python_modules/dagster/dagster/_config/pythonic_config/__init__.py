@@ -113,7 +113,7 @@ class MakeConfigCacheable(BaseModel):
         return super().__setattr__(name, value)
 
     def _is_field_internal(self, name: str) -> bool:
-        return name.startswith("_") or name.endswith(CACHED_METHOD_FIELD_SUFFIX)
+        return name.endswith("__internal__") or name.endswith(CACHED_METHOD_FIELD_SUFFIX)
 
 
 class Config(MakeConfigCacheable):
@@ -489,6 +489,14 @@ class ConfigurableIOManagerFactoryResourceDefinition(IOManagerDefinition, AllowD
         return self._resolve_resource_keys(resource_mapping)
 
 
+class ConfigurableResourceFactoryState(NamedTuple):
+    nested_partial_resources: Mapping[str, CoercibleToResource]
+    resolved_config_dict: Dict[str, Any]
+    config_schema: DagsterField
+    schema: DagsterField
+    nested_resources: Dict[str, CoercibleToResource]
+
+
 class ConfigurableResourceFactory(
     Generic[TResValue],
     Config,
@@ -558,18 +566,39 @@ class ConfigurableResourceFactory(
             k: v for k, v in self._as_config_dict().items() if k in data_without_resources
         }
         resolved_config_dict = config_dictionary_from_values(casted_data_without_resources, schema)
-        self._config_schema = _curry_config_schema(schema, resolved_config_dict)
 
-        # We keep track of any resources we depend on which are not fully configured
-        # so that we can retrieve them at runtime
-        self._nested_partial_resources: Mapping[str, CoercibleToResource] = {
-            k: v for k, v in resource_pointers.items() if (not _is_fully_configured(v))
-        }
+        self._state__internal__ = ConfigurableResourceFactoryState(
+            # We keep track of any resources we depend on which are not fully configured
+            # so that we can retrieve them at runtime
+            nested_partial_resources={
+                k: v for k, v in resource_pointers.items() if (not _is_fully_configured(v))
+            },
+            resolved_config_dict=resolved_config_dict,
+            # These are unfortunately named very similarily
+            config_schema=_curry_config_schema(schema, resolved_config_dict),
+            schema=schema,
+            nested_resources={k: v for k, v in resource_pointers.items()},
+        )
 
-        self._resolved_config_dict = resolved_config_dict
-        self._schema = schema
+    @property
+    def _schema(self):
+        return self._state__internal__.schema
 
-        self._nested_resources = {k: v for k, v in resource_pointers.items()}
+    @property
+    def _config_schema(self):
+        return self._state__internal__.config_schema
+
+    @property
+    def _nested_partial_resources(self):
+        return self._state__internal__.nested_partial_resources
+
+    @property
+    def _nested_resources(self):
+        return self._state__internal__.nested_resources
+
+    @property
+    def _resolved_config_dict(self):
+        return self._state__internal__.resolved_config_dict
 
     def get_resource_definition(self) -> ConfigurableResourceFactoryResourceDefinition:
         return ConfigurableResourceFactoryResourceDefinition(
@@ -751,6 +780,14 @@ def _is_fully_configured(resource: CoercibleToResource) -> bool:
     return res
 
 
+class PartialResourceState(NamedTuple):
+    nested_partial_resources: Dict[str, CoercibleToResource]
+    config_schema: DagsterField
+    resource_fn: Callable[[InitResourceContext], Any]
+    description: Optional[str]
+    nested_resources: Dict[str, CoercibleToResource]
+
+
 class PartialResource(Generic[TResValue], AllowDelayedDependencies, MakeConfigCacheable):
     data: Dict[str, Any]
     resource_cls: Type[ConfigurableResourceFactory[TResValue]]
@@ -758,40 +795,46 @@ class PartialResource(Generic[TResValue], AllowDelayedDependencies, MakeConfigCa
     def __init__(
         self, resource_cls: Type[ConfigurableResourceFactory[TResValue]], data: Dict[str, Any]
     ):
-        resource_pointers, data_without_resources = separate_resource_params(data)
+        resource_pointers, _data_without_resources = separate_resource_params(data)
 
         MakeConfigCacheable.__init__(self, data=data, resource_cls=resource_cls)  # type: ignore  # extends BaseModel, takes kwargs
-
-        # We keep track of any resources we depend on which are not fully configured
-        # so that we can retrieve them at runtime
-        self._nested_partial_resources: Dict[str, CoercibleToResource] = {
-            k: v for k, v in resource_pointers.items() if (not _is_fully_configured(v))
-        }
-
-        self._config_schema = infer_schema_from_config_class(
-            resource_cls, fields_to_omit=set(resource_pointers.keys())
-        )
 
         def resource_fn(context: InitResourceContext):
             instantiated = resource_cls(**context.resource_config, **data)
             return instantiated.initialize_and_run(context)
 
-        self._resource_fn = resource_fn
-        self._description = resource_cls.__doc__
+        self._state__internal__ = PartialResourceState(
+            # We keep track of any resources we depend on which are not fully configured
+            # so that we can retrieve them at runtime
+            nested_partial_resources={
+                k: v for k, v in resource_pointers.items() if (not _is_fully_configured(v))
+            },
+            config_schema=infer_schema_from_config_class(
+                resource_cls, fields_to_omit=set(resource_pointers.keys())
+            ),
+            resource_fn=resource_fn,
+            description=resource_cls.__doc__,
+            nested_resources={k: v for k, v in resource_pointers.items()},
+        )
 
-        self._nested_resources = {k: v for k, v in resource_pointers.items()}
+    # to make AllowDelayedDependencies work
+    @property
+    def _nested_partial_resources(
+        self,
+    ) -> Mapping[str, CoercibleToResource]:
+        return self._state__internal__.nested_partial_resources
 
     @property
     def nested_resources(
         self,
     ) -> Mapping[str, CoercibleToResource]:
-        return self._nested_resources
+        return self._state__internal__.nested_resources
 
     def get_resource_definition(self) -> ConfigurableResourceFactoryResourceDefinition:
         return ConfigurableResourceFactoryResourceDefinition(
-            resource_fn=self._resource_fn,
-            config_schema=self._config_schema,
-            description=self._description,
+            resource_fn=self._state__internal__.resource_fn,
+            config_schema=self._state__internal__.config_schema,
+            description=self._state__internal__.description,
             resolve_resource_keys=self._resolve_required_resource_keys,
             nested_resources=self.nested_resources,
         )
