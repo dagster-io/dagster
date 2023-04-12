@@ -298,8 +298,7 @@ class AllowDelayedDependencies:
         for v in resources.values():
             nested_resource_required_keys.update(
                 _resolve_required_resource_keys_for_resource(
-                    (coerce_to_resource(v)),
-                    resource_mapping,
+                    coerce_to_resource(v), resource_mapping
                 )
             )
 
@@ -657,10 +656,7 @@ class ConfigurableResourceFactory(
         # Also evaluate any resources that are not partial
         resources_to_update, _ = separate_resource_params(self.__dict__)
         resources_to_update = {
-            attr_name: _call_resource_fn_with_default(
-                (coerce_to_resource(resource)),
-                context,
-            )
+            attr_name: _call_resource_fn_with_default(coerce_to_resource(resource), context)
             for attr_name, resource in resources_to_update.items()
             if attr_name not in partial_resources_to_update
         }
