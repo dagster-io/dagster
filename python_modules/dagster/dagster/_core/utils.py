@@ -95,7 +95,7 @@ def check_dagster_package_version(library_name: str, library_version: str) -> No
         if library_version != target_version:
             message = (
                 f"Found version mismatch between `dagster` ({__version__}) "
-                f"expected library version ({target_version} "
+                f"expected library version ({target_version}) "
                 f"and `{library_name}` ({library_version})."
             )
             warnings.warn(message)
