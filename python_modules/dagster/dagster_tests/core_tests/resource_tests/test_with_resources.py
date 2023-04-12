@@ -3,6 +3,7 @@ import warnings
 import pytest
 from dagster import (
     AssetKey,
+    Definitions,
     IOManager,
     IOManagerDefinition,
     ResourceDefinition,
@@ -606,6 +607,23 @@ def test_with_resources_no_exp_warnings():
             [blah, my_source_asset],
             {"foo": ResourceDefinition.hardcoded_resource("something"), "the_manager": the_manager},
         )
+
+
+def test_bare_resource_on_with_resources():
+    class BareObjectResource:
+        pass
+
+    executed = {}
+
+    @asset(required_resource_keys={"bare_resource"})
+    def blah(context):
+        assert context.resources.bare_resource
+        executed["yes"] = True
+
+    bound_assets = with_resources([blah], {"bare_resource": BareObjectResource()})
+    defs = Definitions(assets=bound_assets)
+    defs.get_implicit_global_asset_job_def().execute_in_process()
+    assert executed["yes"]
 
 
 class FooIoManager(PickledObjectFilesystemIOManager):
