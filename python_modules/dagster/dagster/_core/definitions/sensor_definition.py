@@ -203,7 +203,6 @@ class SensorEvaluationContext:
         )
         from dagster._core.execution.build_resources import wrap_resources_for_execution
 
-        wrapped_resources_defs = wrap_resources_for_execution(resources_dict)
         return SensorEvaluationContext(
             instance_ref=self._instance_ref,
             last_completion_time=self._last_completion_time,
@@ -213,7 +212,10 @@ class SensorEvaluationContext:
             repository_def=self._repository_def,
             instance=self._instance,
             sensor_name=self._sensor_name,
-            resources={**(self._resource_defs or {}), **wrapped_resources_defs},
+            resources={
+                **(self._resource_defs or {}),
+                **wrap_resources_for_execution(resources_dict),
+            },
         )
 
     @property
