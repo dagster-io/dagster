@@ -200,7 +200,7 @@ def test_upath_io_manager_multiple_static_partitions(dummy_io_manager: DummyIOMa
     my_job = build_assets_job(
         "my_job",
         assets=[upstream_asset, downstream_asset],
-        resource_defs={"io_manager": dummy_io_manager},  # type: ignore[dict-item]
+        resource_defs={"io_manager": dummy_io_manager},
     )
     result = my_job.execute_in_process(partition_key="A")
     downstream_asset_data = result.output_for_node("downstream_asset", "result")
