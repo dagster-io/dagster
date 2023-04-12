@@ -20,8 +20,23 @@ class InMemoryRunStorage(SqlRunStorage):
     """
 
     def __init__(self, preload: Optional[Sequence[DebugRunPayload]] = None):
-        self._engine = None
-        self._conn = None
+        self._engine = create_engine(
+            create_in_memory_conn_string(f"runs-{id(self)}"),
+            poolclass=NullPool,
+        )
+
+        # hold one connection for life of instance, but vend new ones for specific calls
+        self._held_conn = self._engine.connect()
+
+        RunStorageSqlMetadata.create_all(self._held_conn)
+        alembic_config = get_alembic_config(__file__, "sqlite/alembic/alembic.ini")
+        stamp_alembic_rev(alembic_config, self._held_conn)
+        table_names = db.inspect(self._held_conn).get_table_names()
+        if "instance_info" not in table_names:
+            InstanceInfo.create(self._held_conn)
+        self.migrate()
+        self.optimize()
+
         if preload:
             for payload in preload:
                 self.add_pipeline_snapshot(
@@ -32,39 +47,17 @@ class InMemoryRunStorage(SqlRunStorage):
                 )
                 self.add_run(payload.pipeline_run)
 
-    def _create_connection(self) -> None:
-        engine = create_engine(create_in_memory_conn_string("runs"), poolclass=NullPool)
-        conn = engine.connect()
-
-        conn.execute("PRAGMA journal_mode=WAL;")
-        conn.execute("PRAGMA foreign_keys=ON;")
-        RunStorageSqlMetadata.create_all(conn)
-        alembic_config = get_alembic_config(__file__, "sqlite/alembic/alembic.ini")
-        stamp_alembic_rev(alembic_config, conn)
-        table_names = db.inspect(conn).get_table_names()
-        if "instance_info" not in table_names:
-            InstanceInfo.create(conn)
-
-        self._engine = engine
-        self._conn = conn
-
-        self.migrate()
-        self.optimize()
-
     @contextmanager
     def connect(self) -> Iterator[Connection]:
-        if not self._conn:
-            self._create_connection()
+        with self._engine.connect() as conn:
+            conn.execute("PRAGMA journal_mode=WAL;")
+            conn.execute("PRAGMA foreign_keys=ON;")
 
-        yield self._conn  # type: ignore
+            yield conn
 
     def upgrade(self) -> None:
         pass
 
     def dispose(self) -> None:
-        if self._conn:
-            self._conn.close()
-            self._conn = None
-
-        if self._engine:
-            self._engine.dispose()
+        self._held_conn.close()
+        self._engine.dispose()
