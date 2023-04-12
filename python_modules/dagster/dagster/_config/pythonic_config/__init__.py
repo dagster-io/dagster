@@ -104,11 +104,14 @@ class MakeConfigCacheable(BaseModel):
         # config schema. Pydantic will normally raise an error if you try to set an attribute
         # that is not part of the schema.
 
-        if name.startswith("_") or name.endswith("_cache"):
+        if self._is_field_internal(name):
             object.__setattr__(self, name, value)
             return
 
         return super().__setattr__(name, value)
+
+    def _is_field_internal(self, name: str) -> bool:
+        return name.startswith("_") or name.endswith("_cache")
 
 
 class Config(MakeConfigCacheable):
@@ -143,7 +146,7 @@ class Config(MakeConfigCacheable):
         """
         output = {}
         for key, value in self.__dict__.items():
-            if key.startswith("_"):
+            if self._is_field_internal(key):
                 continue
             field = self.__fields__.get(key)
             if field and value is None and not _is_pydantic_field_required(field):
