@@ -39,7 +39,7 @@ Copy this bot token and put it somewhere safe; see `Safely Storing Credentials
 .. currentmodule:: dagster_slack
 
 .. autodata:: SlackResource
-  :annotation: ResourceDefinition
+   :annotation: ResourceDefinition
 
 .. autodata:: slack_on_failure
   :annotation: HookDefinition

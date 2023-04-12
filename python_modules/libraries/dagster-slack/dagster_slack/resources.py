@@ -6,8 +6,6 @@ from slack_sdk.web.client import WebClient
 class SlackResource(ConfigurableResource):
     """This resource is for connecting to Slack.
 
-    The resource interacts with Slack via `slack_sdk.WebClient`.
-
     By configuring this Slack resource, you can post messages to Slack from any Dagster op, asset, schedule or sensor.
 
     Examples:
@@ -21,7 +19,7 @@ class SlackResource(ConfigurableResource):
 
             @op
             def slack_op(slack: SlackResource):
-                slack.get_web_client().chat_postMessage(channel='#noise', text=':wave: hey there!')
+                slack.get_client().chat_postMessage(channel='#noise', text=':wave: hey there!')
 
             @job
             def slack_job():
@@ -45,7 +43,8 @@ class SlackResource(ConfigurableResource):
         ),
     )
 
-    def get_web_client(self) -> WebClient:
+    def get_client(self) -> WebClient:
+        """Returns a ``slack_sdk.WebClient`` for interacting with the Slack API."""
         return WebClient(self.token)
 
 
@@ -80,4 +79,4 @@ def slack_resource(context) -> WebClient:
                 run_config={'resources': {'slack': {'config': {'token': os.getenv('SLACK_TOKEN')}}}}
             )
     """
-    return SlackResource.from_resource_context(context).get_web_client()
+    return SlackResource.from_resource_context(context).get_client()
