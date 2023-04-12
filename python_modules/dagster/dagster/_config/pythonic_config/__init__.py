@@ -937,6 +937,7 @@ def _convert_pydantic_field(pydantic_field: ModelField, model_cls: Optional[Type
         wrapped_config_type = _wrap_config_type(
             shape_type=pydantic_field.shape, config_type=config_type, key_type=key_type
         )
+
         return Field(
             config=Noneable(wrapped_config_type)
             if pydantic_field.allow_none
@@ -944,7 +945,7 @@ def _convert_pydantic_field(pydantic_field: ModelField, model_cls: Optional[Type
             description=pydantic_field.field_info.description,
             is_required=_is_pydantic_field_required(pydantic_field),
             default_value=pydantic_field.default
-            if pydantic_field.default
+            if pydantic_field.default is not None
             else FIELD_NO_DEFAULT_PROVIDED,
         )
 
