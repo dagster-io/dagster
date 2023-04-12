@@ -98,7 +98,7 @@ export const SidebarAssetInfo: React.FC<{
         assetKey={assetKey}
         assetLastMaterializedAt={lastMaterialization?.timestamp}
         assetHasDefinedPartitions={!!asset.partitionDefinition}
-        isSourceAsset={assetNode.definition.isSource}
+        isSourceAsset={definition.isSource}
         liveData={liveData}
       />
 
