@@ -224,7 +224,6 @@ def job(
             def job1():
                 add_one(return_one())
     """
-
     if compose_fn is not None:
         check.invariant(description is None)
         return _Job()(compose_fn)
