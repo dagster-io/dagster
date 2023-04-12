@@ -77,7 +77,7 @@ mutation($executionParams: ExecutionParams!) {
     __typename
     ... on LaunchRunSuccess {
       run {
-        runId
+        id
         status
       }
     }
@@ -99,17 +99,17 @@ mutation($runId: String!) {
     __typename
     ... on TerminateRunSuccess{
       run {
-        runId
+        id
       }
     }
     ... on TerminateRunFailure {
       run {
-        runId
+        id
       }
       message
     }
     ... on RunNotFoundError {
-      runId
+      id
     }
     ... on PythonError {
       message
@@ -182,7 +182,7 @@ def test_deploy_docker():
         assert launch_res["data"]["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
 
         run = launch_res["data"]["launchPipelineExecution"]["run"]
-        run_id = run["runId"]
+        run_id = run["id"]
         assert run["status"] == "QUEUED"
 
         _wait_for_run_status(run_id, dagit_host, DagsterRunStatus.SUCCESS)
@@ -211,7 +211,7 @@ def test_deploy_docker():
         assert launch_res["data"]["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
 
         run = launch_res["data"]["launchPipelineExecution"]["run"]
-        run_id = run["runId"]
+        run_id = run["id"]
         assert run["status"] == "QUEUED"
 
         _wait_for_run_status(run_id, dagit_host, DagsterRunStatus.SUCCESS)
@@ -239,7 +239,7 @@ def test_deploy_docker():
         assert launch_res["data"]["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
 
         run = launch_res["data"]["launchPipelineExecution"]["run"]
-        hanging_run_id = run["runId"]
+        hanging_run_id = run["id"]
 
         _wait_for_run_status(hanging_run_id, dagit_host, DagsterRunStatus.STARTED)
 

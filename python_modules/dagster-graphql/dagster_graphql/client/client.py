@@ -195,7 +195,7 @@ class DagsterGraphQLClient:
             query_result_type == "LaunchRunSuccess"
             or query_result_type == "LaunchPipelineRunSuccess"
         ):
-            return query_result["run"]["runId"]
+            return query_result["run"]["id"]
         elif query_result_type == "InvalidStepError":
             raise DagsterGraphQLClientError(query_result_type, query_result["invalidStepKey"])
         elif query_result_type == "InvalidOutputError":

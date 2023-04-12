@@ -36,7 +36,7 @@ class TestCapturedLogs(ExecutingGraphQLContextTestMatrix):
             context=graphql_context,
             variables={"executionParams": {"selector": selector, "mode": "default"}},
         )
-        run_id = payload["run"]["runId"]
+        run_id = payload["run"]["id"]
 
         logs = graphql_context.instance.all_logs(run_id, of_type=DagsterEventType.LOGS_CAPTURED)
         assert len(logs) == 1
@@ -57,7 +57,7 @@ class TestCapturedLogs(ExecutingGraphQLContextTestMatrix):
             context=graphql_context,
             variables={"executionParams": {"selector": selector, "mode": "default"}},
         )
-        run_id = payload["run"]["runId"]
+        run_id = payload["run"]["id"]
         logs = graphql_context.instance.all_logs(run_id, of_type=DagsterEventType.LOGS_CAPTURED)
         assert len(logs) == 1
         entry = logs[0]

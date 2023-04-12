@@ -14,7 +14,7 @@ query RunsQuery {
     __typename
     ... on PipelineRuns {
       results {
-        runId
+        id
         pipelineName
         status
         runConfigYaml
@@ -40,7 +40,7 @@ query PaginatedRunsQuery($cursor: String!, $limit: Int) {
     __typename
     ... on PipelineRuns {
       results {
-        runId
+        id
         pipelineName
         status
         runConfigYaml
@@ -63,7 +63,7 @@ query FilteredRunsQuery {
     __typename
     ... on PipelineRuns {
       results {
-        runId
+        id
         pipelineName
         status
         runConfigYaml
@@ -137,7 +137,7 @@ mutation ExecutePipeline(
     __typename
     ... on LaunchPipelineRunSuccess {
       run {
-        runId
+        id
       }
     }
     ... on PipelineConfigValidationInvalid {
@@ -191,7 +191,7 @@ def test_runs_query():
         with define_out_of_process_context(__file__, "get_repo", instance) as context:
             result = execute_dagster_graphql(context, RUNS_QUERY)
             assert result.data
-            run_ids = [run["runId"] for run in result.data["pipelineRunsOrError"]["results"]]
+            run_ids = [run["id"] for run in result.data["pipelineRunsOrError"]["results"]]
             assert len(run_ids) == 2
             assert run_ids[0] == run_id_2
             assert run_ids[1] == run_id_1
@@ -216,7 +216,7 @@ def test_paginated_runs_query():
                 variables={"cursor": run_id_3, "limit": 1},
             )
             assert result.data
-            run_ids = [run["runId"] for run in result.data["pipelineRunsOrError"]["results"]]
+            run_ids = [run["id"] for run in result.data["pipelineRunsOrError"]["results"]]
             assert len(run_ids) == 1
             assert run_ids[0] == run_id_2
 
@@ -236,7 +236,7 @@ def test_filtered_runs_query():
         with define_out_of_process_context(__file__, "get_repo", instance) as context:
             result = execute_dagster_graphql(context, FILTERED_RUNS_QUERY)
             assert result.data
-            run_ids = [run["runId"] for run in result.data["pipelineRunsOrError"]["results"]]
+            run_ids = [run["id"] for run in result.data["pipelineRunsOrError"]["results"]]
             assert len(run_ids) == 1
             assert run_ids[0] == run_id_2
 
@@ -286,7 +286,7 @@ def test_launch_mutation():
             assert not result.errors
             assert result.data
             run = result.data["launchPipelineExecution"]["run"]
-            assert run and run["runId"]
+            assert run and run["id"]
 
 
 def test_launch_mutation_error():

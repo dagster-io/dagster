@@ -94,7 +94,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
 
         # just test existence
         assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
-        assert uuid.UUID(result.data["launchPipelineExecution"]["run"]["runId"])
+        assert uuid.UUID(result.data["launchPipelineExecution"]["run"]["id"])
         assert (
             result.data["launchPipelineExecution"]["run"]["pipeline"]["name"] == "csv_hello_world"
         )
@@ -119,7 +119,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
 
         # just test existence
         assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
-        assert uuid.UUID(result.data["launchPipelineExecution"]["run"]["runId"])
+        assert uuid.UUID(result.data["launchPipelineExecution"]["run"]["id"])
         assert (
             result.data["launchPipelineExecution"]["run"]["pipeline"]["name"] == "csv_hello_world"
         )
@@ -168,7 +168,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
 
         # just test existence
         assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
-        assert uuid.UUID(result.data["launchPipelineExecution"]["run"]["runId"])
+        assert uuid.UUID(result.data["launchPipelineExecution"]["run"]["id"])
         assert (
             result.data["launchPipelineExecution"]["run"]["pipeline"]["name"]
             == "hello_world_with_tags"
@@ -374,7 +374,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         events_result = execute_dagster_graphql(
             graphql_context,
             RUN_EVENTS_QUERY,
-            variables={"runId": exc_result.data["launchPipelineExecution"]["run"]["runId"]},
+            variables={"runId": exc_result.data["launchPipelineExecution"]["run"]["id"]},
         )
 
         assert not events_result.errors
@@ -419,7 +419,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
                 graphql_context,
                 RUN_EVENTS_QUERY,
                 variables={
-                    "runId": exc_result.data["launchPipelineExecution"]["run"]["runId"],
+                    "runId": exc_result.data["launchPipelineExecution"]["run"]["id"],
                     "cursor": cursor,
                 },
             )
@@ -474,7 +474,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess", str(
             result.data
         )
-        run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+        run_id = result.data["launchPipelineExecution"]["run"]["id"]
 
         wait_for_runs_to_finish(graphql_context.instance)
 
@@ -610,7 +610,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
 
         run = result.data["launchPipelineExecution"]["run"]
-        run_id = run["runId"]
+        run_id = run["id"]
         assert len(run["tags"]) > 0
         assert any(
             [x["key"] == "dagster/test_key" and x["value"] == "test_value" for x in run["tags"]]
@@ -704,7 +704,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             },
         )
         run = result.data["launchPipelineExecution"]["run"]
-        run_id = run["runId"]
+        run_id = run["id"]
 
         wait_for_runs_to_finish(graphql_context.instance)
 
@@ -729,7 +729,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             },
         )
         run = result.data["launchPipelineExecution"]["run"]
-        run_id = run["runId"]
+        run_id = run["id"]
 
         wait_for_runs_to_finish(graphql_context.instance)
 

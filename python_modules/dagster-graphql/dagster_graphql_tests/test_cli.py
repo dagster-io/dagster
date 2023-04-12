@@ -109,7 +109,7 @@ mutation ($executionParams: ExecutionParams!) {
         __typename
         ... on LaunchRunSuccess {
             run {
-                runId
+                id
                 pipeline { ...on PipelineReference { name } }
             }
         }
@@ -302,7 +302,7 @@ def test_logs_in_start_execution_predefined():
             assert (
                 result_data["data"]["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
             )
-            run_id = result_data["data"]["launchPipelineExecution"]["run"]["runId"]
+            run_id = result_data["data"]["launchPipelineExecution"]["run"]["id"]
 
             # allow FS events to flush
             retries = 5

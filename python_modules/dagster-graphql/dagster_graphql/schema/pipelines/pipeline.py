@@ -277,7 +277,6 @@ class GrapheneEventConnectionOrError(graphene.Union):
 
 class GraphenePipelineRun(graphene.Interface):
     id = graphene.NonNull(graphene.ID)
-    runId = graphene.NonNull(graphene.String)
     # Nullable because of historical runs
     pipelineSnapshotId = graphene.String()
     repositoryOrigin = graphene.Field(GrapheneRepositoryOrigin)
@@ -323,7 +322,6 @@ class GraphenePipelineRun(graphene.Interface):
 
 class GrapheneRun(graphene.ObjectType):
     id = graphene.NonNull(graphene.ID)
-    runId = graphene.NonNull(graphene.String)
     # Nullable because of historical runs
     pipelineSnapshotId = graphene.String()
     parentPipelineSnapshotId = graphene.String()
@@ -374,7 +372,7 @@ class GrapheneRun(graphene.ObjectType):
         check.inst_param(record, "record", RunRecord)
         pipeline_run = record.dagster_run
         super().__init__(
-            runId=pipeline_run.run_id,
+            id=pipeline_run.run_id,
             status=pipeline_run.status.value,
             mode=pipeline_run.mode,
         )

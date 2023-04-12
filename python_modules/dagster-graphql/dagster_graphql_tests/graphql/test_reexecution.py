@@ -40,7 +40,7 @@ class TestReexecution(ExecutingGraphQLContextTestMatrix):
 
         assert result_one.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
 
-        result_one.data["launchPipelineExecution"]["run"]["runId"] = "<runId dummy value>"
+        result_one.data["launchPipelineExecution"]["run"]["id"] = "<runId dummy value>"
         result_one.data["launchPipelineExecution"]["run"][
             "runConfigYaml"
         ] = "<runConfigYaml dummy value>"
@@ -90,7 +90,7 @@ class TestReexecution(ExecutingGraphQLContextTestMatrix):
 
         assert result_one.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
 
-        result_one.data["launchPipelineExecution"]["run"]["runId"] = "<runId dummy value>"
+        result_one.data["launchPipelineExecution"]["run"]["id"] = "<runId dummy value>"
         result_one.data["launchPipelineExecution"]["run"][
             "runConfigYaml"
         ] = "<runConfigYaml dummy value>"

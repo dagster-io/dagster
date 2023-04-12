@@ -71,7 +71,7 @@ class TestGetRunStatusWithClient(ExecutingGraphQLContextTestMatrix):
         assert not result.errors
         assert result.data
 
-        run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+        run_id = result.data["launchPipelineExecution"]["run"]["id"]
 
         start_time = time.time()
 

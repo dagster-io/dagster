@@ -61,7 +61,7 @@ mutation($executionParams: ExecutionParams!) {
     __typename
     ... on LaunchPipelineRunSuccess {
       run {
-        runId
+        id
         status
       }
     }
@@ -105,17 +105,17 @@ mutation($runId: String!, $terminatePolicy: TerminateRunPolicy) {
     __typename
     ... on TerminateRunSuccess{
       run {
-        runId
+        id
       }
     }
     ... on TerminateRunFailure {
       run {
-        runId
+        id
       }
       message
     }
     ... on RunNotFoundError {
-      runId
+      id
     }
     ... on PythonError {
       message
@@ -175,7 +175,7 @@ def launch_run_over_graphql(
         and result["data"]["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
     )
 
-    return result["data"]["launchPipelineExecution"]["run"]["runId"]
+    return result["data"]["launchPipelineExecution"]["run"]["id"]
 
 
 def can_terminate_run_over_graphql(

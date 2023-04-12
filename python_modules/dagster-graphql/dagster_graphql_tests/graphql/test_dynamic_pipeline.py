@@ -38,7 +38,7 @@ def test_dynamic_resume_reexecution(graphql_context: WorkspaceRequestContext):
     assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
     assert result.data["launchPipelineExecution"]["run"]["pipeline"]["name"] == "dynamic_job"
 
-    parent_run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+    parent_run_id = result.data["launchPipelineExecution"]["run"]["id"]
 
     logs = get_all_logs_for_finished_run_via_subscription(graphql_context, parent_run_id)[
         "pipelineRunLogs"
@@ -74,7 +74,7 @@ def test_dynamic_resume_reexecution(graphql_context: WorkspaceRequestContext):
         retry_one.data["launchPipelineReexecution"]["__typename"] == "LaunchRunSuccess"
     ), retry_one.data["launchPipelineReexecution"].get("message")
 
-    run_id = retry_one.data["launchPipelineReexecution"]["run"]["runId"]
+    run_id = retry_one.data["launchPipelineReexecution"]["run"]["id"]
 
     logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[
         "pipelineRunLogs"
@@ -111,7 +111,7 @@ def test_dynamic_full_reexecution(graphql_context: WorkspaceRequestContext):
     assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
     assert result.data["launchPipelineExecution"]["run"]["pipeline"]["name"] == "dynamic_job"
 
-    parent_run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+    parent_run_id = result.data["launchPipelineExecution"]["run"]["id"]
 
     logs = get_all_logs_for_finished_run_via_subscription(graphql_context, parent_run_id)[
         "pipelineRunLogs"
@@ -147,7 +147,7 @@ def test_dynamic_full_reexecution(graphql_context: WorkspaceRequestContext):
         retry_one.data["launchPipelineReexecution"]["__typename"] == "LaunchRunSuccess"
     ), retry_one.data["launchPipelineReexecution"].get("message")
 
-    run_id = retry_one.data["launchPipelineReexecution"]["run"]["runId"]
+    run_id = retry_one.data["launchPipelineReexecution"]["run"]["id"]
 
     logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[
         "pipelineRunLogs"
@@ -184,7 +184,7 @@ def test_dynamic_subset(graphql_context: WorkspaceRequestContext):
     assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
     assert result.data["launchPipelineExecution"]["run"]["pipeline"]["name"] == "dynamic_job"
 
-    parent_run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+    parent_run_id = result.data["launchPipelineExecution"]["run"]["id"]
 
     logs = get_all_logs_for_finished_run_via_subscription(graphql_context, parent_run_id)[
         "pipelineRunLogs"
@@ -226,7 +226,7 @@ def test_dynamic_subset(graphql_context: WorkspaceRequestContext):
         retry_one.data["launchPipelineReexecution"]["__typename"] == "LaunchRunSuccess"
     ), retry_one.data["launchPipelineReexecution"].get("message")
 
-    run_id = retry_one.data["launchPipelineReexecution"]["run"]["runId"]
+    run_id = retry_one.data["launchPipelineReexecution"]["run"]["id"]
 
     logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[
         "pipelineRunLogs"

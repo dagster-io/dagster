@@ -562,7 +562,7 @@ def _create_run(
         },
     )
     assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
-    run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+    run_id = result.data["launchPipelineExecution"]["run"]["id"]
     poll_for_finished_run(graphql_context.instance, run_id)
     return run_id
 
@@ -908,7 +908,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             variables={"pipelineSelector": selector, "partition": "a"},
         )
         assert result.data
-        assert result.data["assetNodes"][0]["latestRunForPartition"]["runId"] == run_id
+        assert result.data["assetNodes"][0]["latestRunForPartition"]["id"] == run_id
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -1522,7 +1522,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
                 },
             },
         )
-        run_id = result.data["launchPipelineReexecution"]["run"]["runId"]
+        run_id = result.data["launchPipelineReexecution"]["run"]["id"]
         poll_for_finished_run(graphql_context.instance, run_id)
 
         run = graphql_context.instance.get_run_by_id(run_id)
@@ -2061,7 +2061,7 @@ class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):
             assert not result.errors
             assert result.data
 
-            run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+            run_id = result.data["launchPipelineExecution"]["run"]["id"]
 
             # ensure the execution has happened
             while not os.path.exists(path):
@@ -2124,7 +2124,7 @@ class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):
             assert not result.errors
             assert result.data
 
-            run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+            run_id = result.data["launchPipelineExecution"]["run"]["id"]
 
             # ensure the execution has happened
             while not os.path.exists(path):
@@ -2182,7 +2182,7 @@ class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):
             assert not result.errors
             assert result.data
 
-            run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+            run_id = result.data["launchPipelineExecution"]["run"]["id"]
 
             # ensure the execution has happened
             while not os.path.exists(path):

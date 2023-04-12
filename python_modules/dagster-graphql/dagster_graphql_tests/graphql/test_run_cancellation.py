@@ -25,12 +25,12 @@ mutation($runId: String!, $terminatePolicy: TerminateRunPolicy) {
     __typename
     ... on TerminateRunSuccess{
       run {
-        runId
+        id
       }
     }
     ... on TerminateRunFailure {
       run {
-        runId
+        id
       }
       message
     }
@@ -52,7 +52,7 @@ mutation TerminatePipeline($runId: String!) {
     __typename
     ... on TerminatePipelineExecutionSuccess{
       run {
-        runId
+        id
       }
     }
     ... on TerminatePipelineExecutionFailure {
@@ -96,7 +96,7 @@ class TestQueuedRunTermination(QueuedRunCoordinatorTestSuite):
 
             # just test existence
             assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
-            run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+            run_id = result.data["launchPipelineExecution"]["run"]["id"]
 
             run = graphql_context.instance.get_run_by_id(run_id)
             assert run and run.status == DagsterRunStatus.QUEUED
@@ -128,7 +128,7 @@ class TestQueuedRunTermination(QueuedRunCoordinatorTestSuite):
 
             # just test existence
             assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
-            run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+            run_id = result.data["launchPipelineExecution"]["run"]["id"]
 
             run = graphql_context.instance.get_run_by_id(run_id)
             assert run and run.status == DagsterRunStatus.QUEUED
@@ -191,7 +191,7 @@ class TestRunVariantTermination(RunTerminationTestSuite):
 
             # just test existence
             assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
-            run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+            run_id = result.data["launchPipelineExecution"]["run"]["id"]
 
             assert run_id
 
@@ -224,7 +224,7 @@ class TestRunVariantTermination(RunTerminationTestSuite):
 
             # just test existence
             assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
-            run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+            run_id = result.data["launchPipelineExecution"]["run"]["id"]
 
             assert run_id
 
@@ -286,7 +286,7 @@ class TestRunVariantTermination(RunTerminationTestSuite):
 
             # just test existence
             assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
-            run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+            run_id = result.data["launchPipelineExecution"]["run"]["id"]
             # ensure the execution has happened
             while not os.path.exists(path):
                 time.sleep(0.1)
@@ -309,7 +309,7 @@ class TestRunVariantTermination(RunTerminationTestSuite):
 
             assert result.data["terminatePipelineExecution"]["__typename"] == "TerminateRunSuccess"
 
-            assert result.data["terminatePipelineExecution"]["run"]["runId"] == run_id
+            assert result.data["terminatePipelineExecution"]["run"]["id"] == run_id
 
             graphql_context.instance.run_launcher.terminate = old_terminate
 
@@ -382,7 +382,7 @@ class TestRunVariantTermination(RunTerminationTestSuite):
 
             # just test existence
             assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
-            run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+            run_id = result.data["launchPipelineExecution"]["run"]["id"]
 
             assert run_id
 
@@ -395,4 +395,4 @@ class TestRunVariantTermination(RunTerminationTestSuite):
                 BACKCOMPAT_LEGACY_TERMINATE_PIPELINE,
                 variables={"runId": run_id},
             )
-            assert result.data["terminatePipelineExecution"]["run"]["runId"] == run_id
+            assert result.data["terminatePipelineExecution"]["run"]["id"] == run_id

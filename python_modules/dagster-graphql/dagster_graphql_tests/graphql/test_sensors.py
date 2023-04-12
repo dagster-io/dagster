@@ -59,7 +59,6 @@ query SensorsQuery($repositorySelector: RepositorySelector!) {
           status
           runs {
               id
-              runId
           }
           runsCount
           ticks {
@@ -124,7 +123,6 @@ query SensorQuery($sensorSelector: SensorSelector!) {
         status
         runs {
           id
-          runId
         }
         runsCount
         ticks {
@@ -329,7 +327,6 @@ query RepositorySensorsQuery($repositorySelector: RepositorySelector!) {
                     id
                     runs(limit: 1) {
                       id
-                      runId
                     }
                     ticks(limit: 1) {
                       id

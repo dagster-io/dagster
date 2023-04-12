@@ -42,7 +42,7 @@ def test_execute_hammer_through_dagit():
             if start_pipeline_result.errors:
                 raise Exception(f"{start_pipeline_result.errors}")
 
-            run_id = start_pipeline_result.data["launchPipelineExecution"]["run"]["runId"]
+            run_id = start_pipeline_result.data["launchPipelineExecution"]["run"]["id"]
 
             context.instance.run_launcher.join(timeout=60)
 

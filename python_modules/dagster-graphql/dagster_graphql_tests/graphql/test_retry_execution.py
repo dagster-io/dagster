@@ -110,7 +110,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
             },
         )
 
-        run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+        run_id = result.data["launchPipelineExecution"]["run"]["id"]
         logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[
             "pipelineRunLogs"
         ]["messages"]
@@ -138,7 +138,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
             },
         )
 
-        run_id = retry_one.data["launchPipelineReexecution"]["run"]["runId"]
+        run_id = retry_one.data["launchPipelineReexecution"]["run"]["id"]
         logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[
             "pipelineRunLogs"
         ]["messages"]
@@ -165,7 +165,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
             },
         )
 
-        run_id = retry_two.data["launchPipelineReexecution"]["run"]["runId"]
+        run_id = retry_two.data["launchPipelineReexecution"]["run"]["id"]
         logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[
             "pipelineRunLogs"
         ]["messages"]
@@ -193,7 +193,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
             },
         )
 
-        run_id = retry_three.data["launchPipelineReexecution"]["run"]["runId"]
+        run_id = retry_three.data["launchPipelineReexecution"]["run"]["id"]
         logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[
             "pipelineRunLogs"
         ]["messages"]
@@ -218,7 +218,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
             },
         )
 
-        run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+        run_id = result.data["launchPipelineExecution"]["run"]["id"]
         logs = get_all_logs_for_finished_run_via_subscription(context, run_id)["pipelineRunLogs"][
             "messages"
         ]
@@ -239,7 +239,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
                 }
             },
         )
-        run_id = retry_one.data["launchPipelineReexecution"]["run"]["runId"]
+        run_id = retry_one.data["launchPipelineReexecution"]["run"]["id"]
         logs = get_all_logs_for_finished_run_via_subscription(context, run_id)["pipelineRunLogs"][
             "messages"
         ]
@@ -256,7 +256,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
             },
         )
 
-        run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+        run_id = result.data["launchPipelineExecution"]["run"]["id"]
         logs = get_all_logs_for_finished_run_via_subscription(context, run_id)["pipelineRunLogs"][
             "messages"
         ]
@@ -277,7 +277,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
             },
         )
 
-        run_id = retry_one.data["launchPipelineReexecution"]["run"]["runId"]
+        run_id = retry_one.data["launchPipelineReexecution"]["run"]["id"]
         logs = get_all_logs_for_finished_run_via_subscription(context, run_id)["pipelineRunLogs"][
             "messages"
         ]
@@ -298,7 +298,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
             },
         )
 
-        run_id = retry_two.data["launchPipelineReexecution"]["run"]["runId"]
+        run_id = retry_two.data["launchPipelineReexecution"]["run"]["id"]
         logs = get_all_logs_for_finished_run_via_subscription(context, run_id)["pipelineRunLogs"][
             "messages"
         ]
@@ -480,7 +480,7 @@ class TestHardFailures(ExecutingGraphQLContextTestMatrix):
             },
         )
 
-        run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+        run_id = result.data["launchPipelineExecution"]["run"]["id"]
         logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[
             "pipelineRunLogs"
         ]["messages"]
@@ -505,7 +505,7 @@ class TestHardFailures(ExecutingGraphQLContextTestMatrix):
             },
         )
 
-        run_id = retry.data["launchPipelineReexecution"]["run"]["runId"]
+        run_id = retry.data["launchPipelineReexecution"]["run"]["id"]
         logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[
             "pipelineRunLogs"
         ]["messages"]
@@ -536,7 +536,7 @@ class TestHardFailures(ExecutingGraphQLContextTestMatrix):
         finally:
             os.remove(output_file)
 
-        run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+        run_id = result.data["launchPipelineExecution"]["run"]["id"]
         run = graphql_context.instance.get_run_by_id(run_id)
         assert run and run.status == DagsterRunStatus.FAILURE
 
@@ -549,7 +549,7 @@ class TestHardFailures(ExecutingGraphQLContextTestMatrix):
         assert retry.data["launchPipelineReexecution"].get("run"), retry.data[
             "launchPipelineReexecution"
         ]
-        run_id = retry.data["launchPipelineReexecution"]["run"]["runId"]
+        run_id = retry.data["launchPipelineReexecution"]["run"]["id"]
         run = graphql_context.instance.get_run_by_id(run_id)
         assert run and run.status == DagsterRunStatus.SUCCESS
         logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[
@@ -583,7 +583,7 @@ class TestHardFailures(ExecutingGraphQLContextTestMatrix):
         finally:
             os.remove(output_file)
 
-        parent_run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+        parent_run_id = result.data["launchPipelineExecution"]["run"]["id"]
         parent_run = graphql_context.instance.get_run_by_id(parent_run_id)
         assert parent_run
         assert parent_run.status == DagsterRunStatus.FAILURE
@@ -625,7 +625,7 @@ class TestHardFailures(ExecutingGraphQLContextTestMatrix):
         finally:
             os.remove(output_file)
 
-        run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+        run_id = result.data["launchPipelineExecution"]["run"]["id"]
         run = graphql_context.instance.get_run_by_id(run_id)
         assert run and run.status == DagsterRunStatus.FAILURE
 
@@ -635,7 +635,7 @@ class TestHardFailures(ExecutingGraphQLContextTestMatrix):
             variables={"reexecutionParams": {"parentRunId": run_id, "strategy": "FROM_FAILURE"}},
         )
 
-        run_id = retry.data["launchPipelineReexecution"]["run"]["runId"]
+        run_id = retry.data["launchPipelineReexecution"]["run"]["id"]
         run = graphql_context.instance.get_run_by_id(run_id)
         assert run and run.status == DagsterRunStatus.SUCCESS
         logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[

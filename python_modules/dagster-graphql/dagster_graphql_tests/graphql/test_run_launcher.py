@@ -43,7 +43,7 @@ class TestBasicLaunch(BaseTestSuite):
         assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
         assert result.data["launchPipelineExecution"]["run"]["status"] == "STARTING"
 
-        run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+        run_id = result.data["launchPipelineExecution"]["run"]["id"]
 
         wait_for_runs_to_finish(graphql_context.instance)
 
@@ -69,7 +69,7 @@ class TestBasicLaunch(BaseTestSuite):
         assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
         assert result.data["launchPipelineExecution"]["run"]["status"] == "STARTING"
 
-        run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+        run_id = result.data["launchPipelineExecution"]["run"]["id"]
 
         wait_for_runs_to_finish(graphql_context.instance)
 

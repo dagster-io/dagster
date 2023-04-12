@@ -12,7 +12,7 @@ mutation($executionParams: ExecutionParams!) {
     }
     ... on LaunchPipelineRunSuccess {
       run {
-        runId
+        id
       }
     }
     ... on ConflictingExecutionParamsError {
@@ -130,7 +130,7 @@ mutation TerminateRun($runId: String!) {
     __typename
     ... on TerminateRunSuccess{
       run {
-        runId
+        id
       }
     }
     ... on TerminateRunFailure {

@@ -36,7 +36,7 @@ query PipelineRunsRootQuery($selector: PipelineSelector!) {
 }
 
 fragment RunHistoryRunFragment on PipelineRun {
-  runId
+  id
   status
   repositoryOrigin {
     repositoryLocationName
@@ -126,7 +126,7 @@ ALL_RUNS_QUERY = """
   pipelineRunsOrError {
     ... on PipelineRuns {
       results {
-        runId
+        id
         pipelineSnapshotId
         pipeline {
           __typename
@@ -147,7 +147,7 @@ query PipelineRunsRootQuery($filter: RunsFilter!) {
   pipelineRunsOrError(filter: $filter) {
     ... on PipelineRuns {
       results {
-        runId
+        id
         hasReExecutePermission
         hasTerminatePermission
         hasDeletePermission
@@ -175,7 +175,7 @@ query RunGroupQuery($runId: ID!) {
       __typename
       rootRunId
       runs {
-        runId
+        id
         pipeline {
           __typename
           ... on PipelineReference {
@@ -200,7 +200,7 @@ ALL_RUN_GROUPS_QUERY = """
     results {
       rootRunId
       runs {
-        runId
+        id
         pipelineSnapshotId
         pipeline {
           __typename
@@ -226,7 +226,6 @@ query RepositoryRunsQuery($repositorySelector: RepositorySelector!) {
                 name
                 runs(limit: 10) {
                     id
-                    runId
                 }
             }
         }
@@ -243,7 +242,6 @@ query AssetRunsQuery($assetKey: AssetKeyInput!) {
                 runOrError {
                     ... on PipelineRun {
                         id
-                        runId
                     }
                 }
             }
@@ -305,7 +303,7 @@ class TestGetRuns(ExecutingGraphQLContextTestMatrix):
                 }
             },
         )
-        run_id_one = payload_one["run"]["runId"]
+        run_id_one = payload_one["run"]["id"]
 
         read_context = graphql_context
 
@@ -337,7 +335,7 @@ class TestGetRuns(ExecutingGraphQLContextTestMatrix):
             },
         )
 
-        run_id_two = payload_two["run"]["runId"]
+        run_id_two = payload_two["run"]["id"]
 
         result = execute_dagster_graphql(read_context, RUNS_QUERY, variables={"selector": selector})
 
@@ -527,7 +525,7 @@ def test_runs_over_time():
             result = execute_dagster_graphql(context_at_time_1, ALL_RUNS_QUERY)
             assert result.data
 
-            t1_runs = {run["runId"]: run for run in result.data["pipelineRunsOrError"]["results"]}
+            t1_runs = {run["id"]: run for run in result.data["pipelineRunsOrError"]["results"]}
 
             assert t1_runs[full_evolve_run_id]["pipeline"] == {
                 "__typename": "PipelineSnapshot",
@@ -559,7 +557,7 @@ def test_runs_over_time():
             result = execute_dagster_graphql(context_at_time_2, ALL_RUNS_QUERY)
             assert result.data
 
-            t2_runs = {run["runId"]: run for run in result.data["pipelineRunsOrError"]["results"]}
+            t2_runs = {run["id"]: run for run in result.data["pipelineRunsOrError"]["results"]}
 
             assert t2_runs[full_evolve_run_id]["pipeline"] == {
                 "__typename": "PipelineSnapshot",
@@ -621,7 +619,7 @@ def test_run_groups_over_time():
             assert len(result.data["runGroupsOrError"]["results"]) == 4
 
             t1_runs = {
-                run["runId"]: run
+                run["id"]: run
                 for group in result.data["runGroupsOrError"]["results"]
                 for run in group["runs"]
             }
@@ -664,7 +662,7 @@ def test_run_groups_over_time():
             assert len(result.data["runGroupsOrError"]["results"]) == 4
 
             t2_runs = {
-                run["runId"]: run
+                run["id"]: run
                 for group in result.data["runGroupsOrError"]["results"]
                 for run in group["runs"]
             }
@@ -730,7 +728,7 @@ def test_filtered_runs():
                 variables={"filter": {"runIds": [run_id_1]}},
             )
             assert result.data
-            run_ids = [run["runId"] for run in result.data["pipelineRunsOrError"]["results"]]
+            run_ids = [run["id"] for run in result.data["pipelineRunsOrError"]["results"]]
             assert len(run_ids) == 1
             assert run_ids[0] == run_id_1
 
@@ -745,7 +743,7 @@ def test_filtered_runs():
                 variables={"filter": {"tags": [{"key": "run", "value": "one"}]}},
             )
             assert result.data
-            run_ids = [run["runId"] for run in result.data["pipelineRunsOrError"]["results"]]
+            run_ids = [run["id"] for run in result.data["pipelineRunsOrError"]["results"]]
             assert len(run_ids) == 1
             assert run_ids[0] == run_id_1
 
@@ -756,7 +754,7 @@ def test_filtered_runs():
                 variables={"filter": {"runIds": [run_id_1, run_id_2]}},
             )
             assert result.data
-            run_ids = [run["runId"] for run in result.data["pipelineRunsOrError"]["results"]]
+            run_ids = [run["id"] for run in result.data["pipelineRunsOrError"]["results"]]
             assert len(run_ids) == 2
             assert set(run_ids) == set([run_id_1, run_id_2])
 
@@ -777,7 +775,7 @@ def test_filtered_runs_status():
                 variables={"filter": {"statuses": ["FAILURE"]}},
             )
             assert result.data
-            run_ids = [run["runId"] for run in result.data["pipelineRunsOrError"]["results"]]
+            run_ids = [run["id"] for run in result.data["pipelineRunsOrError"]["results"]]
             assert len(run_ids) == 1
             assert run_ids[0] == run_id_2
 
@@ -801,7 +799,7 @@ def test_filtered_runs_multiple_statuses():
                 variables={"filter": {"statuses": ["FAILURE", "SUCCESS"]}},
             )
             assert result.data
-            run_ids = [run["runId"] for run in result.data["pipelineRunsOrError"]["results"]]
+            run_ids = [run["id"] for run in result.data["pipelineRunsOrError"]["results"]]
             assert len(run_ids) == 2
             assert run_id_2 in run_ids
             assert run_id_3 in run_ids
@@ -839,7 +837,7 @@ def test_filtered_runs_multiple_filters():
                 },
             )
             assert result.data
-            run_ids = [run["runId"] for run in result.data["pipelineRunsOrError"]["results"]]
+            run_ids = [run["id"] for run in result.data["pipelineRunsOrError"]["results"]]
             assert len(run_ids) == 1
             assert started_run_with_tags.run_id in run_ids
             assert failed_run_with_tags.run_id not in run_ids
@@ -973,7 +971,7 @@ def test_repository_batching():
                     }
                 },
             )
-            return payload["run"]["runId"]
+            return payload["run"]["id"]
 
         with define_out_of_process_context(__file__, "get_repo_at_time_1", instance) as context:
             foo_run_ids = [_execute_run(context, "foo_job") for _ in range(3)]
@@ -992,10 +990,8 @@ def test_repository_batching():
             pipeline_runs = {pipeline["name"]: pipeline["runs"] for pipeline in pipelines}
             assert len(pipeline_runs["foo_job"]) == 3
             assert len(pipeline_runs["evolving_job"]) == 2
-            assert set(foo_run_ids) == set(run["runId"] for run in pipeline_runs["foo_job"])
-            assert set(evolving_run_ids) == set(
-                run["runId"] for run in pipeline_runs["evolving_job"]
-            )
+            assert set(foo_run_ids) == set(run["id"] for run in pipeline_runs["foo_job"])
+            assert set(evolving_run_ids) == set(run["id"] for run in pipeline_runs["evolving_job"])
             counter = traced_counter.get()
             counts = counter.counts()
             assert counts

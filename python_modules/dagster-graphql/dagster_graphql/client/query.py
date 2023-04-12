@@ -230,7 +230,7 @@ subscription subscribeTest($runId: ID!) {
     __typename
     ... on PipelineRunLogsSubscriptionSuccess {
       run {
-        runId
+        id
       }
       messages {
         ...messageEventFragment
@@ -280,7 +280,7 @@ mutation($executionParams: ExecutionParams!) {
     }
     ... on LaunchRunSuccess {
       run {
-        runId
+        id
         pipeline {
           name
         }
@@ -335,7 +335,7 @@ mutation($executionParams: ExecutionParams, $reexecutionParams: ReexecutionParam
     }
     ... on LaunchRunSuccess {
       run {
-        runId
+        id
         status
         pipeline {
           name

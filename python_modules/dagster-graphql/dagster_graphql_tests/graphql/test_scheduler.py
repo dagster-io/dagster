@@ -260,7 +260,6 @@ query RepositorySchedulesQuery($repositorySelector: RepositorySelector!) {
                     id
                     runs(limit: 1) {
                       id
-                      runId
                     }
                     ticks(limit: 1) {
                       id

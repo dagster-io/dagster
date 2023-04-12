@@ -983,7 +983,6 @@ interface PipelineReference {
 
 interface PipelineRun {
   id: ID!
-  runId: String!
   pipelineSnapshotId: String
   repositoryOrigin: RepositoryOrigin
   status: RunStatus!
@@ -1209,7 +1208,6 @@ type RuntimeMismatchConfigError implements PipelineConfigValidationError {
 
 type Run implements PipelineRun {
   id: ID!
-  runId: String!
   pipelineSnapshotId: String
   repositoryOrigin: RepositoryOrigin
   status: RunStatus!

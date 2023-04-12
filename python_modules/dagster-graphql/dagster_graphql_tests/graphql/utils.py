@@ -56,7 +56,7 @@ def sync_execute_get_payload(variables, context):
 
     wait_for_runs_to_finish(context.instance)
 
-    run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+    run_id = result.data["launchPipelineExecution"]["run"]["id"]
     return get_all_logs_for_finished_run_via_subscription(context, run_id)
 
 

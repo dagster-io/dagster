@@ -259,7 +259,6 @@ mutation Terminate($runId: String!, $terminatePolicy: TerminateRunPolicy) {
     ... on TerminateRunSuccess {
       run {
         id
-        runId
         canTerminate
         __typename
       }
