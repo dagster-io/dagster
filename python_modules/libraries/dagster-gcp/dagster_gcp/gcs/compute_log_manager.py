@@ -42,6 +42,8 @@ class GCSComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
             prefix: "dagster-test-"
             upload_interval: 30
 
+    There are more configuration examples in the instance documentation guide: https://docs.dagster.io/deployment/dagster-instance#compute-log-storage
+
     Args:
         bucket (str): The name of the GCS bucket to which to log.
         local_dir (Optional[str]): Path to the local directory in which to stage logs. Default:
