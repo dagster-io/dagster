@@ -94,8 +94,7 @@ def get_or_create_schedule_context(
     Raises an exception if the user passes more than one argument or if the user-provided
     function requires a context parameter but none is passed.
     """
-    from dagster import ResourceDefinition
-    from dagster._config.pythonic_config import ConfigurableResourceFactory, PartialResource
+    from dagster._config.pythonic_config import is_coercible_to_resource
     from dagster._core.definitions.sensor_definition import get_context_param_name
 
     context_param_name = get_context_param_name(fn)
@@ -107,10 +106,7 @@ def get_or_create_schedule_context(
             "positional context parameter should be provided when invoking."
         )
 
-    if any(
-        isinstance(arg, (ResourceDefinition, ConfigurableResourceFactory, PartialResource))
-        for arg in args
-    ):
+    if any(is_coercible_to_resource(arg) for arg in args):
         raise DagsterInvalidInvocationError(
             "If directly invoking a schedule, you may not provide resources as"
             " positional arguments, only as keyword arguments."
@@ -278,13 +274,15 @@ class ScheduleEvaluationContext:
         )
         from dagster._core.execution.build_resources import wrap_resources_for_execution
 
-        wrapped_resources_defs = wrap_resources_for_execution(resources_dict)
         return ScheduleEvaluationContext(
             instance_ref=self._instance_ref,
             scheduled_execution_time=self._scheduled_execution_time,
             repository_name=self._repository_name,
             schedule_name=self._schedule_name,
-            resources={**(self._resource_defs or {}), **wrapped_resources_defs},
+            resources={
+                **(self._resource_defs or {}),
+                **wrap_resources_for_execution(resources_dict),
+            },
             repository_def=self._repository_def,
         )
 

@@ -1003,8 +1003,7 @@ def get_sensor_context_from_args_or_kwargs(
     kwargs: Dict[str, Any],
     context_type: Type[T],
 ) -> Optional[T]:
-    from dagster import ResourceDefinition
-    from dagster._config.pythonic_config import ConfigurableResourceFactory, PartialResource
+    from dagster._config.pythonic_config import is_coercible_to_resource
 
     context_param_name = get_context_param_name(fn)
 
@@ -1015,10 +1014,7 @@ def get_sensor_context_from_args_or_kwargs(
             "positional context parameter should be provided when invoking."
         )
 
-    if any(
-        isinstance(arg, (ResourceDefinition, ConfigurableResourceFactory, PartialResource))
-        for arg in args
-    ):
+    if any(is_coercible_to_resource(arg) for arg in args):
         raise DagsterInvalidInvocationError(
             "If directly invoking a sensor, you may not provide resources as"
             " positional"
