@@ -497,7 +497,7 @@ class ConfigurableIOManagerFactoryResourceDefinition(IOManagerDefinition, AllowD
 class ConfigurableResourceFactoryState(NamedTuple):
     nested_partial_resources: Mapping[str, CoercibleToResource]
     resolved_config_dict: Dict[str, Any]
-    config_schema: DagsterField
+    config_schema: DefinitionConfigSchema
     schema: DagsterField
     nested_resources: Dict[str, CoercibleToResource]
 
@@ -966,11 +966,11 @@ class PartialIOManager(Generic[TResValue], PartialResource[TResValue]):
 
     def get_resource_definition(self) -> ConfigurableIOManagerFactoryResourceDefinition:
         return ConfigurableIOManagerFactoryResourceDefinition(
-            resource_fn=self._resource_fn,
-            config_schema=self._config_schema,
-            description=self._description,
+            resource_fn=self._state__internal__.resource_fn,
+            config_schema=self._state__internal__.config_schema,
+            description=self._state__internal__.description,
             resolve_resource_keys=self._resolve_required_resource_keys,
-            nested_resources=self.nested_resources,
+            nested_resources=self._state__internal__.nested_resources,
         )
 
 
