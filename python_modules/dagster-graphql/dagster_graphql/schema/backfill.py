@@ -126,7 +126,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     class Meta:
         name = "PartitionBackfill"
 
-    backfillId = graphene.NonNull(graphene.String)
+    id = graphene.NonNull(graphene.String)
     status = graphene.NonNull(GrapheneBulkActionStatus)
     partitionNames = graphene.List(graphene.NonNull(graphene.String))
     isValidSerialization = graphene.NonNull(graphene.Boolean)
@@ -167,7 +167,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         self._partition_run_data = None
 
         super().__init__(
-            backfillId=backfill_job.backfill_id,
+            id=backfill_job.backfill_id,
             partitionSetName=backfill_job.partition_set_name,
             status=backfill_job.status.value,
             fromFailure=bool(backfill_job.from_failure),

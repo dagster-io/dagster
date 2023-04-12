@@ -44,7 +44,7 @@ export const BackfillStepStatusDialog = ({backfill, onClose}: Props) => {
   return (
     <Dialog
       isOpen={!!backfill?.partitionSet}
-      title={`Step status for backfill: ${backfill?.backfillId}`}
+      title={`Step status for backfill: ${backfill?.id}`}
       onClose={onClose}
       style={{width: '80vw'}}
     >
@@ -74,9 +74,9 @@ const BackfillStepStatusDialogContent = ({
   const [offset, setOffset] = React.useState<number>(0);
 
   const runsFilter = React.useMemo(() => {
-    const token: RunFilterToken = {token: 'tag', value: `dagster/backfill=${backfill.backfillId}`};
+    const token: RunFilterToken = {token: 'tag', value: `dagster/backfill=${backfill.id}`};
     return [token];
-  }, [backfill.backfillId]);
+  }, [backfill.id]);
 
   const partitions = usePartitionStepQuery({
     partitionSetName: partitionSet.name,

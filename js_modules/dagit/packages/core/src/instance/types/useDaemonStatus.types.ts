@@ -35,7 +35,7 @@ export type InstanceWarningQuery = {
   partitionBackfillsOrError:
     | {
         __typename: 'PartitionBackfills';
-        results: Array<{__typename: 'PartitionBackfill'; backfillId: string}>;
+        results: Array<{__typename: 'PartitionBackfill'; id: string}>;
       }
     | {__typename: 'PythonError'};
 };

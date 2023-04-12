@@ -48,7 +48,7 @@ export const InstanceBackfills = () => {
     pageSize: PAGE_SIZE,
     nextCursorForResult: (result) =>
       result.partitionBackfillsOrError.__typename === 'PartitionBackfills'
-        ? result.partitionBackfillsOrError.results[PAGE_SIZE - 1]?.backfillId
+        ? result.partitionBackfillsOrError.results[PAGE_SIZE - 1]?.id
         : undefined,
     getResultArray: (result) =>
       result?.partitionBackfillsOrError.__typename === 'PartitionBackfills'
@@ -125,7 +125,7 @@ const BACKFILLS_QUERY = gql`
     partitionBackfillsOrError(cursor: $cursor, limit: $limit) {
       ... on PartitionBackfills {
         results {
-          backfillId
+          id
           status
           isValidSerialization
           numPartitions
