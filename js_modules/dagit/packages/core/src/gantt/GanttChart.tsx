@@ -812,7 +812,6 @@ export const GanttChartLoadingState = ({runId}: {runId: string}) => (
       firstInitialPercent={70}
       second={
         <GanttStatusPanel
-          graph={[]}
           metadata={EMPTY_RUN_METADATA}
           selection={{keys: [], query: '*'}}
           runId={runId}
@@ -846,7 +845,6 @@ export const QueuedState = ({run}: {run: RunFragment}) => (
       firstInitialPercent={70}
       second={
         <GanttStatusPanel
-          graph={[]}
           metadata={EMPTY_RUN_METADATA}
           selection={{keys: [], query: '*'}}
           runId={run.id}
