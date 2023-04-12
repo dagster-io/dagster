@@ -31,6 +31,7 @@ from dagster import (
     materialize,
     op,
 )
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.storage.db_io_manager import TableSlice
 from dagster_snowflake import build_snowflake_io_manager
 from dagster_snowflake.resources import SnowflakeConnection
@@ -40,6 +41,7 @@ from dagster_snowflake_pandas import (
     snowflake_pandas_io_manager,
 )
 from dagster_snowflake_pandas.snowflake_pandas_type_handler import (
+    _add_missing_timezone,
     _convert_string_to_timestamp,
     _convert_timestamp_to_string,
 )
@@ -93,7 +95,9 @@ def test_handle_output():
     handler = SnowflakePandasTypeHandler()
     connection = MagicMock()
     df = DataFrame([{"col1": "a", "col2": 1}])
-    output_context = build_output_context(resource_config=resource_config)
+    output_context = build_output_context(
+        resource_config={**resource_config, "time_data_to_string": False}
+    )
 
     metadata = handler.handle_output(
         output_context,
@@ -124,7 +128,9 @@ def test_load_input():
         mock_read_sql.return_value = DataFrame([{"COL1": "a", "COL2": 1}])
 
         handler = SnowflakePandasTypeHandler()
-        input_context = build_input_context()
+        input_context = build_input_context(
+            resource_config={**resource_config, "time_data_to_string": False}
+        )
         df = handler.load_input(
             input_context,
             TableSlice(
@@ -143,8 +149,7 @@ def test_load_input():
 def test_type_conversions():
     # no timestamp data
     no_time = pandas.Series([1, 2, 3, 4, 5])
-    converted = _convert_string_to_timestamp(_convert_timestamp_to_string(no_time))
-
+    converted = _convert_string_to_timestamp(_convert_timestamp_to_string(no_time, None, "foo"))
     assert (converted == no_time).all()
 
     # timestamp data
@@ -155,7 +160,9 @@ def test_type_conversions():
             pandas.Timestamp("2017-03-01T12:30:45.35"),
         ]
     )
-    time_converted = _convert_string_to_timestamp(_convert_timestamp_to_string(with_time))
+    time_converted = _convert_string_to_timestamp(
+        _convert_timestamp_to_string(with_time, None, "foo")
+    )
 
     assert (with_time == time_converted).all()
 
@@ -163,6 +170,25 @@ def test_type_conversions():
     string_data = pandas.Series(["not", "a", "timestamp"])
 
     assert (_convert_string_to_timestamp(string_data) == string_data).all()
+
+
+def test_timezone_conversions():
+    # no timestamp data
+    no_time = pandas.Series([1, 2, 3, 4, 5])
+    converted = _add_missing_timezone(no_time, None, "foo")
+    assert (converted == no_time).all()
+
+    # timestamp data
+    with_time = pandas.Series(
+        [
+            pandas.Timestamp("2017-01-01T12:30:45.35"),
+            pandas.Timestamp("2017-02-01T12:30:45.35"),
+            pandas.Timestamp("2017-03-01T12:30:45.35"),
+        ]
+    )
+    time_converted = _add_missing_timezone(with_time, None, "foo")
+
+    assert (with_time.dt.tz_localize("UTC") == time_converted).all()
 
 
 def test_build_snowflake_pandas_io_manager():
@@ -206,7 +232,7 @@ def test_io_manager_with_snowflake_pandas(io_manager):
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
 @pytest.mark.parametrize(
-    "io_manager", [(old_snowflake_io_manager), (pythonic_snowflake_io_manager)]
+    "io_manager", [(snowflake_pandas_io_manager), (SnowflakePandasIOManager.configure_at_launch())]
 )
 def test_io_manager_with_snowflake_pandas_timestamp_data(io_manager):
     with temporary_snowflake_table(
@@ -234,12 +260,42 @@ def test_io_manager_with_snowflake_pandas_timestamp_data(io_manager):
 
         @job(
             resource_defs={"snowflake": io_manager},
+            config={
+                "resources": {
+                    "snowflake": {
+                        "config": {**SHARED_BUILDKITE_SNOWFLAKE_CONF, "database": DATABASE}
+                    }
+                }
+            },
         )
         def io_manager_timestamp_test_job():
             read_time_df(emit_time_df())
 
         res = io_manager_timestamp_test_job.execute_in_process()
         assert res.success
+
+        @job(
+            resource_defs={"snowflake": io_manager},
+            config={
+                "resources": {
+                    "snowflake": {
+                        "config": {
+                            **SHARED_BUILDKITE_SNOWFLAKE_CONF,
+                            "database": DATABASE,
+                            "store_timestamps_as_strings": True,
+                        }
+                    }
+                }
+            },
+        )
+        def io_manager_timestamp_as_string_test_job():
+            read_time_df(emit_time_df())
+
+        with pytest.raises(
+            DagsterInvariantViolationError,
+            match=r"is not of type VARCHAR, it is of type TIMESTAMP_NTZ\(9\)",
+        ):
+            io_manager_timestamp_as_string_test_job.execute_in_process()
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
