@@ -940,7 +940,7 @@ def build_multi_asset_sensor_context(
     cursor: Optional[str] = None,
     repository_name: Optional[str] = None,
     cursor_from_latest_materializations: bool = False,
-    resources: Optional[Mapping[str, ResourceDefinition]] = None,
+    resources: Optional[Mapping[str, object]] = None,
     definitions: Optional["Definitions"] = None,
 ) -> MultiAssetSensorEvaluationContext:
     """Builds multi asset sensor execution context for testing purposes using the provided parameters.
@@ -961,7 +961,7 @@ def build_multi_asset_sensor_context(
         repository_name (Optional[str]): The name of the repository that the sensor belongs to.
         cursor_from_latest_materializations (bool): If True, the cursor will be set to the latest
             materialization for each monitored asset. By default, set to False.
-        resources (Optional[Mapping[str, ResourceDefinition]]): The resource definitions
+        resources (Optional[Mapping[str, object]]): The resource definitions
             to provide to the sensor.
         definitions (Optional[Definitions]): `Definitions` object that the sensor is defined in.
             Must provide `repository_def` if this is not provided.
@@ -979,6 +979,7 @@ def build_multi_asset_sensor_context(
     """
     from dagster._core.definitions import RepositoryDefinition
     from dagster._core.definitions.definitions_class import Definitions
+    from dagster._core.execution.build_resources import wrap_resources_for_execution
 
     check.opt_inst_param(instance, "instance", DagsterInstance)
     check.opt_str_param(cursor, "cursor")
@@ -1025,7 +1026,7 @@ def build_multi_asset_sensor_context(
         instance=instance,
         monitored_assets=monitored_assets,
         repository_def=repository_def,
-        resource_defs=resources,
+        resource_defs=wrap_resources_for_execution(resources),
     )
 
 
