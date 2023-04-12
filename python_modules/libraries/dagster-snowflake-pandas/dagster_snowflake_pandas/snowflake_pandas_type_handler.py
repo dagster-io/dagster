@@ -68,7 +68,7 @@ def _add_missing_timezone(
     s: pd.Series, column_types: Optional[Mapping[str, str]], table_name: str
 ) -> pd.Series:
     column_name = str(s.name)
-    if pd_core_dtypes_common.is_datetime_or_timedelta_dtype(s):
+    if pd_core_dtypes_common.is_datetime_or_timedelta_dtype(s):  # type: ignore  # (bad stubs)
         if column_types:
             if "VARCHAR" in column_types[column_name]:
                 raise DagsterInvariantViolationError(
