@@ -1000,3 +1000,19 @@ def test_graph_multi_asset_w_key_prefix():
         AssetKey(["this", "is", "a", "prefix", "first_asset"]): "grp",
         AssetKey(["second_asset"]): "grp",
     }
+
+
+def test_multi_asset_with_bare_resource():
+    class BareResourceObject:
+        pass
+
+    executed = {}
+
+    @multi_asset(outs={"o1": AssetOut()}, resource_defs={"bare_resource": BareResourceObject()})
+    def my_asset(context):
+        assert context.resources.bare_resource
+        executed["yes"] = True
+
+    materialize_to_memory([my_asset])
+
+    assert executed["yes"]
