@@ -1,6 +1,6 @@
 import operator
 from functools import reduce
-from typing import AbstractSet, Iterable, Union
+from typing import AbstractSet, Iterable, Tuple, Union
 
 import pytest
 from dagster import (
@@ -54,21 +54,37 @@ def george(bob, fiona):
     return "george"
 
 
+@multi_asset(
+    group_name="robots",
+    outs={
+        "rosie": AssetOut(),
+        "r2d2": AssetOut(),
+        "walle": AssetOut(),
+    },
+)
+def robots() -> Tuple[str, str, str]:
+    return "rosie", "r2d2", "walle"
+
+
+@multi_asset(
+    group_name="aliens",
+    outs={
+        "zorg": AssetOut(),
+        "zapp": AssetOut(),
+        "zort": AssetOut(),
+    },
+    can_subset=True,
+)
+def aliens() -> Tuple[str, str, str]:
+    return "zorg", "zapp", "zort"
+
+
 _AssetList: TypeAlias = Iterable[Union[AssetsDefinition, SourceAsset]]
 
 
 @pytest.fixture
 def all_assets() -> _AssetList:
-    return [
-        earth,
-        alice,
-        bob,
-        candace,
-        danny,
-        edgar,
-        fiona,
-        george,
-    ]
+    return [earth, alice, bob, candace, danny, edgar, fiona, george, robots, aliens]
 
 
 def _asset_keys_of(assets_defs: _AssetList) -> AbstractSet[AssetKey]:
@@ -157,12 +173,30 @@ def test_asset_selection_sinks(all_assets: _AssetList):
     assert sel.resolve(all_assets) == _asset_keys_of({bob})
 
     sel = AssetSelection.all().sinks()
-    assert sel.resolve(all_assets) == _asset_keys_of({edgar, george})
+    assert sel.resolve(all_assets) == _asset_keys_of({edgar, george, robots, aliens})
 
     sel = AssetSelection.groups("ladies").sinks()
     # fiona is a sink because it has no downstream dependencies within the "ladies" group
     # candace is not a sink because it is an upstream dependency of fiona
     assert sel.resolve(all_assets) == _asset_keys_of({fiona})
+
+
+def test_asset_selection_required_multi_asset_neighbors(all_assets: _AssetList):
+    # no effect for single assets
+    sel = AssetSelection.keys("george").required_multi_asset_neighbors()
+    assert sel.resolve(all_assets) == _asset_keys_of({george})
+
+    # robots must all be materialized together, so they are expanded
+    # from required_multi_asset_neighbors
+    sel = AssetSelection.keys("rosie").required_multi_asset_neighbors()
+    assert sel.resolve(all_assets) == _asset_keys_of({robots})
+
+    sel = AssetSelection.keys("alice", "bob", "walle").required_multi_asset_neighbors()
+    assert sel.resolve(all_assets) == _asset_keys_of({alice, bob, robots})
+
+    # aliens are subsettable, so no expansion from required_multi_asset_neighbors
+    sel = AssetSelection.keys("zorg").required_multi_asset_neighbors()
+    assert sel.resolve(all_assets) == {AssetKey("zorg")}
 
 
 def test_asset_selection_upstream(all_assets: _AssetList):
