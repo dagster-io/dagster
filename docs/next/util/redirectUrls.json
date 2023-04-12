@@ -231,7 +231,12 @@
   },
   {
     "source": "/guides/dagster/asset-tutorial/testing-assets",
-    "destination": "/tutorial/assets/testing-assets",
+    "destination": "/guides/dagster/testing-assets",
+    "statusCode": 302
+  },
+    {
+    "source": "/tutorial/assets/testing-assets",
+    "destination": "/guides/dagster/testing-assets",
     "statusCode": 302
   },
   {
@@ -663,11 +668,6 @@
   {
     "source": "/tutorial/ops-jobs/testable",
     "destination": "/guides/dagster/intro-to-ops-jobs/testable",
-    "statusCode": 302
-  },
-  {
-    "source": "/tutorial/assets/testing-assets",
-    "destination": "/guides/dagster/testing-assets",
     "statusCode": 302
   }
 ]
