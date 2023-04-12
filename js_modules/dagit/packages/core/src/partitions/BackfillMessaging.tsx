@@ -92,6 +92,7 @@ export function showBackfillSuccessToast(
 
 export const DAEMON_NOT_RUNNING_ALERT_INSTANCE_FRAGMENT = gql`
   fragment DaemonNotRunningAlertInstanceFragment on Instance {
+    id
     daemonHealth {
       id
       daemonStatus(daemonType: "BACKFILL") {
@@ -129,6 +130,7 @@ export const DaemonNotRunningAlertBody = () => (
 
 export const USING_DEFAULT_LAUNCH_ERALERT_INSTANCE_FRAGMENT = gql`
   fragment UsingDefaultLauncherAlertInstanceFragment on Instance {
+    id
     runQueuingSupported
     runLauncher {
       name

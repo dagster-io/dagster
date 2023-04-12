@@ -370,10 +370,14 @@ class GrapheneRepositoryConnection(graphene.ObjectType):
 
 
 class GrapheneWorkspace(graphene.ObjectType):
+    id = graphene.NonNull(graphene.String)
     locationEntries = non_null_list(GrapheneWorkspaceLocationEntry)
 
     class Meta:
         name = "Workspace"
+
+    def resolve_id(self, _graphene_info: ResolveInfo):
+        return "Workspace"
 
 
 class GrapheneLocationStateChangeEvent(graphene.ObjectType):

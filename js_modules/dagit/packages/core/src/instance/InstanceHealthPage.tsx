@@ -60,6 +60,7 @@ export default InstanceHealthPage;
 const INSTANCE_HEALTH_QUERY = gql`
   query InstanceHealthQuery {
     instance {
+      id
       ...InstanceHealthFragment
     }
   }

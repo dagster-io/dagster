@@ -199,6 +199,7 @@ const OVERVIEW_JOBS_QUERY = gql`
   query OverviewJobsQuery {
     workspaceOrError {
       ... on Workspace {
+        id
         locationEntries {
           id
           locationOrLoadError {

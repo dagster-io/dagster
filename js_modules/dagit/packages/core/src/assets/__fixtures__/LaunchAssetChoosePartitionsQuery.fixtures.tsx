@@ -1,5 +1,11 @@
 import {MockedResponse} from '@apollo/client/testing';
 
+import {
+  buildDaemonHealth,
+  buildDaemonStatus,
+  buildInstance,
+  buildRunLauncher,
+} from '../../graphql/types';
 import {LAUNCH_ASSET_CHOOSE_PARTITIONS_QUERY} from '../LaunchAssetChoosePartitionsDialog';
 import {LaunchAssetChoosePartitionsQuery} from '../types/LaunchAssetChoosePartitionsDialog.types';
 
@@ -11,23 +17,19 @@ export const ReleasesWorkspace: MockedResponse<LaunchAssetChoosePartitionsQuery>
   result: {
     data: {
       __typename: 'DagitQuery',
-      instance: {
-        daemonHealth: {
+      instance: buildInstance({
+        daemonHealth: buildDaemonHealth({
           id: 'daemonHealth',
-          daemonStatus: {
+          daemonStatus: buildDaemonStatus({
             id: 'BACKFILL',
             healthy: false,
-            __typename: 'DaemonStatus',
-          },
-          __typename: 'DaemonHealth',
-        },
-        __typename: 'Instance',
+          }),
+        }),
         runQueuingSupported: false,
-        runLauncher: {
+        runLauncher: buildRunLauncher({
           name: 'DefaultRunLauncher',
-          __typename: 'RunLauncher',
-        },
-      },
+        }),
+      }),
     },
   },
 };

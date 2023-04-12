@@ -16,6 +16,7 @@ export type PermissionsQuery = {
     | {__typename: 'PythonError'}
     | {
         __typename: 'Workspace';
+        id: string;
         locationEntries: Array<{
           __typename: 'WorkspaceLocationEntry';
           id: string;

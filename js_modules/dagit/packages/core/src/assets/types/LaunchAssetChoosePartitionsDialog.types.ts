@@ -8,6 +8,7 @@ export type LaunchAssetChoosePartitionsQuery = {
   __typename: 'DagitQuery';
   instance: {
     __typename: 'Instance';
+    id: string;
     runQueuingSupported: boolean;
     daemonHealth: {
       __typename: 'DaemonHealth';

@@ -222,6 +222,7 @@ const REPOSITORY_LOCATION_STATUS_QUERY = gql`
     workspaceOrError {
       __typename
       ... on Workspace {
+        id
         locationEntries {
           __typename
           id
@@ -274,6 +275,7 @@ const RELOAD_WORKSPACE_MUTATION = gql`
   mutation ReloadWorkspaceMutation {
     reloadWorkspace {
       ... on Workspace {
+        id
         locationEntries {
           __typename
           name

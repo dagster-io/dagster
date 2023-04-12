@@ -227,6 +227,7 @@ export const PERMISSIONS_QUERY = gql`
     }
     workspaceOrError {
       ... on Workspace {
+        id
         locationEntries {
           id
           name

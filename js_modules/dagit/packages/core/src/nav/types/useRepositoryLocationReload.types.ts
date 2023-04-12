@@ -19,6 +19,7 @@ export type RepositoryLocationStatusQuery = {
       }
     | {
         __typename: 'Workspace';
+        id: string;
         locationEntries: Array<{
           __typename: 'WorkspaceLocationEntry';
           id: string;
@@ -67,6 +68,7 @@ export type ReloadWorkspaceMutation = {
     | {__typename: 'UnauthorizedError'; message: string}
     | {
         __typename: 'Workspace';
+        id: string;
         locationEntries: Array<{
           __typename: 'WorkspaceLocationEntry';
           name: string;

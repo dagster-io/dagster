@@ -7,5 +7,5 @@ export type InstanceConfigQueryVariables = Types.Exact<{[key: string]: never}>;
 export type InstanceConfigQuery = {
   __typename: 'DagitQuery';
   version: string;
-  instance: {__typename: 'Instance'; info: string | null};
+  instance: {__typename: 'Instance'; id: string; info: string | null};
 };

@@ -19,6 +19,7 @@ export type OverviewSchedulesQuery = {
       }
     | {
         __typename: 'Workspace';
+        id: string;
         locationEntries: Array<{
           __typename: 'WorkspaceLocationEntry';
           id: string;
@@ -60,6 +61,7 @@ export type OverviewSchedulesQuery = {
     | {__typename: 'PythonError'};
   instance: {
     __typename: 'Instance';
+    id: string;
     hasInfo: boolean;
     daemonHealth: {
       __typename: 'DaemonHealth';

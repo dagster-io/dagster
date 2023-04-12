@@ -199,6 +199,7 @@ const SEARCH_BOOTSTRAP_QUERY = gql`
     workspaceOrError {
       __typename
       ... on Workspace {
+        id
         locationEntries {
           __typename
           id

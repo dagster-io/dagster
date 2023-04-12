@@ -7,7 +7,11 @@ import {
   LaunchBackfillParams,
   PartitionDefinitionType,
   PartitionRangeStatus,
+  buildDaemonHealth,
+  buildDaemonStatus,
   buildDimensionDefinitionType,
+  buildInstance,
+  buildRunLauncher,
 } from '../../graphql/types';
 import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../../instance/BackfillUtils';
 import {LaunchPartitionBackfillMutation} from '../../instance/types/BackfillUtils.types';
@@ -194,16 +198,17 @@ export const LaunchAssetChoosePartitionsMock: MockedResponse<LaunchAssetChoosePa
   result: {
     data: {
       __typename: 'DagitQuery',
-      instance: {
-        daemonHealth: {
+      instance: buildInstance({
+        daemonHealth: buildDaemonHealth({
           id: 'daemonHealth',
-          daemonStatus: {id: 'BACKFILL', healthy: false, __typename: 'DaemonStatus'},
-          __typename: 'DaemonHealth',
-        },
-        __typename: 'Instance',
+          daemonStatus: buildDaemonStatus({
+            id: 'BACKFILL',
+            healthy: false,
+          }),
+        }),
         runQueuingSupported: false,
-        runLauncher: {name: 'DefaultRunLauncher', __typename: 'RunLauncher'},
-      },
+        runLauncher: buildRunLauncher({name: 'DefaultRunLauncher'}),
+      }),
     },
   },
 };

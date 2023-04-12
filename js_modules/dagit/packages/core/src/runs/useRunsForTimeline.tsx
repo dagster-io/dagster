@@ -231,6 +231,7 @@ const RUN_TIMELINE_QUERY = gql`
     }
     workspaceOrError {
       ... on Workspace {
+        id
         locationEntries {
           id
           name
