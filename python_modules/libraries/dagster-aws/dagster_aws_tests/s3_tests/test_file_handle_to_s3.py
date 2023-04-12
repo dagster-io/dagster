@@ -1,5 +1,7 @@
+from typing import Any
+
 import pytest
-from dagster import DagsterEventType, ResourceDefinition, job, op
+from dagster import DagsterEventType, job, op
 from dagster._core.definitions.metadata import MetadataValue
 from dagster_aws.s3 import (
     S3FileHandle,
@@ -12,7 +14,7 @@ from dagster_aws.s3 import (
 
 
 @pytest.fixture(name="s3_resource_type", params=[True, False])
-def s3_resource_type_fixture(request) -> ResourceDefinition:
+def s3_resource_type_fixture(request) -> Any:
     if request.param:
         return s3_resource
     else:
@@ -20,7 +22,7 @@ def s3_resource_type_fixture(request) -> ResourceDefinition:
 
 
 @pytest.fixture(name="s3_file_manager_resource_type", params=[True, False])
-def s3_file_manager_resource_type_fixture(request) -> ResourceDefinition:
+def s3_file_manager_resource_type_fixture(request) -> Any:
     if request.param:
         return s3_file_manager
     else:
