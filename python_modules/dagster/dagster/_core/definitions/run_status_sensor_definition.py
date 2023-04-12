@@ -139,7 +139,7 @@ class RunStatusSensorContext:
         self._dagster_run = check.inst_param(dagster_run, "dagster_run", DagsterRun)
         self._dagster_event = check.inst_param(dagster_event, "dagster_event", DagsterEvent)
         self._instance = check.inst_param(instance, "instance", DagsterInstance)
-        self._logger: Optional[logging.Logger] = logger or context.log if context else None
+        self._logger: Optional[logging.Logger] = logger or (context.log if context else None)
 
         # Wait to set resources unless they're accessed
         self._resource_defs = resource_defs
