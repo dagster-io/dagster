@@ -1,3 +1,7 @@
+from typing import Any
+
+from dagster._core.host_representation.external import ExternalJob
+from dagster._core.instance import DagsterInstance
 from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._core.test_utils import create_run_for_test, poll_for_finished_run
 from dagster._utils import file_relative_path
@@ -5,12 +9,14 @@ from dagster._utils.merger import merge_dicts
 from utils import start_daemon
 
 
-def create_run(instance, external_pipeline, **kwargs):
+def create_run(
+    instance: DagsterInstance, external_pipeline: ExternalJob, **kwargs: Any
+) -> DagsterRun:
     pipeline_args = merge_dicts(
         {
-            "pipeline_name": "foo_job",
-            "external_pipeline_origin": external_pipeline.get_external_origin(),
-            "pipeline_code_origin": external_pipeline.get_python_origin(),
+            "job_name": "foo_job",
+            "external_job_origin": external_pipeline.get_external_origin(),
+            "job_code_origin": external_pipeline.get_python_origin(),
         },
         kwargs,
     )
