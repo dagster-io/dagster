@@ -85,6 +85,7 @@ Self = TypeVar("Self", bound="ConfigurableResourceFactory")
 
 INTERNAL_MARKER = "__internal__"
 
+# ensure that this ends with the internal marker so we can do a single check
 assert CACHED_METHOD_FIELD_SUFFIX.endswith(INTERNAL_MARKER)
 
 
