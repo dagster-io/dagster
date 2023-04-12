@@ -1,10 +1,11 @@
 from dagster import (
     Definitions,
+    EnvVar,
     ScheduleDefinition,
     define_asset_job,
     load_assets_from_package_module,
 )
-from dagster_gcp_pandas import bigquery_pandas_io_manager
+from dagster_gcp_pandas import BigQueryPandasIOManager
 
 from . import assets
 
@@ -18,9 +19,9 @@ defs = Definitions(
     resources={
         # Read about using environment variables and secrets in Dagster:
         #   https://docs.dagster.io/guides/dagster/using-environment-variables-and-secrets
-        "io_manager": bigquery_pandas_io_manager.configured(
-            {"project": {"env": "BIGQUERY_PROJECT_ID"}, "dataset": "hackernews"}
-        ),
+        "io_manager": BigQueryPandasIOManager(
+            project=EnvVar("BIGQUERY_PROJECT_ID"), dataset="hackernews"
+        )
     },
     schedules=[daily_refresh_schedule],
 )
