@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 from typing import Optional
@@ -177,6 +178,16 @@ def dagit(
             )
 
 
+async def _lifespan(app):
+    # workaround from https://github.com/encode/uvicorn/issues/1160 for termination
+    try:
+        yield
+    except asyncio.exceptions.CancelledError:
+        logging.getLogger("dagit").info("Server for dagit was shut down.")
+        # Expected error when dagit is terminated by CTRL-C, suppress
+        pass
+
+
 def host_dagit_ui_with_workspace_process_context(
     workspace_process_context: WorkspaceProcessContext,
     host: Optional[str],
@@ -193,7 +204,9 @@ def host_dagit_ui_with_workspace_process_context(
 
     logger = logging.getLogger("dagit")
 
-    app = create_app_from_workspace_process_context(workspace_process_context, path_prefix)
+    app = create_app_from_workspace_process_context(
+        workspace_process_context, path_prefix, lifespan=_lifespan
+    )
 
     if not port:
         if is_port_in_use(host, DEFAULT_DAGIT_PORT):
