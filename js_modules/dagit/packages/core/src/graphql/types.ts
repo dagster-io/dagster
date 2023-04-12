@@ -482,6 +482,7 @@ export type DagitMutation = {
   resumePartitionBackfill: ResumeBackfillResult;
   scheduleDryRun: ScheduleDryRunResult;
   sensorDryRun: SensorDryRunResult;
+  setAutoMaterializePaused: Scalars['Boolean'];
   setNuxSeen: Scalars['Boolean'];
   setSensorCursor: SensorOrError;
   shutdownRepositoryLocation: ShutdownRepositoryLocationMutationResult;
@@ -557,6 +558,10 @@ export type DagitMutationScheduleDryRunArgs = {
 export type DagitMutationSensorDryRunArgs = {
   cursor?: InputMaybe<Scalars['String']>;
   selectorData: SensorSelector;
+};
+
+export type DagitMutationSetAutoMaterializePausedArgs = {
+  paused: Scalars['Boolean'];
 };
 
 export type DagitMutationSetSensorCursorArgs = {
@@ -1554,6 +1559,7 @@ export type InputTag = {
 
 export type Instance = {
   __typename: 'Instance';
+  autoMaterializePaused: Scalars['Boolean'];
   daemonHealth: DaemonHealth;
   executablePath: Scalars['String'];
   hasCapturedLogManager: Scalars['Boolean'];
@@ -5131,6 +5137,10 @@ export const buildDagitMutation = (
         : relationshipsToOmit.has('DryRunInstigationTick')
         ? ({} as DryRunInstigationTick)
         : buildDryRunInstigationTick({}, relationshipsToOmit),
+    setAutoMaterializePaused:
+      overrides && overrides.hasOwnProperty('setAutoMaterializePaused')
+        ? overrides.setAutoMaterializePaused!
+        : true,
     setNuxSeen: overrides && overrides.hasOwnProperty('setNuxSeen') ? overrides.setNuxSeen! : true,
     setSensorCursor:
       overrides && overrides.hasOwnProperty('setSensorCursor')
@@ -7035,6 +7045,10 @@ export const buildInstance = (
   relationshipsToOmit.add('Instance');
   return {
     __typename: 'Instance',
+    autoMaterializePaused:
+      overrides && overrides.hasOwnProperty('autoMaterializePaused')
+        ? overrides.autoMaterializePaused!
+        : true,
     daemonHealth:
       overrides && overrides.hasOwnProperty('daemonHealth')
         ? overrides.daemonHealth!
