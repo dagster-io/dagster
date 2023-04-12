@@ -40,7 +40,7 @@ class AssetDaemon(IntervalDaemon):
             yield
             return
 
-        raw_cursor = instance.run_storage.kvs_get({CURSOR_NAME}).get(CURSOR_NAME)
+        raw_cursor = instance.daemon_cursor_storage.kvs_get({CURSOR_NAME}).get(CURSOR_NAME)
         cursor = (
             AssetReconciliationCursor.from_serialized(raw_cursor, asset_graph)
             if raw_cursor
@@ -118,4 +118,4 @@ class AssetDaemon(IntervalDaemon):
             )
             instance.submit_run(run.run_id, workspace)
 
-        instance.run_storage.kvs_set({CURSOR_NAME: new_cursor.serialize()})
+        instance.daemon_cursor_storage.kvs_set({CURSOR_NAME: new_cursor.serialize()})
