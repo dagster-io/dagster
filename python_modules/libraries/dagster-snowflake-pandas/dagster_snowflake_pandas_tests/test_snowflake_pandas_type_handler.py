@@ -293,7 +293,7 @@ def test_io_manager_with_snowflake_pandas_timestamp_data(io_manager):
 
         with pytest.raises(
             DagsterInvariantViolationError,
-            match="is not of type VARCHAR, it is of type TIMESTAMP_NTZ(9)",
+            match=r"is not of type VARCHAR, it is of type TIMESTAMP_NTZ\(9\)",
         ):
             io_manager_timestamp_as_string_test_job.execute_in_process()
 
