@@ -104,7 +104,7 @@ class MakeConfigCacheable(BaseModel):
         # config schema. Pydantic will normally raise an error if you try to set an attribute
         # that is not part of the schema.
 
-        if name.startswith("_") or name.endswith("_cache"):
+        if name.endswith("_cache"):
             object.__setattr__(self, name, value)
             return
 
