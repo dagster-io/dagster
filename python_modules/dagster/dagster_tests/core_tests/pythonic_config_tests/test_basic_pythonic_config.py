@@ -956,3 +956,23 @@ def test_direct_op_invocation_kwarg_with_config_and_context_err() -> None:
         DagsterInvalidInvocationError, match="Cannot provide config in both context and kwargs"
     ):
         an_op(context=build_op_context(config={"num": 2}), config=MyConfig(num=1))
+
+
+def test_truthy_and_falsey_defaults() -> None:
+    class ConfigClassToConvertTrue(Config):
+        bool_with_default_true_value: bool = PyField(default=True)
+
+    fields = ConfigClassToConvertTrue.to_fields_dict()
+    true_default_field = fields["bool_with_default_true_value"]
+    assert true_default_field.is_required is False
+    assert true_default_field.default_provided is True
+    assert true_default_field.default_value is True
+
+    class ConfigClassToConvertFalse(Config):
+        bool_with_default_false_value: bool = PyField(default=False)
+
+    fields = ConfigClassToConvertFalse.to_fields_dict()
+    false_default_field = fields["bool_with_default_false_value"]
+    assert false_default_field.is_required is False
+    assert false_default_field.default_provided is True
+    assert false_default_field.default_value is False
