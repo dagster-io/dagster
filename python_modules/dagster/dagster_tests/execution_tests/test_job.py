@@ -242,3 +242,24 @@ def test_coerce_resource_job_decorator() -> None:
 
     assert a_job.execute_in_process().success
     assert executed["yes"]
+
+
+def test_coerce_resource_graph_to_job() -> None:
+    executed = {}
+
+    class BareResourceObject:
+        pass
+
+    @op(required_resource_keys={"bare_resource"})
+    def an_op(context) -> None:
+        assert context.resources.bare_resource
+        executed["yes"] = True
+
+    @graph
+    def a_graph() -> None:
+        an_op()
+
+    a_job = a_graph.to_job(resource_defs={"bare_resource": BareResourceObject()})
+
+    assert a_job.execute_in_process().success
+    assert executed["yes"]
