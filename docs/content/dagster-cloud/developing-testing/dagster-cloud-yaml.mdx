@@ -132,7 +132,7 @@ locations:
 
 ## Python Executable
 
-By default, Dagster Cloud will use the python executable that is installed on the agent. If you want to use a different python executable, you can specify it in the dagster_cloud.yaml file. It might also be useful to have different python executables for different code locations.
+If you are using Dagster Cloud Serverless, the Python executable to use is specified [here](https://docs.dagster.io/dagster-cloud/deployment/serverless#using-a-different-python-version). For Dagster Cloud Hybrid, the python executable that is installed globally in the image, or the default Python executable on the local system if you use the local agent, will be used. If you want to use a different python executable, you can specify it in the dagster_cloud.yaml file. It might also be useful to have different python executables for different code locations.
 
 Parameter reference table:
 
