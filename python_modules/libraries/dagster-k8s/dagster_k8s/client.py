@@ -693,6 +693,7 @@ class DagsterKubernetesClient:
                     container_name,
                     tail_lines=25,
                     timestamps=True,
+                    previous=True,
                 )
                 # Remove trailing newline if present
                 pod_logs = pod_logs[:-1] if pod_logs.endswith("\n") else pod_logs
