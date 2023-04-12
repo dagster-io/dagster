@@ -65,7 +65,7 @@ def asset(
     description: Optional[str] = ...,
     config_schema: Optional[UserConfigSchema] = None,
     required_resource_keys: Optional[Set[str]] = ...,
-    resource_defs: Optional[Mapping[str, ResourceDefinition]] = ...,
+    resource_defs: Optional[Mapping[str, object]] = ...,
     io_manager_def: Optional[IOManagerDefinition] = ...,
     io_manager_key: Optional[str] = ...,
     compute_kind: Optional[str] = ...,
@@ -93,7 +93,7 @@ def asset(
     description: Optional[str] = None,
     config_schema: Optional[UserConfigSchema] = None,
     required_resource_keys: Optional[Set[str]] = None,
-    resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+    resource_defs: Optional[Mapping[str, object]] = None,
     io_manager_def: Optional[IOManagerDefinition] = None,
     io_manager_key: Optional[str] = None,
     compute_kind: Optional[str] = None,
@@ -156,8 +156,8 @@ def asset(
             `json.loads(json.dumps(value)) == value`.
         group_name (Optional[str]): A string name used to organize multiple assets into groups. If not provided,
             the name "default" is used.
-        resource_defs (Optional[Mapping[str, ResourceDefinition]]):
-            (Experimental) A mapping of resource keys to resource definitions. These resources
+        resource_defs (Optional[Mapping[str, object]]):
+            (Experimental) A mapping of resource keys to resources. These resources
             will be initialized during execution, and can be accessed from the
             context within the body of the function.
         output_required (bool): Whether the decorated function will always materialize an asset.
@@ -180,6 +180,8 @@ def asset(
     """
 
     def create_asset():
+        from dagster._core.execution.build_resources import wrap_resources_for_execution
+
         return _Asset(
             name=cast(Optional[str], name),  # (mypy bug that it can't infer name is Optional[str])
             key_prefix=key_prefix,
@@ -189,7 +191,7 @@ def asset(
             description=description,
             config_schema=config_schema,
             required_resource_keys=required_resource_keys,
-            resource_defs=resource_defs,
+            resource_defs=wrap_resources_for_execution(resource_defs),
             io_manager=io_manager_def or io_manager_key,
             compute_kind=check.opt_str_param(compute_kind, "compute_kind"),
             dagster_type=dagster_type,
