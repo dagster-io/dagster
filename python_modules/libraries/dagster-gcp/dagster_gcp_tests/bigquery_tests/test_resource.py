@@ -57,10 +57,10 @@ def test_pythonic_resource_authenticate_via_config():
 
     @asset
     def test_asset(bigquery: BigQueryResource) -> int:
-        bq = bigquery.get_client()  # noqa: F841
-        asset_info["gcp_creds_file"] = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-        assert os.getenv("GOOGLE_APPLICATION_CREDENTIALS") is not None
-        return 1
+        with bigquery.get_client():
+            asset_info["gcp_creds_file"] = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+            assert os.getenv("GOOGLE_APPLICATION_CREDENTIALS") is not None
+            return 1
 
     old_gcp_creds_file = os.environ.pop("GOOGLE_APPLICATION_CREDENTIALS", None)
     assert old_gcp_creds_file is not None
