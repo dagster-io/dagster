@@ -298,7 +298,7 @@ class AssetReconciliationScenario(NamedTuple):
                     workspace.get_code_location_error("test_location") is None
                 ), workspace.get_code_location_error("test_location")
 
-                list(AssetDaemon().run_iteration(workspace_context))
+                list(AssetDaemon(interval_seconds=42).run_iteration(workspace_context))
 
 
 def do_run(

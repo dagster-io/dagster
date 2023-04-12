@@ -795,6 +795,14 @@ class DagsterInstance(DynamicPartitionsStore):
     def run_retries_max_retries(self) -> int:
         return self.get_settings("run_retries").get("max_retries")
 
+    @property
+    def auto_materialize_enabled(self) -> bool:
+        return self.get_settings("auto_materialize").get("enabled", True)
+
+    @property
+    def auto_materialize_minimum_interval_seconds(self) -> int:
+        return self.get_settings("auto_materialize").get("minimum_interval_seconds")
+
     # python logs
 
     @property
@@ -2427,6 +2435,7 @@ class DagsterInstance(DynamicPartitionsStore):
     def get_required_daemon_types(self) -> Sequence[str]:
         from dagster._core.run_coordinator import QueuedRunCoordinator
         from dagster._core.scheduler import DagsterDaemonScheduler
+        from dagster._daemon.asset_daemon import AssetDaemon
         from dagster._daemon.auto_run_reexecution.event_log_consumer import EventLogConsumerDaemon
         from dagster._daemon.daemon import (
             BackfillDaemon,
@@ -2450,6 +2459,8 @@ class DagsterInstance(DynamicPartitionsStore):
             daemons.append(MonitoringDaemon.daemon_type())
         if self.run_retries_enabled:
             daemons.append(EventLogConsumerDaemon.daemon_type())
+        if self.auto_materialize_enabled:
+            daemons.append(AssetDaemon.daemon_type())
         return daemons
 
     def get_daemon_statuses(

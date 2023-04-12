@@ -325,4 +325,10 @@ def dagster_instance_config_schema() -> Mapping[str, Field]:
         "retention": retention_config_schema(),
         "sensors": sensors_daemon_config(),
         "schedules": schedules_daemon_config(),
+        "auto_materialize": Field(
+            {
+                "enabled": Field(Bool, is_required=False),
+                "minimum_interval_seconds": Field(int, is_required=False),
+            }
+        ),
     }

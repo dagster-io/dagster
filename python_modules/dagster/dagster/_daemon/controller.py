@@ -16,6 +16,7 @@ from dagster._core.host_representation.grpc_server_registry import GrpcServerReg
 from dagster._core.instance import DagsterInstance
 from dagster._core.workspace.context import IWorkspaceProcessContext, WorkspaceProcessContext
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
+from dagster._daemon.asset_daemon import AssetDaemon
 from dagster._daemon.auto_run_reexecution.event_log_consumer import EventLogConsumerDaemon
 from dagster._daemon.daemon import (
     BackfillDaemon,
@@ -334,6 +335,12 @@ def create_daemon_of_type(daemon_type: str, instance: DagsterInstance) -> Dagste
         return MonitoringDaemon(interval_seconds=instance.run_monitoring_poll_interval_seconds)
     elif daemon_type == EventLogConsumerDaemon.daemon_type():
         return EventLogConsumerDaemon()
+    elif daemon_type == AssetDaemon.daemon_type():
+        return AssetDaemon(
+            interval_seconds=instance.auto_materialize_minimum_interval_seconds
+            if instance.auto_materialize_minimum_interval_seconds is not None
+            else DEFAULT_DAEMON_INTERVAL_SECONDS
+        )
     else:
         raise Exception(f"Unexpected daemon type {daemon_type}")
 
