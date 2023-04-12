@@ -8,8 +8,8 @@ from .file_manager import (
     ADLS2FileManager as ADLS2FileManager,
 )
 from .io_manager import (
+    ConfigurablePickledObjectADLS2IOManager as ConfigurablePickledObjectADLS2IOManager,
     PickledObjectADLS2IOManager as PickledObjectADLS2IOManager,
-    PickledObjectADLS2IOManagerResource as PickledObjectADLS2IOManagerResource,
     adls2_pickle_io_manager as adls2_pickle_io_manager,
 )
 from .resources import (

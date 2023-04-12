@@ -104,7 +104,7 @@ class PickledObjectADLS2IOManager(UPathIOManager):
             file.upload_data(pickled_obj, lease=lease, overwrite=True)
 
 
-class PickledObjectADLS2IOManagerResource(ConfigurableIOManager):
+class ConfigurablePickledObjectADLS2IOManager(ConfigurableIOManager):
     adls2: ResourceDependency[ADLS2Resource]
     adls2_file_system: str = Field(description="ADLS Gen2 file system name.")
     adls2_prefix: str = Field(
@@ -130,7 +130,7 @@ class PickledObjectADLS2IOManagerResource(ConfigurableIOManager):
 
 
 @io_manager(
-    config_schema=PickledObjectADLS2IOManagerResource.to_config_schema(),
+    config_schema=ConfigurablePickledObjectADLS2IOManager.to_config_schema(),
     required_resource_keys={"adls2"},
 )
 def adls2_pickle_io_manager(init_context):

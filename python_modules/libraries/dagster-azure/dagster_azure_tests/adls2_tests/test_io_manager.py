@@ -37,8 +37,8 @@ from dagster._core.utils import make_new_run_id
 from dagster_azure.adls2 import create_adls2_client
 from dagster_azure.adls2.fake_adls2_resource import FakeADLS2Resource, fake_adls2_resource
 from dagster_azure.adls2.io_manager import (
+    ConfigurablePickledObjectADLS2IOManager,
     PickledObjectADLS2IOManager,
-    PickledObjectADLS2IOManagerResource,
     adls2_pickle_io_manager,
 )
 from dagster_azure.adls2.resources import adls2_resource
@@ -377,7 +377,7 @@ def test_nothing_pythonic() -> None:
         with_resources(
             [asset1, asset2],
             resource_defs={
-                "io_manager": PickledObjectADLS2IOManagerResource(
+                "io_manager": ConfigurablePickledObjectADLS2IOManager(
                     adls2=FakeADLS2Resource(account_name="my_account"),  # type: ignore[arg-type]
                     adls2_file_system="fake_file_system",
                 )
