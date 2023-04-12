@@ -378,7 +378,7 @@ def test_nothing_pythonic() -> None:
             [asset1, asset2],
             resource_defs={
                 "io_manager": ConfigurablePickledObjectADLS2IOManager(
-                    adls2=FakeADLS2Resource(account_name="my_account"),  # type: ignore[arg-type]
+                    adls2=FakeADLS2Resource(account_name="my_account"),
                     adls2_file_system="fake_file_system",
                 )
             },
@@ -389,4 +389,4 @@ def test_nothing_pythonic() -> None:
     assert len(handled_output_events) == 2
 
     for event in handled_output_events:
-        assert len(event.event_specific_data.metadata) == 0
+        assert len(event.event_specific_data.metadata) == 0  # type: ignore[attr-defined]
