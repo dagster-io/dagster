@@ -296,7 +296,14 @@ class AllowDelayedDependencies:
         resources, _ = separate_resource_params(self.__dict__)
         for v in resources.values():
             nested_resource_required_keys.update(
-                _resolve_required_resource_keys_for_resource(v, resource_mapping)
+                _resolve_required_resource_keys_for_resource(
+                    (
+                        v.get_resource_definition()
+                        if isinstance(v, (ConfigurableResourceFactory, PartialResource))
+                        else v
+                    ),
+                    resource_mapping,
+                )
             )
 
         out = set(cast(Set[str], nested_partial_resource_keys.values())).union(
@@ -529,7 +536,7 @@ class ConfigurableResourceFactory(
         # We keep track of any resources we depend on which are not fully configured
         # so that we can retrieve them at runtime
         self._nested_partial_resources: Mapping[
-            str, Union[ResourceDefinition, ConfigurableResource, PartialResource]
+            str, Union[ResourceDefinition, ConfigurableResourceFactory, PartialResource]
         ] = {k: v for k, v in resource_pointers.items() if (not _is_fully_configured(v))}
 
         self._resolved_config_dict = resolved_config_dict
@@ -554,7 +561,9 @@ class ConfigurableResourceFactory(
         raise NotImplementedError()
 
     @property
-    def nested_resources(self) -> Mapping[str, ResourceDefinition]:
+    def nested_resources(
+        self,
+    ) -> Mapping[str, Union[ResourceDefinition, "ConfigurableResourceFactory", "PartialResource"]]:
         return self._nested_resources
 
     @classmethod
@@ -707,7 +716,7 @@ class ConfigurableResource(ConfigurableResourceFactory[TResValue]):
 
 
 def _is_fully_configured(
-    resource: Union[ResourceDefinition, ConfigurableResource, "PartialResource"]
+    resource: Union[ResourceDefinition, ConfigurableResourceFactory, "PartialResource"]
 ) -> bool:
     if isinstance(resource, (ConfigurableResourceFactory, PartialResource)):
         resource = resource.get_resource_definition()
@@ -735,9 +744,9 @@ class PartialResource(Generic[TResValue], AllowDelayedDependencies, MakeConfigCa
 
         # We keep track of any resources we depend on which are not fully configured
         # so that we can retrieve them at runtime
-        self._nested_partial_resources: Dict[str, ResourceDefinition] = {
-            k: v for k, v in resource_pointers.items() if (not _is_fully_configured(v))
-        }
+        self._nested_partial_resources: Dict[
+            str, Union[ResourceDefinition, PartialResource, ConfigurableResourceFactory]
+        ] = {k: v for k, v in resource_pointers.items() if (not _is_fully_configured(v))}
 
         self._config_schema = infer_schema_from_config_class(
             resource_cls, fields_to_omit=set(resource_pointers.keys())
@@ -753,7 +762,9 @@ class PartialResource(Generic[TResValue], AllowDelayedDependencies, MakeConfigCa
         self._nested_resources = {k: v for k, v in resource_pointers.items()}
 
     @property
-    def nested_resources(self) -> Mapping[str, ResourceDefinition]:
+    def nested_resources(
+        self,
+    ) -> Mapping[str, Union[ResourceDefinition, "ConfigurableResourceFactory", "PartialResource"]]:
         return self._nested_resources
 
     def get_resource_definition(self) -> ConfigurableResourceFactoryResourceDefinition:

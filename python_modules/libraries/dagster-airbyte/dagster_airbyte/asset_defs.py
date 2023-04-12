@@ -17,6 +17,7 @@ from typing import (
     Sequence,
     Set,
     Tuple,
+    Union,
     cast,
 )
 
@@ -544,7 +545,7 @@ class AirbyteCoreCacheableAssetsDefinition(CacheableAssetsDefinition):
 class AirbyteInstanceCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinition):
     def __init__(
         self,
-        airbyte_resource_def: ResourceDefinition,
+        airbyte_resource_def: Union[ResourceDefinition, AirbyteResource],
         workspace_id: Optional[str],
         key_prefix: Sequence[str],
         create_assets_for_normalization_tables: bool,
@@ -566,9 +567,10 @@ class AirbyteInstanceCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinit
             connection_to_freshness_policy_fn=connection_to_freshness_policy_fn,
         )
         self._workspace_id = workspace_id
-        self._airbyte_resource_def = airbyte_resource_def
-        self._airbyte_instance: AirbyteResource = airbyte_resource_def(
-            build_init_resource_context()
+        self._airbyte_instance: AirbyteResource = (
+            airbyte_resource_def
+            if isinstance(airbyte_resource_def, AirbyteResource)
+            else airbyte_resource_def(build_init_resource_context())
         )
 
     def _get_connections(self) -> Sequence[Tuple[str, AirbyteConnectionMetadata]]:
@@ -621,7 +623,7 @@ class AirbyteInstanceCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinit
         self, data: Sequence[AssetsDefinitionCacheableData]
     ) -> Sequence[AssetsDefinition]:
         return super()._build_definitions_with_resources(
-            data, {"airbyte": self._airbyte_resource_def}
+            data, {"airbyte": self._airbyte_instance.get_resource_definition()}
         )
 
 
