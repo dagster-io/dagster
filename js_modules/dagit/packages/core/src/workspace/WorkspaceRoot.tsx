@@ -15,7 +15,6 @@ import {WorkspaceContext} from './WorkspaceContext';
 import {WorkspaceGraphsRoot} from './WorkspaceGraphsRoot';
 import {WorkspaceJobsRoot} from './WorkspaceJobsRoot';
 import {WorkspaceOpsRoot} from './WorkspaceOpsRoot';
-import {WorkspacePipelineRoot} from './WorkspacePipelineRoot';
 import {WorkspaceSchedulesRoot} from './WorkspaceSchedulesRoot';
 import {WorkspaceSensorsRoot} from './WorkspaceSensorsRoot';
 import {repoAddressAsHumanString} from './repoAddressAsString';
@@ -146,9 +145,6 @@ export const WorkspaceRoot = () => {
   return (
     <MainContent>
       <Switch>
-        <Route path={['/locations/pipelines/:pipelinePath', '/locations/jobs/:pipelinePath']}>
-          <WorkspacePipelineRoot />
-        </Route>
         <Route path="/locations/:repoPath">
           <RepoRouteContainer />
         </Route>
