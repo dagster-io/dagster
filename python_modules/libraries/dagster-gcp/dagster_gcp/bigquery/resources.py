@@ -1,17 +1,13 @@
 from typing import Generator, Optional
 
-from dagster import resource
-from dagster._config.structured_config import (
-    ConfigurableResourceFactory,
-    infer_schema_from_config_class,
-)
+from dagster import ConfigurableResource, resource
 from google.cloud import bigquery
 from pydantic import Field
 
 from .utils import setup_gcp_creds
 
 
-class BigQueryResource(ConfigurableResourceFactory):
+class BigQueryResource(ConfigurableResource):
     project: Optional[str] = Field(
         default=None,
         description="""Project ID for the project which the client acts on behalf of. Will be passed
@@ -35,7 +31,7 @@ class BigQueryResource(ConfigurableResourceFactory):
         ),
     )
 
-    def create_resource(self, context) -> Generator:
+    def get_client(self) -> Generator:
         if self.gcp_credentials:
             with setup_gcp_creds(self.gcp_credentials):
                 yield bigquery.Client(project=self.project, location=self.location)
@@ -44,8 +40,8 @@ class BigQueryResource(ConfigurableResourceFactory):
 
 
 @resource(
-    config_schema=infer_schema_from_config_class(BigQueryResource),
+    config_schema=BigQueryResource.to_config_schema(),
     description="Dagster resource for connecting to BigQuery",
 )
 def bigquery_resource(context):
-    return BigQueryResource.from_resource_context(context)
+    return BigQueryResource.from_resource_context(context).get_client()
