@@ -1046,15 +1046,17 @@ def build_asset_reconciliation_sensor(
         # if there is a auto materialize policy set in the selection, filter down to that. Otherwise, use the
         # whole selection
         target_asset_keys = asset_selection.resolve(asset_graph)
-        if any(
-            asset_graph.get_auto_materialize_policy(target_key) is not None
-            for target_key in target_asset_keys
-        ):
-            target_asset_keys = {
-                target_key
-                for target_key in target_asset_keys
-                if asset_graph.get_auto_materialize_policy(target_key) is not None
-            }
+        for target_key in target_asset_keys:
+            check.invariant(
+                asset_graph.get_auto_materialize_policy(target_key) is None,
+                (
+                    f"build_asset_reconciliation_sensor: Asset '{target_key.to_user_string()}' has"
+                    " an AutoMaterializePolicy set. This asset will be automatically materialized"
+                    " by the AssetDaemon, and should not be passed to this sensor. It's"
+                    " recommended to remove this sensor once you have migrated to the"
+                    " AutoMaterializePolicy api."
+                ),
+            )
 
         run_requests, updated_cursor = reconcile(
             asset_graph=asset_graph,
