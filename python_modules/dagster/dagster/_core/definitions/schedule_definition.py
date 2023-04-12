@@ -94,7 +94,7 @@ def get_or_create_schedule_context(
     Raises an exception if the user passes more than one argument or if the user-provided
     function requires a context parameter but none is passed.
     """
-    from dagster._config.structured_config import ResourceDefinition
+    from dagster import ResourceDefinition
     from dagster._core.definitions.sensor_definition import get_context_param_name
 
     context_param_name = get_context_param_name(fn)
