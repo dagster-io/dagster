@@ -318,20 +318,20 @@ def _whitelist_for_serdes(
 ###################################################################################################
 
 
-class RecursiveDescentContext:
+class PackContext:
     """values are packed/unpacked by recursing from the top."""
 
     def __init__(self, descent_path: str):
         self._descent_path = descent_path
 
-    def descend(self, path_suffix: str) -> "RecursiveDescentContext":
-        return RecursiveDescentContext(self._descent_path + path_suffix)
+    def descend(self, path_suffix: str) -> "PackContext":
+        return PackContext(self._descent_path + path_suffix)
 
     def get_error_context(self) -> str:
         return f"\nDescent path: {self._descent_path}"
 
 
-class BottomUpUnpackContext:
+class UnpackContext:
     """values are unpacked "bottom up" via json load object_hook."""
 
     def __init__(self):
@@ -383,9 +383,6 @@ class BottomUpUnpackContext:
             )
 
 
-UnpackContext: TypeAlias = Union[RecursiveDescentContext, BottomUpUnpackContext]
-
-
 class Serializer(ABC):
     pass
 
@@ -405,7 +402,7 @@ class EnumSerializer(Serializer, Generic[T_Enum]):
         self,
         value: Enum,
         whitelist_map: WhitelistMap,
-        context: RecursiveDescentContext,
+        context: PackContext,
     ) -> str:
         return f"{self.get_storage_name()}.{value.name}"
 
@@ -460,19 +457,19 @@ class NamedTupleSerializer(Serializer, Generic[T_NamedTuple]):
                             whitelist_map=whitelist_map,
                             context=context,
                         )
-                    elif isinstance(context, RecursiveDescentContext):
+                    elif isinstance(context, PackContext):
                         unpacked[loaded_name] = unpack_value(
                             value,
                             whitelist_map=whitelist_map,
                             context=context.descend(f".{key}"),
                         )
-                    elif isinstance(context, BottomUpUnpackContext):
+                    elif isinstance(context, UnpackContext):
                         unpacked[loaded_name] = context.assert_no_unknown_values(value)
                     else:
                         check.failed(f"Unexpected serdes context: {context}")
 
                 # if we are ignoring the field and bottom-up parsing, clear unknown values
-                elif isinstance(context, BottomUpUnpackContext):
+                elif isinstance(context, UnpackContext):
                     context.clear_ignored_unknown_values(value)
 
             # False positive type error here due to an eccentricity of `NamedTuple`-- calling `NamedTuple`
@@ -482,7 +479,7 @@ class NamedTupleSerializer(Serializer, Generic[T_NamedTuple]):
             return self.klass(**unpacked)  # type: ignore
         except Exception as exc:
             value = self.handle_unpack_error(exc, context, storage_dict)
-            if isinstance(context, BottomUpUnpackContext):
+            if isinstance(context, UnpackContext):
                 context.assert_no_unknown_values(value)
                 context.clear_ignored_unknown_values(storage_dict)
             return value
@@ -510,7 +507,7 @@ class NamedTupleSerializer(Serializer, Generic[T_NamedTuple]):
         self,
         value: T_NamedTuple,
         whitelist_map: WhitelistMap,
-        context: RecursiveDescentContext,
+        context: PackContext,
     ) -> Dict[str, JsonSerializableValue]:
         packed: Dict[str, JsonSerializableValue] = {}
         packed["__class__"] = self.get_storage_name()
@@ -586,7 +583,7 @@ class FieldSerializer(Serializer):
         self,
         __unpacked_value: Any,
         whitelist_map: WhitelistMap,
-        context: RecursiveDescentContext,
+        context: PackContext,
     ) -> JsonSerializableValue:
         ...
 
@@ -613,7 +610,7 @@ def serialize_value(
 def pack_value(
     val: T_Scalar,
     whitelist_map: WhitelistMap = ...,
-    context: Optional[RecursiveDescentContext] = ...,
+    context: Optional[PackContext] = ...,
 ) -> T_Scalar:
     ...
 
@@ -624,7 +621,7 @@ def pack_value(
         Mapping[str, PackableValue], Set[PackableValue], FrozenSet[PackableValue], NamedTuple, Enum
     ],
     whitelist_map: WhitelistMap = ...,
-    context: Optional[RecursiveDescentContext] = ...,
+    context: Optional[PackContext] = ...,
 ) -> Mapping[str, JsonSerializableValue]:
     ...
 
@@ -633,7 +630,7 @@ def pack_value(
 def pack_value(
     val: Sequence[PackableValue],
     whitelist_map: WhitelistMap = ...,
-    context: Optional[RecursiveDescentContext] = ...,
+    context: Optional[PackContext] = ...,
 ) -> Sequence[JsonSerializableValue]:
     ...
 
@@ -641,7 +638,7 @@ def pack_value(
 def pack_value(
     val: PackableValue,
     whitelist_map: WhitelistMap = _WHITELIST_MAP,
-    context: Optional[RecursiveDescentContext] = None,
+    context: Optional[PackContext] = None,
 ) -> JsonSerializableValue:
     """Convert an object into a json serializable complex of dicts, lists, and scalars.
 
@@ -651,14 +648,14 @@ def pack_value(
         * set
         * frozenset
     """
-    context = RecursiveDescentContext(_root(val)) if context is None else context
+    context = PackContext(_root(val)) if context is None else context
     return _pack_value(val, whitelist_map=whitelist_map, context=context)
 
 
 def _pack_value(
     val: PackableValue,
     whitelist_map: WhitelistMap,
-    context: RecursiveDescentContext,
+    context: PackContext,
 ) -> JsonSerializableValue:
     if is_named_tuple_instance(val):
         klass_name = val.__class__.__name__
@@ -769,9 +766,9 @@ def deserialize_value(
     # Never issue warnings when deserializing deprecated objects.
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", DeprecationWarning)
-        context = BottomUpUnpackContext()
+        context = UnpackContext()
         unpacked_value = seven.json.loads(
-            val, object_hook=partial(unpack_hook, whitelist_map=whitelist_map, context=context)
+            val, object_hook=partial(_unpack_object, whitelist_map=whitelist_map, context=context)
         )
         context.assert_no_remaining_unknown_values()
         if as_type and not (
@@ -792,7 +789,87 @@ class UnknownSerdesValue:
         self.value = value
 
 
-def unpack_hook(val: dict, whitelist_map: WhitelistMap, context: BottomUpUnpackContext):
+@overload
+def unpack_value(
+    val: JsonSerializableValue,
+    as_type: Tuple[Type[T_PackableValue], Type[U_PackableValue]],
+    whitelist_map: WhitelistMap = ...,
+    context: Optional[UnpackContext] = ...,
+) -> Union[T_PackableValue, U_PackableValue]:
+    ...
+
+
+@overload
+def unpack_value(
+    val: JsonSerializableValue,
+    as_type: Type[T_PackableValue],
+    whitelist_map: WhitelistMap = ...,
+    context: Optional[UnpackContext] = ...,
+) -> T_PackableValue:
+    ...
+
+
+@overload
+def unpack_value(
+    val: JsonSerializableValue,
+    as_type: None = ...,
+    whitelist_map: WhitelistMap = ...,
+    context: Optional[UnpackContext] = ...,
+) -> PackableValue:
+    ...
+
+
+def unpack_value(
+    val: JsonSerializableValue,
+    as_type: Optional[
+        Union[Type[T_PackableValue], Tuple[Type[T_PackableValue], Type[U_PackableValue]]]
+    ] = None,
+    whitelist_map: WhitelistMap = _WHITELIST_MAP,
+    context: Optional[UnpackContext] = None,
+) -> Union[PackableValue, T_PackableValue, Union[T_PackableValue, U_PackableValue]]:
+    """Convert a JSON-serializable complex of dicts, lists, and scalars into domain objects.
+
+    Dicts with special keys are processed specially:
+    - {"__set__": [...]}: becomes a set()
+    - {"__frozenset__": [...]}: becomes a frozenset()
+    - {"__enum__": "<class>.<name>"}: becomes an Enum class[name], where `class` is an Enum descendant
+    - {"__class__": "<class>", ...}: becomes a NamedTuple, where `class` is a NamedTuple descendant
+    """
+    context = UnpackContext() if context is None else context
+    unpacked_value = _unpack_value(
+        val,
+        whitelist_map,
+        context,
+    )
+    context.assert_no_remaining_unknown_values()
+    if as_type and not (
+        is_named_tuple_instance(unpacked_value)
+        if as_type is NamedTuple
+        else isinstance(unpacked_value, as_type)
+    ):
+        raise DeserializationError(
+            f"Unpacked object was not expected type {as_type}, got {type(val)}"
+        )
+    return unpacked_value
+
+
+def _unpack_value(
+    val: JsonSerializableValue,
+    whitelist_map: WhitelistMap,
+    context: UnpackContext,
+) -> PackableValue:
+    if isinstance(val, list):
+        return [_unpack_value(item, whitelist_map, context) for idx, item in enumerate(val)]
+    if isinstance(val, dict):
+        unpacked_vals = {k: _unpack_value(v, whitelist_map, context) for k, v in val.items()}
+        return _unpack_object(unpacked_vals, whitelist_map, context)
+
+    return val
+
+
+def _unpack_object(
+    val: Dict[str, Any], whitelist_map: WhitelistMap, context: UnpackContext
+) -> Union[PackableValue, UnknownSerdesValue]:
     if "__class__" in val:
         klass_name = cast(str, val["__class__"])
         if not whitelist_map.has_tuple_entry(klass_name):
@@ -828,118 +905,6 @@ def unpack_hook(val: dict, whitelist_map: WhitelistMap, context: BottomUpUnpackC
     if "__frozenset__" in val:
         items = cast(List[JsonSerializableValue], val["__frozenset__"])
         return frozenset(items)
-
-    return val
-
-
-@overload
-def unpack_value(
-    val: JsonSerializableValue,
-    as_type: Tuple[Type[T_PackableValue], Type[U_PackableValue]],
-    whitelist_map: WhitelistMap = ...,
-    context: Optional[RecursiveDescentContext] = ...,
-) -> Union[T_PackableValue, U_PackableValue]:
-    ...
-
-
-@overload
-def unpack_value(
-    val: JsonSerializableValue,
-    as_type: Type[T_PackableValue],
-    whitelist_map: WhitelistMap = ...,
-    context: Optional[RecursiveDescentContext] = ...,
-) -> T_PackableValue:
-    ...
-
-
-@overload
-def unpack_value(
-    val: JsonSerializableValue,
-    as_type: None = ...,
-    whitelist_map: WhitelistMap = ...,
-    context: Optional[RecursiveDescentContext] = ...,
-) -> PackableValue:
-    ...
-
-
-def unpack_value(
-    val: JsonSerializableValue,
-    as_type: Optional[
-        Union[Type[T_PackableValue], Tuple[Type[T_PackableValue], Type[U_PackableValue]]]
-    ] = None,
-    whitelist_map: WhitelistMap = _WHITELIST_MAP,
-    context: Optional[RecursiveDescentContext] = None,
-) -> Union[PackableValue, T_PackableValue, Union[T_PackableValue, U_PackableValue]]:
-    """Convert a JSON-serializable complex of dicts, lists, and scalars into domain objects.
-
-    Dicts with special keys are processed specially:
-    - {"__set__": [...]}: becomes a set()
-    - {"__frozenset__": [...]}: becomes a frozenset()
-    - {"__enum__": "<class>.<name>"}: becomes an Enum class[name], where `class` is an Enum descendant
-    - {"__class__": "<class>", ...}: becomes a NamedTuple, where `class` is a NamedTuple descendant
-    """
-    context = RecursiveDescentContext(_root(val)) if context is None else context
-    unpacked_value = _unpack_value(
-        val,
-        whitelist_map,
-        context,
-    )
-    if as_type and not (
-        is_named_tuple_instance(unpacked_value)
-        if as_type is NamedTuple
-        else isinstance(unpacked_value, as_type)
-    ):
-        raise DeserializationError(
-            f"Unpacked object was not expected type {as_type}, got {type(val)}"
-        )
-    return unpacked_value
-
-
-def _unpack_value(
-    val: JsonSerializableValue,
-    whitelist_map: WhitelistMap,
-    context: RecursiveDescentContext,
-) -> PackableValue:
-    if isinstance(val, list):
-        return [
-            _unpack_value(item, whitelist_map, context.descend(f"[{idx}]"))
-            for idx, item in enumerate(val)
-        ]
-    if isinstance(val, dict) and val.get("__class__"):
-        klass_name = cast(str, val.pop("__class__"))
-        if not whitelist_map.has_tuple_entry(klass_name):
-            raise DeserializationError(
-                f'Attempted to deserialize class "{klass_name}" which is not in the whitelist. '
-                "This error can occur due to version skew, verify processes are running "
-                f"expected versions.{context.get_error_context()}"
-            )
-
-        serializer = whitelist_map.get_tuple_entry(klass_name)
-        return serializer.unpack(val, whitelist_map, context)
-    if isinstance(val, dict) and val.get("__enum__"):
-        enum = cast(str, val["__enum__"])
-        name, member = enum.split(".")
-        if not whitelist_map.has_enum_entry(name):
-            raise DeserializationError(
-                f"Attempted to deserialize enum {name} which was not in the whitelist.\n"
-                "This error can occur due to version skew, verify processes are running "
-                f"expected versions.{context.get_error_context()}"
-            )
-        enum_serializer = whitelist_map.get_enum_entry(name)
-        return enum_serializer.unpack(member)
-    if isinstance(val, dict) and "__set__" in val:
-        set_ctx = context.descend("{}")
-        items = cast(List[JsonSerializableValue], val["__set__"])
-        return set([_unpack_value(item, whitelist_map, set_ctx) for item in items])
-    if isinstance(val, dict) and "__frozenset__" in val:
-        frz_set_ctx = context.descend("{}")
-        items = cast(List[JsonSerializableValue], val["__frozenset__"])
-        return frozenset([_unpack_value(item, whitelist_map, frz_set_ctx) for item in items])
-    if isinstance(val, dict):
-        return {
-            key: _unpack_value(value, whitelist_map, context.descend(f".{key}"))
-            for key, value in val.items()
-        }
 
     return val
 

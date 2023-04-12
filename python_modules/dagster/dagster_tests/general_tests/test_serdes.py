@@ -65,7 +65,7 @@ def test_descent_path():
 
     with pytest.raises(
         DeserializationError,
-        match=re.escape("Descent path: <root:dict>.a.b[2].c"),
+        match=r"Attempted to deserialize class \"Fizz\" which is not in the whitelist",
     ):
         unpack_value(packed, whitelist_map=blank_map)
 

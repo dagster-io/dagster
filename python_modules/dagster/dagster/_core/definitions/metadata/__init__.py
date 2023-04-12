@@ -23,14 +23,13 @@ from dagster._annotations import PublicAttr, experimental, public
 from dagster._core.errors import DagsterInvalidMetadata
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.serdes import (
-    BottomUpUnpackContext,
     FieldSerializer,
     PackableValue,
-    RecursiveDescentContext,
+    PackContext,
+    UnknownSerdesValue,
     UnpackContext,
     WhitelistMap,
     pack_value,
-    unpack_value,
 )
 from dagster._utils.backcompat import (
     canonicalize_backcompat_args,
@@ -948,7 +947,7 @@ class MetadataFieldSerializer(FieldSerializer):
         self,
         metadata_dict: Mapping[str, MetadataValue],
         whitelist_map: WhitelistMap,
-        context: RecursiveDescentContext,
+        context: PackContext,
     ) -> Sequence[Mapping[str, Any]]:
         return [
             {
@@ -964,28 +963,17 @@ class MetadataFieldSerializer(FieldSerializer):
 
     def unpack(
         self,
-        metadata_entries: Union[List[Mapping[str, Any]], List["MetadataEntry"]],
+        metadata_entries: List[UnknownSerdesValue],
         whitelist_map: WhitelistMap,
         context: UnpackContext,
     ) -> Mapping[str, MetadataValue]:
-        if isinstance(context, RecursiveDescentContext):
-            metadata_entries = cast(List[Mapping[str, Any]], metadata_entries)
-            return {
-                e["label"]: unpack_value(
-                    e["entry_data"],
-                    # MetadataValue itself can't inherit from NamedTuple and so isn't a PackableValue,
-                    # but one of its subclasses will always be returned here.
-                    as_type=MetadataValue,  # type: ignore
-                    whitelist_map=whitelist_map,
-                    context=context,
-                )
-                for e in metadata_entries
-            }
-        elif isinstance(context, BottomUpUnpackContext):
-            metadata_entries = cast(List[MetadataEntry], metadata_entries)
-            return {e.label: e.entry_data for e in metadata_entries}
-        else:
-            check.failed(f"unexpected serdes context {context}")
+        metadata = {}
+        for entry in metadata_entries:
+            context.clear_ignored_unknown_values(entry)
+            key = cast(str, entry.value["label"])
+            value = cast(MetadataValue, entry.value["entry_data"])
+            metadata[key] = value
+        return metadata
 
 
 T_MetadataValue = TypeVar("T_MetadataValue", bound=MetadataValue, covariant=True)
@@ -994,7 +982,6 @@ T_MetadataValue = TypeVar("T_MetadataValue", bound=MetadataValue, covariant=True
 # NOTE: This currently stores value in the `entry_data` NamedTuple attribute. In the next release,
 # we will change the name of the NamedTuple property to `value`, and need to implement custom
 # serialization so that it continues to be saved as `entry_data` for backcompat purposes.
-@whitelist_for_serdes(storage_name="EventMetadataEntry")
 class MetadataEntry(
     NamedTuple(
         "_MetadataEntry",
