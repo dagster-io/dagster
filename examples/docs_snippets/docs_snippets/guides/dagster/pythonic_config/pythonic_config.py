@@ -59,7 +59,7 @@ def execute_with_config() -> None:
         print_greeting()
 
     job_result = greeting_job.execute_in_process(
-        run_config=RunConfig({"print_greeting": MyOpConfig(person_name="Alice")})  # type: ignore
+        run_config=RunConfig({"print_greeting": MyOpConfig(person_name="Alice")})
     )
 
     asset_result = materialize(
@@ -73,7 +73,9 @@ def execute_with_config() -> None:
     from dagster import job, materialize, op, RunConfig, EnvVar
 
     job_result = greeting_job.execute_in_process(
-        run_config=RunConfig({"print_greeting": MyOpConfig(person_name=EnvVar("PERSON_NAME"))})  # type: ignore
+        run_config=RunConfig(
+            {"print_greeting": MyOpConfig(person_name=EnvVar("PERSON_NAME"))}
+        )
     )
 
     asset_result = materialize(
