@@ -9,6 +9,7 @@ from dagster import (
     DailyPartitionsDefinition,
     DynamicPartitionsDefinition,
     HourlyPartitionsDefinition,
+    MultiPartitionsDefinition,
     PartitionKeyRange,
     StaticPartitionsDefinition,
 )
@@ -789,6 +790,46 @@ def test_unique_identifier():
         assert identifier1 != dynamic_def.get_serializable_unique_identifier(
             dynamic_partitions_store=instance
         )
+
+        dynamic_dimension_def = DynamicPartitionsDefinition(name="fruits")
+        multipartitions_def = MultiPartitionsDefinition(
+            {"a": StaticPartitionsDefinition(["a", "b", "c"]), "b": dynamic_dimension_def}
+        )
+        serializable_unique_id = multipartitions_def.get_serializable_unique_identifier(instance)
+        instance.add_dynamic_partitions(dynamic_dimension_def.name, ["apple"])
+        assert serializable_unique_id != multipartitions_def.get_serializable_unique_identifier(
+            instance
+        )
+
+    assert (
+        MultiPartitionsDefinition(
+            {
+                "a": StaticPartitionsDefinition(["a", "b", "c"]),
+                "b": StaticPartitionsDefinition(["1"]),
+            }
+        ).get_serializable_unique_identifier()
+        != MultiPartitionsDefinition(
+            {
+                "different_name": StaticPartitionsDefinition(["a", "b", "c"]),
+                "b": StaticPartitionsDefinition(["1"]),
+            }
+        ).get_serializable_unique_identifier()
+    )
+
+    assert (
+        MultiPartitionsDefinition(
+            {
+                "a": StaticPartitionsDefinition(["a", "b", "c"]),
+                "b": StaticPartitionsDefinition(["1"]),
+            }
+        ).get_serializable_unique_identifier()
+        != MultiPartitionsDefinition(
+            {
+                "a": StaticPartitionsDefinition(["a", "b"]),
+                "b": StaticPartitionsDefinition(["1"]),
+            }
+        ).get_serializable_unique_identifier()
+    )
 
 
 def test_static_partitions_subset():
