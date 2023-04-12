@@ -1,4 +1,3 @@
-import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -13,7 +12,7 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._annotations import experimental, public
+from dagster._annotations import deprecated, experimental, public
 from dagster._config.pythonic_config import (
     attach_resource_id_to_key_mapping,
 )
@@ -236,40 +235,12 @@ def _create_repository_using_definitions_args(
 
     check.opt_mapping_param(loggers, "loggers", key_type=str, value_type=LoggerDefinition)
 
-    if isinstance(jobs, BindResourcesToJobs):
-        # Binds top-level resources to jobs and any jobs attached to schedules or sensors
-        (
-            jobs_with_resources,
-            schedules_with_resources,
-            sensors_with_resources,
-        ) = _attach_resources_to_jobs_and_instigator_jobs(jobs, schedules, sensors, resource_defs)
-    else:
-        jobs_to_warn = _jobs_which_will_have_io_manager_replaced(jobs, resource_defs)
-        if jobs_to_warn:
-            jobs_text = ", ".join([f"`{job.name}`" for job in jobs_to_warn[:10]])
-            if len(jobs_to_warn) > 10:
-                jobs_text += f", and {len(jobs_to_warn) - 10} others"
-            warnings.warn(
-                f"""You have overridden the default `io_manager` on `Definitions`. One or more jobs utilize the default filesystem I/O manager. In the future, these jobs will use the `Definitions`-level override instead. To silence this warning, explicitly set the `io_manager` on the jobs in question:
-
-@job(resource_defs={{'io_manager': fs_io_manager}})
-def my_job():
-    ...
-    
-Alternatively, wrap the jobs input to `Definitions` with `BindResourceToJobs`:
-
-defs = Definitions(
-    jobs=BindResourcesToJobs([my_job, my_other_job, ...])
-)
-
-In later releases, this will be the default behavior, and `BindResourcesToJobs` will not be required.
-
-The following jobs are affected: {jobs_text}
-                """
-            )
-        jobs_with_resources = jobs or []
-        schedules_with_resources = schedules or []
-        sensors_with_resources = sensors or []
+    # Binds top-level resources to jobs and any jobs attached to schedules or sensors
+    (
+        jobs_with_resources,
+        schedules_with_resources,
+        sensors_with_resources,
+    ) = _attach_resources_to_jobs_and_instigator_jobs(jobs, schedules, sensors, resource_defs)
 
     @repository(
         name=name,
@@ -289,8 +260,11 @@ The following jobs are affected: {jobs_text}
     return created_repo
 
 
+@deprecated
 class BindResourcesToJobs(list):
-    pass
+    """Used to instruct Dagster to bind top-level resources to jobs and any jobs attached to schedules
+    and sensors. Now deprecated since this behavior is the default.
+    """
 
 
 class Definitions:
