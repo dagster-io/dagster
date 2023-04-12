@@ -2,7 +2,6 @@ import {Colors, Spinner, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {formatElapsedTime} from '../app/Util';
 import {SidebarSection} from '../pipelines/SidebarComponents';
 import {IRunMetadataDict, IStepState} from '../runs/RunMetadataProvider';
@@ -13,7 +12,6 @@ import {boxStyleFor} from './GanttChartLayout';
 import {RunGroupPanel} from './RunGroupPanel';
 
 interface GanttStatusPanelProps {
-  graph: GraphQueryItem[];
   metadata: IRunMetadataDict;
   selection: StepSelection;
   runId: string;
@@ -27,20 +25,18 @@ interface GanttStatusPanelProps {
 export const GanttStatusPanel: React.FC<GanttStatusPanelProps> = ({
   runId,
   nowMs,
-  graph,
   metadata,
   selection,
   onClickStep,
   onDoubleClickStep,
   onHighlightStep,
 }) => {
-  const {preparing, executing, errored, succeeded, notExecuted} = React.useMemo(() => {
+  const {preparing, executing, errored, succeeded} = React.useMemo(() => {
     const keys = Object.keys(metadata.steps);
     const preparing = [];
     const executing = [];
     const errored = [];
     const succeeded = [];
-    const notExecuted = [];
     for (const key of keys) {
       const state = metadata.steps[key].state;
       switch (state) {
@@ -56,18 +52,10 @@ export const GanttStatusPanel: React.FC<GanttStatusPanelProps> = ({
           break;
         case IStepState.SUCCEEDED:
           succeeded.push(key);
-          break;
       }
     }
-
-    for (const node of graph) {
-      const name = node.name;
-      if (!metadata.steps[name]?.state) {
-        notExecuted.push(name);
-      }
-    }
-    return {preparing, executing, errored, succeeded, notExecuted};
-  }, [metadata, graph]);
+    return {preparing, executing, errored, succeeded};
+  }, [metadata]);
 
   const renderStepItem = (stepName: string) => (
     <StepItem
@@ -82,6 +70,8 @@ export const GanttStatusPanel: React.FC<GanttStatusPanelProps> = ({
     />
   );
 
+  const isFinished = metadata?.exitedAt && metadata.exitedAt > 0;
+
   return (
     <div style={{overflowY: 'auto'}}>
       <RunGroupPanel
@@ -90,7 +80,7 @@ export const GanttStatusPanel: React.FC<GanttStatusPanelProps> = ({
           metadata.exitedAt || metadata.startedProcessAt || metadata.startedPipelineAt || 0
         }
       />
-      <SidebarSection title={`Preparing (${preparing.length})`}>
+      <SidebarSection title={`${isFinished ? 'Not executed' : 'Preparing'} (${preparing.length})`}>
         <div>
           {preparing.length === 0 ? (
             <EmptyNotice>No steps are waiting to execute</EmptyNotice>
@@ -126,11 +116,6 @@ export const GanttStatusPanel: React.FC<GanttStatusPanelProps> = ({
           )}
         </div>
       </SidebarSection>
-      {notExecuted.length > 0 ? (
-        <SidebarSection collapsedByDefault title={`Not executed (${notExecuted.length})`}>
-          <div>{notExecuted.map(renderStepItem)}</div>
-        </SidebarSection>
-      ) : null}
     </div>
   );
 };
@@ -145,7 +130,7 @@ const StepItem: React.FC<{
   onDoubleClick?: (name: string) => void;
 }> = ({nowMs, name, selected, metadata, onClick, onHover, onDoubleClick}) => {
   const step = metadata.steps[name];
-  const end = (step && step.end) ?? nowMs;
+  const end = step.end ?? nowMs;
   return (
     <StepItemContainer
       key={name}
@@ -155,9 +140,9 @@ const StepItem: React.FC<{
       onMouseEnter={() => onHover?.(name)}
       onMouseLeave={() => onHover?.(null)}
     >
-      {step?.state === IStepState.RUNNING ? (
+      {step.state === IStepState.RUNNING ? (
         <Spinner purpose="body-text" />
-      ) : step?.state === IStepState.UNKNOWN ? (
+      ) : step.state === IStepState.UNKNOWN ? (
         <Tooltip
           // Modifiers are to prevent flickering: https://github.com/palantir/blueprint/issues/4019
           modifiers={{
@@ -172,7 +157,7 @@ const StepItem: React.FC<{
       ) : (
         <StepStatusDot
           style={{
-            ...boxStyleFor(step?.state, {
+            ...boxStyleFor(metadata.steps[name]?.state, {
               metadata,
               options: {mode: GanttChartMode.WATERFALL_TIMED},
             }),
@@ -180,7 +165,7 @@ const StepItem: React.FC<{
         />
       )}
       <StepLabel>{name}</StepLabel>
-      {step?.start && <Elapsed>{formatElapsedTime(end - step.start)}</Elapsed>}
+      {step.start && <Elapsed>{formatElapsedTime(end - step.start)}</Elapsed>}
     </StepItemContainer>
   );
 };
