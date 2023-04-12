@@ -25,7 +25,6 @@ from dagster._annotations import public
 from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.definition_config_schema import IDefinitionConfigSchema
 from dagster._core.definitions.policy import RetryPolicy
-from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.selector.subset_selector import AssetSelectionData
 from dagster._core.types.dagster_type import (
@@ -547,7 +546,7 @@ class GraphDefinition(NodeDefinition):
         self,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+        resource_defs: Optional[Mapping[str, object]] = None,
         config: Optional[Union[ConfigMapping, Mapping[str, object], "PartitionedConfig[T]"]] = None,
         tags: Optional[Mapping[str, str]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
@@ -567,7 +566,7 @@ class GraphDefinition(NodeDefinition):
         Args:
             name (Optional[str]):
                 The name for the Job. Defaults to the name of the this graph.
-            resource_defs (Optional[Mapping [str, ResourceDefinition]]):
+            resource_defs (Optional[Mapping [str, object]]):
                 Resources that are required by this graph for execution.
                 If not defined, `io_manager` will default to filesystem.
             config:
@@ -620,13 +619,17 @@ class GraphDefinition(NodeDefinition):
         Returns:
             JobDefinition
         """
+        from dagster._core.execution.build_resources import wrap_resources_for_execution
+
         from .job_definition import JobDefinition
+
+        wrapped_resource_defs = wrap_resources_for_execution(resource_defs)
 
         return JobDefinition(
             name=name,
             description=description or self.description,
             graph_def=self,
-            resource_defs=resource_defs,
+            resource_defs=wrapped_resource_defs,
             logger_defs=logger_defs,
             executor_def=executor_def,
             config=config,
