@@ -22,12 +22,15 @@ from dagster import (
     resource,
     with_resources,
 )
-from dagster._config.structured_config import Config
+from dagster._config.pythonic_config import Config
 from dagster._core.definitions.utils import DEFAULT_OUTPUT
 from dagster._utils import PICKLE_PROTOCOL, file_relative_path
 
 import dagstermill
-from dagstermill.io_managers import LocalOutputNotebookIOManager, local_output_notebook_io_manager
+from dagstermill.io_managers import (
+    ConfigurableLocalOutputNotebookIOManager,
+    local_output_notebook_io_manager,
+)
 
 try:
     from dagster_pandas import DataFrame
@@ -92,7 +95,7 @@ def hello_world_job():
 
 @job(
     resource_defs={
-        "output_notebook_io_manager": LocalOutputNotebookIOManager.configure_at_launch(),
+        "output_notebook_io_manager": ConfigurableLocalOutputNotebookIOManager.configure_at_launch(),
         "io_manager": fs_io_manager,
     }
 )

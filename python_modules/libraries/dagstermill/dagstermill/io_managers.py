@@ -1,22 +1,28 @@
 import os
 from pathlib import Path
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Sequence
 
 import dagster._check as check
-from dagster import AssetKey, AssetMaterialization, ConfigurableIOManager
-from dagster._config.structured_config import infer_schema_from_config_class
+from dagster import (
+    AssetKey,
+    AssetMaterialization,
+    ConfigurableIOManagerFactory,
+    InitResourceContext,
+    IOManager,
+)
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.execution.context.input import InputContext
 from dagster._core.execution.context.output import OutputContext
 from dagster._core.storage.io_manager import io_manager
 from dagster._utils import mkdir_p
-from pydantic import Field as PyField
+from pydantic import Field
 
 from dagstermill.factory import _clean_path_for_windows
 
 
-class OutputNotebookIOManager(ConfigurableIOManager):
-    asset_key_prefix: List[str] = PyField([])
+class OutputNotebookIOManager(IOManager):
+    def __init__(self, asset_key_prefix: Optional[Sequence[str]] = None):
+        self.asset_key_prefix = asset_key_prefix if asset_key_prefix else []
 
     def handle_output(self, context: OutputContext, obj: bytes):
         raise NotImplementedError
@@ -30,19 +36,11 @@ READ_MODE = "rb"
 
 
 class LocalOutputNotebookIOManager(OutputNotebookIOManager):
-    """Built-in IO Manager for handling output notebook."""
-
-    base_dir: Optional[str] = PyField(None)
-
-    def create_io_manager(self, context) -> "LocalOutputNotebookIOManager":
-        config = dict(self._as_config_dict())
-        config["base_dir"] = config.get("base_dir") or context.instance.storage_directory()
-        return self.__class__(**config)
-
-    @property
-    def effective_base_dir(self) -> str:
-        assert self.base_dir, "base_dir must be set"
-        return self.base_dir
+    def __init__(self, base_dir: str, asset_key_prefix: Optional[Sequence[str]] = None):
+        super(LocalOutputNotebookIOManager, self).__init__(asset_key_prefix=asset_key_prefix)
+        self.base_dir = base_dir
+        self.write_mode = "wb"
+        self.read_mode = "rb"
 
     def _get_path(self, context: OutputContext) -> str:
         """Automatically construct filepath."""
@@ -50,7 +48,7 @@ class LocalOutputNotebookIOManager(OutputNotebookIOManager):
             keys = context.get_asset_identifier()
         else:
             keys = context.get_run_scoped_output_identifier()
-        return str(Path(self.effective_base_dir, *keys).with_suffix(".ipynb"))
+        return str(Path(self.base_dir, *keys).with_suffix(".ipynb"))
 
     def handle_output(self, context: OutputContext, obj: bytes):
         """obj: bytes."""
@@ -88,12 +86,20 @@ class LocalOutputNotebookIOManager(OutputNotebookIOManager):
             return file_obj.read()
 
 
-@io_manager(config_schema=infer_schema_from_config_class(LocalOutputNotebookIOManager))
+class ConfigurableLocalOutputNotebookIOManager(ConfigurableIOManagerFactory):
+    """Built-in IO Manager for handling output notebook."""
+
+    base_dir: Optional[str] = Field(None)
+    asset_key_prefix: List[str] = Field([])
+
+    def create_io_manager(self, context: InitResourceContext) -> "LocalOutputNotebookIOManager":
+        return LocalOutputNotebookIOManager(
+            base_dir=self.base_dir or check.not_none(context.instance).storage_directory(),
+            asset_key_prefix=self.asset_key_prefix,
+        )
+
+
+@io_manager(config_schema=ConfigurableLocalOutputNotebookIOManager.to_config_schema())
 def local_output_notebook_io_manager(init_context) -> LocalOutputNotebookIOManager:
     """Built-in IO Manager that handles output notebooks."""
-    return LocalOutputNotebookIOManager(
-        base_dir=init_context.resource_config.get(
-            "base_dir", init_context.instance.storage_directory()
-        ),
-        asset_key_prefix=init_context.resource_config.get("asset_key_prefix", []),
-    )
+    return ConfigurableLocalOutputNotebookIOManager.from_resource_context(init_context)

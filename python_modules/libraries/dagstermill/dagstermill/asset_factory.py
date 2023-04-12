@@ -15,8 +15,8 @@ from dagster import (
     RetryRequested,
     asset,
 )
-from dagster._config.structured_config import Config, infer_schema_from_config_class
-from dagster._config.structured_config.utils import safe_is_subclass
+from dagster._config.pythonic_config import Config, infer_schema_from_config_class
+from dagster._config.pythonic_config.utils import safe_is_subclass
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
 from dagster._core.definitions.utils import validate_tags
 from dagster._core.execution.context.compute import OpExecutionContext

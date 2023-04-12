@@ -14,7 +14,10 @@ from dagster import (
 from dagster._core.test_utils import instance_for_test
 from dagster._utils import safe_tempfile_path
 from dagstermill.examples.repository import hello_logging
-from dagstermill.io_managers import LocalOutputNotebookIOManager, local_output_notebook_io_manager
+from dagstermill.io_managers import (
+    ConfigurableLocalOutputNotebookIOManager,
+    local_output_notebook_io_manager,
+)
 
 
 class LogTestFileHandler(logging.Handler):
@@ -62,7 +65,7 @@ def hello_logging_pipeline():
         "critical": test_file_logger,
     },
     resource_defs={
-        "output_notebook_io_manager": LocalOutputNotebookIOManager.configure_at_launch(),
+        "output_notebook_io_manager": ConfigurableLocalOutputNotebookIOManager.configure_at_launch(),
     },
 )
 def hello_logging_pipeline_pythonic():
