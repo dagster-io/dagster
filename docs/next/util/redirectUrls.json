@@ -571,8 +571,18 @@
     "statusCode": 302
   },
   {
+    "source": "/dagster-cloud/developing-testing",
+    "destination": "/dagster-cloud/managing-deployments",
+    "statusCode": 302
+  },
+  {
     "source": "/dagster-cloud/developing-testing/environment-variables",
-    "destination": "/dagster-cloud/developing-testing/environment-variables-and-secrets",
+    "destination": "/dagster-cloud/managing-deployments/environment-variables-and-secrets",
+    "statusCode": 302
+  },
+  {
+    "source": "/dagster-cloud/developing-testing/environment-variables-and-secrets",
+    "destination": "/dagster-cloud/managing-deployments/environment-variables-and-secrets",
     "statusCode": 302
   },
   {
@@ -583,6 +593,56 @@
   {
     "source": "/dagster-cloud/getting-started/getting-started-with-serverless-deployment",
     "destination": "/dagster-cloud/getting-started",
+    "statusCode": 302
+  },
+  {
+    "source": "/dagster-cloud/developing-testing/managing-deployments",
+    "destination": "/dagster-cloud/managing-deployments/managing-deployments",
+    "statusCode": 302
+  },
+  {
+    "source": "/dagster-cloud/developing-testing/deployment-settings-reference",
+    "destination": "/dagster-cloud/managing-deployments/deployment-settings-reference",
+    "statusCode": 302
+  },
+  {
+    "source": "/dagster-cloud/account/setting-up-alerts",
+    "destination": "/dagster-cloud/managing-deployments/setting-up-alerts",
+    "statusCode": 302
+  },
+  {
+    "source": "/dagster-cloud/developing-testing/code-locations",
+    "destination": "/dagster-cloud/managing-deployments/code-locations",
+    "statusCode": 302
+  },
+  {
+    "source": "/dagster-cloud/developing-testing/dagster-cloud-cli",
+    "destination": "/dagster-cloud/managing-deployments/dagster-cloud-cli",
+    "statusCode": 302
+  },
+  {
+    "source": "/dagster-cloud/developing-testing/setting-environment-variables-dagster-cloud-agents",
+    "destination": "/dagster-cloud/managing-deployments/setting-environment-variables-dagster-cloud-agents",
+    "statusCode": 302
+  },
+  {
+    "source": "/dagster-cloud/developing-testing/branch-deployments",
+    "destination": "/dagster-cloud/managing-deployments/branch-deployments",
+    "statusCode": 302
+  },
+  {
+    "source": "/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments-with-github",
+    "destination": "/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments-with-github",
+    "statusCode": 302
+  },
+  {
+    "source": "/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments-with-gitlab",
+    "destination": "/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments-with-gitlab",
+    "statusCode": 302
+  },
+  {
+    "source": "/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments",
+    "destination": "/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments",
     "statusCode": 302
   },
   {
