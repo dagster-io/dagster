@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, 
 
 import dagster._check as check
 from dagster._core.definitions import AssetKey
-from dagster._core.definitions.run_config import RunConfig
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.instance import DagsterInstance
@@ -25,6 +24,7 @@ if TYPE_CHECKING:
     )
     from dagster._core.definitions.asset_graph import InternalAssetGraph
     from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
+    from dagster._core.definitions.run_config import RunConfig
 
 
 class UnresolvedAssetJobDefinition(
@@ -49,7 +49,7 @@ class UnresolvedAssetJobDefinition(
         name: str,
         selection: "AssetSelection",
         config: Optional[
-            Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig", RunConfig]
+            Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig", "RunConfig"]
         ] = None,
         description: Optional[str] = None,
         tags: Optional[Mapping[str, Any]] = None,
@@ -245,7 +245,7 @@ def define_asset_job(
     name: str,
     selection: Optional["CoercibleToAssetSelection"] = None,
     config: Optional[
-        Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig[object]", RunConfig]
+        Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig[object]", "RunConfig"]
     ] = None,
     description: Optional[str] = None,
     tags: Optional[Mapping[str, Any]] = None,
