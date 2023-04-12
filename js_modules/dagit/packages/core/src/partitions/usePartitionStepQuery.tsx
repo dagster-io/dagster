@@ -165,7 +165,7 @@ export function usePartitionStepQuery({
         );
         setDataState((state) => {
           const updated = state.runs
-            .filter((r) => !relevant.some((o) => o.runId === r.runId))
+            .filter((r) => !relevant.some((o) => o.id === r.id))
             .concat(relevant);
           return {...state, loading: false, runs: updated};
         });

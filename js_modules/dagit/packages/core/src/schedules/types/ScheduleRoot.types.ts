@@ -49,7 +49,6 @@ export type ScheduleRootQuery = {
           runs: Array<{
             __typename: 'Run';
             id: string;
-            runId: string;
             status: Types.RunStatus;
             startTime: number | null;
             endTime: number | null;
@@ -126,7 +125,6 @@ export type PreviousRunsForScheduleQuery = {
         results: Array<{
           __typename: 'Run';
           id: string;
-          runId: string;
           status: Types.RunStatus;
           stepKeysToExecute: Array<string> | null;
           canTerminate: boolean;

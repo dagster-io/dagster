@@ -5,7 +5,6 @@ import * as Types from '../../graphql/types';
 export type PartitionMatrixStepRunFragment = {
   __typename: 'Run';
   id: string;
-  runId: string;
   status: Types.RunStatus;
   startTime: number | null;
   endTime: number | null;

@@ -16,7 +16,6 @@ export type AssetPartitionDetailQuery = {
         latestRunForPartition: {
           __typename: 'Run';
           id: string;
-          runId: string;
           status: Types.RunStatus;
           endTime: number | null;
         } | null;
@@ -34,7 +33,6 @@ export type AssetPartitionDetailQuery = {
             | {
                 __typename: 'Run';
                 id: string;
-                runId: string;
                 mode: string;
                 status: Types.RunStatus;
                 pipelineName: string;
@@ -190,7 +188,6 @@ export type AssetPartitionDetailQuery = {
             | {
                 __typename: 'Run';
                 id: string;
-                runId: string;
                 mode: string;
                 status: Types.RunStatus;
                 pipelineName: string;
@@ -334,7 +331,6 @@ export type AssetPartitionDetailQuery = {
 export type AssetPartitionLatestRunFragment = {
   __typename: 'Run';
   id: string;
-  runId: string;
   status: Types.RunStatus;
   endTime: number | null;
 };

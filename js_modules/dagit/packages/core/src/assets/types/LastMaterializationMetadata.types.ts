@@ -14,7 +14,6 @@ export type LatestMaterializationMetadataFragment = {
     | {
         __typename: 'Run';
         id: string;
-        runId: string;
         mode: string;
         pipelineName: string;
         pipelineSnapshotId: string | null;

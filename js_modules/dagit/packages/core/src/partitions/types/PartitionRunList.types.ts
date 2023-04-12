@@ -25,7 +25,6 @@ export type PartitionRunListQuery = {
         results: Array<{
           __typename: 'Run';
           id: string;
-          runId: string;
           status: Types.RunStatus;
           stepKeysToExecute: Array<string> | null;
           canTerminate: boolean;

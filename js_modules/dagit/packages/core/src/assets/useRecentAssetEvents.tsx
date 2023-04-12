@@ -92,7 +92,6 @@ export const ASSET_MATERIALIZATION_FRAGMENT = gql`
     runOrError {
       ... on PipelineRun {
         id
-        runId
         mode
         repositoryOrigin {
           id
@@ -131,7 +130,6 @@ export const ASSET_OBSERVATION_FRAGMENT = gql`
     runOrError {
       ... on PipelineRun {
         id
-        runId
         mode
         repositoryOrigin {
           id

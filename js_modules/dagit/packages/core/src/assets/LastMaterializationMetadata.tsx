@@ -55,7 +55,7 @@ export const LatestMaterializationMetadata: React.FC<{
                 <Box>
                   {'Run '}
                   <Link to={`/runs/${latestEvent.runId}?timestamp=${latestEvent.timestamp}`}>
-                    <Mono>{titleForRun({runId: latestEvent.runId})}</Mono>
+                    <Mono>{titleForRun({id: latestEvent.runId})}</Mono>
                   </Link>
                 </Box>
                 {!isHiddenAssetGroupJob(latestRun.pipelineName) && (
@@ -156,7 +156,6 @@ export const LATEST_MATERIALIZATION_METADATA_FRAGMENT = gql`
     runOrError {
       ... on PipelineRun {
         id
-        runId
         mode
         pipelineName
         pipelineSnapshotId

@@ -20,7 +20,6 @@ export type RunTimelineQuery = {
           __typename: 'Run';
           id: string;
           pipelineName: string;
-          runId: string;
           status: Types.RunStatus;
           startTime: number | null;
           endTime: number | null;
@@ -42,7 +41,6 @@ export type RunTimelineQuery = {
           __typename: 'Run';
           id: string;
           pipelineName: string;
-          runId: string;
           status: Types.RunStatus;
           startTime: number | null;
           endTime: number | null;

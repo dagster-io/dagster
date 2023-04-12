@@ -30,7 +30,6 @@ export type SensorFragment = {
     runs: Array<{
       __typename: 'Run';
       id: string;
-      runId: string;
       status: Types.RunStatus;
       startTime: number | null;
       endTime: number | null;

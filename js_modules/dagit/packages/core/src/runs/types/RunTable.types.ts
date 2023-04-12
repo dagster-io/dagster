@@ -5,7 +5,6 @@ import * as Types from '../../graphql/types';
 export type RunTableRunFragment = {
   __typename: 'Run';
   id: string;
-  runId: string;
   status: Types.RunStatus;
   stepKeysToExecute: Array<string> | null;
   canTerminate: boolean;

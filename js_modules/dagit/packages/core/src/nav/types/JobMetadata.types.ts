@@ -60,7 +60,6 @@ export type JobMetadataQuery = {
           __typename: 'Run';
           id: string;
           status: Types.RunStatus;
-          runId: string;
           startTime: number | null;
           endTime: number | null;
           updateTime: number | null;
@@ -117,7 +116,6 @@ export type RunMetadataFragment = {
   __typename: 'Run';
   id: string;
   status: Types.RunStatus;
-  runId: string;
   startTime: number | null;
   endTime: number | null;
   updateTime: number | null;

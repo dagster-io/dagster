@@ -385,7 +385,6 @@ const PIPELINE_RUN_LOGS_SUBSCRIPTION = gql`
 const PIPELINE_RUN_LOGS_SUBSCRIPTION_STATUS_FRAGMENT = gql`
   fragment PipelineRunLogsSubscriptionStatusFragment on Run {
     id
-    runId
     status
     canTerminate
   }
@@ -396,7 +395,6 @@ const RUN_LOGS_QUERY = gql`
     pipelineRunOrError(runId: $runId) {
       ... on Run {
         id
-        runId
         status
         canTerminate
       }

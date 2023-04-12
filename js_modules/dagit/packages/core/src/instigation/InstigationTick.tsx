@@ -230,7 +230,6 @@ const LAUNCHED_RUN_LIST_QUERY = gql`
         results {
           ...RunTableRunFragment
           id
-          runId
         }
       }
       ... on InvalidPipelineRunsFilterError {

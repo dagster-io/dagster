@@ -71,7 +71,7 @@ export const RunActionsMenu: React.FC<{
     PipelineEnvironmentQuery,
     PipelineEnvironmentQueryVariables
   >(PIPELINE_ENVIRONMENT_QUERY, {
-    variables: {runId: run.runId},
+    variables: {runId: run.id},
   });
 
   const closeDialogs = () => {
@@ -192,7 +192,7 @@ export const RunActionsMenu: React.FC<{
               text="Download debug file"
               icon="download_for_offline"
               download
-              href={`${rootServerURI}/download_debug/${run.runId}`}
+              href={`${rootServerURI}/download_debug/${run.id}`}
             />
             {run.hasDeletePermission ? (
               <MenuItem
@@ -298,7 +298,7 @@ export const RunBulkActionsMenu: React.FC<{
     {},
   );
 
-  const deleteableIDs = selected.map((run) => run.runId);
+  const deleteableIDs = selected.map((run) => run.id);
   const deletionMap = selected.reduce((accum, run) => ({...accum, [run.id]: run.canTerminate}), {});
 
   const reexecuteFromFailureRuns = selected.filter(
