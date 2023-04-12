@@ -85,8 +85,20 @@ class LocalOutputNotebookIOManager(OutputNotebookIOManager):
 class ConfigurableLocalOutputNotebookIOManager(ConfigurableIOManagerFactory):
     """Built-in IO Manager for handling output notebook."""
 
-    base_dir: Optional[str] = Field(None)
-    asset_key_prefix: List[str] = Field([])
+    base_dir: Optional[str] = Field(
+        default=None,
+        description=(
+            "Base directory to use for output notebooks. Defaults to the Dagster instance storage"
+            " directory if not provided."
+        ),
+    )
+    asset_key_prefix: List[str] = Field(
+        [],
+        description=(
+            "Asset key prefix to apply to assets materialized for output notebooks. Defaults to no"
+            " prefix."
+        ),
+    )
 
     def create_io_manager(self, context: InitResourceContext) -> "LocalOutputNotebookIOManager":
         return LocalOutputNotebookIOManager(
