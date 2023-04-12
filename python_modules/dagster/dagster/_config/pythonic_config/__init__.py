@@ -405,17 +405,58 @@ def attach_resource_id_to_key_mapping(
     resource_def: Any, resource_id_to_key_mapping: Dict[ResourceId, str]
 ) -> Any:
     if isinstance(resource_def, (ConfigurableResourceFactory, PartialResource)):
+        defn = resource_def.get_resource_definition()
         return (
-            IOManagerWithKeyMapping(resource_def, resource_id_to_key_mapping)
-            if isinstance(resource_def, IOManagerDefinition)
-            else ResourceWithKeyMapping(resource_def, resource_id_to_key_mapping)
+            IOManagerWithKeyMapping(defn, resource_id_to_key_mapping)
+            if isinstance(defn, IOManagerDefinition)
+            else ResourceWithKeyMapping(defn, resource_id_to_key_mapping)
         )
     return resource_def
 
 
+from typing import Callable
+
+
+class ConfigurableResourceFactoryResourceDefinition(ResourceDefinition, AllowDelayedDependencies):
+    def __init__(
+        self,
+        resource_fn: ResourceFunction,
+        config_schema: Any,
+        description: Optional[str],
+        resolve_resource_keys: Callable[[Mapping[int, str]], AbstractSet[str]],
+    ):
+        super().__init__(
+            resource_fn=resource_fn, config_schema=config_schema, description=description
+        )
+        self._resolve_resource_keys = resolve_resource_keys
+
+    def _resolve_required_resource_keys(
+        self, resource_mapping: Mapping[int, str]
+    ) -> AbstractSet[str]:
+        return self._resolve_resource_keys(resource_mapping)
+
+
+class ConfigurableIOManagerFactoryResourceDefinition(IOManagerDefinition, AllowDelayedDependencies):
+    def __init__(
+        self,
+        resource_fn: ResourceFunction,
+        config_schema: Any,
+        description: Optional[str],
+        resolve_resource_keys: Callable[[Mapping[int, str]], AbstractSet[str]],
+    ):
+        super().__init__(
+            resource_fn=resource_fn, config_schema=config_schema, description=description
+        )
+        self._resolve_resource_keys = resolve_resource_keys
+
+    def _resolve_required_resource_keys(
+        self, resource_mapping: Mapping[int, str]
+    ) -> AbstractSet[str]:
+        return self._resolve_resource_keys(resource_mapping)
+
+
 class ConfigurableResourceFactory(
     Generic[TResValue],
-    ResourceDefinition,
     Config,
     TypecheckAllowPartialResourceInitParams,
     AllowDelayedDependencies,
@@ -483,24 +524,26 @@ class ConfigurableResourceFactory(
             k: v for k, v in self._as_config_dict().items() if k in data_without_resources
         }
         resolved_config_dict = config_dictionary_from_values(casted_data_without_resources, schema)
-        curried_schema = _curry_config_schema(schema, resolved_config_dict)
+        self._config_schema = _curry_config_schema(schema, resolved_config_dict)
 
         # We keep track of any resources we depend on which are not fully configured
         # so that we can retrieve them at runtime
-        self._nested_partial_resources: Mapping[str, ResourceDefinition] = {
-            k: v for k, v in resource_pointers.items() if (not _is_fully_configured(v))
-        }
+        self._nested_partial_resources: Mapping[
+            str, Union[ResourceDefinition, ConfigurableResource, PartialResource]
+        ] = {k: v for k, v in resource_pointers.items() if (not _is_fully_configured(v))}
 
-        ResourceDefinition.__init__(
-            self,
-            resource_fn=self.initialize_and_run,
-            config_schema=curried_schema,
-            description=self.__doc__,
-        )
         self._resolved_config_dict = resolved_config_dict
         self._schema = schema
 
         self._nested_resources = {k: v for k, v in resource_pointers.items()}
+
+    def get_resource_definition(self) -> ConfigurableResourceFactoryResourceDefinition:
+        return ConfigurableResourceFactoryResourceDefinition(
+            resource_fn=self.initialize_and_run,
+            config_schema=self._config_schema,
+            description=self.__doc__,
+            resolve_resource_keys=self._resolve_required_resource_keys,
+        )
 
     @abstractmethod
     def create_resource(self, context: InitResourceContext) -> TResValue:
@@ -568,15 +611,22 @@ class ConfigurableResourceFactory(
                 ),
             )
             partial_resources_to_update = {
-                attr_name: context_with_mapping.resources_by_id[id(resource_def)]
-                for attr_name, resource_def in self._nested_partial_resources.items()
+                attr_name: context_with_mapping.resources_by_id[id(resource)]
+                for attr_name, resource in self._nested_partial_resources.items()
             }
 
         # Also evaluate any resources that are not partial
         resources_to_update, _ = separate_resource_params(self.__dict__)
         resources_to_update = {
-            attr_name: _call_resource_fn_with_default(resource_def, context)
-            for attr_name, resource_def in resources_to_update.items()
+            attr_name: _call_resource_fn_with_default(
+                (
+                    resource.get_resource_definition()
+                    if isinstance(resource, (ConfigurableResourceFactory, PartialResource))
+                    else resource
+                ),
+                context,
+            )
+            for attr_name, resource in resources_to_update.items()
             if attr_name not in partial_resources_to_update
         }
 
@@ -656,7 +706,11 @@ class ConfigurableResource(ConfigurableResourceFactory[TResValue]):
         return cast(TResValue, self)
 
 
-def _is_fully_configured(resource: ResourceDefinition) -> bool:
+def _is_fully_configured(
+    resource: Union[ResourceDefinition, ConfigurableResource, "PartialResource"]
+) -> bool:
+    if isinstance(resource, (ConfigurableResourceFactory, PartialResource)):
+        resource = resource.get_resource_definition()
     res = (
         validate_config(
             resource.config_schema.config_type,
@@ -668,9 +722,7 @@ def _is_fully_configured(resource: ResourceDefinition) -> bool:
     return res
 
 
-class PartialResource(
-    Generic[TResValue], ResourceDefinition, AllowDelayedDependencies, MakeConfigCacheable
-):
+class PartialResource(Generic[TResValue], AllowDelayedDependencies, MakeConfigCacheable):
     data: Dict[str, Any]
     resource_cls: Type[ConfigurableResourceFactory[TResValue]]
 
@@ -687,7 +739,7 @@ class PartialResource(
             k: v for k, v in resource_pointers.items() if (not _is_fully_configured(v))
         }
 
-        schema = infer_schema_from_config_class(
+        self._config_schema = infer_schema_from_config_class(
             resource_cls, fields_to_omit=set(resource_pointers.keys())
         )
 
@@ -695,18 +747,22 @@ class PartialResource(
             instantiated = resource_cls(**context.resource_config, **data)
             return instantiated.initialize_and_run(context)
 
-        ResourceDefinition.__init__(
-            self,
-            resource_fn=resource_fn,
-            config_schema=schema,
-            description=resource_cls.__doc__,
-        )
+        self._resource_fn = resource_fn
+        self._description = resource_cls.__doc__
 
         self._nested_resources = {k: v for k, v in resource_pointers.items()}
 
     @property
     def nested_resources(self) -> Mapping[str, ResourceDefinition]:
         return self._nested_resources
+
+    def get_resource_definition(self) -> ConfigurableResourceFactoryResourceDefinition:
+        return ConfigurableResourceFactoryResourceDefinition(
+            resource_fn=self._resource_fn,
+            config_schema=self._config_schema,
+            description=self._description,
+            resolve_resource_keys=self._resolve_required_resource_keys,
+        )
 
 
 ResourceOrPartial: TypeAlias = Union[
@@ -766,17 +822,19 @@ class ConfigurableLegacyResourceAdapter(ConfigurableResource, ABC):
     def wrapped_resource(self) -> ResourceDefinition:
         raise NotImplementedError()
 
-    @property
-    def resource_fn(self) -> ResourceFunction:
-        return self.wrapped_resource.resource_fn
+    def get_resource_definition(self) -> ConfigurableResourceFactoryResourceDefinition:
+        return ConfigurableResourceFactoryResourceDefinition(
+            resource_fn=self.wrapped_resource.resource_fn,
+            config_schema=self._config_schema,
+            description=self.__doc__,
+            resolve_resource_keys=self._resolve_required_resource_keys,
+        )
 
     def __call__(self, *args, **kwargs):
         return self.wrapped_resource(*args, **kwargs)
 
 
-class ConfigurableIOManagerFactory(
-    ConfigurableResourceFactory[TIOManagerValue], IOManagerDefinition
-):
+class ConfigurableIOManagerFactory(ConfigurableResourceFactory[TIOManagerValue]):
     """Base class for Dagster IO managers that utilize structured config. This base class
     is useful for cases in which the returned IO manager is not the same as the class itself
     (e.g. when it is a wrapper around the actual IO manager implementation).
@@ -788,12 +846,6 @@ class ConfigurableIOManagerFactory(
 
     def __init__(self, **data: Any):
         ConfigurableResourceFactory.__init__(self, **data)
-        IOManagerDefinition.__init__(
-            self,
-            resource_fn=self.initialize_and_run,
-            config_schema=self._config_schema,
-            description=self.__doc__,
-        )
 
     @abstractmethod
     def create_io_manager(self, context) -> TIOManagerValue:
@@ -815,17 +867,27 @@ class ConfigurableIOManagerFactory(
         """
         return PartialIOManager(cls, data=kwargs)
 
+    def get_resource_definition(self) -> ConfigurableIOManagerFactoryResourceDefinition:
+        return ConfigurableIOManagerFactoryResourceDefinition(
+            resource_fn=self.initialize_and_run,
+            config_schema=self._config_schema,
+            description=self.__doc__,
+            resolve_resource_keys=self._resolve_required_resource_keys,
+        )
 
-class PartialIOManager(Generic[TResValue], PartialResource[TResValue], IOManagerDefinition):
+
+class PartialIOManager(Generic[TResValue], PartialResource[TResValue]):
     def __init__(
         self, resource_cls: Type[ConfigurableResourceFactory[TResValue]], data: Dict[str, Any]
     ):
         PartialResource.__init__(self, resource_cls, data)
-        IOManagerDefinition.__init__(
-            self,
+
+    def get_resource_definition(self) -> ConfigurableIOManagerFactoryResourceDefinition:
+        return ConfigurableIOManagerFactoryResourceDefinition(
             resource_fn=self._resource_fn,
             config_schema=self._config_schema,
-            description=resource_cls.__doc__,
+            description=self._description,
+            resolve_resource_keys=self._resolve_required_resource_keys,
         )
 
 
@@ -1051,9 +1113,13 @@ class ConfigurableLegacyIOManagerAdapter(ConfigurableIOManagerFactory):
             "Because we override resource_fn in the adapter, this is never called."
         )
 
-    @property
-    def resource_fn(self) -> ResourceFunction:
-        return self.wrapped_io_manager.resource_fn
+    def get_resource_definition(self) -> ConfigurableIOManagerFactoryResourceDefinition:
+        return ConfigurableIOManagerFactoryResourceDefinition(
+            resource_fn=self.wrapped_io_manager.resource_fn,
+            config_schema=self._config_schema,
+            description=self.__doc__,
+            resolve_resource_keys=self._resolve_required_resource_keys,
+        )
 
 
 def _convert_pydantic_descriminated_union_field(pydantic_field: ModelField) -> Field:
@@ -1176,7 +1242,7 @@ def infer_schema_from_config_class(
 
 
 class SeparatedResourceParams(NamedTuple):
-    resources: Dict[str, ResourceDefinition]
+    resources: Dict[str, Union[ResourceDefinition, ConfigurableResourceFactory, PartialResource]]
     non_resources: Dict[str, Any]
 
 
@@ -1185,8 +1251,16 @@ def separate_resource_params(data: Dict[str, Any]) -> SeparatedResourceParams:
     are themselves Resources and those which are not.
     """
     return SeparatedResourceParams(
-        resources={k: v for k, v in data.items() if isinstance(v, ResourceDefinition)},
-        non_resources={k: v for k, v in data.items() if not isinstance(v, ResourceDefinition)},
+        resources={
+            k: v
+            for k, v in data.items()
+            if isinstance(v, (ResourceDefinition, ConfigurableResourceFactory, PartialResource))
+        },
+        non_resources={
+            k: v
+            for k, v in data.items()
+            if not isinstance(v, (ResourceDefinition, ConfigurableResourceFactory, PartialResource))
+        },
     )
 
 

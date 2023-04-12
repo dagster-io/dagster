@@ -58,7 +58,7 @@ from pydantic import (
 )
 
 
-def test_basic_structured_resource():
+def test_basic_structured_resource_defs():
     out_txt = []
 
     class WriterResource(ConfigurableResource):
@@ -85,6 +85,27 @@ def test_basic_structured_resource():
         hello_world_op()
 
     assert prefix_job.execute_in_process().success
+    assert out_txt == ["greeting: hello, world!"]
+
+
+def test_basic_structured_resource_defs_asset() -> None:
+    out_txt = []
+
+    class WriterResource(ConfigurableResource):
+        prefix: str
+
+        def output(self, text: str) -> None:
+            out_txt.append(f"{self.prefix}{text}")
+
+    @asset
+    def hello_world_asset(writer: WriterResource):
+        writer.output("hello, world!")
+
+    defs = Definitions(
+        assets=[hello_world_asset], resources={"writer": WriterResource(prefix="greeting: ")}
+    )
+
+    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
     assert out_txt == ["greeting: hello, world!"]
 
 
