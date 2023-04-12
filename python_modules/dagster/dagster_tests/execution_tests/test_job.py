@@ -223,3 +223,22 @@ def test_subset_job_with_config():
         run_config={"ops": {"echo": {"inputs": {"x": 1}}}}
     )
     assert result.success
+
+
+def test_coerce_resource_job_decorator() -> None:
+    executed = {}
+
+    class BareResourceObject:
+        pass
+
+    @op(required_resource_keys={"bare_resource"})
+    def an_op(context) -> None:
+        assert context.resources.bare_resource
+        executed["yes"] = True
+
+    @job(resource_defs={"bare_resource": BareResourceObject()})
+    def a_job() -> None:
+        an_op()
+
+    assert a_job.execute_in_process().success
+    assert executed["yes"]

@@ -119,7 +119,7 @@ def job(
     *,
     name: Optional[str] = ...,
     description: Optional[str] = ...,
-    resource_defs: Optional[Mapping[str, ResourceDefinition]] = ...,
+    resource_defs: Optional[Mapping[str, object]] = ...,
     config: Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig[object]"] = ...,
     tags: Optional[Mapping[str, Any]] = ...,
     metadata: Optional[Mapping[str, RawMetadataValue]] = ...,
@@ -139,7 +139,7 @@ def job(
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
-    resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+    resource_defs: Optional[Mapping[str, object]] = None,
     config: Optional[Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig[object]"]] = None,
     tags: Optional[Mapping[str, Any]] = None,
     metadata: Optional[Mapping[str, RawMetadataValue]] = None,
@@ -162,7 +162,7 @@ def job(
             functions, does not accept a context argument.
         name (Optional[str]):
             The name for the Job. Defaults to the name of the this graph.
-        resource_defs (Optional[Mapping[str, ResourceDefinition]]):
+        resource_defs (Optional[Mapping[str, object]]):
             Resources that are required by this graph for execution.
             If not defined, `io_manager` will default to filesystem.
         config:
@@ -228,10 +228,12 @@ def job(
         check.invariant(description is None)
         return _Job()(compose_fn)
 
+    from dagster._core.execution.build_resources import wrap_resources_for_execution
+
     return _Job(
         name=name,
         description=description,
-        resource_defs=resource_defs,
+        resource_defs=wrap_resources_for_execution(resource_defs),
         config=config,
         tags=tags,
         metadata=metadata,
