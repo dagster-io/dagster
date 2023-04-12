@@ -4,6 +4,7 @@ import * as React from 'react';
 import {Button} from './Button';
 import {Countdown, useCountdown} from './Countdown';
 import {Group} from './Group';
+import {secondsToCountdownTime} from './secondsToCountdownTime';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -27,7 +28,7 @@ export const FiveSeconds = () => {
       return <div>Waiting for refresh…</div>;
     }
     const seconds = Math.floor(timeRemaining / 1000);
-    return <div>{`Refresh in 0:${seconds < 10 ? `0${seconds}` : seconds}`}</div>;
+    return <div>{`Refresh in ${secondsToCountdownTime(seconds)}`}</div>;
   };
 
   return (
