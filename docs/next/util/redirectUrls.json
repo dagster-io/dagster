@@ -108,11 +108,6 @@
     "statusCode": 302
   },
   {
-    "source": "/examples/pipeline_unittesting",
-    "destination": "/concepts/solids-pipelines/testing",
-    "statusCode": 302
-  },
-  {
     "source": "/overview/configuration/run-config",
     "destination": "/concepts/configuration/config-schema",
     "statusCode": 302
@@ -405,12 +400,6 @@
     "destination": "/concepts/solids-pipelines/pipelines#pipeline-tags",
     "statusCode": 302
   },
-
-  {
-    "source": "/examples/pipeline_unittesting",
-    "destination": "/concepts/solids-pipelines/testing",
-    "statusCode": 302
-  },
   {
     "source": "/examples/basic_pyspark",
     "destination": "/integrations/pyspark",
@@ -419,17 +408,6 @@
   {
     "source": "/examples/dynamic_graph",
     "destination": "/concepts/solids-pipelines/pipelines#dynamic-fan-out",
-    "statusCode": 302
-  },
-
-  {
-    "source": "/examples/simple_lakehouse",
-    "destination": "/guides/dagster/lakehouse",
-    "statusCode": 302
-  },
-  {
-    "source": "/examples/multi_type_lakehouse",
-    "destination": "/guides/dagster/multi-type-lakehouse",
     "statusCode": 302
   },
   {
