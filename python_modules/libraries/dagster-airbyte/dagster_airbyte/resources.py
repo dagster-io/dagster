@@ -16,6 +16,7 @@ from dagster import (
 )
 from dagster._annotations import quiet_experimental_warnings
 from dagster._config.pythonic_config import infer_schema_from_config_class
+from dagster._utils.cached_method import cached_method
 from dagster._utils.merger import deep_merge_dicts
 from pydantic import Field
 from requests.exceptions import RequestException
@@ -35,10 +36,15 @@ class AirbyteState:
     INCOMPLETE = "incomplete"
 
 
+class AirbyteResourceState:
+    def __init__(self) -> None:
+        self.request_cache: Dict[str, Optional[Mapping[str, object]]] = {}
+        # Int in case we nest contexts
+        self.cache_enabled = 0
+
+
 class AirbyteResource(ConfigurableResource):
     """This class exposes methods on top of the Airbyte REST API."""
-
-    _log: logging.Logger
 
     host: str = Field(description="The Airbyte server address.")
     port: str = Field(description="Port used for the Airbyte server.")
@@ -85,19 +91,15 @@ class AirbyteResource(ConfigurableResource):
         ),
     )
 
-    def __init__(
-        self,
-        *args,
-        **kwargs,
-    ) -> None:
-        super().__init__(*args, **kwargs)
+    @property
+    @cached_method
+    def _state(self) -> AirbyteResourceState:
+        return AirbyteResourceState()
 
-        # self._log = log
-        self._log = get_dagster_logger()
-
-        self._request_cache: Dict[str, Optional[Mapping[str, object]]] = {}
-        # Int in case we nest contexts
-        self._cache_enabled = 0
+    @property
+    @cached_method
+    def _log(self) -> logging.Logger:
+        return get_dagster_logger()
 
     @property
     def api_base_url(self) -> str:
@@ -113,18 +115,18 @@ class AirbyteResource(ConfigurableResource):
         cleared when the context is exited.
         """
         self.clear_request_cache()
-        self._cache_enabled += 1
+        self._state.cache_enabled += 1
         try:
             yield
         finally:
             self.clear_request_cache()
-            self._cache_enabled -= 1
+            self._state.cache_enabled -= 1
 
-    def clear_request_cache(self):
-        self._request_cache = {}
+    def clear_request_cache(self) -> None:
+        self._state.request_cache = {}
 
     def make_request_cached(self, endpoint: str, data: Optional[Mapping[str, object]]):
-        if not self._cache_enabled > 0:
+        if not self._state.cache_enabled > 0:
             return self.make_request(endpoint, data)
         data_json = json.dumps(data, sort_keys=True)
         sha = hashlib.sha1()
@@ -132,9 +134,9 @@ class AirbyteResource(ConfigurableResource):
         sha.update(data_json.encode("utf-8"))
         digest = sha.hexdigest()
 
-        if digest not in self._request_cache:
-            self._request_cache[digest] = self.make_request(endpoint, data)
-        return self._request_cache[digest]
+        if digest not in self._state.request_cache:
+            self._state.request_cache[digest] = self.make_request(endpoint, data)
+        return self._state.request_cache[digest]
 
     def make_request(
         self, endpoint: str, data: Optional[Mapping[str, object]]
