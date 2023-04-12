@@ -48,6 +48,7 @@ import {AssetPlots} from './AssetPlots';
 import {CurrentMinutesLateTag} from './CurrentMinutesLateTag';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {LaunchAssetObservationButton} from './LaunchAssetObservationButton';
+import {UNDERLYING_OPS_ASSET_NODE_FRAGMENT} from './UnderlyingOpsOrGraph';
 import {AssetKey} from './types';
 import {
   AssetViewDefinitionNodeFragment,
@@ -416,10 +417,12 @@ export const ASSET_VIEW_DEFINITION_QUERY = gql`
 
     ...AssetNodeInstigatorsFragment
     ...AssetNodeDefinitionFragment
+    ...UnderlyingOpsAssetNodeFragment
   }
 
   ${ASSET_NODE_INSTIGATORS_FRAGMENT}
   ${ASSET_NODE_DEFINITION_FRAGMENT}
+  ${UNDERLYING_OPS_ASSET_NODE_FRAGMENT}
 `;
 
 const HistoricalViewAlert: React.FC<{

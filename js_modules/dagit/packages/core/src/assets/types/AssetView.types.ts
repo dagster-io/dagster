@@ -67,6 +67,7 @@ export type AssetViewDefinitionQuery = {
             }>;
           }>;
           requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
+          assetKey: {__typename: 'AssetKey'; path: Array<string>};
           configField: {
             __typename: 'ConfigTypeField';
             name: string;
@@ -623,7 +624,6 @@ export type AssetViewDefinitionQuery = {
                   >;
                 };
           } | null;
-          assetKey: {__typename: 'AssetKey'; path: Array<string>};
           metadataEntries: Array<
             | {
                 __typename: 'AssetMetadataEntry';
@@ -15768,6 +15768,7 @@ export type AssetViewDefinitionNodeFragment = {
     }>;
   }>;
   requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
+  assetKey: {__typename: 'AssetKey'; path: Array<string>};
   configField: {
     __typename: 'ConfigTypeField';
     name: string;
@@ -16320,7 +16321,6 @@ export type AssetViewDefinitionNodeFragment = {
           >;
         };
   } | null;
-  assetKey: {__typename: 'AssetKey'; path: Array<string>};
   metadataEntries: Array<
     | {
         __typename: 'AssetMetadataEntry';
