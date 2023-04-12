@@ -22,7 +22,6 @@ export type RunStatsQuery = {
     | {
         __typename: 'Run';
         id: string;
-        runId: string;
         pipelineName: string;
         stats:
           | {

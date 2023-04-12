@@ -10,7 +10,6 @@ export const RUN_FRAGMENT = gql`
   fragment RunFragment on Run {
     id
     runConfigYaml
-    runId
     canTerminate
     repositoryOrigin {
       id

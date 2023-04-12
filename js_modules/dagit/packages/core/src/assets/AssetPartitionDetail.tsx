@@ -123,7 +123,6 @@ export const ASSET_PARTITION_DETAIL_QUERY = gql`
   fragment AssetPartitionLatestRunFragment on Run {
     __typename
     id
-    runId
     status
     endTime
   }
@@ -206,7 +205,7 @@ export const AssetPartitionDetail: React.FC<{
           icon={<Spinner purpose="body-text" />}
           title={
             <div style={{fontWeight: 400}}>
-              Run <Link to={`/runs/${currentRun.runId}`}>{titleForRun(currentRun)}</Link>{' '}
+              Run <Link to={`/runs/${currentRun.id}`}>{titleForRun(currentRun)}</Link>{' '}
               {currentRunStatusMessage}
             </div>
           }
@@ -252,7 +251,7 @@ export const AssetPartitionDetail: React.FC<{
           <Subheading>Run</Subheading>
           {latestEventRun && latest ? (
             <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-              <RunStatusWithStats runId={latestEventRun.runId} status={latestEventRun.status} />
+              <RunStatusWithStats runId={latestEventRun.id} status={latestEventRun.status} />
               <Link to={linkToRunEvent(latestEventRun, latest)}>
                 <Mono>{titleForRun(latestEventRun)}</Mono>
               </Link>

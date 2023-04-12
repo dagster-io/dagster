@@ -110,7 +110,7 @@ export const SidebarOpExecutionGraphs: React.FC<{
                   placement="bottom-end"
                   content={`View Run ${runId.slice(0, 8)} →`}
                 >
-                  <Link to={linkToRunEvent({runId}, {stepKey: solidName})}>
+                  <Link to={linkToRunEvent({id: runId}, {stepKey: solidName})}>
                     <StepStatusDot
                       onMouseEnter={() => startTime && setHighlightedStartTime(startTime * 1000)}
                       onMouseLeave={() => setHighlightedStartTime(null)}

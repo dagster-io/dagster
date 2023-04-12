@@ -24,7 +24,6 @@ const buildLaunchPipelineReexecutionSuccessMock = (
         __typename: 'LaunchRunSuccess',
         run: {
           id: '1234',
-          runId: '1234',
           pipelineName: '1234',
           rootRunId: null,
           parentRunId,

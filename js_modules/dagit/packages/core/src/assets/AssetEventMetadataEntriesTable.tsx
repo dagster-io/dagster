@@ -66,7 +66,7 @@ export const AssetEventMetadataEntriesTable: React.FC<{
                 <Box>
                   {`Observed in run `}
                   <Link to={`/runs/${obv.runId}?timestamp=${timestamp}`}>
-                    <Mono>{titleForRun({runId: obv.runId})}</Mono>
+                    <Mono>{titleForRun({id: obv.runId})}</Mono>
                   </Link>
                 </Box>
                 <Caption>

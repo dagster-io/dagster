@@ -24,7 +24,6 @@ export const LatestMaterializationMetadata: React.FC<{
   latest: AssetObservationFragment | AssetMaterializationFragment | undefined;
   liveData: LiveDataForNode | undefined;
 }> = ({assetKey, latest, liveData}) => {
-  console.log(latest);
   const latestRun = latest?.runOrError.__typename === 'Run' ? latest?.runOrError : null;
   const repositoryOrigin = latestRun?.repositoryOrigin;
   const repoAddress = repositoryOrigin
@@ -59,7 +58,7 @@ export const LatestMaterializationMetadata: React.FC<{
                 <Box>
                   {'Run '}
                   <Link to={`/runs/${latestEvent.runId}?timestamp=${latestEvent.timestamp}`}>
-                    <Mono>{titleForRun({runId: latestEvent.runId})}</Mono>
+                    <Mono>{titleForRun({id: latestEvent.runId})}</Mono>
                   </Link>
                 </Box>
                 {!isHiddenAssetGroupJob(latestRun.pipelineName) && (

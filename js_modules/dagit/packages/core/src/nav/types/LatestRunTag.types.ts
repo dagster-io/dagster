@@ -17,7 +17,6 @@ export type LatestRunTagQuery = {
           __typename: 'Run';
           id: string;
           status: Types.RunStatus;
-          runId: string;
           startTime: number | null;
           endTime: number | null;
           updateTime: number | null;
