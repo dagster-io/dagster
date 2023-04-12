@@ -17,7 +17,7 @@ from dagster import (
 from dagster._annotations import quiet_experimental_warnings
 from dagster._config.pythonic_config import infer_schema_from_config_class
 from dagster._utils.merger import deep_merge_dicts
-from pydantic import Field as PyField
+from pydantic import Field
 from requests.exceptions import RequestException
 
 from dagster_airbyte.types import AirbyteOutput
@@ -40,43 +40,43 @@ class AirbyteResource(ConfigurableResource):
 
     _log: logging.Logger
 
-    host: str = PyField(..., description="The Airbyte server address.")
-    port: str = PyField(..., description="Port used for the Airbyte server.")
-    username: Optional[str] = PyField(None, description="Username if using basic auth.")
-    password: Optional[str] = PyField(None, description="Password if using basic auth.")
-    use_https: bool = PyField(
-        False, description="Whether to use HTTPS to connect to the Airbyte server."
+    host: str = Field(description="The Airbyte server address.")
+    port: str = Field(description="Port used for the Airbyte server.")
+    username: Optional[str] = Field(default=None, description="Username if using basic auth.")
+    password: Optional[str] = Field(default=None, description="Password if using basic auth.")
+    use_https: bool = Field(
+        default=False, description="Whether to use HTTPS to connect to the Airbyte server."
     )
-    request_max_retries: int = PyField(
-        3,
+    request_max_retries: int = Field(
+        default=3,
         description=(
             "The maximum number of times requests to the Airbyte API should be retried "
             "before failing."
         ),
     )
-    request_retry_delay: float = PyField(
-        0.25,
+    request_retry_delay: float = Field(
+        default=0.25,
         description="Time (in seconds) to wait between each request retry.",
     )
-    request_timeout: int = PyField(
-        15,
+    request_timeout: int = Field(
+        default=15,
         description="Time (in seconds) after which the requests to Airbyte are declared timed out.",
     )
-    request_additional_params: Mapping[str, Any] = PyField(
-        dict(),
+    request_additional_params: Mapping[str, Any] = Field(
+        default=dict(),
         description=(
             "Any additional kwargs to pass to the requests library when making requests to Airbyte."
         ),
     )
-    forward_logs: bool = PyField(
-        True,
+    forward_logs: bool = Field(
+        default=True,
         description=(
             "Whether to forward Airbyte logs to the compute log, can be expensive for"
             " long-running syncs."
         ),
     )
-    cancel_sync_on_run_termination: bool = PyField(
-        True,
+    cancel_sync_on_run_termination: bool = Field(
+        default=True,
         description=(
             "Whether to cancel a sync in Airbyte if the Dagster runner is terminated. This may"
             " be useful to disable if using Airbyte sources that cannot be cancelled and"
