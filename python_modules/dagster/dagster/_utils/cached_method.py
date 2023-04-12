@@ -18,7 +18,7 @@ class _Sentinel:
 NO_VALUE_IN_CACHE_SENTINEL: Final = _Sentinel()
 NO_ARGS_HASH_VALUE = 0
 
-CACHED_METHOD_FIELD_SUFFIX = "_cached_method_cache"
+CACHED_METHOD_FIELD_SUFFIX = "_cached__internal__"
 
 
 def cached_method(method: Callable[Concatenate[S, P], T]) -> Callable[Concatenate[S, P], T]:
