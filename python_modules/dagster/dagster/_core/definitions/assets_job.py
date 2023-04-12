@@ -98,7 +98,7 @@ def build_assets_job(
     name: str,
     assets: Sequence[AssetsDefinition],
     source_assets: Optional[Sequence[Union[SourceAsset, AssetsDefinition]]] = None,
-    resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+    resource_defs: Optional[Mapping[str, object]] = None,
     description: Optional[str] = None,
     config: Optional[Union[ConfigMapping, Mapping[str, object], PartitionedConfig[object]]] = None,
     tags: Optional[Mapping[str, str]] = None,
@@ -118,7 +118,7 @@ def build_assets_job(
             decorator.
         source_assets (Optional[Sequence[Union[SourceAsset, AssetsDefinition]]]): A list of
             assets that are not materialized by this job, but that assets in this job depend on.
-        resource_defs (Optional[Mapping[str, ResourceDefinition]]): Resource defs to be included in
+        resource_defs (Optional[Mapping[str, object]]): Resource defs to be included in
             this job.
         description (Optional[str]): A description of the job.
 
@@ -138,6 +138,8 @@ def build_assets_job(
     Returns:
         JobDefinition: A job that materializes the given assets.
     """
+    from dagster._core.execution.build_resources import wrap_resources_for_execution
+
     check.str_param(name, "name")
     check.iterable_param(assets, "assets", of_type=(AssetsDefinition, SourceAsset))
     source_assets = check.opt_sequence_param(
@@ -151,6 +153,7 @@ def build_assets_job(
 
     resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
     resource_defs = merge_dicts({DEFAULT_IO_MANAGER_KEY: default_job_io_manager}, resource_defs)
+    wrapped_resource_defs = wrap_resources_for_execution(resource_defs)
 
     # turn any AssetsDefinitions into SourceAssets
     resolved_source_assets: List[SourceAsset] = []
@@ -189,7 +192,7 @@ def build_assets_job(
         graph, assets_defs_by_node_handle, resolved_source_assets, resolved_asset_deps
     )
 
-    all_resource_defs = get_all_resource_defs(assets, resolved_source_assets, resource_defs)
+    all_resource_defs = get_all_resource_defs(assets, resolved_source_assets, wrapped_resource_defs)
 
     if _asset_selection_data:
         original_job = _asset_selection_data.parent_job_def
