@@ -10,6 +10,7 @@ from dagster import (
     AssetsDefinition,
     DagsterEventType,
     DailyPartitionsDefinition,
+    Definitions,
     EventRecordsFilter,
     FreshnessPolicy,
     GraphOut,
@@ -1363,3 +1364,19 @@ def test_invalid_context_assets_def():
 
     with pytest.raises(DagsterInvalidPropertyError, match="does not have an assets definition"):
         my_job.execute_in_process()
+
+
+def test_asset_takes_bare_resource():
+    class BareObjectResource:
+        pass
+
+    executed = {}
+
+    @asset(resource_defs={"bare_resource": BareObjectResource()})
+    def blah(context):
+        assert context.resources.bare_resource
+        executed["yes"] = True
+
+    defs = Definitions(assets=[blah])
+    defs.get_implicit_global_asset_job_def().execute_in_process()
+    assert executed["yes"]
