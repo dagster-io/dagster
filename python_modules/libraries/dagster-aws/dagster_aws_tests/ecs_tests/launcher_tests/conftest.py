@@ -283,7 +283,7 @@ def run(instance: DagsterInstance, job: JobDefinition, external_job: ExternalJob
 
 @pytest.fixture
 def other_run(
-    instance: DagsterInstance, job: JobDefinition, external_job: ExternalJob
+    instance: DagsterInstance, job: JobDefinition, other_external_job: ExternalJob
 ) -> DagsterRun:
     return instance.create_run_for_job(
         job,
