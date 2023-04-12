@@ -43,7 +43,9 @@ export const DagsterTypeSummary: React.FC<{
   horizontalPadding?: Spacing;
 }> = ({type, horizontalPadding}) => {
   horizontalPadding = horizontalPadding || 0;
-  const tableSchemaEntry = type.metadataEntries.find(gqlTypePredicate('TableSchemaMetadataEntry'));
+  const tableSchemaEntry = (type.metadataEntries || []).find(
+    gqlTypePredicate('TableSchemaMetadataEntry'),
+  );
   return (
     <Box
       flex={{direction: 'column', gap: 8}}
@@ -76,12 +78,15 @@ export const DagsterTypeSummary: React.FC<{
 // NOTE: Because you can't have a recursive fragment, inner types are limited.
 export const DAGSTER_TYPE_FRAGMENT = gql`
   fragment DagsterTypeFragment on DagsterType {
+    __typename
     ..._DagsterTypeFragment
     innerTypes {
+      __typename
       ..._DagsterTypeFragment
     }
   }
   fragment _DagsterTypeFragment on DagsterType {
+    __typename
     key
     name
     displayName

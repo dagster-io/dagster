@@ -1,12 +1,11 @@
 import {Box} from '@dagster-io/ui';
 import React from 'react';
 
-import {KNOWN_TAGS} from '../graph/OpTags';
-
-import {AssetNode, AssetNodeMinimal} from './AssetNode';
-import * as Mocks from './AssetNode.mocks';
-import {AssetNodeLink} from './ForeignNode';
-import {getAssetNodeDimensions} from './layout';
+import {KNOWN_TAGS} from '../../graph/OpTags';
+import {AssetNode, AssetNodeMinimal} from '../AssetNode';
+import * as Mocks from '../AssetNode.mocks';
+import {AssetNodeLink} from '../ForeignNode';
+import {getAssetNodeDimensions} from '../layout';
 
 // eslint-disable-next-line import/no-default-export
 export default {component: AssetNode};

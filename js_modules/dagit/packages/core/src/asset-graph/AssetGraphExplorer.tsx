@@ -444,7 +444,7 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
             <RightInfoPanelContent>
               <ErrorBoundary region="asset sidebar" resetErrorOnChange={[selectedGraphNodes[0].id]}>
                 <SidebarAssetInfo
-                  assetNode={selectedGraphNodes[0]}
+                  graphNode={selectedGraphNodes[0]}
                   liveData={liveDataByNode[selectedGraphNodes[0].id]}
                 />
               </ErrorBoundary>

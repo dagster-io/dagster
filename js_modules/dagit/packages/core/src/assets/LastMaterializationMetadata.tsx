@@ -24,6 +24,7 @@ export const LatestMaterializationMetadata: React.FC<{
   latest: AssetObservationFragment | AssetMaterializationFragment | undefined;
   liveData: LiveDataForNode | undefined;
 }> = ({assetKey, latest, liveData}) => {
+  console.log(latest);
   const latestRun = latest?.runOrError.__typename === 'Run' ? latest?.runOrError : null;
   const repositoryOrigin = latestRun?.repositoryOrigin;
   const repoAddress = repositoryOrigin
