@@ -4,17 +4,45 @@ import pandas as pd
 import pandas.core.dtypes.common as pd_core_dtypes_common
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
 from dagster._core.definitions.metadata import RawMetadataValue
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 from dagster_snowflake import build_snowflake_io_manager
 from dagster_snowflake.snowflake_io_manager import SnowflakeDbClient, SnowflakeIOManager
 from snowflake.connector.pandas_tools import pd_writer
 
 
-def _convert_timestamp_to_string(s: pd.Series) -> pd.Series:
+def _table_exists(table_slice: TableSlice, connection):
+    tables = connection.execute(
+        f"SHOW TABLES LIKE '{table_slice.table}' IN SCHEMA"
+        f" {table_slice.database}.{table_slice.schema}"
+    ).fetchall()
+    return len(tables) > 0
+
+
+def _get_table_column_types(table_slice: TableSlice, connection) -> Optional[Mapping[str, str]]:
+    if _table_exists(table_slice, connection):
+        schema_list = connection.execute(f"DESCRIBE TABLE {table_slice.table}").fetchall()
+        return {item[0]: item[1] for item in schema_list}
+
+
+def _convert_timestamp_to_string(
+    s: pd.Series, column_types: Optional[Mapping[str, str]], table_name: str
+) -> pd.Series:
     """Converts columns of data of type pd.Timestamp to string so that it can be stored in
     snowflake.
     """
+    column_name = str(s.name)
     if pd_core_dtypes_common.is_datetime_or_timedelta_dtype(s):  # type: ignore  # (bad stubs)
+        if column_types:
+            if "VARCHAR" not in column_types[column_name]:
+                raise DagsterInvariantViolationError(
+                    "Snowflake I/O manager: Snowflake I/O manager configured to convert time data"
+                    f" in DataFrame column {column_name} to strings, but the corresponding"
+                    f" {column_name.upper()} column in table {table_name} is not of type VARCHAR,"
+                    f" it is of type {column_types[column_name]}. Please set"
+                    " store_timestamps_as_strings=False in the Snowflake I/O manager configuration"
+                    " to store time data as TIMESTAMP types."
+                )
         return s.dt.strftime("%Y-%m-%d %H:%M:%S.%f %z")
     else:
         return s
@@ -34,6 +62,23 @@ def _convert_string_to_timestamp(s: pd.Series) -> pd.Series:
             return s
     else:
         return s
+
+
+def _add_missing_timezone(
+    s: pd.Series, column_types: Optional[Mapping[str, str]], table_name: str
+) -> pd.Series:
+    column_name = str(s.name)
+    if pd_core_dtypes_common.is_datetime_or_timedelta_dtype(s):  # type: ignore  # (bad stubs)
+        if column_types:
+            if "VARCHAR" in column_types[column_name]:
+                raise DagsterInvariantViolationError(
+                    f"Snowflake I/O manager: The Snowflake column {column_name.upper()} in table"
+                    f" {table_name} is of type {column_types[column_name]} and should be of type"
+                    f" TIMESTAMP to store the time data in dataframe column {column_name}. Please"
+                    " migrate this column to be of time TIMESTAMP_NTZ(9) to store time data."
+                )
+        return s.dt.tz_localize("UTC")
+    return s
 
 
 class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
@@ -73,7 +118,18 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
 
         connector.paramstyle = "pyformat"
         with_uppercase_cols = obj.rename(str.upper, copy=False, axis="columns")
-        with_uppercase_cols = with_uppercase_cols.apply(_convert_timestamp_to_string, axis="index")
+        column_types = _get_table_column_types(table_slice, connection)
+        if context.resource_config and context.resource_config.get(
+            "store_timestamps_as_strings", False
+        ):
+            with_uppercase_cols = with_uppercase_cols.apply(
+                lambda x: _convert_timestamp_to_string(x, column_types, table_slice.table),
+                axis="index",
+            )
+        else:
+            with_uppercase_cols = with_uppercase_cols.apply(
+                lambda x: _add_missing_timezone(x, column_types, table_slice.table), axis="index"
+            )
         with_uppercase_cols.to_sql(
             table_slice.table,
             con=connection.engine,
@@ -102,7 +158,10 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
         result = pd.read_sql(
             sql=SnowflakeDbClient.get_select_statement(table_slice), con=connection
         )
-        result = result.apply(_convert_string_to_timestamp, axis="index")
+        if context.resource_config and context.resource_config.get(
+            "store_timestamps_as_strings", False
+        ):
+            result = result.apply(_convert_string_to_timestamp, axis="index")
         result.columns = map(str.lower, result.columns)  # type: ignore  # (bad stubs)
         return result
 

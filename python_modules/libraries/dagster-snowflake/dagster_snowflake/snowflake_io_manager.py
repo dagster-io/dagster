@@ -194,6 +194,15 @@ class SnowflakeIOManager(ConfigurableIOManagerFactory):
             " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details."
         ),
     )
+    store_timestamps_as_strings: bool = Field(
+        default=False,
+        description=(
+            "If using Pandas DataFrames, whether to convert time data to strings. If True, time"
+            " data will be converted to strings when storing the DataFrame and converted back to"
+            " time data when loading the DataFrame. If False, time data without a timezone will be"
+            " set to UTC timezone to avoid a Snowflake bug. Defaults to False."
+        ),
+    )
 
     @staticmethod
     @abstractmethod
