@@ -18,7 +18,7 @@ def create_in_memory_conn_string(db_name: str) -> str:
     # that multiple instances can share the same logical DB across connections, while maintaining
     # separate DBs for different db names.  The latter is required to have both the run / event_log
     # in-memory implementations within the same process
-    return f"sqlite:///file:{db_name}?mode=memory&uri=true&check_same_thread=false"
+    return f"sqlite:///file:{db_name}?mode=memory&uri=true&cache=shared"
 
 
 def get_sqlite_version() -> str:
