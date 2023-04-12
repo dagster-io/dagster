@@ -535,6 +535,67 @@ def test_celery_k8s_run_launcher_set_namespace(template: HelmTemplate):
     run_launcher_config = instance["run_launcher"]["config"]
     assert run_launcher_config["job_namespace"] == "my-namespace"
 
+def test_celery_k8s_run_launcher_default_run_k8s_config(template: HelmTemplate):
+    default_helm_values = DagsterHelmValues.construct(
+        runLauncher=RunLauncher.construct(
+            type=RunLauncherType.CELERY,
+            config=RunLauncherConfig.construct(
+                celeryK8sRunLauncher=CeleryK8sRunLauncherConfig.construct()
+            ),
+        )
+    )
+    configmaps = template.render(default_helm_values)
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    _check_valid_run_launcher_yaml(instance, instance_class=CeleryK8sRunLauncher)
+    run_launcher_config = instance["run_launcher"]["config"]
+    assert "run_k8s_config" not in run_launcher_config
+
+
+def test_celery_k8s_run_launcher_set_run_k8s_config(template: HelmTemplate):
+    container_config = {
+        "resources": {
+            "requests": {"cpu": "250m", "memory": "64Mi"},
+            "limits": {"cpu": "500m", "memory": "2560Mi"},
+        }
+    }
+
+    pod_template_spec_metadata = {"namespace": "my_pod_namespace"}
+
+    pod_spec_config = {"dns_policy": "value"}
+
+    job_metadata = {"namespace": "my_job_value"}
+
+    job_spec_config = {"backoff_limit": 120}
+
+    default_helm_values = DagsterHelmValues.construct(
+        runLauncher=RunLauncher.construct(
+            type=RunLauncherType.CELERY,
+            config=RunLauncherConfig.construct(
+                celeryK8sRunLauncher=CeleryK8sRunLauncherConfig.construct(
+                    runK8sConfig=RunK8sConfig(
+                        containerConfig=container_config,
+                        podSpecConfig=pod_spec_config,
+                        podTemplateSpecMetadata=pod_template_spec_metadata,
+                        jobMetadata=job_metadata,
+                        jobSpecConfig=job_spec_config,
+                    )
+                )
+            ),
+        )
+    )
+    configmaps = template.render(default_helm_values)
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    _check_valid_run_launcher_yaml(instance, instance_class=CeleryK8sRunLauncher)
+    run_launcher_config = instance["run_launcher"]
+
+    assert run_launcher_config["config"]["run_k8s_config"] == {
+        "container_config": container_config,
+        "pod_spec_config": pod_spec_config,
+        "pod_template_spec_metadata": pod_template_spec_metadata,
+        "job_metadata": job_metadata,
+        "job_spec_config": job_spec_config,
+    }
+
 
 def test_queued_run_coordinator_config_default(template: HelmTemplate):
     helm_values = DagsterHelmValues.construct(

@@ -13,6 +13,17 @@ class RunLauncherType(str, Enum):
     CUSTOM = "CustomRunLauncher"
 
 
+class RunK8sConfig(BaseModel):
+    containerConfig: Optional[Dict[str, Any]]
+    podSpecConfig: Optional[Dict[str, Any]]
+    podTemplateSpecMetadata: Optional[Dict[str, Any]]
+    jobSpecConfig: Optional[Dict[str, Any]]
+    jobMetadata: Optional[Dict[str, Any]]
+
+    class Config:
+        extra = Extra.forbid
+
+
 class CeleryWorkerQueue(BaseModel):
     replicaCount: int = Field(gt=0)
     name: str
@@ -41,6 +52,7 @@ class CeleryK8sRunLauncherConfig(BaseModel):
     podSecurityContext: kubernetes.PodSecurityContext
     securityContext: kubernetes.SecurityContext
     resources: kubernetes.Resources
+    runK8sConfig: Optional[RunK8sConfig]
     livenessProbe: kubernetes.LivenessProbe
     volumeMounts: List[kubernetes.VolumeMount]
     volumes: List[kubernetes.Volume]
@@ -52,16 +64,6 @@ class CeleryK8sRunLauncherConfig(BaseModel):
     class Config:
         extra = Extra.forbid
 
-
-class RunK8sConfig(BaseModel):
-    containerConfig: Optional[Dict[str, Any]]
-    podSpecConfig: Optional[Dict[str, Any]]
-    podTemplateSpecMetadata: Optional[Dict[str, Any]]
-    jobSpecConfig: Optional[Dict[str, Any]]
-    jobMetadata: Optional[Dict[str, Any]]
-
-    class Config:
-        extra = Extra.forbid
 
 
 class K8sRunLauncherConfig(BaseModel):
