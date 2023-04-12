@@ -16,10 +16,9 @@ from typing import (
 import dagster._check as check
 from dagster._config.pythonic_config import (
     ConfigurableIOManagerFactoryResourceDefinition,
-    ConfigurableResourceFactory,
     ConfigurableResourceFactoryResourceDefinition,
-    PartialResource,
     ResourceWithKeyMapping,
+    coerce_to_resource,
 )
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.assets_job import (
@@ -88,15 +87,7 @@ def _env_vars_from_resource_defaults(resource_def: ResourceDefinition) -> Set[st
         nested_resources = resource_def.inner_resource.nested_resources
         for nested_resource in nested_resources.values():
             env_vars = env_vars.union(
-                _env_vars_from_resource_defaults(
-                    (
-                        nested_resource.get_resource_definition()
-                        if isinstance(
-                            nested_resource, (ConfigurableResourceFactory, PartialResource)
-                        )
-                        else nested_resource
-                    )
-                )
+                _env_vars_from_resource_defaults(coerce_to_resource(nested_resource))
             )
 
     return env_vars

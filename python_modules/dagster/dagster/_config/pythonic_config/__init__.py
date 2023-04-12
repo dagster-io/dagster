@@ -3,6 +3,7 @@ from enum import Enum
 from typing import (
     AbstractSet,
     Any,
+    Callable,
     Dict,
     Generic,
     Iterable,
@@ -297,11 +298,7 @@ class AllowDelayedDependencies:
         for v in resources.values():
             nested_resource_required_keys.update(
                 _resolve_required_resource_keys_for_resource(
-                    (
-                        v.get_resource_definition()
-                        if isinstance(v, (ConfigurableResourceFactory, PartialResource))
-                        else v
-                    ),
+                    (coerce_to_resource(v)),
                     resource_mapping,
                 )
             )
@@ -421,7 +418,23 @@ def attach_resource_id_to_key_mapping(
     return resource_def
 
 
-from typing import Callable
+CoercibleToResource: TypeAlias = Union[
+    ResourceDefinition, "ConfigurableResourceFactory", "PartialResource"
+]
+
+from typing_extensions import TypeGuard
+
+
+def is_coercible_to_resource(val: Any) -> TypeGuard[CoercibleToResource]:
+    return isinstance(val, (ResourceDefinition, ConfigurableResourceFactory, PartialResource))
+
+
+def coerce_to_resource(
+    coercible_to_resource: CoercibleToResource,
+) -> ResourceDefinition:
+    if isinstance(coercible_to_resource, (ConfigurableResourceFactory, PartialResource)):
+        return coercible_to_resource.get_resource_definition()
+    return coercible_to_resource
 
 
 class ConfigurableResourceFactoryResourceDefinition(ResourceDefinition, AllowDelayedDependencies):
@@ -431,9 +444,7 @@ class ConfigurableResourceFactoryResourceDefinition(ResourceDefinition, AllowDel
         config_schema: Any,
         description: Optional[str],
         resolve_resource_keys: Callable[[Mapping[int, str]], AbstractSet[str]],
-        nested_resources: Mapping[
-            str, Union[ResourceDefinition, "ConfigurableResourceFactory", "PartialResource"]
-        ],
+        nested_resources: Mapping[str, CoercibleToResource],
     ):
         super().__init__(
             resource_fn=resource_fn, config_schema=config_schema, description=description
@@ -444,7 +455,7 @@ class ConfigurableResourceFactoryResourceDefinition(ResourceDefinition, AllowDel
     @property
     def nested_resources(
         self,
-    ) -> Mapping[str, Union[ResourceDefinition, "ConfigurableResourceFactory", "PartialResource"]]:
+    ) -> Mapping[str, CoercibleToResource]:
         return self._nested_resources
 
     def _resolve_required_resource_keys(
@@ -460,9 +471,7 @@ class ConfigurableIOManagerFactoryResourceDefinition(IOManagerDefinition, AllowD
         config_schema: Any,
         description: Optional[str],
         resolve_resource_keys: Callable[[Mapping[int, str]], AbstractSet[str]],
-        nested_resources: Mapping[
-            str, Union[ResourceDefinition, "ConfigurableResourceFactory", "PartialResource"]
-        ],
+        nested_resources: Mapping[str, CoercibleToResource],
     ):
         super().__init__(
             resource_fn=resource_fn, config_schema=config_schema, description=description
@@ -473,7 +482,7 @@ class ConfigurableIOManagerFactoryResourceDefinition(IOManagerDefinition, AllowD
     @property
     def nested_resources(
         self,
-    ) -> Mapping[str, Union[ResourceDefinition, "ConfigurableResourceFactory", "PartialResource"]]:
+    ) -> Mapping[str, CoercibleToResource]:
         return self._nested_resources
 
     def _resolve_required_resource_keys(
@@ -555,9 +564,9 @@ class ConfigurableResourceFactory(
 
         # We keep track of any resources we depend on which are not fully configured
         # so that we can retrieve them at runtime
-        self._nested_partial_resources: Mapping[
-            str, Union[ResourceDefinition, ConfigurableResourceFactory, PartialResource]
-        ] = {k: v for k, v in resource_pointers.items() if (not _is_fully_configured(v))}
+        self._nested_partial_resources: Mapping[str, CoercibleToResource] = {
+            k: v for k, v in resource_pointers.items() if (not _is_fully_configured(v))
+        }
 
         self._resolved_config_dict = resolved_config_dict
         self._schema = schema
@@ -584,7 +593,7 @@ class ConfigurableResourceFactory(
     @property
     def nested_resources(
         self,
-    ) -> Mapping[str, Union[ResourceDefinition, "ConfigurableResourceFactory", "PartialResource"]]:
+    ) -> Mapping[str, CoercibleToResource]:
         return self._nested_resources
 
     @classmethod
@@ -649,11 +658,7 @@ class ConfigurableResourceFactory(
         resources_to_update, _ = separate_resource_params(self.__dict__)
         resources_to_update = {
             attr_name: _call_resource_fn_with_default(
-                (
-                    resource.get_resource_definition()
-                    if isinstance(resource, (ConfigurableResourceFactory, PartialResource))
-                    else resource
-                ),
+                (coerce_to_resource(resource)),
                 context,
             )
             for attr_name, resource in resources_to_update.items()
@@ -736,15 +741,14 @@ class ConfigurableResource(ConfigurableResourceFactory[TResValue]):
         return cast(TResValue, self)
 
 
-def _is_fully_configured(
-    resource: Union[ResourceDefinition, ConfigurableResourceFactory, "PartialResource"]
-) -> bool:
-    if isinstance(resource, (ConfigurableResourceFactory, PartialResource)):
-        resource = resource.get_resource_definition()
+def _is_fully_configured(resource: CoercibleToResource) -> bool:
+    actual_resource = coerce_to_resource(resource)
     res = (
         validate_config(
-            resource.config_schema.config_type,
-            resource.config_schema.default_value if resource.config_schema.default_provided else {},
+            actual_resource.config_schema.config_type,
+            actual_resource.config_schema.default_value
+            if actual_resource.config_schema.default_provided
+            else {},
         ).success
         is True
     )
@@ -765,9 +769,9 @@ class PartialResource(Generic[TResValue], AllowDelayedDependencies, MakeConfigCa
 
         # We keep track of any resources we depend on which are not fully configured
         # so that we can retrieve them at runtime
-        self._nested_partial_resources: Dict[
-            str, Union[ResourceDefinition, PartialResource, ConfigurableResourceFactory]
-        ] = {k: v for k, v in resource_pointers.items() if (not _is_fully_configured(v))}
+        self._nested_partial_resources: Dict[str, CoercibleToResource] = {
+            k: v for k, v in resource_pointers.items() if (not _is_fully_configured(v))
+        }
 
         self._config_schema = infer_schema_from_config_class(
             resource_cls, fields_to_omit=set(resource_pointers.keys())
@@ -785,7 +789,7 @@ class PartialResource(Generic[TResValue], AllowDelayedDependencies, MakeConfigCa
     @property
     def nested_resources(
         self,
-    ) -> Mapping[str, Union[ResourceDefinition, "ConfigurableResourceFactory", "PartialResource"]]:
+    ) -> Mapping[str, CoercibleToResource]:
         return self._nested_resources
 
     def get_resource_definition(self) -> ConfigurableResourceFactoryResourceDefinition:
@@ -1279,7 +1283,7 @@ def infer_schema_from_config_class(
 
 
 class SeparatedResourceParams(NamedTuple):
-    resources: Dict[str, Union[ResourceDefinition, ConfigurableResourceFactory, PartialResource]]
+    resources: Dict[str, CoercibleToResource]
     non_resources: Dict[str, Any]
 
 
@@ -1288,16 +1292,8 @@ def separate_resource_params(data: Dict[str, Any]) -> SeparatedResourceParams:
     are themselves Resources and those which are not.
     """
     return SeparatedResourceParams(
-        resources={
-            k: v
-            for k, v in data.items()
-            if isinstance(v, (ResourceDefinition, ConfigurableResourceFactory, PartialResource))
-        },
-        non_resources={
-            k: v
-            for k, v in data.items()
-            if not isinstance(v, (ResourceDefinition, ConfigurableResourceFactory, PartialResource))
-        },
+        resources={k: v for k, v in data.items() if is_coercible_to_resource(v)},
+        non_resources={k: v for k, v in data.items() if not is_coercible_to_resource(v)},
     )
 
 
