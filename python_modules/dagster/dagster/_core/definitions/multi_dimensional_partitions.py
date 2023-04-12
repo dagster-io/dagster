@@ -1,3 +1,4 @@
+import hashlib
 import itertools
 from datetime import datetime
 from functools import reduce
@@ -213,6 +214,20 @@ class MultiPartitionsDefinition(PartitionsDefinition):
     @property
     def partitions_subset_class(self) -> Type["PartitionsSubset"]:
         return MultiPartitionsSubset
+
+    def get_serializable_unique_identifier(
+        self, dynamic_partitions_store: Optional[DynamicPartitionsStore] = None
+    ) -> str:
+        return hashlib.sha1(
+            str(
+                {
+                    dim_def.name: dim_def.partitions_def.get_serializable_unique_identifier(
+                        dynamic_partitions_store
+                    )
+                    for dim_def in self.partitions_defs
+                }
+            ).encode("utf-8")
+        ).hexdigest()
 
     @property
     def partition_dimension_names(self) -> List[str]:
