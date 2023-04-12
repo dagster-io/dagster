@@ -202,12 +202,12 @@ class GraphenePipelineNotFoundError(graphene.ObjectType):
 
         super().__init__()
         check.inst_param(selector, "selector", JobSubsetSelector)
-        self.pipeline_name = selector.pipeline_name
+        self.pipeline_name = selector.job_name
         self.repository_name = selector.repository_name
         self.repository_location_name = selector.location_name
         self.message = (
             "Could not find Pipeline "
-            f"{selector.location_name}.{selector.repository_name}.{selector.pipeline_name}"
+            f"{selector.location_name}.{selector.repository_name}.{selector.job_name}"
         )
 
 
@@ -289,7 +289,7 @@ class GraphenePresetNotFoundError(graphene.ObjectType):
     def __init__(self, preset, selector):
         super().__init__()
         self.preset = check.str_param(preset, "preset")
-        self.message = f"Preset {preset} not found in pipeline {selector.pipeline_name}."
+        self.message = f"Preset {preset} not found in pipeline {selector.job_name}."
 
 
 class GrapheneConflictingExecutionParamsError(graphene.ObjectType):
@@ -314,7 +314,7 @@ class GrapheneModeNotFoundError(graphene.ObjectType):
     def __init__(self, mode, selector):
         super().__init__()
         self.mode = check.str_param(mode, "mode")
-        self.message = f"Mode {mode} not found in pipeline {selector.pipeline_name}."
+        self.message = f"Mode {mode} not found in pipeline {selector.job_name}."
 
 
 class GrapheneNoModeProvidedError(graphene.ObjectType):

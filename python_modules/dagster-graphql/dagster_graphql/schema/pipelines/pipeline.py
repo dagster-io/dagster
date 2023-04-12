@@ -905,11 +905,9 @@ class GrapheneJob(GraphenePipeline):
         name = "Job"
 
     # doesn't inherit from base class
-    def __init__(self, external_pipeline, batch_loader=None):
+    def __init__(self, external_job, batch_loader=None):
         super().__init__()
-        self._external_pipeline = check.inst_param(
-            external_pipeline, "external_pipeline", ExternalJob
-        )
+        self._external_job = check.inst_param(external_job, "external_job", ExternalJob)
         # optional run loader, provided by a parent GrapheneRepository object that instantiates
         # multiple pipelines
         self._batch_loader = check.opt_inst_param(
