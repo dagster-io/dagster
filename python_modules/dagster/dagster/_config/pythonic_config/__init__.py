@@ -18,7 +18,7 @@ from typing import (
 )
 
 from pydantic import ConstrainedFloat, ConstrainedInt, ConstrainedStr
-from typing_extensions import TypeAlias, get_args
+from typing_extensions import TypeAlias, TypeGuard, get_args
 
 from dagster import (
     Enum as DagsterEnum,
@@ -420,8 +420,6 @@ def attach_resource_id_to_key_mapping(
 CoercibleToResource: TypeAlias = Union[
     ResourceDefinition, "ConfigurableResourceFactory", "PartialResource"
 ]
-
-from typing_extensions import TypeGuard
 
 
 def is_coercible_to_resource(val: Any) -> TypeGuard[CoercibleToResource]:
