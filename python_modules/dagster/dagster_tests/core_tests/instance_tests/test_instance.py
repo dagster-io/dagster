@@ -40,6 +40,7 @@ from dagster._core.test_utils import (
     environ,
     instance_for_test,
 )
+from dagster._daemon.asset_daemon import AssetDaemon
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
 from typing_extensions import Self
@@ -307,6 +308,7 @@ def test_get_required_daemon_types():
             SensorDaemon.daemon_type(),
             BackfillDaemon.daemon_type(),
             SchedulerDaemon.daemon_type(),
+            AssetDaemon.daemon_type(),
         ]
 
     with instance_for_test(
@@ -323,6 +325,18 @@ def test_get_required_daemon_types():
             BackfillDaemon.daemon_type(),
             SchedulerDaemon.daemon_type(),
             MonitoringDaemon.daemon_type(),
+            AssetDaemon.daemon_type(),
+        ]
+
+    with instance_for_test(
+        overrides={
+            "auto_materialize": {"enabled": False},
+        }
+    ) as instance:
+        assert instance.get_required_daemon_types() == [
+            SensorDaemon.daemon_type(),
+            BackfillDaemon.daemon_type(),
+            SchedulerDaemon.daemon_type(),
         ]
 
 

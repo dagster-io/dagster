@@ -13,12 +13,10 @@ from dagster._daemon.daemon import DaemonIterator, IntervalDaemon
 
 CURSOR_NAME = "ASSET_DAEMON_CURSOR"
 
-ASSET_DAEMON_INTERVAL_SECONDS = 30
-
 
 class AssetDaemon(IntervalDaemon):
-    def __init__(self):
-        super().__init__(interval_seconds=ASSET_DAEMON_INTERVAL_SECONDS)
+    def __init__(self, interval_seconds: int):
+        super().__init__(interval_seconds=interval_seconds)
 
     @classmethod
     def daemon_type(cls) -> str:
