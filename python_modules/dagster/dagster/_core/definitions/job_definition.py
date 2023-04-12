@@ -77,7 +77,7 @@ from .utils import DEFAULT_IO_MANAGER_KEY
 from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.run_config import ConfigInput
+    from dagster._core.definitions.run_config import RunConfig
     from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
     from dagster._core.execution.resources_init import InitResourceContext
     from dagster._core.instance import DagsterInstance
@@ -97,7 +97,7 @@ class JobDefinition(PipelineDefinition):
         logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         name: Optional[str] = None,
         config: Optional[
-            Union[ConfigMapping, Mapping[str, object], PartitionedConfig, "ConfigInput"]
+            Union[ConfigMapping, Mapping[str, object], PartitionedConfig, "RunConfig"]
         ] = None,
         description: Optional[str] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
@@ -300,7 +300,7 @@ class JobDefinition(PipelineDefinition):
     @public
     def execute_in_process(
         self,
-        run_config: Optional[Union[Mapping[str, Any], "ConfigInput"]] = None,
+        run_config: Optional[Union[Mapping[str, Any], "RunConfig"]] = None,
         instance: Optional["DagsterInstance"] = None,
         partition_key: Optional[str] = None,
         raise_on_error: bool = True,

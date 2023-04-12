@@ -45,7 +45,7 @@ from .utils import DEFAULT_IO_MANAGER_KEY
 ASSET_BASE_JOB_PREFIX = "__ASSET_JOB"
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.run_config import ConfigInput
+    from dagster._core.definitions.run_config import RunConfig
 
 
 def is_base_asset_job_name(name: str) -> bool:
@@ -105,7 +105,7 @@ def build_assets_job(
     resource_defs: Optional[Mapping[str, object]] = None,
     description: Optional[str] = None,
     config: Optional[
-        Union[ConfigMapping, Mapping[str, object], PartitionedConfig[object], "ConfigInput"]
+        Union[ConfigMapping, Mapping[str, object], PartitionedConfig[object], "RunConfig"]
     ] = None,
     tags: Optional[Mapping[str, str]] = None,
     executor_def: Optional[ExecutorDefinition] = None,
