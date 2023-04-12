@@ -128,7 +128,9 @@ class RunStatusSensorContext:
         dagster_run,
         dagster_event,
         instance,
-        context=None,
+        context: Optional[
+            SensorEvaluationContext
+        ] = None,  # deprecated arg, but we need to keep it for backcompat
         resource_defs: Optional[Mapping[str, "ResourceDefinition"]] = None,
         logger: Optional[logging.Logger] = None,
     ) -> None:
@@ -137,24 +139,21 @@ class RunStatusSensorContext:
         self._dagster_run = check.inst_param(dagster_run, "dagster_run", DagsterRun)
         self._dagster_event = check.inst_param(dagster_event, "dagster_event", DagsterEvent)
         self._instance = check.inst_param(instance, "instance", DagsterInstance)
-        self._context: Optional[SensorEvaluationContext] = check.opt_inst_param(
-            context, "context", SensorEvaluationContext
-        )
-        self._logger: Optional[logging.Logger] = logger
+        self._logger: Optional[logging.Logger] = logger or context.log if context else None
 
         # Wait to set resources unless they're accessed
         self._resource_defs = resource_defs
         self._resources = None
         self._cm_scope_entered = False
 
-    def for_run_failure(self):
+    def for_run_failure(self) -> "RunFailureSensorContext":
         """Converts RunStatusSensorContext to RunFailureSensorContext."""
         return RunFailureSensorContext(
             sensor_name=self._sensor_name,
             dagster_run=self._dagster_run,
             dagster_event=self._dagster_event,
             instance=self._instance,
-            context=self._context,
+            logger=self._logger,
         )
 
     @property
