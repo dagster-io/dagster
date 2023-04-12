@@ -14,7 +14,7 @@ def test_binding_runconfig() -> None:
     def do_something(config: DoSomethingConfig) -> str:
         return config.config_param
 
-    @job(config=RunConfig(ops={"do_something": DoSomethingConfig(config_param="foo")}))  # type: ignore[call-arg]
+    @job(config=RunConfig(ops={"do_something": DoSomethingConfig(config_param="foo")}))
     def do_it_all_with_baked_in_config() -> None:
         do_something()
 
@@ -40,7 +40,7 @@ def test_binding_runconfig_more_complex() -> None:
         return config.x + config.y
 
     @job(
-        config=RunConfig(  # type: ignore[call-arg]
+        config=RunConfig(
             ops={
                 "do_something": DoSomethingConfig(config_param="foo"),
                 "do_something_else": DoSomethingElseConfig(x=3, y=4),
