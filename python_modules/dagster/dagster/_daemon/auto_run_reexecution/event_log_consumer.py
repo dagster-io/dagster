@@ -107,7 +107,7 @@ def _fetch_persisted_cursors(
     check.sequence_param(event_types, "event_types", of_type=DagsterEventType)
 
     # get the persisted cursor for each event type
-    persisted_cursors = instance.run_storage.kvs_get(
+    persisted_cursors = instance.daemon_cursor_storage.kvs_get(
         {_create_cursor_key(event_type) for event_type in event_types}
     )
 
@@ -134,7 +134,7 @@ def _persist_cursors(instance: DagsterInstance, cursors: Mapping[DagsterEventTyp
     check.mapping_param(cursors, "cursors", key_type=DagsterEventType, value_type=int)
 
     if cursors:
-        instance.run_storage.kvs_set(
+        instance.daemon_cursor_storage.kvs_set(
             {
                 _create_cursor_key(event_type): str(cursor_value)
                 for event_type, cursor_value in cursors.items()
