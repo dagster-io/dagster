@@ -3,13 +3,12 @@ from typing import Any, Dict
 
 import great_expectations as ge
 from dagster import (
+    ConfigurableResource,
     ExpectationResult,
     In,
     MetadataValue,
-    Noneable,
     Out,
     Output,
-    StringSource,
     _check as check,
     op,
     resource,
@@ -17,6 +16,7 @@ from dagster import (
 from dagster_pandas import DataFrame
 from great_expectations.render.renderer import ValidationResultsPageRenderer
 from great_expectations.render.view import DefaultMarkdownPageView
+from pydantic import Field
 
 try:
     # ge < v0.13.0
@@ -26,12 +26,21 @@ except ImportError:
     from great_expectations.core.util import convert_to_json_serializable
 
 
-@resource(config_schema={"ge_root_dir": Noneable(StringSource)})
+class GEContextResource(ConfigurableResource):
+    ge_root_dir: str = Field(
+        default=None,
+        description="The root directory for your Great Expectations project.",
+    )
+
+    def get_data_context(self):
+        if self.ge_root_dir is None:
+            return ge.data_context.DataContext()
+        return ge.data_context.DataContext(context_root_dir=self.ge_root_dir)
+
+
+@resource(config_schema=GEContextResource.to_config_schema())
 def ge_data_context(context):
-    if context.resource_config["ge_root_dir"] is None:
-        yield ge.data_context.DataContext()
-    else:
-        yield ge.data_context.DataContext(context_root_dir=context.resource_config["ge_root_dir"])
+    return GEContextResource.from_resource_context(context).get_data_context()
 
 
 def ge_validation_op_factory(
