@@ -78,13 +78,13 @@ Dagster Cloud supports five user roles for several levels of role-based access c
           </li>
           <li>
             Manage{" "}
-            <a href="/dagster-cloud/developing-testing/environment-variables-and-secrets">
+            <a href="/dagster-cloud/managing-deployments/environment-variables-and-secrets">
               environment variables
             </a>
           </li>
           <li>
             Manage{" "}
-            <a href="/dagster-cloud/developing-testing/code-locations">
+            <a href="/dagster-cloud/managing-deployments/code-locations">
               code locations
             </a>
           </li>
@@ -93,7 +93,10 @@ Dagster Cloud supports five user roles for several levels of role-based access c
             <a href="/dagster-cloud/account/managing-user-agent-tokens#managing-agent-tokens">
               agents
             </a>{" "}
-            and <a href="/dagster-cloud/account/setting-up-alerts">alerts</a>
+            and{" "}
+            <a href="dagster-cloud/managing-deployments/setting-up-alerts">
+              alerts
+            </a>
           </li>
           <li>
             Manage own{" "}
@@ -136,7 +139,7 @@ Dagster Cloud supports five user roles for several levels of role-based access c
         <ul>
           <li>
             Create and delete{" "}
-            <a href="/dagster-cloud/developing-testing/managing-deployments">
+            <a href="/dagster-cloud/managing-deployments/managing-deployments">
               deployments
             </a>
           </li>
@@ -250,7 +253,7 @@ View <a href="#user-roles">user role summaries</a>.
     <tr>
       <td>
         View{" "}
-        <a href="/dagster-cloud/developing-testing/managing-deployments">
+        <a href="/dagster-cloud/managing-deployments/managing-deployments">
           deployments
         </a>
       </td>
@@ -263,7 +266,7 @@ View <a href="#user-roles">user role summaries</a>.
     <tr>
       <td>
         Modify{" "}
-        <a href="/dagster-cloud/developing-testing/managing-deployments">
+        <a href="/dagster-cloud/managing-deployments/managing-deployments">
           deployment
         </a>{" "}
         settings
@@ -277,7 +280,7 @@ View <a href="#user-roles">user role summaries</a>.
     <tr>
       <td>
         Create, edit, delete{" "}
-        <a href="/dagster-cloud/developing-testing/environment-variables-and-secrets">
+        <a href="/dagster-cloud/managing-deployments/environment-variables-and-secrets">
           environment variables
         </a>
       </td>
@@ -290,7 +293,7 @@ View <a href="#user-roles">user role summaries</a>.
     <tr>
       <td>
         View{" "}
-        <a href="/dagster-cloud/developing-testing/environment-variables-and-secrets">
+        <a href="/dagster-cloud/managing-deployments/environment-variables-and-secrets">
           environment variable
         </a>{" "}
         values
@@ -304,7 +307,7 @@ View <a href="#user-roles">user role summaries</a>.
     <tr>
       <td>
         Export{" "}
-        <a href="/dagster-cloud/developing-testing/environment-variables-and-secrets##exporting-variables-to-a-env-file">
+        <a href="/dagster-cloud/managing-deployments/environment-variables-and-secrets##exporting-variables-to-a-env-file">
           environment variables
         </a>
       </td>
@@ -317,7 +320,7 @@ View <a href="#user-roles">user role summaries</a>.
     <tr>
       <td>
         Create and delete{" "}
-        <a href="/dagster-cloud/developing-testing/managing-deployments">
+        <a href="/dagster-cloud/managing-deployments/managing-deployments">
           deployments
         </a>
       </td>
@@ -335,7 +338,7 @@ View <a href="#user-roles">user role summaries</a>.
     <tr>
       <td>
         View
-        <a href="/dagster-cloud/developing-testing/code-locations">
+        <a href="/dagster-cloud/managing-deployments/code-locations">
           code locations
         </a>
       </td>
@@ -348,7 +351,7 @@ View <a href="#user-roles">user role summaries</a>.
     <tr>
       <td>
         Create and remove
-        <a href="/dagster-cloud/developing-testing/code-locations">
+        <a href="/dagster-cloud/managing-deployments/code-locations">
           code locations
         </a>
       </td>
@@ -361,7 +364,7 @@ View <a href="#user-roles">user role summaries</a>.
     <tr>
       <td>
         Reload{" "}
-        <a href="/dagster-cloud/developing-testing/code-locations">
+        <a href="/dagster-cloud/managing-deployments/code-locations">
           code locations
         </a>{" "}
         and workspaces
@@ -494,7 +497,10 @@ View <a href="#user-roles">user role summaries</a>.
     </tr>
     <tr>
       <td>
-        Manage <a href="/dagster-cloud/account/setting-up-alerts">alerts</a>
+        Manage{" "}
+        <a href="dagster-cloud/managing-deployments/setting-up-alerts">
+          alerts
+        </a>
       </td>
       <td className="bg-red-50">❌</td>
       <td className="bg-red-50">❌</td>
@@ -544,7 +550,7 @@ View <a href="#user-roles">user role summaries</a>.
 
 ### Assigning user roles
 
-All user roles are enforced both in Dagster Cloud and the GraphQL API. With the exception of the **Organization Admin** role, user roles are set on a per-deployment basis. Organization Admins have access to the entire organization, including all [full deployments](/dagster-cloud/developing-testing/managing-deployments), [code locations](/dagster-cloud/developing-testing/code-locations), and [Branch Deployments](/dagster-cloud/developing-testing/branch-deployments).
+All user roles are enforced both in Dagster Cloud and the GraphQL API. With the exception of the **Organization Admin** role, user roles are set on a per-deployment basis. Organization Admins have access to the entire organization, including all [full deployments](/dagster-cloud/managing-deployments/managing-deployments), [code locations](/dagster-cloud/managing-deployments/code-locations), and [Branch Deployments](/dagster-cloud/managing-deployments/branch-deployments).
 
 #### Deployment permissions
 
@@ -635,7 +641,7 @@ Before you start, note that:
 
 - **If using Google for SSO**, users must be added in Dagster Cloud before they can log in.
 
-- **If using a SAML-based solution like Okta**, users must be assigned to the Dagster app in the SSO portal to log in. By default, users will be granted Viewer permissions on each deployment. The default role can be adjusted by modifying the [`sso_default_role` deployment setting](/dagster-cloud/developing-testing/deployment-settings-reference#sso-default-role).
+- **If using a SAML-based solution like Okta**, users must be assigned to the Dagster app in the SSO portal to log in. By default, users will be granted Viewer permissions on each deployment. The default role can be adjusted by modifying the [`sso_default_role` deployment setting](/dagster-cloud/managing-deployments/deployment-settings-reference#sso-default-role).
 
 1. Sign in to your Dagster Cloud account.
 2. Click the **user menu (your icon) > Cloud Settings**.

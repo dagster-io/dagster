@@ -25,7 +25,7 @@ Let's get started!
 
 If you don't already have a Dagster Cloud account, [sign up for one](https://dagster.cloud/signup) before continuing.
 
-You'll also be asked to create a Dagster Cloud organization. When your organization is created, a single deployment, named `prod`, will also be created. Refer to the [Managing deployments guide](/dagster-cloud/developing-testing/managing-deployments) for more information about deployments in Dagster Cloud.
+You'll also be asked to create a Dagster Cloud organization. When your organization is created, a single deployment, named `prod`, will also be created. Refer to the [Managing deployments guide](/dagster-cloud/managing-deployments/managing-deployments) for more information about deployments in Dagster Cloud.
 
 ---
 
@@ -145,7 +145,7 @@ Select the deployment type you want to use and [proceed to the next step](#step-
 
 ## Step 3: Deploy your code
 
-Now that you've selected a deployment type, the next step is to tell Dagster Cloud the location of your Dagster code. In addition to this, you'll set up Continuous Integration (CI) and Continuous Deployment (CD). Once completed, [Branch Deployments](/dagster-cloud/developing-testing/branch-deployments) and continuous code location deployments will be enabled for your Dagster project.
+Now that you've selected a deployment type, the next step is to tell Dagster Cloud the location of your Dagster code. In addition to this, you'll set up Continuous Integration (CI) and Continuous Deployment (CD). Once completed, [Branch Deployments](/dagster-cloud/managing-deployments/branch-deployments) and continuous code location deployments will be enabled for your Dagster project.
 
 The steps for accomplishing this vary depending on the **deployment type** you selected in the previous step:
 
@@ -163,7 +163,7 @@ For **Serverless deployments**, there are two ways to deploy your code to Dagste
 
 - **Start from a template** - Use one of our quickstart templates to get up and running. All templates come with CI/CD already configured and will be cloned to a new GitHub repository.
 
-- **Import an existing project** - Import an existing GitHub repository using our GitHub integration or the [dagster-cloud CLI](/dagster-cloud/developing-testing/dagster-cloud-cli). **Note**: If using the GitHub integration, Dagster Cloud will automatically set up CI/CD for you.
+- **Import an existing project** - Import an existing GitHub repository using our GitHub integration or the [dagster-cloud CLI](/dagster-cloud/managing-deployments/dagster-cloud-cli). **Note**: If using the GitHub integration, Dagster Cloud will automatically set up CI/CD for you.
 
 <TabGroup>
 <TabItem name="Use a template">
@@ -370,9 +370,9 @@ For continuous integration using a CI/CD provider other than GitHub, your system
        --package-name PACKAGE_NAME \
    ```
 
-   Refer to the [Adding a code location guide](/dagster-cloud/developing-testing/code-locations#managing-code-locations-using-the-dagster-cloud-cli) for more info.
+   Refer to the [Adding a code location guide](/dagster-cloud/managing-deployments/code-locations#managing-code-locations-using-the-dagster-cloud-cli) for more info.
 
-**Note**: Creating Branch Deployments using the CLI requires some additional steps. Refer to the [Branch Deployments with the dagster-cloud CLI guide](/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments) for more info.
+**Note**: Creating Branch Deployments using the CLI requires some additional steps. Refer to the [Branch Deployments with the dagster-cloud CLI guide](/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments) for more info.
 
 When finished, [continue to the next step](#step-4-set-up-environment-variables-and-secrets).
 
@@ -386,7 +386,7 @@ When finished, [continue to the next step](#step-4-set-up-environment-variables-
 
 ## Step 4: Set up environment variables and secrets
 
-Congrats! At this point, your Dagster Cloud deployment should be up and running. To ensure the external services you use in your Dagster project work correctly, start setting up your [environment variables](/dagster-cloud/developing-testing/environment-variables-and-secrets). Using environment variables, you can securely pass in sensitive info like passwords, API tokens, etc.
+Congrats! At this point, your Dagster Cloud deployment should be up and running. To ensure the external services you use in your Dagster project work correctly, start setting up your [environment variables](/dagster-cloud/managing-deployments/environment-variables-and-secrets). Using environment variables, you can securely pass in sensitive info like passwords, API tokens, etc.
 
 ---
 
@@ -396,5 +396,5 @@ From here, you can:
 
 - [Invite your team](/dagster-cloud/account/managing-users)
 - [Configure authentication for your account](/dagster-cloud/account/authentication)
-- [Set up monitoring and alerting](/dagster-cloud/account/setting-up-alerts)
-- [Learn more about Branch Deployments](/dagster-cloud/developing-testing/branch-deployments)
+- [Set up monitoring and alerting](/dagster-cloud/managing-deployments/setting-up-alerts)
+- [Learn more about Branch Deployments](/dagster-cloud/managing-deployments/branch-deployments)
