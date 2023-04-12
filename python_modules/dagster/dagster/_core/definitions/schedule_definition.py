@@ -369,7 +369,7 @@ class DecoratedScheduleFunction(NamedTuple):
 def build_schedule_context(
     instance: Optional[DagsterInstance] = None,
     scheduled_execution_time: Optional[datetime] = None,
-    resources: Optional[Mapping[str, "ResourceDefinition"]] = None,
+    resources: Optional[Mapping[str, object]] = None,
     repository_def: Optional["RepositoryDefinition"] = None,
 ) -> ScheduleEvaluationContext:
     """Builds schedule execution context using the provided parameters.
@@ -389,6 +389,8 @@ def build_schedule_context(
             context = build_schedule_context(instance)
 
     """
+    from dagster._core.execution.build_resources import wrap_resources_for_execution
+
     check.opt_inst_param(instance, "instance", DagsterInstance)
 
     return ScheduleEvaluationContext(
@@ -396,7 +398,7 @@ def build_schedule_context(
         scheduled_execution_time=check.opt_inst_param(
             scheduled_execution_time, "scheduled_execution_time", datetime
         ),
-        resources=resources,
+        resources=wrap_resources_for_execution(resources),
         repository_def=repository_def,
     )
 

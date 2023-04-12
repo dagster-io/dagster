@@ -706,7 +706,7 @@ class AirbyteYAMLCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinition)
 
 @experimental
 def load_assets_from_airbyte_instance(
-    airbyte: ResourceDefinition,
+    airbyte: Union[AirbyteResource, ResourceDefinition],
     workspace_id: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     create_assets_for_normalization_tables: bool = True,
