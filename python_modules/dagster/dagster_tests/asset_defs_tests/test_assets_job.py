@@ -1989,4 +1989,26 @@ def test_coerce_resource_build_asset_job() -> None:
     )
 
     assert a_job.execute_in_process().success
+
+
+def test_assets_def_takes_bare_object():
+    class BareResourceObject:
+        pass
+
+    executed = {}
+
+    @op(required_resource_keys={"bare_resource"})
+    def an_op(context):
+        assert context.resources.bare_resource
+        executed["yes"] = True
+
+    cool_thing_asset = AssetsDefinition(
+        keys_by_input_name={},
+        keys_by_output_name={"result": AssetKey("thing")},
+        node_def=an_op,
+        resource_defs={"bare_resource": BareResourceObject()},
+    )
+    job = build_assets_job("graph_asset_job", [cool_thing_asset])
+    result = job.execute_in_process()
+    assert result.success
     assert executed["yes"]

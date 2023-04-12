@@ -94,7 +94,7 @@ class SourceAsset(ResourceAddable):
         description: Optional[str] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
         group_name: Optional[str] = None,
-        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+        resource_defs: Optional[Mapping[str, object]] = None,
         observe_fn: Optional[SourceAssetObserveFunction] = None,
         # This is currently private because it is necessary for source asset observation functions,
         # but we have not yet decided on a final API for associated one or more ops with a source
@@ -104,6 +104,8 @@ class SourceAsset(ResourceAddable):
         _required_resource_keys: Optional[AbstractSet[str]] = None,
         # Add additional fields to with_resources and with_group below
     ):
+        from dagster._core.execution.build_resources import wrap_resources_for_execution
+
         if resource_defs is not None:
             experimental_arg_warning("resource_defs", "SourceAsset.__new__")
 
@@ -114,7 +116,9 @@ class SourceAsset(ResourceAddable):
         metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
         self.raw_metadata = metadata
         self.metadata = normalize_metadata(metadata, allow_invalid=True)
-        self.resource_defs = dict(check.opt_mapping_param(resource_defs, "resource_defs"))
+        self.resource_defs = wrap_resources_for_execution(
+            dict(check.opt_mapping_param(resource_defs, "resource_defs"))
+        )
         self._io_manager_def = check.opt_inst_param(
             io_manager_def, "io_manager_def", IOManagerDefinition
         )

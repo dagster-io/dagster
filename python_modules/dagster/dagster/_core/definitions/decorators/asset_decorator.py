@@ -385,7 +385,7 @@ def multi_asset(
     partitions_def: Optional[PartitionsDefinition[object]] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
     can_subset: bool = False,
-    resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+    resource_defs: Optional[Mapping[str, object]] = None,
     group_name: Optional[str] = None,
     retry_policy: Optional[RetryPolicy] = None,
     code_version: Optional[str] = None,
@@ -422,8 +422,8 @@ def multi_asset(
             `json.loads(json.dumps(value)) == value`.
         can_subset (bool): If this asset's computation can emit a subset of the asset
             keys based on the context.selected_assets argument. Defaults to False.
-        resource_defs (Optional[Mapping[str, ResourceDefinition]]):
-            (Experimental) A mapping of resource keys to resource definitions. These resources
+        resource_defs (Optional[Mapping[str, object]]):
+            (Experimental) A mapping of resource keys to resources. These resources
             will be initialized during execution, and can be accessed from the
             context within the body of the function.
         group_name (Optional[str]): A string name used to organize multiple assets into groups. This
@@ -432,6 +432,8 @@ def multi_asset(
         code_version (Optional[str]): (Experimental) Version of the code encapsulated by the multi-asset. If set,
             this is used as a default code version for all defined assets.
     """
+    from dagster._core.execution.build_resources import wrap_resources_for_execution
+
     if resource_defs is not None:
         experimental_arg_warning("resource_defs", "multi_asset")
 
@@ -441,9 +443,10 @@ def multi_asset(
     required_resource_keys = check.opt_set_param(
         required_resource_keys, "required_resource_keys", of_type=str
     )
-    resource_defs = check.opt_mapping_param(
-        resource_defs, "resource_defs", key_type=str, value_type=ResourceDefinition
+    resource_defs = wrap_resources_for_execution(
+        check.opt_mapping_param(resource_defs, "resource_defs", key_type=str)
     )
+
     _config_schema = check.opt_mapping_param(
         config_schema,
         "config_schema",
