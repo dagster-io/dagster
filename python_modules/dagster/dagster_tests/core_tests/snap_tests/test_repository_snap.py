@@ -3,7 +3,6 @@ from typing import Dict, List
 from dagster import Definitions, asset, graph, job, op, repository, resource
 from dagster._config.field_utils import EnvVar
 from dagster._config.pythonic_config import Config, ConfigurableResource
-from dagster._core.definitions.definitions_class import BindResourcesToJobs
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.repository_definition import (
     PendingRepositoryDefinition,
@@ -480,7 +479,7 @@ def test_repository_snap_definitions_resources_job_op_usage() -> None:
         my_op_in_other_job()
 
     defs = Definitions(
-        jobs=BindResourcesToJobs([my_first_job, my_second_job]),
+        jobs=[my_first_job, my_second_job],
         resources={"foo": MyResource(a_str="foo"), "bar": MyResource(a_str="bar")},
     )
 
@@ -540,7 +539,7 @@ def test_repository_snap_definitions_resources_job_op_usage_graph() -> None:
         my_op()
 
     defs = Definitions(
-        jobs=BindResourcesToJobs([my_job]),
+        jobs=[my_job],
         resources={"foo": MyResource(a_str="foo"), "bar": MyResource(a_str="bar")},
     )
 
