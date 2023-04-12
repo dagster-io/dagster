@@ -10,6 +10,7 @@ from dagster import (
     op,
     repository,
 )
+from dagster._check import CheckError
 from dagster._core.definitions.time_window_partitions import (
     HourlyPartitionsDefinition,
 )
@@ -122,3 +123,24 @@ def test_bad_partition_key():
     )
     run_requests, _ = scenario.do_sensor_scenario(instance)
     assert len(run_requests) == 0
+
+
+def test_sensor_fails_on_auto_materialize_policy():
+    scenario = ASSET_RECONCILIATION_SCENARIOS[
+        "auto_materialize_policy_eager_with_freshness_policies"
+    ]
+
+    @repository
+    def repo():
+        return scenario.assets
+
+    reconciliation_sensor = build_asset_reconciliation_sensor(AssetSelection.all())
+    instance = DagsterInstance.ephemeral()
+
+    context = build_sensor_context(instance=instance, repository_def=repo)
+
+    with pytest.raises(
+        CheckError,
+        match=r"build_asset_reconciliation_sensor: Asset '.*' has an AutoMaterializePolicy set",
+    ):
+        reconciliation_sensor(context)
