@@ -340,187 +340,187 @@
               },
               {
                 "title": "Hybrid",
-                "path": "/dagster-cloud/deployment/hybrid"
+                "path": "/dagster-cloud/deployment/hybrid",
+                "children": [
+                  {
+                    "title": "All agents",
+                    "path": "/dagster-cloud/deployment/agents"
+                  },
+                  {
+                    "title": "Amazon ECS",
+                    "path": "/dagster-cloud/deployment/agents/amazon-ecs",
+                    "children": [
+                      {
+                        "title": "Setup in new VPC",
+                        "path": "/dagster-cloud/deployment/agents/amazon-ecs/creating-ecs-agent-new-vpc"
+                      },
+                      {
+                        "title": "Setup in existing VPC",
+                        "path": "/dagster-cloud/deployment/agents/amazon-ecs/creating-ecs-agent-existing-vpc"
+                      },
+                      {
+                        "title": "Manual provision",
+                        "path": "/dagster-cloud/deployment/agents/amazon-ecs/manually-provisioning-ecs-agent"
+                      },
+                      {
+                        "title": "Configuration",
+                        "path": "/dagster-cloud/deployment/agents/amazon-ecs/configuration-reference"
+                      },
+                      {
+                        "title": "Upgrade CloudFormation",
+                        "path": "/dagster-cloud/deployment/agents/amazon-ecs/upgrading-cloudformation-template"
+                      }
+                    ]
+                  },
+                  {
+                    "title": "Docker",
+                    "path": "/dagster-cloud/deployment/agents/docker",
+                    "children": [
+                      {
+                        "title": "Setup",
+                        "path": "/dagster-cloud/deployment/agents/docker/configuring-running-docker-agent"
+                      },
+                      {
+                        "title": "Configuration",
+                        "path": "/dagster-cloud/deployment/agents/docker/configuration-reference"
+                      }
+                    ]
+                  },
+                  {
+                    "title": "Kubernetes",
+                    "path": "/dagster-cloud/deployment/agents/kubernetes",
+                    "children": [
+                      {
+                        "title": "Setup",
+                        "path": "/dagster-cloud/deployment/agents/kubernetes/configuring-running-kubernetes-agent"
+                      },
+                      {
+                        "title": "Configuration",
+                        "path": "/dagster-cloud/deployment/agents/kubernetes/configuration-reference"
+                      }
+                    ]
+                  },
+                  {
+                    "title": "Local",
+                    "path": "/dagster-cloud/deployment/agents/local"
+                  },
+                  {
+                    "title": "Custom configuration",
+                    "path": "/dagster-cloud/deployment/agents/customizing-configuration"
+                  },
+                  {
+                    "title": "Multiple agents",
+                    "path": "/dagster-cloud/deployment/agents/running-multiple-agents"
+                  },
+                  {
+                    "title": "Setting environment variables",
+                    "path": "/dagster-cloud/managing-deployments/setting-environment-variables-dagster-cloud-agents"
+                  }
+                ]
               }
             ]
           },
           {
-            "title": "Account",
+            "title": "Organization settings",
             "path": "/dagster-cloud/account",
             "children": [
               {
-                "title": "Users",
-                "path": "/dagster-cloud/account/managing-users"
-              },
-              {
                 "title": "Tokens",
                 "path": "/dagster-cloud/account/managing-user-agent-tokens"
-              },
-              {
-                "title": "Alerts",
-                "path": "/dagster-cloud/account/setting-up-alerts"
               }
             ]
           },
           {
-            "title": "Authentication",
+            "title": "Authentication & users",
             "path": "/dagster-cloud/account/authentication",
             "children": [
               {
-                "title": "Azure Active Directory",
-                "path": "/dagster-cloud/account/authentication/setting-up-azure-ad-saml-sso"
+                "title": "Setting up SSO",
+                "children": [
+                  {
+                    "title": "Azure Active Directory",
+                    "path": "/dagster-cloud/account/authentication/setting-up-azure-ad-saml-sso"
+                  },
+                  {
+                    "title": "Google Workspace",
+                    "path": "/dagster-cloud/account/authentication/setting-up-google-workspace-saml-sso"
+                  },
+                  {
+                    "title": "Okta",
+                    "path": "/dagster-cloud/account/authentication/setting-up-okta-saml-sso"
+                  },
+                  {
+                    "title": "OneLogin",
+                    "path": "/dagster-cloud/account/authentication/setting-up-onelogin-saml-sso"
+                  },
+                  {
+                    "title": "PingOne",
+                    "path": "dagster-cloud/account/authentication/setting-up-pingone-saml-sso"
+                  }
+                ]
               },
               {
-                "title": "Google Workspace",
-                "path": "/dagster-cloud/account/authentication/setting-up-google-workspace-saml-sso"
-              },
-              {
-                "title": "Okta",
-                "path": "/dagster-cloud/account/authentication/setting-up-okta-saml-sso"
-              },
-              {
-                "title": "OneLogin",
-                "path": "/dagster-cloud/account/authentication/setting-up-onelogin-saml-sso"
-              },
-              {
-                "title": "PingOne",
-                "path": "dagster-cloud/account/authentication/setting-up-pingone-saml-sso"
+                "title": "Managing users",
+                "path": "/dagster-cloud/account/managing-users"
               }
             ]
           },
           {
-            "title": "Hybrid agents",
-            "path": "/dagster-cloud/deployment/agents",
+            "title": "Managing deployments",
+            "path": "/dagster-cloud/managing-deployments",
             "children": [
               {
-                "title": "Amazon ECS",
-                "path": "/dagster-cloud/deployment/agents/amazon-ecs",
-                "children": [
-                  {
-                    "title": "Setup in new VPC",
-                    "path": "/dagster-cloud/deployment/agents/amazon-ecs/creating-ecs-agent-new-vpc"
-                  },
-                  {
-                    "title": "Setup in existing VPC",
-                    "path": "/dagster-cloud/deployment/agents/amazon-ecs/creating-ecs-agent-existing-vpc"
-                  },
-                  {
-                    "title": "Manual provision",
-                    "path": "/dagster-cloud/deployment/agents/amazon-ecs/manually-provisioning-ecs-agent"
-                  },
-                  {
-                    "title": "Configuration",
-                    "path": "/dagster-cloud/deployment/agents/amazon-ecs/configuration-reference"
-                  },
-                  {
-                    "title": "Upgrade CloudFormation",
-                    "path": "/dagster-cloud/deployment/agents/amazon-ecs/upgrading-cloudformation-template"
-                  }
-                ]
+                "title": "Management",
+                "path": "/dagster-cloud/managing-deployments/managing-deployments"
               },
               {
-                "title": "Docker",
-                "path": "/dagster-cloud/deployment/agents/docker",
-                "children": [
-                  {
-                    "title": "Setup",
-                    "path": "/dagster-cloud/deployment/agents/docker/configuring-running-docker-agent"
-                  },
-                  {
-                    "title": "Configuration",
-                    "path": "/dagster-cloud/deployment/agents/docker/configuration-reference"
-                  }
-                ]
+                "title": "Alerts",
+                "path": "/dagster-cloud/managing-deployments/setting-up-alerts"
               },
               {
-                "title": "Kubernetes",
-                "path": "/dagster-cloud/deployment/agents/kubernetes",
-                "children": [
-                  {
-                    "title": "Setup",
-                    "path": "/dagster-cloud/deployment/agents/kubernetes/configuring-running-kubernetes-agent"
-                  },
-                  {
-                    "title": "Configuration",
-                    "path": "/dagster-cloud/deployment/agents/kubernetes/configuration-reference"
-                  }
-                ]
-              },
-              {
-                "title": "Local",
-                "path": "/dagster-cloud/deployment/agents/local"
-              },
-              {
-                "title": "Custom configuration",
-                "path": "/dagster-cloud/deployment/agents/customizing-configuration"
-              },
-              {
-                "title": "Multiple agents",
-                "path": "/dagster-cloud/deployment/agents/running-multiple-agents"
-              },
-              {
-                "title": "Setting environment variables",
-                "path": "/dagster-cloud/developing-testing/setting-environment-variables-dagster-cloud-agents"
-              }
-            ]
-          },
-          {
-            "title": "Developing and testing",
-            "path": "/dagster-cloud/developing-testing",
-            "children": [
-              {
-                "title": "Environment variables and secrets",
+                "title": "Environment variables & secrets",
                 "children": [
                   {
                     "title": "Overview and setup",
-                    "path": "/dagster-cloud/developing-testing/environment-variables-and-secrets"
+                    "path": "/dagster-cloud/managing-deployments/environment-variables-and-secrets"
                   },
                   {
                     "title": "Setup for Hybrid agents",
-                    "path": "/dagster-cloud/developing-testing/setting-environment-variables-dagster-cloud-agents"
+                    "path": "/dagster-cloud/managing-deployments/setting-environment-variables-dagster-cloud-agents"
                   }
                 ]
               },
               {
-                "title": "dagster-cloud CLI",
-                "path": "/dagster-cloud/developing-testing/dagster-cloud-cli"
-              },
-              {
-                "title": "Full deployments",
-                "children": [
-                  {
-                    "title": "Management",
-                    "path": "/dagster-cloud/developing-testing/managing-deployments"
-                  },
-                  {
-                    "title": "Settings",
-                    "path": "/dagster-cloud/developing-testing/deployment-settings-reference"
-                  }
-                ]
+                "title": "Settings",
+                "path": "/dagster-cloud/managing-deployments/deployment-settings-reference"
               },
               {
                 "title": "Code locations",
-                "path": "/dagster-cloud/developing-testing/code-locations"
+                "path": "/dagster-cloud/managing-deployments/code-locations"
               },
               {
                 "title": "Branch deployments",
-                "path": "/dagster-cloud/developing-testing/branch-deployments",
+                "path": "/dagster-cloud/managing-deployments/branch-deployments",
                 "children": [
                   {
                     "title": "Using with GitHub",
-                    "path": "/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments-with-github"
+                    "path": "/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments-with-github"
                   },
                   {
                     "title": "Using with Gitlab",
-                    "path": "/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments-with-gitlab"
+                    "path": "/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments-with-gitlab"
                   },
                   {
                     "title": "Using with dagster-cloud CLI",
-                    "path": "/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments"
+                    "path": "/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments"
                   }
                 ]
               }
             ]
+          },
+          {
+            "title": "dagster-cloud CLI",
+            "path": "/dagster-cloud/managing-deployments/dagster-cloud-cli"
           }
         ]
       }
