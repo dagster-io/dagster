@@ -179,9 +179,9 @@ class ExternalRepositoryData(
         if self.external_job_datas is None:
             check.failed("Snapshots were deferred, external_pipeline_data not loaded")
 
-        for external_pipeline_data in self.external_job_datas:
-            if external_pipeline_data.name == name:
-                return external_pipeline_data.job_snapshot
+        for external_job_data in self.external_job_datas:
+            if external_job_data.name == name:
+                return external_job_data.job_snapshot
 
         check.failed("Could not find pipeline snapshot named " + name)
 
@@ -190,9 +190,9 @@ class ExternalRepositoryData(
         if self.external_job_datas is None:
             check.failed("Snapshots were deferred, external_pipeline_data not loaded")
 
-        for external_pipeline_data in self.external_job_datas:
-            if external_pipeline_data.name == name:
-                return external_pipeline_data
+        for external_job_data in self.external_job_datas:
+            if external_job_data.name == name:
+                return external_job_data
 
         check.failed("Could not find external pipeline data named " + name)
 
@@ -230,7 +230,7 @@ class ExternalRepositoryData(
 )
 class ExternalJobSubsetResult(
     NamedTuple(
-        "_ExternalPipelineSubsetResult",
+        "_ExternalJobSubsetResult",
         [
             ("success", bool),
             ("error", Optional[SerializableErrorInfo]),
@@ -1178,23 +1178,23 @@ def _get_resource_usage_from_node(
             yield from _get_resource_usage_from_node(pipeline, nested_node, handle)
 
 
-def _get_resource_job_usage(pipelines: Sequence[JobDefinition]) -> ResourceJobUsageMap:
+def _get_resource_job_usage(job_defs: Sequence[JobDefinition]) -> ResourceJobUsageMap:
     resource_job_usage_map: Dict[str, List[ResourceJobUsageEntry]] = defaultdict(list)
 
-    for pipeline in pipelines:
-        job_name = pipeline.name
+    for job_def in job_defs:
+        job_name = job_def.name
         if is_base_asset_job_name(job_name):
             continue
 
         resource_usage: List[NodeHandleResourceUse] = []
-        for solid in pipeline.nodes_in_topological_order:
-            resource_usage += [use for use in _get_resource_usage_from_node(pipeline, solid)]
+        for solid in job_def.nodes_in_topological_order:
+            resource_usage += [use for use in _get_resource_usage_from_node(job_def, solid)]
         node_use_by_key: Dict[str, List[NodeHandle]] = defaultdict(list)
         for use in resource_usage:
             node_use_by_key[use.resource_key].append(use.node_handle)
         for resource_key in node_use_by_key:
             resource_job_usage_map[resource_key].append(
-                ResourceJobUsageEntry(pipeline.name, node_use_by_key[resource_key])
+                ResourceJobUsageEntry(job_def.name, node_use_by_key[resource_key])
             )
 
     return resource_job_usage_map
@@ -1317,8 +1317,8 @@ def external_asset_graph_from_defs(
     descriptions_by_asset_key: Dict[AssetKey, str] = {}
     atomic_execution_unit_ids_by_asset_key: Dict[AssetKey, str] = {}
 
-    for pipeline_def in job_defs:
-        asset_layer = pipeline_def.asset_layer
+    for job_def in job_defs:
+        asset_layer = job_def.asset_layer
         asset_info_by_node_output = asset_layer.asset_info_by_node_output_handle
 
         for node_output_handle, asset_info in asset_info_by_node_output.items():
@@ -1335,7 +1335,7 @@ def external_asset_graph_from_defs(
             code_version_by_asset_key[output_key] = asset_info.code_version
             upstream_asset_keys = asset_layer.upstream_assets_for_asset(output_key)
             all_upstream_asset_keys.update(upstream_asset_keys)
-            node_defs_by_asset_key[output_key].append((node_output_handle, pipeline_def))
+            node_defs_by_asset_key[output_key].append((node_output_handle, job_def))
             asset_info_by_asset_key[output_key] = asset_info
 
             for upstream_key in upstream_asset_keys:
@@ -1387,7 +1387,7 @@ def external_asset_graph_from_defs(
             job_names = (
                 [
                     job_def.name
-                    for job_def in pipelines
+                    for job_def in job_defs
                     if source_asset.key in job_def.asset_layer.source_assets_by_key
                     and source_asset.partitions_def is None
                     or source_asset.partitions_def == job_def.partitions_def
