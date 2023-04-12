@@ -14,9 +14,7 @@ export const BackfillPartitionsRequestedDialog = ({backfill, onClose}: Props) =>
       title={
         <span>
           Partitions requested for backfill:{' '}
-          <span style={{fontSize: '18px', fontFamily: FontFamily.monospace}}>
-            {backfill?.backfillId}
-          </span>
+          <span style={{fontSize: '18px', fontFamily: FontFamily.monospace}}>{backfill?.id}</span>
         </span>
       }
       onClose={onClose}

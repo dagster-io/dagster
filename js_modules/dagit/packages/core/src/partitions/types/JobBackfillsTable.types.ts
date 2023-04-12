@@ -18,7 +18,7 @@ export type JobBackfillsQuery = {
         pipelineName: string;
         backfills: Array<{
           __typename: 'PartitionBackfill';
-          backfillId: string;
+          id: string;
           status: Types.BulkActionStatus;
           isAssetBackfill: boolean;
           hasCancelPermission: boolean;

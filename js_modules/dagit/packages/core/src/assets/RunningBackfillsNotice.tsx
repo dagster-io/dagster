@@ -47,8 +47,8 @@ export const RUNNING_BACKFILLS_NOTICE_QUERY = gql`
       __typename
       ... on PartitionBackfills {
         results {
+          id
           partitionSetName
-          backfillId
         }
       }
     }

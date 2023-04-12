@@ -11,7 +11,7 @@ export type SingleBackfillCountsQuery = {
   partitionBackfillOrError:
     | {
         __typename: 'PartitionBackfill';
-        backfillId: string;
+        id: string;
         partitionStatusCounts: Array<{
           __typename: 'PartitionStatusCounts';
           runStatus: Types.RunStatus;
@@ -30,7 +30,7 @@ export type SingleBackfillQuery = {
   partitionBackfillOrError:
     | {
         __typename: 'PartitionBackfill';
-        backfillId: string;
+        id: string;
         partitionStatuses: {
           __typename: 'PartitionStatuses';
           results: Array<{

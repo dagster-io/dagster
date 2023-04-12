@@ -36,19 +36,19 @@ export const BackfillTable = ({
     RESUME_BACKFILL_MUTATION,
   );
 
-  const candidateId = terminationBackfill?.backfillId;
+  const candidateId = terminationBackfill?.id;
 
   React.useEffect(() => {
     if (candidateId) {
       const [backfill] = backfills.filter(
-        (backfill) => backfill.backfillId === candidateId && backfill.hasCancelPermission,
+        (backfill) => backfill.id === candidateId && backfill.hasCancelPermission,
       );
       setTerminationBackfill(backfill);
     }
   }, [backfills, candidateId]);
 
   const resume = async (backfill: BackfillTableFragment) => {
-    const {data} = await resumeBackfill({variables: {backfillId: backfill.backfillId}});
+    const {data} = await resumeBackfill({variables: {backfillId: backfill.id}});
     if (data && data.resumePartitionBackfill.__typename === 'ResumeBackfillSuccess') {
       refetch();
     } else if (data && data.resumePartitionBackfill.__typename === 'UnauthorizedError') {
@@ -97,7 +97,7 @@ export const BackfillTable = ({
         <tbody>
           {backfills.map((backfill) => (
             <BackfillRow
-              key={backfill.backfillId}
+              key={backfill.id}
               showBackfillTarget={showBackfillTarget}
               backfill={backfill}
               allPartitions={allPartitions}
@@ -128,7 +128,7 @@ export const BackfillTable = ({
 
 export const BACKFILL_TABLE_FRAGMENT = gql`
   fragment BackfillTableFragment on PartitionBackfill {
-    backfillId
+    id
     status
     isAssetBackfill
     hasCancelPermission

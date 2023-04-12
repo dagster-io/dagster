@@ -57,7 +57,7 @@ export const BackfillRow = ({
   const statusDetails = useLazyQuery<SingleBackfillQuery, SingleBackfillQueryVariables>(
     SINGLE_BACKFILL_STATUS_DETAILS_QUERY,
     {
-      variables: {backfillId: backfill.backfillId},
+      variables: {backfillId: backfill.id},
       notifyOnNetworkStatusChange: true,
     },
   );
@@ -65,7 +65,7 @@ export const BackfillRow = ({
   const statusCounts = useLazyQuery<SingleBackfillCountsQuery, SingleBackfillCountsQueryVariables>(
     SINGLE_BACKFILL_STATUS_COUNTS_QUERY,
     {
-      variables: {backfillId: backfill.backfillId},
+      variables: {backfillId: backfill.id},
       notifyOnNetworkStatusChange: true,
     },
   );
@@ -110,16 +110,16 @@ export const BackfillRow = ({
           <Link
             to={
               backfill.isAssetBackfill
-                ? `/overview/backfills/${backfill.backfillId}`
+                ? `/overview/backfills/${backfill.id}`
                 : runsPathWithFilters([
                     {
                       token: 'tag',
-                      value: `dagster/backfill=${backfill.backfillId}`,
+                      value: `dagster/backfill=${backfill.id}`,
                     },
                   ])
             }
           >
-            {backfill.backfillId}
+            {backfill.id}
           </Link>
         </Mono>
       </td>
@@ -190,7 +190,7 @@ const BackfillMenu = ({
   const runsUrl = runsPathWithFilters([
     {
       token: 'tag',
-      value: `dagster/backfill=${backfill.backfillId}`,
+      value: `dagster/backfill=${backfill.id}`,
     },
   ]);
 
@@ -483,7 +483,7 @@ export const SINGLE_BACKFILL_STATUS_COUNTS_QUERY = gql`
   query SingleBackfillCountsQuery($backfillId: String!) {
     partitionBackfillOrError(backfillId: $backfillId) {
       ... on PartitionBackfill {
-        backfillId
+        id
         partitionStatusCounts {
           runStatus
           count
@@ -497,7 +497,7 @@ export const SINGLE_BACKFILL_STATUS_DETAILS_QUERY = gql`
   query SingleBackfillQuery($backfillId: String!) {
     partitionBackfillOrError(backfillId: $backfillId) {
       ... on PartitionBackfill {
-        backfillId
+        id
         partitionStatuses {
           ...PartitionStatusesForBackfill
         }

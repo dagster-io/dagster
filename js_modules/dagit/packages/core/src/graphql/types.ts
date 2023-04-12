@@ -2256,12 +2256,12 @@ export type PartitionBackfill = {
   __typename: 'PartitionBackfill';
   assetBackfillData: Maybe<AssetBackfillData>;
   assetSelection: Maybe<Array<AssetKey>>;
-  backfillId: Scalars['String'];
   endTimestamp: Maybe<Scalars['Float']>;
   error: Maybe<PythonError>;
   fromFailure: Scalars['Boolean'];
   hasCancelPermission: Scalars['Boolean'];
   hasResumePermission: Scalars['Boolean'];
+  id: Scalars['String'];
   isAssetBackfill: Scalars['Boolean'];
   isValidSerialization: Scalars['Boolean'];
   numCancelable: Scalars['Int'];
@@ -8759,8 +8759,6 @@ export const buildPartitionBackfill = (
               ? ({} as AssetKey)
               : buildAssetKey({}, relationshipsToOmit),
           ],
-    backfillId:
-      overrides && overrides.hasOwnProperty('backfillId') ? overrides.backfillId! : 'sint',
     endTimestamp:
       overrides && overrides.hasOwnProperty('endTimestamp') ? overrides.endTimestamp! : 0.33,
     error:
@@ -8779,6 +8777,7 @@ export const buildPartitionBackfill = (
       overrides && overrides.hasOwnProperty('hasResumePermission')
         ? overrides.hasResumePermission!
         : true,
+    id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : 'recusandae',
     isAssetBackfill:
       overrides && overrides.hasOwnProperty('isAssetBackfill') ? overrides.isAssetBackfill! : false,
     isValidSerialization:

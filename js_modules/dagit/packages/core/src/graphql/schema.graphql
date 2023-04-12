@@ -2386,7 +2386,7 @@ type PartitionRun {
 }
 
 type PartitionBackfill {
-  backfillId: String!
+  id: String!
   status: BulkActionStatus!
   partitionNames: [String!]
   isValidSerialization: Boolean!

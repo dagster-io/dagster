@@ -326,6 +326,7 @@ export const BACKFILL_DETAILS_QUERY = gql`
   }
 
   fragment PartitionBackfillFragment on PartitionBackfill {
+    id
     status
     timestamp
     endTimestamp
