@@ -1124,7 +1124,7 @@ class MultiAssetSensorDefinition(SensorDefinition):
                     repository_def=context.repository_def,
                     monitored_assets=monitored_assets,
                     instance=context.instance,
-                    resources=context.resource_defs,
+                    resource_defs=context.resource_defs,
                 ) as multi_asset_sensor_context:
                     context_param_name = get_context_param_name(materialization_fn)
                     context_param = (

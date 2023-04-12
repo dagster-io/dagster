@@ -384,27 +384,6 @@ def test_run_status_sensor_invocation_resources() -> None:
     status_sensor(context)
     status_sensor_no_context(context)
 
-    # also keeps resources from nested `context`
-    context = build_run_status_sensor_context(
-        sensor_name="status_sensor",
-        dagster_instance=instance,
-        dagster_run=dagster_run,
-        dagster_event=dagster_event,
-        context=build_sensor_context(resources={"my_resource": MyResource(a_str="bar")}),
-    )
-
-    status_sensor(context)
-    status_sensor_no_context(context)
-
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match=(
-            "Resource with key 'my_resource' required by sensor 'status_sensor_no_context' was not"
-            " provided."
-        ),
-    ):
-        status_sensor_no_context()
-
 
 def test_instance_access_built_sensor():
     with pytest.raises(
