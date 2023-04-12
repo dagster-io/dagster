@@ -100,7 +100,7 @@ class AssetsDefinition(ResourceAddable):
         asset_deps: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]] = None,
         selected_asset_keys: Optional[AbstractSet[AssetKey]] = None,
         can_subset: bool = False,
-        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+        resource_defs: Optional[Mapping[str, object]] = None,
         group_names_by_key: Optional[Mapping[AssetKey, str]] = None,
         metadata_by_key: Optional[Mapping[AssetKey, ArbitraryMetadataMapping]] = None,
         freshness_policies_by_key: Optional[Mapping[AssetKey, FreshnessPolicy]] = None,
@@ -109,6 +109,8 @@ class AssetsDefinition(ResourceAddable):
         # if adding new fields, make sure to handle them in the with_attributes
         # and from_graph methods
     ):
+        from dagster._core.execution.build_resources import wrap_resources_for_execution
+
         from .graph_definition import GraphDefinition
 
         if isinstance(node_def, GraphDefinition):
@@ -159,7 +161,9 @@ class AssetsDefinition(ResourceAddable):
                 f"expected keys: {all_asset_keys}"
             ),
         )
-        self._resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
+        self._resource_defs = wrap_resources_for_execution(
+            check.opt_mapping_param(resource_defs, "resource_defs")
+        )
 
         group_names_by_key = (
             check.mapping_param(group_names_by_key, "group_names_by_key")
