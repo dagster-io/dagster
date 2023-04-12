@@ -12,9 +12,7 @@ from dagster import (
     multi_asset,
 )
 from dagster._core.definitions import AssetSelection, asset
-from dagster._core.definitions.asset_out import AssetOut
 from dagster._core.definitions.assets import AssetsDefinition
-from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.events import AssetKey
 from typing_extensions import TypeAlias
 
