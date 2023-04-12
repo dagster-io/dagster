@@ -310,7 +310,7 @@ def test_create_run_with_asset_partitions():
         execution_plan = create_execution_plan(noop_asset_job)
 
         ep_snapshot = snapshot_from_execution_plan(
-            execution_plan, noop_asset_job.get_pipeline_snapshot_id()
+            execution_plan, noop_asset_job.get_job_snapshot_id()
         )
 
         with pytest.raises(
@@ -322,9 +322,9 @@ def test_create_run_with_asset_partitions():
         ):
             create_run_for_test(
                 instance=instance,
-                pipeline_name="foo",
+                job_name="foo",
                 execution_plan_snapshot=ep_snapshot,
-                pipeline_snapshot=noop_asset_job.get_pipeline_snapshot(),
+                job_snapshot=noop_asset_job.get_job_snapshot(),
                 tags={ASSET_PARTITION_RANGE_START_TAG: "partition_0"},
             )
 
@@ -337,17 +337,17 @@ def test_create_run_with_asset_partitions():
         ):
             create_run_for_test(
                 instance=instance,
-                pipeline_name="foo",
+                job_name="foo",
                 execution_plan_snapshot=ep_snapshot,
-                pipeline_snapshot=noop_asset_job.get_pipeline_snapshot(),
+                job_snapshot=noop_asset_job.get_job_snapshot(),
                 tags={ASSET_PARTITION_RANGE_END_TAG: "partition_0"},
             )
 
         create_run_for_test(
             instance=instance,
-            pipeline_name="foo",
+            job_name="foo",
             execution_plan_snapshot=ep_snapshot,
-            pipeline_snapshot=noop_asset_job.get_pipeline_snapshot(),
+            job_snapshot=noop_asset_job.get_job_snapshot(),
             tags={ASSET_PARTITION_RANGE_START_TAG: "bar", ASSET_PARTITION_RANGE_END_TAG: "foo"},
         )
 

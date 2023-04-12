@@ -173,7 +173,7 @@ class ReconstructableRepository(
 
 
 @whitelist_for_serdes(
-    storage_name="ReconstructableJob",
+    storage_name="ReconstructablePipeline",
     storage_field_names={
         "job_name": "pipeline_name",
     },

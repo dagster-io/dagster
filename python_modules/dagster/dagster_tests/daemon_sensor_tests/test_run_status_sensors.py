@@ -1089,10 +1089,10 @@ def test_partitioned_job_run_status_sensor(
 
     with pendulum.test(freeze_datetime):
         external_job = external_repo.get_full_external_job("daily_partitioned_job")
-        run = instance.create_run_for_pipeline(
+        run = instance.create_run_for_job(
             daily_partitioned_job,
-            external_pipeline_origin=external_job.get_external_origin(),
-            pipeline_code_origin=external_job.get_python_origin(),
+            external_job_origin=external_job.get_external_origin(),
+            job_code_origin=external_job.get_python_origin(),
             tags={"dagster/partition": "2022-08-01"},
         )
         instance.submit_run(run.run_id, workspace_context.create_request_context())

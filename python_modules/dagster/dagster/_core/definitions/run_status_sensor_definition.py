@@ -724,12 +724,12 @@ class RunStatusSensorDefinition(SensorDefinition):
                 try:
                     with RunStatusSensorContext(
                         sensor_name=name,
-                        dagster_run=pipeline_run,
+                        dagster_run=dagster_run,
                         dagster_event=event_log_entry.dagster_event,
                         instance=context.instance,
                         resource_defs=context.resource_defs,
                         logger=context.log,
-                        partition_key=pipeline_run.tags.get("dagster/partition"),
+                        partition_key=dagster_run.tags.get("dagster/partition"),
                     ) as sensor_context, user_code_error_boundary(
                         RunStatusSensorExecutionError,
                         lambda: f'Error occurred during the execution sensor "{name}".',

@@ -636,7 +636,7 @@ class SensorDefinition:
     @property
     def jobs(self) -> List[Union[JobDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]:
         if self._targets and all(isinstance(target, DirectTarget) for target in self._targets):
-            return [target.target for target in self._targets]
+            return [target.target for target in self._targets]  # type: ignore  # (illegible conditional)
         raise DagsterInvalidDefinitionError("No job was provided to SensorDefinition.")
 
     @property

@@ -260,6 +260,9 @@ class ExternalJobSubsetResult(
         "job_snapshot": "pipeline_snapshot",
         "parent_job_snapshot": "parent_pipeline_snapshot",
     },
+    # There was a period during which `JobDefinition` was a newer subclass of the legacy
+    # `PipelineDefinition`, and `is_job` was a boolean field used to distinguish between the two
+    # cases on this class.
     old_fields={"is_job": True},
 )
 class ExternalJobData(
