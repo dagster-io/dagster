@@ -7,15 +7,11 @@ description: How to use dagster_cloud.yaml to configure Dagster Cloud
 
 <Note>This guide is applicable to Dagster Cloud.</Note>
 
-<<<<<<< HEAD:docs/content/dagster-cloud/developing-testing/dagster-cloud-yaml.mdx
-This dagster_cloud.yaml file is used to configure a Dagster Cloud instance. The file is required to tell Dagster where the code sources are to load into Dagster Cloud but has other options as well. For Hybrid Deployments, secrets are configured in this file as well. 
-=======
 This dagster_cloud.yaml file is used to configure a Dagster Cloud instance. The file is required to tell Dagster where the code sources are to load into Dagster Cloud but has other options as well. 
->>>>>>> c9277529c9 (Update docs/content/dagster-cloud/developing-testing/dagster-cloud-yaml.mdx):docs/content/dagster-cloud/managing-deployments/dagster-cloud-yaml.mdx
 
 ## Where to put the dagster_cloud.yaml file
 
-The dagster_cloud.yaml file should be placed in your dagster project's repository root. Below is an example of a file structure from the [Dagster cloud ETL quickstart](https://github.com/dagster-io/dagster/tree/master/examples/quickstart_etl). 
+The dagster_cloud.yaml file should be placed in your dagster project's repository root. Below is an example of a file structure from the [Dagster cloud ETL quickstart](https://github.com/dagster-io/dagster/tree/master/examples/quickstart_etl).
 
 ```shell
 quickstart_etl
@@ -30,24 +26,18 @@ quickstart_etl
 └── setup.py
 ```
 
+## Code Source
 
-<<<<<<< HEAD:docs/content/dagster-cloud/developing-testing/dagster-cloud-yaml.mdx
-## Code Source 
-
-The only **mandatory** section in the dagster_cloud.yaml file is setting up your code locations. If you have multiple code locations, you will have multiple code locations within a single dagster_cloud.yaml file. Dagster code can be sourced from a package, a python file, or a module. 
-=======
 The only **mandatory** section in the dagster_cloud.yaml file is setting up your code locations. If you have multiple code locations, you will have multiple code locations within a single dagster_cloud.yaml file. Dagster code can be sourced from a package, a python file, or a module, and one of these parameters should be specified for each code location.
->>>>>>> 6181090f9c (Update docs/content/dagster-cloud/developing-testing/dagster-cloud-yaml.mdx):docs/content/dagster-cloud/managing-deployments/dagster-cloud-yaml.mdx
 
 Parameter reference table:
 
-| Parameter | Description | Data type |
-| --- | --- | --- |
-| `locations.location_name` | The name of your code location that will appear in the Dagster UI code locations page | string |
-| `locations.code_source.package_name` | The folder that contains your dagster code | string (folder name) |
-| `locations.code_source.python_file` | The python file that contains your dagster code | string (.py file)|
-| `locations.code_source.module_name` | The module that contains your dagster code | string (module name)|
-
+| Parameter                            | Description                                                                           | Data type            |
+| ------------------------------------ | ------------------------------------------------------------------------------------- | -------------------- |
+| `locations.location_name`            | The name of your code location that will appear in the Dagster UI code locations page | string               |
+| `locations.code_source.package_name` | The folder that contains your dagster code                                            | string (folder name) |
+| `locations.code_source.python_file`  | The python file that contains your dagster code                                       | string (.py file)    |
+| `locations.code_source.module_name`  | The module that contains your dagster code                                            | string (module name) |
 
 Example for a single code location:
 
@@ -76,14 +66,15 @@ locations:
     code_source:
       python_file: definitions.py
 ```
+
 ## Configuring your working directory
 
 There might be some cases where you want to run your Dagster code from a different directory than the root of your code repository. You can specify the directory you want to run your Dagster code from in the dagster_cloud.yaml file using the `working_directory` option.
 
 Parameter reference table:
 
-| Parameter | Description | Data type |
-| --- | --- | --- |
+| Parameter           | Description                                            | Data type     |
+| ------------------- | ------------------------------------------------------ | ------------- |
 | `working_directory` | The path of the directory that Dagster should run from | string (path) |
 
 ```yaml
@@ -94,17 +85,16 @@ locations:
     code_source:
       package_name: hooli_data_eng
     working_directory: ./hooli_data_eng
-
 ```
 
 ## Build: Docker Registry
 
 Parameter reference table:
 
-| Parameter | Description | Data type |
-| --- | --- | --- |
-| `locations.build.directory` | The directory in your project code that you want to deploy, the default is `.`. If you have sub-folders you can specific the path to only deploy that sub-project| string (path) |
-| `locations.build.registry` | The Docker registry to push your code location to in the registry | string (docker registry) |
+| Parameter                   | Description                                                                                                                                                       | Data type                |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| `locations.build.directory` | The directory in your project code that you want to deploy, the default is `.`. If you have sub-folders you can specific the path to only deploy that sub-project | string (path)            |
+| `locations.build.registry`  | The Docker registry to push your code location to in the registry                                                                                                 | string (docker registry) |
 
 Single code location:
 
@@ -131,25 +121,24 @@ locations:
       package_name: hooli_data_eng
     build:
       directory: ./
-      registry:  764506304434.dkr.ecr.us-west-2.amazonaws.com/hooli-data-science-prod
+      registry: 764506304434.dkr.ecr.us-west-2.amazonaws.com/hooli-data-science-prod
   - location_name: basics
     code_source:
       python_file: definitions.py
     build:
       directory: ./hooli_basics
-      registry:  764506304434.dkr.ecr.us-west-2.amazonaws.com/hooli-data-science-prod
+      registry: 764506304434.dkr.ecr.us-west-2.amazonaws.com/hooli-data-science-prod
 ```
 
 ## Python Executable
 
-By default, Dagster Cloud will use the python executable that is installed on the agent. If you want to use a different python executable, you can specify it in the dagster_cloud.yaml file. It might also be useful to have different python executables for different code locations. 
+By default, Dagster Cloud will use the python executable that is installed on the agent. If you want to use a different python executable, you can specify it in the dagster_cloud.yaml file. It might also be useful to have different python executables for different code locations.
 
 Parameter reference table:
 
-| Parameter | Description | Data type |
-| --- | --- | --- |
+| Parameter                   | Description                            | Data type     |
+| --------------------------- | -------------------------------------- | ------------- |
 | `locations.executable_path` | The location of your python executable | string (path) |
-
 
 ```yaml
 #dagster_cloud.yaml
@@ -165,7 +154,7 @@ locations:
     executable_path: venvs/path/to/ml_tensorflow/bin/python
 ```
 
-## Other Configurations 
+## Other Configurations
 
 ### Secrets Management for Serverless
 
@@ -173,5 +162,8 @@ When using a serverless deployment, secrets can be configured in the Dagster UI.
 
 For Dagster Cloud Hybrid deployments, making environment variables accessible is accomplished by adding them to your agent's configuration
 
-
 ### Secrets for hybrid and configuration references
+
+- [Docker agent configuration reference](/dagster-cloud/deployment/agents/docker/configuration-reference)
+- [Amazon ECS agent configuration reference](/dagster-cloud/deployment/agents/amazon-ecs/configuration-reference#amazon-ecs-agent-configuration-reference)
+- [Kubernetes agent configuration reference](/dagster-cloud/deployment/agents/kubernetes/configuration-reference)
