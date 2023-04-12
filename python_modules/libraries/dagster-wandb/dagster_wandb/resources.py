@@ -68,21 +68,6 @@ class WandBResource(ConfigurableResource):
         )
         return Api(default_settings=client_settings, load_settings=False)
 
-    # api_key = context.resource_config["api_key"]
-    # host = context.resource_config["host"]
-    # wandb.login(
-    #     key=api_key,
-    #     host=host,
-    #     anonymous="never",
-    # )
-    # client_settings = wandb.Settings(
-    #     api_key=api_key,
-    #     base_url=host,
-    #     anonymous="never",
-    #     launch=True,
-    # )
-    # api = Api(default_settings=client_settings, load_settings=False)
-
     def get_host(self) -> str:
         return self.host
 
