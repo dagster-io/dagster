@@ -83,6 +83,10 @@ from .utils import safe_is_subclass
 
 Self = TypeVar("Self", bound="ConfigurableResourceFactory")
 
+INTERNAL_MARKER = "__internal__"
+
+assert CACHED_METHOD_FIELD_SUFFIX.endswith(INTERNAL_MARKER)
+
 
 class MakeConfigCacheable(BaseModel):
     """This class centralizes and implements all the chicanery we need in order
@@ -113,7 +117,7 @@ class MakeConfigCacheable(BaseModel):
         return super().__setattr__(name, value)
 
     def _is_field_internal(self, name: str) -> bool:
-        return name.endswith("__internal__") or name.endswith(CACHED_METHOD_FIELD_SUFFIX)
+        return name.endswith(INTERNAL_MARKER)
 
 
 class Config(MakeConfigCacheable):
