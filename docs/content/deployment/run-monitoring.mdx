@@ -26,7 +26,7 @@ When Dagster launches a run, the run stays in STARTING status until the run work
 
 ## General run timeouts
 
-After a run is marked as STARTED, it may hang indefinitely for various reasons (user API errors, network issues, etc.). `MAX_RUNTIME_SECONDS_TAG` can be used to set a timeout on a per-run basis. If the run exceeds this timeout, and run-monitoring is enabled, it will be marked as failed.
+After a run is marked as STARTED, it may hang indefinitely for various reasons (user API errors, network issues, etc.). `MAX_RUNTIME_SECONDS_TAG` can be used to set a timeout on a per-run basis. If the run exceeds this timeout, and run monitoring is enabled, it will be marked as failed.
 
 The below code example shows how to set a run timeout of 10 seconds on a per-job basis:
 
@@ -47,14 +47,16 @@ asset_job = define_asset_job(
 
 ## Detecting run worker crashes
 
+<Note>
+  Detecting run worker crashes only works when using a run launcher other than the <PyObject object="DefaultRunLauncher" />.
+</Note>
+
 It's possible for a run worker process to crash during a run. This can happen for a variety of reasons (the host it's running on could go down, it could run out of memory, etc.). Without the monitoring daemon, there are two possible outcomes, neither desirable:
 
 - If the run worker was able to catch the interrupt, it will mark the run as failed
 - If the run worker goes down without a grace period, the run could be left hanging in STARTED status
 
 If a run worker crashes, the run it's managing can hang. The monitoring daemon can run health checks on run workers for all active runs to detect this. If a failed run worker is detected (e.g. by the K8s Job having a non-zero exit code), the run is either marked as failed or resumed (see below).
-
-Note that detecting run worker crashes only works when using a run launcher other than the <PyObject object="DefaultRunLauncher" />.
 
 
 ## Resuming runs after run worker crashes (Experimental)
