@@ -4,12 +4,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {ASSET_NODE_FRAGMENT} from '../asset-graph/AssetNode';
-import {
-  displayNameForAssetKey,
-  isHiddenAssetGroupJob,
-  LiveData,
-  toGraphId,
-} from '../asset-graph/Utils';
+import {isHiddenAssetGroupJob, LiveData, toGraphId} from '../asset-graph/Utils';
 import {AssetNodeForGraphQueryFragment} from '../asset-graph/types/useAssetGraphData.types';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {Description} from '../pipelines/Description';
@@ -30,6 +25,7 @@ import {
 import {AssetNodeList} from './AssetNodeList';
 import {CurrentMinutesLateTag, freshnessPolicyDescription} from './CurrentMinutesLateTag';
 import {DependsOnSelfBanner} from './DependsOnSelfBanner';
+import {UnderlyingOpsOrGraph} from './UnderlyingOpsOrGraph';
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinition.types';
 
 export const AssetNodeDefinition: React.FC<{
@@ -252,57 +248,12 @@ const DescriptionAnnotations: React.FC<{
           />
         </Mono>
       ))}
-    <OpNamesDisplay assetNode={assetNode} repoAddress={repoAddress} />
+    <UnderlyingOpsOrGraph assetNode={assetNode} repoAddress={repoAddress} />
     {assetNode.isSource && (
       <Caption style={{lineHeight: '16px', marginTop: 2}}>Source Asset</Caption>
     )}
   </Box>
 );
-
-const OpNamesDisplay = (props: {
-  assetNode: AssetNodeDefinitionFragment;
-  repoAddress: RepoAddress;
-}) => {
-  const {assetNode, repoAddress} = props;
-  const {assetKey, graphName, opNames, jobNames} = assetNode;
-  const opCount = opNames.length;
-
-  if (!opCount) {
-    return null;
-  }
-
-  if (!graphName) {
-    const firstOp = opNames[0];
-    if (displayNameForAssetKey(assetKey) === firstOp) {
-      return null;
-    }
-    const opPath = workspacePathFromAddress(repoAddress, `/ops/${firstOp}`);
-    return (
-      <Box flex={{gap: 4, alignItems: 'center'}}>
-        <Icon name="op" size={16} />
-        <Mono>
-          <Link to={opPath}>{firstOp}</Link>
-        </Mono>
-      </Box>
-    );
-  }
-
-  if (!jobNames.length) {
-    return null;
-  }
-
-  return (
-    <Box flex={{gap: 4, alignItems: 'center'}}>
-      <Icon name="schema" size={16} />
-      <Mono>
-        <Link to={workspacePathFromAddress(repoAddress, `/graphs/${jobNames[0]}/${graphName}/`)}>
-          {graphName}
-        </Link>
-        {` (${opCount === 1 ? '1 op' : `${opCount} ops`})`}
-      </Mono>
-    </Box>
-  );
-};
 
 export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
   fragment AssetNodeDefinitionFragment on AssetNode {

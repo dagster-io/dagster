@@ -156,7 +156,7 @@ export const ASSET_OBSERVATION_FRAGMENT = gql`
   ${METADATA_ENTRY_FRAGMENT}
 `;
 
-const ASSET_EVENTS_QUERY = gql`
+export const ASSET_EVENTS_QUERY = gql`
   query AssetEventsQuery(
     $assetKey: AssetKeyInput!
     $limit: Int

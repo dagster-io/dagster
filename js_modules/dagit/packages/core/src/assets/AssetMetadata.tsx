@@ -41,6 +41,7 @@ export const ASSET_NODE_OP_METADATA_FRAGMENT = gql`
       ...MetadataEntryFragment
     }
     type {
+      __typename
       ...DagsterTypeFragment
     }
   }
