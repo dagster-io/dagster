@@ -113,7 +113,7 @@ defs = Definitions(
 
 ### Using environment variables with resources
 
-Resources can be configured using environment variables, which is useful for secrets or other environment-specific configuration. If you're using Dagster Cloud, environment variables can be [configured directly in the UI](/dagster-cloud/managing-deployments/environment-variables-and-secrets).
+Resources can be configured using environment variables, which is useful for secrets or other environment-specific configuration. If you're using Dagster Cloud, environment variables can be [configured directly in the UI](/dagster-cloud/developing-testing/environment-variables-and-secrets).
 
 To use environment variables, pass an <PyObject object="EnvVar" /> when constructing your resource.
 
@@ -426,18 +426,18 @@ defs = Definitions(
 
 In some cases, you may want to use a bare Python object as a resource which is not a subclass of <PyObject object="ConfigurableResource"/>.
 
-For example, you may want to directly pass a third-party API client into your assets or ops. This follows a similar pattern to using a <PyObject object="ConfigurableResource"/> subclass, however assets and ops which use these resources must [annotate](https://docs.python.org/3/library/typing.html#typing.Annotated) them with <PyObject object="Resource"/>.
+For example, you may want to directly pass a third-party API client into your assets or ops. This follows a similar pattern to using a <PyObject object="ConfigurableResource"/> subclass, however assets and ops which use these resources must [annotate](https://docs.python.org/3/library/typing.html#typing.Annotated) them with <PyObject object="ResourceParam"/>.
 
 ```python file=/guides/dagster/pythonic_resources/pythonic_resources.py startafter=start_raw_github_resource endbefore=end_raw_github_resource dedent=4
-from dagster import Definitions, asset, Resource
+from dagster import Definitions, asset, ResourceParam
 
-# `Resource[GitHub]` is treated exactly like `GitHub` for type checking purposes,
+# `ResourceParam[GitHub]` is treated exactly like `GitHub` for type checking purposes,
 # and the runtime type of the github parameter is `GitHub`. The purpose of the
 # `Resource` wrapper is to let Dagster know that `github` is a resource and not an
 # upstream asset.
 
 @asset
-def public_github_repos(github: Resource[GitHub]):
+def public_github_repos(github: ResourceParam[GitHub]):
     return github.organization("dagster-io").repositories()
 
 defs = Definitions(

@@ -101,7 +101,7 @@ asset_result = materialize(
 
 ### Using environment variables with config
 
-Ops and assets can be configured using environment variables by passing an <PyObject object="EnvVar" /> when constructing your config object. This is useful when the value may vary based on environment or is sensitive. If you're using Dagster Cloud, environment variables can be [set up directly in the UI](/dagster-cloud/managing-deployments/environment-variables-and-secrets).
+Ops and assets can be configured using environment variables by passing an <PyObject object="EnvVar" /> when constructing your config object. This is useful when the value may vary based on environment or is sensitive. If you're using Dagster Cloud, environment variables can be [set up directly in the UI](/dagster-cloud/developing-testing/environment-variables-and-secrets).
 
 ```python file=/guides/dagster/pythonic_config/pythonic_config.py startafter=start_execute_with_config_envvar endbefore=end_execute_with_config_envvar dedent=4
 from dagster import job, materialize, op, RunConfig, EnvVar
