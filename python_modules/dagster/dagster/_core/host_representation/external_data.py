@@ -30,8 +30,8 @@ from dagster import (
     _check as check,
 )
 from dagster._config.pythonic_config import (
-    ConfigurableResource,
-    PartialResource,
+    ConfigurableIOManagerFactoryResourceDefinition,
+    ConfigurableResourceFactoryResourceDefinition,
     ResourceWithKeyMapping,
 )
 from dagster._config.snap import (
@@ -1545,7 +1545,13 @@ def _get_nested_resources(
             )
             for k, nested_resource in resource_def.nested_resources.items()
         }
-        if isinstance(resource_def, (ConfigurableResource, PartialResource))
+        if isinstance(
+            resource_def,
+            (
+                ConfigurableResourceFactoryResourceDefinition,
+                ConfigurableIOManagerFactoryResourceDefinition,
+            ),
+        )
         else {
             k: NestedResource(NestedResourceType.TOP_LEVEL, k)
             for k in resource_def.required_resource_keys

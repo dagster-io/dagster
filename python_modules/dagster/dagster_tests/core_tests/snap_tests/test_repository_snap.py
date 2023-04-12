@@ -340,6 +340,7 @@ def test_repository_snap_definitions_env_vars() -> None:
 
     env_vars = dict(external_repo_data.utilized_env_vars)
 
+    print(env_vars)
     assert len(env_vars) == 5
     assert "MY_STRING" in env_vars
     assert {consumer.name for consumer in env_vars["MY_STRING"]} == {"foo", "bar", "quux"}

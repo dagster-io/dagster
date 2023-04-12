@@ -431,11 +431,21 @@ class ConfigurableResourceFactoryResourceDefinition(ResourceDefinition, AllowDel
         config_schema: Any,
         description: Optional[str],
         resolve_resource_keys: Callable[[Mapping[int, str]], AbstractSet[str]],
+        nested_resources: Mapping[
+            str, Union[ResourceDefinition, "ConfigurableResourceFactory", "PartialResource"]
+        ],
     ):
         super().__init__(
             resource_fn=resource_fn, config_schema=config_schema, description=description
         )
         self._resolve_resource_keys = resolve_resource_keys
+        self._nested_resources = nested_resources
+
+    @property
+    def nested_resources(
+        self,
+    ) -> Mapping[str, Union[ResourceDefinition, "ConfigurableResourceFactory", "PartialResource"]]:
+        return self._nested_resources
 
     def _resolve_required_resource_keys(
         self, resource_mapping: Mapping[int, str]
@@ -450,11 +460,21 @@ class ConfigurableIOManagerFactoryResourceDefinition(IOManagerDefinition, AllowD
         config_schema: Any,
         description: Optional[str],
         resolve_resource_keys: Callable[[Mapping[int, str]], AbstractSet[str]],
+        nested_resources: Mapping[
+            str, Union[ResourceDefinition, "ConfigurableResourceFactory", "PartialResource"]
+        ],
     ):
         super().__init__(
             resource_fn=resource_fn, config_schema=config_schema, description=description
         )
         self._resolve_resource_keys = resolve_resource_keys
+        self._nested_resources = nested_resources
+
+    @property
+    def nested_resources(
+        self,
+    ) -> Mapping[str, Union[ResourceDefinition, "ConfigurableResourceFactory", "PartialResource"]]:
+        return self._nested_resources
 
     def _resolve_required_resource_keys(
         self, resource_mapping: Mapping[int, str]
@@ -550,6 +570,7 @@ class ConfigurableResourceFactory(
             config_schema=self._config_schema,
             description=self.__doc__,
             resolve_resource_keys=self._resolve_required_resource_keys,
+            nested_resources=self.nested_resources,
         )
 
     @abstractmethod
@@ -773,6 +794,7 @@ class PartialResource(Generic[TResValue], AllowDelayedDependencies, MakeConfigCa
             config_schema=self._config_schema,
             description=self._description,
             resolve_resource_keys=self._resolve_required_resource_keys,
+            nested_resources=self.nested_resources,
         )
 
 
@@ -839,6 +861,7 @@ class ConfigurableLegacyResourceAdapter(ConfigurableResource, ABC):
             config_schema=self._config_schema,
             description=self.__doc__,
             resolve_resource_keys=self._resolve_required_resource_keys,
+            nested_resources=self.nested_resources,
         )
 
     def __call__(self, *args, **kwargs):
@@ -884,6 +907,7 @@ class ConfigurableIOManagerFactory(ConfigurableResourceFactory[TIOManagerValue])
             config_schema=self._config_schema,
             description=self.__doc__,
             resolve_resource_keys=self._resolve_required_resource_keys,
+            nested_resources=self.nested_resources,
         )
 
 
@@ -899,6 +923,7 @@ class PartialIOManager(Generic[TResValue], PartialResource[TResValue]):
             config_schema=self._config_schema,
             description=self._description,
             resolve_resource_keys=self._resolve_required_resource_keys,
+            nested_resources=self.nested_resources,
         )
 
 
@@ -1130,6 +1155,7 @@ class ConfigurableLegacyIOManagerAdapter(ConfigurableIOManagerFactory):
             config_schema=self._config_schema,
             description=self.__doc__,
             resolve_resource_keys=self._resolve_required_resource_keys,
+            nested_resources=self.nested_resources,
         )
 
 
