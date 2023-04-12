@@ -110,7 +110,7 @@ export const StaleCausesInfoDot: React.FC<{causes: LiveDataForNode['staleCauses'
 
 const StaleCausesSummary: React.FC<{causes: LiveDataForNode['staleCauses']}> = ({causes}) => (
   <Box>
-    <strong>This asset has unpropagated changes:</strong>
+    <strong>Changes since last materialization:</strong>
     <ul style={{margin: 0, padding: '4px 12px'}}>
       {causes.slice(0, MAX_DISPLAYED_REASONS).map((cause, idx) => (
         <li key={idx}>
