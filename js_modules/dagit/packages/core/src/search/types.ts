@@ -1,4 +1,5 @@
 export enum SearchResultType {
+  AssetGroup,
   Asset,
   Page,
   PartitionSet,

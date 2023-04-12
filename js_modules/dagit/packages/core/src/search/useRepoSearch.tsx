@@ -26,7 +26,13 @@ const bootstrapDataToSearchResults = (input: {data?: SearchBootstrapQuery}) => {
   }
 
   const {locationEntries} = data.workspaceOrError;
-  const manyRepos = locationEntries.length > 1;
+  const firstEntry = locationEntries[0];
+  const manyLocations =
+    locationEntries.length > 1 ||
+    (firstEntry &&
+      firstEntry.__typename === 'WorkspaceLocationEntry' &&
+      firstEntry.locationOrLoadError?.__typename === 'RepositoryLocation' &&
+      firstEntry.locationOrLoadError.repositories.length > 1);
 
   const allEntries = locationEntries.reduce((accum, locationEntry) => {
     if (locationEntry.locationOrLoadError?.__typename !== 'RepositoryLocation') {
@@ -40,6 +46,7 @@ const bootstrapDataToSearchResults = (input: {data?: SearchBootstrapQuery}) => {
       ...repos.reduce((inner, repo) => {
         const {
           name: repoName,
+          assetGroups,
           partitionSets,
           pipelines,
           schedules,
@@ -49,6 +56,19 @@ const bootstrapDataToSearchResults = (input: {data?: SearchBootstrapQuery}) => {
         const {name: locationName} = repoLocation;
         const repoPath = buildRepoPathForHuman(repoName, locationName);
 
+        const allAssetGroups = assetGroups.reduce((flat, assetGroup) => {
+          const {groupName} = assetGroup;
+          return [
+            ...flat,
+            {
+              label: groupName,
+              description: manyLocations ? `Asset group in ${repoPath}` : 'Asset group',
+              href: workspacePath(repoName, locationName, `/asset-groups/${groupName}`),
+              type: SearchResultType.AssetGroup,
+            },
+          ];
+        }, [] as SearchResult[]);
+
         const allPipelinesAndJobs = pipelines
           .filter((item) => !isHiddenAssetGroupJob(item.name))
           .reduce((flat, pipelineOrJob) => {
@@ -57,7 +77,7 @@ const bootstrapDataToSearchResults = (input: {data?: SearchBootstrapQuery}) => {
               ...flat,
               {
                 label: name,
-                description: manyRepos
+                description: manyLocations
                   ? `${isJob ? 'Job' : 'Pipeline'} in ${repoPath}`
                   : isJob
                   ? 'Job'
@@ -74,29 +94,30 @@ const bootstrapDataToSearchResults = (input: {data?: SearchBootstrapQuery}) => {
 
         const allSchedules: SearchResult[] = schedules.map((schedule) => ({
           label: schedule.name,
-          description: manyRepos ? `Schedule in ${repoPath}` : 'Schedule',
+          description: manyLocations ? `Schedule in ${repoPath}` : 'Schedule',
           href: workspacePath(repoName, locationName, `/schedules/${schedule.name}`),
           type: SearchResultType.Schedule,
         }));
 
         const allSensors: SearchResult[] = sensors.map((sensor) => ({
           label: sensor.name,
-          description: manyRepos ? `Sensor in ${repoPath}` : 'Sensor',
+          description: manyLocations ? `Sensor in ${repoPath}` : 'Sensor',
           href: workspacePath(repoName, locationName, `/sensors/${sensor.name}`),
           type: SearchResultType.Sensor,
         }));
 
         const allResources: SearchResult[] = allTopLevelResourceDetails.map((resource) => ({
           label: resource.name,
-          description: manyRepos ? `Resource in ${repoPath}` : 'Resource',
+          description: manyLocations ? `Resource in ${repoPath}` : 'Resource',
           href: workspacePath(repoName, locationName, `/resources/${resource.name}`),
           type: SearchResultType.Resource,
         }));
+
         const allPartitionSets: SearchResult[] = partitionSets
           .filter((item) => !isHiddenAssetGroupJob(item.pipelineName))
           .map((partitionSet) => ({
             label: partitionSet.name,
-            description: manyRepos ? `Partition set in ${repoPath}` : 'Partition set',
+            description: manyLocations ? `Partition set in ${repoPath}` : 'Partition set',
             href: workspacePath(
               repoName,
               locationName,
@@ -107,6 +128,7 @@ const bootstrapDataToSearchResults = (input: {data?: SearchBootstrapQuery}) => {
 
         return [
           ...inner,
+          ...allAssetGroups,
           ...allPipelinesAndJobs,
           ...allSchedules,
           ...allSensors,
@@ -189,6 +211,9 @@ const SEARCH_BOOTSTRAP_QUERY = gql`
                 ... on Repository {
                   id
                   name
+                  assetGroups {
+                    groupName
+                  }
                   pipelines {
                     id
                     isJob
