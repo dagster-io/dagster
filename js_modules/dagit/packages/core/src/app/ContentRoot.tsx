@@ -16,6 +16,7 @@ const RunRoot = React.lazy(() => import('../runs/RunRoot'));
 const RunsRoot = React.lazy(() => import('../runs/RunsRoot'));
 const ScheduledRunListRoot = React.lazy(() => import('../runs/ScheduledRunListRoot'));
 const SnapshotRoot = React.lazy(() => import('../snapshots/SnapshotRoot'));
+const GuessJobLocationRoot = React.lazy(() => import('../workspace/GuessJobLocationRoot'));
 
 export const ContentRoot = React.memo(() => {
   const {pathname} = useLocation();
@@ -77,6 +78,11 @@ export const ContentRoot = React.memo(() => {
           <Route path="/locations">
             <React.Suspense fallback={<div />}>
               <WorkspaceRoot />
+            </React.Suspense>
+          </Route>
+          <Route path="/guess/:jobPath">
+            <React.Suspense fallback={<div />}>
+              <GuessJobLocationRoot />
             </React.Suspense>
           </Route>
           <Route path="/overview">

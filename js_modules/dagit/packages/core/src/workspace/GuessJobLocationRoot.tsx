@@ -11,19 +11,19 @@ import {buildRepoPathForHuman} from './buildRepoAddress';
 import {findRepoContainingPipeline} from './findRepoContainingPipeline';
 import {workspacePath, workspacePathFromAddress} from './workspacePath';
 
-export const WorkspacePipelineRoot = () => {
+export const GuessJobLocationRoot = () => {
   useTrackPageView();
 
-  const params = useParams<{pipelinePath: string}>();
-  const {pipelinePath} = params;
+  const params = useParams<{jobPath: string}>();
+  const {jobPath} = params;
 
-  const entireMatch = useRouteMatch(['/locations/pipelines/(/?.*)', '/locations/jobs/(/?.*)']);
+  const entireMatch = useRouteMatch('/guess/(/?.*)');
   const location = useLocation();
 
   const toAppend = (entireMatch!.params as any)[0];
   const {search} = location;
 
-  const {pipelineName} = explorerPathFromString(pipelinePath);
+  const {pipelineName} = explorerPathFromString(jobPath);
   const {loading, options} = useRepositoryOptions();
 
   if (loading) {
@@ -42,7 +42,7 @@ export const WorkspacePipelineRoot = () => {
               <div>
                 <strong>{pipelineName}</strong>
               </div>
-              was not found in any repositories in this workspace.
+              was not found in any of your definitions.
             </div>
           }
         />
@@ -131,3 +131,7 @@ export const WorkspacePipelineRoot = () => {
     </Page>
   );
 };
+
+// Imported via React.lazy, which requires a default export.
+// eslint-disable-next-line import/no-default-export
+export default GuessJobLocationRoot;
