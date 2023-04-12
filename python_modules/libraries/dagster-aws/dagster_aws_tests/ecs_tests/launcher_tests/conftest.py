@@ -233,7 +233,7 @@ def workspace(instance: DagsterInstance, image: str) -> Iterator[WorkspaceReques
         instance,
         loadable_target_origin=LoadableTargetOrigin(
             python_file=repo.__file__,
-            attribute=repo.repository.__name__,
+            attribute=repo.repository.name,
         ),
         container_image=image,
     ) as workspace:
@@ -248,7 +248,7 @@ def other_workspace(
         instance,
         loadable_target_origin=LoadableTargetOrigin(
             python_file=repo.__file__,
-            attribute=repo.repository.__name__,
+            attribute=repo.repository.name,
         ),
         container_image=other_image,
     ) as workspace:
@@ -263,13 +263,13 @@ def job() -> JobDefinition:
 @pytest.fixture
 def external_job(workspace: WorkspaceRequestContext) -> ExternalJob:
     location = workspace.get_code_location(workspace.code_location_names[0])
-    return location.get_repository(repo.repository.__name__).get_full_external_job(repo.job.name)
+    return location.get_repository(repo.repository.name).get_full_external_job(repo.job.name)
 
 
 @pytest.fixture
 def other_external_job(other_workspace: WorkspaceRequestContext) -> ExternalJob:
     location = other_workspace.get_code_location(other_workspace.code_location_names[0])
-    return location.get_repository(repo.repository.__name__).get_full_external_job(repo.job.name)
+    return location.get_repository(repo.repository.name).get_full_external_job(repo.job.name)
 
 
 @pytest.fixture
@@ -340,7 +340,7 @@ def custom_workspace(
         custom_instance,
         loadable_target_origin=LoadableTargetOrigin(
             python_file=repo.__file__,
-            attribute=repo.repository.__name__,
+            attribute=repo.repository.name,
         ),
         container_image=image,
     ) as workspace:
