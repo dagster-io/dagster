@@ -122,3 +122,8 @@ class ScopedResourcesBuilder(
                     return resource_instance_dict
 
             return _ScopedResources(**resources_to_attach_to_context)  # type: ignore[call-arg]
+
+    @classmethod
+    def build_empty(cls) -> Resources:
+        """Returns an empty Resources object, equivalent to ScopedResourcesBuilder().build(None)."""
+        return cls().build(None)
