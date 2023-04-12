@@ -238,7 +238,7 @@ export const VirtualizedAssetCatalogHeader: React.FC<{
     >
       <HeaderCell>{headerCheckbox}</HeaderCell>
       <HeaderCell>{view === 'flat' ? 'Asset name' : 'Asset key prefix'}</HeaderCell>
-      <HeaderCell>Repository / Asset group</HeaderCell>
+      <HeaderCell>Code location / Asset group</HeaderCell>
       <HeaderCell>Status</HeaderCell>
       <HeaderCell></HeaderCell>
     </Box>
