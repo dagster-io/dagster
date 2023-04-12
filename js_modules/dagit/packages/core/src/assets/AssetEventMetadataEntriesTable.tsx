@@ -22,7 +22,7 @@ export const AssetEventMetadataEntriesTable: React.FC<{
   observations?: (AssetObservationFragment | AssetMaterializationFragment)[];
 }> = ({event, observations}) => {
   if (!event || (!event.metadataEntries.length && !observations?.length)) {
-    return <Caption color={Colors.Gray500}>No materializations</Caption>;
+    return <Caption color={Colors.Gray500}>No metadata entries</Caption>;
   }
   const {metadataEntries, timestamp} = event;
 

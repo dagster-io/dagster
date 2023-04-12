@@ -16,6 +16,7 @@ import {useRecentAssetEvents} from './useRecentAssetEvents';
 
 interface Props {
   assetKey: AssetKey;
+  isSourceAsset: boolean;
   liveData?: LiveDataForNode;
 
   // This timestamp is a "hint", when it changes this component will refetch
@@ -31,6 +32,7 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
   assetKey,
   assetLastMaterializedAt,
   assetHasDefinedPartitions,
+  isSourceAsset,
   liveData,
 }) => {
   const {
@@ -43,6 +45,8 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
   } = useRecentAssetEvents(assetKey, {}, {assetHasDefinedPartitions});
 
   const grouped = useGroupedEvents(xAxis, materializations, observations, loadedPartitionKeys);
+
+  const displayedEvent = isSourceAsset ? observations[0] : materializations[0];
 
   React.useEffect(() => {
     refetch();
@@ -79,12 +83,14 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
         </SidebarSection>
       )}
 
-      <SidebarSection title="Materialization in last run">
-        {materializations[0] ? (
+      <SidebarSection
+        title={!isSourceAsset ? 'Materialization in last run' : 'Observation in last run'}
+      >
+        {displayedEvent ? (
           <div style={{margin: -1, maxWidth: '100%', overflowX: 'auto'}}>
             <LatestMaterializationMetadata
               assetKey={assetKey}
-              latest={materializations[0]}
+              latest={displayedEvent}
               liveData={liveData}
             />
           </div>
@@ -93,21 +99,24 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
             margin={{horizontal: 24, vertical: 12}}
             style={{color: Colors.Gray500, fontSize: '0.8rem'}}
           >
-            No materializations found
+            {!isSourceAsset ? `No materializations found` : `No observations found`}
           </Box>
         )}
       </SidebarSection>
-      <SidebarSection title="Materialization system tags" collapsedByDefault>
-        {materializations[0] ? (
+      <SidebarSection
+        title={!isSourceAsset ? 'Materialization system tags' : 'Observation system tags'}
+        collapsedByDefault
+      >
+        {displayedEvent ? (
           <div style={{margin: -1, maxWidth: '100%', overflowX: 'auto'}}>
-            <AssetEventSystemTags event={materializations[0]} paddingLeft={24} />
+            <AssetEventSystemTags event={displayedEvent} paddingLeft={24} />
           </div>
         ) : (
           <Box
             margin={{horizontal: 24, vertical: 12}}
             style={{color: Colors.Gray500, fontSize: '0.8rem'}}
           >
-            No materializations found
+            {!isSourceAsset ? `No materializations found` : `No observations found`}
           </Box>
         )}
       </SidebarSection>

@@ -97,7 +97,7 @@ export const AssetMaterializationUpstreamData: React.FC<{
       <AssetUpstreamDataTable>
         <tbody>
           <tr>
-            <td>No materializations to display.</td>
+            <td>No upstream materializations to display.</td>
           </tr>
         </tbody>
       </AssetUpstreamDataTable>
