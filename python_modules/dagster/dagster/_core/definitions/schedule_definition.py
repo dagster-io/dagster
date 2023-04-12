@@ -95,6 +95,7 @@ def get_or_create_schedule_context(
     function requires a context parameter but none is passed.
     """
     from dagster import ResourceDefinition
+    from dagster._config.pythonic_config import ConfigurableResourceFactory, PartialResource
     from dagster._core.definitions.sensor_definition import get_context_param_name
 
     context_param_name = get_context_param_name(fn)
@@ -106,7 +107,10 @@ def get_or_create_schedule_context(
             "positional context parameter should be provided when invoking."
         )
 
-    if any(isinstance(arg, ResourceDefinition) for arg in args):
+    if any(
+        isinstance(arg, (ResourceDefinition, ConfigurableResourceFactory, PartialResource))
+        for arg in args
+    ):
         raise DagsterInvalidInvocationError(
             "If directly invoking a schedule, you may not provide resources as"
             " positional arguments, only as keyword arguments."
@@ -272,12 +276,15 @@ class ScheduleEvaluationContext:
         check.invariant(
             self._resources is None, "Cannot merge resources in context that has been initialized."
         )
+        from dagster._core.execution.build_resources import wrap_resources_for_execution
+
+        wrapped_resources_defs = wrap_resources_for_execution(resources_dict)
         return ScheduleEvaluationContext(
             instance_ref=self._instance_ref,
             scheduled_execution_time=self._scheduled_execution_time,
             repository_name=self._repository_name,
             schedule_name=self._schedule_name,
-            resources={**(self._resource_defs or {}), **resources_dict},
+            resources={**(self._resource_defs or {}), **wrapped_resources_defs},
             repository_def=self._repository_def,
         )
 

@@ -201,6 +201,9 @@ class SensorEvaluationContext:
         check.invariant(
             self._resources is None, "Cannot merge resources in context that has been initialized."
         )
+        from dagster._core.execution.build_resources import wrap_resources_for_execution
+
+        wrapped_resources_defs = wrap_resources_for_execution(resources_dict)
         return SensorEvaluationContext(
             instance_ref=self._instance_ref,
             last_completion_time=self._last_completion_time,
@@ -210,7 +213,7 @@ class SensorEvaluationContext:
             repository_def=self._repository_def,
             instance=self._instance,
             sensor_name=self._sensor_name,
-            resources={**(self._resource_defs or {}), **resources_dict},
+            resources={**(self._resource_defs or {}), **wrapped_resources_defs},
         )
 
     @property
@@ -1001,6 +1004,7 @@ def get_sensor_context_from_args_or_kwargs(
     context_type: Type[T],
 ) -> Optional[T]:
     from dagster import ResourceDefinition
+    from dagster._config.pythonic_config import ConfigurableResourceFactory, PartialResource
 
     context_param_name = get_context_param_name(fn)
 
@@ -1011,7 +1015,10 @@ def get_sensor_context_from_args_or_kwargs(
             "positional context parameter should be provided when invoking."
         )
 
-    if any(isinstance(arg, ResourceDefinition) for arg in args):
+    if any(
+        isinstance(arg, (ResourceDefinition, ConfigurableResourceFactory, PartialResource))
+        for arg in args
+    ):
         raise DagsterInvalidInvocationError(
             "If directly invoking a sensor, you may not provide resources as"
             " positional"

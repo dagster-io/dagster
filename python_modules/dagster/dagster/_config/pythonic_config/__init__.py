@@ -1300,7 +1300,7 @@ def validate_resource_annotated_function(fn) -> None:
     malformed_params = [
         param
         for param in get_function_params(fn)
-        if safe_is_subclass(param.annotation, ResourceDefinition)
+        if safe_is_subclass(param.annotation, (ResourceDefinition, ConfigurableResourceFactory))
         and not safe_is_subclass(param.annotation, ConfigurableResource)
     ]
     if len(malformed_params) > 0:
