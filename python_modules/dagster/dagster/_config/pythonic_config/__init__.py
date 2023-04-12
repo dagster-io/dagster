@@ -42,6 +42,7 @@ from dagster._core.errors import (
     DagsterInvalidPythonicConfigDefinitionError,
 )
 from dagster._core.execution.context.init import InitResourceContext
+from dagster._utils.cached_method import CACHED_METHOD_FIELD_SUFFIX
 
 from .attach_other_object_to_context import (
     IAttachDifferentObjectToOpContext as IAttachDifferentObjectToOpContext,
@@ -112,7 +113,7 @@ class MakeConfigCacheable(BaseModel):
         return super().__setattr__(name, value)
 
     def _is_field_internal(self, name: str) -> bool:
-        return name.startswith("_") or name.endswith("_cache")
+        return name.startswith("_") or name.endswith(CACHED_METHOD_FIELD_SUFFIX)
 
 
 class Config(MakeConfigCacheable):
