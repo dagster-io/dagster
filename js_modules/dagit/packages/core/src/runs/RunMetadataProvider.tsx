@@ -40,7 +40,7 @@ export interface IStepAttempt {
 
 export interface IStepMetadata {
   // current state
-  state?: IStepState;
+  state: IStepState;
 
   // execution start and stop (user-code) inclusive of all retries
   start?: number;
@@ -262,9 +262,14 @@ export function extractMetadataFromLogs(
       const step =
         metadata.steps[stepKey] ||
         ({
-          state: undefined,
+          state: IStepState.PREPARING,
           attempts: [],
-          transitions: [],
+          transitions: [
+            {
+              state: IStepState.PREPARING,
+              time: timestamp,
+            },
+          ],
           start: undefined,
           end: undefined,
           markers: [],
@@ -280,9 +285,7 @@ export function extractMetadataFromLogs(
         }
       }
 
-      if (log.__typename === 'StepWorkerStartingEvent') {
-        upsertState(step, timestamp, IStepState.PREPARING);
-      } else if (log.__typename === 'ExecutionStepStartEvent') {
+      if (log.__typename === 'ExecutionStepStartEvent') {
         upsertState(step, timestamp, IStepState.RUNNING);
         step.start = timestamp;
       } else if (log.__typename === 'ExecutionStepSuccessEvent') {
