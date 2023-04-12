@@ -256,53 +256,51 @@ def other_workspace(
 
 
 @pytest.fixture
-def pipeline() -> JobDefinition:
+def job() -> JobDefinition:
     return repo.job
 
 
 @pytest.fixture
-def external_pipeline(workspace: WorkspaceRequestContext) -> ExternalJob:
+def external_job(workspace: WorkspaceRequestContext) -> ExternalJob:
     location = workspace.get_code_location(workspace.code_location_names[0])
     return location.get_repository(repo.repository.__name__).get_full_external_job(repo.job.name)
 
 
 @pytest.fixture
-def other_external_pipeline(other_workspace: WorkspaceRequestContext) -> ExternalJob:
+def other_external_job(other_workspace: WorkspaceRequestContext) -> ExternalJob:
     location = other_workspace.get_code_location(other_workspace.code_location_names[0])
     return location.get_repository(repo.repository.__name__).get_full_external_job(repo.job.name)
 
 
 @pytest.fixture
-def run(
-    instance: DagsterInstance, pipeline: JobDefinition, external_pipeline: ExternalJob
-) -> DagsterRun:
+def run(instance: DagsterInstance, job: JobDefinition, external_job: ExternalJob) -> DagsterRun:
     return instance.create_run_for_job(
-        pipeline,
-        external_job_origin=external_pipeline.get_external_origin(),
-        job_code_origin=external_pipeline.get_python_origin(),
+        job,
+        external_job_origin=external_job.get_external_origin(),
+        job_code_origin=external_job.get_python_origin(),
     )
 
 
 @pytest.fixture
 def other_run(
-    instance: DagsterInstance, pipeline: JobDefinition, external_pipeline: ExternalJob
+    instance: DagsterInstance, job: JobDefinition, external_job: ExternalJob
 ) -> DagsterRun:
     return instance.create_run_for_job(
-        pipeline,
-        external_job_origin=other_external_pipeline.get_external_origin(),
-        job_code_origin=other_external_pipeline.get_python_origin(),
+        job,
+        external_job_origin=other_external_job.get_external_origin(),
+        job_code_origin=other_external_job.get_python_origin(),
     )
 
 
 @pytest.fixture
 def launch_run(
-    workspace: WorkspaceRequestContext, pipeline: JobDefinition, external_pipeline: ExternalJob
+    workspace: WorkspaceRequestContext, job: JobDefinition, external_job: ExternalJob
 ) -> Callable[[DagsterInstance], None]:
     def _launch_run(instance: DagsterInstance) -> None:
         run = instance.create_run_for_job(
-            pipeline,
-            external_job_origin=external_pipeline.get_external_origin(),
-            job_code_origin=external_pipeline.get_python_origin(),
+            job,
+            external_job_origin=external_job.get_external_origin(),
+            job_code_origin=external_job.get_python_origin(),
         )
         instance.launch_run(run.run_id, workspace)
 
@@ -351,12 +349,12 @@ def custom_workspace(
 
 @pytest.fixture
 def custom_run(
-    custom_instance: DagsterInstance, pipeline: JobDefinition, external_pipeline: ExternalJob
+    custom_instance: DagsterInstance, job: JobDefinition, external_job: ExternalJob
 ) -> DagsterRun:
     return custom_instance.create_run_for_job(
-        pipeline,
-        external_job_origin=external_pipeline.get_external_origin(),
-        job_code_origin=external_pipeline.get_python_origin(),
+        job,
+        external_job_origin=external_job.get_external_origin(),
+        job_code_origin=external_job.get_python_origin(),
     )
 
 
@@ -501,13 +499,13 @@ def other_container_context_config(other_configured_secret):
 
 @pytest.fixture
 def launch_run_with_container_context(
-    pipeline: JobDefinition,
-    external_pipeline: ExternalJob,
+    job: JobDefinition,
+    external_job: ExternalJob,
     workspace: WorkspaceRequestContext,
     container_context_config,
 ):
     def _launch_run(instance):
-        python_origin = external_pipeline.get_python_origin()
+        python_origin = external_job.get_python_origin()
         python_origin = python_origin._replace(
             repository_origin=python_origin.repository_origin._replace(
                 container_context=container_context_config,
@@ -515,8 +513,8 @@ def launch_run_with_container_context(
         )
 
         run = instance.create_run_for_job(
-            pipeline,
-            external_job_origin=external_pipeline.get_external_origin(),
+            job,
+            external_job_origin=external_job.get_external_origin(),
             job_code_origin=python_origin,
         )
         instance.launch_run(run.run_id, workspace)
