@@ -1,9 +1,9 @@
 import logging
+import uuid
 from collections import defaultdict
 from contextlib import contextmanager
-from typing import Callable, Optional, cast
+from typing import Callable, Optional
 
-from sqlalchemy.engine import Engine
 from sqlalchemy.pool import NullPool
 
 from dagster._core.storage.event_log.base import EventLogCursor
@@ -24,47 +24,44 @@ class InMemoryEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     def __init__(self, inst_data: Optional[ConfigurableClassData] = None, preload=None):
         self._inst_data = inst_data
-        self._engine = None
-        self._conn = None
+        self._engine = create_engine(
+            create_in_memory_conn_string(f"events-{uuid.uuid4()}"),
+            poolclass=NullPool,
+        )
         self._handlers = defaultdict(set)
         self._storage_id = 0  # mirror the storage id, to mimic watching cursors
+
+        # hold one connection for life of instance, but vend new ones for specific calls
+        self._held_conn = self._engine.connect()
+
+        SqlEventLogStorageMetadata.create_all(self._held_conn)
+        alembic_config = get_alembic_config(__file__, "sqlite/alembic/alembic.ini")
+        stamp_alembic_rev(alembic_config, self._held_conn)
+        self.reindex_events()
+        self.reindex_assets()
 
         if preload:
             for payload in preload:
                 for event in payload.event_list:
                     self.store_event(event)
 
-    def _create_connection(self):
-        engine = create_engine(create_in_memory_conn_string("event_log"), poolclass=NullPool)
-        conn = engine.connect()
-        conn.execute("PRAGMA journal_mode=WAL;")
-        conn.execute("PRAGMA foreign_keys=ON;")
-        SqlEventLogStorageMetadata.create_all(conn)
-        alembic_config = get_alembic_config(__file__, "sqlite/alembic/alembic.ini")
-        stamp_alembic_rev(alembic_config, conn)
-
-        self._engine = engine
-        self._conn = conn
-        self.reindex_events()
-        self.reindex_assets()
-
     @contextmanager
     def run_connection(self, run_id=None):
-        if not self._conn:
-            self._create_connection()
-        yield self._conn
+        with self._engine.connect() as conn:
+            conn.execute("PRAGMA journal_mode=WAL;")
+            conn.execute("PRAGMA foreign_keys=ON;")
+            yield conn
 
     @contextmanager
     def index_connection(self):
-        if not self._conn:
-            self._create_connection()
-        yield self._conn
+        with self._engine.connect() as conn:
+            conn.execute("PRAGMA journal_mode=WAL;")
+            conn.execute("PRAGMA foreign_keys=ON;")
+            yield conn
 
     def has_table(self, table_name: str) -> bool:
-        if not self._conn:
-            self._create_connection()
-        engine = cast(Engine, self._engine)
-        return bool(engine.dialect.has_table(self._conn, table_name))
+        with self._engine.connect() as conn:
+            return bool(self._engine.dialect.has_table(conn, table_name))
 
     @property
     def inst_data(self):
@@ -104,9 +101,5 @@ class InMemoryEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         return False
 
     def dispose(self):
-        if self._conn:
-            self._conn.close()
-            self._conn = None
-
-        if self._engine:
-            self._engine.dispose()
+        self._held_conn.close()
+        self._engine.dispose()
