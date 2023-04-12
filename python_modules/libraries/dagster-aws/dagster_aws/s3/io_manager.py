@@ -157,18 +157,18 @@ class ConfigurablePickledObjectS3IOManager(ConfigurableIOManager):
     )
 
     @cached_method
-    def inner_db_io_manager(self) -> PickledObjectS3IOManager:
+    def inner_io_manager(self) -> PickledObjectS3IOManager:
         return PickledObjectS3IOManager(
             s3_bucket=self.s3_bucket,
-            s3_session=self.s3_resource,
+            s3_session=self.s3_resource.create_client(),
             s3_prefix=self.s3_prefix,
         )
 
     def load_input(self, context: InputContext) -> Any:
-        return self.inner_db_io_manager().load_input(context)
+        return self.inner_io_manager().load_input(context)
 
     def handle_output(self, context: OutputContext, obj: Any) -> None:
-        return self.inner_db_io_manager().handle_output(context, obj)
+        return self.inner_io_manager().handle_output(context, obj)
 
 
 @io_manager(
