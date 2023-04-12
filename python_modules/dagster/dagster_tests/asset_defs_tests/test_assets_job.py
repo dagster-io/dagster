@@ -1971,3 +1971,22 @@ def test_get_base_asset_jobs_multiple_partitions_defs():
         frozenset(["hourly_asset", "unpartitioned_asset"]),
         frozenset(["daily_asset_different_start_date", "unpartitioned_asset"]),
     }
+
+
+def test_coerce_resource_build_asset_job() -> None:
+    executed = {}
+
+    class BareResourceObject:
+        pass
+
+    @asset(required_resource_keys={"bare_resource"})
+    def an_asset(context) -> None:
+        assert context.resources.bare_resource
+        executed["yes"] = True
+
+    a_job = build_assets_job(
+        "my_job", assets=[an_asset], resource_defs={"bare_resource": BareResourceObject()}
+    )
+
+    assert a_job.execute_in_process().success
+    assert executed["yes"]
