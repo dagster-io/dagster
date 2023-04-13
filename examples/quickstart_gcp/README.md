@@ -55,12 +55,11 @@ To connect to GCP, you'll need to set up your credentials in Dagster.
 
 Dagster allows using environment variables to handle sensitive information. You can define various configuration options and access environment variables through them. This also allows you to parameterize your pipeline without modifying code.
 
-In this example, we write a custom [`bigquery_pandas_io_manager`](./quickstart_gcp/io_managers.py) to write outputs to BigQuery and read inputs from it.
-
-The configurations of the Bigquery connection are defined in [`quickstart_gcp/repository.py`](./quickstart_gcp/repository.py), which requires the following environment variables:
-- `BIGQUERY_SERVICE_ACCOUNT_CREDENTIALS`
-  - *Note: In this example, we use [`from_service_account_info`](https://googleapis.dev/python/google-auth/1.7.0/reference/google.oauth2.service_account.html#google.oauth2.service_account.Credentials.from_service_account_info) to set up the GCP connection. It accepts a dictionary corresponding to the JSON file contents, so the value of this environment variable needs to be a JSON string. If you'd like to refer to the JSON file path instead, change the I/O manager to use [`from_service_account_file`](https://googleapis.dev/python/google-auth/1.7.0/reference/google.oauth2.service_account.html#google.oauth2.service_account.Credentials.from_service_account_file).
+In this example, we use [BigQueryPandasIOManager](https://docs.dagster.io/_apidocs/libraries/dagster-gcp-pandas#dagster_gcp_pandas.BigQueryPandasIOManager) to write outputs to BigQuery and read inputs from it. The configurations of the BigQuery connection are defined [in `quickstart_gcp/__init__.py`](./quickstart_snowflake/__init__.py), which requires the following environment variables:
 - `BIGQUERY_PROJECT_ID`
+
+To authenticate with Bigquery, you can either use the `gcloud` CLI, or set the environment variable `GOOGLE_APPLICATION_CREDENTIALS` to point at a credentials file. See [this page](https://cloud.google.com/docs/authentication/provide-credentials-adc). If neither of these authentication methods is feasible (for example if you are deploying this project in Dagster Serverless and cannot upload a credentials file) you can use the `gcp_credentials` configuration for the `BigQueryPandasIOManager`. See the `BigQueryPandasIOManager` [documentation](https://docs.dagster.io/_apidocs/libraries/dagster-gcp-pandas#dagster_gcp_pandas.BigQueryPandasIOManager) for more information.
+
 
 You can declare environment variables in various ways:
 - **Local development**: [Using `.env` files to load env vars into local environments](https://docs.dagster.io/guides/dagster/using-environment-variables-and-secrets#declaring-environment-variables)
