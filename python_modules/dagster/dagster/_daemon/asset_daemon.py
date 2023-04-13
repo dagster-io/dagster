@@ -6,12 +6,29 @@ from dagster._core.definitions.asset_reconciliation_sensor import (
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.mode import DEFAULT_MODE_NAME
 from dagster._core.definitions.selector import PipelineSelector
+from dagster._core.instance import DagsterInstance
 from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.storage.tags import CREATED_BY_TAG
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._daemon.daemon import DaemonIterator, IntervalDaemon
 
-CURSOR_NAME = "ASSET_DAEMON_CURSOR"
+CURSOR_KEY = "ASSET_DAEMON_CURSOR"
+ASSET_DAEMON_PAUSED_KEY = "ASSET_DAEMON_PAUSED"
+
+
+def get_auto_materialize_paused(instance: DagsterInstance) -> bool:
+    return (
+        instance.daemon_cursor_storage.get_cursor_values({ASSET_DAEMON_PAUSED_KEY}).get(
+            ASSET_DAEMON_PAUSED_KEY
+        )
+        == "true"
+    )
+
+
+def set_auto_materialize_paused(instance: DagsterInstance, paused: bool):
+    instance.daemon_cursor_storage.set_cursor_values(
+        {ASSET_DAEMON_PAUSED_KEY: "true" if paused else "false"}
+    )
 
 
 class AssetDaemon(IntervalDaemon):
@@ -27,9 +44,17 @@ class AssetDaemon(IntervalDaemon):
         workspace_process_context: IWorkspaceProcessContext,
     ) -> DaemonIterator:
         instance = workspace_process_context.instance
+
+        persisted_info = instance.daemon_cursor_storage.get_cursor_values(
+            {CURSOR_KEY, ASSET_DAEMON_PAUSED_KEY}
+        )
+
+        if persisted_info.get(ASSET_DAEMON_PAUSED_KEY) == "true":
+            yield
+            return
+
         workspace = workspace_process_context.create_request_context()
         asset_graph = ExternalAssetGraph.from_workspace(workspace)
-
         target_asset_keys = {
             target_key
             for target_key in asset_graph.non_source_asset_keys
@@ -40,9 +65,7 @@ class AssetDaemon(IntervalDaemon):
             yield
             return
 
-        raw_cursor = instance.daemon_cursor_storage.get_cursor_values({CURSOR_NAME}).get(
-            CURSOR_NAME
-        )
+        raw_cursor = persisted_info.get(CURSOR_KEY)
         cursor = (
             AssetReconciliationCursor.from_serialized(raw_cursor, asset_graph)
             if raw_cursor
@@ -120,4 +143,4 @@ class AssetDaemon(IntervalDaemon):
             )
             instance.submit_run(run.run_id, workspace)
 
-        instance.daemon_cursor_storage.set_cursor_values({CURSOR_NAME: new_cursor.serialize()})
+        instance.daemon_cursor_storage.set_cursor_values({CURSOR_KEY: new_cursor.serialize()})

@@ -2123,6 +2123,7 @@ type Instance {
   daemonHealth: DaemonHealth!
   hasInfo: Boolean!
   hasCapturedLogManager: Boolean!
+  autoMaterializePaused: Boolean!
 }
 
 type RunLauncher {
@@ -3029,6 +3030,7 @@ type DagitMutation {
     partitionsDefName: String!
     repositorySelector: RepositorySelector!
   ): AddDynamicPartitionResult!
+  setAutoMaterializePaused(paused: Boolean!): Boolean!
 }
 
 input ReexecutionParams {
