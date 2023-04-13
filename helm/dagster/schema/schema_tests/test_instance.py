@@ -63,6 +63,7 @@ def helm_template() -> HelmTemplate:
         subchart_paths=["charts/dagster-user-deployments"],
         output="templates/configmap-instance.yaml",
         model=models.V1ConfigMap,
+        namespace="test-namespace",
     )
 
 
@@ -515,7 +516,7 @@ def test_celery_k8s_run_launcher_default_namespace(template: HelmTemplate):
     instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
     _check_valid_run_launcher_yaml(instance, instance_class=CeleryK8sRunLauncher)
     run_launcher_config = instance["run_launcher"]["config"]
-    assert "job_namespace" not in run_launcher_config
+    assert run_launcher_config["job_namespace"] == template.namespace
 
 
 def test_celery_k8s_run_launcher_set_namespace(template: HelmTemplate):
