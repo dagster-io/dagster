@@ -105,7 +105,7 @@ describe('BackfillPage', () => {
   });
 
   it('renders the loaded state', async () => {
-    const {getByText} = render(
+    const {getByText, getAllByText} = render(
       <AnalyticsContext.Provider value={{page: () => {}} as any}>
         <MemoryRouter initialEntries={[`/backfills/${mockBackfillId}`]}>
           <Route path="/backfills/:backfillId">
@@ -126,8 +126,8 @@ describe('BackfillPage', () => {
     expect(getByText('Status')).toBeVisible();
     expect(getByText('Asset name')).toBeVisible();
     expect(getByText('Partitions targeted')).toBeVisible();
-    expect(getByText('Requested')).toBeVisible();
-    expect(getByText('Complete')).toBeVisible();
+    expect(getAllByText('Requested').length).toBe(2);
+    expect(getByText('Completed')).toBeVisible();
     expect(getByText('Failed')).toBeVisible();
 
     // Check if the correct data is displayed
