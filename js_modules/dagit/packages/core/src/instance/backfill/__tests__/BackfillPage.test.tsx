@@ -187,8 +187,8 @@ describe('PartitionSelection', () => {
 
     fireEvent.click(getByText('2 partitions'));
 
-    expect(getByText('1 - 2')).toBeInTheDocument();
-    expect(getByText('3 - 4')).toBeInTheDocument();
+    expect(getByText('1...2')).toBeInTheDocument();
+    expect(getByText('3...4')).toBeInTheDocument();
   });
 
   it('renders the numPartitions in a ButtonLink when neither rootAssetTargetedPartitions nor rootAssetTargetedRanges are provided', () => {
