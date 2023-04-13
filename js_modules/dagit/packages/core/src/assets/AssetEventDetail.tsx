@@ -72,7 +72,7 @@ export const AssetEventDetail: React.FC<{
           <Subheading>Run</Subheading>
           {run ? (
             <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-              <RunStatusWithStats runId={run.runId} status={run.status} />
+              <RunStatusWithStats runId={run.id} status={run.status} />
               <Link to={linkToRunEvent(run, event)}>
                 <Mono>{titleForRun(run)}</Mono>
               </Link>

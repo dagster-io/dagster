@@ -4865,7 +4865,6 @@ export type RunLogsSubscriptionSuccessFragment = {
 export type PipelineRunLogsSubscriptionStatusFragment = {
   __typename: 'Run';
   id: string;
-  runId: string;
   status: Types.RunStatus;
   canTerminate: boolean;
 };
@@ -4880,7 +4879,7 @@ export type RunLogsQuery = {
   __typename: 'DagitQuery';
   pipelineRunOrError:
     | {__typename: 'PythonError'}
-    | {__typename: 'Run'; id: string; runId: string; status: Types.RunStatus; canTerminate: boolean}
+    | {__typename: 'Run'; id: string; status: Types.RunStatus; canTerminate: boolean}
     | {__typename: 'RunNotFoundError'};
   logsForRun:
     | {

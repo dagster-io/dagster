@@ -18,8 +18,8 @@ export const FailedRunSinceMaterializationBanner: React.FC<{
           intent="error"
           title={
             <div style={{fontWeight: 400}}>
-              Run <Link to={`/runs/${run.id}`}>{titleForRun({runId: run.id})}</Link> failed to
-              materialize this asset.
+              Run <Link to={`/runs/${run.id}`}>{titleForRun(run)}</Link> failed to materialize this
+              asset.
             </div>
           }
         />

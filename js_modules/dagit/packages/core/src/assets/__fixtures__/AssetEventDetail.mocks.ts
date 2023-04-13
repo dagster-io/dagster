@@ -31,7 +31,6 @@ export const MaterializationEventOlder: AssetMaterializationFragment = {
   ],
   runOrError: {
     id: '0b847814-4e03-82a6-cfab-d9431369974d',
-    runId: '0b847814-4e03-82a6-cfab-d9431369974d',
     mode: 'default',
     repositoryOrigin: {
       id: 'c22d9677b8089be89b1e014b9de34284962f83a7',
@@ -79,7 +78,6 @@ export const MaterializationEventMinimal: AssetMaterializationFragment = {
   tags: [],
   runOrError: {
     id: '1369974d-cfab-4e03-82a6-d9430b847814',
-    runId: '1369974d-cfab-4e03-82a6-d9430b847814',
     mode: 'default',
     repositoryOrigin: {
       id: 'c22d9677b8089be89b1e014b9de34284962f83a7',
@@ -133,7 +131,6 @@ export const MaterializationEventFull: AssetMaterializationFragment = {
   ],
   runOrError: {
     id: '1369974d-cfab-4e03-82a6-d9430b847814',
-    runId: '1369974d-cfab-4e03-82a6-d9430b847814',
     mode: 'default',
     repositoryOrigin: {
       id: 'c22d9677b8089be89b1e014b9de34284962f83a7',
@@ -186,7 +183,6 @@ export const BasicObservationEvent: AssetObservationFragment = {
   ],
   runOrError: {
     id: '01e455fc-9ea5-4d45-92d6-a997b9e4bf60',
-    runId: '01e455fc-9ea5-4d45-92d6-a997b9e4bf60',
     mode: 'default',
     repositoryOrigin: {
       id: 'cc94e313d9025bbc796a3e7e46487eb305969b68',
@@ -304,7 +300,6 @@ export const buildAssetPartitionDetailMock = (
           ? {
               __typename: 'Run',
               id: '123456',
-              runId: '123456',
               status: currentRunStatus,
               endTime: null,
             }

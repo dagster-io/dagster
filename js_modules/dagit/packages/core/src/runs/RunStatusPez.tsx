@@ -44,7 +44,7 @@ export const RunStatusPezList = (props: ListProps) => {
     <Box flex={{direction: 'row', alignItems: 'center', gap: 2}}>
       {runs.map((run, ii) => (
         <Popover
-          key={run.runId}
+          key={run.id}
           position="top"
           interactionKind="hover"
           content={
@@ -55,8 +55,8 @@ export const RunStatusPezList = (props: ListProps) => {
           hoverOpenDelay={100}
         >
           <RunStatusPez
-            key={run.runId}
-            runId={run.runId}
+            key={run.id}
+            runId={run.id}
             status={run.status}
             opacity={fade ? MAX_OPACITY - (count - ii - 1) * step : 1.0}
           />
@@ -78,7 +78,7 @@ export const RunStatusOverlay = ({name, run}: OverlayProps) => {
       <RunRow>
         <Box flex={{alignItems: 'center', direction: 'row', gap: 8}}>
           <RunStatusIndicator status={run.status} />
-          <Link to={`/runs/${run.runId}`}>
+          <Link to={`/runs/${run.id}`}>
             <Mono style={{fontSize: '14px'}}>{titleForRun(run)}</Mono>
           </Link>
         </Box>

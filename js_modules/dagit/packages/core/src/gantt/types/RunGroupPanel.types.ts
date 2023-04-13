@@ -25,7 +25,6 @@ export type RunGroupPanelQuery = {
         runs: Array<{
           __typename: 'Run';
           id: string;
-          runId: string;
           parentRunId: string | null;
           status: Types.RunStatus;
           stepKeysToExecute: Array<string> | null;
@@ -42,7 +41,6 @@ export type RunGroupPanelQuery = {
 export type RunGroupPanelRunFragment = {
   __typename: 'Run';
   id: string;
-  runId: string;
   parentRunId: string | null;
   status: Types.RunStatus;
   stepKeysToExecute: Array<string> | null;

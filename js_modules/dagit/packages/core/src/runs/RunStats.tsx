@@ -61,7 +61,6 @@ const RUN_STATS_QUERY = gql`
       }
       ... on Run {
         id
-        runId
         pipelineName
         stats {
           ... on RunStatsSnapshot {

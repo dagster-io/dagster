@@ -24,14 +24,9 @@ export const CurrentRunsBanner: React.FC<{liveData?: LiveDataForNode; border: Bo
           <div style={{fontWeight: 400}}>
             {inProgressRunIds.length > 0 && (
               <>
-                {inProgressRunIds.map((runId) => (
-                  <React.Fragment key={runId}>
-                    Run{' '}
-                    <Link to={`/runs/${runId}`}>
-                      {titleForRun({
-                        runId,
-                      })}
-                    </Link>
+                {inProgressRunIds.map((id) => (
+                  <React.Fragment key={id}>
+                    Run <Link to={`/runs/${id}`}>{titleForRun({id})}</Link>
                   </React.Fragment>
                 ))}{' '}
                 {inProgressRunIds.length === 1 ? 'is' : 'are'} currently refreshing this asset.
@@ -39,14 +34,9 @@ export const CurrentRunsBanner: React.FC<{liveData?: LiveDataForNode; border: Bo
             )}
             {unstartedRunIds.length > 0 && (
               <>
-                {unstartedRunIds.map((runId) => (
-                  <React.Fragment key={runId}>
-                    Run{' '}
-                    <Link to={`/runs/${runId}`}>
-                      {titleForRun({
-                        runId,
-                      })}
-                    </Link>
+                {unstartedRunIds.map((id) => (
+                  <React.Fragment key={id}>
+                    Run <Link to={`/runs/${id}`}>{titleForRun({id})}</Link>
                   </React.Fragment>
                 ))}{' '}
                 {unstartedRunIds.length === 1 ? 'has' : 'have'} started and will refresh this asset.

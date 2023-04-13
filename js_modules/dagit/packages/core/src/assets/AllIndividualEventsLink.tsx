@@ -132,7 +132,7 @@ const MetadataEntriesRow: React.FC<{
                           <span>
                             {`${obs.stepKey} in `}
                             <Link to={`/runs/${obs.runId}?timestamp=${obs.timestamp}`}>
-                              <Mono>{titleForRun({runId: obs.runId})}</Mono>
+                              <Mono>{titleForRun({id: obs.runId})}</Mono>
                             </Link>
                             {` (${dayjs(Number(obs.timestamp)).from(
                               Number(timestamp),
@@ -252,8 +252,8 @@ const EventGroupRow: React.FC<{
       </td>
       <td>
         <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-          <RunStatusWithStats runId={run.runId} status={run.status} />
-          <Link to={`/runs/${run.runId}?timestamp=${timestamp}`}>
+          <RunStatusWithStats runId={run.id} status={run.status} />
+          <Link to={`/runs/${run.id}?timestamp=${timestamp}`}>
             <Mono>{titleForRun(run)}</Mono>
           </Link>
         </Box>

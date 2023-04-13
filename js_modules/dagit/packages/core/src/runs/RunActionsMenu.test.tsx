@@ -23,7 +23,6 @@ describe('RunActionsMenu', () => {
   const runFragment: RunTableRunFragment = {
     __typename: 'Run',
     id: 'run-foo-bar',
-    runId: 'abcdef12',
     status: RunStatus.SUCCESS,
     stepKeysToExecute: null,
     canTerminate: true,

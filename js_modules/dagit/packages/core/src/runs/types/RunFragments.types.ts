@@ -6,7 +6,6 @@ export type RunFragment = {
   __typename: 'Run';
   id: string;
   runConfigYaml: string;
-  runId: string;
   canTerminate: boolean;
   hasReExecutePermission: boolean;
   hasTerminatePermission: boolean;
@@ -2243,7 +2242,6 @@ export type RunPageFragment = {
   id: string;
   parentPipelineSnapshotId: string | null;
   runConfigYaml: string;
-  runId: string;
   canTerminate: boolean;
   hasReExecutePermission: boolean;
   hasTerminatePermission: boolean;
