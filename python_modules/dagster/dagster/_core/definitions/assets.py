@@ -722,6 +722,9 @@ class AssetsDefinition(ResourceAddable):
         freshness_policy: Optional[
             Union[FreshnessPolicy, Mapping[AssetKey, FreshnessPolicy]]
         ] = None,
+        auto_materialize_policy: Optional[
+            Union[AutoMaterializePolicy, Mapping[AssetKey, AutoMaterializePolicy]]
+        ] = None,
     ) -> "AssetsDefinition":
         output_asset_key_replacements = check.opt_mapping_param(
             output_asset_key_replacements,
@@ -783,10 +786,31 @@ class AssetsDefinition(ResourceAddable):
                     output_asset_key_replacements.get(key, key)
                 ] = replaced_freshness_policy
 
-        replaced_auto_materialize_policies_by_key = {
-            output_asset_key_replacements.get(key, key): policy
-            for key, policy in self._auto_materialize_policies_by_key.items()
-        }
+        if auto_materialize_policy:
+            auto_materialize_policy_conflicts = (
+                self.auto_materialize_policies_by_key.keys()
+                if isinstance(auto_materialize_policy, AutoMaterializePolicy)
+                else (auto_materialize_policy.keys() & self.auto_materialize_policies_by_key.keys())
+            )
+            if auto_materialize_policy_conflicts:
+                raise DagsterInvalidDefinitionError(
+                    "AutoMaterializePolicy already exists on assets"
+                    f" {', '.join(key.to_string() for key in auto_materialize_policy_conflicts)}"
+                )
+
+        replaced_auto_materialize_policies_by_key = {}
+        for key in self.keys:
+            if isinstance(auto_materialize_policy, AutoMaterializePolicy):
+                replaced_auto_materialize_policy = auto_materialize_policy
+            elif auto_materialize_policy:
+                replaced_auto_materialize_policy = auto_materialize_policy.get(key)
+            else:
+                replaced_auto_materialize_policy = self.auto_materialize_policies_by_key.get(key)
+
+            if replaced_auto_materialize_policy:
+                replaced_auto_materialize_policies_by_key[
+                    output_asset_key_replacements.get(key, key)
+                ] = replaced_auto_materialize_policy
 
         replaced_descriptions_by_key = {
             output_asset_key_replacements.get(key, key): description
