@@ -24,6 +24,8 @@ from dagster._seven.compat.pendulum import to_timezone
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster._utils.yaml_utils import dump_run_config_yaml
 
+from dagster_graphql.schema.asset_key import GrapheneAssetKey
+
 from ..implementation.fetch_instigators import get_tick_log_events
 from ..implementation.fetch_schedules import get_schedule_next_tick
 from ..implementation.fetch_sensors import get_sensor_next_tick
@@ -308,6 +310,9 @@ class GrapheneRunRequest(graphene.ObjectType):
     runKey = graphene.String()
     tags = non_null_list(GraphenePipelineTag)
     runConfigYaml = graphene.NonNull(graphene.String)
+    assetSelection = graphene.List(graphene.NonNull(GrapheneAssetKey))
+
+    _run_request: RunRequest
 
     class Meta:
         name = "RunRequest"
@@ -325,6 +330,14 @@ class GrapheneRunRequest(graphene.ObjectType):
 
     def resolve_runConfigYaml(self, _graphene_info: ResolveInfo):
         return dump_run_config_yaml(self._run_request.run_config)
+
+    def resolve_assetSelection(self, _graphene_info: ResolveInfo):
+        if self._run_request.asset_selection:
+            return [
+                GrapheneAssetKey(path=asset_key.path)
+                for asset_key in self._run_request.asset_selection
+            ]
+        return None
 
 
 class GrapheneDryRunInstigationTicks(graphene.ObjectType):

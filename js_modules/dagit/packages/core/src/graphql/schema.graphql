@@ -2145,6 +2145,7 @@ type RunRequest {
   runKey: String
   tags: [PipelineTag!]!
   runConfigYaml: String!
+  assetSelection: [AssetKey!]
 }
 
 type DryRunInstigationTicks {

@@ -7,6 +7,7 @@ import {IExecutionSession} from '../app/ExecutionSessionStorage';
 import {usePermissionsForLocation} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {useTrackPageView} from '../app/analytics';
+import {__ASSET_JOB_PREFIX} from '../asset-graph/Utils';
 import {explorerPathFromString, useStripSnapshotFromPath} from '../pipelines/PipelinePathUtils';
 import {useJobTitle} from '../pipelines/useJobTitle';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
@@ -60,7 +61,7 @@ export const AssetLaunchpad: React.FC<{
   );
 };
 
-export const JobLaunchpad: React.FC<{repoAddress: RepoAddress}> = (props) => {
+export const JobOrAssetLaunchpad: React.FC<{repoAddress: RepoAddress}> = (props) => {
   const {repoAddress} = props;
   const {pipelinePath, repoPath} = useParams<{repoPath: string; pipelinePath: string}>();
   const {
@@ -73,7 +74,7 @@ export const JobLaunchpad: React.FC<{repoAddress: RepoAddress}> = (props) => {
 
   return (
     <LaunchpadAllowedRoot
-      launchpadType="job"
+      launchpadType={pipelinePath.includes(__ASSET_JOB_PREFIX) ? 'asset' : 'job'}
       pipelinePath={pipelinePath}
       repoAddress={repoAddress}
     />
