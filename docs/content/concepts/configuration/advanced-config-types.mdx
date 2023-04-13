@@ -69,7 +69,7 @@ asset_result = materialize(
 
 ## Basic data structures
 
-Many basic Python data structures can be used in your config schemas, including lists and mappings.
+Basic Python data structures can be used in your config schemas, including `List`s and `Dict`s, along with nested versions of these data structures.
 
 For example, we can define a config schema that takes in a list of user names and a mapping of user names to user scores.
 
@@ -139,6 +139,30 @@ result = materialize(
 
 ---
 
+## Permissive schemas
+
+By default, `Config` schemas are strict, meaning that they will only accept fields that are explicitly defined in the schema. This can be cumbersome if you want to allow users to specify arbitrary fields in their config. For this purpose, you can use the `PermissiveConfig` base class, which allows arbitrary fields to be specified in the config.
+
+```python file=/guides/dagster/pythonic_config/pythonic_config.py startafter=start_permissive_schema_config endbefore=end_permissive_schema_config dedent=4
+from dagster import asset, PermissiveConfig
+from typing import Optional
+import requests
+
+class FilterConfig(PermissiveConfig):
+    title: Optional[str] = None
+    description: Optional[str] = None
+
+@asset
+def filtered_listings(config: FilterConfig):
+    # extract all config fields, including those not defined in the schema
+    url_params = config.dict()
+    return requests.get("https://my-api.com/listings", params=url_params).json()
+
+filtered_listings(FilterConfig(title="hotel", beds=4))
+```
+
+---
+
 ## Union types
 
 Union types are supported using Pydantic [discriminated unions](https://docs.pydantic.dev/usage/types/#discriminated-unions-aka-tagged-unions). Each union type must be a subclass of <PyObject object="Config"/>. The `discriminator` argument to <PyObject object="Field"/> specifies the field that will be used to determine which union type to use.
@@ -160,8 +184,7 @@ class Dog(Config):
     barks: float
 
 class ConfigWithUnion(Config):
-    # Here, the ellipses `...` indicates that the field is required and has no default value.
-    pet: Union[Cat, Dog] = Field(..., discriminator="pet_type")
+    pet: Union[Cat, Dog] = Field(discriminator="pet_type")
 
 @asset
 def pet_stats(config: ConfigWithUnion):
@@ -228,7 +251,9 @@ op_result = process_users_job.execute_in_process(
 
 ## Validated config fields
 
-Config fields can have custom validation logic applied using [Pydantic validators](https://docs.pydantic.dev/usage/validators/). Pydantic validators are defined as methods on the config class, and are decorated with the `@validator` decorator. Here, we define some validators on a configured user's name and username, which will throw exceptions if incorrect values are passed in the launchpad or from a schedule or sensor.
+Config fields can have custom validation logic applied using [Pydantic validators](https://docs.pydantic.dev/usage/validators/). Pydantic validators are defined as methods on the config class, and are decorated with the `@validator` decorator. These validators are triggered when the config class is instantiated. In the case of config defined at runtime, a failing validator will not prevent the launch button from being pressed, but will raise an exception and prevent run start.
+
+Here, we define some validators on a configured user's name and username, which will throw exceptions if incorrect values are passed in the launchpad or from a schedule or sensor.
 
 ```python file=/guides/dagster/pythonic_config/pythonic_config.py startafter=start_validated_schema_config endbefore=end_validated_schema_config dedent=4
 from dagster import Config, RunConfig, op, job

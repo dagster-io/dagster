@@ -27,6 +27,27 @@ def basic_resource_config() -> None:
     # end_basic_resource_config
 
 
+def permissive_schema_config() -> None:
+    # start_permissive_schema_config
+
+    from dagster import asset, PermissiveConfig
+    from typing import Optional
+    import requests
+
+    class FilterConfig(PermissiveConfig):
+        title: Optional[str] = None
+        description: Optional[str] = None
+
+    @asset
+    def filtered_listings(config: FilterConfig):
+        # extract all config fields, including those not defined in the schema
+        url_params = config.dict()
+        return requests.get("https://my-api.com/listings", params=url_params).json()
+
+    filtered_listings(FilterConfig(title="hotel", beds=4))
+    # end_permissive_schema_config
+
+
 def execute_with_config() -> None:
     # start_basic_op_config
 
@@ -170,8 +191,7 @@ def union_schema_config() -> None:
         barks: float
 
     class ConfigWithUnion(Config):
-        # Here, the ellipses `...` indicates that the field is required and has no default value.
-        pet: Union[Cat, Dog] = Field(..., discriminator="pet_type")
+        pet: Union[Cat, Dog] = Field(discriminator="pet_type")
 
     @asset
     def pet_stats(config: ConfigWithUnion):
