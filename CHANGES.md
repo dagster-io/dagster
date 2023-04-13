@@ -16,7 +16,6 @@
 - [dagster-gcp, dagster-gcp-pandas, dagster-gcp-pyspark] New `BigQueryPandasIOManager` and `BigQueryPySparkIOManager` follow Pythonic resource system. The existing `bigquery_pandas_io_manager` and `bigquery_pyspark_io_manager` remain supported.
 - [dagster-gcp] The BigQuery resource now accepts authentication credentials as configuration. If you pass GCP authentication credentials to `gcp_crentials` , a temporary file to store the credentials will be created and the `GOOGLE_APPLICATION_CREDENTIALS` environment variable will be set to the temporary file. When the BigQuery resource is garbage collected, the environment variable will be unset and the temporary file deleted.
 - [dagster-snowflake, dagster-snowflake-pandas, dagster-snowflake-pyspark] New `SnowflakePandasIOManager` and `SnowflakePySparkIOManager` follow Pythonic resource system. The existing `snowflake_pandas_io_manager` and `snowflake_pyspark_io_manager` remain supported.
-- [docs] New tutorial section that adds I/O managers to the tutorial project.
 
 ### Bugfixes
 
@@ -53,6 +52,7 @@
 
 - Learn how to [limit concurrency in your data pipelines](https://docs.dagster.io/guides/limiting-concurrency-in-data-pipelines) with our new guide!
 - Need some help managing a run queue? Check out the new [customizing run queue priority guide](https://docs.dagster.io/guides/customizing-run-queue-priority).
+- New tutorial section that adds I/O managers to the tutorial project.
 
 # 1.2.6 (core) / 0.18.6 (libraries)
 
@@ -100,8 +100,7 @@
 
 ### Documentation
 
-- Added a missing link to next tutorial section  (Thanks Mike Kutzma!)
-
+- Added a missing link to next tutorial section (Thanks Mike Kutzma!)
 
 # 1.2.4 (core) / 0.18.4 (libraries)
 
