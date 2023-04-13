@@ -753,7 +753,7 @@ class ConfigurableResourceFactory(
     def _create_object_fn(self, context: InitResourceContext) -> TResValue:
         return self.create_resource(context)
 
-    def get_context(self) -> InitResourceContext:
+    def get_resource_init_context(self) -> InitResourceContext:
         """Returns the context that this resource was initialized with."""
         return check.not_none(
             self._state__internal__.context,
