@@ -183,7 +183,7 @@ export function buildAssetNodeStatusContent({
             {expanded && <AssetPartitionStatusDot status={[AssetPartitionStatus.MISSING]} />}
             <span>Observed</span>
             {expanded && <SpacerDot />}
-            <span style={{textAlign: 'right'}}>
+            <span style={{textAlign: 'right', overflow: 'hidden'}}>
               <AssetRunLink
                 runId={liveData.lastObservation.runId}
                 event={{
@@ -230,6 +230,9 @@ export function buildAssetNodeStatusContent({
   }
 
   if (materializingRunId) {
+    // Note: this value is undefined for unpartitioned assets
+    const numMaterializing = liveData.partitionStats?.numMaterializing;
+
     return {
       background: Colors.Blue50,
       border: Colors.Blue500,
@@ -237,14 +240,16 @@ export function buildAssetNodeStatusContent({
         <>
           <AssetLatestRunSpinner liveData={liveData} />
           <span style={{flex: 1}} color={Colors.Gray800}>
-            {liveData.partitionStats?.numMaterializing === 1
+            {numMaterializing === 1
               ? `Materializing 1 partition...`
-              : liveData.partitionStats?.numMaterializing
-              ? `Materializing ${liveData.partitionStats.numMaterializing} partitions...`
+              : numMaterializing
+              ? `Materializing ${numMaterializing} partitions...`
               : `Materializing...`}
           </span>
           {expanded && <SpacerDot />}
-          <AssetRunLink runId={materializingRunId} />
+          {!numMaterializing || numMaterializing === 1 ? (
+            <AssetRunLink runId={materializingRunId} />
+          ) : undefined}
         </>
       ),
     };
@@ -265,23 +270,29 @@ export function buildAssetNodeStatusContent({
       background,
       border,
       content: (
-        <span style={{color: foreground}}>
-          <Link
-            to={assetDetailsPathForKey(definition.assetKey, {view: 'partitions'})}
-            target="_blank"
-            rel="noreferrer"
-          >
-            {late
-              ? humanizedLateString(liveData.freshnessInfo.currentMinutesLate)
-              : partitionCountString(numPartitions)}
-          </Link>
-        </span>
+        <Link
+          to={assetDetailsPathForKey(definition.assetKey, {view: 'partitions'})}
+          style={{color: foreground}}
+          target="_blank"
+          rel="noreferrer"
+        >
+          {late ? (
+            <Tooltip
+              position="top"
+              content={humanizedLateString(liveData.freshnessInfo.currentMinutesLate)}
+            >
+              Overdue
+            </Tooltip>
+          ) : (
+            partitionCountString(numPartitions)
+          )}
+        </Link>
       ),
     };
   }
 
   const lastMaterializationLink = lastMaterialization ? (
-    <span>
+    <span style={{overflow: 'hidden'}}>
       <AssetRunLink
         runId={lastMaterialization.runId}
         event={{stepKey: getStepKey(definition), timestamp: lastMaterialization.timestamp}}
@@ -309,18 +320,21 @@ export function buildAssetNodeStatusContent({
             />
           )}
 
-          <span style={{color: Colors.Red700}}>
-            {runWhichFailedToMaterialize && late
-              ? `Failed (Overdue)`
-              : late
-              ? humanizedLateString(liveData.freshnessInfo.currentMinutesLate)
-              : 'Failed'}
-          </span>
+          {late ? (
+            <Tooltip
+              position="top"
+              content={humanizedLateString(liveData.freshnessInfo.currentMinutesLate)}
+            >
+              <span style={{color: Colors.Red700}}>{late ? `Failed, Overdue` : 'Overdue'}</span>
+            </Tooltip>
+          ) : runWhichFailedToMaterialize ? (
+            <span style={{color: Colors.Red700}}>Failed</span>
+          ) : undefined}
 
           {expanded && <SpacerDot />}
 
           {runWhichFailedToMaterialize ? (
-            <span>
+            <span style={{overflow: 'hidden'}}>
               <AssetRunLink runId={runWhichFailedToMaterialize.id}>
                 <TimestampDisplay
                   timestamp={Number(runWhichFailedToMaterialize.endTime)}

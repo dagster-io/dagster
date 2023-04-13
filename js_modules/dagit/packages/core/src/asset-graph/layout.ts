@@ -162,7 +162,7 @@ export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
       }
     }
     for (const group of Object.values(groups)) {
-      group.bounds = padBounds(group.bounds, {x: 15, top: 80, bottom: 15});
+      group.bounds = padBounds(group.bounds, {x: 15, top: 70, bottom: -10});
     }
   }
 
@@ -237,7 +237,7 @@ export const getAssetNodeDimensions = (def: {
   description?: string | null;
   computeKind: string | null;
 }) => {
-  const width = 255;
+  const width = 265;
 
   if (def.isSource && !def.isObservable) {
     return {width, height: 102};

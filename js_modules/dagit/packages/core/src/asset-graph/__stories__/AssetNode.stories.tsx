@@ -14,9 +14,14 @@ export const LiveStates = () => {
   const caseWithLiveData = (scenario: typeof Mocks.AssetNodeScenariosBase[0]) => {
     const dimensions = getAssetNodeDimensions(scenario.definition);
     return (
-      <Box flex={{direction: 'column', gap: 0, alignItems: 'flex-start'}}>
+      <Box flex={{direction: 'column', gap: 8, alignItems: 'flex-start'}}>
         <div
-          style={{position: 'relative', width: 280, height: dimensions.height, overflowY: 'hidden'}}
+          style={{
+            position: 'relative',
+            width: dimensions.width,
+            height: dimensions.height,
+            overflowY: 'hidden',
+          }}
         >
           <AssetNode
             definition={scenario.definition}
@@ -24,8 +29,8 @@ export const LiveStates = () => {
             selected={false}
           />
         </div>
-        <div style={{position: 'relative', width: 280, height: 82}}>
-          <div style={{position: 'absolute', width: 280, height: 82}}>
+        <div style={{position: 'relative', width: dimensions.width, height: 82}}>
+          <div style={{position: 'absolute', width: dimensions.width, height: 82}}>
             <AssetNodeMinimal
               definition={scenario.definition}
               liveData={scenario.liveData}
