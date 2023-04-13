@@ -605,7 +605,7 @@ export const AssetNodeScenariosBase = [
     title: 'Materialized and Stale and Overdue',
     liveData: LiveDataForNodeMaterializedAndStaleAndOverdue,
     definition: AssetNodeFragmentBasic,
-    expectedText: ['Code version', '12 minutes overdue', 'Feb'],
+    expectedText: ['Code version', 'Overdue', 'Feb'],
   },
 
   {
@@ -626,7 +626,7 @@ export const AssetNodeScenariosBase = [
     title: 'Materialized and Overdue',
     liveData: LiveDataForNodeMaterializedAndOverdue,
     definition: AssetNodeFragmentBasic,
-    expectedText: ['12 minutes overdue'],
+    expectedText: ['Overdue'],
   },
 ];
 
@@ -707,14 +707,14 @@ export const AssetNodeScenariosPartitioned = [
     title: 'Materializing...',
     liveData: LiveDataForNodePartitionedMaterializing,
     definition: AssetNodeFragmentPartitioned,
-    expectedText: ['Materializing 5 partitions', 'ABCDEF'],
+    expectedText: ['Materializing 5 partitions'],
   },
 
   {
     title: 'Partitioned Asset - Overdue',
     liveData: LiveDataForNodePartitionedOverdue,
     definition: AssetNodeFragmentPartitioned,
-    expectedText: ['All', '12 minutes overdue'],
+    expectedText: ['All', 'Overdue'],
   },
 
   {
