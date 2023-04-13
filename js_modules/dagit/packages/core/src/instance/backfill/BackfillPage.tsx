@@ -414,7 +414,7 @@ export const PartitionSelection = ({
         <Box flex={{direction: 'column', gap: 8}}>
           {rootAssetTargetedRanges?.map((r) => (
             <div key={`${r.start}:${r.end}`}>
-              {r.start} - {r.end}
+              {r.start}...{r.end}
             </div>
           ))}
         </Box>
