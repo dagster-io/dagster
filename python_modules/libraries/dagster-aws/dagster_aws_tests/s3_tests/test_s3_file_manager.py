@@ -92,13 +92,13 @@ def test_depends_on_s3_resource_file_manager_pythonic(mock_s3_bucket) -> None:
 
     @op(out=Out(S3FileHandle))
     def emit_file(file_manager: S3FileManagerResource):
-        return file_manager.create_client().write_data(bar_bytes)
+        return file_manager.get_client().write_data(bar_bytes)
 
     @op(
         ins={"file_handle": In(S3FileHandle)},
     )
     def accept_file(file_handle, file_manager: S3FileManagerResource):
-        local_path = file_manager.create_client().copy_handle_to_local_temp(file_handle)
+        local_path = file_manager.get_client().copy_handle_to_local_temp(file_handle)
         assert isinstance(local_path, str)
         assert open(local_path, "rb").read() == bar_bytes
 
@@ -224,7 +224,7 @@ def test_s3_file_manager_resource_with_profile_pythonic() -> None:
 
     @op
     def test_op(file_manager: S3FileManagerResource) -> None:
-        file_manager.create_client()
+        file_manager.get_client()
         # placeholder function to test resource initialization
         return context.log.info("return from test_solid")
 

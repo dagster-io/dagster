@@ -255,7 +255,7 @@ class AthenaClientResource(ResourceWithAthenaConfig):
 
                 @asset
                 def example_athena_asset(athena: AthenaClientResource):
-                    return athena.create_athena_client().execute_query("SELECT 1", fetch_results=True)
+                    return athena.get_client().execute_query("SELECT 1", fetch_results=True)
 
                 defs = Definitions(
                     assets=[example_athena_asset],
@@ -264,7 +264,7 @@ class AthenaClientResource(ResourceWithAthenaConfig):
 
     """
 
-    def create_athena_client(self) -> AthenaClient:
+    def get_client(self) -> AthenaClient:
         """Returns an Athena client object."""
         client = boto3.client(
             "athena",
@@ -300,7 +300,7 @@ def athena_resource(context: InitResourceContext) -> AthenaClient:
                 assert example_athena_op(context) == [("1",)]
 
     """
-    return AthenaClientResource.from_resource_context(context).create_athena_client()
+    return AthenaClientResource.from_resource_context(context).get_client()
 
 
 @resource(

@@ -160,7 +160,7 @@ class ConfigurablePickledObjectS3IOManager(ConfigurableIOManager):
     def inner_io_manager(self) -> PickledObjectS3IOManager:
         return PickledObjectS3IOManager(
             s3_bucket=self.s3_bucket,
-            s3_session=self.s3_resource.create_client(),
+            s3_session=self.s3_resource.get_client(),
             s3_prefix=self.s3_prefix,
         )
 
