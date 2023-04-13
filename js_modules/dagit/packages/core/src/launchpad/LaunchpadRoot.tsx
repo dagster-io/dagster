@@ -3,15 +3,15 @@ import {CodeMirrorInDialogStyle, Dialog, DialogHeader} from '@dagster-io/ui';
 import * as React from 'react';
 import {Redirect, useParams} from 'react-router-dom';
 
+import {useTrackPageView} from '../app/analytics';
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
 import {usePermissionsForLocation} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {useTrackPageView} from '../app/analytics';
+import {__ASSET_JOB_PREFIX} from '../asset-graph/Utils';
 import {explorerPathFromString, useStripSnapshotFromPath} from '../pipelines/PipelinePathUtils';
 import {useJobTitle} from '../pipelines/useJobTitle';
-import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
-
+import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {
   CONFIG_EDITOR_GENERATOR_PARTITION_SETS_FRAGMENT,
   CONFIG_EDITOR_GENERATOR_PIPELINE_FRAGMENT,
@@ -71,19 +71,9 @@ export const JobOrAssetLaunchpad: React.FC<{repoAddress: RepoAddress}> = (props)
     return <Redirect to={`/locations/${repoPath}/pipeline_or_job/${pipelinePath}`} />;
   }
 
-  if (pipelinePath.includes('__ASSET_JOB')) {
-    return (
-      <LaunchpadAllowedRoot
-        launchpadType="asset"
-        pipelinePath={pipelinePath}
-        repoAddress={repoAddress}
-      />
-    );
-  }
-
   return (
     <LaunchpadAllowedRoot
-      launchpadType="job"
+      launchpadType={pipelinePath.includes(__ASSET_JOB_PREFIX) ? 'asset' : 'job'}
       pipelinePath={pipelinePath}
       repoAddress={repoAddress}
     />
