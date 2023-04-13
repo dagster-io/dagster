@@ -8,6 +8,7 @@ import tempfile
 from abc import ABC, abstractmethod
 from typing import Any, Callable, List, Mapping, Optional, cast
 
+import mock
 import pytest
 from dagster import (
     BindResourcesToJobs,
@@ -2406,3 +2407,41 @@ def test_from_resource_context_and_to_config_empty() -> None:
         return NoConfigResource.from_resource_context(context).get_string()
 
     assert string_resource_function_style(build_init_resource_context()) == "foo"
+
+
+def test_context_on_resource() -> None:
+    executed = {}
+
+    class OutputDirResource(ConfigurableResource):
+        output_dir: Optional[str] = None
+
+        def get_effective_output_dir(self) -> str:
+            if self.output_dir:
+                return self.output_dir
+
+            context = self.get_context()
+            assert context.instance
+            return context.instance.storage_directory()
+
+    with pytest.raises(
+        CheckError, match="Attempted to get context before resource was initialized."
+    ):
+        OutputDirResource(output_dir=None).get_effective_output_dir()
+
+    with mock.patch(
+        "dagster._core.instance.DagsterInstance.storage_directory"
+    ) as storage_directory:
+        storage_directory.return_value = "/tmp"
+
+        @asset
+        def my_other_output_asset(output_dir: OutputDirResource) -> None:
+            assert output_dir.get_effective_output_dir() == "/tmp"
+            executed["yes"] = True
+
+        defs = Definitions(
+            assets=[my_other_output_asset],
+            resources={"output_dir": OutputDirResource()},
+        )
+
+        assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+        assert executed["yes"]

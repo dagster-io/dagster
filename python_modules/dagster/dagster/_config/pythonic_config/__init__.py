@@ -540,6 +540,7 @@ class ConfigurableResourceFactoryState(NamedTuple):
     config_schema: DefinitionConfigSchema
     schema: DagsterField
     nested_resources: Dict[str, CoercibleToResource]
+    context: Optional[InitResourceContext]
 
 
 class ConfigurableResourceFactory(
@@ -623,6 +624,7 @@ class ConfigurableResourceFactory(
             config_schema=_curry_config_schema(schema, resolved_config_dict),
             schema=schema,
             nested_resources={k: v for k, v in resource_pointers.items()},
+            context=None,
         )
 
     @property
@@ -684,7 +686,11 @@ class ConfigurableResourceFactory(
         # Since Resource extends BaseModel and is a dataclass, we know that the
         # signature of any __init__ method will always consist of the fields
         # of this class. We can therefore safely pass in the values as kwargs.
-        return self.__class__(**{**self._as_config_dict(), **values})
+        out = self.__class__(**{**self._as_config_dict(), **values})
+        out._state__internal__ = out._state__internal__._replace(  # noqa: SLF001
+            context=self._state__internal__.context
+        )
+        return out
 
     def _resolve_and_update_env_vars(self) -> "ConfigurableResourceFactory[TResValue]":
         """Processes the config dictionary to resolve any EnvVar values. This is called at runtime
@@ -738,6 +744,7 @@ class ConfigurableResourceFactory(
         return self._with_updated_values(to_update)
 
     def initialize_and_run(self, context: InitResourceContext) -> TResValue:
+        self._state__internal__ = self._state__internal__._replace(context=context)
         with_nested_resources = self._resolve_and_update_nested_resources(context)
         with_env_vars = with_nested_resources._resolve_and_update_env_vars()  # noqa: SLF001
 
@@ -745,6 +752,13 @@ class ConfigurableResourceFactory(
 
     def _create_object_fn(self, context: InitResourceContext) -> TResValue:
         return self.create_resource(context)
+
+    def get_context(self) -> InitResourceContext:
+        """Returns the context that this resource was initialized with."""
+        return check.not_none(
+            self._state__internal__.context,
+            additional_message="Attempted to get context before resource was initialized.",
+        )
 
     @classmethod
     def from_resource_context(cls, context: InitResourceContext) -> TResValue:
