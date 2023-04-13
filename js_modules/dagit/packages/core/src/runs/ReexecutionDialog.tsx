@@ -6,7 +6,7 @@ import * as React from 'react';
 
 import {ReexecutionStrategy} from '../graphql/types';
 
-import {NavigationBlock} from './NavitationBlock';
+import {NavigationBlock} from './NavigationBlock';
 import {LAUNCH_PIPELINE_REEXECUTION_MUTATION} from './RunUtils';
 import {
   LaunchPipelineReexecutionMutation,

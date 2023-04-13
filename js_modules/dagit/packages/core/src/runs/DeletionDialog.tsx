@@ -4,7 +4,7 @@ import {ProgressBar} from '@blueprintjs/core';
 import {Button, Colors, DialogBody, DialogFooter, Dialog, Group, Icon, Mono} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {NavigationBlock} from './NavitationBlock';
+import {NavigationBlock} from './NavigationBlock';
 import {DELETE_MUTATION} from './RunUtils';
 import {DeleteMutation, DeleteMutationVariables} from './types/RunUtils.types';
 
