@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import requests
 from dagster import MetadataValue, OpExecutionContext, asset
+from dagster_aws.s3 import S3Resource
 from wordcloud import STOPWORDS, WordCloud
 
 
@@ -52,7 +53,9 @@ def hackernews_topstories(
 
 @asset(group_name="hackernews", compute_kind="Plot", required_resource_keys={"s3"})
 def hackernews_topstories_word_cloud(
-    context: OpExecutionContext, hackernews_topstories: pd.DataFrame
+    context: OpExecutionContext,
+    s3_resource: S3Resource,
+    hackernews_topstories: pd.DataFrame,
 ) -> None:
     """Exploratory analysis: Generate a word cloud from the current top 500 HackerNews top stories.
     Embed the plot into a Markdown metadata for quick view.
@@ -78,11 +81,11 @@ def hackernews_topstories_word_cloud(
 
     # Also, upload the image to S3
     bucket_name = os.environ.get("S3_BUCKET")
-    bucket_location = context.resources.s3.get_client().get_bucket_location(Bucket=bucket_name)[
+    bucket_location = s3_resource.get_client().get_bucket_location(Bucket=bucket_name)[
         "LocationConstraint"
     ]
     file_name = "hackernews_topstories_word_cloud.png"
-    context.resources.s3.get_client().upload_fileobj(buffer, bucket_name, file_name)
+    s3_resource.get_client().upload_fileobj(buffer, bucket_name, file_name)
     s3_path = f"https://s3.{bucket_location}.amazonaws.com/{bucket_name}/{file_name}"
     context.add_output_metadata(
         {
