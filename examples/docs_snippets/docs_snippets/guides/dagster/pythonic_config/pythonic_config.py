@@ -1,6 +1,9 @@
 # isort: skip_file
 
 
+from typing import Dict, List
+
+
 class Engine:
     def execute(self, query: str):
         ...
@@ -80,9 +83,7 @@ def execute_with_config() -> None:
 
     asset_result = materialize(
         [greeting],
-        run_config=RunConfig(
-            {"greeting": MyAssetConfig(person_name=EnvVar("PERSON_NAME"))}
-        ),
+        run_config=RunConfig({"greeting": MyAssetConfig(person_name=EnvVar("PERSON_NAME"))}),
     )
 
     # end_execute_with_config_envvar
@@ -198,9 +199,7 @@ def metadata_config() -> None:
     class MyMetadataConfig(Config):
         # Here, the ellipses `...` indicates that the field is required and has no default value.
         person_name: str = Field(..., description="The name of the person to greet")
-        age: int = Field(
-            ..., gt=0, lt=100, description="The age of the person to greet"
-        )
+        age: int = Field(..., gt=0, lt=100, description="The age of the person to greet")
 
     # errors!
     MyMetadataConfig(person_name="Alice", age=200)
@@ -231,3 +230,40 @@ def optional_config() -> None:
     )
 
     # end_optional_config
+
+
+def execute_with_bad_config() -> None:
+    from dagster import op, job, materialize, Config, RunConfig
+
+    class MyOpConfig(Config):
+        person_name: str
+
+    @op
+    def print_greeting(config: MyOpConfig):
+        print(f"hello {config.person_name}")  # noqa: T201
+
+    from dagster import asset, Config
+
+    class MyAssetConfig(Config):
+        person_name: str
+
+    @asset
+    def greeting(config: MyAssetConfig) -> str:
+        return f"hello {config.person_name}"
+
+    # start_execute_with_bad_config
+
+    @job
+    def example_job():
+        op_using_config()
+
+    op_result = example_job.execute_in_process(
+        run_config=RunConfig({"print_greeting": MyOpConfig(nonexistent_config_param=1)}),  # type: ignore
+    )
+
+    asset_result = materialize(
+        [greeting],
+        run_config=RunConfig({"greeting": MyAssetConfig(nonexistent_config_param=1)}),  # type: ignore
+    )
+
+    # end_execute_with_bad_config
