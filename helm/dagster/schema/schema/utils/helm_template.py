@@ -28,6 +28,7 @@ class HelmTemplate:
     model: Optional[Any] = None
     release_name: str = "release-name"
     api_client: ApiClient = ApiClient()
+    namespace: str = "default"
 
     def render(
         self,
@@ -56,6 +57,8 @@ class HelmTemplate:
                 self.release_name,
                 helm_dir_path,
                 "--debug",
+                "--namespace",
+                self.namespace,
                 "--values",
                 tmp_file.name,
             ]
