@@ -104,7 +104,7 @@ export interface AppProviderProps {
     origin: string;
     staticPathRoot?: string;
     telemetryEnabled?: boolean;
-    statusPolling?: Set<DeploymentStatusType>;
+    statusPolling: Set<DeploymentStatusType>;
   };
 }
 
@@ -178,12 +178,6 @@ export const AppProvider: React.FC<AppProviderProps> = (props) => {
     [],
   );
 
-  // todo dish: Make `statusPolling` non-optional once Cloud defines it.
-  const deploymentStatuses = React.useMemo(
-    () => statusPolling || new Set<DeploymentStatusType>(['code-locations']),
-    [statusPolling],
-  );
-
   return (
     <AppContext.Provider value={appContextValue}>
       <WebSocketProvider websocketClient={websocketClient}>
@@ -201,7 +195,7 @@ export const AppProvider: React.FC<AppProviderProps> = (props) => {
               <CompatRouter>
                 <TimeProvider>
                   <WorkspaceProvider>
-                    <DeploymentStatusProvider include={deploymentStatuses}>
+                    <DeploymentStatusProvider include={statusPolling}>
                       <CustomConfirmationProvider>
                         <AnalyticsContext.Provider value={analytics}>
                           <InstancePageContext.Provider value={instancePageValue}>
