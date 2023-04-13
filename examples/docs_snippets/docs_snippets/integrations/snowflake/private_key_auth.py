@@ -31,7 +31,7 @@ defs = Definitions(
 # start_key_file
 
 defs = Definitions(
-    assets=[iris_dataset],  # type: ignore  # (didactic)
+    assets=[iris_dataset],
     resources={
         "io_manager": SnowflakePandasIOManager(
             account="abc1234.us-east-1",
