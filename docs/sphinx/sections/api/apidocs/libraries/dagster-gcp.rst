@@ -47,6 +47,8 @@ Dataproc
 GCS
 ---
 
+.. autoclass:: dagster_gcp.gcs.GCSComputeLogManager
+
 .. autoconfigurable:: gcs_resource
   :annotation: ResourceDefinition
 
