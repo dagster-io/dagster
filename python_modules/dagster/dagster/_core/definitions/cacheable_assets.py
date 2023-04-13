@@ -8,6 +8,7 @@ import dagster._check as check
 import dagster._seven as seven
 from dagster._config.field_utils import compute_fields_hash
 from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKeyPrefix
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import MetadataUserInput
@@ -156,14 +157,20 @@ class CacheableAssetsDefinition(ResourceAddable, ABC):
         return PrefixOrGroupWrappedCacheableAssetsDefinition(self, prefix_for_all_assets=prefix)
 
     def with_attributes_for_all(
-        self, group_name: Optional[str], freshness_policy: Optional[FreshnessPolicy]
+        self,
+        group_name: Optional[str],
+        freshness_policy: Optional[FreshnessPolicy],
+        auto_materialize_policy: Optional[AutoMaterializePolicy],
     ) -> "CacheableAssetsDefinition":
         """Utility method which allows setting attributes for all assets in this
         CacheableAssetsDefinition, since the keys may not be known at the time of
         construction.
         """
         return PrefixOrGroupWrappedCacheableAssetsDefinition(
-            self, group_name_for_all_assets=group_name, freshness_policy=freshness_policy
+            self,
+            group_name_for_all_assets=group_name,
+            freshness_policy=freshness_policy,
+            auto_materialize_policy=auto_materialize_policy,
         )
 
 
@@ -224,6 +231,9 @@ class PrefixOrGroupWrappedCacheableAssetsDefinition(WrappedCacheableAssetsDefini
         freshness_policy: Optional[
             Union[FreshnessPolicy, Mapping[AssetKey, FreshnessPolicy]]
         ] = None,
+        auto_materialize_policy: Optional[
+            Union[AutoMaterializePolicy, Mapping[AssetKey, AutoMaterializePolicy]]
+        ] = None,
     ):
         self._output_asset_key_replacements = output_asset_key_replacements or {}
         self._input_asset_key_replacements = input_asset_key_replacements or {}
@@ -231,6 +241,7 @@ class PrefixOrGroupWrappedCacheableAssetsDefinition(WrappedCacheableAssetsDefini
         self._group_name_for_all_assets = group_name_for_all_assets
         self._prefix_for_all_assets = prefix_for_all_assets
         self._freshness_policy = freshness_policy
+        self._auto_materialize_policy = auto_materialize_policy
 
         check.invariant(
             not (group_name_for_all_assets and group_names_by_key),
@@ -324,6 +335,7 @@ class PrefixOrGroupWrappedCacheableAssetsDefinition(WrappedCacheableAssetsDefini
             input_asset_key_replacements=input_asset_key_replacements,
             group_names_by_key=group_names_by_key,
             freshness_policy=self._freshness_policy,
+            auto_materialize_policy=self._auto_materialize_policy,
         )
 
 

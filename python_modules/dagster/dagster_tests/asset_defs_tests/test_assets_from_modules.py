@@ -14,6 +14,7 @@ from dagster import (
     load_assets_from_package_module,
     load_assets_from_package_name,
 )
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 
 get_unique_asset_identifier = (
@@ -37,6 +38,16 @@ def check_freshness_policy(assets, freshness_policy):
             asset_keys = a.keys
             for asset_key in asset_keys:
                 assert a.freshness_policies_by_key.get(asset_key) == freshness_policy, asset_key
+
+
+def check_auto_materialize_policy(assets, auto_materialize_policy):
+    for a in assets:
+        if isinstance(a, AssetsDefinition):
+            asset_keys = a.keys
+            for asset_key in asset_keys:
+                assert (
+                    a.auto_materialize_policies_by_key.get(asset_key) == auto_materialize_policy
+                ), asset_key
 
 
 def check_asset_prefix(prefix, assets):
@@ -163,6 +174,21 @@ def test_load_assets_with_freshness_policy():
         asset_package, freshness_policy=FreshnessPolicy(maximum_lag_minutes=50)
     )
     check_freshness_policy(assets, FreshnessPolicy(maximum_lag_minutes=50))
+
+
+def test_load_assets_with_auto_materialize_policy():
+    from . import asset_package
+    from .asset_package import module_with_assets
+
+    assets = load_assets_from_modules(
+        [asset_package, module_with_assets], auto_materialize_policy=AutoMaterializePolicy.eager()
+    )
+    check_auto_materialize_policy(assets, AutoMaterializePolicy.eager())
+
+    assets = load_assets_from_package_module(
+        asset_package, auto_materialize_policy=AutoMaterializePolicy.lazy()
+    )
+    check_auto_materialize_policy(assets, AutoMaterializePolicy.lazy())
 
 
 @pytest.mark.parametrize(
