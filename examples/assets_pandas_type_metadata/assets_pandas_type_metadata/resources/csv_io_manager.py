@@ -4,26 +4,26 @@ import textwrap
 import pandas as pd
 from dagster import (
     AssetKey,
+    ConfigurableIOManager,
     MemoizableIOManager,
     TableSchemaMetadataValue,
-    io_manager,
 )
 from dagster._core.definitions.metadata import MetadataValue
+from pydantic import Field
 
 
-class LocalCsvIOManager(MemoizableIOManager):
+class LocalCsvIOManager(ConfigurableIOManager, MemoizableIOManager):
     """Translates between Pandas DataFrames and CSVs on the local filesystem."""
 
-    def __init__(self, base_dir):
-        self._base_dir = base_dir
+    base_dir: str = Field(default=os.getenv("DAGSTER_HOME"))
 
     def _get_fs_path(self, asset_key: AssetKey) -> str:
-        rpath = os.path.join(self._base_dir, *asset_key.path) + ".csv"
+        rpath = os.path.join(self.base_dir, *asset_key.path) + ".csv"
         return os.path.abspath(rpath)
 
     def handle_output(self, context, obj: pd.DataFrame):
         """This saves the dataframe as a CSV."""
-        fpath = self._get_fs_path(context.asset_key)
+        fpath = self._get_fs_path(asset_key=context.asset_key)
         os.makedirs(os.path.dirname(fpath), exist_ok=True)
         obj.to_csv(fpath)
         with open(fpath + ".version", "w", encoding="utf8") as f:
@@ -49,7 +49,7 @@ class LocalCsvIOManager(MemoizableIOManager):
 
     def load_input(self, context):
         """This reads a dataframe from a CSV."""
-        fpath = self._get_fs_path(context.asset_key)
+        fpath = self._get_fs_path(asset_key=context.asset_key)
         date_col_names = [
             table_col.name
             for table_col in self.get_schema(context.upstream_output.dagster_type).columns
@@ -58,7 +58,7 @@ class LocalCsvIOManager(MemoizableIOManager):
         return pd.read_csv(fpath, parse_dates=date_col_names)
 
     def has_output(self, context) -> bool:
-        fpath = self._get_fs_path(context.asset_key)
+        fpath = self._get_fs_path(asset_key=context.asset_key)
         version_fpath = fpath + ".version"
         if not os.path.exists(version_fpath):
             return False
@@ -66,11 +66,6 @@ class LocalCsvIOManager(MemoizableIOManager):
             version = f.read()
 
         return version == context.version
-
-
-@io_manager
-def local_csv_io_manager(context):
-    return LocalCsvIOManager(context.instance.storage_directory())
 
 
 def pandas_columns_to_markdown(dataframe: pd.DataFrame) -> str:
