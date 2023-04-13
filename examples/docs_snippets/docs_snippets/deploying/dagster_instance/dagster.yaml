@@ -283,6 +283,29 @@ compute_logs:
 
 # end_marker_compute_log_storage_s3
 
+# start_marker_compute_log_storage_gcs
+# there are multiple ways to configure the GCSComputeLogManager
+
+# you can set the necessary configuration values directly:
+compute_logs:
+  module: dagster_gcp.gcs.compute_log_manager
+  class: GCSComputeLogManager
+  config:
+    bucket: mycorp-dagster-compute-logs
+    prefix: dagster-test-
+
+# alternatively, you can obtain any of these config values from environment variables
+compute_logs:
+  module: dagster_gcp.gcs.compute_log_manager
+  class: GCSComputeLogManager
+  config:
+    bucket:
+      env: MYCORP_DAGSTER_COMPUTE_LOGS_BUCKET
+    prefix:
+      env: DAGSTER_COMPUTE_LOG_PREFIX
+
+# end_marker_compute_log_storage_gcs
+
 # start_marker_local_artifact_storage
 # there are two possible ways to configure LocalArtifactStorage
 
