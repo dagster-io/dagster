@@ -43,7 +43,7 @@ export type LaunchAssetsChoosePartitionsTarget =
   | {type: 'job'; jobName: string; partitionSetName: string}
   | {type: 'pureWithAnchorAsset'; anchorAssetKey: AssetKey};
 
-type LaunchAssetsState =
+export type LaunchAssetsState =
   | {type: 'none'}
   | {type: 'loading'}
   | {type: 'error'; error: string}
@@ -157,7 +157,10 @@ export const LaunchAssetExecutionButton: React.FC<{
   intent?: 'primary' | 'none';
   preferredJobName?: string;
 }> = ({scope, liveDataForStale, preferredJobName, intent = 'primary'}) => {
-  const {onClick, loading, launchpadElement} = useMaterializationAction(preferredJobName);
+  const {onClick, loading, launchpadElement} = useAssetLaunchAction({
+    preferredJobName,
+    type: 'materialization',
+  });
   const [isOpen, setIsOpen] = React.useState(false);
 
   const options = optionsForButton(scope, liveDataForStale);
@@ -243,7 +246,10 @@ export const LaunchAssetExecutionButton: React.FC<{
   );
 };
 
-export const useMaterializationAction = (preferredJobName?: string) => {
+export const useAssetLaunchAction = (opts: {
+  preferredJobName?: string;
+  type: 'materialization' | 'observation';
+}) => {
   const {useLaunchWithTelemetry} = useLaunchPadHooks();
   const launchWithTelemetry = useLaunchWithTelemetry();
 
@@ -276,7 +282,7 @@ export const useMaterializationAction = (preferredJobName?: string) => {
     const assets = result.data.assetNodes;
     const forceLaunchpad = e.shiftKey || _forceLaunchpad;
 
-    const next = await stateForLaunchingAssets(client, assets, forceLaunchpad, preferredJobName);
+    const next = await stateForLaunchingAssets(client, assets, forceLaunchpad, opts);
 
     if (next.type === 'error') {
       showCustomAlert({
@@ -352,7 +358,7 @@ export const useMaterializationAction = (preferredJobName?: string) => {
               variables: {assetKeys: state.assets.map(({assetKey}) => ({path: assetKey.path}))},
             });
             const assets = result.data.assetNodes;
-            const next = await stateForLaunchingAssets(client, assets, false, preferredJobName);
+            const next = await stateForLaunchingAssets(client, assets, false, opts);
             if (next.type === 'error') {
               showCustomAlert({
                 title: 'Unable to Materialize',
@@ -373,16 +379,22 @@ export const useMaterializationAction = (preferredJobName?: string) => {
   return {onClick, loading: state.type === 'loading', launchpadElement: launchpad()};
 };
 
-async function stateForLaunchingAssets(
+export async function stateForLaunchingAssets(
   client: ApolloClient<any>,
   assets: LaunchAssetExecutionAssetNodeFragment[],
   forceLaunchpad: boolean,
-  preferredJobName?: string,
+  opts: {preferredJobName?: string; type: 'materialization' | 'observation'},
 ): Promise<LaunchAssetsState> {
-  if (assets.some((x) => x.isSource)) {
+  if (opts.type === 'materialization' && assets.some((x) => x.isSource)) {
     return {
       type: 'error',
       error: 'One or more source assets are selected and cannot be materialized.',
+    };
+  }
+  if (opts.type === 'observation' && assets.some((x) => !x.isSource)) {
+    return {
+      type: 'error',
+      error: 'One or more non-source assets are selected and cannot be observed.',
     };
   }
 
@@ -390,7 +402,7 @@ async function stateForLaunchingAssets(
     assets[0]?.repository.name || '',
     assets[0]?.repository.location.name || '',
   );
-  const jobName = getCommonJob(assets, preferredJobName);
+  const jobName = getCommonJob(assets, opts.preferredJobName);
   const partitionDefinition = assets.find((a) => !!a.partitionDefinition)?.partitionDefinition;
 
   const inSameRepo = assets.every(

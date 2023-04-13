@@ -6,7 +6,7 @@ import {MenuLink} from '../ui/MenuLink';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
-import {useMaterializationAction} from './LaunchAssetExecutionButton';
+import {useAssetLaunchAction} from './LaunchAssetExecutionButton';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {AssetTableFragment} from './types/AssetTableFragment.types';
 
@@ -23,7 +23,9 @@ export const AssetActionMenu: React.FC<Props> = (props) => {
   } = usePermissionsForLocation(repoAddress?.location);
   const {path} = asset.key;
 
-  const {onClick, loading, launchpadElement} = useMaterializationAction();
+  const {onClick, loading, launchpadElement} = useAssetLaunchAction({
+    type: 'materialization',
+  });
 
   return (
     <>
