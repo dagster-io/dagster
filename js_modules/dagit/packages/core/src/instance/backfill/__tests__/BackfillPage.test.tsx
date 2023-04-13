@@ -120,7 +120,7 @@ describe('BackfillPage', () => {
     await waitFor(() => getByText('assetA'));
 
     // Check if the loaded content is displayed
-    expect(getByText('Mar 22, 5:00 PM')).toBeVisible();
+    expect(getByText('Jan 1, 1970, 12:16:40 AM')).toBeVisible();
     expect(getByText('Duration')).toBeVisible();
     expect(getByText('Partition Selection')).toBeVisible();
     expect(getByText('Status')).toBeVisible();
