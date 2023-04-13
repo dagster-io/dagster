@@ -96,26 +96,24 @@ def stories(items: pd.DataFrame) -> pd.DataFrame:
     return items[items["type"] == "story"]
 ```
 
-Now we can add these assets to our <PyObject object="Definitions" /> object and materialize them via Dagit as part of our local development workflow. We will use the [configured API](/concepts/configuration/configured) to add configuration for the `snowflake_pandas_io_manager`.
+Now we can add these assets to our <PyObject object="Definitions" /> object and materialize them via Dagit as part of our local development workflow. We can pass in credentials to our `SnowflakePandasIOManager`.
 
 ```python file=/guides/dagster/development_to_production/repository/repository_v1.py startafter=start endbefore=end
 # __init__.py
-from dagster_snowflake_pandas import snowflake_pandas_io_manager
+from dagster_snowflake_pandas import SnowflakePandasIOManager
 
 from dagster import Definitions
 from development_to_production.assets import comments, items, stories
 
 # Note that storing passwords in configuration is bad practice. It will be resolved later in the guide.
 resources = {
-    "snowflake_io_manager": snowflake_pandas_io_manager.configured(
-        {
-            "account": "abc1234.us-east-1",
-            "user": "me@company.com",
-            # password in config is bad practice
-            "password": "my_super_secret_password",
-            "database": "LOCAL",
-            "schema": "ALICE",
-        }
+    "snowflake_io_manager": SnowflakePandasIOManager(
+        account="abc1234.us-east-1",
+        user="me@company.com",
+        # password in config is bad practice
+        password="my_super_secret_password",
+        database="LOCAL",
+        schema="ALICE",
     ),
 }
 
@@ -157,7 +155,7 @@ Now that our assets work locally, we can start the deployment process! We'll fir
 
 ### Production
 
-We want to store the assets in a production Snowflake database, so we need to update the configuration for the `snowflake_pandas_io_manager`. But if we were to simply update the values we set for local development, we would run into an issue: the next time a developer wants to work on these assets, they will need to remember to change the configuration back to the local values. This leaves room for a developer to accidentally overwrite the production asset during local development.
+We want to store the assets in a production Snowflake database, so we need to update the configuration for the `SnowflakePandasIOManager`. But if we were to simply update the values we set for local development, we would run into an issue: the next time a developer wants to work on these assets, they will need to remember to change the configuration back to the local values. This leaves room for a developer to accidentally overwrite the production asset during local development.
 
 Instead, we can determine the configuration for resources based on the environment:
 
@@ -167,27 +165,23 @@ Instead, we can determine the configuration for resources based on the environme
 # Note that storing passwords in configuration is bad practice. It will be resolved soon.
 resources = {
     "local": {
-        "snowflake_io_manager": snowflake_pandas_io_manager.configured(
-            {
-                "account": "abc1234.us-east-1",
-                "user": "me@company.com",
-                # password in config is bad practice
-                "password": "my_super_secret_password",
-                "database": "LOCAL",
-                "schema": "ALICE",
-            }
+        "snowflake_io_manager": SnowflakePandasIOManager(
+            account="abc1234.us-east-1",
+            user="me@company.com",
+            # password in config is bad practice
+            password="my_super_secret_password",
+            database="LOCAL",
+            schema="ALICE",
         ),
     },
     "production": {
-        "snowflake_io_manager": snowflake_pandas_io_manager.configured(
-            {
-                "account": "abc1234.us-east-1",
-                "user": "dev@company.com",
-                # password in config is bad practice
-                "password": "company_super_secret_password",
-                "database": "PRODUCTION",
-                "schema": "HACKER_NEWS",
-            }
+        "snowflake_io_manager": SnowflakePandasIOManager(
+            account="abc1234.us-east-1",
+            user="dev@company.com",
+            # password in config is bad practice
+            password="company_super_secret_password",
+            database="PRODUCTION",
+            schema="HACKER_NEWS",
         ),
     },
 }
@@ -207,7 +201,7 @@ We still have some problems with this setup:
 1. Developers need to remember to change `user` and `password` to their credentials and `schema` to their name when developing locally.
 2. Passwords are being stored in code.
 
-We can easily solve these problems because the Snowflake I/O manager accepts configuration from environment variables using the <PyObject object="StringSource" /> configuration type. This allows us to store configuration values as environment variables and point Dagster to those environment variables in the run configuration:
+We can easily solve these problems using <PyObject object="EnvVar"/>, which lets us source configuration for resources from environment variables. This allows us to store Snowflake configuration values as environment variables and point the IO manager to those environment variables:
 
 ```python file=/guides/dagster/development_to_production/repository/repository_v3.py startafter=start endbefore=end
 # __init__.py
@@ -215,25 +209,21 @@ We can easily solve these problems because the Snowflake I/O manager accepts con
 
 resources = {
     "local": {
-        "snowflake_io_manager": snowflake_pandas_io_manager.configured(
-            {
-                "account": "abc1234.us-east-1",
-                "user": {"env": "DEV_SNOWFLAKE_USER"},
-                "password": {"env": "DEV_SNOWFLAKE_PASSWORD"},
-                "database": "LOCAL",
-                "schema": {"env": "DEV_SNOWFLAKE_SCHEMA"},
-            }
+        "snowflake_io_manager": SnowflakePandasIOManager(
+            account="abc1234.us-east-1",
+            user=EnvVar("DEV_SNOWFLAKE_USER"),
+            password=EnvVar("DEV_SNOWFLAKE_PASSWORD"),
+            database="LOCAL",
+            schema=EnvVar("DEV_SNOWFLAKE_SCHEMA"),
         ),
     },
     "production": {
-        "snowflake_io_manager": snowflake_pandas_io_manager.configured(
-            {
-                "account": "abc1234.us-east-1",
-                "user": "system@company.com",
-                "password": {"env": "SYSTEM_SNOWFLAKE_PASSWORD"},
-                "database": "PRODUCTION",
-                "schema": "HACKER_NEWS",
-            }
+        "snowflake_io_manager": SnowflakePandasIOManager(
+            account="abc1234.us-east-1",
+            user="system@company.com",
+            password=EnvVar("SYSTEM_SNOWFLAKE_PASSWORD"),
+            database="PRODUCTION",
+            schema="HACKER_NEWS",
         ),
     },
 }
@@ -257,14 +247,12 @@ resources = {
     "local": {...},
     "production": {...},
     "staging": {
-        "snowflake_io_manager": snowflake_pandas_io_manager.configured(
-            {
-                "account": "abc1234.us-east-1",
-                "user": "system@company.com",
-                "password": {"env": "SYSTEM_SNOWFLAKE_PASSWORD"},
-                "database": "STAGING",
-                "schema": "HACKER_NEWS",
-            }
+        "snowflake_io_manager": SnowflakePandasIOManager(
+            account="abc1234.us-east-1",
+            user="system@company.com",
+            password=EnvVar("SYSTEM_SNOWFLAKE_PASSWORD"),
+            database="STAGING",
+            schema="HACKER_NEWS",
         ),
     },
 }
