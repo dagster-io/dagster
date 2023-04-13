@@ -56,6 +56,7 @@ class AirflowPersistentDatabaseResource(ConfigurableResource[AirflowPersistentDa
 
     uri: str
     connections: List[Mapping[str, Optional[str]]]
+    dag_run_config: Optional[dict]
 
     def create_resource(self, context: InitResourceContext) -> AirflowPersistentDatabase:
         return AirflowPersistentDatabase.from_resource_context(context)
@@ -100,4 +101,6 @@ def make_persistent_airflow_db_resource(
 
     serialized_connections = serialize_connections(connections)
 
-    return AirflowPersistentDatabaseResource(uri=uri or "", connections=serialized_connections)
+    return AirflowPersistentDatabaseResource(
+        uri=uri or "", connections=serialized_connections, dag_run_config=dag_run_config
+    )
