@@ -105,7 +105,7 @@ describe('BackfillPage', () => {
   });
 
   it('renders the loaded state', async () => {
-    const {getByText} = render(
+    const {getByText, getAllByText} = render(
       <AnalyticsContext.Provider value={{page: () => {}} as any}>
         <MemoryRouter initialEntries={[`/backfills/${mockBackfillId}`]}>
           <Route path="/backfills/:backfillId">
@@ -120,14 +120,14 @@ describe('BackfillPage', () => {
     await waitFor(() => getByText('assetA'));
 
     // Check if the loaded content is displayed
-    expect(getByText('Mar 22, 5:00 PM')).toBeVisible();
+    expect(getByText('Jan 1, 1970, 12:16:40 AM')).toBeVisible();
     expect(getByText('Duration')).toBeVisible();
     expect(getByText('Partition Selection')).toBeVisible();
     expect(getByText('Status')).toBeVisible();
     expect(getByText('Asset name')).toBeVisible();
     expect(getByText('Partitions targeted')).toBeVisible();
-    expect(getByText('Requested')).toBeVisible();
-    expect(getByText('Complete')).toBeVisible();
+    expect(getAllByText('Requested').length).toBe(2);
+    expect(getByText('Completed')).toBeVisible();
     expect(getByText('Failed')).toBeVisible();
 
     // Check if the correct data is displayed
@@ -171,7 +171,7 @@ describe('PartitionSelection', () => {
       />,
     );
 
-    expect(getByText('1 - 2')).toBeInTheDocument();
+    expect(getByText('1...2')).toBeInTheDocument();
   });
 
   it('renders the targeted ranges in a dialog when rootAssetTargetedRanges is provided and length > 1', () => {
@@ -187,8 +187,8 @@ describe('PartitionSelection', () => {
 
     fireEvent.click(getByText('2 partitions'));
 
-    expect(getByText('1 - 2')).toBeInTheDocument();
-    expect(getByText('3 - 4')).toBeInTheDocument();
+    expect(getByText('1...2')).toBeInTheDocument();
+    expect(getByText('3...4')).toBeInTheDocument();
   });
 
   it('renders the numPartitions in a ButtonLink when neither rootAssetTargetedPartitions nor rootAssetTargetedRanges are provided', () => {
