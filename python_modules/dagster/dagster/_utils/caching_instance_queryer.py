@@ -305,7 +305,8 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                     ),
                     ascending=False,
                 )
-            )
+            ),
+            None,
         )
 
     @cached_method
