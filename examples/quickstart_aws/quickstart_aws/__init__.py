@@ -1,11 +1,11 @@
 from dagster import (
     Definitions,
+    EnvVar,
     ScheduleDefinition,
     define_asset_job,
     load_assets_from_package_module,
 )
-from dagster_aws.s3.io_manager import s3_pickle_io_manager
-from dagster_aws.s3.resources import s3_resource
+from dagster_aws.s3 import ConfigurablePickledObjectS3IOManager, S3Resource
 
 from . import assets
 
@@ -24,8 +24,8 @@ defs = Definitions(
     resources={
         # With this I/O manager in place, your job runs will store data passed between assets
         # on S3 in the location s3://<bucket>/dagster/storage/<asset key>.
-        "io_manager": s3_pickle_io_manager.configured({"s3_bucket": {"env": "S3_BUCKET"}}),
-        "s3": s3_resource,
+        "io_manager": ConfigurablePickledObjectS3IOManager(s3_bucket=EnvVar("S3_BUCKET")),
+        "s3": S3Resource(),
     },
     schedules=[daily_refresh_schedule],
 )
