@@ -171,7 +171,7 @@ describe('PartitionSelection', () => {
       />,
     );
 
-    expect(getByText('1 - 2')).toBeInTheDocument();
+    expect(getByText('1...2')).toBeInTheDocument();
   });
 
   it('renders the targeted ranges in a dialog when rootAssetTargetedRanges is provided and length > 1', () => {
