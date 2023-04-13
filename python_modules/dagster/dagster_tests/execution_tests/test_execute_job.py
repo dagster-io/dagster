@@ -379,9 +379,9 @@ def echo(x):
 @op
 def fail_once(context: OpExecutionContext, x):
     key = context.op_handle.name
-    if context.instance.run_storage.kvs_get({key}).get(key):
+    if context.instance.run_storage.get_cursor_values({key}).get(key):
         return x
-    context.instance.run_storage.kvs_set({key: "true"})
+    context.instance.run_storage.set_cursor_values({key: "true"})
     raise Exception("failed (just this once)")
 
 

@@ -286,7 +286,9 @@ def test_using_repository_data():
         repository_load_data = repository_def.repository_load_data
 
         assert (
-            instance.run_storage.kvs_get({"get_definitions_called"}).get("get_definitions_called")
+            instance.run_storage.get_cursor_values({"get_definitions_called"}).get(
+                "get_definitions_called"
+            )
             == "1"
         )
 
@@ -300,7 +302,9 @@ def test_using_repository_data():
 
         # need to get the definitions from metadata when creating the plan
         assert (
-            instance.run_storage.kvs_get({"get_definitions_called"}).get("get_definitions_called")
+            instance.run_storage.get_cursor_values({"get_definitions_called"}).get(
+                "get_definitions_called"
+            )
             == "2"
         )
 
@@ -314,14 +318,16 @@ def test_using_repository_data():
         )
 
         assert (
-            instance.run_storage.kvs_get({"compute_cacheable_data_called"}).get(
+            instance.run_storage.get_cursor_values({"compute_cacheable_data_called"}).get(
                 "compute_cacheable_data_called"
             )
             == "1"
         )
         # should not have needed to get_definitions again after creating the plan
         assert (
-            instance.run_storage.kvs_get({"get_definitions_called"}).get("get_definitions_called")
+            instance.run_storage.get_cursor_values({"get_definitions_called"}).get(
+                "get_definitions_called"
+            )
             == "2"
         )
 
@@ -334,9 +340,9 @@ class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
         instance = DagsterInstance.get()
         kvs_key = "compute_cacheable_data_called"
         compute_cacheable_data_called = int(
-            instance.run_storage.kvs_get({kvs_key}).get(kvs_key, "0")
+            instance.run_storage.get_cursor_values({kvs_key}).get(kvs_key, "0")
         )
-        instance.run_storage.kvs_set({kvs_key: str(compute_cacheable_data_called + 1)})
+        instance.run_storage.set_cursor_values({kvs_key: str(compute_cacheable_data_called + 1)})
         return [self._cacheable_data]
 
     def build_definitions(self, data):
@@ -346,8 +352,10 @@ class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
         # used for tracking how many times this function gets called over an execution
         instance = DagsterInstance.get()
         kvs_key = "get_definitions_called"
-        get_definitions_called = int(instance.run_storage.kvs_get({kvs_key}).get(kvs_key, "0"))
-        instance.run_storage.kvs_set({kvs_key: str(get_definitions_called + 1)})
+        get_definitions_called = int(
+            instance.run_storage.get_cursor_values({kvs_key}).get(kvs_key, "0")
+        )
+        instance.run_storage.set_cursor_values({kvs_key: str(get_definitions_called + 1)})
 
         @op
         def _op():

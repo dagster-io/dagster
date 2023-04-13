@@ -1580,26 +1580,6 @@ class TestRunStorage:
                 assert record.start_time == freeze_datetime.timestamp()
                 assert record.end_time == freeze_datetime.timestamp()
 
-    def test_kvs(self, storage):
-        if not storage.supports_kvs():
-            pytest.skip("storage cannot kvs")
-
-        storage.kvs_set({"key": "value"})
-        assert storage.kvs_get({"key"}) == {"key": "value"}
-
-        storage.kvs_set({"key": "new-value"})
-        assert storage.kvs_get({"key"}) == {"key": "new-value"}
-
-        storage.kvs_set({"foo": "foo", "bar": "bar"})
-        assert storage.kvs_get({"foo", "bar", "key"}) == {
-            "key": "new-value",
-            "foo": "foo",
-            "bar": "bar",
-        }
-
-        storage.kvs_set({"foo": "1", "bar": "2", "key": "3"})
-        assert storage.kvs_get({"foo", "bar", "key"}) == {"foo": "1", "bar": "2", "key": "3"}
-
     def test_migrate_repo(self, storage):
         assert storage
         self._skip_in_memory(storage)
