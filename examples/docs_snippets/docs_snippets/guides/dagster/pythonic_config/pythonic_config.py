@@ -219,13 +219,10 @@ def metadata_config() -> None:
     from pydantic import Field
 
     class MyMetadataConfig(Config):
-        # Here, the ellipses `...` indicates that the field is required and has no default value.
-        person_name: str = Field(..., description="The name of the person to greet")
-        age: int = Field(
-            ..., gt=0, lt=100, description="The age of the person to greet"
-        )
+        person_name: str = Field(description="The name of the person to greet")
+        age: int = Field(gt=0, lt=100, description="The age of the person to greet")
 
-    # errors!
+    # errors, since age is not in the valid range!
     MyMetadataConfig(person_name="Alice", age=200)
 
     # end_metadata_config
