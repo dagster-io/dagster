@@ -23,8 +23,8 @@ export const InstigatedRunStatus: React.FC<{
 export const RunStatusLink: React.FC<{run: RunStatusFragment}> = ({run}) => (
   <Group direction="row" spacing={4} alignItems="center">
     <RunStatusIndicator status={run.status} />
-    <Link to={`/runs/${run.runId}`} target="_blank" rel="noreferrer">
-      <Mono>{titleForRun({runId: run.runId})}</Mono>
+    <Link to={`/runs/${run.id}`} target="_blank" rel="noreferrer">
+      <Mono>{titleForRun({id: run.id})}</Mono>
     </Link>
   </Group>
 );
@@ -32,7 +32,6 @@ export const RunStatusLink: React.FC<{run: RunStatusFragment}> = ({run}) => (
 export const RUN_STATUS_FRAGMENT = gql`
   fragment RunStatusFragment on Run {
     id
-    runId
     status
   }
 `;

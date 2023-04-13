@@ -223,7 +223,6 @@ export const useMatrixData = (inputs: MatrixDataInputs) => {
 export const PARTITION_MATRIX_STEP_RUN_FRAGMENT = gql`
   fragment PartitionMatrixStepRunFragment on Run {
     id
-    runId
     status
     startTime
     endTime

@@ -29,7 +29,7 @@ export type TickHistoryQuery = {
           originRunIds: Array<string>;
           logKey: Array<string> | null;
           runKeys: Array<string>;
-          runs: Array<{__typename: 'Run'; id: string; status: Types.RunStatus; runId: string}>;
+          runs: Array<{__typename: 'Run'; id: string; status: Types.RunStatus}>;
           error: {
             __typename: 'PythonError';
             message: string;
@@ -71,7 +71,7 @@ export type HistoryTickFragment = {
   originRunIds: Array<string>;
   logKey: Array<string> | null;
   runKeys: Array<string>;
-  runs: Array<{__typename: 'Run'; id: string; status: Types.RunStatus; runId: string}>;
+  runs: Array<{__typename: 'Run'; id: string; status: Types.RunStatus}>;
   error: {
     __typename: 'PythonError';
     message: string;

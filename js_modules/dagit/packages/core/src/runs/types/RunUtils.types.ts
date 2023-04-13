@@ -13,10 +13,7 @@ export type LaunchPipelineExecutionMutation = {
     | {__typename: 'InvalidOutputError'}
     | {__typename: 'InvalidStepError'}
     | {__typename: 'InvalidSubsetError'; message: string}
-    | {
-        __typename: 'LaunchRunSuccess';
-        run: {__typename: 'Run'; id: string; runId: string; pipelineName: string};
-      }
+    | {__typename: 'LaunchRunSuccess'; run: {__typename: 'Run'; id: string; pipelineName: string}}
     | {__typename: 'NoModeProvidedError'}
     | {__typename: 'PipelineNotFoundError'; message: string}
     | {__typename: 'PresetNotFoundError'}
@@ -89,7 +86,7 @@ export type TerminateMutation = {
     | {__typename: 'TerminateRunFailure'; message: string}
     | {
         __typename: 'TerminateRunSuccess';
-        run: {__typename: 'Run'; id: string; runId: string; canTerminate: boolean};
+        run: {__typename: 'Run'; id: string; canTerminate: boolean};
       }
     | {__typename: 'UnauthorizedError'; message: string};
 };
@@ -111,7 +108,6 @@ export type LaunchPipelineReexecutionMutation = {
         run: {
           __typename: 'Run';
           id: string;
-          runId: string;
           pipelineName: string;
           rootRunId: string | null;
           parentRunId: string | null;
@@ -148,7 +144,6 @@ export type LaunchPipelineReexecutionMutation = {
 export type RunTimeFragment = {
   __typename: 'Run';
   id: string;
-  runId: string;
   status: Types.RunStatus;
   startTime: number | null;
   endTime: number | null;

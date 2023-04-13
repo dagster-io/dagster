@@ -15,7 +15,6 @@ export type RunReExecutionQuery = {
         id: string;
         parentPipelineSnapshotId: string | null;
         runConfigYaml: string;
-        runId: string;
         canTerminate: boolean;
         hasReExecutePermission: boolean;
         hasTerminatePermission: boolean;

@@ -165,7 +165,6 @@ const EventsMock: MockedResponse<AssetEventsQuery> = {
               pipelineSnapshotId: null,
               id: '12345',
               status: RunStatus.SUCCESS,
-              runId: '12345',
               repositoryOrigin: {
                 __typename: 'RepositoryOrigin',
                 id: 'test.py',
@@ -193,7 +192,6 @@ const EventsMock: MockedResponse<AssetEventsQuery> = {
               pipelineSnapshotId: null,
               id: '12345',
               status: RunStatus.SUCCESS,
-              runId: '12345',
               repositoryOrigin: {
                 __typename: 'RepositoryOrigin',
                 id: 'test.py',

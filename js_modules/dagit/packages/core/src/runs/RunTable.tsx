@@ -45,7 +45,7 @@ interface RunTableProps {
 
 export const RunTable = (props: RunTableProps) => {
   const {runs, filter, onAddTag, highlightedIds, actionBarComponents} = props;
-  const allIds = runs.map((r) => r.runId);
+  const allIds = runs.map((r) => r.id);
 
   const [{checkedIds}, {onToggleFactory, onToggleAll}] = useSelectionReducer(allIds);
 
@@ -110,7 +110,7 @@ export const RunTable = (props: RunTableProps) => {
     }
   }
 
-  const selectedFragments = runs.filter((run) => checkedIds.has(run.runId));
+  const selectedFragments = runs.filter((run) => checkedIds.has(run.id));
 
   return (
     <>
@@ -153,12 +153,12 @@ export const RunTable = (props: RunTableProps) => {
             <RunRow
               canTerminateOrDelete={run.hasTerminatePermission || run.hasDeletePermission}
               run={run}
-              key={run.runId}
+              key={run.id}
               onAddTag={onAddTag}
-              checked={checkedIds.has(run.runId)}
+              checked={checkedIds.has(run.id)}
               additionalColumns={props.additionalColumnsForRow?.(run)}
-              onToggleChecked={onToggleFactory(run.runId)}
-              isHighlighted={highlightedIds && highlightedIds.includes(run.runId)}
+              onToggleChecked={onToggleFactory(run.id)}
+              isHighlighted={highlightedIds && highlightedIds.includes(run.id)}
             />
           ))}
         </tbody>
@@ -170,7 +170,6 @@ export const RunTable = (props: RunTableProps) => {
 export const RUN_TABLE_RUN_FRAGMENT = gql`
   fragment RunTableRunFragment on Run {
     id
-    runId
     status
     stepKeysToExecute
     canTerminate
@@ -250,10 +249,10 @@ const RunRow: React.FC<{
         ) : null}
       </td>
       <td>
-        <RunStatusTagWithStats status={run.status} runId={run.runId} />
+        <RunStatusTagWithStats status={run.status} runId={run.id} />
       </td>
       <td>
-        <Link to={`/runs/${run.runId}`}>
+        <Link to={`/runs/${run.id}`}>
           <Mono>{titleForRun(run)}</Mono>
         </Link>
       </td>

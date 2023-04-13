@@ -33,10 +33,10 @@ export const AssetRunLink: React.FC<{
   event?: Parameters<typeof linkToRunEvent>[1];
 }> = ({runId, children, event}) => (
   <Link
-    to={event ? linkToRunEvent({runId}, event) : `/runs/${runId}`}
+    to={event ? linkToRunEvent({id: runId}, event) : `/runs/${runId}`}
     target="_blank"
     rel="noreferrer"
   >
-    {children || <CaptionMono>{titleForRun({runId})}</CaptionMono>}
+    {children || <CaptionMono>{titleForRun({id: runId})}</CaptionMono>}
   </Link>
 );
