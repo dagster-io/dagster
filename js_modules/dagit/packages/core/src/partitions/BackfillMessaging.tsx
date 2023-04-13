@@ -78,17 +78,14 @@ export function showBackfillSuccessToast(
     ),
     action: {
       text: 'View',
-      onClick: () =>
-        isAssetBackfill
-          ? history.push(`/overview/backfills/${backfillId}`)
-          : history.push(
-              runsPathWithFilters([
-                {
-                  token: 'tag',
-                  value: `dagster/backfill=${backfillId}`,
-                },
-              ]),
-            ),
+      href: isAssetBackfill
+        ? `/overview/backfills/${backfillId}`
+        : runsPathWithFilters([
+            {
+              token: 'tag',
+              value: `dagster/backfill=${backfillId}`,
+            },
+          ]),
     },
   });
 }
