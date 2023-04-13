@@ -707,7 +707,7 @@ export const AssetNodeScenariosPartitioned = [
     title: 'Materializing...',
     liveData: LiveDataForNodePartitionedMaterializing,
     definition: AssetNodeFragmentPartitioned,
-    expectedText: ['Materializing 5 partitions', 'ABCDEF'],
+    expectedText: ['Materializing 5 partitions'],
   },
 
   {

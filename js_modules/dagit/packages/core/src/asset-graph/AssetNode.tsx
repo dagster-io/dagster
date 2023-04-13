@@ -230,6 +230,9 @@ export function buildAssetNodeStatusContent({
   }
 
   if (materializingRunId) {
+    // Note: this value is undefined for unpartitioned assets
+    const numMaterializing = liveData.partitionStats?.numMaterializing;
+
     return {
       background: Colors.Blue50,
       border: Colors.Blue500,
@@ -237,14 +240,16 @@ export function buildAssetNodeStatusContent({
         <>
           <AssetLatestRunSpinner liveData={liveData} />
           <span style={{flex: 1}} color={Colors.Gray800}>
-            {liveData.partitionStats?.numMaterializing === 1
+            {numMaterializing === 1
               ? `Materializing 1 partition...`
-              : liveData.partitionStats?.numMaterializing
-              ? `Materializing ${liveData.partitionStats.numMaterializing} partitions...`
+              : numMaterializing
+              ? `Materializing ${numMaterializing} partitions...`
               : `Materializing...`}
           </span>
           {expanded && <SpacerDot />}
-          <AssetRunLink runId={materializingRunId} />
+          {!numMaterializing || numMaterializing === 1 ? (
+            <AssetRunLink runId={materializingRunId} />
+          ) : undefined}
         </>
       ),
     };
