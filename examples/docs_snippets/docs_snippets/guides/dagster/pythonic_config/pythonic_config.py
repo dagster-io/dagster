@@ -376,3 +376,29 @@ def validated_schema_config() -> None:
     )
 
     # end_validated_schema_config
+
+
+def required_config() -> None:
+    # start_required_config
+    from typing import Optional
+    from dagster import asset, Config
+
+    class MyAssetConfig(Config):
+        # ellipsis indicates that even though the type is Optional,
+        # an input is required
+        person_name: Optional[str] = ...  # type: ignore
+
+    @asset
+    def goodbye(config: MyAssetConfig) -> str:
+        if config.person_name:
+            return f"Goodbye, {config.person_name}"
+        else:
+            return "Goodbye"
+
+    # errors, since person_name is required
+    goodbye(MyAssetConfig())
+
+    # works, since person_name is provided
+    goodbye(MyAssetConfig(person_name=None))
+
+    # end_required_config

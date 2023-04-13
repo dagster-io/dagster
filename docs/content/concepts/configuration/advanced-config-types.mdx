@@ -39,7 +39,9 @@ MyMetadataConfig(person_name="Alice", age=200)
 
 ## Defaults and optional config fields
 
-Config fields can be marked as optional by specifying a default value. For example, we can mark the `greeting_phrase` field as optional by specifying a default of `hello`. Optional fields, such as `person_name`, can be specified a default value of `None`.
+Config fields can have an attached default value. Fields with defaults are not required, meaning they do not need to be specified when constructing the config object.
+
+For example, we can attach a default value of `"hello"` to the `greeting_phrase` field, and can construct `MyAssetConfig` without specifying a phrase. Fields which are marked as `Optional`, such as `person_name`, implicitly have a default value of `None`, but can also be explicitly set to `None` as in the example below.
 
 ```python file=/guides/dagster/pythonic_config/pythonic_config.py startafter=start_optional_config endbefore=end_optional_config dedent=4
 from typing import Optional
@@ -60,6 +62,33 @@ asset_result = materialize(
     [greeting],
     run_config=RunConfig({"greeting": MyAssetConfig()}),
 )
+```
+
+### Required config fields
+
+By default, fields which are typed as `Optional` are not required to be specified in the config, and have an implicit default value of `None`. If you want to require that a field be specified in the config, you may use an ellipsis (`...`) to [require that a value be passed](https://docs.pydantic.dev/usage/models/#required-fields).
+
+```python file=/guides/dagster/pythonic_config/pythonic_config.py startafter=start_required_config endbefore=end_required_config dedent=4
+from typing import Optional
+from dagster import asset, Config
+
+class MyAssetConfig(Config):
+    # ellipsis indicates that even though the type is Optional,
+    # an input is required
+    person_name: Optional[str] = ...
+
+@asset
+def goodbye(config: MyAssetConfig) -> str:
+    if config.person_name:
+        return f"Goodbye, {config.person_name}"
+    else:
+        return "Goodbye"
+
+# errors, since person_name is required
+goodbye(MyAssetConfig())
+
+# works, since person_name is provided
+goodbye(MyAssetConfig(person_name=None))
 ```
 
 ---
@@ -202,6 +231,28 @@ result = materialize(
 )
 ```
 
+### YAML and config dictionary representations of union types
+
+The YAML or config dictionary representation of a discriminated union is structured slightly differently than the Python representation. In the YAML representation, the discriminator key is used as the key for the union type's dictionary. For example, a `Cat` object would be represented as:
+
+```yaml
+pet:
+  cat:
+    meows: 10
+```
+
+In the config dictionary representation, the same pattern is used:
+
+```python
+{
+    "pet": {
+        "cat": {
+            "meows": 10,
+        }
+    }
+}
+```
+
 ---
 
 ## Enum types
@@ -242,6 +293,27 @@ op_result = process_users_job.execute_in_process(
         }
     ),
 )
+```
+
+### YAML and config dictionary representations of enum types
+
+The YAML or config dictionary representation of a Python enum uses the enum's name. For example, a YAML specification of the user list above would be:
+
+```yaml
+users_list:
+  Bob: GUEST
+  Alice: ADMIN
+```
+
+In the config dictionary representation, the same pattern is used:
+
+```python
+{
+    "users_list": {
+        "Bob": "GUEST",
+        "Alice": "ADMIN",
+    }
+}
 ```
 
 ---
