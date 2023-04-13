@@ -137,7 +137,7 @@ materialize_databricks_table = define_asset_job(
 
 Now that your Databricks API calls are modeled within Dagster, you can [schedule](/concepts/partitions-schedules-sensors/schedules) it to run on a regular cadence.
 
-In the example below, we schedule the `materialize_databricks_table` job to run daily, which materiali, and the `my_databricks_job` job to run daily.
+In the example below, we schedule the `materialize_databricks_table` and `my_databricks_job` jobs to run daily:
 
 ```python startafter=start_schedule_databricks endbefore=end_schedule_databricks file=/integrations/databricks/databricks.py dedent=4
 from dagster import (
