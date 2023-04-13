@@ -51,7 +51,7 @@ def single_redshift_solid(context):
 
 @op
 def single_redshift_solid_pythonic(redshift: RedshiftClientResource):
-    return redshift.create_redshift_client().execute_query("SELECT 1", fetch_results=True)
+    return redshift.get_client().execute_query("SELECT 1", fetch_results=True)
 
 
 @op(required_resource_keys={"redshift"})
@@ -64,7 +64,7 @@ def multi_redshift_solid(context):
 
 @op
 def multi_redshift_solid_pythonic(redshift: RedshiftClientResource):
-    return redshift.create_redshift_client().execute_queries(
+    return redshift.get_client().execute_queries(
         ["SELECT 1", "SELECT 1", "SELECT 1"], fetch_results=True
     )
 

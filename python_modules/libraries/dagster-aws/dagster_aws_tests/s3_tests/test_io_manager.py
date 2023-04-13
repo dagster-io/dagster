@@ -28,11 +28,11 @@ from dagster_aws.s3.utils import construct_s3_client
 
 
 class S3TestResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
-    def create_client(self) -> Any:
+    def get_client(self) -> Any:
         return construct_s3_client(max_attempts=5)
 
     def get_object_to_set_on_execution_context(self) -> Any:
-        return self.create_client()
+        return self.get_client()
 
 
 @resource

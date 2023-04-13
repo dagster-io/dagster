@@ -38,7 +38,7 @@ class SSMResource(ResourceWithBoto3Configuration):
 
             @op
             def example_ssm_op(ssm: SSMResource):
-                return ssm.create_client().get_parameter(
+                return ssm.get_client().get_parameter(
                     Name="a_parameter"
                 )
 
@@ -56,7 +56,7 @@ class SSMResource(ResourceWithBoto3Configuration):
             )
     """
 
-    def create_client(self) -> "botocore.client.ssm":
+    def get_client(self) -> "botocore.client.ssm":
         return construct_ssm_client(
             max_attempts=self.max_attempts,
             region_name=self.region_name,
@@ -115,7 +115,7 @@ def ssm_resource(context) -> "botocore.client.ssm":
               # profile as specified in ~/.aws/credentials file
 
     """
-    return SSMResource.from_resource_context(context).create_client()
+    return SSMResource.from_resource_context(context).get_client()
 
 
 class ParameterStoreTag(Config):
