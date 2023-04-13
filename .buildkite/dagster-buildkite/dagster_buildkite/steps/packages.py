@@ -23,9 +23,17 @@ def build_example_packages_steps() -> List[BuildkiteStep]:
         )
     ]
 
-    return _build_steps_from_package_specs(
-        EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG + example_packages_with_standard_config
-    )
+    example_packages = EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG + example_packages_with_standard_config
+
+    # TODO: these tests were failing to install due to using editable install dagster and published
+    # dagster-cloud.
+    example_packages_filtered = [
+        pkg
+        for pkg in example_packages
+        if pkg.directory not in ["examples/assets_dbt_python", "examples/assets_modern_data_stack"]
+    ]
+
+    return _build_steps_from_package_specs(example_packages_filtered)
 
 
 def build_library_packages_steps() -> List[BuildkiteStep]:
