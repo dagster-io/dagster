@@ -105,12 +105,12 @@ SUCCESS_KEY = "EVENT_LOG_CONSUMER_CURSOR-PIPELINE_SUCCESS"
 
 
 def test_cursors(instance: DagsterInstance, empty_workspace_context):
-    assert instance.run_storage.kvs_get({FAILURE_KEY, SUCCESS_KEY}) == {}
+    assert instance.run_storage.get_cursor_values({FAILURE_KEY, SUCCESS_KEY}) == {}
 
     daemon = TestEventLogConsumerDaemon()
     list(daemon.run_iteration(empty_workspace_context))
 
-    assert instance.run_storage.kvs_get({FAILURE_KEY, SUCCESS_KEY}) == {
+    assert instance.run_storage.get_cursor_values({FAILURE_KEY, SUCCESS_KEY}) == {
         FAILURE_KEY: str(0),
         SUCCESS_KEY: str(0),
     }
@@ -124,17 +124,17 @@ def test_cursors(instance: DagsterInstance, empty_workspace_context):
     list(daemon.run_iteration(empty_workspace_context))
     assert len(daemon.run_records) == 2
 
-    cursors = instance.run_storage.kvs_get({FAILURE_KEY, SUCCESS_KEY})
+    cursors = instance.run_storage.get_cursor_values({FAILURE_KEY, SUCCESS_KEY})
 
     list(daemon.run_iteration(empty_workspace_context))
-    assert instance.run_storage.kvs_get({FAILURE_KEY, SUCCESS_KEY}) == cursors
+    assert instance.run_storage.get_cursor_values({FAILURE_KEY, SUCCESS_KEY}) == cursors
 
     for _ in range(5):
         instance.report_engine_event("foo", run1)
         instance.report_engine_event("foo", run2)
 
     list(daemon.run_iteration(empty_workspace_context))
-    assert instance.run_storage.kvs_get({FAILURE_KEY, SUCCESS_KEY}) == {
+    assert instance.run_storage.get_cursor_values({FAILURE_KEY, SUCCESS_KEY}) == {
         FAILURE_KEY: str(int(cursors[FAILURE_KEY]) + 10),
         SUCCESS_KEY: str(int(cursors[SUCCESS_KEY]) + 10),
     }

@@ -193,7 +193,7 @@ def test_successful_run_from_pending(
         known_state=None,
     )
 
-    call_counts = instance.run_storage.kvs_get(
+    call_counts = instance.run_storage.get_cursor_values(
         {
             "compute_cacheable_data_called_a",
             "compute_cacheable_data_called_b",
@@ -240,7 +240,7 @@ def test_successful_run_from_pending(
     finished_run = poll_for_finished_run(instance, run_id)
     assert finished_run.status == DagsterRunStatus.SUCCESS
 
-    call_counts = instance.run_storage.kvs_get(
+    call_counts = instance.run_storage.get_cursor_values(
         {
             "compute_cacheable_data_called_a",
             "compute_cacheable_data_called_b",

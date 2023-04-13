@@ -403,9 +403,6 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
     def alembic_version(self) -> Optional[AlembicVersion]:
         return None
 
-    def supports_kvs(self) -> bool:
-        return True
-
     @abstractmethod
     def replace_job_origin(self, run: "DagsterRun", job_origin: "ExternalPipelineOrigin") -> None:
         ...

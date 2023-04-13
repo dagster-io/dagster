@@ -1122,8 +1122,8 @@ def test_add_primary_keys():
         with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
             assert "id" not in set(get_sqlite3_columns(db_path, "kvs"))
             # trigger insert, and update
-            instance.run_storage.kvs_set({"a": "A"})
-            instance.run_storage.kvs_set({"a": "A"})
+            instance.run_storage.set_cursor_values({"a": "A"})
+            instance.run_storage.set_cursor_values({"a": "A"})
             kvs_row_count = _get_table_row_count(instance.run_storage, KeyValueStoreTable)
             assert kvs_row_count > 0
 

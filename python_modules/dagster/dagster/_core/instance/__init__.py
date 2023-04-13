@@ -423,13 +423,6 @@ class DagsterInstance(DynamicPartitionsStore):
 
         if self.run_retries_enabled:
             check.invariant(
-                self.run_storage.supports_kvs(),
-                (
-                    "Run retries are enabled, but the configured run storage does not support them."
-                    " Consider switching to Postgres or Mysql."
-                ),
-            )
-            check.invariant(
                 self.event_log_storage.supports_event_consumer_queries(),
                 (
                     "Run retries are enabled, but the configured event log storage does not support"

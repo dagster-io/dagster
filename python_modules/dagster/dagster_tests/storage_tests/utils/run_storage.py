@@ -1580,7 +1580,6 @@ class TestRunStorage:
                 assert record.start_time == freeze_datetime.timestamp()
                 assert record.end_time == freeze_datetime.timestamp()
 
-
     def test_migrate_repo(self, storage):
         assert storage
         self._skip_in_memory(storage)

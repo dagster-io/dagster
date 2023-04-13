@@ -14,18 +14,22 @@ class TestDaemonCursorStorage:
             yield s
 
     def test_kvs(self, storage):
-        storage.kvs_set({"key": "value"})
-        assert storage.kvs_get({"key"}) == {"key": "value"}
+        storage.set_cursor_values({"key": "value"})
+        assert storage.get_cursor_values({"key"}) == {"key": "value"}
 
-        storage.kvs_set({"key": "new-value"})
-        assert storage.kvs_get({"key"}) == {"key": "new-value"}
+        storage.set_cursor_values({"key": "new-value"})
+        assert storage.get_cursor_values({"key"}) == {"key": "new-value"}
 
-        storage.kvs_set({"foo": "foo", "bar": "bar"})
-        assert storage.kvs_get({"foo", "bar", "key"}) == {
+        storage.set_cursor_values({"foo": "foo", "bar": "bar"})
+        assert storage.get_cursor_values({"foo", "bar", "key"}) == {
             "key": "new-value",
             "foo": "foo",
             "bar": "bar",
         }
 
-        storage.kvs_set({"foo": "1", "bar": "2", "key": "3"})
-        assert storage.kvs_get({"foo", "bar", "key"}) == {"foo": "1", "bar": "2", "key": "3"}
+        storage.set_cursor_values({"foo": "1", "bar": "2", "key": "3"})
+        assert storage.get_cursor_values({"foo", "bar", "key"}) == {
+            "foo": "1",
+            "bar": "2",
+            "key": "3",
+        }
