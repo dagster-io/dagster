@@ -73,6 +73,9 @@ export const CodeLocationRowSet: React.FC<Props> = ({locationNode}) => {
       {repositories.map((repository) => {
         const repoAddress = buildRepoAddress(repository.name, name);
         const allMetadata = [...locationNode.displayMetadata, ...repository.displayMetadata];
+        const imageKV = allMetadata.find(({key}) => key === 'image');
+        const imageValue = imageKV?.value || '';
+
         return (
           <tr key={repoAddressAsHumanString(repoAddress)}>
             <td style={{maxWidth: '400px'}}>
@@ -82,7 +85,7 @@ export const CodeLocationRowSet: React.FC<Props> = ({locationNode}) => {
                     <MiddleTruncate text={repoAddressAsHumanString(repoAddress)} />
                   </Link>
                 </div>
-                <ImageName metadata={allMetadata} />
+                {imageValue ? <ImageName value={imageValue} /> : null}
                 <ModuleOrPackageOrFile metadata={allMetadata} />
               </Box>
             </td>
@@ -108,10 +111,13 @@ export const CodeLocationRowSet: React.FC<Props> = ({locationNode}) => {
   );
 };
 
-export const ImageName: React.FC<{metadata: WorkspaceDisplayMetadataFragment[]}> = ({metadata}) => {
+interface ImageNameProps {
+  label?: string;
+  value: string;
+}
+
+export const ImageName = ({value, label = 'image:'}: ImageNameProps) => {
   const copy = useCopyToClipboard();
-  const imageKV = metadata.find(({key}) => key === 'image');
-  const value = imageKV?.value || '';
 
   const onClick = React.useCallback(() => {
     copy(value);
@@ -122,25 +128,23 @@ export const ImageName: React.FC<{metadata: WorkspaceDisplayMetadataFragment[]}>
     });
   }, [copy, value]);
 
-  if (imageKV) {
-    return (
-      <ImageNameBox flex={{direction: 'row', gap: 4}}>
-        <span style={{fontWeight: 500}}>image:</span>
-        <Tooltip content="Click to copy" placement="top" display="block">
-          <button onClick={onClick}>
-            <MiddleTruncate text={imageKV.value} />
-          </button>
-        </Tooltip>
-      </ImageNameBox>
-    );
-  }
-  return null;
+  return (
+    <ImageNameBox flex={{direction: 'row', gap: 4}}>
+      <span style={{fontWeight: 500, whiteSpace: 'nowrap'}}>{label}</span>
+      <Tooltip content="Click to copy" placement="top" display="block">
+        <button onClick={onClick}>
+          <MiddleTruncate text={value} />
+        </button>
+      </Tooltip>
+    </ImageNameBox>
+  );
 };
 
 const ImageNameBox = styled(Box)`
   width: 100%;
   color: ${Colors.Gray700};
   font-size: 12px;
+  line-height: 14px;
 
   .bp4-popover2-target {
     overflow: hidden;
@@ -152,6 +156,7 @@ const ImageNameBox = styled(Box)`
     color: ${Colors.Gray700};
     cursor: pointer;
     font-size: 12px;
+    line-height: 14px;
     overflow: hidden;
     padding: 0;
     margin: 0;
@@ -173,7 +178,7 @@ export const ModuleOrPackageOrFile: React.FC<{metadata: WorkspaceDisplayMetadata
     return (
       <Box
         flex={{direction: 'row', gap: 4}}
-        style={{width: '100%', color: Colors.Gray700, fontSize: 12}}
+        style={{width: '100%', color: Colors.Gray700, fontSize: 12, lineHeight: '14px'}}
       >
         <span style={{fontWeight: 500}}>{imageKV.key}:</span>
         <MiddleTruncate text={imageKV.value} />
