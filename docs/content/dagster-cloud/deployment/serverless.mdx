@@ -297,6 +297,14 @@ Unlike Hybrid, Serverless Deployments on Dagster Cloud require direct access to 
 
 ---
 
+## Data storage and I/O Managers
+
+By default, Serverless Deployments on Dagster Cloud will use <PyObject object="fs_io_manager" /> as their I/O Manager, which is made for development and not recommended for production use. Serverless Deployments will be able to run and save outputs normally using this default, but you will not be able to retrieve the output data of ops or assets until you configure the deployment to save to a storage location which is accessible to you.
+
+To do this, provide an [I/O Manager](/concepts/io-management/io-managers) resource to your assets or ops. Dagster provides out-of-the-box options for saving data to several popular storage systems such as AWS S3; see [the I/O Manager docs](/concepts/io-management/io-managers#built-in-io-managers) for more information and example configurations.
+
+---
+
 ## Run isolation
 
 Dagster Cloud Serverless offers two settings for run isolation: isolated and non-isolated. Non-isolated runs are for iterating quickly and trade off isolation for speed. Isolated runs are for production and compute heavy Assets/Jobs.
