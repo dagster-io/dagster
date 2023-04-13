@@ -1,5 +1,59 @@
 # Changelog
 
+# 1.2.7 (core) / 0.18.7 (libraries)
+
+### New
+
+- [ui] Performance improvement for Runs page for runs that materialize large numbers of assets.
+- [ui] Performance improvements for Run timeline and left navigation for users with large numbers of jobs or assets.
+- [ui] The asset graph now shows how many partitions of each asset are currently materializing, and blue bands appear on the partition health bar.
+- [dagster-dbt] Python 3.10 is now supported.
+- [dagster-aws] The `EcsRunLauncher` now allows you to customize volumes and mount points for the launched ECS task. See [the API docs](https://docs.dagster.io/_apidocs/libraries/dagster-aws#dagster_aws.ecs.EcsRunLauncher) for more information.
+- [dagster-duckdb, dagster-duckdb-pandas, dagster-duckdb-pyspark] New `DuckDBPandasIOManager` and `DuckDBPySparkIOManager` follow Pythonic resource system. The existing `duckdb_pandas_io_manager` and `duckdb_pyspark_io_manager` remain supported.
+- [dagster-gcp, dagster-gcp-pandas, dagster-gcp-pyspark] New `BigQueryPandasIOManager` and `BigQueryPySparkIOManager` follow Pythonic resource system. The existing `bigquery_pandas_io_manager` and `bigquery_pyspark_io_manager` remain supported.
+- [dagster-gcp] The BigQuery resource now accepts authentication credentials as configuration. If you pass GCP authentication credentials to `gcp_crentials` , a temporary file to store the credentials will be created and the `GOOGLE_APPLICATION_CREDENTIALS` environment variable will be set to the temporary file. When the BigQuery resource is garbage collected, the environment variable will be unset and the temporary file deleted
+- [dagster-snowflake, dagster-snowflake-pandas, dagster-snowflake-pyspark] New `SnowflakePandasIOManager` and `SnowflakePySparkIOManager` follow Pythonic resource system. The existing `snowflake_pandas_io_manager` and `snowflake_pyspark_io_manager` remain supported.
+- [ui] In the run timeline, consolidate “Ad hoc materializations” rows into a single row.
+- Resource access (via both `required_resource_keys` and Pythonic resources) are now supported in observable source assets
+- [ui] Added a new page to monitor an asset backfill.
+
+### Bugfixes
+
+- Fixed an issue where `dagster dev` would periodically emit a harmless but annoying warning every few minutes about a gRPC server being shut down.
+- Fixed a schedule evaluation error that occurred when schedules returned a `RunRequest(partition_key=...)` object.
+- Fixed a bug that caused errors in the asset reconciliation sensor when the event log includes asset materializations with partitions that aren’t part of the asset’s `PartitionsDefinition`.
+- Fixed a bug that caused errors in the asset reconciliation sensor when a partitioned asset is removed.
+- Fixed an issue where `run_request_for_partition` would incorrectly raise an error for a job with a `DynamicPartitionsDefinition` that was defined with a function.
+- Fixed an issue where defining a partitioned job with unpartitioned assets via `define_asset_job` would raise an error.
+- Fixed a bug where source asset observations could not be launched from dagit when the asset graph contained partitioned assets.
+- [ui] The asset partition health bar now correctly renders partial failed partitions of multi-dimensional assets in a striped red color.
+- [ui] Fixed an issue where steps that were skipped due to an upstream dependency failure were incorrectly listed as “Preparing” in the right-hand column of the runs timeline.
+- [dagster-aws] Fixed an issue where the `EcsRunLauncher` would fail to launch runs if the `use_current_ecs_task_config` field was set to `False` but no `task_definition` field was set.
+- [dagster-k8s] Fixed an issue introduced in 1.2.6 where older versions of the kubernetes Python package were unable to import the package.
+- Fixed a bug that caused **`__ASSET_JOB has no op named ...`** errors when using automatic run retries.
+- [ui] Fixed markdown base64 image embeds.
+- [ui] Guard against localStorage quota errors when storing launchpad config tabs.
+
+### Community Contributions
+
+- The `EcsRunLauncher` now allows you to set a capacity provider strategy and customize the ephemeral storage used for launched ECS tasks. See [the docs](https://docs.dagster.io/deployment/guides/aws#customizing-the-launched-runs-task) for details. Thanks [AranVinkItility](https://github.com/AranVinkItility)!
+- Fixed an issue where freshness policies were not being correctly applied to assets with key prefixes defined via `AssetsDefinition.from_op`. Thanks @tghanken for the fix!
+- Added the `minimum_interval_seconds` parameter to enable customizing the evaluation interval on the slack run failure sensor, thanks @ldnicolasmay!
+- Fixed a docs example and updated references, thanks @NicolasPA!
+
+### Experimental
+
+- The `Resource` annotation for Pythonic resource inputs has been renamed to `ResourceParam` in preparation for the release of the feature in 1.3.
+- When invoking ops and assets that request resources via parameters directly, resources can now be specified as arguments.
+- Improved various error messages related to Pythonic config and resources.
+- If the Resources Dagit feature flag is enabled, they will now show up in the overview page and search.
+
+### Documentation
+
+- Learn how to [limit concurrency in your data pipelines](https://docs.dagster.io/guides/limiting-concurrency-in-data-pipelines) with our new guide!
+- Need some help managing a run queue? Check out the new [customizing run queue priority guide](https://docs.dagster.io/guides/customizing-run-queue-priority).
+- New tutorial section that adds I/O managers to the tutorial project
+
 # 1.2.6 (core) / 0.18.6 (libraries)
 
 ### Bugfixes
@@ -46,8 +100,7 @@
 
 ### Documentation
 
-- Added a missing link to next tutorial section  (Thanks Mike Kutzma!)
-
+- Added a missing link to next tutorial section (Thanks Mike Kutzma!)
 
 # 1.2.4 (core) / 0.18.4 (libraries)
 
