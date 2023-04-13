@@ -38,7 +38,7 @@ class ECRPublicResource(ConfigurableResource):
     Similar to the AWS CLI's `aws ecr-public get-login-password` command.
     """
 
-    def create_ecr_client(self) -> ECRPublicClient:
+    def get_client(self) -> ECRPublicClient:
         return ECRPublicClient()
 
 
@@ -47,7 +47,7 @@ class FakeECRPublicResource(ConfigurableResource):
     requests and always returns `'token'` as its login password.
     """
 
-    def create_ecr_client(self) -> FakeECRPublicClient:
+    def get_client(self) -> FakeECRPublicClient:
         return FakeECRPublicClient()
 
 
@@ -58,7 +58,7 @@ class FakeECRPublicResource(ConfigurableResource):
     )
 )
 def ecr_public_resource(context) -> ECRPublicClient:
-    return ECRPublicResource.from_resource_context(context).create_ecr_client()
+    return ECRPublicResource.from_resource_context(context).get_client()
 
 
 @resource(
@@ -68,4 +68,4 @@ def ecr_public_resource(context) -> ECRPublicClient:
     )
 )
 def fake_ecr_public_resource(context) -> FakeECRPublicClient:
-    return FakeECRPublicResource.from_resource_context(context).create_ecr_client()
+    return FakeECRPublicResource.from_resource_context(context).get_client()
