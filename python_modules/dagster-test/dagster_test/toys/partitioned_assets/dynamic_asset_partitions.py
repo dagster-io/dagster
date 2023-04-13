@@ -1,3 +1,5 @@
+import random
+
 import click
 from dagster import (
     AssetSelection,
@@ -6,9 +8,12 @@ from dagster import (
     Definitions,
     DynamicPartitionsDefinition,
     MultiPartitionsDefinition,
+    RunRequest,
+    SensorResult,
     asset,
     define_asset_job,
     load_assets_from_current_module,
+    sensor,
 )
 
 customers_partitions_def = DynamicPartitionsDefinition(name="customers")
@@ -40,7 +45,37 @@ def multipartitioned_with_dynamic_dimension():
     return 1
 
 
-defs = Definitions(assets=load_assets_from_current_module(), jobs=[dynamic_partitions_job])
+ints_dynamic_partitions_def = DynamicPartitionsDefinition(name="ints")
+
+
+@asset(partitions_def=ints_dynamic_partitions_def)
+def ints_dynamic_asset():
+    return 1
+
+
+ints_job = define_asset_job(
+    "ints_job",
+    AssetSelection.assets(ints_dynamic_asset),
+    partitions_def=ints_dynamic_partitions_def,
+)
+
+
+@sensor(job=ints_job)
+def ints_new_dynamic_partitions_sensor():
+    new_partition_key = str(random.randint(0, 100))
+    return SensorResult(
+        run_requests=[RunRequest(partition_key=new_partition_key)],
+        dynamic_partitions_requests=[
+            ints_dynamic_partitions_def.build_add_request([new_partition_key])
+        ],
+    )
+
+
+defs = Definitions(
+    assets=load_assets_from_current_module(),
+    jobs=[dynamic_partitions_job],
+    sensors=[ints_new_dynamic_partitions_sensor],
+)
 
 
 @click.command()
