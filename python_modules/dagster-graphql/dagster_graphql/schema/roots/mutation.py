@@ -5,6 +5,7 @@ import graphene
 from dagster._core.definitions.events import AssetKey
 from dagster._core.nux import get_has_seen_nux, set_nux_seen
 from dagster._core.workspace.permissions import Permissions
+from dagster._daemon.asset_daemon import set_auto_materialize_paused
 
 from dagster_graphql.implementation.execution.backfill import (
     cancel_partition_backfill,
@@ -694,6 +695,23 @@ class GrapheneSetNuxSeenMutation(graphene.Mutation):
         return get_has_seen_nux()
 
 
+class GrapheneSetAutoMaterializePausedMutation(graphene.Mutation):
+    """Toggle asset auto materializing on or off."""
+
+    Output = graphene.NonNull(graphene.Boolean)
+
+    class Meta:
+        name = "SetAutoMaterializedPausedMutation"
+
+    class Arguments:
+        paused = graphene.Argument(graphene.NonNull(graphene.Boolean))
+
+    @capture_error
+    def mutate(self, graphene_info, paused: bool):
+        set_auto_materialize_paused(graphene_info.context.instance, paused)
+        return paused
+
+
 class GrapheneDagitMutation(graphene.ObjectType):
     """The root for all mutations to modify data in your Dagster instance."""
 
@@ -725,3 +743,4 @@ class GrapheneDagitMutation(graphene.ObjectType):
     log_telemetry = GrapheneLogTelemetryMutation.Field()
     set_nux_seen = GrapheneSetNuxSeenMutation.Field()
     add_dynamic_partition = GrapheneAddDynamicPartitionMutation.Field()
+    setAutoMaterializePaused = GrapheneSetAutoMaterializePausedMutation.Field()
