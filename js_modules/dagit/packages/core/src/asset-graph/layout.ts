@@ -237,7 +237,7 @@ export const getAssetNodeDimensions = (def: {
   description?: string | null;
   computeKind: string | null;
 }) => {
-  const width = 255;
+  const width = 265;
 
   if (def.isSource && !def.isObservable) {
     return {width, height: 102};
