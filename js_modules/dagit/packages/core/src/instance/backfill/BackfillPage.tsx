@@ -22,10 +22,13 @@ import styled from 'styled-components/macro';
 
 import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
-import {useQueryRefreshAtInterval} from '../../app/QueryRefresh';
+import {QueryRefreshCountdown, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {useTrackPageView} from '../../app/analytics';
+import {Timestamp} from '../../app/time/Timestamp';
+import {assetDetailsPathForKey} from '../../assets/assetDetailsPathForKey';
 import {BulkActionStatus, RunStatus} from '../../graphql/types';
 import {useDocumentTitle} from '../../hooks/useDocumentTitle';
+import {TruncatedTextWithFullTextOnHover} from '../../nav/getLeftNavItemsForOption';
 import {RunFilterToken, runsPathWithFilters} from '../../runs/RunsFilterInput';
 import {testId} from '../../testing/testId';
 import {numberFormatter} from '../../ui/formatters';
@@ -58,7 +61,7 @@ export const BackfillPage = () => {
     // for asset backfills, all of the requested runs have concluded in order for the status to be BulkActionStatus.COMPLETED
     isInProgress = backfill.status === BulkActionStatus.REQUESTED;
   }
-  useQueryRefreshAtInterval(queryResult, 5000, isInProgress);
+  const refreshState = useQueryRefreshAtInterval(queryResult, 10000, isInProgress);
 
   function content() {
     if (!backfill || !data) {
@@ -127,7 +130,15 @@ export const BackfillPage = () => {
             alignItems: 'center',
           }}
         >
-          <Detail label="Created" detail="Mar 22, 5:00 PM" />
+          <Detail
+            label="Created"
+            detail={
+              <Timestamp
+                timestamp={{ms: Number(backfill.timestamp * 1000)}}
+                timeFormat={{showSeconds: true, showTimezone: false}}
+              />
+            }
+          />
           <Detail
             label="Duration"
             detail={
@@ -155,10 +166,18 @@ export const BackfillPage = () => {
           <thead>
             <tr>
               <th style={{width: '50%'}}>Asset name</th>
-              <th>Partitions targeted</th>
-              <th>Requested</th>
-              <th>Complete</th>
-              <th>Failed</th>
+              <th>
+                <a href={getRunsUrl('targeted')}>Partitions targeted</a>
+              </th>
+              <th>
+                <a href={getRunsUrl('requested')}>Requested</a>
+              </th>
+              <th>
+                <a href={getRunsUrl('complete')}>Completed</a>
+              </th>
+              <th>
+                <a href={getRunsUrl('failed')}>Failed</a>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -166,7 +185,11 @@ export const BackfillPage = () => {
               <tr key={asset.assetKey.path.join('/')}>
                 <td>
                   <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
-                    <div>{asset.assetKey.path.join('/')}</div>
+                    <div>
+                      <a href={assetDetailsPathForKey(asset.assetKey)}>
+                        {asset.assetKey.path.join('/')}
+                      </a>
+                    </div>
                     <div>
                       <StatusBar
                         targeted={asset.numPartitionsTargeted}
@@ -177,39 +200,10 @@ export const BackfillPage = () => {
                     </div>
                   </Box>
                 </td>
-                <td>
-                  <a href={getRunsUrl('targeted')}>{asset.numPartitionsTargeted}</a>
-                </td>
-                <td>
-                  <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
-                    <div>{asset.numPartitionsRequested}</div>
-                    <div>
-                      {asset.numPartitionsRequested ? (
-                        <a href={getRunsUrl('requested')}>View Runs</a>
-                      ) : null}
-                    </div>
-                  </Box>
-                </td>
-                <td>
-                  <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
-                    <div>{asset.numPartitionsCompleted}</div>
-                    <div>
-                      {asset.numPartitionsCompleted ? (
-                        <a href={getRunsUrl('complete')}>View Runs</a>
-                      ) : null}
-                    </div>
-                  </Box>
-                </td>
-                <td>
-                  <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
-                    <div>{asset.numPartitionsFailed}</div>
-                    <div>
-                      {asset.numPartitionsFailed ? (
-                        <a href={getRunsUrl('failed')}>View Runs</a>
-                      ) : null}
-                    </div>
-                  </Box>
-                </td>
+                <td>{asset.numPartitionsTargeted}</td>
+                <td>{asset.numPartitionsRequested}</td>
+                <td>{asset.numPartitionsCompleted}</td>
+                <td>{asset.numPartitionsFailed}</td>
               </tr>
             ))}
           </tbody>
@@ -230,6 +224,7 @@ export const BackfillPage = () => {
             {backfillId}
           </div>
         }
+        right={isInProgress ? <QueryRefreshCountdown refreshState={refreshState} /> : null}
       />
       {content()}
     </Page>
@@ -248,13 +243,13 @@ const StatusLabel = ({status}: {status: BulkActionStatus}) => {
     case BulkActionStatus.CANCELED:
       return <Tag intent="warning">Canceled</Tag>;
     case BulkActionStatus.COMPLETED:
-      return <Tag intent="success">Complete</Tag>;
+      return <Tag intent="success">Completed</Tag>;
     case BulkActionStatus.FAILED:
       return <Tag intent="danger">Failed</Tag>;
     case BulkActionStatus.REQUESTED:
       return (
         <Tag intent="primary" icon="spinner">
-          In Progress
+          Requested
         </Tag>
       );
     default:
@@ -313,8 +308,7 @@ const Duration = ({start, end}: {start: number; end?: number | null}) => {
   }, [start, end]);
   const duration = end ? end - start : Date.now() - start;
 
-  const str = dayjs.duration(duration).humanize(false);
-  return <span>{str}</span>;
+  return <span>{formatDuration(duration)}</span>;
 };
 
 export const BACKFILL_DETAILS_QUERY = gql`
@@ -374,7 +368,9 @@ export const PartitionSelection = ({
       dialogContent = (
         <div>
           {rootAssetTargetedPartitions.map((p) => (
-            <div key={p}>{p}</div>
+            <div key={p} style={{maxWidth: '100px'}}>
+              <TruncatedTextWithFullTextOnHover text={p} />
+            </div>
           ))}
         </div>
       );
@@ -401,7 +397,7 @@ export const PartitionSelection = ({
       const {start, end} = rootAssetTargetedRanges[0];
       content = (
         <div>
-          {start} - {end}
+          {start}...{end}
         </div>
       );
     } else {
@@ -418,7 +414,7 @@ export const PartitionSelection = ({
         <Box flex={{direction: 'column', gap: 8}}>
           {rootAssetTargetedRanges?.map((r) => (
             <div key={`${r.start}:${r.end}`}>
-              {r.start} - {r.end}
+              {r.start}...{r.end}
             </div>
           ))}
         </Box>
@@ -437,4 +433,24 @@ export const PartitionSelection = ({
       </Dialog>
     </>
   );
+};
+
+const formatDuration = (duration: number) => {
+  const seconds = Math.floor((duration / 1000) % 60);
+  const minutes = Math.floor((duration / (1000 * 60)) % 60);
+  const hours = Math.floor((duration / (1000 * 60 * 60)) % 24);
+  const days = Math.floor(duration / (1000 * 60 * 60 * 24));
+
+  let result = '';
+  if (days > 0) {
+    result += `${days}d `;
+    result += `${hours}h`;
+  } else if (hours > 0) {
+    result += `${hours}h `;
+    result += `${minutes}m`;
+  } else if (minutes > 0) {
+    result += `${minutes}m `;
+    result += `${seconds}s`;
+  }
+  return result.trim();
 };
