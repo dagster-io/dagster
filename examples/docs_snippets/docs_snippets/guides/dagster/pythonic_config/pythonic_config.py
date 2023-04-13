@@ -262,12 +262,12 @@ def execute_with_bad_config() -> None:
         print_greeting()
 
     op_result = greeting_job.execute_in_process(
-        run_config=RunConfig({"print_greeting": MyOpConfig(nonexistent_config_param=1)}),  # type: ignore
+        run_config=RunConfig({"print_greeting": MyOpConfig(nonexistent_config_value=1)}),  # type: ignore
     )
 
     asset_result = materialize(
         [greeting],
-        run_config=RunConfig({"greeting": MyAssetConfig(nonexistent_config_param=1)}),  # type: ignore
+        run_config=RunConfig({"greeting": MyAssetConfig(nonexistent_config_value=1)}),  # type: ignore
     )
 
     # end_execute_with_bad_config

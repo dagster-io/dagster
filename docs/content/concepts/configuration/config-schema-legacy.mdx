@@ -6,8 +6,8 @@ description: Job run configuration allows providing parameters to jobs at the ti
 # Run Configuration (Legacy)
 
 <Note>
-  This guide covers using the legacy Dagster config system. For docs on the new
-  Pythonic config system introduced in Dagster 1.3, see the{" "}
+  This guide covers using legacy APIs for the Dagster config system. For docs on
+  the new Pythonic config system introduced in Dagster 1.3, see the{" "}
   <a href="/concepts/configuration/config-schema">
     updated configuration guide
   </a>
@@ -98,29 +98,11 @@ asset_result = materialize(
 
 ### Dagit
 
-From Dagit's [Launchpad](/concepts/dagit/dagit#launchpad-tab), we supply config as YAML using the config editor. The editor has typeahead, schema validation, and schema documentation. You can also click the "Scaffold Missing Config" button to generate dummy values based on the config schema. Note that a modal containing the launchpad editor will pop up if we attempt to materialize an asset with a defined `config_schema`:
-
-<Image
-alt="Config in Dagit"
-src="/images/concepts/config-dagit.png"
-width={3808}
-height={2414}
-/>
+From Dagit's [Launchpad](/concepts/dagit/dagit#launchpad-tab), we supply config as YAML using the config editor. Refer to [the config schema guide](/concepts/configuration/config-schema#dagit) for using runtime config in the Dagster UI.
 
 ### Command line
 
-When executing a job from Dagster's CLI with [dagster job execute](/\_apidocs/cli#dagster-job-execute), we can put config in a YAML file and pass the file path with the `--config` option:
-
-```YAML file=/concepts/configuration/good.yaml
-ops:
-  op_using_config:
-    config:
-      person_name: Alice
-```
-
-```bash
-dagster job execute --config my_config.yaml
-```
+Refer to [the config schema guide](/concepts/configuration/config-schema#command-line) for details on using config with Dagster's CLI.
 
 ---
 

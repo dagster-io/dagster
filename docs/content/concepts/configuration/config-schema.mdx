@@ -7,7 +7,7 @@ description: Job run configuration allows providing parameters to jobs at the ti
 
 <Note>
   This guide covers using the new Pythonic config system introduced in Dagster
-  1.3. If your code is still using the legacy config system, see the{" "}
+  1.3. If your code is still using the legacy APIs, see the{" "}
   <a href="/concepts/configuration/config-schema-legacy">
     legacy configuration guide
   </a>
@@ -156,6 +156,7 @@ dagster job execute --config my_config.yaml
 ```
 
 </TabItem>
+</TabGroup>
 
 ---
 
@@ -169,12 +170,12 @@ def greeting_job():
     print_greeting()
 
 op_result = greeting_job.execute_in_process(
-    run_config=RunConfig({"print_greeting": MyOpConfig(nonexistent_config_param=1)}),
+    run_config=RunConfig({"print_greeting": MyOpConfig(nonexistent_config_value=1)}),
 )
 
 asset_result = materialize(
     [greeting],
-    run_config=RunConfig({"greeting": MyAssetConfig(nonexistent_config_param=1)}),
+    run_config=RunConfig({"greeting": MyAssetConfig(nonexistent_config_value=1)}),
 )
 ```
 
@@ -186,7 +187,9 @@ Ops and assets can be configured using environment variables by passing an <PyOb
 from dagster import job, materialize, op, RunConfig, EnvVar
 
 job_result = greeting_job.execute_in_process(
-    run_config=RunConfig({"print_greeting": MyOpConfig(person_name=EnvVar("PERSON_NAME"))})
+    run_config=RunConfig(
+        {"print_greeting": MyOpConfig(person_name=EnvVar("PERSON_NAME"))}
+    )
 )
 
 asset_result = materialize(
