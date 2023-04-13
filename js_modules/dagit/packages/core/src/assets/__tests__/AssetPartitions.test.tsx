@@ -130,7 +130,7 @@ describe('AssetPartitions', () => {
     );
     await userEvent.click(successCheck);
     expect(screen.getByTestId('router-search')).toHaveTextContent(
-      `status=${AssetPartitionStatus.FAILED}%2C${AssetPartitionStatus.MISSING}`,
+      `status=${AssetPartitionStatus.FAILED}%2C${AssetPartitionStatus.MATERIALIZING}%2C${AssetPartitionStatus.MISSING}`,
     );
     expect(screen.getByTestId('partitions-selected')).toHaveTextContent('5,310 Partitions');
 

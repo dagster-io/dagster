@@ -45,6 +45,7 @@ interface Props {
 
 const DISPLAYED_STATUSES = [
   AssetPartitionStatus.MISSING,
+  AssetPartitionStatus.MATERIALIZING,
   AssetPartitionStatus.MATERIALIZED,
   AssetPartitionStatus.FAILED,
 ].sort();
@@ -131,34 +132,33 @@ export const AssetPartitions: React.FC<Props> = ({
       return sort === 1 ? result : result.reverse();
     }
 
-    const rangesInSelection = rangesClippedToSelection(rangesForEachDimension[idx], selectedRanges);
+    const healthRangesInSelection = rangesClippedToSelection(
+      rangesForEachDimension[idx],
+      selectedRanges,
+    );
     const getKeysWithStates = (states: AssetPartitionStatus[]) => {
-      return rangesInSelection.flatMap((r) =>
+      return healthRangesInSelection.flatMap((r) =>
         states.some((s) => r.value.includes(s)) ? allKeys.slice(r.start.idx, r.end.idx + 1) : [],
       );
     };
 
-    const states: AssetPartitionStatus[] = [];
-    if (statusFilters.includes(AssetPartitionStatus.MATERIALIZED)) {
-      states.push(AssetPartitionStatus.MATERIALIZED);
-    }
-    if (statusFilters.includes(AssetPartitionStatus.FAILED)) {
-      states.push(AssetPartitionStatus.FAILED);
-    }
-    const matching = uniq(getKeysWithStates(states));
+    const matching = uniq(
+      getKeysWithStates(statusFilters.filter((f) => f !== AssetPartitionStatus.MISSING)),
+    );
 
     let result;
     // We have to add in "missing" separately because it's the absence of a range
     if (statusFilters.includes(AssetPartitionStatus.MISSING)) {
+      const selectionKeys = getSelectionKeys();
+      const isMissingForIndex = (idx: number) =>
+        !healthRangesInSelection.some(
+          (r) =>
+            r.start.idx <= idx &&
+            r.end.idx >= idx &&
+            !r.value.includes(AssetPartitionStatus.MISSING),
+        );
       result = allKeys.filter(
-        (a, idx) =>
-          matching.includes(a) ||
-          !rangesInSelection.some(
-            (r) =>
-              r.start.idx <= idx &&
-              r.end.idx >= idx &&
-              !r.value.includes(AssetPartitionStatus.MISSING),
-          ),
+        (a, pidx) => selectionKeys.includes(a) && (matching.includes(a) || isMissingForIndex(pidx)),
       );
     } else {
       result = matching;
@@ -201,11 +201,7 @@ export const AssetPartitions: React.FC<Props> = ({
         </div>
         <AssetPartitionStatusCheckboxes
           counts={countsByStateInSelection}
-          allowed={[
-            AssetPartitionStatus.MISSING,
-            AssetPartitionStatus.MATERIALIZED,
-            AssetPartitionStatus.FAILED,
-          ]}
+          allowed={DISPLAYED_STATUSES}
           value={statusFilters}
           onChange={setStatusFilters}
         />
