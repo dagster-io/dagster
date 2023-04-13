@@ -350,7 +350,7 @@ def test_execute_using_repository_data():
             recon_job,
             instance=instance,
         ) as result:
-            call_counts = instance.run_storage.kvs_get(
+            call_counts = instance.run_storage.get_cursor_values(
                 {"compute_cacheable_data_called", "get_definitions_called"}
             )
             assert call_counts.get("compute_cacheable_data_called") == "1"
@@ -382,7 +382,7 @@ def test_execute_using_repository_data():
             assert result.success
             # we do not attempt to fetch the previous repository load data off of the execution plan
             # from the previous run, so the reexecution will require us to fetch the metadata again
-            call_counts = instance.run_storage.kvs_get(
+            call_counts = instance.run_storage.get_cursor_values(
                 {"compute_cacheable_data_called", "get_definitions_called"}
             )
             assert call_counts.get("compute_cacheable_data_called") == "2"
@@ -397,8 +397,8 @@ class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
         # used for tracking how many times this function gets called over an execution
         instance = DagsterInstance.get()
         kvs_key = "compute_cacheable_data_called"
-        num_called = int(instance.run_storage.kvs_get({kvs_key}).get(kvs_key, "0"))
-        instance.run_storage.kvs_set({kvs_key: str(num_called + 1)})
+        num_called = int(instance.run_storage.get_cursor_values({kvs_key}).get(kvs_key, "0"))
+        instance.run_storage.set_cursor_values({kvs_key: str(num_called + 1)})
         return [self._cacheable_data]
 
     def build_definitions(self, data):
@@ -407,8 +407,8 @@ class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
         # used for tracking how many times this function gets called over an execution
         instance = DagsterInstance.get()
         kvs_key = "get_definitions_called"
-        num_called = int(instance.run_storage.kvs_get({kvs_key}).get(kvs_key, "0"))
-        instance.run_storage.kvs_set({kvs_key: str(num_called + 1)})
+        num_called = int(instance.run_storage.get_cursor_values({kvs_key}).get(kvs_key, "0"))
+        instance.run_storage.set_cursor_values({kvs_key: str(num_called + 1)})
 
         @op
         def _op():

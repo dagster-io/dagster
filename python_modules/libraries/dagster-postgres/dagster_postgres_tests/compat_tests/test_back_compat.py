@@ -845,8 +845,8 @@ def test_add_primary_keys(hostname, conn_string):
         with DagsterInstance.from_config(tempdir) as instance:
             assert "id" not in get_columns(instance, "kvs")
             # trigger insert, and update
-            instance.run_storage.kvs_set({"a": "A"})
-            instance.run_storage.kvs_set({"a": "A"})
+            instance.run_storage.set_cursor_values({"a": "A"})
+            instance.run_storage.set_cursor_values({"a": "A"})
             kvs_row_count = _get_table_row_count(instance.run_storage, KeyValueStoreTable)
             assert kvs_row_count > 0
 

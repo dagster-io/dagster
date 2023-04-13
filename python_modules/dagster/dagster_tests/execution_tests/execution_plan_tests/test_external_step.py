@@ -611,7 +611,7 @@ def test_multiproc_launcher_with_repository_load_data():
             }
         }
         with instance_for_test() as instance:
-            instance.run_storage.kvs_set({"val": "INITIAL_VALUE"})
+            instance.run_storage.set_cursor_values({"val": "INITIAL_VALUE"})
             recon_repo = ReconstructableRepository.for_file(
                 file_relative_path(__file__, "test_external_step.py"),
                 fn_name="pending_repo",
@@ -626,7 +626,7 @@ def test_multiproc_launcher_with_repository_load_data():
                 instance=instance,
             ) as result:
                 assert result.success
-                assert instance.run_storage.kvs_get({"val"}).get("val") == "NEW_VALUE"
+                assert instance.run_storage.get_cursor_values({"val"}).get("val") == "NEW_VALUE"
 
 
 class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
@@ -638,9 +638,9 @@ class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
         # and assert that this pre-populated value is present, to ensure that we'll error if this
         # gets called in a child process
         instance = DagsterInstance.get()
-        val = instance.run_storage.kvs_get({"val"}).get("val")
+        val = instance.run_storage.get_cursor_values({"val"}).get("val")
         assert val == "INITIAL_VALUE"
-        instance.run_storage.kvs_set({"val": "NEW_VALUE"})
+        instance.run_storage.set_cursor_values({"val": "NEW_VALUE"})
         return [self._cacheable_data]
 
     def build_definitions(self, data):

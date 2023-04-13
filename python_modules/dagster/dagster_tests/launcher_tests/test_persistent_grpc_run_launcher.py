@@ -117,7 +117,7 @@ def test_run_from_pending_repository():
                     known_state=None,
                 )
 
-                call_counts = instance.run_storage.kvs_get(
+                call_counts = instance.run_storage.get_cursor_values(
                     {
                         "compute_cacheable_data_called_a",
                         "compute_cacheable_data_called_b",
@@ -176,7 +176,7 @@ def test_run_from_pending_repository():
         server_process.wait()
 
         # should only have had to get the metadata once for each cacheable asset def
-        call_counts = instance.run_storage.kvs_get(
+        call_counts = instance.run_storage.get_cursor_values(
             {
                 "compute_cacheable_data_called_a",
                 "compute_cacheable_data_called_b",
