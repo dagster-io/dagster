@@ -1137,10 +1137,7 @@ class SqlRunStorage(RunStorage):
                 )
             )
 
-    def supports_kvs(self) -> bool:
-        return True
-
-    def kvs_get(self, keys: Set[str]) -> Mapping[str, str]:
+    def get_cursor_values(self, keys: Set[str]) -> Mapping[str, str]:
         check.set_param(keys, "keys", of_type=str)
 
         with self.connect() as conn:
@@ -1151,7 +1148,7 @@ class SqlRunStorage(RunStorage):
             )
             return {row.key: row.value for row in rows}
 
-    def kvs_set(self, pairs: Mapping[str, str]) -> None:
+    def set_cursor_values(self, pairs: Mapping[str, str]) -> None:
         check.mapping_param(pairs, "pairs", key_type=str, value_type=str)
         db_values = [{"key": k, "value": v} for k, v in pairs.items()]
 

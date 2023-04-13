@@ -125,6 +125,7 @@ if TYPE_CHECKING:
     from dagster._core.secrets import SecretsLoader
     from dagster._core.snap import ExecutionPlanSnapshot, PipelineSnapshot
     from dagster._core.storage.compute_log_manager import ComputeLogManager
+    from dagster._core.storage.daemon_cursor import DaemonCursorStorage
     from dagster._core.storage.event_log import EventLogStorage
     from dagster._core.storage.event_log.base import (
         AssetRecord,
@@ -422,13 +423,6 @@ class DagsterInstance(DynamicPartitionsStore):
 
         if self.run_retries_enabled:
             check.invariant(
-                self.run_storage.supports_kvs(),
-                (
-                    "Run retries are enabled, but the configured run storage does not support them."
-                    " Consider switching to Postgres or Mysql."
-                ),
-            )
-            check.invariant(
                 self.event_log_storage.supports_event_consumer_queries(),
                 (
                     "Run retries are enabled, but the configured event log storage does not support"
@@ -664,6 +658,10 @@ class DagsterInstance(DynamicPartitionsStore):
     @property
     def event_log_storage(self) -> "EventLogStorage":
         return self._event_storage
+
+    @property
+    def daemon_cursor_storage(self) -> "DaemonCursorStorage":
+        return self._run_storage
 
     # schedule storage
 

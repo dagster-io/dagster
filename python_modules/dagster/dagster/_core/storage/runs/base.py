@@ -19,6 +19,8 @@ from dagster._core.storage.sql import AlembicVersion
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._utils import PrintFn
 
+from ..daemon_cursor import DaemonCursorStorage
+
 if TYPE_CHECKING:
     from dagster._core.host_representation.origin import ExternalPipelineOrigin
 
@@ -28,7 +30,7 @@ class RunGroupInfo(TypedDict):
     runs: Sequence[DagsterRun]
 
 
-class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
+class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorStorage):
     """Abstract base class for storing pipeline run history.
 
     Note that run storages using SQL databases as backing stores should implement
@@ -400,22 +402,6 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
 
     def alembic_version(self) -> Optional[AlembicVersion]:
         return None
-
-    # Key Value Storage
-    #
-    # Stores arbitrary key-value pairs. Currently used for the cursor for the auto-reexecution
-    # deamon. Bundled into run storage for convenience.
-
-    def supports_kvs(self) -> bool:
-        return True
-
-    @abstractmethod
-    def kvs_get(self, keys: Set[str]) -> Mapping[str, str]:
-        """Retrieve the value for a given key in the current deployment."""
-
-    @abstractmethod
-    def kvs_set(self, pairs: Mapping[str, str]) -> None:
-        """Set the value for a given key in the current deployment."""
 
     @abstractmethod
     def replace_job_origin(self, run: "DagsterRun", job_origin: "ExternalPipelineOrigin") -> None:

@@ -196,7 +196,7 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
                 )
             )
 
-    def kvs_set(self, pairs: Mapping[str, str]) -> None:
+    def set_cursor_values(self, pairs: Mapping[str, str]) -> None:
         check.mapping_param(pairs, "pairs", key_type=str, value_type=str)
 
         # pg speciic on_conflict_do_update

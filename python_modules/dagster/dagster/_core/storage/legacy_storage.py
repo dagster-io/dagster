@@ -327,11 +327,11 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
     def get_run_partition_data(self, runs_filter: "RunsFilter") -> Sequence["RunPartitionData"]:
         return self._storage.run_storage.get_run_partition_data(runs_filter)
 
-    def kvs_get(self, keys: Set[str]) -> Mapping[str, str]:
-        return self._storage.run_storage.kvs_get(keys)
+    def get_cursor_values(self, keys: Set[str]) -> Mapping[str, str]:
+        return self._storage.run_storage.get_cursor_values(keys)
 
-    def kvs_set(self, pairs: Mapping[str, str]) -> None:
-        return self._storage.run_storage.kvs_set(pairs)
+    def set_cursor_values(self, pairs: Mapping[str, str]) -> None:
+        return self._storage.run_storage.set_cursor_values(pairs)
 
     def replace_job_origin(self, run: "DagsterRun", job_origin: "ExternalPipelineOrigin") -> None:
         return self._storage.run_storage.replace_job_origin(run, job_origin)
