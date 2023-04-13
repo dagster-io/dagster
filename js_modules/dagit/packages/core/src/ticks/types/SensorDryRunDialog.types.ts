@@ -22,6 +22,7 @@ export type SensorDryRunMutation = {
             runConfigYaml: string;
             runKey: string | null;
             tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
+            assetSelection: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
           }> | null;
           error: {
             __typename: 'PythonError';

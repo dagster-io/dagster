@@ -3187,6 +3187,7 @@ export type RunOrError = PythonError | Run | RunNotFoundError;
 
 export type RunRequest = {
   __typename: 'RunRequest';
+  assetSelection: Maybe<Array<AssetKey>>;
   runConfigYaml: Scalars['String'];
   runKey: Maybe<Scalars['String']>;
   tags: Array<PipelineTag>;
@@ -11078,6 +11079,14 @@ export const buildRunRequest = (
   relationshipsToOmit.add('RunRequest');
   return {
     __typename: 'RunRequest',
+    assetSelection:
+      overrides && overrides.hasOwnProperty('assetSelection')
+        ? overrides.assetSelection!
+        : [
+            relationshipsToOmit.has('AssetKey')
+              ? ({} as AssetKey)
+              : buildAssetKey({}, relationshipsToOmit),
+          ],
     runConfigYaml:
       overrides && overrides.hasOwnProperty('runConfigYaml') ? overrides.runConfigYaml! : 'ut',
     runKey: overrides && overrides.hasOwnProperty('runKey') ? overrides.runKey! : 'eius',
