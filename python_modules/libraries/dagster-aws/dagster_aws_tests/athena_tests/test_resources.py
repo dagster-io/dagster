@@ -11,7 +11,7 @@ from moto import mock_athena
 
 
 class TestAthenaClientResource(ResourceWithAthenaConfig):
-    def create_athena_client(self) -> FakeAthenaClient:
+    def get_client(self) -> FakeAthenaClient:
         return FakeAthenaClient(
             client=boto3.client("athena", region_name="us-east-1"),
             workgroup=self.workgroup,
@@ -93,6 +93,6 @@ def test_op_pythonic_resource(mock_athena_client) -> None:
 
     @op
     def example_athena_op(athena: TestAthenaClientResource):
-        return athena.create_athena_client().execute_query("SELECT 1", fetch_results=True)
+        return athena.get_client().execute_query("SELECT 1", fetch_results=True)
 
     assert example_athena_op(athena=TestAthenaClientResource.configure_at_launch()) == [("1",)]

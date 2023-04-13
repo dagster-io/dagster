@@ -292,9 +292,9 @@ class RedshiftClientResource(ConfigurableResource):
             from dagster import Definitions, asset, EnvVar
             from dagster_aws.redshift import RedshiftClientResource
 
-            @asset(required_resource_keys={'redshift'})
-            def example_redshift_asset(context):
-                return context.resources.redshift.execute_query('SELECT 1', fetch_results=True)
+            @asset
+            def example_redshift_asset(context, redshift: RedshiftClientResource):
+                redshift.get_client().execute_query('SELECT 1', fetch_results=True)
 
             redshift_configured = RedshiftClientResource(
                 host='my-redshift-cluster.us-east-1.redshift.amazonaws.com',
@@ -334,7 +334,7 @@ class RedshiftClientResource(ConfigurableResource):
         ),
     )
 
-    def create_redshift_client(self) -> RedshiftClient:
+    def get_client(self) -> RedshiftClient:
         conn_args = {
             k: getattr(self, k, None)
             for k in (
@@ -353,7 +353,7 @@ class RedshiftClientResource(ConfigurableResource):
 
 
 class FakeRedshiftClientResource(RedshiftClientResource):
-    def create_redshift_client(self) -> FakeRedshiftClient:
+    def get_client(self) -> FakeRedshiftClient:
         return FakeRedshiftClient(get_dagster_logger())
 
 
@@ -386,7 +386,7 @@ def redshift_resource(context) -> RedshiftClient:
             assert example_redshift_op(context) == [(1,)]
 
     """
-    return RedshiftClientResource.from_resource_context(context).create_redshift_client()
+    return RedshiftClientResource.from_resource_context(context).get_client()
 
 
 @resource(
@@ -400,5 +400,5 @@ def redshift_resource(context) -> RedshiftClient:
 def fake_redshift_resource(context) -> FakeRedshiftClient:
     return cast(
         FakeRedshiftClient,
-        FakeRedshiftClientResource.from_resource_context(context).create_redshift_client(),
+        FakeRedshiftClientResource.from_resource_context(context).get_client(),
     )

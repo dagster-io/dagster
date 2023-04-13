@@ -61,12 +61,12 @@ class S3Resource(ResourceWithS3Configuration, IAttachDifferentObjectToOpContext)
     Example:
         .. code-block:: python
 
-            from dagster import job, op, Resource, Definitions
+            from dagster import job, op, Definitions
             from dagster_aws.s3 import S3Resource
 
             @op
-            def example_s3_op(s3: Resource[Any]):
-                return s3.list_objects_v2(
+            def example_s3_op(s3: S3Resource):
+                return s3.get_client().list_objects_v2(
                     Bucket='my-bucket',
                     Prefix='some-key'
                 )
@@ -82,7 +82,7 @@ class S3Resource(ResourceWithS3Configuration, IAttachDifferentObjectToOpContext)
 
     """
 
-    def create_client(self) -> Any:
+    def get_client(self) -> Any:
         return construct_s3_client(
             max_attempts=self.max_attempts,
             region_name=self.region_name,
@@ -97,7 +97,7 @@ class S3Resource(ResourceWithS3Configuration, IAttachDifferentObjectToOpContext)
         )
 
     def get_object_to_set_on_execution_context(self) -> Any:
-        return self.create_client()
+        return self.get_client()
 
 
 @resource(config_schema=S3Resource.to_config_schema())
@@ -170,7 +170,7 @@ def s3_resource(context) -> Any:
               aws_session_token: None
               # Optional[str]:  The session token to use when creating the client.
     """
-    return S3Resource.from_resource_context(context).create_client()
+    return S3Resource.from_resource_context(context).get_client()
 
 
 class S3FileManagerResource(ResourceWithS3Configuration, IAttachDifferentObjectToOpContext):
@@ -179,7 +179,7 @@ class S3FileManagerResource(ResourceWithS3Configuration, IAttachDifferentObjectT
         default="dagster", description="Prefix to use for the S3 bucket for this file manager."
     )
 
-    def create_client(self) -> S3FileManager:
+    def get_client(self) -> S3FileManager:
         return S3FileManager(
             s3_session=construct_s3_client(
                 max_attempts=self.max_attempts,
@@ -198,7 +198,7 @@ class S3FileManagerResource(ResourceWithS3Configuration, IAttachDifferentObjectT
         )
 
     def get_object_to_set_on_execution_context(self) -> Any:
-        return self.create_client()
+        return self.get_client()
 
 
 @resource(
@@ -209,4 +209,4 @@ def s3_file_manager(context) -> S3FileManager:
 
     Implements the :py:class:`~dagster._core.storage.file_manager.FileManager` API.
     """
-    return S3FileManagerResource.from_resource_context(context).create_client()
+    return S3FileManagerResource.from_resource_context(context).get_client()

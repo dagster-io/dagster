@@ -31,7 +31,7 @@ class SecretsManagerResource(ResourceWithBoto3Configuration):
 
             @op
             def example_secretsmanager_op(secretsmanager: SecretsManagerResource):
-                return secretsmanager.create_client().get_secret_value(
+                return secretsmanager.get_client().get_secret_value(
                     SecretId='arn:aws:secretsmanager:region:aws_account_id:secret:appauthexample-AbCdEf'
                 )
 
@@ -49,7 +49,7 @@ class SecretsManagerResource(ResourceWithBoto3Configuration):
             )
     """
 
-    def create_client(self) -> "botocore.client.SecretsManager":
+    def get_client(self) -> "botocore.client.SecretsManager":
         return construct_secretsmanager_client(
             max_attempts=self.max_attempts,
             region_name=self.region_name,
@@ -108,7 +108,7 @@ def secretsmanager_resource(context) -> "botocore.client.SecretsManager":
               # profile as specified in ~/.aws/credentials file
 
     """
-    return SecretsManagerResource.from_resource_context(context).create_client()
+    return SecretsManagerResource.from_resource_context(context).get_client()
 
 
 class SecretsManagerSecretsResource(ResourceWithBoto3Configuration):

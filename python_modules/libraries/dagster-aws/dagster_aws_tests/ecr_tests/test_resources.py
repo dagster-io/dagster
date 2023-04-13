@@ -19,7 +19,7 @@ def test_ecr_public_get_login_password() -> None:
 def test_ecr_public_get_login_password_pythonic() -> None:
     @op
     def ecr_public_op(ecr_public: FakeECRPublicResource):
-        return ecr_public.create_ecr_client().get_login_password()
+        return ecr_public.get_client().get_login_password()
 
     result = wrap_op_in_graph_and_execute(
         ecr_public_op,
