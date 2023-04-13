@@ -165,7 +165,8 @@ def asset(
             storage and will halt execution of downstream assets.
         freshness_policy (FreshnessPolicy): A constraint telling Dagster how often this asset is intended to be updated
             with respect to its root data.
-        auto_materialize_policy (AutoMaterializePolicy): (Experimental) This currently has no effect.
+        auto_materialize_policy (AutoMaterializePolicy): (Experimental) Configure Dagster to automatically materialize
+            this asset according to its FreshnessPolicy and when upstream dependencies change.
         retry_policy (Optional[RetryPolicy]): The retry policy for the op that computes the asset.
         code_version (Optional[str]): (Experimental) Version of the code that generates this asset. In
             general, versions should be set only for code that deterministically produces the same
