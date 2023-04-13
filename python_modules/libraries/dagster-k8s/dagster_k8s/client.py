@@ -662,6 +662,19 @@ class DagsterKubernetesClient:
         field_selector = f"involvedObject.name={pod_name}"
         return self.core_api.list_namespaced_event(namespace, field_selector=field_selector).items
 
+    def _has_container_logs(self, container_status):
+        # Logs are availalbe if either the container is running or terminated, or it's waiting
+        # but previously ran or terminated
+        if container_status.state:
+            if container_status.state.running or container_status.state.terminated:
+                return True
+
+        if container_status.last_state:
+            if container_status.last_state.running or container_status.last_state.terminated:
+                return True
+
+        return False
+
     def get_pod_debug_info(self, pod_name, namespace, container_name: Optional[str] = None) -> str:
         pods = self.core_api.list_namespaced_pod(
             namespace=namespace, field_selector="metadata.name=%s" % pod_name
@@ -680,8 +693,7 @@ class DagsterKubernetesClient:
             and any(
                 [
                     container_status.name == container_name
-                    and container_status.state.running
-                    or container_status.state.terminated
+                    and self._has_container_logs(container_status)
                     for container_status in pod.status.container_statuses
                 ]
             )
@@ -732,8 +744,8 @@ class DagsterKubernetesClient:
 
         return (
             f"Debug information for pod {pod_name}:"
-            + f"\n{pod_status_str}"
-            + (f"\n{specific_warning}" if specific_warning else "")
-            + (f"\n{log_str}" if log_str else "")
-            + f"\n{warning_str}"
+            + f"\n\n{pod_status_str}"
+            + (f"\n\n{specific_warning}" if specific_warning else "")
+            + (f"\n\n{log_str}" if log_str else "")
+            + f"\n\n{warning_str}"
         )

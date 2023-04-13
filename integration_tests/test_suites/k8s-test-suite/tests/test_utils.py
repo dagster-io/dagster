@@ -128,7 +128,9 @@ def test_pod_debug_info_failure(cluster_provider, namespace, should_cleanup):
 
         assert pod_debug_info.startswith(
             f"""Debug information for pod {pod_names[0]}:
+
 Pod status: Pending
+
 Warning events for pod:
 FailedScheduling: 0/1 nodes are available: 1 Insufficient memory."""
         )
@@ -161,8 +163,10 @@ FailedScheduling: 0/1 nodes are available: 1 Insufficient memory."""
 
         assert pod_debug_info.startswith(
             f"""Debug information for pod {pod_names[0]}:
+
 Pod status: Running
 Container 'waitforever' status: Ready
+
 Last 25 log lines:"""
         )
 
@@ -192,10 +196,13 @@ Last 25 log lines:"""
 
         assert pod_debug_info.startswith(
             f"""Debug information for pod {pod_names[0]}:
+
 Pod status: Failed
 Container 'execformaterror' status: Terminated with exit code 1: Error
+
 Pod logs contained `exec format error`, which usually means that your Docker image was built using the wrong architecture.
 Try rebuilding your docker image with the `--platform linux/amd64` flag set.
+
 Last 25 log lines:
 """
         )
@@ -245,8 +252,10 @@ Last 25 log lines:
 
         assert pod_debug_info.startswith(
             f"""Debug information for pod {pod_names[0]}:
+
 Pod status: Pending
 Container 'missingsecret' status: Waiting: CreateContainerConfigError: secret "missing-secret" not found
+
 Warning events for pod:"""
         )
 
@@ -277,8 +286,10 @@ Warning events for pod:"""
         print(str(pod_debug_info))  # noqa
         assert pod_debug_info.startswith(
             f"""Debug information for pod {pod_names[0]}:
+
 Pod status: Pending
 Container 'pullfail' status: Waiting: ErrImagePull: rpc error: code = Unknown desc = failed to pull and unpack image "docker.io/library/fakeimage:latest": failed to resolve reference "docker.io/library/fakeimage:latest": pull access denied, repository does not exist or may require authorization: server message: insufficient_scope: authorization failed
+
 Warning events for pod:"""
         )
         assert "Failed: Error: ErrImagePull" in pod_debug_info
@@ -306,8 +317,10 @@ Warning events for pod:"""
 
         assert pod_debug_info.startswith(
             f"""Debug information for pod {pod_names[0]}:
+
 Pod status: Failed
 Container 'fail' status: Terminated with exit code 1: Error
+
 Last 25 log lines:"""
         )
         assert " whoops!\n" in pod_debug_info
@@ -328,8 +341,10 @@ Last 25 log lines:"""
 
         assert pod_debug_info.startswith(
             f"""Debug information for pod {pod_names[0]}:
+
 Pod status: Succeeded
 Container 'sayhi1' status: Terminated with exit code 0: Completed
+
 Last 25 log lines:"""
         )
         assert "hello world" in pod_debug_info
