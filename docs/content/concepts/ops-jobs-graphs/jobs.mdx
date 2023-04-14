@@ -160,7 +160,7 @@ When constructing a job, you can customize how that configuration will be satisf
 
 ### Hardcoded configuration
 
-You can supply a config dictionary or <PyObject object="RunConfig"/> object. The supplied config will be used to configure the job whenever the job is launched. It will show up in the Dagit Launchpad and can be overridden.
+You can supply a <PyObject object="RunConfig"/> object or raw config dictionary. The supplied config will be used to configure the job whenever the job is launched. It will show up in the Dagit Launchpad and can be overridden.
 
 ```python file=/concepts/ops_jobs_graphs/jobs_with_default_config.py
 from dagster import Config, RunConfig, job, op
