@@ -1,0 +1,112 @@
+---
+title: "dagster.yaml reference | Dagster Docs"
+description: ""
+---
+
+# dagster.yaml reference
+
+<table
+  className="table"
+  style={{
+    width: "100%",
+  }}
+>
+  <tbody>
+    <tr>
+      <td
+        style={{
+          width: "15%",
+        }}
+      >
+        <strong>Name</strong>
+      </td>
+      <td>dagster.yaml</td>
+    </tr>
+    <tr>
+      <td
+        style={{
+          width: "15%",
+        }}
+      >
+        <strong>Status</strong>
+      </td>
+      <td>Active</td>
+    </tr>
+    <tr>
+      <td
+        style={{
+          width: "15%",
+        }}
+      >
+        <strong>Required?</strong>
+      </td>
+      <td>Optional for Cloud and OSS</td>
+    </tr>
+    <tr>
+      <td
+        style={{
+          width: "15%",
+        }}
+      >
+        <strong>Description</strong>
+      </td>
+      <td>
+        In local development and deployments to your infrastructure, used to
+        configure a <a href="/deployment/dagster-instance">Dagster instance</a>.
+        <br />
+        <br />
+        In <a href="/dagster-cloud">Dagster Cloud</a> Hybrid deployments, used to{" "}
+        <a href="/dagster-cloud/deployment/agents/customizing-configuration">
+          customize Hybrid agent configuration
+        </a>.
+      </td>
+    </tr>
+    <tr>
+      <td
+        style={{
+          width: "15%",
+        }}
+      >
+        <strong>Uses</strong>
+      </td>
+      <td>
+        <ul>
+          <li>Configure Dagster, compute log, and artifact storage</li>
+          <li>Define run launcher settings</li>
+          <li>Configure run retries, concurrency limits, and prioritization</li>
+          <li>Define sensor and schedule evaluation</li>
+          <li>Enable/disable telemetry</li>
+          <li>Configure data retention policies</li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+---
+
+## Settings schema
+
+Settings are formatted using YAML. For example:
+
+```yaml
+some example here
+```
+
+---
+
+## Settings
+
+<ReferenceTable>
+  <ReferenceTableItem propertyName="property_name">
+    DESCRIPTION
+    <ul>
+      <li>
+        <strong>Default</strong> - <code></code>
+      </li>
+      <li>
+        <strong>Maximum</strong> - <code></code>
+      </li>
+    </ul>
+  </ReferenceTableItem>
+</ReferenceTable>
