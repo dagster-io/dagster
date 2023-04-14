@@ -18,7 +18,7 @@ Dagster orchestrates dbt alongside other technologies, so you can combine dbt wi
 Dagster has built-in support for loading dbt models, seeds, and snapshots as software-defined assets, enabling you to:
 
 - Visualize and orchestrate a graph of dbt assets, and execute them with a single dbt invocation
-- Version your dbt models by their defining SQL code, allowing downstream assets to be automatically marked stale when a model changes
+- Version your dbt models by their defining SQL code, allowing Dagster to indicate when a model has changed
 - View detailed historical metadata and logs for each asset
 - Define Python computations that depend directly on tables updated using dbt
 - Track data lineage through dbt and your other tools

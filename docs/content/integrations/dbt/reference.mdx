@@ -200,7 +200,7 @@ dbt_assets = load_assets_from_dbt_project(
 
 ## dbt models, code versions, and staleness
 
-Note that Dagster allows the optional specification of a [`code_version`](/guides/dagster/scheduling-assets#step-5-change-code-versions) for each software-defined asset, which is used to track asset staleness. The `code_version` for an asset arising from a dbt model is defined automatically as the hash of the SQL defining the DBT model. This means that changing the code of the model will automatically cause the corresponding asset, and all downstream assets, to be marked stale.
+Note that Dagster allows the optional specification of a [`code_version`](/guides/dagster/scheduling-assets#step-5-change-code-versions) for each software-defined asset, which are used to track changes. The `code_version` for an asset arising from a dbt model is defined automatically as the hash of the SQL defining the DBT model. This allows the asset graph in the UI to indicate which dbt models have new SQL since they were last materialized.
 
 ---
 
