@@ -274,7 +274,7 @@ def downstream(may_not_materialize):
 
 ### Asset code versions
 
-Assets may be assigned a `code_version`. Versions let you help Dagster track what assets are stale and avoid performing redundant computation.
+Assets may be assigned a `code_version`. Versions let you help Dagster track what assets haven't been re-materialized since their code has changed, and avoid performing redundant computation.
 
 ```python file=/concepts/assets/code_versions.py startafter=start_single_asset endbefore=end_single_asset
 @asset(code_version="1")
@@ -282,7 +282,7 @@ def asset_with_version():
     return 100
 ```
 
-When an asset with a code version is materialized, the generated `AssetMaterialization` is tagged with the version. An asset that has a different code version than the code version used for its most recent materialization will be considered stale. Any assets downstream of a stale asset are also considered stale.
+When an asset with a code version is materialized, the generated `AssetMaterialization` is tagged with the version. The UI will indicate when an asset has a different code version than the code version used for its most recent materialization.
 
 Multi-assets may assign different code versions for each of their outputs:
 
@@ -298,7 +298,7 @@ def multi_asset_with_versions():
     yield Output(200, "b")
 ```
 
-Just as with regular assets, these versions are attached to the `AssetMaterialization` objects for each of the constituent assets and accounted for when determining asset staleness.
+Just as with regular assets, these versions are attached to the `AssetMaterialization` objects for each of the constituent assets and represented in the UI.
 
 ---
 
@@ -335,7 +335,6 @@ A <PyObject object="Definitions" /> object defines a code location, which is a c
 - [Viewing all assets](#asset-catalog)
 - [Details for an asset](#asset-details)
 - [Dependency graph](#dependency-graph)
-- [Upstream changes](#upstream-changed)
 
 <TabGroup>
 <TabItem name="Asset catalog (all assets)">
@@ -387,40 +386,6 @@ src="/images/concepts/assets/software-defined-assets/graph.png"
 width={3574}
 height={1962}
 />
-
-</TabItem>
-<TabItem name="Upstream changed indicator">
-
-#### Upstream changed
-
-<Note>
-  Currently, the <strong>upstream changed</strong> indicator won't display in
-  the following scenarios:
-  <ul>
-    <li>The upstream asset is in another code location definition or job</li>
-    <li>The assets are partitioned</li>
-  </ul>
-</Note>
-
-On occasion, you might see an **upstream changed** indicator on an asset in the dependency graph or on the **Asset Details** page:
-
-<Image
-alt="Asset Graph with an upstream changed indicator"
-src="/images/concepts/assets/software-defined-assets/upstream-changed.png"
-width={1556}
-height={790}
-/>
-
-This occurs when a downstream asset's last materialization took place **earlier than the asset it depends on.** Dagit displays this alert to notify you that the contents of an asset may be stale. For example:
-
-- `comments` is upstream of `comment_stories`
-- `comment_stories` depends on `comments`
-- `comment_stories` was last materialized on February 25 at **5:30PM**
-- `comments` was last materialized on February 25 at **7:05PM**
-
-In this case, the contents of `comment_stories` may be outdated, as the most recent data from `comments` wasn't used to compute them.
-
-You can resolve this issue by re-materializing the downstream asset. This will re-compute the contents with the most recent data/changes to its upstream dependency.
 
 </TabItem>
 </TabGroup>
