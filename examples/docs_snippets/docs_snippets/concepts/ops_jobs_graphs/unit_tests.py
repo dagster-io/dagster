@@ -11,6 +11,7 @@ from dagster import (
     op,
     graph,
 )
+from dagster._core.execution.context.compute import OpExecutionContext
 
 
 @op(ins={"num": In(dagster_type=int, default_value=1)})
@@ -108,23 +109,75 @@ def test_inputs_op_with_invocation():
 
 
 # start_op_requires_foo_marker
-@op(required_resource_keys={"foo"})
-def op_requires_foo(context):
-    return f"found {context.resources.foo}"
+from dagster import ConfigurableResource
+
+
+class FooResource(ConfigurableResource):
+    my_string: str
+
+
+@op
+def op_requires_foo(foo: FooResource):
+    return f"found {foo.my_string}"
 
 
 # end_op_requires_foo_marker
 
-# start_test_op_context_marker
-from dagster import build_op_context
+# start_op_requires_config
+
+from dagster import Config
+
+
+class MyOpConfig(Config):
+    my_int: int
+
+
+@op
+def op_requires_config(config: MyOpConfig):
+    return config.my_int * 2
+
+
+# end_op_requires_config
+
+# start_op_invocation_config
+
+
+def test_op_with_config():
+    assert op_requires_config(MyOpConfig(my_int=5)) == 10
+
+
+# end_op_invocation_config
+
+
+# start_op_requires_context_marker
+
+
+@op
+def context_op(context: OpExecutionContext):
+    context.log.info(f"My run ID is {context.run_id}")
+
+
+# end_op_requires_context_marker
+
+
+# start_op_invocation_context_marker
 
 
 def test_op_with_context():
-    context = build_op_context(resources={"foo": "bar"})
-    assert op_requires_foo(context) == "found bar"
+    context = build_op_context()
+    context_op(context)
 
 
-# end_test_op_context_marker
+# end_op_invocation_context_marker
+
+# start_test_op_resource_marker
+
+
+def test_op_with_resource():
+    assert op_requires_foo(FooResource(my_string="bar")) == "found bar"
+
+
+# end_test_op_resource_marker
 
 from dagster import resource
 
