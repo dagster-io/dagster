@@ -39,6 +39,7 @@ from dagster._core.errors import (
     DagsterInvalidConfigDefinitionError,
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
+    DagsterInvalidInvocationError,
     DagsterInvalidPythonicConfigDefinitionError,
 )
 from dagster._core.execution.context.init import InitResourceContext
@@ -115,7 +116,24 @@ class MakeConfigCacheable(BaseModel):
             object.__setattr__(self, name, value)
             return
 
-        return super().__setattr__(name, value)
+        try:
+            return super().__setattr__(name, value)
+        except TypeError as e:
+            if "is immutable and does not support item assignment" in str(e):
+                clsname = self.__class__.__name__
+                if isinstance(self, ConfigurableResourceFactory):
+                    raise DagsterInvalidInvocationError(
+                        f"'{clsname}' is a Pythonic resource and does not support item assignment."
+                        " If trying to set state on this resource, consider building a separate,"
+                        " stateful client class."
+                    ) from e
+                else:
+                    raise DagsterInvalidInvocationError(
+                        f"'{clsname}' is a Pythonic config class and does not support item"
+                        " assignment."
+                    ) from e
+            else:
+                raise
 
     def _is_field_internal(self, name: str) -> bool:
         return name.endswith(INTERNAL_MARKER)

@@ -13,6 +13,7 @@ from dagster._config.pythonic_config import ConfigurableResource, ConfigurableRe
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
+    DagsterInvalidInvocationError,
     DagsterInvalidPythonicConfigDefinitionError,
 )
 
@@ -355,3 +356,30 @@ def test_using_dagster_field_by_mistake_resource() -> None:
         ),
     ):
         MyResource(my_str="foo")
+
+
+def test_trying_to_set_a_field() -> None:
+    class MyConfig(Config):
+        my_str: str
+
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match="'MyConfig' is a Pythonic config class and does not support item assignment.",
+    ):
+        my_config = MyConfig(my_str="foo")
+        my_config.my_str = "bar"
+
+
+def test_trying_to_set_a_field_resource() -> None:
+    class MyResource(ConfigurableResource):
+        my_str: str
+
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match=(
+            "'MyResource' is a Pythonic resource and does not support item assignment. If trying"
+            " to set state on this resource, consider building a separate, stateful client class."
+        ),
+    ):
+        my_resource = MyResource(my_str="foo")
+        my_resource.my_str = "bar"
