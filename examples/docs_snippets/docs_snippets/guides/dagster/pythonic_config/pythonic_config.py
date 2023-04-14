@@ -44,7 +44,8 @@ def permissive_schema_config() -> None:
         url_params = config.dict()
         return requests.get("https://my-api.com/listings", params=url_params).json()
 
-    filtered_listings(FilterConfig(title="hotel", beds=4))
+    # can pass in any fields, including those not defined in the schema
+    filtered_listings(FilterConfig(title="hotel", beds=4))  # type: ignore
     # end_permissive_schema_config
 
 
@@ -329,7 +330,7 @@ def enum_schema_config() -> None:
                     }
                 )
             }
-        ),  # type: ignore
+        ),
     )
     # end_enum_schema_config
 
@@ -370,14 +371,14 @@ def validated_schema_config() -> None:
     op_result = greet_user_job.execute_in_process(
         run_config=RunConfig(
             {"greet_user": UserConfig(name="Alice Smith", username="alice123")}
-        ),  # type: ignore
+        ),
     )
 
     # Name has no space, so this will fail
     op_result = greet_user_job.execute_in_process(
         run_config=RunConfig(
             {"greet_user": UserConfig(name="John", username="johndoe44")}
-        ),  # type: ignore
+        ),
     )
 
     # end_validated_schema_config

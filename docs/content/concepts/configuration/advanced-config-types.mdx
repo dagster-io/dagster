@@ -200,6 +200,7 @@ def filtered_listings(config: FilterConfig):
     url_params = config.dict()
     return requests.get("https://my-api.com/listings", params=url_params).json()
 
+# can pass in any fields, including those not defined in the schema
 filtered_listings(FilterConfig(title="hotel", beds=4))
 ```
 
