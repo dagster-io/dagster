@@ -1,6 +1,9 @@
 # isort: skip_file
 
 
+from typing import Dict, List
+
+
 class Engine:
     def execute(self, query: str):
         ...
@@ -231,3 +234,40 @@ def optional_config() -> None:
     )
 
     # end_optional_config
+
+
+def execute_with_bad_config() -> None:
+    from dagster import op, job, materialize, Config, RunConfig
+
+    class MyOpConfig(Config):
+        person_name: str
+
+    @op
+    def print_greeting(config: MyOpConfig):
+        print(f"hello {config.person_name}")  # noqa: T201
+
+    from dagster import asset, Config
+
+    class MyAssetConfig(Config):
+        person_name: str
+
+    @asset
+    def greeting(config: MyAssetConfig) -> str:
+        return f"hello {config.person_name}"
+
+    # start_execute_with_bad_config
+
+    @job
+    def greeting_job():
+        print_greeting()
+
+    op_result = greeting_job.execute_in_process(
+        run_config=RunConfig({"print_greeting": MyOpConfig(nonexistent_config_value=1)}),  # type: ignore
+    )
+
+    asset_result = materialize(
+        [greeting],
+        run_config=RunConfig({"greeting": MyAssetConfig(nonexistent_config_value=1)}),  # type: ignore
+    )
+
+    # end_execute_with_bad_config
