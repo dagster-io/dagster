@@ -1,5 +1,5 @@
 # isort: skip_file
-hackernews_assets = None
+all_assets = None
 
 # start_imports_and_definitions
 from dagster import (
@@ -26,7 +26,7 @@ io_manager = fs_io_manager.configured(
 
 # start_update_defs
 defs = Definitions(
-    assets=hackernews_assets,
+    assets=all_assets,
     schedules=[hackernews_schedule],
     resources={
         "io_manager": io_manager,

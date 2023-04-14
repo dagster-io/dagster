@@ -1,5 +1,5 @@
 # isort: skip_file
-hackernews_assets = None
+all_assets = None
 hackernews_schedule = None
 
 from dagster import (
@@ -36,7 +36,7 @@ database_io_manager = duckdb_pandas_io_manager.configured(
 
 # Update your Definitions
 defs = Definitions(
-    assets=hackernews_assets,
+    assets=all_assets,
     schedules=[hackernews_schedule],
     resources={
         "io_manager": io_manager,
