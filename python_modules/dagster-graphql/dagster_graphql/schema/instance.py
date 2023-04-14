@@ -89,6 +89,7 @@ class GrapheneDaemonHealth(graphene.ObjectType):
 
 
 class GrapheneInstance(graphene.ObjectType):
+    id = graphene.NonNull(graphene.String)
     info = graphene.Field(graphene.String)
     runLauncher = graphene.Field(GrapheneRunLauncher)
     runQueuingSupported = graphene.NonNull(graphene.Boolean)
@@ -104,6 +105,9 @@ class GrapheneInstance(graphene.ObjectType):
     def __init__(self, instance):
         super().__init__()
         self._instance = check.inst_param(instance, "instance", DagsterInstance)
+
+    def resolve_id(self, _graphene_info: ResolveInfo):
+        return "Instance"
 
     def resolve_hasInfo(self, graphene_info: ResolveInfo) -> bool:
         return graphene_info.context.show_instance_config

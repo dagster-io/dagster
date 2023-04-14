@@ -6,5 +6,5 @@ export type InstanceConfigHasInfoQueryVariables = Types.Exact<{[key: string]: ne
 
 export type InstanceConfigHasInfoQuery = {
   __typename: 'DagitQuery';
-  instance: {__typename: 'Instance'; hasInfo: boolean};
+  instance: {__typename: 'Instance'; id: string; hasInfo: boolean};
 };

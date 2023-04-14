@@ -88,6 +88,7 @@ export type SensorRootQuery = {
     | {__typename: 'UnauthorizedError'};
   instance: {
     __typename: 'Instance';
+    id: string;
     hasInfo: boolean;
     daemonHealth: {
       __typename: 'DaemonHealth';

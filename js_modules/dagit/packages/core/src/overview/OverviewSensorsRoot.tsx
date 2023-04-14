@@ -294,6 +294,7 @@ const OVERVIEW_SENSORS_QUERY = gql`
   query OverviewSensorsQuery {
     workspaceOrError {
       ... on Workspace {
+        id
         locationEntries {
           id
           locationOrLoadError {
@@ -325,6 +326,7 @@ const OVERVIEW_SENSORS_QUERY = gql`
       }
     }
     instance {
+      id
       ...InstanceHealthFragment
     }
   }

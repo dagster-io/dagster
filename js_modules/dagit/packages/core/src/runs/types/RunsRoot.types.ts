@@ -60,6 +60,7 @@ export type QueueDaemonStatusQuery = {
   __typename: 'DagitQuery';
   instance: {
     __typename: 'Instance';
+    id: string;
     daemonHealth: {
       __typename: 'DaemonHealth';
       id: string;

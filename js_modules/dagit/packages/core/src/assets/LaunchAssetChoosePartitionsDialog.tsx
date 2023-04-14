@@ -720,6 +720,7 @@ const UpstreamUnavailableWarning: React.FC<{
 export const LAUNCH_ASSET_CHOOSE_PARTITIONS_QUERY = gql`
   query LaunchAssetChoosePartitionsQuery {
     instance {
+      id
       ...DaemonNotRunningAlertInstanceFragment
       ...UsingDefaultLauncherAlertInstanceFragment
     }

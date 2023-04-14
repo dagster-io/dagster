@@ -6,5 +6,5 @@ export type InstanceSupportsCapturedLogsQueryVariables = Types.Exact<{[key: stri
 
 export type InstanceSupportsCapturedLogsQuery = {
   __typename: 'DagitQuery';
-  instance: {__typename: 'Instance'; hasCapturedLogManager: boolean};
+  instance: {__typename: 'Instance'; id: string; hasCapturedLogManager: boolean};
 };

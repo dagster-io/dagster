@@ -294,6 +294,7 @@ const OVERVIEW_SCHEDULES_QUERY = gql`
   query OverviewSchedulesQuery {
     workspaceOrError {
       ... on Workspace {
+        id
         locationEntries {
           id
           locationOrLoadError {
@@ -324,6 +325,7 @@ const OVERVIEW_SCHEDULES_QUERY = gql`
       }
     }
     instance {
+      id
       ...InstanceHealthFragment
     }
   }

@@ -88,6 +88,7 @@ export default ScheduledRunListRoot;
 const SCHEDULED_RUNS_LIST_QUERY = gql`
   query ScheduledRunsListQuery {
     instance {
+      id
       ...InstanceHealthFragment
     }
     repositoriesOrError {
