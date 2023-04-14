@@ -215,6 +215,11 @@
     "statusCode": 302
   },
   {
+    "source": "/guides/dagster/pythonic-config",
+    "destination": "/concepts/configuration/config-schema",
+    "statusCode": 302
+  },
+  {
     "source": "/guides/dagster/asset-tutorial",
     "destination": "/tutorial/assets/defining-an-asset",
     "statusCode": 302
