@@ -7,6 +7,7 @@ import {
   buildAssetNode,
   buildRepositoryLocation,
   buildRepository,
+  buildAssetKey,
 } from '../../graphql/types';
 import {SINGLE_ASSET_QUERY} from '../../workspace/VirtualizedAssetRow';
 import {SingleAssetQuery} from '../../workspace/types/VirtualizedAssetRow.types';
@@ -309,6 +310,77 @@ export const SingleAssetQueryLastRunFailed: MockedResponse<SingleAssetQuery> = {
   },
 };
 
+export const AssetCatalogTableMockAssets: Extract<
+  AssetCatalogTableQuery['assetsOrError'],
+  {__typename: 'AssetConnection'}
+>['nodes'] = [
+  {
+    id: '["dashboards", "cost_dashboard"]',
+    __typename: 'Asset',
+    key: buildAssetKey({path: ['dashboards', 'cost_dashboard']}),
+    definition: null,
+  },
+  {
+    id: '["dashboards", "traffic_dashboard"]',
+    __typename: 'Asset',
+    key: buildAssetKey({path: ['dashboards', 'traffic_dashboard']}),
+    definition: null,
+  },
+  {
+    id: 'test.py.repo.["good_asset"]',
+    __typename: 'Asset',
+    key: buildAssetKey({path: ['good_asset']}),
+    definition: buildAssetNode({
+      id: 'test.py.repo.["good_asset"]',
+      groupName: 'GROUP2',
+      partitionDefinition: null,
+      hasMaterializePermission: true,
+      description:
+        'This is a super long description that could involve some level of SQL and is just generally very long',
+      repository,
+    }),
+  },
+  {
+    id: 'test.py.repo.["late_asset"]',
+    __typename: 'Asset',
+    key: buildAssetKey({path: ['late_asset']}),
+    definition: buildAssetNode({
+      id: 'test.py.repo.["late_asset"]',
+      groupName: 'GROUP2',
+      partitionDefinition: null,
+      hasMaterializePermission: true,
+      description: null,
+      repository,
+    }),
+  },
+  {
+    id: 'test.py.repo.["run_failing_asset"]',
+    __typename: 'Asset',
+    key: buildAssetKey({path: ['run_failing_asset']}),
+    definition: buildAssetNode({
+      id: 'test.py.repo.["run_failing_asset"]',
+      groupName: 'GROUP4',
+      partitionDefinition: null,
+      description: null,
+      hasMaterializePermission: true,
+      repository,
+    }),
+  },
+  {
+    id: 'test.py.repo.["asset_with_a_very_long_key_that_will_require_truncation"]',
+    __typename: 'Asset',
+    key: buildAssetKey({path: ['asset_with_a_very_long_key_that_will_require_truncation']}),
+    definition: buildAssetNode({
+      id: 'test.py.repo.["asset_with_a_very_long_key_that_will_require_truncation"]',
+      groupName: 'GROUP4',
+      partitionDefinition: null,
+      description: null,
+      hasMaterializePermission: true,
+      repository,
+    }),
+  },
+];
+
 export const AssetCatalogTableMock: MockedResponse<AssetCatalogTableQuery> = {
   request: {
     query: ASSET_CATALOG_TABLE_QUERY,
@@ -318,93 +390,7 @@ export const AssetCatalogTableMock: MockedResponse<AssetCatalogTableQuery> = {
       __typename: 'DagitQuery',
       assetsOrError: {
         __typename: 'AssetConnection',
-        nodes: [
-          {
-            id: '["dashboards", "cost_dashboard"]',
-            __typename: 'Asset',
-            key: {
-              path: ['dashboards', 'cost_dashboard'],
-              __typename: 'AssetKey',
-            },
-            definition: null,
-          },
-          {
-            id: '["dashboards", "traffic_dashboard"]',
-            __typename: 'Asset',
-            key: {
-              path: ['dashboards', 'traffic_dashboard'],
-              __typename: 'AssetKey',
-            },
-            definition: null,
-          },
-          {
-            id: 'test.py.repo.["good_asset"]',
-            __typename: 'Asset',
-            key: {
-              path: ['good_asset'],
-              __typename: 'AssetKey',
-            },
-            definition: buildAssetNode({
-              id: 'test.py.repo.["good_asset"]',
-              groupName: 'GROUP2',
-              partitionDefinition: null,
-              hasMaterializePermission: true,
-              description:
-                'This is a super long description that could involve some level of SQL and is just generally very long',
-              repository,
-              __typename: 'AssetNode',
-            }),
-          },
-          {
-            id: 'test.py.repo.["late_asset"]',
-            __typename: 'Asset',
-            key: {
-              path: ['late_asset'],
-              __typename: 'AssetKey',
-            },
-            definition: buildAssetNode({
-              id: 'test.py.repo.["late_asset"]',
-              groupName: 'GROUP2',
-              partitionDefinition: null,
-              hasMaterializePermission: true,
-              description: null,
-              repository,
-            }),
-          },
-          {
-            id: 'test.py.repo.["run_failing_asset"]',
-            __typename: 'Asset',
-            key: {
-              path: ['run_failing_asset'],
-              __typename: 'AssetKey',
-            },
-            definition: buildAssetNode({
-              id: 'test.py.repo.["run_failing_asset"]',
-              groupName: 'GROUP4',
-              partitionDefinition: null,
-              description: null,
-              hasMaterializePermission: true,
-              repository,
-              __typename: 'AssetNode',
-            }),
-          },
-          {
-            id: 'test.py.repo.["asset_with_a_very_long_key_that_will_require_truncation"]',
-            __typename: 'Asset',
-            key: {
-              path: ['asset_with_a_very_long_key_that_will_require_truncation'],
-              __typename: 'AssetKey',
-            },
-            definition: buildAssetNode({
-              id: 'test.py.repo.["asset_with_a_very_long_key_that_will_require_truncation"]',
-              groupName: 'GROUP4',
-              partitionDefinition: null,
-              description: null,
-              hasMaterializePermission: true,
-              repository,
-            }),
-          },
-        ],
+        nodes: AssetCatalogTableMockAssets,
       },
     },
   },
