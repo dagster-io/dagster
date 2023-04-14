@@ -73,3 +73,40 @@ def test_daemon(scenario_item):
         assert run.asset_selection is not None
         assert set(run.asset_selection) == set(expected_run_request.asset_selection)
         assert run.tags.get(PARTITION_NAME_TAG) == expected_run_request.partition_key
+
+
+def test_daemon_run_tags():
+    scenario_name = "auto_materialize_policy_eager_with_freshness_policies"
+    scenario = auto_materialize_policy_scenarios[scenario_name]
+
+    instance = DagsterInstance.ephemeral(
+        settings={"auto_materialize": {"run_tags": {"foo": "bar"}}}
+    )
+    scenario.do_daemon_scenario(instance, scenario_name=scenario_name)
+
+    runs = instance.get_runs()
+
+    assert len(runs) == len(
+        scenario.expected_run_requests
+        + scenario.unevaluated_runs
+        + (scenario.cursor_from.unevaluated_runs if scenario.cursor_from else [])
+    )
+
+    for run in runs:
+        assert run.status == DagsterRunStatus.SUCCESS
+
+    def sort_run_request_key_fn(run_request):
+        return (min(run_request.asset_selection), run_request.partition_key)
+
+    def sort_run_key_fn(run):
+        return (min(run.asset_selection), run.tags.get(PARTITION_NAME_TAG))
+
+    sorted_runs = sorted(runs[: len(scenario.expected_run_requests)], key=sort_run_key_fn)
+    sorted_expected_run_requests = sorted(
+        scenario.expected_run_requests, key=sort_run_request_key_fn
+    )
+    for run, expected_run_request in zip(sorted_runs, sorted_expected_run_requests):
+        assert run.asset_selection is not None
+        assert set(run.asset_selection) == set(expected_run_request.asset_selection)
+        assert run.tags.get(PARTITION_NAME_TAG) == expected_run_request.partition_key
+        assert run.tags["foo"] == "bar"
