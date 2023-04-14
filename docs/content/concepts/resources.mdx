@@ -149,6 +149,8 @@ defs = Definitions(
 )
 ```
 
+For more information on using environment variables with Dagster, refer to the [Environment variables guide](/guides/dagster/using-environment-variables-and-secrets).
+
 ### Configuring resources at runtime
 
 In some cases, you may want to specify configuration for a resource at runtime, in the launchpad or in a <PyObject object="RunRequest" /> for a [schedule](/concepts/partitions-schedules-sensors/schedules) or [sensor](/concepts/partitions-schedules-sensors/sensors). For example, you may want a sensor-triggered run to specify a different target table in a database resource for each run.
@@ -174,7 +176,7 @@ defs = Definitions(
 )
 ```
 
-#### Configuring a resource at runtime in Python code
+#### Providing resource runtime configuration in Python code
 
 Then, configuration for the resource can be provided at runtime in the launchpad or in Python code using the `config` parameter of the <PyObject object="RunRequest" />:
 
@@ -253,49 +255,11 @@ defs = Definitions(
 )
 ```
 
-### Testing configurable resources
-
-You can test the initialization of a <PyObject object="ConfigurableResource"/> by constructing it manually. In most cases, you can construct your resource directly:
-
-```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_testing endbefore=end_new_resource_testing dedent=4
-from dagster import ConfigurableResource
-
-class MyResource(ConfigurableResource):
-    value: str
-
-    def get_value(self) -> str:
-        return self.value
-
-def test_my_resource():
-    assert MyResource(value="foo").get_value() == "foo"
-```
-
-If your resource requires other resources, then you can pass them as constructor arguments.
-
-```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_testing_with_context endbefore=end_new_resource_testing_with_context dedent=4
-from dagster import ConfigurableResource
-
-class StringHolderResource(ConfigurableResource):
-    value: str
-
-class MyResourceRequiresAnother(ConfigurableResource):
-    foo: StringHolderResource
-    bar: str
-
-def test_my_resource_with_context():
-    string_holder = StringHolderResource(value="foo")
-    resource = MyResourceRequiresAnother(foo=string_holder, bar="bar")
-    assert resource.foo.value == "foo"
-    assert resource.bar == "bar"
-```
-
 ---
 
 ## Defining Pythonic I/O managers
 
 Pythonic [I/O managers](/concepts/io-management/io-managers) are defined as subclasses of <PyObject object="ConfigurableIOManager"/>, and similarly to Pythonic resources specify any configuration fields as attributes. Each subclass must implement a `handle_output` and `load_input` method, which are called by Dagster at runtime to handle the storing and loading of data.
-
-If you are interested in adapting a legacy, function-styled I/O manager, see the [adapting function-style I/O managers section](#adapting-function-style-io-managers).
 
 ```python file=/concepts/resources/pythonic_resources.py startafter=start_new_io_manager endbefore=end_new_io_manager dedent=4
 from dagster import (
@@ -348,6 +312,44 @@ defs = Definitions(
     assets=[public_github_repos],
     resources={"github": GitHub(...)},
 )
+```
+
+---
+
+## Testing configurable resources
+
+You can test the initialization of a <PyObject object="ConfigurableResource"/> by constructing it manually. In most cases, you can construct your resource directly:
+
+```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_testing endbefore=end_new_resource_testing dedent=4
+from dagster import ConfigurableResource
+
+class MyResource(ConfigurableResource):
+    value: str
+
+    def get_value(self) -> str:
+        return self.value
+
+def test_my_resource():
+    assert MyResource(value="foo").get_value() == "foo"
+```
+
+If your resource requires other resources, then you can pass them as constructor arguments.
+
+```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_testing_with_context endbefore=end_new_resource_testing_with_context dedent=4
+from dagster import ConfigurableResource
+
+class StringHolderResource(ConfigurableResource):
+    value: str
+
+class MyResourceRequiresAnother(ConfigurableResource):
+    foo: StringHolderResource
+    bar: str
+
+def test_my_resource_with_context():
+    string_holder = StringHolderResource(value="foo")
+    resource = MyResourceRequiresAnother(foo=string_holder, bar="bar")
+    assert resource.foo.value == "foo"
+    assert resource.bar == "bar"
 ```
 
 ---
