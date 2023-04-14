@@ -9,8 +9,8 @@ class GEOpConfig(Config):
 
 
 @op
-def read_in_datafile(csv_path):
-    return read_csv(csv_path)
+def read_in_datafile(config: GEOpConfig):
+    return read_csv(config.csv_path)
 
 
 @op
