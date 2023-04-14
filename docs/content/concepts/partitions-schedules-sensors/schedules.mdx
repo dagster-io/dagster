@@ -240,7 +240,7 @@ Dagster's [resources](/concepts/resources) system can be used with schedules to 
 
 To specify resource dependencies, annotate the resource as a parameter to the schedule's function. Resources are provided by attaching them to your <PyObject object="Definitions" /> call.
 
-Here, a resource is provided which helps a schedule generate run configuration for a job.
+Here, a resource is provided which helps a schedule generate a date string:
 
 ```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_on_schedule endbefore=end_new_resource_on_schedule dedent=4
 from dagster import (
@@ -274,8 +274,7 @@ def process_data_schedule(
 
     return RunRequest(
         run_key=None,
-        run_config=RunConfig(ops={"fetch_data": {"date": formatted_date}}),
-        tags={},
+        tags={"date": formatted_date},
     )
 
 defs = Definitions(
@@ -285,7 +284,7 @@ defs = Definitions(
 )
 ```
 
-For more information on resources, see the [resources](/concepts/resources#using-resources-with-schedules) concept page.
+For more information on resources, refer to the [Resources documentation](/concepts/resources).
 
 ---
 
@@ -393,24 +392,12 @@ If your `@schedule`-decorated function doesn't have a context parameter, you don
 
 For schedules which utilize [resources](/concepts/resources), you can provide the necessary resources when invoking the schedule function.
 
-Below is a test for the `process_data_schedule` that we defined [above](#using-resources-in-schedules) which uses the `date_formatter` resource.
+Below is a test for the `process_data_schedule` that we defined in the [Using resources in schedules](#using-resources-in-schedules) section, which uses the `date_formatter` resource.
 
 ```python file=/concepts/resources/pythonic_resources.py startafter=start_test_resource_on_schedule endbefore=end_test_resource_on_schedule dedent=4
 from dagster import build_schedule_context, validate_run_config
 
 def test_process_data_schedule():
-    # You can build resources into the schedule context
-    context = build_schedule_context(
-        scheduled_execution_time=datetime.datetime(2020, 1, 1),
-        resources={"date_formatter": DateFormatter(format="%Y-%m-%d")},
-    )
-    run_request = process_data_schedule(context)
-    assert (
-        run_request.run_config["ops"]["fetch_data"]["config"]["date"]
-        == "2020-01-01"
-    )
-
-    # You can also supply resources as kwargs to the schedule function
     context = build_schedule_context(
         scheduled_execution_time=datetime.datetime(2020, 1, 1)
     )

@@ -260,8 +260,7 @@ def process_new_users_sensor(
     for user_id in users[last_user:]:
         yield RunRequest(
             run_key=user_id,
-            run_config=RunConfig(ops={"insert_user": {"user_id": user_id}}),
-            tags={},
+            tags={"user_id": user_id},
         )
 
     context.update_cursor(str(num_users))
@@ -269,11 +268,11 @@ def process_new_users_sensor(
 defs = Definitions(
     jobs=[process_user],
     sensors=[process_new_users_sensor],
-    resources={"users_api": UsersAPI("https://my-api.com/users")},
+    resources={"users_api": UsersAPI(url="https://my-api.com/users")},
 )
 ```
 
-For more information on resources, see the [resources](/concepts/resources#using-resources-with-schedules) concept page.
+For more information on resources, refer to the [Resources documentation](/concepts/resources).
 
 ---
 
@@ -398,7 +397,7 @@ def test_my_directory_sensor_cursor():
 
 For sensors which utilize [resources](/concepts/resources), you can provide the necessary resources when invoking the sensor function.
 
-Below is a test for the `process_new_users_sensor` that we defined [above](#using-resources-in-sensors) which uses the `users_api` resource.
+Below is a test for the `process_new_users_sensor` that we defined in the [Using resources in sensors](#using-resources-in-sensors) section, which uses the `users_api` resource.
 
 ```python file=/concepts/resources/pythonic_resources.py startafter=start_test_resource_on_sensor endbefore=end_test_resource_on_sensor dedent=4
 from dagster import build_sensor_context, validate_run_config
@@ -408,17 +407,8 @@ def test_process_new_users_sensor():
         def fetch_users(self) -> List[str]:
             return ["1", "2", "3"]
 
-    # You can build resources into the sensor context
-    context = build_sensor_context(
-        resources={"users_api": MockUsersAPI()},
-    )
-    run_requests = process_new_users_sensor(context)
-    assert len(run_requests) == 3
-
-    # You can also supply resources as kwargs to the sensor function
     context = build_sensor_context()
-    run_request = process_new_users_sensor(context, users_api=MockUsersAPI())
-    run_requests = process_new_users_sensor(context)
+    run_requests = process_new_users_sensor(context, users_api=MockUsersAPI())
     assert len(run_requests) == 3
 ```
 
@@ -778,27 +768,6 @@ def my_s3_sensor(context):
     context.update_cursor(last_key)
     return run_requests
 ```
-
-### Using resources in sensors
-
-If you want to use resources within your sensor, you can attach a set of `required_resource_keys` to the sensor decorator. This will ensure that the resources are initialized before the sensor is run. You can then access the resources in the sensor function using the context:
-
-```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_build_resources_example endbefore=end_build_resources_example
-from dagster import resource, sensor
-
-
-@resource
-def the_db_connection(init_context):
-    ...
-
-
-@sensor(job=the_job, required_resource_keys={"db_connection"})
-def uses_db_connection(context):
-    conn = context.resources.db_connection
-    ...
-```
-
-If a resource you want to initialize has dependencies on other resources, those can be included in the dictionary passed to <PyObject object="build_resources"/>.
 
 ---
 

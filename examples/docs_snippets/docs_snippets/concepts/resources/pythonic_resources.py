@@ -731,8 +731,7 @@ def new_resource_on_sensor() -> None:
         for user_id in users[last_user:]:
             yield RunRequest(
                 run_key=user_id,
-                run_config=RunConfig(ops={"insert_user": {"user_id": user_id}}),  # type: ignore
-                tags={},
+                tags={"user_id": user_id},
             )
 
         context.update_cursor(str(num_users))
@@ -740,7 +739,7 @@ def new_resource_on_sensor() -> None:
     defs = Definitions(
         jobs=[process_user],
         sensors=[process_new_users_sensor],
-        resources={"users_api": UsersAPI("https://my-api.com/users")},
+        resources={"users_api": UsersAPI(url="https://my-api.com/users")},
     )
     # end_new_resource_on_sensor
 
@@ -753,17 +752,8 @@ def new_resource_on_sensor() -> None:
             def fetch_users(self) -> List[str]:
                 return ["1", "2", "3"]
 
-        # You can build resources into the sensor context
-        context = build_sensor_context(
-            resources={"users_api": MockUsersAPI()},
-        )
-        run_requests = process_new_users_sensor(context)
-        assert len(run_requests) == 3
-
-        # You can also supply resources as kwargs to the sensor function
         context = build_sensor_context()
-        run_request = process_new_users_sensor(context, users_api=MockUsersAPI())
-        run_requests = process_new_users_sensor(context)
+        run_requests = process_new_users_sensor(context, users_api=MockUsersAPI())
         assert len(run_requests) == 3
 
         # end_test_resource_on_sensor
@@ -802,8 +792,7 @@ def new_resource_on_schedule() -> None:
 
         return RunRequest(
             run_key=None,
-            run_config=RunConfig(ops={"fetch_data": {"date": formatted_date}}),  # type: ignore
-            tags={},
+            tags={"date": formatted_date},
         )
 
     defs = Definitions(
@@ -817,18 +806,6 @@ def new_resource_on_schedule() -> None:
     from dagster import build_schedule_context, validate_run_config
 
     def test_process_data_schedule():
-        # You can build resources into the schedule context
-        context = build_schedule_context(
-            scheduled_execution_time=datetime.datetime(2020, 1, 1),
-            resources={"date_formatter": DateFormatter(format="%Y-%m-%d")},
-        )
-        run_request = process_data_schedule(context)
-        assert (
-            run_request.run_config["ops"]["fetch_data"]["config"]["date"]
-            == "2020-01-01"
-        )
-
-        # You can also supply resources as kwargs to the schedule function
         context = build_schedule_context(
             scheduled_execution_time=datetime.datetime(2020, 1, 1)
         )

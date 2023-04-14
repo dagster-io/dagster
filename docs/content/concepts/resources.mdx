@@ -129,108 +129,13 @@ There are many supported config types that can be used when defining resources. 
 
 [Sensors](/concepts/partitions-schedules-sensors/sensors) can use resources in the same way as ops and assets, which can be useful for querying external services for data.
 
-To specify resource dependencies, annotate the resource as a parameter to the sensor's function. Resources are provided by attaching them to your <PyObject object="Definitions" /> call.
-
-Here, a resource is provided which provides access to an external API. The same resource could be used in the job that the sensor triggers.
-
-```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_on_sensor endbefore=end_new_resource_on_sensor dedent=4
-from dagster import (
-    sensor,
-    RunRequest,
-    SensorEvaluationContext,
-    ConfigurableResource,
-    job,
-    Definitions,
-    RunConfig,
-)
-import requests
-from typing import List
-
-class UsersAPI(ConfigurableResource):
-    url: str
-
-    def fetch_users(self) -> List[str]:
-        return requests.get(self.url).json()
-
-@job
-def process_user():
-    ...
-
-@sensor(job=process_user)
-def process_new_users_sensor(
-    context: SensorEvaluationContext,
-    users_api: UsersAPI,
-):
-    last_user = int(context.cursor) if context.cursor else 0
-    users = users_api.fetch_users()
-
-    num_users = len(users)
-    for user_id in users[last_user:]:
-        yield RunRequest(
-            run_key=user_id,
-            run_config=RunConfig(ops={"insert_user": {"user_id": user_id}}),
-            tags={},
-        )
-
-    context.update_cursor(str(num_users))
-
-defs = Definitions(
-    jobs=[process_user],
-    sensors=[process_new_users_sensor],
-    resources={"users_api": UsersAPI("https://my-api.com/users")},
-)
-```
+To specify resource dependencies on a sensor, annotate the resource type as a parameter to the sensor's function. For more information and examples, refer to the [Sensors documentation](/concepts/partitions-schedules-sensors/sensors#using-resources-in-sensors).
 
 ### Using resources with schedules
 
-[Schedules](/concepts/partitions-schedules-sensors/schedules)can also use resources in case your schedule logic needs to interface with an external tool, or to make your schedule logic more testable.
+[Schedules](/concepts/partitions-schedules-sensors/schedules) can also use resources in case your schedule logic needs to interface with an external tool, or to make your schedule logic more testable.
 
-To specify resource dependencies, annotate the resource as a parameter to the schedule's function. Resources are provided by attaching them to your <PyObject object="Definitions" /> call.
-
-Here, a resource is provided which helps a schedule generate run configuration for a job.
-
-```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_on_schedule endbefore=end_new_resource_on_schedule dedent=4
-from dagster import (
-    schedule,
-    ScheduleEvaluationContext,
-    ConfigurableResource,
-    job,
-    RunRequest,
-    RunConfig,
-    Definitions,
-)
-from datetime import datetime
-from typing import List
-
-class DateFormatter(ConfigurableResource):
-    format: str
-
-    def strftime(self, dt: datetime) -> str:
-        return dt.strftime(self.format)
-
-@job
-def process_data():
-    ...
-
-@schedule(job=process_data, cron_schedule="* * * * *")
-def process_data_schedule(
-    context: ScheduleEvaluationContext,
-    date_formatter: DateFormatter,
-):
-    formatted_date = date_formatter.strftime(context.scheduled_execution_time)
-
-    return RunRequest(
-        run_key=None,
-        run_config=RunConfig(ops={"fetch_data": {"date": formatted_date}}),
-        tags={},
-    )
-
-defs = Definitions(
-    jobs=[process_data],
-    schedules=[process_data_schedule],
-    resources={"date_formatter": DateFormatter(format="%Y-%m-%d")},
-)
-```
+To specify resource dependencies on a schedule, annotate the resource type as a parameter to the schedule's function. For more information and examples, refer to the [Schedules documentation](/concepts/partitions-schedules-sensors/schedules#using-resources-in-schedules).
 
 ### Using environment variables with resources
 
