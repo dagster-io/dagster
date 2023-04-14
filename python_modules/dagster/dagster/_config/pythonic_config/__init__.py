@@ -118,19 +118,23 @@ class MakeConfigCacheable(BaseModel):
 
         try:
             return super().__setattr__(name, value)
-        except TypeError as e:
-            if "is immutable and does not support item assignment" in str(e):
+        except (TypeError, ValueError) as e:
+            if "is immutable and does not support item assignment" in str(
+                e
+            ) or "object has no field" in str(e):
                 clsname = self.__class__.__name__
                 if isinstance(self, ConfigurableResourceFactory):
                     raise DagsterInvalidInvocationError(
-                        f"'{clsname}' is a Pythonic resource and does not support item assignment."
-                        " If trying to set state on this resource, consider building a separate,"
-                        " stateful client class."
+                        f"'{clsname}' is a Pythonic resource and does not support item assignment,"
+                        " as it inherits from 'pydantic.BaseModel' with frozen=True. If trying to"
+                        " maintain state on this resource, consider building a separate, stateful"
+                        " client class, and provide a method on the resource to construct and"
+                        " return the stateful client."
                     ) from e
                 else:
                     raise DagsterInvalidInvocationError(
                         f"'{clsname}' is a Pythonic config class and does not support item"
-                        " assignment."
+                        " assignment, as it inherits from 'pydantic.BaseModel' with frozen=True."
                     ) from e
             else:
                 raise

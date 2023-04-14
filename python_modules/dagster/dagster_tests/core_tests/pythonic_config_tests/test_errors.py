@@ -377,9 +377,45 @@ def test_trying_to_set_a_field_resource() -> None:
     with pytest.raises(
         DagsterInvalidInvocationError,
         match=(
-            "'MyResource' is a Pythonic resource and does not support item assignment. If trying"
-            " to set state on this resource, consider building a separate, stateful client class."
+            "'MyResource' is a Pythonic resource and does not support item assignment, as it"
+            " inherits from 'pydantic.BaseModel' with frozen=True. If trying to"
+            " maintain state on this resource, consider building a separate, stateful"
+            " client class, and provide a method on the resource to construct and"
+            " return the stateful client."
         ),
     ):
         my_resource = MyResource(my_str="foo")
         my_resource.my_str = "bar"
+
+
+def test_trying_to_set_an_undefined_field() -> None:
+    class MyConfig(Config):
+        my_str: str
+
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match=(
+            "'MyConfig' is a Pythonic config class and does not support item assignment, as it"
+            " inherits from 'pydantic.BaseModel' with frozen=True."
+        ),
+    ):
+        my_config = MyConfig(my_str="foo")
+        my_config._my_random_other_field = "bar"  # noqa: SLF001
+
+
+def test_trying_to_set_an_undefined_field_resource() -> None:
+    class MyResource(ConfigurableResource):
+        my_str: str
+
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match=(
+            "'MyResource' is a Pythonic resource and does not support item assignment, as it"
+            " inherits from 'pydantic.BaseModel' with frozen=True. If trying to"
+            " maintain state on this resource, consider building a separate, stateful"
+            " client class, and provide a method on the resource to construct and"
+            " return the stateful client."
+        ),
+    ):
+        my_resource = MyResource(my_str="foo")
+        my_resource._my_random_other_field = "bar"  # noqa: SLF001
