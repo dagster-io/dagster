@@ -29,7 +29,7 @@ So, why use resources?
 | Name                                             | Description                                                                                                                                                                                                                             |
 | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | <PyObject object="ConfigurableResource"/>        | The base class extended to define resources. Under the hood, implements <PyObject object="ResourceDefinition" />.                                                                                                                       |
-| <PyObject object="ConfigurableResourceFactory"/> | A base class extended to define resources which pass plain Python objects to user code.                                                                                                                                                 |
+| <PyObject object="ResourceParam"/>               | An annotation used to specify that a plain Python object parameter for an op or asset is a resource.                                                                                                                                    |
 | <PyObject object="ResourceDefinition" />         | Class for resource definitions. You almost never want to use initialize this class directly. Instead, you should extend the <PyObject object="ConfigurableResource" /> class which implements <PyObject object="ResourceDefinition" />. |
 | <PyObject object="InitResourceContext"/>         | The context object provided to a resource during initialization. This object contains required resource, config, and other run information.                                                                                             |
 | <PyObject object="build_init_resource_context"/> | Function for building an <PyObject object="InitResourceContext"/> outside of execution, intended to be used when testing a resource.                                                                                                    |
@@ -122,6 +122,8 @@ defs = Definitions(
 
 </TabItem>
 </TabGroup>
+
+There are many supported config types that can be used when defining resources. See the [advanced config types documentation](/concepts/configuration/advanced-config-types) for a more comprehensive overview on the available config types.
 
 ### Using environment variables with resources
 
@@ -324,130 +326,18 @@ defs = Definitions(
 
 ---
 
-## Advanced resource patterns
+## Using bare Python objects as resources
 
-The following sections describe more advanced patterns for using Pythonic resources.
+When starting to build a set of assets or jobs, you may want to use a bare Python object without configuration as a resource, such as a third-party API client.
 
-### Adapting function-style resources
-
-In codebases that utilize [function-style](https://docs.dagster.io/concepts/resources#resources) resources with the <PyObject object="@resource"/> decorator, you can use the <PyObject object="ConfigurableResourceAdapter"/> class to adapt these resources to the new Pythonic resource pattern.
-
-The adapter subclass should list all config fields as attributes and implement a `wrapped_resource` property which returns the underlying resource definition to adapt.
-
-```python file=/concepts/resources/pythonic_resources.py startafter=start_resource_adapter endbefore=end_resource_adapter dedent=4
-from dagster import (
-    resource,
-    Definitions,
-    ResourceDefinition,
-    asset,
-    ConfigurableLegacyResourceAdapter,
-)
-
-# Old code, interface cannot be changed for back-compat purposes
-class Writer:
-    def __init__(self, prefix: str):
-        self._prefix = prefix
-
-    def output(self, text: str) -> None:
-        print(self._prefix + text)
-
-@resource(config_schema={"prefix": str})
-def writer_resource(context):
-    prefix = context.resource_config["prefix"]
-    return Writer(prefix)
-
-# New adapter layer
-class WriterResource(ConfigurableLegacyResourceAdapter):
-    prefix: str
-
-    @property
-    def wrapped_resource(self) -> ResourceDefinition:
-        return writer_resource
-
-@asset
-def my_asset(writer: Writer):
-    writer.output("hello, world!")
-
-defs = Definitions(
-    assets=[my_asset], resources={"writer": WriterResource(prefix="greeting: ")}
-)
-```
-
-### Adapting function-style I/O managers
-
-Similar to with resources, in codebases that utilize [function-style](https://docs.dagster.io/concepts/io-management/io-managers) I/O managers with the <PyObject object="@io_manager"/> decorator, you can use the <PyObject object="ConfigurableIOManagerAdapter"/> class to adapt them to the new Pythonic I/O manager pattern.
-
-The adapter subclass should list all config fields as attributes and implement a `wrapped_io_manager` property which returns the underlying I/O manager definition to adapt.
-
-```python file=/concepts/resources/pythonic_resources.py startafter=start_io_adapter endbefore=end_io_adapter dedent=4
-from dagster import (
-    Definitions,
-    IOManagerDefinition,
-    io_manager,
-    IOManager,
-    InputContext,
-    ConfigurableLegacyIOManagerAdapter,
-    OutputContext,
-)
-import os
-
-# Old code, interface cannot be changed for back-compat purposes
-class OldFileIOManager(IOManager):
-    def __init__(self, base_path: str):
-        self.base_path = base_path
-
-    def handle_output(self, context: OutputContext, obj):
-        with open(
-            os.path.join(self.base_path, context.step_key, context.name), "w"
-        ) as fd:
-            fd.write(obj)
-
-    def load_input(self, context: InputContext):
-        with open(
-            os.path.join(
-                self.base_path,
-                context.upstream_output.step_key,
-                context.upstream_output.name,
-            ),
-            "r",
-        ) as fd:
-            return fd.read()
-
-@io_manager(config_schema={"base_path": str})
-def old_file_io_manager(context):
-    base_path = context.resource_config["base_path"]
-    return OldFileIOManager(base_path)
-
-# New adapter layer
-class MyIOManager(ConfigurableLegacyIOManagerAdapter):
-    base_path: str
-
-    @property
-    def wrapped_io_manager(self) -> IOManagerDefinition:
-        return old_file_io_manager
-
-defs = Definitions(
-    assets=...,
-    resources={
-        "io_manager": MyIOManager(base_path="/tmp/"),
-    },
-)
-```
-
-### Using bare Python objects as resources
-
-In some cases, you may want to use a bare Python object as a resource which is not a subclass of <PyObject object="ConfigurableResource"/>.
-
-#### Directly passing bare Python objects
-
-You may want to directly pass a third-party API client into your assets or ops. This follows a similar pattern to using a <PyObject object="ConfigurableResource"/> subclass, however assets and ops which use these resources must [annotate](https://docs.python.org/3/library/typing.html#typing.Annotated) them with <PyObject object="Resource"/>.
+Dagster supports passing plain Python objects as resources. This follows a similar pattern to using a <PyObject object="ConfigurableResource"/> subclass, however assets and ops which use these resources must [annotate](https://docs.python.org/3/library/typing.html#typing.Annotated) them with <PyObject object="ResourceParam"/>. This annotation lets Dagster know that the parameter is a resource and not an upstream input.
 
 ```python file=/concepts/resources/pythonic_resources.py startafter=start_raw_github_resource endbefore=end_raw_github_resource dedent=4
 from dagster import Definitions, asset, ResourceParam
 
 # `ResourceParam[GitHub]` is treated exactly like `GitHub` for type checking purposes,
 # and the runtime type of the github parameter is `GitHub`. The purpose of the
-# `Resource` wrapper is to let Dagster know that `github` is a resource and not an
+# `ResourceParam` wrapper is to let Dagster know that `github` is a resource and not an
 # upstream asset.
 
 @asset
@@ -460,48 +350,8 @@ defs = Definitions(
 )
 ```
 
-#### Config with bare Python objects
+---
 
-If you want to attach any config to your Python objects, such as credentials or tokens, you can use <PyObject object="ConfigurableResourceFactory"/>. Similar to a <PyObject object="ConfigurableResource"/>, any fields on the factory will be treated as config fields. The factory should implement a `create_resource` method which returns the bare Python object.
+## Next steps
 
-```python file=/concepts/resources/pythonic_resources.py startafter=start_raw_github_resource_factory endbefore=end_raw_github_resource_factory dedent=4
-from dagster import ConfigurableResourceFactory, Resource, asset, EnvVar
-
-class GitHubResource(ConfigurableResourceFactory[GitHub]):
-    access_token: str
-
-    def create_resource(self, _context) -> GitHub:
-        return GitHub(self.access_token)
-
-@asset
-def public_github_repos(github: Resource[GitHub]):
-    return github.organization("dagster-io").repositories()
-
-defs = Definitions(
-    assets=[public_github_repos],
-    resources={
-        "github": GitHubResource(access_token=EnvVar("GITHUB_ACCESS_TOKEN"))
-    },
-)
-```
-
-#### Dependencies on bare Python objects
-
-If you would like a Pythonic resource to depend on a bare Python object, you can use the <PyObject object="ResourceDependency"/> annotation to annotate the attribute in question. This indicates to Dagster that the attribute should be treated as a resource dependency.
-
-```python file=/concepts/resources/pythonic_resources.py startafter=start_raw_github_resource_dep endbefore=end_raw_github_resource_dep dedent=4
-from dagster import ConfigurableResource, ResourceDependency, Definitions
-
-class DBResource(ConfigurableResource):
-    engine: ResourceDependency[Engine]
-
-    def query(self, query: str):
-        with self.engine.connect() as conn:
-            return conn.execute(query)
-
-engine = create_engine(...)
-defs = Definitions(
-    assets=...,
-    resources={"db": DBResource(engine=engine)},
-)
-```
+Resources are a powerful way to encapsulate reusable logic in your assets and ops. For more information on the supported config types for resources, see [the advanced config types documentation](/concepts/configuration/advanced-config-types). For information on the Dagster config system, which you can use to parameterize ops and assets, see the [run configuration documentation](/concepts/configuration/config-schema).

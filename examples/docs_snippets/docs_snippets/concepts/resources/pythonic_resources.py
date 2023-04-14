@@ -320,7 +320,7 @@ def raw_github_resource() -> None:
 
     # `ResourceParam[GitHub]` is treated exactly like `GitHub` for type checking purposes,
     # and the runtime type of the github parameter is `GitHub`. The purpose of the
-    # `Resource` wrapper is to let Dagster know that `github` is a resource and not an
+    # `ResourceParam` wrapper is to let Dagster know that `github` is a resource and not an
     # upstream asset.
 
     @asset
