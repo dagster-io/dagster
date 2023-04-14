@@ -10,7 +10,6 @@ import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {Description} from '../pipelines/Description';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {ResourceContainer, ResourceHeader} from '../pipelines/SidebarOpHelpers';
-import {Version} from '../versions/Version';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -26,6 +25,7 @@ import {AssetNodeList} from './AssetNodeList';
 import {CurrentMinutesLateTag, freshnessPolicyDescription} from './CurrentMinutesLateTag';
 import {DependsOnSelfBanner} from './DependsOnSelfBanner';
 import {UnderlyingOpsOrGraph} from './UnderlyingOpsOrGraph';
+import {Version} from './Version';
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinition.types';
 
 export const AssetNodeDefinition: React.FC<{
