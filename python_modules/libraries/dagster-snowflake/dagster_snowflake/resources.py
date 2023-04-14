@@ -1,7 +1,7 @@
 import sys
 import warnings
 from contextlib import closing, contextmanager
-from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence, Union, cast
+from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence, Union
 
 import dagster._check as check
 from cryptography.hazmat.backends import default_backend
@@ -33,11 +33,6 @@ class SnowflakeConnection:
     """
 
     def __init__(self, config: Mapping[str, str], log):
-        config = cast(Dict[str, str], config)
-        # with pydantic resources the schema config field will be named schema_
-        if config.get("schema_") is not None:
-            config["schema"] = config["schema_"]
-
         # Extract parameters from resource config. Note that we can't pass None values to
         # snowflake.connector.connect() because they will override the default values set within the
         # connector; remove them from the conn_args dict.
