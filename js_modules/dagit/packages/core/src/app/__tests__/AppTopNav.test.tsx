@@ -22,6 +22,7 @@ describe('AppTopNav', () => {
       repositories: () => [...new Array(1)],
     }),
     Workspace: () => ({
+      id: () => 'my_workspace',
       locationEntries: () => [...new Array(1)],
     }),
     RepositoryOrigin: () => ({

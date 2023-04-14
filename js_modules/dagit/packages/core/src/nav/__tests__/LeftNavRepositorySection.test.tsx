@@ -77,6 +77,7 @@ describe('Repository options', () => {
   describe('localStorage', () => {
     const mocksWithOne = {
       Workspace: () => ({
+        id: 'workspace',
         locationEntries: () => [
           {
             locationOrLoadError: {
@@ -91,6 +92,7 @@ describe('Repository options', () => {
 
     const mocksWithThree = {
       Workspace: () => ({
+        id: 'workspace',
         locationEntries: () => [
           {
             locationOrLoadError: {
@@ -274,6 +276,7 @@ describe('Repository options', () => {
     it('initializes empty, then shows options when they are added', async () => {
       const initialMocks = {
         Workspace: () => ({
+          id: 'workspace',
           locationEntries: () => [],
         }),
       };
@@ -326,6 +329,7 @@ describe('Repository options', () => {
     it('initializes with options, then shows empty if they are removed', async () => {
       const mocksAfterRemoval = {
         Workspace: () => ({
+          id: 'workspace',
           locationEntries: () => [],
         }),
       };
@@ -379,6 +383,7 @@ describe('Repository options', () => {
         isAssetJob: () => false,
       }),
       Workspace: () => ({
+        id: 'workspace',
         locationEntries: () => [
           {
             locationOrLoadError: {
