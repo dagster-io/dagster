@@ -1,16 +1,24 @@
-from dagster import config_mapping, job, op
+from dagster import Config, RunConfig, config_mapping, job, op
 
 
-@op(config_schema={"config_param": str})
-def do_something(context):
-    context.log.info("config_param: " + context.op_config["config_param"])
+class DoSomethingConfig(Config):
+    config_param: str
 
 
-@config_mapping(config_schema={"simplified_param": str})
-def simplified_config(val):
-    return {
-        "ops": {"do_something": {"config": {"config_param": val["simplified_param"]}}}
-    }
+@op
+def do_something(context, config: DoSomethingConfig) -> None:
+    context.log.info("config_param: " + config.config_param)
+
+
+class SimplifiedConfig(Config):
+    simplified_param: str
+
+
+@config_mapping
+def simplified_config(val: SimplifiedConfig) -> RunConfig:
+    return RunConfig(
+        ops={"do_something": DoSomethingConfig(config_param=val.simplified_param)}
+    )
 
 
 @job(config=simplified_config)
