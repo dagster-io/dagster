@@ -10,7 +10,7 @@ import {
   SingleAssetQueryMaterializedStaleAndLate,
   SingleAssetQueryMaterializedWithLatestRun,
   SingleAssetQueryTrafficDashboard,
-} from '../__fixtures__/AssetsCatalogTable.mocks';
+} from '../__fixtures__/AssetsCatalogTable.fixtures';
 
 // eslint-disable-next-line import/no-default-export
 export default {component: AssetsCatalogTable};

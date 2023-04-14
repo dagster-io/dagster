@@ -11,7 +11,7 @@ import {
   LatestMaterializationTimestamp,
   AssetViewDefinitionSDA,
   AssetGraphEmpty,
-} from '../__fixtures__/AssetViewDefinition.mocks';
+} from '../__fixtures__/AssetViewDefinition.fixtures';
 
 // This file must be mocked because Jest can't handle `import.meta.url`.
 jest.mock('../../graph/asyncGraphLayout', () => ({}));

@@ -13,7 +13,7 @@ import {
   SingleDimensionStaticPartitionHealthQuery,
   SingleDimensionTimePartitionHealthQuery,
   MultiDimensionTimeFirstPartitionHealthQuery,
-} from '../__fixtures__/PartitionHealthSummary.mocks';
+} from '../__fixtures__/PartitionHealthSummary.fixtures';
 
 // This file must be mocked because useVirtualizer tries to create a ResizeObserver,
 // and the component tree fails to mount. We still want to test whether certain partitions

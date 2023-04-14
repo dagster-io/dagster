@@ -30,7 +30,7 @@ import {
   UNPARTITIONED_ASSET,
   UNPARTITIONED_ASSET_OTHER_REPO,
   UNPARTITIONED_ASSET_WITH_REQUIRED_CONFIG,
-} from '../__fixtures__/LaunchAssetExecutionButton.mocks';
+} from '../__fixtures__/LaunchAssetExecutionButton.fixtures';
 
 // This file must be mocked because Jest can't handle `import.meta.url`.
 jest.mock('../../graph/asyncGraphLayout', () => ({}));
