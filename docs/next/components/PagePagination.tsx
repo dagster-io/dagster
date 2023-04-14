@@ -19,7 +19,7 @@ export function PagePagination(props: {currentPageIndex: number; totalPageCount:
   let content: React.ReactNode;
 
   if (totalPageCount <= 7) {
-    // 1 / 2 / 3 / 4 / 5 / 6 / 7
+    // 1 / 2 / 3 / 4 / 5 / 6 / 7 
     // ^   ^   ^   ^   ^   ^   ^ (current page can be here)
     content = (
       <>
