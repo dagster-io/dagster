@@ -7,6 +7,7 @@ from dagster import (
     ExpectationResult,
     In,
     MetadataValue,
+    OpExecutionContext,
     Out,
     Output,
     _check as check,
@@ -88,11 +89,10 @@ def ge_validation_op_factory(
         expectation results/details.
         """,
         ),
-        required_resource_keys={"ge_data_context"},
         tags={"kind": "ge"},
     )
-    def _ge_validation_fn(context, dataset):
-        data_context = context.resources.ge_data_context
+    def _ge_validation_fn(context: OpExecutionContext, ge_data_context: GEContextResource, dataset):
+        data_context = ge_data_context.get_data_context()
         if validation_operator_name is not None:
             validation_operator = validation_operator_name
         else:
