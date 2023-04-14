@@ -250,9 +250,11 @@ export const VersionedContentLayout = ({children, asPath = null}) => {
 export function UnversionedMDXRenderer({
   data,
   toggleFeedback,
+  bottomContent,
 }: {
   data: MDXData;
   toggleFeedback: any;
+  bottomContent?: React.ReactNode | null;
 }) {
   const {query} = useRouter();
   const {editMode} = query;
@@ -284,6 +286,7 @@ export function UnversionedMDXRenderer({
 
           <div className="py-4 px-4 sm:px-6 lg:px-8 w-full">
             <div className="DocSearch-content prose dark:prose-dark max-w-none">{content}</div>
+            {bottomContent ?? null}
           </div>
           {/* End main area */}
         </div>
