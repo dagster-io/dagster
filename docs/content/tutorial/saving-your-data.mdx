@@ -60,7 +60,7 @@ Next, update your `Definitions` (shown below) to attach the I/O manager to your 
 
 ```python file=/tutorial/saving/add_fs_io_manager.py startafter=start_update_defs endbefore=end_update_defs
 defs = Definitions(
-    assets=hackernews_assets,
+    assets=all_assets,
     schedules=[hackernews_schedule],
     resources={
         "io_manager": io_manager,
@@ -115,7 +115,7 @@ database_io_manager = duckdb_pandas_io_manager.configured(
 
 # Update your Definitions
 defs = Definitions(
-    assets=hackernews_assets,
+    assets=all_assets,
     schedules=[hackernews_schedule],
     resources={
         "io_manager": io_manager,
