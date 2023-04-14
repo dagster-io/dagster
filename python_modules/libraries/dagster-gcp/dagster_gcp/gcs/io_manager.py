@@ -2,11 +2,12 @@ import pickle
 from typing import Any, Optional, Union
 
 from dagster import (
-    Field,
+    ConfigurableIOManager,
     InputContext,
     OutputContext,
-    StringSource,
+    ResourceDependency,
     _check as check,
+    cached_method,
     io_manager,
 )
 from dagster._core.storage.upath_io_manager import UPathIOManager
@@ -15,6 +16,9 @@ from dagster._utils.backoff import backoff
 from google.api_core.exceptions import Forbidden, ServiceUnavailable, TooManyRequests
 from google.cloud import storage
 from upath import UPath
+from pydantic import Field
+
+from .resources import GCSResource
 
 DEFAULT_LEASE_DURATION = 60  # One minute
 
@@ -71,11 +75,92 @@ class PickledObjectGCSIOManager(UPathIOManager):
         )
 
 
+class ConfigurablePickledObjectGCSIOManager(ConfigurableIOManager):
+    """Persistent IO manager using GCS for storage.
+
+    Serializes objects via pickling. Suitable for objects storage for distributed executors, so long
+    as each execution node has network connectivity and credentials for GCS and the backing bucket.
+
+    Assigns each op output to a unique filepath containing run ID, step key, and output name.
+    Assigns each asset to a single filesystem path, at "<base_dir>/<asset_key>". If the asset key
+    has multiple components, the final component is used as the name of the file, and the preceding
+    components as parent directories under the base_dir.
+
+    Subsequent materializations of an asset will overwrite previous materializations of that asset.
+    With a base directory of "/my/base/path", an asset with key
+    `AssetKey(["one", "two", "three"])` would be stored in a file called "three" in a directory
+    with path "/my/base/path/one/two/".
+
+    Example usage:
+
+    1. Attach this IO manager to a set of assets.
+
+    .. code-block:: python
+
+        from dagster import asset, Definitions
+        from dagster_gcp.gcs import ConfigurablePickledObjectGCSIOManager, GCSResource
+
+        @asset
+        def asset1():
+            # create df ...
+            return df
+
+        @asset
+        def asset2(asset1):
+            return asset1[:5]
+
+        defs = Definitions(
+            assets=[asset1, asset2],
+            resources={
+                "io_manager": ConfigurablePickledObjectGCSIOManager(
+                    gcs_bucket="my-cool-bucket",
+                    gcs_prefix="my-cool-prefix"
+                ),
+                "gcs": GCSResource(project="my-cool-project")
+            }
+        )
+
+
+    2. Attach this IO manager to your job to make it available to your ops.
+
+    .. code-block:: python
+
+        from dagster import job
+        from dagster_gcp.gcs import ConfigurablePickledObjectGCSIOManager, GCSResource
+
+        @job(
+            resource_defs={
+                "io_manager": ConfigurablePickledObjectGCSIOManager(
+                    gcs_bucket="my-cool-bucket",
+                    gcs_prefix="my-cool-prefix"
+                ),
+                "gcs": GCSResource(project="my-cool-project")
+            }
+        )
+        def my_job():
+            ...
+    """
+
+    gcs: ResourceDependency[GCSResource]
+    gcs_bucket: str = Field(description="GCS bucket to store files")
+    gcs_prefix: str = Field(default="dagster", description="Prefix to add to all file paths")
+
+    @property
+    @cached_method
+    def _internal_io_manager(self) -> PickledObjectGCSIOManager:
+        return PickledObjectGCSIOManager(
+            bucket=self.gcs_bucket, client=self.gcs.get_client(), prefix=self.gcs_prefix
+        )
+
+    def load_input(self, context: InputContext) -> Any:
+        return self._internal_io_manager.load_input(context)
+
+    def handle_output(self, context: OutputContext, obj: Any) -> None:
+        self._internal_io_manager.handle_output(context, obj)
+
+
 @io_manager(
-    config_schema={
-        "gcs_bucket": Field(StringSource),
-        "gcs_prefix": Field(StringSource, is_required=False, default_value="dagster"),
-    },
+    config_schema=ConfigurablePickledObjectGCSIOManager.to_config_schema(),
     required_resource_keys={"gcs"},
 )
 def gcs_pickle_io_manager(init_context):
@@ -115,11 +200,11 @@ def gcs_pickle_io_manager(init_context):
         defs = Definitions(
             assets=[asset1, asset2],
             resources={
-                "io_manager": gcs_pickle_io_manager.configured(
-                    {"gcs_bucket": "my-cool-bucket", "gcs_prefix": "my-cool-prefix"}
-                ),
-                "gcs": gcs_resource,
-            },
+                    "io_manager": gcs_pickle_io_manager.configured(
+                        {"gcs_bucket": "my-cool-bucket", "gcs_prefix": "my-cool-prefix"}
+                    ),
+                    "gcs": gcs_resource.configured({"project": "my-cool-project"}),
+                },
         )
 
 
@@ -135,7 +220,7 @@ def gcs_pickle_io_manager(init_context):
                 "io_manager": gcs_pickle_io_manager.configured(
                     {"gcs_bucket": "my-cool-bucket", "gcs_prefix": "my-cool-prefix"}
                 ),
-                "gcs": gcs_resource,
+                "gcs": gcs_resource.configured({"project": "my-cool-project"}),
             },
         )
         def my_job():
@@ -143,8 +228,8 @@ def gcs_pickle_io_manager(init_context):
     """
     client = init_context.resources.gcs
     pickled_io_manager = PickledObjectGCSIOManager(
-        init_context.resource_config["gcs_bucket"],
-        client,
-        init_context.resource_config["gcs_prefix"],
+        bucket=init_context.resource_config["gcs_bucket"],
+        client=client,
+        prefix=init_context.resource_config["gcs_prefix"],
     )
     return pickled_io_manager

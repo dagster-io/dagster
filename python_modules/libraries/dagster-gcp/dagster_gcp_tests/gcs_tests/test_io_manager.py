@@ -37,7 +37,11 @@ from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.types.dagster_type import resolve_dagster_type
 from dagster._core.utils import make_new_run_id
 from dagster_gcp.gcs import FakeGCSClient
-from dagster_gcp.gcs.io_manager import PickledObjectGCSIOManager, gcs_pickle_io_manager
+from dagster_gcp.gcs.io_manager import (
+    ConfigurablePickledObjectGCSIOManager,
+    PickledObjectGCSIOManager,
+    gcs_pickle_io_manager,
+)
 from dagster_gcp.gcs.resources import gcs_resource
 from google.cloud import storage
 from upath import UPath
@@ -255,6 +259,84 @@ def test_nothing(gcs_bucket):
             resource_defs={
                 "io_manager": gcs_pickle_io_manager.configured(
                     {"gcs_bucket": gcs_bucket, "gcs_prefix": "assets"}
+                ),
+                "gcs": ResourceDefinition.hardcoded_resource(FakeGCSClient()),
+            },
+        )
+    )
+
+    handled_output_events = list(filter(lambda evt: evt.is_handled_output, result.all_node_events))
+    assert len(handled_output_events) == 2
+
+    for event in handled_output_events:
+        assert len(event.event_specific_data.metadata) == 0
+
+
+def test_asset_pythonic_io_manager(gcs_bucket):
+    @op
+    def first_op(first_input):
+        assert first_input == 3
+        return first_input * 2
+
+    @op
+    def second_op(second_input):
+        assert second_input == 6
+        return second_input + 3
+
+    @asset
+    def upstream():
+        return 2
+
+    @asset
+    def downstream(upstream):
+        return 1 + upstream
+
+    @graph(ins={"downstream": GraphIn()}, out={"asset3": GraphOut()})
+    def graph_asset(downstream):
+        return second_op(first_op(downstream))
+
+    @asset(partitions_def=StaticPartitionsDefinition(["apple", "orange"]))
+    def partitioned():
+        return 8
+
+    fake_gcs_client = FakeGCSClient()
+    asset_group = AssetGroup(
+        [upstream, downstream, AssetsDefinition.from_graph(graph_asset), partitioned],
+        resource_defs={
+            "io_manager": ConfigurablePickledObjectGCSIOManager(
+                gcs_bucket=gcs_bucket, gcs_prefix="assets"
+            ),
+            "gcs": ResourceDefinition.hardcoded_resource(fake_gcs_client),
+        },
+    )
+    asset_job = asset_group.build_job(name="my_asset_job")
+
+    result = asset_job.execute_in_process(partition_key="apple")
+    assert result.success
+    assert fake_gcs_client.get_all_blob_paths() == {
+        f"{gcs_bucket}/assets/upstream",
+        f"{gcs_bucket}/assets/downstream",
+        f"{gcs_bucket}/assets/partitioned/apple",
+        f"{gcs_bucket}/assets/asset3",
+        f"{gcs_bucket}/assets/storage/{result.run_id}/files/graph_asset.first_op/result",
+    }
+
+
+def test_nothing_pythonic_io_manager(gcs_bucket):
+    @asset
+    def asset1() -> None:
+        ...
+
+    @asset(non_argument_deps={"asset1"})
+    def asset2() -> None:
+        ...
+
+    result = materialize(
+        with_resources(
+            [asset1, asset2],
+            resource_defs={
+                "io_manager": ConfigurablePickledObjectGCSIOManager(
+                    gcs_bucket=gcs_bucket, gcs_prefix="assets"
                 ),
                 "gcs": ResourceDefinition.hardcoded_resource(FakeGCSClient()),
             },

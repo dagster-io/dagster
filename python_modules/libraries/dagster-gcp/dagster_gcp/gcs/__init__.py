@@ -6,10 +6,12 @@ from .gcs_fake_resource import (
     FakeGCSClient as FakeGCSClient,
 )
 from .io_manager import (
+    ConfigurablePickledObjectGCSIOManager as ConfigurablePickledObjectGCSIOManager,
     PickledObjectGCSIOManager as PickledObjectGCSIOManager,
     gcs_pickle_io_manager as gcs_pickle_io_manager,
 )
 from .resources import (
+    GCSResource as GCSResource,
     gcs_file_manager as gcs_file_manager,
     gcs_resource as gcs_resource,
 )

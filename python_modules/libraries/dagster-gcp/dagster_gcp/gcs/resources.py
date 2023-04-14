@@ -1,49 +1,56 @@
-from dagster import Field, Noneable, StringSource, resource
-from dagster._utils.merger import merge_dicts
+from typing import Optional
+
+from dagster import ConfigurableResource, resource
 from google.cloud import storage
+from pydantic import Field
 
 from .file_manager import GCSFileManager
 
-GCS_CLIENT_CONFIG = {
-    "project": Field(Noneable(StringSource), is_required=False, description="Project name")
-}
+
+class GCSResource(ConfigurableResource):
+    project: Optional[str] = Field(default=None, description="Project name")
+
+    def get_client(self) -> storage.Client:
+        return _gcs_client_from_config(project=self.project)
 
 
 @resource(
-    GCS_CLIENT_CONFIG,
+    config_schema=GCSResource.to_config_schema(),
     description="This resource provides a GCS client",
 )
-def gcs_resource(init_context):
-    return _gcs_client_from_config(init_context.resource_config)
+def gcs_resource(init_context) -> storage.Client:
+    return GCSResource.from_resource_context(init_context).get_client()
 
 
-@resource(
-    merge_dicts(
-        GCS_CLIENT_CONFIG,
-        {
-            "gcs_bucket": Field(StringSource),
-            "gcs_prefix": Field(StringSource, is_required=False, default_value="dagster"),
-        },
-    )
-)
+class GCSFileManagerResource(ConfigurableResource):
+    project: Optional[str] = Field(default=None, description="Project name")
+    gcs_bucket: str = Field(description="GCS bucket to store files")
+    gcs_prefix: str = Field(default="dagster", description="Prefix to add to all file paths")
+
+    def get_client(self) -> GCSFileManager:
+        gcs_client = _gcs_client_from_config(project=self.project)
+        return GCSFileManager(
+            client=gcs_client,
+            gcs_bucket=self.gcs_bucket,
+            gcs_base_key=self.gcs_prefix,
+        )
+
+
+@resource(config_schema=GCSFileManagerResource.to_config_schema())
 def gcs_file_manager(context):
     """FileManager that provides abstract access to GCS.
 
     Implements the :py:class:`~dagster._core.storage.file_manager.FileManager` API.
     """
-    gcs_client = _gcs_client_from_config(context.resource_config)
-    return GCSFileManager(
-        client=gcs_client,
-        gcs_bucket=context.resource_config["gcs_bucket"],
-        gcs_base_key=context.resource_config["gcs_prefix"],
-    )
+    return GCSFileManagerResource.from_resource_context(context).get_client()
 
 
-def _gcs_client_from_config(config):
-    """Args:
-        config: A configuration containing the fields in GCS_CLIENT_CONFIG.
+def _gcs_client_from_config(project: Optional[str]) -> storage.Client:
+    """Creates a GCS Client.
+
+    Args:
+        project: The GCP project
 
     Returns: A GCS client.
     """
-    project = config.get("project", None)
     return storage.client.Client(project=project)
