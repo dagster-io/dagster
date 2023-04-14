@@ -35,8 +35,8 @@ Parameter reference table:
 | Parameter                            | Description                                                                           | Data type            |
 | ------------------------------------ | ------------------------------------------------------------------------------------- | -------------------- |
 | `locations.location_name`            | The name of your code location that will appear in the Dagster UI code locations page | string               |
-| `locations.code_source.package_name` | Use if your dagster code is structured as a package | string (folder name) |
-| `locations.code_source.python_file`  | Use if your dagster code is in a single file | string (.py file)    |
+| `locations.code_source.package_name` | Use if your dagster code is structured as a package                                   | string (folder name) |
+| `locations.code_source.python_file`  | Use if your dagster code is in a single file                                          | string (.py file)    |
 | `locations.code_source.module_name`  | The module that contains your dagster code                                            | string (module name) |
 
 Example for a single code location:
@@ -48,7 +48,6 @@ locations:
   - location_name: data-eng-pipeline
     code_source:
       package_name: quickstart_etl
-      
 ```
 
 Example for multiple code locations:
@@ -89,14 +88,14 @@ locations:
 
 Build directory is useful if your setup.py or requirements.txt is not at your project root but in a subdirectory. This is common if you have multiple python packages within a single dagster project.
 
-The build registry is applicable to hybrid deployments only 
+The build registry is applicable to hybrid deployments only
 
 Parameter reference table:
 
 | Parameter                   | Description                                                                                                                                                       | Data type                |
 | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
 | `locations.build.directory` | The directory in your project code that you want to deploy, the default is `.`. If you have sub-folders you can specific the path to only deploy that sub-project | string (path)            |
-| `locations.build.registry`  | The Docker registry to push your code location to in the registry (Hybrid only)                                                                                                | string (docker registry) |
+| `locations.build.registry`  | The Docker registry to push your code location to in the registry (Hybrid only)                                                                                   | string (docker registry) |
 
 Example:
 
@@ -109,7 +108,7 @@ locations:
       package_name: quickstart_etl
     build:
       directory: ./
-      registry: 764506304434.dkr.ecr.us-west-2.amazonaws.com/branch-deployments-gh-action-test
+      registry: your-docker-image-registry/image-name
 ```
 
 ## Python Executable
