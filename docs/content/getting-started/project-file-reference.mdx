@@ -1,0 +1,458 @@
+---
+title: Dagster project file reference | Dagster Docs
+description: ""
+---
+
+# Dagster project file reference
+
+Following [our recommended best practices for project structure](/guides/dagster/recommended-project-structure), a small Dagster project might look like this:
+
+```shell
+.
+├── README.md
+├── my_dagster_project
+│   ├── __init__.py
+│   ├── assets
+│   │   ├── __init__.py
+│   │   ├── activity_analytics
+│   │   │   ├── __init__.py
+│   │   │   └── activity_forecast.py
+│   │   └──  core
+│   │   │   ├── __init__.py
+│   │   │   ├── id_range_for_time.py
+│   │   │   └── items.py
+│   ├── jobs.py
+│   ├── partitions.py
+│   ├── resources
+│   │   ├── __init__.py
+│   │   ├── hn_resource.py
+│   │   └── snowflake_io_manager.py
+│   ├── sensors
+│   │   ├── __init__.py
+│   │   ├── hn_tables_updated_sensor.py
+│   │   └── slack_on_failure_sensor.py
+│   └── utils
+├── my_dagster_project_tests
+├── pyproject.toml
+├── setup.cfg
+├── setup.py
+└── tox.ini
+```
+
+Let's take a look at what each of these files and directories does:
+
+<table
+  className="table"
+  style={{
+    width: "100%",
+  }}
+>
+  <thead>
+    <tr>
+      <th
+        style={{
+          width: "25%",
+        }}
+      >
+        File/Directory
+      </th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>my_dagster_project/</td>
+      <td>A Python package that contains your new Dagster code.</td>
+    </tr>
+    <tr>
+      <td>my_dagster_project_tests/</td>
+      <td>
+        A Python package that contains tests for <code>my_dagster_project</code>
+        .
+      </td>
+    </tr>
+    <tr>
+      <td>README.md</td>
+      <td>A description and starter guide for your new Dagster project.</td>
+    </tr>
+    <tr>
+      <td>pyproject.toml</td>
+      <td>
+        A file that specifies package core metadata in a static, tool-agnostic
+        way.
+        <br />
+        <br />
+        This file includes a <code>tool.dagster</code> section which references the
+        Python package with your Dagster definitions defined and discoverable at
+        the top level. This allows you to use the
+        <code>dagster dev</code> command to load your Dagster code without any
+        parameters. Refer to the{" "}
+        <a href="/concepts/code-locations">Code locations documentation</a> to
+        learn more.
+        <br />
+        <br /> <strong>Note:</strong> <code>pyproject.toml</code> was introduced
+        in{" "}
+        <a href="https://peps.python.org/pep-0518/https://peps.python.org/pep-0518/">
+          PEP-518
+        </a>{" "}
+        and meant to replace <code>setup.py</code>, but we may still include a{" "}
+        <code>setup.py</code> for compatibility with tools that do not use this
+        spec.
+      </td>
+    </tr>
+    <tr>
+      <td>setup.py</td>
+      <td>
+        A build script with Python package dependencies for your new project as
+        a package.
+      </td>
+    </tr>
+    <tr>
+      <td>setup.cfg</td>
+      <td>
+        An ini file that contains option defaults for <code>setup.py</code>{" "}
+        commands.
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+---
+
+## Configuration files
+
+Depending on your use case or if you're using Dagster Cloud, you may also need to add additional configuration files to your project:
+
+<table
+  className="table"
+  style={{
+    width: "100%",
+  }}
+>
+  <thead>
+    <tr>
+      <th
+        style={{
+          width: "20%",
+        }}
+      >
+        File/Directory
+      </th>
+      <th>Description</th>
+      <th
+        style={{
+          width: "10%",
+        }}
+      >
+        OSS
+      </th>
+      <th
+        style={{
+          width: "10%",
+        }}
+      >
+        Cloud
+      </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>dagster.yaml</td>
+      <td>
+        Configures your Dagster instance, including defining storage locations,
+        run launchers, sensors, and schedules. Refer to the{" "}
+        <a href="somelinkhere">dagster.yaml reference</a> for more info,
+        including a list of use cases and available options.
+        <br />
+        <br />
+        For Dagster Cloud <a href="/dagster-cloud/deployment/hybrid">
+          Hybrid deployments
+        </a>, this file can be used to <a href="/dagster-cloud/deployment/agents/customizing-configuration">
+          customize the Hybrid agent
+        </a>.
+      </td>
+      <td>Optional</td>
+      <td>Optional</td>
+    </tr>
+    <tr>
+      <td>dagster_cloud.yaml</td>
+      <td>
+        Defines multiple code locations for Dagster Cloud. For Hybrid
+        deployments, this file can be used to manage environment
+        variables/secrets. Refer to the{" "}
+        <a href="somelinkhere">dagster_cloud.yaml reference</a> for more info,
+        including a list of use cases and available options.
+      </td>
+      <td>n/a</td>
+      <td>Optional</td>
+    </tr>
+    <tr>
+      <td>deployment_settings.yaml</td>
+      <td>
+        Configures settings for full deployments in Dagster Cloud, including run
+        queue priority and concurrency limits. Refer to the{" "}
+        <a href="/dagster-cloud/managing-deployments/deployment-settings-reference">
+          Deployment settings reference
+        </a>{" "}
+        for more info.
+      </td>
+      <td>n/a</td>
+      <td>Optional</td>
+    </tr>
+    <tr>
+      <td>workspace.yaml</td>
+      <td>
+        Defines multiple code locations for local development or deploying to
+        your infrastructure. Refer to the{" "}
+        <a href="/concepts/code-locations/workspace-files">
+          Workspace file documentation
+        </a>{" "}
+        for more info and available options.
+      </td>
+      <td>Optional</td>
+      <td>n/a</td>
+    </tr>
+  </tbody>
+</table>
+
+---
+
+## Example project structures
+
+### Local development
+
+When running Dagster locally, you can configure `pyproject.toml` to define a single code location. If you have multiple code locations, list them in a single `workspace.yaml` file. You can also include a `dagster.yaml` to configure things like storage, run launchers, and concurrency limits.
+
+<TabGroup>
+<TabItem name="Single code location">
+
+#### Single code location
+
+For local development, a project with a single code location might look like this:
+
+```shell
+.
+├── README.md
+├── my_dagster_project
+│   ├── __init__.py
+│   ├── assets
+│   │   ├── __init__.py
+│   │   ├── activity_analytics
+│   │   │   ├── __init__.py
+│   │   │   └── activity_forecast.py
+│   │   └──  core
+│   │   │   ├── __init__.py
+│   │   │   ├── id_range_for_time.py
+│   │   │   └── items.py
+│   ├── jobs.py
+│   ├── partitions.py
+│   ├── resources
+│   │   ├── __init__.py
+│   │   ├── hn_resource.py
+│   │   └── snowflake_io_manager.py
+│   ├── sensors
+│   │   ├── __init__.py
+│   │   ├── hn_tables_updated_sensor.py
+│   │   └── slack_on_failure_sensor.py
+│   └── utils
+├── my_dagster_project_tests
+├── dagster.yaml 			## optional, used for instance settings
+├── pyproject.toml			## defines a single code location
+├── setup.cfg
+├── setup.py
+└── tox.ini
+```
+
+In this example project, we've included a `dagster.yaml` to configure settings for our instance and `pyproject.toml` to define our project as a module. This allows us to run [`dagster dev`](/guides/dagster/running-dagster-locally) without supplying command line arguments.
+
+---
+
+</TabItem>
+<TabItem name="Multiple code locations">
+
+#### Multiple code locations
+
+For local development, a project with multiple code locations might look like this:
+
+TODO - Should we add another directory (ex: `my_other_dagster_project` to make it clear there's another code location/project?)
+
+```shell
+.
+├── README.md
+├── my_dagster_project
+│   ├── __init__.py
+│   ├── assets
+│   │   ├── __init__.py
+│   │   ├── activity_analytics
+│   │   │   ├── __init__.py
+│   │   │   └── activity_forecast.py
+│   │   └──  core
+│   │   │   ├── __init__.py
+│   │   │   ├── id_range_for_time.py
+│   │   │   └── items.py
+│   ├── jobs.py
+│   ├── partitions.py
+│   ├── resources
+│   │   ├── __init__.py
+│   │   ├── hn_resource.py
+│   │   └── snowflake_io_manager.py
+│   ├── sensors
+│   │   ├── __init__.py
+│   │   ├── hn_tables_updated_sensor.py
+│   │   └── slack_on_failure_sensor.py
+│   └── utils
+├── my_dagster_project_tests
+├── dagster.yaml 			## optional, used for instance settings
+├── pyproject.toml
+├── setup.cfg
+├── setup.py
+├── tox.ini
+└── workspace.yaml		## defines multiple code locations
+```
+
+---
+
+</TabItem>
+</TabGroup>
+
+### Dagster Open Source deployment
+
+Once you're ready to move from working locally to deploying Dagster to your infrastructure, use our [deployment guides](/deployment/guides) to get up and running.
+
+A Dagster project deployed to your infrastructure might look like this:
+
+```shell
+.
+├── README.md
+├── my_dagster_project
+│   ├── __init__.py
+│   ├── assets
+│   │   ├── __init__.py
+│   │   ├── activity_analytics
+│   │   │   ├── __init__.py
+│   │   │   └── activity_forecast.py
+│   │   └──  core
+│   │   │   ├── __init__.py
+│   │   │   ├── id_range_for_time.py
+│   │   │   └── items.py
+│   ├── jobs.py
+│   ├── partitions.py
+│   ├── resources
+│   │   ├── __init__.py
+│   │   ├── hn_resource.py
+│   │   └── snowflake_io_manager.py
+│   ├── sensors
+│   │   ├── __init__.py
+│   │   ├── hn_tables_updated_sensor.py
+│   │   └── slack_on_failure_sensor.py
+│   └── utils
+├── my_dagster_project_tests
+├── dagster.yaml            ## used for instance settings
+├── pyproject.toml
+├── setup.cfg
+├── setup.py
+├── tox.ini
+└── workspace.yaml          ## defines multiple code locations
+```
+
+### Dagster Cloud
+
+Depending on the type of deployment you're using in Dagster Cloud - Serverless or Hybrid - your project structure might look slightly different. Click the tabs for more info.
+
+<TabGroup>
+<TabItem name="Serverless deployment">
+
+#### Serverless deployment
+
+For Dagster Cloud Serverless deployments, the `dagster_cloud.yaml` file is used to configure your code locations as well as other settings.
+
+In cases where you want to configure [settings for a full deployment](/dagster-cloud/developing-testing/deployment-settings-reference), use the `deployment_settings.yaml` file.
+
+For a Serverless deployment to Dagster Cloud, an example project might look like this:
+
+TODO - Changes to `setup.py` are sometimes required before deploying to Cloud - we should confirm this and add info in if necessary
+
+```shell
+.
+├── README.md
+├── my_dagster_project
+│   ├── __init__.py
+│   ├── assets
+│   │   ├── __init__.py
+│   │   ├── activity_analytics
+│   │   │   ├── __init__.py
+│   │   │   └── activity_forecast.py
+│   │   └──  core
+│   │   │   ├── __init__.py
+│   │   │   ├── id_range_for_time.py
+│   │   │   └── items.py
+│   ├── jobs.py
+│   ├── partitions.py
+│   ├── resources
+│   │   ├── __init__.py
+│   │   ├── hn_resource.py
+│   │   └── snowflake_io_manager.py
+│   ├── sensors
+│   │   ├── __init__.py
+│   │   ├── hn_tables_updated_sensor.py
+│   │   └── slack_on_failure_sensor.py
+│   └── utils
+├── my_dagster_project_tests
+├── dagster_cloud.yaml			   ## defines code locations
+├── deployment_settings.yaml	 ## defines settings for full deployments
+├── pyproject.toml
+├── setup.cfg
+├── setup.py
+└── tox.ini
+```
+
+</TabItem>
+<TabItem name="Hybrid deployment">
+
+#### Hybrid deployment
+
+For Dagster Cloud Hybrid deployments, the `dagster_cloud.yaml` file is used to configure your code locations as well as other settings.
+
+To customize your [Hybrid agent's configuration](/dagster-cloud/deployment/agents/customizing-configuration), include a `dagster.yaml` with the desired settings.
+
+In cases where you want to configure [settings for a full deployment](/dagster-cloud/developing-testing/deployment-settings-reference), use the `deployment_settings.yaml` file.
+
+For a Hybrid deployment to Dagster Cloud, an example project might look like this:
+
+```shell
+.
+├── README.md
+├── my_dagster_project
+│   ├── __init__.py
+│   ├── assets
+│   │   ├── __init__.py
+│   │   ├── activity_analytics
+│   │   │   ├── __init__.py
+│   │   │   └── activity_forecast.py
+│   │   └──  core
+│   │   │   ├── __init__.py
+│   │   │   ├── id_range_for_time.py
+│   │   │   └── items.py
+│   ├── jobs.py
+│   ├── partitions.py
+│   ├── resources
+│   │   ├── __init__.py
+│   │   ├── hn_resource.py
+│   │   └── snowflake_io_manager.py
+│   ├── sensors
+│   │   ├── __init__.py
+│   │   ├── hn_tables_updated_sensor.py
+│   │   └── slack_on_failure_sensor.py
+│   └── utils
+├── my_dagster_project_tests
+├── dagster.yaml				        ## hybrid agent custom configuration
+├── dagster_cloud.yaml          ## defines code locations
+├── deployment_settings.yaml    ## defines settings for full deployments
+├── pyproject.toml
+├── setup.cfg
+├── setup.py
+└── tox.ini
+```
+
+</TabItem>
+</TabGroup>
