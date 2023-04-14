@@ -17,7 +17,7 @@ import * as React from 'react';
 
 import {TerminateRunPolicy} from '../graphql/types';
 
-import {NavigationBlock} from './NavitationBlock';
+import {NavigationBlock} from './NavigationBlock';
 import {TERMINATE_MUTATION} from './RunUtils';
 import {TerminateMutation, TerminateMutationVariables} from './types/RunUtils.types';
 
