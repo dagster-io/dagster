@@ -7,6 +7,7 @@ from dagster import (
     Field as LegacyDagsterField,
     IntSource,
     Map,
+    RunConfig,
     Shape,
     asset,
     job,
@@ -17,7 +18,7 @@ from dagster._config.pythonic_config import Config, ConfigurableResource, Permis
 from dagster._config.type_printer import print_config_type_to_string
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._utils.cached_method import cached_method
-from pydantic import Field
+from pydantic import Field, SecretStr
 from typing_extensions import Literal
 
 
@@ -910,3 +911,23 @@ def test_to_config_dict_combined_with_cached_method() -> None:
     obj = ConfigWithCachedMethod(a_string="bar")
     obj.a_string_cached()
     assert obj._convert_to_config_dictionary() == {"a_string": "bar"}  # noqa: SLF001
+
+
+def test_secret_str() -> None:
+    class ConfigWithSecret(Config):
+        a_secret: SecretStr
+
+    @asset
+    def my_asset(config: ConfigWithSecret):
+        return config.a_secret.get_secret_value()
+
+    assert my_asset(ConfigWithSecret(a_secret="foo")) == "foo"  # type: ignore
+    assert my_asset(config=ConfigWithSecret(a_secret="foo")) == "foo"  # type: ignore
+
+    defs = Definitions(assets=[my_asset])
+    result = defs.get_implicit_global_asset_job_def().execute_in_process(
+        run_config=RunConfig(ops={"my_asset": ConfigWithSecret(a_secret="foo")})  # type: ignore
+    )
+
+    assert result.success
+    assert result.output_for_node("my_asset") == "foo"

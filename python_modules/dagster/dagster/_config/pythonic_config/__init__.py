@@ -18,7 +18,7 @@ from typing import (
     cast,
 )
 
-from pydantic import ConstrainedFloat, ConstrainedInt, ConstrainedStr
+from pydantic import ConstrainedFloat, ConstrainedInt, ConstrainedStr, SecretField, SecretStr
 from typing_extensions import TypeAlias, TypeGuard, get_args
 
 from dagster import (
@@ -246,16 +246,21 @@ class Config(MakeConfigCacheable):
         """
         output = {}
         for key, value in self.__dict__.items():
+            underlying_value = value
+            # If the value is a SecretField, we want to get the underlying value
+            if isinstance(value, SecretField):
+                underlying_value = value.get_secret_value()
+
             if self._is_field_internal(key):
                 continue
             field = self.__fields__.get(key)
-            if field and value is None and not _is_pydantic_field_required(field):
+            if field and underlying_value is None and not _is_pydantic_field_required(field):
                 continue
 
             if field:
-                output[field.alias] = value
+                output[field.alias] = underlying_value
             else:
-                output[key] = value
+                output[key] = underlying_value
         return output
 
     @classmethod
@@ -1416,7 +1421,7 @@ def _config_type_for_type_on_pydantic_field(
         potential_dagster_type (Any): The Python type of the Pydantic field.
     """
     # special case pydantic constrained types to their source equivalents
-    if safe_is_subclass(potential_dagster_type, ConstrainedStr):
+    if safe_is_subclass(potential_dagster_type, (ConstrainedStr, SecretStr)):
         return StringSource
     # no FloatSource, so we just return float
     elif safe_is_subclass(potential_dagster_type, ConstrainedFloat):

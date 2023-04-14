@@ -57,6 +57,7 @@ from dagster._core.test_utils import environ
 from dagster._utils.cached_method import cached_method
 from pydantic import (
     Field as PyField,
+    SecretStr,
     ValidationError,
 )
 
@@ -2598,3 +2599,97 @@ def test_bind_top_level_resource_sensor_multi_job() -> None:
             "foo": FooResource(my_str="foo"),
         },
     )
+
+
+def test_secret_str() -> None:
+    class ResourceWithSecret(ConfigurableResource):
+        a_secret: SecretStr
+
+    @asset
+    def my_asset(my_resource: ResourceWithSecret):
+        return my_resource.a_secret.get_secret_value()
+
+    assert my_asset(ResourceWithSecret(a_secret="foo")) == "foo"  # type: ignore
+    assert my_asset(my_resource=ResourceWithSecret(a_secret="foo")) == "foo"  # type: ignore
+
+    defs = Definitions(
+        assets=[my_asset], resources={"my_resource": ResourceWithSecret(a_secret="foo")}
+    )
+    result = defs.get_implicit_global_asset_job_def().execute_in_process()
+
+    assert result.success
+    assert result.output_for_node("my_asset") == "foo"
+
+
+def test_secret_str_runtime_config() -> None:
+    class ResourceWithSecret(ConfigurableResource):
+        a_secret: SecretStr
+
+    @asset
+    def my_asset(my_resource: ResourceWithSecret):
+        return my_resource.a_secret.get_secret_value()
+
+    defs = Definitions(
+        assets=[my_asset], resources={"my_resource": ResourceWithSecret.configure_at_launch()}
+    )
+    result = defs.get_implicit_global_asset_job_def().execute_in_process(
+        run_config={"resources": {"my_resource": {"config": {"a_secret": "bar"}}}}
+    )
+
+    assert result.success
+    assert result.output_for_node("my_asset") == "bar"
+
+
+def test_secret_str_from_env() -> None:
+    class ResourceWithSecret(ConfigurableResource):
+        a_secret: SecretStr
+
+    @asset
+    def my_asset(my_resource: ResourceWithSecret):
+        return my_resource.a_secret.get_secret_value()
+
+    with environ(
+        {
+            "ENV_VARIABLE_FOR_TEST": "baz",
+        }
+    ):
+        defs = Definitions(
+            assets=[my_asset],
+            resources={"my_resource": ResourceWithSecret(a_secret=EnvVar("ENV_VARIABLE_FOR_TEST"))},
+        )
+        result = defs.get_implicit_global_asset_job_def().execute_in_process()
+
+        assert result.success
+        assert result.output_for_node("my_asset") == "baz"
+
+
+def test_secret_str_nested() -> None:
+    class ResourceWithSecret(ConfigurableResource):
+        a_secret: SecretStr
+
+    class OuterResourceWithSecret(ConfigurableResource):
+        inner: ResourceWithSecret
+        another_secret: SecretStr
+
+    @asset
+    def my_asset(my_resource: OuterResourceWithSecret):
+        return (
+            my_resource.another_secret.get_secret_value()
+            + my_resource.inner.a_secret.get_secret_value()
+        )
+
+    assert my_asset(OuterResourceWithSecret(inner=ResourceWithSecret(a_secret="foo"), another_secret="bar")) == "barfoo"  # type: ignore
+    assert my_asset(my_resource=OuterResourceWithSecret(inner=ResourceWithSecret(a_secret="foo"), another_secret="bar")) == "barfoo"  # type: ignore
+
+    defs = Definitions(
+        assets=[my_asset],
+        resources={
+            "my_resource": OuterResourceWithSecret(
+                inner=ResourceWithSecret(a_secret="foo"), another_secret="bar"
+            )
+        },
+    )
+    result = defs.get_implicit_global_asset_job_def().execute_in_process()
+
+    assert result.success
+    assert result.output_for_node("my_asset") == "barfoo"
