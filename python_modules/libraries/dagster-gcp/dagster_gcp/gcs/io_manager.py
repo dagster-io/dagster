@@ -206,11 +206,11 @@ def gcs_pickle_io_manager(init_context):
         defs = Definitions(
             assets=[asset1, asset2],
             resources={
-                    "io_manager": gcs_pickle_io_manager.configured(
-                        {"gcs_bucket": "my-cool-bucket", "gcs_prefix": "my-cool-prefix"}
-                    ),
-                    "gcs": gcs_resource.configured({"project": "my-cool-project"}),
-                },
+                "io_manager": gcs_pickle_io_manager.configured(
+                    {"gcs_bucket": "my-cool-bucket", "gcs_prefix": "my-cool-prefix"}
+                ),
+                "gcs": gcs_resource,
+            },
         )
 
 
