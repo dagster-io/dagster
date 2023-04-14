@@ -46,10 +46,15 @@ For example, we can attach a default value of `"hello"` to the `greeting_phrase`
 ```python file=/guides/dagster/pythonic_config/pythonic_config.py startafter=start_optional_config endbefore=end_optional_config dedent=4
 from typing import Optional
 from dagster import asset, Config, materialize, RunConfig
+from pydantic import Field
 
 class MyAssetConfig(Config):
     person_name: Optional[str] = None
-    greeting_phrase: str = "hello"
+
+    # can pass default to pydantic.Field to attach metadata to the field
+    greeting_phrase: str = Field(
+        default="hello", description="The greeting phrase to use."
+    )
 
 @asset
 def greeting(config: MyAssetConfig) -> str:
@@ -69,33 +74,44 @@ asset_result = materialize(
 By default, fields which are typed as `Optional` are not required to be specified in the config, and have an implicit default value of `None`. If you want to require that a field be specified in the config, you may use an ellipsis (`...`) to [require that a value be passed](https://docs.pydantic.dev/usage/models/#required-fields).
 
 ```python file=/guides/dagster/pythonic_config/pythonic_config.py startafter=start_required_config endbefore=end_required_config dedent=4
-from typing import Optional
+from typing import Optional, Callable
 from dagster import asset, Config
+from pydantic import Field
 
 class MyAssetConfig(Config):
     # ellipsis indicates that even though the type is Optional,
     # an input is required
-    person_name: Optional[str] = ...
+    person_first_name: Optional[str] = ...
+
+    # ellipsis can also be used with pydantic.Field to attach metadata
+    person_last_name: Optional[Callable] = Field(
+        default=..., description="The last name of the person to greet"
+    )
 
 @asset
 def goodbye(config: MyAssetConfig) -> str:
-    if config.person_name:
-        return f"Goodbye, {config.person_name}"
+    full_name = f"{config.person_first_name} {config.person_last_name}".strip()
+    if full_name:
+        return f"Goodbye, {full_name}"
     else:
         return "Goodbye"
 
-# errors, since person_name is required
+# errors, since person_first_name and person_last_name are required
 goodbye(MyAssetConfig())
 
-# works, since person_name is provided
-goodbye(MyAssetConfig(person_name=None))
+# works, since both person_first_name and person_last_name are provided
+goodbye(MyAssetConfig(person_first_name="Alice", person_last_name=None))
 ```
 
 ---
 
 ## Basic data structures
 
-Basic Python data structures can be used in your config schemas, including `List`s and `Dict`s, along with nested versions of these data structures.
+Basic Python data structures can be used in your config schemas along with nested versions of these data structures. The data structures which can be used are:
+
+- `List`
+- `Dict`
+- `Mapping`
 
 For example, we can define a config schema that takes in a list of user names and a mapping of user names to user scores.
 
@@ -191,7 +207,7 @@ filtered_listings(FilterConfig(title="hotel", beds=4))
 
 ## Union types
 
-Union types are supported using Pydantic [discriminated unions](https://docs.pydantic.dev/usage/types/#discriminated-unions-aka-tagged-unions). Each union type must be a subclass of <PyObject object="Config"/>. The `discriminator` argument to <PyObject object="Field"/> specifies the field that will be used to determine which union type to use.
+Union types are supported using Pydantic [discriminated unions](https://docs.pydantic.dev/usage/types/#discriminated-unions-aka-tagged-unions). Each union type must be a subclass of <PyObject object="Config"/>. The `discriminator` argument to <PyObject object="Field"/> specifies the field that will be used to determine which union type to use. Discriminated unions provide comparable functionality to the `Selector` type in the legacy Dagster config APIs.
 
 Here, we define a config schema which takes in a `pet` field, which can be either a `Cat` or a `Dog`, as indicated by the `pet_type` field.
 

@@ -233,10 +233,15 @@ def optional_config() -> None:
 
     from typing import Optional
     from dagster import asset, Config, materialize, RunConfig
+    from pydantic import Field
 
     class MyAssetConfig(Config):
         person_name: Optional[str] = None
-        greeting_phrase: str = "hello"
+
+        # can pass default to pydantic.Field to attach metadata to the field
+        greeting_phrase: str = Field(
+            default="hello", description="The greeting phrase to use."
+        )
 
     @asset
     def greeting(config: MyAssetConfig) -> str:
@@ -380,25 +385,32 @@ def validated_schema_config() -> None:
 
 def required_config() -> None:
     # start_required_config
-    from typing import Optional
+    from typing import Optional, Callable
     from dagster import asset, Config
+    from pydantic import Field
 
     class MyAssetConfig(Config):
         # ellipsis indicates that even though the type is Optional,
         # an input is required
-        person_name: Optional[str] = ...  # type: ignore
+        person_first_name: Optional[str] = ...  # type: ignore
+
+        # ellipsis can also be used with pydantic.Field to attach metadata
+        person_last_name: Optional[Callable] = Field(
+            default=..., description="The last name of the person to greet"
+        )
 
     @asset
     def goodbye(config: MyAssetConfig) -> str:
-        if config.person_name:
-            return f"Goodbye, {config.person_name}"
+        full_name = f"{config.person_first_name} {config.person_last_name}".strip()
+        if full_name:
+            return f"Goodbye, {full_name}"
         else:
             return "Goodbye"
 
-    # errors, since person_name is required
+    # errors, since person_first_name and person_last_name are required
     goodbye(MyAssetConfig())
 
-    # works, since person_name is provided
-    goodbye(MyAssetConfig(person_name=None))
+    # works, since both person_first_name and person_last_name are provided
+    goodbye(MyAssetConfig(person_first_name="Alice", person_last_name=None))
 
     # end_required_config
