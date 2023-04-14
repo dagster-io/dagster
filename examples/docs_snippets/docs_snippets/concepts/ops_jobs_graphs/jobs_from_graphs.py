@@ -1,16 +1,16 @@
 # isort: skip_file
 
 # start_define_graph
-from dagster import graph, op, Resource
+from dagster import graph, op, ConfigurableResource
 
 
-class Server:
+class Server(ConfigurableResource):
     def ping_server(self):
         ...
 
 
 @op
-def interact_with_server(server: Resource[Server]):
+def interact_with_server(server: Server):
     server.ping_server()
 
 

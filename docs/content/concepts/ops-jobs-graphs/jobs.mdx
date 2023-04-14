@@ -112,16 +112,16 @@ You can model this by building multiple jobs that use the same underlying graph 
 To do this, you first define a graph with the <PyObject object="graph" decorator /> decorator.
 
 ```python file=/concepts/ops_jobs_graphs/jobs_from_graphs.py startafter=start_define_graph endbefore=end_define_graph
-from dagster import graph, op, Resource
+from dagster import graph, op, ConfigurableResource
 
 
-class Server:
+class Server(ConfigurableResource):
     def ping_server(self):
         ...
 
 
 @op
-def interact_with_server(server: Resource[Server]):
+def interact_with_server(server: Server):
     server.ping_server()
 
 
