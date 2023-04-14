@@ -208,6 +208,10 @@
           {
             "title": "Run Configuration",
             "path": "/concepts/configuration/config-schema"
+          },
+          {
+            "title": "Advanced Config Types",
+            "path": "/concepts/configuration/advanced-config-types"
           }
         ]
       },
