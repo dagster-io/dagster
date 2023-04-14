@@ -204,10 +204,6 @@
           {
             "title": "Run Configuration",
             "path": "/concepts/configuration/config-schema"
-          },
-          {
-            "title": "Configured API",
-            "path": "/concepts/configuration/configured"
           }
         ]
       },
@@ -806,10 +802,6 @@
               {
                 "title": "Asset versioning and caching",
                 "path": "/guides/dagster/asset-versioning-and-caching"
-              },
-              {
-                "title": "Pythonic config",
-                "path": "/guides/dagster/pythonic-config"
               },
               {
                 "title": "Pythonic resources",
