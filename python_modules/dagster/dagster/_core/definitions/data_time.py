@@ -490,7 +490,7 @@ class CachingDataTimeResolver:
                 "Cannot calculate minutes late for asset without a FreshnessPolicy"
             )
 
-        return freshness_policy.minutes_late(
+        return freshness_policy.minutes_overdue(
             data_time=self.get_current_data_time(asset_key, current_time=evaluation_time),
             evaluation_time=evaluation_time,
         )
