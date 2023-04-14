@@ -804,10 +804,6 @@
                 "path": "/guides/dagster/asset-versioning-and-caching"
               },
               {
-                "title": "Pythonic config",
-                "path": "/guides/dagster/pythonic-config"
-              },
-              {
                 "title": "Pythonic resources",
                 "path": "/guides/dagster/pythonic-resources"
               }
