@@ -2,7 +2,6 @@ import {MockedResponse} from '@apollo/client/testing';
 
 import {tokenForAssetKey} from '../../asset-graph/Utils';
 import {AssetNodeForGraphQueryFragment} from '../../asset-graph/types/useAssetGraphData.types';
-import {LaunchPipelineExecutionMutationVariables} from '../../graphql/graphql';
 import {
   AssetKeyInput,
   LaunchBackfillParams,
@@ -15,7 +14,10 @@ import {LaunchPartitionBackfillMutation} from '../../instance/types/BackfillUtil
 import {CONFIG_PARTITION_SELECTION_QUERY} from '../../launchpad/ConfigEditorConfigPicker';
 import {ConfigPartitionSelectionQuery} from '../../launchpad/types/ConfigEditorConfigPicker.types';
 import {LAUNCH_PIPELINE_EXECUTION_MUTATION} from '../../runs/RunUtils';
-import {LaunchPipelineExecutionMutation} from '../../runs/types/RunUtils.types';
+import {
+  LaunchPipelineExecutionMutation,
+  LaunchPipelineExecutionMutationVariables,
+} from '../../runs/types/RunUtils.types';
 import {LAUNCH_ASSET_CHOOSE_PARTITIONS_QUERY} from '../LaunchAssetChoosePartitionsDialog';
 import {
   LAUNCH_ASSET_CHECK_UPSTREAM_QUERY,

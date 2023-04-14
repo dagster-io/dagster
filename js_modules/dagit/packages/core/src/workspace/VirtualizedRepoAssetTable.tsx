@@ -95,14 +95,12 @@ export const VirtualizedRepoAssetTable: React.FC<Props> = ({repoAddress, assets}
                 <VirtualizedAssetRow
                   showCheckboxColumn={false}
                   key={key}
-                  // todo dish: Fix this
                   type="asset"
                   path={row.path}
                   repoAddress={repoAddress}
                   showRepoColumn={false}
                   height={size}
                   start={start}
-                  // todo dish: Fix this
                   checked={false}
                   onToggleChecked={() => {}}
                   onWipe={() => {}}
