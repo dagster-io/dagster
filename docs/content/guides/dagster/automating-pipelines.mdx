@@ -123,7 +123,15 @@ def my_s3_sensor(context):
 
 ### I want some assets to materialize every time other assets materialize
 
-If every time you materialize Airbyte assets you want to execute a dbt asset, [asset sensors](/concepts/partitions-schedules-sensors/asset-sensors) can be used to automate that process. Asset sensors can be used across [code locations](/concepts/code-locations), so if you are managing some Airbyte assets in one code location and dbt assets in another, you can use asset sensors to trigger jobs to run.
+For example, the `logins` table is downstream of the `events` table, and you want the logins table to be materialized every time the `events` table is materialized.
+
+Dagster provides _eager_ <PyObject object="AutoMaterializePolicy" pluralize>, which allow materializing an asset whenever it's parent assets are materialized. Note that this feature is currently marked experimental, and some of the APIs may change in the future.
+
+To learn more about auto-materializing assets, visit the [Concept page](/concepts/assets/asset-auto-execution).
+
+Every time the `events` table is materialized,
+
+If every time you materialize Airbyte assets, you want to execute a dbt asset, [asset sensors](/concepts/partitions-schedules-sensors/asset-sensors) can be used to automate that process. Asset sensors can be used across [code locations](/concepts/code-locations), so if you are managing some Airbyte assets in one code location and dbt assets in another, you can use asset sensors to trigger jobs to run.
 
 Dagster provides [reconciliation sensors](/concepts/partitions-schedules-sensors/asset-sensors#asset-reconciliation-sensors), a type of asset sensor, that automatically materialize assets if they are ‘unreconciled’. One of the ways assets are considered unreconciled if any of the asset’s upstream dependencies have been materialized more recently than it has.
 
