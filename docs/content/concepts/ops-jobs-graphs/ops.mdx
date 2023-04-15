@@ -164,9 +164,9 @@ While many use cases can be served using built-in python annotations, <PyObject 
 
 ### Op Configuration
 
-Ops in Dagster can specify a config schema which makes them configurable and parameterizable. The configuration system is explained in detail in the [Config schema documentation](/concepts/configuration/config-schema).
+Ops in Dagster can specify a config schema which makes them configurable and parameterizable at execution time. The configuration system is explained in detail in the [Config schema documentation](/concepts/configuration/config-schema).
 
-Op functions can specify an annotated `config` parameter for the op's configuration. The config class, which subclasses <PyObject object="Config"/>, specifies the configuration schema for the op. Op configuration can be used to specify op behavior at runtime, making ops more flexible and reusable.
+Op functions can specify an annotated `config` parameter for the op's configuration. The config class, which subclasses <PyObject object="Config"/> (which wraps [`pydantic.BaseModel`](https://docs.pydantic.dev/usage/models/#basic-model-usage)) specifies the configuration schema for the op. Op configuration can be used to specify op behavior at runtime, making ops more flexible and reusable.
 
 For example, we can define an op where the API endpoint it queries is defined through its configuration:
 
