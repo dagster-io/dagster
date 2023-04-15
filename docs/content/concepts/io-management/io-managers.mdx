@@ -100,7 +100,12 @@ def downstream_asset(upstream_asset):
 
 defs = Definitions(
     assets=[upstream_asset, downstream_asset],
-    resources={"io_manager": s3_pickle_io_manager, "s3": s3_resource},
+    resources={
+       "io_manager": s3_pickle_io_manager.configured(
+           {"s3_bucket": "my-cool-bucket", "s3_prefix": "my-cool-prefix"}
+       ),
+       "s3": s3_resource,
+    },
 )
 ```
 
@@ -131,7 +136,7 @@ def downstream_asset(upstream_asset):
 defs = Definitions(
     assets=[upstream_asset, downstream_asset],
     resources={
-        "s3_io_manager": s3_pickle_io_manager,
+        "s3_io_manager": s3_pickle_io_manager.configured({"s3_bucket": "my-cool-bucket"}),
         "s3": s3_resource,
         "fs_io_manager": fs_io_manager,
     },
@@ -276,7 +281,7 @@ def op_2(a):
 @job(
     resource_defs={
         "fs": fs_io_manager,
-        "s3_io": s3_pickle_io_manager,
+        "s3_io": s3_pickle_io_manager.configured({"s3_bucket": "my-cool-bucket"}),
         "s3": s3_resource,
     }
 )
