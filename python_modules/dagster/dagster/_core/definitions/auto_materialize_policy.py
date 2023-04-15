@@ -17,7 +17,7 @@ class AutoMaterializePolicy(NamedTuple):
 
     - one or more of its parents is missing
     - the partition is a time window partition with a start time that is more than
-      time_window_partition_scope older than the latest available time window partition. By
+      time_window_partition_scope_minutes older than the latest available time window partition. By
       default, only the most recent time window partition will be materialized.
 
     Outside of those cases...

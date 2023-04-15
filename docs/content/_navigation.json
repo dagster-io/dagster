@@ -90,6 +90,10 @@
           {
             "title": "Asset Selection Syntax",
             "path": "/concepts/assets/asset-selection-syntax"
+          },
+          {
+            "title": "Auto-Materializing Assets",
+            "path": "/concepts/assets/asset-auto-execution"
           }
         ]
       },
