@@ -195,41 +195,41 @@ Once you have loaded your Airbyte assets into Dagster, you can create assets whi
 
 In this case, we have an Airbyte connection which is storing data in the `stargazers` table in our Snowflake warehouse. We specify the output [IO manager](/concepts/io-management/io-managers) to tell downstream assets how to retreive the data.
 
-```python startafter=start_add_downstream_assets endbefore=end_add_downstream_assets file=/integrations/airbyte/airbyte.py dedent=4
+```python startafter=start_add_downstream_assets endbefore=end_add_downstream_assets file=/integrations/airbyte/airbyte.py dedent=8
 import json
-    from dagster import asset, Definitions, define_asset_job, AssetSelection
-    from dagster_airbyte import load_assets_from_airbyte_instance, AirbyteResource
-    from dagster_snowflake_pandas import SnowflakePandasIOManager
-    import pandas as pd
+from dagster import asset, Definitions, define_asset_job, AssetSelection
+from dagster_airbyte import load_assets_from_airbyte_instance, AirbyteResource
+from dagster_snowflake_pandas import SnowflakePandasIOManager
+import pandas as pd
 
-    airbyte_instance = AirbyteResource(
-        host="localhost",
-        port="8000",
-    )
+airbyte_instance = AirbyteResource(
+    host="localhost",
+    port="8000",
+)
 
-    airbyte_assets = load_assets_from_airbyte_instance(
-        airbyte_instance,
-        io_manager_key="snowflake_io_manager",
-    )
+airbyte_assets = load_assets_from_airbyte_instance(
+    airbyte_instance,
+    io_manager_key="snowflake_io_manager",
+)
 
-    @asset
-    def stargazers_file(stargazers: pd.DataFrame):
-        with open("stargazers.json", "w", encoding="utf8") as f:
-            f.write(json.dumps(stargazers.to_json(), indent=2))
+@asset
+def stargazers_file(stargazers: pd.DataFrame):
+    with open("stargazers.json", "w", encoding="utf8") as f:
+        f.write(json.dumps(stargazers.to_json(), indent=2))
 
-    # only run the airbyte syncs necessary to materialize stargazers_file
-    my_upstream_job = define_asset_job(
-        "my_upstream_job",
-        AssetSelection.assets("stargazers_file")
-        .upstream()  # all upstream assets (in this case, just the stargazers Airbyte asset)
-        .required_multi_asset_neighbors(),  # all Airbyte assets linked to the same connection
-    )
+# only run the airbyte syncs necessary to materialize stargazers_file
+my_upstream_job = define_asset_job(
+    "my_upstream_job",
+    AssetSelection.assets("stargazers_file")
+    .upstream()  # all upstream assets (in this case, just the stargazers Airbyte asset)
+    .required_multi_asset_neighbors(),  # all Airbyte assets linked to the same connection
+)
 
-    defs = Definitions(
-        jobs=[my_upstream_job],
-        assets=[airbyte_assets, stargazers_file],
-        resources={"snowflake_io_manager": SnowflakePandasIOManager(...)},
-    )
+defs = Definitions(
+    jobs=[my_upstream_job],
+    assets=[airbyte_assets, stargazers_file],
+    resources={"snowflake_io_manager": SnowflakePandasIOManager(...)},
+)
 ```
 
 ---
