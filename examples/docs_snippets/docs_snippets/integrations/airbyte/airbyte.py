@@ -105,7 +105,7 @@ def scope_add_downstream_assets():
     with mock.patch("dagster_snowflake_pandas.SnowflakePandasIOManager"):
         # start_add_downstream_assets
         import json
-        from dagster import asset, Definitions
+        from dagster import asset, Definitions, define_asset_job, AssetSelection
         from dagster_airbyte import load_assets_from_airbyte_instance, AirbyteResource
         from dagster_snowflake_pandas import SnowflakePandasIOManager
         import pandas as pd
@@ -125,7 +125,16 @@ def scope_add_downstream_assets():
             with open("stargazers.json", "w", encoding="utf8") as f:
                 f.write(json.dumps(stargazers.to_json(), indent=2))
 
+        # only run the airbyte syncs necessary to materialize stargazers_file
+        my_upstream_job = define_asset_job(
+            "my_upstream_job",
+            AssetSelection.assets("stargazers_file")
+            .upstream()  # all upstream assets (in this case, just the stargazers Airbyte asset)
+            .required_multi_asset_neighbors(),  # all Airbyte assets linked to the same connection
+        )
+
         defs = Definitions(
+            jobs=[my_upstream_job],
             assets=[airbyte_assets, stargazers_file],
             resources={"snowflake_io_manager": SnowflakePandasIOManager(...)},
         )
