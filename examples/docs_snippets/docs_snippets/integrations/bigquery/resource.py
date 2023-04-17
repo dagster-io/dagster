@@ -6,7 +6,7 @@ from dagster import Definitions, asset
 # Using Dagster with BigQuery tutorial
 
 
-@asset()
+@asset
 def small_petals(bigquery: BigQueryResource):
     with bigquery.get_client() as client:
         return (

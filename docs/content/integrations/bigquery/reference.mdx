@@ -585,18 +585,18 @@ from dagster import Definitions, asset
 # Using Dagster with BigQuery tutorial
 
 
-@asset()
+@asset
 def small_petals(bigquery: BigQueryResource):
-    return (
-        bigquery.get_client()
-        .query(
-            (
-                'SELECT * FROM IRIS.IRIS_DATA WHERE "Petal length (cm)" < 1 AND "Petal'
-                ' width (cm)" < 1'
-            ),
+    with bigquery.get_client() as client:
+        return (
+            client.query(
+                (
+                    'SELECT * FROM IRIS.IRIS_DATA WHERE "Petal length (cm)" < 1 AND "Petal'
+                    ' width (cm)" < 1'
+                ),
+            )
+            .result()
         )
-        .result()
-    )
 
 
 defs = Definitions(
