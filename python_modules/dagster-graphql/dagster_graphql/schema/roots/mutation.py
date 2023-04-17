@@ -707,6 +707,7 @@ class GrapheneSetAutoMaterializePausedMutation(graphene.Mutation):
         paused = graphene.Argument(graphene.NonNull(graphene.Boolean))
 
     @capture_error
+    @check_permission(Permissions.TOGGLE_AUTO_MATERIALIZE)
     def mutate(self, graphene_info, paused: bool):
         set_auto_materialize_paused(graphene_info.context.instance, paused)
         return paused
