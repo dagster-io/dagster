@@ -50,7 +50,7 @@ def download():
 
 
 # The prod job for the download graph.
-download_job = download.to_job(resource_defs={"api": api_client})
+download_job = download.to_job(resource_defs={"api": MyApi()})
 
 
 # end_test_after_marker

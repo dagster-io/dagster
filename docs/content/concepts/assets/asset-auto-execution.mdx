@@ -200,8 +200,8 @@ If a partition of `asset1` is re-materialized, e.g. manually from the UI, then t
 To avoid accidentally auto-materializing enormous numbers of partitions, <PyObject object="AutoMaterializePolicy" pluralize /> have a `time_window_partition_scope_minutes`, which limits how far back in time partitions will be auto-materalized. It defaults to the latest partition. To materialize earlier partitions, launch a backfill or set `time_window_partition_scope_minutes` to a larger value.
 
 <PyObject object="StaticPartitionsDefinition" pluralize /> and <PyObject
-object="DynamicPartitionsDefinition"
-pluralize
+  object="DynamicPartitionsDefinition"
+  pluralize
 /> do not have this limit, so all partitions will be automatically-materialized.
 
 ### Rules of auto-materialization

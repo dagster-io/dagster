@@ -114,7 +114,7 @@ def download():
 
 
 # The prod job for the download graph.
-download_job = download.to_job(resource_defs={"api": api_client})
+download_job = download.to_job(resource_defs={"api": MyApi()})
 ```
 
 In this example, we define the business logic (i.e., jobs and ops) within a computation graph, independent of any particular environment. From this computation graph, we define a production job using the resources that define our production environment.
@@ -290,35 +290,51 @@ def test_asset_with_inputs():
     assert asset_with_inputs(5, 6) == 11
 ```
 
-Any resources defined on your asset - either directly, or using <PyObject object="with_resources" /> - will be picked up when invoking the asset. When using resources, it is required to provide a context using <PyObject object="build_op_context" />.
+#### Testing assets with config
 
-```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_test_resource_asset endbefore=end_test_resource_asset
-from dagster import asset, resource, build_op_context, with_resources
+If your asset has a config schema, you can pass a config value to the invocation. The following asset relies on attached config:
 
-
-@asset(required_resource_keys={"service"})
-def asset_reqs_service(context):
-    service = context.resources.service
-    ...
+```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_test_config_asset endbefore=end_test_config_asset
+from dagster import asset, Config, build_op_context, with_configs
 
 
-@resource
-def service():
-    ...
+class MyAssetConfig(Config):
+    my_string: str
 
 
-# asset_with_service now has resource service specified.
-asset_with_service = with_resources([asset_reqs_service], {"service": service})[0]
+@asset
+def asset_requires_config(config: MyAssetConfig) -> str:
+    return config.my_string
 
 
-def test_asset_with_service():
-    # When invoking asset_with_service, service resource will
-    # automatically be used.
-    result = asset_with_service(build_op_context())
+def test_asset_requires_config():
+    result = asset_requires_config(config=Config(my_string="foo"))
     ...
 ```
 
-Note that resources provided on <PyObject object="build_op_context" /> should not conflict with the resources provided directly on the asset. If a resource key is provided both to the context and the asset, it will result in a <PyObject object="DagsterInvalidInvocationError" />.
+#### Testing assets with resources
+
+If your asset requires resources, you can specify them as arguments when invoking the asset directly.
+
+Consider the following asset, which requires a resource `foo`.
+
+```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_test_resource_asset endbefore=end_test_resource_asset
+from dagster import asset, ConfigurableResource, build_op_context, with_resources
+
+
+class BarResource(ConfigurableResource):
+    my_string: str
+
+
+@asset
+def asset_requires_bar(bar: BarResource) -> str:
+    return bar.my_string
+
+
+def test_asset_requires_bar():
+    result = asset_requires_bar(bar=BarResource(my_string="bar"))
+    ...
+```
 
 ### Testing multiple software-defined assets together
 
@@ -350,20 +366,29 @@ def test_data_assets():
 Mock resources can be provided directly using `materialize_to_memory`:
 
 ```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_materialize_resources endbefore=end_materialize_resources
-from dagster import asset, resource, materialize_to_memory
+from dagster import asset, materialize_to_memory, ConfigurableResource
 import mock
 
 
-@asset(required_resource_keys={"service"})
-def asset_requires_service(context):
-    service = context.resources.service
+class MyServiceResource(ConfigurableResource):
     ...
 
 
-def test_asset_requires_service():
+@asset
+def asset_requires_service(service: MyServiceResource):
+    ...
+
+
+@asset
+def other_asset_requires_service(service: MyServiceResource):
+    ...
+
+
+def test_assets_require_service():
     # Mock objects can be provided directly.
     result = materialize_to_memory(
-        [asset_requires_service], resources={"service": mock.MagicMock()}
+        [asset_requires_service, other_asset_requires_service],
+        resources={"service": mock.MagicMock()},
     )
     assert result.success
     ...
@@ -374,14 +399,17 @@ def test_asset_requires_service():
 Sometimes, you may want to test with different configuration. You can execute job with a specified run config via the `run_config`:
 
 ```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_test_job_with_config endbefore=end_test_job_with_config
+from dagster import RunConfig
+
+
 def test_job_with_config():
     result = do_math_job.execute_in_process(
-        run_config={
-            "ops": {
-                "add_one": {"inputs": {"num": 2}},
-                "add_two": {"inputs": {"num": 3}},
+        run_config=RunConfig(
+            ops={
+                "add_one": AddOneConfig(num=2),
+                "add_two": AddTwoConfig(num=3),
             }
-        }
+        )
     )
 
     assert result.success
@@ -397,9 +425,7 @@ The event stream is the most generic way that an op communicates what happened d
 
 ```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_test_event_stream endbefore=end_test_event_stream
 def test_event_stream():
-    job_result = emit_events_job.execute_in_process(
-        run_config={"ops": {"emit_events_op": {"inputs": {"input_num": 1}}}}
-    )
+    job_result = emit_events_job.execute_in_process()
 
     assert job_result.success
 

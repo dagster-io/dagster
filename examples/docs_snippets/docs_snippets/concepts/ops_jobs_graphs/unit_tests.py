@@ -9,19 +9,28 @@ from dagster import (
     Output,
     Out,
     op,
+    Config,
     graph,
 )
 from dagster._core.execution.context.compute import OpExecutionContext
 
 
-@op(ins={"num": In(dagster_type=int, default_value=1)})
-def add_one(num: int) -> int:
-    return num + 1
+class AddOneConfig(Config):
+    num: int = 1
 
 
-@op(ins={"num": In(dagster_type=int, default_value=1)})
-def add_two(num: int) -> int:
-    return num + 2
+class AddTwoConfig(Config):
+    num: int = 1
+
+
+@op
+def add_one(config: AddOneConfig) -> int:
+    return config.num + 1
+
+
+@op
+def add_two(config: AddTwoConfig) -> int:
+    return config.num + 2
 
 
 @op
@@ -37,9 +46,9 @@ def do_math():
 do_math_job = do_math.to_job()
 
 
-@op(ins={"input_num": In(dagster_type=int)}, out={"a_num": Out(dagster_type=int)})
-def emit_events_op(input_num):
-    a_num = input_num + 1
+@op(out={"a_num": Out(dagster_type=int)})
+def emit_events_op():
+    a_num = 1
     yield ExpectationResult(
         success=a_num > 0, label="positive", description="A num must be positive"
     )
@@ -199,14 +208,17 @@ def test_op_resource_def():
 
 
 # start_test_job_with_config
+from dagster import RunConfig
+
+
 def test_job_with_config():
     result = do_math_job.execute_in_process(
-        run_config={
-            "ops": {
-                "add_one": {"inputs": {"num": 2}},
-                "add_two": {"inputs": {"num": 3}},
+        run_config=RunConfig(
+            ops={
+                "add_one": AddOneConfig(num=2),
+                "add_two": AddTwoConfig(num=3),
             }
-        }
+        )
     )
 
     assert result.success
@@ -221,9 +233,7 @@ def test_job_with_config():
 
 # start_test_event_stream
 def test_event_stream():
-    job_result = emit_events_job.execute_in_process(
-        run_config={"ops": {"emit_events_op": {"inputs": {"input_num": 1}}}}
-    )
+    job_result = emit_events_job.execute_in_process()
 
     assert job_result.success
 
@@ -299,32 +309,45 @@ def test_asset_with_inputs():
 
 
 # start_test_resource_asset
-from dagster import asset, resource, build_op_context, with_resources
+from dagster import asset, ConfigurableResource, build_op_context, with_resources
 
 
-@asset(required_resource_keys={"service"})
-def asset_reqs_service(context):
-    service = context.resources.service
-    ...
+class BarResource(ConfigurableResource):
+    my_string: str
 
 
-@resource
-def service():
-    ...
+@asset
+def asset_requires_bar(bar: BarResource) -> str:
+    return bar.my_string
 
 
-# asset_with_service now has resource service specified.
-asset_with_service = with_resources([asset_reqs_service], {"service": service})[0]
-
-
-def test_asset_with_service():
-    # When invoking asset_with_service, service resource will
-    # automatically be used.
-    result = asset_with_service(build_op_context())
+def test_asset_requires_bar():
+    result = asset_requires_bar(bar=BarResource(my_string="bar"))
     ...
 
 
 # end_test_resource_asset
+
+
+# start_test_config_asset
+from dagster import asset, Config, build_op_context, with_configs
+
+
+class MyAssetConfig(Config):
+    my_string: str
+
+
+@asset
+def asset_requires_config(config: MyAssetConfig) -> str:
+    return config.my_string
+
+
+def test_asset_requires_config():
+    result = asset_requires_config(config=Config(my_string="foo"))
+    ...
+
+
+# end_test_config_asset
 
 
 def get_data_from_source():
@@ -362,20 +385,29 @@ def test_data_assets():
 
 
 # start_materialize_resources
-from dagster import asset, resource, materialize_to_memory
+from dagster import asset, materialize_to_memory, ConfigurableResource
 import mock
 
 
-@asset(required_resource_keys={"service"})
-def asset_requires_service(context):
-    service = context.resources.service
+class MyServiceResource(ConfigurableResource):
     ...
 
 
-def test_asset_requires_service():
+@asset
+def asset_requires_service(service: MyServiceResource):
+    ...
+
+
+@asset
+def other_asset_requires_service(service: MyServiceResource):
+    ...
+
+
+def test_assets_require_service():
     # Mock objects can be provided directly.
     result = materialize_to_memory(
-        [asset_requires_service], resources={"service": mock.MagicMock()}
+        [asset_requires_service, other_asset_requires_service],
+        resources={"service": mock.MagicMock()},
     )
     assert result.success
     ...

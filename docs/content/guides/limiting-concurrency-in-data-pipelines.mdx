@@ -166,9 +166,9 @@ run_queue:
   max_concurrent_runs: 15
   tag_concurrency_limits:
     - key: "database"
-      value: "redshift" # applies when the `database` tag has a value of `redshift`
+      value: "redshift"        # applies when the `database` tag has a value of `redshift`
       limit: 4
-    - key: "dagster/backfill" # applies when the `dagster/backfill` tag is present, regardless of value
+    - key: "dagster/backfill"  # applies when the `dagster/backfill` tag is present, regardless of value
       limit: 10
 ```
 
