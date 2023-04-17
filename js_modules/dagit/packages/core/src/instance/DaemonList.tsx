@@ -98,7 +98,7 @@ export const DaemonList: React.FC<Props> = ({daemonStatuses, showTimestampColumn
                         await confirm({
                           title: 'Pause Auto-materializing?',
                           description:
-                            'Pausing Auto-materializing will prevent new materializations trigger by an Auto-materializing policy.',
+                            'Pausing Auto-materializing will prevent new materializations triggered by an Auto-materializing policy.',
                         });
                       }
                       setAutoMaterializePaused({
