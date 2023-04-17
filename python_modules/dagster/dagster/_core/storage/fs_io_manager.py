@@ -51,7 +51,7 @@ def fs_io_manager(init_context: InitResourceContext) -> "PickledObjectFilesystem
 
     .. code-block:: python
 
-        from dagster import asset, fs_io_manager, repository, with_resources
+        from dagster import Definitions, asset, fs_io_manager
 
         @asset
         def asset1():
@@ -62,14 +62,12 @@ def fs_io_manager(init_context: InitResourceContext) -> "PickledObjectFilesystem
         def asset2(asset1):
             return asset1[:5]
 
-        @repository
-        def repo():
-            return with_resources(
-                [asset1, asset2],
-                resource_defs={
-                    "io_manager": fs_io_manager.configured({"base_dir": "/my/base/path"})
-                },
-            )
+        defs = Definitions(
+            assets=[asset1, asset2],
+            resources={
+                "io_manager": fs_io_manager.configured({"base_dir": "/my/base/path"})
+            },
+        )
 
 
     2. Specify a job-level IO manager using the reserved resource key ``"io_manager"``,

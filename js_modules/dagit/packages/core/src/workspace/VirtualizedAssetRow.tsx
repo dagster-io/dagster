@@ -26,7 +26,7 @@ import {RepoAddress} from './types';
 import {SingleAssetQuery, SingleAssetQueryVariables} from './types/VirtualizedAssetRow.types';
 import {workspacePathFromAddress} from './workspacePath';
 
-const TEMPLATE_COLUMNS = '1.3fr 1.3fr 80px';
+const TEMPLATE_COLUMNS = '1.3fr 1fr 80px';
 const TEMPLATE_COLUMNS_FOR_CATALOG = '76px 1.3fr 1.3fr 1.3fr 80px';
 
 interface AssetRowProps {
@@ -260,8 +260,7 @@ export const VirtualizedAssetHeader: React.FC<{
       }}
     >
       <HeaderCell>{nameLabel}</HeaderCell>
-      <HeaderCell>Materialized</HeaderCell>
-      <HeaderCell>Latest run</HeaderCell>
+      <HeaderCell>Status</HeaderCell>
       <HeaderCell></HeaderCell>
     </Box>
   );

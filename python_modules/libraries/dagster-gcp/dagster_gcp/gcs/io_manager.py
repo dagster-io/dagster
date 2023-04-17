@@ -123,7 +123,7 @@ def gcs_pickle_io_manager(init_context):
 
     .. code-block:: python
 
-        from dagster import asset, repository, with_resources
+        from dagster import Definitions, asset
         from dagster_gcp.gcs import gcs_pickle_io_manager, gcs_resource
 
         @asset
@@ -135,17 +135,15 @@ def gcs_pickle_io_manager(init_context):
         def asset2(asset1):
             return asset1[:5]
 
-        @repository
-        def repo():
-            return with_resources(
-                [asset1, asset2],
-                resource_defs={
-                    "io_manager": gcs_pickle_io_manager.configured(
-                        {"gcs_bucket": "my-cool-bucket", "gcs_prefix": "my-cool-prefix"}
-                    ),
-                    "gcs": gcs_resource,
-                },
-            )
+        defs = Definitions(
+            assets=[asset1, asset2],
+            resources={
+                "io_manager": gcs_pickle_io_manager.configured(
+                    {"gcs_bucket": "my-cool-bucket", "gcs_prefix": "my-cool-prefix"}
+                ),
+                "gcs": gcs_resource,
+            },
+        )
 
 
     2. Attach this IO manager to your job to make it available to your ops.

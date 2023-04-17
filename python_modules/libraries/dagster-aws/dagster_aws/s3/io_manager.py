@@ -197,7 +197,7 @@ def s3_pickle_io_manager(init_context):
 
     .. code-block:: python
 
-        from dagster import asset, repository, with_resources
+        from dagster import Definitions, asset
         from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
 
 
@@ -210,17 +210,15 @@ def s3_pickle_io_manager(init_context):
         def asset2(asset1):
             return asset1[:5]
 
-        @repository
-        def repo():
-            return with_resources(
-                [asset1, asset2],
-                resource_defs={
-                    "io_manager": s3_pickle_io_manager.configured(
-                        {"s3_bucket": "my-cool-bucket", "s3_prefix": "my-cool-prefix"}
-                    ),
-                    "s3": s3_resource,
-                },
-            )
+        defs = Definitions(
+            assets=[asset1, asset2],
+            resources={
+                "io_manager": s3_pickle_io_manager.configured(
+                    {"s3_bucket": "my-cool-bucket", "s3_prefix": "my-cool-prefix"}
+                ),
+                "s3": s3_resource,
+            },
+        )
 
 
     2. Attach this IO manager to your job to make it available to your ops.

@@ -24,6 +24,7 @@ export const EXPECTED_PERMISSIONS = {
   launch_partition_backfill: true,
   cancel_partition_backfill: true,
   edit_dynamic_partitions: true,
+  toggle_auto_materialize: true,
 };
 
 export type PermissionResult = {

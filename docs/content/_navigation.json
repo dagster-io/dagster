@@ -90,6 +90,10 @@
           {
             "title": "Asset Selection Syntax",
             "path": "/concepts/assets/asset-selection-syntax"
+          },
+          {
+            "title": "Auto-Materializing Assets",
+            "path": "/concepts/assets/asset-auto-execution"
           }
         ]
       },
@@ -206,8 +210,8 @@
             "path": "/concepts/configuration/config-schema"
           },
           {
-            "title": "Configured API",
-            "path": "/concepts/configuration/configured"
+            "title": "Advanced Config Types",
+            "path": "/concepts/configuration/advanced-config-types"
           }
         ]
       },
@@ -806,10 +810,6 @@
               {
                 "title": "Asset versioning and caching",
                 "path": "/guides/dagster/asset-versioning-and-caching"
-              },
-              {
-                "title": "Pythonic config",
-                "path": "/guides/dagster/pythonic-config"
               },
               {
                 "title": "Pythonic resources",
