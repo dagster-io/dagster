@@ -469,6 +469,10 @@ def _config_dictionary_from_values_inner(obj: Any):
         return [_config_dictionary_from_values_inner(v) for v in obj]
     elif isinstance(obj, EnvVar):
         return {"env": str(obj)}
+    elif isinstance(obj, IntEnvVar):
+        return {"env": obj.name}
+    elif isinstance(obj, FloatEnvVar):
+        return {"env": obj.name}
     elif isinstance(obj, Config):
         return {
             k: _config_dictionary_from_values_inner(v)
@@ -492,5 +496,49 @@ def config_dictionary_from_values(
     return check.is_dict(_config_dictionary_from_values_inner(values))
 
 
+class IntEnvVar(int):
+    """Class used to represent an environment variable in the Dagster config system.
+
+    The environment variable will be resolved to an int value when the config is
+    loaded.
+    """
+
+    name: str
+
+    @classmethod
+    def create(cls, name: str) -> "IntEnvVar":
+        var = IntEnvVar(0)
+        var.name = name
+        return var
+
+
+class FloatEnvVar(float):
+    """Class used to represent an environment variable in the Dagster config system.
+
+    The environment variable will be resolved to an float value when the config is
+    loaded.
+    """
+
+    name: str
+
+    @classmethod
+    def create(cls, name: str) -> "FloatEnvVar":
+        var = FloatEnvVar(0)
+        var.name = name
+        return var
+
+
 class EnvVar(str):
-    pass
+    """Class used to represent an environment variable in the Dagster config system.
+
+    The environment variable will be resolved to a string value when the config is
+    loaded.
+    """
+
+    @classmethod
+    def int(cls, name: str) -> "IntEnvVar":
+        return IntEnvVar.create(name=name)
+
+    @classmethod
+    def float(cls, name: str) -> "FloatEnvVar":
+        return FloatEnvVar.create(name=name)

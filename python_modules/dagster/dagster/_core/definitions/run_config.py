@@ -652,8 +652,9 @@ def construct_config_type_dictionary(
 
 
 def _convert_config_classes(configs: Dict[str, Any]) -> Dict[str, Any]:
+    from dagster._config.pythonic_config import config_dictionary_from_values
     return {
-        k: {"config": v._as_config_dict() if isinstance(v, Config) else v}  # noqa: SLF001
+        k: {"config": config_dictionary_from_values(v._as_config_dict(), v.to_config_schema().as_field()) if isinstance(v, Config) else v}  # noqa: SLF001
         for k, v in configs.items()
     }
 
