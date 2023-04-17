@@ -7,7 +7,7 @@ description: How to use dagster_cloud.yaml to configure Dagster Cloud
 
 <Note>This guide is applicable to Dagster Cloud.</Note>
 
-This dagster_cloud.yaml file is used to configure a Dagster Cloud instance. The file is required to tell Dagster where the code sources are to load into Dagster Cloud but has other options as well. For Hybrid Deployments, secrets are configured in this file as well.
+This dagster_cloud.yaml file is used to configure how a code location should be build and deployed to Dagster Cloud, usually as part of CI/CD. The file is required to tell Dagster where the code sources are to load into Dagster Cloud but has other options as well. For Hybrid Deployments, secrets are configured in this file as well since those secrets are part of the code location.
 
 ## Where to put the dagster_cloud.yaml file
 
@@ -26,7 +26,7 @@ quickstart_etl
 └── setup.py
 ```
 
-## Code Source
+## Code Locations
 
 The only **mandatory** section in the dagster_cloud.yaml file is setting up your code locations. If you have multiple code locations, you will have multiple code locations within a single dagster_cloud.yaml file. Dagster code can be sourced from a package, a python file, or a module, and one of these parameters should be specified for each code location.
 
@@ -37,7 +37,7 @@ Parameter reference table:
 | `locations.location_name`            | The name of your code location that will appear in the Dagster UI code locations page | string               |
 | `locations.code_source.package_name` | Use if your dagster code is structured as a package                                   | string (folder name) |
 | `locations.code_source.python_file`  | Use if your dagster code is in a single file                                          | string (.py file)    |
-| `locations.code_source.module_name`  | The module that contains your dagster code                                            | string (module name) |
+| `locations.code_source.module_name`  | The module that contains your dagster code (which matches pyproject.toml)                                            | string (module name) |
 
 Example for a single code location:
 
@@ -61,7 +61,7 @@ locations:
       package_name: quickstart_etl
   - location_name: machine_learning
     code_source:
-      python_file: ml_model.py
+      python_file: ml/ml_model.py
 ```
 
 ## Configuring your working directory
@@ -135,13 +135,9 @@ locations:
     executable_path: venvs/path/to/ml_tensorflow/bin/python
 ```
 
-## Other Configurations
+## Container Contexts 
 
-### Secrets Management for Serverless
-
-When using a serverless deployment, secrets can be configured in the Dagster UI. For more information, visit [Dagster Cloud environment variables](/dagster-cloud/developing-testing/environment-variables-and-secrets#dagster-cloud-environment-variables-and-secrets).
-
-In addition to these settings, different Dagster Cloud Hybrid agents support additional configuration options. To see details:
+Dagster Cloud Hybrid agents support additional configuration options which can be configured using `container_context`. Depending on your hybrid deployment, the configuration settings under `container_context` will vary. For more information 
 
 - [Docker agent configuration reference](/dagster-cloud/deployment/agents/docker/configuration-reference)
 - [Amazon ECS agent configuration reference](/dagster-cloud/deployment/agents/amazon-ecs/configuration-reference#amazon-ecs-agent-configuration-reference)
