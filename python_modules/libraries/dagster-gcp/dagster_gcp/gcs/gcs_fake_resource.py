@@ -1,5 +1,7 @@
 from typing import AbstractSet, Dict, Optional, Union
 
+from dagster._utils.cached_method import cached_method
+
 
 class FakeGCSBlob:
     def __init__(self, name: str, bucket: "FakeGCSBucket"):
@@ -97,3 +99,9 @@ class FakeGCSClient:
             for bucket in self.buckets.values()
             for blob in bucket.blobs.values()
         }
+
+
+class FakeConfigurableGCSClient:
+    @cached_method
+    def get_client(self):
+        return FakeGCSClient()

@@ -1,6 +1,7 @@
 from .compute_log_manager import GCSComputeLogManager as GCSComputeLogManager
 from .file_manager import GCSFileHandle as GCSFileHandle
 from .gcs_fake_resource import (
+    FakeConfigurableGCSClient as FakeConfigurableGCSClient,
     FakeGCSBlob as FakeGCSBlob,
     FakeGCSBucket as FakeGCSBucket,
     FakeGCSClient as FakeGCSClient,

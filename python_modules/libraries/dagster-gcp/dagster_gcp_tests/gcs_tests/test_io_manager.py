@@ -37,6 +37,8 @@ from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.types.dagster_type import resolve_dagster_type
 from dagster._core.utils import make_new_run_id
 from dagster_gcp.gcs import FakeGCSClient
+from dagster._legacy import AssetGroup
+from dagster_gcp.gcs import FakeConfigurableGCSClient, FakeGCSClient
 from dagster_gcp.gcs.io_manager import (
     ConfigurablePickledObjectGCSIOManager,
     PickledObjectGCSIOManager,
@@ -299,21 +301,21 @@ def test_asset_pythonic_io_manager(gcs_bucket):
     def partitioned():
         return 8
 
-    fake_gcs_client = FakeGCSClient()
-    asset_group = AssetGroup(
+    fake_gcs_client = FakeConfigurableGCSClient()
+
+    result = materialize(
         [upstream, downstream, AssetsDefinition.from_graph(graph_asset), partitioned],
-        resource_defs={
+        partition_key="apple",
+        resources={
             "io_manager": ConfigurablePickledObjectGCSIOManager(
-                gcs_bucket=gcs_bucket, gcs_prefix="assets"
+                gcs_bucket=gcs_bucket,
+                gcs_prefix="assets",
+                gcs=ResourceDefinition.hardcoded_resource(fake_gcs_client),
             ),
-            "gcs": ResourceDefinition.hardcoded_resource(fake_gcs_client),
         },
     )
-    asset_job = asset_group.build_job(name="my_asset_job")
-
-    result = asset_job.execute_in_process(partition_key="apple")
     assert result.success
-    assert fake_gcs_client.get_all_blob_paths() == {
+    assert fake_gcs_client.get_client().get_all_blob_paths() == {
         f"{gcs_bucket}/assets/upstream",
         f"{gcs_bucket}/assets/downstream",
         f"{gcs_bucket}/assets/partitioned/apple",
@@ -336,9 +338,10 @@ def test_nothing_pythonic_io_manager(gcs_bucket):
             [asset1, asset2],
             resource_defs={
                 "io_manager": ConfigurablePickledObjectGCSIOManager(
-                    gcs_bucket=gcs_bucket, gcs_prefix="assets"
+                    gcs_bucket=gcs_bucket,
+                    gcs_prefix="assets",
+                    gcs=ResourceDefinition.hardcoded_resource(FakeConfigurableGCSClient()),
                 ),
-                "gcs": ResourceDefinition.hardcoded_resource(FakeGCSClient()),
             },
         )
     )
