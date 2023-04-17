@@ -395,8 +395,9 @@ def test_trying_to_set_an_undefined_field() -> None:
     with pytest.raises(
         DagsterInvalidInvocationError,
         match=(
-            "'MyConfig' is a Pythonic config class and does not support item assignment, as it"
-            " inherits from 'pydantic.BaseModel' with frozen=True."
+            "'MyConfig' is a Pythonic config class and does not support manipulating"
+            " undeclared attribute '_my_random_other_field' as it inherits from"
+            " 'pydantic.BaseModel' without extra=\\\"allow\\\"."
         ),
     ):
         my_config = MyConfig(my_str="foo")
@@ -410,11 +411,12 @@ def test_trying_to_set_an_undefined_field_resource() -> None:
     with pytest.raises(
         DagsterInvalidInvocationError,
         match=(
-            "'MyResource' is a Pythonic resource and does not support item assignment, as it"
-            " inherits from 'pydantic.BaseModel' with frozen=True. If trying to"
-            " maintain state on this resource, consider building a separate, stateful"
-            " client class, and provide a method on the resource to construct and"
-            " return the stateful client."
+            "'MyResource' is a Pythonic resource and does not support manipulating"
+            " undeclared attribute '_my_random_other_field' as it inherits from"
+            " 'pydantic.BaseModel' without extra=\\\"allow\\\". If trying to maintain"
+            " state on this resource, consider building a separate, stateful client"
+            " class, and provide a method on the resource to construct and return the"
+            " stateful client."
         ),
     ):
         my_resource = MyResource(my_str="foo")
