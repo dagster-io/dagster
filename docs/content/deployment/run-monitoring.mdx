@@ -31,7 +31,6 @@ After a run is marked as STARTED, it may hang indefinitely for various reasons (
 The below code example shows how to set a run timeout of 10 seconds on a per-job basis:
 
 ```python file=/deploying/monitoring_daemon/run_timeouts.py startafter=start_timeout
-endbefore=end_timeout
 from dagster import MAX_RUNTIME_SECONDS_TAG, define_asset_job, job
 
 
@@ -43,12 +42,14 @@ def my_job():
 asset_job = define_asset_job(
     name="some_job", selection="*", tags={MAX_RUNTIME_SECONDS_TAG: 10}
 )
+# end_timeout
 ```
 
 ## Detecting run worker crashes
 
 <Note>
-  Detecting run worker crashes only works when using a run launcher other than the <PyObject object="DefaultRunLauncher" />.
+  Detecting run worker crashes only works when using a run launcher other than
+  the <PyObject object="DefaultRunLauncher" />.
 </Note>
 
 It's possible for a run worker process to crash during a run. This can happen for a variety of reasons (the host it's running on could go down, it could run out of memory, etc.). Without the monitoring daemon, there are two possible outcomes, neither desirable:
@@ -57,7 +58,6 @@ It's possible for a run worker process to crash during a run. This can happen fo
 - If the run worker goes down without a grace period, the run could be left hanging in STARTED status
 
 If a run worker crashes, the run it's managing can hang. The monitoring daemon can run health checks on run workers for all active runs to detect this. If a failed run worker is detected (e.g. by the K8s Job having a non-zero exit code), the run is either marked as failed or resumed (see below).
-
 
 ## Resuming runs after run worker crashes (Experimental)
 
