@@ -1,10 +1,5 @@
-<<<<<<< HEAD
 from typing import Optional, Iterator
 from contextlib import contextmanager
-=======
-from contextlib import contextmanager
-from typing import Optional
->>>>>>> c19b0a3426 (working...)
 
 from dagster import ConfigurableResource, resource
 from google.cloud import bigquery
@@ -14,6 +9,27 @@ from .utils import setup_gcp_creds
 
 
 class BigQueryResource(ConfigurableResource):
+    """Resource for interacting with Google BigQuery.
+
+    Examples:
+        .. code-block:: python
+
+            from dagster import Definitions, asset
+            from dagster_gcp import BigQueryResource
+
+            @asset
+            def my_table(bigquery: BigQueryResource):
+                with bigquery.get_client() as client:
+                    client.query("SELECT * FROM my_dataset.my_table")
+
+            defs = Definitions(
+                assets=[my_table],
+                resources={
+                    "bigquery": BigQueryResource(project="my-project")
+                }
+            )
+    """
+
     project: Optional[str] = Field(
         default=None,
         description="""Project ID for the project which the client acts on behalf of. Will be passed
@@ -39,14 +55,25 @@ class BigQueryResource(ConfigurableResource):
 
     @contextmanager
     def get_client(self) -> Iterator[bigquery.Client]:
+        """Context manager to create a BigQuery Client.
+
+        Examples:
+            .. code-block:: python
+
+                from dagster import asset
+                from dagster_gcp import BigQueryResource
+
+                @asset
+                def my_table(bigquery: BigQueryResource):
+                    with bigquery.get_client() as client:
+                        client.query("SELECT * FROM my_dataset.my_table")
+        """
         if self.gcp_credentials:
             with setup_gcp_creds(self.gcp_credentials):
-                yield
-        else:
-            yield
+                yield bigquery.Client(project=self.project, location=self.location)
 
-    def get_client(self) -> bigquery.Client:
-        return bigquery.Client(project=self.project, location=self.location)
+        else:
+            yield bigquery.Client(project=self.project, location=self.location)
 
 
 @resource(
@@ -55,5 +82,5 @@ class BigQueryResource(ConfigurableResource):
 )
 def bigquery_resource(context):
     bq_resource = BigQueryResource.from_resource_context(context)
-    with bq_resource.setup_credentials():
-        yield bq_resource.get_client()
+    with bq_resource.get_client() as client:
+        yield client
