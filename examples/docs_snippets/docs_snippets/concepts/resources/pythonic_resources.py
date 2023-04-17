@@ -619,3 +619,77 @@ def new_resource_testing_with_context():
             )
 
     # end_new_resource_testing_with_context
+
+
+def with_state_example() -> None:
+    # start_with_state_example
+    from dagster import ConfigurableResource, asset
+    import requests
+
+    class MyClient:
+        """Client class with mutable state."""
+
+        def __init__(self, username: str, password: str):
+            self.username = username
+            self.password = password
+            self._api_token = requests.get(
+                "https://my-api.com/token", auth=(username, password)
+            ).text
+
+        def query(self, body: str):
+            return requests.get(
+                "https://my-api.com/query",
+                headers={"Authorization": self._api_token},
+                data=body,
+            )
+
+    class MyClientResource(ConfigurableResource):
+        username: str
+        password: str
+
+        def get_client(self):
+            return MyClient(self.username, self.password)
+
+    @asset
+    def my_asset(client: MyClientResource):
+        return client.get_client().query("SELECT * FROM my_table")
+
+    # end_with_state_example
+
+
+def new_resource_testing_with_state() -> None:
+    # start_new_resource_testing_with_state
+
+    from dagster import ConfigurableResource, asset
+    import requests
+    import mock
+
+    class MyClient:
+        ...
+
+        def query(self, body: str):
+            ...
+
+    class MyClientResource(ConfigurableResource):
+        username: str
+        password: str
+
+        def get_client(self):
+            return MyClient(self.username, self.password)
+
+    @asset
+    def my_asset(client: MyClientResource):
+        return client.get_client().query("SELECT * FROM my_table")
+
+    def test_my_asset():
+        class FakeClient:
+            def query(self, body: str):
+                assert body == "SELECT * FROM my_table"
+                return "my_result"
+
+        mocked_client_resource = mock.Mock()
+        mocked_client_resource.get_client.return_value = FakeClient()
+
+        assert my_asset(mocked_client_resource) == "my_result"
+
+    # end_new_resource_testing_with_state

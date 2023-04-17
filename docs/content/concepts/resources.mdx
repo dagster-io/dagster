@@ -258,6 +258,49 @@ defs = Definitions(
 
 ---
 
+## Defining resources which require state
+
+Once a resource reaches a certain complexity, it may be desirable to manage the state of the resource over its lifetime. This is useful for resources which require special initilization or cleanup such as database connections or file handles. Since `ConfigurableResource` is a dataclass meant to encapsulate config, it is not a good fit for managing state. The recommended pattern in this case is to build a separate class which manages the state of the resource which is provided by the `ConfigurableResource` class.
+
+In this instance, we have a client which generates an API token from user-supplied credentials. This client class is provided by the resource, which handles config.
+
+```python file=/concepts/resources/pythonic_resources.py startafter=start_with_state_example endbefore=end_with_state_example dedent=4
+from dagster import ConfigurableResource, asset
+import requests
+
+class MyClient:
+    """Client class with mutable state."""
+
+    def __init__(self, username: str, password: str):
+        self.username = username
+        self.password = password
+        self._api_token = requests.get(
+            "https://my-api.com/token", auth=(username, password)
+        ).text
+
+    def query(self, body: str):
+        return requests.get(
+            "https://my-api.com/query",
+            headers={"Authorization": self._api_token},
+            data=body,
+        )
+
+class MyClientResource(ConfigurableResource):
+    username: str
+    password: str
+
+    def get_client(self):
+        return MyClient(self.username, self.password)
+
+@asset
+def my_asset(client: MyClientResource):
+    return client.get_client().query("SELECT * FROM my_table")
+```
+
+For more information on the recommended way to test with resources which require state, see the [testing section](#testing-resources-which-require-state).
+
+---
+
 ## Defining Pythonic I/O managers
 
 Pythonic [I/O managers](/concepts/io-management/io-managers) are defined as subclasses of <PyObject object="ConfigurableIOManager"/>, and similarly to Pythonic resources specify any configuration fields as attributes. Each subclass must implement a `handle_output` and `load_input` method, which are called by Dagster at runtime to handle the storing and loading of data.
@@ -351,6 +394,44 @@ def test_my_resource_with_nesting():
     resource = MyResourceRequiresAnother(foo=string_holder, bar="bar")
     assert resource.foo.value == "foo"
     assert resource.bar == "bar"
+```
+
+### Testing resources with state
+
+If you have separated out a stateful client class from your resource class as detailed above in the [Defining resources which require state](#defining-resources-which-require-state) section, you can use tools such as the `mock` library to easily fake your resource and associated client.
+
+```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_testing_with_state endbefore=end_new_resource_testing_with_state dedent=4
+from dagster import ConfigurableResource, asset
+import requests
+import mock
+
+class MyClient:
+    ...
+
+    def query(self, body: str):
+        ...
+
+class MyClientResource(ConfigurableResource):
+    username: str
+    password: str
+
+    def get_client(self):
+        return MyClient(self.username, self.password)
+
+@asset
+def my_asset(client: MyClientResource):
+    return client.get_client().query("SELECT * FROM my_table")
+
+def test_my_asset():
+    class FakeClient:
+        def query(self, body: str):
+            assert body == "SELECT * FROM my_table"
+            return "my_result"
+
+    mocked_client_resource = mock.Mock()
+    mocked_client_resource.get_client.return_value = FakeClient()
+
+    assert my_asset(mocked_client_resource) == "my_result"
 ```
 
 ### Testing with resource context
