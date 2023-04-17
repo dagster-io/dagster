@@ -56,6 +56,7 @@ def core_celery_execution_loop(job_context, execution_plan, step_execution_fn):
     step_errors = {}
 
     with execution_plan.start(
+        job_context.instance,
         retry_mode=job_context.executor.retries,
         sort_key_fn=priority_for_step,
     ) as active_execution:

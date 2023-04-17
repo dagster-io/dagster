@@ -69,6 +69,7 @@ USER_EDITABLE_SYSTEM_TAGS = [
 ]
 
 RUN_WORKER_ID_TAG = f"{HIDDEN_TAG_PREFIX}run_worker"
+GLOBAL_CONCURRENCY_TAG = f"{SYSTEM_TAG_PREFIX}pool"
 
 # In cloud, we tag runs with the email of the user who triggered the run
 # This is used to display the user in the UI
