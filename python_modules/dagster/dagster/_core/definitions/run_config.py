@@ -660,21 +660,26 @@ def _convert_config_classes(configs: Dict[str, Any]) -> Dict[str, Any]:
 
 @experimental
 class RunConfig:
+    """RunConfig is a container for all the configuration that can be passed to a pipeline run."""
+
     def __init__(
         self,
         ops: Optional[Dict[str, Any]] = None,
         resources: Optional[Dict[str, Any]] = None,
         loggers: Optional[Dict[str, Any]] = None,
+        execution: Optional[Dict[str, Any]] = None,
     ):
         self.ops = check.opt_dict_param(ops, "ops")
         self.resources = check.opt_dict_param(resources, "resources")
         self.loggers = check.opt_dict_param(loggers, "loggers")
+        self.execution = check.opt_dict_param(execution, "execution")
 
     def to_config_dict(self):
         return {
             "loggers": self.loggers,
             "resources": _convert_config_classes(self.resources),
             "ops": _convert_config_classes(self.ops),
+            "execution": self.execution,
         }
 
 
