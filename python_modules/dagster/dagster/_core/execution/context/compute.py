@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import AbstractSet, Any, Dict, Iterator, List, Mapping, Optional, Sequence, Set, cast
+from typing import AbstractSet, Any, Dict, Iterator, List, Mapping, Optional, Sequence, Set, Union, cast
 
 from typing_extensions import TypeAlias
 
@@ -20,6 +20,7 @@ from dagster._core.definitions.events import (
 )
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.mode import ModeDefinition
+from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
@@ -289,7 +290,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
     @public
     @property
-    def partition_key(self) -> str:
+    def partition_key(self) -> Union[str, MultiPartitionKey]:
         """The partition key for the current run.
 
         Raises an error if the current run is not a partitioned run.
