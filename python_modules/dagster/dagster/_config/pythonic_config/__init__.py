@@ -1,4 +1,5 @@
 import inspect
+import re
 from enum import Enum
 from typing import (
     AbstractSet,
@@ -39,6 +40,7 @@ from dagster._core.errors import (
     DagsterInvalidConfigDefinitionError,
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
+    DagsterInvalidInvocationError,
     DagsterInvalidPythonicConfigDefinitionError,
 )
 from dagster._core.execution.context.init import InitResourceContext
@@ -115,7 +117,45 @@ class MakeConfigCacheable(BaseModel):
             object.__setattr__(self, name, value)
             return
 
-        return super().__setattr__(name, value)
+        try:
+            return super().__setattr__(name, value)
+        except (TypeError, ValueError) as e:
+            clsname = self.__class__.__name__
+            if "is immutable and does not support item assignment" in str(e):
+                if isinstance(self, ConfigurableResourceFactory):
+                    raise DagsterInvalidInvocationError(
+                        f"'{clsname}' is a Pythonic resource and does not support item assignment,"
+                        " as it inherits from 'pydantic.BaseModel' with frozen=True. If trying to"
+                        " maintain state on this resource, consider building a separate, stateful"
+                        " client class, and provide a method on the resource to construct and"
+                        " return the stateful client."
+                    ) from e
+                else:
+                    raise DagsterInvalidInvocationError(
+                        f"'{clsname}' is a Pythonic config class and does not support item"
+                        " assignment, as it inherits from 'pydantic.BaseModel' with frozen=True."
+                    ) from e
+            elif "object has no field" in str(e):
+                field_name = check.not_none(
+                    re.search(r"object has no field \"(.*)\"", str(e))
+                ).group(1)
+                if isinstance(self, ConfigurableResourceFactory):
+                    raise DagsterInvalidInvocationError(
+                        f"'{clsname}' is a Pythonic resource and does not support manipulating"
+                        f" undeclared attribute '{field_name}' as it inherits from"
+                        " 'pydantic.BaseModel' without extra=\"allow\". If trying to maintain"
+                        " state on this resource, consider building a separate, stateful client"
+                        " class, and provide a method on the resource to construct and return the"
+                        " stateful client."
+                    ) from e
+                else:
+                    raise DagsterInvalidInvocationError(
+                        f"'{clsname}' is a Pythonic config class and does not support manipulating"
+                        f" undeclared attribute '{field_name}' as it inherits from"
+                        " 'pydantic.BaseModel' without extra=\"allow\"."
+                    ) from e
+            else:
+                raise
 
     def _is_field_internal(self, name: str) -> bool:
         return name.endswith(INTERNAL_MARKER)
