@@ -280,7 +280,9 @@ class AssetReconciliationCursor(NamedTuple):
                     key
                 ] = partitions_def.deserialize_subset(serialized_subset)
             except:
-                materialized_or_requested_root_partitions_by_asset_key[key] = partitions_def.empty_subset()
+                materialized_or_requested_root_partitions_by_asset_key[
+                    key
+                ] = partitions_def.empty_subset()
         return cls(
             latest_storage_id=latest_storage_id,
             materialized_or_requested_root_asset_keys={
