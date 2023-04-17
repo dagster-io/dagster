@@ -8,7 +8,6 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from dagster import ConfigurableResource, get_dagster_logger, resource
 from dagster._annotations import public
-from dagster._core.errors import DagsterError
 from dagster._core.storage.event_log.sql_event_log import SqlDbConnection
 from pydantic import Field, validator
 
@@ -544,17 +543,17 @@ class SnowflakeResource(ConfigurableResource):
     def validate_paramstyle(cls, v: Optional[str]) -> Optional[str]:
         valid_config = ["pyformat", "qmark", "numeric"]
         if v is not None and v not in valid_config:
-            raise DagsterError(
+            raise ValueError(
                 "Snowflake Resource: 'paramstyle' configuration value must be one of:"
-                f" {','.join(valid_config)}"
+                f" {','.join(valid_config)}."
             )
         return v
 
     @validator("connector")
     def validate_connector(cls, v: Optional[str]) -> Optional[str]:
         if v is not None and v != "sqlalchemy":
-            raise DagsterError(
-                "Snowflake Resource: 'connector' configuration value must be None or sqlalchemy"
+            raise ValueError(
+                "Snowflake Resource: 'connector' configuration value must be None or sqlalchemy."
             )
         return v
 
