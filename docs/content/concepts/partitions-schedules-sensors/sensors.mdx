@@ -403,12 +403,12 @@ Below is a test for the `process_new_users_sensor` that we defined in the [Using
 from dagster import build_sensor_context, validate_run_config
 
 def test_process_new_users_sensor():
-    class MockUsersAPI(ConfigurableResource):
+    class FakeUsersAPI:
         def fetch_users(self) -> List[str]:
             return ["1", "2", "3"]
 
     context = build_sensor_context()
-    run_requests = process_new_users_sensor(context, users_api=MockUsersAPI())
+    run_requests = process_new_users_sensor(context, users_api=FakeUsersAPI())
     assert len(run_requests) == 3
 ```
 
