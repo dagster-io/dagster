@@ -54,4 +54,6 @@ class BigQueryResource(ConfigurableResource):
     description="Dagster resource for connecting to BigQuery",
 )
 def bigquery_resource(context):
-    return BigQueryResource.from_resource_context(context).get_client()
+    bq_resource = BigQueryResource.from_resource_context(context)
+    with bq_resource.setup_credentials():
+        yield bq_resource.get_client()
