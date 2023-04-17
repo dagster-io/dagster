@@ -295,7 +295,7 @@ def test_asset_with_inputs():
 If your asset has a config schema, you can pass a config value to the invocation. The following asset relies on attached config:
 
 ```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_test_config_asset endbefore=end_test_config_asset
-from dagster import asset, Config, build_op_context, with_configs
+from dagster import asset, Config, build_op_context
 
 
 class MyAssetConfig(Config):
@@ -308,7 +308,7 @@ def asset_requires_config(config: MyAssetConfig) -> str:
 
 
 def test_asset_requires_config():
-    result = asset_requires_config(config=Config(my_string="foo"))
+    result = asset_requires_config(config=MyAssetConfig(my_string="foo"))
     ...
 ```
 
@@ -435,7 +435,6 @@ def test_event_stream():
     events_for_step = job_result.events_for_node("emit_events_op")
     assert [se.event_type for se in events_for_step] == [
         DagsterEventType.STEP_START,
-        DagsterEventType.STEP_INPUT,
         DagsterEventType.STEP_EXPECTATION_RESULT,
         DagsterEventType.ASSET_MATERIALIZATION,
         DagsterEventType.STEP_OUTPUT,
@@ -446,7 +445,6 @@ def test_event_stream():
     # ops communicate what they did via the event stream, viewable in tools (e.g. dagit)
     (
         _start,
-        _input_event,
         expectation_event,
         materialization_event,
         _num_output_event,

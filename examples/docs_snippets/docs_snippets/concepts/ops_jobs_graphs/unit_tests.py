@@ -48,7 +48,7 @@ do_math_job = do_math.to_job()
 
 @op(out={"a_num": Out(dagster_type=int)})
 def emit_events_op():
-    a_num = 1
+    a_num = 2
     yield ExpectationResult(
         success=a_num > 0, label="positive", description="A num must be positive"
     )
@@ -191,22 +191,6 @@ def test_op_with_resource():
 from dagster import resource
 
 
-# start_test_resource_def_marker
-@resource(config_schema={"my_str": str})
-def my_foo_resource(context):
-    return context.resource_config["my_str"]
-
-
-def test_op_resource_def():
-    context = build_op_context(
-        resources={"foo": my_foo_resource.configured({"my_str": "bar"})}
-    )
-    assert op_requires_foo(context) == "found bar"
-
-
-# end_test_resource_def_marker
-
-
 # start_test_job_with_config
 from dagster import RunConfig
 
@@ -243,7 +227,6 @@ def test_event_stream():
     events_for_step = job_result.events_for_node("emit_events_op")
     assert [se.event_type for se in events_for_step] == [
         DagsterEventType.STEP_START,
-        DagsterEventType.STEP_INPUT,
         DagsterEventType.STEP_EXPECTATION_RESULT,
         DagsterEventType.ASSET_MATERIALIZATION,
         DagsterEventType.STEP_OUTPUT,
@@ -254,7 +237,6 @@ def test_event_stream():
     # ops communicate what they did via the event stream, viewable in tools (e.g. dagit)
     (
         _start,
-        _input_event,
         expectation_event,
         materialization_event,
         _num_output_event,
@@ -330,7 +312,7 @@ def test_asset_requires_bar():
 
 
 # start_test_config_asset
-from dagster import asset, Config, build_op_context, with_configs
+from dagster import asset, Config, build_op_context
 
 
 class MyAssetConfig(Config):
@@ -343,7 +325,7 @@ def asset_requires_config(config: MyAssetConfig) -> str:
 
 
 def test_asset_requires_config():
-    result = asset_requires_config(config=Config(my_string="foo"))
+    result = asset_requires_config(config=MyAssetConfig(my_string="foo"))
     ...
 
 
