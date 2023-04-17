@@ -7,12 +7,12 @@ from dagster import (
     OutputContext,
     ResourceDependency,
     _check as check,
-    cached_method,
     io_manager,
 )
 from dagster._core.storage.upath_io_manager import UPathIOManager
 from dagster._utils import PICKLE_PROTOCOL
 from dagster._utils.backoff import backoff
+from dagster._utils.cached_method import cached_method
 from google.api_core.exceptions import Forbidden, ServiceUnavailable, TooManyRequests
 from google.cloud import storage
 from upath import UPath
