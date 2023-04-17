@@ -11,6 +11,12 @@ import {
 } from '../DaemonList';
 
 let mockResolveConfirmation = (_any: any) => {};
+beforeEach(() => {
+  mockResolveConfirmation = (_any: any) => {
+    throw new Error('No confirmation mock defined');
+  };
+});
+
 jest.mock('../../app/CustomConfirmationProvider', () => ({
   useConfirmation: () => {
     return async () => {
@@ -98,7 +104,12 @@ describe('DaemonList', () => {
 
     const switchButton = await findByRole('checkbox');
     userEvent.click(switchButton);
+    // Confirmation required
     mockResolveConfirmation(0);
+    await waitFor(() => expect(setAutoMaterializePausedMock.result).toHaveBeenCalled());
+    expect(switchButton).not.toBeChecked();
+    userEvent.click(switchButton);
+    // No confirmation this time.
     await waitFor(() => expect(setAutoMaterializePausedMock.result).toHaveBeenCalled());
   });
 });
