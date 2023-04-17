@@ -56,7 +56,7 @@ def _build_slack_blocks_and_text(
         else:
             text = (
                 f'*Asset "{context.asset_key.to_user_string()}" is now'
-                f' {"on time" if context.minutes_late == 0 else f"{context.minutes_late:.2f} minutes late.*"}'
+                f' {"on time" if context.minutes_overdue == 0 else f"{context.minutes_overdue:.2f} minutes late.*"}'
             )
 
         blocks.extend(
@@ -218,7 +218,7 @@ def make_slack_on_run_failure_sensor(
 
 def _default_freshness_message_text_fn(context: FreshnessPolicySensorContext) -> str:
     return (
-        f"Asset `{context.asset_key.to_user_string()}` is now {context.minutes_late:.2f} minutes"
+        f"Asset `{context.asset_key.to_user_string()}` is now {context.minutes_overdue:.2f} minutes"
         " late."
     )
 
@@ -228,7 +228,7 @@ def make_slack_on_freshness_policy_status_change_sensor(
     channel: str,
     slack_token: str,
     asset_selection: AssetSelection,
-    warn_after_minutes_late: float = 0,
+    warn_after_minutes_overdue: float = 0,
     notify_when_back_on_time: bool = False,
     text_fn: Callable[[FreshnessPolicySensorContext], str] = _default_freshness_message_text_fn,
     blocks_fn: Optional[Callable[[FreshnessPolicySensorContext], List[Dict[Any, Any]]]] = None,
@@ -249,7 +249,7 @@ def make_slack_on_freshness_policy_status_change_sensor(
             documentation here: https://api.slack.com/docs/token-types
         asset_selection (AssetSelection): The selection of assets which this sensor will monitor.
             Alerts will only be fired for assets that have a FreshnessPolicy defined.
-        warn_after_minutes_late (float): How many minutes past the specified FreshnessPolicy this
+        warn_after_minutes_overdue (float): How many minutes past the specified FreshnessPolicy this
             sensor will wait before firing an alert (by default, an alert will be fired as soon as
             the policy is violated).
         notify_when_back_on_time (bool): If a success message should be sent when the asset becomes on
@@ -283,10 +283,10 @@ def make_slack_on_freshness_policy_status_change_sensor(
         .. code-block:: python
 
             def my_message_fn(context: FreshnessPolicySensorContext) -> str:
-                if context.minutes_late == 0:
+                if context.minutes_overdue == 0:
                     return f"Asset {context.asset_key} is currently on time :)"
                 return (
-                    f"Asset {context.asset_key} is currently {context.minutes_late} minutes late!!"
+                    f"Asset {context.asset_key} is currently {context.minutes_overdue} minutes late!!"
                 )
 
             slack_on_run_failure = make_slack_on_run_failure_sensor(
@@ -304,16 +304,16 @@ def make_slack_on_freshness_policy_status_change_sensor(
         name=name, asset_selection=asset_selection, default_status=default_status
     )
     def slack_on_freshness_policy(context: FreshnessPolicySensorContext):
-        if context.minutes_late is None or context.previous_minutes_late is None:
+        if context.minutes_overdue is None or context.previous_minutes_overdue is None:
             return
 
         if (
-            context.minutes_late > warn_after_minutes_late
-            and context.previous_minutes_late <= warn_after_minutes_late
+            context.minutes_overdue > warn_after_minutes_overdue
+            and context.previous_minutes_overdue <= warn_after_minutes_overdue
         ) or (
             notify_when_back_on_time
-            and context.minutes_late == 0
-            and context.previous_minutes_late != 0
+            and context.minutes_overdue == 0
+            and context.previous_minutes_overdue != 0
         ):
             blocks, main_body_text = _build_slack_blocks_and_text(
                 context=context, text_fn=text_fn, blocks_fn=blocks_fn, dagit_base_url=dagit_base_url
