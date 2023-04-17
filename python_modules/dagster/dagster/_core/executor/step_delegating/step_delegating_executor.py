@@ -108,10 +108,12 @@ class StepDelegatingExecutor(Executor):
         )
 
         with ActiveExecution(
+            plan_context.instance,
             execution_plan,
             retry_mode=self.retries,
             max_concurrent=self._max_concurrent,
             tag_concurrency_limits=self._tag_concurrency_limits,
+            run_id=plan_context.run_id,
         ) as active_execution:
             running_steps: Dict[str, ExecutionStep] = {}
 
@@ -299,7 +301,9 @@ class StepDelegatingExecutor(Executor):
                 else:
                     max_steps_to_run = None  # disables limit
 
-                for step in active_execution.get_steps_to_execute(max_steps_to_run):
+                for step in active_execution.get_steps_to_execute(
+                    max_steps_to_run, register_steps=True
+                ):
                     running_steps[step.key] = step
                     list(
                         self._step_handler.launch_step(

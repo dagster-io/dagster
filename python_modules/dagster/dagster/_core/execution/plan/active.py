@@ -31,7 +31,9 @@ from dagster._core.execution.context.system import (
 )
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.retries import RetryMode, RetryState
-from dagster._core.storage.tags import PRIORITY_TAG
+from dagster._core.instance import DagsterInstance
+from dagster._core.storage.tags import GLOBAL_CONCURRENCY_TAG, PRIORITY_TAG
+from dagster._utils.concurrency import ConcurrencyState
 from dagster._utils.interrupts import pop_captured_interrupt
 from dagster._utils.tags import TagConcurrencyLimitsCounter
 
@@ -49,12 +51,15 @@ class ActiveExecution:
 
     def __init__(
         self,
+        instance: DagsterInstance,
         execution_plan: ExecutionPlan,
         retry_mode: RetryMode,
         sort_key_fn: Optional[Callable[[ExecutionStep], float]] = None,
         max_concurrent: Optional[int] = None,
         tag_concurrency_limits: Optional[List[Dict[str, Any]]] = None,
+        run_id: Optional[str] = None,
     ):
+        self._instance: DagsterInstance = check.inst_param(instance, "instance", DagsterInstance)
         self._plan: ExecutionPlan = check.inst_param(
             execution_plan, "execution_plan", ExecutionPlan
         )
@@ -114,6 +119,13 @@ class ActiveExecution:
         self._unknown_state: Set[str] = set()
 
         self._interrupted: bool = False
+
+        self._global_concurrency_keys = (
+            instance.event_log_storage.get_concurrency_limited_keys()
+            if run_id and instance.event_log_storage.supports_global_concurrency_limits
+            else set()
+        )
+        self._run_id = run_id
 
         # Start the show by loading _executable with the set of _pending steps that have no deps
         self._update()
@@ -253,10 +265,10 @@ class ActiveExecution:
         if sleep_amt > 0:
             time.sleep(sleep_amt)
 
-    def get_next_step(self) -> ExecutionStep:
+    def get_next_step(self, register_steps: bool = False) -> ExecutionStep:
         check.invariant(not self.is_complete, "Can not call get_next_step when is_complete is True")
 
-        steps = self.get_steps_to_execute(limit=1)
+        steps = self.get_steps_to_execute(limit=1, register_steps=register_steps)
         step = None
 
         if steps:
@@ -275,6 +287,7 @@ class ActiveExecution:
     def get_steps_to_execute(
         self,
         limit: Optional[int] = None,
+        register_steps: bool = False,
     ) -> Sequence[ExecutionStep]:
         check.invariant(
             self._context_guard,
@@ -289,10 +302,10 @@ class ActiveExecution:
             key=self._sort_key_fn,
         )
 
-        tag_concurrency_limits_counter = None
+        run_scoped_concurrency_limits_counter = None
         if self._tag_concurrency_limits:
             in_flight_steps = [self.get_step_by_key(key) for key in self._in_flight]
-            tag_concurrency_limits_counter = TagConcurrencyLimitsCounter(
+            run_scoped_concurrency_limits_counter = TagConcurrencyLimitsCounter(
                 self._tag_concurrency_limits,
                 in_flight_steps,
             )
@@ -309,11 +322,29 @@ class ActiveExecution:
             ):
                 break
 
-            if tag_concurrency_limits_counter:
-                if tag_concurrency_limits_counter.is_blocked(step):
+            if run_scoped_concurrency_limits_counter:
+                if run_scoped_concurrency_limits_counter.is_blocked(step):
                     continue
 
-                tag_concurrency_limits_counter.update_counters_with_launched_item(step)
+            if run_scoped_concurrency_limits_counter:
+                run_scoped_concurrency_limits_counter.update_counters_with_launched_item(step)
+
+            step_concurrency_key = step.tags.get(GLOBAL_CONCURRENCY_TAG)
+            try:
+                priority = int(step.tags.get(PRIORITY_TAG, 0))
+            except ValueError:
+                priority = 0
+            if (
+                register_steps
+                and step_concurrency_key
+                and step_concurrency_key in self._global_concurrency_keys
+                and self._run_id
+            ):
+                state = self._instance.event_log_storage.claim_concurrency_slot(
+                    step_concurrency_key, self._run_id, step.key, priority
+                )
+                if state == ConcurrencyState.BLOCKED:
+                    continue
 
             batch.append(step)
 
@@ -457,6 +488,8 @@ class ActiveExecution:
         step_key = cast(str, dagster_event.step_key)
         if dagster_event.is_step_failure:
             self.mark_failed(step_key)
+            if self._global_concurrency_keys and self._run_id:
+                self._instance.event_log_storage.free_concurrency_slots(self._run_id, step_key)
         elif dagster_event.is_resource_init_failure:
             # Resources are only initialized without a step key in the
             # in-process case, and resource initalization happens before the
@@ -468,6 +501,8 @@ class ActiveExecution:
             self.mark_failed(step_key)
         elif dagster_event.is_step_success:
             self.mark_success(step_key)
+            if self._global_concurrency_keys and self._run_id:
+                self._instance.event_log_storage.free_concurrency_slots(self._run_id, step_key)
         elif dagster_event.is_step_skipped:
             # Skip events are generated by this class. They should not be sent via handle_event
             raise DagsterInvariantViolationError(
