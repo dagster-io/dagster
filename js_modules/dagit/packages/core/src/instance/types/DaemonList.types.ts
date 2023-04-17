@@ -48,7 +48,7 @@ export type GetAutoMaterializePausedQueryVariables = Types.Exact<{[key: string]:
 
 export type GetAutoMaterializePausedQuery = {
   __typename: 'DagitQuery';
-  instance: {__typename: 'Instance'; autoMaterializePaused: boolean};
+  instance: {__typename: 'Instance'; id: string; autoMaterializePaused: boolean};
 };
 
 export type SetAutoMaterializePausedMutationVariables = Types.Exact<{

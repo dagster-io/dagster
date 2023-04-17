@@ -3,6 +3,7 @@ import {Box, Checkbox, Group, Spinner, Table, Tag} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {useConfirmation} from '../app/CustomConfirmationProvider';
+import {useUnscopedPermissions} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {Timestamp} from '../app/time/Timestamp';
 import {TimeFromNow} from '../ui/TimeFromNow';
@@ -67,6 +68,8 @@ export const DaemonList: React.FC<Props> = ({daemonStatuses, showTimestampColumn
 
   const confirm = useConfirmation();
 
+  const {permissions: {canToggleAutoMaterialize} = {}} = useUnscopedPermissions();
+
   return (
     <Table>
       <thead>
@@ -88,6 +91,7 @@ export const DaemonList: React.FC<Props> = ({daemonStatuses, showTimestampColumn
                   <Checkbox
                     format="switch"
                     checked={!data?.instance?.autoMaterializePaused}
+                    disabled={!canToggleAutoMaterialize}
                     onChange={async (e) => {
                       const checked = e.target.checked;
                       if (!checked) {
