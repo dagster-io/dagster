@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 from typing import Optional, Iterator
 from contextlib import contextmanager
+=======
+from contextlib import contextmanager
+from typing import Optional
+>>>>>>> c19b0a3426 (working...)
 
 from dagster import ConfigurableResource, resource
 from google.cloud import bigquery
@@ -36,9 +41,12 @@ class BigQueryResource(ConfigurableResource):
     def get_client(self) -> Iterator[bigquery.Client]:
         if self.gcp_credentials:
             with setup_gcp_creds(self.gcp_credentials):
-                yield bigquery.Client(project=self.project, location=self.location)
+                yield
         else:
-            yield bigquery.Client(project=self.project, location=self.location)
+            yield
+
+    def get_client(self) -> bigquery.Client:
+        return bigquery.Client(project=self.project, location=self.location)
 
 
 @resource(

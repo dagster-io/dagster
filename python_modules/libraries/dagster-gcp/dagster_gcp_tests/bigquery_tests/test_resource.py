@@ -91,3 +91,24 @@ def test_pythonic_resource_authenticate_via_config():
     finally:
         os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = old_gcp_creds_file
         assert passed
+
+
+@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE bigquery DB")
+def test_pythonic_resource_authenticate_via_env():
+    @asset
+    def test_asset(bigquery: BigQueryResource) -> int:
+        with bigquery.setup_credentials():
+            assert os.getenv("GOOGLE_APPLICATION_CREDENTIALS") is not None
+            return 1
+
+    resource_defs = {
+        "bigquery": BigQueryResource(
+            project=EnvVar("GCP_PROJECT_ID"),
+        ),
+    }
+
+    result = materialize(
+        [test_asset],
+        resources=resource_defs,
+    )
+    assert result.success
