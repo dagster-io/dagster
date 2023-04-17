@@ -8,12 +8,13 @@ from dagster import (
     MetadataValue,
     MultiPartitionKey,
     OutputContext,
+    ConfigurableIOManager,
     _check as check,
 )
 from dagster._core.storage.memoizable_io_manager import MemoizableIOManager
 
 
-class UPathIOManager(MemoizableIOManager):
+class UPathIOManager(MemoizableIOManager, ConfigurableIOManager):
     """Abstract IOManager base class compatible with local and cloud storage via `universal-pathlib` and `fsspec`.
 
     Features:
