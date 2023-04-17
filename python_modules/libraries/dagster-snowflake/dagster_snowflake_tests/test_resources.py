@@ -2,6 +2,7 @@ from unittest import mock
 
 import pytest
 from dagster import DagsterResourceFunctionError, EnvVar, job, op
+from dagster._check import CheckError
 from dagster._core.test_utils import environ
 from dagster_snowflake import SnowflakeResource, snowflake_resource
 
@@ -208,7 +209,7 @@ def test_pydantic_snowflake_resource_no_auth(snowflake_connect):
     def snowflake_job():
         snowflake_op()
 
-    with pytest.raises(DagsterResourceFunctionError):
+    with pytest.raises(CheckError):
         snowflake_job.execute_in_process()
 
 
@@ -262,7 +263,7 @@ def test_pydantic_snowflake_resource_duplicate_auth(snowflake_connect):
     def snowflake_job():
         snowflake_op()
 
-    with pytest.raises(DagsterResourceFunctionError):
+    with pytest.raises(CheckError):
         snowflake_job.execute_in_process()
 
 
@@ -314,5 +315,5 @@ def test_pydantic_snowflake_resource_missing_private_key_password(snowflake_conn
     def snowflake_job():
         snowflake_op()
 
-    with pytest.raises(DagsterResourceFunctionError):
+    with pytest.raises(TypeError):
         snowflake_job.execute_in_process()

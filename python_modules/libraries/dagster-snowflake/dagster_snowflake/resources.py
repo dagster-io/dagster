@@ -451,7 +451,7 @@ class SnowflakeResource(ConfigurableResource):
         ),
     )
 
-    client_session_keep_alive: Optional[str] = Field(
+    client_session_keep_alive: Optional[bool] = Field(
         default=None,
         description=(
             "False by default. Set this to True to keep the session active indefinitely, "
@@ -484,8 +484,8 @@ class SnowflakeResource(ConfigurableResource):
         ),
     )
 
-    validate_default_parameters: bool = Field(
-        default=False,
+    validate_default_parameters: Optional[bool] = Field(
+        default=None,
         description=(
             "False by default. Raise an exception if either one of specified database, "
             "schema or warehouse doesn't exists if True."
@@ -526,7 +526,7 @@ class SnowflakeResource(ConfigurableResource):
         ),
     )
 
-    numpy: Optional[str] = Field(
+    numpy: Optional[bool] = Field(
         default=None,
         description=(
             "Optional parameter when connector is set to sqlalchemy. To enable fetching "
