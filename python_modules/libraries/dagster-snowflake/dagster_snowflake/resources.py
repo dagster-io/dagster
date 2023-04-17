@@ -28,7 +28,7 @@ except ImportError:
 class SnowflakeConnection:
     """A connection to Snowflake that can execute queries. In general this class should not be
     directly instantiated, but rather used as a resource in an op or asset via the
-    :py:func:`snowflake_resource`.
+    :py:func:`SnowflakeResource`.
     """
 
     def __init__(self, config: Mapping[str, str], log):
@@ -159,9 +159,9 @@ class SnowflakeConnection:
         Examples:
             .. code-block:: python
 
-                @op(required_resource_keys={"snowflake"})
-                def get_query_status(context, query_id):
-                    with context.resources.snowflake.get_connection() as conn:
+                @op
+                def get_query_status(snowflake: SnowflakeResource, query_id):
+                    with snowflake.get_connection() as conn:
                         # conn is a Snowflake Connection object or a SQLAlchemy Connection if
                         # sqlalchemy is specified as the connector in the Snowflake Resource config
 
@@ -212,9 +212,9 @@ class SnowflakeConnection:
         Examples:
             .. code-block:: python
 
-                @op(required_resource_keys={"snowflake"})
-                def drop_database(context):
-                    context.resources.snowflake.execute_query(
+                @op
+                def drop_database(snowflake: SnowflakeResource):
+                    snowflake.execute_query(
                         "DROP DATABASE IF EXISTS MY_DATABASE"
                     )
         """
@@ -264,10 +264,10 @@ class SnowflakeConnection:
         Examples:
             .. code-block:: python
 
-                @op(required_resource_keys={"snowflake"})
-                def create_fresh_database(context):
+                @op
+                def create_fresh_database(snowflake: SnowflakeResource):
                     queries = ["DROP DATABASE IF EXISTS MY_DATABASE", "CREATE DATABASE MY_DATABASE"]
-                    context.resources.snowflake.execute_queries(
+                    snowflake.execute_queries(
                         sql_queries=queries
                     )
 
@@ -309,12 +309,12 @@ class SnowflakeConnection:
                 import pyarrow as pa
                 import pyarrow.parquet as pq
 
-                @op(required_resource_keys={"snowflake"})
-                def write_parquet_file(context):
+                @op
+                def write_parquet_file(snowflake: SnowflakeResource):
                     df = pd.DataFrame({"one": [1, 2, 3], "ten": [11, 12, 13]})
                     table = pa.Table.from_pandas(df)
                     pq.write_table(table, "example.parquet')
-                    context.resources.snowflake.load_table_from_local_parquet(
+                    snowflake.load_table_from_local_parquet(
                         src="example.parquet",
                         table="MY_TABLE"
                     )
@@ -335,8 +335,7 @@ class SnowflakeConnection:
 
 
 class SnowflakeResource(ConfigurableResource):
-    """A resource for connecting to the Snowflake data warehouse. The returned resource object is an
-    instance of :py:class:`SnowflakeConnection`.
+    """A resource for connecting to the Snowflake data warehouse.
 
     A simple example of loading data into Snowflake and subsequently querying that data is shown below:
 
