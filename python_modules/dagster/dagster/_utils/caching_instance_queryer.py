@@ -315,7 +315,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         *,
         asset_key: AssetKey,
         after_cursor: Optional[int],
-        data_version: DataVersion,
+        data_version: Optional[DataVersion],
     ) -> Optional["EventLogRecord"]:
         from dagster._core.event_api import EventRecordsFilter
 
@@ -353,11 +353,11 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             # what the version was before `after_cursor`
             before_cursor=after_cursor,
         )
-        if previous_version_record is None:
-            return False
-        previous_version = extract_data_version_from_entry(previous_version_record.event_log_entry)
-        if previous_version is None:
-            return False
+        previous_version = (
+            extract_data_version_from_entry(previous_version_record.event_log_entry)
+            if previous_version_record is not None
+            else None
+        )
 
         next_version_record = self.next_version_record(
             asset_key=observable_source_asset_key,
