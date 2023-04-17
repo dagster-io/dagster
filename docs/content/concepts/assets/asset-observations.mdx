@@ -101,7 +101,7 @@ class MyOpConfig(Config):
 
 
 @op
-def my_partitioned_asset_op(context, config: MyOpConfig):
+def partitioned_dataset_op(context, config: MyOpConfig):
     partition_date = config.date
     df = read_df_for_date(partition_date)
     context.log_event(
