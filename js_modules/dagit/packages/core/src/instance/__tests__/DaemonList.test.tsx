@@ -1,14 +1,14 @@
-import {MockedProvider} from '@apollo/client/testing';
-import {render, waitFor} from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import {MockedResponse, MockedProvider} from '@apollo/client/testing';
+import {fireEvent, render, waitFor} from '@testing-library/react';
 import React from 'react';
 
-import {buildDaemonStatus} from '../../graphql/types';
+import {buildDaemonStatus, buildInstance} from '../../graphql/types';
 import {
   DaemonList,
   AUTOMATERIALIZE_PAUSED_QUERY,
   SET_AUTOMATERIALIZE_PAUSED_MUTATION,
 } from '../DaemonList';
+import {GetAutoMaterializePausedQuery} from '../types/DaemonList.types';
 
 let mockResolveConfirmation = (_any: any) => {};
 beforeEach(() => {
@@ -54,25 +54,28 @@ const mockDaemons = [
   }),
 ];
 
-const mocks = [
-  {
+function autoMaterializePausedMock(paused: boolean): MockedResponse<GetAutoMaterializePausedQuery> {
+  return {
     request: {
       query: AUTOMATERIALIZE_PAUSED_QUERY,
     },
-    result: {
-      data: {
-        instance: {
-          autoMaterializePaused: false,
+    result: jest.fn(() => {
+      return {
+        data: {
+          __typename: 'DagitQuery',
+          instance: buildInstance({
+            autoMaterializePaused: paused,
+          }),
         },
-      },
-    },
-  },
-];
+      };
+    }),
+  };
+}
 
 describe('DaemonList', () => {
   it('renders daemons correctly', async () => {
     const {findByText, queryByText} = render(
-      <MockedProvider mocks={mocks} addTypename={false}>
+      <MockedProvider mocks={[autoMaterializePausedMock(false)]} addTypename={false}>
         <DaemonList daemonStatuses={mockDaemons} />
       </MockedProvider>,
     );
@@ -85,7 +88,7 @@ describe('DaemonList', () => {
     expect(queryByText('NonExistentDaemon')).not.toBeInTheDocument();
   });
 
-  it('toggles Auto-materializing correctly', async () => {
+  it('turns off Auto-materializing', async () => {
     const setAutoMaterializePausedMock = {
       request: {
         query: SET_AUTOMATERIALIZE_PAUSED_MUTATION,
@@ -97,19 +100,65 @@ describe('DaemonList', () => {
     };
 
     const {findByRole} = render(
-      <MockedProvider mocks={[...mocks, setAutoMaterializePausedMock]} addTypename={false}>
-        <DaemonList daemonStatuses={mockDaemons as any} />
+      <MockedProvider
+        mocks={[autoMaterializePausedMock(false), setAutoMaterializePausedMock]}
+        addTypename={false}
+      >
+        <DaemonList daemonStatuses={mockDaemons} />
       </MockedProvider>,
     );
 
     const switchButton = await findByRole('checkbox');
-    userEvent.click(switchButton);
-    // Confirmation required
-    mockResolveConfirmation(0);
+    expect(switchButton).toBeChecked();
+
+    fireEvent.click(switchButton);
+
+    await waitFor(() => expect(setAutoMaterializePausedMock.result).not.toHaveBeenCalled());
+
+    await waitFor(() => {
+      expect(() => {
+        // Confirmation required
+        mockResolveConfirmation(0);
+      }).not.toThrow();
+    });
+
     await waitFor(() => expect(setAutoMaterializePausedMock.result).toHaveBeenCalled());
+  });
+
+  it('turns ob Auto-materializing', async () => {
+    const setAutoMaterializePausedMock = {
+      request: {
+        query: SET_AUTOMATERIALIZE_PAUSED_MUTATION,
+        variables: {paused: false},
+      },
+      result: jest.fn(() => {
+        return {data: {setAutoMaterializePaused: true}};
+      }),
+    };
+
+    const {findByRole} = render(
+      <MockedProvider
+        mocks={[autoMaterializePausedMock(true), setAutoMaterializePausedMock]}
+        addTypename={false}
+      >
+        <DaemonList daemonStatuses={mockDaemons} />
+      </MockedProvider>,
+    );
+
+    const switchButton = await findByRole('checkbox');
     expect(switchButton).not.toBeChecked();
-    userEvent.click(switchButton);
-    // No confirmation this time.
+
+    fireEvent.click(switchButton);
+
+    await waitFor(() => expect(setAutoMaterializePausedMock.result).not.toHaveBeenCalled());
+
+    await waitFor(() => {
+      expect(() => {
+        // Confirmation required
+        mockResolveConfirmation(0);
+      }).toThrow();
+    });
+
     await waitFor(() => expect(setAutoMaterializePausedMock.result).toHaveBeenCalled());
   });
 });
