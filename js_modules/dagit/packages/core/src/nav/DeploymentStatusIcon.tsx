@@ -10,7 +10,7 @@ export const DeploymentStatusIcon = React.memo(() => {
 });
 
 const CombinedStatusIcon = React.memo(() => {
-  const {codeLocations, daemons} = React.useContext(DeploymentStatusContext);
+  const {codeLocations, daemons, autoMaterialization} = React.useContext(DeploymentStatusContext);
 
   if (codeLocations?.type === 'spinner') {
     return (
@@ -20,7 +20,10 @@ const CombinedStatusIcon = React.memo(() => {
     );
   }
 
-  const anyWarning = daemons?.type === 'warning' || codeLocations?.type === 'warning';
+  const anyWarning =
+    daemons?.type === 'warning' ||
+    codeLocations?.type === 'warning' ||
+    autoMaterialization?.type === 'warning';
 
   if (anyWarning) {
     return (
@@ -29,6 +32,7 @@ const CombinedStatusIcon = React.memo(() => {
           <Box flex={{direction: 'column', gap: 4}}>
             {daemons?.content}
             {codeLocations?.content}
+            {autoMaterialization?.content}
           </Box>
         }
         position="bottom"

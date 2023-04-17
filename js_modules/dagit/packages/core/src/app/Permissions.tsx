@@ -46,6 +46,7 @@ export type PermissionsFromJSON = {
   wipe_assets?: PermissionResult;
   launch_partition_backfill?: PermissionResult;
   cancel_partition_backfill?: PermissionResult;
+  toggle_auto_materialize?: PermissionResult;
 };
 
 export const DEFAULT_DISABLED_REASON = 'Disabled by your administrator';
@@ -93,6 +94,7 @@ export const extractPermissions = (
     canWipeAssets: permissionOrFallback('wipe_assets'),
     canLaunchPartitionBackfill: permissionOrFallback('launch_partition_backfill'),
     canCancelPartitionBackfill: permissionOrFallback('cancel_partition_backfill'),
+    canToggleAutoMaterialize: permissionOrFallback('toggle_auto_materialize'),
   };
 };
 
