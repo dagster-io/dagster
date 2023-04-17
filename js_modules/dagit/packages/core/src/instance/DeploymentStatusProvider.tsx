@@ -35,7 +35,7 @@ export const DeploymentStatusProvider: React.FC<Props> = (props) => {
 
   const codeLocations = useCodeLocationsStatus(!include.has('code-locations'));
   const daemons = useDaemonStatus(!include.has('daemons'));
-  const autoMaterialization = useAutomatializationStatus();
+  const autoMaterialization = useAutoMaterializationStatus();
 
   const value = React.useMemo(() => ({codeLocations, daemons, autoMaterialization}), [
     daemons,
@@ -48,14 +48,13 @@ export const DeploymentStatusProvider: React.FC<Props> = (props) => {
   );
 };
 
-function useAutomatializationStatus() {
-  const {data, loading, refetch} = useQuery<
-    GetAutoMaterializePausedQuery,
-    GetAutoMaterializePausedQueryVariables
-  >(AUTOMATERIALIZE_PAUSED_QUERY);
+function useAutoMaterializationStatus() {
+  const {data} = useQuery<GetAutoMaterializePausedQuery, GetAutoMaterializePausedQueryVariables>(
+    AUTOMATERIALIZE_PAUSED_QUERY,
+  );
   if (data?.instance.autoMaterializePaused) {
     return {
-      type: 'warning',
+      type: 'warning' as const,
       content: <span>Auto-materialization is paused</span>,
     };
   }
