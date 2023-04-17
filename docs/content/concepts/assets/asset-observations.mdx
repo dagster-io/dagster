@@ -93,12 +93,16 @@ height={1146}
 If you are observing a single slice of an asset (e.g. a single day's worth of data on a larger table), rather than mutating or creating it entirely, you can indicate this to Dagster by including the `partition` argument on the object.
 
 ```python file=/concepts/assets/observations.py startafter=start_partitioned_asset_observation endbefore=end_partitioned_asset_observation
-from dagster import AssetObservation, op
+from dagster import AssetMaterialization, Config, op
 
 
-@op(config_schema={"date": str})
-def partitioned_dataset_op(context):
-    partition_date = context.op_config["date"]
+class MyOpConfig(Config):
+    date: str
+
+
+@op
+def my_partitioned_asset_op(context, config: MyOpConfig):
+    partition_date = config.date
     df = read_df_for_date(partition_date)
     context.log_event(
         AssetObservation(asset_key="my_partitioned_dataset", partition=partition_date)
