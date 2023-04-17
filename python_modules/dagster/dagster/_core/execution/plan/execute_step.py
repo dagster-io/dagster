@@ -37,7 +37,6 @@ from dagster._core.definitions.data_version import (
 from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 from dagster._core.definitions.events import DynamicOutput
 from dagster._core.definitions.metadata import (
-    MetadataEntry,
     MetadataValue,
     normalize_metadata,
 )
@@ -611,11 +610,6 @@ def _store_output(
             yield elt
         elif isinstance(elt, AssetMaterialization):
             manager_materializations.append(elt)
-        elif isinstance(elt, MetadataEntry):  # should remove this?
-            experimental_functionality_warning(
-                "Yielding metadata from an IOManager's handle_output() function"
-            )
-            manager_metadata[elt.label] = elt.value
         elif isinstance(elt, dict):  # should remove this?
             experimental_functionality_warning(
                 "Yielding metadata from an IOManager's handle_output() function"
@@ -625,7 +619,7 @@ def _store_output(
             raise DagsterInvariantViolationError(
                 f"IO manager on output {output_def.name} has returned "
                 f"value {elt} of type {type(elt).__name__}. The return type can only be "
-                "one of AssetMaterialization, MetadataEntry."
+                "one of AssetMaterialization, Dict[str, MetadataValue]."
             )
 
     for event in output_context.consume_events():
