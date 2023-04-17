@@ -40,7 +40,7 @@ So, why use resources?
 
 ## Defining a resource
 
-Typically, resources are defined by subclassing <PyObject object="ConfigurableResource"/>. Attributes on the class are used to define the resource's [configuration schema](/concepts/configuration/config-schema). The configuration system has a few advantages over plain Python parameter passing; configured values are displayed in the Dagster UI and can be set dynamically using environment variables.
+Typically, resources are defined by subclassing <PyObject object="ConfigurableResource"/>. Attributes on the class are used to define the resource's [configuration schema](/concepts/configuration/config-schema). The configuration system has a few advantages over plain Python parameter passing; configured values are displayed in the Dagster UI and can be set dynamically using environment variables. Binding resource config values can also be delayed so that they can be specified at run launch time.
 
 Assets and ops specify resource dependencies by annotating the resource as a parameter to the asset or op function.
 
@@ -129,7 +129,7 @@ There are many supported config types that can be used when defining resources. 
 
 Resources can be configured using environment variables, which is useful for secrets or other environment-specific configuration. If you're using Dagster Cloud, environment variables can be [configured directly in the UI](/dagster-cloud/managing-deployments/environment-variables-and-secrets).
 
-To use environment variables, pass an <PyObject object="EnvVar" /> when constructing your resource.
+To use environment variables, pass an <PyObject object="EnvVar" /> when constructing your resource. `EnvVar` inherits from `str` and can be used to populate any string config field on a resource. The value of the environment variable will be evaluated at launch time.
 
 ```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resources_env_vars endbefore=end_new_resources_env_vars dedent=4
 from dagster import EnvVar, Definitions, ConfigurableResource
@@ -151,11 +151,11 @@ defs = Definitions(
 
 For more information on using environment variables with Dagster, refer to the [Environment variables guide](/guides/dagster/using-environment-variables-and-secrets).
 
-### Configuring resources at runtime
+### Configuring resources at launch time
 
-In some cases, you may want to specify configuration for a resource at runtime, in the launchpad or in a <PyObject object="RunRequest" /> for a [schedule](/concepts/partitions-schedules-sensors/schedules) or [sensor](/concepts/partitions-schedules-sensors/sensors). For example, you may want a sensor-triggered run to specify a different target table in a database resource for each run.
+In some cases, you may want to specify configuration for a resource at launch time, in the launchpad or in a <PyObject object="RunRequest" /> for a [schedule](/concepts/partitions-schedules-sensors/schedules) or [sensor](/concepts/partitions-schedules-sensors/sensors). For example, you may want a sensor-triggered run to specify a different target table in a database resource for each run.
 
-You can use the `configure_at_launch()` method to defer the construction of a configurable resource until runtime.
+You can use the `configure_at_launch()` method to defer the construction of a configurable resource until launch time.
 
 ```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_runtime endbefore=end_new_resource_runtime dedent=4
 from dagster import ConfigurableResource, Definitions, asset
@@ -176,9 +176,9 @@ defs = Definitions(
 )
 ```
 
-#### Providing resource runtime configuration in Python code
+#### Providing resource launch time configuration in Python code
 
-Then, configuration for the resource can be provided at runtime in the launchpad or in Python code using the `config` parameter of the <PyObject object="RunRequest" />:
+Then, configuration for the resource can be provided at launch time in the launchpad or in Python code using the `config` parameter of the <PyObject object="RunRequest" />:
 
 ```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_runtime_launch endbefore=end_new_resource_runtime_launch dedent=4
 from dagster import sensor, define_asset_job, RunRequest, RunConfig
@@ -224,21 +224,22 @@ class FileStoreBucket(ConfigurableResource):
             region=self.region,
         ).write(data)
 
-credentials = CredentialsResource(username="my_user", password="my_password")
 defs = Definitions(
     assets=[my_asset],
     resources={
         "bucket": FileStoreBucket(
-            credentials=credentials,
+            credentials=CredentialsResource(
+                username="my_user", password="my_password"
+            ),
             region="us-east-1",
         ),
     },
 )
 ```
 
-If we instead would like the configuration for our credentials to be provided at runtime, we can use the `configure_at_launch()` method to defer the construction of the `CredentialsResource` until runtime.
+If we instead would like the configuration for our credentials to be provided at launch time, we can use the `configure_at_launch()` method to defer the construction of the `CredentialsResource` until launch time.
 
-Because `credentials` requires runtime configuration through the launchpad, it must also be passed to the <PyObject object="Definitions" /> object, so that configuration can be provided at runtime. Nested resources only need to be passed to the <PyObject object="Definitions" /> object if they require runtime configuration.
+Because `credentials` requires launch time configuration through the launchpad, it must also be passed to the <PyObject object="Definitions" /> object, so that configuration can be provided at launch time. Nested resources only need to be passed to the <PyObject object="Definitions" /> object if they require launch time configuration.
 
 ```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_dep_job_runtime endbefore=end_new_resource_dep_job_runtime dedent=4
 credentials = CredentialsResource.configure_at_launch()
@@ -335,7 +336,7 @@ def test_my_resource():
 
 If your resource requires other resources, then you can pass them as constructor arguments.
 
-```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_testing_with_context endbefore=end_new_resource_testing_with_context dedent=4
+```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_testing_with_nesting endbefore=end_new_resource_testing_with_nesting dedent=4
 from dagster import ConfigurableResource
 
 class StringHolderResource(ConfigurableResource):
@@ -345,7 +346,7 @@ class MyResourceRequiresAnother(ConfigurableResource):
     foo: StringHolderResource
     bar: str
 
-def test_my_resource_with_context():
+def test_my_resource_with_nesting():
     string_holder = StringHolderResource(value="foo")
     resource = MyResourceRequiresAnother(foo=string_holder, bar="bar")
     assert resource.foo.value == "foo"
@@ -357,20 +358,37 @@ def test_my_resource_with_context():
 In the case that your resource makes use of the resource initialization context, you can use the <PyObject object="build_init_resource_context"/> utility alongside the `with_init_resource_context` helper on your resource class:
 
 ```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_testing_with_context endbefore=end_new_resource_testing_with_context dedent=4
-from dagster import ConfigurableResource
+from dagster import (
+    ConfigurableResource,
+    InitResourceContext,
+    build_init_resource_context,
+    DagsterInstance,
+)
+from typing import Optional
 
-class StringHolderResource(ConfigurableResource):
-    value: str
+class MyContextResource(ConfigurableResource[GitHub]):
+    base_path: Optional[str] = None
 
-class MyResourceRequiresAnother(ConfigurableResource):
-    foo: StringHolderResource
-    bar: str
+    def effective_base_path(self) -> str:
+        if self.base_path:
+            return self.base_path
+        instance = self.get_resource_context().instance
+        assert instance
+        return instance.storage_directory()
 
-def test_my_resource_with_context():
-    string_holder = StringHolderResource(value="foo")
-    resource = MyResourceRequiresAnother(foo=string_holder, bar="bar")
-    assert resource.foo.value == "foo"
-    assert resource.bar == "bar"
+    # TODO: remove with https://github.com/dagster-io/dagster/pull/13613
+    def get_resource_context(self) -> InitResourceContext:
+        ...
+
+def test_my_context_resource():
+    with DagsterInstance.ephemeral() as instance:
+        context = build_init_resource_context(instance=instance)
+        assert (
+            MyContextResource(base_path=None)
+            .with_resource_context(context)
+            .effective_base_path()
+            == instance.storage_directory()
+        )
 ```
 
 ---

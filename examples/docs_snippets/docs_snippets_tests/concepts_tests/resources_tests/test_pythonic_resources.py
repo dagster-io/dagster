@@ -16,12 +16,12 @@ def test_new_resource_testing() -> None:
     new_resource_testing()
 
 
-def test_new_resource_testing_with_context() -> None:
+def test_new_resource_testing_with_nesting() -> None:
     from docs_snippets.concepts.resources.pythonic_resources import (
-        new_resource_testing_with_context,
+        new_resource_testing_with_nesting,
     )
 
-    new_resource_testing_with_context()
+    new_resource_testing_with_nesting()
 
 
 def test_new_resources_assets_defs() -> None:

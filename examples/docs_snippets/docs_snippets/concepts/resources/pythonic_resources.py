@@ -25,8 +25,8 @@ def new_resource_testing() -> None:
     test_my_resource()
 
 
-def new_resource_testing_with_context() -> None:
-    # start_new_resource_testing_with_context
+def new_resource_testing_with_nesting() -> None:
+    # start_new_resource_testing_with_nesting
     from dagster import ConfigurableResource
 
     class StringHolderResource(ConfigurableResource):
@@ -36,15 +36,15 @@ def new_resource_testing_with_context() -> None:
         foo: StringHolderResource
         bar: str
 
-    def test_my_resource_with_context():
+    def test_my_resource_with_nesting():
         string_holder = StringHolderResource(value="foo")
         resource = MyResourceRequiresAnother(foo=string_holder, bar="bar")
         assert resource.foo.value == "foo"
         assert resource.bar == "bar"
 
-    # end_new_resource_testing_with_context
+    # end_new_resource_testing_with_nesting
 
-    test_my_resource_with_context()
+    test_my_resource_with_nesting()
 
 
 from typing import TYPE_CHECKING, Dict, Any
@@ -245,12 +245,13 @@ def new_resources_nesting() -> "Definitions":
                 region=self.region,
             ).write(data)
 
-    credentials = CredentialsResource(username="my_user", password="my_password")
     defs = Definitions(
         assets=[my_asset],
         resources={
             "bucket": FileStoreBucket(
-                credentials=credentials,
+                credentials=CredentialsResource(
+                    username="my_user", password="my_password"
+                ),
                 region="us-east-1",
             ),
         },
