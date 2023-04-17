@@ -12,6 +12,7 @@ import mock
 import pytest
 from dagster import (
     BindResourcesToJobs,
+    DagsterInstance,
     IOManager,
     JobDefinition,
     ScheduleDefinition,
@@ -2414,12 +2415,15 @@ def test_context_on_resource_basic() -> None:
 
     class ContextUsingResource(ConfigurableResource):
         def access_context(self) -> None:
-            self.get_resource_init_context()
+            self.get_resource_context()
 
     with pytest.raises(
         CheckError, match="Attempted to get context before resource was initialized."
     ):
         ContextUsingResource().access_context()
+
+    # Can access context after binding one
+    ContextUsingResource().with_resource_context(build_init_resource_context()).access_context()
 
     @asset
     def my_test_asset(context_using: ContextUsingResource) -> None:
@@ -2445,7 +2449,7 @@ def test_context_on_resource_use_instance() -> None:
             if self.output_dir:
                 return self.output_dir
 
-            context = self.get_resource_init_context()
+            context = self.get_resource_context()
             assert context.instance
             return context.instance.storage_directory()
 
@@ -2458,6 +2462,9 @@ def test_context_on_resource_use_instance() -> None:
         "dagster._core.instance.DagsterInstance.storage_directory"
     ) as storage_directory:
         storage_directory.return_value = "/tmp"
+
+        with DagsterInstance.ephemeral() as instance:
+            assert OutputDirResource(output_dir=None).with_resource_context(build_init_resource_context(instance=instance)).get_effective_output_dir() == "/tmp"
 
         @asset
         def my_other_output_asset(output_dir: OutputDirResource) -> None:
@@ -2483,7 +2490,7 @@ def test_context_on_resource_runtime_config() -> None:
             if self.output_dir:
                 return self.output_dir
 
-            context = self.get_resource_init_context()
+            context = self.get_resource_context()
             assert context.instance
             return context.instance.storage_directory()
 
@@ -2522,7 +2529,7 @@ def test_context_on_resource_nested() -> None:
             if self.output_dir:
                 return self.output_dir
 
-            context = self.get_resource_init_context()
+            context = self.get_resource_context()
             assert context.instance
             return context.instance.storage_directory()
 

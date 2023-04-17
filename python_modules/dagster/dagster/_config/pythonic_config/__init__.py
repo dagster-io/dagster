@@ -743,17 +743,25 @@ class ConfigurableResourceFactory(
         to_update = {**resources_to_update, **partial_resources_to_update}
         return self._with_updated_values(to_update)
 
+    def with_resource_context(
+        self, context: InitResourceContext
+    ) -> "ConfigurableResourceFactory[TResValue]":
+        """Returns a new instance of the resource with the given resource init context bound."""
+        copy = self._with_updated_values({})
+        copy._state__internal__ = copy._state__internal__._replace(context=context)  # noqa: SLF001
+        return copy
+
     def initialize_and_run(self, context: InitResourceContext) -> TResValue:
-        self._state__internal__ = self._state__internal__._replace(context=context)
         with_nested_resources = self._resolve_and_update_nested_resources(context)
-        with_env_vars = with_nested_resources._resolve_and_update_env_vars()  # noqa: SLF001
+        with_context = with_nested_resources.with_resource_context(context)
+        with_env_vars = with_context._resolve_and_update_env_vars()  # noqa: SLF001
 
         return with_env_vars._create_object_fn(context)  # noqa: SLF001
 
     def _create_object_fn(self, context: InitResourceContext) -> TResValue:
         return self.create_resource(context)
 
-    def get_resource_init_context(self) -> InitResourceContext:
+    def get_resource_context(self) -> InitResourceContext:
         """Returns the context that this resource was initialized with."""
         return check.not_none(
             self._state__internal__.context,
