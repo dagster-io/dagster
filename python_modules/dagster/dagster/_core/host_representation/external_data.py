@@ -1384,6 +1384,7 @@ def external_asset_graph_from_defs(
                     job_def.name
                     for job_def in pipelines
                     if source_asset.key in job_def.asset_layer.source_assets_by_key
+                    and source_asset.partitions_def == job_def.partitions_def
                 ]
                 if source_asset.node_def is not None
                 else []
