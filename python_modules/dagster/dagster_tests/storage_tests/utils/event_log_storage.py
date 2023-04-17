@@ -72,6 +72,7 @@ from dagster._legacy import build_assets_job
 from dagster._loggers import colored_console_logger
 from dagster._serdes.serdes import deserialize_value
 from dagster._utils import datetime_as_float
+from dagster._utils.concurrency import ConcurrencyState
 
 TEST_TIMEOUT = 5
 
@@ -3282,3 +3283,45 @@ class TestEventLogStorage:
         assert storage.has_dynamic_partition(partitions_def_name="foo", partition_key="foo")
         assert not storage.has_dynamic_partition(partitions_def_name="foo", partition_key="qux")
         assert not storage.has_dynamic_partition(partitions_def_name="bar", partition_key="foo")
+
+    def test_concurrency(self, storage):
+        assert storage
+
+        run_id_one = make_new_run_id()
+        run_id_two = make_new_run_id()
+        blocked_run_id = make_new_run_id()
+
+        def claim(keys, run_id, step_key):
+            return storage.claim_concurrency_slots(keys, run_id, step_key)
+
+        # initially there are no concurrency limited keys
+        assert storage.get_concurrency_limited_keys() == set()
+
+        # fill concurrency slots
+        storage.allocate_concurrency_slots("foo", 4)
+        storage.allocate_concurrency_slots("bar", 1)
+
+        # now there are two concurrency limited keys
+        assert storage.get_concurrency_limited_keys() == {"foo", "bar"}
+
+        assert claim({"foo"}, run_id_one, "step_1") == ConcurrencyState.CLAIMED
+        assert claim({"foo"}, run_id_two, "step_2") == ConcurrencyState.CLAIMED
+        assert claim({"foo"}, run_id_one, "step_3") == ConcurrencyState.CLAIMED
+        assert claim({"foo", "bar"}, run_id_two, "step_4") == ConcurrencyState.CLAIMED
+
+        # next claim should be blocked
+        assert claim({"foo"}, blocked_run_id, "blocked") == ConcurrencyState.BLOCKED
+        assert claim({"bar"}, blocked_run_id, "blocked") == ConcurrencyState.BLOCKED
+
+        # free single slot, one in each concurrency key: foo, bar
+        storage.free_concurrency_slots(run_id_two, "step_4")
+        assert claim({"foo", "bar"}, run_id_two, "step_4") == ConcurrencyState.CLAIMED
+        assert claim({"foo"}, blocked_run_id, "blocked") == ConcurrencyState.BLOCKED
+        assert claim({"bar"}, blocked_run_id, "blocked") == ConcurrencyState.BLOCKED
+
+        # free all slots for run_id_one, 2 slots for foo, 1 for bar
+        storage.free_concurrency_slots(run_id_two)
+        assert claim({"foo"}, run_id_two, "step_2") == ConcurrencyState.CLAIMED
+        assert claim({"foo", "bar"}, run_id_two, "step_4") == ConcurrencyState.CLAIMED
+        assert claim({"foo"}, blocked_run_id, "blocked") == ConcurrencyState.BLOCKED
+        assert claim({"bar"}, blocked_run_id, "blocked") == ConcurrencyState.BLOCKED

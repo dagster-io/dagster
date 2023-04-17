@@ -407,3 +407,28 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     def is_run_sharded(self) -> bool:
         """Indicates that the EventLogStoarge is sharded."""
         return False
+
+    @abstractmethod
+    def allocate_concurrency_slots(self, concurrency_key: str, num_int: int) -> None:
+        """Allocate concurrency slots for the given concurrency key."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_concurrency_limited_keys(self) -> Set[str]:
+        """Get the set of concurrency limited keys."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_concurrency_info(self, concurrency_key: str):
+        """Get concurrency info for key."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def claim_concurrency_slots(self, concurrency_keys: Set[str], run_id: str, step_key: str):
+        """Claim concurrency slots for step."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def free_concurrency_slots(self, run_id: str, step_key: Optional[str] = None):
+        """Frees concurrency slots for a given run/step."""
+        raise NotImplementedError()

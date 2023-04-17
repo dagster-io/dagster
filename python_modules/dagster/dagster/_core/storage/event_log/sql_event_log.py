@@ -49,6 +49,7 @@ from dagster._utils import (
     utc_datetime_from_naive,
     utc_datetime_from_timestamp,
 )
+from dagster._utils.concurrency import ConcurrencyState
 
 from ..dagster_run import DagsterRunStatsSnapshot
 from .base import (
@@ -65,6 +66,7 @@ from .migration import ASSET_DATA_MIGRATIONS, ASSET_KEY_INDEX_COLS, EVENT_LOG_DA
 from .schema import (
     AssetEventTagsTable,
     AssetKeyTable,
+    ConcurrencySlotsTable,
     DynamicPartitionsTable,
     SecondaryIndexMigrationTable,
     SqlEventLogStorageTable,
@@ -1851,6 +1853,115 @@ class SqlEventLogStorage(EventLogStorage):
                     )
                 )
             )
+
+    def allocate_concurrency_slots(self, concurrency_key: str, num_int: int) -> None:
+        """Allocate a set of concurrency slots.
+
+        Args:
+            concurrency_key (str): The key to allocate the slots for.
+            count (int): The number of slots to allocate.
+        """
+        with self.index_connection() as conn:
+            count_query = (
+                db.select([db.func.count()])
+                .select_from(ConcurrencySlotsTable)
+                .where(ConcurrencySlotsTable.c.concurrency_key == concurrency_key)
+            )
+            count_row = conn.execute(count_query).fetchone()
+            count = count_row[0] if count_row else 0
+            rows = [
+                {"concurrency_key": concurrency_key, "run_id": None, "step_key": None}
+                for _ in range(count, num_int)
+            ]
+            conn.execute(ConcurrencySlotsTable.insert().values(rows))
+
+    def claim_concurrency_slots(self, concurrency_keys: Set[str], run_id: str, step_key: str):
+        """Claim concurrency slots for step.
+
+        Args:
+            concurrency_keys (Set[str]): The set of concurrency keys to claim.
+            run_id (str): The run id to claim the slots for.
+            step_key (str): The step key to claim the slots for.
+        """
+        with self.index_connection() as conn:
+            with conn.begin() as transaction:
+                for concurrency_key in sorted(concurrency_keys):
+                    result = conn.execute(
+                        db.select([ConcurrencySlotsTable.c.id])
+                        .select_from(ConcurrencySlotsTable)
+                        .where(
+                            db.and_(
+                                ConcurrencySlotsTable.c.concurrency_key == concurrency_key,
+                                ConcurrencySlotsTable.c.step_key == None,  # noqa: E711
+                            )
+                        )
+                        .limit(1),
+                        for_update=True,
+                        skip_locked=True,
+                    ).fetchone()
+                    if result and result[0]:
+                        if not conn.execute(
+                            ConcurrencySlotsTable.update()
+                            .values(run_id=run_id, step_key=step_key)
+                            .where(ConcurrencySlotsTable.c.id == result[0])
+                        ).rowcount:
+                            transaction.rollback()
+                            return ConcurrencyState.BLOCKED
+                    else:
+                        transaction.rollback()
+                        return ConcurrencyState.BLOCKED
+
+                return ConcurrencyState.CLAIMED
+
+    def get_concurrency_limited_keys(self) -> Set[str]:
+        """Get the set of concurrency limited keys."""
+        with self.index_connection() as conn:
+            rows = conn.execute(
+                db.select([ConcurrencySlotsTable.c.concurrency_key])
+                .select_from(ConcurrencySlotsTable)
+                .distinct()
+            ).fetchall()
+            return {row[0] for row in rows}
+
+    def get_concurrency_info(self, concurrency_key: str) -> List[Tuple[str, str]]:
+        """Get the list of concurrency slots for a given concurrency key.
+
+        Args:
+            concurrency_key (str): The concurrency key to get the slots for.
+
+        Returns:
+            List[Tuple[str, str]]: A list of tuples of run_id and step_key for the slots.
+        """
+        with self.index_connection() as conn:
+            rows = conn.execute(
+                db.select([ConcurrencySlotsTable.c.run_id, db.func.count()])
+                .select_from(ConcurrencySlotsTable)
+                .where(ConcurrencySlotsTable.c.concurrency_key == concurrency_key)
+                .group_by(ConcurrencySlotsTable.c.run_id)
+            ).fetchall()
+            return [(row[0], row[1]) for row in rows]
+
+    def free_concurrency_slots(self, run_id: str, step_key: Optional[str] = None):
+        """Frees concurrency slots for a given run/step.
+
+        Args:
+            run_id (str): The run id to free the slots for.
+            step_key (Optional[str]): The step key to free the slots for. If not provided, all the
+                slots for all the steps of the run will be freed.
+        """
+        with self.index_connection() as conn:
+            query = (
+                ConcurrencySlotsTable.update()
+                .values(run_id=None, step_key=None)
+                .where(
+                    ConcurrencySlotsTable.c.run_id == run_id,
+                )
+            )
+            if step_key:
+                query = query.where(ConcurrencySlotsTable.c.step_key == step_key)
+
+            result = conn.execute(query)
+            return result.rowcount
 
 
 def _get_from_row(row: SqlAlchemyRow, column: str) -> object:
