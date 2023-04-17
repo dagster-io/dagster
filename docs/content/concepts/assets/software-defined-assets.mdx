@@ -224,22 +224,27 @@ If you'd like to define more complex assets, Dagster offers augmented software-d
 
 Like ops, assets in Dagster can specify a config schema. The configuration system is explained in detail in the [Config schema documentation](/concepts/configuration/config-schema).
 
-Asset functions can specify an annotated `config` parameter for the assets's configuration. The config class, which subclasses <PyObject object="Config"/> (which wraps [`pydantic.BaseModel`](https://docs.pydantic.dev/usage/models/#basic-model-usage)) specifies the configuration schema for the asset.
+Asset functions can specify an annotated `config` parameter for the assets's configuration. The config class, which subclasses <PyObject object="Config"/> (which inherits from [`pydantic.BaseModel`](https://docs.pydantic.dev/usage/models/#basic-model-usage)) specifies the configuration schema for the asset.
 
-For example, the following asset queries an API endpoint defined through configuration:
+For example, the following downstream asset queries an API endpoint defined through configuration:
 
 ```python file=/concepts/assets/asset_config.py startafter=start_example endbefore=end_example
 from dagster import Config, asset
 
 
-class MyAssetConfig(Config):
+@asset
+def my_upstream_asset() -> int:
+    return 5
+
+
+class MyDownstreamAssetConfig(Config):
     api_endpoint: str
 
 
 @asset
-def my_configurable_asset(config: MyAssetConfig):
+def my_downstream_asset(config: MyDownstreamAssetConfig, my_upstream_asset: int) -> int:
     data = requests.get(f"{config.api_endpoint}/data").json()
-    return data
+    return data["value"] + my_upstream_asset
 ```
 
 Refer to the [Config schema documentation](/concepts/configuration/config-schema) for more configuration info and examples.
