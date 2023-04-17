@@ -53,6 +53,7 @@ def check_experimental_warnings():
                 or "build_assets_job" in w.message.args[0]
                 or "MultiPartitionsDefinition" in w.message.args[0]
                 or "SQLALCHEMY" in w.message.args[0]  # from sqlalchemy <2
+                or "Implicitly cleaning up <TemporaryDirectory" in w.message.args[0]
             ):
                 continue
             assert False, f"Unexpected warning: {w.message.args[0]}"
