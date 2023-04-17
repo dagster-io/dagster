@@ -97,7 +97,7 @@ def test_pythonic_resource_authenticate_via_config():
 def test_pythonic_resource_authenticate_via_env():
     @asset
     def test_asset(bigquery: BigQueryResource) -> int:
-        with bigquery.setup_credentials():
+        with bigquery.get_client():
             assert os.getenv("GOOGLE_APPLICATION_CREDENTIALS") is not None
             return 1
 
