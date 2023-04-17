@@ -273,9 +273,16 @@ class AssetReconciliationCursor(NamedTuple):
             if partitions_def is None:
                 continue
 
-            materialized_or_requested_root_partitions_by_asset_key[
-                key
-            ] = partitions_def.deserialize_subset(serialized_subset)
+            try:
+                # in the case that the partitions def has changed, we may not be able to deserialize
+                # the corresponding subset. in this case, we just use an empty subset
+                materialized_or_requested_root_partitions_by_asset_key[
+                    key
+                ] = partitions_def.deserialize_subset(serialized_subset)
+            except:
+                materialized_or_requested_root_partitions_by_asset_key[
+                    key
+                ] = partitions_def.empty_subset()
         return cls(
             latest_storage_id=latest_storage_id,
             materialized_or_requested_root_asset_keys={
