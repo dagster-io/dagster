@@ -1,7 +1,9 @@
 import {MockedProvider} from '@apollo/client/testing';
-import {render, fireEvent, waitFor} from '@testing-library/react';
+import {render, waitFor} from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import React from 'react';
 
+import {buildDaemonStatus} from '../../graphql/types';
 import {
   DaemonList,
   AUTOMATERIALIZE_PAUSED_QUERY,
@@ -20,30 +22,30 @@ jest.mock('../../app/CustomConfirmationProvider', () => ({
 }));
 
 const mockDaemons = [
-  {
+  buildDaemonStatus({
     id: '1',
     daemonType: 'SCHEDULER',
     required: true,
     healthy: true,
     lastHeartbeatErrors: [],
     lastHeartbeatTime: 1000,
-  },
-  {
+  }),
+  buildDaemonStatus({
     id: '2',
     daemonType: 'SENSOR',
     required: true,
     healthy: true,
     lastHeartbeatErrors: [],
     lastHeartbeatTime: 2000,
-  },
-  {
+  }),
+  buildDaemonStatus({
     id: '3',
     daemonType: 'ASSET',
     required: true,
     healthy: true,
     lastHeartbeatErrors: [],
     lastHeartbeatTime: 3000,
-  },
+  }),
 ];
 
 const mocks = [
@@ -65,7 +67,7 @@ describe('DaemonList', () => {
   it('renders daemons correctly', async () => {
     const {findByText, queryByText} = render(
       <MockedProvider mocks={mocks} addTypename={false}>
-        <DaemonList daemonStatuses={mockDaemons as any} />
+        <DaemonList daemonStatuses={mockDaemons} />
       </MockedProvider>,
     );
 
@@ -95,7 +97,7 @@ describe('DaemonList', () => {
     );
 
     const switchButton = await findByRole('checkbox');
-    fireEvent.click(switchButton);
+    userEvent.click(switchButton);
     mockResolveConfirmation(0);
     await waitFor(() => expect(setAutoMaterializePausedMock.result).toHaveBeenCalled());
   });
