@@ -71,13 +71,13 @@ describe('DaemonList', () => {
 
     expect(await findByText('Scheduler')).toBeInTheDocument();
     expect(await findByText('Sensors')).toBeInTheDocument();
-    expect(await findByText('Auto-materialization')).toBeInTheDocument();
+    expect(await findByText('Auto-materializing')).toBeInTheDocument();
 
     // Check for non-existent daemon type
     expect(queryByText('NonExistentDaemon')).not.toBeInTheDocument();
   });
 
-  it('toggles auto-materialization correctly', async () => {
+  it('toggles Auto-materializing correctly', async () => {
     const setAutoMaterializePausedMock = {
       request: {
         query: SET_AUTOMATERIALIZE_PAUSED_MUTATION,

@@ -55,7 +55,7 @@ function useAutoMaterializationStatus() {
   if (data?.instance.autoMaterializePaused) {
     return {
       type: 'warning' as const,
-      content: <span>Auto-materialization is paused</span>,
+      content: <span>Auto-materializing is paused</span>,
     };
   }
   return null;

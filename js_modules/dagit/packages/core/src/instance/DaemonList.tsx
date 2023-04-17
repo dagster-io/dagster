@@ -1,11 +1,9 @@
-import {DocumentNode, gql, useQuery, useMutation} from '@apollo/client';
+import {gql, useQuery, useMutation} from '@apollo/client';
 import {Box, Checkbox, Group, Spinner, Table, Tag} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {showCustomAlert} from '../app/CustomAlertProvider';
 import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {Timestamp} from '../app/time/Timestamp';
 import {TimeFromNow} from '../ui/TimeFromNow';
 
@@ -83,7 +81,7 @@ export const DaemonList: React.FC<Props> = ({daemonStatuses, showTimestampColumn
           <tr>
             <td>
               <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
-                Auto-materialization
+                Auto-materializing
                 {loading ? (
                   <Spinner purpose="body-text" />
                 ) : (
@@ -94,9 +92,9 @@ export const DaemonList: React.FC<Props> = ({daemonStatuses, showTimestampColumn
                       const checked = e.target.checked;
                       if (!checked) {
                         await confirm({
-                          title: 'Pause Auto-materialization?',
+                          title: 'Pause Auto-materializing?',
                           description:
-                            'Pausing auto-materialization will prevent new materializations trigger by an auto-materialization policy.',
+                            'Pausing Auto-materializing will prevent new materializations trigger by an Auto-materializing policy.',
                         });
                       }
                       setAutoMaterializePaused({
@@ -199,6 +197,7 @@ export const DAEMON_HEALTH_FRAGMENT = gql`
 export const AUTOMATERIALIZE_PAUSED_QUERY = gql`
   query GetAutoMaterializePausedQuery {
     instance {
+      id
       autoMaterializePaused
     }
   }
