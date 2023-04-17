@@ -4,7 +4,7 @@ from typing import Iterator, Optional
 import dagster._check as check
 from dagster._core.events import DagsterEvent, EngineEventData
 from dagster._core.execution.api import ExecuteRunWithPlanIterable
-from dagster._core.execution.context.system import PlanOrchestrationContext
+from dagster._core.execution.context.system import PlanExecutionContext, PlanOrchestrationContext
 from dagster._core.execution.context_creation_job import PlanExecutionContextManager
 from dagster._core.execution.plan.execute_plan import inner_plan_execution_iterator
 from dagster._core.execution.plan.plan import ExecutionPlan
@@ -12,6 +12,16 @@ from dagster._core.execution.retries import RetryMode
 from dagster._utils.timing import format_duration, time_execution_scope
 
 from .base import Executor
+
+
+def in_process_plan_execution_iterator(
+    pipeline_context: PlanExecutionContext, execution_plan: ExecutionPlan
+) -> Iterator[DagsterEvent]:
+    # utility function that registers steps to iterate through, to enforce op concurrency.  This
+    # explicit flag is required because the `inner_plan_execution_iterator` is also used to
+    # coordinate the plan execution within the step workers, after the steps have already been
+    # registered by the executor.
+    return inner_plan_execution_iterator(pipeline_context, execution_plan, register_steps=True)
 
 
 class InProcessExecutor(Executor):
@@ -41,7 +51,7 @@ class InProcessExecutor(Executor):
             yield from iter(
                 ExecuteRunWithPlanIterable(
                     execution_plan=plan_context.execution_plan,
-                    iterator=inner_plan_execution_iterator,
+                    iterator=in_process_plan_execution_iterator,
                     execution_context_manager=PlanExecutionContextManager(
                         job=plan_context.job,
                         retry_mode=plan_context.retry_mode,
