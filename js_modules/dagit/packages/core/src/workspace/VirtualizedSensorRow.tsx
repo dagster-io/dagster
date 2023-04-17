@@ -1,14 +1,15 @@
 import {gql, useLazyQuery} from '@apollo/client';
-import {Box, Caption, Colors, MiddleTruncate} from '@dagster-io/ui';
+import {Box, Caption, Checkbox, Colors, MiddleTruncate, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
 import {AssetLink} from '../assets/AssetLink';
-import {InstigationType} from '../graphql/types';
+import {InstigationStatus, InstigationType} from '../graphql/types';
 import {LastRunSummary} from '../instance/LastRunSummary';
 import {TickTag, TICK_TAG_FRAGMENT} from '../instigation/InstigationTick';
+import {BasicInstigationStateFragment} from '../overview/types/BasicInstigationStateFragment.types';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {humanizeSensorInterval} from '../sensors/SensorDetails';
@@ -21,17 +22,31 @@ import {RepoAddress} from './types';
 import {SingleSensorQuery, SingleSensorQueryVariables} from './types/VirtualizedSensorRow.types';
 import {workspacePathFromAddress} from './workspacePath';
 
-const TEMPLATE_COLUMNS = '76px 1.5fr 1fr 120px 148px 180px';
+const TEMPLATE_COLUMNS_WITH_CHECKBOX = '60px 1.5fr 1fr 76px 120px 148px 180px';
+const TEMPLATE_COLUMNS = '1.5fr 1fr 76px 120px 148px 180px';
 
 interface SensorRowProps {
   name: string;
   repoAddress: RepoAddress;
+  checked: boolean;
+  onToggleChecked: (values: {checked: boolean; shiftKey: boolean}) => void;
+  showCheckboxColumn: boolean;
+  sensorState: BasicInstigationStateFragment;
   height: number;
   start: number;
 }
 
 export const VirtualizedSensorRow = (props: SensorRowProps) => {
-  const {name, repoAddress, start, height} = props;
+  const {
+    name,
+    repoAddress,
+    checked,
+    onToggleChecked,
+    showCheckboxColumn,
+    sensorState,
+    start,
+    height,
+  } = props;
 
   const repo = useRepository(repoAddress);
 
@@ -61,17 +76,43 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
     return data.sensorOrError;
   }, [data]);
 
+  const onChange = (e: React.FormEvent<HTMLInputElement>) => {
+    if (onToggleChecked && e.target instanceof HTMLInputElement) {
+      const {checked} = e.target;
+      const shiftKey =
+        e.nativeEvent instanceof MouseEvent && e.nativeEvent.getModifierState('Shift');
+      onToggleChecked({checked, shiftKey});
+    }
+  };
+
+  const checkboxState = React.useMemo(() => {
+    const {hasStartPermission, hasStopPermission, status} = sensorState;
+    if (status === InstigationStatus.RUNNING && !hasStopPermission) {
+      return {disabled: true, message: 'You do not have permission to stop this sensor'};
+    }
+    if (status === InstigationStatus.STOPPED && !hasStartPermission) {
+      return {disabled: true, message: 'You do not have permission to start this sensor'};
+    }
+    return {disabled: false};
+  }, [sensorState]);
+
   return (
     <Row $height={height} $start={start}>
-      <RowGrid border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}>
-        <RowCell>
-          {sensorData ? (
-            <Box flex={{direction: 'column', gap: 4}}>
-              {/* Keyed so that a new switch is always rendered, otherwise it's reused and animates on/off */}
-              <SensorSwitch key={name} repoAddress={repoAddress} sensor={sensorData} />
-            </Box>
-          ) : null}
-        </RowCell>
+      <RowGrid
+        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+        $showCheckboxColumn={showCheckboxColumn}
+      >
+        {showCheckboxColumn ? (
+          <RowCell>
+            <Tooltip
+              canShow={checkboxState.disabled}
+              content={checkboxState.message || ''}
+              placement="top"
+            >
+              <Checkbox disabled={checkboxState.disabled} checked={checked} onChange={onChange} />
+            </Tooltip>
+          </RowCell>
+        ) : null}
         <RowCell>
           <Box flex={{direction: 'column', gap: 4}}>
             <span style={{fontWeight: 500}}>
@@ -124,6 +165,14 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
         </RowCell>
         <RowCell>
           {sensorData ? (
+            <Box flex={{direction: 'column', gap: 4}}>
+              {/* Keyed so that a new switch is always rendered, otherwise it's reused and animates on/off */}
+              <SensorSwitch key={name} repoAddress={repoAddress} sensor={sensorData} />
+            </Box>
+          ) : null}
+        </RowCell>
+        <RowCell>
+          {sensorData ? (
             <div style={{color: Colors.Dark}}>
               {humanizeSensorInterval(sensorData.minIntervalSeconds)}
             </div>
@@ -161,21 +210,27 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
   );
 };
 
-export const VirtualizedSensorHeader = () => {
+export const VirtualizedSensorHeader = (props: {checkbox: React.ReactNode}) => {
+  const {checkbox} = props;
   return (
     <Box
       border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
       style={{
         display: 'grid',
-        gridTemplateColumns: TEMPLATE_COLUMNS,
+        gridTemplateColumns: checkbox ? TEMPLATE_COLUMNS_WITH_CHECKBOX : TEMPLATE_COLUMNS,
         height: '32px',
         fontSize: '12px',
         color: Colors.Gray600,
       }}
     >
-      <HeaderCell />
+      {checkbox ? (
+        <HeaderCell>
+          <div style={{position: 'relative', top: '-1px'}}>{checkbox}</div>
+        </HeaderCell>
+      ) : null}
       <HeaderCell>Name</HeaderCell>
       <HeaderCell>Job / Asset</HeaderCell>
+      <HeaderCell>Running</HeaderCell>
       <HeaderCell>Frequency</HeaderCell>
       <HeaderCell>Last tick</HeaderCell>
       <HeaderCell>Last run</HeaderCell>
@@ -183,9 +238,10 @@ export const VirtualizedSensorHeader = () => {
   );
 };
 
-const RowGrid = styled(Box)`
+const RowGrid = styled(Box)<{$showCheckboxColumn: boolean}>`
   display: grid;
-  grid-template-columns: ${TEMPLATE_COLUMNS};
+  grid-template-columns: ${({$showCheckboxColumn}) =>
+    $showCheckboxColumn ? TEMPLATE_COLUMNS_WITH_CHECKBOX : TEMPLATE_COLUMNS};
   height: 100%;
 `;
 
