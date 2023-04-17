@@ -12,30 +12,30 @@ import {BasicInstigationStateFragment} from '../overview/types/BasicInstigationS
 import {NavigationBlock} from '../runs/NavigationBlock';
 import {RepoAddress} from '../workspace/types';
 
-import {START_SCHEDULE_MUTATION, STOP_SCHEDULE_MUTATION} from './ScheduleMutations';
+import {START_SENSOR_MUTATION, STOP_SENSOR_MUTATION} from './SensorMutations';
 import {
-  StartThisScheduleMutation,
-  StartThisScheduleMutationVariables,
-  StopScheduleMutation,
-  StopScheduleMutationVariables,
-} from './types/ScheduleMutations.types';
+  StartSensorMutation,
+  StartSensorMutationVariables,
+  StopRunningSensorMutation,
+  StopRunningSensorMutationVariables,
+} from './types/SensorMutations.types';
 
-export type ScheduleInfo = {
+export type SensorInfo = {
   repoAddress: RepoAddress;
-  scheduleName: string;
-  scheduleState: BasicInstigationStateFragment;
+  sensorName: string;
+  sensorState: BasicInstigationStateFragment;
 };
 
 export interface Props {
   openWithIntent: OpenWithIntent;
   onClose: () => void;
   onComplete: () => void;
-  schedules: ScheduleInfo[];
+  sensors: SensorInfo[];
 }
 
-export const ScheduleStateChangeDialog = (props: Props) => {
-  const {openWithIntent, onClose, onComplete, schedules} = props;
-  const count = schedules.length;
+export const SensorStateChangeDialog = (props: Props) => {
+  const {openWithIntent, onClose, onComplete, sensors} = props;
+  const count = sensors.length;
 
   const [state, dispatch] = useInstigationStateReducer();
 
@@ -46,60 +46,60 @@ export const ScheduleStateChangeDialog = (props: Props) => {
     }
   }, [openWithIntent, dispatch]);
 
-  const [startSchedule] = useMutation<
-    StartThisScheduleMutation,
-    StartThisScheduleMutationVariables
-  >(START_SCHEDULE_MUTATION);
-
-  const [stopSchedule] = useMutation<StopScheduleMutation, StopScheduleMutationVariables>(
-    STOP_SCHEDULE_MUTATION,
+  const [startSensor] = useMutation<StartSensorMutation, StartSensorMutationVariables>(
+    START_SENSOR_MUTATION,
   );
 
-  const start = async (schedule: ScheduleInfo) => {
-    const {repoAddress, scheduleName} = schedule;
+  const [stopSensor] = useMutation<StopRunningSensorMutation, StopRunningSensorMutationVariables>(
+    STOP_SENSOR_MUTATION,
+  );
+
+  const start = async (sensor: SensorInfo) => {
+    const {repoAddress, sensorName} = sensor;
     const variables = {
-      scheduleSelector: {
+      sensorSelector: {
         repositoryLocationName: repoAddress.location,
         repositoryName: repoAddress.name,
-        scheduleName,
+        sensorName,
       },
     };
 
-    const {data} = await startSchedule({variables});
+    const {data} = await startSensor({variables});
 
-    switch (data?.startSchedule.__typename) {
-      case 'ScheduleStateResult':
+    switch (data?.startSensor.__typename) {
+      case 'Sensor':
         dispatch({type: 'update-success'});
         return;
+      case 'SensorNotFoundError':
       case 'UnauthorizedError':
       case 'PythonError':
         dispatch({
           type: 'update-error',
-          name: scheduleName,
-          error: data.startSchedule.message,
+          name: sensorName,
+          error: data.startSensor.message,
         });
     }
   };
 
-  const stop = async (schedule: ScheduleInfo) => {
-    const {scheduleName, scheduleState} = schedule;
+  const stop = async (sensor: SensorInfo) => {
+    const {sensorName, sensorState} = sensor;
     const variables = {
-      scheduleOriginId: scheduleState.id,
-      scheduleSelectorId: scheduleState.selectorId,
+      jobOriginId: sensorState.id,
+      jobSelectorId: sensorState.selectorId,
     };
 
-    const {data} = await stopSchedule({variables});
+    const {data} = await stopSensor({variables});
 
-    switch (data?.stopRunningSchedule.__typename) {
-      case 'ScheduleStateResult':
+    switch (data?.stopSensor.__typename) {
+      case 'StopSensorMutationResult':
         dispatch({type: 'update-success'});
         return;
       case 'UnauthorizedError':
       case 'PythonError':
         dispatch({
           type: 'update-error',
-          name: scheduleName,
-          error: data.stopRunningSchedule.message,
+          name: sensorName,
+          error: data.stopSensor.message,
         });
     }
   };
@@ -110,12 +110,12 @@ export const ScheduleStateChangeDialog = (props: Props) => {
     }
 
     dispatch({type: 'start'});
-    for (let ii = 0; ii < schedules.length; ii++) {
-      const schedule = schedules[ii];
+    for (let ii = 0; ii < sensors.length; ii++) {
+      const sensor = sensors[ii];
       if (openWithIntent === 'start') {
-        await start(schedule);
+        await start(sensor);
       } else {
-        await stop(schedule);
+        await stop(sensor);
       }
     }
 
@@ -134,7 +134,7 @@ export const ScheduleStateChangeDialog = (props: Props) => {
           return (
             <div>
               {`${count} ${
-                count === 1 ? 'schedule' : 'schedules'
+                count === 1 ? 'sensor' : 'sensors'
               } will be stopped. Do you want to continue?`}
             </div>
           );
@@ -142,7 +142,7 @@ export const ScheduleStateChangeDialog = (props: Props) => {
         return (
           <div>
             {`${count} ${
-              count === 1 ? 'schedule' : 'schedules'
+              count === 1 ? 'sensor' : 'sensors'
             } will be started. Do you want to continue?`}
           </div>
         );
@@ -153,7 +153,7 @@ export const ScheduleStateChangeDialog = (props: Props) => {
           <Group direction="column" spacing={8}>
             <ProgressBar intent="primary" value={Math.max(0.1, value)} animate={value < 1} />
             {state.step === 'updating' ? (
-              <NavigationBlock message="Schedules are being updated, please do not navigate away yet." />
+              <NavigationBlock message="Sensors are being updated, please do not navigate away yet." />
             ) : null}
           </Group>
         );
@@ -171,8 +171,8 @@ export const ScheduleStateChangeDialog = (props: Props) => {
       case 'initial': {
         const label =
           openWithIntent === 'start'
-            ? `Start ${count === 1 ? '1 schedule' : `${count} schedules`}`
-            : `Stop ${count === 1 ? '1 schedule' : `${count} schedules`}`;
+            ? `Start ${count === 1 ? '1 sensor' : `${count} sensors`}`
+            : `Stop ${count === 1 ? '1 sensor' : `${count} sensors`}`;
         return (
           <>
             <Button intent="none" onClick={onClose}>
@@ -187,8 +187,8 @@ export const ScheduleStateChangeDialog = (props: Props) => {
       case 'updating': {
         const label =
           openWithIntent === 'start'
-            ? `Starting ${count === 1 ? '1 schedule' : `${count} schedules`}`
-            : `Stopping ${count === 1 ? '1 schedule' : `${count} schedules`}`;
+            ? `Starting ${count === 1 ? '1 sensor' : `${count} sensors`}`
+            : `Stopping ${count === 1 ? '1 sensor' : `${count} sensors`}`;
         return (
           <Button intent="primary" disabled>
             {label}
@@ -211,9 +211,7 @@ export const ScheduleStateChangeDialog = (props: Props) => {
 
     if (state.step === 'updating') {
       return (
-        <div>
-          Please do not close the window or navigate away while schedules are being updated.
-        </div>
+        <div>Please do not close the window or navigate away while sensors are being updated.</div>
       );
     }
 
@@ -229,10 +227,10 @@ export const ScheduleStateChangeDialog = (props: Props) => {
             <div>
               {openWithIntent === 'start'
                 ? `Successfully started ${
-                    successCount === 1 ? '1 schedule' : `${successCount} schedules`
+                    successCount === 1 ? '1 sensor' : `${successCount} sensors`
                   }.`
                 : `Successfully stopped ${
-                    successCount === 1 ? '1 schedule' : `${successCount} schedules`
+                    successCount === 1 ? '1 sensor' : `${successCount} sensors`
                   }.`}
             </div>
           </Group>
@@ -243,20 +241,16 @@ export const ScheduleStateChangeDialog = (props: Props) => {
               <Icon name="warning" color={Colors.Yellow500} />
               <div>
                 {openWithIntent === 'start'
-                  ? `Could not start ${
-                      errorCount === 1 ? '1 schedule' : `${errorCount} schedules`
-                    }.`
-                  : `Could not stop ${
-                      errorCount === 1 ? '1 schedule' : `${errorCount} schedules`
-                    }.`}
+                  ? `Could not start ${errorCount === 1 ? '1 sensor' : `${errorCount} sensors`}:`
+                  : `Could not stop ${errorCount === 1 ? '1 sensor' : `${errorCount} sensors`}:`}
               </div>
             </Group>
-            <ul>
-              {Object.keys(errors).map((scheduleName) => (
-                <li key={scheduleName}>
+            <ul style={{margin: '8px 0'}}>
+              {Object.keys(errors).map((sensorName) => (
+                <li key={sensorName}>
                   <Group direction="row" spacing={8}>
-                    <strong>{scheduleName}:</strong>
-                    {errors[scheduleName] ? <div>{errors[scheduleName]}</div> : null}
+                    <strong>{sensorName}:</strong>
+                    {errors[sensorName] ? <div>{errors[sensorName]}</div> : null}
                   </Group>
                 </li>
               ))}
@@ -272,7 +266,7 @@ export const ScheduleStateChangeDialog = (props: Props) => {
   return (
     <Dialog
       isOpen={openWithIntent !== 'not-open'}
-      title={openWithIntent === 'start' ? 'Start schedules' : 'Stop schedules'}
+      title={openWithIntent === 'start' ? 'Start sensors' : 'Stop sensors'}
       canEscapeKeyClose={canQuicklyClose}
       canOutsideClickClose={canQuicklyClose}
       onClose={onClose}

@@ -4,22 +4,22 @@ import * as React from 'react';
 import {instigationStateSummary} from '../instigation/instigationStateSummary';
 import {OpenWithIntent} from '../instigation/useInstigationStateReducer';
 
-import {ScheduleInfo, ScheduleStateChangeDialog} from './ScheduleStateChangeDialog';
+import {SensorInfo, SensorStateChangeDialog} from './SensorStateChangeDialog';
 
 interface Props {
-  schedules: ScheduleInfo[];
+  sensors: SensorInfo[];
   onDone: () => void;
 }
 
-export const ScheduleBulkActionMenu = (props: Props) => {
-  const {schedules, onDone} = props;
-  const count = schedules.length;
+export const SensorBulkActionMenu = (props: Props) => {
+  const {sensors, onDone} = props;
+  const count = sensors.length;
 
   const [openWithIntent, setOpenWithIntent] = React.useState<OpenWithIntent>('not-open');
 
   const {anyOff, anyOn} = React.useMemo(() => {
-    return instigationStateSummary(schedules.map(({scheduleState}) => scheduleState));
-  }, [schedules]);
+    return instigationStateSummary(sensors.map(({sensorState}) => sensorState));
+  }, [sensors]);
 
   return (
     <>
@@ -27,7 +27,7 @@ export const ScheduleBulkActionMenu = (props: Props) => {
         content={
           <Menu>
             <MenuItem
-              text={`Start ${count === 1 ? '1 schedule' : `${count} schedules`}`}
+              text={`Start ${count === 1 ? '1 sensor' : `${count} sensors`}`}
               disabled={!anyOff}
               aria-disabled={!anyOff}
               icon="toggle_on"
@@ -36,7 +36,7 @@ export const ScheduleBulkActionMenu = (props: Props) => {
               }}
             />
             <MenuItem
-              text={`Stop ${count === 1 ? '1 schedule' : `${count} schedules`}`}
+              text={`Stop ${count === 1 ? '1 sensor' : `${count} sensors`}`}
               disabled={!anyOn}
               aria-disabled={!anyOn}
               icon="toggle_off"
@@ -52,9 +52,9 @@ export const ScheduleBulkActionMenu = (props: Props) => {
           Actions
         </Button>
       </Popover>
-      <ScheduleStateChangeDialog
+      <SensorStateChangeDialog
         openWithIntent={openWithIntent}
-        schedules={schedules}
+        sensors={sensors}
         onClose={() => setOpenWithIntent('not-open')}
         onComplete={() => {
           onDone();
