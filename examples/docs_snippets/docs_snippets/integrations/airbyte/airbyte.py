@@ -128,7 +128,7 @@ def scope_add_downstream_assets():
         # only run the airbyte syncs necessary to materialize stargazers_file
         my_upstream_job = define_asset_job(
             "my_upstream_job",
-            AssetSelection.assets("stargazers_file")
+            AssetSelection.keys("stargazers_file")
             .upstream()  # all upstream assets (in this case, just the stargazers Airbyte asset)
             .required_multi_asset_neighbors(),  # all Airbyte assets linked to the same connection
         )
