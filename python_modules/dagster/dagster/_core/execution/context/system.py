@@ -25,7 +25,10 @@ from dagster._core.definitions.dependency import OpNode
 from dagster._core.definitions.events import AssetKey, AssetLineageInfo
 from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.mode import ModeDefinition
-from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
+from dagster._core.definitions.multi_dimensional_partitions import (
+    MultiPartitionKey,
+    MultiPartitionsDefinition,
+)
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
@@ -373,7 +376,7 @@ class PlanExecutionContext(IPlanContext):
         )
 
     @property
-    def partition_key(self) -> str:
+    def partition_key(self) -> Union[str, MultiPartitionKey]:
         from dagster._core.definitions.multi_dimensional_partitions import (
             MultiPartitionsDefinition,
             get_multipartition_key_from_tags,
