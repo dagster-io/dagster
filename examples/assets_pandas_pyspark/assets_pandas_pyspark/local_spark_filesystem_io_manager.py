@@ -13,8 +13,8 @@ from typing import Union
 import pandas as pd
 from dagster import (
     AssetKey,
+    ConfigurableIOManager,
     _check as check,
-    ConfigurableIOManager
 )
 from pandas import DataFrame as PandasDF
 from pyspark.sql import (
