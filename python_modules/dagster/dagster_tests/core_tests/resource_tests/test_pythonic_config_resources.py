@@ -2464,7 +2464,12 @@ def test_context_on_resource_use_instance() -> None:
         storage_directory.return_value = "/tmp"
 
         with DagsterInstance.ephemeral() as instance:
-            assert OutputDirResource(output_dir=None).with_resource_context(build_init_resource_context(instance=instance)).get_effective_output_dir() == "/tmp"
+            assert (
+                OutputDirResource(output_dir=None)
+                .with_resource_context(build_init_resource_context(instance=instance))
+                .get_effective_output_dir()
+                == "/tmp"
+            )
 
         @asset
         def my_other_output_asset(output_dir: OutputDirResource) -> None:
