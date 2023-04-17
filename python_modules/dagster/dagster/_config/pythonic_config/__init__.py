@@ -540,7 +540,7 @@ class ConfigurableResourceFactoryState(NamedTuple):
     config_schema: DefinitionConfigSchema
     schema: DagsterField
     nested_resources: Dict[str, CoercibleToResource]
-    context: Optional[InitResourceContext]
+    resource_context: Optional[InitResourceContext]
 
 
 class ConfigurableResourceFactory(
@@ -624,7 +624,7 @@ class ConfigurableResourceFactory(
             config_schema=_curry_config_schema(schema, resolved_config_dict),
             schema=schema,
             nested_resources={k: v for k, v in resource_pointers.items()},
-            context=None,
+            resource_context=None,
         )
 
     @property
@@ -688,7 +688,7 @@ class ConfigurableResourceFactory(
         # of this class. We can therefore safely pass in the values as kwargs.
         out = self.__class__(**{**self._as_config_dict(), **values})
         out._state__internal__ = out._state__internal__._replace(  # noqa: SLF001
-            context=self._state__internal__.context
+            resource_context=self._state__internal__.resource_context
         )
         return out
 
@@ -744,19 +744,23 @@ class ConfigurableResourceFactory(
         return self._with_updated_values(to_update)
 
     def with_resource_context(
-        self, context: InitResourceContext
+        self, resource_context: InitResourceContext
     ) -> "ConfigurableResourceFactory[TResValue]":
         """Returns a new instance of the resource with the given resource init context bound."""
         copy = self._with_updated_values({})
-        copy._state__internal__ = copy._state__internal__._replace(context=context)  # noqa: SLF001
+        copy._state__internal__ = copy._state__internal__._replace(  # noqa: SLF001
+            resource_context=resource_context
+        )
         return copy
 
     def initialize_and_run(self, context: InitResourceContext) -> TResValue:
-        with_nested_resources = self._resolve_and_update_nested_resources(context)
-        with_context = with_nested_resources.with_resource_context(context)
-        with_env_vars = with_context._resolve_and_update_env_vars()  # noqa: SLF001
+        updated_resource = (
+            self._resolve_and_update_nested_resources(context)  # noqa: SLF001
+            .with_resource_context(context)
+            ._resolve_and_update_env_vars()
+        )
 
-        return with_env_vars._create_object_fn(context)  # noqa: SLF001
+        return updated_resource._create_object_fn(context)  # noqa: SLF001
 
     def _create_object_fn(self, context: InitResourceContext) -> TResValue:
         return self.create_resource(context)
@@ -764,7 +768,7 @@ class ConfigurableResourceFactory(
     def get_resource_context(self) -> InitResourceContext:
         """Returns the context that this resource was initialized with."""
         return check.not_none(
-            self._state__internal__.context,
+            self._state__internal__.resource_context,
             additional_message="Attempted to get context before resource was initialized.",
         )
 
