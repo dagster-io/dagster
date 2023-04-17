@@ -80,6 +80,20 @@ DynamicPartitionsTable = db.Table(
     db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
 )
 
+ConcurrencySlotsTable = db.Table(
+    "concurrency_slots",
+    SqlEventLogStorageMetadata,
+    db.Column(
+        "id",
+        db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    ),
+    db.Column("concurrency_key", db.Text, nullable=False),
+    db.Column("run_id", db.Text),
+    db.Column("step_key", db.Text),
+    db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
+)
 
 db.Index(
     "idx_step_key",
