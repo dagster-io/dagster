@@ -255,23 +255,28 @@ assets_job = define_asset_job(
 Op-based jobs are defined using the <PyObject object="job" decorator /> decorator. In this example, using the <PyObject module="dagster" object="multiprocess_executor" />, the job will execute up to four ops at once:
 
 ```python file=/concepts/ops_jobs_graphs/job_execution.py startafter=start_tag_concurrency endbefore=end_tag_concurrency
+from dagster import job, RunConfig
+
+
 @job(
-    config={
-        "execution": {
+    config=RunConfig(
+        execution={
             "config": {
                 "multiprocess": {
-                    "max_concurrent": 4,
-                    "tag_concurrency_limits": [
-                        {
-                            "key": "database",
-                            "value": "redshift",
-                            "limit": 2,
-                        }
-                    ],
-                },
+                    "config": {
+                        "max_concurrent": 0,
+                        "tag_concurrency_limits": [
+                            {
+                                "key": "database",
+                                "value": "redshift",
+                                "limit": 2,
+                            }
+                        ],
+                    }
+                }
             }
         }
-    }
+    ),
 )
 def tag_concurrency_job():
     ...
@@ -348,23 +353,28 @@ assets_job = define_asset_job(
 In this example, using the <PyObject module="dagster" object="multiprocess_executor" />, the job will execute up to two ops at once with the `database` tag equal to `redshift`:
 
 ```python file=/concepts/ops_jobs_graphs/job_execution.py startafter=start_tag_concurrency endbefore=end_tag_concurrency
+from dagster import job, RunConfig
+
+
 @job(
-    config={
-        "execution": {
+    config=RunConfig(
+        execution={
             "config": {
                 "multiprocess": {
-                    "max_concurrent": 4,
-                    "tag_concurrency_limits": [
-                        {
-                            "key": "database",
-                            "value": "redshift",
-                            "limit": 2,
-                        }
-                    ],
-                },
+                    "config": {
+                        "max_concurrent": 0,
+                        "tag_concurrency_limits": [
+                            {
+                                "key": "database",
+                                "value": "redshift",
+                                "limit": 2,
+                            }
+                        ],
+                    }
+                }
             }
         }
-    }
+    ),
 )
 def tag_concurrency_job():
     ...

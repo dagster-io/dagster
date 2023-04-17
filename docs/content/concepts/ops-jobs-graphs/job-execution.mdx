@@ -167,9 +167,12 @@ Additional config options are available for multiprocess execution that can help
 The example below sets the run config directly on the job to explicitly set the max concurrent subprocesses to `4`, and change the subprocess start method to use a forkserver.
 
 ```python file=/concepts/ops_jobs_graphs/job_execution.py startafter=start_mp_cfg endbefore=end_mp_cfg
+from dagster import job, RunConfig
+
+
 @job(
-    config={
-        "execution": {
+    config=RunConfig(
+        execution={
             "config": {
                 "multiprocess": {
                     "start_method": {
@@ -179,7 +182,7 @@ The example below sets the run config directly on the job to explicitly set the 
                 },
             }
         }
-    }
+    ),
 )
 def forkserver_job():
     multi_three(add_two(return_one()))
@@ -196,23 +199,28 @@ Limits can be specified for all ops with a certain tag key or key-value pair. If
 For example, the following job will execute at most two ops at once with the `database` tag equal to `redshift`, while also ensuring that at most four ops execute at once:
 
 ```python file=/concepts/ops_jobs_graphs/job_execution.py startafter=start_tag_concurrency endbefore=end_tag_concurrency
+from dagster import job, RunConfig
+
+
 @job(
-    config={
-        "execution": {
+    config=RunConfig(
+        execution={
             "config": {
                 "multiprocess": {
-                    "max_concurrent": 4,
-                    "tag_concurrency_limits": [
-                        {
-                            "key": "database",
-                            "value": "redshift",
-                            "limit": 2,
-                        }
-                    ],
-                },
+                    "config": {
+                        "max_concurrent": 0,
+                        "tag_concurrency_limits": [
+                            {
+                                "key": "database",
+                                "value": "redshift",
+                                "limit": 2,
+                            }
+                        ],
+                    }
+                }
             }
         }
-    }
+    ),
 )
 def tag_concurrency_job():
     ...
