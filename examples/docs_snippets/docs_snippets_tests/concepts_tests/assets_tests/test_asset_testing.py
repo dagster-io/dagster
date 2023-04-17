@@ -1,9 +1,5 @@
 import mock
 
-from docs_snippets.concepts.assets.asset_config import (
-    MyAssetConfig as MyConfigurableAssetConfig,
-)
-
 
 def test_uses_resource() -> None:
     from docs_snippets.concepts.assets.asset_testing import test_uses_resource
