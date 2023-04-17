@@ -69,7 +69,7 @@ from dagster import job, RunConfig
                         "forkserver": {},
                     },
                     "max_concurrent": 4,
-                },
+                }
             }
         }
     ),
@@ -90,16 +90,14 @@ from dagster import job, RunConfig
         execution={
             "config": {
                 "multiprocess": {
-                    "config": {
-                        "max_concurrent": 0,
-                        "tag_concurrency_limits": [
-                            {
-                                "key": "database",
-                                "value": "redshift",
-                                "limit": 2,
-                            }
-                        ],
-                    }
+                    "max_concurrent": 0,
+                    "tag_concurrency_limits": [
+                        {
+                            "key": "database",
+                            "value": "redshift",
+                            "limit": 2,
+                        }
+                    ],
                 }
             }
         }
