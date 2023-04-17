@@ -580,3 +580,41 @@ def raw_github_resource_factory() -> None:
     )
 
     # end_raw_github_resource_factory
+
+
+def new_resource_testing_with_context():
+    # start_new_resource_testing_with_context
+
+    from dagster import (
+        ConfigurableResource,
+        InitResourceContext,
+        build_init_resource_context,
+        DagsterInstance,
+    )
+    from typing import Optional
+
+    class MyContextResource(ConfigurableResource[GitHub]):
+        base_path: Optional[str] = None
+
+        def effective_base_path(self) -> str:
+            if self.base_path:
+                return self.base_path
+            instance = self.get_resource_context().instance
+            assert instance
+            return instance.storage_directory()
+
+        # TODO: remove with https://github.com/dagster-io/dagster/pull/13613
+        def get_resource_context(self) -> InitResourceContext:
+            ...
+
+    def test_my_context_resource():
+        with DagsterInstance.ephemeral() as instance:
+            context = build_init_resource_context(instance=instance)
+            assert (
+                MyContextResource(base_path=None)
+                .with_resource_context(context)
+                .effective_base_path()
+                == instance.storage_directory()
+            )
+
+    # end_new_resource_testing_with_context

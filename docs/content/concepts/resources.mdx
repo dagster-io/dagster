@@ -34,7 +34,7 @@ So, why use resources?
 | <PyObject object="InitResourceContext"/>         | The context object provided to a resource during initialization. This object contains required resource, config, and other run information.                                                                                             |
 | <PyObject object="build_init_resource_context"/> | Function for building an <PyObject object="InitResourceContext"/> outside of execution, intended to be used when testing a resource.                                                                                                    |
 | <PyObject object="build_resources"/>             | Function for initializing a set of resources outside of the context of a job's execution.                                                                                                                                               |
-| <PyObject object="with_resources"/>              | Function for providing resources to software-defined assets and source assets.                                                                                                                                                          |
+| <PyObject object="with_resources"/>              | Advanced API for providing resources to a specific set of software-defined assets and source assets, overriding those provided to <PyObject object="Definitions"/>.                                                                     |
 
 ---
 
@@ -334,6 +334,27 @@ def test_my_resource():
 ```
 
 If your resource requires other resources, then you can pass them as constructor arguments.
+
+```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_testing_with_context endbefore=end_new_resource_testing_with_context dedent=4
+from dagster import ConfigurableResource
+
+class StringHolderResource(ConfigurableResource):
+    value: str
+
+class MyResourceRequiresAnother(ConfigurableResource):
+    foo: StringHolderResource
+    bar: str
+
+def test_my_resource_with_context():
+    string_holder = StringHolderResource(value="foo")
+    resource = MyResourceRequiresAnother(foo=string_holder, bar="bar")
+    assert resource.foo.value == "foo"
+    assert resource.bar == "bar"
+```
+
+### Testing with resource context
+
+In the case that your resource makes use of the resource initialization context, you can use the <PyObject object="build_init_resource_context"/> utility alongside the `with_init_resource_context` helper on your resource class:
 
 ```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_testing_with_context endbefore=end_new_resource_testing_with_context dedent=4
 from dagster import ConfigurableResource
