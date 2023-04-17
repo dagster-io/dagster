@@ -277,19 +277,9 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     ),
     PackageSpec(
         "examples/assets_dbt_python",
-        unsupported_python_versions=[
-            # dependency on dagster-dbt
-            AvailablePythonVersion.V3_10,
-            AvailablePythonVersion.V3_11,
-        ],
     ),
     PackageSpec(
         "examples/assets_smoke_test",
-        unsupported_python_versions=[
-            # dependency on dagster-dbt
-            AvailablePythonVersion.V3_10,
-            AvailablePythonVersion.V3_11,
-        ],
     ),
     PackageSpec(
         "examples/deploy_docker",
@@ -427,9 +417,13 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     ),
     PackageSpec(
         "python_modules/libraries/dagster-dbt",
-        unsupported_python_versions=[
-            AvailablePythonVersion.V3_11,
-        ],
+        unsupported_python_versions=lambda tox_factor: (
+            [
+                AvailablePythonVersion.V3_11,
+            ]
+            if tox_factor == "dbt_13X"
+            else []
+        ),
         pytest_tox_factors=[
             "dbt_13X",
             "dbt_14X",
