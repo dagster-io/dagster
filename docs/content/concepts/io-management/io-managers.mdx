@@ -66,9 +66,9 @@ The default IO manager, <PyObject module="dagster" object="fs_io_manager" />, st
 
 Dagster provides out-of-the-box IO managers for popular storage systems: AWS S3 (<PyObject module="dagster_aws.s3" object="s3_pickle_io_manager" />), Azure Blob Storage (<PyObject module="dagster_azure.adls2" object="adls2_pickle_io_manager" />), GCS (<PyObject module="dagster_gcp.gcs" object="gcs_pickle_io_manager" />), and Snowflake (<PyObject module="dagster_snowflake" object="build_snowflake_io_manager" />) - or you can write your own: either from scratch or by extending the `UPathIOManager` if you want to store data in an `fsspec`-supported filesystem.
 
-### IO managers are resources
+### IO managers are provided by resources
 
-IO managers are [resources](/concepts/resources), which means users can supply different IO managers for the same assets or ops in different situations. For example, you might use an in-memory IO manager for unit-testing and an S3 IO manager in production.
+IO managers are provided through the [resources](/concepts/resources) system which means users can supply different IO managers for the same assets or ops in different situations. For example, you might use an in-memory IO manager for unit-testing and an S3 IO manager in production.
 
 ---
 
@@ -83,7 +83,7 @@ By default, materializing an asset named `my_asset` will pickle it to a local fi
 To apply an IO manager to a set of assets, you can use <PyObject object="Definitions" />:
 
 ```python file=/concepts/assets/asset_io_manager.py startafter=start_marker endbefore=end_marker
-from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
+from dagster_aws.s3 import ConfigurablePickledObjectS3IOManager, S3Resource
 
 from dagster import Definitions, asset
 
@@ -98,13 +98,18 @@ def downstream_asset(upstream_asset):
     return upstream_asset + [4]
 
 
+s3_resource = S3Resource()
 defs = Definitions(
     assets=[upstream_asset, downstream_asset],
-    resources={"io_manager": s3_pickle_io_manager, "s3": s3_resource},
+    resources={
+        "io_manager": ConfigurablePickledObjectS3IOManager(
+            s3_resource=s3_resource, s3_bucket="my-bucket"
+        ),
+    },
 )
 ```
 
-This example also includes `"s3": s3_resource` because the <PyObject module="dagster_aws.s3" object="s3_pickle_io_manager" /> depends on an S3 resource.
+This example also constructs a <PyObject module="dagster_aws.s3" object="S3Resource" /> because the <PyObject module="dagster_aws.s3" object="ConfigurablePickledObjectS3IOManager" /> depends on the S3 resource.
 
 When `upstream_asset` is materialized, the value `[1, 2, 3]` will be pickled and stored in an object on S3. When `downstream_asset` is materialized, the value of `upstream_asset` will be read from S3 and depickled, and `[1, 2, 3, 4]` will be pickled and stored in a different object on S3.
 
@@ -113,7 +118,7 @@ When `upstream_asset` is materialized, the value `[1, 2, 3]` will be pickled and
 Different assets can have different IO managers:
 
 ```python file=/concepts/assets/asset_different_io_managers.py startafter=start_marker endbefore=end_marker
-from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
+from dagster_aws.s3 import ConfigurablePickledObjectS3IOManager, S3Resource
 
 from dagster import Definitions, asset, fs_io_manager
 
@@ -128,11 +133,13 @@ def downstream_asset(upstream_asset):
     return upstream_asset + [4]
 
 
+s3_resource = S3Resource()
 defs = Definitions(
     assets=[upstream_asset, downstream_asset],
     resources={
-        "s3_io_manager": s3_pickle_io_manager,
-        "s3": s3_resource,
+        "s3_io_manager": ConfigurablePickledObjectS3IOManager(
+            s3_resource=s3_resource, s3_bucket="my-bucket"
+        ),
         "fs_io_manager": fs_io_manager,
     },
 )
@@ -161,7 +168,7 @@ The same assets can be bound to different resources and IO managers in different
 ```python file=/concepts/assets/asset_io_manager_prod_local.py startafter=start_marker endbefore=end_marker
 import os
 
-from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
+from dagster_aws.s3 import ConfigurablePickledObjectS3IOManager, S3Resource
 
 from dagster import Definitions, asset, fs_io_manager
 
@@ -176,8 +183,13 @@ def downstream_asset(upstream_asset):
     return upstream_asset + [4]
 
 
+s3_resource = S3Resource()
 resources_by_env = {
-    "prod": {"io_manager": s3_pickle_io_manager, "s3": s3_resource},
+    "prod": {
+        "io_manager": ConfigurablePickledObjectS3IOManager(
+            s3_resource=s3_resource, s3_bucket="my-bucket"
+        )
+    },
     "local": {"io_manager": fs_io_manager},
 }
 
@@ -193,7 +205,7 @@ In some cases you may need to load the input to an asset with different logic th
 
 To set an IO manager for a particular input, use the `input_manager_key` argument on <PyObject module="dagster" object="AssetIn" />.
 
-In this example,`first_asset` and `second_asset` will be stored using the default IO manager, but will be loaded as inputs to `third_asset` using the logic defined in the `pandas_series_io_manager` (in this case loading as Pandas Series rather than python lists).
+In this example,`first_asset` and `second_asset` will be stored using the default IO manager, but will be loaded as inputs to `third_asset` using the logic defined in the `PandasSeriesIOManager` (in this case loading as Pandas Series rather than python lists).
 
 ```python file=/concepts/assets/asset_input_managers.py startafter=start_different_input_managers endbefore=end_different_input_managers
 @asset
@@ -219,7 +231,7 @@ def third_asset(first_asset, second_asset):
 defs = Definitions(
     assets=[first_asset, second_asset, third_asset],
     resources={
-        "pandas_series": pandas_series_io_manager,
+        "pandas_series": PandasSeriesIOManager(),
     },
 )
 ```
@@ -258,7 +270,7 @@ Not all the outputs in a job should necessarily be stored the same way. Maybe so
 To select the IO manager for a particular output, you can set an `io_manager_key` on <PyObject module="dagster" object="Out" />, and then refer to that `io_manager_key` when setting IO managers in your job. In this example, the output of `op_1` will go to `fs_io_manager` and the output of `op_2` will go to `s3_pickle_io_manager`.
 
 ```python file=/concepts/io_management/io_manager_per_output.py startafter=start_marker endbefore=end_marker
-from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
+from dagster_aws.s3 import ConfigurablePickledObjectS3IOManager, S3Resource
 
 from dagster import Out, fs_io_manager, job, op
 
@@ -273,11 +285,15 @@ def op_2(a):
     return a + 1
 
 
+s3_resource = S3Resource()
+
+
 @job(
     resource_defs={
         "fs": fs_io_manager,
-        "s3_io": s3_pickle_io_manager,
-        "s3": s3_resource,
+        "s3_io": ConfigurablePickledObjectS3IOManager(
+            s3_resource=s3_resource, s3_bucket="my-bucket"
+        ),
     }
 )
 def my_job():
@@ -548,13 +564,9 @@ import pandas as pd
 from upath import UPath
 
 from dagster import (
-    Field,
-    InitResourceContext,
     InputContext,
     OutputContext,
-    StringSource,
     UPathIOManager,
-    io_manager,
 )
 
 
@@ -575,32 +587,29 @@ The extension attribute defines the suffix all the file paths generated by the I
 The io managers defined above will work with partitioned assets on any filesystem:
 
 ```python file=/concepts/io_management/filesystem_io_manager.py startafter=start_def_marker endbefore=end_marker
-@io_manager(config_schema={"base_path": Field(str, is_required=False)})
-def local_pandas_parquet_io_manager(
-    init_context: InitResourceContext,
-) -> PandasParquetIOManager:
-    assert init_context.instance is not None  # to please mypy
-    base_path = UPath(
-        init_context.resource_config.get(
-            "base_path", init_context.instance.storage_directory()
-        )
-    )
-    return PandasParquetIOManager(base_path=base_path)
+from typing import Optional
+
+from dagster import ConfigurableIOManagerFactory, EnvVar
 
 
-@io_manager(
-    config_schema={
-        "base_path": Field(str, is_required=True),
-        "AWS_ACCESS_KEY_ID": StringSource,
-        "AWS_SECRET_ACCESS_KEY": StringSource,
-    }
-)
-def s3_parquet_io_manager(init_context: InitResourceContext) -> PandasParquetIOManager:
-    # `UPath` will read boto env vars.
-    # The credentials can also be taken from the config and passed to `UPath` directly.
-    base_path = UPath(init_context.resource_config.get("base_path"))
-    assert str(base_path).startswith("s3://"), base_path
-    return PandasParquetIOManager(base_path=base_path)
+class LocalPandasParquetIOManager(ConfigurableIOManagerFactory):
+    base_path: Optional[str] = None
+
+    def create_io_manager(self, context) -> PandasParquetIOManager:
+        base_path = UPath(self.base_path or context.instance.storage_directory())
+        return PandasParquetIOManager(base_path=base_path)
+
+
+class S3ParquetIOManager(ConfigurableIOManagerFactory):
+    base_path: str
+
+    aws_access_key: str = EnvVar("AWS_ACCESS_KEY_ID")
+    aws_secret_key: str = EnvVar("AWS_SECRET_ACCESS_KEY")
+
+    def create_io_manager(self, context) -> PandasParquetIOManager:
+        base_path = UPath(self.base_path)
+        assert str(base_path).startswith("s3://"), base_path
+        return PandasParquetIOManager(base_path=base_path)
 ```
 
 Notice how the local and S3 IO managers are practically the same - the only difference is in the required resources.

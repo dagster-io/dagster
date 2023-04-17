@@ -1,7 +1,7 @@
 # start_marker
 import os
 
-from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
+from dagster_aws.s3 import ConfigurablePickledObjectS3IOManager, S3Resource
 
 from dagster import Definitions, asset, fs_io_manager
 
@@ -16,8 +16,13 @@ def downstream_asset(upstream_asset):
     return upstream_asset + [4]
 
 
+s3_resource = S3Resource()
 resources_by_env = {
-    "prod": {"io_manager": s3_pickle_io_manager, "s3": s3_resource},
+    "prod": {
+        "io_manager": ConfigurablePickledObjectS3IOManager(
+            s3_resource=s3_resource, s3_bucket="my-bucket"
+        )
+    },
     "local": {"io_manager": fs_io_manager},
 }
 
