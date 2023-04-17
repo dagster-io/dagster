@@ -7,7 +7,7 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from dagster import op
 from dagster._utils.test import wrap_op_in_graph_and_execute
-from dagster_github.resources import GithubClient, GithubClientResource
+from dagster_github.resources import GithubClient, GithubResource
 
 FAKE_PRIVATE_RSA_KEY = (
     rsa.generate_private_key(public_exponent=65537, key_size=1024, backend=default_backend())
@@ -23,7 +23,7 @@ FAKE_PRIVATE_RSA_KEY = (
 @responses.activate
 def test_github_resource_get_installations():
     @op
-    def github_op(github_client_resource: GithubClientResource):
+    def github_op(github_client_resource: GithubResource):
         github = github_client_resource.get_client()
         assert github
 
@@ -39,7 +39,7 @@ def test_github_resource_get_installations():
     result = wrap_op_in_graph_and_execute(
         github_op,
         resources={
-            "github_client_resource": GithubClientResource(
+            "github_client_resource": GithubResource(
                 github_app_id=123,
                 github_app_private_rsa_key=FAKE_PRIVATE_RSA_KEY,
                 github_installation_id=123,
@@ -52,7 +52,7 @@ def test_github_resource_get_installations():
 @responses.activate
 def test_github_resource_get_installations_with_hostname():
     @op
-    def github_op(github_client_resource: GithubClientResource):
+    def github_op(github_client_resource: GithubResource):
         github = github_client_resource.get_client()
         assert github
         with responses.RequestsMock() as rsps:
@@ -67,7 +67,7 @@ def test_github_resource_get_installations_with_hostname():
     result = wrap_op_in_graph_and_execute(
         github_op,
         resources={
-            "github_client_resource": GithubClientResource(
+            "github_client_resource": GithubResource(
                 github_app_id=123,
                 github_app_private_rsa_key=FAKE_PRIVATE_RSA_KEY,
                 github_installation_id=123,
@@ -81,7 +81,7 @@ def test_github_resource_get_installations_with_hostname():
 @responses.activate
 def test_github_resource_create_issue():
     @op
-    def github_op(github_client_resource: GithubClientResource):
+    def github_op(github_client_resource: GithubResource):
         github = github_client_resource.get_client()
         assert github
         with responses.RequestsMock() as rsps:
@@ -118,7 +118,7 @@ def test_github_resource_create_issue():
     result = wrap_op_in_graph_and_execute(
         github_op,
         resources={
-            "github_client_resource": GithubClientResource(
+            "github_client_resource": GithubResource(
                 github_app_id=123,
                 github_app_private_rsa_key=FAKE_PRIVATE_RSA_KEY,
                 github_installation_id=123,
@@ -131,7 +131,7 @@ def test_github_resource_create_issue():
 @responses.activate
 def test_github_resource_execute():
     @op
-    def github_op(github_client_resource: GithubClientResource):
+    def github_op(github_client_resource: GithubResource):
         github = github_client_resource.get_client()
         assert github
         with responses.RequestsMock() as rsps:
@@ -165,7 +165,7 @@ def test_github_resource_execute():
     result = wrap_op_in_graph_and_execute(
         github_op,
         resources={
-            "github_client_resource": GithubClientResource(
+            "github_client_resource": GithubResource(
                 github_app_id=123,
                 github_app_private_rsa_key=FAKE_PRIVATE_RSA_KEY,
                 github_installation_id=123,
