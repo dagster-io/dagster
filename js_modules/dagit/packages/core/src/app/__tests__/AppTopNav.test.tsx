@@ -45,6 +45,9 @@ describe('AppTopNav', () => {
     DaemonHealth: () => ({
       allDaemonStatuses: () => [],
     }),
+    Instance: () => ({
+      autoMaterializePaused: () => false,
+    }),
   };
 
   const Test: React.FC<{statusPolling?: Set<DeploymentStatusType>}> = ({
