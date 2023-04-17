@@ -512,28 +512,25 @@ def test_more_complex_asset():
 If you use config of resources in your asset, they will be provided automatically during execution. When writing unit tests, you may provide them directly when invoking the asset function:
 
 ```python file=/concepts/assets/asset_testing.py startafter=start_asset_with_resource endbefore=end_asset_with_resource
-from dagster import Config, ConfigurableResource
-
-
 class MyConfig(Config):
     api_url: str
 
 
 class MyAPIResource(ConfigurableResource):
-    def query(self, url):
+    def query(self, url) -> Dict[str, Any]:
         return requests.get(url).json()
 
 
 @asset
 def uses_config_and_resource(config: MyConfig, my_api: MyAPIResource):
-    return my_api.query(config.api_url).json()
+    return my_api.query(config.api_url)
 
 
 def test_uses_resource() -> None:
     result = uses_config_and_resource(
-        config=MyConfig(api_url=...), my_api=MyAPIResource()
+        config=MyConfig(api_url="https://dagster.io"), my_api=MyAPIResource()
     )
-    assert result == "bar"
+    assert result == {"foo": "bar"}
 ```
 
 If you use a context object in your function, you can use <PyObject object="build_op_context" /> to generate the `context` object, because under the hood the function decorated by `@asset` is an op.

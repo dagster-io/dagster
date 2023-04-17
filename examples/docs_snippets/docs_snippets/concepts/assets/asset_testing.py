@@ -62,10 +62,14 @@ def test_uses_context():
 
 # end_test_with_context_asset
 
+
+from typing import Any, Dict
+
 import requests
 
-# start_asset_with_resource
 from dagster import Config, ConfigurableResource
+
+# start_asset_with_resource
 
 
 class MyConfig(Config):
@@ -73,20 +77,20 @@ class MyConfig(Config):
 
 
 class MyAPIResource(ConfigurableResource):
-    def query(self, url):
+    def query(self, url) -> Dict[str, Any]:
         return requests.get(url).json()
 
 
 @asset
 def uses_config_and_resource(config: MyConfig, my_api: MyAPIResource):
-    return my_api.query(config.api_url).json()
+    return my_api.query(config.api_url)
 
 
 def test_uses_resource() -> None:
     result = uses_config_and_resource(
-        config=MyConfig(api_url=...), my_api=MyAPIResource()  # type: ignore
+        config=MyConfig(api_url="https://dagster.io"), my_api=MyAPIResource()
     )
-    assert result == "bar"
+    assert result == {"foo": "bar"}
 
 
 # end_asset_with_resource
