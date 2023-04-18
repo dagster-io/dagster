@@ -852,7 +852,7 @@ def test_graph_asset_with_args():
     assert my_asset.freshness_policies_by_key[AssetKey("my_asset")] == FreshnessPolicy(
         maximum_lag_minutes=5
     )
-    assert my_asset.resource_defs['foo'] == foo_resource
+    assert my_asset.resource_defs["foo"] == foo_resource
 
 
 def test_graph_asset_partitioned():
@@ -958,7 +958,7 @@ def test_graph_multi_asset_decorator():
     assert two_assets.freshness_policies_by_key[AssetKey("second_asset")] == FreshnessPolicy(
         maximum_lag_minutes=5
     )
-    assert two_assets.resource_defs['foo'] == foo_resource
+    assert two_assets.resource_defs["foo"] == foo_resource
 
     @asset
     def x():
