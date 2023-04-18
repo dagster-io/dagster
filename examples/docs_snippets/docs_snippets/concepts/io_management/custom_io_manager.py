@@ -31,19 +31,20 @@ def write_csv(_path, _obj):
 
 
 # start_io_manager_marker
-from dagster import ConfigurableIOManager
+from dagster import ConfigurableIOManager, InputContext, OutputContext
 
 
 class MyIOManager(ConfigurableIOManager):
+    # specifies an optional string list input, via config system
     path_prefix: List[str] = []
 
     def _get_path(self, context) -> str:
         return "/".join(self.path_prefix + context.asset_key.path)
 
-    def handle_output(self, context, obj):
+    def handle_output(self, context: OutputContext, obj):
         write_csv(self._get_path(context), obj)
 
-    def load_input(self, context):
+    def load_input(self, context: InputContext):
         return read_csv(self._get_path(context))
 
 
