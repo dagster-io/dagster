@@ -349,20 +349,22 @@ class SnowflakeResource(ConfigurableResource):
             def get_one(snowflake_resource: SnowflakeResource):
                 snowflake_resource.get_client().execute_query('SELECT 1')
 
-            @job(resource_defs={
-                'snowflake_resource': SnowflakeResource(
-                    account=EnvVar("SNOWFLAKE_ACCOUNT"),
-                    user=EnvVar("SNOWFLAKE_USER"),
-                    password=EnvVar("SNOWFLAKE_PASSWORD")
-                    database="MY_DATABASE",
-                    schema="MY_SCHEMA",
-                    warehouse="MY_WAREHOUSE"
-                )}
-            )
+            @job
             def my_snowflake_job():
                 get_one()
 
-            my_snowflake_job.execute_in_process()
+            my_snowflake_job.execute_in_process(
+                resources={
+                    'snowflake_resource': SnowflakeResource(
+                        account=EnvVar("SNOWFLAKE_ACCOUNT"),
+                        user=EnvVar("SNOWFLAKE_USER"),
+                        password=EnvVar("SNOWFLAKE_PASSWORD")
+                        database="MY_DATABASE",
+                        schema="MY_SCHEMA",
+                        warehouse="MY_WAREHOUSE"
+                    )
+                }
+            )
     """
 
     account: Optional[str] = Field(
