@@ -8,6 +8,7 @@ from dagster import (
     AssetKey,
     AssetOut,
     AssetSelection,
+    Config,
     DagsterEventType,
     DagsterInstance,
     DagsterInvariantViolationError,
@@ -21,6 +22,7 @@ from dagster import (
     PartitionKeyRange,
     PartitionMapping,
     PartitionsDefinition,
+    RunConfig,
     RunRequest,
     SkipReason,
     StaticPartitionsDefinition,
@@ -1668,3 +1670,22 @@ def test_dynamic_partitions_sensor():
         )
         run_request = test_sensor(ctx)
         assert run_request.partition_key == "apple"
+
+
+def test_sensor_invocation_runconfig() -> None:
+    class MyConfig(Config):
+        a_str: str
+        an_int: int
+
+    # Test no arg invocation
+    @sensor(job_name="foo_pipeline")
+    def basic_sensor():
+        return RunRequest(
+            run_key=None,
+            run_config=RunConfig(ops={"foo": MyConfig(a_str="foo", an_int=55)}),
+            tags={},
+        )
+
+    assert cast(RunRequest, basic_sensor()).run_config.get("ops", {}) == {
+        "foo": {"config": {"a_str": "foo", "an_int": 55}}
+    }
