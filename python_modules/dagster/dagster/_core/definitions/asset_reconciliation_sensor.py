@@ -28,7 +28,6 @@ from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
-from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
 from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
     TimeWindowPartitionsDefinition,
@@ -422,9 +421,11 @@ def find_parent_materialized_asset_partitions(
                         child_asset_partition = AssetKeyPartitionKey(child, child_partition)
                         if not can_reconcile_fn(child_asset_partition):
                             continue
-                        # cannot materialize in the same run if different partitions defs
-                        elif child_partitions_def != partitions_def or not isinstance(
-                            partition_mapping, IdentityPartitionMapping
+                        # cannot materialize in the same run if different partitions defs or
+                        # different partition keys
+                        elif (
+                            child_partitions_def != partitions_def
+                            or child_partition not in materialized_partitions
                         ):
                             result_asset_partitions.add(child_asset_partition)
                         else:
