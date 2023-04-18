@@ -16,23 +16,37 @@ def my_job():
     pass
 
 
+from typing import List
+
+from dagster import Config
+
+
+class ReadMaterializationConfig(Config):
+    asset_key: List[str]
+
+
 # start_asset_sensor_marker
-from dagster import AssetKey, EventLogEntry, SensorEvaluationContext, asset_sensor
+from dagster import (
+    AssetKey,
+    EventLogEntry,
+    RunConfig,
+    SensorEvaluationContext,
+    asset_sensor,
+)
 
 
 @asset_sensor(asset_key=AssetKey("my_table"), job=my_job)
 def my_asset_sensor(context: SensorEvaluationContext, asset_event: EventLogEntry):
+    assert asset_event.dagster_event and asset_event.dagster_event.asset_key
     yield RunRequest(
         run_key=context.cursor,
-        run_config={
-            "ops": {
-                "read_materialization": {
-                    "config": {
-                        "asset_key": asset_event.dagster_event.asset_key.path,  # type: ignore
-                    }
-                }
+        run_config=RunConfig(
+            ops={
+                "read_materialization": ReadMaterializationConfig(
+                    asset_key=list(asset_event.dagster_event.asset_key.path)
+                )
             }
-        },
+        ),
     )
 
 
