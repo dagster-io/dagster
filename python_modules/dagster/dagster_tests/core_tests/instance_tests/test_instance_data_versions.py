@@ -25,7 +25,7 @@ from dagster._core.events import (
 from dagster._core.events.log import EventLogEntry
 
 
-def _create_test_event_log_entry(event_type: DagsterEventType, data: Any) -> EventLogEntry:
+def create_test_event_log_entry(event_type: DagsterEventType, data: Any) -> EventLogEntry:
     event_specific_data: Union[StepMaterializationData, AssetObservationData]
     if isinstance(data, AssetMaterialization):
         event_specific_data = StepMaterializationData(data, [])
@@ -60,7 +60,7 @@ def test_extract_data_version_and_provenance_from_materialization_entry():
             f"{CODE_VERSION_TAG}": "3",
         },
     )
-    entry = _create_test_event_log_entry(DagsterEventType.ASSET_MATERIALIZATION, materialization)
+    entry = create_test_event_log_entry(DagsterEventType.ASSET_MATERIALIZATION, materialization)
     assert extract_data_version_from_entry(entry) == DataVersion("1")
     assert extract_data_provenance_from_entry(entry) == DataProvenance(
         code_version="3",
@@ -79,7 +79,7 @@ def test_extract_data_version_from_observation_entry():
             DATA_VERSION_TAG: "1",
         },
     )
-    entry = _create_test_event_log_entry(
+    entry = create_test_event_log_entry(
         DagsterEventType.ASSET_OBSERVATION,
         observation,
     )

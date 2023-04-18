@@ -368,9 +368,11 @@ class CachingStaleStatusResolver:
                             )
                         ],
                     )
-            # if no provenance, then use materialization timestamps instead of versions
-            # this should be removable eventually since provenance is on all newer materializations
-            else:
+            # If no provenance and dep is a materializable asset, then use materialization
+            # timestamps instead of versions this should be removable eventually since
+            # provenance is on all newer materializations. If dep is a source, then we'll never
+            # provide a stale reason here.
+            elif not self.asset_graph.is_source(dep_key):
                 dep_materialization = self._get_latest_materialization_event(key=dep_key)
                 if dep_materialization is None:
                     # The input must be new if it has no materialization

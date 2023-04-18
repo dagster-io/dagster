@@ -33,10 +33,15 @@ from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.events import AssetKey, Output
 from dagster._core.definitions.observe import observe
 from dagster._core.definitions.partition import StaticPartitionsDefinition
+from dagster._core.events import DagsterEventType
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 from dagster._core.instance_for_test import instance_for_test
 from typing_extensions import Literal
+
+from dagster_tests.core_tests.instance_tests.test_instance_data_versions import (
+    create_test_event_log_entry,
+)
 
 # ########################
 # ##### HELPERS
@@ -847,6 +852,22 @@ def test_stale_status_root_causes_dedup() -> None:
         assert status_resolver.get_stale_root_causes(asset4.key) == [
             StaleCause(asset1.key, StaleCauseCategory.CODE, "has a new code version"),
         ]
+
+
+def test_no_provenance_stale_status():
+    @asset
+    def foo(bar):
+        return 1
+
+    bar = SourceAsset(AssetKey(["bar"]))
+
+    with instance_for_test() as instance:
+        materialization = AssetMaterialization(asset_key=AssetKey(["foo"]))
+        entry = create_test_event_log_entry(DagsterEventType.ASSET_MATERIALIZATION, materialization)
+        instance.store_event(entry)
+        status_resolver = get_stale_status_resolver(instance, [foo, bar])
+        assert status_resolver.get_status(foo.key) == StaleStatus.FRESH
+        assert status_resolver.get_stale_root_causes(foo.key) == []
 
 
 def test_get_data_provenance_inside_op():
