@@ -3,7 +3,7 @@ from datadog import DogStatsd, initialize, statsd
 from pydantic import Field
 
 
-class DataDogClient:
+class DatadogClient:
     # Mirroring levels from the dogstatsd library
     OK, WARNING, CRITICAL, UNKNOWN = (
         DogStatsd.OK,
@@ -33,7 +33,7 @@ class DataDogClient:
             setattr(self, method, getattr(statsd, method))
 
 
-class DataDogClientResource(ConfigurableResource):
+class DatadogResource(ConfigurableResource):
     """This resource is a thin wrapper over the
     `dogstatsd library <https://datadogpy.readthedocs.io/en/latest/>`_.
 
@@ -45,7 +45,7 @@ class DataDogClientResource(ConfigurableResource):
         .. code-block:: python
 
             @op
-            def datadog_op(datadog_client: ResourceParam[DataDogClient]):
+            def datadog_op(datadog_client: ResourceParam[DatadogClient]):
                 datadog_client.event('Man down!', 'This server needs assistance.')
                 datadog_client.gauge('users.online', 1001, tags=["protocol:http"])
                 datadog_client.increment('page.views')
@@ -68,7 +68,7 @@ class DataDogClientResource(ConfigurableResource):
                 datadog_op()
 
             job_for_datadog_op.execute_in_process(
-                resources={"datadog_client": DataDogClientResource(api_key="FOO", app_key="BAR")}
+                resources={"datadog_client": DatadogResource(api_key="FOO", app_key="BAR")}
             )
 
     """
@@ -85,19 +85,19 @@ class DataDogClientResource(ConfigurableResource):
         )
     )
 
-    def get_client(self) -> DataDogClient:
-        return DataDogClient(self.api_key, self.app_key)
+    def get_client(self) -> DatadogClient:
+        return DatadogClient(self.api_key, self.app_key)
 
 
 @resource(
-    config_schema=DataDogClientResource.to_config_schema(),
+    config_schema=DatadogResource.to_config_schema(),
     description="This resource is for publishing to DataDog",
 )
-def datadog_resource(context) -> DataDogClient:
+def datadog_resource(context) -> DatadogClient:
     """This legacy resource is a thin wrapper over the
     `dogstatsd library <https://datadogpy.readthedocs.io/en/latest/>`_.
 
-    Prefer using :py:class:`DataDogClientResource`.
+    Prefer using :py:class:`DatadogResource`.
 
     As such, we directly mirror the public API methods of DogStatsd here; you can refer to the
     `DataDog documentation <https://docs.datadoghq.com/developers/dogstatsd/>`_ for how to use this
@@ -136,4 +136,4 @@ def datadog_resource(context) -> DataDogClient:
             )
 
     """
-    return DataDogClientResource.from_resource_context(context).get_client()
+    return DatadogResource.from_resource_context(context).get_client()

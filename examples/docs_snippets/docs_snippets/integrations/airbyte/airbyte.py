@@ -3,16 +3,15 @@
 
 def scope_define_instance():
     # start_define_instance
-    from dagster_airbyte import airbyte_resource
+    from dagster import EnvVar
+    from dagster_airbyte import AirbyteResource
 
-    airbyte_instance = airbyte_resource.configured(
-        {
-            "host": "localhost",
-            "port": "8000",
-            # If using basic auth, include username and password:
-            "username": "airbyte",
-            "password": {"env": "AIRBYTE_PASSWORD"},
-        }
+    airbyte_instance = AirbyteResource(
+        host="localhost",
+        port="8000",
+        # If using basic auth, include username and password:
+        username="airbyte",
+        password=EnvVar("AIRBYTE_PASSWORD"),
     )
     # end_define_instance
 
@@ -28,16 +27,15 @@ def scope_load_assets_from_airbyte_project():
 
 
 def scope_load_assets_from_airbyte_instance():
-    from dagster_airbyte import airbyte_resource
+    from dagster_airbyte import AirbyteResource
+    from dagster import EnvVar
 
-    airbyte_instance = airbyte_resource.configured(
-        {
-            "host": "localhost",
-            "port": "8000",
-            # If using basic auth, include username and password:
-            "username": "airbyte",
-            "password": {"env": "AIRBYTE_PASSWORD"},
-        }
+    airbyte_instance = AirbyteResource(
+        host="localhost",
+        port="8000",
+        # If using basic auth, include username and password:
+        username="airbyte",
+        password=EnvVar("AIRBYTE_PASSWORD"),
     )
     # start_load_assets_from_airbyte_instance
     from dagster_airbyte import load_assets_from_airbyte_instance
@@ -48,13 +46,11 @@ def scope_load_assets_from_airbyte_instance():
 
 
 def scope_airbyte_project_config():
-    from dagster_airbyte import airbyte_resource
+    from dagster_airbyte import AirbyteResource
 
-    airbyte_instance = airbyte_resource.configured(
-        {
-            "host": "localhost",
-            "port": "8000",
-        }
+    airbyte_instance = AirbyteResource(
+        host="localhost",
+        port="8000",
     )
     # start_airbyte_project_config
     from dagster_airbyte import load_assets_from_airbyte_project
@@ -81,13 +77,11 @@ def scope_manually_define_airbyte_assets():
 
 
 def scope_airbyte_manual_config():
-    from dagster_airbyte import airbyte_resource
+    from dagster_airbyte import AirbyteResource
 
-    airbyte_instance = airbyte_resource.configured(
-        {
-            "host": "localhost",
-            "port": "8000",
-        }
+    airbyte_instance = AirbyteResource(
+        host="localhost",
+        port="8000",
     )
     # start_airbyte_manual_config
     from dagster_airbyte import build_airbyte_assets
@@ -106,51 +100,58 @@ def scope_airbyte_manual_config():
 
 
 def scope_add_downstream_assets():
-    from dagster_airbyte import airbyte_resource
+    import mock
 
-    airbyte_instance = airbyte_resource.configured(
-        {
-            "host": "localhost",
-            "port": "8000",
-        }
-    )
-    snowflake_io_manager = ...
+    with mock.patch("dagster_snowflake_pandas.SnowflakePandasIOManager"):
+        # start_add_downstream_assets
+        import json
+        from dagster import asset, Definitions, define_asset_job, AssetSelection
+        from dagster_airbyte import load_assets_from_airbyte_instance, AirbyteResource
+        from dagster_snowflake_pandas import SnowflakePandasIOManager
+        import pandas as pd
 
-    # start_add_downstream_assets
-    import json
-    from dagster import asset, Definitions
-    from dagster_airbyte import load_assets_from_airbyte_instance
+        airbyte_instance = AirbyteResource(
+            host="localhost",
+            port="8000",
+        )
 
-    airbyte_assets = load_assets_from_airbyte_instance(
-        airbyte_instance,
-        io_manager_key="snowflake_io_manager",
-    )
+        airbyte_assets = load_assets_from_airbyte_instance(
+            airbyte_instance,
+            io_manager_key="snowflake_io_manager",
+        )
 
-    @asset
-    def stargazers_file(stargazers):
-        with open("stargazers.json", "w", encoding="utf8") as f:
-            f.write(json.dumps(stargazers, indent=2))
+        @asset
+        def stargazers_file(stargazers: pd.DataFrame):
+            with open("stargazers.json", "w", encoding="utf8") as f:
+                f.write(json.dumps(stargazers.to_json(), indent=2))
 
-    defs = Definitions(
-        assets=[airbyte_assets, stargazers_file],
-        resources={"snowflake_io_manager": snowflake_io_manager},
-    )
+        # only run the airbyte syncs necessary to materialize stargazers_file
+        my_upstream_job = define_asset_job(
+            "my_upstream_job",
+            AssetSelection.keys("stargazers_file")
+            .upstream()  # all upstream assets (in this case, just the stargazers Airbyte asset)
+            .required_multi_asset_neighbors(),  # all Airbyte assets linked to the same connection
+        )
 
-    # end_add_downstream_assets
+        defs = Definitions(
+            jobs=[my_upstream_job],
+            assets=[airbyte_assets, stargazers_file],
+            resources={"snowflake_io_manager": SnowflakePandasIOManager(...)},
+        )
+
+        # end_add_downstream_assets
 
 
 def scope_schedule_assets():
-    from dagster_airbyte import airbyte_resource, load_assets_from_airbyte_instance
+    from dagster_airbyte import AirbyteResource, load_assets_from_airbyte_instance
 
-    airbyte_instance = airbyte_resource.configured(
-        {
-            "host": "localhost",
-            "port": "8000",
-        }
+    # start_schedule_assets
+    airbyte_instance = AirbyteResource(
+        host="localhost",
+        port="8000",
     )
     airbyte_assets = load_assets_from_airbyte_instance(airbyte_instance)
 
-    # start_schedule_assets
     from dagster import (
         ScheduleDefinition,
         define_asset_job,

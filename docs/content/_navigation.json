@@ -709,10 +709,6 @@
             "path": "/guides/dagster/software-defined-assets"
           },
           {
-            "title": "Declarative scheduling for Software-defined assets",
-            "path": "/guides/dagster/scheduling-assets"
-          },
-          {
             "title": "Re-executing jobs",
             "path": "/guides/dagster/re-execution"
           },
@@ -810,10 +806,6 @@
               {
                 "title": "Asset versioning and caching",
                 "path": "/guides/dagster/asset-versioning-and-caching"
-              },
-              {
-                "title": "Pythonic resources",
-                "path": "/guides/dagster/pythonic-resources"
               }
             ]
           }

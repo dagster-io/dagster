@@ -1,15 +1,22 @@
 import requests
 
-from dagster import asset
-
 # start_example
+from dagster import Config, asset
 
 
-@asset(config_schema={"api_endpoint": str})
-def my_configurable_asset(context):
-    api_endpoint = context.op_config["api_endpoint"]
-    data = requests.get(f"{api_endpoint}/data").json()
-    return data
+@asset
+def my_upstream_asset() -> int:
+    return 5
+
+
+class MyDownstreamAssetConfig(Config):
+    api_endpoint: str
+
+
+@asset
+def my_downstream_asset(config: MyDownstreamAssetConfig, my_upstream_asset: int) -> int:
+    data = requests.get(f"{config.api_endpoint}/data").json()
+    return data["value"] + my_upstream_asset
 
 
 # end_example
