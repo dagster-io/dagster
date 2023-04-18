@@ -18,7 +18,7 @@ beforeEach(() => {
   };
 });
 
-jest.mock('../../app/CustomConfirmationProvider', () => ({
+jest.mock('../app/CustomConfirmationProvider', () => ({
   useConfirmation: () => {
     return async () => {
       await new Promise((resolve) => {
