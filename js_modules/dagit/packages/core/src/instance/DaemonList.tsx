@@ -199,7 +199,6 @@ export const DAEMON_HEALTH_FRAGMENT = gql`
 export const AUTOMATERIALIZE_PAUSED_QUERY = gql`
   query GetAutoMaterializePausedQuery {
     instance {
-      id
       autoMaterializePaused
     }
   }
