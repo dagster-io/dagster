@@ -30,7 +30,7 @@ from dagster._core.errors import (
     RunStatusSensorExecutionError,
     user_code_error_boundary,
 )
-from dagster._core.events import PIPELINE_RUN_STATUS_TO_EVENT_TYPE, DagsterEvent
+from dagster._core.events import PIPELINE_RUN_STATUS_TO_EVENT_TYPE, DagsterEvent, DagsterEventType
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._serdes import (
@@ -257,13 +257,36 @@ class RunFailureSensorContext(RunStatusSensorContext):
 
     Attributes:
         sensor_name (str): the name of the sensor.
-        dagster_run (DagsterRun): the failed pipeline run.
-        failure_event (DagsterEvent): the pipeline failure event.
+        dagster_run (DagsterRun): the failed run.
+        failure_event (DagsterEvent): the failure event.
     """
 
+    @public
     @property
-    def failure_event(self):
+    def failure_event(self) -> DagsterEvent:
+        """The run failure event.
+
+        If the run failed because of an error inside a step, get_step_failure_events will have more
+        details on the step failure.
+        """
         return self.dagster_event
+
+    @public
+    def get_step_failure_events(self) -> Sequence[DagsterEvent]:
+        """The step failure event for each step in the run that failed.
+
+        Examples:
+            .. code-block:: python
+
+                error_messages_by_step_key = {
+                    event.step_key: event.message
+                    for event in context.get_step_failure_events()
+                }
+        """
+        records = self.instance.get_records_for_run(
+            run_id=self.dagster_run.run_id, of_type=DagsterEventType.STEP_FAILURE
+        ).records
+        return [cast(DagsterEvent, record.event_log_entry.dagster_event) for record in records]
 
 
 def build_run_status_sensor_context(
