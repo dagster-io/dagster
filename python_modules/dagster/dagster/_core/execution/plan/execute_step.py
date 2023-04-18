@@ -26,6 +26,7 @@ from dagster._core.definitions import (
 )
 from dagster._core.definitions.data_version import (
     CODE_VERSION_TAG,
+    DATA_VERSION_IS_USER_PROVIDED_TAG,
     DATA_VERSION_TAG,
     DEFAULT_DATA_VERSION,
     DataVersion,
@@ -474,7 +475,9 @@ def _get_output_asset_materializations(
             if output.data_version is None
             else output.data_version
         )
-        tags = _build_data_version_tags(data_version, code_version, input_provenance_data)
+        tags = _build_data_version_tags(
+            data_version, code_version, input_provenance_data, output.data_version is not None
+        )
         if not step_context.has_data_version(asset_key):
             data_version = DataVersion(tags[DATA_VERSION_TAG])
             step_context.set_data_version(asset_key, data_version)
@@ -550,6 +553,7 @@ def _build_data_version_tags(
     data_version: DataVersion,
     code_version: str,
     input_provenance_data: Mapping[AssetKey, _InputProvenanceData],
+    data_version_is_user_provided: bool,
 ) -> Dict[str, str]:
     tags: Dict[str, str] = {}
     tags[CODE_VERSION_TAG] = code_version
@@ -559,6 +563,8 @@ def _build_data_version_tags(
             str(meta["storage_id"]) if meta["storage_id"] else "NULL"
         )
     tags[DATA_VERSION_TAG] = data_version.value
+    if data_version_is_user_provided:
+        tags[DATA_VERSION_IS_USER_PROVIDED_TAG] = "true"
     return tags
 
 
