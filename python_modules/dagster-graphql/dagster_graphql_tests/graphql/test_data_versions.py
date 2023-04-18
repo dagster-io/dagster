@@ -99,7 +99,7 @@ def test_stale_status():
                 {
                     "key": {"path": ["foo"]},
                     "category": "DATA",
-                    "reason": "updated data version",
+                    "reason": "has a new materialization",
                     "dependency": None,
                 }
             ]
