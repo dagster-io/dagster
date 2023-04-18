@@ -127,7 +127,7 @@ export const DaemonList: React.FC<Props> = ({daemonStatuses, showTimestampColumn
                       timeFormat={TIME_FORMAT}
                     />
                     <span>
-                      <TimeFromNow unixTimestamp={assetDaemon.lastHeartbeatTime} />)
+                      <TimeFromNow unixTimestamp={assetDaemon.lastHeartbeatTime} />
                     </span>
                   </Group>
                 ) : (
@@ -157,7 +157,7 @@ export const DaemonList: React.FC<Props> = ({daemonStatuses, showTimestampColumn
                           timeFormat={TIME_FORMAT}
                         />
                         <span>
-                          <TimeFromNow unixTimestamp={daemon.lastHeartbeatTime} />)
+                          <TimeFromNow unixTimestamp={daemon.lastHeartbeatTime} />
                         </span>
                       </Group>
                     ) : (
