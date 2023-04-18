@@ -588,7 +588,6 @@ def new_resource_testing_with_context():
 
     from dagster import (
         ConfigurableResource,
-        InitResourceContext,
         build_init_resource_context,
         DagsterInstance,
     )
@@ -603,10 +602,6 @@ def new_resource_testing_with_context():
             instance = self.get_resource_context().instance
             assert instance
             return instance.storage_directory()
-
-        # TODO: remove with https://github.com/dagster-io/dagster/pull/13613
-        def get_resource_context(self) -> InitResourceContext:
-            ...
 
     def test_my_context_resource():
         with DagsterInstance.ephemeral() as instance:
@@ -661,7 +656,6 @@ def new_resource_testing_with_state() -> None:
     # start_new_resource_testing_with_state
 
     from dagster import ConfigurableResource, asset
-    import requests
     import mock
 
     class MyClient:
@@ -693,6 +687,43 @@ def new_resource_testing_with_state() -> None:
         assert my_asset(mocked_client_resource) == "my_result"
 
     # end_new_resource_testing_with_state
+
+
+def new_resource_testing_with_state_ops() -> None:
+    # start_new_resource_testing_with_state_ops
+
+    from dagster import ConfigurableResource, op
+    import mock
+
+    class MyClient:
+        ...
+
+        def query(self, body: str):
+            ...
+
+    class MyClientResource(ConfigurableResource):
+        username: str
+        password: str
+
+        def get_client(self):
+            return MyClient(self.username, self.password)
+
+    @op
+    def my_op(client: MyClientResource):
+        return client.get_client().query("SELECT * FROM my_table")
+
+    def test_my_op():
+        class FakeClient:
+            def query(self, body: str):
+                assert body == "SELECT * FROM my_table"
+                return "my_result"
+
+        mocked_client_resource = mock.Mock()
+        mocked_client_resource.get_client.return_value = FakeClient()
+
+        assert my_op(mocked_client_resource) == "my_result"
+
+    # end_new_resource_testing_with_state_ops
 
 
 def new_resource_on_sensor() -> None:
