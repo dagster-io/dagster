@@ -53,7 +53,7 @@ class InputDefSnap(
             dagster_type_key=check.str_param(dagster_type_key, "dagster_type_key"),
             description=check.opt_str_param(description, "description"),
             metadata=normalize_metadata(
-                check.opt_mapping_param(metadata, "metadata", key_type=str)
+                check.opt_mapping_param(metadata, "metadata", key_type=str), allow_invalid=True
             ),
         )
 
@@ -92,7 +92,7 @@ class OutputDefSnap(
             description=check.opt_str_param(description, "description"),
             is_required=check.bool_param(is_required, "is_required"),
             metadata=normalize_metadata(
-                check.opt_mapping_param(metadata, "metadata", key_type=str)
+                check.opt_mapping_param(metadata, "metadata", key_type=str), allow_invalid=True
             ),
             is_dynamic=check.bool_param(is_dynamic, "is_dynamic"),
         )
