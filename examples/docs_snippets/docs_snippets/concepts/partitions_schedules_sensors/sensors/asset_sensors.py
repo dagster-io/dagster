@@ -39,7 +39,7 @@ from dagster import (
 def my_asset_sensor(context: SensorEvaluationContext, asset_event: EventLogEntry):
     yield RunRequest(
         run_key=context.cursor,
-        run_config=RunConfig(  # type: ignore
+        run_config=RunConfig(
             ops={
                 "read_materialization": ReadMaterializationConfig(
                     asset_key=list(asset_event.dagster_event.asset_key.path)  # type: ignore
