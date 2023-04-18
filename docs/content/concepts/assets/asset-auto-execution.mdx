@@ -14,6 +14,13 @@ At a high-level, there are two factors that can be used to determine when an ass
 
 Assets can be auto-materialized "eagerly" – i.e. immediately after upstream changes occur. Or they can be auto-materialized "lazily" – i.e. by waiting until downstream <PyObject object="FreshnessPolicy" pluralize /> dictate that they need to be fresh. Or a mixture of both.
 
+### Turning on auto-materializing
+
+To enable assets to be automatically materialized, you need to first flip a toggle in the Dagster UI.
+
+- If you're using an open source Dagster deployment, you can get to this toggle by clicking "Deployment" in the top navigation pane and then clicking on the "Daemons" tab.
+- If you're using Dagster Cloud, you can get to this toggle by clicking "Deployment" in the top navigation pane, then clicking on the "Agents" tab, then looking under "Cloud service statuses".
+
 ### Auto-materialize policies
 
 You can set up an asset to be auto-materialized by assigning it an <PyObject object="AutoMaterializePolicy" />. In this example, we use <PyObject object="AutoMaterializePolicy" method="eager" /> to indicate that, any time that `asset1` is materialized, `asset2` should be automatically materialized right after:
@@ -33,8 +40,6 @@ def asset2(asset1):
 ```
 
 This example assumes that `asset1` will be materialized in some other way - e.g. manually, via a [sensor](/concepts/partitions-schedules-sensors/sensors), or via a [schedule](/concepts/partitions-schedules-sensors/schedules).
-
-Note that the [Dagster Daemon](/deployment/dagster-daemon) needs to be running for auto-materialization to function. If you use the `dagster dev` command to run Dagster, the daemon will automatically run as part of it, so assets will immediately start to be auto-materialized when Dagster starts.
 
 ### Adding an auto-materialize policy to multiple assets at once
 
