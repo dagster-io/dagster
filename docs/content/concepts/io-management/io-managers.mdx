@@ -5,6 +5,12 @@ description: I/O Managers determine how to store asset/op outputs and load asset
 
 # I/O Managers
 
+<Note>
+  This guide covers using the new Pythonic resources system introduced in
+  Dagster 1.3. If your code is still using the legacy resources system, see the{" "}
+  <a href="/concepts/io-management/io-managers-legacy">legacy I/O managers guide</a>.
+</Note>
+
 I/O Managers are user-provided objects that store asset and op outputs and load them as inputs to downstream assets and ops.
 
 <center>
@@ -20,8 +26,8 @@ I/O Managers are user-provided objects that store asset and op outputs and load 
 
 | Name                                                                          | Description                                                                                                                                                                                                  |   |
 | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | - |
-| <PyObject module="dagster" object="ConfigurableIOManager" decorator />        | A base class used to define configurable I/O managers which are also resources.                                                                                                                              | ƒ |
-| <PyObject module="dagster" object="ConfigurableIOManagerFactory" decorator /> | A base class used to specify configuration for more advanced I/O managers.                                                                                                                                   |   |
+| <PyObject module="dagster" object="ConfigurableIOManager" />        | A base class used to define configurable I/O managers which are also resources.                                                                                                                              | ƒ |
+| <PyObject module="dagster" object="ConfigurableIOManagerFactory" /> | A base class used to specify configuration for more advanced I/O managers.                                                                                                                                   |   |
 | <PyObject module="dagster" object="IOManager" />                              | Base class for standalone I/O managers which are constructed by factories.                                                                                                                                   |   |
 | <PyObject object="build_input_context"/>                                      | Function for directly constructing an <PyObject object="InputContext"/>, to be passed to the <PyObject object="IOManager" method="load_input"/> method. This is designed primarily for testing purposes.     |   |
 | <PyObject object="build_output_context"/>                                     | Function for directly constructing an <PyObject object="OutputContext"/>, to be passed to the <PyObject object="IOManager" method="handle_output"/> method. This is designed primarily for testing purposes. |   |
