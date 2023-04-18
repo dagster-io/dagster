@@ -58,23 +58,23 @@ import requests
 class ExternalIOManager(IOManager):
     def __init__(self, api_token):
         self._api_token = api_token
+        # setup stateful cache
+        self._cache = {}
 
     def handle_output(self, context, obj):
         ...
 
     def load_input(self, context):
+        if context.asset_key in self._cache:
+            return self._cache[context.asset_key]
         ...
 
 
 class ConfigurableExternalIOManager(ConfigurableIOManagerFactory):
-    username: str
-    password: str
+    api_token: str
 
     def create_io_manager(self, context) -> ExternalIOManager:
-        api_token = requests.get(
-            "https://my-api.com/token", auth=(self.username, self.password)
-        ).json()
-        return ExternalIOManager(api_token)
+        return ExternalIOManager(self.api_token)
 
 
 # end_io_manager_factory_marker
