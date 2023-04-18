@@ -11,7 +11,7 @@ from dagster._core.storage.io_manager import io_manager
 
 
 def test_all_fields():
-    partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d"])
+    StaticPartitionsDefinition(["a", "b", "c", "d"])
 
     @io_manager(required_resource_keys={"baz"})
     def foo_manager():
@@ -24,7 +24,6 @@ def test_all_fields():
         metadata={"epsilon": "gamma"},
         io_manager_key="lambda",
         io_manager_def=foo_manager,
-        partitions_def=partitions_def,
         group_name="rho",
     )
     def foo_source_asset(context):
@@ -33,7 +32,6 @@ def test_all_fields():
     assert foo_source_asset.key == AssetKey(["delta", "alpha"])
     assert foo_source_asset.description == "beta"
     assert foo_source_asset.io_manager_key == "lambda"
-    assert foo_source_asset.partitions_def == partitions_def
     assert foo_source_asset.group_name == "rho"
     assert foo_source_asset.resource_defs == {"lambda": foo_manager}
     assert foo_source_asset.io_manager_def == foo_manager
