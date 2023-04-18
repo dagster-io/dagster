@@ -61,6 +61,18 @@ export const Sizes = () => {
       >
         Error Toast
       </Button>
+      <Button
+        onClick={() =>
+          SharedToaster.show({
+            intent: Intent.PRIMARY,
+            timeout: 5000,
+            message: 'This is a primary toaster',
+            icon: 'account_circle',
+          })
+        }
+      >
+        Primary Toast
+      </Button>
     </Group>
   );
 };
