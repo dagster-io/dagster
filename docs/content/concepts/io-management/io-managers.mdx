@@ -18,13 +18,13 @@ I/O Managers are user-provided objects that store asset and op outputs and load 
 
 ## Relevant APIs
 
-| Name                                                                          | Description                                                                                                                                                                                                 |   |
-| ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | - |
-| <PyObject module="dagster" object="ConfigurableIOManager" decorator />        | A base class used to define configurable I/O managers which are also resources.                                                                                                                             | ƒ |
-| <PyObject module="dagster" object="ConfigurableIOManagerFactory" decorator /> | A base class used to specify configuration for more advanced I/O managers.                                                                                                                                  |   |
-| <PyObject module="dagster" object="IOManager" />                              | Base class for standalone I/O managers which are constructed by factories.                                                                                                                                  |   |
-| <PyObject object="build_input_context"/>                                      | Function for directly constructing a <PyObject object="InputContext"/>, to be passed to the <PyObject object="IOManager" method="load_input"/> method. This is designed primarily for testing purposes.     |   |
-| <PyObject object="build_output_context"/>                                     | Function for directly constructing a <PyObject object="OutputContext"/>, to be passed to the <PyObject object="IOManager" method="handle_output"/> method. This is designed primarily for testing purposes. |   |
+| Name                                                                          | Description                                                                                                                                                                                                  |   |
+| ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | - |
+| <PyObject module="dagster" object="ConfigurableIOManager" decorator />        | A base class used to define configurable I/O managers which are also resources.                                                                                                                              | ƒ |
+| <PyObject module="dagster" object="ConfigurableIOManagerFactory" decorator /> | A base class used to specify configuration for more advanced I/O managers.                                                                                                                                   |   |
+| <PyObject module="dagster" object="IOManager" />                              | Base class for standalone I/O managers which are constructed by factories.                                                                                                                                   |   |
+| <PyObject object="build_input_context"/>                                      | Function for directly constructing an <PyObject object="InputContext"/>, to be passed to the <PyObject object="IOManager" method="load_input"/> method. This is designed primarily for testing purposes.     |   |
+| <PyObject object="build_output_context"/>                                     | Function for directly constructing an <PyObject object="OutputContext"/>, to be passed to the <PyObject object="IOManager" method="handle_output"/> method. This is designed primarily for testing purposes. |   |
 
 ## Overview
 
@@ -69,7 +69,7 @@ Dagster provides out-of-the-box I/O managers for popular storage systems: AWS S3
 
 ### I/O managers are resources
 
-I/O managers are provided through the [resources](/concepts/resources) system which means users can supply different I/O managers for the same assets or ops in different situations. For example, you might use an in-memory I/O manager for unit-testing and an S3 I/O manager in production.
+I/O managers are provided through the [resources](/concepts/resources) system which means you can supply different I/O managers for the same assets or ops in different situations. For example, you might use an in-memory I/O manager for unit-testing and an Amazon S3 I/O manager in production.
 
 ---
 
@@ -109,7 +109,7 @@ defs = Definitions(
 )
 ```
 
-This example also constructs a <PyObject module="dagster_aws.s3" object="S3Resource" /> because the <PyObject module="dagster_aws.s3" object="ConfigurablePickledObjectS3IOManager" /> depends on the S3 resource. For more information on how these resource-resource dependencies are modeled, refer to the [resources](/concepts/resources#resources-which-depend-on-other-resources) documentation.
+This example also constructs an <PyObject module="dagster_aws.s3" object="S3Resource" /> because the <PyObject module="dagster_aws.s3" object="ConfigurablePickledObjectS3IOManager" /> depends on the S3 resource. For more information on how these resource-resource dependencies are modeled, refer to the [resources](/concepts/resources#resources-which-depend-on-other-resources) documentation.
 
 When `upstream_asset` is materialized, the value `[1, 2, 3]` will be pickled and stored in an object on S3. When `downstream_asset` is materialized, the value of `upstream_asset` will be read from S3 and depickled, and `[1, 2, 3, 4]` will be pickled and stored in a different object on S3.
 
@@ -203,7 +203,7 @@ In some cases you may need to load the input to an asset with different logic th
 
 To set an I/O manager for a particular input, use the `input_manager_key` argument on <PyObject module="dagster" object="AssetIn" />.
 
-In this example,`first_asset` and `second_asset` will be stored using the default I/O manager, but will be loaded as inputs to `third_asset` using the logic defined in the `PandasSeriesIOManager` (in this case loading as Pandas Series rather than python lists).
+In this example,`first_asset` and `second_asset` will be stored using the default I/O manager, but will be loaded as inputs to `third_asset` using the logic defined in the `PandasSeriesIOManager` (in this case loading as Pandas Series rather than Python lists).
 
 ```python file=/concepts/assets/asset_input_managers.py startafter=start_different_input_managers endbefore=end_different_input_managers
 @asset
@@ -299,7 +299,7 @@ def my_job():
 
 Just as with the inputs to assets, the inputs to ops can be loaded using custom logic if you want to override the I/O manager of the upstream output. To set an I/O manager for a particular input, use the `input_manager_key` argument on <PyObject module="dagster" object="In" />.
 
-In this example, the output of `op_1` will be stored using the default I/O manager, but will be loaded in `op_2` using the logic defined in the `pandas_series_io_manager` (in this case loading as Pandas Series rather than python lists).
+In this example, the output of `op_1` will be stored using the default I/O manager, but will be loaded in `op_2` using the logic defined in the `PandasSeriesIOManager` (in this case loading as Pandas Series rather than python lists).
 
 ```python file=/concepts/io_management/input_managers.py startafter=start_different_input_managers endbefore=end_different_input_managers
 @op
@@ -321,7 +321,7 @@ def a_job():
 
 If you have specific requirements for where and how your outputs should be stored and retrieved, you can define your own I/O manager. This boils down to implementing two functions: one that stores outputs and one that loads inputs.
 
-To define an I/O manager, you will want to extend the <PyObject module="dagster" object="IOManager" /> class. Often times, you will want to extend the <PyObject module="dagster" object="ConfigurableIOManager"/> class (which subclasses `IOManager`) to attach a config schema to your I/O manager.
+To define an I/O manager, extend the <PyObject module="dagster" object="IOManager" /> class. Oftentimes, you will want to extend the <PyObject module="dagster" object="ConfigurableIOManager"/> class (which subclasses `IOManager`) to attach a config schema to your I/O manager.
 
 Here, we define a simple I/O manager that reads and writes CSV values to the filesystem. It takes an optional prefix path through config.
 
