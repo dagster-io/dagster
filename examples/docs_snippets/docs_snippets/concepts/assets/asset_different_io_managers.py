@@ -1,7 +1,7 @@
 # start_marker
 from dagster_aws.s3 import ConfigurablePickledObjectS3IOManager, S3Resource
 
-from dagster import Definitions, asset, fs_io_manager
+from dagster import Definitions, FilesystemIOManager, asset
 
 
 @asset(io_manager_key="s3_io_manager")
@@ -20,7 +20,7 @@ defs = Definitions(
         "s3_io_manager": ConfigurablePickledObjectS3IOManager(
             s3_resource=S3Resource(), s3_bucket="my-bucket"
         ),
-        "fs_io_manager": fs_io_manager,
+        "fs_io_manager": FilesystemIOManager(),
     },
 )
 

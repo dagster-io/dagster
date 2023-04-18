@@ -456,6 +456,7 @@ from dagster._core.storage.file_manager import (
     local_file_manager as local_file_manager,
 )
 from dagster._core.storage.fs_io_manager import (
+    FilesystemIOManager as FilesystemIOManager,
     custom_path_fs_io_manager as custom_path_fs_io_manager,
     fs_io_manager as fs_io_manager,
 )
