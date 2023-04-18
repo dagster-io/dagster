@@ -540,6 +540,7 @@ class ConfigurableResourceFactoryState(NamedTuple):
     config_schema: DefinitionConfigSchema
     schema: DagsterField
     nested_resources: Dict[str, CoercibleToResource]
+    resource_context: Optional[InitResourceContext]
 
 
 class ConfigurableResourceFactory(
@@ -623,6 +624,7 @@ class ConfigurableResourceFactory(
             config_schema=_curry_config_schema(schema, resolved_config_dict),
             schema=schema,
             nested_resources={k: v for k, v in resource_pointers.items()},
+            resource_context=None,
         )
 
     @property
@@ -647,7 +649,7 @@ class ConfigurableResourceFactory(
 
     def get_resource_definition(self) -> ConfigurableResourceFactoryResourceDefinition:
         return ConfigurableResourceFactoryResourceDefinition(
-            resource_fn=self.initialize_and_run,
+            resource_fn=self._initialize_and_run,
             config_schema=self._config_schema,
             description=self.__doc__,
             resolve_resource_keys=self._resolve_required_resource_keys,
@@ -684,7 +686,11 @@ class ConfigurableResourceFactory(
         # Since Resource extends BaseModel and is a dataclass, we know that the
         # signature of any __init__ method will always consist of the fields
         # of this class. We can therefore safely pass in the values as kwargs.
-        return self.__class__(**{**self._as_config_dict(), **values})
+        out = self.__class__(**{**self._as_config_dict(), **values})
+        out._state__internal__ = out._state__internal__._replace(  # noqa: SLF001
+            resource_context=self._state__internal__.resource_context
+        )
+        return out
 
     def _resolve_and_update_env_vars(self) -> "ConfigurableResourceFactory[TResValue]":
         """Processes the config dictionary to resolve any EnvVar values. This is called at runtime
@@ -737,14 +743,36 @@ class ConfigurableResourceFactory(
         to_update = {**resources_to_update, **partial_resources_to_update}
         return self._with_updated_values(to_update)
 
-    def initialize_and_run(self, context: InitResourceContext) -> TResValue:
-        with_nested_resources = self._resolve_and_update_nested_resources(context)
-        with_env_vars = with_nested_resources._resolve_and_update_env_vars()  # noqa: SLF001
+    def with_resource_context(
+        self, resource_context: InitResourceContext
+    ) -> "ConfigurableResourceFactory[TResValue]":
+        """Returns a new instance of the resource with the given resource init context bound."""
+        # This utility is used to create a copy of this resource, without adjusting
+        # any values in this case
+        copy = self._with_updated_values({})
+        copy._state__internal__ = copy._state__internal__._replace(  # noqa: SLF001
+            resource_context=resource_context
+        )
+        return copy
 
-        return with_env_vars._create_object_fn(context)  # noqa: SLF001
+    def _initialize_and_run(self, context: InitResourceContext) -> TResValue:
+        updated_resource = (
+            self._resolve_and_update_nested_resources(context)  # noqa: SLF001
+            .with_resource_context(context)
+            ._resolve_and_update_env_vars()
+        )
+
+        return updated_resource._create_object_fn(context)  # noqa: SLF001
 
     def _create_object_fn(self, context: InitResourceContext) -> TResValue:
         return self.create_resource(context)
+
+    def get_resource_context(self) -> InitResourceContext:
+        """Returns the context that this resource was initialized with."""
+        return check.not_none(
+            self._state__internal__.resource_context,
+            additional_message="Attempted to get context before resource was initialized.",
+        )
 
     @classmethod
     def from_resource_context(cls, context: InitResourceContext) -> TResValue:
@@ -846,7 +874,7 @@ class PartialResource(Generic[TResValue], AllowDelayedDependencies, MakeConfigCa
 
         def resource_fn(context: InitResourceContext):
             instantiated = resource_cls(**context.resource_config, **data)
-            return instantiated.initialize_and_run(context)
+            return instantiated._initialize_and_run(context)  # noqa: SLF001
 
         self._state__internal__ = PartialResourceState(
             # We keep track of any resources we depend on which are not fully configured
@@ -990,7 +1018,7 @@ class ConfigurableIOManagerFactory(ConfigurableResourceFactory[TIOManagerValue])
 
     def get_resource_definition(self) -> ConfigurableIOManagerFactoryResourceDefinition:
         return ConfigurableIOManagerFactoryResourceDefinition(
-            resource_fn=self.initialize_and_run,
+            resource_fn=self._initialize_and_run,
             config_schema=self._config_schema,
             description=self.__doc__,
             resolve_resource_keys=self._resolve_required_resource_keys,
