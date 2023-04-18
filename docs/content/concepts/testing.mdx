@@ -236,6 +236,43 @@ def test_op_with_resource():
 
 Note that when directly invoking ops, I/O managers specified on inputs and outputs are not used.
 
+#### Testing ops with complex resources
+
+If your ops rely on more complex resources, such as those that build separate clients, a common pattern is to use tools such as the `mock` library to fake your resource and associated client.
+
+```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_testing_with_state_ops endbefore=end_new_resource_testing_with_state_ops dedent=4
+from dagster import ConfigurableResource, op
+import mock
+
+class MyClient:
+    ...
+
+    def query(self, body: str):
+        ...
+
+class MyClientResource(ConfigurableResource):
+    username: str
+    password: str
+
+    def get_client(self):
+        return MyClient(self.username, self.password)
+
+@op
+def my_op(client: MyClientResource):
+    return client.get_client().query("SELECT * FROM my_table")
+
+def test_my_op():
+    class FakeClient:
+        def query(self, body: str):
+            assert body == "SELECT * FROM my_table"
+            return "my_result"
+
+    mocked_client_resource = mock.Mock()
+    mocked_client_resource.get_client.return_value = FakeClient()
+
+    assert my_op(mocked_client_resource) == "my_result"
+```
+
 #### Testing ops that rely on context
 
 Finally, if your op relies on context, you can build and pass a context. The following op uses the context logger:
@@ -335,6 +372,10 @@ def test_asset_requires_bar():
     result = asset_requires_bar(bar=BarResource(my_string="bar"))
     ...
 ```
+
+#### Testing assets with complex resources
+
+In order to test assets which rely on complex resources, such as those that build separate clients, a common pattern is to use tools such as the `mock` library to fake your resource and associated client. See the section on [Testing ops with complex resources](#testing-ops-with-complex-resources) for an example.
 
 ### Testing multiple software-defined assets together
 

@@ -132,6 +132,7 @@ def op_requires_foo(foo: FooResource):
 
 # end_op_requires_foo_marker
 
+
 # start_op_requires_config
 
 from dagster import Config
@@ -168,6 +169,45 @@ def context_op(context: OpExecutionContext):
 
 # end_op_requires_context_marker
 
+# start_test_op_with_resource_client
+
+from dagster import ConfigurableResource
+import mock
+
+
+class Client:
+    def __init__(self, api_key):
+        self._api_key = api_key
+
+    def query(self, body):
+        ...
+
+
+class MyClientResource(ConfigurableResource):
+    api_key: str
+
+    def get_client(self) -> Client:
+        return Client(self.api_key)
+
+
+@op
+def my_client_op(client_resource: MyClientResource):
+    return client_resource.get_client().query({"foo": "bar"})
+
+
+def test_my_client_op():
+    class FakeClient:
+        def query(self, body):
+            assert body == {"foo": "bar"}
+            return {"baz": "qux"}
+
+    mock_client_resource = mock.Mock()
+    mock_client_resource.get_client.return_value = FakeClient()
+
+    assert my_client_op(mock_client_resource) == {"baz": "qux"}
+
+
+# end_test_op_with_resource_client
 
 # start_op_invocation_context_marker
 
