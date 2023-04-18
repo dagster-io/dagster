@@ -11,6 +11,7 @@ When new releases include breaking changes or deprecations, this document descri
 
 ### Breaking Changes
 
+- By default, resources defined on `Definitions` are now automatically bound to jobs. The `BindResourcesToJobs` wrapper, introduced in 1.2 to simulate this behavior, is now deprecated. This can result in a change in behavior for jobs using the default I/O manager if an I/O manager is provided to Definitions with default key `"io_manager"`.
 - **[experimental]** The `minutes_late` and `previous_minutes_late` properties on the experimental `FreshnesPolicySensorContext` have been renamed to `minutes_overdue` and `previous_minutes_overdue`, respectively.
 - **[previously deprecated, 0.15.0]** The `metadata_entries` arguments to user-constructed events (`AssetObservation`,  `AssetMaterialization`,  `ExpectationResult`,  `TypeCheck`,  `Failure`,  `Output`,  `DynamicOutput`), as well as the `DagsterType` object have been removed. Instead, a dictionary of metadata should be passed into the `metadata` argument.
 - **[dagster-celery-k8s]** The default kubernetes namespace for run pods when using the Dagster Helm chart with the `CeleryK8sRunLauncher` is now the same namespace as the Helm chart, instead of the `default` namespace. To restore the previous behavior, you can set the `celeryK8sRunLauncher.jobNamespace` field to the string `default`.
