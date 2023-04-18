@@ -31,6 +31,7 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
     TimeWindowPartitionsDefinition,
 )
+from dagster._utils.backcompat import deprecation_warning
 from dagster._utils.schedules import cron_string_iterator
 
 from .asset_selection import AssetGraph, AssetSelection
@@ -1034,6 +1035,9 @@ def build_asset_reconciliation_sensor(
     """
     check_valid_name(name)
     check.opt_mapping_param(run_tags, "run_tags", key_type=str, value_type=str)
+    deprecation_warning(
+        "build_asset_reconciliation_sensor", "1.4", "Use AutoMaterializePolicys instead."
+    )
 
     @sensor(
         name=name,
