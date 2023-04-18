@@ -16,11 +16,10 @@ def downstream_asset(upstream_asset):
     return upstream_asset + [4]
 
 
-s3_resource = S3Resource()
 resources_by_env = {
     "prod": {
         "io_manager": ConfigurablePickledObjectS3IOManager(
-            s3_resource=s3_resource, s3_bucket="my-bucket"
+            s3_resource=S3Resource(), s3_bucket="my-bucket"
         )
     },
     "local": {"io_manager": fs_io_manager},

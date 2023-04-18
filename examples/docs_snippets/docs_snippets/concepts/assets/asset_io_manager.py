@@ -14,12 +14,11 @@ def downstream_asset(upstream_asset):
     return upstream_asset + [4]
 
 
-s3_resource = S3Resource()
 defs = Definitions(
     assets=[upstream_asset, downstream_asset],
     resources={
         "io_manager": ConfigurablePickledObjectS3IOManager(
-            s3_resource=s3_resource, s3_bucket="my-bucket"
+            s3_resource=S3Resource(), s3_bucket="my-bucket"
         ),
     },
 )

@@ -14,14 +14,11 @@ def op_2(a):
     return a + 1
 
 
-s3_resource = S3Resource()
-
-
 @job(
     resource_defs={
         "fs": fs_io_manager,
         "s3_io": ConfigurablePickledObjectS3IOManager(
-            s3_resource=s3_resource, s3_bucket="my-bucket"
+            s3_resource=S3Resource(), s3_bucket="my-bucket"
         ),
     }
 )
