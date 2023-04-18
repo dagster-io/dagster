@@ -4,11 +4,17 @@ When new releases include breaking changes or deprecations, this document descri
 
 ## Migrating to 1.3.0
 
+### Deprecations
+
+- **[deprecation, 1.4.0]** `build_asset_reconciliation_sensor`, which was experimental, is now deprecated, in favor of assigning `AutoMaterializePolicy`s on assets. Refer to the docs on `AutoMaterializePolicy`s for how this works: [https://docs.dagster.io/concepts/assets/asset-auto-execution](https://docs.dagster.io/concepts/assets/asset-auto-execution).
+- **[deprecation, 2.0.0]** Previously, the recommended pattern for creating a run request for a given partition of a job within a sensor was  `yield job_def.run_request_for_partition(partition_key="...")`. This has been deprecated, in favor of `yield RunRequest(partition_key="...")`.
 
 ### Breaking Changes
 
-#### Extension Libraries
-[dagster-snowflake-pandas] Prior to `dagster-snowflake` version `0.19.0` the Snowflake I/O manager converted all timestamp data to strings before loading the data in Snowflake, and did the opposite conversion when fetching a DataFrame from Snowflake. The I/O manager now ensures timestamp data has a timezone attached and stores the data as TIMESTAMP_NTZ(9) type. If you used the Snowflake I/O manager prior to version `0.19.0` you can set the `store_timestamps_as_strings=True` configuration value for the Snowflake I/O manager to continue storing time data as strings while you do table migrations.
+- **[experimental]** The `minutes_late` and `previous_minutes_late` properties on the experimental `FreshnesPolicySensorContext` have been renamed to `minutes_overdue` and `previous_minutes_overdue`, respectively.
+- **[previously deprecated, 0.15.0]** The `metadata_entries` arguments to user-constructed events (`AssetObservation`,  `AssetMaterialization`,  `ExpectationResult`,  `TypeCheck`,  `Failure`,  `Output`,  `DynamicOutput`), as well as the `DagsterType` object have been removed. Instead, a dictionary of metadata should be passed into the `metadata` argument.
+- **[dagster-celery-k8s]** The default kubernetes namespace for run pods when using the Dagster Helm chart with the `CeleryK8sRunLauncher` is now the same namespace as the Helm chart, instead of the `default` namespace. To restore the previous behavior, you can set the `celeryK8sRunLauncher.jobNamespace` field to the string `default`.
+- **[dagster-snowflake-pandas]** Prior to `dagster-snowflake` version `0.19.0` the Snowflake I/O manager converted all timestamp data to strings before loading the data in Snowflake, and did the opposite conversion when fetching a DataFrame from Snowflake. The I/O manager now ensures timestamp data has a timezone attached and stores the data as TIMESTAMP_NTZ(9) type. If you used the Snowflake I/O manager prior to version `0.19.0` you can set the `store_timestamps_as_strings=True` configuration value for the Snowflake I/O manager to continue storing time data as strings while you do table migrations.
 
 To migrate a table created prior to `0.19.0` to one with a TIMESTAMP_NTZ(9) type, you can run the follow SQL queries in Snowflake. In the example, our table is located at `database.schema.table` and the column we want to migrate is called `time`:
 
