@@ -155,9 +155,9 @@ def test_partitioned_self_dep():
 
 
 def get_observable_source_asset_repo():
-    @observable_source_asset(partitions_def=StaticPartitionsDefinition(["1"]))
+    @asset(partitions_def=StaticPartitionsDefinition(["1"]))
     def foo():
-        return DataVersion("1")
+        return 1
 
     @observable_source_asset
     def bar():

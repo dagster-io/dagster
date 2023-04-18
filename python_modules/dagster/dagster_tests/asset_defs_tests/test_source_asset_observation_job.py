@@ -56,6 +56,7 @@ def test_execute_source_asset_observation_job():
     assert _get_current_data_version(AssetKey("bar"), instance) == DataVersion("beta")
 
 
+@pytest.mark.skip("Temporarily disabling this feature pending GQL UI work")
 def test_partitioned_observable_source_asset():
     partitions_def_a = StaticPartitionsDefinition(["A"])
     partitions_def_b = StaticPartitionsDefinition(["B"])

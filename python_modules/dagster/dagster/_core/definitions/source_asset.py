@@ -106,6 +106,11 @@ class SourceAsset(ResourceAddable):
     ):
         from dagster._core.execution.build_resources import wrap_resources_for_execution
 
+        if partitions_def is not None and observe_fn is not None:
+            raise DagsterInvalidDefinitionError(
+                "Cannot specify a `partitions_def` for an observable source asset."
+            )
+
         if resource_defs is not None:
             experimental_arg_warning("resource_defs", "SourceAsset.__new__")
 
