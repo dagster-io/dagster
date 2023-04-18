@@ -17,11 +17,11 @@ def iris_dataset_partitioned(context) -> pd.DataFrame:
     full_df = pd.read_csv(
         "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data",
         names=[
-            "Sepal length (cm)",
-            "Sepal width (cm)",
-            "Petal length (cm)",
-            "Petal width (cm)",
-            "Species",
+            "sepal_length_cm",
+            "sepal_width_cm",
+            "petal_length_cm",
+            "petal_width_cm",
+            "species",
         ],
     )
 
