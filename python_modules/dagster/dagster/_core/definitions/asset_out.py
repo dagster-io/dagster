@@ -2,6 +2,7 @@ from typing import Any, Mapping, NamedTuple, Optional, Sequence, Type, Union
 
 import dagster._check as check
 from dagster._annotations import PublicAttr
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.events import (
     AssetKey,
     CoercibleToAssetKey,
@@ -29,6 +30,7 @@ class AssetOut(
             ("group_name", PublicAttr[Optional[str]]),
             ("code_version", PublicAttr[Optional[str]]),
             ("freshness_policy", PublicAttr[Optional[FreshnessPolicy]]),
+            ("auto_materialize_policy", PublicAttr[Optional[AutoMaterializePolicy]]),
         ],
     )
 ):
@@ -57,6 +59,8 @@ class AssetOut(
         code_version (Optional[str]): The version of the code that generates this asset.
         freshness_policy (Optional[FreshnessPolicy]): A policy which indicates how up to date this
             asset is intended to be.
+        auto_materialize_policy (Optional[AutoMaterializePolicy]): AutoMaterializePolicy to apply to
+            the specified asset.
     """
 
     def __new__(
@@ -71,6 +75,7 @@ class AssetOut(
         group_name: Optional[str] = None,
         code_version: Optional[str] = None,
         freshness_policy: Optional[FreshnessPolicy] = None,
+        auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
     ):
         if isinstance(key_prefix, str):
             key_prefix = [key_prefix]
@@ -92,6 +97,9 @@ class AssetOut(
             code_version=check.opt_str_param(code_version, "code_version"),
             freshness_policy=check.opt_inst_param(
                 freshness_policy, "freshness_policy", FreshnessPolicy
+            ),
+            auto_materialize_policy=check.opt_inst_param(
+                auto_materialize_policy, "auto_materialize_policy", AutoMaterializePolicy
             ),
         )
 
