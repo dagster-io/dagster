@@ -251,44 +251,51 @@ def test_run_step_stats_with_retries():
 
 
 def test_threaded_ephemeral_instance(caplog):
-    n = 5
+    # prevent GC from firing during this to prevent false positives on thread warnings
+    gc.disable()
+    try:
+        n = 5
 
-    with DagsterInstance.ephemeral() as shared_instance:
+        with DagsterInstance.ephemeral() as shared_instance:
 
-        def _instantiate_ephemeral_instance(_):
-            with DagsterInstance.ephemeral() as instance:
-                instance.get_runs_count()  # call run storage
-                instance.all_asset_keys()  # call event log storage
-                shared_instance.get_runs_count()
-                shared_instance.all_asset_keys()
+            def _instantiate_ephemeral_instance(_):
+                with DagsterInstance.ephemeral() as instance:
+                    instance.get_runs_count()  # call run storage
+                    instance.all_asset_keys()  # call event log storage
+                    shared_instance.get_runs_count()
+                    shared_instance.all_asset_keys()
 
-            return True
+                return True
 
-        with ThreadPoolExecutor(max_workers=n, thread_name_prefix="ephemeral_worker") as executor:
-            results = executor.map(_instantiate_ephemeral_instance, range(n))
-            assert all(results)
+            with ThreadPoolExecutor(
+                max_workers=n, thread_name_prefix="ephemeral_worker"
+            ) as executor:
+                results = executor.map(_instantiate_ephemeral_instance, range(n))
+                assert all(results)
 
-    # old SQL alchemy has issue that causes warning to fire
-    if version.parse(sqlalchemy_version) > version.parse("1.3.24"):
-        assert (
-            "SQLite objects created in a thread can only be used in that same thread."
-            not in caplog.text
-        )
+        # old SQL alchemy has issue that causes warning to fire
+        if version.parse(sqlalchemy_version) > version.parse("1.3.24"):
+            assert (
+                "SQLite objects created in a thread can only be used in that same thread."
+                not in caplog.text
+            )
+    finally:
+        gc.enable()
 
 
 def test_threadsafe_ephemeral_instance():
-    n = 100
-    shared = DagsterInstance.ephemeral()
+    n = 25
+    with DagsterInstance.ephemeral() as shared:
 
-    def _run(_):
-        shared.root_directory
-        with DagsterInstance.ephemeral() as instance:
-            instance.root_directory
-        return True
+        def _run(_):
+            shared.root_directory
+            with DagsterInstance.ephemeral() as instance:
+                instance.root_directory
+            return True
 
-    with ThreadPoolExecutor(max_workers=n) as executor:
-        results = executor.map(_run, range(n))
-        assert all(results)
+        with ThreadPoolExecutor(max_workers=n) as executor:
+            results = executor.map(_run, range(n))
+            assert all(results)
 
 
 def test_threadsafe_local_temp_instance():

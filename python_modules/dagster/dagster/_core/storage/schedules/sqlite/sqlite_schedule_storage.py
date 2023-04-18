@@ -67,7 +67,7 @@ class SqliteScheduleStorage(SqlScheduleStorage, ConfigurableClass):
             db_revision, head_revision = check_alembic_revision(alembic_config, connection)
             if not (db_revision and head_revision):
                 ScheduleStorageSqlMetadata.create_all(engine)
-                engine.execute("PRAGMA journal_mode=WAL;")
+                connection.execute("PRAGMA journal_mode=WAL;")
                 stamp_alembic_rev(alembic_config, connection)
                 should_migrate_data = True
 
