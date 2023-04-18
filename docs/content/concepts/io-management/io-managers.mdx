@@ -18,12 +18,13 @@ IO Managers are user-provided objects that store asset and op outputs and load t
 
 ## Relevant APIs
 
-| Name                                                        | Description                                                                                                                                                                                                 |
-| ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| <PyObject module="dagster" object="io_manager" decorator /> | A decorator used to define IO managers.                                                                                                                                                                     |
-| <PyObject module="dagster" object="IOManager" />            | Base class for user-provided IO managers.                                                                                                                                                                   |
-| <PyObject object="build_input_context"/>                    | Function for directly constructing a <PyObject object="InputContext"/>, to be passed to the <PyObject object="IOManager" method="load_input"/> method. This is designed primarily for testing purposes.     |
-| <PyObject object="build_output_context"/>                   | Function for directly constructing a <PyObject object="OutputContext"/>, to be passed to the <PyObject object="IOManager" method="handle_output"/> method. This is designed primarily for testing purposes. |
+| Name                                                                          | Description                                                                                                                                                                                                 |
+| ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| <PyObject module="dagster" object="ConfigurableIOManager" decorator />        | A base class used to define configurable IO managers which are also resources.                                                                                                                              |
+| <PyObject module="dagster" object="ConfigurableIOManagerFactory" decorator /> | A base class used to specify configuration for more advanced I/O managers.                                                                                                                                  |
+| <PyObject module="dagster" object="IOManager" />                              | Base class for user-provided IO managers.                                                                                                                                                                   |
+| <PyObject object="build_input_context"/>                                      | Function for directly constructing a <PyObject object="InputContext"/>, to be passed to the <PyObject object="IOManager" method="load_input"/> method. This is designed primarily for testing purposes.     |
+| <PyObject object="build_output_context"/>                                     | Function for directly constructing a <PyObject object="OutputContext"/>, to be passed to the <PyObject object="IOManager" method="handle_output"/> method. This is designed primarily for testing purposes. |
 
 ## Overview
 
@@ -320,31 +321,59 @@ def a_job():
 
 If you have specific requirements for where and how your outputs should be stored and retrieved, you can define your own IO manager. This boils down to implementing two functions: one that stores outputs and one that loads inputs.
 
-To define an IO manager, use the <PyObject module="dagster" object="io_manager" displayText="@io_manager" /> decorator.
+To define an IO manager, you will want to extend the <PyObject module="dagster" object="IOManager" /> class. Often times, you will want to extend the <PyObject module="dagster" object="ConfigurableIOManager"/> class (which subclasses `IOManager`) to attach a config schema to your IO manager.
+
+Here, we define a simple IO manager that reads and writes CSV values to the filesystem. It takes an optional prefix path through config.
 
 ```python file=/concepts/io_management/custom_io_manager.py startafter=start_io_manager_marker endbefore=end_io_manager_marker
-from dagster import IOManager, io_manager
+from dagster import ConfigurableIOManager
 
 
-class MyIOManager(IOManager):
+class MyIOManager(ConfigurableIOManager):
+    path_prefix: List[str] = []
+
     def _get_path(self, context) -> str:
-        return "/".join(context.asset_key.path)
+        return "/".join(self.path_prefix + context.asset_key.path)
 
     def handle_output(self, context, obj):
         write_csv(self._get_path(context), obj)
 
     def load_input(self, context):
         return read_csv(self._get_path(context))
-
-
-@io_manager
-def my_io_manager():
-    return MyIOManager()
 ```
 
-The <PyObject module="dagster" object="io_manager" /> decorator behaves nearly identically to the <PyObject module="dagster" object="resource" /> decorator. It yields an <PyObject module="dagster" object="IOManagerDefinition" />, which is a subclass of <PyObject module="dagster" object="ResourceDefinition" /> that will produce an <PyObject module="dagster" object="IOManager" />.
-
 The provided `context` argument for `handle_output` is an <PyObject module="dagster" object="OutputContext" />. The provided `context` argument for `load_input` is an <PyObject module="dagster" object="InputContext" />. The linked API documentation lists all the fields that are available on these objects.
+
+### Using an IO manager factory
+
+If your IO manager is more complex, or needs to manage internal state, it may make sense to split out the IO manager definition from its configuration. In this case, you can use `ConfigurableIOManagerFactory`, which specifies config schema and implements a factory function that takes the config and returns an IO manager.
+
+```python file=/concepts/io_management/custom_io_manager.py startafter=start_io_manager_factory_marker endbefore=end_io_manager_factory_marker
+from dagster import IOManager, ConfigurableIOManagerFactory
+import requests
+
+
+class ExternalIOManager(IOManager):
+    def __init__(self, api_token):
+        self._api_token = api_token
+
+    def handle_output(self, context, obj):
+        ...
+
+    def load_input(self, context):
+        ...
+
+
+class ConfigurableExternalIOManager(ConfigurableIOManagerFactory):
+    username: str
+    password: str
+
+    def create_io_manager(self, context) -> ExternalIOManager:
+        api_token = requests.get(
+            "https://my-api.com/token", auth=(self.username, self.password)
+        ).json()
+        return ExternalIOManager(api_token)
+```
 
 ### Handling partitioned assets
 
@@ -440,17 +469,12 @@ class MyNumpyLoader(PandasIOManager):
         return array
 
 
-@io_manager
-def numpy_io_manager():
-    return MyNumpyLoader()
-
-
 @op(ins={"np_array_input": In(input_manager_key="numpy_manager")})
 def analyze_as_numpy(np_array_input: np.ndarray):
     assert isinstance(np_array_input, np.ndarray)
 
 
-@job(resource_defs={"numpy_manager": numpy_io_manager, "io_manager": pandas_io_manager})
+@job(resource_defs={"numpy_manager": MyNumpyLoader(), "io_manager": PandasIOManager()})
 def my_job():
     df = produce_pandas_output()
     analyze_as_numpy(df)
@@ -460,7 +484,7 @@ This may quickly run into issues if the owner of `PandasIOManager` changes the p
 
 ```python file=/concepts/io_management/input_managers.py startafter=start_better_input_manager endbefore=end_better_input_manager
 # this IO Manager is owned by a different team
-class BetterPandasIOManager(IOManager):
+class BetterPandasIOManager(ConfigurableIOManager):
     def _get_path(self, output_context):
         return os.path.join(
             self.base_dir,
@@ -486,11 +510,6 @@ class MyBetterNumpyLoader(PandasIOManager):
         return array
 
 
-@io_manager
-def better_numpy_io_manager():
-    return MyBetterNumpyLoader()
-
-
 @op(ins={"np_array_input": In(input_manager_key="better_numpy_manager")})
 def better_analyze_as_numpy(np_array_input: np.ndarray):
     assert isinstance(np_array_input, np.ndarray)
@@ -498,8 +517,8 @@ def better_analyze_as_numpy(np_array_input: np.ndarray):
 
 @job(
     resource_defs={
-        "numpy_manager": better_numpy_io_manager,
-        "io_manager": pandas_io_manager,
+        "numpy_manager": MyBetterNumpyLoader(),
+        "io_manager": PandasIOManager(),
     }
 )
 def my_better_job():
@@ -514,10 +533,10 @@ def my_better_job():
 If your ops produce Pandas DataFrames that populate tables in a data warehouse, you might write something like the following. This IO manager uses the name assigned to the output as the name of the table to write the output to.
 
 ```python file=/concepts/io_management/custom_io_manager.py startafter=start_df_marker endbefore=end_df_marker
-from dagster import IOManager, io_manager
+from dagster import ConfigurableIOManager, io_manager
 
 
-class DataframeTableIOManager(IOManager):
+class DataframeTableIOManager(ConfigurableIOManager):
     def handle_output(self, context, obj):
         # name is the name given to the Out that we're storing for
         table_name = context.name
@@ -529,12 +548,7 @@ class DataframeTableIOManager(IOManager):
         return read_dataframe_from_table(name=table_name)
 
 
-@io_manager
-def df_table_io_manager():
-    return DataframeTableIOManager()
-
-
-@job(resource_defs={"io_manager": df_table_io_manager})
+@job(resource_defs={"io_manager": DataframeTableIOManager()})
 def my_job():
     op_2(op_1())
 ```
@@ -672,7 +686,7 @@ The IO manager can then access this metadata when storing or retrieving data, vi
 In this case, the table names are encoded in the job definition. If, instead, you want to be able to set them at run time, the next section describes how.
 
 ```python file=/concepts/io_management/metadata.py startafter=io_manager_start_marker endbefore=io_manager_end_marker
-class MyIOManager(IOManager):
+class MyIOManager(ConfigurableIOManager):
     def handle_output(self, context, obj):
         table_name = context.metadata["table"]
         schema = context.metadata["schema"]
@@ -682,11 +696,6 @@ class MyIOManager(IOManager):
         table_name = context.upstream_output.metadata["table"]
         schema = context.upstream_output.metadata["schema"]
         return read_dataframe_from_table(name=table_name, schema=schema)
-
-
-@io_manager
-def my_io_manager(_):
-    return MyIOManager()
 ```
 
 ### Per-input loading in assets
@@ -696,7 +705,7 @@ Let's say you have an asset that is set to store and load as a Pandas DataFrame,
 In this example, we store `upstream_asset` as a Pandas DataFrame, and we write a new IO manager to load is as a NumPy array in `downstream_asset`
 
 ```python file=/concepts/assets/asset_input_managers_numpy.py startafter=start_numpy_example endbefore=end_numpy_example
-class PandasAssetIOManager(IOManager):
+class PandasAssetIOManager(ConfigurableIOManager):
     def handle_output(self, context, obj):
         file_path = self._get_path(context)
         store_pandas_dataframe(name=file_path, table=obj)
@@ -712,20 +721,10 @@ class PandasAssetIOManager(IOManager):
         return load_pandas_dataframe(name=file_path)
 
 
-@io_manager
-def pandas_asset_io_manager():
-    return PandasAssetIOManager()
-
-
 class NumpyAssetIOManager(PandasAssetIOManager):
     def load_input(self, context):
         file_path = self._get_path(context)
         return load_numpy_array(name=file_path)
-
-
-@io_manager
-def numpy_asset_io_manager():
-    return NumpyAssetIOManager()
 
 
 @asset(io_manager_key="pandas_manager")
@@ -743,8 +742,8 @@ def downstream_asset(upstream):
 defs = Definitions(
     assets=[upstream_asset, downstream_asset],
     resources={
-        "pandas_manager": pandas_asset_io_manager,
-        "numpy_manager": numpy_asset_io_manager,
+        "pandas_manager": PandasAssetIOManager(),
+        "numpy_manager": NumpyAssetIOManager(),
     },
 )
 ```
@@ -756,7 +755,11 @@ The easiest way to test an IO manager is to construct an <PyObject module="dagst
 Here's an example for a simple IO manager that stores outputs in an in-memory dictionary that's keyed on the step and name of the output.
 
 ```python file=/concepts/io_management/test_io_manager.py
-from dagster import IOManager, build_input_context, build_output_context, io_manager
+from dagster import (
+    IOManager,
+    build_input_context,
+    build_output_context,
+)
 
 
 class MyIOManager(IOManager):
@@ -772,20 +775,15 @@ class MyIOManager(IOManager):
         ]
 
 
-@io_manager
-def my_io_manager(_):
-    return MyIOManager()
-
-
 def test_my_io_manager_handle_output():
-    manager = my_io_manager(None)
+    manager = MyIOManager()
     context = build_output_context(name="abc", step_key="123")
     manager.handle_output(context, 5)
     assert manager.storage_dict[("123", "abc")] == 5
 
 
 def test_my_io_manager_load_input():
-    manager = my_io_manager(None)
+    manager = MyIOManager()
     manager.storage_dict[("123", "abc")] = 5
 
     context = build_input_context(
@@ -799,7 +797,7 @@ def test_my_io_manager_load_input():
 Sometimes, you may want to record some metadata while handling an output in an IO manager. To do this, you can invoke <PyObject object="OutputContext" method="add_output_metadata"/> from within the body of the `handle_output` function. Using this, we can modify one of the [above examples](/concepts/io-management/io-managers#a-custom-io-manager-that-stores-pandas-dataframes-in-tables) to now include some helpful metadata in the log:
 
 ```python file=/concepts/io_management/custom_io_manager.py startafter=start_metadata_marker endbefore=end_metadata_marker
-class DataframeTableIOManagerWithMetadata(IOManager):
+class DataframeTableIOManagerWithMetadata(ConfigurableIOManager):
     def handle_output(self, context, obj):
         table_name = context.name
         write_dataframe_to_table(name=table_name, dataframe=obj)
