@@ -28,6 +28,14 @@ export type WorkspaceSchedulesQuery = {
           id: string;
           name: string;
           description: string | null;
+          scheduleState: {
+            __typename: 'InstigationState';
+            id: string;
+            selectorId: string;
+            status: Types.InstigationStatus;
+            hasStartPermission: boolean;
+            hasStopPermission: boolean;
+          };
         }>;
       }
     | {__typename: 'RepositoryNotFoundError'};

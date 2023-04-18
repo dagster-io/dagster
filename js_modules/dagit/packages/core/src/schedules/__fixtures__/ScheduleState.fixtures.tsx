@@ -12,7 +12,7 @@ import {StartThisScheduleMutation, StopScheduleMutation} from '../types/Schedule
 
 const repoAddress = buildRepoAddress('foo', 'bar');
 
-export const scheduleAlaskaCurrentlyOff = {
+export const scheduleAlaskaCurrentlyStopped = {
   repoAddress,
   scheduleName: 'alaska',
   scheduleState: buildInstigationState({
@@ -22,7 +22,7 @@ export const scheduleAlaskaCurrentlyOff = {
   }),
 };
 
-export const scheduleColoradoCurrentlyOff = {
+export const scheduleColoradoCurrentlyStopped = {
   repoAddress,
   scheduleName: 'colorado',
   scheduleState: buildInstigationState({
@@ -30,7 +30,7 @@ export const scheduleColoradoCurrentlyOff = {
   }),
 };
 
-export const scheduleDelawareCurrentlyOn = {
+export const scheduleDelawareCurrentlyRunning = {
   repoAddress,
   scheduleName: 'delaware',
   scheduleState: buildInstigationState({
@@ -40,7 +40,7 @@ export const scheduleDelawareCurrentlyOn = {
   }),
 };
 
-export const scheduleHawaiiCurrentlyOn = {
+export const scheduleHawaiiCurrentlyRunning = {
   repoAddress,
   scheduleName: 'hawaii',
   scheduleState: buildInstigationState({
@@ -50,7 +50,7 @@ export const scheduleHawaiiCurrentlyOn = {
   }),
 };
 
-export const buildTurnOnAlaskaSuccess = (delay = 0): MockedResponse<StartThisScheduleMutation> => {
+export const buildStartAlaskaSuccess = (delay = 0): MockedResponse<StartThisScheduleMutation> => {
   return {
     request: {
       query: START_SCHEDULE_MUTATION,
@@ -76,9 +76,7 @@ export const buildTurnOnAlaskaSuccess = (delay = 0): MockedResponse<StartThisSch
   };
 };
 
-export const buildTurnOnColoradoSuccess = (
-  delay = 0,
-): MockedResponse<StartThisScheduleMutation> => {
+export const buildStartColoradoSuccess = (delay = 0): MockedResponse<StartThisScheduleMutation> => {
   return {
     request: {
       query: START_SCHEDULE_MUTATION,
@@ -104,7 +102,7 @@ export const buildTurnOnColoradoSuccess = (
   };
 };
 
-export const buildTurnOnColoradoError = (delay = 0): MockedResponse<StartThisScheduleMutation> => {
+export const buildStartColoradoError = (delay = 0): MockedResponse<StartThisScheduleMutation> => {
   return {
     request: {
       query: START_SCHEDULE_MUTATION,
@@ -128,7 +126,7 @@ export const buildTurnOnColoradoError = (delay = 0): MockedResponse<StartThisSch
   };
 };
 
-export const buildTurnOffDelawareSuccess = (delay = 0): MockedResponse<StopScheduleMutation> => {
+export const buildStopDelawareSuccess = (delay = 0): MockedResponse<StopScheduleMutation> => {
   return {
     request: {
       query: STOP_SCHEDULE_MUTATION,
@@ -151,7 +149,7 @@ export const buildTurnOffDelawareSuccess = (delay = 0): MockedResponse<StopSched
   };
 };
 
-export const buildTurnOffHawaiiSuccess = (delay = 0): MockedResponse<StopScheduleMutation> => {
+export const buildStopHawaiiSuccess = (delay = 0): MockedResponse<StopScheduleMutation> => {
   return {
     request: {
       query: STOP_SCHEDULE_MUTATION,
@@ -174,7 +172,7 @@ export const buildTurnOffHawaiiSuccess = (delay = 0): MockedResponse<StopSchedul
   };
 };
 
-export const buildTurnOffHawaiiError = (delay = 0): MockedResponse<StopScheduleMutation> => {
+export const buildStopHawaiiError = (delay = 0): MockedResponse<StopScheduleMutation> => {
   return {
     request: {
       query: STOP_SCHEDULE_MUTATION,

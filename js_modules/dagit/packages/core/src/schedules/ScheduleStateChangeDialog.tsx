@@ -22,7 +22,7 @@ export type ScheduleInfo = {
   scheduleState: BasicInstigationStateFragment;
 };
 
-export type OpenWithIntent = 'not-open' | 'turn-on' | 'turn-off';
+export type OpenWithIntent = 'not-open' | 'start' | 'stop';
 
 export interface Props {
   openWithIntent: OpenWithIntent;
@@ -158,7 +158,7 @@ export const ScheduleStateChangeDialog = (props: Props) => {
     dispatch({type: 'start'});
     for (let ii = 0; ii < schedules.length; ii++) {
       const schedule = schedules[ii];
-      if (openWithIntent === 'turn-on') {
+      if (openWithIntent === 'start') {
         await start(schedule);
       } else {
         await stop(schedule);
@@ -176,12 +176,12 @@ export const ScheduleStateChangeDialog = (props: Props) => {
 
     switch (state.step) {
       case 'initial':
-        if (openWithIntent === 'turn-on') {
+        if (openWithIntent === 'stop') {
           return (
             <div>
               {`${count} ${
                 count === 1 ? 'schedule' : 'schedules'
-              } will be turned on. Do you wish to continue?`}
+              } will be stopped. Do you want to continue?`}
             </div>
           );
         }
@@ -189,7 +189,7 @@ export const ScheduleStateChangeDialog = (props: Props) => {
           <div>
             {`${count} ${
               count === 1 ? 'schedule' : 'schedules'
-            } will be turned off. Do you wish to continue?`}
+            } will be started. Do you want to continue?`}
           </div>
         );
       case 'updating':
@@ -216,9 +216,9 @@ export const ScheduleStateChangeDialog = (props: Props) => {
     switch (state.step) {
       case 'initial': {
         const label =
-          openWithIntent === 'turn-on'
-            ? `Turn on ${count === 1 ? '1 schedule' : `${count} schedules`}`
-            : `Turn off ${count === 1 ? '1 schedule' : `${count} schedules`}`;
+          openWithIntent === 'start'
+            ? `Start ${count === 1 ? '1 schedule' : `${count} schedules`}`
+            : `Stop ${count === 1 ? '1 schedule' : `${count} schedules`}`;
         return (
           <>
             <Button intent="none" onClick={onClose}>
@@ -232,9 +232,9 @@ export const ScheduleStateChangeDialog = (props: Props) => {
       }
       case 'updating': {
         const label =
-          openWithIntent === 'turn-on'
-            ? `Turning on ${count === 1 ? '1 schedule' : `${count} schedules`}`
-            : `Turning off ${count === 1 ? '1 schedule' : `${count} schedules`}`;
+          openWithIntent === 'start'
+            ? `Starting ${count === 1 ? '1 schedule' : `${count} schedules`}`
+            : `Stopping ${count === 1 ? '1 schedule' : `${count} schedules`}`;
         return (
           <Button intent="primary" disabled>
             {label}
@@ -273,11 +273,11 @@ export const ScheduleStateChangeDialog = (props: Props) => {
           <Group direction="row" spacing={8} alignItems="flex-start">
             <Icon name="check_circle" color={Colors.Green500} />
             <div>
-              {openWithIntent === 'turn-on'
-                ? `Successfully turned on ${
+              {openWithIntent === 'start'
+                ? `Successfully started ${
                     successCount === 1 ? '1 schedule' : `${successCount} schedules`
                   }.`
-                : `Successfully turned off ${
+                : `Successfully stopped ${
                     successCount === 1 ? '1 schedule' : `${successCount} schedules`
                   }.`}
             </div>
@@ -288,11 +288,11 @@ export const ScheduleStateChangeDialog = (props: Props) => {
             <Group direction="row" spacing={8} alignItems="flex-start">
               <Icon name="warning" color={Colors.Yellow500} />
               <div>
-                {openWithIntent === 'turn-on'
-                  ? `Could not turn on ${
+                {openWithIntent === 'start'
+                  ? `Could not start ${
                       errorCount === 1 ? '1 schedule' : `${errorCount} schedules`
                     }.`
-                  : `Could not turn off ${
+                  : `Could not stop ${
                       errorCount === 1 ? '1 schedule' : `${errorCount} schedules`
                     }.`}
               </div>
@@ -318,7 +318,7 @@ export const ScheduleStateChangeDialog = (props: Props) => {
   return (
     <Dialog
       isOpen={openWithIntent !== 'not-open'}
-      title={openWithIntent === 'turn-on' ? 'Turn on schedules' : 'Turn off schedules'}
+      title={openWithIntent === 'start' ? 'Start schedules' : 'Stop schedules'}
       canEscapeKeyClose={canQuicklyClose}
       canOutsideClickClose={canQuicklyClose}
       onClose={onClose}
