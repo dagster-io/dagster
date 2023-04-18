@@ -414,7 +414,6 @@ If you have separated out a stateful client class from your resource class as de
 
 ```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_testing_with_state endbefore=end_new_resource_testing_with_state dedent=4
 from dagster import ConfigurableResource, asset
-import requests
 import mock
 
 class MyClient:
@@ -453,7 +452,6 @@ In the case that your resource makes use of the resource initialization context,
 ```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_testing_with_context endbefore=end_new_resource_testing_with_context dedent=4
 from dagster import (
     ConfigurableResource,
-    InitResourceContext,
     build_init_resource_context,
     DagsterInstance,
 )
@@ -468,10 +466,6 @@ class MyContextResource(ConfigurableResource[GitHub]):
         instance = self.get_resource_context().instance
         assert instance
         return instance.storage_directory()
-
-    # TODO: remove with https://github.com/dagster-io/dagster/pull/13613
-    def get_resource_context(self) -> InitResourceContext:
-        ...
 
 def test_my_context_resource():
     with DagsterInstance.ephemeral() as instance:
