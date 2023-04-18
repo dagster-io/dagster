@@ -245,6 +245,11 @@
     "statusCode": 302
   },
   {
+    "source": "/guides/dagster/pythonic-resources",
+    "destination": "/concepts/resources",
+    "statusCode": 302
+  },
+  {
     "source": "/overview/dagit",
     "destination": "/concepts/dagit/dagit",
     "statusCode": 302
