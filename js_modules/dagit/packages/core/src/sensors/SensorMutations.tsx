@@ -18,6 +18,12 @@ export const START_SENSOR_MUTATION = gql`
           status
         }
       }
+      ... on SensorNotFoundError {
+        message
+      }
+      ... on UnauthorizedError {
+        message
+      }
       ...PythonErrorFragment
     }
   }
@@ -34,6 +40,9 @@ export const STOP_SENSOR_MUTATION = gql`
           id
           status
         }
+      }
+      ... on UnauthorizedError {
+        message
       }
       ...PythonErrorFragment
     }
