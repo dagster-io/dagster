@@ -171,7 +171,8 @@ Partitioned assets can have <PyObject object="AutoMaterializePolicy" pluralize /
 
 - They are missing - i.e. have never been materialized before
 - New data has arrived in the partitions that are upstream of them
-- They fall within the `time_window_partition_scope_minutes` (more on this below)
+
+For time-partitioned assets (daily, hourly, etc.), only the last partition will be auto-materialized. To materialize earlier partition, launch a backfill.
 
 Here's a pipeline with two daily-partitioned assets that have eager auto-materialize policies. At the end of each day, a partition for that day will be added to the set of partitions for each of the assets. Dagster will notice that the new partitions exist, but have no materializations, and then auto-materialize them.
 
@@ -195,9 +196,7 @@ def asset2(asset1):
     ...
 ```
 
-If a partition of `asset1` is re-materialized, e.g. manually from the UI, then the corresponding partition of `asset2` will be auto-materialized after.
-
-To avoid accidentally auto-materializing enormous numbers of partitions, <PyObject object="AutoMaterializePolicy" pluralize /> have a `time_window_partition_scope_minutes`, which limits how far back in time partitions will be auto-materalized. It defaults to the latest partition. To materialize earlier partitions, launch a backfill or set `time_window_partition_scope_minutes` to a larger value.
+If the last partition of `asset1` is re-materialized, e.g. manually from the UI, then the corresponding partition of `asset2` will be auto-materialized after.
 
 <PyObject object="StaticPartitionsDefinition" pluralize /> and <PyObject
 object="DynamicPartitionsDefinition"
