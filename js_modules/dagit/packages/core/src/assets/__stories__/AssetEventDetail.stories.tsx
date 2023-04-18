@@ -12,7 +12,7 @@ import {
   MaterializationEventMinimal,
   MaterializationUpstreamDataEmptyMock,
   MaterializationUpstreamDataFullMock,
-} from '../__fixtures__/AssetEventDetail.mocks';
+} from '../__fixtures__/AssetEventDetail.fixtures';
 
 // eslint-disable-next-line import/no-default-export
 export default {component: AssetEventDetail};

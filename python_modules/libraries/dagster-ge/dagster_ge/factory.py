@@ -5,8 +5,10 @@ import great_expectations as ge
 from dagster import (
     ConfigurableResource,
     ExpectationResult,
+    IAttachDifferentObjectToOpContext,
     In,
     MetadataValue,
+    OpExecutionContext,
     Out,
     Output,
     _check as check,
@@ -26,7 +28,7 @@ except ImportError:
     from great_expectations.core.util import convert_to_json_serializable
 
 
-class GEContextResource(ConfigurableResource):
+class GEContextResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
     ge_root_dir: str = Field(
         default=None,
         description="The root directory for your Great Expectations project.",
@@ -36,6 +38,9 @@ class GEContextResource(ConfigurableResource):
         if self.ge_root_dir is None:
             return ge.data_context.DataContext()
         return ge.data_context.DataContext(context_root_dir=self.ge_root_dir)
+
+    def get_object_to_set_on_execution_context(self):
+        return self.get_data_context()
 
 
 @resource(config_schema=GEContextResource.to_config_schema())
@@ -91,8 +96,9 @@ def ge_validation_op_factory(
         required_resource_keys={"ge_data_context"},
         tags={"kind": "ge"},
     )
-    def _ge_validation_fn(context, dataset):
+    def _ge_validation_fn(context: OpExecutionContext, dataset):
         data_context = context.resources.ge_data_context
+
         if validation_operator_name is not None:
             validation_operator = validation_operator_name
         else:
@@ -201,8 +207,9 @@ def ge_validation_op_factory_v3(
         required_resource_keys={"ge_data_context"},
         tags={"kind": "ge"},
     )
-    def _ge_validation_fn(context, dataset):
+    def _ge_validation_fn(context: OpExecutionContext, dataset):
         data_context = context.resources.ge_data_context
+
         validator_kwargs = {
             "datasource_name": datasource_name,
             "data_connector_name": data_connector_name,

@@ -19,6 +19,7 @@ export type OverviewSchedulesQuery = {
       }
     | {
         __typename: 'Workspace';
+        id: string;
         locationEntries: Array<{
           __typename: 'WorkspaceLocationEntry';
           id: string;
@@ -46,6 +47,14 @@ export type OverviewSchedulesQuery = {
                     id: string;
                     name: string;
                     description: string | null;
+                    scheduleState: {
+                      __typename: 'InstigationState';
+                      id: string;
+                      selectorId: string;
+                      status: Types.InstigationStatus;
+                      hasStartPermission: boolean;
+                      hasStopPermission: boolean;
+                    };
                   }>;
                 }>;
               }
@@ -60,6 +69,7 @@ export type OverviewSchedulesQuery = {
     | {__typename: 'PythonError'};
   instance: {
     __typename: 'Instance';
+    id: string;
     hasInfo: boolean;
     daemonHealth: {
       __typename: 'DaemonHealth';

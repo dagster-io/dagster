@@ -156,17 +156,24 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
         }
       });
 
+      const toastContent = () => {
+        if (addedEntries.length === 1) {
+          const entryId = addedEntries[0];
+          const locationName = currEntriesById[entryId]?.name;
+          // The entry should be in the entry map, but guard against errors just in case.
+          return (
+            <span>Code location {locationName ? <strong>{locationName}</strong> : ''} added</span>
+          );
+        }
+
+        return <span>{addedEntries.length} code locations added</span>;
+      };
+
       SharedToaster.show({
         intent: 'primary',
         message: (
           <Box flex={{direction: 'row', justifyContent: 'space-between', gap: 24, grow: 1}}>
-            {addedEntries.length === 1 ? (
-              <span>
-                Code location <strong>{addedEntries[0]}</strong> added
-              </span>
-            ) : (
-              <span>{addedEntries.length} code locations added</span>
-            )}
+            {toastContent()}
             {showViewButton ? <ViewCodeLocationsButton onClick={onClickViewButton} /> : null}
           </Box>
         ),

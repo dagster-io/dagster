@@ -39,7 +39,11 @@ class NonBucketQuerySqliteRunStorage(SqliteRunStorage):
 
 @contextmanager
 def create_in_memory_storage():
-    yield InMemoryRunStorage()
+    storage = InMemoryRunStorage()
+    try:
+        yield storage
+    finally:
+        storage.dispose()
 
 
 @contextmanager

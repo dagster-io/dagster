@@ -140,3 +140,24 @@ def test_databricks_submit_run_op(mocker: MockerFixture) -> None:
 def test_databricks_submit_run_op_no_job() -> None:
     with pytest.raises(CheckError):
         create_databricks_submit_run_op(databricks_job_configuration={})
+
+
+def test_databricks_op_name():
+    databricks_job_configuration = {
+        "new_cluster": {
+            "spark_version": "2.1.0-db3-scala2.11",
+            "num_workers": 2,
+        },
+        "notebook_task": {
+            "notebook_path": "/Users/dagster@example.com/PrepareData",
+        },
+    }
+
+    @job
+    def databricks_job():
+        create_databricks_run_now_op(
+            databricks_job_id=1,
+        )()
+        create_databricks_run_now_op(databricks_job_id=1, name="other_name")()
+        create_databricks_submit_run_op(databricks_job_configuration)()
+        create_databricks_submit_run_op(databricks_job_configuration, name="other_name_2")()

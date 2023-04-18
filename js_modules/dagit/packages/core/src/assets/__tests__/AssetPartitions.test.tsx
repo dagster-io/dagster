@@ -13,7 +13,7 @@ import {
   SingleDimensionStaticPartitionHealthQuery,
   SingleDimensionTimePartitionHealthQuery,
   MultiDimensionTimeFirstPartitionHealthQuery,
-} from '../__fixtures__/PartitionHealthSummary.mocks';
+} from '../__fixtures__/PartitionHealthSummary.fixtures';
 
 // This file must be mocked because useVirtualizer tries to create a ResizeObserver,
 // and the component tree fails to mount. We still want to test whether certain partitions
@@ -130,7 +130,7 @@ describe('AssetPartitions', () => {
     );
     await userEvent.click(successCheck);
     expect(screen.getByTestId('router-search')).toHaveTextContent(
-      `status=${AssetPartitionStatus.FAILED}%2C${AssetPartitionStatus.MISSING}`,
+      `status=${AssetPartitionStatus.FAILED}%2C${AssetPartitionStatus.MATERIALIZING}%2C${AssetPartitionStatus.MISSING}`,
     );
     expect(screen.getByTestId('partitions-selected')).toHaveTextContent('5,310 Partitions');
 

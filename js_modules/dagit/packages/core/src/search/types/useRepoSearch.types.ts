@@ -19,6 +19,7 @@ export type SearchBootstrapQuery = {
       }
     | {
         __typename: 'Workspace';
+        id: string;
         locationEntries: Array<{
           __typename: 'WorkspaceLocationEntry';
           id: string;

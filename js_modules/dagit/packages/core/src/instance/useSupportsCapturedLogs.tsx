@@ -16,6 +16,7 @@ export const useSupportsCapturedLogs = () => {
 const INSTANCE_SUPPORTS_CAPTURED_LOGS = gql`
   query InstanceSupportsCapturedLogs {
     instance {
+      id
       hasCapturedLogManager
     }
   }

@@ -424,10 +424,16 @@ def test_async_op():
 
 
 def test_async_gen_invocation():
-    @op
-    async def aio_gen(_):
+    async def make_outputs():
         await asyncio.sleep(0.01)
-        yield Output("done")
+        yield Output("first", output_name="first")
+        await asyncio.sleep(0.01)
+        yield Output("second", output_name="second")
+
+    @op(out={"first": Out(), "second": Out()})
+    async def aio_gen(_):
+        async for v in make_outputs():
+            yield v
 
     context = build_op_context()
 
@@ -437,8 +443,18 @@ def test_async_gen_invocation():
             res.append(output)
         return res
 
-    output = asyncio.run(get_results())[0]
-    assert output.value == "done"
+    results = asyncio.run(get_results())
+    assert results[0].value == "first"
+    assert results[1].value == "second"
+
+    @graph
+    def aio():
+        aio_gen()
+
+    result = aio.execute_in_process()
+    assert result.success
+    assert result.output_for_node("aio_gen", "first") == "first"
+    assert result.output_for_node("aio_gen", "second") == "second"
 
 
 def test_multiple_outputs_iterator():

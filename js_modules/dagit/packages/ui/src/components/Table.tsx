@@ -8,8 +8,6 @@ import {FontFamily} from './styles';
 
 export interface TableProps extends HTMLTableProps {
   $compact?: boolean;
-  // todo dish: Delete this
-  $monospaceFont?: boolean;
 }
 
 export const Table = styled(HTMLTable)<TableProps>`

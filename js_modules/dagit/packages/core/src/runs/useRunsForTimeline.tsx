@@ -149,7 +149,9 @@ export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilt
 
           const jobsAndTicksToAdd = [...jobRuns, ...jobTicks];
           if (isAdHoc) {
-            const adHocJobs = jobs.find(({jobType}) => jobType === 'asset');
+            const adHocJobs = jobs.find(
+              (job) => job.jobType === 'asset' && job.repoAddress === repoAddress,
+            );
             if (adHocJobs) {
               adHocJobs.runs.push(...jobsAndTicksToAdd);
               continue;
@@ -231,6 +233,7 @@ const RUN_TIMELINE_QUERY = gql`
     }
     workspaceOrError {
       ... on Workspace {
+        id
         locationEntries {
           id
           name

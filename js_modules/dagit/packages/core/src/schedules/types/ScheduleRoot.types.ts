@@ -83,6 +83,7 @@ export type ScheduleRootQuery = {
     | {__typename: 'ScheduleNotFoundError'; message: string};
   instance: {
     __typename: 'Instance';
+    id: string;
     hasInfo: boolean;
     daemonHealth: {
       __typename: 'DaemonHealth';

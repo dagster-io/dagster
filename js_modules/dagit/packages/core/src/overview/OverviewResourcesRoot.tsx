@@ -193,6 +193,7 @@ const OVERVIEW_RESOURCES_QUERY = gql`
   query OverviewResourcesQuery {
     workspaceOrError {
       ... on Workspace {
+        id
         locationEntries {
           id
           locationOrLoadError {

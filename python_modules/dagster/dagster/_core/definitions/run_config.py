@@ -16,7 +16,6 @@ from typing import (
 
 from typing_extensions import TypeAlias
 
-from dagster._annotations import experimental
 from dagster._config import (
     ALL_CONFIG_BUILTINS,
     ConfigType,
@@ -25,7 +24,7 @@ from dagster._config import (
     Selector,
     Shape,
 )
-from dagster._config.pythonic_config import Config
+from dagster._config.pythonic_config import Config, config_dictionary_from_values
 from dagster._core.definitions.asset_layer import AssetLayer
 from dagster._core.definitions.executor_definition import (
     ExecutorDefinition,
@@ -653,28 +652,38 @@ def construct_config_type_dictionary(
 
 def _convert_config_classes(configs: Dict[str, Any]) -> Dict[str, Any]:
     return {
-        k: {"config": v._as_config_dict() if isinstance(v, Config) else v}  # noqa: SLF001
+        k: {
+            "config": config_dictionary_from_values(
+                v._as_config_dict(), v.to_config_schema().as_field()  # noqa: SLF001
+            )
+            if isinstance(v, Config)
+            else v
+        }
         for k, v in configs.items()
     }
 
 
-@experimental
 class RunConfig:
+    """RunConfig is a container for all the configuration that can be passed to a pipeline run."""
+
     def __init__(
         self,
         ops: Optional[Dict[str, Any]] = None,
         resources: Optional[Dict[str, Any]] = None,
         loggers: Optional[Dict[str, Any]] = None,
+        execution: Optional[Dict[str, Any]] = None,
     ):
         self.ops = check.opt_dict_param(ops, "ops")
         self.resources = check.opt_dict_param(resources, "resources")
         self.loggers = check.opt_dict_param(loggers, "loggers")
+        self.execution = check.opt_dict_param(execution, "execution")
 
     def to_config_dict(self):
         return {
             "loggers": self.loggers,
             "resources": _convert_config_classes(self.resources),
             "ops": _convert_config_classes(self.ops),
+            "execution": self.execution,
         }
 
 

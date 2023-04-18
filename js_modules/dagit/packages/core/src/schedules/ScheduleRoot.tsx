@@ -153,6 +153,7 @@ const SCHEDULE_ROOT_QUERY = gql`
       ...PythonErrorFragment
     }
     instance {
+      id
       daemonHealth {
         id
         daemonStatus(daemonType: "SCHEDULER") {

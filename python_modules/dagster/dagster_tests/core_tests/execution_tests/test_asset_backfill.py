@@ -1,3 +1,4 @@
+import datetime
 from typing import AbstractSet, Mapping, NamedTuple, Optional, Sequence, Set, Union, cast
 from unittest.mock import MagicMock, patch
 
@@ -10,8 +11,6 @@ from dagster import (
     DailyPartitionsDefinition,
     Definitions,
     PartitionsDefinition,
-    RunRequest,
-    SourceAsset,
     StaticPartitionsDefinition,
     asset,
 )
@@ -29,7 +28,6 @@ from dagster._seven.compat.pendulum import create_pendulum_time
 from dagster._utils import Counter, traced_counter
 
 from dagster_tests.definitions_tests.asset_reconciliation_tests.asset_reconciliation_scenario import (
-    RunSpec,
     do_run,
 )
 from dagster_tests.definitions_tests.asset_reconciliation_tests.exotic_partition_mapping_scenarios import (
@@ -38,6 +36,7 @@ from dagster_tests.definitions_tests.asset_reconciliation_tests.exotic_partition
     two_assets_in_sequence_fan_out_partitions,
 )
 from dagster_tests.definitions_tests.asset_reconciliation_tests.partition_scenarios import (
+    hourly_to_daily_partitions,
     non_partitioned_after_partitioned,
     one_asset_one_partition,
     one_asset_two_partitions,
@@ -50,30 +49,66 @@ from dagster_tests.definitions_tests.asset_reconciliation_tests.partition_scenar
 
 
 class AssetBackfillScenario(NamedTuple):
-    assets: Sequence[Union[SourceAsset, AssetsDefinition]]
-    unevaluated_runs: Sequence[RunSpec] = []
-    expected_run_requests: Optional[Sequence[RunRequest]] = None
-    expected_iterations: Optional[int] = None
+    assets_by_repo_name: Mapping[str, Sequence[AssetsDefinition]]
+    current_time: Optional[datetime.datetime]
+    # when backfilling "some" partitions, the subset of partitions of root assets in the backfill
+    # to target:
+    target_root_partition_keys: Optional[Sequence[str]]
 
 
-assets_by_repo_name_by_scenario_name: Mapping[str, Mapping[str, Sequence[AssetsDefinition]]] = {
-    "one_asset_one_partition": {"repo": one_asset_one_partition},
-    "one_asset_two_partitions": {"repo": one_asset_two_partitions},
-    "two_assets_in_sequence_one_partition": {"repo": two_assets_in_sequence_one_partition},
-    "two_assets_in_sequence_one_partition_cross_repo": {
-        "repo1": [two_assets_in_sequence_one_partition[0]],
-        "repo2": [two_assets_in_sequence_one_partition[1]],
-    },
-    "two_assets_in_sequence_two_partitions": {"repo": two_assets_in_sequence_two_partitions},
-    "two_assets_in_sequence_fan_in_partitions": {"repo": two_assets_in_sequence_fan_in_partitions},
-    "two_assets_in_sequence_fan_out_partitions": {
-        "repo": two_assets_in_sequence_fan_out_partitions
-    },
-    "one_asset_self_dependency": {"repo": one_asset_self_dependency},
-    "non_partitioned_after_partitioned": {"repo": non_partitioned_after_partitioned},
-    "partitioned_after_non_partitioned": {"repo": partitioned_after_non_partitioned},
-    "unpartitioned_after_dynamic_asset": {"repo": unpartitioned_after_dynamic_asset},
-    "two_dynamic_assets": {"repo": two_dynamic_assets},
+def scenario(
+    assets: Union[Mapping[str, Sequence[AssetsDefinition]], Sequence[AssetsDefinition]],
+    current_time: Optional[datetime.datetime] = None,
+    target_root_partition_keys: Optional[Sequence[str]] = None,
+) -> AssetBackfillScenario:
+    if isinstance(assets, list):
+        assets_by_repo_name = {"repo": assets}
+    else:
+        assets_by_repo_name = assets
+
+    return AssetBackfillScenario(
+        assets_by_repo_name=cast(Mapping[str, Sequence[AssetsDefinition]], assets_by_repo_name),
+        current_time=current_time,
+        target_root_partition_keys=target_root_partition_keys,
+    )
+
+
+scenarios = {
+    "one_asset_one_partition": scenario(one_asset_one_partition),
+    "one_asset_two_partitions": scenario(one_asset_two_partitions),
+    "two_assets_in_sequence_one_partition": scenario(two_assets_in_sequence_one_partition),
+    "two_assets_in_sequence_one_partition_cross_repo": scenario(
+        {
+            "repo1": [two_assets_in_sequence_one_partition[0]],
+            "repo2": [two_assets_in_sequence_one_partition[1]],
+        },
+    ),
+    "two_assets_in_sequence_two_partitions": scenario(two_assets_in_sequence_two_partitions),
+    "two_assets_in_sequence_fan_in_partitions": scenario(two_assets_in_sequence_fan_in_partitions),
+    "two_assets_in_sequence_fan_out_partitions": scenario(
+        two_assets_in_sequence_fan_out_partitions
+    ),
+    "one_asset_self_dependency": scenario(
+        one_asset_self_dependency, create_pendulum_time(year=2020, month=1, day=7, hour=4)
+    ),
+    "non_partitioned_after_partitioned": scenario(
+        non_partitioned_after_partitioned, create_pendulum_time(year=2020, month=1, day=7, hour=4)
+    ),
+    "partitioned_after_non_partitioned": scenario(
+        partitioned_after_non_partitioned, create_pendulum_time(year=2020, month=1, day=7, hour=4)
+    ),
+    "unpartitioned_after_dynamic_asset": scenario(unpartitioned_after_dynamic_asset),
+    "two_dynamic_assets": scenario(two_dynamic_assets),
+    "hourly_to_daily_partiitons": scenario(
+        hourly_to_daily_partitions,
+        create_pendulum_time(year=2013, month=1, day=7, hour=0),
+        target_root_partition_keys=[
+            "2013-01-05-22:00",
+            "2013-01-05-23:00",
+            "2013-01-06-00:00",
+            "2013-01-06-01:00",
+        ],
+    ),
 }
 
 
@@ -105,7 +140,7 @@ assets_by_repo_name_by_scenario_name: Mapping[str, Mapping[str, Sequence[AssetsD
 def test_from_asset_partitions_target_subset(
     scenario_name, partition_keys, expected_target_asset_partitions
 ):
-    assets_by_repo_name = assets_by_repo_name_by_scenario_name[scenario_name]
+    assets_by_repo_name = scenarios[scenario_name].assets_by_repo_name
     asset_graph = get_asset_graph(assets_by_repo_name)
     backfill_data = AssetBackfillData.from_asset_partitions(
         partition_names=partition_keys,
@@ -124,19 +159,30 @@ def test_from_asset_partitions_target_subset(
 
 @pytest.mark.parametrize("some_or_all", ["all", "some"])
 @pytest.mark.parametrize("failures", ["no_failures", "root_failures", "random_half_failures"])
-@pytest.mark.parametrize("scenario_name", list(assets_by_repo_name_by_scenario_name.keys()))
-def test_scenario_to_completion(scenario_name: str, failures: str, some_or_all: str):
+@pytest.mark.parametrize("scenario", list(scenarios.values()), ids=list(scenarios.keys()))
+def test_scenario_to_completion(scenario: AssetBackfillScenario, failures: str, some_or_all: str):
     with instance_for_test() as instance:
-        if "dynamic" in scenario_name:
-            instance.add_dynamic_partitions("foo", ["a", "b"])
+        instance.add_dynamic_partitions("foo", ["a", "b"])
 
-        with pendulum.test(create_pendulum_time(year=2020, month=1, day=7, hour=4)):
-            assets_by_repo_name = assets_by_repo_name_by_scenario_name[scenario_name]
+        with pendulum.test(scenario.current_time or pendulum.now()):
+            assets_by_repo_name = scenario.assets_by_repo_name
 
             asset_graph = get_asset_graph(assets_by_repo_name)
-            backfill_data = make_backfill_data(
-                some_or_all=some_or_all, asset_graph=asset_graph, instance=instance
-            )
+            if some_or_all == "all":
+                target_subset = AssetGraphSubset.all(asset_graph, dynamic_partitions_store=instance)
+            elif some_or_all == "some":
+                if scenario.target_root_partition_keys is None:
+                    target_subset = make_random_subset(asset_graph, instance, scenario.current_time)
+                else:
+                    target_subset = make_subset_from_partition_keys(
+                        scenario.target_root_partition_keys,
+                        asset_graph,
+                        instance,
+                    )
+            else:
+                assert False
+
+            backfill_data = AssetBackfillData.empty(target_subset)
 
             if failures == "no_failures":
                 fail_asset_partitions: Set[AssetKeyPartitionKey] = set()
@@ -182,48 +228,80 @@ def test_materializations_outside_of_backfill():
         instance=instance,
         asset_graph=asset_graph,
         assets_by_repo_name=assets_by_repo_name,
-        backfill_data=make_backfill_data("all", asset_graph, instance),
+        backfill_data=make_backfill_data("all", asset_graph, instance, None),
         fail_asset_partitions=set(),
     )
 
 
 def make_backfill_data(
-    some_or_all: str, asset_graph: ExternalAssetGraph, instance: DagsterInstance
+    some_or_all: str,
+    asset_graph: ExternalAssetGraph,
+    instance: DagsterInstance,
+    current_time: Optional[datetime.datetime],
 ) -> AssetBackfillData:
     if some_or_all == "all":
         target_subset = AssetGraphSubset.all(asset_graph, dynamic_partitions_store=instance)
     elif some_or_all == "some":
-        # all partitions downstream of half of the partitions in each partitioned root asset
-        root_asset_partitions: Set[AssetKeyPartitionKey] = set()
-        for i, root_asset_key in enumerate(sorted(asset_graph.root_asset_keys)):
-            partitions_def = asset_graph.get_partitions_def(root_asset_key)
-
-            if partitions_def is not None:
-                partition_keys = list(
-                    partitions_def.get_partition_keys(dynamic_partitions_store=instance)
-                )
-                start_index = len(partition_keys) // 2
-                chosen_partition_keys = partition_keys[start_index:]
-                root_asset_partitions.update(
-                    AssetKeyPartitionKey(root_asset_key, partition_key)
-                    for partition_key in chosen_partition_keys
-                )
-            else:
-                if i % 2 == 0:
-                    root_asset_partitions.add(AssetKeyPartitionKey(root_asset_key, None))
-
-        target_asset_partitions = asset_graph.bfs_filter_asset_partitions(
-            instance, lambda _a, _b: True, root_asset_partitions
-        )
-
-        target_subset = AssetGraphSubset.from_asset_partition_set(
-            target_asset_partitions, asset_graph
-        )
-
+        target_subset = make_random_subset(asset_graph, instance, current_time)
     else:
         assert False
 
     return AssetBackfillData.empty(target_subset)
+
+
+def make_random_subset(
+    asset_graph: ExternalAssetGraph,
+    instance: DagsterInstance,
+    current_time: Optional[datetime.datetime],
+) -> AssetGraphSubset:
+    # all partitions downstream of half of the partitions in each partitioned root asset
+    root_asset_partitions: Set[AssetKeyPartitionKey] = set()
+    for i, root_asset_key in enumerate(sorted(asset_graph.root_asset_keys)):
+        partitions_def = asset_graph.get_partitions_def(root_asset_key)
+
+        if partitions_def is not None:
+            partition_keys = list(
+                partitions_def.get_partition_keys(
+                    dynamic_partitions_store=instance, current_time=current_time
+                )
+            )
+            start_index = len(partition_keys) // 2
+            chosen_partition_keys = partition_keys[start_index:]
+            root_asset_partitions.update(
+                AssetKeyPartitionKey(root_asset_key, partition_key)
+                for partition_key in chosen_partition_keys
+            )
+        else:
+            if i % 2 == 0:
+                root_asset_partitions.add(AssetKeyPartitionKey(root_asset_key, None))
+
+    target_asset_partitions = asset_graph.bfs_filter_asset_partitions(
+        instance, lambda _a, _b: True, root_asset_partitions
+    )
+
+    return AssetGraphSubset.from_asset_partition_set(target_asset_partitions, asset_graph)
+
+
+def make_subset_from_partition_keys(
+    partition_keys: Sequence[str],
+    asset_graph: ExternalAssetGraph,
+    instance: DagsterInstance,
+) -> AssetGraphSubset:
+    root_asset_partitions: Set[AssetKeyPartitionKey] = set()
+    for i, root_asset_key in enumerate(sorted(asset_graph.root_asset_keys)):
+        if asset_graph.get_partitions_def(root_asset_key) is not None:
+            root_asset_partitions.update(
+                AssetKeyPartitionKey(root_asset_key, partition_key)
+                for partition_key in partition_keys
+            )
+        else:
+            root_asset_partitions.add(AssetKeyPartitionKey(root_asset_key, None))
+
+    target_asset_partitions = asset_graph.bfs_filter_asset_partitions(
+        instance, lambda _a, _b: True, root_asset_partitions
+    )
+
+    return AssetGraphSubset.from_asset_partition_set(target_asset_partitions, asset_graph)
 
 
 def get_asset_graph(

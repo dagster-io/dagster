@@ -3,25 +3,35 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 export const HeaderCell = ({children}: {children?: React.ReactNode}) => (
-  <Box
-    padding={{vertical: 8, horizontal: 24}}
+  <CellBox
+    padding={{vertical: 8, horizontal: 12}}
     border={{side: 'right', width: 1, color: Colors.KeylineGray}}
     style={{whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden'}}
   >
     {children}
-  </Box>
+  </CellBox>
 );
 
 export const RowCell = ({children}: {children?: React.ReactNode}) => (
-  <Box
-    padding={{horizontal: 24, vertical: 12}}
+  <CellBox
+    padding={12}
     flex={{direction: 'column', justifyContent: 'flex-start'}}
     style={{color: Colors.Gray500, overflow: 'hidden'}}
     border={{side: 'right', width: 1, color: Colors.KeylineGray}}
   >
     {children}
-  </Box>
+  </CellBox>
 );
+
+const CellBox = styled(Box)`
+  :first-child {
+    padding-left: 24px;
+  }
+
+  :last-child {
+    padding-right: 24px;
+  }
+`;
 
 export const Container = styled.div`
   height: 100%;

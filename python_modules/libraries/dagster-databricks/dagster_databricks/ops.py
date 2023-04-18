@@ -23,6 +23,7 @@ def create_databricks_run_now_op(
     databricks_job_configuration: Optional[dict] = None,
     poll_interval_seconds: float = DEFAULT_POLL_INTERVAL_SECONDS,
     max_wait_time_seconds: float = DEFAULT_MAX_WAIT_TIME_SECONDS,
+    name: Optional[str] = None,
 ) -> OpDefinition:
     """Creates an op that launches an existing databricks job.
 
@@ -40,6 +41,8 @@ def create_databricks_run_now_op(
             Databricks job has finished running.
         max_wait_time_seconds (float): How long to wait for the Databricks job to finish running
             before raising an error.
+        name (Optional[str]): The name of the op. If not provided, the name will be
+            _databricks_run_now_op.
 
     Returns:
         OpDefinition: An op definition to run the Databricks Job.
@@ -100,6 +103,7 @@ def create_databricks_run_now_op(
         },
         required_resource_keys={"databricks"},
         tags={"kind": "databricks"},
+        name=name,
     )
     def _databricks_run_now_op(context: OpExecutionContext) -> None:
         databricks: DatabricksClient = context.resources.databricks
@@ -131,6 +135,7 @@ def create_databricks_submit_run_op(
     databricks_job_configuration: dict,
     poll_interval_seconds: float = DEFAULT_POLL_INTERVAL_SECONDS,
     max_wait_time_seconds: float = DEFAULT_MAX_WAIT_TIME_SECONDS,
+    name: Optional[str] = None,
 ) -> OpDefinition:
     """Creates an op that submits a one-time run of a set of tasks on Databricks.
 
@@ -145,6 +150,8 @@ def create_databricks_submit_run_op(
             Databricks job has finished running.
         max_wait_time_seconds (float): How long to wait for the Databricks job to finish running
             before raising an error.
+        name (Optional[str]): The name of the op. If not provided, the name will be
+            _databricks_submit_run_op.
 
     Returns:
         OpDefinition: An op definition to submit a one-time run of a set of tasks on Databricks.
@@ -207,6 +214,7 @@ def create_databricks_submit_run_op(
         },
         required_resource_keys={"databricks"},
         tags={"kind": "databricks"},
+        name=name,
     )
     def _databricks_submit_run_op(context: OpExecutionContext) -> None:
         databricks: DatabricksClient = context.resources.databricks

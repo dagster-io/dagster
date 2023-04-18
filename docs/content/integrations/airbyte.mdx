@@ -48,16 +48,15 @@ You'll also want to have an Airbyte instance running. If you don't have one alre
 The first step in using Airbyte with Dagster is to tell Dagster how to connect to your Airbyte instance using an Airbyte [resource](/concepts/resources). This resource contains information on where the Airbyte instance is located and any credentials needed to access it.
 
 ```python startafter=start_define_instance endbefore=end_define_instance file=/integrations/airbyte/airbyte.py dedent=4
-from dagster_airbyte import airbyte_resource
+from dagster import EnvVar
+from dagster_airbyte import AirbyteResource
 
-airbyte_instance = airbyte_resource.configured(
-    {
-        "host": "localhost",
-        "port": "8000",
-        # If using basic auth, include username and password:
-        "username": "airbyte",
-        "password": {"env": "AIRBYTE_PASSWORD"},
-    }
+airbyte_instance = AirbyteResource(
+    host="localhost",
+    port="8000",
+    # If using basic auth, include username and password:
+    username="airbyte",
+    password=EnvVar("AIRBYTE_PASSWORD"),
 )
 ```
 
@@ -113,7 +112,7 @@ The `load_assets_from_airbyte_project` function parses the YAML metadata, genera
 
 #### Adding a resource
 
-Assets loaded from Airbyte require an `airbyte_resource`, which defines how to connect and interact with your Airbyte instance.
+Assets loaded from Airbyte require an `AirbyteResource`, which defines how to connect and interact with your Airbyte instance.
 
 We can add the Airbyte resource we configured above to our Airbyte assets by doing the following:
 
@@ -158,7 +157,7 @@ airbyte_assets = build_airbyte_assets(
 
 #### Adding a resource
 
-Manually built Airbyte assets require an `airbyte_resource`, which defines how to connect and interact with your Airbyte instance.
+Manually built Airbyte assets require an `AirbyteResource`, which defines how to connect and interact with your Airbyte instance.
 
 We can add the Airbyte resource we configured above to our Airbyte assets by doing the following:
 
@@ -196,10 +195,17 @@ Once you have loaded your Airbyte assets into Dagster, you can create assets whi
 
 In this case, we have an Airbyte connection which is storing data in the `stargazers` table in our Snowflake warehouse. We specify the output [IO manager](/concepts/io-management/io-managers) to tell downstream assets how to retreive the data.
 
-```python startafter=start_add_downstream_assets endbefore=end_add_downstream_assets file=/integrations/airbyte/airbyte.py dedent=4
+```python startafter=start_add_downstream_assets endbefore=end_add_downstream_assets file=/integrations/airbyte/airbyte.py dedent=8
 import json
-from dagster import asset, Definitions
-from dagster_airbyte import load_assets_from_airbyte_instance
+from dagster import asset, Definitions, define_asset_job, AssetSelection
+from dagster_airbyte import load_assets_from_airbyte_instance, AirbyteResource
+from dagster_snowflake_pandas import SnowflakePandasIOManager
+import pandas as pd
+
+airbyte_instance = AirbyteResource(
+    host="localhost",
+    port="8000",
+)
 
 airbyte_assets = load_assets_from_airbyte_instance(
     airbyte_instance,
@@ -207,13 +213,22 @@ airbyte_assets = load_assets_from_airbyte_instance(
 )
 
 @asset
-def stargazers_file(stargazers):
+def stargazers_file(stargazers: pd.DataFrame):
     with open("stargazers.json", "w", encoding="utf8") as f:
-        f.write(json.dumps(stargazers, indent=2))
+        f.write(json.dumps(stargazers.to_json(), indent=2))
+
+# only run the airbyte syncs necessary to materialize stargazers_file
+my_upstream_job = define_asset_job(
+    "my_upstream_job",
+    AssetSelection.keys("stargazers_file")
+    .upstream()  # all upstream assets (in this case, just the stargazers Airbyte asset)
+    .required_multi_asset_neighbors(),  # all Airbyte assets linked to the same connection
+)
 
 defs = Definitions(
+    jobs=[my_upstream_job],
     assets=[airbyte_assets, stargazers_file],
-    resources={"snowflake_io_manager": snowflake_io_manager},
+    resources={"snowflake_io_manager": SnowflakePandasIOManager(...)},
 )
 ```
 
@@ -224,6 +239,12 @@ defs = Definitions(
 Once you have Airbyte assets, you can define a job that runs some or all of these assets on a schedule, triggering the underlying Airbyte sync.
 
 ```python startafter=start_schedule_assets endbefore=end_schedule_assets file=/integrations/airbyte/airbyte.py dedent=4
+airbyte_instance = AirbyteResource(
+    host="localhost",
+    port="8000",
+)
+airbyte_assets = load_assets_from_airbyte_instance(airbyte_instance)
+
 from dagster import (
     ScheduleDefinition,
     define_asset_job,

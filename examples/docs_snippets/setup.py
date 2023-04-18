@@ -35,6 +35,8 @@ setup(
         "dagster-slack",
         "dagster-gcp-pandas",
         "dagster-gcp-pyspark",
+        "dagster-snowflake",
+        "dagster-snowflake-pandas",
     ],
     extras_require={
         "full": [

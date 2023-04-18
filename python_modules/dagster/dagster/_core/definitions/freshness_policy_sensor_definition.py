@@ -90,8 +90,8 @@ class FreshnessPolicySensorContext(
             ("sensor_name", PublicAttr[str]),
             ("asset_key", PublicAttr[AssetKey]),
             ("freshness_policy", PublicAttr[FreshnessPolicy]),
-            ("minutes_late", PublicAttr[Optional[float]]),
-            ("previous_minutes_late", PublicAttr[Optional[float]]),
+            ("minutes_overdue", PublicAttr[Optional[float]]),
+            ("previous_minutes_overdue", PublicAttr[Optional[float]]),
             ("instance", PublicAttr[DagsterInstance]),
             ("resources", Resources),
         ],
@@ -103,8 +103,8 @@ class FreshnessPolicySensorContext(
         sensor_name (str): the name of the sensor.
         asset_key (AssetKey): the key of the asset being monitored
         freshness_policy (FreshnessPolicy): the freshness policy of the asset being monitored
-        minutes_late (Optional[float])
-        previous_minutes_late (Optional[float]): the minutes_late value for this asset on the
+        minutes_overdue (Optional[float])
+        previous_minutes_overdue (Optional[float]): the minutes_overdue value for this asset on the
             previous sensor tick.
         instance (DagsterInstance): the current instance.
     """
@@ -114,23 +114,23 @@ class FreshnessPolicySensorContext(
         sensor_name: str,
         asset_key: AssetKey,
         freshness_policy: FreshnessPolicy,
-        minutes_late: Optional[float],
-        previous_minutes_late: Optional[float],
+        minutes_overdue: Optional[float],
+        previous_minutes_overdue: Optional[float],
         instance: DagsterInstance,
         resources: Optional[Resources] = None,
     ):
-        minutes_late = check.opt_numeric_param(minutes_late, "minutes_late")
-        previous_minutes_late = check.opt_numeric_param(
-            previous_minutes_late, "previous_minutes_late"
+        minutes_overdue = check.opt_numeric_param(minutes_overdue, "minutes_overdue")
+        previous_minutes_overdue = check.opt_numeric_param(
+            previous_minutes_overdue, "previous_minutes_overdue"
         )
         return super(FreshnessPolicySensorContext, cls).__new__(
             cls,
             sensor_name=check.str_param(sensor_name, "sensor_name"),
             asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
             freshness_policy=check.inst_param(freshness_policy, "FreshnessPolicy", FreshnessPolicy),
-            minutes_late=float(minutes_late) if minutes_late is not None else None,
-            previous_minutes_late=float(previous_minutes_late)
-            if previous_minutes_late is not None
+            minutes_overdue=float(minutes_overdue) if minutes_overdue is not None else None,
+            previous_minutes_overdue=float(previous_minutes_overdue)
+            if previous_minutes_overdue is not None
             else None,
             instance=check.inst_param(instance, "instance", DagsterInstance),
             resources=resources or ScopedResourcesBuilder.build_empty(),
@@ -142,8 +142,8 @@ def build_freshness_policy_sensor_context(
     sensor_name: str,
     asset_key: AssetKey,
     freshness_policy: FreshnessPolicy,
-    minutes_late: Optional[float],
-    previous_minutes_late: Optional[float] = None,
+    minutes_overdue: Optional[float],
+    previous_minutes_overdue: Optional[float] = None,
     instance: Optional[DagsterInstance] = None,
     resources: Optional[Resources] = None,
 ) -> FreshnessPolicySensorContext:
@@ -156,9 +156,9 @@ def build_freshness_policy_sensor_context(
         sensor_name (str): The name of the sensor the context is being constructed for.
         asset_key (AssetKey): The AssetKey for the monitored asset
         freshness_policy (FreshnessPolicy): The FreshnessPolicy for the monitored asset
-        minutes_late (Optional[float]): How late the monitored asset currently is
-        previous_minutes_late (Optional[float]): How late the monitored asset was on the previous
-            tick.
+        minutes_overdue (Optional[float]): How overdue the monitored asset currently is
+        previous_minutes_overdue (Optional[float]): How overdue the monitored asset was on the
+            previous tick.
         instance (DagsterInstance): The dagster instance configured for the context.
 
     Examples:
@@ -168,7 +168,7 @@ def build_freshness_policy_sensor_context(
                 sensor_name="freshness_policy_sensor_to_invoke",
                 asset_key=AssetKey("some_asset"),
                 freshness_policy=FreshnessPolicy(maximum_lag_minutes=30)<
-                minutes_late=10.0,
+                minutes_overdue=10.0,
             )
             freshness_policy_sensor_to_invoke(context)
     """
@@ -176,8 +176,8 @@ def build_freshness_policy_sensor_context(
         sensor_name=sensor_name,
         asset_key=asset_key,
         freshness_policy=freshness_policy,
-        minutes_late=minutes_late,
-        previous_minutes_late=previous_minutes_late,
+        minutes_overdue=minutes_overdue,
+        previous_minutes_overdue=previous_minutes_overdue,
         instance=instance or DagsterInstance.ephemeral(),
         resources=resources,
     )
@@ -264,7 +264,7 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
                 if freshness_policy is None:
                     continue
 
-                # get the current minutes_late value for this asset
+                # get the current minutes_overdue value for this asset
                 minutes_late_by_key[asset_key] = data_time_resolver.get_current_minutes_late(
                     evaluation_time=evaluation_time,
                     asset_key=asset_key,
@@ -278,8 +278,8 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
                     sensor_name=name,
                     asset_key=asset_key,
                     freshness_policy=freshness_policy,
-                    minutes_late=minutes_late_by_key[asset_key],
-                    previous_minutes_late=previous_minutes_late_by_key.get(asset_key),
+                    minutes_overdue=minutes_late_by_key[asset_key],
+                    previous_minutes_overdue=previous_minutes_late_by_key.get(asset_key),
                     instance=context.instance,
                     resources=context.resources,
                 )

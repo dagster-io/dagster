@@ -28,6 +28,11 @@ export const GlobalToasterStyle = createGlobalStyle`
       gap: 8px;
     }
 
+    .bp4-toast.bp4-intent-primary,
+    .bp4-toast.bp4-intent-primary .bp4-button {
+      background-color: ${Colors.Gray700} !important;
+    }
+
     .bp4-toast.bp4-intent-success,
     .bp4-toast.bp4-intent-success .bp4-button {
       background-color: ${Colors.Blue500} !important;

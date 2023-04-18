@@ -9,7 +9,7 @@ import {
   MultiDimensionTimeSecondPartitionHealthQuery,
   SingleDimensionStaticPartitionHealthQuery,
   SingleDimensionTimePartitionHealthQuery,
-} from '../__fixtures__/PartitionHealthSummary.mocks';
+} from '../__fixtures__/PartitionHealthSummary.fixtures';
 import {AssetKey} from '../types';
 import {PartitionDimensionSelection, usePartitionHealthData} from '../usePartitionHealthData';
 

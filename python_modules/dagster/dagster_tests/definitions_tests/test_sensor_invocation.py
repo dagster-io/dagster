@@ -8,6 +8,7 @@ from dagster import (
     AssetKey,
     AssetOut,
     AssetSelection,
+    Config,
     DagsterEventType,
     DagsterInstance,
     DagsterInvariantViolationError,
@@ -21,6 +22,7 @@ from dagster import (
     PartitionKeyRange,
     PartitionMapping,
     PartitionsDefinition,
+    RunConfig,
     RunRequest,
     SkipReason,
     StaticPartitionsDefinition,
@@ -327,8 +329,8 @@ def test_freshness_policy_sensor_invocation_resources() -> None:
 
     @freshness_policy_sensor(asset_selection=AssetSelection.all())
     def freshness_sensor(context, my_resource: MyResource) -> None:
-        assert context.minutes_late == 10
-        assert context.previous_minutes_late is None
+        assert context.minutes_overdue == 10
+        assert context.previous_minutes_overdue is None
         assert my_resource.a_str == "bar"
 
     with build_resources({"my_resource": MyResource(a_str="bar")}) as resources:
@@ -336,7 +338,7 @@ def test_freshness_policy_sensor_invocation_resources() -> None:
             sensor_name="status_sensor",
             asset_key=AssetKey("a"),
             freshness_policy=FreshnessPolicy(maximum_lag_minutes=30),
-            minutes_late=10,
+            minutes_overdue=10,
             # This is a bit gross right now, but FressnessPolicySensorContext is not a subclass of
             # SensorEvaluationContext and isn't set up to be a context manager
             # Direct invocation of freshness policy sensors should be rare anyway
@@ -692,14 +694,14 @@ def test_run_failure_w_run_request():
 def test_freshness_policy_sensor():
     @freshness_policy_sensor(asset_selection=AssetSelection.all())
     def freshness_sensor(context):
-        assert context.minutes_late == 10
-        assert context.previous_minutes_late is None
+        assert context.minutes_overdue == 10
+        assert context.previous_minutes_overdue is None
 
     context = build_freshness_policy_sensor_context(
         sensor_name="status_sensor",
         asset_key=AssetKey("a"),
         freshness_policy=FreshnessPolicy(maximum_lag_minutes=30),
-        minutes_late=10,
+        minutes_overdue=10,
     )
 
     freshness_sensor(context)
@@ -713,14 +715,14 @@ def test_freshness_policy_sensor_params_out_of_order():
         description="foo",
     )
     def freshness_sensor(context):
-        assert context.minutes_late == 10
-        assert context.previous_minutes_late is None
+        assert context.minutes_overdue == 10
+        assert context.previous_minutes_overdue is None
 
     context = build_freshness_policy_sensor_context(
         sensor_name="some_name",
         asset_key=AssetKey("a"),
         freshness_policy=FreshnessPolicy(maximum_lag_minutes=30),
-        minutes_late=10,
+        minutes_overdue=10,
     )
 
     freshness_sensor(context)
@@ -1668,3 +1670,22 @@ def test_dynamic_partitions_sensor():
         )
         run_request = test_sensor(ctx)
         assert run_request.partition_key == "apple"
+
+
+def test_sensor_invocation_runconfig() -> None:
+    class MyConfig(Config):
+        a_str: str
+        an_int: int
+
+    # Test no arg invocation
+    @sensor(job_name="foo_pipeline")
+    def basic_sensor():
+        return RunRequest(
+            run_key=None,
+            run_config=RunConfig(ops={"foo": MyConfig(a_str="foo", an_int=55)}),
+            tags={},
+        )
+
+    assert cast(RunRequest, basic_sensor()).run_config.get("ops", {}) == {
+        "foo": {"config": {"a_str": "foo", "an_int": 55}}
+    }

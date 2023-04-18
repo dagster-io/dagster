@@ -19,6 +19,7 @@ export type OverviewJobsQuery = {
       }
     | {
         __typename: 'Workspace';
+        id: string;
         locationEntries: Array<{
           __typename: 'WorkspaceLocationEntry';
           id: string;

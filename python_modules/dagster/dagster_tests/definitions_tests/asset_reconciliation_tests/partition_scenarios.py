@@ -1,6 +1,7 @@
 from dagster import (
     AssetKey,
     DailyPartitionsDefinition,
+    MultiPartitionsDefinition,
     PartitionKeyRange,
     StaticPartitionsDefinition,
 )
@@ -25,6 +26,12 @@ daily_partitions_def = DailyPartitionsDefinition("2013-01-05")
 hourly_partitions_def = HourlyPartitionsDefinition("2013-01-05-00:00")
 one_partition_partitions_def = StaticPartitionsDefinition(["a"])
 two_partitions_partitions_def = StaticPartitionsDefinition(["a", "b"])
+time_multipartitions_def = MultiPartitionsDefinition(
+    {"time": daily_partitions_def, "static": two_partitions_partitions_def}
+)
+static_multipartitions_def = MultiPartitionsDefinition(
+    {"static_1": one_partition_partitions_def, "static_2": two_partitions_partitions_def}
+)
 
 one_asset_one_partition = [asset_def("asset1", partitions_def=one_partition_partitions_def)]
 one_asset_two_partitions = [asset_def("asset1", partitions_def=two_partitions_partitions_def)]
@@ -61,6 +68,11 @@ two_dynamic_assets = [
     asset_def("asset1", partitions_def=DynamicPartitionsDefinition(name="foo")),
     asset_def("asset2", ["asset1"], partitions_def=DynamicPartitionsDefinition(name="foo")),
 ]
+
+
+time_multipartitioned_asset = [asset_def("asset1", partitions_def=time_multipartitions_def)]
+
+static_multipartitioned_asset = [asset_def("asset1", partitions_def=static_multipartitions_def)]
 
 
 partitioned_after_non_partitioned = [
@@ -268,5 +280,26 @@ partition_scenarios = {
         assets=two_assets_in_sequence_one_partition,
         unevaluated_runs=[run(["asset1"], failed_asset_keys=["asset2"], partition_key="a")],
         expected_run_requests=[],
+    ),
+    "time_dimension_multipartitioned": AssetReconciliationScenario(
+        assets=time_multipartitioned_asset,
+        unevaluated_runs=[],
+        current_time=create_pendulum_time(year=2020, month=1, day=2, hour=1),
+        expected_run_requests=[
+            run_request(asset_keys=["asset1"], partition_key=partition_key)
+            for partition_key in time_multipartitions_def.get_multipartition_keys_with_dimension_value(
+                "time",
+                "2020-01-01",
+                current_time=create_pendulum_time(year=2020, month=1, day=2, hour=1),
+            )
+        ],
+    ),
+    "static_multipartitioned": AssetReconciliationScenario(
+        assets=static_multipartitioned_asset,
+        unevaluated_runs=[],
+        expected_run_requests=[
+            run_request(asset_keys=["asset1"], partition_key=partition_key)
+            for partition_key in static_multipartitions_def.get_partition_keys()
+        ],
     ),
 }

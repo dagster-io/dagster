@@ -458,6 +458,7 @@ const BACKFILL_SELECTOR_QUERY = gql`
       }
     }
     instance {
+      id
       ...UsingDefaultLauncherAlertInstanceFragment
       ...DaemonNotRunningAlertInstanceFragment
     }

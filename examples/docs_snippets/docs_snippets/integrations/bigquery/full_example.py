@@ -1,5 +1,5 @@
 import pandas as pd
-from dagster_gcp_pandas import bigquery_pandas_io_manager
+from dagster_gcp_pandas import BigQueryPandasIOManager
 
 from dagster import Definitions, SourceAsset, asset
 
@@ -11,11 +11,11 @@ def iris_data() -> pd.DataFrame:
     return pd.read_csv(
         "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data",
         names=[
-            "Sepal length (cm)",
-            "Sepal width (cm)",
-            "Petal length (cm)",
-            "Petal width (cm)",
-            "Species",
+            "sepal_length_cm",
+            "sepal_width_cm",
+            "petal_length_cm",
+            "petal_width_cm",
+            "species",
         ],
     )
 
@@ -28,12 +28,11 @@ def iris_cleaned(iris_data: pd.DataFrame):
 defs = Definitions(
     assets=[iris_data, iris_harvest_data, iris_cleaned],
     resources={
-        "io_manager": bigquery_pandas_io_manager.configured(
-            {
-                "project": "my-gcp-project",
-                "location": "us-east5",
-                "dataset": "IRIS",
-            }
+        "io_manager": BigQueryPandasIOManager(
+            project="my-gcp-project",
+            location="us-east5",
+            dataset="IRIS",
+            timeout=15.0,
         )
     },
 )

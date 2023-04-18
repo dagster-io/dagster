@@ -8,9 +8,11 @@ import tempfile
 from abc import ABC, abstractmethod
 from typing import Any, Callable, List, Mapping, Optional, cast
 
+import mock
 import pytest
 from dagster import (
     BindResourcesToJobs,
+    DagsterInstance,
     IOManager,
     JobDefinition,
     ScheduleDefinition,
@@ -2406,3 +2408,160 @@ def test_from_resource_context_and_to_config_empty() -> None:
         return NoConfigResource.from_resource_context(context).get_string()
 
     assert string_resource_function_style(build_init_resource_context()) == "foo"
+
+
+def test_context_on_resource_basic() -> None:
+    executed = {}
+
+    class ContextUsingResource(ConfigurableResource):
+        def access_context(self) -> None:
+            self.get_resource_context()
+
+    with pytest.raises(
+        CheckError, match="Attempted to get context before resource was initialized."
+    ):
+        ContextUsingResource().access_context()
+
+    # Can access context after binding one
+    ContextUsingResource().with_resource_context(build_init_resource_context()).access_context()
+
+    @asset
+    def my_test_asset(context_using: ContextUsingResource) -> None:
+        context_using.access_context()
+        executed["yes"] = True
+
+    defs = Definitions(
+        assets=[my_test_asset],
+        resources={"context_using": ContextUsingResource()},
+    )
+
+    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert executed["yes"]
+
+
+def test_context_on_resource_use_instance() -> None:
+    executed = {}
+
+    class OutputDirResource(ConfigurableResource):
+        output_dir: Optional[str] = None
+
+        def get_effective_output_dir(self) -> str:
+            if self.output_dir:
+                return self.output_dir
+
+            context = self.get_resource_context()
+            assert context.instance
+            return context.instance.storage_directory()
+
+    with pytest.raises(
+        CheckError, match="Attempted to get context before resource was initialized."
+    ):
+        OutputDirResource(output_dir=None).get_effective_output_dir()
+
+    with mock.patch(
+        "dagster._core.instance.DagsterInstance.storage_directory"
+    ) as storage_directory:
+        storage_directory.return_value = "/tmp"
+
+        with DagsterInstance.ephemeral() as instance:
+            assert (
+                OutputDirResource(output_dir=None)
+                .with_resource_context(build_init_resource_context(instance=instance))
+                .get_effective_output_dir()
+                == "/tmp"
+            )
+
+        @asset
+        def my_other_output_asset(output_dir: OutputDirResource) -> None:
+            assert output_dir.get_effective_output_dir() == "/tmp"
+            executed["yes"] = True
+
+        defs = Definitions(
+            assets=[my_other_output_asset],
+            resources={"output_dir": OutputDirResource()},
+        )
+
+        assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+        assert executed["yes"]
+
+
+def test_context_on_resource_runtime_config() -> None:
+    executed = {}
+
+    class OutputDirResource(ConfigurableResource):
+        output_dir: Optional[str] = None
+
+        def get_effective_output_dir(self) -> str:
+            if self.output_dir:
+                return self.output_dir
+
+            context = self.get_resource_context()
+            assert context.instance
+            return context.instance.storage_directory()
+
+    with mock.patch(
+        "dagster._core.instance.DagsterInstance.storage_directory"
+    ) as storage_directory:
+        storage_directory.return_value = "/tmp"
+
+        @asset
+        def my_other_output_asset(output_dir: OutputDirResource) -> None:
+            assert output_dir.get_effective_output_dir() == "/tmp"
+            executed["yes"] = True
+
+        defs = Definitions(
+            assets=[my_other_output_asset],
+            resources={"output_dir": OutputDirResource.configure_at_launch()},
+        )
+
+        assert (
+            defs.get_implicit_global_asset_job_def()
+            .execute_in_process(
+                run_config={"resources": {"output_dir": {"config": {"output_dir": None}}}}
+            )
+            .success
+        )
+        assert executed["yes"]
+
+
+def test_context_on_resource_nested() -> None:
+    executed = {}
+
+    class OutputDirResource(ConfigurableResource):
+        output_dir: Optional[str] = None
+
+        def get_effective_output_dir(self) -> str:
+            if self.output_dir:
+                return self.output_dir
+
+            context = self.get_resource_context()
+            assert context.instance
+            return context.instance.storage_directory()
+
+    class OutputDirWrapperResource(ConfigurableResource):
+        output_dir: OutputDirResource
+
+    with pytest.raises(
+        CheckError, match="Attempted to get context before resource was initialized."
+    ):
+        OutputDirWrapperResource(
+            output_dir=OutputDirResource(output_dir=None)
+        ).output_dir.get_effective_output_dir()
+
+    with mock.patch(
+        "dagster._core.instance.DagsterInstance.storage_directory"
+    ) as storage_directory:
+        storage_directory.return_value = "/tmp"
+
+        @asset
+        def my_other_output_asset(wrapper: OutputDirWrapperResource) -> None:
+            assert wrapper.output_dir.get_effective_output_dir() == "/tmp"
+            executed["yes"] = True
+
+        defs = Definitions(
+            assets=[my_other_output_asset],
+            resources={"wrapper": OutputDirWrapperResource(output_dir=OutputDirResource())},
+        )
+
+        assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+        assert executed["yes"]
