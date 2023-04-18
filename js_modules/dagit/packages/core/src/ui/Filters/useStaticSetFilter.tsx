@@ -21,6 +21,7 @@ type Args<TValue> = {
   onStateChanged?: (state: Set<TValue>) => void;
   allowMultipleSelections?: boolean;
   matchType?: 'any-of' | 'all-of';
+  menuWidth?: number | string;
 };
 
 export type StaticSetFilter<TValue> = FilterObject & {
@@ -38,10 +39,11 @@ export function useStaticSetFilter<TValue>({
   initialState,
   getStringValue,
   onStateChanged,
+  menuWidth,
   allowMultipleSelections = true,
   matchType = 'any-of',
 }: Args<TValue>): StaticSetFilter<TValue> {
-  const [state, setState] = React.useState(new Set(initialState || []));
+  const [state, setState] = React.useState(() => new Set(initialState || []));
 
   React.useEffect(() => {
     onStateChanged?.(state);
@@ -73,6 +75,7 @@ export function useStaticSetFilter<TValue>({
             value,
           }));
         }
+
         return allValues
           .filter(({match}) =>
             match.some((value) => value.toLowerCase().includes(query.toLowerCase())),
@@ -118,9 +121,20 @@ export function useStaticSetFilter<TValue>({
         />
       ),
       setState,
+      menuWidth,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [name, icon, state, getStringValue, renderLabel, allValues, matchType, renderActiveStateLabel],
+    [
+      name,
+      icon,
+      state,
+      getStringValue,
+      renderLabel,
+      allValues,
+      matchType,
+      renderActiveStateLabel,
+      menuWidth,
+    ],
   );
   const filterObjRef = useUpdatingRef(filterObj);
   return filterObj;

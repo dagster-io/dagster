@@ -23,7 +23,6 @@ import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
-import {RepoFilterButton} from '../instance/RepoFilterButton';
 import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
 import {UnloadableSensors} from '../instigation/Unloadable';
 import {filterPermissionedInstigationState} from '../instigation/filterPermissionedInstigationState';
@@ -31,6 +30,9 @@ import {SensorBulkActionMenu} from '../sensors/SensorBulkActionMenu';
 import {SensorInfo} from '../sensors/SensorInfo';
 import {makeSensorKey} from '../sensors/makeSensorKey';
 import {CheckAllBox} from '../ui/CheckAllBox';
+import {useFilters} from '../ui/Filters';
+import {useCodeLocationFilter} from '../ui/Filters/useCodeLocationFilter';
+import {useInstigationStatusFilter} from '../ui/Filters/useInstigationStatusFilter';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
@@ -60,6 +62,15 @@ export const OverviewSensorsRoot = () => {
     defaults: {search: ''},
   });
 
+  const codeLocationFilter = useCodeLocationFilter();
+  const runningStateFilter = useInstigationStatusFilter();
+
+  const filters = React.useMemo(() => [codeLocationFilter, runningStateFilter], [
+    codeLocationFilter,
+    runningStateFilter,
+  ]);
+  const {button: filterButton, activeFiltersJsx} = useFilters({filters});
+
   const queryResultOverview = useQuery<OverviewSensorsQuery, OverviewSensorsQueryVariables>(
     OVERVIEW_SENSORS_QUERY,
     {
@@ -78,18 +89,30 @@ export const OverviewSensorsRoot = () => {
     );
   }, [data, visibleRepos]);
 
+  const {state: runningState} = runningStateFilter;
+  const filteredBuckets = React.useMemo(() => {
+    return repoBuckets.map(({sensors, ...rest}) => {
+      return {
+        ...rest,
+        sensors: runningState.size
+          ? sensors.filter(({sensorState}) => runningState.has(sensorState.status))
+          : sensors,
+      };
+    });
+  }, [repoBuckets, runningState]);
+
   const sanitizedSearch = searchValue.trim().toLocaleLowerCase();
   const anySearch = sanitizedSearch.length > 0;
 
   const filteredBySearch = React.useMemo(() => {
     const searchToLower = sanitizedSearch.toLocaleLowerCase();
-    return repoBuckets
+    return filteredBuckets
       .map(({repoAddress, sensors}) => ({
         repoAddress,
         sensors: sensors.filter(({name}) => name.toLocaleLowerCase().includes(searchToLower)),
       }))
       .filter(({sensors}) => sensors.length > 0);
-  }, [repoBuckets, sanitizedSearch]);
+  }, [filteredBuckets, sanitizedSearch]);
 
   const anySensorsVisible = React.useMemo(
     () => filteredBySearch.some(({sensors}) => sensors.length > 0),
@@ -239,7 +262,7 @@ export const OverviewSensorsRoot = () => {
         }}
       >
         <Box flex={{direction: 'row', gap: 12}}>
-          {repoCount > 0 ? <RepoFilterButton /> : null}
+          {filterButton}
           <TextInput
             icon="search"
             value={searchValue}
@@ -257,6 +280,15 @@ export const OverviewSensorsRoot = () => {
           <SensorBulkActionMenu sensors={checkedSensors} onDone={() => refreshState.refetch()} />
         </Tooltip>
       </Box>
+      {activeFiltersJsx.length ? (
+        <Box
+          padding={{vertical: 8, horizontal: 24}}
+          border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+          flex={{direction: 'row', gap: 8}}
+        >
+          {activeFiltersJsx}
+        </Box>
+      ) : null}
       {loading && !repoCount ? (
         <Box padding={64}>
           <Spinner purpose="page" />
