@@ -8,7 +8,6 @@ import {
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {CapturedOrExternalLogPanel} from '../CapturedLogPanel';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {filterByQuery} from '../app/GraphQueryImpl';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
@@ -21,6 +20,7 @@ import {useFavicon} from '../hooks/useFavicon';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useSupportsCapturedLogs} from '../instance/useSupportsCapturedLogs';
 
+import {CapturedOrExternalLogPanel} from './CapturedLogPanel';
 import {ComputeLogPanel} from './ComputeLogPanel';
 import {LogFilter, LogsProvider, LogsProviderLogs} from './LogsProvider';
 import {LogsScrollingTable} from './LogsScrollingTable';

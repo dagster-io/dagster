@@ -8,6 +8,7 @@ export type InstanceHealthQuery = {
   __typename: 'DagitQuery';
   instance: {
     __typename: 'Instance';
+    id: string;
     hasInfo: boolean;
     daemonHealth: {
       __typename: 'DaemonHealth';

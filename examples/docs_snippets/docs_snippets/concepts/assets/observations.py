@@ -35,12 +35,16 @@ def observation_op(context):
 # end_observation_asset_marker_0
 
 # start_partitioned_asset_observation
-from dagster import AssetMaterialization, op
+from dagster import AssetMaterialization, Config, op
 
 
-@op(config_schema={"date": str})
-def partitioned_dataset_op(context):
-    partition_date = context.op_config["date"]
+class MyOpConfig(Config):
+    date: str
+
+
+@op
+def partitioned_dataset_op(context, config: MyOpConfig):
+    partition_date = config.date
     df = read_df_for_date(partition_date)
     context.log_event(
         AssetObservation(asset_key="my_partitioned_dataset", partition=partition_date)
@@ -52,7 +56,7 @@ def partitioned_dataset_op(context):
 
 
 # start_observation_asset_marker_2
-from dagster import AssetObservation, MetadataValue, op
+from dagster import AssetMaterialization, AssetObservation, MetadataValue, op
 
 
 @op

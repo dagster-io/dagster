@@ -19,6 +19,9 @@ export const START_SCHEDULE_MUTATION = gql`
           runningCount
         }
       }
+      ... on UnauthorizedError {
+        message
+      }
       ...PythonErrorFragment
     }
   }
@@ -40,6 +43,9 @@ export const STOP_SCHEDULE_MUTATION = gql`
           status
           runningCount
         }
+      }
+      ... on UnauthorizedError {
+        message
       }
       ...PythonErrorFragment
     }

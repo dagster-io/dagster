@@ -20,7 +20,19 @@ query GetAutoMaterializePausedQuery {
 
 
 class TestDaemonHealth(ExecutingGraphQLContextTestMatrix):
-    def test_get_individual_daemons(self, graphql_context):
+    def test_paused(self, graphql_context):
+        results = execute_dagster_graphql(graphql_context, QUERY)
+        assert results.data == {
+            "instance": {
+                "autoMaterializePaused": True,
+            }
+        }
+
+        results = execute_dagster_graphql(graphql_context, MUTATION, variables={"paused": False})
+        assert results.data == {
+            "setAutoMaterializePaused": False,
+        }
+
         results = execute_dagster_graphql(graphql_context, QUERY)
         assert results.data == {
             "instance": {

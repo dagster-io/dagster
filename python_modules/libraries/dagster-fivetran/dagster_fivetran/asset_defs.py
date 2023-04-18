@@ -2,7 +2,19 @@ import hashlib
 import inspect
 import re
 from functools import partial
-from typing import Any, Callable, Dict, List, Mapping, NamedTuple, Optional, Sequence, Set, cast
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Set,
+    Union,
+    cast,
+)
 
 from dagster import (
     AssetKey,
@@ -301,7 +313,7 @@ def _build_fivetran_assets_from_metadata(
 class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
     def __init__(
         self,
-        fivetran_resource_def: ResourceDefinition,
+        fivetran_resource_def: Union[FivetranResource, ResourceDefinition],
         key_prefix: Sequence[str],
         connector_to_group_fn: Optional[Callable[[str], Optional[str]]],
         connector_filter: Optional[Callable[[FivetranConnectionMetadata], bool]],
@@ -309,8 +321,10 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
         connector_to_asset_key_fn: Optional[Callable[[FivetranConnectionMetadata, str], AssetKey]],
     ):
         self._fivetran_resource_def = fivetran_resource_def
-        self._fivetran_instance: FivetranResource = fivetran_resource_def(
-            build_init_resource_context()
+        self._fivetran_instance: FivetranResource = (
+            fivetran_resource_def
+            if isinstance(fivetran_resource_def, FivetranResource)
+            else fivetran_resource_def(build_init_resource_context())
         )
 
         self._key_prefix = key_prefix
@@ -384,7 +398,9 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
         self, data: Sequence[AssetsDefinitionCacheableData]
     ) -> Sequence[AssetsDefinition]:
         return [
-            _build_fivetran_assets_from_metadata(meta, {"fivetran": self._fivetran_resource_def})
+            _build_fivetran_assets_from_metadata(
+                meta, {"fivetran": self._fivetran_instance.get_resource_definition()}
+            )
             for meta in data
         ]
 
@@ -396,7 +412,7 @@ def _clean_name(name: str) -> str:
 
 @experimental
 def load_assets_from_fivetran_instance(
-    fivetran: ResourceDefinition,
+    fivetran: Union[FivetranResource, ResourceDefinition],
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     connector_to_group_fn: Optional[Callable[[str], Optional[str]]] = _clean_name,
     io_manager_key: Optional[str] = None,

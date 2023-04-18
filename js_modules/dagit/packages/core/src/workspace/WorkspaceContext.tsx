@@ -55,6 +55,7 @@ const ROOT_WORKSPACE_QUERY = gql`
   query RootWorkspaceQuery {
     workspaceOrError {
       ... on Workspace {
+        id
         locationEntries {
           id
           ...WorkspaceLocationNode

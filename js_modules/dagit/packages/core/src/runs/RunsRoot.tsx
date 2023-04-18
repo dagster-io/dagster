@@ -275,6 +275,7 @@ const QueueDaemonAlert = () => {
 const QUEUE_DAEMON_STATUS_QUERY = gql`
   query QueueDaemonStatusQuery {
     instance {
+      id
       daemonHealth {
         id
         daemonStatus(daemonType: "QUEUED_RUN_COORDINATOR") {

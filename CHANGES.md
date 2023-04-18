@@ -10,7 +10,6 @@
 - [ui] Performance improvement for Runs page for runs that materialize large numbers of assets.
 - [ui] Performance improvements for Run timeline and left navigation for users with large numbers of jobs or assets.
 - [ui] In the run timeline, consolidate “Ad hoc materializations” rows into a single row.
-- [dagster-dbt] Python 3.10 is now supported.
 - [dagster-aws] The `EcsRunLauncher` now allows you to customize volumes and mount points for the launched ECS task. See [the API docs](https://docs.dagster.io/_apidocs/libraries/dagster-aws#dagster_aws.ecs.EcsRunLauncher) for more information.
 - [dagster-duckdb, dagster-duckdb-pandas, dagster-duckdb-pyspark] New `DuckDBPandasIOManager` and `DuckDBPySparkIOManager` follow Pythonic resource system. The existing `duckdb_pandas_io_manager` and `duckdb_pyspark_io_manager` remain supported.
 - [dagster-gcp, dagster-gcp-pandas, dagster-gcp-pyspark] New `BigQueryPandasIOManager` and `BigQueryPySparkIOManager` follow Pythonic resource system. The existing `bigquery_pandas_io_manager` and `bigquery_pyspark_io_manager` remain supported.

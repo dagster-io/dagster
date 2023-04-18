@@ -13,7 +13,7 @@
   vetted: false
   steps:
     - materialize `versioned_number`
-    - go to `a_number` in the asset catalog
+    - go to it in the asset catalog
     - expand "System tags"
 
 - id: simple-asset-with-code-version-in-asset-graph.png
@@ -22,7 +22,7 @@
   vetted: false
   steps:
     - materialize `versioned_number`
-    - change the `code_version` of `vanilla_asset_with_code_version`
+    - edit its `code_version` in vanilla_asset_with_code_version.py
     - reload code location
     - select asset and expand "Materialization system tags" in sidebar
     - hover over stale tag in sidebar

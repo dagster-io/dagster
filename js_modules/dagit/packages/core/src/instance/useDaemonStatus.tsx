@@ -96,6 +96,7 @@ export const useDaemonStatus = (skip = false): StatusAndMessage | null => {
 const INSTANCE_WARNING_QUERY = gql`
   query InstanceWarningQuery {
     instance {
+      id
       ...InstanceHealthFragment
     }
     partitionBackfillsOrError(status: REQUESTED) {

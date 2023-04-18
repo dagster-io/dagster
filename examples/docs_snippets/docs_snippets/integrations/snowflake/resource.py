@@ -10,8 +10,8 @@ from dagster import Definitions, asset
 def small_petals(context):
     return context.resources.snowflake.execute_query(
         (
-            'SELECT * FROM IRIS_DATASET WHERE "Petal length (cm)" < 1 AND "Petal width'
-            ' (cm)" < 1'
+            'SELECT * FROM IRIS_DATASET WHERE "petal_length_cm)" < 1 AND'
+            ' "petal_width_cm" < 1'
         ),
         fetch_results=True,
         use_pandas_result=True,

@@ -103,6 +103,7 @@ const SENSOR_ROOT_QUERY = gql`
       ...PythonErrorFragment
     }
     instance {
+      id
       daemonHealth {
         id
         daemonStatus(daemonType: "SENSOR") {

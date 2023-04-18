@@ -160,6 +160,7 @@ export type BackfillSelectorQuery = {
     | {__typename: 'PythonError'};
   instance: {
     __typename: 'Instance';
+    id: string;
     runQueuingSupported: boolean;
     runLauncher: {__typename: 'RunLauncher'; name: string} | null;
     daemonHealth: {

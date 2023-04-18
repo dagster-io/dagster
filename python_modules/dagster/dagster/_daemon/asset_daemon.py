@@ -21,7 +21,7 @@ def get_auto_materialize_paused(instance: DagsterInstance) -> bool:
         instance.daemon_cursor_storage.get_cursor_values({ASSET_DAEMON_PAUSED_KEY}).get(
             ASSET_DAEMON_PAUSED_KEY
         )
-        == "true"
+        != "false"
     )
 
 
@@ -45,11 +45,7 @@ class AssetDaemon(IntervalDaemon):
     ) -> DaemonIterator:
         instance = workspace_process_context.instance
 
-        persisted_info = instance.daemon_cursor_storage.get_cursor_values(
-            {CURSOR_KEY, ASSET_DAEMON_PAUSED_KEY}
-        )
-
-        if persisted_info.get(ASSET_DAEMON_PAUSED_KEY) == "true":
+        if get_auto_materialize_paused(instance):
             yield
             return
 
@@ -65,6 +61,9 @@ class AssetDaemon(IntervalDaemon):
             yield
             return
 
+        persisted_info = instance.daemon_cursor_storage.get_cursor_values(
+            {CURSOR_KEY, ASSET_DAEMON_PAUSED_KEY}
+        )
         raw_cursor = persisted_info.get(CURSOR_KEY)
         cursor = (
             AssetReconciliationCursor.from_serialized(raw_cursor, asset_graph)
@@ -110,6 +109,7 @@ class AssetDaemon(IntervalDaemon):
             tags = {
                 **run_request.tags,
                 CREATED_BY_TAG: "auto_materialize",
+                **instance.auto_materialize_run_tags,
             }
 
             external_execution_plan = code_location.get_external_execution_plan(

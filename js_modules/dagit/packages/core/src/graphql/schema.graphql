@@ -1341,6 +1341,7 @@ type ReloadWorkspaceMutation {
 union ReloadWorkspaceMutationResult = Workspace | UnauthorizedError | PythonError
 
 type Workspace {
+  id: String!
   locationEntries: [WorkspaceLocationEntry!]!
 }
 
@@ -2116,6 +2117,7 @@ type DaemonStatus {
 }
 
 type Instance {
+  id: String!
   info: String
   runLauncher: RunLauncher
   runQueuingSupported: Boolean!

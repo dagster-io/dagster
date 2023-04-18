@@ -19,6 +19,8 @@ from dagster import (
     op,
 )
 from dagster._check import CheckError
+from dagster._core.definitions.decorators.asset_decorator import asset
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.metadata import (
     DagsterInvalidMetadata,
     TableMetadataValue,
@@ -32,6 +34,7 @@ from dagster._core.definitions.metadata.table import (
     TableSchema,
 )
 from dagster._core.execution.execution_result import ExecutionResult
+from dagster._core.snap.node import build_node_defs_snapshot
 from dagster._serdes.serdes import deserialize_value, serialize_value
 
 
@@ -367,3 +370,15 @@ def test_bool_metadata_value():
     entry_map = {k: v.__class__ for k, v in materialization.metadata.items()}
     assert entry_map["first_bool"] == BoolMetadataValue
     assert entry_map["second_bool"] == BoolMetadataValue
+
+
+def test_snapshot_arbitrary_metadata():
+    # Asset decorator accepts arbitrary metadata. Need to ensure this doesn't throw an error when a
+    # snap is created.
+    @asset(metadata={"my_key": [object()]})
+    def foo_asset():
+        pass
+
+    assert build_node_defs_snapshot(
+        Definitions(assets=[foo_asset]).get_implicit_global_asset_job_def()
+    )

@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, Colors, NonIdealState, Spinner, TextInput} from '@dagster-io/ui';
+import {Box, Colors, NonIdealState, Spinner, TextInput, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
@@ -7,6 +7,12 @@ import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {useSelectionReducer} from '../hooks/useSelectionReducer';
+import {BASIC_INSTIGATION_STATE_FRAGMENT} from '../overview/BasicInstigationStateFragment';
+import {ScheduleBulkActionMenu} from '../schedules/ScheduleBulkActionMenu';
+import {SchedulesCheckAll} from '../schedules/SchedulesCheckAll';
+import {filterPermissionedSchedules} from '../schedules/filterPermissionedSchedules';
+import {makeScheduleKey} from '../schedules/makeScheduleKey';
 
 import {VirtualizedScheduleTable} from './VirtualizedScheduleTable';
 import {WorkspaceHeader} from './WorkspaceHeader';
@@ -56,6 +62,31 @@ export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}
     return schedules.filter(({name}) => name.toLocaleLowerCase().includes(searchToLower));
   }, [schedules, sanitizedSearch]);
 
+  const permissionedSchedules = React.useMemo(() => {
+    return filteredBySearch.filter(filterPermissionedSchedules);
+  }, [filteredBySearch]);
+
+  const permissionedKeys = React.useMemo(() => {
+    return permissionedSchedules.map(({name}) => makeScheduleKey(repoAddress, name));
+  }, [permissionedSchedules, repoAddress]);
+
+  const [{checkedIds: checkedKeys}, {onToggleFactory, onToggleAll}] = useSelectionReducer(
+    permissionedKeys,
+  );
+
+  const checkedSchedules = React.useMemo(() => {
+    return permissionedSchedules
+      .filter(({name}) => checkedKeys.has(makeScheduleKey(repoAddress, name)))
+      .map(({name, scheduleState}) => {
+        return {repoAddress, scheduleName: name, scheduleState};
+      });
+  }, [permissionedSchedules, checkedKeys, repoAddress]);
+
+  const permissionedCount = permissionedKeys.length;
+  const checkedCount = checkedKeys.size;
+
+  const viewerHasAnyInstigationPermission = permissionedKeys.length > 0;
+
   const content = () => {
     if (loading && !data) {
       return (
@@ -96,7 +127,23 @@ export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}
       );
     }
 
-    return <VirtualizedScheduleTable repoAddress={repoAddress} schedules={filteredBySearch} />;
+    return (
+      <VirtualizedScheduleTable
+        repoAddress={repoAddress}
+        schedules={filteredBySearch}
+        headerCheckbox={
+          viewerHasAnyInstigationPermission ? (
+            <SchedulesCheckAll
+              checkedCount={checkedCount}
+              totalCount={permissionedCount}
+              onToggleAll={onToggleAll}
+            />
+          ) : undefined
+        }
+        checkedKeys={checkedKeys}
+        onToggleCheckFactory={onToggleFactory}
+      />
+    );
   };
 
   return (
@@ -107,14 +154,32 @@ export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}
         refreshState={refreshState}
         queryData={queryResultOverview}
       />
-      <Box padding={{horizontal: 24, vertical: 16}}>
+      <Box padding={{horizontal: 24, vertical: 16}} flex={{justifyContent: 'space-between'}}>
         <TextInput
           icon="search"
           value={searchValue}
-          onChange={(e) => setSearchValue(e.target.value)}
+          onChange={(e) => {
+            setSearchValue(e.target.value);
+            onToggleAll(false);
+          }}
           placeholder="Filter by schedule name…"
           style={{width: '340px'}}
         />
+        <Tooltip
+          content={
+            viewerHasAnyInstigationPermission
+              ? ''
+              : 'You do not have permission to start or stop these schedules'
+          }
+          canShow={!viewerHasAnyInstigationPermission}
+          placement="top-end"
+          useDisabledButtonTooltipFix
+        >
+          <ScheduleBulkActionMenu
+            schedules={checkedSchedules}
+            onDone={() => refreshState.refetch()}
+          />
+        </Tooltip>
       </Box>
       {loading && !data ? (
         <Box padding={64}>
@@ -137,11 +202,16 @@ const WORKSPACE_SCHEDULES_QUERY = gql`
           id
           name
           description
+          scheduleState {
+            id
+            ...BasicInstigationStateFragment
+          }
         }
       }
       ...PythonErrorFragment
     }
   }
 
+  ${BASIC_INSTIGATION_STATE_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
 `;

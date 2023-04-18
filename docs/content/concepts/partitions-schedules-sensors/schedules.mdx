@@ -234,6 +234,58 @@ It's also possible to specify an execution time that exists twice on one day eve
 
 Hourly schedules will be unaffected by daylight savings time transitions - the schedule will continue to run exactly once every hour, even as the timezone changes. In the example above where the hour from 1:00 AM to 2:00 AM repeats, an hourly schedule running at 30 minutes past the hour would run at 12:30 AM, both instances of 1:30 AM, and then proceed normally from 2:30 AM on.
 
+### Using resources in schedules
+
+Dagster's [resources](/concepts/resources) system can be used with schedules to make it easier to interact with external systems or to make components of a schedule easier to plug in for testing purposes.
+
+To specify resource dependencies, annotate the resource as a parameter to the schedule's function. Resources are provided by attaching them to your <PyObject object="Definitions" /> call.
+
+Here, a resource is provided which helps a schedule generate a date string:
+
+```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_on_schedule endbefore=end_new_resource_on_schedule dedent=4
+from dagster import (
+    schedule,
+    ScheduleEvaluationContext,
+    ConfigurableResource,
+    job,
+    RunRequest,
+    RunConfig,
+    Definitions,
+)
+from datetime import datetime
+from typing import List
+
+class DateFormatter(ConfigurableResource):
+    format: str
+
+    def strftime(self, dt: datetime) -> str:
+        return dt.strftime(self.format)
+
+@job
+def process_data():
+    ...
+
+@schedule(job=process_data, cron_schedule="* * * * *")
+def process_data_schedule(
+    context: ScheduleEvaluationContext,
+    date_formatter: DateFormatter,
+):
+    formatted_date = date_formatter.strftime(context.scheduled_execution_time)
+
+    return RunRequest(
+        run_key=None,
+        tags={"date": formatted_date},
+    )
+
+defs = Definitions(
+    jobs=[process_data],
+    schedules=[process_data_schedule],
+    resources={"date_formatter": DateFormatter(format="%Y-%m-%d")},
+)
+```
+
+For more information on resources, refer to the [Resources documentation](/concepts/resources). To see how to test schedules with resources, refer to the section on [Testing schedules with resources](#testing-schedules-with-resources).
+
 ---
 
 ## Running the scheduler
@@ -335,6 +387,28 @@ def test_configurable_job_schedule():
 ```
 
 If your `@schedule`-decorated function doesn't have a context parameter, you don't need to provide one when invoking it.
+
+#### Testing schedules with resources
+
+For schedules which utilize [resources](/concepts/resources), you can provide the necessary resources when invoking the schedule function.
+
+Below is a test for the `process_data_schedule` that we defined in the [Using resources in schedules](#using-resources-in-schedules) section, which uses the `date_formatter` resource.
+
+```python file=/concepts/resources/pythonic_resources.py startafter=start_test_resource_on_schedule endbefore=end_test_resource_on_schedule dedent=4
+from dagster import build_schedule_context, validate_run_config
+
+def test_process_data_schedule():
+    context = build_schedule_context(
+        scheduled_execution_time=datetime.datetime(2020, 1, 1)
+    )
+    run_request = process_data_schedule(
+        context, date_formatter=DateFormatter(format="%Y-%m-%d")
+    )
+    assert (
+        run_request.run_config["ops"]["fetch_data"]["config"]["date"]
+        == "2020-01-01"
+    )
+```
 
 </TabItem>
 </TabGroup>

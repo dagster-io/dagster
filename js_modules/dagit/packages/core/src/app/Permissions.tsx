@@ -24,6 +24,7 @@ export const EXPECTED_PERMISSIONS = {
   launch_partition_backfill: true,
   cancel_partition_backfill: true,
   edit_dynamic_partitions: true,
+  toggle_auto_materialize: true,
 };
 
 export type PermissionResult = {
@@ -45,6 +46,7 @@ export type PermissionsFromJSON = {
   wipe_assets?: PermissionResult;
   launch_partition_backfill?: PermissionResult;
   cancel_partition_backfill?: PermissionResult;
+  toggle_auto_materialize?: PermissionResult;
 };
 
 export const DEFAULT_DISABLED_REASON = 'Disabled by your administrator';
@@ -92,6 +94,7 @@ export const extractPermissions = (
     canWipeAssets: permissionOrFallback('wipe_assets'),
     canLaunchPartitionBackfill: permissionOrFallback('launch_partition_backfill'),
     canCancelPartitionBackfill: permissionOrFallback('cancel_partition_backfill'),
+    canToggleAutoMaterialize: permissionOrFallback('toggle_auto_materialize'),
   };
 };
 
@@ -227,6 +230,7 @@ export const PERMISSIONS_QUERY = gql`
     }
     workspaceOrError {
       ... on Workspace {
+        id
         locationEntries {
           id
           name

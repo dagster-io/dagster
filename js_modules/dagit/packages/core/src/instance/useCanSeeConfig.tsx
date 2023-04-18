@@ -15,6 +15,7 @@ export const useCanSeeConfig = () => {
 const INSTANCE_CONFIG_HAS_INFO = gql`
   query InstanceConfigHasInfo {
     instance {
+      id
       hasInfo
     }
   }

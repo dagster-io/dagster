@@ -113,6 +113,7 @@ export const InstanceBackfills = () => {
 const INSTANCE_HEALTH_FOR_BACKFILLS_QUERY = gql`
   query InstanceHealthForBackfillsQuery {
     instance {
+      id
       ...InstanceHealthFragment
     }
   }

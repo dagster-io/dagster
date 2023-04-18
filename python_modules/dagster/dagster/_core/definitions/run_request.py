@@ -13,6 +13,7 @@ from dagster._utils.error import SerializableErrorInfo
 
 if TYPE_CHECKING:
     from dagster._core.definitions.job_definition import JobDefinition
+    from dagster._core.definitions.run_config import RunConfig
     from dagster._core.definitions.unresolved_asset_job_definition import (
         UnresolvedAssetJobDefinition,
     )
@@ -132,17 +133,21 @@ class RunRequest(
     def __new__(
         cls,
         run_key: Optional[str] = None,
-        run_config: Optional[Mapping[str, Any]] = None,
+        run_config: Optional[Union["RunConfig", Mapping[str, Any]]] = None,
         tags: Optional[Mapping[str, str]] = None,
         job_name: Optional[str] = None,
         asset_selection: Optional[Sequence[AssetKey]] = None,
         stale_assets_only: bool = False,
         partition_key: Optional[str] = None,
     ):
+        from dagster._core.definitions.run_config import convert_config_input
+
         return super(RunRequest, cls).__new__(
             cls,
             run_key=check.opt_str_param(run_key, "run_key"),
-            run_config=check.opt_mapping_param(run_config, "run_config", key_type=str),
+            run_config=check.opt_mapping_param(
+                convert_config_input(run_config), "run_config", key_type=str
+            ),
             tags=check.opt_mapping_param(tags, "tags", key_type=str, value_type=str),
             job_name=check.opt_str_param(job_name, "job_name"),
             asset_selection=check.opt_nullable_sequence_param(

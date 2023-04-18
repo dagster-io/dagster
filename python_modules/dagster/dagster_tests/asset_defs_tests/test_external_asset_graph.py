@@ -1,4 +1,3 @@
-import datetime
 import os
 import sys
 import time
@@ -68,8 +67,11 @@ partitioned_source = SourceAsset(
 @asset(
     partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"),
     non_argument_deps={"partitioned_source"},
-    auto_materialize_policy=AutoMaterializePolicy.eager(
-        time_window_partition_scope=datetime.timedelta(days=1, hours=7)
+    auto_materialize_policy=AutoMaterializePolicy(
+        on_missing=True,
+        for_freshness=True,
+        on_upstream_data_newer=True,
+        time_window_partition_scope_minutes=(24 + 7) * 60,
     ),
 )
 def downstream_of_partitioned_source():
@@ -259,8 +261,11 @@ def test_auto_materialize_policy():
 
     assert asset_graph.get_auto_materialize_policy(
         AssetKey("downstream_of_partitioned_source")
-    ) == AutoMaterializePolicy.eager(
-        time_window_partition_scope=datetime.timedelta(days=1, hours=7)
+    ) == AutoMaterializePolicy(
+        on_missing=True,
+        for_freshness=True,
+        on_upstream_data_newer=True,
+        time_window_partition_scope_minutes=(24 + 7) * 60,
     )
 
 

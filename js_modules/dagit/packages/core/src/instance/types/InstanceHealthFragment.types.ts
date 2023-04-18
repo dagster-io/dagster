@@ -4,6 +4,7 @@ import * as Types from '../../graphql/types';
 
 export type InstanceHealthFragment = {
   __typename: 'Instance';
+  id: string;
   hasInfo: boolean;
   daemonHealth: {
     __typename: 'DaemonHealth';

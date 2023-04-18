@@ -222,6 +222,7 @@ const REPOSITORY_LOCATION_STATUS_QUERY = gql`
     workspaceOrError {
       __typename
       ... on Workspace {
+        id
         locationEntries {
           __typename
           id
@@ -274,13 +275,12 @@ const RELOAD_WORKSPACE_MUTATION = gql`
   mutation ReloadWorkspaceMutation {
     reloadWorkspace {
       ... on Workspace {
+        id
         locationEntries {
-          __typename
           name
           id
           loadStatus
           locationOrLoadError {
-            __typename
             ... on RepositoryLocation {
               id
               repositories {
@@ -337,10 +337,15 @@ export const buildReloadFnForLocation = (location: string) => {
 const RELOAD_REPOSITORY_LOCATION_MUTATION = gql`
   mutation ReloadRepositoryLocationMutation($location: String!) {
     reloadRepositoryLocation(repositoryLocationName: $location) {
-      __typename
       ... on WorkspaceLocationEntry {
         id
         loadStatus
+        locationOrLoadError {
+          ... on RepositoryLocation {
+            id
+          }
+          ...PythonErrorFragment
+        }
       }
       ... on UnauthorizedError {
         message

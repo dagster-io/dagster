@@ -15,6 +15,7 @@ import {AssetSidebarActivitySummary} from '../assets/AssetSidebarActivitySummary
 import {DependsOnSelfBanner} from '../assets/DependsOnSelfBanner';
 import {PartitionHealthSummary} from '../assets/PartitionHealthSummary';
 import {UnderlyingOpsOrGraph} from '../assets/UnderlyingOpsOrGraph';
+import {Version} from '../assets/Version';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {
   healthRefreshHintFromLiveData,
@@ -27,7 +28,6 @@ import {Description} from '../pipelines/Description';
 import {SidebarSection, SidebarTitle} from '../pipelines/SidebarComponents';
 import {ResourceContainer, ResourceHeader} from '../pipelines/SidebarOpHelpers';
 import {pluginForMetadata} from '../plugins';
-import {Version} from '../versions/Version';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';

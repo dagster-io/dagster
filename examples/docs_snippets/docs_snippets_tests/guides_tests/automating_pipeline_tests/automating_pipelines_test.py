@@ -1,26 +1,17 @@
-# isort: skip_file
-
-from docs_snippets.guides.dagster.automating_pipelines.airbyte_dbt_sensor import (
-    defs as airbtye_dbt_defs,
-)
-
-
-def test_airbyte_sensor():
-    assert airbtye_dbt_defs.get_sensor_def("asset_reconciliation_sensor")
-
+import datetime
 
 from dagster import (
-    schedule,
-    ScheduleEvaluationContext,
-    RunRequest,
-    op,
-    job,
     build_schedule_context,
+    materialize,
     validate_run_config,
 )
-import datetime
 from docs_snippets.guides.dagster.automating_pipelines.config_schedule import (
     configurable_job,
+)
+from docs_snippets.guides.dagster.automating_pipelines.declare_schedule import (
+    finance_report,
+    sales_report,
+    transactions_cleaned,
 )
 
 
@@ -44,21 +35,6 @@ def test_configurable_job_schedule():
     )
 
 
-from docs_snippets.guides.dagster.automating_pipelines.declare_schedule import (
-    defs as declare_schedule_defs,
-)
-from docs_snippets.guides.dagster.automating_pipelines.declare_schedule import (
-    transactions,
-    expenses,
-    sales,
-)
-from dagster import materialize
-
-
-def test_declare_sensor():
-    assert declare_schedule_defs.get_sensor_def("update_sensor")
-
-
 def test_assets():
-    result = materialize([transactions, expenses, sales])
+    result = materialize([transactions_cleaned, sales_report, finance_report])
     assert result.success

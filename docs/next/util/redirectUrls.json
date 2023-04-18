@@ -215,6 +215,11 @@
     "statusCode": 302
   },
   {
+    "source": "/guides/dagster/pythonic-config",
+    "destination": "/concepts/configuration/config-schema",
+    "statusCode": 302
+  },
+  {
     "source": "/guides/dagster/asset-tutorial",
     "destination": "/tutorial/assets/defining-an-asset",
     "statusCode": 302
@@ -237,6 +242,11 @@
     {
     "source": "/tutorial/assets/testing-assets",
     "destination": "/guides/dagster/testing-assets",
+    "statusCode": 302
+  },
+  {
+    "source": "/guides/dagster/pythonic-resources",
+    "destination": "/concepts/resources",
     "statusCode": 302
   },
   {
@@ -668,6 +678,11 @@
   {
     "source": "/tutorial/ops-jobs/testable",
     "destination": "/guides/dagster/intro-to-ops-jobs/testable",
+    "statusCode": 302
+  },
+  {
+    "source": "/guides/dagster/scheduling-assets",
+    "destination": "/concepts/assets/asset-auto-execution",
     "statusCode": 302
   }
 ]

@@ -105,6 +105,7 @@ export const INSTANCE_CONFIG_QUERY = gql`
   query InstanceConfigQuery {
     version
     instance {
+      id
       info
     }
   }

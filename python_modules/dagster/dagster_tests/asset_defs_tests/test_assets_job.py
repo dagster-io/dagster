@@ -2012,3 +2012,22 @@ def test_assets_def_takes_bare_object():
     result = job.execute_in_process()
     assert result.success
     assert executed["yes"]
+
+
+def test_async_multi_asset():
+    async def make_outputs():
+        yield Output(1, output_name="A")
+        yield Output(2, output_name="B")
+
+    @multi_asset(
+        outs={"A": AssetOut(), "B": AssetOut()},
+        can_subset=True,
+    )
+    async def aio_gen_asset(context):
+        async for v in make_outputs():
+            context.log.info(v.output_name)
+            yield v
+
+    aio_job = build_assets_job(name="test", assets=[aio_gen_asset])
+    result = aio_job.execute_in_process()
+    assert result.success

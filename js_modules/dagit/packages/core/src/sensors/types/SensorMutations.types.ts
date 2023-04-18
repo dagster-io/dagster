@@ -24,8 +24,8 @@ export type StartSensorMutation = {
         id: string;
         sensorState: {__typename: 'InstigationState'; id: string; status: Types.InstigationStatus};
       }
-    | {__typename: 'SensorNotFoundError'}
-    | {__typename: 'UnauthorizedError'};
+    | {__typename: 'SensorNotFoundError'; message: string}
+    | {__typename: 'UnauthorizedError'; message: string};
 };
 
 export type StopRunningSensorMutationVariables = Types.Exact<{
@@ -54,5 +54,5 @@ export type StopRunningSensorMutation = {
           status: Types.InstigationStatus;
         } | null;
       }
-    | {__typename: 'UnauthorizedError'};
+    | {__typename: 'UnauthorizedError'; message: string};
 };

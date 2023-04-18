@@ -11,6 +11,7 @@ import {
   PageHeader,
   Spinner,
   TextInput,
+  Tooltip,
 } from '@dagster-io/ui';
 import * as React from 'react';
 
@@ -20,19 +21,26 @@ import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {RepoFilterButton} from '../instance/RepoFilterButton';
 import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
 import {UnloadableSchedules} from '../instigation/Unloadable';
+import {ScheduleBulkActionMenu} from '../schedules/ScheduleBulkActionMenu';
 import {SchedulerInfo} from '../schedules/SchedulerInfo';
+import {SchedulesCheckAll} from '../schedules/SchedulesCheckAll';
+import {filterPermissionedSchedules} from '../schedules/filterPermissionedSchedules';
+import {makeScheduleKey} from '../schedules/makeScheduleKey';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
+import {BASIC_INSTIGATION_STATE_FRAGMENT} from './BasicInstigationStateFragment';
 import {OverviewScheduleTable} from './OverviewSchedulesTable';
 import {OverviewTabs} from './OverviewTabs';
 import {sortRepoBuckets} from './sortRepoBuckets';
+import {BasicInstigationStateFragment} from './types/BasicInstigationStateFragment.types';
 import {
   OverviewSchedulesQuery,
   OverviewSchedulesQueryVariables,
@@ -78,10 +86,62 @@ export const OverviewSchedulesRoot = () => {
     return repoBuckets
       .map(({repoAddress, schedules}) => ({
         repoAddress,
-        schedules: schedules.filter((name) => name.toLocaleLowerCase().includes(searchToLower)),
+        schedules: schedules.filter(({name}) => name.toLocaleLowerCase().includes(searchToLower)),
       }))
       .filter(({schedules}) => schedules.length > 0);
   }, [repoBuckets, sanitizedSearch]);
+
+  // Collect all schedules across visible code locations that the viewer has permission
+  // to start or stop.
+  const allPermissionedSchedules = React.useMemo(() => {
+    return repoBuckets
+      .map(({repoAddress, schedules}) => {
+        return schedules.filter(filterPermissionedSchedules).map(({name, scheduleState}) => ({
+          repoAddress,
+          scheduleName: name,
+          scheduleState,
+        }));
+      })
+      .flat();
+  }, [repoBuckets]);
+
+  // Build a list of keys from the permissioned schedules for use in checkbox state.
+  // This includes collapsed code locations.
+  const allPermissionedScheduleKeys = React.useMemo(() => {
+    return allPermissionedSchedules.map(({repoAddress, scheduleName}) =>
+      makeScheduleKey(repoAddress, scheduleName),
+    );
+  }, [allPermissionedSchedules]);
+
+  const [{checkedIds: checkedKeys}, {onToggleFactory, onToggleAll}] = useSelectionReducer(
+    allPermissionedScheduleKeys,
+  );
+
+  // Filter to find keys that are visible given any text search.
+  const permissionedKeysOnScreen = React.useMemo(() => {
+    const filteredKeys = new Set(
+      filteredBySearch
+        .map(({repoAddress, schedules}) => {
+          return schedules.map(({name}) => makeScheduleKey(repoAddress, name));
+        })
+        .flat(),
+    );
+    return allPermissionedScheduleKeys.filter((key) => filteredKeys.has(key));
+  }, [allPermissionedScheduleKeys, filteredBySearch]);
+
+  // Determine the list of schedule objects that have been checked by the viewer.
+  // These are the schedules that will be operated on by the bulk start/stop action.
+  const checkedSchedules = React.useMemo(() => {
+    const checkedKeysOnScreen = new Set(
+      permissionedKeysOnScreen.filter((key: string) => checkedKeys.has(key)),
+    );
+    return allPermissionedSchedules.filter(({repoAddress, scheduleName}) => {
+      return checkedKeysOnScreen.has(makeScheduleKey(repoAddress, scheduleName));
+    });
+  }, [permissionedKeysOnScreen, allPermissionedSchedules, checkedKeys]);
+
+  const viewerHasAnyInstigationPermission = allPermissionedScheduleKeys.length > 0;
+  const checkedCount = checkedSchedules.length;
 
   const content = () => {
     if (loading && !data) {
@@ -137,7 +197,22 @@ export const OverviewSchedulesRoot = () => {
       );
     }
 
-    return <OverviewScheduleTable repos={filteredBySearch} />;
+    return (
+      <OverviewScheduleTable
+        headerCheckbox={
+          viewerHasAnyInstigationPermission ? (
+            <SchedulesCheckAll
+              checkedCount={checkedCount}
+              totalCount={permissionedKeysOnScreen.length}
+              onToggleAll={onToggleAll}
+            />
+          ) : undefined
+        }
+        repos={filteredBySearch}
+        checkedKeys={checkedKeys}
+        onToggleCheckFactory={onToggleFactory}
+      />
+    );
   };
 
   return (
@@ -148,16 +223,32 @@ export const OverviewSchedulesRoot = () => {
       />
       <Box
         padding={{horizontal: 24, vertical: 16}}
-        flex={{direction: 'row', alignItems: 'center', gap: 12, grow: 0}}
+        flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
       >
-        {repoCount > 0 ? <RepoFilterButton /> : null}
-        <TextInput
-          icon="search"
-          value={searchValue}
-          onChange={(e) => setSearchValue(e.target.value)}
-          placeholder="Filter by schedule name…"
-          style={{width: '340px'}}
-        />
+        <Box flex={{direction: 'row', gap: 12}}>
+          {repoCount > 0 ? <RepoFilterButton /> : null}
+          <TextInput
+            icon="search"
+            value={searchValue}
+            onChange={(e) => {
+              setSearchValue(e.target.value);
+              onToggleAll(false);
+            }}
+            placeholder="Filter by schedule name…"
+            style={{width: '340px'}}
+          />
+        </Box>
+        <Tooltip
+          content="You do not have permission to start or stop these schedules"
+          canShow={!viewerHasAnyInstigationPermission}
+          placement="top-end"
+          useDisabledButtonTooltipFix
+        >
+          <ScheduleBulkActionMenu
+            schedules={checkedSchedules}
+            onDone={() => refreshState.refetch()}
+          />
+        </Tooltip>
       </Box>
       {loading && !repoCount ? (
         <Box padding={64}>
@@ -256,7 +347,7 @@ const UnloadableScheduleDialog: React.FC = () => {
 
 type RepoBucket = {
   repoAddress: RepoAddress;
-  schedules: string[];
+  schedules: {name: string; scheduleState: BasicInstigationStateFragment}[];
 };
 
 const buildBuckets = (data?: OverviewSchedulesQuery): RepoBucket[] => {
@@ -276,7 +367,7 @@ const buildBuckets = (data?: OverviewSchedulesQuery): RepoBucket[] => {
     for (const repo of entry.repositories) {
       const {name, schedules} = repo;
       const repoAddress = buildRepoAddress(name, entry.name);
-      const scheduleNames = schedules.map(({name}) => name);
+      const scheduleNames = schedules.map(({name, scheduleState}) => ({name, scheduleState}));
 
       if (scheduleNames.length > 0) {
         buckets.push({
@@ -294,6 +385,7 @@ const OVERVIEW_SCHEDULES_QUERY = gql`
   query OverviewSchedulesQuery {
     workspaceOrError {
       ... on Workspace {
+        id
         locationEntries {
           id
           locationOrLoadError {
@@ -307,6 +399,10 @@ const OVERVIEW_SCHEDULES_QUERY = gql`
                   id
                   name
                   description
+                  scheduleState {
+                    id
+                    ...BasicInstigationStateFragment
+                  }
                 }
               }
             }
@@ -324,10 +420,12 @@ const OVERVIEW_SCHEDULES_QUERY = gql`
       }
     }
     instance {
+      id
       ...InstanceHealthFragment
     }
   }
 
+  ${BASIC_INSTIGATION_STATE_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
   ${INSTANCE_HEALTH_FRAGMENT}
 `;

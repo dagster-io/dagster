@@ -14,6 +14,7 @@ from typing import (
     Sequence,
     Set,
     Tuple,
+    Union,
     cast,
 )
 
@@ -26,11 +27,14 @@ from dagster._core.definitions.auto_materialize_policy import AutoMaterializePol
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
 from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
     TimeWindowPartitionsDefinition,
+    has_one_dimension_time_window_partitioning,
 )
+from dagster._utils.backcompat import deprecation_warning
 from dagster._utils.schedules import cron_string_iterator
 
 from .asset_selection import AssetGraph, AssetSelection
@@ -63,12 +67,23 @@ def get_implicit_auto_materialize_policy(
 
 
 def reconciliation_window_for_time_window_partitions(
-    partitions_def: TimeWindowPartitionsDefinition,
+    partitions_def: Union[TimeWindowPartitionsDefinition, MultiPartitionsDefinition],
     time_window_partition_scope: Optional[datetime.timedelta],
     current_time: datetime.datetime,
 ) -> Optional[TimeWindow]:
-    latest_partition_window = partitions_def.get_last_partition_window(current_time=current_time)
-    earliest_partition_window = partitions_def.get_first_partition_window(current_time=current_time)
+    if isinstance(partitions_def, MultiPartitionsDefinition):
+        time_partitions_def = cast(
+            TimeWindowPartitionsDefinition, partitions_def.time_window_dimension.partitions_def
+        )
+    else:
+        time_partitions_def = partitions_def
+
+    latest_partition_window = time_partitions_def.get_last_partition_window(
+        current_time=current_time
+    )
+    earliest_partition_window = time_partitions_def.get_first_partition_window(
+        current_time=current_time
+    )
     if latest_partition_window is None or earliest_partition_window is None:
         return None
 
@@ -86,7 +101,7 @@ def reconciliation_window_for_time_window_partitions(
 
 
 def can_reconcile_time_window_partition(
-    partitions_def: TimeWindowPartitionsDefinition,
+    partitions_def: Union[TimeWindowPartitionsDefinition, MultiPartitionsDefinition],
     partition_key: Optional[str],
     time_window_partition_scope: Optional[datetime.timedelta],
     current_time: datetime.datetime,
@@ -259,9 +274,16 @@ class AssetReconciliationCursor(NamedTuple):
             if partitions_def is None:
                 continue
 
-            materialized_or_requested_root_partitions_by_asset_key[
-                key
-            ] = partitions_def.deserialize_subset(serialized_subset)
+            try:
+                # in the case that the partitions def has changed, we may not be able to deserialize
+                # the corresponding subset. in this case, we just use an empty subset
+                materialized_or_requested_root_partitions_by_asset_key[
+                    key
+                ] = partitions_def.deserialize_subset(serialized_subset)
+            except:
+                materialized_or_requested_root_partitions_by_asset_key[
+                    key
+                ] = partitions_def.empty_subset()
         return cls(
             latest_storage_id=latest_storage_id,
             materialized_or_requested_root_asset_keys={
@@ -514,13 +536,17 @@ def determine_asset_partitions_to_reconcile(
         if auto_materialize_policy is None:
             return False
         # the partition is too old to reconcile
-        elif isinstance(
-            partitions_def, TimeWindowPartitionsDefinition
-        ) and not can_reconcile_time_window_partition(
-            partitions_def=partitions_def,
-            partition_key=candidate.partition_key,
-            time_window_partition_scope=auto_materialize_policy.time_window_partition_scope,
-            current_time=current_time,
+        elif (
+            partitions_def
+            and has_one_dimension_time_window_partitioning(partitions_def)
+            and not can_reconcile_time_window_partition(
+                partitions_def=cast(
+                    Union[TimeWindowPartitionsDefinition, MultiPartitionsDefinition], partitions_def
+                ),
+                partition_key=candidate.partition_key,
+                time_window_partition_scope=auto_materialize_policy.time_window_partition_scope,
+                current_time=current_time,
+            )
         ):
             return False
         # the policy does not allow for materializing missing partitions and it's missing
@@ -1027,6 +1053,9 @@ def build_asset_reconciliation_sensor(
     """
     check_valid_name(name)
     check.opt_mapping_param(run_tags, "run_tags", key_type=str, value_type=str)
+    deprecation_warning(
+        "build_asset_reconciliation_sensor", "1.4", "Use AutoMaterializePolicys instead."
+    )
 
     @sensor(
         name=name,

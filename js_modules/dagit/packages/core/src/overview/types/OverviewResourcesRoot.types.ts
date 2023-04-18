@@ -19,6 +19,7 @@ export type OverviewResourcesQuery = {
       }
     | {
         __typename: 'Workspace';
+        id: string;
         locationEntries: Array<{
           __typename: 'WorkspaceLocationEntry';
           id: string;

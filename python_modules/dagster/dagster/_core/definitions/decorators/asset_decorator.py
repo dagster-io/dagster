@@ -680,6 +680,7 @@ def graph_asset(
     group_name: Optional[str] = None,
     metadata: Optional[MetadataUserInput] = None,
     freshness_policy: Optional[FreshnessPolicy] = None,
+    resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Creates a software-defined asset that's computed using a graph of ops.
 
@@ -733,6 +734,7 @@ def graph_asset(
             group_name=group_name,
             metadata=metadata,
             freshness_policy=freshness_policy,
+            resource_defs=resource_defs,
         )(fn)
 
     return inner
@@ -749,6 +751,7 @@ class _GraphBackedAsset:
         group_name: Optional[str] = None,
         metadata: Optional[MetadataUserInput] = None,
         freshness_policy: Optional[FreshnessPolicy] = None,
+        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     ):
         self.name = name
 
@@ -761,6 +764,7 @@ class _GraphBackedAsset:
         self.group_name = group_name
         self.metadata = metadata
         self.freshness_policy = freshness_policy
+        self.resource_defs = resource_defs
 
     def __call__(self, fn: Callable) -> AssetsDefinition:
         asset_name = self.name or fn.__name__
@@ -791,6 +795,7 @@ class _GraphBackedAsset:
             if self.freshness_policy
             else None,
             descriptions_by_output_name={"result": self.description} if self.description else None,
+            resource_defs=self.resource_defs,
         )
 
 
@@ -802,6 +807,7 @@ def graph_multi_asset(
     partitions_def: Optional[PartitionsDefinition[object]] = None,
     group_name: Optional[str] = None,
     can_subset: bool = False,
+    resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a combined definition of multiple assets that are computed using the same graph of
     ops, and the same upstream assets.
@@ -873,6 +879,7 @@ def graph_multi_asset(
             metadata_by_output_name=metadata_by_output_name,
             freshness_policies_by_output_name=freshness_policies_by_output_name,
             descriptions_by_output_name=descriptions_by_output_name,
+            resource_defs=resource_defs,
         )
 
     return inner

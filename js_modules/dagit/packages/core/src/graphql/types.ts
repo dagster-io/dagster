@@ -1564,6 +1564,7 @@ export type Instance = {
   executablePath: Scalars['String'];
   hasCapturedLogManager: Scalars['Boolean'];
   hasInfo: Scalars['Boolean'];
+  id: Scalars['String'];
   info: Maybe<Scalars['String']>;
   runLauncher: Maybe<RunLauncher>;
   runQueuingSupported: Scalars['Boolean'];
@@ -3883,6 +3884,7 @@ export type UsedSolid = {
 
 export type Workspace = {
   __typename: 'Workspace';
+  id: Scalars['String'];
   locationEntries: Array<WorkspaceLocationEntry>;
 };
 
@@ -7062,6 +7064,7 @@ export const buildInstance = (
         ? overrides.hasCapturedLogManager!
         : true,
     hasInfo: overrides && overrides.hasOwnProperty('hasInfo') ? overrides.hasInfo! : true,
+    id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : 'deleniti',
     info: overrides && overrides.hasOwnProperty('info') ? overrides.info! : 'qui',
     runLauncher:
       overrides && overrides.hasOwnProperty('runLauncher')
@@ -12751,6 +12754,7 @@ export const buildWorkspace = (
   relationshipsToOmit.add('Workspace');
   return {
     __typename: 'Workspace',
+    id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : 'id',
     locationEntries:
       overrides && overrides.hasOwnProperty('locationEntries')
         ? overrides.locationEntries!

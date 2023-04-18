@@ -10,7 +10,7 @@ import {
   MultiDimensionTimeSecondPartitionHealthQuery,
   SingleDimensionStaticPartitionHealthQuery,
   SingleDimensionTimePartitionHealthQuery,
-} from '../__fixtures__/PartitionHealthSummary.mocks';
+} from '../__fixtures__/PartitionHealthSummary.fixtures';
 
 // eslint-disable-next-line import/no-default-export
 export default {component: AssetPartitions};
