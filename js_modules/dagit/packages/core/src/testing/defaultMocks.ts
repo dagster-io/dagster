@@ -54,7 +54,6 @@ export const defaultMocks = {
     name: hyphenatedName,
   }),
   Workspace: () => ({
-    id: 'workspace',
     locationEntries: () => [...new Array(1)],
   }),
   WorkspaceLocationEntry: () => ({
