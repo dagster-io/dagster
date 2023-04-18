@@ -505,20 +505,13 @@ class NamedTupleSerializer(Serializer, Generic[T_NamedTuple]):
         for key, inner_value in value._asdict().items():
             if key in self.skip_when_empty_fields and inner_value in EMPTY_VALUES_TO_SKIP:
                 continue
-            storage_key = self.storage_field_names.get(key, key)
-            custom = self.field_serializers.get(key)
-            if custom:
-                packed[storage_key] = custom.pack(
-                    inner_value,
-                    whitelist_map=whitelist_map,
-                    descent_path=f"{descent_path}.{key}",
-                )
-            else:
-                packed[storage_key] = _pack_value(
-                    inner_value,
-                    whitelist_map=whitelist_map,
-                    descent_path=f"{descent_path}.{key}",
-                )
+            storage_key = self.get_storage_field_name(field=key)
+            pack_fn = self.get_field_pack_fn(field=key)
+            packed[storage_key] = pack_fn(
+                inner_value,
+                whitelist_map=whitelist_map,
+                descent_path=f"{descent_path}.{key}",
+            )
         for key, default in self.old_fields.items():
             packed[key] = default
         packed = self.after_pack(**packed)
@@ -536,6 +529,13 @@ class NamedTupleSerializer(Serializer, Generic[T_NamedTuple]):
 
     def get_storage_name(self) -> str:
         return self.storage_name or self.klass.__name__
+
+    def get_field_pack_fn(self, field: str) -> Callable[..., JsonSerializableValue]:
+        field_serializer = self.field_serializers.get(field)
+        return field_serializer.pack if field_serializer else pack_value
+
+    def get_storage_field_name(self, field: str) -> str:
+        return self.storage_field_names.get(field, field)
 
 
 class FieldSerializer(Serializer):
@@ -638,23 +638,7 @@ def _pack_value(
     whitelist_map: WhitelistMap,
     descent_path: str,
 ) -> JsonSerializableValue:
-    # this is a hot code path so we handle the common base cases without isinstance
-    tval = type(val)
-    if tval in (int, float, str, bool) or val is None:
-        return cast(JsonSerializableValue, val)
-    if tval is list:
-        return [
-            _pack_value(item, whitelist_map, f"{descent_path}[{idx}]")
-            for idx, item in enumerate(cast(list, val))
-        ]
-    if tval is dict:
-        return {
-            key: _pack_value(value, whitelist_map, f"{descent_path}.{key}")
-            for key, value in cast(dict, val).items()
-        }
-
-    # inlined is_named_tuple_instance
-    if isinstance(val, tuple) and hasattr(val, "_fields"):
+    if is_named_tuple_instance(val):
         klass_name = val.__class__.__name__
         if not whitelist_map.has_tuple_entry(klass_name):
             raise SerializationError(
@@ -664,7 +648,7 @@ def _pack_value(
                 ),
             )
         serializer = whitelist_map.get_tuple_entry(klass_name)
-        return serializer.pack(cast(NamedTuple, val), whitelist_map, descent_path)
+        return serializer.pack(val, whitelist_map, descent_path)
     if isinstance(val, Enum):
         klass_name = val.__class__.__name__
         if not whitelist_map.has_enum_entry(klass_name):
@@ -676,6 +660,13 @@ def _pack_value(
             )
         enum_serializer = whitelist_map.get_enum_entry(klass_name)
         return {"__enum__": enum_serializer.pack(val, whitelist_map, descent_path)}
+    if isinstance(val, (int, float, str, bool)) or val is None:
+        return val
+    if isinstance(val, collections.abc.Sequence):
+        return [
+            _pack_value(item, whitelist_map, f"{descent_path}[{idx}]")
+            for idx, item in enumerate(val)
+        ]
     if isinstance(val, set):
         set_path = descent_path + "{}"
         return {
@@ -691,23 +682,13 @@ def _pack_value(
                 for item in sorted(list(val), key=str)
             ]
         }
-
-    # custom string subclasses
-    if isinstance(val, str):
-        return val
-
-    # handle more expensive and uncommon abc instance checks last
     if isinstance(val, collections.abc.Mapping):
         return {
             key: _pack_value(value, whitelist_map, f"{descent_path}.{key}")
             for key, value in val.items()
         }
-    if isinstance(val, collections.abc.Sequence):
-        return [
-            _pack_value(item, whitelist_map, f"{descent_path}[{idx}]")
-            for idx, item in enumerate(val)
-        ]
 
+    # list/dict checks above don't fully cover Sequence/Mapping
     return val
 
 
