@@ -151,7 +151,7 @@ def adls2_pickle_io_manager(init_context):
 
     .. code-block:: python
 
-        from dagster import Definitions, asset
+        from dagster import asset, repository, with_resources
         from dagster_azure.adls2 import adls2_pickle_io_manager, adls2_resource
 
         @asset
@@ -163,14 +163,17 @@ def adls2_pickle_io_manager(init_context):
         def asset2(asset1):
             return df[:5]
 
-        defs = Definitions(
-            assets=[asset1, asset2],
-            resources={
-                "io_manager": adls2_pickle_io_manager.configured(
-                    {"adls2_file_system": "my-cool-fs", "adls2_prefix": "my-cool-prefix"}
-                ),
-                "adls2": adls2_resource,
-            },
+        @repository
+        def repo():
+            return with_resources(
+                [asset1, asset2],
+                resource_defs={
+                    "io_manager": adls2_pickle_io_manager.configured(
+                        {"adls2_file_system": "my-cool-fs", "adls2_prefix": "my-cool-prefix"}
+                    ),
+                    "adls2": adls2_resource,
+                },
+            )
         )
 
 
