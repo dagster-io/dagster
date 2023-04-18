@@ -10,8 +10,8 @@ from dagster import Definitions, asset
 def small_petals(context):
     return context.resources.bigquery.query(
         (
-            'SELECT * FROM IRIS.IRIS_DATA WHERE "Petal length (cm)" < 1 AND "Petal'
-            ' width (cm)" < 1'
+            'SELECT * FROM IRIS.IRIS_DATA WHERE "petal_length_cm" < 1 AND'
+            ' "petal_width_cm" < 1'
         ),
     ).result()
 
