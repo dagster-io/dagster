@@ -810,10 +810,6 @@
               {
                 "title": "Asset versioning and caching",
                 "path": "/guides/dagster/asset-versioning-and-caching"
-              },
-              {
-                "title": "Pythonic resources",
-                "path": "/guides/dagster/pythonic-resources"
               }
             ]
           }
