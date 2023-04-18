@@ -64,6 +64,12 @@ def get_base_asset_jobs(
     for assets_def in assets:
         assets_by_partitions_def[assets_def.partitions_def].append(assets_def)
 
+    # We need to create "empty" jobs for each partitions def that is used by an observable but no
+    # materializable asset. They are empty because we don't assign the source asset to the `assets`,
+    # but rather the `source_assets` argument of `build_assets_job`.
+    for observable in [sa for sa in source_assets if sa.is_observable]:
+        if observable.partitions_def not in assets_by_partitions_def:
+            assets_by_partitions_def[observable.partitions_def] = []
     if len(assets_by_partitions_def.keys()) == 0 or assets_by_partitions_def.keys() == {None}:
         return [
             build_assets_job(
@@ -82,19 +88,21 @@ def get_base_asset_jobs(
         jobs = []
 
         # sort to ensure some stability in the ordering
-        for i, (_, assets_with_partitions) in enumerate(
+        for i, (partitions_def, assets_with_partitions) in enumerate(
             sorted(partitioned_assets_by_partitions_def.items(), key=lambda item: repr(item[0]))
         ):
             jobs.append(
                 build_assets_job(
                     f"{ASSET_BASE_JOB_PREFIX}_{i}",
-                    assets=assets_with_partitions + unpartitioned_assets,
+                    assets=[*assets_with_partitions, *unpartitioned_assets],
                     source_assets=[*source_assets, *assets],
                     resource_defs=resource_defs,
                     executor_def=executor_def,
+                    # Only explicitly set partitions_def for observable-only jobs since it can't be
+                    # auto-detected from the passed assets (which is an empty list).
+                    partitions_def=partitions_def if len(assets_with_partitions) == 0 else None,
                 )
             )
-
         return jobs
 
 
