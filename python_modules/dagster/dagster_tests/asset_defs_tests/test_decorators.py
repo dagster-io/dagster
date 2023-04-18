@@ -826,6 +826,10 @@ def test_graph_asset_decorator_no_args():
 
 
 def test_graph_asset_with_args():
+    @resource
+    def foo_resource():
+        pass
+
     @op
     def my_op1(x):
         return x
@@ -838,6 +842,7 @@ def test_graph_asset_with_args():
         group_name="group1",
         metadata={"my_metadata": "some_metadata"},
         freshness_policy=FreshnessPolicy(maximum_lag_minutes=5),
+        resource_defs={"foo": foo_resource},
     )
     def my_asset(x):
         return my_op2(my_op1(x))
@@ -847,6 +852,7 @@ def test_graph_asset_with_args():
     assert my_asset.freshness_policies_by_key[AssetKey("my_asset")] == FreshnessPolicy(
         maximum_lag_minutes=5
     )
+    assert my_asset.resource_defs["foo"] == foo_resource
 
 
 def test_graph_asset_partitioned():
@@ -916,6 +922,10 @@ def test_graph_asset_w_key_prefix():
 
 
 def test_graph_multi_asset_decorator():
+    @resource
+    def foo_resource():
+        pass
+
     @op(out={"one": Out(), "two": Out()})
     def two_in_two_out(context, in1, in2):
         assert context.asset_key_for_input("in1") == AssetKey("x")
@@ -930,6 +940,7 @@ def test_graph_multi_asset_decorator():
             "second_asset": AssetOut(freshness_policy=FreshnessPolicy(maximum_lag_minutes=5)),
         },
         group_name="grp",
+        resource_defs={"foo": foo_resource},
     )
     def two_assets(x, y):
         one, two = two_in_two_out(x, y)
@@ -947,6 +958,7 @@ def test_graph_multi_asset_decorator():
     assert two_assets.freshness_policies_by_key[AssetKey("second_asset")] == FreshnessPolicy(
         maximum_lag_minutes=5
     )
+    assert two_assets.resource_defs["foo"] == foo_resource
 
     @asset
     def x():
