@@ -70,7 +70,7 @@ partitioned_source = SourceAsset(
     auto_materialize_policy=AutoMaterializePolicy(
         on_missing=True,
         for_freshness=True,
-        on_upstream_data_newer=True,
+        on_new_parent_data=True,
         time_window_partition_scope_minutes=(24 + 7) * 60,
     ),
 )
@@ -264,7 +264,7 @@ def test_auto_materialize_policy():
     ) == AutoMaterializePolicy(
         on_missing=True,
         for_freshness=True,
-        on_upstream_data_newer=True,
+        on_new_parent_data=True,
         time_window_partition_scope_minutes=(24 + 7) * 60,
     )
 
