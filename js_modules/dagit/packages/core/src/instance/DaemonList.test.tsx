@@ -2,13 +2,14 @@ import {MockedResponse, MockedProvider} from '@apollo/client/testing';
 import {fireEvent, render, waitFor} from '@testing-library/react';
 import React from 'react';
 
-import {buildDaemonStatus, buildInstance} from '../../graphql/types';
+import {buildDaemonStatus, buildInstance} from '../graphql/types';
+
 import {
   DaemonList,
   AUTOMATERIALIZE_PAUSED_QUERY,
   SET_AUTOMATERIALIZE_PAUSED_MUTATION,
-} from '../DaemonList';
-import {GetAutoMaterializePausedQuery} from '../types/DaemonList.types';
+} from './DaemonList';
+import {GetAutoMaterializePausedQuery} from './types/DaemonList.types';
 
 let mockResolveConfirmation = (_any: any) => {};
 beforeEach(() => {
@@ -17,7 +18,7 @@ beforeEach(() => {
   };
 });
 
-jest.mock('../../app/CustomConfirmationProvider', () => ({
+jest.mock('../app/CustomConfirmationProvider', () => ({
   useConfirmation: () => {
     return async () => {
       await new Promise((resolve) => {
