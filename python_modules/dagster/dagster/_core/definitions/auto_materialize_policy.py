@@ -12,15 +12,8 @@ class AutoMaterializePolicy(NamedTuple):
 
     There are two main modes of reconciliation: eager and lazy.
 
-    Regardless of this selection, there are some cases where an asset / partition will never be
-    materialized:
-
-    - one or more of its parents is missing
-    - the partition is a time window partition with a start time that is more than
-      time_window_partition_scope_minutes older than the latest available time window partition. By
-      default, only the most recent time window partition will be materialized.
-
-    Outside of those cases...
+    Regardless of this selection an asset / partition will never be materialized if any of its
+    parents are missing.
 
     For eager reconciliation, an asset / partition will be (re)materialized when:
 
@@ -57,27 +50,19 @@ class AutoMaterializePolicy(NamedTuple):
         return datetime.timedelta(minutes=self.time_window_partition_scope_minutes)
 
     @staticmethod
-    def eager(
-        time_window_partition_scope: Optional[datetime.timedelta] = datetime.timedelta.resolution,
-    ) -> "AutoMaterializePolicy":
+    def eager() -> "AutoMaterializePolicy":
         return AutoMaterializePolicy(
             on_missing=True,
             on_upstream_data_newer=True,
             for_freshness=True,
-            time_window_partition_scope_minutes=time_window_partition_scope.total_seconds() / 60
-            if time_window_partition_scope is not None
-            else None,
+            time_window_partition_scope_minutes=datetime.timedelta.resolution.total_seconds() / 60,
         )
 
     @staticmethod
-    def lazy(
-        time_window_partition_scope: Optional[datetime.timedelta] = datetime.timedelta.resolution,
-    ) -> "AutoMaterializePolicy":
+    def lazy() -> "AutoMaterializePolicy":
         return AutoMaterializePolicy(
             on_missing=True,
             on_upstream_data_newer=False,
             for_freshness=True,
-            time_window_partition_scope_minutes=time_window_partition_scope.total_seconds() / 60
-            if time_window_partition_scope is not None
-            else None,
+            time_window_partition_scope_minutes=datetime.timedelta.resolution.total_seconds() / 60,
         )
