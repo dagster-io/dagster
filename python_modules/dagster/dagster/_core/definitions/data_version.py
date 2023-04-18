@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import functools
 from collections import OrderedDict
 from enum import Enum
 from hashlib import sha256
@@ -229,10 +230,16 @@ class StaleStatus(Enum):
     FRESH = "FRESH"
 
 
+@functools.total_ordering
 class StaleCauseCategory(Enum):
     CODE = "CODE"
     DATA = "DATA"
     DEPENDENCIES = "DEPENDENCIES"
+
+    def __lt__(self, other: "StaleCauseCategory"):
+        if self.__class__ is other.__class__:
+            return self.value < other.value
+        return NotImplemented
 
 
 class StaleCause(NamedTuple):
