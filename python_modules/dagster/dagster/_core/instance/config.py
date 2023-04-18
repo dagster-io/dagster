@@ -329,7 +329,6 @@ def dagster_instance_config_schema() -> Mapping[str, Field]:
             {
                 "enabled": Field(Bool, is_required=False),
                 "minimum_interval_seconds": Field(int, is_required=False),
-                "run_tags": Field(dict, is_required=False),
             }
         ),
     }

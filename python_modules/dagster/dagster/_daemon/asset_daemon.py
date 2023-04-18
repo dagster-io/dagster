@@ -110,7 +110,6 @@ class AssetDaemon(IntervalDaemon):
             tags = {
                 **run_request.tags,
                 CREATED_BY_TAG: "auto_materialize",
-                **instance.auto_materialize_run_tags,
             }
 
             external_execution_plan = code_location.get_external_execution_plan(

@@ -437,7 +437,6 @@ class DagsterInstance(DynamicPartitionsStore):
     def ephemeral(
         tempdir: Optional[str] = None,
         preload: Optional[Sequence["DebugRunPayload"]] = None,
-        settings: Optional[Dict] = None,
     ) -> "DagsterInstance":
         from dagster._core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
         from dagster._core.run_coordinator import DefaultRunCoordinator
@@ -459,7 +458,6 @@ class DagsterInstance(DynamicPartitionsStore):
             compute_log_manager=NoOpComputeLogManager(),
             run_coordinator=DefaultRunCoordinator(),
             run_launcher=SyncInMemoryRunLauncher(),
-            settings=settings,
         )
 
     @public
@@ -802,10 +800,6 @@ class DagsterInstance(DynamicPartitionsStore):
     @property
     def auto_materialize_minimum_interval_seconds(self) -> int:
         return self.get_settings("auto_materialize").get("minimum_interval_seconds")
-
-    @property
-    def auto_materialize_run_tags(self) -> Dict[str, str]:
-        return self.get_settings("auto_materialize").get("run_tags", {})
 
     # python logs
 
