@@ -6,11 +6,12 @@ from typing import Any, Mapping, Optional, cast
 
 import pendulum
 import pytest
+from dagster import _seven as seven
 from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.instance import DagsterInstance
 from dagster._core.launcher import CheckRunHealthResult, RunLauncher, WorkerStatus
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.tags import MAX_RUNTIME_SECONDS_TAG
 from dagster._core.test_utils import (
     create_run_for_test,
@@ -130,7 +131,7 @@ def report_starting_event(instance, run, timestamp):
     instance.handle_new_event(event_record)
 
 
-def report_started_event(instance, run, timestamp):
+def report_started_event(instance: DagsterInstance, run: DagsterRun, timestamp: float) -> None:
     launch_started_event = DagsterEvent(
         event_type_value=DagsterEventType.PIPELINE_START.value,
         pipeline_name=run.pipeline_name,
@@ -225,6 +226,7 @@ def test_monitor_started(
     assert run_launcher.resume_run_calls == 3
 
 
+@pytest.mark.skipif(seven.IS_WINDOWS, reason="Cannot report started event on Windows")
 def test_long_running_termination(
     instance: DagsterInstance, workspace_context: WorkspaceProcessContext, logger: Logger
 ):
@@ -305,13 +307,14 @@ def test_long_running_termination(
             assert event.message == "Exceeded maximum runtime of 500 seconds."
 
 
+@pytest.mark.skipif(seven.IS_WINDOWS, reason="Cannot report started event on Windows")
 @pytest.mark.parametrize("failure_case", ["fail_termination", "termination_exception"])
 def test_long_running_termination_failure(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
     logger: Logger,
     failure_case: str,
-):
+) -> None:
     with environ({"DAGSTER_TEST_RUN_HEALTH_CHECK_RESULT": "healthy"}):
         if failure_case == "fail_termination":
             instance.run_launcher.should_fail_termination = True  # type: ignore
