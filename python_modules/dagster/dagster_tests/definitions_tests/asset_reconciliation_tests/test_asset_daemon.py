@@ -2,6 +2,7 @@ import pytest
 from dagster import DagsterInstance
 from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.storage.tags import PARTITION_NAME_TAG
+from dagster._daemon.asset_daemon import set_auto_materialize_paused
 
 from .auto_materialize_policy_scenarios import auto_materialize_policy_scenarios
 from .multi_code_location_scenarios import multi_code_location_scenarios
@@ -38,17 +39,23 @@ def test_reconcile_with_external_asset_graph(scenario_item):
 daemon_scenarios = {**auto_materialize_policy_scenarios, **multi_code_location_scenarios}
 
 
+@pytest.fixture
+def daemon_not_paused_instance():
+    instance = DagsterInstance.ephemeral()
+    set_auto_materialize_paused(instance, False)
+    yield instance
+
+
 @pytest.mark.parametrize(
     "scenario_item",
     list(daemon_scenarios.items()),
     ids=list(daemon_scenarios.keys()),
 )
-def test_daemon(scenario_item):
+def test_daemon(scenario_item, daemon_not_paused_instance):
     scenario_name, scenario = scenario_item
-    instance = DagsterInstance.ephemeral()
-    scenario.do_daemon_scenario(instance, scenario_name=scenario_name)
+    scenario.do_daemon_scenario(daemon_not_paused_instance, scenario_name=scenario_name)
 
-    runs = instance.get_runs()
+    runs = daemon_not_paused_instance.get_runs()
 
     assert len(runs) == len(
         scenario.expected_run_requests
@@ -82,6 +89,7 @@ def test_daemon_run_tags():
     instance = DagsterInstance.ephemeral(
         settings={"auto_materialize": {"run_tags": {"foo": "bar"}}}
     )
+    set_auto_materialize_paused(instance, False)
     scenario.do_daemon_scenario(instance, scenario_name=scenario_name)
 
     runs = instance.get_runs()
@@ -110,3 +118,30 @@ def test_daemon_run_tags():
         assert set(run.asset_selection) == set(expected_run_request.asset_selection)
         assert run.tags.get(PARTITION_NAME_TAG) == expected_run_request.partition_key
         assert run.tags["foo"] == "bar"
+
+
+def test_daemon_paused():
+    scenario_name = "auto_materialize_policy_eager_with_freshness_policies"
+    scenario = auto_materialize_policy_scenarios[scenario_name]
+
+    instance = DagsterInstance.ephemeral()
+    scenario.do_daemon_scenario(instance, scenario_name=scenario_name)
+
+    runs = instance.get_runs()
+
+    # daemon is paused by default , so no new runs should have been created
+    assert len(runs) == len(
+        scenario.unevaluated_runs
+        + (scenario.cursor_from.unevaluated_runs if scenario.cursor_from else [])
+    )
+
+    instance.wipe()
+    set_auto_materialize_paused(instance, False)
+    scenario.do_daemon_scenario(instance, scenario_name=scenario_name)
+    runs = instance.get_runs()
+
+    assert len(runs) == len(
+        scenario.expected_run_requests
+        + scenario.unevaluated_runs
+        + (scenario.cursor_from.unevaluated_runs if scenario.cursor_from else [])
+    )
