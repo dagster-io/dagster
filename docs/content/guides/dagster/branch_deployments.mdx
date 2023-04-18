@@ -179,22 +179,22 @@ Refer to the [Dagster Cloud environment variables documentation](/dagster-cloud/
 We’ll first need to define a job that clones our `PRODUCTION` database for each branch deployment. Later, in our GitHub actions workflow, we can trigger this job to run upon each redeploy. Each clone will be named `PRODUCTION_CLONE_<ID>` with `<ID>` representing the pull request ID, ensuring each branch deployment has a unique clone. This job will drop a database clone if it exists and then reclone from production, ensuring each redeployment has a fresh clone of `PRODUCTION`:
 
 ```python file=/guides/dagster/development_to_production/branch_deployments/clone_and_drop_db.py startafter=start_clone_db endbefore=end_clone_db
-from dagster_snowflake import SnowflakeConnection
+from dagster_snowflake import SnowflakeResource
 
 from dagster import In, Nothing, ResourceParam, graph, op
 
 
-@op(required_resource_keys={"snowflake"})
-def drop_database_clone(snowflake: ResourceParam[SnowflakeConnection]):
-    snowflake.execute_query(
+@op
+def drop_database_clone(snowflake: SnowflakeResource):
+    snowflake.get_client().execute_query(
         "DROP DATABASE IF EXISTS"
         f" PRODUCTION_CLONE_{os.environ['DAGSTER_CLOUD_PULL_REQUEST_ID']}"
     )
 
 
 @op(ins={"start": In(Nothing)})
-def clone_production_database(snowflake: ResourceParam[SnowflakeConnection]):
-    snowflake.execute_query(
+def clone_production_database(snowflake: SnowflakeResource):
+    snowflake.get_client().execute_query(
         "CREATE DATABASE"
         f" PRODUCTION_CLONE_{os.environ['DAGSTER_CLOUD_PULL_REQUEST_ID']} CLONE"
         ' "PRODUCTION"'
@@ -222,13 +222,9 @@ resources = {
             **snowflake_config,
             database=f"PRODUCTION_CLONE_{os.getenv('DAGSTER_CLOUD_PULL_REQUEST_ID')}",
         ),
-        "snowflake": snowflake_resource.configured(
-            {
-                **snowflake_config,
-                "database": (
-                    f"PRODUCTION_CLONE_{os.getenv('DAGSTER_CLOUD_PULL_REQUEST_ID')}"
-                ),
-            }
+        "snowflake": SnowflakeResource(
+            **snowflake_config,
+            database=f"PRODUCTION_CLONE_{os.getenv('DAGSTER_CLOUD_PULL_REQUEST_ID')}",
         ),
     },
     "production": {
@@ -236,9 +232,7 @@ resources = {
             **snowflake_config,
             database="PRODUCTION",
         ),
-        "snowflake": snowflake_resource.configured(
-            {**snowflake_config, "database": "PRODUCTION"}
-        ),
+        "snowflake": SnowflakeResource(**snowflake_config, database="PRODUCTION"),
     },
 }
 ```
