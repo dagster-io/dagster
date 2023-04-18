@@ -649,7 +649,7 @@ class ConfigurableResourceFactory(
 
     def get_resource_definition(self) -> ConfigurableResourceFactoryResourceDefinition:
         return ConfigurableResourceFactoryResourceDefinition(
-            resource_fn=self.initialize_and_run,
+            resource_fn=self._initialize_and_run,
             config_schema=self._config_schema,
             description=self.__doc__,
             resolve_resource_keys=self._resolve_required_resource_keys,
@@ -747,13 +747,15 @@ class ConfigurableResourceFactory(
         self, resource_context: InitResourceContext
     ) -> "ConfigurableResourceFactory[TResValue]":
         """Returns a new instance of the resource with the given resource init context bound."""
+        # This utility is used to create a copy of this resource, without adjusting
+        # any values in this case
         copy = self._with_updated_values({})
         copy._state__internal__ = copy._state__internal__._replace(  # noqa: SLF001
             resource_context=resource_context
         )
         return copy
 
-    def initialize_and_run(self, context: InitResourceContext) -> TResValue:
+    def _initialize_and_run(self, context: InitResourceContext) -> TResValue:
         updated_resource = (
             self._resolve_and_update_nested_resources(context)  # noqa: SLF001
             .with_resource_context(context)
@@ -872,7 +874,7 @@ class PartialResource(Generic[TResValue], AllowDelayedDependencies, MakeConfigCa
 
         def resource_fn(context: InitResourceContext):
             instantiated = resource_cls(**context.resource_config, **data)
-            return instantiated.initialize_and_run(context)
+            return instantiated._initialize_and_run(context)  # noqa: SLF001
 
         self._state__internal__ = PartialResourceState(
             # We keep track of any resources we depend on which are not fully configured
@@ -1016,7 +1018,7 @@ class ConfigurableIOManagerFactory(ConfigurableResourceFactory[TIOManagerValue])
 
     def get_resource_definition(self) -> ConfigurableIOManagerFactoryResourceDefinition:
         return ConfigurableIOManagerFactoryResourceDefinition(
-            resource_fn=self.initialize_and_run,
+            resource_fn=self._initialize_and_run,
             config_schema=self._config_schema,
             description=self.__doc__,
             resolve_resource_keys=self._resolve_required_resource_keys,
