@@ -518,6 +518,19 @@ GET_ASSET_TYPE = """
     }
 """
 
+GET_ASSET_JOB_NAMES = """
+    query($selector: RepositorySelector!) {
+        repositoryOrError(repositorySelector: $selector) {
+            ... on Repository {
+                 assetNodes {
+                      assetKey {path}
+                      jobNames
+                 }
+            }
+        }
+    }
+"""
+
 BATCH_LOAD_ASSETS = """
     query BatchLoadQuery($assetKeys: [AssetKeyInput!]) {
         assetNodes(assetKeys: $assetKeys, loadMaterializations: true) {
