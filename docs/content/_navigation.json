@@ -705,10 +705,6 @@
             "path": "/guides/dagster/software-defined-assets"
           },
           {
-            "title": "Declarative scheduling for Software-defined assets",
-            "path": "/guides/dagster/scheduling-assets"
-          },
-          {
             "title": "Re-executing jobs",
             "path": "/guides/dagster/re-execution"
           },
