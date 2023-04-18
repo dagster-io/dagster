@@ -54,7 +54,7 @@ def get_implicit_auto_materialize_policy(
     if auto_materialize_policy is None:
         return AutoMaterializePolicy(
             on_missing=True,
-            on_upstream_data_newer=not bool(
+            on_new_parent_data=not bool(
                 asset_graph.get_downstream_freshness_policies(asset_key=asset_key)
             ),
             for_freshness=True,
@@ -599,7 +599,7 @@ def determine_asset_partitions_to_reconcile(
             auto_materialize_policy.on_missing
             and not instance_queryer.materialization_exists(asset_partition=candidate)
         ) or (
-            auto_materialize_policy.on_upstream_data_newer
+            auto_materialize_policy.on_new_parent_data
             and not instance_queryer.is_reconciled(
                 asset_partition=candidate, asset_graph=asset_graph
             )

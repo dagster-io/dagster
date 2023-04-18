@@ -1,7 +1,7 @@
 import datetime
 from typing import NamedTuple, Optional
 
-from dagster._annotations import experimental
+from dagster._annotations import experimental, public
 from dagster._serdes.serdes import whitelist_for_serdes
 
 
@@ -39,7 +39,7 @@ class AutoMaterializePolicy(NamedTuple):
     """
 
     on_missing: bool
-    on_upstream_data_newer: bool
+    on_new_parent_data: bool
     for_freshness: bool
     time_window_partition_scope_minutes: Optional[float]
 
@@ -49,20 +49,22 @@ class AutoMaterializePolicy(NamedTuple):
             return None
         return datetime.timedelta(minutes=self.time_window_partition_scope_minutes)
 
+    @public
     @staticmethod
     def eager() -> "AutoMaterializePolicy":
         return AutoMaterializePolicy(
             on_missing=True,
-            on_upstream_data_newer=True,
+            on_new_parent_data=True,
             for_freshness=True,
             time_window_partition_scope_minutes=datetime.timedelta.resolution.total_seconds() / 60,
         )
 
+    @public
     @staticmethod
     def lazy() -> "AutoMaterializePolicy":
         return AutoMaterializePolicy(
             on_missing=True,
-            on_upstream_data_newer=False,
+            on_new_parent_data=False,
             for_freshness=True,
             time_window_partition_scope_minutes=datetime.timedelta.resolution.total_seconds() / 60,
         )
