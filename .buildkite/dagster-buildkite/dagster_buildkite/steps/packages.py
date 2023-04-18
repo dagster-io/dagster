@@ -296,12 +296,6 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         ],
     ),
     PackageSpec(
-        "examples/experimental/project_fully_featured_v2_resources",
-        unsupported_python_versions=[
-            AvailablePythonVersion.V3_11,
-        ],
-    ),
-    PackageSpec(
         "examples/project_fully_featured",
         unsupported_python_versions=[
             AvailablePythonVersion.V3_11,

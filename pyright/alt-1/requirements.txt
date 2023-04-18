@@ -29,7 +29,6 @@
 
 ### examples/project_fully_featured (and experimental version)
 -e examples/project_fully_featured[tests]
--e examples/experimental/project_fully_featured_v2_resources
   -e python_modules/dagster[pyright,test]
   -e python_modules/dagit
   -e python_modules/dagster-graphql
