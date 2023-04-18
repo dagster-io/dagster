@@ -125,6 +125,18 @@ defs = Definitions(
 
 There are many supported config types that can be used when defining resources. See the [advanced config types documentation](/concepts/configuration/advanced-config-types) for a more comprehensive overview on the available config types.
 
+### Using resources with sensors
+
+[Sensors](/concepts/partitions-schedules-sensors/sensors) can use resources in the same way as ops and assets, which can be useful for querying external services for data.
+
+To specify resource dependencies on a sensor, annotate the resource type as a parameter to the sensor's function. For more information and examples, refer to the [Sensors documentation](/concepts/partitions-schedules-sensors/sensors#using-resources-in-sensors).
+
+### Using resources with schedules
+
+[Schedules](/concepts/partitions-schedules-sensors/schedules) can also use resources in case your schedule logic needs to interface with an external tool, or to make your schedule logic more testable.
+
+To specify resource dependencies on a schedule, annotate the resource type as a parameter to the schedule's function. For more information and examples, refer to the [Schedules documentation](/concepts/partitions-schedules-sensors/schedules#using-resources-in-schedules).
+
 ### Using environment variables with resources
 
 Resources can be configured using environment variables, which is useful for secrets or other environment-specific configuration. If you're using Dagster Cloud, environment variables can be [configured directly in the UI](/dagster-cloud/managing-deployments/environment-variables-and-secrets).

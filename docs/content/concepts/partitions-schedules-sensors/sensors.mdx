@@ -217,6 +217,65 @@ def my_directory_sensor_with_skip_reasons():
 
 ---
 
+## Using resources in sensors
+
+Dagster's [resources](/concepts/resources) system can be used with sensors to make it easier to call out to external systems and to make components of a sensor easier to plug in for testing purposes.
+
+To specify resource dependencies, annotate the resource as a parameter to the sensor's function. Resources are provided by attaching them to your <PyObject object="Definitions" /> call.
+
+Here, a resource is provided which provides access to an external API. The same resource could be used in the job that the sensor triggers.
+
+```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_on_sensor endbefore=end_new_resource_on_sensor dedent=4
+from dagster import (
+    sensor,
+    RunRequest,
+    SensorEvaluationContext,
+    ConfigurableResource,
+    job,
+    Definitions,
+    RunConfig,
+)
+import requests
+from typing import List
+
+class UsersAPI(ConfigurableResource):
+    url: str
+
+    def fetch_users(self) -> List[str]:
+        return requests.get(self.url).json()
+
+@job
+def process_user():
+    ...
+
+@sensor(job=process_user)
+def process_new_users_sensor(
+    context: SensorEvaluationContext,
+    users_api: UsersAPI,
+):
+    last_user = int(context.cursor) if context.cursor else 0
+    users = users_api.fetch_users()
+
+    num_users = len(users)
+    for user_id in users[last_user:]:
+        yield RunRequest(
+            run_key=user_id,
+            tags={"user_id": user_id},
+        )
+
+    context.update_cursor(str(num_users))
+
+defs = Definitions(
+    jobs=[process_user],
+    sensors=[process_new_users_sensor],
+    resources={"users_api": UsersAPI(url="https://my-api.com/users")},
+)
+```
+
+For more information on resources, refer to the [Resources documentation](/concepts/resources). To see how to test schedules with resources, refer to the section on [Testing sensors with resources](#testing-sensors-with-resources).
+
+---
+
 ## Testing sensors
 
 <TabGroup>
@@ -332,6 +391,25 @@ def test_my_directory_sensor_cursor():
     context = build_sensor_context(cursor="0")
     for run_request in my_directory_sensor_cursor(context):
         assert validate_run_config(log_file_job, run_request.run_config)
+```
+
+#### Testing sensors with resources
+
+For sensors which utilize [resources](/concepts/resources), you can provide the necessary resources when invoking the sensor function.
+
+Below is a test for the `process_new_users_sensor` that we defined in the [Using resources in sensors](#using-resources-in-sensors) section, which uses the `users_api` resource.
+
+```python file=/concepts/resources/pythonic_resources.py startafter=start_test_resource_on_sensor endbefore=end_test_resource_on_sensor dedent=4
+from dagster import build_sensor_context, validate_run_config
+
+def test_process_new_users_sensor():
+    class FakeUsersAPI:
+        def fetch_users(self) -> List[str]:
+            return ["1", "2", "3"]
+
+    context = build_sensor_context()
+    run_requests = process_new_users_sensor(context, users_api=FakeUsersAPI())
+    assert len(run_requests) == 3
 ```
 
 </TabItem>
@@ -690,35 +768,6 @@ def my_s3_sensor(context):
     context.update_cursor(last_key)
     return run_requests
 ```
-
-### Using resources in sensors
-
-If you want to use resources within your sensor, you can use the <PyObject object="build_resources"/> API to perform the initialization.
-
-```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_build_resources_example endbefore=end_build_resources_example
-from dagster import resource, build_resources, sensor
-
-
-@resource
-def the_credentials():
-    ...
-
-
-@resource(required_resource_keys={"credentials"})
-def the_db_connection(init_context):
-    get_the_db_connection(init_context.resources.credentials)
-
-
-@sensor(job=the_job)
-def uses_db_connection():
-    with build_resources(
-        {"db_connection": the_db_connection, "credentials": the_credentials}
-    ) as resources:
-        conn = resources.db_connection
-        ...
-```
-
-If a resource you want to initialize has dependencies on other resources, those can be included in the dictionary passed to <PyObject object="build_resources"/>.
 
 ---
 
