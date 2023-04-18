@@ -37,12 +37,13 @@ from dagster import (
 
 @asset_sensor(asset_key=AssetKey("my_table"), job=my_job)
 def my_asset_sensor(context: SensorEvaluationContext, asset_event: EventLogEntry):
+    assert asset_event.dagster_event and asset_event.dagster_event.asset_key
     yield RunRequest(
         run_key=context.cursor,
         run_config=RunConfig(
             ops={
                 "read_materialization": ReadMaterializationConfig(
-                    asset_key=list(asset_event.dagster_event.asset_key.path)  # type: ignore
+                    asset_key=list(asset_event.dagster_event.asset_key.path)
                 )
             }
         ),

@@ -45,6 +45,7 @@ from dagster import (
 
 @asset_sensor(asset_key=AssetKey("my_table"), job=my_job)
 def my_asset_sensor(context: SensorEvaluationContext, asset_event: EventLogEntry):
+    assert asset_event.dagster_event and asset_event.dagster_event.asset_key
     yield RunRequest(
         run_key=context.cursor,
         run_config=RunConfig(
