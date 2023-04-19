@@ -321,10 +321,6 @@ GET_1D_ASSET_PARTITIONS = """
             }
             partitionDefinition {
                 name
-                timeWindowMetadata {
-                    startTime
-                    startKey
-                }
             }
         }
     }
@@ -1292,14 +1288,6 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert materialized_ranges[0]["endKey"] == time_2
         assert materialized_ranges[0]["startTime"] == _get_datetime_float(time_0)
         assert materialized_ranges[0]["endTime"] == _get_datetime_float(time_3)
-
-        time_partitions_def_metadata = result.data["assetNodes"][0]["partitionDefinition"][
-            "timeWindowMetadata"
-        ]
-        assert time_partitions_def_metadata is not None
-        start_time = "2021-05-05-01:00"
-        assert time_partitions_def_metadata["startTime"] == _get_datetime_float(start_time)
-        assert time_partitions_def_metadata["startKey"] == start_time
 
     def test_asset_observations(self, graphql_context: WorkspaceRequestContext):
         _create_run(graphql_context, "observation_job")

@@ -2308,7 +2308,6 @@ export type PartitionDefinition = {
   description: Scalars['String'];
   dimensionTypes: Array<DimensionDefinitionType>;
   name: Maybe<Scalars['String']>;
-  timeWindowMetadata: Maybe<TimePartitionsDefinitionMetadata>;
   type: PartitionDefinitionType;
 };
 
@@ -3841,14 +3840,6 @@ export type TimePartitionRange = {
 export type TimePartitions = {
   __typename: 'TimePartitions';
   ranges: Array<TimePartitionRange>;
-};
-
-export type TimePartitionsDefinitionMetadata = {
-  __typename: 'TimePartitionsDefinitionMetadata';
-  endKey: Scalars['String'];
-  endTime: Scalars['Float'];
-  startKey: Scalars['String'];
-  startTime: Scalars['Float'];
 };
 
 export type TypeCheck = DisplayableEvent & {
@@ -8892,12 +8883,6 @@ export const buildPartitionDefinition = (
               : buildDimensionDefinitionType({}, relationshipsToOmit),
           ],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'facilis',
-    timeWindowMetadata:
-      overrides && overrides.hasOwnProperty('timeWindowMetadata')
-        ? overrides.timeWindowMetadata!
-        : relationshipsToOmit.has('TimePartitionsDefinitionMetadata')
-        ? ({} as TimePartitionsDefinitionMetadata)
-        : buildTimePartitionsDefinitionMetadata({}, relationshipsToOmit),
     type:
       overrides && overrides.hasOwnProperty('type')
         ? overrides.type!
@@ -12641,21 +12626,6 @@ export const buildTimePartitions = (
               ? ({} as TimePartitionRange)
               : buildTimePartitionRange({}, relationshipsToOmit),
           ],
-  };
-};
-
-export const buildTimePartitionsDefinitionMetadata = (
-  overrides?: Partial<TimePartitionsDefinitionMetadata>,
-  _relationshipsToOmit: Set<string> = new Set(),
-): {__typename: 'TimePartitionsDefinitionMetadata'} & TimePartitionsDefinitionMetadata => {
-  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
-  relationshipsToOmit.add('TimePartitionsDefinitionMetadata');
-  return {
-    __typename: 'TimePartitionsDefinitionMetadata',
-    endKey: overrides && overrides.hasOwnProperty('endKey') ? overrides.endKey! : 'nobis',
-    endTime: overrides && overrides.hasOwnProperty('endTime') ? overrides.endTime! : 4.51,
-    startKey: overrides && overrides.hasOwnProperty('startKey') ? overrides.startKey! : 'atque',
-    startTime: overrides && overrides.hasOwnProperty('startTime') ? overrides.startTime! : 3.29,
   };
 };
 
