@@ -26,6 +26,7 @@ import {CompatRouter} from 'react-router-dom-v5-compat';
 import {createGlobalStyle} from 'styled-components/macro';
 import {SubscriptionClient} from 'subscriptions-transport-ws';
 
+import {AssetRunLogObserver} from '../asset-graph/AssetRunLogObserver';
 import {DeploymentStatusProvider, DeploymentStatusType} from '../instance/DeploymentStatusProvider';
 import {InstancePageContext} from '../instance/InstancePageContext';
 import {WorkspaceProvider} from '../workspace/WorkspaceContext';
@@ -205,6 +206,7 @@ export const AppProvider: React.FC<AppProviderProps> = (props) => {
                       </CustomConfirmationProvider>
                       <CustomTooltipProvider />
                       <CustomAlertProvider />
+                      <AssetRunLogObserver />
                     </DeploymentStatusProvider>
                   </WorkspaceProvider>
                 </TimeProvider>

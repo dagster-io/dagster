@@ -1,51 +1,56 @@
-import {gql, useLazyQuery} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import {Box, Caption, Checkbox, Colors, Icon} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {ASSET_NODE_LIVE_FRAGMENT, buildAssetNodeStatusContent} from '../asset-graph/AssetNode';
+import {buildAssetNodeStatusContent} from '../asset-graph/AssetNode';
 import {AssetRunLink} from '../asset-graph/AssetRunLinking';
-import {buildLiveDataForNode} from '../asset-graph/Utils';
-import {ASSET_LATEST_INFO_FRAGMENT} from '../asset-graph/useLiveDataForAssetKeys';
+import {MISSING_LIVE_DATA, toGraphId} from '../asset-graph/Utils';
+import {useLiveDataForAssetKeys} from '../asset-graph/useLiveDataForAssetKeys';
 import {AssetActionMenu} from '../assets/AssetActionMenu';
 import {AssetLink} from '../assets/AssetLink';
-import {PartitionCountLabels} from '../assets/AssetNodePartitionCounts';
-import {ASSET_TABLE_FRAGMENT} from '../assets/AssetTableFragment';
+import {PartitionCountLabels, partitionCountString} from '../assets/AssetNodePartitionCounts';
 import {StaleReasonsLabel} from '../assets/Stale';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
-import {AssetTableFragment} from '../assets/types/AssetTableFragment.types';
+import {AssetTableDefinitionFragment} from '../assets/types/AssetTableFragment.types';
 import {AssetViewType} from '../assets/useAssetView';
 import {AssetComputeKindTag} from '../graph/OpTags';
+import {AssetKeyInput} from '../graphql/types';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {HeaderCell, Row, RowCell} from '../ui/VirtualizedTable';
 
-import {LoadingOrNone, useDelayedRowQuery} from './VirtualizedWorkspaceTable';
 import {RepoAddress} from './types';
-import {SingleAssetQuery, SingleAssetQueryVariables} from './types/VirtualizedAssetRow.types';
+import {
+  SingleNonSdaAssetQuery,
+  SingleNonSdaAssetQueryVariables,
+} from './types/VirtualizedAssetRow.types';
 import {workspacePathFromAddress} from './workspacePath';
 
 const TEMPLATE_COLUMNS = '1.3fr 1fr 80px';
 const TEMPLATE_COLUMNS_FOR_CATALOG = '76px 1.3fr 1.3fr 1.3fr 80px';
 
 interface AssetRowProps {
+  path: string[];
+  definition: AssetTableDefinitionFragment | null;
+
   checked: boolean;
   type: 'folder' | 'asset' | 'asset_non_sda';
   view?: AssetViewType;
   onToggleChecked: (values: {checked: boolean; shiftKey: boolean}) => void;
   showCheckboxColumn: boolean;
   showRepoColumn: boolean;
-  path: string[];
   repoAddress: RepoAddress | null;
   height: number;
   start: number;
-  onWipe: (assets: AssetTableFragment[]) => void;
+  onWipe: (assets: AssetKeyInput[]) => void;
 }
 
 export const VirtualizedAssetRow = (props: AssetRowProps) => {
   const {
     path,
+    definition,
     type,
     repoAddress,
     start,
@@ -58,15 +63,8 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
     view = 'flat',
   } = props;
 
-  const [queryAsset, queryResult] = useLazyQuery<SingleAssetQuery, SingleAssetQueryVariables>(
-    SINGLE_ASSET_QUERY,
-    {
-      variables: {input: {path}},
-    },
-  );
-
-  useDelayedRowQuery(queryAsset);
-  const {data} = queryResult;
+  const liveData = useLiveDataOrLatestMaterializationDebounced(path, type);
+  const linkUrl = assetDetailsPathForKey({path});
 
   const onChange = (e: React.FormEvent<HTMLInputElement>) => {
     if (onToggleChecked && e.target instanceof HTMLInputElement) {
@@ -76,25 +74,6 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
       onToggleChecked({checked, shiftKey});
     }
   };
-
-  const asset = React.useMemo(() => {
-    if (data?.assetOrError.__typename === 'Asset') {
-      return data.assetOrError;
-    }
-    return null;
-  }, [data]);
-
-  const liveData = React.useMemo(() => {
-    if (asset?.definition && data?.assetsLatestInfo) {
-      const latestInfoForAsset = data.assetsLatestInfo[0];
-      if (latestInfoForAsset) {
-        return buildLiveDataForNode(asset.definition, latestInfoForAsset);
-      }
-    }
-    return null;
-  }, [data, asset]);
-
-  const linkUrl = assetDetailsPathForKey({path});
 
   return (
     <Row $height={height} $start={start}>
@@ -118,11 +97,11 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
                 textStyle="middle-truncate"
               />
             </div>
-            {asset?.definition && (
+            {definition && (
               <AssetComputeKindTag
                 reduceColor
                 reduceText
-                definition={asset.definition}
+                definition={definition}
                 style={{position: 'relative'}}
               />
             )}
@@ -135,7 +114,7 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
             }}
           >
             <Caption style={{color: Colors.Gray500, whiteSpace: 'nowrap'}}>
-              {asset?.definition?.description}
+              {definition?.description}
             </Caption>
           </div>
         </RowCell>
@@ -147,16 +126,16 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
                 style={{maxWidth: '100%', overflow: 'hidden'}}
               >
                 <RepositoryLink repoAddress={repoAddress} showIcon showRefresh={false} />
-                {asset?.definition && asset?.definition.groupName ? (
+                {definition && definition.groupName ? (
                   <Link
                     to={workspacePathFromAddress(
                       repoAddress,
-                      `/asset-groups/${asset.definition.groupName}`,
+                      `/asset-groups/${definition.groupName}`,
                     )}
                   >
                     <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
                       <Icon color={Colors.Gray400} name="asset_group" />
-                      {asset.definition.groupName}
+                      {definition.groupName}
                     </Box>
                   </Link>
                 ) : null}
@@ -167,23 +146,22 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
           </RowCell>
         ) : null}
         <RowCell>
-          {asset?.definition?.partitionDefinition ? (
+          {definition?.partitionDefinition ? (
             <Box flex={{direction: 'column', alignItems: 'flex-start', gap: 4}}>
               <PartitionCountLabels partitionStats={liveData?.partitionStats} />
-              <Caption>{`${liveData?.partitionStats?.numPartitions.toLocaleString()} ${
-                liveData?.partitionStats?.numPartitions === 1 ? 'partition' : 'partitions'
-              }`}</Caption>
+              <Caption>{partitionCountString(liveData?.partitionStats?.numPartitions)}</Caption>
             </Box>
           ) : (
             <Box flex={{direction: 'column', alignItems: 'flex-start', gap: 4}}>
-              {asset?.definition ? (
+              {definition ? (
                 <Box
                   style={{whiteSpace: 'nowrap'}}
                   flex={{direction: 'row', alignItems: 'center', gap: 8}}
                 >
                   {
                     buildAssetNodeStatusContent({
-                      definition: asset.definition,
+                      assetKey: {path},
+                      definition,
                       expanded: true,
                       liveData,
                     }).content
@@ -203,7 +181,9 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
                   />
                 </AssetRunLink>
               ) : (
-                <LoadingOrNone queryResult={queryResult} noneString={'\u2013'} />
+                <div style={{color: Colors.Gray500}}>
+                  {!liveData && type !== 'folder' ? 'Loading' : '\u2013'}
+                </div>
               )}
               {liveData && (
                 <StaleReasonsLabel assetKey={{path}} liveData={liveData} include="all" />
@@ -212,8 +192,13 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
           )}
         </RowCell>
         <RowCell>
-          {asset ? (
-            <AssetActionMenu repoAddress={repoAddress} asset={asset} onWipe={onWipe} />
+          {type !== 'folder' ? (
+            <AssetActionMenu
+              path={path}
+              definition={definition}
+              repoAddress={repoAddress}
+              onWipe={onWipe}
+            />
           ) : null}
         </RowCell>
       </RowGrid>
@@ -273,8 +258,55 @@ const RowGrid = styled(Box)<{$showRepoColumn: boolean}>`
   height: 100%;
 `;
 
-export const SINGLE_ASSET_QUERY = gql`
-  query SingleAssetQuery($input: AssetKeyInput!) {
+const LIVE_QUERY_DELAY = 250;
+
+/**
+ * This hook maps through to `useLiveDataForAssetKeys` for the `asset` case and a per-row
+ * query for the latest materialization for the `asset_non_sda` case.
+ *
+ * It uses internal state and `skip` to implement a debounce that prevents a ton of queries
+ * as the user scans past rows. (The best way to skip the useLiveDataForAssetKeys work is
+ * to pass it an empty array of asset keys.)
+ */
+function useLiveDataOrLatestMaterializationDebounced(
+  path: string[],
+  type: 'folder' | 'asset' | 'asset_non_sda',
+) {
+  const [debouncedKeys, setDebouncedKeys] = React.useState<AssetKeyInput[]>([]);
+
+  const {liveDataByNode} = useLiveDataForAssetKeys(type === 'asset' ? debouncedKeys : []);
+
+  const {data: nonSDAData} = useQuery<SingleNonSdaAssetQuery, SingleNonSdaAssetQueryVariables>(
+    SINGLE_NON_SDA_ASSET_QUERY,
+    {
+      skip: !(type === 'asset_non_sda' && debouncedKeys.length > 0),
+      variables: {input: debouncedKeys[0]},
+    },
+  );
+  const nonSDALastMaterialization = React.useMemo(
+    () =>
+      nonSDAData?.assetOrError.__typename === 'Asset'
+        ? nonSDAData.assetOrError.assetMaterializations[0]
+        : null,
+    [nonSDAData],
+  );
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedKeys(path ? [{path}] : []);
+    }, LIVE_QUERY_DELAY);
+    return () => clearTimeout(timer);
+  }, [path]);
+
+  return type === 'asset'
+    ? liveDataByNode[toGraphId({path})]
+    : type === 'asset_non_sda'
+    ? {...MISSING_LIVE_DATA, lastMaterialization: nonSDALastMaterialization}
+    : null;
+}
+
+export const SINGLE_NON_SDA_ASSET_QUERY = gql`
+  query SingleNonSDAAssetQuery($input: AssetKeyInput!) {
     assetOrError(assetKey: $input) {
       ... on Asset {
         id
@@ -282,20 +314,7 @@ export const SINGLE_ASSET_QUERY = gql`
           runId
           timestamp
         }
-        definition {
-          id
-          computeKind
-          ...AssetNodeLiveFragment
-        }
-        ...AssetTableFragment
       }
     }
-    assetsLatestInfo(assetKeys: [$input]) {
-      ...AssetLatestInfoFragment
-    }
   }
-
-  ${ASSET_NODE_LIVE_FRAGMENT}
-  ${ASSET_TABLE_FRAGMENT}
-  ${ASSET_LATEST_INFO_FRAGMENT}
 `;
