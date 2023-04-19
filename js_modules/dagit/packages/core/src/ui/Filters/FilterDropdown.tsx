@@ -372,7 +372,7 @@ export const FilterDropdownMenuItem = React.memo(
     React.useLayoutEffect(() => {
       if (rest.active) {
         if (divRef.current) {
-          divRef.current.scrollIntoView({block: 'center'});
+          divRef.current?.scrollIntoView?.({block: 'center'});
         }
       }
     }, [rest.active]);
