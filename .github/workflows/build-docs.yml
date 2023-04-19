@@ -19,6 +19,8 @@ jobs:
     steps:
       - name: Checkout PR branch
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 1000
 
       - name: Get changed docs files
         if: ${{ github.event.pull_request }}
