@@ -10,6 +10,7 @@ import {
   Spinner,
   TextInput,
 } from '@dagster-io/ui';
+import {useVirtualizer} from '@tanstack/react-virtual';
 import React, {useState, useRef} from 'react';
 import styled, {createGlobalStyle} from 'styled-components/macro';
 import {v4 as uuidv4} from 'uuid';
@@ -17,6 +18,7 @@ import {v4 as uuidv4} from 'uuid';
 import {ShortcutHandler} from '../../app/ShortcutHandler';
 import {useSetStateUpdateCallback} from '../../hooks/useSetStateUpdateCallback';
 import {useUpdatingRef} from '../../hooks/useUpdatingRef';
+import {Container, Inner, Row} from '../../ui/VirtualizedTable';
 
 import {FilterObject} from './useFilter';
 
@@ -195,6 +197,18 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
     [allResultsJsx, focusedItemIndex, selectedFilter, setSelectedFilterName, setIsOpen],
   );
 
+  const parentRef = React.useRef<HTMLDivElement>(null);
+
+  const rowVirtualizer = useVirtualizer({
+    count: allResultsJsx.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: (_: number) => 32,
+    overscan: 10,
+  });
+
+  const totalHeight = rowVirtualizer.getTotalSize();
+  const items = rowVirtualizer.getVirtualItems();
+
   return (
     <div>
       <TextInputWrapper>
@@ -224,18 +238,23 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
         </Box>
       </TextInputWrapper>
       <Menu>
-        <DropdownMenuContainer
-          id={menuKey}
-          ref={dropdownRef}
-          style={{maxHeight: '500px', overflowY: 'auto'}}
-          onKeyDown={handleKeyDown}
-        >
+        <DropdownMenuContainer id={menuKey} ref={dropdownRef} onKeyDown={handleKeyDown}>
           {selectedFilter && selectedFilter.isLoadingFilters ? (
             <Box padding={{vertical: 12, horizontal: 16}}>
               <Spinner purpose="section" />
             </Box>
           ) : allResultsJsx.length ? (
-            allResultsJsx
+            <Container ref={parentRef} style={{maxHeight: '500px', overflowY: 'auto'}}>
+              <Inner $totalHeight={totalHeight}>
+                {items.map(({index, end, start}) => {
+                  return (
+                    <Row $height={end - start} $start={start} key={index}>
+                      {allResultsJsx[index]}
+                    </Row>
+                  );
+                })}
+              </Inner>
+            </Container>
           ) : (
             <Box padding={{vertical: 12, horizontal: 16}}>No results</Box>
           )}
