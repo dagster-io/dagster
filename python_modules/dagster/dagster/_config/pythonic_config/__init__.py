@@ -246,7 +246,7 @@ class Config(MakeConfigCacheable):
 
 
 class PermissiveConfig(Config):
-    """Subclass of `Config` that allows arbitrary extra fields. This is useful for
+    """Subclass of :py:class:`Config` that allows arbitrary extra fields. This is useful for
     config classes which may have open-ended inputs.
 
     Example definition:
