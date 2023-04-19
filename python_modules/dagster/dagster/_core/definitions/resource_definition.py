@@ -62,7 +62,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources):
     """Core class for defining resources.
 
     Resources are scoped ways to make external resources (like database connections) available to
-    during job execution and to clean up after execution resolves.
+    ops and assets during job execution and to clean up after execution resolves.
 
     If resource_fn yields once rather than returning (in the manner of functions decorable with
     :py:func:`@contextlib.contextmanager <python:contextlib.contextmanager>`) then the body of the

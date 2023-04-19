@@ -163,7 +163,7 @@ class MakeConfigCacheable(BaseModel):
 
 class Config(MakeConfigCacheable):
     """Base class for Dagster configuration models, used to specify config schema for
-    ops and assets. Subclasses `pydantic.BaseModel`.
+    ops and assets. Subclasses :py:class:`pydantic.BaseModel`.
 
     Example definition:
 
