@@ -159,6 +159,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
 
     hasCancelPermission = graphene.NonNull(graphene.Boolean)
     hasResumePermission = graphene.NonNull(graphene.Boolean)
+    user = graphene.Field(graphene.String)
 
     def __init__(self, backfill_job: PartitionBackfill):
         self._backfill_job = check.inst_param(backfill_job, "backfill_job", PartitionBackfill)
@@ -363,6 +364,9 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         return graphene_info.context.has_permission_for_location(
             Permissions.LAUNCH_PARTITION_BACKFILL, location_name
         )
+
+    def resolve_user(self, _graphene_info: ResolveInfo) -> Optional[str]:
+        return self._backfill_job.user
 
 
 class GraphenePartitionBackfillOrError(graphene.Union):

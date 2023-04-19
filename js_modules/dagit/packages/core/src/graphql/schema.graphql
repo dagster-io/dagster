@@ -2412,6 +2412,7 @@ type PartitionBackfill {
   assetBackfillData: AssetBackfillData
   hasCancelPermission: Boolean!
   hasResumePermission: Boolean!
+  user: String
 }
 
 enum BulkActionStatus {
