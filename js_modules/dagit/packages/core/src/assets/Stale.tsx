@@ -1,4 +1,4 @@
-import {Colors, Box, BaseTag, Tooltip, Icon, Body, ButtonLink} from '@dagster-io/ui';
+import {Colors, Box, BaseTag, Tooltip, Icon, Body, ButtonLink, CaptionMono} from '@dagster-io/ui';
 import groupBy from 'lodash/groupBy';
 import isEqual from 'lodash/isEqual';
 import React from 'react';
@@ -114,7 +114,7 @@ const StaleCausesSummary: React.FC<{causes: LiveDataForNode['staleCauses']}> = (
     <ul style={{margin: 0, padding: '4px 12px'}}>
       {causes.slice(0, MAX_DISPLAYED_REASONS).map((cause, idx) => (
         <li key={idx}>
-          [{displayNameForAssetKey(cause.key)}] {cause.reason}{' '}
+          <CaptionMono>{displayNameForAssetKey(cause.key)}</CaptionMono> {cause.reason}{' '}
           {cause.dependency ? `(${displayNameForAssetKey(cause.dependency)})` : ''}
         </li>
       ))}
