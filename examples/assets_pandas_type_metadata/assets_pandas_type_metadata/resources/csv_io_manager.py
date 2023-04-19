@@ -1,24 +1,32 @@
 import os
 import textwrap
+from typing import Optional
 
 import pandas as pd
-from dagster import (
-    AssetKey,
-    ConfigurableIOManager,
-    MemoizableIOManager,
-    TableSchemaMetadataValue,
-)
+from dagster import AssetKey, ConfigurableIOManager, MemoizableIOManager, TableSchemaMetadataValue
 from dagster._core.definitions.metadata import MetadataValue
+from dagster._utils.cached_method import cached_method
 from pydantic import Field
 
 
 class LocalCsvIOManager(ConfigurableIOManager, MemoizableIOManager):
     """Translates between Pandas DataFrames and CSVs on the local filesystem."""
 
-    base_dir: str = Field(default=os.getenv("DAGSTER_HOME"))
+    base_dir: Optional[str] = Field(default=None)
+
+    @property
+    @cached_method
+    def resolved_base_dir(self) -> str:
+        if self.base_dir:
+            return self.base_dir
+        resource_context = self.get_resource_context()
+        if resource_context.instance is not None:
+            return resource_context.instance.storage_directory()
+        else:
+            return os.getenv("DAGSTER_HOME", ".")
 
     def _get_fs_path(self, asset_key: AssetKey) -> str:
-        rpath = os.path.join(self.base_dir, *asset_key.path) + ".csv"
+        rpath = os.path.join(self.resolved_base_dir, *asset_key.path) + ".csv"
         return os.path.abspath(rpath)
 
     def handle_output(self, context, obj: pd.DataFrame):
