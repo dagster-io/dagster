@@ -16,6 +16,7 @@ import {v4 as uuidv4} from 'uuid';
 
 import {ShortcutHandler} from '../../app/ShortcutHandler';
 import {useSetStateUpdateCallback} from '../../hooks/useSetStateUpdateCallback';
+import {useUpdatingRef} from '../../hooks/useUpdatingRef';
 
 import {FilterObject} from './useFilter';
 
@@ -42,6 +43,14 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
       }
     }
   });
+
+  const selectedFilterRef = useUpdatingRef(selectedFilter);
+  React.useLayoutEffect(() => {
+    return () => {
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      selectedFilterRef.current?.onUnselected?.();
+    };
+  }, [selectedFilterRef]);
 
   const {results, filteredFilters} = React.useMemo(() => {
     const filteredFilters = selectedFilter
