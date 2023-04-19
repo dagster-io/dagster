@@ -49,7 +49,7 @@ def test_pydantic_snowflake_resource(snowflake_connect):
     @op
     def snowflake_op(snowflake: SnowflakeResource):
         assert snowflake
-        with snowflake.get_client().get_connection() as _:
+        with snowflake.get_connection() as _:
             pass
 
     resource = SnowflakeResource(
@@ -126,7 +126,7 @@ def test_pydantic_snowflake_resource_from_envvars(snowflake_connect):
     @op
     def snowflake_op(snowflake: SnowflakeResource):
         assert snowflake
-        with snowflake.get_client().get_connection() as _:
+        with snowflake.get_connection() as _:
             pass
 
     resource = SnowflakeResource(
@@ -194,7 +194,7 @@ def test_pydantic_snowflake_resource_no_auth(snowflake_connect):
     @op
     def snowflake_op(snowflake: SnowflakeResource):
         assert snowflake
-        with snowflake.get_client().get_connection() as _:
+        with snowflake.get_connection() as _:
             pass
 
     resource = SnowflakeResource(
@@ -246,7 +246,7 @@ def test_pydantic_snowflake_resource_duplicate_auth(snowflake_connect):
     @op
     def snowflake_op(snowflake: SnowflakeResource):
         assert snowflake
-        with snowflake.get_client().get_connection() as _:
+        with snowflake.get_connection() as _:
             pass
 
     resource = SnowflakeResource(
@@ -299,7 +299,7 @@ def test_pydantic_snowflake_resource_missing_private_key_password(snowflake_conn
     @op
     def snowflake_op(snowflake: SnowflakeResource):
         assert snowflake
-        with snowflake.get_client().get_connection() as _:
+        with snowflake.get_connection() as _:
             pass
 
     resource = SnowflakeResource(
