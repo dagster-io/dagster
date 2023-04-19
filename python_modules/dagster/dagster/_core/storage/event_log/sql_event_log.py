@@ -1866,18 +1866,65 @@ class SqlEventLogStorage(EventLogStorage):
             count (int): The number of slots to allocate.
         """
         with self.index_connection() as conn:
-            count_query = (
+            count_row = conn.execute(
                 db.select([db.func.count()])
                 .select_from(ConcurrencySlotsTable)
-                .where(ConcurrencySlotsTable.c.concurrency_key == concurrency_key)
-            )
-            count_row = conn.execute(count_query).fetchone()
+                .where(
+                    db.and_(
+                        ConcurrencySlotsTable.c.concurrency_key == concurrency_key,
+                        ConcurrencySlotsTable.c.deleted == False,  # noqa: E712
+                    )
+                )
+            ).fetchone()
             count = count_row[0] if count_row else 0
-            rows = [
-                {"concurrency_key": concurrency_key, "run_id": None, "step_key": None}
-                for _ in range(count, num_int)
-            ]
-            conn.execute(ConcurrencySlotsTable.insert().values(rows))
+
+            if count > num_int:
+                # need to delete some slots, favoring ones where the slot is unallocated
+                subquery = (
+                    db.select([ConcurrencySlotsTable.c.id])
+                    .select_from(ConcurrencySlotsTable)
+                    .where(
+                        db.and_(
+                            ConcurrencySlotsTable.c.concurrency_key == concurrency_key,
+                            ConcurrencySlotsTable.c.deleted == False,  # noqa: E712
+                        )
+                    )
+                    .order_by(
+                        db.case([(ConcurrencySlotsTable.c.run_id.is_(None), 1)], else_=0).desc(),
+                        ConcurrencySlotsTable.c.id.desc(),
+                    )
+                    .limit(count - num_int)
+                )
+
+                # mark rows as deleted
+                conn.execute(
+                    ConcurrencySlotsTable.update()
+                    .values(deleted=True)
+                    .where(ConcurrencySlotsTable.c.id.in_(subquery))
+                )
+
+                # actually delete rows that are marked as deleted and are not claimed... the rest
+                # will be deleted when the slots are released by the free_concurrency_slots
+                conn.execute(
+                    ConcurrencySlotsTable.delete().where(
+                        db.and_(
+                            ConcurrencySlotsTable.c.deleted == True,  # noqa: E712
+                            ConcurrencySlotsTable.c.run_id == None,  # noqa: E711
+                        )
+                    )
+                )
+            elif num_int > count:
+                # need to add some slots
+                rows = [
+                    {
+                        "concurrency_key": concurrency_key,
+                        "run_id": None,
+                        "step_key": None,
+                        "deleted": False,
+                    }
+                    for _ in range(count, num_int)
+                ]
+                conn.execute(ConcurrencySlotsTable.insert().values(rows))
 
     def claim_concurrency_slots(self, concurrency_keys: Set[str], run_id: str, step_key: str):
         """Claim concurrency slots for step.
@@ -1897,6 +1944,7 @@ class SqlEventLogStorage(EventLogStorage):
                             db.and_(
                                 ConcurrencySlotsTable.c.concurrency_key == concurrency_key,
                                 ConcurrencySlotsTable.c.step_key == None,  # noqa: E711
+                                ConcurrencySlotsTable.c.deleted == False,  # noqa: E712
                             )
                         )
                         .limit(1),
@@ -1923,11 +1971,14 @@ class SqlEventLogStorage(EventLogStorage):
             rows = conn.execute(
                 db.select([ConcurrencySlotsTable.c.concurrency_key])
                 .select_from(ConcurrencySlotsTable)
+                .where(ConcurrencySlotsTable.c.deleted == False)  # noqa: E712
                 .distinct()
             ).fetchall()
             return {row[0] for row in rows}
 
-    def get_concurrency_info(self, concurrency_key: str) -> List[Tuple[str, str]]:
+    def get_concurrency_info(
+        self, concurrency_key: str, include_deleted: bool = False
+    ) -> List[Tuple[str, str]]:
         """Get the list of concurrency slots for a given concurrency key.
 
         Args:
@@ -1937,12 +1988,15 @@ class SqlEventLogStorage(EventLogStorage):
             List[Tuple[str, str]]: A list of tuples of run_id and step_key for the slots.
         """
         with self.index_connection() as conn:
-            rows = conn.execute(
+            query = (
                 db.select([ConcurrencySlotsTable.c.run_id, db.func.count()])
                 .select_from(ConcurrencySlotsTable)
                 .where(ConcurrencySlotsTable.c.concurrency_key == concurrency_key)
                 .group_by(ConcurrencySlotsTable.c.run_id)
-            ).fetchall()
+            )
+            if not include_deleted:
+                query = query.where(ConcurrencySlotsTable.c.deleted == False)  # noqa: E712
+            rows = conn.execute(query).fetchall()
             return [(row[0], row[1]) for row in rows]
 
     def free_concurrency_slots(self, run_id: str, step_key: Optional[str] = None):
@@ -1954,7 +2008,19 @@ class SqlEventLogStorage(EventLogStorage):
                 slots for all the steps of the run will be freed.
         """
         with self.index_connection() as conn:
-            query = (
+            # first delete any rows that apply and are marked as deleted
+            delete_query = ConcurrencySlotsTable.delete().where(
+                db.and_(
+                    ConcurrencySlotsTable.c.run_id == run_id,
+                    ConcurrencySlotsTable.c.deleted == True,  # noqa: E712
+                )
+            )
+            if step_key:
+                delete_query = delete_query.where(ConcurrencySlotsTable.c.step_key == step_key)
+            result = conn.execute(delete_query)
+            freed_slot_count = result.rowcount
+
+            update_query = (
                 ConcurrencySlotsTable.update()
                 .values(run_id=None, step_key=None)
                 .where(
@@ -1962,10 +2028,11 @@ class SqlEventLogStorage(EventLogStorage):
                 )
             )
             if step_key:
-                query = query.where(ConcurrencySlotsTable.c.step_key == step_key)
+                update_query = update_query.where(ConcurrencySlotsTable.c.step_key == step_key)
 
-            result = conn.execute(query)
-            return result.rowcount
+            result = conn.execute(update_query)
+            freed_slot_count = freed_slot_count + result.rowcount
+            return freed_slot_count
 
 
 def _get_from_row(row: SqlAlchemyRow, column: str) -> object:

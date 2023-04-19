@@ -92,6 +92,7 @@ ConcurrencySlotsTable = db.Table(
     db.Column("concurrency_key", db.Text, nullable=False),
     db.Column("run_id", db.Text),
     db.Column("step_key", db.Text),
+    db.Column("deleted", db.Boolean, nullable=False, default=False),
     db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
 )
 
