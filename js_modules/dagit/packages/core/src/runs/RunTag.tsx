@@ -21,6 +21,7 @@ export enum DagsterTag {
   AssetEventDataVersion = 'dagster/data_version',
   AssetEventDataVersionDeprecated = 'dagster/logical_version',
   AssetEventCodeVersion = 'dagster/code_version',
+  User = 'user',
 
   // Hidden tags (using ".dagster" HIDDEN_TAG_PREFIX)
   RepositoryLabelTag = '.dagster/repository',

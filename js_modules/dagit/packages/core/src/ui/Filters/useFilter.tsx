@@ -4,14 +4,7 @@ import styled from 'styled-components/macro';
 
 import {TruncatedTextWithFullTextOnHover} from '../../nav/getLeftNavItemsForOption';
 
-export type FilterListenerCallback<TState> = (value: {
-  state: TState;
-  previousActive: boolean;
-  active: boolean;
-  name: string;
-}) => void;
-
-export type FilterObject<TState> = {
+export type FilterObject = {
   isActive: boolean;
   activeJSX: JSX.Element;
   icon: IconName;
@@ -22,8 +15,8 @@ export type FilterObject<TState> = {
     close: () => void;
     createPortal: (element: JSX.Element) => () => void;
   }) => void;
-  state: TState;
-  setState: (state: TState) => void;
+  onUnselected?: () => void;
+  isLoadingFilters?: boolean;
 };
 
 export const FilterTag = ({
