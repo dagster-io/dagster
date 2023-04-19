@@ -12,7 +12,7 @@ TWENTY_MINUTES = 20 * 60
 DEFAULT_ITER_TIME_SEC = 5
 
 
-class DataprocResource:
+class DataprocClient:
     """Builds a client to the dataproc API."""
 
     def __init__(self, config):
@@ -68,7 +68,7 @@ class DataprocResource:
             cluster = self.get_cluster()
             return cluster["status"]["state"] in {"RUNNING", "UPDATING"}
 
-        done = DataprocResource._iter_and_sleep_until_ready(iter_fn)
+        done = DataprocClient._iter_and_sleep_until_ready(iter_fn)
         if not done:
             cluster = self.get_cluster()
             raise DataprocError(
@@ -112,7 +112,7 @@ class DataprocResource:
 
             return False
 
-        done = DataprocResource._iter_and_sleep_until_ready(iter_fn, max_wait_time_sec=wait_timeout)
+        done = DataprocClient._iter_and_sleep_until_ready(iter_fn, max_wait_time_sec=wait_timeout)
         if not done:
             job = self.get_job(job_id)
             raise DataprocError("Job run timed out: %s" % str(job["status"]))
@@ -154,4 +154,4 @@ class DataprocResource:
     description="Manage a Dataproc cluster resource",
 )
 def dataproc_resource(context):
-    return DataprocResource(context.resource_config)
+    return DataprocClient(context.resource_config)
