@@ -2,8 +2,14 @@ from contextlib import contextmanager
 from datetime import datetime
 from typing import Any, Mapping, Optional, Sequence, Tuple, Union
 
-from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
-from dagster._config.pythonic_config import ConfigurableIOManager
+from dagster import (
+    ConfigurableIOManager,
+    InputContext,
+    MetadataValue,
+    OutputContext,
+    TableColumn,
+    TableSchema,
+)
 from pandas import (
     DataFrame as PandasDataFrame,
     read_sql,

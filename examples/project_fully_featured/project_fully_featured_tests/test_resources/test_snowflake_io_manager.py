@@ -8,8 +8,8 @@ from dagster import AssetKey, asset, build_input_context, build_output_context
 from dagster._core.execution.context.input import InputContext
 from dagster._core.execution.context.output import OutputContext
 from pandas import DataFrame as PandasDataFrame
-from project_fully_featured_v2_resources.resources import SHARED_SNOWFLAKE_CONF
-from project_fully_featured_v2_resources.resources.snowflake_io_manager import (
+from project_fully_featured.resources import SHARED_SNOWFLAKE_CONF
+from project_fully_featured.resources.snowflake_io_manager import (
     SnowflakeIOManager,
     connect_snowflake,
 )
@@ -51,7 +51,8 @@ def temporary_snowflake_table(contents: PandasDataFrame) -> Iterator[AssetKey]:
 
 
 @pytest.mark.skipif(
-    os.environ.get("TEST_SNOWFLAKE") != "true", reason="avoid dependency on snowflake for tests"
+    os.environ.get("TEST_SNOWFLAKE") != "true",
+    reason="avoid dependency on snowflake for tests",
 )
 def test_handle_output_then_load_input_pandas():
     snowflake_manager = SnowflakeIOManager(database="BEN", **SHARED_SNOWFLAKE_CONF)
@@ -67,7 +68,8 @@ def test_handle_output_then_load_input_pandas():
 
 
 @pytest.mark.skipif(
-    os.environ.get("TEST_SNOWFLAKE") != "true", reason="avoid dependency on snowflake for tests"
+    os.environ.get("TEST_SNOWFLAKE") != "true",
+    reason="avoid dependency on snowflake for tests",
 )
 def test_handle_output_spark_then_load_input_pandas():
     snowflake_manager = SnowflakeIOManager(database="BEN", **SHARED_SNOWFLAKE_CONF)
