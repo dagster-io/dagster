@@ -278,6 +278,34 @@ export const LiveDataForNodeMaterializedAndOverdue: LiveDataForNode = {
   partitionStats: null,
 };
 
+export const LiveDataForNodeFailedAndOverdue: LiveDataForNode = {
+  stepKey: 'asset1',
+  unstartedRunIds: [],
+  inProgressRunIds: [],
+  lastMaterializationRunStatus: null,
+  lastObservation: null,
+  lastMaterialization: null,
+  runWhichFailedToMaterialize: {
+    __typename: 'Run',
+    id: '123456',
+    status: RunStatus.FAILURE,
+    endTime: 1673301346,
+  },
+  staleStatus: StaleStatus.FRESH,
+  staleCauses: [],
+  freshnessInfo: {
+    __typename: 'AssetFreshnessInfo',
+    currentMinutesLate: 12,
+  },
+  freshnessPolicy: {
+    __typename: 'FreshnessPolicy',
+    maximumLagMinutes: 10,
+    cronSchedule: null,
+    cronScheduleTimezone: null,
+  },
+  partitionStats: null,
+};
+
 export const LiveDataForNodeSourceNeverObserved: LiveDataForNode = {
   stepKey: 'source_asset',
   unstartedRunIds: [],
@@ -625,7 +653,13 @@ export const AssetNodeScenariosBase = [
     title: 'Materialized and Overdue',
     liveData: LiveDataForNodeMaterializedAndOverdue,
     definition: AssetNodeFragmentBasic,
-    expectedText: ['Overdue'],
+    expectedText: ['Overdue', 'Feb'],
+  },
+  {
+    title: 'Materialized and Failed and Overdue',
+    liveData: LiveDataForNodeFailedAndOverdue,
+    definition: AssetNodeFragmentBasic,
+    expectedText: ['Failed, Overdue', 'Jan'],
   },
 ];
 
