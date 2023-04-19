@@ -3,12 +3,21 @@ Config
 
 .. currentmodule:: dagster
 
-Config Types
-------------
+Pythonic config system
+----------------------
 
-The following types are used to describe the schema of configuration
-data via ``config``. They are used in conjunction with the
-builtin types above.
+The following classes are used as part of the new `Pythonic config system </concepts/configuration/config-schema>`_. They are used in conjunction with builtin types.
+
+.. autoclass:: Config
+
+.. autoclass:: PermissiveConfig
+
+.. autoclass:: RunConfig
+
+Legacy Dagster config types
+---------------------------
+
+The following types are used as part of the legacy `Dagster config system </concepts/configuration/config-schema-legacy>`_. They are used in conjunction with builtin types.
 
 .. autoclass:: ConfigSchema
 

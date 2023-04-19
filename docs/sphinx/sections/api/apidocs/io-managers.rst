@@ -6,7 +6,11 @@ IO Managers
 IO managers are user-provided objects that store op outputs and load them as inputs to downstream
 ops.
 
-.. autodecorator:: io_manager
+
+.. autoclass:: ConfigurableIOManager
+
+.. autoclass:: ConfigurableIOManagerFactory
+
 
 .. autoclass:: IOManager
     :members:
@@ -14,6 +18,7 @@ ops.
 .. autoclass:: IOManagerDefinition
     :members:
 
+.. autodecorator:: io_manager
 
 Input and Output Contexts
 -------------------------
