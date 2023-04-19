@@ -6,7 +6,7 @@ import {AssetKey} from '../graphql/types';
 import {
   AssetLiveRunLogsSubscription,
   AssetLiveRunLogsSubscriptionVariables,
-} from './types/useLiveDataForAssetKeys.types';
+} from './types/AssetRunLogObserver.types';
 
 const OBSERVED_RUNS_CHANGED = 'observed-runs-changed';
 
@@ -25,11 +25,18 @@ function removeCallback(runId: string, callback: ObservedRunCallback) {
   }
 }
 
+/** Call this function with runIds you'd like to observe and the callback will be invoked when
+ * asset events occur in those runs. This function returns an `unsubscribe` method that you
+ * should call when your component is unmounted to stop listening.
+ */
 export function observeAssetEventsInRuns(runIds: string[], callback: ObservedRunCallback) {
   runIds.forEach((runId) => (ObservedRuns[runId] = [...(ObservedRuns[runId] || []), callback]));
-
   document.dispatchEvent(new CustomEvent(OBSERVED_RUNS_CHANGED));
+
   return () => {
+    // Note: When a component unsubscribes from runs, we immediately remove the callback but we
+    // register a temporary one in it's place for one second. This prevents thrashing the subscriptions
+    // if you're clicking around Dagit between assets that are all materializing in the same run.
     const temporary: ObservedRunCallback = () => {};
     runIds.forEach((runId) => (ObservedRuns[runId] = [...(ObservedRuns[runId] || []), temporary]));
     runIds.forEach((runId) => removeCallback(runId, callback));
