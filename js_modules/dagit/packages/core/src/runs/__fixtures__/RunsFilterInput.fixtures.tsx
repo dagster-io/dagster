@@ -1,12 +1,6 @@
 import {MockedResponse} from '@apollo/client/testing';
 
-import {
-  Run,
-  RunTagsOrError,
-  WorkspaceOrError,
-  buildPipelineTagAndValues,
-  buildRunTags,
-} from '../../graphql/types';
+import {WorkspaceOrError, buildPipelineTagAndValues, buildRunTags} from '../../graphql/types';
 import {ROOT_WORKSPACE_QUERY} from '../../workspace/WorkspaceContext';
 import {RootWorkspaceQuery} from '../../workspace/types/WorkspaceContext.types';
 import {DagsterTag} from '../RunTag';

@@ -155,7 +155,6 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
                         enabledFilters={ENABLED_FILTERS}
                         tokens={filterTokens}
                         onChange={setFilterTokens}
-                        loading={queryResult.loading}
                       />
                     }
                   />
