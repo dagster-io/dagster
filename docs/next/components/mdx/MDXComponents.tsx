@@ -669,7 +669,7 @@ const Image = ({children, ...props}) => {
    * - in public/images/ dir
    */
   const {version} = useVersion();
-  const {src} = props;
+  const {src, maxWidth} = props;
   if (!src.startsWith('/images/')) {
     return (
       <span className="block mx-auto">
@@ -686,12 +686,15 @@ const Image = ({children, ...props}) => {
           'https://dagster-docs-versioned-content.s3.us-west-1.amazonaws.com',
         ).href;
 
+  const actualMaxWidth = maxWidth || 1500;
   return (
-    <Zoom wrapElement="span" wrapStyle={{display: 'block'}}>
-      <span className="block mx-auto">
-        <NextImage src={resolvedPath} width={props.width} height={props.height} alt={props.alt} />
-      </span>
-    </Zoom>
+    <div style={{maxWidth: actualMaxWidth}}>
+      <Zoom wrapElement="span" wrapStyle={{display: 'block'}}>
+        <span className="block mx-auto">
+          <NextImage src={resolvedPath} width={props.width} height={props.height} alt={props.alt} />
+        </span>
+      </Zoom>
+    </div>
   );
 };
 
