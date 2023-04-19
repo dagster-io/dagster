@@ -18,6 +18,7 @@ from dagster import (
     AssetOut,
     AssetsDefinition,
     AssetSelection,
+    AutoMaterializePolicy,
     Bool,
     DagsterInstance,
     DailyPartitionsDefinition,
@@ -1650,7 +1651,10 @@ def fresh_diamond_right(fresh_diamond_top):
     return fresh_diamond_top + 1
 
 
-@asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=30))
+@asset(
+    freshness_policy=FreshnessPolicy(maximum_lag_minutes=30),
+    auto_materialize_policy=AutoMaterializePolicy.lazy(),
+)
 def fresh_diamond_bottom(fresh_diamond_left, fresh_diamond_right):
     return fresh_diamond_left + fresh_diamond_right
 

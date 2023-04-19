@@ -60,6 +60,7 @@ from ..implementation.loader import (
 )
 from . import external
 from .asset_key import GrapheneAssetKey
+from .auto_materialize_policy import GrapheneAutoMaterializePolicy
 from .dagster_types import (
     GrapheneDagsterType,
     GrapheneListDagsterType,
@@ -210,6 +211,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     description = graphene.String()
     freshnessInfo = graphene.Field(GrapheneAssetFreshnessInfo)
     freshnessPolicy = graphene.Field(GrapheneFreshnessPolicy)
+    autoMaterializePolicy = graphene.Field(GrapheneAutoMaterializePolicy)
     graphName = graphene.String()
     groupName = graphene.String()
     id = graphene.NonNull(graphene.ID)
@@ -704,6 +706,13 @@ class GrapheneAssetNode(graphene.ObjectType):
     ) -> Optional[GrapheneFreshnessPolicy]:
         if self._external_asset_node.freshness_policy:
             return GrapheneFreshnessPolicy(self._external_asset_node.freshness_policy)
+        return None
+
+    def resolve_autoMaterializePolicy(
+        self, _graphene_info: ResolveInfo
+    ) -> Optional[GrapheneAutoMaterializePolicy]:
+        if self._external_asset_node.auto_materialize_policy:
+            return GrapheneAutoMaterializePolicy(self._external_asset_node.auto_materialize_policy)
         return None
 
     def resolve_jobNames(self, _graphene_info: ResolveInfo) -> Sequence[str]:
