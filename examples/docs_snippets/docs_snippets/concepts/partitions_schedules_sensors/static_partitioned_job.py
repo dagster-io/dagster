@@ -1,4 +1,4 @@
-from dagster import Config, job, op, static_partitioned_config
+from dagster import Config, RunConfig, job, op, static_partitioned_config
 
 CONTINENTS = [
     "Africa",
@@ -13,7 +13,9 @@ CONTINENTS = [
 
 @static_partitioned_config(partition_keys=CONTINENTS)
 def continent_config(partition_key: str):
-    return {"ops": {"continent_op": {"config": {"continent_name": partition_key}}}}
+    return RunConfig(
+        ops={"continent_op": ContinentOpConfig(continent_name=partition_key)}
+    )
 
 
 class ContinentOpConfig(Config):
