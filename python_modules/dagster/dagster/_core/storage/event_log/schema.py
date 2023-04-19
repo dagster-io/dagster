@@ -96,6 +96,23 @@ ConcurrencySlotsTable = db.Table(
     db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
 )
 
+PendingStepsTable = db.Table(
+    "pending_steps",
+    SqlEventLogStorageMetadata,
+    db.Column(
+        "id",
+        db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    ),
+    db.Column("concurrency_key", db.Text, nullable=False),
+    db.Column("run_id", db.Text),
+    db.Column("step_key", db.Text),
+    db.Column("priority", db.Text),
+    db.Column("assigned_timestamp", db.DateTime),
+    db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
+)
+
 db.Index(
     "idx_step_key",
     SqlEventLogStorageTable.c.step_key,
@@ -151,5 +168,13 @@ db.Index(
     DynamicPartitionsTable.c.partitions_def_name,
     DynamicPartitionsTable.c.partition,
     mysql_length={"partitions_def_name": 64, "partition": 64},
+    unique=True,
+)
+db.Index(
+    "idx_pending_steps",
+    PendingStepsTable.c.concurrency_key,
+    PendingStepsTable.c.run_id,
+    PendingStepsTable.c.step_key,
+    mysql_length={"concurrency_key": 255, "run_id": 255, "step_key": 32},
     unique=True,
 )
