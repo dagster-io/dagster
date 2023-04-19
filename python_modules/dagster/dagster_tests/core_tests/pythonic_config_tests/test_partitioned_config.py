@@ -6,6 +6,9 @@ from dagster import (
     asset,
     daily_partitioned_config,
     define_asset_job,
+    job,
+    op,
+    static_partitioned_config,
 )
 from dagster._core.definitions.asset_graph import AssetGraph
 
@@ -55,3 +58,33 @@ def test_job_partitioned_config_with_asset_partitions() -> None:
     )
 
     assert the_job.execute_in_process(partition_key="2020-01-01").success
+
+
+def test_static_partitioned_job() -> None:
+    class MyOpConfig(Config):
+        my_str: str
+
+    executed = {}
+
+    @op
+    def my_op(config: MyOpConfig):
+        assert config.my_str == "blah"
+        executed["blah"] = True
+
+    @static_partitioned_config(
+        ["blah"], tags_for_partition_fn=lambda partition_key: {"foo": partition_key}
+    )
+    def my_static_partitioned_config(partition_key: str):
+        return RunConfig(ops={"my_op": MyOpConfig(my_str=partition_key)})
+
+    @job(config=my_static_partitioned_config)
+    def my_job():
+        my_op()
+
+    partition_keys = my_static_partitioned_config.get_partition_keys()
+    assert partition_keys == ["blah"]
+
+    result = my_job.execute_in_process(partition_key="blah")
+    assert result.success
+    assert executed["blah"]
+    assert result.dagster_run.tags["foo"] == "blah"
