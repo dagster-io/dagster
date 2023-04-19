@@ -88286,6 +88286,10 @@
               "title": "Moving to Software-defined assets"
             },
             {
+              "path": "/guides/dagster/migrating-to-pythonic-resources-and-config",
+              "title": "Migrating to Pythonic resources and config"
+            },
+            {
               "path": "/guides/dagster/testing-assets",
               "title": "Testing assets"
             },
