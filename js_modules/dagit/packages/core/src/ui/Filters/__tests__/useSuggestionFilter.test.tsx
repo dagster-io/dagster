@@ -104,13 +104,11 @@ describe('useSuggestionFilter', () => {
       result.current.onSelect({value: {final: false, value: 'p'}} as any);
     });
 
-    const expectedResult = asyncSuggestions.map((suggestion) => ({
-      label: renderLabel({value: suggestion.value, isActive: false}),
-      key: getKey(suggestion.value),
-      value: suggestion,
-    }));
+    const expectedResult = asyncSuggestions.filter(({value}) => isMatch(value, 'p'));
 
-    expect(result.current.getResults('p')).toEqual(expectedResult);
+    expect(result.current.getResults('p').map((suggestion) => suggestion.value)).toEqual(
+      expectedResult,
+    );
   });
 
   it('should filter suggestions based on a query', () => {
