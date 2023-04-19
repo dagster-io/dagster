@@ -17,7 +17,7 @@ The following classes are used as part of the new `Pythonic config system </conc
 Legacy Dagster config types
 ---------------------------
 
-The following types are used as part of the legacy `Dagster config system </concepts/configuration/config-schema-legacy>`_. They are used in conjunction with built-in types.
+The following types are used as part of the legacy `Dagster config system </concepts/configuration/config-schema-legacy>`_. They are used in conjunction with builtin types.
 
 .. autoclass:: ConfigSchema
 
