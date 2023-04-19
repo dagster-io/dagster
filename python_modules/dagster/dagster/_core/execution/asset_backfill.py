@@ -129,6 +129,25 @@ class AssetBackfillData(NamedTuple):
             for asset_key, subset in self.target_subset.partitions_subsets_by_asset_key.items()
         }
 
+    def get_targeted_partitioned_asset_keys_topological_order(self) -> List[AssetKey]:
+        """
+        Returns a topological ordering of partitioned asset keys targeted by the backfill.
+
+        For keys in the same topological level, the order is arbitrary.
+        """
+        toposorted_keys = self.target_subset.asset_graph.toposort_asset_keys()
+
+        targeted_toposorted_keys = []
+        for level_keys in toposorted_keys:
+            for key in level_keys:
+                if (
+                    key in self.target_subset.asset_keys
+                    and self.target_subset.asset_graph.get_partitions_def(key) is not None
+                ):
+                    targeted_toposorted_keys.append(key)
+
+        return targeted_toposorted_keys
+
     def get_partitions_status_counts_by_asset_key(
         self,
     ) -> Mapping[AssetKey, Mapping[BackfillPartitionsStatus, int]]:

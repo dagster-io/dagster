@@ -300,20 +300,20 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             GraphenePartitionKeyRange,
         )
 
-        status_counts_by_asset = (
-            self._backfill_job.get_partitions_status_counts_and_totals_by_asset(
+        status_counts_per_asset = (
+            self._backfill_job.get_partitions_status_counts_and_totals_per_asset(
                 graphene_info.context
             )
         )
 
         asset_partition_status_counts = []
 
-        for asset_key, partitions_counts in status_counts_by_asset.items():
-            counts_by_status = partitions_counts[0]
+        for asset_status in status_counts_per_asset:
+            (asset_key, counts_by_status, total_num_partitions) = asset_status
             asset_partition_status_counts.append(
                 GrapheneAssetPartitionsStatusCounts(
                     assetKey=asset_key,
-                    numPartitionsTargeted=partitions_counts[1],
+                    numPartitionsTargeted=total_num_partitions,
                     numPartitionsRequested=counts_by_status[BackfillPartitionsStatus.REQUESTED],
                     numPartitionsCompleted=counts_by_status[BackfillPartitionsStatus.COMPLETED],
                     numPartitionsFailed=counts_by_status[BackfillPartitionsStatus.FAILED],
