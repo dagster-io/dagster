@@ -1602,6 +1602,30 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert len(counts) == 1
         assert counts.get("DagsterInstance.get_asset_records") == 1
 
+    def test_batch_empty_list(self, graphql_context: WorkspaceRequestContext):
+        traced_counter.set(Counter())
+        result = execute_dagster_graphql(
+            graphql_context,
+            BATCH_LOAD_ASSETS,
+            variables={
+                "assetKeys": [],
+            },
+        )
+        assert result.data
+        assert len(result.data["assetNodes"]) == 0
+
+    def test_batch_null_keys(self, graphql_context: WorkspaceRequestContext):
+        traced_counter.set(Counter())
+        result = execute_dagster_graphql(
+            graphql_context,
+            BATCH_LOAD_ASSETS,
+            variables={
+                "assetKeys": None,
+            },
+        )
+        assert result.data
+        assert len(result.data["assetNodes"]) > 0
+
     def test_get_partitions_by_dimension(self, graphql_context: WorkspaceRequestContext):
         result = execute_dagster_graphql(
             graphql_context,
