@@ -1854,6 +1854,10 @@ class SqlEventLogStorage(EventLogStorage):
                 )
             )
 
+    @property
+    def supports_global_concurrency_limits(self) -> bool:
+        return self.has_table(ConcurrencySlotsTable.name)
+
     def allocate_concurrency_slots(self, concurrency_key: str, num_int: int) -> None:
         """Allocate a set of concurrency slots.
 

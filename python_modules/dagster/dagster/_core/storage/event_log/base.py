@@ -408,6 +408,11 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         """Indicates that the EventLogStoarge is sharded."""
         return False
 
+    @property
+    def supports_global_concurrency_limits(self) -> bool:
+        """Indicates that the EventLogStorage supports global concurrency limits."""
+        return False
+
     @abstractmethod
     def allocate_concurrency_slots(self, concurrency_key: str, num_int: int) -> None:
         """Allocate concurrency slots for the given concurrency key."""
