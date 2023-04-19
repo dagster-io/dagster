@@ -76,11 +76,11 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
         </>
       )}
 
-      {liveData?.freshnessPolicy && (
+      {asset.freshnessPolicy && (
         <SidebarSection title="Freshness policy">
           <Box margin={{horizontal: 24, vertical: 12}} flex={{gap: 12, alignItems: 'flex-start'}}>
-            <Body style={{flex: 1}}>{freshnessPolicyDescription(liveData.freshnessPolicy)}</Body>
-            <CurrentMinutesLateTag liveData={liveData} />
+            <Body style={{flex: 1}}>{freshnessPolicyDescription(asset.freshnessPolicy)}</Body>
+            <CurrentMinutesLateTag liveData={liveData} policy={asset.freshnessPolicy} />
           </Box>
         </SidebarSection>
       )}

@@ -12,6 +12,7 @@ import {
   RunStatus,
   buildAssetNode,
   buildAutoMaterializePolicy,
+  buildFreshnessPolicy,
 } from '../../graphql/types';
 import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
 import {SIDEBAR_ASSET_QUERY, SidebarAssetInfo} from '../SidebarAssetInfo';
@@ -68,6 +69,7 @@ const buildSidebarQueryMock = (
         configField: null,
         metadataEntries: [],
         autoMaterializePolicy: null,
+        freshnessPolicy: null,
         partitionDefinition: null,
         assetKey: {
           path: ['asset1'],
@@ -236,6 +238,10 @@ export const AssetWithPolicies = () => {
         buildSidebarQueryMock({
           autoMaterializePolicy: buildAutoMaterializePolicy({
             policyType: AutoMaterializePolicyType.EAGER,
+          }),
+          freshnessPolicy: buildFreshnessPolicy({
+            maximumLagMinutes: 60,
+            cronSchedule: '* 1 1 1 1',
           }),
         }),
       ]}

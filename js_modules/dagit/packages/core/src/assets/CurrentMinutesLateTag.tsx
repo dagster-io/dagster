@@ -6,6 +6,7 @@ import React from 'react';
 
 import {LiveDataForNode} from '../asset-graph/Utils';
 import {AssetNodeLiveFreshnessPolicyFragment} from '../asset-graph/types/AssetNode.types';
+import {FreshnessPolicy} from '../graphql/types';
 import {humanCronString} from '../schedules/humanCronString';
 
 const STALE_OVERDUE_MSG = `A materialization incorporating more recent upstream data is overdue.`;
@@ -28,15 +29,16 @@ export const humanizedLateString = (minLate: number) =>
   `${dayjs.duration(minLate, 'minutes').humanize(false)} overdue`;
 
 export const CurrentMinutesLateTag: React.FC<{
-  liveData: LiveDataForNode;
+  liveData: LiveDataForNode | undefined;
+  policy: FreshnessPolicy;
   policyOnHover?: boolean;
-}> = ({liveData, policyOnHover}) => {
-  const {freshnessInfo, freshnessPolicy} = liveData;
-  const description = policyOnHover ? freshnessPolicyDescription(freshnessPolicy) : '';
-
-  if (!freshnessInfo) {
+}> = ({liveData, policyOnHover, policy}) => {
+  if (!liveData?.freshnessInfo) {
     return null;
   }
+
+  const {freshnessInfo} = liveData;
+  const description = policyOnHover ? freshnessPolicyDescription(policy) : '';
 
   if (freshnessInfo.currentMinutesLate === null) {
     return (
@@ -52,7 +54,7 @@ export const CurrentMinutesLateTag: React.FC<{
 
   if (freshnessInfo.currentMinutesLate === 0) {
     return description ? (
-      <Tooltip content={freshnessPolicyDescription(freshnessPolicy)}>
+      <Tooltip content={freshnessPolicyDescription(policy)}>
         <Tag intent="success" icon="check_circle" />
       </Tooltip>
     ) : (

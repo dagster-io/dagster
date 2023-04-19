@@ -486,7 +486,13 @@ const AssetViewPageHeaderTags: React.FC<{
           </Link>
         </Tag>
       )}
-      {liveData?.freshnessPolicy && <CurrentMinutesLateTag liveData={liveData} policyOnHover />}
+      {definition && definition.freshnessPolicy && (
+        <CurrentMinutesLateTag
+          liveData={liveData}
+          policy={definition.freshnessPolicy}
+          policyOnHover
+        />
+      )}
       {definition && (
         <StaleReasonsTags
           liveData={liveData}
