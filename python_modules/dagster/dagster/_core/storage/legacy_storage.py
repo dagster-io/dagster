@@ -535,6 +535,23 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     ) -> EventLogConnection:
         return self._storage.event_log_storage.get_records_for_run(run_id, cursor, of_type, limit)
 
+    def allocate_concurrency_slots(self, concurrency_key: str, num_int: int) -> None:
+        return self._storage.event_log_storage.allocate_concurrency_slots(concurrency_key, num_int)
+
+    def get_concurrency_limited_keys(self) -> Set[str]:
+        return self._storage.event_log_storage.get_concurrency_limited_keys()
+
+    def get_concurrency_info(self, concurrency_key: str):
+        return self._storage.event_log_storage.get_concurrency_info(concurrency_key)
+
+    def claim_concurrency_slots(self, concurrency_keys: Set[str], run_id: str, step_key: str):
+        return self._storage.event_log_storage.claim_concurrency_slots(
+            concurrency_keys, run_id, step_key
+        )
+
+    def free_concurrency_slots(self, run_id: str, step_key: Optional[str] = None):
+        return self._storage.event_log_storage.free_concurrency_slots(run_id, step_key)
+
 
 class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
     def __init__(self, storage: DagsterStorage, inst_data: Optional[ConfigurableClassData] = None):
