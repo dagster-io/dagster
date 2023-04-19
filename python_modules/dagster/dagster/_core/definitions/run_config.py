@@ -664,7 +664,28 @@ def _convert_config_classes(configs: Dict[str, Any]) -> Dict[str, Any]:
 
 
 class RunConfig:
-    """RunConfig is a container for all the configuration that can be passed to a pipeline run."""
+    """Container for all the configuration that can be passed to a pipeline run. Accepts Pythonic definitions
+    for op and asset config and resources and converts them under the hood to the appropriate config dictionaries.
+
+    Example usage:
+
+    .. code-block:: python
+
+        class MyAssetConfig(Config):
+            a_str: str
+
+        @asset
+        def my_asset(config: MyAssetConfig):
+            assert config.a_str == "foo"
+
+        materialize(
+            [my_asset],
+            run_config=RunConfig(
+                ops={"my_asset": MyAssetConfig(a_str="foo")}
+            )
+        )
+
+    """
 
     def __init__(
         self,
