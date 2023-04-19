@@ -64,7 +64,7 @@ result = job_def.execute_in_process(
 
 Notice that we did not have to change the run config dictionary passed to `execute_in_process`. The same thing goes for <PyObject object="RunRequest"/> instances in sensors and schedules: you do not have to update them in lockstep order to migrate to the Pythonic config API.
 
-However we do enable the use of strong typing to launch runs, which you can opt-in to if you so choose. For that you can use the <PyObject object="RunConfig"/> object.
+However, we do enable the use of strong typing to launch runs which you can opt into if you so choose. To do this, you can use the <PyObject object="RunConfig"/> object.
 
 ```python file=/guides/dagster/migrating_to_python_resources_and_config/migrating_config.py  startafter=begin_new_config_schema_and_typed_run_config endbefore=end_new_config_schema_and_typed_run_config dedent=4
 result = job_def.execute_in_process(
@@ -116,7 +116,7 @@ defs = Definitions(
 
 ### Step 1: Converting to a Pythonic resource
 
-The first step is to convert to a Pythonic resource. We will convert `FancyDbResource` to a Pythonic resource by making it inherit from <PyObject object="ConfigurableResource"/> . Instead of `config_schema={"conn_string": str}`, we can instead declare attributes on a class using vanilla Python typing.
+The first step is to convert to a Pythonic resource. We will convert `FancyDbResource` to a Pythonic resource by making it inherit from <PyObject object="ConfigurableResource"/> . Instead of `config_schema={"conn_string": str}`, we can declare attributes on a class using vanilla Python typing.
 
 ```python file=/guides/dagster/migrating_to_python_resources_and_config/migrating_resources.py  startafter=begin_convert_resource endbefore=end_convert_resource dedent=4
 from dagster import ConfigurableResource
@@ -221,7 +221,7 @@ def existing_asset(context) -> None:
     context.resources.fancy_db.execute_query("SELECT * FROM foo")
 ```
 
-With Pythonic style resources you would write a class that can return that client from a method. In code that consumes that resource you would call that method to access the underlying client.
+With Pythonic-style resources you would write a class that can return that client from a method. In code that consumes that resource you would call that method to access the underlying client.
 
 ```python file=/guides/dagster/migrating_to_python_resources_and_config/migrating_resources.py  startafter=begin_new_third_party_resource endbefore=end_new_third_party_resource dedent=4
 from dagster import ConfigurableResource, asset
@@ -339,4 +339,4 @@ def existing_asset(context) -> None:
     title="Resources"
      href="/concepts/configuration/resources"
   ></ArticleListItem>
-<ArticleList>
+</ArticleList>
