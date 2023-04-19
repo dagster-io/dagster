@@ -5,7 +5,6 @@ MAX_KEYS = 1000
 
 
 def get_gcs_keys(bucket, prefix="", since_key=None, gcs_session=None):
-    """Credits to @ajohnson5 for the original implementation of this method."""
     check.str_param(bucket, "bucket")
     check.str_param(prefix, "prefix")
     check.opt_str_param(since_key, "since_key")
