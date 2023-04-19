@@ -11,7 +11,6 @@ from enum import Enum
 from typing import (
     Any,
     Callable,
-    Dict,
     Generic,
     Iterable,
     List,
@@ -1202,35 +1201,3 @@ class DefaultPartitionsSubset(PartitionsSubset[T_cov]):
     @classmethod
     def empty_subset(cls, partitions_def: PartitionsDefinition[T_cov]) -> "PartitionsSubset[T_cov]":
         return cls(partitions_def=partitions_def)
-
-
-class CachingPartitionsLoader:
-    """Caches the partitions returned from a partition definition's get_partitions method.
-    Meant to be used within a tick, when the partitions do not change over the course of the tick.
-    """
-
-    def __init__(
-        self,
-        current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ):
-        self._current_time = current_time
-        self._dynamic_partitions_store = dynamic_partitions_store
-        self._partitions_by_def: Dict[PartitionsDefinition, Sequence[Partition]] = {}
-
-    def get_partition(
-        self,
-        partitions_def: PartitionsDefinition,
-        partition_key: str,
-    ) -> Partition:
-        if partitions_def not in self._partitions_by_def:
-            self._partitions_by_def[partitions_def] = partitions_def.get_partitions(
-                current_time=self._current_time,
-                dynamic_partitions_store=self._dynamic_partitions_store,
-            )
-
-        for partition in self._partitions_by_def[partitions_def]:
-            if partition.name == partition_key:
-                return partition
-
-        raise DagsterUnknownPartitionError(f"Could not find a partition with key `{partition_key}`")

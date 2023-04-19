@@ -1,6 +1,5 @@
 from contextlib import contextmanager
-from datetime import datetime
-from typing import Iterator, Optional, Sequence, cast
+from typing import Iterator, Optional, cast
 from unittest import mock
 
 import pytest
@@ -20,7 +19,6 @@ from dagster import (
     EventRecordsFilter,
     FreshnessPolicy,
     Output,
-    Partition,
     PartitionKeyRange,
     PartitionMapping,
     PartitionsDefinition,
@@ -53,7 +51,6 @@ from dagster._core.definitions.partition import DynamicPartitionsDefinition
 from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster._core.execution.build_resources import build_resources
-from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._core.test_utils import instance_for_test
 
@@ -1692,36 +1689,3 @@ def test_sensor_invocation_runconfig() -> None:
     assert cast(RunRequest, basic_sensor()).run_config.get("ops", {}) == {
         "foo": {"config": {"a_str": "foo", "an_int": 55}}
     }
-
-
-def test_sensor_cache_partitions():
-    class CustomDailyPartitionsDefinition(DailyPartitionsDefinition):
-        num_calls = 0
-
-        def get_partitions(
-            self,
-            current_time: Optional[datetime] = None,
-            dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-        ) -> Sequence[Partition]:
-            self.num_calls += 1
-            return super().get_partitions(current_time, dynamic_partitions_store)
-
-    partitions_def = CustomDailyPartitionsDefinition(start_date="2020-01-01")
-
-    @job(partitions_def=partitions_def)
-    def my_job():
-        pass
-
-    @sensor(job=my_job)
-    def my_sensor(_context):
-        for key in ["2020-01-01", "2020-01-02", "2020-01-03"]:
-            yield RunRequest(partition_key=key)
-
-    @repository
-    def my_repo():
-        return [my_job, my_sensor]
-
-    with build_sensor_context(repository_def=my_repo) as context:
-        result = my_sensor.evaluate_tick(context)
-        assert len(result.run_requests) == 3
-        assert partitions_def.num_calls == 1

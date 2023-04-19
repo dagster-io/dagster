@@ -1,3 +1,4 @@
+from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, Set, Union, cast
 
@@ -12,7 +13,6 @@ from dagster._utils.error import SerializableErrorInfo
 
 if TYPE_CHECKING:
     from dagster._core.definitions.job_definition import JobDefinition
-    from dagster._core.definitions.partition import CachingPartitionsLoader
     from dagster._core.definitions.run_config import RunConfig
     from dagster._core.definitions.unresolved_asset_job_definition import (
         UnresolvedAssetJobDefinition,
@@ -170,7 +170,7 @@ class RunRequest(
         dynamic_partitions_requests: Sequence[
             Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]
         ],
-        caching_partitions_loader: "CachingPartitionsLoader",
+        current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> "RunRequest":
         from dagster._core.definitions.job_definition import JobDefinition
@@ -243,9 +243,10 @@ class RunRequest(
 
         else:
             # Relies on the partitions def to throw an error if the partition does not exist
-            partition = caching_partitions_loader.get_partition(
-                partitions_def,
+            partition = partitions_def.get_partition(
                 self.partition_key,
+                current_time=current_time,
+                dynamic_partitions_store=dynamic_partitions_store,
             )
 
         get_run_request_tags = lambda partition: (

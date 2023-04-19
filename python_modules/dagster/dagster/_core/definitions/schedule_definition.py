@@ -317,10 +317,6 @@ class ScheduleEvaluationContext:
         return self._scheduled_execution_time
 
     @property
-    def has_scheduled_execution_time(self) -> bool:
-        return True if self._scheduled_execution_time else False
-
-    @property
     def log(self) -> logging.Logger:
         if self._logger:
             return self._logger
@@ -775,10 +771,7 @@ class ScheduleDefinition:
             ScheduleExecutionData: Contains list of run requests, or skip message if present.
 
         """
-        from dagster._core.definitions.partition import (
-            CachingDynamicPartitionsLoader,
-            CachingPartitionsLoader,
-        )
+        from dagster._core.definitions.partition import CachingDynamicPartitionsLoader
 
         check.inst_param(context, "context", ScheduleEvaluationContext)
         execution_fn: Callable[..., "ScheduleEvaluationFunctionReturn"]
@@ -823,12 +816,6 @@ class ScheduleDefinition:
         dynamic_partitions_store = (
             CachingDynamicPartitionsLoader(context.instance) if context.instance_ref else None
         )
-        caching_partitions_loader = CachingPartitionsLoader(
-            current_time=context.scheduled_execution_time
-            if context.has_scheduled_execution_time
-            else None,
-            dynamic_partitions_store=dynamic_partitions_store,
-        )
 
         # clone all the run requests with resolved tags and config
         resolved_run_requests = []
@@ -844,8 +831,8 @@ class ScheduleDefinition:
                 resolved_request = run_request.with_resolved_tags_and_config(
                     target_definition=scheduled_target,
                     dynamic_partitions_requests=[],
+                    current_time=context.scheduled_execution_time,
                     dynamic_partitions_store=dynamic_partitions_store,
-                    caching_partitions_loader=caching_partitions_loader,
                 )
             else:
                 resolved_request = run_request
