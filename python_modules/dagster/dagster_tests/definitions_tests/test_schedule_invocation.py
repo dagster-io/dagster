@@ -1,11 +1,13 @@
 import datetime
-from typing import cast
+from typing import Optional, Sequence, cast
 
 import pytest
 from dagster import (
     DagsterInstance,
     DagsterInvariantViolationError,
+    DailyPartitionsDefinition,
     DynamicPartitionsDefinition,
+    Partition,
     RunRequest,
     StaticPartitionsDefinition,
     build_schedule_context,
@@ -15,6 +17,7 @@ from dagster import (
 )
 from dagster._config.pythonic_config import ConfigurableResource
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
+from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._core.test_utils import instance_for_test
 
@@ -262,3 +265,38 @@ def test_dynamic_partition_run_request_schedule():
         assert len(run_requests) == 2
         for request in run_requests:
             assert request.tags.get(PARTITION_NAME_TAG) == "1"
+
+
+def test_schedule_cache_partitions():
+    class CustomDailyPartitionsDefinition(DailyPartitionsDefinition):
+        num_calls = 0
+
+        def get_partitions(
+            self,
+            current_time: Optional[datetime.datetime] = None,
+            dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+        ) -> Sequence[Partition]:
+            self.num_calls += 1
+            return super().get_partitions(current_time, dynamic_partitions_store)
+
+    partitions_def = CustomDailyPartitionsDefinition(start_date="2020-01-01")
+
+    @job(partitions_def=partitions_def)
+    def my_job():
+        pass
+
+    @schedule(job=my_job, cron_schedule="* * * * *")
+    def my_schedule(_context):
+        for key in ["2020-01-01", "2020-01-02", "2020-01-03"]:
+            yield RunRequest(partition_key=key, run_key=key)
+
+    @repository
+    def my_repo():
+        return [my_job, my_schedule]
+
+    with build_schedule_context(
+        repository_def=my_repo, scheduled_execution_time=datetime.datetime(2023, 1, 1)
+    ) as context:
+        result = my_schedule.evaluate_tick(context)
+        assert len(result.run_requests) == 3
+        assert partitions_def.num_calls == 1

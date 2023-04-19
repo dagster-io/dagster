@@ -31,6 +31,7 @@ from dagster._annotations import public
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.definitions.partition import (
     CachingDynamicPartitionsLoader,
+    CachingPartitionsLoader,
 )
 from dagster._core.definitions.resource_annotation import (
     get_resource_args,
@@ -782,6 +783,9 @@ class SensorDefinition:
         dynamic_partitions_store = (
             CachingDynamicPartitionsLoader(context.instance) if context.instance_ref else None
         )
+        caching_partitions_loader = CachingPartitionsLoader(
+            dynamic_partitions_store=dynamic_partitions_store
+        )
 
         # Run requests may contain an invalid target, or a partition key that does not exist.
         # We will resolve these run requests, applying the target and partition config/tags.
@@ -810,9 +814,9 @@ class SensorDefinition:
                 resolved_run_requests.append(
                     run_request.with_resolved_tags_and_config(
                         target_definition=selected_job,
-                        current_time=None,
                         dynamic_partitions_store=dynamic_partitions_store,
                         dynamic_partitions_requests=dynamic_partitions_requests,
+                        caching_partitions_loader=caching_partitions_loader,
                     )
                 )
             else:
