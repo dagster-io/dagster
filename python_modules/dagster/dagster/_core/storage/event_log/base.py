@@ -428,7 +428,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_concurrency_info(self, concurrency_key: str):
+    def get_concurrency_info(self, concurrency_key: str, include_deleted: bool = False):
         """Get concurrency info for key."""
         raise NotImplementedError()
 
