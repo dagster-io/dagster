@@ -33,7 +33,6 @@ def core_execute_in_process(
     asset_selection: Optional[FrozenSet[AssetKey]] = None,
 ) -> ExecuteInProcessResult:
     job_def = ephemeral_pipeline
-    mode_def = job_def.get_mode_definition()
     pipeline = InMemoryPipeline(job_def)
 
     _check_top_level_inputs(job_def)
@@ -41,7 +40,6 @@ def core_execute_in_process(
     execution_plan = create_execution_plan(
         pipeline,
         run_config=run_config,
-        mode=mode_def.name,
         instance_ref=instance.get_ref() if instance and instance.is_persistent else None,
     )
 
@@ -51,7 +49,6 @@ def core_execute_in_process(
         run = execute_instance.create_run_for_pipeline(
             pipeline_def=job_def,
             run_config=run_config,
-            mode=mode_def.name,
             tags={**job_def.tags, **(run_tags or {})},
             run_id=run_id,
             asset_selection=asset_selection,

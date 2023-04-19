@@ -226,7 +226,6 @@ class BaseWorkspaceRequestContext(IWorkspace):
         self,
         external_pipeline: ExternalPipeline,
         run_config: Mapping[str, object],
-        mode: str,
         step_keys_to_execute: Optional[Sequence[str]],
         known_state: Optional[KnownExecutionState],
     ) -> ExternalExecutionPlan:
@@ -235,7 +234,6 @@ class BaseWorkspaceRequestContext(IWorkspace):
         ).get_external_execution_plan(
             external_pipeline=external_pipeline,
             run_config=run_config,
-            mode=mode,
             step_keys_to_execute=step_keys_to_execute,
             known_state=known_state,
             instance=self.instance,

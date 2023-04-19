@@ -7,7 +7,7 @@ from dagster._config import Field, process_config
 from dagster._core.definitions.executor_definition import (
     ExecutorDefinition,
     check_cross_process_constraints,
-    default_executors,
+    multi_or_in_process_executor,
 )
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.definitions.run_config import selector_for_named_defs
@@ -171,7 +171,7 @@ def execute_run_host_mode(
     check.inst_param(pipeline_run, "pipeline_run", DagsterRun)
     check.inst_param(instance, "instance", DagsterInstance)
     check.opt_sequence_param(executor_defs, "executor_defs", of_type=ExecutorDefinition)
-    executor_defs = executor_defs if executor_defs is not None else default_executors
+    executor_defs = executor_defs if executor_defs is not None else [multi_or_in_process_executor]
 
     if pipeline_run.status == DagsterRunStatus.CANCELED:
         message = "Not starting execution since the run was canceled before execution could start"

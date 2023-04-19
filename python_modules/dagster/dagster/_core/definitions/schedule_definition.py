@@ -46,8 +46,7 @@ from ..instance import DagsterInstance
 from ..instance.ref import InstanceRef
 from ..storage.pipeline_run import DagsterRun
 from .graph_definition import GraphDefinition
-from .mode import DEFAULT_MODE_NAME
-from .pipeline_definition import PipelineDefinition
+from .job_definition import JobDefinition
 from .run_request import RunRequest, SkipReason
 from .target import DirectTarget, ExecutableDefinition, RepoRelativeTarget
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
@@ -546,7 +545,6 @@ class ScheduleDefinition:
         else:
             self._target = RepoRelativeTarget(
                 pipeline_name=check.str_param(job_name, "job_name"),
-                mode=DEFAULT_MODE_NAME,
                 solid_selection=None,
             )
 
@@ -756,7 +754,7 @@ class ScheduleDefinition:
 
     @public
     @property
-    def job(self) -> Union[GraphDefinition, PipelineDefinition, UnresolvedAssetJobDefinition]:
+    def job(self) -> Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]:
         if isinstance(self._target, DirectTarget):
             return self._target.target
         raise DagsterInvalidDefinitionError("No job was provided to ScheduleDefinition.")
@@ -860,7 +858,7 @@ class ScheduleDefinition:
 
     def load_target(
         self,
-    ) -> Union[GraphDefinition, PipelineDefinition, UnresolvedAssetJobDefinition]:
+    ) -> Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]:
         if isinstance(self._target, DirectTarget):
             return self._target.load()
 

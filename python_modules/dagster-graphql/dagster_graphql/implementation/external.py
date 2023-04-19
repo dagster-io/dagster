@@ -70,18 +70,15 @@ def _get_external_pipeline_or_raise(
     return external_pipeline
 
 
-def ensure_valid_config(
-    external_pipeline: ExternalPipeline, mode: Optional[str], run_config: object
-) -> object:
+def ensure_valid_config(external_pipeline: ExternalPipeline, run_config: object) -> object:
     from ..schema.pipelines.config import GrapheneRunConfigValidationInvalid
 
     check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
-    check.opt_str_param(mode, "mode")
     # do not type check run_config so that validate_config_from_snap throws
 
     validated_config = validate_config_from_snap(
         config_schema_snapshot=external_pipeline.config_schema_snapshot,
-        config_type_key=check.not_none(external_pipeline.root_config_key_for_mode(mode)),
+        config_type_key=check.not_none(external_pipeline.root_config_key),
         config_value=run_config,
     )
 
@@ -98,7 +95,6 @@ def ensure_valid_config(
 def get_external_execution_plan_or_raise(
     graphene_info: "ResolveInfo",
     external_pipeline: ExternalPipeline,
-    mode: Optional[str],
     run_config: Mapping[str, object],
     step_keys_to_execute: Optional[Sequence[str]],
     known_state: Optional[KnownExecutionState],
@@ -106,7 +102,6 @@ def get_external_execution_plan_or_raise(
     return graphene_info.context.get_external_execution_plan(
         external_pipeline=external_pipeline,
         run_config=run_config,
-        mode=check.not_none(mode),
         step_keys_to_execute=step_keys_to_execute,
         known_state=known_state,
     )

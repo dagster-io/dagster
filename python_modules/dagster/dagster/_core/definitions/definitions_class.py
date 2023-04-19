@@ -210,7 +210,6 @@ def _create_repository_using_definitions_args(
     check.opt_iterable_param(jobs, "jobs", (JobDefinition, UnresolvedAssetJobDefinition))
 
     check.opt_inst_param(executor, "executor", (ExecutorDefinition, Executor))
-
     executor_def = (
         executor
         if isinstance(executor, ExecutorDefinition) or executor is None

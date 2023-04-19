@@ -1101,28 +1101,28 @@ def test_resource_op_subset():
         bar_op()
         baz_op()
 
-    assert set(nested.get_required_resource_defs_for_mode("default").keys()) == {
+    assert set(nested.get_required_resource_defs().keys()) == {
         "foo",
         "bar",
         "baz",
         "io_manager",
     }
 
-    assert nested.get_job_def_for_subset_selection(["foo_op"]).get_required_resource_defs_for_mode(
-        "default"
-    ).keys() == {
+    assert nested.get_job_def_for_subset_selection(
+        ["foo_op"]
+    ).get_required_resource_defs().keys() == {
         "foo",
         "bar",
         "io_manager",
     }
 
-    assert nested.get_job_def_for_subset_selection(["bar_op"]).get_required_resource_defs_for_mode(
-        "default"
-    ).keys() == {"bar", "io_manager"}
+    assert nested.get_job_def_for_subset_selection(
+        ["bar_op"]
+    ).get_required_resource_defs().keys() == {"bar", "io_manager"}
 
-    assert nested.get_job_def_for_subset_selection(["baz_op"]).get_required_resource_defs_for_mode(
-        "default"
-    ).keys() == {"baz", "io_manager"}
+    assert nested.get_job_def_for_subset_selection(
+        ["baz_op"]
+    ).get_required_resource_defs().keys() == {"baz", "io_manager"}
 
 
 def test_config_with_no_schema():

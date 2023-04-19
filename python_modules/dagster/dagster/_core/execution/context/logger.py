@@ -4,7 +4,6 @@ import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
-from dagster._core.definitions.pipeline_definition import PipelineDefinition
 from dagster._core.errors import DagsterInvariantViolationError
 
 from .output import RUN_ID_PLACEHOLDER
@@ -39,11 +38,11 @@ class InitLoggerContext:
         self,
         logger_config: Any,
         logger_def: Optional[LoggerDefinition] = None,
-        pipeline_def: Optional[PipelineDefinition] = None,
+        pipeline_def: Optional[JobDefinition] = None,
         run_id: Optional[str] = None,
     ):
         self._logger_config = logger_config
-        self._pipeline_def = check.opt_inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
+        self._pipeline_def = check.opt_inst_param(pipeline_def, "pipeline_def", JobDefinition)
         self._logger_def = check.opt_inst_param(logger_def, "logger_def", LoggerDefinition)
         self._run_id = check.opt_str_param(run_id, "run_id")
 
@@ -53,7 +52,7 @@ class InitLoggerContext:
         return self._logger_config
 
     @property
-    def pipeline_def(self) -> Optional[PipelineDefinition]:
+    def pipeline_def(self) -> Optional[JobDefinition]:
         return self._pipeline_def
 
     @public
@@ -88,7 +87,7 @@ class UnboundInitLoggerContext(InitLoggerContext):
     and it is subsumed into an `InitLoggerContext`, which contains the logger_def validated against.
     """
 
-    def __init__(self, logger_config: Any, pipeline_def: Optional[PipelineDefinition]):
+    def __init__(self, logger_config: Any, pipeline_def: Optional[JobDefinition]):
         super(UnboundInitLoggerContext, self).__init__(
             logger_config, logger_def=None, pipeline_def=pipeline_def, run_id=None
         )

@@ -298,7 +298,6 @@ class GrapheneRepository(graphene.ObjectType):
             for pipeline in sorted(
                 self._repository.get_all_external_jobs(), key=lambda pipeline: pipeline.name
             )
-            if pipeline.is_job
         ]
 
     def resolve_usedSolid(self, _graphene_info: ResolveInfo, name):

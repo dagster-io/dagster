@@ -196,14 +196,11 @@ def memoizable_job():
 @repository
 def bar():
     return {
-        "pipelines": {
-            "foo": foo_job,
-            "memoizable": memoizable_job,
-        },
         "jobs": {
+            "foo": foo_job,
             "qux": qux_job,
             "quux": quux_job,
-            "memoizable_job": memoizable_job,
+            "memoizable": memoizable_job,
             "partitioned_job": partitioned_job,
             "baz": baz_job,
             "baz_error_config": baz_error_config_job,

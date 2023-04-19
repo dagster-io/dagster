@@ -117,7 +117,6 @@ class CodeLocation(AbstractContextManager):
         self,
         external_pipeline: ExternalPipeline,
         run_config: Mapping[str, object],
-        mode: str,
         step_keys_to_execute: Optional[Sequence[str]],
         known_state: Optional[KnownExecutionState],
         instance: Optional[DagsterInstance] = None,
@@ -378,14 +377,12 @@ class InProcessCodeLocation(CodeLocation):
         self,
         external_pipeline: ExternalPipeline,
         run_config: Mapping[str, object],
-        mode: str,
         step_keys_to_execute: Optional[Sequence[str]],
         known_state: Optional[KnownExecutionState],
         instance: Optional[DagsterInstance] = None,
     ) -> ExternalExecutionPlan:
         check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
         check.mapping_param(run_config, "run_config")
-        check.str_param(mode, "mode")
         step_keys_to_execute = check.opt_nullable_sequence_param(
             step_keys_to_execute, "step_keys_to_execute", of_type=str
         )
@@ -400,7 +397,6 @@ class InProcessCodeLocation(CodeLocation):
                 external_pipeline.asset_selection,
             ),
             run_config=run_config,
-            mode=mode,
             step_keys_to_execute=step_keys_to_execute,
             known_state=known_state,
             instance_ref=instance.get_ref() if instance and instance.is_persistent else None,
@@ -722,14 +718,12 @@ class GrpcServerCodeLocation(CodeLocation):
         self,
         external_pipeline: ExternalPipeline,
         run_config: Mapping[str, Any],
-        mode: str,
         step_keys_to_execute: Optional[Sequence[str]],
         known_state: Optional[KnownExecutionState],
         instance: Optional[DagsterInstance] = None,
     ) -> ExternalExecutionPlan:
         check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
         run_config = check.mapping_param(run_config, "run_config")
-        check.str_param(mode, "mode")
         check.opt_nullable_sequence_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
         check.opt_inst_param(known_state, "known_state", KnownExecutionState)
         check.opt_inst_param(instance, "instance", DagsterInstance)
@@ -744,7 +738,6 @@ class GrpcServerCodeLocation(CodeLocation):
             api_client=self.client,
             pipeline_origin=external_pipeline.get_external_origin(),
             run_config=run_config,
-            mode=mode,
             pipeline_snapshot_id=external_pipeline.identifying_pipeline_snapshot_id,
             asset_selection=asset_selection,
             solid_selection=external_pipeline.solid_selection,

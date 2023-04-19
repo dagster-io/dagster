@@ -355,7 +355,7 @@ def test_logger_defs():
         pass
 
     my_job = my_graph.to_job(logger_defs={"abc": my_logger})
-    assert my_job.mode_definitions[0].loggers == {"abc": my_logger}
+    assert my_job.loggers == {"abc": my_logger}
 
 
 def test_job_with_hooks():

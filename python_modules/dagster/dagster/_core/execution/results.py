@@ -15,7 +15,7 @@ from typing import (
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._core.definitions import GraphDefinition, Node, NodeHandle, PipelineDefinition
+from dagster._core.definitions import GraphDefinition, JobDefinition, Node, NodeHandle
 from dagster._core.definitions.dependency import GraphNode, OpNode
 from dagster._core.definitions.events import (
     AssetMaterialization,
@@ -55,7 +55,7 @@ class GraphExecutionResult:
         container: GraphDefinition,
         event_list: Sequence[DagsterEvent],
         reconstruct_context: ReconstructContextFn,
-        pipeline_def: PipelineDefinition,
+        pipeline_def: JobDefinition,
         handle: Optional[NodeHandle] = None,
         output_capture: Optional[Dict[StepOutputHandle, object]] = None,
     ):
@@ -65,7 +65,7 @@ class GraphExecutionResult:
             reconstruct_context,
             "reconstruct_context",
         )
-        self.pipeline_def = check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
+        self.pipeline_def = check.inst_param(pipeline_def, "pipeline_def", JobDefinition)
         self.handle = check.opt_inst_param(handle, "handle", NodeHandle)
         self.output_capture = check.opt_dict_param(
             output_capture, "output_capture", key_type=StepOutputHandle
@@ -209,14 +209,14 @@ class PipelineExecutionResult(GraphExecutionResult):
 
     def __init__(
         self,
-        pipeline_def: PipelineDefinition,
+        pipeline_def: JobDefinition,
         run_id: str,
         event_list: Sequence[DagsterEvent],
         reconstruct_context: ReconstructContextFn,
         output_capture: Optional[Dict[StepOutputHandle, object]] = None,
     ):
         self.run_id = check.str_param(run_id, "run_id")
-        check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
+        check.inst_param(pipeline_def, "pipeline_def", JobDefinition)
 
         super(PipelineExecutionResult, self).__init__(
             container=pipeline_def.graph,
@@ -239,7 +239,7 @@ class CompositeSolidExecutionResult(GraphExecutionResult):
         event_list: Sequence[DagsterEvent],
         step_events_by_kind: Mapping[StepKind, Sequence[DagsterEvent]],
         reconstruct_context: ReconstructContextFn,
-        pipeline_def: PipelineDefinition,
+        pipeline_def: JobDefinition,
         handle: Optional[NodeHandle] = None,
         output_capture: Optional[Dict[StepOutputHandle, object]] = None,
     ):
@@ -336,7 +336,7 @@ class OpExecutionResult:
         node: OpNode,
         step_events_by_kind: Mapping[StepKind, Sequence[DagsterEvent]],
         reconstruct_context: ReconstructContextFn,
-        pipeline_def: PipelineDefinition,
+        pipeline_def: JobDefinition,
         output_capture: Optional[Dict[StepOutputHandle, object]] = None,
     ):
         check.inst_param(node, "node", OpNode)
@@ -349,7 +349,7 @@ class OpExecutionResult:
             "reconstruct_context",
         )
         self.output_capture = check.opt_dict_param(output_capture, "output_capture")
-        self.pipeline_def = check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
+        self.pipeline_def = check.inst_param(pipeline_def, "pipeline_def", JobDefinition)
 
     @property
     def compute_input_event_dict(self) -> Mapping[str, DagsterEvent]:

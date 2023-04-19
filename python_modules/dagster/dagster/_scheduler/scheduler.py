@@ -737,7 +737,6 @@ def _create_scheduler_run(
     external_execution_plan = code_location.get_external_execution_plan(
         external_pipeline,
         run_config,
-        check.not_none(external_schedule.mode),
         step_keys_to_execute=None,
         known_state=None,
     )
@@ -767,7 +766,6 @@ def _create_scheduler_run(
         pipeline_name=external_schedule.pipeline_name,
         run_id=None,
         run_config=run_config,
-        mode=external_schedule.mode,
         solids_to_execute=external_pipeline.solids_to_execute,
         step_keys_to_execute=None,
         solid_selection=external_pipeline.solid_selection,

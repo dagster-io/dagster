@@ -285,7 +285,6 @@ def create_backfill_run(
             strategy=ReexecutionStrategy.FROM_FAILURE,
             extra_tags=tags,
             run_config=partition_data.run_config,
-            mode=external_partition_set.mode,
             use_parent_run_tags=False,  # don't inherit tags from the previous run
         )
 
@@ -313,7 +312,6 @@ def create_backfill_run(
     external_execution_plan = code_location.get_external_execution_plan(
         external_pipeline,
         partition_data.run_config,
-        check.not_none(external_partition_set.mode),
         step_keys_to_execute=step_keys_to_execute,
         known_state=known_state,
         instance=instance,
@@ -327,7 +325,6 @@ def create_backfill_run(
         run_id=make_new_run_id(),
         solids_to_execute=solids_to_execute,
         run_config=partition_data.run_config,
-        mode=external_partition_set.mode,
         step_keys_to_execute=step_keys_to_execute,
         tags=tags,
         root_run_id=root_run_id,

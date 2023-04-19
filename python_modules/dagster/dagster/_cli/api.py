@@ -434,7 +434,6 @@ def _execute_step_command_body(
             recon_pipeline,
             run_config=pipeline_run.run_config,
             step_keys_to_execute=args.step_keys_to_execute,
-            mode=pipeline_run.mode,
             known_state=args.known_state,
             repository_load_data=repository_load_data,
         )

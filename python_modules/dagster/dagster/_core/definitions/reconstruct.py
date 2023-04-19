@@ -54,7 +54,6 @@ if TYPE_CHECKING:
 
     from .asset_group import AssetGroup
     from .graph_definition import GraphDefinition
-    from .pipeline_definition import PipelineDefinition
     from .repository_definition import RepositoryDefinition
 
 
@@ -234,7 +233,7 @@ class ReconstructablePipeline(
     # Keep the most recent 1 definition (globally since this is a NamedTuple method)
     # This allows repeated calls to get_definition in execution paths to not reload the job
     @lru_cache(maxsize=1)
-    def get_definition(self) -> Union[JobDefinition, "PipelineDefinition"]:
+    def get_definition(self) -> Union[JobDefinition, "JobDefinition"]:
         return self.repository.get_definition().get_maybe_subset_job_def(
             self.pipeline_name,
             self.solid_selection,
@@ -258,7 +257,7 @@ class ReconstructablePipeline(
                 pipeline_name=self.pipeline_name,
             )
 
-        from dagster._core.definitions import JobDefinition, PipelineDefinition
+        from dagster._core.definitions import JobDefinition
 
         pipeline_def = self.get_definition()
         if isinstance(pipeline_def, JobDefinition):
@@ -277,7 +276,7 @@ class ReconstructablePipeline(
                 solids_to_execute=None,
                 asset_selection=asset_selection,
             )
-        elif isinstance(pipeline_def, PipelineDefinition):
+        elif isinstance(pipeline_def, JobDefinition):
             # when subselecting a pipeline
             # * pipeline subselection depend on solids_to_excute rather than solid_selection
             # * we resolve a list of solid selection queries to a frozenset of qualified solid names
@@ -383,7 +382,7 @@ class ReconstructablePipeline(
 ReconstructableJob = ReconstructablePipeline
 
 
-def reconstructable(target: Callable[..., "PipelineDefinition"]) -> ReconstructablePipeline:
+def reconstructable(target: Callable[..., "JobDefinition"]) -> ReconstructablePipeline:
     """Create a :py:class:`~dagster._core.definitions.reconstructable.ReconstructablePipeline` from a
     function that returns a :py:class:`~dagster.PipelineDefinition`/:py:class:`~dagster.JobDefinition`,
     or a function decorated with :py:func:`@job <dagster.job>`.
@@ -439,9 +438,9 @@ def reconstructable(target: Callable[..., "PipelineDefinition"]) -> Reconstructa
 
             reconstructable_bar_job = reconstructable(make_bar_job)
     """
-    from dagster._core.definitions import JobDefinition, PipelineDefinition
+    from dagster._core.definitions import JobDefinition
 
-    if not seven.is_function_or_decorator_instance_of(target, PipelineDefinition):
+    if not seven.is_function_or_decorator_instance_of(target, JobDefinition):
         if isinstance(target, JobDefinition):
             raise DagsterInvariantViolationError(
                 "Reconstructable target was not a function returning a job definition, or a job "
@@ -617,7 +616,7 @@ def bootstrap_standalone_recon_pipeline(pointer: CodePointer) -> Reconstructable
 
 
 LoadableDefinition: TypeAlias = Union[
-    "PipelineDefinition",
+    "JobDefinition",
     "RepositoryDefinition",
     "PendingRepositoryDefinition",
     "GraphDefinition",
@@ -632,13 +631,13 @@ def _check_is_loadable(definition: T_LoadableDefinition) -> T_LoadableDefinition
 
     from .definitions_class import Definitions
     from .graph_definition import GraphDefinition
-    from .pipeline_definition import PipelineDefinition
+    from .job_definition import JobDefinition
     from .repository_definition import PendingRepositoryDefinition, RepositoryDefinition
 
     if not isinstance(
         definition,
         (
-            PipelineDefinition,
+            JobDefinition,
             RepositoryDefinition,
             PendingRepositoryDefinition,
             GraphDefinition,
@@ -681,7 +680,7 @@ def def_from_pointer(
     from dagster._core.definitions import AssetGroup
 
     from .graph_definition import GraphDefinition
-    from .pipeline_definition import PipelineDefinition
+    from .job_definition import JobDefinition
     from .repository_definition import PendingRepositoryDefinition, RepositoryDefinition
 
     if isinstance(
@@ -689,7 +688,7 @@ def def_from_pointer(
         (
             AssetGroup,
             GraphDefinition,
-            PipelineDefinition,
+            JobDefinition,
             PendingRepositoryDefinition,
             RepositoryDefinition,
         ),
@@ -710,12 +709,12 @@ def def_from_pointer(
     return _check_is_loadable(target())
 
 
-def pipeline_def_from_pointer(pointer: CodePointer) -> "PipelineDefinition":
-    from .pipeline_definition import PipelineDefinition
+def pipeline_def_from_pointer(pointer: CodePointer) -> "JobDefinition":
+    from .job_definition import JobDefinition
 
     target = def_from_pointer(pointer)
 
-    if isinstance(target, PipelineDefinition):
+    if isinstance(target, JobDefinition):
         return target
 
     raise DagsterInvariantViolationError(
@@ -727,7 +726,7 @@ def pipeline_def_from_pointer(pointer: CodePointer) -> "PipelineDefinition":
 @overload
 # NOTE: mypy can't handle these overloads but pyright can
 def repository_def_from_target_def(
-    target: Union["RepositoryDefinition", "PipelineDefinition", "GraphDefinition", "AssetGroup"],
+    target: Union["RepositoryDefinition", "JobDefinition", "GraphDefinition", "AssetGroup"],
     repository_load_data: Optional["RepositoryLoadData"] = None,
 ) -> "RepositoryDefinition":
     ...
@@ -747,7 +746,7 @@ def repository_def_from_target_def(
 
     from .definitions_class import Definitions
     from .graph_definition import GraphDefinition
-    from .pipeline_definition import PipelineDefinition
+    from .job_definition import JobDefinition
     from .repository_definition import (
         SINGLETON_REPOSITORY_NAME,
         CachingRepositoryData,
@@ -760,7 +759,7 @@ def repository_def_from_target_def(
         target = target.get_inner_repository_for_loading_process()
 
     # special case - we can wrap a single pipeline in a repository
-    if isinstance(target, (PipelineDefinition, GraphDefinition)):
+    if isinstance(target, (JobDefinition, GraphDefinition)):
         # consider including pipeline name in generated repo name
         return RepositoryDefinition(
             name=get_ephemeral_repository_name(target.name),

@@ -219,7 +219,7 @@ def build_assets_job(
             asset_layer=asset_layer,
             _asset_selection_data=_asset_selection_data,
             metadata=original_job.metadata,
-            logger_defs=original_job.get_mode_definition().loggers,
+            logger_defs=original_job.loggers,
             hooks=original_job.hook_defs,
             op_retry_policy=original_job._op_retry_policy,  # noqa: SLF001
             version_strategy=original_job.version_strategy,
@@ -318,7 +318,7 @@ def build_source_asset_observation_job(
             asset_layer=asset_layer,
             _asset_selection_data=_asset_selection_data,
             metadata=original_job.metadata,
-            logger_defs=original_job.get_mode_definition().loggers,
+            logger_defs=original_job.loggers,
             hooks=original_job.hook_defs,
             op_retry_policy=original_job._op_retry_policy,  # noqa: SLF001
             version_strategy=original_job.version_strategy,
