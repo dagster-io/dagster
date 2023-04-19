@@ -1,9 +1,10 @@
 // eslint-disable-next-line no-restricted-imports
 import {Colors} from '@blueprintjs/core';
-import {Icon, IconName} from '@dagster-io/ui';
 import memoize from 'lodash/memoize';
 import * as React from 'react';
 import styled from 'styled-components/macro';
+
+import {Icon, IconName} from './Icon';
 
 const SECONDARY_COLORS = {
   Orchid: '#8982DD',
