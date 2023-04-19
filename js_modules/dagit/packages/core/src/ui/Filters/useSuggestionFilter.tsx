@@ -65,17 +65,19 @@ export function useSuggestionFilter<TValue>({
       getResults: (query: string) => {
         if (nextSuggestionsRef.current || nextSuggestionsLoadingRef.current) {
           return (
-            nextSuggestionsRef.current?.map((value, index) => ({
-              label: (
-                <SuggestionFilterLabel
-                  value={value.value}
-                  renderLabel={renderLabel}
-                  filter={filterObjRef.current}
-                />
-              ),
-              key: getKey?.(value.value) || index.toString(),
-              value,
-            })) || []
+            nextSuggestionsRef.current
+              ?.filter(({value}) => query === '' || isMatch(value, query))
+              .map((value, index) => ({
+                label: (
+                  <SuggestionFilterLabel
+                    value={value.value}
+                    renderLabel={renderLabel}
+                    filter={filterObjRef.current}
+                  />
+                ),
+                key: getKey?.(value.value) || index.toString(),
+                value,
+              })) || []
           );
         }
         return initialSuggestions
