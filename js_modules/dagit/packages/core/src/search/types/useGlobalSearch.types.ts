@@ -2,9 +2,9 @@
 
 import * as Types from '../../graphql/types';
 
-export type SearchBootstrapQueryVariables = Types.Exact<{[key: string]: never}>;
+export type SearchPrimaryQueryVariables = Types.Exact<{[key: string]: never}>;
 
-export type SearchBootstrapQuery = {
+export type SearchPrimaryQuery = {
   __typename: 'DagitQuery';
   workspaceOrError:
     | {
