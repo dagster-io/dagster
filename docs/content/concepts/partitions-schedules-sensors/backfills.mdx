@@ -18,19 +18,19 @@ Dagster supports data backfills for each partition or subsets of partitions. Aft
 You can open the backfill modal to launch backfills for a partitioned asset using the "Materialize" button on the [Asset detail page](https://docs.dagster.io/concepts/partitions-schedules-sensors/partitions#materializing-partitioned-assets). Backfills can also be launched for a selection of differently partitioned assets, as long as the roots share the same partitioning. You can select assets to materialize from the lineage tab of your asset group.
 
 <Image
-  alt="backfills-launch-modal"
-  src="/images/concepts/assets/asset-backfill-partition-selection-modal.png"
-  width={1712}
-  height={1378}
+alt="backfills-launch-modal"
+src="/images/concepts/assets/asset-backfill-partition-selection-modal.png"
+width={1712}
+height={1378}
 />
 
 After selecting the partitions you want to backfill you can click on the toast notification to go to the Backfill details page. You can also reach this page via link on the backfills page.
 
 <Image
-  alt="backfills-launch-modal"
-  src="/images/concepts/assets/asset-backfill-details-page.png"
-  width={3474}
-  height={670}
+alt="backfills-launch-modal"
+src="/images/concepts/assets/asset-backfill-details-page.png"
+width={3474}
+height={670}
 />
 
 ### Partitioned Job Backfills
@@ -42,10 +42,10 @@ To launch a backfill, click the "Launch backfill" button at the top center of th
 <!-- This was generated from go/prod -->
 
 <Image
-  alt="backfills-launch-modal"
-  src="/images/concepts/partitions-schedules-sensors/backfills-launch-modal.png"
-  width={3808}
-  height={2414}
+alt="backfills-launch-modal"
+src="/images/concepts/partitions-schedules-sensors/backfills-launch-modal.png"
+width={3808}
+height={2414}
 />
 
 You can click the button on the bottom right to submit the runs. What happens when you hit this button depends on your [Run Coordinator](/deployment/run-coordinator). With the default run coordinator, the modal will exit after all runs have been launched. With the queued run coordinator, the modal will exit after all runs have been queued.
@@ -53,15 +53,15 @@ You can click the button on the bottom right to submit the runs. What happens wh
 After all the runs have been submitted, you'll be returned to the partitions page, with a filter for runs inside the backfill. This refreshes periodically and allows you to see how the backfill is progressing. Boxes become green or red as steps in the backfill runs succeed or fail.
 
 <Image
-  alt="partitions-page"
-  src="/images/concepts/partitions-schedules-sensors/partitions-page.png"
-  width={3808}
-  height={2414}
+alt="partitions-page"
+src="/images/concepts/partitions-schedules-sensors/partitions-page.png"
+width={3808}
+height={2414}
 />
 
 ### Using the Backfill CLI
 
-You can also launch backfills using the [`backfill`](/_apidocs/cli#dagster-pipeline-backfill) CLI.
+You can also launch backfills using the [`backfill`](\/_apidocs/cli#dagster-pipeline-backfill) CLI.
 
 In the [Partitions](/concepts/partitions-schedules-sensors/partitions#date-partitioned-job) concept page, we defined a partitioned job called `do_stuff_partitioned` that had date partitions.
 
