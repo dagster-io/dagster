@@ -664,14 +664,17 @@ class JobDefinition(IHasInternalInit):
             run_config = (
                 run_config
                 if run_config
-                else self.partitioned_config.get_run_config_for_partition_key(partition_key)
+                else convert_config_input(
+                    self.partitioned_config.get_run_config_for_partition_key(
+                        partition_key
+                    )
+                )
             )
             merged_tags.update(
                 self.partitioned_config.get_tags_for_partition_key(
                     partition_key, job_name=self.name
                 )
             )
-
         return core_execute_in_process(
             ephemeral_job=ephemeral_job,
             run_config=run_config,
