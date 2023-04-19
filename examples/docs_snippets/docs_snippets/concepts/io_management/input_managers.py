@@ -4,10 +4,17 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from dagster import In, InputManager, IOManager, input_manager, io_manager, job, op
+from dagster import (
+    ConfigurableIOManager,
+    In,
+    InputManager,
+    input_manager,
+    job,
+    op,
+)
 
 
-class PandasIOManager(IOManager):
+class PandasIOManager(ConfigurableIOManager):
     def handle_output(self, context, obj):
         pass
 
@@ -15,17 +22,12 @@ class PandasIOManager(IOManager):
         pass
 
 
-class TableIOManager(IOManager):
+class TableIOManager(ConfigurableIOManager):
     def handle_output(self, context, obj):
         pass
 
     def load_input(self, context):
         pass
-
-
-@io_manager
-def pandas_io_manager():
-    return PandasIOManager()
 
 
 @op
@@ -74,17 +76,12 @@ class MyNumpyLoader(PandasIOManager):
         return array
 
 
-@io_manager
-def numpy_io_manager():
-    return MyNumpyLoader()
-
-
 @op(ins={"np_array_input": In(input_manager_key="numpy_manager")})
 def analyze_as_numpy(np_array_input: np.ndarray):
     assert isinstance(np_array_input, np.ndarray)
 
 
-@job(resource_defs={"numpy_manager": numpy_io_manager, "io_manager": pandas_io_manager})
+@job(resource_defs={"numpy_manager": MyNumpyLoader(), "io_manager": PandasIOManager()})
 def my_job():
     df = produce_pandas_output()
     analyze_as_numpy(df)
@@ -97,7 +94,7 @@ def my_job():
 
 
 # this IO Manager is owned by a different team
-class BetterPandasIOManager(IOManager):
+class BetterPandasIOManager(ConfigurableIOManager):
     def _get_path(self, output_context):
         return os.path.join(
             self.base_dir,
@@ -123,11 +120,6 @@ class MyBetterNumpyLoader(PandasIOManager):
         return array
 
 
-@io_manager
-def better_numpy_io_manager():
-    return MyBetterNumpyLoader()
-
-
 @op(ins={"np_array_input": In(input_manager_key="better_numpy_manager")})
 def better_analyze_as_numpy(np_array_input: np.ndarray):
     assert isinstance(np_array_input, np.ndarray)
@@ -135,8 +127,8 @@ def better_analyze_as_numpy(np_array_input: np.ndarray):
 
 @job(
     resource_defs={
-        "numpy_manager": better_numpy_io_manager,
-        "io_manager": pandas_io_manager,
+        "numpy_manager": MyBetterNumpyLoader(),
+        "io_manager": PandasIOManager(),
     }
 )
 def my_better_job():
@@ -195,12 +187,7 @@ class Table1IOManager(TableIOManager):
         return read_dataframe_from_table(name="table_1")
 
 
-@io_manager
-def table_1_io_manager():
-    return Table1IOManager()
-
-
-@job(resource_defs={"load_input_manager": table_1_io_manager})
+@job(resource_defs={"load_input_manager": Table1IOManager()})
 def io_load_table_job():
     my_op()
 
@@ -210,18 +197,13 @@ def io_load_table_job():
 # start_load_input_subset
 
 
-class MyIOManager(IOManager):
+class MyIOManager(ConfigurableIOManager):
     def handle_output(self, context, obj):
         table_name = context.name
         write_dataframe_to_table(name=table_name, dataframe=obj)
 
     def load_input(self, context):
         return read_dataframe_from_table(name=context.upstream_output.name)
-
-
-@io_manager
-def my_io_manager(_):
-    return MyIOManager()
 
 
 @input_manager
@@ -242,7 +224,7 @@ def op2(dataframe):
 
 @job(
     resource_defs={
-        "io_manager": my_io_manager,
+        "io_manager": MyIOManager(),
         "my_input_manager": my_subselection_input_manager,
     }
 )

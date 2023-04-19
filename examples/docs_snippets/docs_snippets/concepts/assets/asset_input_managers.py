@@ -15,7 +15,9 @@ def load_numpy_array(*_args, **_kwargs):
     pass
 
 
-pandas_series_io_manager = None
+class PandasSeriesIOManager:
+    pass
+
 
 # start_different_input_managers
 
@@ -43,7 +45,7 @@ def third_asset(first_asset, second_asset):
 defs = Definitions(
     assets=[first_asset, second_asset, third_asset],
     resources={
-        "pandas_series": pandas_series_io_manager,
+        "pandas_series": PandasSeriesIOManager(),
     },
 )
 
