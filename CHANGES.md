@@ -1,6 +1,6 @@
 # Changelog
 
-# 1.3.0 (core) / 0.19.0 (libraries)
+# 1.3.0 (core) / 0.19.0 (libraries) "Smooth Operator"
 
 ## **Major Changes since 1.2.0 (core) / 0.18.0 (libraries)**
 
