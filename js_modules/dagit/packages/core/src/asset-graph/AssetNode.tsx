@@ -420,8 +420,7 @@ export const AssetNodeMinimal: React.FC<{
               style={{
                 position: 'absolute',
                 top: '50%',
-                transform: 'translateY(-16px)',
-                left: 8,
+                transform: 'translate(8px, -16px)',
               }}
             >
               <AssetLatestRunSpinner liveData={liveData} purpose="section" />
