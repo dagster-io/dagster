@@ -848,7 +848,7 @@ class ConfigurableResourceFactory(
                 return MyResource.from_resource_context(context)
 
         """
-        return cls(**context.resource_config or {}).create_resource(context)
+        return cls(**context.resource_config or {})._create_object_fn(context) # noqa: SLF001
 
 
 class ConfigurableResource(ConfigurableResourceFactory[TResValue]):
