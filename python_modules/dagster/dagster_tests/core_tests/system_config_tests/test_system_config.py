@@ -40,7 +40,7 @@ def create_creation_data(job_def):
         logger_defs=default_loggers(),
         ignored_nodes=[],
         required_resources=set(),
-        direct_inputs=job_def._input_values if job_def.is_job else {},  # noqa: SLF001
+        direct_inputs=job_def._input_values,  # noqa: SLF001
         asset_layer=job_def.asset_layer,
     )
 

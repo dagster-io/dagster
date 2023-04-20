@@ -314,13 +314,11 @@ class ExternalPipeline(RepresentedPipeline):
         if external_pipeline_data:
             self._active_preset_dict = {ap.name: ap for ap in external_pipeline_data.active_presets}
             self._name = external_pipeline_data.name
-            self._is_job = external_pipeline_data.is_job
             self._snapshot_id = self._pipeline_index.pipeline_snapshot_id
 
         elif external_job_ref:
             self._active_preset_dict = {ap.name: ap for ap in external_job_ref.active_presets}
             self._name = external_job_ref.name
-            self._is_job = not external_job_ref.is_legacy_pipeline
             if ref_to_data_fn is None:
                 check.failed("ref_to_data_fn must be passed when using deferred snapshots")
             self._snapshot_id = external_job_ref.snapshot_id

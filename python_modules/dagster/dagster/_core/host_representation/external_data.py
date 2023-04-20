@@ -251,7 +251,7 @@ class ExternalPipelineSubsetResult(
         )
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(old_fields={"is_job": True})
 class ExternalPipelineData(
     NamedTuple(
         "_ExternalPipelineData",
@@ -260,7 +260,6 @@ class ExternalPipelineData(
             ("pipeline_snapshot", PipelineSnapshot),
             ("active_presets", Sequence["ExternalPresetData"]),
             ("parent_pipeline_snapshot", Optional[PipelineSnapshot]),
-            ("is_job", bool),
         ],
     )
 ):
@@ -270,7 +269,6 @@ class ExternalPipelineData(
         pipeline_snapshot: PipelineSnapshot,
         active_presets: Sequence["ExternalPresetData"],
         parent_pipeline_snapshot: Optional[PipelineSnapshot],
-        is_job: bool = False,
     ):
         return super(ExternalPipelineData, cls).__new__(
             cls,
@@ -284,7 +282,6 @@ class ExternalPipelineData(
             active_presets=check.sequence_param(
                 active_presets, "active_presets", of_type=ExternalPresetData
             ),
-            is_job=check.bool_param(is_job, "is_job"),
         )
 
 
@@ -311,7 +308,7 @@ class NestedResource(NamedTuple):
     name: str
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(old_fields={"is_legacy_pipeline": False})
 class ExternalJobRef(
     NamedTuple(
         "_ExternalJobRef",
@@ -320,7 +317,6 @@ class ExternalJobRef(
             ("snapshot_id", str),
             ("active_presets", Sequence["ExternalPresetData"]),
             ("parent_snapshot_id", Optional[str]),
-            ("is_legacy_pipeline", bool),
         ],
     )
 ):
@@ -330,7 +326,6 @@ class ExternalJobRef(
         snapshot_id: str,
         active_presets: Sequence["ExternalPresetData"],
         parent_snapshot_id: Optional[str],
-        is_legacy_pipeline: bool = False,
     ):
         return super(ExternalJobRef, cls).__new__(
             cls,
@@ -340,7 +335,6 @@ class ExternalJobRef(
                 active_presets, "active_presets", of_type=ExternalPresetData
             ),
             parent_snapshot_id=check.opt_str_param(parent_snapshot_id, "parent_snapshot_id"),
-            is_legacy_pipeline=check.bool_param(is_legacy_pipeline, "is_legacy"),
         )
 
 
@@ -1485,26 +1479,17 @@ def external_pipeline_data_from_def(pipeline_def: JobDefinition) -> ExternalPipe
         pipeline_snapshot=pipeline_def.get_pipeline_snapshot(),
         parent_pipeline_snapshot=pipeline_def.get_parent_pipeline_snapshot(),
         active_presets=active_presets_from_job_def(pipeline_def),
-        is_job=True,
     )
 
 
 def external_job_ref_from_def(pipeline_def: JobDefinition) -> ExternalJobRef:
     check.inst_param(pipeline_def, "pipeline_def", JobDefinition)
 
-    parent_snapshot_id = None
-    # parent = pipeline_def.parent_pipeline_def
-    # if parent:
-    #     parent_snapshot_id = parent.get_pipeline_snapshot_id()
-    # else:
-    #     parent_snapshot_id = None
-
     return ExternalJobRef(
         name=pipeline_def.name,
         snapshot_id=pipeline_def.get_pipeline_snapshot_id(),
-        parent_snapshot_id=parent_snapshot_id,
+        parent_snapshot_id=None,
         active_presets=active_presets_from_job_def(pipeline_def),
-        is_legacy_pipeline=False,
     )
 
 
