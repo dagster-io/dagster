@@ -1,9 +1,13 @@
+import json
 import time
 from contextlib import contextmanager
+from typing import Any, Mapping, Optional
 
-from dagster import resource
+import yaml
+from dagster import ConfigurableResource, resource
 from googleapiclient.discovery import build
 from oauth2client.client import GoogleCredentials
+from pydantic import Field
 
 from .configs import define_dataproc_create_cluster_config
 from .types import DataprocError
@@ -68,7 +72,7 @@ class DataprocClient:
             cluster = self.get_cluster()
             return cluster["status"]["state"] in {"RUNNING", "UPDATING"}
 
-        done = DataprocClient._iter_and_sleep_until_ready(iter_fn)
+        done = DataprocClient._iter_and_sleep_until_ready(iter_fn)  # noqa: SLF001
         if not done:
             cluster = self.get_cluster()
             raise DataprocError(
@@ -112,7 +116,9 @@ class DataprocClient:
 
             return False
 
-        done = DataprocClient._iter_and_sleep_until_ready(iter_fn, max_wait_time_sec=wait_timeout)
+        done = DataprocClient._iter_and_sleep_until_ready(  # noqa: SLF001
+            iter_fn, max_wait_time_sec=wait_timeout
+        )
         if not done:
             job = self.get_job(job_id)
             raise DataprocError("Job run timed out: %s" % str(job["status"]))
@@ -147,6 +153,72 @@ class DataprocClient:
             yield self
         finally:
             self.delete_cluster()
+
+
+class DataprocResource(ConfigurableResource):
+    project_id: str = Field(
+        description=(
+            "Required. Project ID for the project which the client acts on behalf of. Will be"
+            " passed when creating a dataset/job."
+        )
+    )
+    region: str = Field(description="The GCP region.")
+    cluster_name: str = Field(
+        description=(
+            "Required. The cluster name. Cluster names within a project must be unique. Names of"
+            " deleted clusters can be reused."
+        )
+    )
+    cluster_config_yaml_path: Optional[str] = Field(
+        default=None,
+        description=(
+            "Full path to a YAML file containing cluster configuration. See"
+            " https://cloud.google.com/dataproc/docs/reference/rest/v1/ClusterConfig for"
+            " configuration options."
+        ),
+    )
+    cluster_config_json_path: Optional[str] = Field(
+        default=None,
+        description=(
+            "Full path to a JSON file containing cluster configuration. See"
+            " https://cloud.google.com/dataproc/docs/reference/rest/v1/ClusterConfig for"
+            " configuration options."
+        ),
+    )
+    cluster_config_dict: Optional[str] = Field(
+        default=None,
+        description=(
+            "Python dictionary containing cluster configuration. See"
+            " https://cloud.google.com/dataproc/docs/reference/rest/v1/ClusterConfig for"
+            " configuration options."
+        ),
+    )
+
+    def _read_yaml_config(self, path: str) -> Mapping[str, Any]:
+        with open(path, "r", encoding="utf8") as f:
+            return yaml.safe_load(f)
+
+    def _read_json_config(self, path: str) -> Mapping[str, Any]:
+        with open(path, "r", encoding="utf8") as f:
+            return json.load(f)
+
+    def get_client(self) -> DataprocClient:
+        cluster_config = None
+        if self.cluster_config_json_path:
+            cluster_config = self._read_json_config(self.cluster_config_json_path)
+        elif self.cluster_config_yaml_path:
+            cluster_config = self._read_yaml_config(self.cluster_config_yaml_path)
+        elif self.cluster_config_dict:
+            cluster_config = self.cluster_config_dict
+
+        client_config_dict = {
+            "projectId": self.project_id,
+            "region": self.region,
+            "clusterName": self.cluster_name,
+            "cluster_config": cluster_config,
+        }
+
+        return DataprocClient(config=client_config_dict)
 
 
 @resource(
