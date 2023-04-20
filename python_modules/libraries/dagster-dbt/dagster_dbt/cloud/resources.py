@@ -8,17 +8,17 @@ from urllib.parse import urlencode, urljoin
 
 import requests
 from dagster import (
+    ConfigurableResource,
     Failure,
-    Field,
-    IntSource,
+    IAttachDifferentObjectToOpContext,
     MetadataValue,
-    StringSource,
     __version__,
     _check as check,
     get_dagster_logger,
     resource,
 )
 from dagster._utils.merger import deep_merge_dicts
+from pydantic import Field as PyField
 from requests.exceptions import RequestException
 
 from .types import DbtCloudOutput
@@ -42,7 +42,7 @@ class DbtCloudRunStatus(str, Enum):
 
 # TODO: This resource should be a wrapper over an existing client for a accessing dbt Cloud,
 # rather than using requests to the API directly.
-class DbtCloudResource:
+class DbtCloudClient:
     """This class exposes methods on top of the dbt Cloud REST API v2.
 
     For a complete set of documentation on the dbt Cloud Administrative REST API, including expected
@@ -587,61 +587,77 @@ class DbtCloudResource:
         )
 
 
+class DbtCloudResource(DbtCloudClient):
+    pass
+
+
 # This is a temporary shim to support the old resource name.
 DbtCloudResourceV2 = DbtCloudResource
 
 
+class DbtCloudClientResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
+    """This resource helps interact with dbt Cloud connectors."""
+
+    auth_token: str = PyField(
+        description=(
+            "dbt Cloud API Token. User tokens can be found in the [dbt Cloud"
+            " UI](https://cloud.getdbt.com/#/profile/api/), or see the [dbt Cloud"
+            " Docs](https://docs.getdbt.com/docs/dbt-cloud/dbt-cloud-api/service-tokens) for"
+            " instructions on creating a Service Account token."
+        ),
+    )
+    account_id: int = PyField(
+        description=(
+            "dbt Cloud Account ID. This value can be found in the url of a variety of views in"
+            " the dbt Cloud UI, e.g."
+            " https://cloud.getdbt.com/#/accounts/{account_id}/settings/."
+        ),
+    )
+    disable_schedule_on_trigger: bool = PyField(
+        default=True,
+        description=(
+            "Specifies if you would like any job that is triggered using this "
+            "resource to automatically disable its schedule."
+        ),
+    )
+    request_max_retries: int = PyField(
+        default=3,
+        description=(
+            "The maximum number of times requests to the dbt Cloud API should be retried "
+            "before failing."
+        ),
+    )
+    request_retry_delay: float = PyField(
+        default=0.25,
+        description="Time (in seconds) to wait between each request retry.",
+    )
+    dbt_cloud_host: str = PyField(
+        default=DBT_DEFAULT_HOST,
+        description=(
+            "The hostname where dbt cloud is being hosted (e.g. https://my_org.cloud.getdbt.com/)."
+        ),
+    )
+
+    def get_dbt_client(self) -> DbtCloudClient:
+        context = self.get_resource_context()
+        assert context.log
+
+        return DbtCloudClient(
+            auth_token=self.auth_token,
+            account_id=self.account_id,
+            disable_schedule_on_trigger=self.disable_schedule_on_trigger,
+            request_max_retries=self.request_max_retries,
+            request_retry_delay=self.request_retry_delay,
+            log=context.log,
+            dbt_cloud_host=self.dbt_cloud_host,
+        )
+
+    def get_object_to_set_on_execution_context(self) -> Any:
+        return self.get_dbt_client()
+
+
 @resource(
-    config_schema={
-        "auth_token": Field(
-            StringSource,
-            is_required=True,
-            description=(
-                "dbt Cloud API Token. User tokens can be found in the [dbt Cloud"
-                " UI](https://cloud.getdbt.com/#/profile/api/), or see the [dbt Cloud"
-                " Docs](https://docs.getdbt.com/docs/dbt-cloud/dbt-cloud-api/service-tokens) for"
-                " instructions on creating a Service Account token."
-            ),
-        ),
-        "account_id": Field(
-            IntSource,
-            is_required=True,
-            description=(
-                "dbt Cloud Account ID. This value can be found in the url of a variety of views in"
-                " the dbt Cloud UI, e.g."
-                " https://cloud.getdbt.com/#/accounts/{account_id}/settings/."
-            ),
-        ),
-        "disable_schedule_on_trigger": Field(
-            bool,
-            default_value=True,
-            description=(
-                "Specifies if you would like any job that is triggered using this "
-                "resource to automatically disable its schedule."
-            ),
-        ),
-        "request_max_retries": Field(
-            int,
-            default_value=3,
-            description=(
-                "The maximum number of times requests to the dbt Cloud API should be retried "
-                "before failing."
-            ),
-        ),
-        "request_retry_delay": Field(
-            float,
-            default_value=0.25,
-            description="Time (in seconds) to wait between each request retry.",
-        ),
-        "dbt_cloud_host": Field(
-            config=StringSource,
-            default_value=DBT_DEFAULT_HOST,
-            description=(
-                "The hostname where dbt cloud is being hosted (e.g."
-                " https://my_org.cloud.getdbt.com/)."
-            ),
-        ),
-    },
+    config_schema=DbtCloudClientResource.to_config_schema(),
     description="This resource helps interact with dbt Cloud connectors",
 )
 def dbt_cloud_resource(context) -> DbtCloudResource:

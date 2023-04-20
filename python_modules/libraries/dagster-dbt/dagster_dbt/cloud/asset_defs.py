@@ -12,6 +12,7 @@ from typing import (
     Sequence,
     Set,
     Tuple,
+    Union,
     cast,
 )
 
@@ -50,7 +51,7 @@ from dagster_dbt.asset_utils import (
 
 from ..errors import DagsterDbtCloudJobInvariantViolationError
 from ..utils import ASSET_RESOURCE_TYPES, result_to_events
-from .resources import DbtCloudResource, DbtCloudRunStatus
+from .resources import DbtCloudClient, DbtCloudClientResource, DbtCloudRunStatus
 
 DAGSTER_DBT_COMPILE_RUN_ID_ENV_VAR = "DBT_DAGSTER_COMPILE_RUN_ID"
 
@@ -58,7 +59,7 @@ DAGSTER_DBT_COMPILE_RUN_ID_ENV_VAR = "DBT_DAGSTER_COMPILE_RUN_ID"
 class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
     def __init__(
         self,
-        dbt_cloud_resource_def: ResourceDefinition,
+        dbt_cloud_resource_def: Union[DbtCloudClientResource, ResourceDefinition],
         job_id: int,
         node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey],
         node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]],
@@ -69,8 +70,18 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         partitions_def: Optional[PartitionsDefinition] = None,
         partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
     ):
-        self._dbt_cloud_resource_def = dbt_cloud_resource_def
-        self._dbt_cloud: DbtCloudResource = dbt_cloud_resource_def(build_init_resource_context())
+        self._dbt_cloud_resource_def: ResourceDefinition = (
+            dbt_cloud_resource_def.get_resource_definition()
+            if isinstance(dbt_cloud_resource_def, DbtCloudClientResource)
+            else dbt_cloud_resource_def
+        )
+        self._dbt_cloud: DbtCloudClient = (
+            dbt_cloud_resource_def.with_resource_context(
+                build_init_resource_context()
+            ).get_dbt_client()
+            if isinstance(dbt_cloud_resource_def, DbtCloudClientResource)
+            else dbt_cloud_resource_def(build_init_resource_context())
+        )
         self._job_id = job_id
         self._project_id: int
         self._has_generate_docs: bool
@@ -464,7 +475,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             compute_kind="dbt",
         )
         def _assets(context: OpExecutionContext):
-            dbt_cloud = cast(DbtCloudResource, context.resources.dbt_cloud)
+            dbt_cloud = cast(DbtCloudClient, context.resources.dbt_cloud)
 
             # Add the partition variable as a variable to the dbt Cloud job command.
             dbt_options: List[str] = []

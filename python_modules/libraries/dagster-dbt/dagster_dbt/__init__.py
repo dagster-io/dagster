@@ -12,6 +12,7 @@ from .cli import (
     dbt_cli_resource as dbt_cli_resource,
 )
 from .cloud import (
+    DbtCloudClientResource as DbtCloudClientResource,
     DbtCloudOutput as DbtCloudOutput,
     DbtCloudResource as DbtCloudResource,
     DbtCloudResourceV2 as DbtCloudResourceV2,

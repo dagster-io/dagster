@@ -20,7 +20,7 @@ from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.execution.with_resources import with_resources
 from dagster._utils import file_relative_path
-from dagster_dbt import dbt_cli_resource
+from dagster_dbt import DbtCliClientResource, dbt_cli_resource
 from dagster_dbt.asset_defs import load_assets_from_dbt_manifest, load_assets_from_dbt_project
 from dagster_dbt.errors import DagsterDbtCliFatalRuntimeError, DagsterDbtCliHandledRuntimeError
 from dagster_dbt.types import DbtOutput
@@ -127,7 +127,9 @@ def test_runtime_metadata_fn(
     )
 
 
-def test_fail_immediately(dbt_seed, dbt_cli_resource_factory, test_project_dir, dbt_config_dir):
+def test_fail_immediately(
+    dbt_seed, dbt_cli_resource_factory, test_project_dir, dbt_config_dir
+) -> None:
     from dagster import build_init_resource_context
 
     dbt_assets = load_assets_from_dbt_project(test_project_dir, dbt_config_dir)
@@ -143,7 +145,10 @@ def test_fail_immediately(dbt_seed, dbt_cli_resource_factory, test_project_dir, 
         resource_defs={"dbt": good_dbt},
     ).execute_in_process()
 
-    assert good_dbt(build_init_resource_context()).get_run_results_json()
+    if isinstance(good_dbt, DbtCliClientResource):
+        assert good_dbt.get_dbt_client().get_run_results_json()
+    else:
+        assert good_dbt(build_init_resource_context()).get_run_results_json()
 
     result = build_assets_job(
         "test_job",
@@ -158,7 +163,7 @@ def test_fail_immediately(dbt_seed, dbt_cli_resource_factory, test_project_dir, 
 
     assert not result.success
     materializations = [
-        event.event_specific_data.materialization
+        event.event_specific_data.materialization  # type: ignore
         for event in result.events_for_node(dbt_assets[0].op.name)
         if event.event_type_value == "ASSET_MATERIALIZATION"
     ]
