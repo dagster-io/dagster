@@ -742,10 +742,16 @@ class GrapheneDagitQuery(graphene.ObjectType):
         pipeline: Optional[GraphenePipelineSelector] = None,
         assetKeys: Optional[Sequence[GrapheneAssetKeyInput]] = None,
     ) -> Sequence[GrapheneAssetNode]:
-        resolved_asset_keys = set(
-            AssetKey.from_graphql_input(asset_key_input) for asset_key_input in assetKeys or []
-        )
-        use_all_asset_keys = len(resolved_asset_keys) == 0
+        if assetKeys == []:
+            return []
+        elif not assetKeys:
+            use_all_asset_keys = True
+            resolved_asset_keys = None
+        else:
+            use_all_asset_keys = False
+            resolved_asset_keys = set(
+                AssetKey.from_graphql_input(asset_key_input) for asset_key_input in assetKeys or []
+            )
 
         repo = None
 
@@ -794,7 +800,9 @@ class GrapheneDagitQuery(graphene.ObjectType):
 
         # Filter down to requested asset keys
         results = [
-            node for node in results if use_all_asset_keys or node.assetKey in resolved_asset_keys
+            node
+            for node in results
+            if use_all_asset_keys or node.assetKey in check.not_none(resolved_asset_keys)
         ]
 
         if not results:
