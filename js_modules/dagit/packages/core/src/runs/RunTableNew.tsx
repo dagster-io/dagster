@@ -8,15 +8,9 @@ import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {RunsFilter} from '../graphql/types';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
-import {PipelineSnapshotLink, getPipelineSnapshotLink} from '../pipelines/PipelinePathUtils';
+import {getPipelineSnapshotLink} from '../pipelines/PipelinePathUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {AnchorButton} from '../ui/AnchorButton';
-import {
-  findRepositoryAmongOptions,
-  isThisThingAJob,
-  useRepositoryOptions,
-} from '../workspace/WorkspaceContext';
-import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {useRepositoryForRunWithoutSnapshot} from '../workspace/useRepositoryForRun';
 import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
 
@@ -55,8 +49,6 @@ export const RunTable = (props: RunTableProps) => {
     return runs.some((run) => run.hasTerminatePermission || run.hasDeletePermission);
   }, [runs]);
 
-  const {options} = useRepositoryOptions();
-
   if (runs.length === 0) {
     const anyFilter = Object.keys(filter || {}).length;
     return (
@@ -94,22 +86,6 @@ export const RunTable = (props: RunTableProps) => {
         </Box>
       </div>
     );
-  }
-
-  let anyPipelines = false;
-  for (const run of runs) {
-    const {repositoryOrigin} = run;
-    if (repositoryOrigin) {
-      const repoAddress = buildRepoAddress(
-        repositoryOrigin.repositoryName,
-        repositoryOrigin.repositoryLocationName,
-      );
-      const repo = findRepositoryAmongOptions(options, repoAddress);
-      if (!repo || !isThisThingAJob(repo, run.pipelineName)) {
-        anyPipelines = true;
-        break;
-      }
-    }
   }
 
   const selectedFragments = runs.filter((run) => checkedIds.has(run.id));
