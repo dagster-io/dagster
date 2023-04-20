@@ -25,6 +25,7 @@ from dagster._core.workspace.load_target import WorkspaceFileTarget
 
 from .conftest import create_workspace_load_target
 from .test_sensor_run import (
+    daily_partitioned_job,
     evaluate_sensors,
     failure_job,
     failure_job_2,
@@ -1056,6 +1057,74 @@ def test_cross_repo_job_run_status_sensor(executor: Optional[ThreadPoolExecutor]
                 freeze_datetime,
                 TickStatus.SKIPPED,
             )
+
+
+@pytest.mark.parametrize("executor", get_sensor_executors())
+def test_partitioned_job_run_status_sensor(
+    caplog,
+    executor: Optional[ThreadPoolExecutor],
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    external_repo: ExternalRepository,
+):
+    freeze_datetime = pendulum.now()
+    with pendulum.test(freeze_datetime):
+        success_sensor = external_repo.get_external_sensor("partitioned_pipeline_success_sensor")
+        instance.start_sensor(success_sensor)
+
+        assert instance.get_runs_count() == 0
+        evaluate_sensors(workspace_context, executor)
+        assert instance.get_runs_count() == 0
+
+        ticks = instance.get_ticks(
+            success_sensor.get_external_origin_id(), success_sensor.selector_id
+        )
+        assert len(ticks) == 1
+        validate_tick(
+            ticks[0],
+            success_sensor,
+            freeze_datetime,
+            TickStatus.SKIPPED,
+        )
+
+        freeze_datetime = freeze_datetime.add(seconds=60)
+        time.sleep(1)
+
+    with pendulum.test(freeze_datetime):
+        external_job = external_repo.get_full_external_job("daily_partitioned_job")
+        run = instance.create_run_for_pipeline(
+            daily_partitioned_job,
+            external_pipeline_origin=external_job.get_external_origin(),
+            pipeline_code_origin=external_job.get_python_origin(),
+            tags={"dagster/partition": "2022-08-01"},
+        )
+        instance.submit_run(run.run_id, workspace_context.create_request_context())
+        wait_for_all_runs_to_finish(instance)
+        assert instance.get_runs_count() == 1
+        run = instance.get_runs()[0]
+        assert run.status == DagsterRunStatus.SUCCESS
+        freeze_datetime = freeze_datetime.add(seconds=60)
+
+    caplog.clear()
+
+    with pendulum.test(freeze_datetime):
+        # should fire the success sensor
+        evaluate_sensors(workspace_context, executor)
+
+        ticks = instance.get_ticks(
+            success_sensor.get_external_origin_id(), success_sensor.selector_id
+        )
+        assert len(ticks) == 2
+        validate_tick(
+            ticks[0],
+            success_sensor,
+            freeze_datetime,
+            TickStatus.SUCCESS,
+        )
+        assert (
+            'Sensor "partitioned_pipeline_success_sensor" acted on run status SUCCESS of run'
+            in caplog.text
+        )
 
 
 @pytest.mark.parametrize("executor", get_sensor_executors())
