@@ -25,6 +25,10 @@ import {useRepositoryOptions} from '../workspace/WorkspaceContext';
 import {DagsterTag} from './RunTag';
 import {
   RunTagKeysNewQuery,
+<<<<<<< HEAD
+=======
+  RunTagKeysNewQueryVariables,
+>>>>>>> 56235dfe58 (rename queries)
   RunTagValuesNewQuery,
   RunTagValuesNewQueryVariables,
 } from './types/RunsFilterInputNew.types';
@@ -165,6 +169,20 @@ export const RunsFilterInput: React.FC<RunsFilterInputProps> = ({
   enabledFilters,
 }) => {
   const {options} = useRepositoryOptions();
+<<<<<<< HEAD
+=======
+  const [selectedTagKey, setSelectedTagKey] = React.useState<string | undefined>();
+  const [fetchTagKeys, {data: tagKeyData}] = useLazyQuery<
+    RunTagKeysNewQuery,
+    RunTagKeysNewQueryVariables
+  >(RUN_TAG_KEYS_QUERY);
+  const [fetchTagValues, {data: tagValueData}] = useLazyQuery<
+    RunTagValuesNewQuery,
+    RunTagValuesNewQueryVariables
+  >(RUN_TAG_VALUES_QUERY, {
+    variables: {tagKeys: selectedTagKey ? [selectedTagKey] : []},
+  });
+>>>>>>> 56235dfe58 (rename queries)
 
   const [fetchTagKeys, {data: tagKeyData}] = useLazyQuery<RunTagKeysNewQuery>(RUN_TAG_KEYS_QUERY);
   const client = useApolloClient();
@@ -535,7 +553,11 @@ export const RunsFilterInput: React.FC<RunsFilterInputProps> = ({
   );
 };
 
+<<<<<<< HEAD
 export const RUN_TAG_KEYS_QUERY = gql`
+=======
+const RUN_TAG_KEYS_QUERY = gql`
+>>>>>>> 56235dfe58 (rename queries)
   query RunTagKeysNewQuery {
     runTagKeysOrError {
       ... on RunTagKeys {
@@ -545,7 +567,11 @@ export const RUN_TAG_KEYS_QUERY = gql`
   }
 `;
 
+<<<<<<< HEAD
 export const RUN_TAG_VALUES_QUERY = gql`
+=======
+const RUN_TAG_VALUES_QUERY = gql`
+>>>>>>> 56235dfe58 (rename queries)
   query RunTagValuesNewQuery($tagKeys: [String!]!) {
     runTagsOrError(tagKeys: $tagKeys) {
       __typename

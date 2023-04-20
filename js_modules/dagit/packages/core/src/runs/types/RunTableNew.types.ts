@@ -2,7 +2,11 @@
 
 import * as Types from '../../graphql/types';
 
+<<<<<<< HEAD
 export type RunTableRunNewFragment = {
+=======
+export type RunTableRunFragmentNewFragment = {
+>>>>>>> 56235dfe58 (rename queries)
   __typename: 'Run';
   id: string;
   status: Types.RunStatus;
