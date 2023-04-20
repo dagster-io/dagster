@@ -19719,42 +19719,7 @@ snapshots['test_all_snapshot_ids 129'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.85dc493a9d77d7093872e3999b6173e59966de08": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "field_aliases": {
-          "ops": "solids"
-        },
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "downstream_static_partitioned_asset",
-            "type_key": "Shape.36f967aeb3f6dab9d3a24674eef563a75d431b7f"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "upstream_static_partitioned_asset",
-            "type_key": "Shape.36f967aeb3f6dab9d3a24674eef563a75d431b7f"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.85dc493a9d77d7093872e3999b6173e59966de08",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.d800594f7cfe0b0e5d3c1a240c0f186db951d6ec": {
+      "Shape.c82b217e3252b4c1328ebc3077cca608f35b5300": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
@@ -19783,11 +19748,11 @@ snapshots['test_all_snapshot_ids 129'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
-            "default_value_as_json_str": "{\\"downstream_static_partitioned_asset\\": {}, \\"upstream_static_partitioned_asset\\": {}}",
+            "default_value_as_json_str": "{\\"downstream_static_partitioned_asset\\": {}, \\"middle_static_partitioned_asset_1\\": {}, \\"middle_static_partitioned_asset_2\\": {}, \\"upstream_static_partitioned_asset\\": {}}",
             "description": "Configure runtime parameters for ops or assets.",
             "is_required": false,
             "name": "ops",
-            "type_key": "Shape.85dc493a9d77d7093872e3999b6173e59966de08"
+            "type_key": "Shape.cf1286dc4e13bb2f079e3ad9932b61900aba74f3"
           },
           {
             "__class__": "ConfigFieldSnap",
@@ -19800,7 +19765,60 @@ snapshots['test_all_snapshot_ids 129'] = '''{
           }
         ],
         "given_name": null,
-        "key": "Shape.d800594f7cfe0b0e5d3c1a240c0f186db951d6ec",
+        "key": "Shape.c82b217e3252b4c1328ebc3077cca608f35b5300",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
+      "Shape.cf1286dc4e13bb2f079e3ad9932b61900aba74f3": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "field_aliases": {
+          "ops": "solids"
+        },
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "downstream_static_partitioned_asset",
+            "type_key": "Shape.36f967aeb3f6dab9d3a24674eef563a75d431b7f"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "middle_static_partitioned_asset_1",
+            "type_key": "Shape.36f967aeb3f6dab9d3a24674eef563a75d431b7f"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "middle_static_partitioned_asset_2",
+            "type_key": "Shape.36f967aeb3f6dab9d3a24674eef563a75d431b7f"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "upstream_static_partitioned_asset",
+            "type_key": "Shape.36f967aeb3f6dab9d3a24674eef563a75d431b7f"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.cf1286dc4e13bb2f079e3ad9932b61900aba74f3",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -19980,6 +19998,39 @@ snapshots['test_all_snapshot_ids 129'] = '''{
         "input_dep_snaps": [
           {
             "__class__": "InputDependencySnap",
+            "input_name": "middle_static_partitioned_asset_1",
+            "is_dynamic_collect": false,
+            "upstream_output_snaps": [
+              {
+                "__class__": "OutputHandleSnap",
+                "output_name": "result",
+                "solid_name": "middle_static_partitioned_asset_1"
+              }
+            ]
+          },
+          {
+            "__class__": "InputDependencySnap",
+            "input_name": "middle_static_partitioned_asset_2",
+            "is_dynamic_collect": false,
+            "upstream_output_snaps": [
+              {
+                "__class__": "OutputHandleSnap",
+                "output_name": "result",
+                "solid_name": "middle_static_partitioned_asset_2"
+              }
+            ]
+          }
+        ],
+        "is_dynamic_mapped": false,
+        "solid_def_name": "downstream_static_partitioned_asset",
+        "solid_name": "downstream_static_partitioned_asset",
+        "tags": {}
+      },
+      {
+        "__class__": "SolidInvocationSnap",
+        "input_dep_snaps": [
+          {
+            "__class__": "InputDependencySnap",
             "input_name": "upstream_static_partitioned_asset",
             "is_dynamic_collect": false,
             "upstream_output_snaps": [
@@ -19992,8 +20043,29 @@ snapshots['test_all_snapshot_ids 129'] = '''{
           }
         ],
         "is_dynamic_mapped": false,
-        "solid_def_name": "downstream_static_partitioned_asset",
-        "solid_name": "downstream_static_partitioned_asset",
+        "solid_def_name": "middle_static_partitioned_asset_1",
+        "solid_name": "middle_static_partitioned_asset_1",
+        "tags": {}
+      },
+      {
+        "__class__": "SolidInvocationSnap",
+        "input_dep_snaps": [
+          {
+            "__class__": "InputDependencySnap",
+            "input_name": "upstream_static_partitioned_asset",
+            "is_dynamic_collect": false,
+            "upstream_output_snaps": [
+              {
+                "__class__": "OutputHandleSnap",
+                "output_name": "result",
+                "solid_name": "upstream_static_partitioned_asset"
+              }
+            ]
+          }
+        ],
+        "is_dynamic_mapped": false,
+        "solid_def_name": "middle_static_partitioned_asset_2",
+        "solid_name": "middle_static_partitioned_asset_2",
         "tags": {}
       },
       {
@@ -20046,7 +20118,7 @@ snapshots['test_all_snapshot_ids 129'] = '''{
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.d800594f7cfe0b0e5d3c1a240c0f186db951d6ec"
+      "root_config_key": "Shape.c82b217e3252b4c1328ebc3077cca608f35b5300"
     }
   ],
   "name": "static_partitioned_assets_job",
@@ -20071,10 +20143,84 @@ snapshots['test_all_snapshot_ids 129'] = '''{
             "__class__": "InputDefSnap",
             "dagster_type_key": "Any",
             "description": null,
-            "name": "upstream_static_partitioned_asset"
+            "name": "middle_static_partitioned_asset_1"
+          },
+          {
+            "__class__": "InputDefSnap",
+            "dagster_type_key": "Any",
+            "description": null,
+            "name": "middle_static_partitioned_asset_2"
           }
         ],
         "name": "downstream_static_partitioned_asset",
+        "output_def_snaps": [
+          {
+            "__class__": "OutputDefSnap",
+            "dagster_type_key": "Any",
+            "description": null,
+            "is_dynamic": false,
+            "is_required": true,
+            "name": "result"
+          }
+        ],
+        "required_resource_keys": [],
+        "tags": {}
+      },
+      {
+        "__class__": "SolidDefSnap",
+        "config_field_snap": {
+          "__class__": "ConfigFieldSnap",
+          "default_provided": false,
+          "default_value_as_json_str": null,
+          "description": null,
+          "is_required": false,
+          "name": "config",
+          "type_key": "Any"
+        },
+        "description": null,
+        "input_def_snaps": [
+          {
+            "__class__": "InputDefSnap",
+            "dagster_type_key": "Any",
+            "description": null,
+            "name": "upstream_static_partitioned_asset"
+          }
+        ],
+        "name": "middle_static_partitioned_asset_1",
+        "output_def_snaps": [
+          {
+            "__class__": "OutputDefSnap",
+            "dagster_type_key": "Any",
+            "description": null,
+            "is_dynamic": false,
+            "is_required": true,
+            "name": "result"
+          }
+        ],
+        "required_resource_keys": [],
+        "tags": {}
+      },
+      {
+        "__class__": "SolidDefSnap",
+        "config_field_snap": {
+          "__class__": "ConfigFieldSnap",
+          "default_provided": false,
+          "default_value_as_json_str": null,
+          "description": null,
+          "is_required": false,
+          "name": "config",
+          "type_key": "Any"
+        },
+        "description": null,
+        "input_def_snaps": [
+          {
+            "__class__": "InputDefSnap",
+            "dagster_type_key": "Any",
+            "description": null,
+            "name": "upstream_static_partitioned_asset"
+          }
+        ],
+        "name": "middle_static_partitioned_asset_2",
         "output_def_snaps": [
           {
             "__class__": "OutputDefSnap",
@@ -21327,7 +21473,7 @@ snapshots['test_all_snapshot_ids 13'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 130'] = '635eb1e3540c1be556987dd91de7e792dbc0a625'
+snapshots['test_all_snapshot_ids 130'] = '21734e02964c4cc85ffd0f07bae688038b3c7833'
 
 snapshots['test_all_snapshot_ids 131'] = '''{
   "__class__": "PipelineSnapshot",
