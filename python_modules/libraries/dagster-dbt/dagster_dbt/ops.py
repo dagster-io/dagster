@@ -1,4 +1,7 @@
-from dagster import Array, Bool, Field, In, Nothing, Out, Output, op
+from typing import Any, List
+
+from dagster import Config, In, Nothing, Out, Output, op
+from pydantic import Field
 
 from .types import DbtOutput
 from .utils import generate_events, generate_materializations
@@ -38,66 +41,58 @@ Examples:
 # double-splatted, so we type-ignore the below op declarations.
 
 
-@op(
-    **_DEFAULT_OP_PROPS,
-    config_schema={
-        "yield_asset_events": Field(
-            config=Bool,
-            default_value=True,
-            description=(
-                "If True, materializations and asset observations corresponding to the results of "
-                "the dbt operation will be yielded when the op executes. Default: True"
-            ),
+class DbtBuildOpConfig(Config):
+    yield_asset_events: bool = Field(
+        default_value=True,
+        description=(
+            "If True, materializations and asset observations corresponding to the results of "
+            "the dbt operation will be yielded when the op executes. Default: True"
         ),
-        "asset_key_prefix": Field(
-            config=Array(str),
-            default_value=["dbt"],
-            description=(
-                "If provided and yield_materializations is True, these components will be used to "
-                "prefix the generated asset keys."
-            ),
+    )
+    asset_key_prefix: List[str] = Field(
+        default_value=["dbt"],
+        description=(
+            "If provided and yield_materializations is True, these components will be used to "
+            "prefix the generated asset keys."
         ),
-    },
-)
-def dbt_build_op(context):
+    )
+
+
+@op(**_DEFAULT_OP_PROPS)
+def dbt_build_op(context, config: DbtBuildOpConfig) -> Any:
     dbt_output = context.resources.dbt.build()
-    if context.op_config["yield_asset_events"] and "results" in dbt_output.result:
+    if config.yield_asset_events and "results" in dbt_output.result:
         yield from generate_events(
             dbt_output,
-            node_info_to_asset_key=lambda info: context.op_config["asset_key_prefix"]
+            node_info_to_asset_key=lambda info: config.asset_key_prefix
             + info["unique_id"].split("."),
             manifest_json=context.resources.dbt.get_manifest_json(),
         )
     yield Output(dbt_output)
 
 
-@op(
-    **_DEFAULT_OP_PROPS,
-    config_schema={
-        "yield_materializations": Field(
-            config=Bool,
-            default_value=True,
-            description=(
-                "If True, materializations corresponding to the results of the dbt operation will "
-                "be yielded when the op executes. Default: True"
-            ),
+class DbtRunOpConfig(Config):
+    yield_materializations: bool = Field(
+        default_value=True,
+        description=(
+            "If True, materializations corresponding to the results of the dbt operation will "
+            "be yielded when the op executes. Default: True"
         ),
-        "asset_key_prefix": Field(
-            config=Array(str),
-            default_value=["dbt"],
-            description=(
-                "If provided and yield_materializations is True, these components will be used to "
-                "prefix the generated asset keys."
-            ),
+    )
+    asset_key_prefix: List[str] = Field(
+        default_value=["dbt"],
+        description=(
+            "If provided and yield_materializations is True, these components will be used to "
+            "prefix the generated asset keys."
         ),
-    },
-)
-def dbt_run_op(context):
+    )
+
+
+@op(**_DEFAULT_OP_PROPS)
+def dbt_run_op(context, config: DbtRunOpConfig):
     dbt_output = context.resources.dbt.run()
-    if context.op_config["yield_materializations"] and "results" in dbt_output.result:
-        yield from generate_materializations(
-            dbt_output, asset_key_prefix=context.op_config["asset_key_prefix"]
-        )
+    if config.yield_materializations and "results" in dbt_output.result:
+        yield from generate_materializations(dbt_output, asset_key_prefix=config.asset_key_prefix)
     yield Output(dbt_output)
 
 
