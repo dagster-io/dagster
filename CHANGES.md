@@ -1,6 +1,18 @@
 # Changelog
 
-# 1.3.0 (core) / 0.19.0 (libraries)
+# 1.3.1 (core) / 0.19.1 (libraries)
+
+### New
+
+- Performance improvements when evaluating time-partitioned run requests within sensors and schedules.
+- [ui] Performance improvements when loading the asset catalog and launchpad for deployments with many time-partitioned assets.
+
+### Bugfixes
+
+- Fixed an issue where loading a Definitions object that included sensors attached to multiple jobs would raise an error.
+- Fixed a bug in which Pythonic resources would produce underlying resource values that would fail reference equality checks. This would lead to a conflicting resource version error when using the same Pythonic resource in multiple places.
+
+# 1.3.0 (core) / 0.19.0 (libraries) "Smooth Operator"
 
 ## **Major Changes since 1.2.0 (core) / 0.18.0 (libraries)**
 
