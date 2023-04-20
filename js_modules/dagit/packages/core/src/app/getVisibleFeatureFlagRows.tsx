@@ -20,4 +20,8 @@ export const getVisibleFeatureFlagRows = () => [
     key: 'Experimental schedule/sensor logging view',
     flagType: FeatureFlag.flagSensorScheduleLogging,
   },
+  {
+    key: 'Experimental Runs table view with filtering',
+    flagType: FeatureFlag.flagRunsTableFiltering,
+  },
 ];

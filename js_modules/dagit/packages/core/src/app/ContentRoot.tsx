@@ -2,6 +2,8 @@ import {MainContent, ErrorBoundary} from '@dagster-io/ui';
 import * as React from 'react';
 import {Route, Switch, useLocation} from 'react-router-dom';
 
+import {useFeatureFlags} from './Flags';
+
 const WorkspaceRoot = React.lazy(() => import('../workspace/WorkspaceRoot'));
 const OverviewRoot = React.lazy(() => import('../overview/OverviewRoot'));
 const FallthroughRoot = React.lazy(() => import('./FallthroughRoot'));
