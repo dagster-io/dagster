@@ -69,6 +69,12 @@ def test_hello_world():
 
 
 @pytest.mark.notebook_test
+def test_hello_world_struct_resource() -> None:
+    with exec_for_test("hello_world_job_struct_resource") as result:
+        assert result.success
+
+
+@pytest.mark.notebook_test
 def test_hello_world_job():
     with exec_for_test("hello_world_job") as result:
         assert result.success
@@ -79,6 +85,13 @@ def test_hello_world_with_config():
     with exec_for_test("hello_world_config_job") as result:
         assert result.success
         assert result.output_for_node("hello_world_config") == "hello"
+
+
+@pytest.mark.notebook_test
+def test_hello_world_with_struct_config() -> None:
+    with exec_for_test("hello_world_config_job_struct") as result:
+        assert result.success
+        assert result.output_for_node("hello_world_config_struct") == "hello"
 
 
 @pytest.mark.notebook_test
