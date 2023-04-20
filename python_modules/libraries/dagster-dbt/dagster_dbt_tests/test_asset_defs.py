@@ -30,7 +30,9 @@ from dagster_duckdb_pandas import DuckDBPandasTypeHandler
 from .utils import assert_assets_match_project
 
 
-def test_custom_resource_key_asset_load(dbt_seed, test_project_dir, dbt_config_dir):
+def test_custom_resource_key_asset_load(
+    dbt_seed, dbt_cli_resource_factory, test_project_dir, dbt_config_dir
+):
     dbt_assets = load_assets_from_dbt_project(
         test_project_dir, dbt_config_dir, dbt_resource_key="my_custom_dbt"
     )
@@ -40,8 +42,8 @@ def test_custom_resource_key_asset_load(dbt_seed, test_project_dir, dbt_config_d
         "test_job",
         dbt_assets,
         resource_defs={
-            "my_custom_dbt": dbt_cli_resource.configured(
-                {"project_dir": test_project_dir, "profiles_dir": dbt_config_dir}
+            "my_custom_dbt": dbt_cli_resource_factory(
+                project_dir=test_project_dir, profiles_dir=dbt_config_dir
             )
         },
     ).execute_in_process()
@@ -84,6 +86,7 @@ def test_load_from_manifest_json(prefix):
 
 def test_runtime_metadata_fn(
     dbt_seed,
+    dbt_cli_resource_factory,
     test_project_dir,
     dbt_config_dir,
 ):
@@ -103,11 +106,9 @@ def test_runtime_metadata_fn(
         "assets_job",
         dbt_assets,
         resource_defs={
-            "dbt": dbt_cli_resource.configured(
-                {
-                    "project_dir": test_project_dir,
-                    "profiles_dir": dbt_config_dir,
-                }
+            "dbt": dbt_cli_resource_factory(
+                project_dir=test_project_dir,
+                profiles_dir=dbt_config_dir,
             )
         },
     )
@@ -126,15 +127,13 @@ def test_runtime_metadata_fn(
     )
 
 
-def test_fail_immediately(dbt_seed, test_project_dir, dbt_config_dir):
+def test_fail_immediately(dbt_seed, dbt_cli_resource_factory, test_project_dir, dbt_config_dir):
     from dagster import build_init_resource_context
 
     dbt_assets = load_assets_from_dbt_project(test_project_dir, dbt_config_dir)
-    good_dbt = dbt_cli_resource.configured(
-        {
-            "project_dir": test_project_dir,
-            "profiles_dir": dbt_config_dir,
-        }
+    good_dbt = dbt_cli_resource_factory(
+        project_dir=test_project_dir,
+        profiles_dir=dbt_config_dir,
     )
 
     # ensure that there will be a run results json
@@ -150,11 +149,9 @@ def test_fail_immediately(dbt_seed, test_project_dir, dbt_config_dir):
         "test_job",
         dbt_assets,
         resource_defs={
-            "dbt": dbt_cli_resource.configured(
-                {
-                    "project_dir": test_project_dir,
-                    "profiles_dir": "BAD PROFILES DIR",
-                }
+            "dbt": dbt_cli_resource_factory(
+                project_dir=test_project_dir,
+                profiles_dir="BAD PROFILES DIR",
             )
         },
     ).execute_in_process(raise_on_error=False)
@@ -175,6 +172,7 @@ def test_fail_immediately(dbt_seed, test_project_dir, dbt_config_dir):
 def test_basic(
     capsys,
     dbt_seed,
+    dbt_cli_resource_factory,
     test_project_dir,
     dbt_config_dir,
     use_build,
@@ -195,13 +193,11 @@ def test_basic(
         "test_job",
         dbt_assets,
         resource_defs={
-            "dbt": dbt_cli_resource.configured(
-                {
-                    "project_dir": test_project_dir,
-                    "profiles_dir": dbt_config_dir,
-                    "vars": {"fail_test": fail_test},
-                    "json_log_format": json_log_format,
-                }
+            "dbt": dbt_cli_resource_factory(
+                project_dir=test_project_dir,
+                profiles_dir=dbt_config_dir,
+                vars={"fail_test": fail_test},
+                json_log_format=json_log_format,
             )
         },
     ).execute_in_process(raise_on_error=False)
@@ -320,7 +316,7 @@ def test_custom_definition_metadata():
     assert has_some_schema
 
 
-def test_partitions(dbt_seed, test_project_dir, dbt_config_dir):
+def test_partitions(dbt_seed, dbt_cli_resource_factory, test_project_dir, dbt_config_dir):
     def _partition_key_to_vars(partition_key: str):
         if partition_key == "2022-01-02":
             return {"fail_test": True}
@@ -341,8 +337,8 @@ def test_partitions(dbt_seed, test_project_dir, dbt_config_dir):
         dbt_assets,
         partition_key="2022-01-01",
         resources={
-            "dbt": dbt_cli_resource.configured(
-                {"project_dir": test_project_dir, "profiles_dir": dbt_config_dir}
+            "dbt": dbt_cli_resource_factory(
+                project_dir=test_project_dir, profiles_dir=dbt_config_dir
             )
         },
     )
@@ -353,8 +349,8 @@ def test_partitions(dbt_seed, test_project_dir, dbt_config_dir):
             dbt_assets,
             partition_key="2022-01-02",
             resources={
-                "dbt": dbt_cli_resource.configured(
-                    {"project_dir": test_project_dir, "profiles_dir": dbt_config_dir}
+                "dbt": dbt_cli_resource_factory(
+                    project_dir=test_project_dir, profiles_dir=dbt_config_dir
                 )
             },
         )
@@ -369,7 +365,9 @@ def test_partitions(dbt_seed, test_project_dir, dbt_config_dir):
     ],
 )
 @pytest.mark.parametrize("use_build", [True, False])
-def test_select_from_project(dbt_seed, test_project_dir, dbt_config_dir, use_build, prefix):
+def test_select_from_project(
+    dbt_seed, dbt_cli_resource_factory, test_project_dir, dbt_config_dir, use_build, prefix
+):
     dbt_assets = load_assets_from_dbt_project(
         test_project_dir,
         dbt_config_dir,
@@ -393,8 +391,8 @@ def test_select_from_project(dbt_seed, test_project_dir, dbt_config_dir, use_bui
         "test_job",
         dbt_assets,
         resource_defs={
-            "dbt": dbt_cli_resource.configured(
-                {"project_dir": test_project_dir, "profiles_dir": dbt_config_dir}
+            "dbt": dbt_cli_resource_factory(
+                project_dir=test_project_dir, profiles_dir=dbt_config_dir
             )
         },
     ).execute_in_process()
@@ -447,7 +445,9 @@ def test_dbt_ls_fail_fast():
 
 
 @pytest.mark.parametrize("use_build", [True, False])
-def test_select_from_manifest(dbt_seed, test_project_dir, dbt_config_dir, use_build):
+def test_select_from_manifest(
+    dbt_seed, dbt_cli_resource_factory, test_project_dir, dbt_config_dir, use_build
+):
     manifest_path = file_relative_path(__file__, "sample_manifest.json")
     with open(manifest_path, "r", encoding="utf8") as f:
         manifest_json = json.load(f)
@@ -464,8 +464,8 @@ def test_select_from_manifest(dbt_seed, test_project_dir, dbt_config_dir, use_bu
         "test_job",
         dbt_assets,
         resource_defs={
-            "dbt": dbt_cli_resource.configured(
-                {"project_dir": test_project_dir, "profiles_dir": dbt_config_dir}
+            "dbt": dbt_cli_resource_factory(
+                project_dir=test_project_dir, profiles_dir=dbt_config_dir
             )
         },
     ).execute_in_process()
@@ -489,7 +489,9 @@ def test_select_from_manifest(dbt_seed, test_project_dir, dbt_config_dir, use_bu
 
 
 @pytest.mark.parametrize("use_build", [True, False])
-def test_node_info_to_asset_key(dbt_seed, test_project_dir, dbt_config_dir, use_build):
+def test_node_info_to_asset_key(
+    dbt_seed, dbt_cli_resource_factory, test_project_dir, dbt_config_dir, use_build
+):
     dbt_assets = load_assets_from_dbt_project(
         test_project_dir,
         dbt_config_dir,
@@ -501,8 +503,8 @@ def test_node_info_to_asset_key(dbt_seed, test_project_dir, dbt_config_dir, use_
         "test_job",
         dbt_assets,
         resource_defs={
-            "dbt": dbt_cli_resource.configured(
-                {"project_dir": test_project_dir, "profiles_dir": dbt_config_dir}
+            "dbt": dbt_cli_resource_factory(
+                project_dir=test_project_dir, profiles_dir=dbt_config_dir
             )
         },
     ).execute_in_process()
@@ -559,6 +561,7 @@ def test_node_info_to_asset_key(dbt_seed, test_project_dir, dbt_config_dir, use_
 )
 def test_subsetting(
     dbt_build,
+    dbt_cli_resource_factory,
     test_project_dir,
     dbt_config_dir,
     job_selection,
@@ -578,8 +581,8 @@ def test_subsetting(
         Definitions(
             assets=[*dbt_assets, hanger1, hanger2],
             resources={
-                "dbt": dbt_cli_resource.configured(
-                    {"project_dir": test_project_dir, "profiles_dir": dbt_config_dir}
+                "dbt": dbt_cli_resource_factory(
+                    project_dir=test_project_dir, profiles_dir=dbt_config_dir
                 )
             },
             jobs=[define_asset_job("dbt_job", job_selection)],
@@ -610,7 +613,14 @@ def test_subsetting(
         ({"vars": {"my_var": "my_value", "another_var": 3, "a_third_var": True}}, "ALL"),
     ],
 )
-def test_op_config(config, expected_asset_names, dbt_seed, test_project_dir, dbt_config_dir):
+def test_op_config(
+    config,
+    expected_asset_names,
+    dbt_seed,
+    dbt_cli_resource_factory,
+    test_project_dir,
+    dbt_config_dir,
+):
     if expected_asset_names == "ALL":
         expected_asset_names = (
             "sort_by_calories,cold_schema/sort_cold_cereals_by_calories,"
@@ -625,8 +635,8 @@ def test_op_config(config, expected_asset_names, dbt_seed, test_project_dir, dbt
         assets=dbt_assets,
         run_config={"ops": {"run_dbt_5ad73": {"config": config}}},
         resources={
-            "dbt": dbt_cli_resource.configured(
-                {"project_dir": test_project_dir, "profiles_dir": dbt_config_dir}
+            "dbt": dbt_cli_resource_factory(
+                project_dir=test_project_dir, profiles_dir=dbt_config_dir
             )
         },
     )
@@ -709,6 +719,7 @@ def test_op_config(config, expected_asset_names, dbt_seed, test_project_dir, dbt
 def test_dbt_selections(
     dbt_build,
     test_project_dir,
+    dbt_cli_resource_factory,
     dbt_config_dir,
     load_from_manifest,
     select,
@@ -736,8 +747,8 @@ def test_dbt_selections(
         Definitions(
             assets=dbt_assets,
             resources={
-                "dbt": dbt_cli_resource.configured(
-                    {"project_dir": test_project_dir, "profiles_dir": dbt_config_dir}
+                "dbt": dbt_cli_resource_factory(
+                    project_dir=test_project_dir, profiles_dir=dbt_config_dir
                 )
             },
             jobs=[define_asset_job("dbt_job")],
@@ -809,7 +820,9 @@ def test_source_tag_selection(test_python_project_dir, dbt_python_config_dir):
     assert len(dbt_assets[0].keys) == 2
 
 
-def test_python_interleaving(dbt_seed_python, test_python_project_dir, dbt_python_config_dir):
+def test_python_interleaving(
+    dbt_seed_python, dbt_cli_resource_factory, test_python_project_dir, dbt_python_config_dir
+):
     dbt_assets = load_assets_from_dbt_project(
         test_python_project_dir, dbt_python_config_dir, key_prefix="test_python_schema"
     )
@@ -831,11 +844,8 @@ def test_python_interleaving(dbt_seed_python, test_python_project_dir, dbt_pytho
             "io_manager": duckdb_io_manager.configured(
                 {"database": os.path.join(test_python_project_dir, "test.duckdb")}
             ),
-            "dbt": dbt_cli_resource.configured(
-                {
-                    "project_dir": test_python_project_dir,
-                    "profiles_dir": dbt_python_config_dir,
-                }
+            "dbt": dbt_cli_resource_factory(
+                project_dir=test_python_project_dir, profiles_dir=dbt_python_config_dir
             ),
         },
         jobs=[define_asset_job("interleave_job")],

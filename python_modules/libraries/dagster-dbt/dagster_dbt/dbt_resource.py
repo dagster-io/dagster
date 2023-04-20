@@ -3,12 +3,13 @@ from abc import abstractmethod
 from typing import Any, Mapping, Optional, Sequence
 
 from dagster import get_dagster_logger
+from dagster._annotations import deprecated
 
 from .types import DbtOutput
 
 
-class DbtResource:
-    """Base class for a resource allowing users to interface with dbt."""
+class DbtClient:
+    """Base class for a client allowing users to interface with dbt."""
 
     def __init__(
         self,
@@ -214,3 +215,8 @@ class DbtResource:
             Dict[str, Any]: dictionary containing the parsed contents of the manifest json file
                 for this dbt project.
         """
+
+
+@deprecated
+class DbtResource(DbtClient):
+    pass
