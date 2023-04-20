@@ -9168,6 +9168,21 @@ snapshots['test_all_snapshot_ids 113'] = '''{
         },
         "type_param_keys": null
       },
+      "Noneable.StringSourceType": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": null,
+        "given_name": null,
+        "key": "Noneable.StringSourceType",
+        "kind": {
+          "__enum__": "ConfigTypeKind.NONEABLE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": [
+          "StringSourceType"
+        ]
+      },
       "ScalarUnion.Bool-Selector.be5d518b39e86a43c5f2eecaf538c1f6c7711b59": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -9570,7 +9585,7 @@ snapshots['test_all_snapshot_ids 113'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851": {
+      "Shape.1629902fbbde68e17f4f310b85646b6a76efd18d": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
@@ -9579,14 +9594,14 @@ snapshots['test_all_snapshot_ids 113'] = '''{
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
             "default_value_as_json_str": null,
-            "description": null,
+            "description": "Base directory for storing files.",
             "is_required": false,
             "name": "base_dir",
-            "type_key": "StringSourceType"
+            "type_key": "Noneable.StringSourceType"
           }
         ],
         "given_name": null,
-        "key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851",
+        "key": "Shape.1629902fbbde68e17f4f310b85646b6a76efd18d",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -9677,29 +9692,6 @@ snapshots['test_all_snapshot_ids 113'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.44f2a71367507edd1b8e64f739222c4312b3691b": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.44f2a71367507edd1b8e64f739222c4312b3691b",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Shape.4b53b73df342381d0d05c5f36183dc99cb9676e2": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -9717,6 +9709,59 @@ snapshots['test_all_snapshot_ids 113'] = '''{
         ],
         "given_name": null,
         "key": "Shape.4b53b73df342381d0d05c5f36183dc99cb9676e2",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
+      "Shape.5c2899abe2b80cdb6b2bb3b25d79b6af5081cce4": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "field_aliases": {
+          "ops": "solids"
+        },
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"config\\": {\\"retries\\": {\\"enabled\\": {}}}}",
+            "description": "Configure how steps are executed within a run.",
+            "is_required": false,
+            "name": "execution",
+            "type_key": "Shape.09d73f0755bf4752d3f121837669c8660dcf451e"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": "Configure how loggers emit messages within a run.",
+            "is_required": false,
+            "name": "loggers",
+            "type_key": "Shape.e895d95ee6d0eff1b884c76f44a2ab7089f0c49b"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": false,
+            "default_value_as_json_str": null,
+            "description": "Configure runtime parameters for ops or assets.",
+            "is_required": true,
+            "name": "ops",
+            "type_key": "Shape.928d1dd16d1e7d89c534fb8540371c00baf4bc95"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"disable_gc\\": {}, \\"io_manager\\": {\\"config\\": {}}}",
+            "description": "Configure how shared resources are implemented within a run.",
+            "is_required": false,
+            "name": "resources",
+            "type_key": "Shape.e6f1a85273b28fd3d7b57b81e9f94fad3bec2fe4"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.5c2899abe2b80cdb6b2bb3b25d79b6af5081cce4",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -9799,7 +9844,7 @@ snapshots['test_all_snapshot_ids 113'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.c4480c14b3d7248e5eef6142add3ac675e264a60": {
+      "Shape.aa06a6ac89e62cfd2f6a1f9bce137c6abfa63805": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
@@ -9808,23 +9853,14 @@ snapshots['test_all_snapshot_ids 113'] = '''{
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
             "default_value_as_json_str": "{}",
-            "description": null,
+            "description": "Built-in filesystem IO manager that stores and retrieves values using pickling.\\n\\n    The base directory that the pickle files live inside is determined by:\\n\\n    * The IO manager\'s \\"base_dir\\" configuration value, if specified. Otherwise...\\n    * A \\"storage/\\" directory underneath the value for \\"local_artifact_storage\\" in your dagster.yaml\\n      file, if specified. Otherwise...\\n    * A \\"storage/\\" directory underneath the directory that the DAGSTER_HOME environment variable\\n      points to, if that environment variable is specified. Otherwise...\\n    * A temporary directory.\\n\\n    Assigns each op output to a unique filepath containing run ID, step key, and output name.\\n    Assigns each asset to a single filesystem path, at \\"<base_dir>/<asset_key>\\". If the asset key\\n    has multiple components, the final component is used as the name of the file, and the preceding\\n    components as parent directories under the base_dir.\\n\\n    Subsequent materializations of an asset will overwrite previous materializations of that asset.\\n    So, with a base directory of \\"/my/base/path\\", an asset with key\\n    `AssetKey([\\"one\\", \\"two\\", \\"three\\"])` would be stored in a file called \\"three\\" in a directory\\n    with path \\"/my/base/path/one/two/\\".\\n\\n    Example usage:\\n\\n\\n    1. Attach an IO manager to a set of assets using the reserved resource key ``\\"io_manager\\"``.\\n\\n    .. code-block:: python\\n\\n        from dagster import Definitions, asset, FilesystemIOManager\\n\\n        @asset\\n        def asset1():\\n            # create df ...\\n            return df\\n\\n        @asset\\n        def asset2(asset1):\\n            return asset1[:5]\\n\\n        defs = Definitions(\\n            assets=[asset1, asset2],\\n            resources={\\n                \\"io_manager\\": FilesystemIOManager(base_dir=\\"/my/base/path\\")\\n            },\\n        )\\n\\n\\n    2. Specify a job-level IO manager using the reserved resource key ``\\"io_manager\\"``,\\n    which will set the given IO manager on all ops in a job.\\n\\n    .. code-block:: python\\n\\n        from dagster import FilesystemIOManager, job, op\\n\\n        @op\\n        def op_a():\\n            # create df ...\\n            return df\\n\\n        @op\\n        def op_b(df):\\n            return df[:5]\\n\\n        @job(\\n            resource_defs={\\n                \\"io_manager\\": FilesystemIOManager(base_dir=\\"/my/base/path\\")\\n            }\\n        )\\n        def job():\\n            op_b(op_a())\\n\\n\\n    3. Specify IO manager on :py:class:`Out`, which allows you to set different IO managers on\\n    different step outputs.\\n\\n    .. code-block:: python\\n\\n        from dagster import FilesystemIOManager, job, op, Out\\n\\n        @op(out=Out(io_manager_key=\\"my_io_manager\\"))\\n        def op_a():\\n            # create df ...\\n            return df\\n\\n        @op\\n        def op_b(df):\\n            return df[:5]\\n\\n        @job(resource_defs={\\"my_io_manager\\": FilesystemIOManager()})\\n        def job():\\n            op_b(op_a())",
             "is_required": false,
-            "name": "disable_gc",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {}}",
-            "description": "Built-in filesystem IO manager that stores and retrieves values using pickling.",
-            "is_required": false,
-            "name": "io_manager",
-            "type_key": "Shape.44f2a71367507edd1b8e64f739222c4312b3691b"
+            "name": "config",
+            "type_key": "Shape.1629902fbbde68e17f4f310b85646b6a76efd18d"
           }
         ],
         "given_name": null,
-        "key": "Shape.c4480c14b3d7248e5eef6142add3ac675e264a60",
+        "key": "Shape.aa06a6ac89e62cfd2f6a1f9bce137c6abfa63805",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -9867,6 +9903,38 @@ snapshots['test_all_snapshot_ids 113'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Shape.e6f1a85273b28fd3d7b57b81e9f94fad3bec2fe4": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "disable_gc",
+            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"config\\": {}}",
+            "description": "Built-in filesystem IO manager that stores and retrieves values using pickling.",
+            "is_required": false,
+            "name": "io_manager",
+            "type_key": "Shape.aa06a6ac89e62cfd2f6a1f9bce137c6abfa63805"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.e6f1a85273b28fd3d7b57b81e9f94fad3bec2fe4",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Shape.e895d95ee6d0eff1b884c76f44a2ab7089f0c49b": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -9884,59 +9952,6 @@ snapshots['test_all_snapshot_ids 113'] = '''{
         ],
         "given_name": null,
         "key": "Shape.e895d95ee6d0eff1b884c76f44a2ab7089f0c49b",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.f48a2556bb132563aa315ea0a65e2dd8fdd7595f": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "field_aliases": {
-          "ops": "solids"
-        },
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {\\"retries\\": {\\"enabled\\": {}}}}",
-            "description": "Configure how steps are executed within a run.",
-            "is_required": false,
-            "name": "execution",
-            "type_key": "Shape.09d73f0755bf4752d3f121837669c8660dcf451e"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": "Configure how loggers emit messages within a run.",
-            "is_required": false,
-            "name": "loggers",
-            "type_key": "Shape.e895d95ee6d0eff1b884c76f44a2ab7089f0c49b"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": "Configure runtime parameters for ops or assets.",
-            "is_required": true,
-            "name": "ops",
-            "type_key": "Shape.928d1dd16d1e7d89c534fb8540371c00baf4bc95"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"disable_gc\\": {}, \\"io_manager\\": {\\"config\\": {}}}",
-            "description": "Configure how shared resources are implemented within a run.",
-            "is_required": false,
-            "name": "resources",
-            "type_key": "Shape.c4480c14b3d7248e5eef6142add3ac675e264a60"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.f48a2556bb132563aa315ea0a65e2dd8fdd7595f",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -10198,16 +10213,16 @@ snapshots['test_all_snapshot_ids 113'] = '''{
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
             "default_value_as_json_str": "{}",
-            "description": null,
+            "description": "Built-in filesystem IO manager that stores and retrieves values using pickling.\\n\\n    The base directory that the pickle files live inside is determined by:\\n\\n    * The IO manager\'s \\"base_dir\\" configuration value, if specified. Otherwise...\\n    * A \\"storage/\\" directory underneath the value for \\"local_artifact_storage\\" in your dagster.yaml\\n      file, if specified. Otherwise...\\n    * A \\"storage/\\" directory underneath the directory that the DAGSTER_HOME environment variable\\n      points to, if that environment variable is specified. Otherwise...\\n    * A temporary directory.\\n\\n    Assigns each op output to a unique filepath containing run ID, step key, and output name.\\n    Assigns each asset to a single filesystem path, at \\"<base_dir>/<asset_key>\\". If the asset key\\n    has multiple components, the final component is used as the name of the file, and the preceding\\n    components as parent directories under the base_dir.\\n\\n    Subsequent materializations of an asset will overwrite previous materializations of that asset.\\n    So, with a base directory of \\"/my/base/path\\", an asset with key\\n    `AssetKey([\\"one\\", \\"two\\", \\"three\\"])` would be stored in a file called \\"three\\" in a directory\\n    with path \\"/my/base/path/one/two/\\".\\n\\n    Example usage:\\n\\n\\n    1. Attach an IO manager to a set of assets using the reserved resource key ``\\"io_manager\\"``.\\n\\n    .. code-block:: python\\n\\n        from dagster import Definitions, asset, FilesystemIOManager\\n\\n        @asset\\n        def asset1():\\n            # create df ...\\n            return df\\n\\n        @asset\\n        def asset2(asset1):\\n            return asset1[:5]\\n\\n        defs = Definitions(\\n            assets=[asset1, asset2],\\n            resources={\\n                \\"io_manager\\": FilesystemIOManager(base_dir=\\"/my/base/path\\")\\n            },\\n        )\\n\\n\\n    2. Specify a job-level IO manager using the reserved resource key ``\\"io_manager\\"``,\\n    which will set the given IO manager on all ops in a job.\\n\\n    .. code-block:: python\\n\\n        from dagster import FilesystemIOManager, job, op\\n\\n        @op\\n        def op_a():\\n            # create df ...\\n            return df\\n\\n        @op\\n        def op_b(df):\\n            return df[:5]\\n\\n        @job(\\n            resource_defs={\\n                \\"io_manager\\": FilesystemIOManager(base_dir=\\"/my/base/path\\")\\n            }\\n        )\\n        def job():\\n            op_b(op_a())\\n\\n\\n    3. Specify IO manager on :py:class:`Out`, which allows you to set different IO managers on\\n    different step outputs.\\n\\n    .. code-block:: python\\n\\n        from dagster import FilesystemIOManager, job, op, Out\\n\\n        @op(out=Out(io_manager_key=\\"my_io_manager\\"))\\n        def op_a():\\n            # create df ...\\n            return df\\n\\n        @op\\n        def op_b(df):\\n            return df[:5]\\n\\n        @job(resource_defs={\\"my_io_manager\\": FilesystemIOManager()})\\n        def job():\\n            op_b(op_a())",
             "is_required": false,
             "name": "config",
-            "type_key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851"
+            "type_key": "Shape.1629902fbbde68e17f4f310b85646b6a76efd18d"
           },
           "description": "Built-in filesystem IO manager that stores and retrieves values using pickling.",
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.f48a2556bb132563aa315ea0a65e2dd8fdd7595f"
+      "root_config_key": "Shape.5c2899abe2b80cdb6b2bb3b25d79b6af5081cce4"
     }
   ],
   "name": "retry_multi_input_early_terminate_job",
@@ -10359,7 +10374,7 @@ snapshots['test_all_snapshot_ids 113'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 114'] = '6f5254cb5927975a2ab870c4d8615169bd64f414'
+snapshots['test_all_snapshot_ids 114'] = 'a9d8893fa8160eab803dec1d19102d07aa067362'
 
 snapshots['test_all_snapshot_ids 115'] = '''{
   "__class__": "PipelineSnapshot",
@@ -11894,6 +11909,21 @@ snapshots['test_all_snapshot_ids 117'] = '''{
         },
         "type_param_keys": null
       },
+      "Noneable.StringSourceType": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": null,
+        "given_name": null,
+        "key": "Noneable.StringSourceType",
+        "kind": {
+          "__enum__": "ConfigTypeKind.NONEABLE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": [
+          "StringSourceType"
+        ]
+      },
       "ScalarUnion.Bool-Selector.be5d518b39e86a43c5f2eecaf538c1f6c7711b59": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -12394,7 +12424,7 @@ snapshots['test_all_snapshot_ids 117'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851": {
+      "Shape.1629902fbbde68e17f4f310b85646b6a76efd18d": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
@@ -12403,14 +12433,14 @@ snapshots['test_all_snapshot_ids 117'] = '''{
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
             "default_value_as_json_str": null,
-            "description": null,
+            "description": "Base directory for storing files.",
             "is_required": false,
             "name": "base_dir",
-            "type_key": "StringSourceType"
+            "type_key": "Noneable.StringSourceType"
           }
         ],
         "given_name": null,
-        "key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851",
+        "key": "Shape.1629902fbbde68e17f4f310b85646b6a76efd18d",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -12492,29 +12522,6 @@ snapshots['test_all_snapshot_ids 117'] = '''{
         ],
         "given_name": null,
         "key": "Shape.44f24ac55059da1634e84af6c1bf7e0ed332251c",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.44f2a71367507edd1b8e64f739222c4312b3691b": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.44f2a71367507edd1b8e64f739222c4312b3691b",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -12675,7 +12682,7 @@ snapshots['test_all_snapshot_ids 117'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.95c949302ec4dc130db4431f7438a2173f545d20": {
+      "Shape.78a200b84d8d79c7e4649d65dcfef90d5b9d43f2": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
@@ -12717,18 +12724,18 @@ snapshots['test_all_snapshot_ids 117'] = '''{
             "description": "Configure how shared resources are implemented within a run.",
             "is_required": false,
             "name": "resources",
-            "type_key": "Shape.9f597f57768affdfb33f57c555651a815944d4ba"
+            "type_key": "Shape.829973262158134d91916a48835fb0c656ac2f5f"
           }
         ],
         "given_name": null,
-        "key": "Shape.95c949302ec4dc130db4431f7438a2173f545d20",
+        "key": "Shape.78a200b84d8d79c7e4649d65dcfef90d5b9d43f2",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.9f597f57768affdfb33f57c555651a815944d4ba": {
+      "Shape.829973262158134d91916a48835fb0c656ac2f5f": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
@@ -12758,11 +12765,34 @@ snapshots['test_all_snapshot_ids 117'] = '''{
             "description": "Built-in filesystem IO manager that stores and retrieves values using pickling.",
             "is_required": false,
             "name": "io_manager",
-            "type_key": "Shape.44f2a71367507edd1b8e64f739222c4312b3691b"
+            "type_key": "Shape.aa06a6ac89e62cfd2f6a1f9bce137c6abfa63805"
           }
         ],
         "given_name": null,
-        "key": "Shape.9f597f57768affdfb33f57c555651a815944d4ba",
+        "key": "Shape.829973262158134d91916a48835fb0c656ac2f5f",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
+      "Shape.aa06a6ac89e62cfd2f6a1f9bce137c6abfa63805": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": "Built-in filesystem IO manager that stores and retrieves values using pickling.\\n\\n    The base directory that the pickle files live inside is determined by:\\n\\n    * The IO manager\'s \\"base_dir\\" configuration value, if specified. Otherwise...\\n    * A \\"storage/\\" directory underneath the value for \\"local_artifact_storage\\" in your dagster.yaml\\n      file, if specified. Otherwise...\\n    * A \\"storage/\\" directory underneath the directory that the DAGSTER_HOME environment variable\\n      points to, if that environment variable is specified. Otherwise...\\n    * A temporary directory.\\n\\n    Assigns each op output to a unique filepath containing run ID, step key, and output name.\\n    Assigns each asset to a single filesystem path, at \\"<base_dir>/<asset_key>\\". If the asset key\\n    has multiple components, the final component is used as the name of the file, and the preceding\\n    components as parent directories under the base_dir.\\n\\n    Subsequent materializations of an asset will overwrite previous materializations of that asset.\\n    So, with a base directory of \\"/my/base/path\\", an asset with key\\n    `AssetKey([\\"one\\", \\"two\\", \\"three\\"])` would be stored in a file called \\"three\\" in a directory\\n    with path \\"/my/base/path/one/two/\\".\\n\\n    Example usage:\\n\\n\\n    1. Attach an IO manager to a set of assets using the reserved resource key ``\\"io_manager\\"``.\\n\\n    .. code-block:: python\\n\\n        from dagster import Definitions, asset, FilesystemIOManager\\n\\n        @asset\\n        def asset1():\\n            # create df ...\\n            return df\\n\\n        @asset\\n        def asset2(asset1):\\n            return asset1[:5]\\n\\n        defs = Definitions(\\n            assets=[asset1, asset2],\\n            resources={\\n                \\"io_manager\\": FilesystemIOManager(base_dir=\\"/my/base/path\\")\\n            },\\n        )\\n\\n\\n    2. Specify a job-level IO manager using the reserved resource key ``\\"io_manager\\"``,\\n    which will set the given IO manager on all ops in a job.\\n\\n    .. code-block:: python\\n\\n        from dagster import FilesystemIOManager, job, op\\n\\n        @op\\n        def op_a():\\n            # create df ...\\n            return df\\n\\n        @op\\n        def op_b(df):\\n            return df[:5]\\n\\n        @job(\\n            resource_defs={\\n                \\"io_manager\\": FilesystemIOManager(base_dir=\\"/my/base/path\\")\\n            }\\n        )\\n        def job():\\n            op_b(op_a())\\n\\n\\n    3. Specify IO manager on :py:class:`Out`, which allows you to set different IO managers on\\n    different step outputs.\\n\\n    .. code-block:: python\\n\\n        from dagster import FilesystemIOManager, job, op, Out\\n\\n        @op(out=Out(io_manager_key=\\"my_io_manager\\"))\\n        def op_a():\\n            # create df ...\\n            return df\\n\\n        @op\\n        def op_b(df):\\n            return df[:5]\\n\\n        @job(resource_defs={\\"my_io_manager\\": FilesystemIOManager()})\\n        def job():\\n            op_b(op_a())",
+            "is_required": false,
+            "name": "config",
+            "type_key": "Shape.1629902fbbde68e17f4f310b85646b6a76efd18d"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.aa06a6ac89e62cfd2f6a1f9bce137c6abfa63805",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -13043,16 +13073,16 @@ snapshots['test_all_snapshot_ids 117'] = '''{
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
             "default_value_as_json_str": "{}",
-            "description": null,
+            "description": "Built-in filesystem IO manager that stores and retrieves values using pickling.\\n\\n    The base directory that the pickle files live inside is determined by:\\n\\n    * The IO manager\'s \\"base_dir\\" configuration value, if specified. Otherwise...\\n    * A \\"storage/\\" directory underneath the value for \\"local_artifact_storage\\" in your dagster.yaml\\n      file, if specified. Otherwise...\\n    * A \\"storage/\\" directory underneath the directory that the DAGSTER_HOME environment variable\\n      points to, if that environment variable is specified. Otherwise...\\n    * A temporary directory.\\n\\n    Assigns each op output to a unique filepath containing run ID, step key, and output name.\\n    Assigns each asset to a single filesystem path, at \\"<base_dir>/<asset_key>\\". If the asset key\\n    has multiple components, the final component is used as the name of the file, and the preceding\\n    components as parent directories under the base_dir.\\n\\n    Subsequent materializations of an asset will overwrite previous materializations of that asset.\\n    So, with a base directory of \\"/my/base/path\\", an asset with key\\n    `AssetKey([\\"one\\", \\"two\\", \\"three\\"])` would be stored in a file called \\"three\\" in a directory\\n    with path \\"/my/base/path/one/two/\\".\\n\\n    Example usage:\\n\\n\\n    1. Attach an IO manager to a set of assets using the reserved resource key ``\\"io_manager\\"``.\\n\\n    .. code-block:: python\\n\\n        from dagster import Definitions, asset, FilesystemIOManager\\n\\n        @asset\\n        def asset1():\\n            # create df ...\\n            return df\\n\\n        @asset\\n        def asset2(asset1):\\n            return asset1[:5]\\n\\n        defs = Definitions(\\n            assets=[asset1, asset2],\\n            resources={\\n                \\"io_manager\\": FilesystemIOManager(base_dir=\\"/my/base/path\\")\\n            },\\n        )\\n\\n\\n    2. Specify a job-level IO manager using the reserved resource key ``\\"io_manager\\"``,\\n    which will set the given IO manager on all ops in a job.\\n\\n    .. code-block:: python\\n\\n        from dagster import FilesystemIOManager, job, op\\n\\n        @op\\n        def op_a():\\n            # create df ...\\n            return df\\n\\n        @op\\n        def op_b(df):\\n            return df[:5]\\n\\n        @job(\\n            resource_defs={\\n                \\"io_manager\\": FilesystemIOManager(base_dir=\\"/my/base/path\\")\\n            }\\n        )\\n        def job():\\n            op_b(op_a())\\n\\n\\n    3. Specify IO manager on :py:class:`Out`, which allows you to set different IO managers on\\n    different step outputs.\\n\\n    .. code-block:: python\\n\\n        from dagster import FilesystemIOManager, job, op, Out\\n\\n        @op(out=Out(io_manager_key=\\"my_io_manager\\"))\\n        def op_a():\\n            # create df ...\\n            return df\\n\\n        @op\\n        def op_b(df):\\n            return df[:5]\\n\\n        @job(resource_defs={\\"my_io_manager\\": FilesystemIOManager()})\\n        def job():\\n            op_b(op_a())",
             "is_required": false,
             "name": "config",
-            "type_key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851"
+            "type_key": "Shape.1629902fbbde68e17f4f310b85646b6a76efd18d"
           },
           "description": "Built-in filesystem IO manager that stores and retrieves values using pickling.",
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.95c949302ec4dc130db4431f7438a2173f545d20"
+      "root_config_key": "Shape.78a200b84d8d79c7e4649d65dcfef90d5b9d43f2"
     }
   ],
   "name": "retry_resource_job",
@@ -13130,7 +13160,7 @@ snapshots['test_all_snapshot_ids 117'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 118'] = 'db9f9166c240326d3273cc1a9feec044869f2379'
+snapshots['test_all_snapshot_ids 118'] = '4ca223e705091ceed5b2b4b4c96b9f4afbb48f57'
 
 snapshots['test_all_snapshot_ids 119'] = '''{
   "__class__": "PipelineSnapshot",
@@ -43306,6 +43336,21 @@ snapshots['test_all_snapshot_ids 35'] = '''{
         },
         "type_param_keys": null
       },
+      "Noneable.StringSourceType": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": null,
+        "given_name": null,
+        "key": "Noneable.StringSourceType",
+        "kind": {
+          "__enum__": "ConfigTypeKind.NONEABLE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": [
+          "StringSourceType"
+        ]
+      },
       "ScalarUnion.Bool-Selector.be5d518b39e86a43c5f2eecaf538c1f6c7711b59": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -43806,7 +43851,7 @@ snapshots['test_all_snapshot_ids 35'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851": {
+      "Shape.1629902fbbde68e17f4f310b85646b6a76efd18d": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
@@ -43815,14 +43860,14 @@ snapshots['test_all_snapshot_ids 35'] = '''{
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
             "default_value_as_json_str": null,
-            "description": null,
+            "description": "Base directory for storing files.",
             "is_required": false,
             "name": "base_dir",
-            "type_key": "StringSourceType"
+            "type_key": "Noneable.StringSourceType"
           }
         ],
         "given_name": null,
-        "key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851",
+        "key": "Shape.1629902fbbde68e17f4f310b85646b6a76efd18d",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -43878,7 +43923,7 @@ snapshots['test_all_snapshot_ids 35'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.38fd99d443e5909325243c3d0bf0472f78041e7c": {
+      "Shape.41f0a64274b46628551366b5411b86685f577251": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
@@ -43890,7 +43935,7 @@ snapshots['test_all_snapshot_ids 35'] = '''{
             "description": "Built-in filesystem IO manager that stores and retrieves values using pickling.",
             "is_required": false,
             "name": "io_manager",
-            "type_key": "Shape.44f2a71367507edd1b8e64f739222c4312b3691b"
+            "type_key": "Shape.aa06a6ac89e62cfd2f6a1f9bce137c6abfa63805"
           },
           {
             "__class__": "ConfigFieldSnap",
@@ -43903,7 +43948,7 @@ snapshots['test_all_snapshot_ids 35'] = '''{
           }
         ],
         "given_name": null,
-        "key": "Shape.38fd99d443e5909325243c3d0bf0472f78041e7c",
+        "key": "Shape.41f0a64274b46628551366b5411b86685f577251",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -43936,29 +43981,6 @@ snapshots['test_all_snapshot_ids 35'] = '''{
         ],
         "given_name": null,
         "key": "Shape.44f24ac55059da1634e84af6c1bf7e0ed332251c",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.44f2a71367507edd1b8e64f739222c4312b3691b": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.44f2a71367507edd1b8e64f739222c4312b3691b",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -44155,7 +44177,7 @@ snapshots['test_all_snapshot_ids 35'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.93650b6cffcc5a036378dfc0c6da5045f618c3da": {
+      "Shape.8550abb193bbb61f6968a36670361c3e8a4fdbfa": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
@@ -44197,11 +44219,34 @@ snapshots['test_all_snapshot_ids 35'] = '''{
             "description": "Configure how shared resources are implemented within a run.",
             "is_required": false,
             "name": "resources",
-            "type_key": "Shape.38fd99d443e5909325243c3d0bf0472f78041e7c"
+            "type_key": "Shape.41f0a64274b46628551366b5411b86685f577251"
           }
         ],
         "given_name": null,
-        "key": "Shape.93650b6cffcc5a036378dfc0c6da5045f618c3da",
+        "key": "Shape.8550abb193bbb61f6968a36670361c3e8a4fdbfa",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
+      "Shape.aa06a6ac89e62cfd2f6a1f9bce137c6abfa63805": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": "Built-in filesystem IO manager that stores and retrieves values using pickling.\\n\\n    The base directory that the pickle files live inside is determined by:\\n\\n    * The IO manager\'s \\"base_dir\\" configuration value, if specified. Otherwise...\\n    * A \\"storage/\\" directory underneath the value for \\"local_artifact_storage\\" in your dagster.yaml\\n      file, if specified. Otherwise...\\n    * A \\"storage/\\" directory underneath the directory that the DAGSTER_HOME environment variable\\n      points to, if that environment variable is specified. Otherwise...\\n    * A temporary directory.\\n\\n    Assigns each op output to a unique filepath containing run ID, step key, and output name.\\n    Assigns each asset to a single filesystem path, at \\"<base_dir>/<asset_key>\\". If the asset key\\n    has multiple components, the final component is used as the name of the file, and the preceding\\n    components as parent directories under the base_dir.\\n\\n    Subsequent materializations of an asset will overwrite previous materializations of that asset.\\n    So, with a base directory of \\"/my/base/path\\", an asset with key\\n    `AssetKey([\\"one\\", \\"two\\", \\"three\\"])` would be stored in a file called \\"three\\" in a directory\\n    with path \\"/my/base/path/one/two/\\".\\n\\n    Example usage:\\n\\n\\n    1. Attach an IO manager to a set of assets using the reserved resource key ``\\"io_manager\\"``.\\n\\n    .. code-block:: python\\n\\n        from dagster import Definitions, asset, FilesystemIOManager\\n\\n        @asset\\n        def asset1():\\n            # create df ...\\n            return df\\n\\n        @asset\\n        def asset2(asset1):\\n            return asset1[:5]\\n\\n        defs = Definitions(\\n            assets=[asset1, asset2],\\n            resources={\\n                \\"io_manager\\": FilesystemIOManager(base_dir=\\"/my/base/path\\")\\n            },\\n        )\\n\\n\\n    2. Specify a job-level IO manager using the reserved resource key ``\\"io_manager\\"``,\\n    which will set the given IO manager on all ops in a job.\\n\\n    .. code-block:: python\\n\\n        from dagster import FilesystemIOManager, job, op\\n\\n        @op\\n        def op_a():\\n            # create df ...\\n            return df\\n\\n        @op\\n        def op_b(df):\\n            return df[:5]\\n\\n        @job(\\n            resource_defs={\\n                \\"io_manager\\": FilesystemIOManager(base_dir=\\"/my/base/path\\")\\n            }\\n        )\\n        def job():\\n            op_b(op_a())\\n\\n\\n    3. Specify IO manager on :py:class:`Out`, which allows you to set different IO managers on\\n    different step outputs.\\n\\n    .. code-block:: python\\n\\n        from dagster import FilesystemIOManager, job, op, Out\\n\\n        @op(out=Out(io_manager_key=\\"my_io_manager\\"))\\n        def op_a():\\n            # create df ...\\n            return df\\n\\n        @op\\n        def op_b(df):\\n            return df[:5]\\n\\n        @job(resource_defs={\\"my_io_manager\\": FilesystemIOManager()})\\n        def job():\\n            op_b(op_a())",
+            "is_required": false,
+            "name": "config",
+            "type_key": "Shape.1629902fbbde68e17f4f310b85646b6a76efd18d"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.aa06a6ac89e62cfd2f6a1f9bce137c6abfa63805",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -44587,10 +44632,10 @@ snapshots['test_all_snapshot_ids 35'] = '''{
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
             "default_value_as_json_str": "{}",
-            "description": null,
+            "description": "Built-in filesystem IO manager that stores and retrieves values using pickling.\\n\\n    The base directory that the pickle files live inside is determined by:\\n\\n    * The IO manager\'s \\"base_dir\\" configuration value, if specified. Otherwise...\\n    * A \\"storage/\\" directory underneath the value for \\"local_artifact_storage\\" in your dagster.yaml\\n      file, if specified. Otherwise...\\n    * A \\"storage/\\" directory underneath the directory that the DAGSTER_HOME environment variable\\n      points to, if that environment variable is specified. Otherwise...\\n    * A temporary directory.\\n\\n    Assigns each op output to a unique filepath containing run ID, step key, and output name.\\n    Assigns each asset to a single filesystem path, at \\"<base_dir>/<asset_key>\\". If the asset key\\n    has multiple components, the final component is used as the name of the file, and the preceding\\n    components as parent directories under the base_dir.\\n\\n    Subsequent materializations of an asset will overwrite previous materializations of that asset.\\n    So, with a base directory of \\"/my/base/path\\", an asset with key\\n    `AssetKey([\\"one\\", \\"two\\", \\"three\\"])` would be stored in a file called \\"three\\" in a directory\\n    with path \\"/my/base/path/one/two/\\".\\n\\n    Example usage:\\n\\n\\n    1. Attach an IO manager to a set of assets using the reserved resource key ``\\"io_manager\\"``.\\n\\n    .. code-block:: python\\n\\n        from dagster import Definitions, asset, FilesystemIOManager\\n\\n        @asset\\n        def asset1():\\n            # create df ...\\n            return df\\n\\n        @asset\\n        def asset2(asset1):\\n            return asset1[:5]\\n\\n        defs = Definitions(\\n            assets=[asset1, asset2],\\n            resources={\\n                \\"io_manager\\": FilesystemIOManager(base_dir=\\"/my/base/path\\")\\n            },\\n        )\\n\\n\\n    2. Specify a job-level IO manager using the reserved resource key ``\\"io_manager\\"``,\\n    which will set the given IO manager on all ops in a job.\\n\\n    .. code-block:: python\\n\\n        from dagster import FilesystemIOManager, job, op\\n\\n        @op\\n        def op_a():\\n            # create df ...\\n            return df\\n\\n        @op\\n        def op_b(df):\\n            return df[:5]\\n\\n        @job(\\n            resource_defs={\\n                \\"io_manager\\": FilesystemIOManager(base_dir=\\"/my/base/path\\")\\n            }\\n        )\\n        def job():\\n            op_b(op_a())\\n\\n\\n    3. Specify IO manager on :py:class:`Out`, which allows you to set different IO managers on\\n    different step outputs.\\n\\n    .. code-block:: python\\n\\n        from dagster import FilesystemIOManager, job, op, Out\\n\\n        @op(out=Out(io_manager_key=\\"my_io_manager\\"))\\n        def op_a():\\n            # create df ...\\n            return df\\n\\n        @op\\n        def op_b(df):\\n            return df[:5]\\n\\n        @job(resource_defs={\\"my_io_manager\\": FilesystemIOManager()})\\n        def job():\\n            op_b(op_a())",
             "is_required": false,
             "name": "config",
-            "type_key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851"
+            "type_key": "Shape.1629902fbbde68e17f4f310b85646b6a76efd18d"
           },
           "description": "Built-in filesystem IO manager that stores and retrieves values using pickling.",
           "name": "io_manager"
@@ -44610,7 +44655,7 @@ snapshots['test_all_snapshot_ids 35'] = '''{
           "name": "retry_count"
         }
       ],
-      "root_config_key": "Shape.93650b6cffcc5a036378dfc0c6da5045f618c3da"
+      "root_config_key": "Shape.8550abb193bbb61f6968a36670361c3e8a4fdbfa"
     }
   ],
   "name": "eventually_successful",
@@ -44754,7 +44799,7 @@ snapshots['test_all_snapshot_ids 35'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 36'] = 'b5f0fb77c958ae86ae19aede60ecfd0c38d99f78'
+snapshots['test_all_snapshot_ids 36'] = '0618c6ad16569ab60394b825d022abc14388b1b5'
 
 snapshots['test_all_snapshot_ids 37'] = '''{
   "__class__": "PipelineSnapshot",
