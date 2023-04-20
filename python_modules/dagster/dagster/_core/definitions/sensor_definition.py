@@ -463,8 +463,8 @@ class SensorDefinition:
             the sensor condition is met. This can be provided instead of specifying a job.
     """
 
-    def with_updated_job(self, new_job: ExecutableDefinition) -> "SensorDefinition":
-        """Returns a copy of this schedule with the job replaced.
+    def with_updated_jobs(self, new_jobs: Sequence[ExecutableDefinition]) -> "SensorDefinition":
+        """Returns a copy of this sensor with the jobs replaced.
 
         Args:
             job (ExecutableDefinition): The job that should execute when this
@@ -475,10 +475,20 @@ class SensorDefinition:
             evaluation_fn=self._evaluation_fn,
             minimum_interval_seconds=self.minimum_interval_seconds,
             description=self.description,
-            job=new_job,
+            jobs=new_jobs if len(new_jobs) > 1 else None,
+            job=new_jobs[0] if len(new_jobs) == 1 else None,
             default_status=self.default_status,
             asset_selection=self.asset_selection,
         )
+
+    def with_updated_job(self, new_job: ExecutableDefinition) -> "SensorDefinition":
+        """Returns a copy of this sensor with the job replaced.
+
+        Args:
+            job (ExecutableDefinition): The job that should execute when this
+                schedule runs.
+        """
+        return self.with_updated_jobs([new_job])
 
     def __init__(
         self,
@@ -621,6 +631,13 @@ class SensorDefinition:
                 raise DagsterInvalidDefinitionError(
                     "Job property not available when SensorDefinition has multiple jobs."
                 )
+        raise DagsterInvalidDefinitionError("No job was provided to SensorDefinition.")
+
+    @public
+    @property
+    def jobs(self) -> List[Union[JobDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]:
+        if self._targets and all(isinstance(target, DirectTarget) for target in self._targets):
+            return [target.target for target in self._targets]
         raise DagsterInvalidDefinitionError("No job was provided to SensorDefinition.")
 
     @property
