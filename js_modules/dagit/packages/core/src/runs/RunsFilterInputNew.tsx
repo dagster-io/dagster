@@ -14,10 +14,11 @@ import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {DagsterRepoOption, useRepositoryOptions} from '../workspace/WorkspaceContext';
 
 import {
-  RunTagKeysQuery,
-  RunTagValuesQuery,
-  RunTagValuesQueryVariables,
-} from './types/RunsFilterInput.types';
+  RunTagKeysNewQuery,
+  RunTagKeysNewQueryVariables,
+  RunTagValuesNewQuery,
+  RunTagValuesNewQueryVariables,
+} from './types/RunsFilterInputNew.types';
 
 type RunTags = Array<{
   __typename: 'PipelineTagAndValues';
@@ -197,10 +198,13 @@ export const RunsFilterInput: React.FC<RunsFilterInputProps> = ({
 }) => {
   const {options} = useRepositoryOptions();
   const [selectedTagKey, setSelectedTagKey] = React.useState<string | undefined>();
-  const [fetchTagKeys, {data: tagKeyData}] = useLazyQuery<RunTagKeysQuery>(RUN_TAG_KEYS_QUERY);
+  const [fetchTagKeys, {data: tagKeyData}] = useLazyQuery<
+    RunTagKeysNewQuery,
+    RunTagKeysNewQueryVariables
+  >(RUN_TAG_KEYS_QUERY);
   const [fetchTagValues, {data: tagValueData}] = useLazyQuery<
-    RunTagValuesQuery,
-    RunTagValuesQueryVariables
+    RunTagValuesNewQuery,
+    RunTagValuesNewQueryVariables
   >(RUN_TAG_VALUES_QUERY, {
     variables: {tagKeys: selectedTagKey ? [selectedTagKey] : []},
   });
@@ -276,7 +280,7 @@ export const RunsFilterInput: React.FC<RunsFilterInputProps> = ({
 };
 
 const RUN_TAG_KEYS_QUERY = gql`
-  query RunTagKeysQuery {
+  query RunTagKeysNewQuery {
     runTagKeysOrError {
       ... on RunTagKeys {
         keys
@@ -286,7 +290,7 @@ const RUN_TAG_KEYS_QUERY = gql`
 `;
 
 const RUN_TAG_VALUES_QUERY = gql`
-  query RunTagValuesQuery($tagKeys: [String!]!) {
+  query RunTagValuesNewQuery($tagKeys: [String!]!) {
     runTagsOrError(tagKeys: $tagKeys) {
       __typename
       ... on RunTags {
