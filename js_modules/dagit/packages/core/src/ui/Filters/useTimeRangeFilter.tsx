@@ -52,7 +52,10 @@ export function calculateTimeRanges(timezone: string) {
   return {timeRanges: obj, timeRangesArray: array};
 }
 
-export type TimeRangeFilter = FilterObject<[number | null, number | null]>;
+export type TimeRangeFilter = FilterObject & {
+  state: [number | null, number | null];
+  setState: (state: TimeRangeState) => void;
+};
 type TimeRangeKey = keyof ReturnType<typeof calculateTimeRanges>['timeRanges'];
 type Args = {
   name: string;

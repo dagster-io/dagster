@@ -13,14 +13,21 @@ type Args<TValue> = {
   name: string;
   icon: IconName;
   renderLabel: (props: {value: TValue; isActive: boolean}) => JSX.Element;
+  renderActiveStateLabel?: (props: {value: TValue; isActive: boolean}) => JSX.Element;
   getKey?: (value: TValue) => string;
   getStringValue: (value: TValue) => string;
   allValues: SetFilterValue<TValue>[];
   initialState?: Set<TValue> | TValue[];
   onStateChanged?: (state: Set<TValue>) => void;
+  allowMultipleSelections?: boolean;
+  // Whether this is an OR or an AND of these filters. This will affect the wording "any of" vs "all of""
+  isOR?: boolean;
 };
 
-export type StaticSetFilter<TValue> = FilterObject<Set<TValue>>;
+export type StaticSetFilter<TValue> = FilterObject & {
+  state: Set<TValue>;
+  setState: (state: Set<TValue>) => void;
+};
 
 export function useStaticSetFilter<TValue>({
   name,
@@ -28,9 +35,12 @@ export function useStaticSetFilter<TValue>({
   getKey,
   allValues,
   renderLabel,
+  renderActiveStateLabel,
   initialState,
   getStringValue,
   onStateChanged,
+  allowMultipleSelections = true,
+  isOR = true,
 }: Args<TValue>): StaticSetFilter<TValue> {
   const [state, setState] = React.useState(new Set(initialState || []));
 
@@ -48,7 +58,6 @@ export function useStaticSetFilter<TValue>({
       name,
       icon,
       state,
-      setState,
       isActive: state.size > 0,
       getResults: (query) => {
         if (query === '') {
@@ -58,6 +67,7 @@ export function useStaticSetFilter<TValue>({
                 value={value}
                 renderLabel={renderLabel}
                 filter={filterObjRef.current}
+                allowMultipleSelections={allowMultipleSelections}
               />
             ),
             key: getKey?.(value) || index.toString(),
@@ -74,6 +84,7 @@ export function useStaticSetFilter<TValue>({
                 value={value}
                 renderLabel={renderLabel}
                 filter={filterObjRef.current}
+                allowMultipleSelections={allowMultipleSelections}
               />
             ),
             key: getKey?.(value) || index.toString(),
@@ -81,11 +92,15 @@ export function useStaticSetFilter<TValue>({
           }));
       },
       onSelect: ({value}) => {
-        const newState = new Set(filterObjRef.current.state);
+        let newState = new Set(filterObjRef.current.state);
         if (newState.has(value)) {
           newState.delete(value);
         } else {
-          newState.add(value);
+          if (!allowMultipleSelections) {
+            newState = new Set([value]);
+          } else {
+            newState.add(value);
+          }
         }
         setState(newState);
       },
@@ -95,16 +110,18 @@ export function useStaticSetFilter<TValue>({
           name={name}
           state={state}
           getStringValue={getStringValue}
-          renderLabel={renderLabel}
+          renderLabel={renderActiveStateLabel || renderLabel}
           onRemove={() => {
             setState(new Set());
           }}
           icon={icon}
+          isOR={isOR}
         />
       ),
+      setState,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [name, icon, state, getStringValue, renderLabel, allValues],
+    [name, icon, state, getStringValue, renderLabel, allValues, isOR, renderActiveStateLabel],
   );
   const filterObjRef = useUpdatingRef(filterObj);
   return filterObj;
@@ -112,13 +129,14 @@ export function useStaticSetFilter<TValue>({
 
 const MAX_VALUES_TO_SHOW = 3;
 
-function SetFilterActiveState({
+export function SetFilterActiveState({
   name,
   state,
   icon,
   getStringValue,
   onRemove,
   renderLabel,
+  isOR,
 }: {
   name: string;
   icon: IconName;
@@ -126,6 +144,8 @@ function SetFilterActiveState({
   getStringValue: (value: any) => string;
   onRemove: () => void;
   renderLabel: (value: any) => JSX.Element;
+  // Whether this is an OR or an AND of these filters. This will affect the wording "any of" vs "all of""
+  isOR: boolean;
 }) {
   const arr = React.useMemo(() => Array.from(state), [state]);
   const label = React.useMemo(() => {
@@ -134,19 +154,19 @@ function SetFilterActiveState({
     } else if (arr.length <= MAX_VALUES_TO_SHOW) {
       return (
         <>
-          is&nbsp;{arr.length === 1 ? '' : <>any of&nbsp;</>}
+          is&nbsp;{arr.length === 1 ? '' : <>{isOR ? 'any of' : 'all of'}&nbsp;</>}
           {arr.map((value, index) => (
-            <>
+            <React.Fragment key={index}>
               <FilterTagHighlightedText>{getStringValue(value)}</FilterTagHighlightedText>
               {index < arr.length - 1 ? <>,&nbsp;</> : ''}
-            </>
+            </React.Fragment>
           ))}
         </>
       );
     } else {
       return (
         <Box flex={{direction: 'row', alignItems: 'center'}}>
-          is any of&nbsp;
+          is <>{isOR ? 'any of' : 'all of'}&nbsp;</>
           <Popover
             interactionKind="hover"
             position="bottom"
@@ -154,7 +174,7 @@ function SetFilterActiveState({
               <Box padding={{vertical: 8, horizontal: 12}} flex={{direction: 'column', gap: 4}}>
                 {arr.map((value) => (
                   <div
-                    key={value}
+                    key={getStringValue(value)}
                     style={{
                       maxWidth: '500px',
                       overflow: 'hidden',
@@ -175,7 +195,7 @@ function SetFilterActiveState({
         </Box>
       );
     }
-  }, [arr, getStringValue, name, renderLabel]);
+  }, [arr, getStringValue, isOR, name, renderLabel]);
 
   if (arr.length === 0) {
     return null;
@@ -193,17 +213,18 @@ function SetFilterActiveState({
   );
 }
 
-function capitalizeFirstLetter(string: string) {
-  return string.charAt(0).toUpperCase() + string.slice(1);
+export function capitalizeFirstLetter(string: string) {
+  return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase().replace(/_/g, ' ');
 }
 
 type SetFilterLabelProps = {
   value: any;
   filter: StaticSetFilter<any>;
   renderLabel: (value: any) => JSX.Element;
+  allowMultipleSelections: boolean;
 };
-function SetFilterLabel(props: SetFilterLabelProps) {
-  const {value, filter, renderLabel} = props;
+export function SetFilterLabel(props: SetFilterLabelProps) {
+  const {value, filter, renderLabel, allowMultipleSelections} = props;
   const isActive = filter.state.has(value);
 
   const labelRef = React.useRef<HTMLDivElement>(null);
@@ -217,7 +238,7 @@ function SetFilterLabel(props: SetFilterLabelProps) {
       margin={{left: 4}}
       style={{maxWidth: '500px'}}
     >
-      <Checkbox checked={isActive} size="small" readOnly />
+      {allowMultipleSelections ? <Checkbox checked={isActive} size="small" readOnly /> : null}
       <Box
         flex={{direction: 'row', alignItems: 'center', grow: 1, shrink: 1}}
         style={{overflow: 'hidden'}}
