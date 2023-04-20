@@ -42,9 +42,14 @@ with open(file_relative_path(__file__, "../sample_run_results.json"), "r", encod
     RUN_RESULTS_JSON = json.load(f)
 
 
-@pytest.fixture(name="dbt_cloud", params=["pythonic", "legacy"])
-def dbt_cloud_fixture(request) -> Any:
-    if request.param == "pythonic":
+@pytest.fixture(params=["pythonic", "legacy"])
+def resource_type(request):
+    return request.param
+
+
+@pytest.fixture(name="dbt_cloud")
+def dbt_cloud_fixture(resource_type) -> Any:
+    if resource_type == "pythonic":
         yield DbtCloudClientResource(
             auth_token=DBT_CLOUD_API_TOKEN, account_id=DBT_CLOUD_ACCOUNT_ID
         )
@@ -58,15 +63,22 @@ def dbt_cloud_fixture(request) -> Any:
 
 
 @pytest.fixture(name="dbt_cloud_service")
-def dbt_cloud_service_fixture():
-    yield dbt_cloud_resource(
-        build_init_resource_context(
-            config={
-                "auth_token": DBT_CLOUD_API_TOKEN,
-                "account_id": DBT_CLOUD_ACCOUNT_ID,
-            }
+def dbt_cloud_service_fixture(resource_type) -> Any:
+    if resource_type == "pythonic":
+        yield DbtCloudClientResource(
+            auth_token=DBT_CLOUD_API_TOKEN, account_id=DBT_CLOUD_ACCOUNT_ID
+        ).with_resource_context(
+            build_init_resource_context()
+        ).get_dbt_client()  # type: ignore
+    else:
+        yield dbt_cloud_resource(
+            build_init_resource_context(
+                config={
+                    "auth_token": DBT_CLOUD_API_TOKEN,
+                    "account_id": DBT_CLOUD_ACCOUNT_ID,
+                }
+            )
         )
-    )
 
 
 def _add_dbt_cloud_job_responses(
