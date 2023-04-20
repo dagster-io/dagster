@@ -522,7 +522,7 @@ export const RunsFilterInput: React.FC<RunsFilterInputProps> = ({
   });
 
   return (
-    <Box flex={{direction: 'row', gap: 8, wrap: 'wrap'}}>
+    <Box flex={{direction: 'row', gap: 8, wrap: 'wrap', alignItems: 'center'}}>
       <span onClick={onFocus}>{button}</span>
       {activeFiltersJsx}
       {activeFiltersJsx.length ? (
