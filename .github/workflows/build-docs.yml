@@ -3,7 +3,6 @@ on:
   push:
     branches:
       - master
-      - 'release-*'
     paths:
       - docs/**
   pull_request:
@@ -17,10 +16,20 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout PR branch
+      - name: Checkout
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         uses: actions/checkout@v3
+
+      - name: 'Get PR fetch depth'
+        if: ${{ github.event.pull_request }}
+        run: echo "PR_FETCH_DEPTH=$(( ${{ github.event.pull_request.commits }} + 1 ))" >> "${GITHUB_ENV}"
+
+      - name: 'Checkout PR branch'
+        uses: actions/checkout@v3
+        if: ${{ github.event.pull_request }}
         with:
-          fetch-depth: 1000
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: ${{ env.PR_FETCH_DEPTH }}
 
       - name: Get changed docs files
         if: ${{ github.event.pull_request }}
