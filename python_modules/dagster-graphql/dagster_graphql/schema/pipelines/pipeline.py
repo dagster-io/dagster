@@ -871,7 +871,7 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
         ]
 
     def resolve_isJob(self, _graphene_info: ResolveInfo):
-        return self._external_pipeline.is_job
+        return True
 
     def resolve_isAssetJob(self, graphene_info: ResolveInfo):
         handle = self._external_pipeline.repository_handle
