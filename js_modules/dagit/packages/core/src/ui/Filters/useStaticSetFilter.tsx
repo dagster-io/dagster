@@ -118,6 +118,7 @@ export function useStaticSetFilter<TValue>({
           isOR={isOR}
         />
       ),
+      setState,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [name, icon, state, getStringValue, renderLabel, allValues, isOR, renderActiveStateLabel],
