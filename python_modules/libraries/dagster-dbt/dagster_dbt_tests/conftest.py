@@ -47,12 +47,18 @@ def dbt_python_config_dir():
     return DBT_PYTHON_CONFIG_DIR
 
 
-@pytest.fixture(scope="session", params=["pythonic", "legacy"])
+@pytest.fixture(
+    scope="session",
+    params=[
+        "legacy",
+        "pythonic",
+    ],
+)
 def dbt_cli_resource_factory(request):
     if request.param == "pythonic":
         return DbtCliClientResource
     else:
-        return lambda **kwargs: dbt_cli_resource.configured(**kwargs)
+        return lambda **kwargs: dbt_cli_resource.configured(kwargs)
 
 
 @pytest.fixture(scope="session")
