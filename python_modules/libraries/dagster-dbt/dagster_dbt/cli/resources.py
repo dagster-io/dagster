@@ -5,7 +5,7 @@ from dagster import resource
 from dagster._annotations import public
 from dagster._config.pythonic_config import ConfigurableResource, IAttachDifferentObjectToOpContext
 from dagster._utils.merger import merge_dicts
-from pydantic import Field as PyField
+from pydantic import Field
 
 from ..dbt_resource import DbtClient
 from .types import DbtCliOutput
@@ -41,27 +41,27 @@ COMMON_OPTION_KEYS = {
 
 
 class ConfigurableResourceWithCliFlags(ConfigurableResource):
-    project_dir: str = PyField(
+    project_dir: str = Field(
         default=".",
         description=(
             "Which directory to look in for the dbt_project.yml file. Default is the current "
             "working directory and its parents."
         ),
     )
-    profiles_dir: Optional[str] = PyField(
+    profiles_dir: Optional[str] = Field(
         default=None,
         description=(
             "Which directory to look in for the profiles.yml file. Default = $DBT_PROFILES_DIR or "
             "$HOME/.dbt"
         ),
     )
-    profile: Optional[str] = PyField(
+    profile: Optional[str] = Field(
         default=None, description="Which profile to load. Overrides setting in dbt_project.yml."
     )
-    target: Optional[str] = PyField(
+    target: Optional[str] = Field(
         default=None, description="Which target to load for the given profile."
     )
-    vars: Optional[Mapping[str, Any]] = PyField(
+    vars: Optional[Mapping[str, Any]] = Field(
         default=None,
         description=(
             "Supply variables to the project. This argument overrides variables defined in your "
@@ -69,10 +69,10 @@ class ConfigurableResourceWithCliFlags(ConfigurableResource):
             "{'my_variable': 'my_value'}"
         ),
     )
-    bypass_cache: bool = PyField(
+    bypass_cache: bool = Field(
         default=False, description="If set, bypass the adapter-level cache of database state"
     )
-    warn_error: bool = PyField(
+    warn_error: bool = Field(
         default=False,
         description=(
             "If dbt would normally warn, instead raise an exception. Examples include --models "
@@ -80,42 +80,42 @@ class ConfigurableResourceWithCliFlags(ConfigurableResource):
             "invalid test configurations, and missing sources/refs in tests."
         ),
     )
-    dbt_executable: str = PyField(
+    dbt_executable: str = Field(
         default=DEFAULT_DBT_EXECUTABLE,
         description=f"Path to the dbt executable. Default is {DEFAULT_DBT_EXECUTABLE}",
     )
-    ignore_handled_error: bool = PyField(
+    ignore_handled_error: bool = Field(
         default=False,
         description=(
             "When True, will not raise an exception when the dbt CLI returns error code 1. "
             "Default is False."
         ),
     )
-    target_path: str = PyField(
+    target_path: str = Field(
         default=DEFAULT_DBT_TARGET_PATH,
         description=(
             "The directory path for target if different from the default `target-path` in "
             "your dbt project configuration file."
         ),
     )
-    docs_url: Optional[str] = PyField(
+    docs_url: Optional[str] = Field(
         default=None, description="The url for where dbt docs are being served for this project."
     )
-    json_log_format: bool = PyField(
+    json_log_format: bool = Field(
         default=True,
         description=(
             "When True, dbt will invoked with the `--log-format json` flag, allowing "
             "Dagster to parse the log messages and emit simpler log messages to the event log."
         ),
     )
-    capture_logs: bool = PyField(
+    capture_logs: bool = Field(
         default=False,
         description=(
             "When True, dbt will invoked with the `--capture-output` flag, allowing "
             "Dagster to capture the logs and emit them to the event log."
         ),
     )
-    debug: bool = PyField(
+    debug: bool = Field(
         default=False,
         description=(
             "When True, dbt will invoked with the `--debug` flag, which will print "

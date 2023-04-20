@@ -18,7 +18,7 @@ from dagster import (
     resource,
 )
 from dagster._utils.merger import deep_merge_dicts
-from pydantic import Field as PyField
+from pydantic import Field
 from requests.exceptions import RequestException
 
 from .types import DbtCloudOutput
@@ -598,7 +598,7 @@ DbtCloudResourceV2 = DbtCloudResource
 class DbtCloudClientResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
     """This resource helps interact with dbt Cloud connectors."""
 
-    auth_token: str = PyField(
+    auth_token: str = Field(
         description=(
             "dbt Cloud API Token. User tokens can be found in the [dbt Cloud"
             " UI](https://cloud.getdbt.com/#/profile/api/), or see the [dbt Cloud"
@@ -606,32 +606,32 @@ class DbtCloudClientResource(ConfigurableResource, IAttachDifferentObjectToOpCon
             " instructions on creating a Service Account token."
         ),
     )
-    account_id: int = PyField(
+    account_id: int = Field(
         description=(
             "dbt Cloud Account ID. This value can be found in the url of a variety of views in"
             " the dbt Cloud UI, e.g."
             " https://cloud.getdbt.com/#/accounts/{account_id}/settings/."
         ),
     )
-    disable_schedule_on_trigger: bool = PyField(
+    disable_schedule_on_trigger: bool = Field(
         default=True,
         description=(
             "Specifies if you would like any job that is triggered using this "
             "resource to automatically disable its schedule."
         ),
     )
-    request_max_retries: int = PyField(
+    request_max_retries: int = Field(
         default=3,
         description=(
             "The maximum number of times requests to the dbt Cloud API should be retried "
             "before failing."
         ),
     )
-    request_retry_delay: float = PyField(
+    request_retry_delay: float = Field(
         default=0.25,
         description="Time (in seconds) to wait between each request retry.",
     )
-    dbt_cloud_host: str = PyField(
+    dbt_cloud_host: str = Field(
         default=DBT_DEFAULT_HOST,
         description=(
             "The hostname where dbt cloud is being hosted (e.g. https://my_org.cloud.getdbt.com/)."
