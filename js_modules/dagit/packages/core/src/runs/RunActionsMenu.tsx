@@ -119,7 +119,7 @@ export const RunActionsMenu: React.FC<{
   return (
     <>
       <JoinedButtons>
-        <AnchorButton to={`/runs/${run.id}`}>View Run</AnchorButton>
+        <AnchorButton to={`/runs/${run.id}`}>View run</AnchorButton>
         <Popover
           content={
             <Menu>

@@ -118,9 +118,9 @@ export const RunTable = (props: RunTableProps) => {
               ) : null}
             </th>
             <th style={{width: 90}}>Run ID</th>
-            <th style={{width: 180}}>Created Date</th>
+            <th style={{width: 180}}>Created date</th>
             <th>Target</th>
-            <th style={{width: 160}}>Created By</th>
+            <th style={{width: 160}}>Created by</th>
             <th style={{width: 120}}>Status</th>
             <th style={{width: 190}}>Duration</th>
             {props.additionalColumnHeaders}
