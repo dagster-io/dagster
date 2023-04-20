@@ -24,7 +24,6 @@ type Args<TValue> = {
   isMatch: (value: TValue, query: string) => boolean;
   // Whether this is an OR or an AND of these filters. This will affect the wording "any of" vs "all of""
   matchType?: 'any-of' | 'all-of';
-  boolean;
 };
 
 export type SuggestionFilter<TValue> = FilterObject & {
