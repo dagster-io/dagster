@@ -15,6 +15,7 @@ from dagster import (
     DagsterInstance,
     IOManager,
     JobDefinition,
+    RunRequest,
     ScheduleDefinition,
     asset,
     job,
@@ -2565,3 +2566,35 @@ def test_context_on_resource_nested() -> None:
 
         assert defs.get_implicit_global_asset_job_def().execute_in_process().success
         assert executed["yes"]
+
+
+def bind_top_level_resource_sensor_multi_job() -> None:
+    executed = {}
+
+    class FooResource(ConfigurableResource):
+        my_str: str
+
+    @op
+    def hello_world_op(foo: FooResource):
+        assert foo.my_str == "foo"
+        executed["yes"] = True
+
+    @job()
+    def hello_world_job():
+        hello_world_op()
+
+    @job
+    def hello_world_job_2():
+        hello_world_op()
+
+    @sensor(jobs=[hello_world_job, hello_world_job_2])
+    def hello_world_sensor(context):
+        return RunRequest(run_key="foo")
+
+    Definitions(
+        sensors=[hello_world_sensor],
+        jobs=[hello_world_job, hello_world_job_2],
+        resources={
+            "foo": FooResource(my_str="foo"),
+        },
+    )

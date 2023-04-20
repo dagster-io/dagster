@@ -510,6 +510,7 @@ class ScheduleDefinition:
             job=new_job,
             default_status=self.default_status,
         )
+        
 
     def __init__(
         self,
