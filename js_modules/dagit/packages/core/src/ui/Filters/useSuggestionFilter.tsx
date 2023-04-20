@@ -42,7 +42,7 @@ export function useSuggestionFilter<TValue>({
   renderLabel,
   renderActiveStateLabel,
   isMatch,
-  isOR = true,
+  matchType = 'any-of',
 }: Args<TValue>): SuggestionFilter<TValue> {
   const [nextSuggestionsLoading, setNextSuggestionsLoading] = React.useState(false);
   const [nextSuggestions, setNextSuggestions] = React.useState<
@@ -123,7 +123,7 @@ export function useSuggestionFilter<TValue>({
             setState([]);
           }}
           icon={icon}
-          isOR={isOR}
+          matchType={matchType}
         />
       ),
     }),
@@ -143,7 +143,7 @@ export function useSuggestionFilter<TValue>({
       isMatch,
       setState,
       onSuggestionClicked,
-      isOR,
+      matchType,
     ],
   );
   const filterObjRef = useUpdatingRef(filterObj);

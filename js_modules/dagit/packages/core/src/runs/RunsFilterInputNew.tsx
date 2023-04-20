@@ -513,7 +513,7 @@ export const RunsFilterInput: React.FC<RunsFilterInputProps> = ({
           </Box>
         ),
         isMatch: ({value}, query) => value.toLowerCase().includes(query.toLowerCase()),
-        isOR: false,
+        matchType: 'all-of',
       }),
     ].filter((x) => x) as FilterObject[],
   });
