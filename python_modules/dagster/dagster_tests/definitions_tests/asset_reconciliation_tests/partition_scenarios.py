@@ -26,6 +26,7 @@ daily_partitions_def = DailyPartitionsDefinition("2013-01-05")
 hourly_partitions_def = HourlyPartitionsDefinition("2013-01-05-00:00")
 one_partition_partitions_def = StaticPartitionsDefinition(["a"])
 two_partitions_partitions_def = StaticPartitionsDefinition(["a", "b"])
+other_two_partitions_partitions_def = StaticPartitionsDefinition(["1", "2"])
 time_multipartitions_def = MultiPartitionsDefinition(
     {"time": daily_partitions_def, "static": two_partitions_partitions_def}
 )

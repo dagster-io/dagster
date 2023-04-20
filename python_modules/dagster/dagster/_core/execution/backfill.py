@@ -321,11 +321,12 @@ class PartitionBackfill(
         cls,
         backfill_id: str,
         asset_graph: AssetGraph,
-        partition_names: Sequence[str],
+        partition_names: Optional[Sequence[str]],
         asset_selection: Sequence[AssetKey],
         backfill_timestamp: float,
         tags: Mapping[str, str],
         dynamic_partitions_store: DynamicPartitionsStore,
+        all_partitions: bool,
     ) -> "PartitionBackfill":
         """If all the selected assets that have PartitionsDefinitions have the same partitioning, then
         the backfill will target the provided partition_names for all those assets.
@@ -347,5 +348,6 @@ class PartitionBackfill(
                 partition_names=partition_names,
                 asset_selection=asset_selection,
                 dynamic_partitions_store=dynamic_partitions_store,
+                all_partitions=all_partitions,
             ).serialize(dynamic_partitions_store=dynamic_partitions_store),
         )
