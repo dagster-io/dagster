@@ -26,6 +26,7 @@ type Args<TValue> = {
 
 export type StaticSetFilter<TValue> = FilterObject & {
   state: Set<TValue>;
+  setState: (state: Set<TValue>) => void;
 };
 
 export function useStaticSetFilter<TValue>({
