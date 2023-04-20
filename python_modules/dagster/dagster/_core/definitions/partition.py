@@ -837,16 +837,13 @@ class PartitionedConfig(Generic[T_cov]):
         current_time: Optional[datetime],
         dynamic_partitions_store: Optional[DynamicPartitionsStore],
     ) -> Partition[T_cov]:
-        matches = [
-            p
-            for p in self.partitions_def.get_partitions(
-                current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
-            )
-            if p.name == partition_key
-        ]
-        if len(matches) == 0:
-            raise DagsterUnknownPartitionError(f"No partition for partition key `{partition_key}`.")
-        return matches[0]
+        partition = self.partitions_def.get_partition(
+            partition_key,
+            current_time=current_time,
+            dynamic_partitions_store=dynamic_partitions_store,
+        )
+
+        return partition
 
     @classmethod
     def from_flexible_config(
