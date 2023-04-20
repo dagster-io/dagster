@@ -215,6 +215,7 @@ const RunsFilterInputImpl: React.FC<RunsFilterInputProps> = ({
   tokens,
   onChange,
   enabledFilters,
+  loading,
 }) => {
   const {options} = useRepositoryOptions();
   const [selectedTagKey, setSelectedTagKey] = React.useState<string | undefined>();
