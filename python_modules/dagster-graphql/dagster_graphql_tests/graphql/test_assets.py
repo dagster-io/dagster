@@ -2302,24 +2302,16 @@ class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):
 
 
 class TestCrossRepoAssetDependedBy(AllRepositoryGraphQLContextTestMatrix):
-    def test_cross_repo_assets(self, graphql_context: WorkspaceRequestContext):
-        code_location = graphql_context.get_code_location("cross_asset_repos")
-        repository = code_location.get_repository("upstream_assets_repository")
-
-        selector = {
-            "repositoryLocationName": code_location.name,
-            "repositoryName": repository.name,
-        }
+    def test_cross_repo_derived_asset_dependencies(self, graphql_context: WorkspaceRequestContext):
         result = execute_dagster_graphql(
             graphql_context,
             CROSS_REPO_ASSET_GRAPH,
-            variables={"repositorySelector": selector},
         )
         asset_nodes = result.data["assetNodes"]
-        upstream_asset = [
+        derived_asset = [
             node
             for node in asset_nodes
-            if node["id"] == 'cross_asset_repos.upstream_assets_repository.["upstream_asset"]'
+            if node["id"] == 'cross_asset_repos.upstream_assets_repository.["derived_asset"]'
         ][0]
         dependent_asset_keys = [
             {"path": ["downstream_asset1"]},
@@ -2327,7 +2319,26 @@ class TestCrossRepoAssetDependedBy(AllRepositoryGraphQLContextTestMatrix):
         ]
 
         result_dependent_keys = sorted(
-            upstream_asset["dependedByKeys"], key=lambda node: node.get("path")[0]
+            derived_asset["dependedByKeys"], key=lambda node: node.get("path")[0]
+        )
+        assert result_dependent_keys == dependent_asset_keys
+
+    def test_cross_repo_source_asset_dependencies(self, graphql_context: WorkspaceRequestContext):
+        result = execute_dagster_graphql(
+            graphql_context,
+            CROSS_REPO_ASSET_GRAPH,
+        )
+        asset_nodes = result.data["assetNodes"]
+        always_source_asset = [node for node in asset_nodes if "always_source_asset" in node["id"]][
+            0
+        ]
+        dependent_asset_keys = [
+            {"path": ["downstream_asset1"]},
+            {"path": ["downstream_asset2"]},
+        ]
+
+        result_dependent_keys = sorted(
+            always_source_asset["dependedByKeys"], key=lambda node: node.get("path")[0]
         )
         assert result_dependent_keys == dependent_asset_keys
 
