@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any, List, Optional
 
 from dagster import Config, In, Nothing, Out, Output, op
 from pydantic import Field
@@ -43,14 +43,14 @@ Examples:
 
 class DbtBuildOpConfig(Config):
     yield_asset_events: bool = Field(
-        default_value=True,
+        default=True,
         description=(
             "If True, materializations and asset observations corresponding to the results of "
             "the dbt operation will be yielded when the op executes. Default: True"
         ),
     )
     asset_key_prefix: List[str] = Field(
-        default_value=["dbt"],
+        default=["dbt"],
         description=(
             "If provided and yield_materializations is True, these components will be used to "
             "prefix the generated asset keys."
@@ -73,14 +73,14 @@ def dbt_build_op(context, config: DbtBuildOpConfig) -> Any:
 
 class DbtRunOpConfig(Config):
     yield_materializations: bool = Field(
-        default_value=True,
+        default=True,
         description=(
             "If True, materializations corresponding to the results of the dbt operation will "
             "be yielded when the op executes. Default: True"
         ),
     )
-    asset_key_prefix: List[str] = Field(
-        default_value=["dbt"],
+    asset_key_prefix: Optional[List[str]] = Field(
+        default=["dbt"],
         description=(
             "If provided and yield_materializations is True, these components will be used to "
             "prefix the generated asset keys."

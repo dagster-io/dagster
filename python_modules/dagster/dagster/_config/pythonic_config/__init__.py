@@ -1333,6 +1333,7 @@ def _config_type_for_type_on_pydantic_field(
 
 def _is_pydantic_field_required(pydantic_field: ModelField) -> bool:
     # required is of type BoolUndefined = Union[bool, UndefinedType] in Pydantic
+
     if isinstance(pydantic_field.required, bool):
         return pydantic_field.required
 
