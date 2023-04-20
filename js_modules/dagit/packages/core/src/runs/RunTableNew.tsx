@@ -168,7 +168,11 @@ export const RunTable = (props: RunTableProps) => {
 };
 
 export const RUN_TABLE_RUN_FRAGMENT = gql`
+<<<<<<< HEAD
   fragment RunTableRunNewFragment on Run {
+=======
+  fragment RunTableRunFragment on Run {
+>>>>>>> fdffb931ca (also copy of run table)
     id
     status
     stepKeysToExecute
