@@ -1,4 +1,7 @@
-from dagster import Definitions, In, asset, job, op
+import os
+import tempfile
+
+from dagster import Definitions, FilesystemIOManager, In, RunConfig, asset, job, op
 from dagster._config.pythonic_config import ConfigurableIOManager, ConfigurableResource
 
 
@@ -156,3 +159,45 @@ def test_nested_resources_runtime_config():
         .success
     )
     assert out_txt == ["greeting: hello, world!"]
+
+
+def test_pythonic_fs_io_manager() -> None:
+    with tempfile.TemporaryDirectory() as tmpdir_path:
+
+        @asset
+        def hello_world_asset():
+            return "hello, world!"
+
+        defs = Definitions(
+            assets=[hello_world_asset],
+            resources={"io_manager": FilesystemIOManager(base_dir=tmpdir_path)},
+        )
+
+        assert not os.path.exists(os.path.join(tmpdir_path, "hello_world_asset"))
+        assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+        assert os.path.exists(os.path.join(tmpdir_path, "hello_world_asset"))
+
+
+def test_pythonic_fs_io_manager_runtime_config() -> None:
+    with tempfile.TemporaryDirectory() as tmpdir_path:
+
+        @asset
+        def hello_world_asset():
+            return "hello, world!"
+
+        defs = Definitions(
+            assets=[hello_world_asset],
+            resources={"io_manager": FilesystemIOManager.configure_at_launch()},
+        )
+
+        assert not os.path.exists(os.path.join(tmpdir_path, "hello_world_asset"))
+        assert (
+            defs.get_implicit_global_asset_job_def()
+            .execute_in_process(
+                run_config=RunConfig(
+                    resources={"io_manager": FilesystemIOManager(base_dir=tmpdir_path)}
+                )
+            )
+            .success
+        )
+        assert os.path.exists(os.path.join(tmpdir_path, "hello_world_asset"))

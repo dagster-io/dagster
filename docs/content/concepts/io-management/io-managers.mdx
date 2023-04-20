@@ -131,7 +131,7 @@ Different assets can have different I/O managers:
 ```python file=/concepts/assets/asset_different_io_managers.py startafter=start_marker endbefore=end_marker
 from dagster_aws.s3 import ConfigurablePickledObjectS3IOManager, S3Resource
 
-from dagster import Definitions, asset, fs_io_manager
+from dagster import Definitions, FilesystemIOManager, asset
 
 
 @asset(io_manager_key="s3_io_manager")
@@ -150,7 +150,7 @@ defs = Definitions(
         "s3_io_manager": ConfigurablePickledObjectS3IOManager(
             s3_resource=S3Resource(), s3_bucket="my-bucket"
         ),
-        "fs_io_manager": fs_io_manager,
+        "fs_io_manager": FilesystemIOManager(),
     },
 )
 ```
@@ -180,7 +180,7 @@ import os
 
 from dagster_aws.s3 import ConfigurablePickledObjectS3IOManager, S3Resource
 
-from dagster import Definitions, asset, fs_io_manager
+from dagster import Definitions, FilesystemIOManager, asset
 
 
 @asset
@@ -199,7 +199,7 @@ resources_by_env = {
             s3_resource=S3Resource(), s3_bucket="my-bucket"
         )
     },
-    "local": {"io_manager": fs_io_manager},
+    "local": {"io_manager": FilesystemIOManager()},
 }
 
 defs = Definitions(
@@ -254,7 +254,7 @@ By default, all the inputs and outputs in a job use the same I/O manager. This I
 Here’s how to specify that all op outputs are stored using the <PyObject module="dagster" object="fs_io_manager" />, which pickles outputs and stores them on the local filesystem. It stores files in a directory with the run ID in the path, so that outputs from prior runs will never be overwritten.
 
 ```python file=/concepts/io_management/default_io_manager.py
-from dagster import fs_io_manager, job, op
+from dagster import FilesystemIOManager, job, op
 
 
 @op
@@ -267,7 +267,7 @@ def op_2(a):
     return a + 1
 
 
-@job(resource_defs={"io_manager": fs_io_manager})
+@job(resource_defs={"io_manager": FilesystemIOManager()})
 def my_job():
     op_2(op_1())
 ```
@@ -281,7 +281,7 @@ To select the I/O manager for a particular output, you can set an `io_manager_ke
 ```python file=/concepts/io_management/io_manager_per_output.py startafter=start_marker endbefore=end_marker
 from dagster_aws.s3 import ConfigurablePickledObjectS3IOManager, S3Resource
 
-from dagster import Out, fs_io_manager, job, op
+from dagster import FilesystemIOManager, Out, job, op
 
 
 @op(out=Out(io_manager_key="fs"))
@@ -296,7 +296,7 @@ def op_2(a):
 
 @job(
     resource_defs={
-        "fs": fs_io_manager,
+        "fs": FilesystemIOManager(),
         "s3_io": ConfigurablePickledObjectS3IOManager(
             s3_resource=S3Resource(), s3_bucket="test-bucket"
         ),

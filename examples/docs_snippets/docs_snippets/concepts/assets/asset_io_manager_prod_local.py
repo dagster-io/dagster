@@ -3,7 +3,7 @@ import os
 
 from dagster_aws.s3 import ConfigurablePickledObjectS3IOManager, S3Resource
 
-from dagster import Definitions, asset, fs_io_manager
+from dagster import Definitions, FilesystemIOManager, asset
 
 
 @asset
@@ -22,7 +22,7 @@ resources_by_env = {
             s3_resource=S3Resource(), s3_bucket="my-bucket"
         )
     },
-    "local": {"io_manager": fs_io_manager},
+    "local": {"io_manager": FilesystemIOManager()},
 }
 
 defs = Definitions(

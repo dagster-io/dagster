@@ -44,6 +44,9 @@ Built-in IO Managers
 .. autodata:: mem_io_manager
   :annotation: IOManagerDefinition
 
+.. autodata:: FilesystemIOManager
+  :annotation: IOManagerDefinition
+
 .. autodata:: fs_io_manager
   :annotation: IOManagerDefinition
 
