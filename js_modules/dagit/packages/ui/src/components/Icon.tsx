@@ -19,6 +19,7 @@ import asset_plot from '../icon-svgs/asset_plot.svg';
 import assignment from '../icon-svgs/assignment.svg';
 import assignment_turned_in from '../icon-svgs/assignment_turned_in.svg';
 import attach_file from '../icon-svgs/attach_file.svg';
+import backfill from '../icon-svgs/backfill.svg';
 import bolt from '../icon-svgs/bolt.svg';
 import expectation from '../icon-svgs/bp-automatic-updates.svg';
 import op from '../icon-svgs/bp-git-commit.svg';
@@ -111,6 +112,7 @@ import speed from '../icon-svgs/speed.svg';
 import splitscreen from '../icon-svgs/splitscreen.svg';
 import star from '../icon-svgs/star.svg';
 import star_outline from '../icon-svgs/star_outline.svg';
+import status from '../icon-svgs/status.svg';
 import subtract from '../icon-svgs/subtract.svg';
 import sync_problem from '../icon-svgs/sync_problem.svg';
 import table_view from '../icon-svgs/table_view.svg';
@@ -147,6 +149,7 @@ export const Icons = {
   asset_plot,
   asset_non_sda,
   asset_group,
+  backfill,
   date,
   expectation,
   materialization,
@@ -270,6 +273,7 @@ export const Icons = {
   splitscreen,
   star,
   star_outline,
+  status,
   sync_problem,
   table_view,
   timer,
