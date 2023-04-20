@@ -1,5 +1,3 @@
-import random
-
 import click
 from dagster import (
     AssetKey,
@@ -8,11 +6,8 @@ from dagster import (
     DailyPartitionsDefinition,
     DynamicPartitionsDefinition,
     MultiPartitionsDefinition,
-    RunRequest,
-    SensorResult,
     asset,
     define_asset_job,
-    sensor,
 )
 
 customers_partitions_def = DynamicPartitionsDefinition(name="customers")
@@ -49,25 +44,6 @@ def ints_dynamic_asset():
     return 1
 
 
-@sensor(
-    job=define_asset_job(
-        "ints_job",
-        AssetSelection.assets(ints_dynamic_asset),
-        partitions_def=ints_dynamic_partitions_def,
-    )
-)
-def ints_job_sensor():
-    new_partition_key = str(random.randint(0, 100))
-    return SensorResult(
-        run_requests=[
-            RunRequest(partition_key=new_partition_key),
-        ],
-        dynamic_partitions_requests=[
-            ints_dynamic_partitions_def.build_add_request([new_partition_key])
-        ],
-    )
-
-
 dynamic_partitions_job = define_asset_job(
     "dynamic_partitions_job",
     selection=AssetSelection.keys(
@@ -75,17 +51,6 @@ dynamic_partitions_job = define_asset_job(
     ),
     partitions_def=customers_partitions_def,
 )
-
-
-@sensor(asset_selection=AssetSelection.assets(ints_dynamic_asset))
-def ints_asset_selection_sensor(context):
-    new_partition_key = str(random.randint(0, 100))
-    return SensorResult(
-        run_requests=[RunRequest(partition_key=new_partition_key)],
-        dynamic_partitions_requests=[
-            ints_dynamic_partitions_def.build_add_request([new_partition_key])
-        ],
-    )
 
 
 @click.command()

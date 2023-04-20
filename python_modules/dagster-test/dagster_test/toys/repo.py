@@ -136,6 +136,7 @@ def partitioned_assets_repository():
         partitioned_assets.dynamic_partitions_job,
         partitioned_assets.ints_job_sensor,
         partitioned_assets.ints_asset_selection_sensor,
+        partitioned_assets.upstream_daily_partitioned_asset_sensor,
     ]
 
 
