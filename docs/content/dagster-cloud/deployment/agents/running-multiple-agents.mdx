@@ -1,5 +1,5 @@
 ---
-title: Running multiple agents | Dagster Docs
+title: Running isolated agents | Dagster Docs
 platform_type: "cloud"
 ---
 
@@ -9,7 +9,7 @@ platform_type: "cloud"
 
 Each Dagster Cloud full deployment (e.g., `prod`) needs to have at least one agent running. Since the agent is lightweight and can tolerate short downtimes such as during an upgrade, a single agent is adequate for most use cases.
 
-If you want to distribute runs across multiple Kubernetes clusters, ECS clusters, EC2 instances, or other environments, you can run multiple agents. For example, one in each cluster, instance, etc.
+If you want to distribute runs across multiple Kubernetes clusters, ECS clusters, EC2 instances, or other environments, you can run multiple agents isolated across these environments. For example, one in each cluster, instance, etc.
 
 It's recommended to only use multiple agents of the same type (e.g. multiple Kubernetes agents). Submitting runs to a specific agent isn't currently supported.
 
@@ -36,9 +36,9 @@ After the agent is up and running, move on to the next step.
 
 ---
 
-## Step 2: Enable the agent_replicas setting
+## Step 2: Enable the isolated_agents setting
 
-In this step, you'll enable the `agent_replicas` option to turn on running multiple agents. You can also choose to label the agent, making it easily identifiable on Dagster Cloud's **Status** page.
+In this step, you'll enable the `isolated_agents` option to turn on running agents in isolated namespaces. You can also choose to label the agents, making it easily identifiable on Dagster Cloud's **Status** page.
 
 Follow the instructions for your agent:
 
@@ -48,7 +48,7 @@ Follow the instructions for your agent:
 Add the following to the `dagster.yaml` file:
 
 ```yaml
-agent_replicas:
+isolated_agents:
   enabled: true
 
 dagster_cloud_api:
@@ -66,14 +66,14 @@ Add the following options to your Helm command:
 ```shell
 helm upgrade \
     ...
-    --set agentReplicas.enabled=true \
+    --set isolatedAgents.enabled=true \
     --set dagsterCloud.agentLabel="My agent" # optional, only supported on 0.13.14 and later
 ```
 
 Or if you're using a `values.yaml` file:
 
 ```yaml
-agentReplicas:
+isolatedAgents:
   enabled: true
 
 dagsterCloud:
@@ -88,7 +88,7 @@ dagsterCloud:
 Add the following to the `dagster.yaml` file:
 
 ```yaml
-agent_replicas:
+isolated_agents:
   enabled: true
 
 dagster_cloud_api:
