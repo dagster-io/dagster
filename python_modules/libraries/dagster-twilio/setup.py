@@ -33,6 +33,6 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_twilio_tests*"]),
-    install_requires=["dagster==1.3.0", "twilio"],
+    install_requires=["dagster==1.3.1", "twilio"],
     zip_safe=False,
 )

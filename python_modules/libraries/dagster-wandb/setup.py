@@ -34,7 +34,7 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_wandb_tests*"]),
     install_requires=[
-        "dagster==1.3.0",
+        "dagster==1.3.1",
         "wandb>=0.13.5",
     ],
     extras_require={"dev": ["cloudpickle", "joblib", "callee", "dill"]},

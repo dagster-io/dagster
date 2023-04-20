@@ -35,7 +35,7 @@ setup(
     packages=find_packages(exclude=["dagster_dask_tests*"]),
     install_requires=[
         "bokeh",
-        "dagster==1.3.0",
+        "dagster==1.3.1",
         "dask[dataframe]>=1.2.2",
         "distributed>=1.28.1",
     ],
