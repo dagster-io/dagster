@@ -4,7 +4,6 @@ from typing_extensions import TypeAlias
 
 from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.pipeline_definition import PipelineDefinition
 from dagster._core.definitions.schedule_definition import ScheduleDefinition
 from dagster._core.definitions.sensor_definition import SensorDefinition
 from dagster._core.definitions.source_asset import SourceAsset
@@ -20,7 +19,6 @@ if TYPE_CHECKING:
 SINGLETON_REPOSITORY_NAME = "__repository__"
 
 VALID_REPOSITORY_DATA_DICT_KEYS = {
-    "pipelines",
     "schedules",
     "sensors",
     "jobs",
@@ -28,7 +26,6 @@ VALID_REPOSITORY_DATA_DICT_KEYS = {
 
 T_RepositoryLevelDefinition = TypeVar(
     "T_RepositoryLevelDefinition",
-    PipelineDefinition,
     JobDefinition,
     ScheduleDefinition,
     SensorDefinition,
@@ -38,7 +35,7 @@ RepositoryListDefinition: TypeAlias = Union[
     "AssetsDefinition",
     "AssetGroup",
     GraphDefinition,
-    PipelineDefinition,
+    JobDefinition,
     ScheduleDefinition,
     SensorDefinition,
     SourceAsset,

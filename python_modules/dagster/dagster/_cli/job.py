@@ -27,10 +27,11 @@ from dagster._cli.workspace.cli_target import (
     python_job_config_argument,
     python_job_target_argument,
 )
+from dagster._core.definitions import JobDefinition
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.selector import PipelineSelector
 from dagster._core.definitions.utils import validate_tags
-from dagster._core.errors import DagsterBackfillFailedError, DagsterInvariantViolationError
+from dagster._core.errors import DagsterBackfillFailedError
 from dagster._core.execution.api import create_execution_plan, execute_job
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.execution.execution_result import ExecutionResult
@@ -52,7 +53,6 @@ from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.telemetry import log_external_repo_stats, telemetry_wrapper
 from dagster._core.utils import make_new_backfill_id
 from dagster._core.workspace.workspace import IWorkspace
-from dagster._legacy import PipelineDefinition
 from dagster._seven import IS_WINDOWS, JSONDecodeError, json
 from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME, PrintFn
 from dagster._utils.error import serializable_error_info_from_exc_info
@@ -265,7 +265,6 @@ def execute_list_versions_command(instance: DagsterInstance, kwargs: ClickArgMap
     memoized_plan = create_execution_plan(
         job,
         run_config=run_config,
-        mode="default",
         instance_ref=instance.get_ref(),
         tags={MEMOIZED_RUN_TAG: "true"},
     )
@@ -323,11 +322,6 @@ def execute_execute_command(instance: DagsterInstance, kwargs: ClickArgMapping) 
     config = list(
         check.opt_tuple_param(cast(Tuple[str, ...], kwargs.get("config")), "config", of_type=str)
     )
-    preset = cast(Optional[str], kwargs.get("preset"))
-    cast(Optional[str], kwargs.get("mode"))
-
-    if preset and config:
-        raise click.UsageError("Can not use --preset with --config.")
 
     tags = get_tags_from_args(kwargs)
 
@@ -444,7 +438,6 @@ def execute_launch_command(
     kwargs: Mapping[str, str],
 ) -> DagsterRun:
     preset = cast(Optional[str], kwargs.get("preset"))
-    mode = cast(Optional[str], kwargs.get("mode"))
     check.inst_param(instance, "instance", DagsterInstance)
     config = get_config_from_args(kwargs)
 
@@ -478,8 +471,6 @@ def execute_launch_command(
             external_repo=external_repo,
             external_pipeline=external_pipeline,
             run_config=config,
-            mode=mode,
-            preset=preset,
             tags=run_tags,
             solid_selection=solid_selection,
             run_id=cast(Optional[str], kwargs.get("run_id")),
@@ -494,8 +485,6 @@ def _create_external_pipeline_run(
     external_repo: ExternalRepository,
     external_pipeline: ExternalPipeline,
     run_config: Mapping[str, object],
-    mode: Optional[str],
-    preset: Optional[str],
     tags: Optional[Mapping[str, str]],
     solid_selection: Optional[Sequence[str]],
     run_id: Optional[str],
@@ -506,17 +495,13 @@ def _create_external_pipeline_run(
     check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
     check.opt_mapping_param(run_config, "run_config", key_type=str)
 
-    check.opt_str_param(mode, "mode")
-    check.opt_str_param(preset, "preset")
     check.opt_mapping_param(tags, "tags", key_type=str)
     check.opt_sequence_param(solid_selection, "solid_selection", of_type=str)
     check.opt_str_param(run_id, "run_id")
 
-    run_config, mode, tags, solid_selection = _check_execute_external_pipeline_args(
+    run_config, tags, solid_selection = _check_execute_external_pipeline_args(
         external_pipeline,
         run_config,
-        mode,
-        preset,
         tags,
         solid_selection,
     )
@@ -531,12 +516,9 @@ def _create_external_pipeline_run(
 
     external_pipeline = code_location.get_external_pipeline(pipeline_selector)
 
-    pipeline_mode = mode or external_pipeline.get_default_mode_name()
-
     external_execution_plan = code_location.get_external_execution_plan(
         external_pipeline,
         run_config,
-        pipeline_mode,
         step_keys_to_execute=None,
         known_state=None,
         instance=instance,
@@ -547,7 +529,6 @@ def _create_external_pipeline_run(
         pipeline_name=pipeline_name,
         run_id=run_id,
         run_config=run_config,
-        mode=pipeline_mode,
         solids_to_execute=external_pipeline.solids_to_execute,
         step_keys_to_execute=execution_plan_snapshot.step_keys_to_execute,
         solid_selection=solid_selection,
@@ -567,88 +548,18 @@ def _create_external_pipeline_run(
 def _check_execute_external_pipeline_args(
     external_pipeline: ExternalPipeline,
     run_config: Mapping[str, object],
-    mode: Optional[str],
-    preset: Optional[str],
     tags: Optional[Mapping[str, str]],
     solid_selection: Optional[Sequence[str]],
-) -> Tuple[Mapping[str, object], str, Mapping[str, str], Optional[Sequence[str]]]:
+) -> Tuple[Mapping[str, object], Mapping[str, str], Optional[Sequence[str]]]:
     check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
     run_config = check.opt_mapping_param(run_config, "run_config")
-    check.opt_str_param(mode, "mode")
-    check.opt_str_param(preset, "preset")
-    check.invariant(
-        not (mode is not None and preset is not None),
-        "You may set only one of `mode` (got {mode}) or `preset` (got {preset}).".format(
-            mode=mode, preset=preset
-        ),
-    )
 
     tags = check.opt_mapping_param(tags, "tags", key_type=str)
     check.opt_sequence_param(solid_selection, "solid_selection", of_type=str)
-
-    if preset is not None:
-        pipeline_preset = external_pipeline.get_preset(preset)
-
-        if pipeline_preset.run_config is not None:
-            check.invariant(
-                (not run_config) or (pipeline_preset.run_config == run_config),
-                "The environment set in preset '{preset}' does not agree with the environment "
-                "passed in the `run_config` argument.".format(preset=preset),
-            )
-
-            run_config = pipeline_preset.run_config
-
-        # load solid_selection from preset
-        if pipeline_preset.solid_selection is not None:
-            check.invariant(
-                solid_selection is None or solid_selection == pipeline_preset.solid_selection,
-                "The solid_selection set in preset '{preset}', {preset_subset}, does not agree with"
-                " the `solid_selection` argument: {solid_selection}".format(
-                    preset=preset,
-                    preset_subset=pipeline_preset.solid_selection,
-                    solid_selection=solid_selection,
-                ),
-            )
-            solid_selection = pipeline_preset.solid_selection
-
-        check.invariant(
-            mode is None or mode == pipeline_preset.mode,
-            "Mode {mode} does not agree with the mode set in preset '{preset}': "
-            "('{preset_mode}')".format(preset=preset, preset_mode=pipeline_preset.mode, mode=mode),
-        )
-
-        mode = pipeline_preset.mode
-
-        tags = merge_dicts(pipeline_preset.tags, tags)
-
-    if mode is not None:
-        if not external_pipeline.has_mode(mode):
-            raise DagsterInvariantViolationError(
-                (
-                    "You have attempted to execute pipeline {name} with mode {mode}. "
-                    "Available modes: {modes}"
-                ).format(
-                    name=external_pipeline.name,
-                    mode=mode,
-                    modes=external_pipeline.available_modes,
-                )
-            )
-    else:
-        if len(external_pipeline.available_modes) > 1:
-            raise DagsterInvariantViolationError(
-                (
-                    "Pipeline {name} has multiple modes (Available modes: {modes}) and you have "
-                    "attempted to execute it without specifying a mode. Set "
-                    "mode property on the PipelineRun object."
-                ).format(name=external_pipeline.name, modes=external_pipeline.available_modes)
-            )
-        mode = external_pipeline.get_default_mode_name()
-
     tags = merge_dicts(external_pipeline.tags, tags)
 
     return (
         run_config,
-        mode,
         validate_tags(tags),
         solid_selection,
     )
@@ -674,11 +585,11 @@ def execute_scaffold_command(cli_args, print_fn):
 
 
 def do_scaffold_command(
-    pipeline_def: PipelineDefinition,
+    pipeline_def: JobDefinition,
     printer: Callable[..., Any],
     skip_non_required: bool,
 ):
-    check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
+    check.inst_param(pipeline_def, "pipeline_def", JobDefinition)
     check.callable_param(printer, "printer")
     check.bool_param(skip_non_required, "skip_non_required")
 

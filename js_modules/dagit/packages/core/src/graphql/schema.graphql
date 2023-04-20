@@ -763,7 +763,6 @@ type PartitionDefinition {
   description: String!
   type: PartitionDefinitionType!
   dimensionTypes: [DimensionDefinitionType!]!
-  timeWindowMetadata: TimePartitionsDefinitionMetadata
   name: String
 }
 
@@ -780,13 +779,6 @@ type DimensionDefinitionType {
   type: PartitionDefinitionType!
   isPrimaryDimension: Boolean!
   dynamicPartitionsDefinitionName: String
-}
-
-type TimePartitionsDefinitionMetadata {
-  startTime: Float!
-  endTime: Float!
-  startKey: String!
-  endKey: String!
 }
 
 type DimensionPartitionKeys {
@@ -2412,6 +2404,7 @@ type PartitionBackfill {
   assetBackfillData: AssetBackfillData
   hasCancelPermission: Boolean!
   hasResumePermission: Boolean!
+  user: String
 }
 
 enum BulkActionStatus {

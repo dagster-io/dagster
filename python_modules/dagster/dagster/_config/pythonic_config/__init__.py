@@ -162,7 +162,34 @@ class MakeConfigCacheable(BaseModel):
 
 
 class Config(MakeConfigCacheable):
-    """Base class for Dagster configuration models."""
+    """Base class for Dagster configuration models, used to specify config schema for
+    ops and assets. Subclasses :py:class:`pydantic.BaseModel`.
+
+    Example definition:
+
+    .. code-block:: python
+
+        from pydantic import Field
+
+        class MyAssetConfig(Config):
+            my_str: str = "my_default_string"
+            my_int_list: List[int]
+            my_bool_with_metadata: bool = Field(default=False, description="A bool field")
+
+
+    Example usage:
+
+    .. code-block:: python
+
+        @asset
+        def asset_with_config(config: MyAssetConfig):
+            assert config.my_str == "my_default_string"
+            assert config.my_int_list == [1, 2, 3]
+            assert config.my_bool_with_metadata == False
+
+        asset_with_config(MyAssetConfig(my_int_list=[1, 2, 3], my_bool_with_metadata=True))
+
+    """
 
     def __init__(self, **config_dict) -> None:
         """This constructor is overridden to handle any remapping of raw config dicts to
@@ -219,14 +246,42 @@ class Config(MakeConfigCacheable):
 
 
 class PermissiveConfig(Config):
+    """Subclass of :py:class:`Config` that allows arbitrary extra fields. This is useful for
+    config classes which may have open-ended inputs.
+
+    Example definition:
+
+    .. code-block:: python
+
+        class MyPermissiveOpConfig(PermissiveConfig):
+            my_explicit_parameter: bool
+            my_other_explicit_parameter: str
+
+
+    Example usage:
+
+    .. code-block:: python
+
+        @op
+        def op_with_config(config: MyPermissiveOpConfig):
+            assert config.my_explicit_parameter == True
+            assert config.my_other_explicit_parameter == "foo"
+            assert config.dict().get("my_implicit_parameter") == "bar"
+
+        op_with_config(
+            MyPermissiveOpConfig(
+                my_explicit_parameter=True,
+                my_other_explicit_parameter="foo",
+                my_implicit_parameter="bar"
+            )
+        )
+
+    """
+
     # Pydantic config for this class
     # Cannot use kwargs for base class as this is not support for pydantic<1.8
     class Config:
         extra = "allow"
-
-    """
-    Base class for Dagster configuration models that allow arbitrary extra fields.
-    """
 
 
 # This is from https://github.com/dagster-io/dagster/pull/11470
@@ -810,8 +865,6 @@ class ConfigurableResource(ConfigurableResourceFactory[TResValue]):
             def output(self, text: str) -> None:
                 print(f"{self.prefix}{text}")
 
-        # which can be used in a pipeline like so:
-
     Example usage:
 
     .. code-block:: python
@@ -991,6 +1044,41 @@ class ConfigurableIOManagerFactory(ConfigurableResourceFactory[TIOManagerValue])
     This class is a subclass of both :py:class:`IOManagerDefinition` and :py:class:`Config`.
     Implementers should provide an implementation of the :py:meth:`resource_function` method,
     which should return an instance of :py:class:`IOManager`.
+
+
+    Example definition:
+
+    .. code-block:: python
+
+        class ExternalIOManager(IOManager):
+
+            def __init__(self, connection):
+                self._connection = connection
+
+            def handle_output(self, context, obj):
+                ...
+
+            def load_input(self, context):
+                ...
+
+        class ConfigurableExternalIOManager(ConfigurableIOManagerFactory):
+            username: str
+            password: str
+
+            def create_io_manager(self, context) -> IOManager:
+                with database.connect(username, password) as connection:
+                    return MyExternalIOManager(connection)
+
+        defs = Definitions(
+            ...,
+            resources={
+                "io_manager": ConfigurableExternalIOManager(
+                    username="dagster",
+                    password=EnvVar("DB_PASSWORD")
+                )
+            }
+        )
+
     """
 
     def __init__(self, **data: Any):
@@ -1048,6 +1136,30 @@ class ConfigurableIOManager(ConfigurableIOManagerFactory, IOManager):
     This class is a subclass of both :py:class:`IOManagerDefinition`, :py:class:`Config`,
     and :py:class:`IOManager`. Implementers must provide an implementation of the
     :py:meth:`handle_output` and :py:meth:`load_input` methods.
+
+    Example definition:
+
+    .. code-block:: python
+
+        class MyIOManager(ConfigurableIOManager):
+            path_prefix: List[str]
+
+            def _get_path(self, context) -> str:
+                return "/".join(context.asset_key.path)
+
+            def handle_output(self, context, obj):
+                write_csv(self._get_path(context), obj)
+
+            def load_input(self, context):
+                return read_csv(self._get_path(context))
+
+        defs = Definitions(
+            ...,
+            resources={
+                "io_manager": MyIOManager(path_prefix=["my", "prefix"])
+            }
+        )
+
     """
 
     def create_io_manager(self, context) -> IOManager:

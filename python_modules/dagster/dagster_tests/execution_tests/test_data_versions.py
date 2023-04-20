@@ -933,3 +933,11 @@ def test_legacy_data_version_tags():
             input_data_versions={AssetKey(["foo"]): DataVersion("alpha")},
             is_user_provided=True,
         )
+
+
+def test_stale_cause_comparison():
+    cause_1 = StaleCause(key=AssetKey(["foo"]), category=StaleCauseCategory.CODE, reason="ok")
+
+    cause_2 = StaleCause(key=AssetKey(["foo"]), category=StaleCauseCategory.DATA, reason="ok")
+
+    assert cause_1 < cause_2

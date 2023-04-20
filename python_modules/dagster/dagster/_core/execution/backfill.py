@@ -12,6 +12,7 @@ from dagster._core.errors import (
 from dagster._core.execution.bulk_actions import BulkActionType
 from dagster._core.host_representation.origin import ExternalPartitionSetOrigin
 from dagster._core.instance import DynamicPartitionsStore
+from dagster._core.storage.tags import USER_TAG
 from dagster._core.workspace.workspace import IWorkspace
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
@@ -118,6 +119,12 @@ class PartitionBackfill(
             return None
 
         return self.partition_set_origin.partition_set_name
+
+    @property
+    def user(self) -> Optional[str]:
+        if self.tags:
+            return self.tags.get(USER_TAG)
+        return None
 
     def is_valid_serialization(self, workspace: IWorkspace) -> bool:
         if self.serialized_asset_backfill_data is not None:

@@ -24,15 +24,13 @@ io_manager = fs_io_manager.configured(
 )
 
 # start_imports_and_definitions
-from dagster_duckdb_pandas import duckdb_pandas_io_manager
+from dagster_duckdb_pandas import DuckDBPandasIOManager
 
 # Add the imports to the top
 # These imports let you define how Dagster communicates with DuckDB
 
 # Insert this section anywhere above your `defs = Definitions(...)`
-database_io_manager = duckdb_pandas_io_manager.configured(
-    {"database": "analytics.hackernews"}
-)
+database_io_manager = DuckDBPandasIOManager(database="analytics.hackernews")
 
 # Update your Definitions
 defs = Definitions(

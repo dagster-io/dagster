@@ -33,6 +33,7 @@ from dagster._core.definitions import (
     build_assets_job,
     multi_asset,
 )
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_requirement import ensure_requirements_satisfied
 from dagster._core.errors import DagsterInvalidConfigError
@@ -1028,3 +1029,20 @@ def test_multi_asset_with_bare_resource():
     materialize_to_memory([my_asset])
 
     assert executed["yes"]
+
+
+def test_multi_asset_with_auto_materialize_policy():
+    @multi_asset(
+        outs={
+            "o1": AssetOut(),
+            "o2": AssetOut(auto_materialize_policy=AutoMaterializePolicy.eager()),
+            "o3": AssetOut(auto_materialize_policy=AutoMaterializePolicy.lazy()),
+        }
+    )
+    def my_asset():
+        ...
+
+    assert my_asset.auto_materialize_policies_by_key == {
+        AssetKey("o2"): AutoMaterializePolicy.eager(),
+        AssetKey("o3"): AutoMaterializePolicy.lazy(),
+    }

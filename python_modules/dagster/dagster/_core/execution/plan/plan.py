@@ -21,7 +21,6 @@ from dagster._core.definitions import (
     GraphDefinition,
     InputDefinition,
     IPipeline,
-    JobDefinition,
     Node,
     NodeHandle,
     NodeOutput,
@@ -30,8 +29,7 @@ from dagster._core.definitions import (
 from dagster._core.definitions.composition import MappedInputPlaceholder
 from dagster._core.definitions.dependency import DependencyStructure
 from dagster._core.definitions.executor_definition import ExecutorRequirement
-from dagster._core.definitions.mode import ModeDefinition
-from dagster._core.definitions.pipeline_definition import PipelineDefinition
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.definitions.repository_definition import RepositoryLoadData
 from dagster._core.errors import (
@@ -125,11 +123,6 @@ class _PlanBuilder:
         )
         check.opt_nullable_sequence_param(step_keys_to_execute, "step_keys_to_execute", str)
         self.step_keys_to_execute = step_keys_to_execute
-        self.mode_definition = (
-            pipeline.get_definition().get_mode_definition(resolved_run_config.mode)
-            if resolved_run_config.mode is not None
-            else pipeline.get_definition().get_default_mode()
-        )
         self._steps: Dict[str, IExecutionStep] = {}
         self.step_output_map: Dict[
             NodeOutput, Union[StepOutputHandle, UnresolvedStepOutputHandle]
@@ -166,7 +159,6 @@ class _PlanBuilder:
         """Builds the execution plan."""
         _check_persistent_storage_requirement(
             self.pipeline,
-            self.mode_definition,
             self.resolved_run_config,
         )
 
@@ -417,11 +409,9 @@ def get_root_graph_input_source(
     plan_builder: _PlanBuilder,
     input_name: str,
     input_def: InputDefinition,
-    pipeline_def: PipelineDefinition,
+    pipeline_def: JobDefinition,
 ) -> Optional[Union[FromConfig, FromDirectInputValue]]:
-    from dagster._core.definitions.job_definition import get_direct_input_values_from_job
-
-    input_values = get_direct_input_values_from_job(pipeline_def)
+    input_values = pipeline_def.input_values
     if input_values and input_name in input_values:
         return FromDirectInputValue(input_name=input_name)
 
@@ -446,7 +436,7 @@ def get_root_graph_input_source(
 
 
 def get_step_input_source(
-    job_def: PipelineDefinition,
+    job_def: JobDefinition,
     node: Node,
     input_name: str,
     input_def: InputDefinition,
@@ -675,7 +665,7 @@ class ExecutionPlan(
     def get_manager_key(
         self,
         step_output_handle: StepOutputHandle,
-        pipeline_def: PipelineDefinition,
+        pipeline_def: JobDefinition,
     ) -> str:
         return _get_manager_key(self.step_dict_by_key, step_output_handle, pipeline_def)
 
@@ -754,7 +744,7 @@ class ExecutionPlan(
     def build_subset_plan(
         self,
         step_keys_to_execute: Sequence[str],
-        pipeline_def: PipelineDefinition,
+        pipeline_def: JobDefinition,
         resolved_run_config: ResolvedRunConfig,
         step_output_versions: Optional[Mapping[StepOutputHandle, Optional[str]]] = None,
     ) -> "ExecutionPlan":
@@ -848,7 +838,7 @@ class ExecutionPlan(
 
     def build_memoized_plan(
         self,
-        pipeline_def: PipelineDefinition,
+        pipeline_def: JobDefinition,
         resolved_run_config: ResolvedRunConfig,
         instance: DagsterInstance,
         selected_step_keys: Optional[Sequence[str]],
@@ -859,9 +849,6 @@ class ExecutionPlan(
         from ...storage.memoizable_io_manager import MemoizableIOManager
         from ..build_resources import build_resources, initialize_console_manager
         from ..resources_init import get_dependencies, resolve_resource_dependencies
-
-        mode = resolved_run_config.mode
-        mode_def = pipeline_def.get_mode_definition(mode)
 
         # Memoization cannot be used with dynamic orchestration yet.
         # Tracking: https://github.com/dagster-io/dagster/issues/4451
@@ -890,10 +877,10 @@ class ExecutionPlan(
                 io_manager_key = self.get_manager_key(step_output_handle, pipeline_def)
                 io_manager_keys[step_output_handle] = io_manager_key
 
-                resource_deps = resolve_resource_dependencies(mode_def.resource_defs)
+                resource_deps = resolve_resource_dependencies(pipeline_def.resource_defs)
                 resource_keys_to_init = get_dependencies(io_manager_key, resource_deps)
                 for resource_key in resource_keys_to_init:
-                    resource_defs_to_init[resource_key] = mode_def.resource_defs[resource_key]
+                    resource_defs_to_init[resource_key] = pipeline_def.resource_defs[resource_key]
 
         all_resources_config = resolved_run_config.to_dict().get("resources", {})
         resource_config = {
@@ -1193,7 +1180,7 @@ def _update_from_resolved_dynamic_outputs(
         del resolvable_map[key_set]
 
 
-def can_isolate_steps(pipeline_def: PipelineDefinition, mode_def: ModeDefinition) -> bool:
+def can_isolate_steps(pipeline_def: JobDefinition) -> bool:
     """Returns true if every output definition in the pipeline uses an IO manager that's not
     the mem_io_manager.
 
@@ -1204,7 +1191,7 @@ def can_isolate_steps(pipeline_def: PipelineDefinition, mode_def: ModeDefinition
         output_def for node_def in pipeline_def.all_node_defs for output_def in node_def.output_defs
     ]
     for output_def in output_defs:
-        if mode_def.resource_defs[output_def.io_manager_key] == mem_io_manager:
+        if pipeline_def.resource_defs[output_def.io_manager_key] == mem_io_manager:
             return False
 
     return True
@@ -1212,35 +1199,22 @@ def can_isolate_steps(pipeline_def: PipelineDefinition, mode_def: ModeDefinition
 
 def _check_persistent_storage_requirement(
     pipeline: IPipeline,
-    mode_def: ModeDefinition,
     resolved_run_config: ResolvedRunConfig,
 ) -> None:
-    from dagster._core.execution.context_creation_pipeline import executor_def_from_config
-
     pipeline_def = pipeline.get_definition()
-    executor_def = executor_def_from_config(mode_def, resolved_run_config)
+    executor_def = pipeline_def.executor_def
     requirements_lst = executor_def.get_requirements(
         resolved_run_config.execution.execution_engine_config
     )
     if ExecutorRequirement.PERSISTENT_OUTPUTS not in requirements_lst:
         return
 
-    if not can_isolate_steps(pipeline_def, mode_def):
-        if isinstance(pipeline_def, JobDefinition):
-            target = "job"
-            node = "op"
-            suggestion = 'the_graph.to_job(resource_defs={"io_manager": fs_io_manager})'
-        else:
-            target = "pipeline"
-            node = "solid"
-            suggestion = (
-                '@pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": fs_io_manager})])'
-            )
+    if not can_isolate_steps(pipeline_def):
         raise DagsterUnmetExecutorRequirementsError(
             "You have attempted to use an executor that uses multiple processes, but your"
-            f" {target} includes {node} outputs that will not be stored somewhere where other"
+            " job includes op outputs that will not be stored somewhere where other"
             " processes can retrieve them. Please use a persistent IO manager for these outputs."
-            f" E.g. with\n    {suggestion}"
+            ' E.g. with\n   the_graph.to_job(resource_defs={"io_manager": fs_io_manager})'
         )
 
 
@@ -1304,7 +1278,7 @@ def _compute_artifacts_persisted(
     step_dict: Dict[StepHandleUnion, IExecutionStep],
     step_dict_by_key: Dict[str, IExecutionStep],
     step_handles_to_execute: Sequence[StepHandleUnion],
-    pipeline_def: PipelineDefinition,
+    pipeline_def: JobDefinition,
     resolved_run_config: ResolvedRunConfig,
     executable_map: Mapping[str, Union[StepHandle, ResolvedFromDynamicStepHandle]],
 ) -> bool:
@@ -1312,8 +1286,6 @@ def _compute_artifacts_persisted(
 
     Border steps: all the steps that don't have upstream steps to execute, i.e. indegree is 0).
     """
-    mode_def = pipeline_def.get_mode_definition(resolved_run_config.mode)
-
     if len(step_dict) == 0:
         return False
 
@@ -1331,7 +1303,7 @@ def _compute_artifacts_persisted(
                 io_manager_key = _get_manager_key(
                     step_dict_by_key, step_output_handle, pipeline_def
                 )
-                manager_def = mode_def.resource_defs.get(io_manager_key)
+                manager_def = pipeline_def.resource_defs.get(io_manager_key)
                 if (
                     # no IO manager is configured
                     not manager_def
@@ -1402,7 +1374,7 @@ def _get_step_output(step_dict_by_key, step_output_handle: StepOutputHandle) -> 
 def _get_manager_key(
     step_dict_by_key: Mapping[str, IExecutionStep],
     step_output_handle: StepOutputHandle,
-    pipeline_def: PipelineDefinition,
+    pipeline_def: JobDefinition,
 ) -> str:
     step_output = _get_step_output(step_dict_by_key, step_output_handle)
     node_handle = step_output.node_handle

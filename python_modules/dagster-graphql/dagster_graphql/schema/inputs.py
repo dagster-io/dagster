@@ -58,7 +58,6 @@ class GrapheneRunsFilter(graphene.InputObjectType):
             statuses=statuses,
             snapshot_id=self.snapshotId,
             updated_after=updated_after,
-            mode=self.mode,
             created_before=created_before,
         )
 

@@ -7,6 +7,7 @@ from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions.events import AssetKey
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.retries import RetryMode
+from dagster._core.host_representation.external_data import DEFAULT_MODE_NAME
 from dagster._core.host_representation.origin import (
     CodeLocationOrigin,
     ExternalPipelineOrigin,
@@ -26,12 +27,12 @@ class ExecutionPlanSnapshotArgs(
             ("pipeline_origin", ExternalPipelineOrigin),
             ("solid_selection", Sequence[str]),
             ("run_config", Mapping[str, object]),
-            ("mode", str),
             ("step_keys_to_execute", Optional[Sequence[str]]),
             ("pipeline_snapshot_id", str),
             ("known_state", Optional[KnownExecutionState]),
             ("instance_ref", Optional[InstanceRef]),
             ("asset_selection", Optional[AbstractSet[AssetKey]]),
+            ("mode", str),
         ],
     )
 ):
@@ -40,12 +41,12 @@ class ExecutionPlanSnapshotArgs(
         pipeline_origin: ExternalPipelineOrigin,
         solid_selection: Sequence[str],
         run_config: Mapping[str, object],
-        mode: str,
         step_keys_to_execute: Optional[Sequence[str]],
         pipeline_snapshot_id: str,
         known_state: Optional[KnownExecutionState] = None,
         instance_ref: Optional[InstanceRef] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
+        mode: str = DEFAULT_MODE_NAME,
     ):
         return super(ExecutionPlanSnapshotArgs, cls).__new__(
             cls,

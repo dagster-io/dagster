@@ -335,15 +335,13 @@ def validate_pipeline_config(
     graphene_info: "ResolveInfo",
     selector: PipelineSelector,
     run_config: Union[str, Mapping[str, object]],
-    mode: Optional[str],
 ) -> "GraphenePipelineConfigValidationValid":
     from ..schema.pipelines.config import GraphenePipelineConfigValidationValid
 
     check.inst_param(selector, "selector", PipelineSelector)
-    check.opt_str_param(mode, "mode")
 
     external_pipeline = get_external_pipeline_or_raise(graphene_info, selector)
-    ensure_valid_config(external_pipeline, mode, run_config)
+    ensure_valid_config(external_pipeline, run_config)
     return GraphenePipelineConfigValidationValid(pipeline_name=external_pipeline.name)
 
 
@@ -352,19 +350,16 @@ def get_execution_plan(
     graphene_info: "ResolveInfo",
     selector: PipelineSelector,
     run_config: Mapping[str, Any],
-    mode: Optional[str],
 ) -> "GrapheneExecutionPlan":
     from ..schema.execution import GrapheneExecutionPlan
 
     check.inst_param(selector, "selector", PipelineSelector)
-    check.opt_str_param(mode, "mode")
 
     external_pipeline = get_external_pipeline_or_raise(graphene_info, selector)
-    ensure_valid_config(external_pipeline, mode, run_config)
+    ensure_valid_config(external_pipeline, run_config)
     return GrapheneExecutionPlan(
         graphene_info.context.get_external_execution_plan(
             external_pipeline=external_pipeline,
-            mode=mode,  # type: ignore  # (unclear if None accepted)
             run_config=run_config,
             step_keys_to_execute=None,
             known_state=None,

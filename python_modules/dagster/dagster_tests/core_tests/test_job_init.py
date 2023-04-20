@@ -74,7 +74,7 @@ def test_clean_event_generator_exit():
     resolved_run_config = ResolvedRunConfig.build(job_def)
     execution_plan = create_execution_plan(job_def)
 
-    resource_name, resource_def = next(iter(job_def.get_default_mode().resource_defs.items()))
+    resource_name, resource_def = next(iter(job_def.resource_defs.items()))
     resource_context = InitResourceContext(
         resource_def=resource_def,
         resources=ScopedResourcesBuilder().build(None),
@@ -86,10 +86,8 @@ def test_clean_event_generator_exit():
     next(generator)
     generator.close()
 
-    resource_defs = job_def.get_mode_definition(resolved_run_config.mode)
-
     generator = resource_initialization_event_generator(
-        resource_defs=resource_defs,
+        resource_defs=job_def.resource_defs,
         resource_configs=resolved_run_config.resources,
         log_manager=log_manager,
         execution_plan=execution_plan,

@@ -1,4 +1,4 @@
-from dagster import IOManager, Out, io_manager, job, op
+from dagster import ConfigurableIOManager, IOManager, Out, io_manager, job, op
 
 
 def connect():
@@ -28,7 +28,7 @@ def op_2(_input_dataframe):
 
 
 # io_manager_start_marker
-class MyIOManager(IOManager):
+class MyIOManager(ConfigurableIOManager):
     def handle_output(self, context, obj):
         table_name = context.metadata["table"]
         schema = context.metadata["schema"]
@@ -40,14 +40,9 @@ class MyIOManager(IOManager):
         return read_dataframe_from_table(name=table_name, schema=schema)
 
 
-@io_manager
-def my_io_manager(_):
-    return MyIOManager()
-
-
 # io_manager_end_marker
 
 
-@job(resource_defs={"io_manager": my_io_manager})
+@job(resource_defs={"io_manager": MyIOManager()})
 def my_job():
     op_2(op_1())

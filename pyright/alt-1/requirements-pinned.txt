@@ -174,7 +174,6 @@ Pillow==9.4.0
 platformdirs==3.1.1
 pluggy==1.0.0
 -e examples/project_fully_featured
--e examples/experimental/project_fully_featured_v2_resources
 prometheus-client==0.16.0
 prompt-toolkit==3.0.38
 protobuf==3.20.3

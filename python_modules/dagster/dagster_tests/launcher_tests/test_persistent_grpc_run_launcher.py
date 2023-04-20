@@ -112,7 +112,6 @@ def test_run_from_pending_repository():
                 external_execution_plan = code_location.get_external_execution_plan(
                     external_pipeline=external_job,
                     run_config={},
-                    mode="default",
                     step_keys_to_execute=None,
                     known_state=None,
                 )
@@ -136,7 +135,6 @@ def test_run_from_pending_repository():
                     pipeline_name="my_cool_asset_job",
                     run_id="xyzabc",
                     run_config=None,
-                    mode="default",
                     solids_to_execute=None,
                     step_keys_to_execute=None,
                     status=None,

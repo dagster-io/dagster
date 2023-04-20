@@ -1,5 +1,83 @@
 # Changelog
 
+# 1.3.0 (core) / 0.19.0 (libraries) "Smooth Operator"
+
+## **Major Changes since 1.2.0 (core) / 0.18.0 (libraries)**
+
+### Core
+
+- **Auto-materialize policies replace the asset reconciliation sensor** - We significantly renovated the APIs used for specifying which assets are scheduled declaratively. Compared to `build_asset_reconciliation_sensor`s , `AutoMaterializePolicy`s work across code locations, as well as allow you to customize the conditions under which each asset is auto-materialized. [[docs](https://docs.dagster.io/concepts/assets/asset-auto-execution)]
+- **Asset backfill page** - A new page in the UI for monitoring asset backfills shows the progress of each asset in the backfill.
+- **Clearer labels for tracking changes to data and code** - Instead of the opaque “stale” indicator, Dagster’s UI now indicates whether code, upstream data, or dependencies have changed. When assets are in violation of their `FreshnessPolicy`s, Dagster’s UI now marks them as “overdue” instead of “late”.
+- **Auto-materialization and observable source assets** - Assets downstream of an observable source asset now use the source asset observations to determine whether upstream data has changed and assets need to be materialized.
+- **Pythonic Config and Resources** - The set of APIs [introduced in 1.2](#120-core--0180-libraries) is no longer experimental [[community memo](https://dagster.io/blog/pythonic-config-and-resources)]. Examples, integrations, and documentation have largely ported to the new APIs. Existing resources and config APIs will continue to be supported for the foreseeable future. Check out [migration guide](https://docs.dagster.io/guides/dagster/migrating-to-pythonic-resources-and-config) to learn how to incrementally adopt the new APIs.
+
+### Docs
+
+- **Improved run concurrency docs** - You asked (in support), and we answered! This [new guide](https://docs.dagster.io/guides/limiting-concurrency-in-data-pipelines) is a one-stop-shop for understanding and implementing run concurrency, whether you’re on Dagster Cloud or deploying to your own infrastructure.
+- **Additions to the Intro to Assets tutorial** - We’ve added two new sections to the assets tutorial, focused on [scheduling](https://docs.dagster.io/tutorial/scheduling-your-pipeline) and [I/O](https://docs.dagster.io/tutorial/saving-your-data). While we’re close to wrapping things up for the tutorial revamp, we still have a few topics to cover - stay tuned!
+- **New guide about building machine learning pipelines** - Many of our users learn best by example - [this guide](https://docs.dagster.io/guides/dagster/ml-pipeline) is one way we’re expanding our library of examples. In this guide, we walk you through building a simple machine learning pipeline using Dagster.
+- **Re-organized Dagster Cloud docs** - We overhauled how the Dagster Cloud docs are organized, bringing them more in line with the UI.
+
+## **Since 1.2.7 (core) / 0.18.7 (libraries)**
+
+### New
+
+- Long-running runs can now be terminated after going over a set runtime. See the [run termination docs](https://docs.dagster.io/deployment/run-monitoring#general-run-timeouts) to learn more.
+- Adds a performance improvement to partition status caching for multi-partitioned assets containing a time dimension.
+- [ui] Asset groups are now included in global search.
+- [ui] Assets in the asset catalog have richer status information that matches what is displayed on the asset graph.
+- [dagster-aws] New `AthenaClientResource`, `ECRPublicResource`, `RedshiftClientResource`, `S3Resource`, `S3FileManagerResource`, `ConfigurablePickledObjectS3IOManager`, `SecretsManagerResource` follow Pythonic resource system. The existing APIs remain supported.
+- [dagster-datadog] New `DatadogResource` follows Pythonic resource system. The existing `datadog_resource` remains supported.
+- [dagster-ge] New `GEContextResource` follows Pythonic resource system. The existing `ge_context_resource` remains supported.
+- [dagster-github] New `GithubResource` follows Pythonic resource system. The existing `github_resource` remains supported.
+- [dagster-msteams] New `MSTeamsResource` follows Pythonic resource system. The existing `msteams_resource` remains supported.
+- [dagster-slack] New `SlackResource` follows Pythonic resource system. The existing `slack_resource` remains supported.
+
+### Bugfixes
+
+- Fixed an issue where using `pdb.set_trace` no longer worked when running Dagster locally using `dagster dev` or `dagit`.
+- Fixed a regression where passing custom metadata on `@asset` or `Out` caused an error to be thrown.
+- Fixed a regression where certain states of the asset graph would cause GQL errors.
+- [ui] Fixed a bug where assets downstream of source assets would sometimes incorrectly display a “New data” (previously “stale”) tag for assets with materializations generated from ops (as opposed to SDA materializations).
+- [ui] Fixed a bug where URLs for code locations named `pipelines` or `jobs` could lead to blank pages.
+- [ui] When configuring a partition-mapped asset backfill, helpful context no longer appears nested within the “warnings” section
+- [ui] For observable source assets,the asset sidebar now shows a “latest observation” instead of a “latest materialization”
+
+### Breaking Changes
+
+- By default, resources defined on `Definitions` are now automatically bound to jobs. This will only result in a change in behavior if you a) have a job with no "io_manager" defined in its `resource_defs` and b) have supplied an `IOManager` with key "io_manager" to the `resource_defs` argument of your `Definitions`. Prior to 1.3.0, this would result in the job using the default filesystem-based `IOManager` for the key "io_manager". In 1.3.0, this will result in the "io_manager" supplied to your `Definitions` being used instead. The `BindResourcesToJobs` wrapper, introduced in 1.2 to simulate this behavior, no longer has any effect.
+- [dagster-celery-k8s] The default kubernetes namespace for run pods when using the Dagster Helm chart with the `CeleryK8sRunLauncher` is now the same namespace as the Helm chart, instead of the `default` namespace. To restore the previous behavior, you can set the `celeryK8sRunLauncher.jobNamespace` field to the string `default`.
+- [dagster-snowflake-pandas] Due to a longstanding issue storing Pandas Timestamps in Snowflake tables, the `SnowflakePandasIOManager` has historically converted all timestamp data to strings before storing it in Snowflake. Now, it will instead ensure that timestamp data has a timezone, and if not, attach the UTC timezone. This allows the timestamp data to be stored as timestamps in Snowflake. If you have been storing timestamp data using the `SnowflakePandasIOManager` you can set the `store_timestamps_as_strings=True` configuration to continue storing timestamps as strings. For more information, and instructions for migrating Snowflake tables to use timestamp types, see the Migration Guide.
+
+**Changes to experimental APIs**
+
+- Pythonic Resources and Config
+    - Enabled passing `RunConfig` to many APIs which previously would only accept a config dictionary.
+    - Enabled passing raw Python objects as resources to many APIs which previously would only accept `ResourceDefinition`.
+    - Added the ability to pass `execution` config when constructing a `RunConfig` object.
+    - Introduced more clear error messages when trying to mutate state on a Pythonic config or resource object.
+    - Improved direct invocation experience for assets, ops, schedules and sensors using Pythonic config and resources. Config and resources can now be passed directly as args or kwargs.
+- The `minutes_late` and `previous_minutes_late` properties on the experimental `FreshnesPolicySensorContext` have been renamed to `minutes_overdue` and `previous_minutes_overdue`, respectively.
+
+**Removal of deprecated APIs**
+
+- [previously deprecated, 0.15.0] `metadata_entries` arguments to event constructors have been removed. While `MetadataEntry` still exists and will only be removed in 2.0, it is no longer passable to any Dagster public API — users should always pass a dictionary of metadata values instead.
+
+### Experimental
+
+- Adds a performance improvement to the multi-asset sensor context’s `latest_materialization_records_by_key` function.
+
+### Documentation
+
+- The Google BigQuery [tutorial](https://docs.dagster.io/integrations/bigquery/using-bigquery-with-dagster) and [reference](https://docs.dagster.io/integrations/bigquery/reference) pages have been updated to use the new `BigQueryPandasIOManager` and `BigQueryPySparkIOManager`.
+- The Snowflake [tutorial](https://docs.dagster.io/integrations/snowflake/using-snowflake-with-dagster) and [reference](https://docs.dagster.io/integrations/snowflake/reference) pages have been updated to use the new `SnowflakePandasIOManager` and `SnowflakePySparkIOManager`.
+
+### Dagster Cloud
+
+- Previously, when deprovisioning an agent, code location servers were cleaned up in serial. Now, they’re cleaned up in parallel.
+
+
 # 1.2.7 (core) / 0.18.7 (libraries)
 
 ### New

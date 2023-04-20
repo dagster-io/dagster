@@ -23,7 +23,7 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._core.definitions import ExecutorDefinition, ModeDefinition, PipelineDefinition
+from dagster._core.definitions import ExecutorDefinition, JobDefinition
 from dagster._core.definitions.executor_definition import check_cross_process_constraints
 from dagster._core.definitions.pipeline_base import IPipeline
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
@@ -75,29 +75,6 @@ def initialize_console_manager(
     return DagsterLogManager.create(loggers=loggers, dagster_run=dagster_run, instance=instance)
 
 
-def executor_def_from_config(
-    mode_definition: ModeDefinition, resolved_run_config: ResolvedRunConfig
-) -> ExecutorDefinition:
-    selected_executor = resolved_run_config.execution.execution_engine_name
-    if selected_executor is None:
-        if len(mode_definition.executor_defs) == 1:
-            return mode_definition.executor_defs[0]
-
-        check.failed(
-            f"No executor selected but there are {len(mode_definition.executor_defs)} options."
-        )
-
-    else:
-        for executor_def in mode_definition.executor_defs:
-            if executor_def.name == selected_executor:
-                return executor_def
-
-        check.failed(
-            f'Could not find executor "{selected_executor}". This should have been caught at config'
-            " validation time."
-        )
-
-
 # This represents all the data that is passed *into* context creation process.
 # The remainder of the objects generated (e.g. loggers, resources) are created
 # using user-defined code that may fail at runtime and result in the emission
@@ -108,14 +85,13 @@ class ContextCreationData(NamedTuple):
     pipeline: IPipeline
     resolved_run_config: ResolvedRunConfig
     dagster_run: DagsterRun
-    mode_def: ModeDefinition
     executor_def: ExecutorDefinition
     instance: DagsterInstance
     resource_keys_to_init: AbstractSet[str]
     execution_plan: ExecutionPlan
 
     @property
-    def pipeline_def(self) -> PipelineDefinition:
+    def pipeline_def(self) -> JobDefinition:
         return self.pipeline.get_definition()
 
 
@@ -127,16 +103,14 @@ def create_context_creation_data(
     instance: DagsterInstance,
 ) -> "ContextCreationData":
     pipeline_def = pipeline.get_definition()
-    resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config, mode=dagster_run.mode)
+    resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config)
 
-    mode_def = pipeline_def.get_mode_definition(dagster_run.mode)
-    executor_def = executor_def_from_config(mode_def, resolved_run_config)
+    executor_def = pipeline_def.executor_def
 
     return ContextCreationData(
         pipeline=pipeline,
         resolved_run_config=resolved_run_config,
         dagster_run=dagster_run,
-        mode_def=mode_def,
         executor_def=executor_def,
         instance=instance,
         resource_keys_to_init=get_required_resource_keys_to_init(
@@ -167,9 +141,6 @@ def create_execution_data(
         scoped_resources_builder=scoped_resources_builder,
         resolved_run_config=context_creation_data.resolved_run_config,
         pipeline_def=context_creation_data.pipeline_def,
-        mode_def=context_creation_data.pipeline_def.get_mode_definition(
-            context_creation_data.resolved_run_config.mode
-        ),
     )
 
 
@@ -244,9 +215,7 @@ def execution_context_event_generator(
     )
 
     log_manager = create_log_manager(context_creation_data)
-    resource_defs = pipeline_def.get_required_resource_defs_for_mode(
-        check.not_none(context_creation_data.resolved_run_config.mode)
-    )
+    resource_defs = pipeline_def.get_required_resource_defs()
 
     resources_manager = scoped_resources_builder_cm(
         resource_defs=resource_defs,
@@ -478,9 +447,8 @@ def create_log_manager(
 ) -> DagsterLogManager:
     check.inst_param(context_creation_data, "context_creation_data", ContextCreationData)
 
-    pipeline_def, mode_def, resolved_run_config, dagster_run = (
+    pipeline_def, resolved_run_config, dagster_run = (
         context_creation_data.pipeline_def,
-        context_creation_data.mode_def,
         context_creation_data.resolved_run_config,
         context_creation_data.dagster_run,
     )
@@ -491,7 +459,7 @@ def create_log_manager(
     # via ConfigurableDefinition (@configured) to incoming logger configs. See docstring for more details.
 
     loggers = []
-    for logger_key, logger_def in mode_def.loggers.items() or default_loggers().items():
+    for logger_key, logger_def in pipeline_def.loggers.items() or default_loggers().items():
         if logger_key in resolved_run_config.loggers:
             loggers.append(
                 logger_def.logger_fn(

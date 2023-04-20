@@ -26,7 +26,6 @@ def create_run(instance, **kwargs):
         )
         return create_run_for_test(
             instance,
-            mode="default",
             external_pipeline_origin=handle.get_external_origin(),
             pipeline_code_origin=handle.get_python_origin(),
             pipeline_name=handle.job_name,

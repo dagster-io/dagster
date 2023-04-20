@@ -29,7 +29,6 @@ def in_job_manager(
     node_handle=NodeHandle("hello_world", None),
     step_key="hello_world",
     executable_dict=None,
-    mode=None,
     **kwargs,
 ):
     manager = Manager()
@@ -47,7 +46,6 @@ def in_job_manager(
             DagsterRun(
                 pipeline_name=pipeline_name,
                 run_id=run_id,
-                mode=mode or "default",
                 run_config=None,
                 step_keys_to_execute=None,
                 status=DagsterRunStatus.NOT_STARTED,

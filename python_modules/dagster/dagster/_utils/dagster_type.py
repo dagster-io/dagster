@@ -1,8 +1,8 @@
 from typing import Any
 
 from dagster._core.definitions.events import Failure, TypeCheck
+from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
-from dagster._core.definitions.pipeline_definition import PipelineDefinition
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.context_creation_pipeline import scoped_pipeline_context
@@ -41,7 +41,7 @@ def check_dagster_type(dagster_type: Any, value: Any) -> TypeCheck:
 
     dagster_type = resolve_dagster_type(dagster_type)
 
-    pipeline = InMemoryPipeline(PipelineDefinition([], "empty"))
+    pipeline = InMemoryPipeline(GraphDefinition(node_defs=[], name="empty").to_job())
     pipeline_def = pipeline.get_definition()
 
     instance = DagsterInstance.ephemeral()

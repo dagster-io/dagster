@@ -19,11 +19,9 @@ from dagster._core.definitions.events import (
     UserEvent,
 )
 from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.mode import ModeDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.pipeline_definition import PipelineDefinition
 from dagster._core.definitions.step_launcher import StepLauncher
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.errors import (
@@ -192,7 +190,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         return self._step_execution_context.run_config
 
     @property
-    def pipeline_def(self) -> PipelineDefinition:
+    def pipeline_def(self) -> JobDefinition:
         """PipelineDefinition: The currently executing pipeline."""
         return self._step_execution_context.pipeline_def
 
@@ -219,11 +217,6 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     def job_name(self) -> str:
         """str: The name of the currently executing job."""
         return self.pipeline_name
-
-    @property
-    def mode_def(self) -> ModeDefinition:
-        """ModeDefinition: The mode of the current execution."""
-        return self._step_execution_context.mode_def
 
     @public
     @property

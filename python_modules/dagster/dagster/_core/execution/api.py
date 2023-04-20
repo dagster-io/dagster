@@ -17,10 +17,9 @@ from typing import (
 
 import dagster._check as check
 from dagster._annotations import experimental
-from dagster._core.definitions import IPipeline, JobDefinition, PipelineDefinition
+from dagster._core.definitions import IPipeline, JobDefinition
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
-from dagster._core.definitions.pipeline_definition import PipelineSubsetDefinition
 from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructablePipeline
 from dagster._core.definitions.repository_definition import RepositoryLoadData
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvariantViolationError
@@ -36,7 +35,6 @@ from dagster._core.selector import parse_step_selection
 from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.telemetry import log_dagster_event, log_repo_stats, telemetry_wrapper
-from dagster._core.utils import str_format_set
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.interrupts import capture_interrupts
 from dagster._utils.merger import merge_dicts
@@ -141,24 +139,13 @@ def execute_run_iterator(
         )
 
     if dagster_run.solids_to_execute or dagster_run.asset_selection:
-        pipeline_def = pipeline.get_definition()
-        if isinstance(pipeline_def, PipelineSubsetDefinition):
-            check.invariant(
-                dagster_run.solids_to_execute == pipeline.solids_to_execute,
-                "Cannot execute DagsterRun with solids_to_execute {solids_to_execute} that"
-                " conflicts with pipeline subset {pipeline_solids_to_execute}.".format(
-                    pipeline_solids_to_execute=str_format_set(pipeline.solids_to_execute),  # type: ignore  # (possible none)
-                    solids_to_execute=str_format_set(dagster_run.solids_to_execute),  # type: ignore  # (possible none)
-                ),
-            )
-        else:
-            # when `execute_run_iterator` is directly called, the sub pipeline hasn't been created
-            # note that when we receive the solids to execute via DagsterRun, it won't support
-            # solid selection query syntax
-            pipeline = pipeline.subset_for_execution_from_existing_pipeline(
-                frozenset(dagster_run.solids_to_execute) if dagster_run.solids_to_execute else None,
-                asset_selection=dagster_run.asset_selection,
-            )
+        # when `execute_run_iterator` is directly called, the sub pipeline hasn't been created
+        # note that when we receive the solids to execute via DagsterRun, it won't support
+        # solid selection query syntax
+        pipeline = pipeline.subset_for_execution_from_existing_pipeline(
+            frozenset(dagster_run.solids_to_execute) if dagster_run.solids_to_execute else None,
+            asset_selection=dagster_run.asset_selection,
+        )
 
     execution_plan = _get_execution_plan_from_run(pipeline, dagster_run, instance)
     if isinstance(pipeline, ReconstructablePipeline):
@@ -204,19 +191,10 @@ def execute_run(
     Returns:
         PipelineExecutionResult: The result of the execution.
     """
-    if isinstance(pipeline, PipelineDefinition):
-        if isinstance(pipeline, JobDefinition):
-            error = (
-                "execute_run requires a reconstructable job but received job definition directly"
-                " instead."
-            )
-        else:
-            error = (
-                "execute_run requires a reconstructable pipeline but received pipeline definition "
-                "directly instead."
-            )
+    if isinstance(pipeline, JobDefinition):
         raise DagsterInvariantViolationError(
-            f"{error} To support hand-off to other processes please wrap your definition in a call"
+            "execute_run requires a reconstructable job but received job definition directly"
+            " instead. To support hand-off to other processes please wrap your definition in a call"
             " to reconstructable(). Learn more about reconstructable here:"
             " https://docs.dagster.io/_apidocs/execution#dagster.reconstructable"
         )
@@ -240,25 +218,14 @@ def execute_run(
             dagster_run.pipeline_name, dagster_run.run_id, dagster_run.status
         ),
     )
-    pipeline_def = pipeline.get_definition()
     if dagster_run.solids_to_execute or dagster_run.asset_selection:
-        if isinstance(pipeline_def, PipelineSubsetDefinition):
-            check.invariant(
-                dagster_run.solids_to_execute == pipeline.solids_to_execute,
-                "Cannot execute DagsterRun with solids_to_execute {solids_to_execute} that "
-                "conflicts with pipeline subset {pipeline_solids_to_execute}.".format(
-                    pipeline_solids_to_execute=str_format_set(pipeline.solids_to_execute),  # type: ignore  # (possible none)
-                    solids_to_execute=str_format_set(dagster_run.solids_to_execute),  # type: ignore  # (possible none)
-                ),
-            )
-        else:
-            # when `execute_run` is directly called, the sub pipeline hasn't been created
-            # note that when we receive the solids to execute via DagsterRun, it won't support
-            # solid selection query syntax
-            pipeline = pipeline.subset_for_execution_from_existing_pipeline(
-                frozenset(dagster_run.solids_to_execute) if dagster_run.solids_to_execute else None,
-                dagster_run.asset_selection,
-            )
+        # when `execute_run` is directly called, the sub pipeline hasn't been created
+        # note that when we receive the solids to execute via DagsterRun, it won't support
+        # solid selection query syntax
+        pipeline = pipeline.subset_for_execution_from_existing_pipeline(
+            frozenset(dagster_run.solids_to_execute) if dagster_run.solids_to_execute else None,
+            dagster_run.asset_selection,
+        )
 
     execution_plan = _get_execution_plan_from_run(pipeline, dagster_run, instance)
     if isinstance(pipeline, ReconstructablePipeline):
@@ -505,7 +472,7 @@ def execute_job(
 
 @telemetry_wrapper
 def _logged_execute_job(
-    job_arg: Union[IPipeline, PipelineDefinition],
+    job_arg: Union[IPipeline, JobDefinition],
     instance: DagsterInstance,
     run_config: Optional[Mapping[str, object]] = None,
     tags: Optional[Mapping[str, str]] = None,
@@ -520,7 +487,6 @@ def _logged_execute_job(
     (
         job_arg,
         run_config,
-        mode,
         tags,
         solids_to_execute,
         op_selection,
@@ -536,7 +502,6 @@ def _logged_execute_job(
     dagster_run = instance.create_run_for_pipeline(
         pipeline_def=job_arg.get_definition(),
         run_config=run_config,
-        mode=mode,
         solid_selection=op_selection,
         solids_to_execute=solids_to_execute,
         tags=tags,
@@ -556,7 +521,7 @@ def _logged_execute_job(
 
 
 def _reexecute_job(
-    job_arg: Union[IPipeline, PipelineDefinition],
+    job_arg: Union[IPipeline, JobDefinition],
     parent_run_id: str,
     run_config: Optional[Mapping[str, object]] = None,
     step_selection: Optional[Sequence[str]] = None,
@@ -572,7 +537,7 @@ def _reexecute_job(
     with ephemeral_instance_if_missing(instance) as execute_instance:
         job_arg, repository_load_data = _job_with_repository_load_data(job_arg)
 
-        (job_arg, run_config, mode, tags, _, _) = _check_execute_job_args(
+        (job_arg, run_config, tags, _, _) = _check_execute_job_args(
             job_arg=job_arg,
             run_config=run_config,
             tags=tags,
@@ -592,7 +557,6 @@ def _reexecute_job(
             execution_plan = _resolve_reexecute_step_selection(
                 execute_instance,
                 job_arg,
-                mode,
                 run_config,
                 cast(DagsterRun, parent_dagster_run),
                 step_selection,
@@ -607,7 +571,6 @@ def _reexecute_job(
             pipeline_def=job_arg.get_definition(),
             execution_plan=execution_plan,
             run_config=run_config,
-            mode=mode,
             tags=tags,
             solid_selection=parent_dagster_run.solid_selection,
             asset_selection=parent_dagster_run.asset_selection,
@@ -693,9 +656,9 @@ def execute_plan(
     )
 
 
-def _check_pipeline(job_arg: Union[PipelineDefinition, IPipeline]) -> IPipeline:
+def _check_pipeline(job_arg: Union[JobDefinition, IPipeline]) -> IPipeline:
     # backcompat
-    if isinstance(job_arg, PipelineDefinition):
+    if isinstance(job_arg, JobDefinition):
         job_arg = InMemoryPipeline(job_arg)
 
     check.inst_param(job_arg, "job_arg", IPipeline)
@@ -728,7 +691,6 @@ def _get_execution_plan_from_run(
     return create_execution_plan(
         pipeline,
         run_config=dagster_run.run_config,
-        mode=dagster_run.mode,
         step_keys_to_execute=dagster_run.step_keys_to_execute,
         instance_ref=instance.get_ref() if instance.is_persistent else None,
         repository_load_data=execution_plan_snapshot.repository_load_data
@@ -741,9 +703,8 @@ def _get_execution_plan_from_run(
 
 
 def create_execution_plan(
-    pipeline: Union[IPipeline, PipelineDefinition],
+    pipeline: Union[IPipeline, JobDefinition],
     run_config: Optional[Mapping[str, object]] = None,
-    mode: Optional[str] = None,
     step_keys_to_execute: Optional[Sequence[str]] = None,
     known_state: Optional[KnownExecutionState] = None,
     instance_ref: Optional[InstanceRef] = None,
@@ -757,9 +718,8 @@ def create_execution_plan(
         pipeline = pipeline.with_repository_load_data(repository_load_data)
 
     pipeline_def = pipeline.get_definition()
-    check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
+    check.inst_param(pipeline_def, "pipeline_def", JobDefinition)
     run_config = check.opt_mapping_param(run_config, "run_config", key_type=str)
-    mode = check.opt_str_param(mode, "mode", default=pipeline_def.get_default_mode_name())
     check.opt_nullable_sequence_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
     check.opt_inst_param(instance_ref, "instance_ref", InstanceRef)
     tags = check.opt_mapping_param(tags, "tags", key_type=str, value_type=str)
@@ -773,7 +733,7 @@ def create_execution_plan(
         repository_load_data, "repository_load_data", RepositoryLoadData
     )
 
-    resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config, mode=mode)
+    resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config)
 
     return ExecutionPlan.build(
         pipeline,
@@ -938,14 +898,13 @@ class ExecuteRunWithPlanIterable:
 
 
 def _check_execute_job_args(
-    job_arg: Union[PipelineDefinition, IPipeline],
+    job_arg: Union[JobDefinition, IPipeline],
     run_config: Optional[Mapping[str, object]],
     tags: Optional[Mapping[str, str]],
     op_selection: Optional[Sequence[str]] = None,
 ) -> Tuple[
     IPipeline,
     Optional[Mapping],
-    Optional[str],
     Mapping[str, str],
     Optional[AbstractSet[str]],
     Optional[Sequence[str]],
@@ -959,8 +918,6 @@ def _check_execute_job_args(
     tags = check.opt_mapping_param(tags, "tags", key_type=str)
     check.opt_sequence_param(op_selection, "solid_selection", of_type=str)
 
-    mode = job_def.get_default_mode_name()
-
     tags = merge_dicts(job_def.tags, tags)
 
     # generate pipeline subset from the given solid_selection
@@ -970,7 +927,6 @@ def _check_execute_job_args(
     return (
         job_arg,
         run_config,
-        mode,
         tags,
         job_arg.solids_to_execute,
         op_selection,
@@ -980,7 +936,6 @@ def _check_execute_job_args(
 def _resolve_reexecute_step_selection(
     instance: DagsterInstance,
     pipeline: IPipeline,
-    mode: Optional[str],
     run_config: Optional[Mapping],
     parent_dagster_run: DagsterRun,
     step_selection: Sequence[str],
@@ -993,14 +948,12 @@ def _resolve_reexecute_step_selection(
     parent_plan = create_execution_plan(
         pipeline,
         parent_dagster_run.run_config,
-        mode,
         known_state=state,
     )
     step_keys_to_execute = parse_step_selection(parent_plan.get_all_step_deps(), step_selection)
     execution_plan = create_execution_plan(
         pipeline,
         run_config,
-        mode,
         step_keys_to_execute=list(step_keys_to_execute),
         known_state=state.update_for_step_selection(step_keys_to_execute),
         tags=parent_dagster_run.tags,
@@ -1009,8 +962,8 @@ def _resolve_reexecute_step_selection(
 
 
 def _job_with_repository_load_data(
-    job_arg: Union[PipelineDefinition, IPipeline],
-) -> Tuple[Union[PipelineDefinition, IPipeline], Optional[RepositoryLoadData]]:
+    job_arg: Union[JobDefinition, IPipeline],
+) -> Tuple[Union[JobDefinition, IPipeline], Optional[RepositoryLoadData]]:
     """For ReconstructablePipeline, generate and return any required RepositoryLoadData, alongside
     a ReconstructablePipeline with this repository load data baked in.
     """

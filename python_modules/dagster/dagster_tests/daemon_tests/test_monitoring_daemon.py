@@ -6,7 +6,6 @@ from typing import Any, Mapping, Optional, cast
 
 import pendulum
 import pytest
-from dagster import _seven as seven
 from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.instance import DagsterInstance
@@ -226,12 +225,11 @@ def test_monitor_started(
     assert run_launcher.resume_run_calls == 3
 
 
-@pytest.mark.skipif(seven.IS_WINDOWS, reason="Cannot report started event on Windows")
 def test_long_running_termination(
     instance: DagsterInstance, workspace_context: WorkspaceProcessContext, logger: Logger
 ):
     with environ({"DAGSTER_TEST_RUN_HEALTH_CHECK_RESULT": "healthy"}):
-        initial = pendulum.now().subtract(1000)
+        initial = pendulum.datetime(2021, 1, 1, tz="UTC")
         with pendulum.test(initial):
             too_long_run = create_run_for_test(
                 instance,
@@ -307,7 +305,6 @@ def test_long_running_termination(
             assert event.message == "Exceeded maximum runtime of 500 seconds."
 
 
-@pytest.mark.skipif(seven.IS_WINDOWS, reason="Cannot report started event on Windows")
 @pytest.mark.parametrize("failure_case", ["fail_termination", "termination_exception"])
 def test_long_running_termination_failure(
     instance: DagsterInstance,
@@ -320,7 +317,7 @@ def test_long_running_termination_failure(
             instance.run_launcher.should_fail_termination = True  # type: ignore
         else:
             instance.run_launcher.should_except_termination = True  # type: ignore
-        initial = pendulum.now().subtract(1000)
+        initial = pendulum.datetime(2021, 1, 1, tz="UTC")
         with pendulum.test(initial):
             too_long_run = create_run_for_test(
                 instance,

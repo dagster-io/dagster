@@ -4,7 +4,6 @@ from dagster._core.definitions.asset_reconciliation_sensor import (
     reconcile,
 )
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
-from dagster._core.definitions.mode import DEFAULT_MODE_NAME
 from dagster._core.definitions.selector import PipelineSelector
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.pipeline_run import DagsterRunStatus
@@ -115,7 +114,6 @@ class AssetDaemon(IntervalDaemon):
             external_execution_plan = code_location.get_external_execution_plan(
                 external_pipeline,
                 run_request.run_config,
-                DEFAULT_MODE_NAME,
                 step_keys_to_execute=None,
                 known_state=None,
                 instance=instance,
@@ -126,7 +124,6 @@ class AssetDaemon(IntervalDaemon):
                 pipeline_name=external_pipeline.name,
                 run_id=None,
                 run_config=None,
-                mode=DEFAULT_MODE_NAME,
                 solids_to_execute=None,
                 step_keys_to_execute=None,
                 status=DagsterRunStatus.NOT_STARTED,

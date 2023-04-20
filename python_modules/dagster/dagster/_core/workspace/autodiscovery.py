@@ -5,7 +5,6 @@ from typing import Callable, NamedTuple, Optional, Sequence, Tuple, Type, Union
 from dagster import (
     DagsterInvariantViolationError,
     GraphDefinition,
-    JobDefinition,
     RepositoryDefinition,
 )
 from dagster._core.code_pointer import load_python_file, load_python_module
@@ -53,7 +52,7 @@ def loadable_targets_from_python_package(
 
 
 def loadable_targets_from_loaded_module(module: ModuleType) -> Sequence[LoadableTarget]:
-    from dagster._legacy import PipelineDefinition
+    from dagster._core.definitions import JobDefinition
 
     loadable_defs = _loadable_targets_of_type(module, Definitions)
 
@@ -71,7 +70,7 @@ def loadable_targets_from_loaded_module(module: ModuleType) -> Sequence[Loadable
     if loadable_repos:
         return loadable_repos
 
-    loadable_pipelines = _loadable_targets_of_type(module, PipelineDefinition)
+    loadable_pipelines = _loadable_targets_of_type(module, JobDefinition)
     loadable_jobs = _loadable_targets_of_type(module, JobDefinition)
 
     if len(loadable_pipelines) == 1:

@@ -55,8 +55,6 @@ from ..decorator_utils import (
 from .asset_selection import AssetSelection
 from .graph_definition import GraphDefinition
 from .job_definition import JobDefinition
-from .mode import DEFAULT_MODE_NAME
-from .pipeline_definition import PipelineDefinition
 from .run_request import (
     AddDynamicPartitionsRequest,
     DeleteDynamicPartitionsRequest,
@@ -463,8 +461,8 @@ class SensorDefinition:
             the sensor condition is met. This can be provided instead of specifying a job.
     """
 
-    def with_updated_job(self, new_job: ExecutableDefinition) -> "SensorDefinition":
-        """Returns a copy of this schedule with the job replaced.
+    def with_updated_jobs(self, new_jobs: Sequence[ExecutableDefinition]) -> "SensorDefinition":
+        """Returns a copy of this sensor with the jobs replaced.
 
         Args:
             job (ExecutableDefinition): The job that should execute when this
@@ -475,10 +473,20 @@ class SensorDefinition:
             evaluation_fn=self._evaluation_fn,
             minimum_interval_seconds=self.minimum_interval_seconds,
             description=self.description,
-            job=new_job,
+            jobs=new_jobs if len(new_jobs) > 1 else None,
+            job=new_jobs[0] if len(new_jobs) == 1 else None,
             default_status=self.default_status,
             asset_selection=self.asset_selection,
         )
+
+    def with_updated_job(self, new_job: ExecutableDefinition) -> "SensorDefinition":
+        """Returns a copy of this sensor with the job replaced.
+
+        Args:
+            job (ExecutableDefinition): The job that should execute when this
+                schedule runs.
+        """
+        return self.with_updated_jobs([new_job])
 
     def __init__(
         self,
@@ -522,7 +530,6 @@ class SensorDefinition:
             targets = [
                 RepoRelativeTarget(
                     pipeline_name=check.str_param(job_name, "job_name"),
-                    mode=DEFAULT_MODE_NAME,
                     solid_selection=None,
                 )
             ]
@@ -613,7 +620,7 @@ class SensorDefinition:
 
     @public
     @property
-    def job(self) -> Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]:
+    def job(self) -> Union[JobDefinition, GraphDefinition, UnresolvedAssetJobDefinition]:
         if self._targets:
             if len(self._targets) == 1 and isinstance(self._targets[0], DirectTarget):
                 return self._targets[0].target
@@ -621,6 +628,13 @@ class SensorDefinition:
                 raise DagsterInvalidDefinitionError(
                     "Job property not available when SensorDefinition has multiple jobs."
                 )
+        raise DagsterInvalidDefinitionError("No job was provided to SensorDefinition.")
+
+    @public
+    @property
+    def jobs(self) -> List[Union[JobDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]:
+        if self._targets and all(isinstance(target, DirectTarget) for target in self._targets):
+            return [target.target for target in self._targets]
         raise DagsterInvalidDefinitionError("No job was provided to SensorDefinition.")
 
     @property
@@ -736,7 +750,7 @@ class SensorDefinition:
 
     def load_targets(
         self,
-    ) -> Sequence[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]:
+    ) -> Sequence[Union[JobDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]:
         """Returns job/graph definitions that have been directly passed into the sensor definition.
         Any jobs or graphs that are referenced by name will not be loaded.
         """

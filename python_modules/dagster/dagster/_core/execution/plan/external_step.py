@@ -196,7 +196,6 @@ def step_run_ref_to_step_context(
     execution_plan = create_execution_plan(
         pipeline,
         step_run_ref.run_config,
-        mode=step_run_ref.dagster_run.mode,
         step_keys_to_execute=[step_run_ref.step_key],
         known_state=step_run_ref.known_state,
         # we packaged repository_load_data onto the reconstructable pipeline when creating the

@@ -14,7 +14,7 @@ def test_jobs():
 
 def test_hello_world_repository():
     assert hello_world_repository
-    assert len(hello_world_repository.get_all_pipelines()) == 1
+    assert len(hello_world_repository.get_all_jobs()) == 1
 
 
 def test_workspace_yamls():

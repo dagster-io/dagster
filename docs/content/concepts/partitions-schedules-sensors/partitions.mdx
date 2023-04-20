@@ -348,12 +348,16 @@ The most common kind of partitioned job is a time-partitioned job - each partiti
 Before we define a partitioned job, let's look at a non-partitioned job that computes some data for a given date:
 
 ```python file=/concepts/partitions_schedules_sensors/date_config_job.py
-from dagster import job, op
+from dagster import Config, job, op
 
 
-@op(config_schema={"date": str})
-def process_data_for_date(context):
-    date = context.op_config["date"]
+class ProcessDateConfig(Config):
+    date: str
+
+
+@op
+def process_data_for_date(context, config: ProcessDateConfig):
+    date = config.date
     context.log.info(f"processing data for {date}")
 
 
@@ -430,7 +434,7 @@ In addition to the <PyObject object="daily_partitioned_config" decorator /> deco
 Not all jobs are partitioned by time. Here's a partitioned job where the partitions are continents:
 
 ```python file=/concepts/partitions_schedules_sensors/static_partitioned_job.py
-from dagster import job, op, static_partitioned_config
+from dagster import Config, job, op, static_partitioned_config
 
 CONTINENTS = [
     "Africa",
@@ -448,9 +452,13 @@ def continent_config(partition_key: str):
     return {"ops": {"continent_op": {"config": {"continent_name": partition_key}}}}
 
 
-@op(config_schema={"continent_name": str})
-def continent_op(context):
-    context.log.info(context.op_config["continent_name"])
+class ContinentOpConfig(Config):
+    continent_name: str
+
+
+@op
+def continent_op(context, config: ContinentOpConfig):
+    context.log.info(config.continent_name)
 
 
 @job(config=continent_config)
@@ -542,6 +550,9 @@ def test_my_partitioned_config():
 If you want to test that your <PyObject object="PartitionedConfig" /> creates the partitions you expect, you can use the `get_partition_keys` or `get_run_config_for_partition_key` functions.
 
 ```python file=/concepts/partitions_schedules_sensors/partitioned_config_test.py startafter=start_partition_keys endbefore=end_partition_keys
+from dagster import Config
+
+
 @daily_partitioned_config(start_date=datetime(2020, 1, 1), minute_offset=15)
 def my_offset_partitioned_config(start: datetime, _end: datetime):
     return {
@@ -556,10 +567,15 @@ def my_offset_partitioned_config(start: datetime, _end: datetime):
     }
 
 
-@op(config_schema={"start": str, "end": str})
-def process_data(context):
-    s = context.op_config["start"]
-    e = context.op_config["end"]
+class ProcessDataConfig(Config):
+    start: str
+    end: str
+
+
+@op
+def process_data(context, config: ProcessDataConfig):
+    s = config.start
+    e = config.end
     context.log.info(f"processing data for {s} - {e}")
 
 

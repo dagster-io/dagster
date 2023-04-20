@@ -455,7 +455,7 @@ def external_asset_graph_from_assets_by_repo_name(
         repo = Definitions(assets=assets).get_repository_def()
 
         external_asset_nodes = external_asset_graph_from_defs(
-            repo.get_all_pipelines(), source_assets_by_key=repo.source_assets_by_key
+            repo.get_all_jobs(), source_assets_by_key=repo.source_assets_by_key
         )
         repo_handle = MagicMock(repository_name=repo_name)
         from_repository_handles_and_external_asset_nodes.extend(

@@ -14,7 +14,7 @@ from .definition_config_schema import (
 )
 
 if TYPE_CHECKING:
-    from dagster._core.definitions import JobDefinition, PipelineDefinition
+    from dagster._core.definitions import JobDefinition
     from dagster._core.execution.context.logger import InitLoggerContext, UnboundInitLoggerContext
 
     InitLoggerFunction = Callable[[InitLoggerContext], logging.Logger]
@@ -158,7 +158,7 @@ def logger(
 
 def build_init_logger_context(
     logger_config: Any = None,
-    pipeline_def: Optional["PipelineDefinition"] = None,
+    pipeline_def: Optional["JobDefinition"] = None,
     job_def: Optional["JobDefinition"] = None,
 ) -> "UnboundInitLoggerContext":
     """Builds logger initialization context from provided parameters.
@@ -180,10 +180,10 @@ def build_init_logger_context(
             context = build_init_logger_context()
             logger_to_init(context)
     """
-    from dagster._core.definitions import JobDefinition, PipelineDefinition
+    from dagster._core.definitions import JobDefinition
     from dagster._core.execution.context.logger import UnboundInitLoggerContext
 
-    check.opt_inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
+    check.opt_inst_param(pipeline_def, "pipeline_def", JobDefinition)
     check.opt_inst_param(job_def, "job_def", JobDefinition)
 
     check.invariant(
