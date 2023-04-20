@@ -14,8 +14,12 @@
         "path": "/getting-started/install"
       },
       {
-        "title": "Create a New Project",
+        "title": "Create a new project",
         "path": "/getting-started/create-new-project"
+      },
+      {
+        "title": "Project files",
+        "path": "/getting-started/project-file-reference"
       },
       {
         "title": "Telemetry",
