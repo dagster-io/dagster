@@ -1,4 +1,4 @@
-import {Tooltip, Spinner, CaptionMono, FontFamily} from '@dagster-io/ui';
+import {Tooltip, Spinner, FontFamily} from '@dagster-io/ui';
 import React from 'react';
 import {Link} from 'react-router-dom';
 
