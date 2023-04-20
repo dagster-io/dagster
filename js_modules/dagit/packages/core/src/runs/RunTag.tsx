@@ -91,8 +91,6 @@ export const RunTag = ({tag, actions}: IRunTagProps) => {
   const ValueWrapper = ({children}: {children: React.ReactNode}) =>
     tag.link ? <Link to={tag.link}>{children}</Link> : <>{children}</>;
 
-  console.log({tag});
-
   const tagElement = (
     <Tag intent={isDagsterTag ? 'none' : 'primary'} interactive icon={icon || undefined}>
       {displayedKey ? (
