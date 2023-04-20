@@ -65,7 +65,7 @@ export const RunTags: React.FC<{
   const displayedTags = React.useMemo(() => {
     const priority = [];
     const others = [];
-    const copiedTags = tags.map(({key, value}) => ({key, value}));
+    const copiedTags = tags.map(({key, value, link}) => ({key, value, link}));
     for (const tag of copiedTags) {
       const {key} = tag;
       if (renamedTags.hasOwnProperty(key)) {
