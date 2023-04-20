@@ -177,7 +177,12 @@ def _attach_resources_to_jobs_and_instigator_jobs(
         for schedule in schedules
     ]
     updated_sensors = [
-        sensor.with_updated_jobs([unsatisfied_job_to_resource_bound_job[id(job)] if job in unsatisfied_jobs else job for job in sensor.jobs])
+        sensor.with_updated_jobs(
+            [
+                unsatisfied_job_to_resource_bound_job[id(job)] if job in unsatisfied_jobs else job
+                for job in sensor.jobs
+            ]
+        )
         if sensor.has_loadable_targets() and any(job in unsatisfied_jobs for job in sensor.jobs)
         else sensor
         for sensor in sensors

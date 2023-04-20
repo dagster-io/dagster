@@ -2568,7 +2568,7 @@ def test_context_on_resource_nested() -> None:
         assert executed["yes"]
 
 
-def bind_top_level_resource_sensor_multi_job() -> None:
+def test_bind_top_level_resource_sensor_multi_job() -> None:
     executed = {}
 
     class FooResource(ConfigurableResource):
