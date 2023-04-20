@@ -293,13 +293,15 @@ const RunRow: React.FC<{
           <RunTags
             tags={
               [
-                {
-                  key: DagsterTag.SnapshotID,
-                  value: run.pipelineSnapshotId?.slice(0, 8) || '',
-                  link: run.pipelineSnapshotId
-                    ? getPipelineSnapshotLink(run.pipelineName, run.pipelineSnapshotId)
-                    : undefined,
-                },
+                run.pipelineSnapshotId
+                  ? {
+                      key: DagsterTag.SnapshotID,
+                      value: run.pipelineSnapshotId?.slice(0, 8) || '',
+                      link: run.pipelineSnapshotId
+                        ? getPipelineSnapshotLink(run.pipelineName, run.pipelineSnapshotId)
+                        : undefined,
+                    }
+                  : null,
                 run.tags.find((tag) => tag.key === DagsterTag.Partition),
               ].filter((x) => x) as TagType[]
             }
