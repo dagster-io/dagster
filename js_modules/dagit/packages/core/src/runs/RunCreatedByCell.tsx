@@ -18,10 +18,10 @@ export function RunCreatedByCell(props: Props) {
   const sensorTag = tags.find((tag) => tag.key === DagsterTag.SensorName);
   const user = tags.find((tag) => tag.key === DagsterTag.User);
 
-  const ret = [];
+  const jsx = [];
 
   if (user) {
-    ret.push(
+    jsx.push(
       <Tag key="user" icon="account_circle">
         {user.value}
       </Tag>,
@@ -36,14 +36,14 @@ export function RunCreatedByCell(props: Props) {
             value: `dagster/backfill=${backfillTag.value}`,
           },
         ]);
-    ret.push(
+    jsx.push(
       <div key="backfill">
         Backfill: <Link to={link}>{backfillTag.value}</Link>
       </div>,
     );
   }
   if (scheduleTag) {
-    ret.push(
+    jsx.push(
       <Tag icon="calendar" key="schedule">
         {scheduleTag.value}
       </Tag>,
@@ -51,12 +51,12 @@ export function RunCreatedByCell(props: Props) {
   }
 
   if (sensorTag) {
-    ret.push(
+    jsx.push(
       <Tag icon="sensors" key="sensor">
         {sensorTag.value}
       </Tag>,
     );
   }
 
-  return <Box flex={{direction: 'column', alignItems: 'flex-start'}}>{ret}</Box>;
+  return <Box flex={{direction: 'column', alignItems: 'flex-start'}}>{jsx}</Box>;
 }
