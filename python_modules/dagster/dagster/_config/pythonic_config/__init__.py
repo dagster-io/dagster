@@ -44,7 +44,7 @@ from dagster._core.errors import (
     DagsterInvalidPythonicConfigDefinitionError,
 )
 from dagster._core.execution.context.init import InitResourceContext
-from dagster._utils.cached_method import CACHED_METHOD_FIELD_SUFFIX
+from dagster._utils.cached_method import CACHED_METHOD_FIELD_SUFFIX, cached_method
 
 from .attach_other_object_to_context import (
     IAttachDifferentObjectToOpContext as IAttachDifferentObjectToOpContext,
@@ -702,6 +702,7 @@ class ConfigurableResourceFactory(
     def _resolved_config_dict(self):
         return self._state__internal__.resolved_config_dict
 
+    @cached_method
     def get_resource_definition(self) -> ConfigurableResourceFactoryResourceDefinition:
         return ConfigurableResourceFactoryResourceDefinition(
             resource_fn=self._initialize_and_run,
@@ -956,6 +957,7 @@ class PartialResource(Generic[TResValue], AllowDelayedDependencies, MakeConfigCa
     ) -> Mapping[str, CoercibleToResource]:
         return self._state__internal__.nested_resources
 
+    @cached_method
     def get_resource_definition(self) -> ConfigurableResourceFactoryResourceDefinition:
         return ConfigurableResourceFactoryResourceDefinition(
             resource_fn=self._state__internal__.resource_fn,
@@ -1023,6 +1025,7 @@ class ConfigurableLegacyResourceAdapter(ConfigurableResource, ABC):
     def wrapped_resource(self) -> ResourceDefinition:
         raise NotImplementedError()
 
+    @cached_method
     def get_resource_definition(self) -> ConfigurableResourceFactoryResourceDefinition:
         return ConfigurableResourceFactoryResourceDefinition(
             resource_fn=self.wrapped_resource.resource_fn,
@@ -1104,6 +1107,7 @@ class ConfigurableIOManagerFactory(ConfigurableResourceFactory[TIOManagerValue])
         """
         return PartialIOManager(cls, data=kwargs)
 
+    @cached_method
     def get_resource_definition(self) -> ConfigurableIOManagerFactoryResourceDefinition:
         return ConfigurableIOManagerFactoryResourceDefinition(
             resource_fn=self._initialize_and_run,
@@ -1120,6 +1124,7 @@ class PartialIOManager(Generic[TResValue], PartialResource[TResValue]):
     ):
         PartialResource.__init__(self, resource_cls, data)
 
+    @cached_method
     def get_resource_definition(self) -> ConfigurableIOManagerFactoryResourceDefinition:
         return ConfigurableIOManagerFactoryResourceDefinition(
             resource_fn=self._state__internal__.resource_fn,
@@ -1376,6 +1381,7 @@ class ConfigurableLegacyIOManagerAdapter(ConfigurableIOManagerFactory):
             "Because we override resource_fn in the adapter, this is never called."
         )
 
+    @cached_method
     def get_resource_definition(self) -> ConfigurableIOManagerFactoryResourceDefinition:
         return ConfigurableIOManagerFactoryResourceDefinition(
             resource_fn=self.wrapped_io_manager.resource_fn,

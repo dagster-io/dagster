@@ -9,14 +9,13 @@ from dagster import (
     IOManager,
     OutputContext,
     asset,
-    build_init_resource_context,
     io_manager,
 )
 from dagster._core.definitions.assets_job import build_assets_job
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 from dagster._core.execution.with_resources import with_resources
-from dagster_fivetran import fivetran_resource
+from dagster_fivetran import FivetranResource
 from dagster_fivetran.asset_defs import (
     FivetranConnectionMetadata,
     load_assets_from_fivetran_instance,
@@ -59,20 +58,7 @@ def test_load_from_instance(connector_to_group_fn, filter_connector, connector_t
 
         return TestIOManager()
 
-    ft_resource = fivetran_resource(
-        build_init_resource_context(
-            config={
-                "api_key": "some_key",
-                "api_secret": "some_secret",
-            }
-        )
-    )
-    ft_instance = fivetran_resource.configured(
-        {
-            "api_key": "some_key",
-            "api_secret": "some_secret",
-        }
-    )
+    ft_resource = FivetranResource(api_key="some_key", api_secret="some_secret")
 
     with responses.RequestsMock() as rsps:
         rsps.add(
@@ -95,7 +81,7 @@ def test_load_from_instance(connector_to_group_fn, filter_connector, connector_t
 
         if connector_to_group_fn:
             ft_cacheable_assets = load_assets_from_fivetran_instance(
-                ft_instance,
+                ft_resource,
                 connector_to_group_fn=connector_to_group_fn,
                 connector_filter=(lambda _: False) if filter_connector else None,
                 connector_to_asset_key_fn=connector_to_asset_key_fn,
@@ -103,7 +89,7 @@ def test_load_from_instance(connector_to_group_fn, filter_connector, connector_t
             )
         else:
             ft_cacheable_assets = load_assets_from_fivetran_instance(
-                ft_instance,
+                ft_resource,
                 connector_filter=(lambda _: False) if filter_connector else None,
                 connector_to_asset_key_fn=connector_to_asset_key_fn,
                 io_manager_key="test_io_manager",
