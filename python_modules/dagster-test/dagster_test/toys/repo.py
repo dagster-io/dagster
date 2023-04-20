@@ -52,6 +52,8 @@ from dagster_test.toys.sleepy import sleepy_job
 from dagster_test.toys.software_defined_assets import software_defined_assets
 from dagster_test.toys.unreliable import unreliable_job
 
+from .auto_materializing.repo_1 import auto_materialize_repo_1 as auto_materialize_repo_1
+from .auto_materializing.repo_2 import auto_materialize_repo_2 as auto_materialize_repo_2
 from .schedules import get_toys_schedules
 from .sensors import get_toys_sensors
 
