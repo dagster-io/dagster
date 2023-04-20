@@ -28,17 +28,19 @@ export const FilterTag = ({
   iconName: IconName;
   onRemove: () => void;
 }) => (
-  <BaseTag
-    icon={<Icon name={iconName} color={Colors.Link} />}
-    rightIcon={
-      <div onClick={onRemove} style={{cursor: 'pointer'}} tabIndex={0}>
-        <Icon name="close" color={Colors.Link} />
-      </div>
-    }
-    label={label}
-    fillColor={Colors.Blue50}
-    textColor={Colors.Link}
-  />
+  <div style={{display: 'inline-block', height: '24px'}}>
+    <BaseTag
+      icon={<Icon name={iconName} color={Colors.Link} />}
+      rightIcon={
+        <div onClick={onRemove} style={{cursor: 'pointer'}} tabIndex={0}>
+          <Icon name="close" color={Colors.Link} />
+        </div>
+      }
+      label={label}
+      fillColor={Colors.Blue50}
+      textColor={Colors.Link}
+    />
+  </div>
 );
 
 const FilterTagHighlightedTextSpan = styled(TruncatedTextWithFullTextOnHover)`
