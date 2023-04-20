@@ -15,7 +15,6 @@ import {RunsFilter, RunStatus} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {DagsterRepoOption, useRepositoryOptions} from '../workspace/WorkspaceContext';
 
-import {DagsterTag} from './RunTag';
 import {RunsFilterInput as RunsFilterInputNew} from './RunsFilterInputNew';
 import {
   RunTagKeysQuery,
