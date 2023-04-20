@@ -31,6 +31,7 @@ from dagster import (
 )
 from dagster._config.field import Field
 from dagster._config.field_utils import Permissive
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.events import (
     AssetMaterialization,
     AssetObservation,
@@ -45,6 +46,7 @@ from dagster._utils.merger import deep_merge_dicts
 
 from dagster_dbt.asset_utils import (
     default_asset_key_fn,
+    default_auto_materialize_policy_fn,
     default_freshness_policy_fn,
     default_group_fn,
     default_metadata_fn,
@@ -346,6 +348,9 @@ def _dbt_nodes_to_assets(
     node_info_to_freshness_policy_fn: Callable[
         [Mapping[str, Any]], Optional[FreshnessPolicy]
     ] = default_freshness_policy_fn,
+    node_info_to_auto_materialize_policy_fn: Callable[
+        [Mapping[str, Any]], Optional[AutoMaterializePolicy]
+    ] = default_auto_materialize_policy_fn,
     node_info_to_definition_metadata_fn: Callable[
         [Mapping[str, Any]], Mapping[str, MetadataUserInput]
     ] = default_metadata_fn,
@@ -366,6 +371,7 @@ def _dbt_nodes_to_assets(
         asset_outs,
         group_names_by_key,
         freshness_policies_by_key,
+        auto_materialize_policies_by_key,
         fqns_by_output_name,
         _,
     ) = get_asset_deps(
@@ -374,6 +380,7 @@ def _dbt_nodes_to_assets(
         node_info_to_asset_key=node_info_to_asset_key,
         node_info_to_group_fn=node_info_to_group_fn,
         node_info_to_freshness_policy_fn=node_info_to_freshness_policy_fn,
+        node_info_to_auto_materialize_policy_fn=node_info_to_auto_materialize_policy_fn,
         node_info_to_definition_metadata_fn=node_info_to_definition_metadata_fn,
         io_manager_key=io_manager_key,
         display_raw_sql=display_raw_sql,
@@ -410,6 +417,7 @@ def _dbt_nodes_to_assets(
         asset_deps=asset_deps,
         group_names_by_key=group_names_by_key,
         freshness_policies_by_key=freshness_policies_by_key,
+        auto_materialize_policies_by_key=auto_materialize_policies_by_key,
         partitions_def=partitions_def,
     )
 
@@ -434,6 +442,9 @@ def load_assets_from_dbt_project(
     node_info_to_freshness_policy_fn: Callable[
         [Mapping[str, Any]], Optional[FreshnessPolicy]
     ] = default_freshness_policy_fn,
+    node_info_to_auto_materialize_policy_fn: Callable[
+        [Mapping[str, Any]], Optional[AutoMaterializePolicy]
+    ] = default_auto_materialize_policy_fn,
     node_info_to_definition_metadata_fn: Callable[
         [Mapping[str, Any]], Mapping[str, MetadataUserInput]
     ] = default_metadata_fn,
@@ -486,6 +497,12 @@ def load_assets_from_dbt_project(
             `dagster_freshness_policy={"maximum_lag_minutes": 60, "cron_schedule": "0 9 * * *"}`
             will result in that model being assigned
             `FreshnessPolicy(maximum_lag_minutes=60, cron_schedule="0 9 * * *")`
+        node_info_to_auto_materialize_policy_fn (Dict[str, Any] -> Optional[FreshnessPolicy]):
+            A function that takes a dictionary of dbt node info and optionally returns a AutoMaterializePolicy
+            that should be applied to this node. By default, AutoMaterializePolicies will be created from
+            config applied to dbt models, i.e.:
+            `dagster_auto_materialize_policy={"type": "lazy"}` will result in that model being assigned
+            `AutoMaterializePolicy.lazy()`
         node_info_to_definition_metadata_fn (Dict[str, Any] -> Optional[Dict[str, MetadataUserInput]]):
             A function that takes a dictionary of dbt node info and optionally returns a dictionary
             of metadata to be attached to the corresponding definition. This is added to the default
@@ -521,6 +538,7 @@ def load_assets_from_dbt_project(
         use_build_command=use_build_command,
         partitions_def=partitions_def,
         partition_key_to_vars_fn=partition_key_to_vars_fn,
+        node_info_to_auto_materialize_policy_fn=node_info_to_auto_materialize_policy_fn,
         node_info_to_group_fn=node_info_to_group_fn,
         node_info_to_freshness_policy_fn=node_info_to_freshness_policy_fn,
         node_info_to_definition_metadata_fn=node_info_to_definition_metadata_fn,
@@ -548,6 +566,9 @@ def load_assets_from_dbt_manifest(
     node_info_to_freshness_policy_fn: Callable[
         [Mapping[str, Any]], Optional[FreshnessPolicy]
     ] = default_freshness_policy_fn,
+    node_info_to_auto_materialize_policy_fn: Callable[
+        [Mapping[str, Any]], Optional[AutoMaterializePolicy]
+    ] = default_auto_materialize_policy_fn,
     node_info_to_definition_metadata_fn: Callable[
         [Mapping[str, Any]], Mapping[str, MetadataUserInput]
     ] = default_metadata_fn,
@@ -598,6 +619,12 @@ def load_assets_from_dbt_manifest(
             `dagster_freshness_policy={"maximum_lag_minutes": 60, "cron_schedule": "0 9 * * *"}`
             will result in that model being assigned
             `FreshnessPolicy(maximum_lag_minutes=60, cron_schedule="0 9 * * *")`
+        node_info_to_auto_materialize_policy_fn (Dict[str, Any] -> Optional[FreshnessPolicy]):
+            A function that takes a dictionary of dbt node info and optionally returns a AutoMaterializePolicy
+            that should be applied to this node. By default, AutoMaterializePolicies will be created from
+            config applied to dbt models, i.e.:
+            `dagster_auto_materialize_policy={"type": "lazy"}` will result in that model being assigned
+            `AutoMaterializePolicy.lazy()`
         node_info_to_definition_metadata_fn (Dict[str, Any] -> Optional[Dict[str, MetadataUserInput]]):
             A function that takes a dictionary of dbt node info and optionally returns a dictionary
             of metadata to be attached to the corresponding definition. This is added to the default
@@ -660,6 +687,7 @@ def load_assets_from_dbt_manifest(
         partition_key_to_vars_fn=partition_key_to_vars_fn,
         node_info_to_group_fn=node_info_to_group_fn,
         node_info_to_freshness_policy_fn=node_info_to_freshness_policy_fn,
+        node_info_to_auto_materialize_policy_fn=node_info_to_auto_materialize_policy_fn,
         node_info_to_definition_metadata_fn=node_info_to_definition_metadata_fn,
         display_raw_sql=display_raw_sql,
     )
