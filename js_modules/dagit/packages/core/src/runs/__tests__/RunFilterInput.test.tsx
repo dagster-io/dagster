@@ -14,14 +14,14 @@ import {
 import {calculateTimeRanges} from '../../ui/Filters/useTimeRangeFilter';
 import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
 import {DagsterTag} from '../RunTag';
+import {RUN_TAG_KEYS_QUERY} from '../RunsFilterInput';
 import {
-  RUN_TAG_KEYS_QUERY,
   tagSuggestionValueObject,
   tagValueToFilterObject,
   RunsFilterInput,
   RunFilterToken,
   useTagDataFilterValues,
-} from '../RunsFilterInput';
+} from '../RunsFilterInputNew';
 import {
   buildRunTagValuesQueryMockedResponse,
   buildWorkspaceContextMockedResponse,
