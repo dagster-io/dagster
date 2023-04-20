@@ -13,7 +13,6 @@ import partition from 'lodash/partition';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {useFeatureFlags} from '../app/Flags';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
@@ -23,7 +22,7 @@ import {Loading} from '../ui/Loading';
 import {StickyTableContainer} from '../ui/StickyTableContainer';
 
 import {useSelectedRunsTab} from './RunListTabs';
-import {RunTable, RUN_TABLE_RUN_FRAGMENT} from './RunTable';
+import {RunTable, RUN_TABLE_RUN_FRAGMENT} from './RunTableNew';
 import {RunsQueryRefetchContext} from './RunUtils';
 import {
   RunFilterTokenType,
@@ -31,25 +30,19 @@ import {
   runsFilterForSearchTokens,
   useQueryPersistedRunFilters,
   RunFilterToken,
-} from './RunsFilterInput';
+} from './RunsFilterInputNew';
 import {RunsPageHeader} from './RunsPageHeader';
-import RunsRootNew from './RunsRootNew';
 import {
-  QueueDaemonStatusQuery,
-  QueueDaemonStatusQueryVariables,
-  RunsRootQuery,
-  RunsRootQueryVariables,
-} from './types/RunsRoot.types';
+  QueueDaemonStatusNewQuery,
+  QueueDaemonStatusNewQueryVariables,
+  RunsRootNewQuery,
+  RunsRootNewQueryVariables,
+} from './types/RunsRootNew.types';
 import {useCursorPaginatedQuery} from './useCursorPaginatedQuery';
 
 const PAGE_SIZE = 25;
 
 export const RunsRoot = () => {
-  const {flagRunsTableFiltering} = useFeatureFlags();
-  return flagRunsTableFiltering ? <RunsRootNew /> : <RunsRootImpl />;
-};
-
-const RunsRootImpl = () => {
   useTrackPageView();
 
   const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters();
@@ -57,8 +50,8 @@ const RunsRootImpl = () => {
   const canSeeConfig = useCanSeeConfig();
 
   const {queryResult, paginationProps} = useCursorPaginatedQuery<
-    RunsRootQuery,
-    RunsRootQueryVariables
+    RunsRootNewQuery,
+    RunsRootNewQueryVariables
   >({
     nextCursorForResult: (runs) => {
       if (runs.pipelineRunsOrError.__typename !== 'Runs') {
@@ -110,7 +103,14 @@ const RunsRootImpl = () => {
   );
 
   const enabledFilters = React.useMemo(() => {
-    const filters: RunFilterTokenType[] = ['tag', 'snapshotId', 'id', 'job', 'pipeline'];
+    const filters: RunFilterTokenType[] = [
+      'tag',
+      'snapshotId',
+      'id',
+      'job',
+      'pipeline',
+      'backfill',
+    ];
 
     if (!staticStatusTags) {
       filters.push('status');
@@ -162,7 +162,6 @@ const RunsRootImpl = () => {
                 <RunsFilterInput
                   tokens={mutableTokens}
                   onChange={setFilterTokensWithStatus}
-                  loading={queryResult.loading}
                   enabledFilters={enabledFilters}
                 />
                 <NonIdealState
@@ -212,7 +211,6 @@ const RunsRootImpl = () => {
                         <RunsFilterInput
                           tokens={mutableTokens}
                           onChange={setFilterTokensWithStatus}
-                          loading={queryResult.loading}
                           enabledFilters={enabledFilters}
                         />
                       </Box>
@@ -238,12 +236,12 @@ const RunsRootImpl = () => {
 export default RunsRoot;
 
 const RUNS_ROOT_QUERY = gql`
-  query RunsRootQuery($limit: Int, $cursor: String, $filter: RunsFilter!) {
+  query RunsRootNewQuery($limit: Int, $cursor: String, $filter: RunsFilter!) {
     pipelineRunsOrError(limit: $limit, cursor: $cursor, filter: $filter) {
       ... on Runs {
         results {
           id
-          ...RunTableRunFragment
+          ...RunTableRunNewFragment
         }
       }
       ... on InvalidPipelineRunsFilterError {
@@ -258,7 +256,7 @@ const RUNS_ROOT_QUERY = gql`
 `;
 
 const QueueDaemonAlert = () => {
-  const {data} = useQuery<QueueDaemonStatusQuery, QueueDaemonStatusQueryVariables>(
+  const {data} = useQuery<QueueDaemonStatusNewQuery, QueueDaemonStatusNewQueryVariables>(
     QUEUE_DAEMON_STATUS_QUERY,
   );
   const {pageTitle} = React.useContext(InstancePageContext);
@@ -280,7 +278,7 @@ const QueueDaemonAlert = () => {
 };
 
 const QUEUE_DAEMON_STATUS_QUERY = gql`
-  query QueueDaemonStatusQuery {
+  query QueueDaemonStatusNewQuery {
     instance {
       id
       daemonHealth {

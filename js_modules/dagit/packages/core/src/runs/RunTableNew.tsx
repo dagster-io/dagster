@@ -4,26 +4,20 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {useFeatureFlags} from '../app/Flags';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {RunsFilter} from '../graphql/types';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
-import {PipelineSnapshotLink} from '../pipelines/PipelinePathUtils';
+import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
+import {getPipelineSnapshotLink} from '../pipelines/PipelinePathUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {AnchorButton} from '../ui/AnchorButton';
-import {
-  findRepositoryAmongOptions,
-  isThisThingAJob,
-  useRepositoryOptions,
-} from '../workspace/WorkspaceContext';
-import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {useRepositoryForRunWithoutSnapshot} from '../workspace/useRepositoryForRun';
 import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
 
 import {AssetKeyTagCollection} from './AssetKeyTagCollection';
 import {RunActionsMenu, RunBulkActionsMenu} from './RunActionsMenu';
 import {RunStatusTagWithStats} from './RunStatusTag';
-import {RunTable as RunTableNew} from './RunTableNew';
+import {DagsterTag, TagType} from './RunTag';
 import {RunTags} from './RunTags';
 import {
   assetKeysForRun,
@@ -44,12 +38,8 @@ interface RunTableProps {
   additionalColumnHeaders?: React.ReactNode[];
   additionalColumnsForRow?: (run: RunTableRunFragment) => React.ReactNode[];
 }
-export const RunTable = (props: RunTableProps) => {
-  const {flagRunsTableFiltering} = useFeatureFlags();
-  return flagRunsTableFiltering ? <RunTableNew {...props} /> : <RunTableImpl {...props} />;
-};
 
-const RunTableImpl = (props: RunTableProps) => {
+export const RunTable = (props: RunTableProps) => {
   const {runs, filter, onAddTag, highlightedIds, actionBarComponents} = props;
   const allIds = runs.map((r) => r.id);
 
@@ -58,8 +48,6 @@ const RunTableImpl = (props: RunTableProps) => {
   const canTerminateOrDeleteAny = React.useMemo(() => {
     return runs.some((run) => run.hasTerminatePermission || run.hasDeletePermission);
   }, [runs]);
-
-  const {options} = useRepositoryOptions();
 
   if (runs.length === 0) {
     const anyFilter = Object.keys(filter || {}).length;
@@ -100,22 +88,6 @@ const RunTableImpl = (props: RunTableProps) => {
     );
   }
 
-  let anyPipelines = false;
-  for (const run of runs) {
-    const {repositoryOrigin} = run;
-    if (repositoryOrigin) {
-      const repoAddress = buildRepoAddress(
-        repositoryOrigin.repositoryName,
-        repositoryOrigin.repositoryLocationName,
-      );
-      const repo = findRepositoryAmongOptions(options, repoAddress);
-      if (!repo || !isThisThingAJob(repo, run.pipelineName)) {
-        anyPipelines = true;
-        break;
-      }
-    }
-  }
-
   const selectedFragments = runs.filter((run) => checkedIds.has(run.id));
 
   return (
@@ -145,11 +117,12 @@ const RunTableImpl = (props: RunTableProps) => {
                 />
               ) : null}
             </th>
-            <th style={{width: 120}}>Status</th>
             <th style={{width: 90}}>Run ID</th>
-            <th>{anyPipelines ? 'Job / Pipeline' : 'Job'}</th>
-            <th style={{width: 90}}>Snapshot ID</th>
-            <th style={{width: 190}}>Timing</th>
+            <th style={{width: 180}}>Created date</th>
+            <th>Target</th>
+            <th style={{width: 160}}>Created by</th>
+            <th style={{width: 120}}>Status</th>
+            <th style={{width: 190}}>Duration</th>
             {props.additionalColumnHeaders}
             <th style={{width: 52}} />
           </tr>
@@ -174,7 +147,7 @@ const RunTableImpl = (props: RunTableProps) => {
 };
 
 export const RUN_TABLE_RUN_FRAGMENT = gql`
-  fragment RunTableRunFragment on Run {
+  fragment RunTableRunNewFragment on Run {
     id
     status
     stepKeysToExecute
@@ -247,6 +220,8 @@ const RunRow: React.FC<{
     }
   };
 
+  const {RunCreatedByCell} = useLaunchPadHooks();
+
   return (
     <Row highlighted={!!isHighlighted}>
       <td>
@@ -255,12 +230,12 @@ const RunRow: React.FC<{
         ) : null}
       </td>
       <td>
-        <RunStatusTagWithStats status={run.status} runId={run.id} />
-      </td>
-      <td>
         <Link to={`/runs/${run.id}`}>
           <Mono>{titleForRun(run)}</Mono>
         </Link>
+      </td>
+      <td>
+        <RunTime run={run} />
       </td>
       <td>
         <Box flex={{direction: 'column', gap: 5}}>
@@ -292,26 +267,37 @@ const RunRow: React.FC<{
             </Box>
           )}
           <RunTags
-            tags={run.tags}
+            tags={
+              [
+                run.pipelineSnapshotId
+                  ? {
+                      key: DagsterTag.SnapshotID,
+                      value: run.pipelineSnapshotId?.slice(0, 8) || '',
+                      link: run.pipelineSnapshotId
+                        ? getPipelineSnapshotLink(run.pipelineName, run.pipelineSnapshotId)
+                        : undefined,
+                    }
+                  : null,
+                run.tags.find((tag) => tag.key === DagsterTag.Partition),
+              ].filter((x) => x) as TagType[]
+            }
             mode={isJob ? (run.mode !== 'default' ? run.mode : null) : run.mode}
             onAddTag={onAddTag}
           />
         </Box>
       </td>
       <td>
-        <PipelineSnapshotLink
-          snapshotId={run.pipelineSnapshotId || ''}
-          pipelineName={run.pipelineName}
-          size="normal"
-        />
+        <RunCreatedByCell run={run} />
       </td>
       <td>
-        <RunTime run={run} />
+        <RunStatusTagWithStats status={run.status} runId={run.id} />
+      </td>
+      <td>
         <RunStateSummary run={run} />
       </td>
       {additionalColumns}
       <td>
-        <RunActionsMenu run={run} />
+        <RunActionsMenu run={run} onAddTag={onAddTag} />
       </td>
     </Row>
   );
