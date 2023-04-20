@@ -9,10 +9,13 @@ import {
 import qs from 'qs';
 import * as React from 'react';
 
+import {useFeatureFlags} from '../app/Flags';
+import {__ASSET_JOB_PREFIX} from '../asset-graph/Utils';
 import {RunsFilter, RunStatus} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {DagsterRepoOption, useRepositoryOptions} from '../workspace/WorkspaceContext';
 
+import {RunsFilterInput as RunsFilterInputNew} from './RunsFilterInputNew';
 import {
   RunTagKeysQuery,
   RunTagValuesQuery,
@@ -32,7 +35,9 @@ export type RunFilterTokenType =
   | 'job'
   | 'snapshotId'
   | 'tag'
-  | 'backfill';
+  | 'backfill'
+  | 'created_date_before'
+  | 'created_date_after';
 
 export type RunFilterToken = {
   token?: RunFilterTokenType;
@@ -196,11 +201,20 @@ interface RunsFilterInputProps {
   enabledFilters?: RunFilterTokenType[];
 }
 
-export const RunsFilterInput: React.FC<RunsFilterInputProps> = ({
-  loading,
+export const RunsFilterInput = (props: RunsFilterInputProps) => {
+  const {flagRunsTableFiltering} = useFeatureFlags();
+  return flagRunsTableFiltering ? (
+    <RunsFilterInputNew {...props} />
+  ) : (
+    <RunsFilterInputImpl {...props} />
+  );
+};
+
+const RunsFilterInputImpl: React.FC<RunsFilterInputProps> = ({
   tokens,
   onChange,
   enabledFilters,
+  loading,
 }) => {
   const {options} = useRepositoryOptions();
   const [selectedTagKey, setSelectedTagKey] = React.useState<string | undefined>();
