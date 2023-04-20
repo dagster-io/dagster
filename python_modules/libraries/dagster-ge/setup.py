@@ -36,7 +36,7 @@ setup(
         f"dagster{pin}",
         f"dagster-pandas{pin}",
         "pandas",
-        "great_expectations >=0.11.9, !=0.12.8, !=0.13.17, !=0.13.27",
+        "great_expectations >=0.11.9, !=0.12.8, !=0.13.17, !=0.13.27, !=0.16.8",
     ],
     zip_safe=False,
 )
