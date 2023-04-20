@@ -844,6 +844,8 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             "b",
             "c",
             "d",
+            "e",
+            "f",
         ]
         asset_node = result.data["assetNodes"][1]
         assert asset_node["partitionKeys"] and asset_node["partitionKeys"] == [
@@ -851,6 +853,8 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             "b",
             "c",
             "d",
+            "e",
+            "f",
         ]
 
         selector = infer_pipeline_selector(graphql_context, "time_partitioned_assets_job")

@@ -53,6 +53,7 @@ from dagster import (
     TableConstraints,
     TableRecord,
     TableSchema,
+    WeeklyPartitionsDefinition,
     _check as check,
     asset,
     asset_sensor,
@@ -1340,7 +1341,7 @@ def asset_two(asset_one):
 two_assets_job = build_assets_job(name="two_assets_job", assets=[asset_one, asset_two])
 
 
-static_partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d"])
+static_partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d", "e", "f"])
 
 
 @asset(partitions_def=static_partitions_def)
@@ -1434,6 +1435,23 @@ time_partitioned_assets_job = build_assets_job(
     "time_partitioned_assets_job",
     [upstream_time_partitioned_asset, downstream_time_partitioned_asset],
 )
+
+
+@asset
+def unpartitioned_upstream_of_partitioned():
+    return 1
+
+
+@asset(partitions_def=DailyPartitionsDefinition("2023-01-01"))
+def upstream_daily_partitioned_asset(unpartitioned_upstream_of_partitioned):
+    return unpartitioned_upstream_of_partitioned
+
+
+@asset(partitions_def=WeeklyPartitionsDefinition("2023-01-01"))
+def downstream_weekly_partitioned_asset(
+    upstream_daily_partitioned_asset,
+):
+    return upstream_daily_partitioned_asset + 1
 
 
 @asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c", "d"]))
@@ -1845,6 +1863,9 @@ def define_asset_jobs():
         define_asset_job(
             "fresh_diamond_assets", AssetSelection.assets(fresh_diamond_bottom).upstream()
         ),
+        upstream_daily_partitioned_asset,
+        downstream_weekly_partitioned_asset,
+        unpartitioned_upstream_of_partitioned,
     ]
 
 

@@ -154,22 +154,27 @@ class AssetBackfillData(NamedTuple):
 
         Only includes assets that are partitioned.
         """
-        return {
-            asset_key: {
-                BackfillPartitionsStatus.COMPLETED: len(
-                    self.materialized_subset.get_partitions_subset(asset_key)
-                ),
-                BackfillPartitionsStatus.FAILED: len(
-                    self.failed_and_downstream_subset.get_partitions_subset(asset_key)
-                ),
-                BackfillPartitionsStatus.REQUESTED: len(
-                    self.requested_subset.get_partitions_subset(asset_key)
-                )
-                - (
-                    len(self.failed_and_downstream_subset.get_partitions_subset(asset_key))
-                    + len(self.materialized_subset.get_partitions_subset(asset_key))
-                ),
+
+        def _get_status_counts_for_asset_key(asset_key: AssetKey):
+            materialized_subset = self.materialized_subset.get_partitions_subset(asset_key)
+            failed_partitions = set(
+                self.failed_and_downstream_subset.get_partitions_subset(
+                    asset_key
+                ).get_partition_keys()
+            )
+            requested_partitions = set(
+                self.requested_subset.get_partitions_subset(asset_key).get_partition_keys()
+            )
+
+            return {
+                BackfillPartitionsStatus.COMPLETED: len(materialized_subset),
+                BackfillPartitionsStatus.FAILED: len(failed_partitions),
+                BackfillPartitionsStatus.REQUESTED: len(requested_partitions)
+                - (len(failed_partitions & requested_partitions) + len(materialized_subset)),
             }
+
+        return {
+            asset_key: _get_status_counts_for_asset_key(asset_key)
             for asset_key in self.target_subset.asset_keys
             if self.target_subset.asset_graph.get_partitions_def(asset_key) is not None
         }
