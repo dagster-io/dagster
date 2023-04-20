@@ -20,6 +20,7 @@ import dateutil
 from dagster import (
     AssetKey,
     AssetsDefinition,
+    AutoMaterializePolicy,
     FreshnessPolicy,
     In,
     OpExecutionContext,
@@ -31,7 +32,6 @@ from dagster import (
 )
 from dagster._config.field import Field
 from dagster._config.field_utils import Permissive
-from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.events import (
     AssetMaterialization,
     AssetObservation,
@@ -497,7 +497,7 @@ def load_assets_from_dbt_project(
             `dagster_freshness_policy={"maximum_lag_minutes": 60, "cron_schedule": "0 9 * * *"}`
             will result in that model being assigned
             `FreshnessPolicy(maximum_lag_minutes=60, cron_schedule="0 9 * * *")`
-        node_info_to_auto_materialize_policy_fn (Dict[str, Any] -> Optional[FreshnessPolicy]):
+        node_info_to_auto_materialize_policy_fn (Dict[str, Any] -> Optional[AutoMaterializePolicy]):
             A function that takes a dictionary of dbt node info and optionally returns a AutoMaterializePolicy
             that should be applied to this node. By default, AutoMaterializePolicies will be created from
             config applied to dbt models, i.e.:
@@ -619,7 +619,7 @@ def load_assets_from_dbt_manifest(
             `dagster_freshness_policy={"maximum_lag_minutes": 60, "cron_schedule": "0 9 * * *"}`
             will result in that model being assigned
             `FreshnessPolicy(maximum_lag_minutes=60, cron_schedule="0 9 * * *")`
-        node_info_to_auto_materialize_policy_fn (Dict[str, Any] -> Optional[FreshnessPolicy]):
+        node_info_to_auto_materialize_policy_fn (Dict[str, Any] -> Optional[AutoMaterializePolicy]):
             A function that takes a dictionary of dbt node info and optionally returns a AutoMaterializePolicy
             that should be applied to this node. By default, AutoMaterializePolicies will be created from
             config applied to dbt models, i.e.:
