@@ -13,6 +13,7 @@ from dagster import (
 from dagster._check import CheckError
 from dagster._core.definitions.partition import DynamicPartitionsDefinition, Partition
 from dagster._core.test_utils import instance_for_test
+from dagster._utils import Counter, traced_counter
 
 
 @pytest.mark.parametrize(
@@ -211,3 +212,31 @@ def test_has_partition_key():
         assert partitions_def.has_partition_key("apple", dynamic_partitions_store=instance)
         assert partitions_def.has_partition_key("banana", dynamic_partitions_store=instance)
         assert not partitions_def.has_partition_key("peach", dynamic_partitions_store=instance)
+
+    partitions_def = DynamicPartitionsDefinition(partition_fn=lambda _: ["apple", "banana"])
+    assert partitions_def.has_partition_key("apple") is True
+    assert partitions_def.has_partition_key("cantaloupe") is False
+
+
+def test_get_partition():
+    partitions_def = DynamicPartitionsDefinition(name="fruits")
+
+    with instance_for_test() as instance:
+        traced_counter.set(Counter())
+
+        instance.add_dynamic_partitions(partitions_def.name, ["apple", "banana"])
+        assert (
+            partitions_def.get_partition("apple", dynamic_partitions_store=instance).name == "apple"
+        )
+
+        counts = traced_counter.get().counts()
+        assert counts.get("DagsterInstance.get_dynamic_partitions", 0) == 0
+        assert counts.get("DagsterInstance.has_dynamic_partition") == 1
+
+        with pytest.raises(DagsterUnknownPartitionError):
+            partitions_def.get_partition("peach", dynamic_partitions_store=instance)
+
+    partitions_def = DynamicPartitionsDefinition(partition_fn=lambda _: ["apple", "banana"])
+    assert partitions_def.get_partition("apple").name == "apple"
+    with pytest.raises(DagsterUnknownPartitionError):
+        partitions_def.get_partition("cantaloupe")
