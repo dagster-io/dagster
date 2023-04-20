@@ -2,7 +2,7 @@
 
 import * as Types from '../../graphql/types';
 
-export type RunTableRunFragmentNewFragment = {
+export type RunTableRunNewFragment = {
   __typename: 'Run';
   id: string;
   status: Types.RunStatus;
