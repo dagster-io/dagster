@@ -162,6 +162,7 @@ export const RunsRoot = () => {
                 <RunsFilterInput
                   tokens={mutableTokens}
                   onChange={setFilterTokensWithStatus}
+                  loading={queryResult.loading}
                   enabledFilters={enabledFilters}
                 />
                 <NonIdealState
@@ -211,6 +212,7 @@ export const RunsRoot = () => {
                         <RunsFilterInput
                           tokens={mutableTokens}
                           onChange={setFilterTokensWithStatus}
+                          loading={queryResult.loading}
                           enabledFilters={enabledFilters}
                         />
                       </Box>

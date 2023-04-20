@@ -152,6 +152,7 @@ interface RunsFilterInputProps {
   tokens: RunFilterToken[];
   onChange: (tokens: RunFilterToken[]) => void;
   enabledFilters?: RunFilterTokenType[];
+  loading?: boolean;
 }
 
 // Exclude these tags from the "tag" filter because theyre already being fetched by other filters.
