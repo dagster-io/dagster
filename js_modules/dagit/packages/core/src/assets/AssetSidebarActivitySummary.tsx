@@ -83,26 +83,28 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
         </SidebarSection>
       )}
 
-      <SidebarSection
-        title={!isSourceAsset ? 'Materialization in last run' : 'Observation in last run'}
-      >
-        {displayedEvent ? (
-          <div style={{margin: -1, maxWidth: '100%', overflowX: 'auto'}}>
-            <LatestMaterializationMetadata
-              assetKey={assetKey}
-              latest={displayedEvent}
-              liveData={liveData}
-            />
-          </div>
-        ) : (
-          <Box
-            margin={{horizontal: 24, vertical: 12}}
-            style={{color: Colors.Gray500, fontSize: '0.8rem'}}
-          >
-            {!isSourceAsset ? `No materializations found` : `No observations found`}
-          </Box>
-        )}
-      </SidebarSection>
+      {loadedPartitionKeys.length > 1 ? null : (
+        <SidebarSection
+          title={!isSourceAsset ? 'Materialization in last run' : 'Observation in last run'}
+        >
+          {displayedEvent ? (
+            <div style={{margin: -1, maxWidth: '100%', overflowX: 'auto'}}>
+              <LatestMaterializationMetadata
+                assetKey={assetKey}
+                latest={displayedEvent}
+                liveData={liveData}
+              />
+            </div>
+          ) : (
+            <Box
+              margin={{horizontal: 24, vertical: 12}}
+              style={{color: Colors.Gray500, fontSize: '0.8rem'}}
+            >
+              {!isSourceAsset ? `No materializations found` : `No observations found`}
+            </Box>
+          )}
+        </SidebarSection>
+      )}
       <SidebarSection
         title={!isSourceAsset ? 'Materialization system tags' : 'Observation system tags'}
         collapsedByDefault
