@@ -1,5 +1,5 @@
-from typing import Optional, Iterator
 from contextlib import contextmanager
+from typing import Iterator, Optional
 
 from dagster import ConfigurableResource, resource
 from google.cloud import bigquery

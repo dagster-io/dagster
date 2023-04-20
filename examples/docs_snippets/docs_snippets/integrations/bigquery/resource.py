@@ -9,15 +9,12 @@ from dagster import Definitions, asset
 @asset
 def small_petals(bigquery: BigQueryResource):
     with bigquery.get_client() as client:
-        return (
-            client.query(
-                (
-                    'SELECT * FROM IRIS.IRIS_DATA WHERE "petal_length_cm" < 1 AND'
-                    ' "petal_width_cm" < 1'
-                ),
-            )
-            .result()
-        )
+        return client.query(
+            (
+                'SELECT * FROM IRIS.IRIS_DATA WHERE "petal_length_cm" < 1 AND'
+                ' "petal_width_cm" < 1'
+            ),
+        ).result()
 
 
 defs = Definitions(
