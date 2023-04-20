@@ -4,14 +4,7 @@ import styled from 'styled-components/macro';
 
 import {TruncatedTextWithFullTextOnHover} from '../../nav/getLeftNavItemsForOption';
 
-export type FilterListenerCallback<TState> = (value: {
-  state: TState;
-  previousActive: boolean;
-  active: boolean;
-  name: string;
-}) => void;
-
-export type FilterObject<TState> = {
+export type FilterObject = {
   isActive: boolean;
   activeJSX: JSX.Element;
   icon: IconName;
@@ -22,8 +15,8 @@ export type FilterObject<TState> = {
     close: () => void;
     createPortal: (element: JSX.Element) => () => void;
   }) => void;
-  state: TState;
-  setState: (state: TState) => void;
+  onUnselected?: () => void;
+  isLoadingFilters?: boolean;
 };
 
 export const FilterTag = ({
@@ -35,17 +28,19 @@ export const FilterTag = ({
   iconName: IconName;
   onRemove: () => void;
 }) => (
-  <BaseTag
-    icon={<Icon name={iconName} color={Colors.Link} />}
-    rightIcon={
-      <div onClick={onRemove} style={{cursor: 'pointer'}} tabIndex={0}>
-        <Icon name="close" color={Colors.Link} />
-      </div>
-    }
-    label={label}
-    fillColor={Colors.Blue50}
-    textColor={Colors.Link}
-  />
+  <div style={{display: 'inline-block', height: '24px'}}>
+    <BaseTag
+      icon={<Icon name={iconName} color={Colors.Link} />}
+      rightIcon={
+        <div onClick={onRemove} style={{cursor: 'pointer'}} tabIndex={0}>
+          <Icon name="close" color={Colors.Link} />
+        </div>
+      }
+      label={label}
+      fillColor={Colors.Blue50}
+      textColor={Colors.Link}
+    />
+  </div>
 );
 
 const FilterTagHighlightedTextSpan = styled(TruncatedTextWithFullTextOnHover)`

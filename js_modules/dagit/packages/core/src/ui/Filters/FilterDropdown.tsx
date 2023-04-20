@@ -7,6 +7,7 @@ import {
   Menu,
   MenuItem,
   Popover,
+  Spinner,
   TextInput,
 } from '@dagster-io/ui';
 import React, {useState, useRef} from 'react';
@@ -15,11 +16,12 @@ import {v4 as uuidv4} from 'uuid';
 
 import {ShortcutHandler} from '../../app/ShortcutHandler';
 import {useSetStateUpdateCallback} from '../../hooks/useSetStateUpdateCallback';
+import {useUpdatingRef} from '../../hooks/useUpdatingRef';
 
 import {FilterObject} from './useFilter';
 
 interface FilterDropdownProps {
-  filters: FilterObject<any>[];
+  filters: FilterObject[];
   setIsOpen: (isOpen: boolean) => void;
   setPortaledElements: React.Dispatch<React.SetStateAction<JSX.Element[]>>;
 }
@@ -28,7 +30,27 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
   const [menuKey, _] = React.useState(() => uuidv4());
   const [focusedItemIndex, setFocusedItemIndex] = React.useState(-1);
   const [search, setSearch] = useState('');
-  const [selectedFilter, setSelectedFilter] = useState<FilterObject<any> | null>(null);
+  const [selectedFilterName, _setSelectedFilterName] = useState<string | null>(null);
+  const selectedFilter = React.useMemo(() => {
+    return filters.find((filter) => filter.name === selectedFilterName);
+  }, [filters, selectedFilterName]);
+
+  const setSelectedFilterName = useSetStateUpdateCallback(selectedFilterName, (nextName) => {
+    _setSelectedFilterName(nextName);
+    if (nextName === null) {
+      if (selectedFilter) {
+        selectedFilter.onUnselected?.();
+      }
+    }
+  });
+
+  const selectedFilterRef = useUpdatingRef(selectedFilter);
+  React.useLayoutEffect(() => {
+    return () => {
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      selectedFilterRef.current?.onUnselected?.();
+    };
+  }, [selectedFilterRef]);
 
   const {results, filteredFilters} = React.useMemo(() => {
     const filteredFilters = selectedFilter
@@ -47,12 +69,12 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
   }, [search, filters, selectedFilter]);
 
   const selectValue = React.useCallback(
-    (filter: FilterObject<any>, value: any) => {
+    (filter: FilterObject, value: any) => {
       filter.onSelect({
         value,
         close: () => {
           setSearch('');
-          setSelectedFilter(null);
+          setSelectedFilterName(null);
           setFocusedItemIndex(-1);
           setIsOpen(false);
         },
@@ -69,7 +91,7 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
         },
       });
     },
-    [setFocusedItemIndex, setIsOpen, setPortaledElements],
+    [setIsOpen, setPortaledElements, setSelectedFilterName],
   );
 
   const allResultsJsx = React.useMemo(() => {
@@ -95,7 +117,7 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
           <FilterDropdownMenuItem
             key={`filter:${filter.name}`}
             onClick={() => {
-              setSelectedFilter(filter);
+              setSelectedFilterName(filter.name);
               setFocusedItemIndex(-1);
             }}
             text={
@@ -116,6 +138,7 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
           <FilterDropdownMenuItem
             key={`filter-result:${filter.name}:${result.key}`}
             onClick={() => {
+              setSelectedFilterName(filter.name);
               selectValue(filter, result.value);
             }}
             text={result.label}
@@ -132,11 +155,11 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
     filters,
     search,
     menuKey,
+    focusedItemIndex,
     selectValue,
     filteredFilters,
     results,
-    focusedItemIndex,
-    setFocusedItemIndex,
+    setSelectedFilterName,
   ]);
 
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -160,7 +183,7 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
         allResultsJsx[focusedItemIndex]?.props.onClick?.();
       } else if (event.key === 'Escape') {
         if (selectedFilter) {
-          setSelectedFilter(null);
+          setSelectedFilterName(null);
           setFocusedItemIndex(-1);
         } else {
           setIsOpen(false);
@@ -169,7 +192,7 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
         setFocusedItemIndex(-1);
       }
     },
-    [selectedFilter, setFocusedItemIndex, setIsOpen, focusedItemIndex, allResultsJsx],
+    [allResultsJsx, focusedItemIndex, selectedFilter, setSelectedFilterName, setIsOpen],
   );
 
   return (
@@ -207,7 +230,11 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
           style={{maxHeight: '500px', overflowY: 'auto'}}
           onKeyDown={handleKeyDown}
         >
-          {allResultsJsx.length ? (
+          {selectedFilter && selectedFilter.isLoadingFilters ? (
+            <Box padding={{vertical: 12, horizontal: 16}}>
+              <Spinner purpose="section" />
+            </Box>
+          ) : allResultsJsx.length ? (
             allResultsJsx
           ) : (
             <Box padding={{vertical: 12, horizontal: 16}}>No results</Box>
@@ -219,7 +246,7 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
 };
 
 type FilterDropdownButtonProps = {
-  filters: FilterObject<any>[];
+  filters: FilterObject[];
 };
 export const FilterDropdownButton = React.memo(({filters}: FilterDropdownButtonProps) => {
   const keyRef = React.useRef(0);
@@ -227,18 +254,15 @@ export const FilterDropdownButton = React.memo(({filters}: FilterDropdownButtonP
   const [isOpen, _setIsOpen] = useState(false);
   const prevOpenRef = React.useRef(isOpen);
 
-  const setIsOpen = useSetStateUpdateCallback(
-    isOpen,
-    React.useCallback((isOpen) => {
-      _setIsOpen(isOpen);
-      if (isOpen && !prevOpenRef.current) {
-        // Reset the key when the dropdown is opened
-        // But not when its closed because of the closing animation
-        keyRef.current++;
-      }
-      prevOpenRef.current = isOpen;
-    }, []),
-  );
+  const setIsOpen = useSetStateUpdateCallback(isOpen, (isOpen) => {
+    _setIsOpen(isOpen);
+    if (isOpen && !prevOpenRef.current) {
+      // Reset the key when the dropdown is opened
+      // But not when its closed because of the closing animation
+      keyRef.current++;
+    }
+    prevOpenRef.current = isOpen;
+  });
 
   const [portaledElements, setPortaledElements] = useState<JSX.Element[]>([]);
 
@@ -304,7 +328,9 @@ export const FilterDropdownButton = React.memo(({filters}: FilterDropdownButtonP
               onClick={() => {
                 setIsOpen((isOpen) => !isOpen);
               }}
-            />
+            >
+              Filter
+            </Button>
           </Popover>
         </div>
       </Popover>
@@ -340,10 +366,23 @@ type FilterDropdownMenuItemProps = React.ComponentProps<typeof MenuItem> & {
   menuKey: string;
   index: number;
 };
-const FilterDropdownMenuItem = React.memo(
+export const FilterDropdownMenuItem = React.memo(
   ({menuKey, index, ...rest}: FilterDropdownMenuItemProps) => {
+    const divRef = React.useRef<HTMLDivElement | null>(null);
+    React.useLayoutEffect(() => {
+      if (rest.active) {
+        if (divRef.current) {
+          divRef.current?.scrollIntoView?.({block: 'center'});
+        }
+      }
+    }, [rest.active]);
     return (
-      <div role="option" id={itemId(menuKey, index)} aria-selected={rest.active ? 'true' : 'false'}>
+      <div
+        role="option"
+        id={itemId(menuKey, index)}
+        aria-selected={rest.active ? 'true' : 'false'}
+        ref={divRef}
+      >
         <StyledMenuItem {...rest} />
       </div>
     );
@@ -351,7 +390,7 @@ const FilterDropdownMenuItem = React.memo(
 );
 
 const StyledMenuItem = styled(MenuItem)`
-  &:focus {
+  &.bp4-active:focus {
     color: white;
     box-shadow: initial;
   }

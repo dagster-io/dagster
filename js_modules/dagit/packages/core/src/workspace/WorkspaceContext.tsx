@@ -51,7 +51,7 @@ export const WorkspaceContext = React.createContext<WorkspaceState>(
 
 export const HIDDEN_REPO_KEYS = 'dagit.hidden-repo-keys';
 
-const ROOT_WORKSPACE_QUERY = gql`
+export const ROOT_WORKSPACE_QUERY = gql`
   query RootWorkspaceQuery {
     workspaceOrError {
       ... on Workspace {

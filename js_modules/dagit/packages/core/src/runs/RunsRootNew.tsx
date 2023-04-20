@@ -30,7 +30,7 @@ import {
   runsFilterForSearchTokens,
   useQueryPersistedRunFilters,
   RunFilterToken,
-} from './RunsFilterInput';
+} from './RunsFilterInputNew';
 import {RunsPageHeader} from './RunsPageHeader';
 import {
   QueueDaemonStatusNewQuery,
@@ -103,7 +103,14 @@ export const RunsRoot = () => {
   );
 
   const enabledFilters = React.useMemo(() => {
-    const filters: RunFilterTokenType[] = ['tag', 'snapshotId', 'id', 'job', 'pipeline'];
+    const filters: RunFilterTokenType[] = [
+      'tag',
+      'snapshotId',
+      'id',
+      'job',
+      'pipeline',
+      'backfill',
+    ];
 
     if (!staticStatusTags) {
       filters.push('status');
@@ -155,7 +162,6 @@ export const RunsRoot = () => {
                 <RunsFilterInput
                   tokens={mutableTokens}
                   onChange={setFilterTokensWithStatus}
-                  loading={queryResult.loading}
                   enabledFilters={enabledFilters}
                 />
                 <NonIdealState
@@ -205,7 +211,6 @@ export const RunsRoot = () => {
                         <RunsFilterInput
                           tokens={mutableTokens}
                           onChange={setFilterTokensWithStatus}
-                          loading={queryResult.loading}
                           enabledFilters={enabledFilters}
                         />
                       </Box>

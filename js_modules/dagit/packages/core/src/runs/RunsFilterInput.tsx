@@ -25,7 +25,14 @@ type RunTags = Array<{
   values: Array<string>;
 }>;
 
-export type RunFilterTokenType = 'id' | 'status' | 'pipeline' | 'job' | 'snapshotId' | 'tag';
+export type RunFilterTokenType =
+  | 'id'
+  | 'status'
+  | 'pipeline'
+  | 'job'
+  | 'snapshotId'
+  | 'tag'
+  | 'backfill';
 
 export type RunFilterToken = {
   token?: RunFilterTokenType;
@@ -275,7 +282,7 @@ export const RunsFilterInput: React.FC<RunsFilterInputProps> = ({
   );
 };
 
-const RUN_TAG_KEYS_QUERY = gql`
+export const RUN_TAG_KEYS_QUERY = gql`
   query RunTagKeysQuery {
     runTagKeysOrError {
       ... on RunTagKeys {
@@ -285,7 +292,7 @@ const RUN_TAG_KEYS_QUERY = gql`
   }
 `;
 
-const RUN_TAG_VALUES_QUERY = gql`
+export const RUN_TAG_VALUES_QUERY = gql`
   query RunTagValuesQuery($tagKeys: [String!]!) {
     runTagsOrError(tagKeys: $tagKeys) {
       __typename
