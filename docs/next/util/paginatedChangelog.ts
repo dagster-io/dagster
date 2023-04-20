@@ -38,6 +38,7 @@ async function getPaginatedChangeLogImpl(input: {versionCountPerPage: number}): 
 
   const lineList = fullContent.split('\n');
 
+  // Mark the line indices of all version notes
   const versionMarkerList = [];
   for (let i = 0; i < lineList.length; i++) {
     const line = lineList[i];
@@ -46,14 +47,15 @@ async function getPaginatedChangeLogImpl(input: {versionCountPerPage: number}): 
     }
   }
 
-  const versionNoteList = versionMarkerList.map((marker, index) => {
-    if (index === versionMarkerList.length - 1) {
-      return lineList.slice(marker).join('\n');
-    }
-    return lineList.slice(marker, versionMarkerList[index + 1]).join('\n');
-  });
-
+  // Everything above the first version note ("# Changelog")
   const sharedHeader = lineList.slice(0, versionMarkerList[0]).join('\n');
+
+  const versionNoteList = versionMarkerList.map((marker, index) => {
+    const endIndex =
+      index === versionMarkerList.length - 1 ? undefined : versionMarkerList[index + 1];
+
+    return lineList.slice(marker, endIndex).join('\n');
+  });
 
   const pageContentList: Array<string> = [];
   let window: Array<string> = [];
