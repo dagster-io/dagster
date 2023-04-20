@@ -500,7 +500,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             ):
                 selected_models = [
                     ".".join(fqns_by_output_name[output_name])
-                    for output_name in context.selected_output_names  # type: ignore
+                    for output_name in context.selected_output_names
                 ]
 
                 dbt_options.append(f"--select {' '.join(sorted(selected_models))}")
