@@ -36,7 +36,7 @@ setup(
         "dagster==1.3.0",
         "dagster-pandas==0.19.0",
         "pandas",
-        "great_expectations >=0.11.9, !=0.12.8, !=0.13.17, !=0.13.27",
+        "great_expectations >=0.11.9, !=0.12.8, !=0.13.17, !=0.13.27, !=0.16.8",
     ],
     zip_safe=False,
 )
