@@ -103,14 +103,7 @@ export const RunsRoot = () => {
   );
 
   const enabledFilters = React.useMemo(() => {
-    const filters: RunFilterTokenType[] = [
-      'tag',
-      'snapshotId',
-      'id',
-      'job',
-      'pipeline',
-      'backfill',
-    ];
+    const filters: RunFilterTokenType[] = ['tag', 'snapshotId', 'id', 'job', 'pipeline'];
 
     if (!staticStatusTags) {
       filters.push('status');

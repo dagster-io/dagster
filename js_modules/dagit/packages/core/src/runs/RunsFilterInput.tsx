@@ -25,7 +25,14 @@ type RunTags = Array<{
   values: Array<string>;
 }>;
 
-export type RunFilterTokenType = 'id' | 'status' | 'pipeline' | 'job' | 'snapshotId' | 'tag';
+export type RunFilterTokenType =
+  | 'id'
+  | 'status'
+  | 'pipeline'
+  | 'job'
+  | 'snapshotId'
+  | 'tag'
+  | 'backfill';
 
 export type RunFilterToken = {
   token?: RunFilterTokenType;
