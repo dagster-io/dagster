@@ -4,8 +4,8 @@ import {WorkspaceOrError, buildPipelineTagAndValues, buildRunTags} from '../../g
 import {ROOT_WORKSPACE_QUERY} from '../../workspace/WorkspaceContext';
 import {RootWorkspaceQuery} from '../../workspace/types/WorkspaceContext.types';
 import {DagsterTag} from '../RunTag';
-import {RUN_TAG_VALUES_QUERY} from '../RunsFilterInput';
-import {RunTagValuesQuery} from '../types/RunsFilterInput.types';
+import {RUN_TAG_VALUES_QUERY} from '../RunsFilterInputNew';
+import {RunTagValuesNewQuery} from '../types/RunsFilterInputNew.types';
 
 export const buildWorkspaceContextMockedResponse = (
   workspaceOrError: WorkspaceOrError,
@@ -24,7 +24,7 @@ export const buildWorkspaceContextMockedResponse = (
 export function buildRunTagValuesQueryMockedResponse(
   tagKey: DagsterTag,
   values: string[],
-): MockedResponse<RunTagValuesQuery> {
+): MockedResponse<RunTagValuesNewQuery> {
   return {
     request: {
       query: RUN_TAG_VALUES_QUERY,

@@ -23,7 +23,8 @@ type Args<TValue> = {
   renderActiveStateLabel?: ({value, isActive}: {value: TValue; isActive: boolean}) => JSX.Element;
   isMatch: (value: TValue, query: string) => boolean;
   // Whether this is an OR or an AND of these filters. This will affect the wording "any of" vs "all of""
-  isOR?: boolean;
+  matchType?: 'any-of' | 'all-of';
+  boolean;
 };
 
 export type SuggestionFilter<TValue> = FilterObject & {

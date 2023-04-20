@@ -20,8 +20,7 @@ type Args<TValue> = {
   initialState?: Set<TValue> | TValue[];
   onStateChanged?: (state: Set<TValue>) => void;
   allowMultipleSelections?: boolean;
-  // Whether this is an OR or an AND of these filters. This will affect the wording "any of" vs "all of""
-  isOR?: boolean;
+  matchType?: 'any-of' | 'all-of';
 };
 
 export type StaticSetFilter<TValue> = FilterObject & {
@@ -40,7 +39,7 @@ export function useStaticSetFilter<TValue>({
   getStringValue,
   onStateChanged,
   allowMultipleSelections = true,
-  isOR = true,
+  matchType = 'any-of',
 }: Args<TValue>): StaticSetFilter<TValue> {
   const [state, setState] = React.useState(new Set(initialState || []));
 
@@ -115,13 +114,13 @@ export function useStaticSetFilter<TValue>({
             setState(new Set());
           }}
           icon={icon}
-          isOR={isOR}
+          matchType={matchType}
         />
       ),
       setState,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [name, icon, state, getStringValue, renderLabel, allValues, isOR, renderActiveStateLabel],
+    [name, icon, state, getStringValue, renderLabel, allValues, matchType, renderActiveStateLabel],
   );
   const filterObjRef = useUpdatingRef(filterObj);
   return filterObj;
@@ -136,7 +135,7 @@ export function SetFilterActiveState({
   getStringValue,
   onRemove,
   renderLabel,
-  isOR,
+  matchType,
 }: {
   name: string;
   icon: IconName;
@@ -144,9 +143,9 @@ export function SetFilterActiveState({
   getStringValue: (value: any) => string;
   onRemove: () => void;
   renderLabel: (value: any) => JSX.Element;
-  // Whether this is an OR or an AND of these filters. This will affect the wording "any of" vs "all of""
-  isOR: boolean;
+  matchType: 'any-of' | 'all-of';
 }) {
+  const isAnyOf = matchType === 'any-of';
   const arr = React.useMemo(() => Array.from(state), [state]);
   const label = React.useMemo(() => {
     if (arr.length === 0) {
@@ -154,7 +153,7 @@ export function SetFilterActiveState({
     } else if (arr.length <= MAX_VALUES_TO_SHOW) {
       return (
         <>
-          is&nbsp;{arr.length === 1 ? '' : <>{isOR ? 'any of' : 'all of'}&nbsp;</>}
+          is&nbsp;{arr.length === 1 ? '' : <>{isAnyOf ? 'any of' : 'all of'}&nbsp;</>}
           {arr.map((value, index) => (
             <React.Fragment key={index}>
               <FilterTagHighlightedText>{getStringValue(value)}</FilterTagHighlightedText>
@@ -166,7 +165,7 @@ export function SetFilterActiveState({
     } else {
       return (
         <Box flex={{direction: 'row', alignItems: 'center'}}>
-          is <>{isOR ? 'any of' : 'all of'}&nbsp;</>
+          is <>{isAnyOf ? 'any of' : 'all of'}&nbsp;</>
           <Popover
             interactionKind="hover"
             position="bottom"
@@ -195,7 +194,7 @@ export function SetFilterActiveState({
         </Box>
       );
     }
-  }, [arr, getStringValue, isOR, name, renderLabel]);
+  }, [arr, getStringValue, isAnyOf, name, renderLabel]);
 
   if (arr.length === 0) {
     return null;

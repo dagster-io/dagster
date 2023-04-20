@@ -535,7 +535,7 @@ export const RunsFilterInput: React.FC<RunsFilterInputProps> = ({
   );
 };
 
-const RUN_TAG_KEYS_QUERY = gql`
+export const RUN_TAG_KEYS_QUERY = gql`
   query RunTagKeysNewQuery {
     runTagKeysOrError {
       ... on RunTagKeys {
@@ -545,7 +545,7 @@ const RUN_TAG_KEYS_QUERY = gql`
   }
 `;
 
-const RUN_TAG_VALUES_QUERY = gql`
+export const RUN_TAG_VALUES_QUERY = gql`
   query RunTagValuesNewQuery($tagKeys: [String!]!) {
     runTagsOrError(tagKeys: $tagKeys) {
       __typename
