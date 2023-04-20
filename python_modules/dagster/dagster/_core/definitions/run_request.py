@@ -176,7 +176,6 @@ class RunRequest(
         from dagster._core.definitions.job_definition import JobDefinition
         from dagster._core.definitions.partition import (
             DynamicPartitionsDefinition,
-            Partition,
             PartitionedConfig,
             PartitionsDefinition,
         )
@@ -239,38 +238,26 @@ class RunRequest(
                     " applied, it does not exist in the set of valid partition keys."
                 )
 
-            partition = Partition(self.partition_key, self.partition_key)
-
         else:
-            # Relies on the partitions def to throw an error if the partition does not exist
-            partition = partitions_def.get_partition(
+            partitions_def.validate_partition_key(
                 self.partition_key,
-                current_time=current_time,
                 dynamic_partitions_store=dynamic_partitions_store,
+                current_time=current_time,
             )
 
-        get_run_request_tags = lambda partition: (
-            {
-                **self.tags,
-                **partitioned_config.get_tags_for_partition(
-                    partition,
-                    job_name=target_definition.name,
-                ),
-            }
-            if self.tags
-            else partitioned_config.get_tags_for_partition(
-                partition,
+        tags = {
+            **(self.tags or {}),
+            **partitioned_config.get_tags_for_partition_key(
+                self.partition_key,
                 job_name=target_definition.name,
-            )
-        )
+            ),
+        }
 
         return self.with_replaced_attrs(
             run_config=self.run_config
             if self.run_config
-            else partitioned_config.get_run_config_for_partition(
-                partition,
-            ),
-            tags=get_run_request_tags(partition),
+            else partitioned_config.get_run_config_for_partition_key(self.partition_key),
+            tags=tags,
         )
 
     def has_resolved_partition(self) -> bool:

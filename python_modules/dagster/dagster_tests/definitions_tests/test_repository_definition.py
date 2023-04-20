@@ -410,7 +410,7 @@ def test_job_with_partitions():
                 resource_defs={},
                 config=PartitionedConfig(
                     partitions_def=StaticPartitionsDefinition(["abc"]),
-                    run_config_for_partition_fn=lambda _: {},
+                    run_config_for_partition_key_fn=lambda _: {},
                 ),
             )
         ]

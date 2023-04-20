@@ -86,7 +86,7 @@ def qux():
 qux_job = qux.to_job(
     config=PartitionedConfig(
         partitions_def=StaticPartitionsDefinition(["abc"]),
-        run_config_for_partition_fn=lambda _: {},
+        run_config_for_partition_key_fn=lambda _: {},
     ),
     tags={"foo": "bar"},
     executor_def=in_process_executor,
@@ -106,8 +106,8 @@ baz_partitions = StaticPartitionsDefinition(list(string.digits))
 
 baz_config = PartitionedConfig(
     partitions_def=baz_partitions,
-    run_config_for_partition_fn=lambda partition: {
-        "ops": {"do_input": {"inputs": {"x": {"value": partition.value}}}}
+    run_config_for_partition_key_fn=lambda key: {
+        "ops": {"do_input": {"inputs": {"x": {"value": key}}}}
     },
 )
 
@@ -123,7 +123,7 @@ def throw_error(*args) -> NoReturn:
 
 baz_error_config = PartitionedConfig(
     partitions_def=baz_partitions,
-    run_config_for_partition_fn=throw_error,
+    run_config_for_partition_key_fn=throw_error,
 )
 
 

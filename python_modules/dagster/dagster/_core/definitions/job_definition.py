@@ -618,17 +618,18 @@ class JobDefinition:
         if partition_key:
             if not (self.partitions_def and self.partitioned_config):
                 check.failed("Attempted to execute a partitioned run for a non-partitioned job")
+            self.partitions_def.validate_partition_key(
+                partition_key, dynamic_partitions_store=instance
+            )
 
             run_config = (
                 run_config
                 if run_config
-                else self.partitioned_config.get_run_config_for_partition_key(
-                    partition_key, instance
-                )
+                else self.partitioned_config.get_run_config_for_partition_key(partition_key)
             )
             merged_tags.update(
                 self.partitioned_config.get_tags_for_partition_key(
-                    partition_key, instance, job_name=self.name
+                    partition_key, job_name=self.name
                 )
             )
 
@@ -815,22 +816,17 @@ class JobDefinition:
                 " RunRequest(partition_key=...)"
             )
 
-        partition = self.partitions_def.get_partition(
-            partition_key, dynamic_partitions_store=None, current_time=current_time
-        )
+        self.partitions_def.validate_partition_key(partition_key, current_time=current_time)
+
         run_config = (
             run_config
             if run_config is not None
-            else self.partitioned_config.get_run_config_for_partition_key(
-                partition.name, dynamic_partitions_store=None, current_time=current_time
-            )
+            else self.partitioned_config.get_run_config_for_partition_key(partition_key)
         )
         run_request_tags = {
             **(tags or {}),
             **self.partitioned_config.get_tags_for_partition_key(
                 partition_key,
-                dynamic_partitions_store=None,
-                current_time=current_time,
                 job_name=self.name,
             ),
         }
