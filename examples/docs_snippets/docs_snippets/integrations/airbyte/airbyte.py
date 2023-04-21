@@ -177,7 +177,7 @@ def scope_add_downstream_assets_cloud():
         import json
         from dagster import asset, Definitions, define_asset_job, AssetSelection, EnvVar
         from dagster_airbyte import (
-            load_assets_from_airbyte_instance,
+            build_airbyte_assets,
             AirbyteCloudResource,
         )
         from dagster_snowflake_pandas import SnowflakePandasIOManager
@@ -186,10 +186,9 @@ def scope_add_downstream_assets_cloud():
         airbyte_instance = AirbyteCloudResource(
             api_key=EnvVar("AIRBYTE_API_KEY"),
         )
-
-        airbyte_assets = load_assets_from_airbyte_instance(
-            airbyte_instance,
-            io_manager_key="snowflake_io_manager",
+        airbyte_assets = build_airbyte_assets(
+            connection_id="87b7fe85-a22c-420e-8d74-b30e7ede77df",
+            destination_tables=["releases", "tags", "teams"],
         )
 
         @asset
@@ -208,7 +207,10 @@ def scope_add_downstream_assets_cloud():
         defs = Definitions(
             jobs=[my_upstream_job],
             assets=[airbyte_assets, stargazers_file],
-            resources={"snowflake_io_manager": SnowflakePandasIOManager(...)},
+            resources={
+                "snowflake_io_manager": SnowflakePandasIOManager(...),
+                "airbyte_instance": airbyte_instance,
+            },
         )
 
         # end_add_downstream_assets_cloud
@@ -257,42 +259,36 @@ def scope_schedule_assets():
 
 
 def scope_schedule_assets_cloud():
-    from dagster_airbyte import AirbyteCloudResource, load_assets_from_airbyte_instance
-    from dagster import EnvVar
-
     # start_schedule_assets_cloud
+    from dagster_airbyte import AirbyteCloudResource, build_airbyte_assets
+
+    from dagster import (
+        EnvVar,
+        ScheduleDefinition,
+        define_asset_job,
+        Definitions,
+    )
+
     airbyte_instance = AirbyteCloudResource(
         api_key=EnvVar("AIRBYTE_API_KEY"),
     )
-    airbyte_assets = load_assets_from_airbyte_instance(airbyte_instance)
-
-    from dagster import (
-        ScheduleDefinition,
-        define_asset_job,
-        AssetSelection,
-        Definitions,
+    airbyte_assets = build_airbyte_assets(
+        connection_id="87b7fe85-a22c-420e-8d74-b30e7ede77df",
+        destination_tables=["releases", "tags", "teams"],
     )
 
     # materialize all assets
     run_everything_job = define_asset_job("run_everything", selection="*")
 
-    # only run my_airbyte_connection and downstream assets
-    my_etl_job = define_asset_job(
-        "my_etl_job", AssetSelection.groups("my_airbyte_connection").downstream()
-    )
-
     defs = Definitions(
         assets=[airbyte_assets],
         schedules=[
-            ScheduleDefinition(
-                job=my_etl_job,
-                cron_schedule="@daily",
-            ),
             ScheduleDefinition(
                 job=run_everything_job,
                 cron_schedule="@weekly",
             ),
         ],
+        resources={"airbyte": airbyte_instance},
     )
 
     # end_schedule_assets_cloud
