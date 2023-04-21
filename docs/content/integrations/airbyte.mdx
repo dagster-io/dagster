@@ -167,10 +167,14 @@ Manually built Airbyte assets require an `AirbyteResource`, which defines how to
 We can add the Airbyte resource we configured above to our Airbyte assets by doing the following:
 
 ```python startafter=start_airbyte_manual_config endbefore=end_airbyte_manual_config file=/integrations/airbyte/airbyte.py dedent=4
-from dagster_airbyte import build_airbyte_assets
+from dagster_airbyte import build_airbyte_assets, AirbyteResource
 
 from dagster import with_resources
 
+airbyte_instance = AirbyteResource(
+    host="localhost",
+    port="8000",
+)
 airbyte_assets = with_resources(
     build_airbyte_assets(
         connection_id="87b7fe85-a22c-420e-8d74-b30e7ede77df",
