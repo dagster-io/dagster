@@ -1,7 +1,6 @@
 from typing import Any, Iterable, List, Optional
 
 from dagster import Config, In, Nothing, Out, Output, op
-from dagster._annotations import quiet_experimental_warnings
 from pydantic import Field
 
 from dagster_airbyte.types import AirbyteOutput
@@ -48,10 +47,6 @@ class AirbyteSyncConfig(Config):
             "prefix the generated asset keys."
         ),
     )
-
-    @quiet_experimental_warnings
-    def __init__(*args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
 
 
 @op(
