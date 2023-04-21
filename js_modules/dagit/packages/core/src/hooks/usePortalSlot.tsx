@@ -5,7 +5,7 @@ import {createPortal} from 'react-dom';
  * Allows you to move a component around in the tree without it losing its state.
  */
 export function usePortalSlot(reactNode: React.ReactNode) {
-  const [targetEl, setTargetEl] = React.useState<HTMLDivElement>(null);
+  const [targetEl, setTargetEl] = React.useState<HTMLDivElement | null>(null);
 
   React.useLayoutEffect(() => {
     setTargetEl((e) => (e === null ? document.createElement('div') : e));
@@ -18,7 +18,7 @@ export function usePortalSlot(reactNode: React.ReactNode) {
 }
 
 function DOMNodeHost({node}: {node: HTMLElement}) {
-  const ref = React.useRef<HTMLElement>();
+  const ref = React.useRef<HTMLDivElement | null>(null);
   React.useLayoutEffect(() => {
     const ownDiv = ref.current;
     if (node.parentNode === ownDiv) {
