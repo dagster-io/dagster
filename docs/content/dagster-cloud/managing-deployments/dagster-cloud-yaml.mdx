@@ -1,6 +1,6 @@
 ---
 title: dagster_cloud.yaml | Dagster Docs
-description: How to use dagster_cloud.yaml to configure Dagster Cloud
+description: How to configure your code locations for configure Dagster Cloud
 ---
 
 # dagster_cloud.yaml
@@ -37,10 +37,10 @@ Parameter reference table:
 
 | Parameter                            | Description                                                                           | Data type            |
 | ------------------------------------ | ------------------------------------------------------------------------------------- | -------------------- |
-| `locations.location_name`            | The name of your code location that will appear in the Dagster UI code locations page | string               |
-| `locations.code_source.package_name` | Use if your dagster code is structured as a package                                   | string (folder name) |
-| `locations.code_source.python_file`  | Use if your dagster code is in a single file                                          | string (.py file)    |
-| `locations.code_source.module_name`  | The module that contains your dagster code (which matches pyproject.toml)                                            | string (module name) |
+| `location_name`            | The name of your code location that will appear in the Dagster UI code locations page | string               |
+| `code_source.package_name` | Use if your dagster code is structured as a package                                   | string (folder name) |
+| `code_source.python_file`  | Use if your dagster code is in a single file                                          | string (.py file)    |
+| `code_source.module_name`  | The module that contains your dagster code (which matches pyproject.toml)                                            | string (module name) |
 
 Example for a single code location:
 
@@ -75,7 +75,23 @@ Parameter reference table:
 
 | Parameter           | Description                                            | Data type     |
 | ------------------- | ------------------------------------------------------ | ------------- |
-| `working_directory` | The path of the directory that Dagster should run from | string (path) |
+| `location_name.working_directory` | The path of the directory that Dagster should run from | string (path) |
+
+Example file directory:
+
+```shell
+quickstart_etl
+├── README.md
+├── project_directory
+│   ├── quickstart_etl
+│     ├── __init__.py
+│     ├── assets
+│   ├── quickstart_etl_tests
+├── dagster_cloud.yaml
+├── pyproject.toml
+├── setup.cfg
+└── setup.py
+```
 
 ```yaml
 #dagster_cloud.yaml
@@ -97,8 +113,8 @@ Parameter reference table:
 
 | Parameter                   | Description                                                                                                                                                       | Data type                |
 | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
-| `locations.build.directory` | The directory in your project code that you want to deploy, the default is `.`. If you have sub-folders you can specific the path to only deploy that sub-project | string (path)            |
-| `locations.build.registry`  | The Docker registry to push your code location to in the registry (Hybrid only)                                                                                   | string (docker registry) |
+| `build.directory` | The directory in your project code that you want to deploy, the default is `.`. If you have sub-folders you can specific the path to only deploy that sub-project | string (path)            |
+| `build.registry`  | The Docker registry to push your code location to in the registry (Hybrid only)                                                                                   | string (docker registry) |
 
 Example:
 
