@@ -307,25 +307,41 @@ class OpDefinition(NodeDefinition):
     def input_supports_dynamic_output_dep(self, input_name: str) -> bool:
         return True
 
+    def with_replaced_properties(
+        self,
+        name: str,
+        ins: Optional[Mapping[str, In]] = None,
+        outs: Optional[Mapping[str, Out]] = None,
+        config_schema: Optional[IDefinitionConfigSchema] = None,
+        description: Optional[str] = None,
+    ) -> "OpDefinition":
+        return OpDefinition(
+            name=name,
+            ins=ins
+            or {input_def.name: In.from_definition(input_def) for input_def in self.input_defs},
+            outs=outs
+            or {
+                output_def.name: Out.from_definition(output_def) for output_def in self.output_defs
+            },
+            compute_fn=self.compute_fn,
+            config_schema=config_schema or self.config_schema,
+            description=description or self.description,
+            tags=self.tags,
+            required_resource_keys=self.required_resource_keys,
+            code_version=self.version,
+            retry_policy=self.retry_policy,
+        )
+
     def copy_for_configured(
         self,
         name: str,
         description: Optional[str],
         config_schema: IDefinitionConfigSchema,
     ) -> "OpDefinition":
-        return OpDefinition(
+        return self.with_replaced_properties(
             name=name,
-            ins={input_def.name: In.from_definition(input_def) for input_def in self.input_defs},
-            outs={
-                output_def.name: Out.from_definition(output_def) for output_def in self.output_defs
-            },
-            compute_fn=self.compute_fn,
+            description=description,
             config_schema=config_schema,
-            description=description or self.description,
-            tags=self.tags,
-            required_resource_keys=self.required_resource_keys,
-            code_version=self.version,
-            retry_policy=self.retry_policy,
         )
 
     def get_resource_requirements(
@@ -435,6 +451,21 @@ class OpDefinition(NodeDefinition):
                     context = cast(UnboundOpExecutionContext, args[0])
                     args = args[1:]
                 return op_invocation_result(self, context, *args, **kwargs)
+
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, OpDefinition):
+            return False
+        return (
+            self.compute_fn == other.compute_fn
+            and self.name == other.name
+            and self.description == other.description
+            and self.config_schema == other.config_schema
+            and self.required_resource_keys == other.required_resource_keys
+            and self.tags == other.tags
+            and self.version == other.version
+            and self.retry_policy == other.retry_policy
+            and self.version == other.version
+        )
 
 
 def _resolve_output_defs_from_outs(

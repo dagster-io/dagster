@@ -12,6 +12,7 @@ from typing import (
     Optional,
     Sequence,
     Set,
+    Tuple,
     Union,
     cast,
 )
@@ -22,11 +23,13 @@ from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.asset_layer import get_dep_node_handles_of_graph_backed_asset
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.input import In
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster._core.selector.subset_selector import SelectionTree
+from dagster._core.types.dagster_type import Nothing
 from dagster._utils.backcompat import (
     ExperimentalWarning,
     deprecation_warning,
@@ -861,6 +864,40 @@ class AssetsDefinition(ResourceAddable):
             descriptions_by_key=replaced_descriptions_by_key,
         )
 
+    def _subset_op_with_new_inputs(
+        self,
+        *,
+        asset_subselection: AbstractSet[AssetKey],
+    ) -> Tuple[OpDefinition, Mapping[str, AssetKey]]:
+        # the set of keys that are not selected but are upstream of the selected keys
+        input_keys = {
+            dep_key for key in asset_subselection for dep_key in self.asset_deps[key]
+        }.difference(asset_subselection)
+        ins = {}
+        outs = {**self.op.outs}
+
+        input_names_by_key = {v: k for k, v in self.keys_by_input_name.items()}
+        output_names_by_key = {v: k for k, v in self.keys_by_output_name.items()}
+        for input_key in input_keys:
+            input_name = input_names_by_key.get(input_key)
+            if input_name is None:
+                # there is no input existing for this key, meaning this is something that is
+                # traditionally produced within the op, so we create a new input and remove the
+                # corresponding output
+                input_name = f"artificial_{'_'.join(input_key.path)}"
+                ins[input_name] = In(Nothing)
+                input_names_by_key[input_key] = input_name
+                del outs[output_names_by_key[input_key]]
+            else:
+                # just copy over existing input
+                ins[input_name] = self.op.ins[input_name]
+
+        # create a hash of the selected keys to generate a unique name for this subsetted op
+        suffix = hashlib.md5((str(list(sorted(asset_subselection)))).encode()).hexdigest()[-5:]
+        return self.op.with_replaced_properties(
+            name=f"{self.op.name}_subset_{suffix}", ins=ins, outs=outs
+        ), {v: k for k, v in input_names_by_key.items()}
+
     def _subset_graph_backed_asset(
         self,
         selected_asset_keys: AbstractSet[AssetKey],
@@ -974,14 +1011,23 @@ class AssetsDefinition(ResourceAddable):
             )
         else:
             # multi_asset subsetting
+            op_def, keys_by_input_name = self._subset_op_with_new_inputs(
+                asset_subselection=frozenset(asset_subselection)
+            )
+            keys_by_output_name = {
+                k: v for k, v in self._keys_by_output_name.items() if k in op_def.outs
+            }
+            asset_deps = {
+                k: v for k, v in self.asset_deps.items() if k in keys_by_output_name.values()
+            }
             return AssetsDefinition(
                 # keep track of the original mapping
-                keys_by_input_name=self._keys_by_input_name,
-                keys_by_output_name=self._keys_by_output_name,
-                node_def=self.node_def,
+                keys_by_input_name=keys_by_input_name,
+                keys_by_output_name=keys_by_output_name,
+                node_def=op_def,
                 partitions_def=self.partitions_def,
                 partition_mappings=self._partition_mappings,
-                asset_deps=self._asset_deps,
+                asset_deps=asset_deps,
                 can_subset=self.can_subset,
                 selected_asset_keys=asset_subselection,
                 resource_defs=self.resource_defs,
