@@ -6,8 +6,8 @@ When new releases include breaking changes or deprecations, this document descri
 
 ### Deprecations
 
-- **[deprecation, 1.4.0]** `build_asset_reconciliation_sensor`, which was experimental, is now deprecated, in favor of assigning `AutoMaterializePolicy`s on assets. Refer to the docs on `AutoMaterializePolicy`s for how this works: [https://docs.dagster.io/concepts/assets/asset-auto-execution](https://docs.dagster.io/concepts/assets/asset-auto-execution).
-- **[deprecation, 2.0.0]** Previously, the recommended pattern for creating a run request for a given partition of a job within a sensor was  `yield job_def.run_request_for_partition(partition_key="...")`. This has been deprecated, in favor of `yield RunRequest(partition_key="...")`.
+- **[deprecation, 1.4.0]** `build_asset_reconciliation_sensor`, which was experimental, is now deprecated, in favor of setting `AutoMaterializePolicy` on assets. Refer to the docs on `AutoMaterializePolicy` for how this works: [https://docs.dagster.io/concepts/assets/asset-auto-execution](https://docs.dagster.io/concepts/assets/asset-auto-execution).
+- **[deprecation, 2.0.0]** Previously, the recommended pattern for creating a run request for a given partition of a job within a sensor was `yield job_def.run_request_for_partition(partition_key="...")`. This has been deprecated, in favor of `yield RunRequest(partition_key="...")`.
 
 ### Breaking Changes
 
@@ -44,13 +44,15 @@ RENAME COLUMN time_copy TO time
 ### Database migration
 
 1.2.0 adds a set of optional database schema migrations, which can be run via `dagster instance migrate`:
-  - Improves Dagit performance by adding a database index which should speed up job run views.
-  - Enables dynamic partitions definitions by creating a database table to store partition keys. This feature is experimental and may require future migrations.
-  - Adds a primary key `id` column to the `kvs`, `daemon_heartbeats` and `instance_info` tables, enforcing that all tables have a primary key.
+
+- Improves Dagit performance by adding a database index which should speed up job run views.
+- Enables dynamic partitions definitions by creating a database table to store partition keys. This feature is experimental and may require future migrations.
+- Adds a primary key `id` column to the `kvs`, `daemon_heartbeats` and `instance_info` tables, enforcing that all tables have a primary key.
 
 ### Breaking changes
 
 #### Core changes
+
 - The minimum `grpcio` version supported by Dagster has been increased to 1.44.0 so that Dagster can support both `protobuf` 3 and `protobuf` 4. Similarly, the minimum `protobuf` version supported by Dagster has been increased to 3.20.0. We are working closely with the gRPC team on resolving the upstream issues keeping the upper-bound `grpcio` pin in place in Dagster, and hope to be able to remove it very soon.
 - Prior to 0.9.19, asset keys were serialized in a legacy format. This release removes support for querying asset events serialized with this legacy format. Contact #dagster-support for tooling to migrate legacy events to the supported version. Users who began using assets after 0.9.19 will not be affected by this change.
 
@@ -69,10 +71,12 @@ RENAME COLUMN time_copy TO time
 - [previously deprecated, 1.0.0] The `pipeline_run` argument to `build_resources` has been removed (use `dagster_run`)
 
 #### Extension Libraries
+
 - [dagster-snowflake] The `execute_query`and `execute_queries` methods of the `SnowflakeResource` now have consistent behavior based on the values of the `fetch_results` and `use_pandas_result` parameters. If `fetch_results` is True, the standard Snowflake result will be returned. If `fetch_results` and `use_pandas_result` are True, a pandas DataFrame will be returned. If `fetch_results` is False and `use_pandas_result` is True, an error will be raised. If both are False, no result will be returned.
 - [dagster-snowflake] The `execute_queries` command now returns a list of DataFrames when `use_pandas_result` is True, rather than appending the results of each query to a single DataFrame.
 - [dagster-shell] The default behavior of the `execute` and `execute_shell_command` functions is now to include any environment variables in the calling op. To restore the previous behavior, you can pass in `env={}` to these functions.
 - [dagster-k8s] Several Dagster features that were previously disabled by default in the Dagster Helm chart are now enabled by default. These features are:
+
   - The [run queue](https://docs.dagster.io/deployment/run-coordinator#limiting-run-concurrency) (by default, without a limit). Runs will now always be launched from the Daemon.
   - Run queue parallelism - by default, up to 4 runs can now be pulled off of the queue at a time (as long as the global run limit or tag-based concurrency limits are not exceeded).
   - [Run retries](https://docs.dagster.io/deployment/run-retries#run-retries) - runs will now retry if they have the `dagster/max_retries` tag set. You can configure a global number of retries in the Helm chart by setting `run_retries.max_retries` to a value greater than the default of 0.
@@ -91,8 +95,9 @@ RENAME COLUMN time_copy TO time
 ### Database migration
 
 Two optional database schema migrations, which can be run via `dagster instance migrate`:
-  - Improves Dagit performance by adding database indexes which should speed up the run view as well as a range of asset-based queries.
-  - Enables multi-dimensional asset partitions and asset versioning.
+
+- Improves Dagit performance by adding database indexes which should speed up the run view as well as a range of asset-based queries.
+- Enables multi-dimensional asset partitions and asset versioning.
 
 ### Breaking changes and deprecations
 
@@ -551,7 +556,7 @@ For example, the following workspace entry:
 
 ```yaml
 - python_environment:
-    executable_path: '/path/to/venvs/dagster-dev-3.7.6/bin/python'
+    executable_path: "/path/to/venvs/dagster-dev-3.7.6/bin/python"
     target:
       python_package:
         package_name: dagster_examples
@@ -562,7 +567,7 @@ should now be expressed as:
 
 ```yaml
 - python_package:
-    executable_path: '/path/to/venvs/dagster-dev-3.7.6/bin/python'
+    executable_path: "/path/to/venvs/dagster-dev-3.7.6/bin/python"
     package_name: dagster_examples
     location_name: dagster_examples
 ```
@@ -937,7 +942,7 @@ load_from:
   - python_module: dagster_examples.intro_tutorial.repos
   - python_file: repos.py
   - python_environment:
-      executable_path: '/path/to/venvs/dagster-dev-3.7.6/bin/python'
+      executable_path: "/path/to/venvs/dagster-dev-3.7.6/bin/python"
       target:
         python_module:
           module_name: dagster_examples
