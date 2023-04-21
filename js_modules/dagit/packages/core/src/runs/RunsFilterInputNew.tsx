@@ -209,13 +209,24 @@ export const RunsFilterInput: React.FC<RunsFilterInputProps> = ({
   const [fetchUserValues, userValues] = useTagDataFilterValues(DagsterTag.User);
   const [fetchBackfillValues, backfillValues] = useTagDataFilterValues(DagsterTag.Backfill);
 
+  const isBackfillsFilterEnabled = !enabledFilters || enabledFilters?.includes('backfill');
+
   const onFocus = React.useCallback(() => {
     fetchTagKeys();
     fetchSensorValues();
     fetchScheduleValues();
     fetchUserValues();
-    fetchBackfillValues();
-  }, [fetchBackfillValues, fetchScheduleValues, fetchSensorValues, fetchTagKeys, fetchUserValues]);
+    if (isBackfillsFilterEnabled) {
+      fetchBackfillValues();
+    }
+  }, [
+    fetchBackfillValues,
+    fetchScheduleValues,
+    fetchSensorValues,
+    fetchTagKeys,
+    fetchUserValues,
+    isBackfillsFilterEnabled,
+  ]);
 
   const createdByValues = React.useMemo(() => [...sensorValues, ...scheduleValues, ...userValues], [
     sensorValues,
@@ -223,9 +234,15 @@ export const RunsFilterInput: React.FC<RunsFilterInputProps> = ({
     userValues,
   ]);
 
+  const isJobFilterEnabled = !enabledFilters || enabledFilters?.includes('job');
+
   const {pipelines, jobs} = React.useMemo(() => {
     const pipelineNames = [];
     const jobNames = [];
+
+    if (!isJobFilterEnabled) {
+      return {pipelines: [], jobs: []};
+    }
 
     for (const option of options) {
       const {repository} = option;
@@ -251,7 +268,10 @@ export const RunsFilterInput: React.FC<RunsFilterInputProps> = ({
         match: [name],
       })),
     };
-  }, [options]);
+  }, [isJobFilterEnabled, options]);
+
+  const isPipelineFilterEnabled =
+    !enabledFilters || (enabledFilters?.includes('job') && pipelines.length);
 
   const jobFilter = useStaticSetFilter({
     name: 'Job',
@@ -446,11 +466,9 @@ export const RunsFilterInput: React.FC<RunsFilterInputProps> = ({
           ]);
         },
       }),
-      !enabledFilters || enabledFilters?.includes('job') ? jobFilter : null,
-      !enabledFilters || (enabledFilters?.includes('job') && pipelines.length)
-        ? pipelinesFilter
-        : null,
-      !enabledFilters || enabledFilters?.includes('backfill') ? backfillsFilter : null,
+      isJobFilterEnabled ? jobFilter : null,
+      isPipelineFilterEnabled ? pipelinesFilter : null,
+      isBackfillsFilterEnabled ? backfillsFilter : null,
       useSuggestionFilter({
         name: 'Tag',
         icon: 'tag',
