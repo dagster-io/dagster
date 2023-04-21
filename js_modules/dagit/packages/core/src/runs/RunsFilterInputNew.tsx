@@ -81,6 +81,12 @@ const RUN_PROVIDERS_EMPTY = [
   },
 ];
 
+const StatusFilterValues = Object.keys(RunStatus).map((x) => ({
+  label: capitalizeFirstLetter(x),
+  value: x,
+  match: [x],
+}));
+
 /**
  * This React hook provides run filtering state similar to React.useState(), but syncs
  * the value to the URL query string so that reloading the page / navigating "back"
@@ -303,11 +309,7 @@ export const RunsFilterInput: React.FC<RunsFilterInputProps> = ({
   const statusFilter = useStaticSetFilter({
     name: 'Status',
     icon: 'status',
-    allValues: Object.keys(RunStatus).map((x) => ({
-      label: capitalizeFirstLetter(x),
-      value: x,
-      match: [x],
-    })),
+    allValues: StatusFilterValues,
     renderLabel: ({value}) => <span>{capitalizeFirstLetter(value)}</span>,
     getStringValue: (x) => capitalizeFirstLetter(x),
     initialState: React.useMemo(
