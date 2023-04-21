@@ -235,6 +235,31 @@ class BaseAirbyteResource(ConfigurableResource):
 
 
 class AirbyteCloudResource(BaseAirbyteResource):
+    """This resource allows users to programatically interface with the Airbyte Cloud API to launch
+    syncs and monitor their progress.
+
+    **Examples:**
+
+    .. code-block:: python
+
+        from dagster import job, EnvVar
+        from dagster_airbyte import AirbyteResource
+
+        my_airbyte_resource = AirbyteCloudResource(
+            api_key=EnvVar("AIRBYTE_API_KEY"),
+        )
+
+        airbyte_assets = build_airbyte_assets(
+            connection_id="87b7fe85-a22c-420e-8d74-b30e7ede77df",
+            destination_tables=["releases", "tags", "teams"],
+        )
+
+        defs = Definitions(
+            assets=[airbyte_assets],
+            resources={"airbyte": my_airbyte_resource},
+        )
+    """
+
     api_key: str = Field(..., description="The Airbyte Cloud API key.")
 
     @property
@@ -274,7 +299,34 @@ class AirbyteCloudResource(BaseAirbyteResource):
 
 
 class AirbyteResource(BaseAirbyteResource):
-    """This class exposes methods on top of the Airbyte REST API."""
+    """This resource allows users to programatically interface with the Airbyte REST API to launch
+    syncs and monitor their progress.
+
+    **Examples:**
+
+    .. code-block:: python
+
+        from dagster import job, EnvVar
+        from dagster_airbyte import AirbyteResource
+
+        my_airbyte_resource = AirbyteResource(
+            host=EnvVar("AIRBYTE_HOST"),
+            port=EnvVar("AIRBYTE_PORT"),
+            # If using basic auth
+            username=EnvVar("AIRBYTE_USERNAME"),
+            password=EnvVar("AIRBYTE_PASSWORD"),
+        )
+
+        airbyte_assets = build_airbyte_assets(
+            connection_id="87b7fe85-a22c-420e-8d74-b30e7ede77df",
+            destination_tables=["releases", "tags", "teams"],
+        )
+
+        defs = Definitions(
+            assets=[airbyte_assets],
+            resources={"airbyte": my_airbyte_resource},
+        )
+    """
 
     host: str = Field(description="The Airbyte server address.")
     port: str = Field(description="Port used for the Airbyte server.")
@@ -630,5 +682,6 @@ def airbyte_cloud_resource(context) -> AirbyteCloudResource:
     """This resource allows users to programatically interface with the Airbyte Cloud REST API to launch
     syncs and monitor their progress. Currently, this resource may only be used with the more basic
     `dagster-airbyte` APIs, including the ops and assets.
+
     """
     return AirbyteCloudResource.from_resource_context(context)

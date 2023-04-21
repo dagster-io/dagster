@@ -43,10 +43,11 @@ from dagster._core.definitions.metadata import (
     TableSchemaMetadataValue,
 )
 from dagster._core.definitions.metadata.table import TableSchema
+from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.execution.context.init import build_init_resource_context
 from dagster._utils.merger import merge_dicts
 
-from dagster_airbyte.resources import AirbyteResource, BaseAirbyteResource
+from dagster_airbyte.resources import AirbyteCloudResource, AirbyteResource, BaseAirbyteResource
 from dagster_airbyte.types import AirbyteTableMetadata
 from dagster_airbyte.utils import (
     generate_materializations,
@@ -800,6 +801,11 @@ def load_assets_from_airbyte_instance(
             connection_filter=lambda meta: "snowflake" in meta.name,
         )
     """
+    if isinstance(airbyte, AirbyteCloudResource):
+        raise DagsterInvalidInvocationError(
+            "load_assets_from_airbyte_instance is not yet supported for AirbyteCloudResource"
+        )
+
     if isinstance(key_prefix, str):
         key_prefix = [key_prefix]
     key_prefix = check.list_param(key_prefix or [], "key_prefix", of_type=str)
