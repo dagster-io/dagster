@@ -2,6 +2,7 @@ import {Tag, Tooltip} from '@dagster-io/ui';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 
+import {makeSensorKey} from '../sensors/makeSensorKey';
 import {Container, Inner} from '../ui/VirtualizedTable';
 import {findDuplicateRepoNames} from '../ui/findDuplicateRepoNames';
 import {useRepoExpansionState} from '../ui/useRepoExpansionState';
@@ -11,21 +12,32 @@ import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
 import {OVERVIEW_COLLAPSED_KEY} from './OverviewExpansionKey';
+import {BasicInstigationStateFragment} from './types/BasicInstigationStateFragment.types';
+
+type SensorInfo = {name: string; sensorState: BasicInstigationStateFragment};
 
 type Repository = {
   repoAddress: RepoAddress;
-  sensors: string[];
+  sensors: SensorInfo[];
 };
 
 interface Props {
   repos: Repository[];
+  headerCheckbox: React.ReactNode;
+  checkedKeys: Set<string>;
+  onToggleCheckFactory: (path: string) => (values: {checked: boolean; shiftKey: boolean}) => void;
 }
 
 type RowType =
   | {type: 'header'; repoAddress: RepoAddress; sensorCount: number}
-  | {type: 'sensor'; repoAddress: RepoAddress; name: string};
+  | {type: 'sensor'; repoAddress: RepoAddress; sensor: SensorInfo};
 
-export const OverviewSensorTable: React.FC<Props> = ({repos}) => {
+export const OverviewSensorTable = ({
+  repos,
+  headerCheckbox,
+  checkedKeys,
+  onToggleCheckFactory,
+}: Props) => {
   const parentRef = React.useRef<HTMLDivElement | null>(null);
   const allKeys = React.useMemo(
     () => repos.map(({repoAddress}) => repoAddressAsHumanString(repoAddress)),
@@ -42,8 +54,8 @@ export const OverviewSensorTable: React.FC<Props> = ({repos}) => {
       flat.push({type: 'header', repoAddress, sensorCount: sensors.length});
       const repoKey = repoAddressAsHumanString(repoAddress);
       if (expandedKeys.includes(repoKey)) {
-        sensors.forEach((name) => {
-          flat.push({type: 'sensor', repoAddress, name});
+        sensors.forEach((sensor) => {
+          flat.push({type: 'sensor', repoAddress, sensor});
         });
       }
     });
@@ -67,36 +79,46 @@ export const OverviewSensorTable: React.FC<Props> = ({repos}) => {
 
   return (
     <>
-      <VirtualizedSensorHeader />
+      <VirtualizedSensorHeader checkbox={headerCheckbox} />
       <div style={{overflow: 'hidden'}}>
         <Container ref={parentRef}>
           <Inner $totalHeight={totalHeight}>
             {items.map(({index, key, size, start}) => {
               const row: RowType = flattened[index];
               const type = row!.type;
-              return type === 'header' ? (
-                <RepoRow
-                  repoAddress={row.repoAddress}
-                  key={key}
-                  height={size}
-                  start={start}
-                  onToggle={onToggle}
-                  onToggleAll={onToggleAll}
-                  expanded={expandedKeys.includes(repoAddressAsHumanString(row.repoAddress))}
-                  showLocation={duplicateRepoNames.has(row.repoAddress.name)}
-                  rightElement={
-                    <Tooltip
-                      content={row.sensorCount === 1 ? '1 sensor' : `${row.sensorCount} sensors`}
-                      placement="top"
-                    >
-                      <Tag>{row.sensorCount}</Tag>
-                    </Tooltip>
-                  }
-                />
-              ) : (
+              if (type === 'header') {
+                return (
+                  <RepoRow
+                    repoAddress={row.repoAddress}
+                    key={key}
+                    height={size}
+                    start={start}
+                    onToggle={onToggle}
+                    onToggleAll={onToggleAll}
+                    expanded={expandedKeys.includes(repoAddressAsHumanString(row.repoAddress))}
+                    showLocation={duplicateRepoNames.has(row.repoAddress.name)}
+                    rightElement={
+                      <Tooltip
+                        content={row.sensorCount === 1 ? '1 sensor' : `${row.sensorCount} sensors`}
+                        placement="top"
+                      >
+                        <Tag>{row.sensorCount}</Tag>
+                      </Tooltip>
+                    }
+                  />
+                );
+              }
+
+              const sensorKey = makeSensorKey(row.repoAddress, row.sensor.name);
+
+              return (
                 <VirtualizedSensorRow
                   key={key}
-                  name={row.name}
+                  name={row.sensor.name}
+                  sensorState={row.sensor.sensorState}
+                  showCheckboxColumn={!!headerCheckbox}
+                  checked={checkedKeys.has(sensorKey)}
+                  onToggleChecked={onToggleCheckFactory(sensorKey)}
                   repoAddress={row.repoAddress}
                   height={size}
                   start={start}

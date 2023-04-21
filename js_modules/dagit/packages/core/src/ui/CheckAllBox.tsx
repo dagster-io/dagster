@@ -7,7 +7,7 @@ interface Props {
   onToggleAll: (checked: boolean) => void;
 }
 
-export const SchedulesCheckAll = ({checkedCount, totalCount, onToggleAll}: Props) => {
+export const CheckAllBox = ({checkedCount, totalCount, onToggleAll}: Props) => {
   return (
     <Tooltip content={`${checkedCount} of ${totalCount} selected`} placement="top">
       <Checkbox
