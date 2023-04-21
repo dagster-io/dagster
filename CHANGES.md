@@ -18,7 +18,7 @@
 
 ### Core
 
-- **Auto-materialize policies replace the asset reconciliation sensor** - We significantly renovated the APIs used for specifying which assets are scheduled declaratively. Compared to `build_asset_reconciliation_sensor`s , `AutoMaterializePolicy`s work across code locations, as well as allow you to customize the conditions under which each asset is auto-materialized. [[docs](https://docs.dagster.io/concepts/assets/asset-auto-execution)]
+- **Auto-materialize policies replace the asset reconciliation sensor** - We significantly renovated the APIs used for specifying which assets are scheduled declaratively. Compared to `build_asset_reconciliation_sensor`s , `AutoMaterializePolicy` works across code locations, as well as allow you to customize the conditions under which each asset is auto-materialized. [[docs](https://docs.dagster.io/concepts/assets/asset-auto-execution)]
 - **Asset backfill page** - A new page in the UI for monitoring asset backfills shows the progress of each asset in the backfill.
 - **Clearer labels for tracking changes to data and code** - Instead of the opaque “stale” indicator, Dagster’s UI now indicates whether code, upstream data, or dependencies have changed. When assets are in violation of their `FreshnessPolicy`s, Dagster’s UI now marks them as “overdue” instead of “late”.
 - **Auto-materialization and observable source assets** - Assets downstream of an observable source asset now use the source asset observations to determine whether upstream data has changed and assets need to be materialized.
@@ -65,11 +65,11 @@
 **Changes to experimental APIs**
 
 - Pythonic Resources and Config
-    - Enabled passing `RunConfig` to many APIs which previously would only accept a config dictionary.
-    - Enabled passing raw Python objects as resources to many APIs which previously would only accept `ResourceDefinition`.
-    - Added the ability to pass `execution` config when constructing a `RunConfig` object.
-    - Introduced more clear error messages when trying to mutate state on a Pythonic config or resource object.
-    - Improved direct invocation experience for assets, ops, schedules and sensors using Pythonic config and resources. Config and resources can now be passed directly as args or kwargs.
+  - Enabled passing `RunConfig` to many APIs which previously would only accept a config dictionary.
+  - Enabled passing raw Python objects as resources to many APIs which previously would only accept `ResourceDefinition`.
+  - Added the ability to pass `execution` config when constructing a `RunConfig` object.
+  - Introduced more clear error messages when trying to mutate state on a Pythonic config or resource object.
+  - Improved direct invocation experience for assets, ops, schedules and sensors using Pythonic config and resources. Config and resources can now be passed directly as args or kwargs.
 - The `minutes_late` and `previous_minutes_late` properties on the experimental `FreshnesPolicySensorContext` have been renamed to `minutes_overdue` and `previous_minutes_overdue`, respectively.
 
 **Removal of deprecated APIs**
@@ -88,7 +88,6 @@
 ### Dagster Cloud
 
 - Previously, when deprovisioning an agent, code location servers were cleaned up in serial. Now, they’re cleaned up in parallel.
-
 
 # 1.2.7 (core) / 0.18.7 (libraries)
 
