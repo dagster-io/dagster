@@ -87,6 +87,18 @@ def scope_manually_define_airbyte_assets():
     # end_manually_define_airbyte_assets
 
 
+
+def scope_manually_define_airbyte_assets_cloud():
+    # start_manually_define_airbyte_assets_cloud
+    from dagster_airbyte import build_airbyte_assets
+
+    airbyte_assets = build_airbyte_assets(
+        connection_id="43908042-8399-4a58-82f1-71a45099fff7",
+        destination_tables=["releases", "tags", "teams"],
+    )
+    # end_manually_define_airbyte_assets_cloud
+
+
 def scope_airbyte_manual_config():
     # start_airbyte_manual_config
     from dagster_airbyte import build_airbyte_assets, AirbyteResource
@@ -118,7 +130,7 @@ def scope_airbyte_cloud_manual_config():
         api_key=EnvVar("AIRBYTE_API_KEY"),
     )
     airbyte_assets = build_airbyte_assets(
-        connection_id="87b7fe85-a22c-420e-8d74-b30e7ede77df",
+        connection_id="43908042-8399-4a58-82f1-71a45099fff7",
         destination_tables=["releases", "tags", "teams"],
     )
 
@@ -187,7 +199,7 @@ def scope_add_downstream_assets_cloud():
             api_key=EnvVar("AIRBYTE_API_KEY"),
         )
         airbyte_assets = build_airbyte_assets(
-            connection_id="87b7fe85-a22c-420e-8d74-b30e7ede77df",
+            connection_id="43908042-8399-4a58-82f1-71a45099fff7",
             destination_tables=["releases", "tags", "teams"],
         )
 
@@ -273,7 +285,7 @@ def scope_schedule_assets_cloud():
         api_key=EnvVar("AIRBYTE_API_KEY"),
     )
     airbyte_assets = build_airbyte_assets(
-        connection_id="87b7fe85-a22c-420e-8d74-b30e7ede77df",
+        connection_id="43908042-8399-4a58-82f1-71a45099fff7",
         destination_tables=["releases", "tags", "teams"],
     )
 

@@ -68,24 +68,26 @@ Here, the API key is provided using an <PyObject object="EnvVar" />. For more in
 
 ## Step 2: Building Airbyte Cloud assets using Dagster
 
-In order to create software-defined assets for your Airbyte Cloud connections, you will first need to determine the connection IDs for each of the connections you would like to build assets for. The connection ID can be seen in the URL of the connection page when viewing the Airbyte Cloud UI.
+In order to create software-defined assets for your Airbyte Cloud connections, you will first need to determine the connection IDs for each of the connections you would like to build assets for. The connection ID can be seen in the URL of the connection page when viewing the Airbyte Cloud UI, located between `/connections/` and `/status`.
+
+For example, the connection ID for the URL `https://cloud.airbyte.com/workspaces/11f3741b-0b54-45f8-9886-937f96f2ba88/connections/43908042-8399-4a58-82f1-71a45099fff7/status` is `43908042-8399-4a58-82f1-71a45099fff7`.
 
 <center>
   <Image
     alt="Screenshot of the Airbyte UI in a browser, showing the connection ID in the URL."
-    src="/images/integrations/airbyte/airbyte_connection_ui.png"
-    width={3102}
-    height={1746}
+    src="/images/integrations/airbyte/airbyte_cloud_connection_ui.png"
+    width={1509}
+    height={1026}
   />
 </center>
 
 Then, supply the connection ID and the list of tables which the connection creates in the destination to `build_airbyte_assets`. This utility will generate a set of software-defined-assets corresponding to the tables which Airbyte creates in the destination.
 
-```python startafter=start_manually_define_airbyte_assets endbefore=end_manually_define_airbyte_assets file=/integrations/airbyte/airbyte.py dedent=4
+```python startafter=start_manually_define_airbyte_assets_cloud endbefore=end_manually_define_airbyte_assets_cloud file=/integrations/airbyte/airbyte.py dedent=4
 from dagster_airbyte import build_airbyte_assets
 
 airbyte_assets = build_airbyte_assets(
-    connection_id="87b7fe85-a22c-420e-8d74-b30e7ede77df",
+    connection_id="43908042-8399-4a58-82f1-71a45099fff7",
     destination_tables=["releases", "tags", "teams"],
 )
 ```
@@ -105,7 +107,7 @@ airbyte_instance = AirbyteCloudResource(
     api_key=EnvVar("AIRBYTE_API_KEY"),
 )
 airbyte_assets = build_airbyte_assets(
-    connection_id="87b7fe85-a22c-420e-8d74-b30e7ede77df",
+    connection_id="43908042-8399-4a58-82f1-71a45099fff7",
     destination_tables=["releases", "tags", "teams"],
 )
 
@@ -142,7 +144,7 @@ airbyte_instance = AirbyteCloudResource(
     api_key=EnvVar("AIRBYTE_API_KEY"),
 )
 airbyte_assets = build_airbyte_assets(
-    connection_id="87b7fe85-a22c-420e-8d74-b30e7ede77df",
+    connection_id="43908042-8399-4a58-82f1-71a45099fff7",
     destination_tables=["releases", "tags", "teams"],
 )
 
@@ -189,7 +191,7 @@ airbyte_instance = AirbyteCloudResource(
     api_key=EnvVar("AIRBYTE_API_KEY"),
 )
 airbyte_assets = build_airbyte_assets(
-    connection_id="87b7fe85-a22c-420e-8d74-b30e7ede77df",
+    connection_id="43908042-8399-4a58-82f1-71a45099fff7",
     destination_tables=["releases", "tags", "teams"],
 )
 
