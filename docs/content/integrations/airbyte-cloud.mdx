@@ -8,7 +8,7 @@ description: Integrate your Airbyte Cloud connections into Dagster.
 <Note>
   Using self-hosted Airbyte? Check out the{" "}
   <a href="/integrations/airbyte">
-    guide on using self-hosted Airbyte with Dagster
+    guide on using self-hosted Airbyte with Dagster.
   </a>
 </Note>
 
@@ -92,7 +92,7 @@ airbyte_assets = build_airbyte_assets(
 )
 ```
 
-#### Adding a resource
+### Adding a resource
 
 The Airbyte assets constructed using `build_airbyte_assets` require an Airbyte resource which defines how to connect and interact with your Airbyte Cloud instance.
 
@@ -128,7 +128,7 @@ defs = Definitions(assets=[airbyte_assets], resources={"airbyte": airbyte_instan
 
 Once you have loaded your Airbyte Cloud assets into Dagster, you can create assets which depend on them. These can be other assets pulled in from external sources such as [dbt](/integrations/dbt) or assets defined in Python code.
 
-In this case, we have an Airbyte connection which is storing data in the `stargazers` table in our Snowflake warehouse. We specify the output [IO manager](/concepts/io-management/io-managers) to tell downstream assets how to retreive the data.
+In this case, we have an Airbyte connection that stores data in our Snowflake warehouse's `stargazers` table. We specify the output [I/O manager](/concepts/io-management/io-managers) to tell downstream assets how to retrieve the data.
 
 ```python startafter=start_add_downstream_assets_cloud endbefore=end_add_downstream_assets_cloud file=/integrations/airbyte/airbyte.py dedent=8
 import json
