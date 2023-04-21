@@ -65,13 +65,13 @@ locations:
 
 ## Configuring your working directory
 
-There might be some cases where you want to run your Dagster code from a different directory than the root of your code repository. You can specify the directory you want to run your Dagster code from in the dagster_cloud.yaml file using the `working_directory` option.
+There might be some cases where you want to load your Dagster code from a different directory than the root of your code repository. You can specify the directory you want to run your Dagster code from in the dagster_cloud.yaml file using the `working_directory` option.
 
 Parameter reference table:
 
 | Parameter           | Description                                            | Data type     |
 | ------------------- | ------------------------------------------------------ | ------------- |
-| `working_directory` | The path of the directory that Dagster should run from | string (path) |
+| `working_directory` | The path of the directory that Dagster should load from | string (path) |
 
 ```yaml
 #dagster_cloud.yaml
