@@ -253,6 +253,13 @@ export const RunsFilterInput: React.FC<RunsFilterInputProps> = ({
     };
   }, [options]);
 
+  const enabledFiltersRef = React.useRef(enabledFilters);
+  if (enabledFiltersRef.current !== enabledFilters) {
+    throw new Error(
+      'Changing enabledFilters is not supported due to conditional hooks being called. Instead change the key provided to RunsFilterInput to avoid the issue',
+    );
+  }
+
   const {button, activeFiltersJsx} = useFilters({
     filters: [
       !enabledFilters || enabledFilters?.includes('status')

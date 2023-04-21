@@ -129,6 +129,7 @@ export const RunsRoot = () => {
 
   const [filtersPortal, filtersSlot] = usePortalSlot(
     <RunsFilterInput
+      key={enabledFilters.join(',')}
       tokens={mutableTokens}
       onChange={setFilterTokensWithStatus}
       enabledFilters={enabledFilters}
