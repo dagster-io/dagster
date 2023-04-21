@@ -1,5 +1,5 @@
 ---
-title: Running isolated agents | Dagster Docs
+title: Running multiple agents | Dagster Docs
 platform_type: "cloud"
 ---
 
@@ -7,43 +7,76 @@ platform_type: "cloud"
 
 <Note>This guide is applicable to Dagster Cloud.</Note>
 
-Each Dagster Cloud full deployment (e.g., `prod`) needs to have at least one agent running. Since the agent is lightweight and can tolerate short downtimes such as during an upgrade, a single agent is adequate for most use cases.
+Each Dagster Cloud full deployment (e.g., `prod`) needs to have at least one agent running. A single agent is adequate for many use cases, but you may want to run multiple agents for the following reasons:
 
-If you want to distribute runs across multiple Kubernetes clusters, ECS clusters, EC2 instances, or other environments, you can run multiple agents isolated across these environments. For example, one in each cluster, instance, etc.
+- Provide redundancy
+- Distribute runs across multiple Kubernetes clusters, ECS clusters, EC2 instances, or other environments
 
 It's recommended to only use multiple agents of the same type (e.g. multiple Kubernetes agents). Submitting runs to a specific agent isn't currently supported.
 
 ---
 
-## Prerequisites
+## Multiple agents in the same environments
 
-To complete the steps in this guide, you'll need:
+If you want to run multiple agents in the same environment (e.g., multiple Kubernetes agents in the same namespace), you can set the number of replicas in the configuration for your particular agent type:
 
-- **dagster-cloud version 0.13.0 or later for both agents and job code.**
-- **To use a Kubernetes, Docker, or local agent.** These agent types can support running multiple agents.
+### In Docker
+
+In docker, you can set the number of replicas for a service in the `docker-compose.yaml` file if the deployment mode is set to `replicated` (which is the default):
+
+```yaml
+services:
+  dagster-cloud-agent:
+    ...
+    deploy:
+      mode: replicated
+      replicas: 2
+```
+
+### In Kubernetes
+
+In Kubernetes, the number of replicas is set in the Helm chart. You can set the number of replicas in the Helm command:
+
+```shell
+helm upgrade \
+    ...
+    --set replicas=2
+```
+
+or if using a `values.yaml` file:
+
+```yaml
+dagsterCloudAgent:
+  ...
+  replicas: 2
+```
+
+### In ECS
+
+In ECS, the number of replicas can be set via the cloudformation template:
+
+```yaml
+DagsterCloudAgent:
+  Type: AWS::ECS::Service
+  Properties:
+    ...
+    DesiredCount: 2
+```
+
+If using the cloudformation template provided by Dagster, the number of replicas can be set via the `NumReplicas` parameter in the AWS UI.
 
 ---
 
-## Step 1: Set up the agent
+## Multiple agents in different environments
 
-Follow the setup guide for your agent:
+<Note>
+  This feature requires dagster-cloud version 0.13.0 or later for both agents
+  and job code. Sending requests to specific agents is not supported.{" "}
+</Note>
 
-- [Docker](/dagster-cloud/deployment/agents/docker)
-- [Kubernetes](/dagster-cloud/deployment/agents/kubernetes/configuring-running-kubernetes-agent)
-- [Local](/dagster-cloud/deployment/agents/local)
+If you want to run multiple agents in different environments (e.g., multiple Kubernetes agents in different namespaces), you need to enable the `isolated_agents` option. This is currently only supported for local, docker and kubernetes agents.
 
-After the agent is up and running, move on to the next step.
-
----
-
-## Step 2: Enable the isolated_agents setting
-
-In this step, you'll enable the `isolated_agents` option to turn on running agents in isolated namespaces. You can also choose to label the agents, making it easily identifiable on Dagster Cloud's **Status** page.
-
-Follow the instructions for your agent:
-
-<details>
-  <summary><strong>DOCKER AGENTS</strong></summary>
+### In Docker
 
 Add the following to the `dagster.yaml` file:
 
@@ -56,17 +89,14 @@ dagster_cloud_api:
   agent_label: "My agent" # optional
 ```
 
-</details>
-
-<details>
-  <summary><strong>KUBERNETES AGENTS</strong></summary>
+### In Kubernetes
 
 Add the following options to your Helm command:
 
 ```shell
 helm upgrade \
     ...
-    --set isolatedAgents.enabled=true \
+    --set agentReplicas.enabled=true \
     --set dagsterCloud.agentLabel="My agent" # optional, only supported on 0.13.14 and later
 ```
 
@@ -79,21 +109,3 @@ isolatedAgents:
 dagsterCloud:
   agentLabel: "My agent" # optional, only supported on 0.13.14 and later
 ```
-
-</details>
-
-<details>
-  <summary><strong>LOCAL AGENTS</strong></summary>
-
-Add the following to the `dagster.yaml` file:
-
-```yaml
-isolated_agents:
-  enabled: true
-
-dagster_cloud_api:
-  # <your other config>
-  agent_label: "My agent" # optional
-```
-
-</details>
