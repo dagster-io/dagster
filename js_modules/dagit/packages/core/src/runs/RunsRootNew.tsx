@@ -16,6 +16,7 @@ import {Link} from 'react-router-dom';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
+import {usePortalSlot} from '../hooks/usePortalSlot';
 import {InstancePageContext} from '../instance/InstancePageContext';
 import {useCanSeeConfig} from '../instance/useCanSeeConfig';
 import {Loading} from '../ui/Loading';
@@ -126,8 +127,17 @@ export const RunsRoot = () => {
     return filterTokens;
   }, [filterTokens, staticStatusTags]);
 
+  const [filtersPortal, filtersSlot] = usePortalSlot(
+    <RunsFilterInput
+      tokens={mutableTokens}
+      onChange={setFilterTokensWithStatus}
+      enabledFilters={enabledFilters}
+    />,
+  );
+
   return (
     <Page>
+      {filtersPortal}
       <RunsPageHeader refreshStates={[refreshState]} />
       {currentTab === 'queued' && canSeeConfig ? (
         <Box
@@ -159,11 +169,7 @@ export const RunsRoot = () => {
                 flex={{direction: 'column', gap: 32}}
                 padding={{vertical: 8, left: 24, right: 12}}
               >
-                <RunsFilterInput
-                  tokens={mutableTokens}
-                  onChange={setFilterTokensWithStatus}
-                  enabledFilters={enabledFilters}
-                />
+                {filtersSlot}
                 <NonIdealState
                   icon="warning"
                   title={badRequest ? 'Invalid run filters' : 'Unexpected error'}
@@ -208,11 +214,7 @@ export const RunsRoot = () => {
                               ))}
                           </Box>
                         ) : null}
-                        <RunsFilterInput
-                          tokens={mutableTokens}
-                          onChange={setFilterTokensWithStatus}
-                          enabledFilters={enabledFilters}
-                        />
+                        {filtersSlot}
                       </Box>
                     }
                   />
