@@ -45,7 +45,7 @@ class AirbyteResourceState:
 
 class BaseAirbyteResource(ConfigurableResource):
     request_max_retries: int = Field(
-        3,
+        default=3,
         description=(
             "The maximum number of times requests to the Airbyte API should be retried "
             "before failing."
@@ -60,7 +60,7 @@ class BaseAirbyteResource(ConfigurableResource):
         description="Time (in seconds) after which the requests to Airbyte are declared timed out.",
     )
     cancel_sync_on_run_termination: bool = Field(
-        True,
+        default=True,
         description=(
             "Whether to cancel a sync in Airbyte if the Dagster runner is terminated. This may"
             " be useful to disable if using Airbyte sources that cannot be cancelled and"
@@ -276,23 +276,22 @@ class AirbyteCloudResource(BaseAirbyteResource):
 class AirbyteResource(BaseAirbyteResource):
     """This class exposes methods on top of the Airbyte REST API."""
 
-    host: str = Field(..., description="The Airbyte server address.")
-    port: str = Field(..., description="Port used for the Airbyte server.")
-    username: Optional[str] = Field(None, description="Username if using basic auth.")
-    password: Optional[str] = Field(None, description="Password if using basic auth.")
+    host: str = Field(description="The Airbyte server address.")
+    port: str = Field(description="Port used for the Airbyte server.")
+    username: Optional[str] = Field(default=None, description="Username if using basic auth.")
+    password: Optional[str] = Field(default=None, description="Password if using basic auth.")
     use_https: bool = Field(
-        False, description="Whether to use HTTPS to connect to the Airbyte server."
+        default=False, description="Whether to use HTTPS to connect to the Airbyte server."
     )
-
     forward_logs: bool = Field(
-        True,
+        default=True,
         description=(
             "Whether to forward Airbyte logs to the compute log, can be expensive for"
             " long-running syncs."
         ),
     )
     request_additional_params: Mapping[str, Any] = Field(
-        dict(),
+        default=dict(),
         description=(
             "Any additional kwargs to pass to the requests library when making requests to Airbyte."
         ),
