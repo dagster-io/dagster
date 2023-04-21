@@ -9,6 +9,11 @@ import {
 import {TestProvider} from '../../testing/TestProvider';
 import {AppTopNav} from '../AppTopNav';
 
+// We don't need to render the search input here.
+jest.mock('../../search/SearchDialog', () => ({
+  SearchDialog: () => <div />,
+}));
+
 describe('AppTopNav', () => {
   const defaultMocks = {
     Repository: () => ({

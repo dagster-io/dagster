@@ -1,8 +1,15 @@
-import {Story, Meta} from '@storybook/react/types-6-0';
+import {MockedProvider} from '@apollo/client/testing';
+import {Meta} from '@storybook/react/types-6-0';
 import * as React from 'react';
 
-import {StorybookProvider} from '../../testing/StorybookProvider';
+import {AnalyticsContext, dummyAnalytics} from '../../app/analytics';
 import {SearchDialog} from '../SearchDialog';
+import {
+  buildPrimarySearch,
+  buildPrimarySearchStatic,
+  buildSecondarySearch,
+  buildSecondarySearchStatic,
+} from '../__fixtures__/Search.fixtures';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -10,10 +17,26 @@ export default {
   component: SearchDialog,
 } as Meta;
 
-const Template: Story = (props) => (
-  <StorybookProvider>
-    <SearchDialog searchPlaceholder="" {...props} />
-  </StorybookProvider>
+export const BasicSearch = () => (
+  <AnalyticsContext.Provider value={dummyAnalytics()}>
+    <MockedProvider mocks={[buildPrimarySearchStatic(), buildSecondarySearchStatic()]}>
+      <SearchDialog searchPlaceholder="" />
+    </MockedProvider>
+  </AnalyticsContext.Provider>
 );
 
-export const Simple = Template.bind({});
+export const SlowSecondaryQuerySearch = () => (
+  <AnalyticsContext.Provider value={dummyAnalytics()}>
+    <MockedProvider mocks={[buildPrimarySearchStatic(), buildSecondarySearchStatic(10000)]}>
+      <SearchDialog searchPlaceholder="" />
+    </MockedProvider>
+  </AnalyticsContext.Provider>
+);
+
+export const LotsOfAssetsSearch = () => (
+  <AnalyticsContext.Provider value={dummyAnalytics()}>
+    <MockedProvider mocks={[buildPrimarySearch(), buildSecondarySearch(10000)]}>
+      <SearchDialog searchPlaceholder="" />
+    </MockedProvider>
+  </AnalyticsContext.Provider>
+);
