@@ -133,7 +133,7 @@ def my_s3_sensor(context):
 
 For example, the `asset2` is downstream of `asset1`, and you want `asset2` to be materialized every time `asset1` is materialized.
 
-Dagster provides _eager_ <PyObject object="AutoMaterializePolicy" pluralize>, which allow materializing an asset whenever it's parent assets are materialized. Note that this feature is currently marked experimental, and some of the APIs may change in the future.
+Dagster provides _eager_ <PyObject object="AutoMaterializePolicy" pluralize />, which allow materializing an asset whenever it's parent assets are materialized. Note that this feature is currently marked experimental, and some of the APIs may change in the future.
 
 ```python file=/concepts/assets/auto_materialize_eager.py
 from dagster import AutoMaterializePolicy, asset
@@ -167,7 +167,7 @@ Partitions can be used with both schedules and sensors. You can use schedules to
 
 ## Dagster automation cheat sheet
 
-Use this table as a quick reference when building out your data pipelines!
+Use this table as a quick reference when building out your data pipelines:
 
 | Name                                               | Good for automating data pipelines that need to be refreshed: | Asset Support | Op/Graph Support |
 | -------------------------------------------------- | ------------------------------------------------------------- | ------------- | ---------------- |
