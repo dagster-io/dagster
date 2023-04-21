@@ -788,7 +788,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         # skipped yielding this output. From the logs, we have no easy way to differentiate the fixed
         # path case and the skipping case, until we record the skipping info in KnownExecutionState,
         # i.e. resolve https://github.com/dagster-io/dagster/issues/3511
-        self.log.warn(
+        self.log.warning(
             f"No previously stored outputs found for source {step_output_handle}. "
             "This is either because you are using an IO Manager that does not depend on run ID, "
             "or because all the previous runs have skipped the output in conditional execution."
