@@ -826,7 +826,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
 
         assert result.data
         assert result.data["assetNodes"]
-        assert len(result.data["assetNodes"]) == 2
+        assert len(result.data["assetNodes"]) == 4
         asset_node = result.data["assetNodes"][0]
         assert asset_node["partitionKeys"] and asset_node["partitionKeys"] == [
             "a",

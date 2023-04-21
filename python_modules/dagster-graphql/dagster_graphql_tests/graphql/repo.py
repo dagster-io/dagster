@@ -1348,15 +1348,31 @@ def upstream_static_partitioned_asset():
 
 
 @asset(partitions_def=static_partitions_def)
+def middle_static_partitioned_asset_1(upstream_static_partitioned_asset):
+    return 1
+
+
+@asset(partitions_def=static_partitions_def)
+def middle_static_partitioned_asset_2(upstream_static_partitioned_asset):
+    return 1
+
+
+@asset(partitions_def=static_partitions_def)
 def downstream_static_partitioned_asset(
-    upstream_static_partitioned_asset,
+    middle_static_partitioned_asset_1, middle_static_partitioned_asset_2
 ):
-    assert upstream_static_partitioned_asset
+    assert middle_static_partitioned_asset_1
+    assert middle_static_partitioned_asset_2
 
 
 static_partitioned_assets_job = build_assets_job(
     "static_partitioned_assets_job",
-    assets=[upstream_static_partitioned_asset, downstream_static_partitioned_asset],
+    assets=[
+        upstream_static_partitioned_asset,
+        middle_static_partitioned_asset_1,
+        middle_static_partitioned_asset_2,
+        downstream_static_partitioned_asset,
+    ],
 )
 
 
