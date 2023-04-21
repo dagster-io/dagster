@@ -38,6 +38,7 @@ import yaml
 from typing_extensions import ParamSpec
 
 import dagster._check as check
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicyType
 from dagster._core.definitions.pipeline_base import IPipeline
 from dagster._core.definitions.reconstruct import (
     ReconstructablePipeline,
@@ -469,6 +470,8 @@ def get_stats_from_external_repo(external_repo: "ExternalRepository") -> Mapping
     num_multi_partitioned_assets_in_repo = 0
     num_dynamic_partitioned_assets_in_repo = 0
     num_assets_with_freshness_policies_in_repo = 0
+    num_assets_with_eager_auto_materialize_policies_in_repo = 0
+    num_assets_with_lazy_auto_materialize_policies_in_repo = 0
     num_source_assets_in_repo = 0
     num_observable_source_assets_in_repo = 0
     num_dbt_assets_in_repo = 0
@@ -485,6 +488,12 @@ def get_stats_from_external_repo(external_repo: "ExternalRepository") -> Mapping
 
         if asset.freshness_policy is not None:
             num_assets_with_freshness_policies_in_repo += 1
+
+        if asset.auto_materialize_policy is not None:
+            if asset.auto_materialize_policy.policy_type == AutoMaterializePolicyType.EAGER:
+                num_assets_with_eager_auto_materialize_policies_in_repo += 1
+            else:
+                num_assets_with_lazy_auto_materialize_policies_in_repo += 1
 
         if asset.is_source:
             num_source_assets_in_repo += 1
@@ -515,6 +524,12 @@ def get_stats_from_external_repo(external_repo: "ExternalRepository") -> Mapping
         "num_multi_partitioned_assets_in_repo": str(num_multi_partitioned_assets_in_repo),
         "num_assets_with_freshness_policies_in_repo": str(
             num_assets_with_freshness_policies_in_repo
+        ),
+        "num_assets_with_eager_auto_materialize_policies_in_repo": str(
+            num_assets_with_eager_auto_materialize_policies_in_repo
+        ),
+        "num_assets_with_lazy_auto_materialize_policies_in_repo": str(
+            num_assets_with_lazy_auto_materialize_policies_in_repo
         ),
         "num_observable_source_assets_in_repo": str(num_observable_source_assets_in_repo),
         "num_dbt_assets_in_repo": str(num_dbt_assets_in_repo),
