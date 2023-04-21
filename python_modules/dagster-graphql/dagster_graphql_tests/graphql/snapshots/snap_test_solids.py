@@ -1045,6 +1045,38 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
+                    'name': 'middle_static_partitioned_asset_1'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'static_partitioned_assets_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'middle_static_partitioned_asset_1'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'middle_static_partitioned_asset_2'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'static_partitioned_assets_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'middle_static_partitioned_asset_2'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
                     'name': 'multi'
                 },
                 'invocations': [

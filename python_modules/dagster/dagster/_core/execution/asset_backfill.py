@@ -129,17 +129,16 @@ class AssetBackfillData(NamedTuple):
             for asset_key, subset in self.target_subset.partitions_subsets_by_asset_key.items()
         }
 
-    def get_targeted_partitioned_asset_keys_topological_order(self) -> List[AssetKey]:
-        """
-        Returns a topological ordering of partitioned asset keys targeted by the backfill.
+    def get_targeted_partitioned_asset_keys_topological_order(self) -> Sequence[AssetKey]:
+        """Returns a topological ordering of partitioned asset keys targeted by the backfill.
 
-        For keys in the same topological level, the order is arbitrary.
+        Orders keys in the same topological level alphabetically.
         """
         toposorted_keys = self.target_subset.asset_graph.toposort_asset_keys()
 
         targeted_toposorted_keys = []
         for level_keys in toposorted_keys:
-            for key in level_keys:
+            for key in sorted(level_keys):
                 if (
                     key in self.target_subset.asset_keys
                     and self.target_subset.asset_graph.get_partitions_def(key) is not None
