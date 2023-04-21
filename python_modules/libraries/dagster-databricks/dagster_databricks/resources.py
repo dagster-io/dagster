@@ -11,6 +11,11 @@ from .databricks import DatabricksClient
 
 
 class DatabricksClientResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
+    """
+    Resource which provides a Python client for interacting with Databricks within an
+    op or asset.
+    """
+
     host: str = Field(description="Databricks host, e.g. uksouth.azuredatabricks.com")
     token: str = Field(description="Databricks access token")
     workspace_id: Optional[str] = Field(
