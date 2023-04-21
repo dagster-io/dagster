@@ -11,8 +11,7 @@ from .databricks import DatabricksClient
 
 
 class DatabricksClientResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
-    """
-    Resource which provides a Python client for interacting with Databricks within an
+    """Resource which provides a Python client for interacting with Databricks within an
     op or asset.
     """
 
