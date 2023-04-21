@@ -660,6 +660,7 @@ type AssetNode {
   description: String
   freshnessInfo: AssetFreshnessInfo
   freshnessPolicy: FreshnessPolicy
+  autoMaterializePolicy: AutoMaterializePolicy
   graphName: String
   groupName: String
   id: ID!
@@ -708,6 +709,15 @@ type FreshnessPolicy {
   maximumLagMinutes: Float!
   cronSchedule: String
   cronScheduleTimezone: String
+}
+
+type AutoMaterializePolicy {
+  policyType: AutoMaterializePolicyType!
+}
+
+enum AutoMaterializePolicyType {
+  EAGER
+  LAZY
 }
 
 union AssetPartitionStatuses = DefaultPartitions | MultiPartitions | TimePartitions

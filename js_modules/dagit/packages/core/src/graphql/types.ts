@@ -194,6 +194,7 @@ export type AssetNode = {
   assetMaterializations: Array<MaterializationEvent>;
   assetObservations: Array<ObservationEvent>;
   assetPartitionStatuses: AssetPartitionStatuses;
+  autoMaterializePolicy: Maybe<AutoMaterializePolicy>;
   computeKind: Maybe<Scalars['String']>;
   configField: Maybe<ConfigTypeField>;
   currentDataVersion: Maybe<Scalars['String']>;
@@ -298,6 +299,16 @@ export type AssetWipeSuccess = {
 };
 
 export type AssetsOrError = AssetConnection | PythonError;
+
+export type AutoMaterializePolicy = {
+  __typename: 'AutoMaterializePolicy';
+  policyType: AutoMaterializePolicyType;
+};
+
+export enum AutoMaterializePolicyType {
+  EAGER = 'EAGER',
+  LAZY = 'LAZY',
+}
 
 export type BoolMetadataEntry = MetadataEntry & {
   __typename: 'BoolMetadataEntry';
@@ -4379,6 +4390,12 @@ export const buildAssetNode = (
         : relationshipsToOmit.has('DefaultPartitions')
         ? ({} as DefaultPartitions)
         : buildDefaultPartitions({}, relationshipsToOmit),
+    autoMaterializePolicy:
+      overrides && overrides.hasOwnProperty('autoMaterializePolicy')
+        ? overrides.autoMaterializePolicy!
+        : relationshipsToOmit.has('AutoMaterializePolicy')
+        ? ({} as AutoMaterializePolicy)
+        : buildAutoMaterializePolicy({}, relationshipsToOmit),
     computeKind:
       overrides && overrides.hasOwnProperty('computeKind') ? overrides.computeKind! : 'quasi',
     configField:
@@ -4637,6 +4654,21 @@ export const buildAssetWipeSuccess = (
               ? ({} as AssetKey)
               : buildAssetKey({}, relationshipsToOmit),
           ],
+  };
+};
+
+export const buildAutoMaterializePolicy = (
+  overrides?: Partial<AutoMaterializePolicy>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AutoMaterializePolicy'} & AutoMaterializePolicy => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AutoMaterializePolicy');
+  return {
+    __typename: 'AutoMaterializePolicy',
+    policyType:
+      overrides && overrides.hasOwnProperty('policyType')
+        ? overrides.policyType!
+        : AutoMaterializePolicyType.EAGER,
   };
 };
 
