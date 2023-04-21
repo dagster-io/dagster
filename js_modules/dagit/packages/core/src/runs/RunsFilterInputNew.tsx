@@ -253,43 +253,125 @@ export const RunsFilterInput: React.FC<RunsFilterInputProps> = ({
     };
   }, [options]);
 
-  const enabledFiltersRef = React.useRef(enabledFilters);
-  if (enabledFiltersRef.current !== enabledFilters) {
-    throw new Error(
-      'Changing enabledFilters is not supported due to conditional hooks being called. Instead change the key provided to RunsFilterInput to avoid the issue',
-    );
-  }
+  const jobFilter = useStaticSetFilter({
+    name: 'Job',
+    icon: 'job',
+    allowMultipleSelections: false,
+    allValues: jobs,
+    renderLabel: ({value}) => (
+      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+        <Icon name="job" />
+        {value}
+      </Box>
+    ),
+    getStringValue: (x) => x,
+    initialState: React.useMemo(
+      () => new Set(tokens.filter((x) => x.token === 'job').map((x) => x.value)),
+      [tokens],
+    ),
+    onStateChanged: (values) => {
+      onChange([
+        ...tokens.filter((x) => x.token !== 'job'),
+        ...Array.from(values).map((value) => ({
+          token: 'job' as const,
+          value,
+        })),
+      ]);
+    },
+  });
+
+  const statusFilter = useStaticSetFilter({
+    name: 'Status',
+    icon: 'status',
+    allValues: Object.keys(RunStatus).map((x) => ({
+      label: capitalizeFirstLetter(x),
+      value: x,
+      match: [x],
+    })),
+    renderLabel: ({value}) => <span>{capitalizeFirstLetter(value)}</span>,
+    getStringValue: (x) => capitalizeFirstLetter(x),
+    initialState: React.useMemo(
+      () => new Set(tokens.filter((x) => x.token === 'status').map((x) => x.value)),
+      [tokens],
+    ),
+    onStateChanged: (values) => {
+      onChange([
+        ...tokens.filter((x) => x.token !== 'status'),
+        ...Array.from(values).map((value) => ({
+          token: 'status' as const,
+          value,
+        })),
+      ]);
+    },
+  });
+
+  const pipelinesFilter = useStaticSetFilter({
+    name: 'Pipelines',
+    icon: 'job',
+    allValues: pipelines,
+    allowMultipleSelections: false,
+    renderLabel: ({value}) => (
+      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+        <Icon name="job" />
+        {value}
+      </Box>
+    ),
+    getStringValue: (x) => x,
+    initialState: React.useMemo(
+      () => new Set(tokens.filter((x) => x.token === 'job').map((x) => x.value)),
+      [tokens],
+    ),
+    onStateChanged: (values) => {
+      onChange([
+        ...tokens.filter((x) => x.token !== 'pipeline'),
+        ...Array.from(values).map((value) => ({
+          token: 'pipeline' as const,
+          value,
+        })),
+      ]);
+    },
+  });
+
+  const backfillsFilter = useStaticSetFilter({
+    name: 'Backfill ID',
+    icon: 'backfill',
+    allValues: backfillValues,
+    allowMultipleSelections: false,
+    initialState: React.useMemo(() => {
+      return new Set(
+        tokens
+          .filter(
+            ({token, value}) => token === 'tag' && value.split('=')[0] === DagsterTag.Backfill,
+          )
+          .map(({value}) => tagValueToFilterObject(value)),
+      );
+    }, [tokens]),
+    renderLabel: ({value}) => (
+      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+        <Icon name="job" />
+        {value.value}
+      </Box>
+    ),
+    getStringValue: ({value}) => value,
+    onStateChanged: (values) => {
+      onChange([
+        ...tokens.filter(({token, value}) => {
+          if (token !== 'tag') {
+            return true;
+          }
+          return value.split('=')[0] !== DagsterTag.Backfill;
+        }),
+        ...Array.from(values).map((value) => ({
+          token: 'tag' as const,
+          value: `${value.type}=${value.value}`,
+        })),
+      ]);
+    },
+  });
 
   const {button, activeFiltersJsx} = useFilters({
     filters: [
-      !enabledFilters || enabledFilters?.includes('status')
-        ? // eslint-disable-next-line react-hooks/rules-of-hooks
-          useStaticSetFilter({
-            name: 'Status',
-            icon: 'status',
-            allValues: Object.keys(RunStatus).map((x) => ({
-              label: capitalizeFirstLetter(x),
-              value: x,
-              match: [x],
-            })),
-            renderLabel: ({value}) => <span>{capitalizeFirstLetter(value)}</span>,
-            getStringValue: (x) => capitalizeFirstLetter(x),
-            // eslint-disable-next-line react-hooks/rules-of-hooks
-            initialState: React.useMemo(
-              () => new Set(tokens.filter((x) => x.token === 'status').map((x) => x.value)),
-              [tokens],
-            ),
-            onStateChanged: (values) => {
-              onChange([
-                ...tokens.filter((x) => x.token !== 'status'),
-                ...Array.from(values).map((value) => ({
-                  token: 'status' as const,
-                  value,
-                })),
-              ]);
-            },
-          })
-        : null,
+      !enabledFilters || enabledFilters?.includes('status') ? statusFilter : null,
       useStaticSetFilter({
         name: 'Created By',
         icon: 'add_circle',
@@ -364,109 +446,11 @@ export const RunsFilterInput: React.FC<RunsFilterInputProps> = ({
           ]);
         },
       }),
-      !enabledFilters || enabledFilters?.includes('job')
-        ? // eslint-disable-next-line react-hooks/rules-of-hooks
-          useStaticSetFilter({
-            name: 'Job',
-            icon: 'job',
-            allowMultipleSelections: false,
-            allValues: jobs,
-            renderLabel: ({value}) => (
-              <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-                <Icon name="job" />
-                {value}
-              </Box>
-            ),
-            getStringValue: (x) => x,
-            // eslint-disable-next-line react-hooks/rules-of-hooks
-            initialState: React.useMemo(
-              () => new Set(tokens.filter((x) => x.token === 'job').map((x) => x.value)),
-              [tokens],
-            ),
-            onStateChanged: (values) => {
-              onChange([
-                ...tokens.filter((x) => x.token !== 'job'),
-                ...Array.from(values).map((value) => ({
-                  token: 'job' as const,
-                  value,
-                })),
-              ]);
-            },
-          })
-        : null,
-      // Disable rules of hooks because the pipelines won't refresh without the page refreshing
-      // eslint-disable-next-line react-hooks/rules-of-hooks
+      !enabledFilters || enabledFilters?.includes('job') ? jobFilter : null,
       !enabledFilters || (enabledFilters?.includes('job') && pipelines.length)
-        ? // eslint-disable-next-line react-hooks/rules-of-hooks
-          useStaticSetFilter({
-            name: 'Pipelines',
-            icon: 'job',
-            allValues: pipelines,
-            allowMultipleSelections: false,
-            renderLabel: ({value}) => (
-              <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-                <Icon name="job" />
-                {value}
-              </Box>
-            ),
-            getStringValue: (x) => x,
-            // eslint-disable-next-line react-hooks/rules-of-hooks
-            initialState: React.useMemo(
-              () => new Set(tokens.filter((x) => x.token === 'job').map((x) => x.value)),
-              [tokens],
-            ),
-            onStateChanged: (values) => {
-              onChange([
-                ...tokens.filter((x) => x.token !== 'pipeline'),
-                ...Array.from(values).map((value) => ({
-                  token: 'pipeline' as const,
-                  value,
-                })),
-              ]);
-            },
-          })
+        ? pipelinesFilter
         : null,
-      !enabledFilters || enabledFilters?.includes('backfill')
-        ? // eslint-disable-next-line react-hooks/rules-of-hooks
-          useStaticSetFilter({
-            name: 'Backfill ID',
-            icon: 'backfill',
-            allValues: backfillValues,
-            allowMultipleSelections: false,
-            // eslint-disable-next-line react-hooks/rules-of-hooks
-            initialState: React.useMemo(() => {
-              return new Set(
-                tokens
-                  .filter(
-                    ({token, value}) =>
-                      token === 'tag' && value.split('=')[0] === DagsterTag.Backfill,
-                  )
-                  .map(({value}) => tagValueToFilterObject(value)),
-              );
-            }, [tokens]),
-            renderLabel: ({value}) => (
-              <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-                <Icon name="job" />
-                {value.value}
-              </Box>
-            ),
-            getStringValue: ({value}) => value,
-            onStateChanged: (values) => {
-              onChange([
-                ...tokens.filter(({token, value}) => {
-                  if (token !== 'tag') {
-                    return true;
-                  }
-                  return value.split('=')[0] !== DagsterTag.Backfill;
-                }),
-                ...Array.from(values).map((value) => ({
-                  token: 'tag' as const,
-                  value: `${value.type}=${value.value}`,
-                })),
-              ]);
-            },
-          })
-        : null,
+      !enabledFilters || enabledFilters?.includes('backfill') ? backfillsFilter : null,
       useSuggestionFilter({
         name: 'Tag',
         icon: 'tag',
