@@ -613,6 +613,7 @@ def test_asset_backfill_status_counts():
         partition_names=["2023-01-09"],
         asset_graph=asset_graph,
         asset_selection=[
+            unpartitioned_upstream_of_partitioned.key,
             upstream_daily_partitioned_asset.key,
             downstream_weekly_partitioned_asset.key,
         ],
@@ -632,15 +633,30 @@ def test_asset_backfill_status_counts():
         ],
     )
 
-    counts = completed_backfill_data.get_partitions_status_counts_by_asset_key()
-    assert counts[upstream_daily_partitioned_asset.key][BackfillPartitionsStatus.MATERIALIZED] == 0
-    assert counts[upstream_daily_partitioned_asset.key][BackfillPartitionsStatus.FAILED] == 1
-    assert counts[upstream_daily_partitioned_asset.key][BackfillPartitionsStatus.IN_PROGRESS] == 0
+    counts = completed_backfill_data.get_status_by_asset_key()
 
     assert (
-        counts[downstream_weekly_partitioned_asset.key][BackfillPartitionsStatus.MATERIALIZED] == 0
+        counts[unpartitioned_upstream_of_partitioned.key] == BackfillPartitionsStatus.MATERIALIZED
     )
-    assert counts[downstream_weekly_partitioned_asset.key][BackfillPartitionsStatus.FAILED] == 1
+
     assert (
-        counts[downstream_weekly_partitioned_asset.key][BackfillPartitionsStatus.IN_PROGRESS] == 0
+        counts[upstream_daily_partitioned_asset.key][0][BackfillPartitionsStatus.MATERIALIZED] == 0
     )
+    assert counts[upstream_daily_partitioned_asset.key][0][BackfillPartitionsStatus.FAILED] == 1
+    assert (
+        counts[upstream_daily_partitioned_asset.key][0][BackfillPartitionsStatus.IN_PROGRESS] == 0
+    )
+    assert (
+        counts[upstream_daily_partitioned_asset.key][1] == 1
+    )  # total number of targeted partitions
+
+    assert (
+        counts[downstream_weekly_partitioned_asset.key][0][BackfillPartitionsStatus.MATERIALIZED]
+        == 0
+    )
+    assert counts[downstream_weekly_partitioned_asset.key][0][BackfillPartitionsStatus.FAILED] == 1
+    assert (
+        counts[downstream_weekly_partitioned_asset.key][0][BackfillPartitionsStatus.IN_PROGRESS]
+        == 0
+    )
+    assert counts[downstream_weekly_partitioned_asset.key][1] == 1

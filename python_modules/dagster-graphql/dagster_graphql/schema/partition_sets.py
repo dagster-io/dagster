@@ -128,9 +128,25 @@ class GrapheneAssetPartitionsStatusCounts(graphene.ObjectType):
 
     assetKey = graphene.NonNull(GrapheneAssetKey)
     numPartitionsTargeted = graphene.NonNull(graphene.Int)
-    numPartitionsRequested = graphene.NonNull(graphene.Int)
-    numPartitionsCompleted = graphene.NonNull(graphene.Int)
+    numPartitionsInProgress = graphene.NonNull(graphene.Int)
+    numPartitionsMaterialized = graphene.NonNull(graphene.Int)
     numPartitionsFailed = graphene.NonNull(graphene.Int)
+
+
+class GrapheneUnpartitionedAssetStatus(graphene.ObjectType):
+    class Meta:
+        name = "UnpartitionedAssetStatus"
+
+    assetKey = graphene.NonNull(GrapheneAssetKey)
+    inProgress = graphene.NonNull(graphene.Boolean)
+    materialized = graphene.NonNull(graphene.Boolean)
+    failed = graphene.NonNull(graphene.Boolean)
+
+
+class GrapheneAssetBackfillStatus(graphene.Union):
+    class Meta:
+        types = (GrapheneAssetPartitionsStatusCounts, GrapheneUnpartitionedAssetStatus)
+        name = "AssetBackfillStatus"
 
 
 class GraphenePartitionKeyRange(graphene.ObjectType):

@@ -113,8 +113,8 @@ class GrapheneAssetBackfillData(graphene.ObjectType):
     class Meta:
         name = "AssetBackfillData"
 
-    assetPartitionsStatusCounts = non_null_list(
-        "dagster_graphql.schema.partition_sets.GrapheneAssetPartitionsStatusCounts"
+    assetBackfillStatuses = non_null_list(
+        "dagster_graphql.schema.partition_sets.GrapheneAssetBackfillStatus"
     )
     rootAssetTargetedRanges = graphene.List(
         graphene.NonNull("dagster_graphql.schema.partition_sets.GraphenePartitionKeyRange")
@@ -295,31 +295,47 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     def resolve_isAssetBackfill(self, _graphene_info: ResolveInfo) -> bool:
         return self._backfill_job.is_asset_backfill
 
-    def resolve_assetBackfillData(self, graphene_info: ResolveInfo) -> GrapheneAssetBackfillData:
+    def resolve_assetBackfillData(
+        self, graphene_info: ResolveInfo
+    ) -> Optional[GrapheneAssetBackfillData]:
         from dagster_graphql.schema.partition_sets import (
             GrapheneAssetPartitionsStatusCounts,
             GraphenePartitionKeyRange,
+            GrapheneUnpartitionedAssetStatus,
         )
 
-        status_counts_by_asset = (
-            self._backfill_job.get_partitions_status_counts_and_totals_by_asset(
-                graphene_info.context
-            )
-        )
+        if not self._backfill_job.is_asset_backfill:
+            return None
+
+        status_counts_by_asset = self._backfill_job.get_status_by_asset(graphene_info.context)
 
         asset_partition_status_counts = []
 
         for asset_key, asset_status in status_counts_by_asset.items():
-            (counts_by_status, total_num_partitions) = asset_status
-            asset_partition_status_counts.append(
-                GrapheneAssetPartitionsStatusCounts(
-                    assetKey=asset_key,
-                    numPartitionsTargeted=total_num_partitions,
-                    numPartitionsRequested=counts_by_status[BackfillPartitionsStatus.IN_PROGRESS],
-                    numPartitionsCompleted=counts_by_status[BackfillPartitionsStatus.MATERIALIZED],
-                    numPartitionsFailed=counts_by_status[BackfillPartitionsStatus.FAILED],
+            if isinstance(asset_status, tuple):
+                (counts_by_status, total_num_partitions) = asset_status
+                asset_partition_status_counts.append(
+                    GrapheneAssetPartitionsStatusCounts(
+                        assetKey=asset_key,
+                        numPartitionsTargeted=total_num_partitions,
+                        numPartitionsInProgress=counts_by_status[
+                            BackfillPartitionsStatus.IN_PROGRESS
+                        ],
+                        numPartitionsMaterialized=counts_by_status[
+                            BackfillPartitionsStatus.MATERIALIZED
+                        ],
+                        numPartitionsFailed=counts_by_status[BackfillPartitionsStatus.FAILED],
+                    )
                 )
-            )
+            else:
+                asset_partition_status_counts.append(
+                    GrapheneUnpartitionedAssetStatus(
+                        assetKey=asset_key,
+                        inProgress=asset_status is BackfillPartitionsStatus.IN_PROGRESS,
+                        materialized=asset_status is BackfillPartitionsStatus.MATERIALIZED,
+                        failed=asset_status is BackfillPartitionsStatus.FAILED,
+                    )
+                )
 
         root_partitions_subset = self._backfill_job.get_target_root_partitions_subset(
             graphene_info.context
@@ -339,7 +355,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             root_targeted_partitions = root_partitions_subset.get_partition_keys()
 
         return GrapheneAssetBackfillData(
-            assetPartitionsStatusCounts=asset_partition_status_counts,
+            assetBackfillStatuses=asset_partition_status_counts,
             rootAssetTargetedRanges=root_targeted_ranges,
             rootAssetTargetedPartitions=root_targeted_partitions,
         )

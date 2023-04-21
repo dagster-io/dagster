@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Mapping, NamedTuple, Optional, Sequence, Tuple
+from typing import Mapping, NamedTuple, Optional, Sequence, Tuple, Union
 
 from dagster import _check as check
 from dagster._core.definitions import AssetKey
@@ -134,9 +134,14 @@ class PartitionBackfill(
         else:
             return True
 
-    def get_partitions_status_counts_and_totals_by_asset(
+    def get_status_by_asset(
         self, workspace: IWorkspace
-    ) -> Mapping[AssetKey, Tuple[Mapping[BackfillPartitionsStatus, int], int]]:
+    ) -> Mapping[
+        AssetKey,
+        Union[
+            Tuple[Mapping[BackfillPartitionsStatus, int], int], Optional[BackfillPartitionsStatus]
+        ],
+    ]:
         """Returns a list of tuples of the form (asset_key, partitions_status_counts, total_partitions)
         in topological order of the asset graph. Includes only partitioned assets.
         """
@@ -152,31 +157,11 @@ class PartitionBackfill(
             except DagsterDefinitionChangedDeserializationError:
                 return {}
 
-            partitions_status_counts_by_asset_key = (
-                asset_backfill_data.get_partitions_status_counts_by_asset_key()
-            )
-            num_targeted_partitions_by_asset_key = (
-                asset_backfill_data.get_num_targeted_partitions_by_asset_key()
-            )
-            topological_order = (
-                asset_backfill_data.get_targeted_partitioned_asset_keys_topological_order()
-            )
+            status_by_asset_key = asset_backfill_data.get_status_by_asset_key()
+            topological_order = asset_backfill_data.get_targeted_asset_keys_topological_order()
 
-            check.invariant(
-                partitions_status_counts_by_asset_key.keys()
-                == num_targeted_partitions_by_asset_key.keys()
-            )
-            check.invariant(
-                set(partitions_status_counts_by_asset_key.keys()) == set(topological_order)
-            )
-
-            return {
-                asset_key: (
-                    partitions_status_counts_by_asset_key[asset_key],
-                    num_targeted_partitions_by_asset_key[asset_key],
-                )
-                for asset_key in topological_order
-            }
+            # Only return back statuses for the assets that still exist in the workspace
+            return {asset_key: status_by_asset_key[asset_key] for asset_key in topological_order}
 
         else:
             return {}
