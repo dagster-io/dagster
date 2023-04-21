@@ -7,7 +7,11 @@ description: How to use dagster_cloud.yaml to configure Dagster Cloud
 
 <Note>This guide is applicable to Dagster Cloud.</Note>
 
-The dagster_cloud.yaml file is used to configure how one or more code locations should be build and deployed to Dagster Cloud, usually as part of CI/CD. The file is required to tell Dagster where the code sources are to load into Dagster Cloud. For Hybrid Deployments, secrets are configured in this file as well since those secrets are part of the code location.
+The `dagster_cloud.yaml` file is used to configure how one or more [code locations](/dagster-cloud/managing-deployments/code-locations) should be built and deployed to [Dagster Cloud](/dagster-cloud), usually as part of CI/CD.
+
+The file is required to tell Dagster where the code sources are to load into Dagster Cloud.
+
+For [Hybrid Deployments](/dagster-cloud/deployment/hybrid), secrets are also configured in this file since secrets are part of a given code location.
 
 ## Where to put the dagster_cloud.yaml file
 
