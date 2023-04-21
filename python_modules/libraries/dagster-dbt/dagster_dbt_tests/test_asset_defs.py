@@ -6,6 +6,7 @@ import pytest
 from dagster import (
     AssetIn,
     AssetKey,
+    AutoMaterializePolicy,
     DailyPartitionsDefinition,
     FreshnessPolicy,
     ResourceDefinition,
@@ -272,6 +273,21 @@ def test_custom_freshness_policy():
 
     assert dbt_assets[0].freshness_policies_by_key == {
         key: FreshnessPolicy(maximum_lag_minutes=len(key.path[-1])) for key in dbt_assets[0].keys
+    }
+
+
+def test_custom_auto_materialize_policy():
+    manifest_path = file_relative_path(__file__, "sample_manifest.json")
+    with open(manifest_path, "r", encoding="utf8") as f:
+        manifest_json = json.load(f)
+
+    dbt_assets = load_assets_from_dbt_manifest(
+        manifest_json=manifest_json,
+        node_info_to_auto_materialize_policy_fn=lambda _: AutoMaterializePolicy.lazy(),
+    )
+
+    assert dbt_assets[0].auto_materialize_policies_by_key == {
+        key: AutoMaterializePolicy.lazy() for key in dbt_assets[0].keys
     }
 
 
