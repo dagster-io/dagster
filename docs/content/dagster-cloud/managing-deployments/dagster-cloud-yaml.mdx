@@ -136,7 +136,10 @@ locations:
 
 ## Container Contexts 
 
-Dagster Cloud Hybrid agents support additional configuration options which can be configured using `container_context`. Depending on your hybrid deployment, the configuration settings under `container_context` will vary. For more information 
+If using Hybrid deployment, you can define additional configuration options for code locations using 
+the `container_context` parameter. Depending on the Hybrid agent you're using, the configuration settings under `container_context` will vary.
+
+Refer to the configuration reference for your agent for more info: 
 
 - [Docker agent configuration reference](/dagster-cloud/deployment/agents/docker/configuration-reference)
 - [Amazon ECS agent configuration reference](/dagster-cloud/deployment/agents/amazon-ecs/configuration-reference#amazon-ecs-agent-configuration-reference)
