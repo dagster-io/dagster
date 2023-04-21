@@ -19,6 +19,7 @@ from dagster import (
     repository,
 )
 from dagster._cli.job import job_execute_command
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.reconstruct import get_ephemeral_repository_name
 from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.host_representation.external_data import external_repository_data_from_def
@@ -292,6 +293,30 @@ def test_get_stats_from_external_repo_freshness_policies():
     )
     stats = get_stats_from_external_repo(external_repo)
     assert stats["num_assets_with_freshness_policies_in_repo"] == "1"
+
+
+def test_get_status_from_external_repo_auto_materialize_policy():
+    @asset(auto_materialize_policy=AutoMaterializePolicy.lazy())
+    def asset1():
+        ...
+
+    @asset
+    def asset2():
+        ...
+
+    @asset(auto_materialize_policy=AutoMaterializePolicy.eager())
+    def asset3():
+        ...
+
+    external_repo = ExternalRepository(
+        external_repository_data_from_def(
+            Definitions(assets=[asset1, asset2, asset3]).get_repository_def()
+        ),
+        repository_handle=MagicMock(spec=RepositoryHandle),
+    )
+    stats = get_stats_from_external_repo(external_repo)
+    assert stats["num_assets_with_eager_auto_materialize_policies_in_repo"] == "1"
+    assert stats["num_assets_with_lazy_auto_materialize_policies_in_repo"] == "1"
 
 
 def test_get_stats_from_external_repo_code_versions():
