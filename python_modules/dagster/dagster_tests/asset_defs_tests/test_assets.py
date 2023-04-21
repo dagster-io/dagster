@@ -160,7 +160,9 @@ def test_graph_backed_retain_freshness_policy_and_auto_materialize_policy():
         return bar(f), bar(f), bar(f)
 
     my_graph_asset = AssetsDefinition.from_graph(
-        my_graph, freshness_policies_by_output_name={"a": fpa, "b": fpb}, auto_materialize_policies_by_output_name = {"a": ampa, "b": ampb}
+        my_graph,
+        freshness_policies_by_output_name={"a": fpa, "b": fpb},
+        auto_materialize_policies_by_output_name={"a": ampa, "b": ampb},
     )
 
     replaced = my_graph_asset.with_attributes(
