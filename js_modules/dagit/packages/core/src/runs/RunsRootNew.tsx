@@ -2,6 +2,7 @@ import {ApolloError, gql, useQuery} from '@apollo/client';
 import {
   Alert,
   Box,
+  ButtonLink,
   Colors,
   CursorHistoryControls,
   Heading,
@@ -172,6 +173,15 @@ export const RunsRoot = () => {
         <QueryRefreshCountdown refreshState={combinedRefreshState} />
         <RunListTabs queuedCount={queuedCount} inProgressCount={inProgressCount} />
         {filtersSlot}
+        {activeFiltersJsx.length ? (
+          <ButtonLink
+            onClick={() => {
+              setFilterTokensWithStatus([]);
+            }}
+          >
+            Clear All
+          </ButtonLink>
+        ) : null}
       </Box>
     );
   }

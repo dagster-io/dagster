@@ -194,7 +194,7 @@ function searchSuggestionsForRuns(
   return suggestions;
 }
 
-interface RunsFilterInputProps {
+export interface RunsFilterInputProps {
   loading?: boolean;
   tokens: RunFilterToken[];
   onChange: (tokens: RunFilterToken[]) => void;

@@ -14,11 +14,12 @@ import {
 import {calculateTimeRanges} from '../../ui/Filters/useTimeRangeFilter';
 import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
 import {DagsterTag} from '../RunTag';
+import {RunsFilterInputProps} from '../RunsFilterInput';
 import {
   RUN_TAG_KEYS_QUERY,
   tagSuggestionValueObject,
   tagValueToFilterObject,
-  RunsFilterInput,
+  useRunsFilterInput,
   RunFilterToken,
   useTagDataFilterValues,
 } from '../RunsFilterInputNew';
@@ -115,9 +116,18 @@ function TestRunsFilterInput({
   tokens,
   onChange,
   enabledFilters,
-}: React.ComponentProps<typeof RunsFilterInput> & {
+}: RunsFilterInputProps & {
   mocks?: MockedResponse[];
 }) {
+  function RunsFilterInput(props: RunsFilterInputProps) {
+    const {button, activeFiltersJsx} = useRunsFilterInput(props);
+    return (
+      <div>
+        {button}
+        {activeFiltersJsx}
+      </div>
+    );
+  }
   return (
     <MockedProvider mocks={mocks}>
       <WorkspaceProvider>
@@ -261,22 +271,5 @@ describe('<RunFilterInput  />', () => {
     expect(onChange).toHaveBeenCalledWith([
       {token: 'tag', value: `${DagsterTag.Partition}=partition1`},
     ]);
-  });
-
-  it('should clear all filters when clear all button is clicked', () => {
-    const onChange = jest.fn();
-    const tokens: RunFilterToken[] = [
-      {token: 'status', value: 'SUCCEEDED'},
-      {token: 'job', value: 'job_name'},
-    ];
-    const {getByText} = render(
-      <TestRunsFilterInput tokens={tokens} onChange={onChange} enabledFilters={['job']} />,
-    );
-
-    onChange.mockClear();
-
-    fireEvent.click(getByText('Clear All'));
-
-    expect(onChange).toHaveBeenCalledWith([]);
   });
 });
