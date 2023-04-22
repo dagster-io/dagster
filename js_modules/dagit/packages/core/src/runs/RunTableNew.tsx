@@ -61,9 +61,11 @@ export const RunTable = (props: RunTableProps) => {
     const anyFilter = Object.keys(filter || {}).length;
     return (
       <div>
-        {actionBarComponents ? (
-          <ActionBar top={actionBarComponents} bottom={belowActionBarComponents} />
-        ) : null}
+        <Box border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}>
+          {actionBarComponents ? (
+            <ActionBar top={actionBarComponents} bottom={belowActionBarComponents} />
+          ) : null}
+        </Box>
         <Box margin={{vertical: 32}}>
           {anyFilter ? (
             <NonIdealState
@@ -323,7 +325,7 @@ const Row = styled.tr<{highlighted: boolean}>`
 function ActionBar({top, bottom}: {top: React.ReactNode; bottom?: React.ReactNode[]}) {
   return (
     <Box flex={{direction: 'column'}} padding={{vertical: 12}}>
-      <Box flex={{alignItems: 'center', gap: 12}} padding={{left: 24, right: 12}}>
+      <Box flex={{alignItems: 'center', gap: 12}} padding={{left: 24, right: 24}}>
         {top}
       </Box>
       {bottom && bottom.length > 0 ? (

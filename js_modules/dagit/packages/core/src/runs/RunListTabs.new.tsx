@@ -1,13 +1,13 @@
 import {gql} from '@apollo/client';
-import {JoinedButtons, Tabs, TokenizingFieldValue} from '@dagster-io/ui';
+import {Colors, JoinedButtons, TokenizingFieldValue} from '@dagster-io/ui';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {useLocation} from 'react-router-dom';
+import styled from 'styled-components';
 
 import {RunStatus} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {AnchorButton} from '../ui/AnchorButton';
-import {TabLink} from '../ui/TabLink';
 
 import {doneStatuses, inProgressStatuses, queuedStatuses} from './RunStatuses';
 import {runsPathWithFilters, useQueryPersistedRunFilters} from './RunsFilterInput';
@@ -48,21 +48,49 @@ export const RunListTabs: React.FC<Props> = React.memo(({queuedCount, inProgress
 
   return (
     <JoinedButtons>
-      <AnchorButton to={urlForStatus([])} id="all">
+      <Button to={urlForStatus([])} id="all" $active={selectedTab === 'all'}>
         All runs
-      </AnchorButton>
-      <AnchorButton to={urlForStatus(Array.from(queuedStatuses))} id="all">
+      </Button>
+      <Button
+        to={urlForStatus(Array.from(queuedStatuses))}
+        id="queued"
+        $active={selectedTab === 'queued'}
+      >
         Queued ({queuedCount ?? 'indeterminate'})
-      </AnchorButton>
-      <AnchorButton to={urlForStatus(Array.from(queuedStatuses))}>
+      </Button>
+      <Button
+        to={urlForStatus(Array.from(inProgressStatuses))}
+        id="in-progress"
+        $active={selectedTab === 'in-progress'}
+      >
         In progress ({inProgressCount ?? 'indeterminate'})
-      </AnchorButton>
-      <AnchorButton title="Scheduled" to="/runs/scheduled" id="scheduled">
+      </Button>
+      <Button
+        to={urlForStatus(Array.from(doneStatuses))}
+        id="done"
+        $active={selectedTab === 'done'}
+      >
+        Done
+      </Button>
+      <Button
+        title="Scheduled"
+        to="/runs/scheduled"
+        id="scheduled"
+        $active={selectedTab === 'scheduled'}
+      >
         Scheduled
-      </AnchorButton>
+      </Button>
     </JoinedButtons>
   );
 });
+
+const Button = styled(AnchorButton)<{$active: boolean}>`
+  ${(props) =>
+    props.$active &&
+    `
+    background: ${Colors.Gray200};
+  `}
+`;
 
 export const useSelectedRunsTab = (filterTokens: TokenizingFieldValue[]) => {
   const {pathname} = useLocation();
@@ -92,7 +120,7 @@ export const useSelectedRunsTab = (filterTokens: TokenizingFieldValue[]) => {
 };
 
 export const RUN_TABS_COUNT_QUERY = gql`
-  query RunTabsCountQuery($queuedFilter: RunsFilter!, $inProgressFilter: RunsFilter!) {
+  query RunTabsCountNewQuery($queuedFilter: RunsFilter!, $inProgressFilter: RunsFilter!) {
     queuedCount: pipelineRunsOrError(filter: $queuedFilter) {
       ... on Runs {
         count

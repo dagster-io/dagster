@@ -16,7 +16,12 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {FIFTEEN_SECONDS, useMergedRefresh, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {
+  FIFTEEN_SECONDS,
+  QueryRefreshCountdown,
+  useMergedRefresh,
+  useQueryRefreshAtInterval,
+} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {usePortalSlot} from '../hooks/usePortalSlot';
 import {InstancePageContext} from '../instance/InstancePageContext';
@@ -161,6 +166,16 @@ export const RunsRoot = () => {
 
   const [filtersPortal, filtersSlot] = usePortalSlot(button);
 
+  function actionBar() {
+    return (
+      <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+        <QueryRefreshCountdown refreshState={combinedRefreshState} />
+        <RunListTabs queuedCount={queuedCount} inProgressCount={inProgressCount} />
+        {filtersSlot}
+      </Box>
+    );
+  }
+
   return (
     <Page>
       {filtersPortal}
@@ -194,7 +209,7 @@ export const RunsRoot = () => {
                 flex={{direction: 'column', gap: 32}}
                 padding={{vertical: 8, left: 24, right: 12}}
               >
-                {filtersSlot}
+                {actionBar()}
                 <NonIdealState
                   icon="warning"
                   title={badRequest ? 'Invalid run filters' : 'Unexpected error'}
@@ -228,12 +243,7 @@ export const RunsRoot = () => {
                     runs={pipelineRunsOrError.results.slice(0, PAGE_SIZE)}
                     onAddTag={onAddTag}
                     filter={filter}
-                    actionBarComponents={
-                      <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-                        <RunListTabs queuedCount={queuedCount} inProgressCount={inProgressCount} />
-                        {filtersSlot}
-                      </Box>
-                    }
+                    actionBarComponents={actionBar()}
                     belowActionBarComponents={activeFiltersJsx}
                   />
                 </StickyTableContainer>
