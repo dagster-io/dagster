@@ -113,7 +113,15 @@ def get_repo_with_non_partitioned_asset() -> RepositoryDefinition:
     return Definitions(assets=[asset1, asset2]).get_repository_def()
 
 
-def test_launch_asset_backfill():
+def get_repo_with_root_assets_different_partitions() -> RepositoryDefinition:
+    from dagster_tests.definitions_tests.asset_reconciliation_tests.exotic_partition_mapping_scenarios import (
+        root_assets_different_partitions_same_downstream,
+    )
+
+    return Definitions(assets=root_assets_different_partitions_same_downstream).get_repository_def()
+
+
+def test_launch_asset_backfill_read_only_context():
     repo = get_repo()
     all_asset_keys = repo.asset_graph.all_asset_keys
 
@@ -142,33 +150,112 @@ def test_launch_asset_backfill():
                 == "UnauthorizedError"
             )
 
+
+def test_launch_asset_backfill_all_partitions():
+    repo = get_repo()
+    all_asset_keys = repo.asset_graph.all_asset_keys
+
+    with instance_for_test() as instance:
         with define_out_of_process_context(__file__, "get_repo", instance) as context:
-            # launchPartitionBackfill
-
-            # can't launch with allPartitions
-
             launch_backfill_result = execute_dagster_graphql(
                 context,
                 LAUNCH_PARTITION_BACKFILL_MUTATION,
                 variables={
                     "backfillParams": {
-                        "partitionNames": ["a", "b"],
                         "assetSelection": [key.to_graphql_input() for key in all_asset_keys],
                         "allPartitions": True,
                     }
                 },
             )
 
-            assert launch_backfill_result
+            backfill_id, asset_backfill_data = _get_backfill_data(
+                launch_backfill_result, instance, repo
+            )
+            target_subset = asset_backfill_data.target_subset
+            assert target_subset.asset_keys == all_asset_keys
+            all_partition_keys = {"a", "b", "c"}
             assert (
-                launch_backfill_result.data["launchPartitionBackfill"]["__typename"]
-                == "PythonError"
+                target_subset.get_partitions_subset(AssetKey("asset1")).get_partition_keys()
+                == all_partition_keys
             )
             assert (
-                "allPartitions is not supported for pure asset backfills"
-                in launch_backfill_result.data["launchPartitionBackfill"]["message"]
+                target_subset.get_partitions_subset(AssetKey("asset2")).get_partition_keys()
+                == all_partition_keys
             )
 
+
+def test_launch_asset_backfill_all_partitions_asset_selection():
+    repo = get_repo()
+
+    with instance_for_test() as instance:
+        with define_out_of_process_context(__file__, "get_repo", instance) as context:
+            launch_backfill_result = execute_dagster_graphql(
+                context,
+                LAUNCH_PARTITION_BACKFILL_MUTATION,
+                variables={
+                    "backfillParams": {
+                        "assetSelection": [AssetKey("asset2").to_graphql_input()],
+                        "allPartitions": True,
+                    }
+                },
+            )
+
+            backfill_id, asset_backfill_data = _get_backfill_data(
+                launch_backfill_result, instance, repo
+            )
+            target_subset = asset_backfill_data.target_subset
+            assert target_subset.asset_keys == {AssetKey("asset2")}
+            all_partition_keys = {"a", "b", "c"}
+            assert (
+                target_subset.get_partitions_subset(AssetKey("asset2")).get_partition_keys()
+                == all_partition_keys
+            )
+            assert not target_subset.get_partitions_subset(AssetKey("asset1")).get_partition_keys()
+
+
+def test_launch_asset_backfill_all_partitions_root_assets_different_partitions():
+    repo = get_repo_with_root_assets_different_partitions()
+    all_asset_keys = repo.asset_graph.all_asset_keys
+
+    with instance_for_test() as instance:
+        with define_out_of_process_context(
+            __file__, "get_repo_with_root_assets_different_partitions", instance
+        ) as context:
+            launch_backfill_result = execute_dagster_graphql(
+                context,
+                LAUNCH_PARTITION_BACKFILL_MUTATION,
+                variables={
+                    "backfillParams": {
+                        "assetSelection": [key.to_graphql_input() for key in all_asset_keys],
+                        "allPartitions": True,
+                    }
+                },
+            )
+
+            backfill_id, asset_backfill_data = _get_backfill_data(
+                launch_backfill_result, instance, repo
+            )
+            target_subset = asset_backfill_data.target_subset
+            assert target_subset.get_partitions_subset(AssetKey("root1")).get_partition_keys() == {
+                "a",
+                "b",
+            }
+            assert target_subset.get_partitions_subset(AssetKey("root2")).get_partition_keys() == {
+                "1",
+                "2",
+            }
+            assert target_subset.get_partitions_subset(
+                AssetKey("downstream")
+            ).get_partition_keys() == {"a", "b"}
+
+
+def test_launch_asset_backfill():
+    repo = get_repo()
+    all_asset_keys = repo.asset_graph.all_asset_keys
+
+    with instance_for_test() as instance:
+        with define_out_of_process_context(__file__, "get_repo", instance) as context:
+            # launchPartitionBackfill
             launch_backfill_result = execute_dagster_graphql(
                 context,
                 LAUNCH_PARTITION_BACKFILL_MUTATION,

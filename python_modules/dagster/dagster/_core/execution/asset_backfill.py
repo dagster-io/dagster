@@ -233,47 +233,63 @@ class AssetBackfillData(NamedTuple):
     def from_asset_partitions(
         cls,
         asset_graph: AssetGraph,
-        partition_names: Sequence[str],
+        partition_names: Optional[Sequence[str]],
         asset_selection: Sequence[AssetKey],
         dynamic_partitions_store: DynamicPartitionsStore,
+        all_partitions: bool,
     ) -> "AssetBackfillData":
-        partitioned_asset_keys = {
-            asset_key
-            for asset_key in asset_selection
-            if asset_graph.get_partitions_def(asset_key) is not None
-        }
-
-        root_partitioned_asset_keys = (
-            AssetSelection.keys(*partitioned_asset_keys).sources().resolve(asset_graph)
+        check.invariant(
+            partition_names is None or all_partitions is False,
+            "Can't provide both a set of partitions and all_partitions=True",
         )
-        root_partitions_defs = {
-            asset_graph.get_partitions_def(asset_key) for asset_key in root_partitioned_asset_keys
-        }
-        if len(root_partitions_defs) > 1:
-            raise DagsterBackfillFailedError(
-                "All the assets at the root of the backfill must have the same PartitionsDefinition"
-            )
 
-        root_partitions_def = next(iter(root_partitions_defs))
-        if not root_partitions_def:
-            raise DagsterBackfillFailedError(
-                "If assets within the backfill have different partitionings, then root assets"
-                " must be partitioned"
+        if all_partitions:
+            target_subset = AssetGraphSubset.from_asset_keys(
+                asset_selection, asset_graph, dynamic_partitions_store
             )
+        elif partition_names is not None:
+            partitioned_asset_keys = {
+                asset_key
+                for asset_key in asset_selection
+                if asset_graph.get_partitions_def(asset_key) is not None
+            }
 
-        root_partitions_subset = root_partitions_def.subset_with_partition_keys(partition_names)
-        target_subset = AssetGraphSubset(
-            asset_graph, non_partitioned_asset_keys=set(asset_selection) - partitioned_asset_keys
-        )
-        for root_asset_key in root_partitioned_asset_keys:
-            target_subset |= asset_graph.bfs_filter_subsets(
-                dynamic_partitions_store,
-                lambda asset_key, _: asset_key in partitioned_asset_keys,
-                AssetGraphSubset(
-                    asset_graph,
-                    partitions_subsets_by_asset_key={root_asset_key: root_partitions_subset},
-                ),
+            root_partitioned_asset_keys = (
+                AssetSelection.keys(*partitioned_asset_keys).sources().resolve(asset_graph)
             )
+            root_partitions_defs = {
+                asset_graph.get_partitions_def(asset_key)
+                for asset_key in root_partitioned_asset_keys
+            }
+            if len(root_partitions_defs) > 1:
+                raise DagsterBackfillFailedError(
+                    "All the assets at the root of the backfill must have the same"
+                    " PartitionsDefinition"
+                )
+
+            root_partitions_def = next(iter(root_partitions_defs))
+            if not root_partitions_def:
+                raise DagsterBackfillFailedError(
+                    "If assets within the backfill have different partitionings, then root assets"
+                    " must be partitioned"
+                )
+
+            root_partitions_subset = root_partitions_def.subset_with_partition_keys(partition_names)
+            target_subset = AssetGraphSubset(
+                asset_graph,
+                non_partitioned_asset_keys=set(asset_selection) - partitioned_asset_keys,
+            )
+            for root_asset_key in root_partitioned_asset_keys:
+                target_subset |= asset_graph.bfs_filter_subsets(
+                    dynamic_partitions_store,
+                    lambda asset_key, _: asset_key in partitioned_asset_keys,
+                    AssetGraphSubset(
+                        asset_graph,
+                        partitions_subsets_by_asset_key={root_asset_key: root_partitions_subset},
+                    ),
+                )
+        else:
+            check.failed("Either partition_names must not be None or all_partitions must be True")
 
         return cls.empty(target_subset)
 
