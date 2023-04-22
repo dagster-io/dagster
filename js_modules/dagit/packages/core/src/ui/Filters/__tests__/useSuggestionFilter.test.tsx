@@ -105,7 +105,9 @@ describe('useSuggestionFilter', () => {
       result.current.onSelect({
         value: {final: false, value: 'p'},
         clearSearch: clearSearchFn,
-      } as any);
+        createPortal: () => () => {},
+        close: () => {},
+      });
     });
     expect(clearSearchFn).toHaveBeenCalled();
 
