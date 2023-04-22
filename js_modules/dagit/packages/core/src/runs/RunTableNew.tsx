@@ -37,10 +37,18 @@ interface RunTableProps {
   highlightedIds?: string[];
   additionalColumnHeaders?: React.ReactNode[];
   additionalColumnsForRow?: (run: RunTableRunFragment) => React.ReactNode[];
+  belowActionBarComponents?: React.ReactNode[];
 }
 
 export const RunTable = (props: RunTableProps) => {
-  const {runs, filter, onAddTag, highlightedIds, actionBarComponents} = props;
+  const {
+    runs,
+    filter,
+    onAddTag,
+    highlightedIds,
+    actionBarComponents,
+    belowActionBarComponents,
+  } = props;
   const allIds = runs.map((r) => r.id);
 
   const [{checkedIds}, {onToggleFactory, onToggleAll}] = useSelectionReducer(allIds);
@@ -54,7 +62,7 @@ export const RunTable = (props: RunTableProps) => {
     return (
       <div>
         {actionBarComponents ? (
-          <Box padding={{vertical: 8, left: 24, right: 12}}>{actionBarComponents}</Box>
+          <ActionBar top={actionBarComponents} bottom={belowActionBarComponents} />
         ) : null}
         <Box margin={{vertical: 32}}>
           {anyFilter ? (
@@ -92,15 +100,19 @@ export const RunTable = (props: RunTableProps) => {
 
   return (
     <>
-      <Box flex={{alignItems: 'center', gap: 12}} padding={{vertical: 8, left: 24, right: 12}}>
-        {actionBarComponents}
-        <div style={{flex: 1}} />
-        <RunBulkActionsMenu
-          selected={selectedFragments}
-          clearSelection={() => onToggleAll(false)}
-        />
-      </Box>
-
+      <ActionBar
+        top={
+          <>
+            {actionBarComponents}
+            <div style={{flex: 1}} />
+            <RunBulkActionsMenu
+              selected={selectedFragments}
+              clearSelection={() => onToggleAll(false)}
+            />
+          </>
+        }
+        bottom={belowActionBarComponents}
+      />
       <Table>
         <thead>
           <tr>
@@ -307,3 +319,23 @@ const Row = styled.tr<{highlighted: boolean}>`
   ${({highlighted}) =>
     highlighted ? `box-shadow: inset 3px 3px #bfccd6, inset -3px -3px #bfccd6;` : null}
 `;
+
+function ActionBar({top, bottom}: {top: React.ReactNode; bottom?: React.ReactNode[]}) {
+  return (
+    <Box flex={{direction: 'column'}} padding={{vertical: 12}}>
+      <Box flex={{alignItems: 'center', gap: 12}} padding={{left: 24, right: 12}}>
+        {top}
+      </Box>
+      {bottom && bottom.length > 0 ? (
+        <Box
+          margin={{top: 12}}
+          padding={{left: 24, right: 12, top: 8}}
+          border={{side: 'top', width: 1, color: Colors.KeylineGray}}
+          flex={{gap: 8}}
+        >
+          {bottom}
+        </Box>
+      ) : null}
+    </Box>
+  );
+}
