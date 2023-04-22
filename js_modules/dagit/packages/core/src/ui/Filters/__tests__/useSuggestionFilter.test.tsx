@@ -100,9 +100,14 @@ describe('useSuggestionFilter', () => {
 
     expect(result.current.getResults('p')).toEqual([]);
 
+    const clearSearchFn = jest.fn();
     await act(async () => {
-      result.current.onSelect({value: {final: false, value: 'p'}} as any);
+      result.current.onSelect({
+        value: {final: false, value: 'p'},
+        clearSearch: clearSearchFn,
+      } as any);
     });
+    expect(clearSearchFn).toHaveBeenCalled();
 
     const expectedResult = asyncSuggestions.filter(({value}) => isMatch(value, 'p'));
 
