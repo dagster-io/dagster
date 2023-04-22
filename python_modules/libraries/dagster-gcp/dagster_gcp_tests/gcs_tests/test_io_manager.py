@@ -1,3 +1,5 @@
+import pickle
+
 from dagster import (
     AssetsDefinition,
     DagsterInstance,
@@ -22,6 +24,7 @@ from dagster import (
 )
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.pipeline_base import InMemoryJob
+from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import execute_plan
@@ -37,6 +40,7 @@ from dagster_gcp.gcs import FakeGCSClient
 from dagster_gcp.gcs.io_manager import PickledObjectGCSIOManager, gcs_pickle_io_manager
 from dagster_gcp.gcs.resources import gcs_resource
 from google.cloud import storage
+from upath import UPath
 
 
 @resource
@@ -171,21 +175,31 @@ def test_dynamic(gcs_bucket):
 def test_asset_io_manager(gcs_bucket):
     @op
     def first_op(first_input):
-        assert first_input == 3
+        assert first_input == 5
         return first_input * 2
 
     @op
     def second_op(second_input):
-        assert second_input == 6
+        assert second_input == 10
         return second_input + 3
 
     @asset
     def upstream():
         return 2
 
+    source1 = SourceAsset("source1", partitions_def=StaticPartitionsDefinition(["foo", "bar"]))
+
+    fake_gcs_client = FakeGCSClient()
+    bucket_obj = fake_gcs_client.bucket(gcs_bucket)
+
+    # Pre-populate storage with source asset
+    for partition_key in ["foo", "bar"]:
+        path = UPath("assets", "source1", partition_key)
+        bucket_obj.blob(str(path)).upload_from_string(pickle.dumps(1))
+
     @asset
-    def downstream(upstream):
-        return 1 + upstream
+    def downstream(upstream, source1):
+        return 1 + upstream + source1["foo"] + source1["bar"]
 
     @graph(ins={"downstream": GraphIn()}, out={"asset3": GraphOut()})
     def graph_asset(downstream):
@@ -195,9 +209,14 @@ def test_asset_io_manager(gcs_bucket):
     def partitioned():
         return 8
 
-    fake_gcs_client = FakeGCSClient()
     defs = Definitions(
-        assets=[upstream, downstream, AssetsDefinition.from_graph(graph_asset), partitioned],
+        assets=[
+            source1,
+            upstream,
+            downstream,
+            AssetsDefinition.from_graph(graph_asset),
+            partitioned,
+        ],
         resources={
             "io_manager": gcs_pickle_io_manager.configured(
                 {"gcs_bucket": gcs_bucket, "gcs_prefix": "assets"}
@@ -216,6 +235,8 @@ def test_asset_io_manager(gcs_bucket):
         f"{gcs_bucket}/assets/partitioned/apple",
         f"{gcs_bucket}/assets/asset3",
         f"{gcs_bucket}/assets/storage/{result.run_id}/files/graph_asset.first_op/result",
+        f"{gcs_bucket}/assets/source1/foo",
+        f"{gcs_bucket}/assets/source1/bar",
     }
 
 
