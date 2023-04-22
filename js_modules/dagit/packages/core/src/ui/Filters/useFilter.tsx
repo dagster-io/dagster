@@ -14,6 +14,7 @@ export type FilterObject = {
     value: any;
     close: () => void;
     createPortal: (element: JSX.Element) => () => void;
+    clearSearch: () => void;
   }) => void;
   onUnselected?: () => void;
   isLoadingFilters?: boolean;
