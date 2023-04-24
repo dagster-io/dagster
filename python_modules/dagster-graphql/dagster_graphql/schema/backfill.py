@@ -315,8 +315,8 @@ class GraphenePartitionBackfill(graphene.ObjectType):
                 GrapheneAssetPartitionsStatusCounts(
                     assetKey=asset_key,
                     numPartitionsTargeted=total_num_partitions,
-                    numPartitionsRequested=counts_by_status[BackfillPartitionsStatus.REQUESTED],
-                    numPartitionsCompleted=counts_by_status[BackfillPartitionsStatus.COMPLETED],
+                    numPartitionsRequested=counts_by_status[BackfillPartitionsStatus.IN_PROGRESS],
+                    numPartitionsCompleted=counts_by_status[BackfillPartitionsStatus.MATERIALIZED],
                     numPartitionsFailed=counts_by_status[BackfillPartitionsStatus.FAILED],
                 )
             )

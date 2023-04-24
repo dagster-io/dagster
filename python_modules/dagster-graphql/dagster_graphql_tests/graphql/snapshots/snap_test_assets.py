@@ -126,6 +126,13 @@ snapshots['TestAssetAwareEventLog.test_all_asset_keys[postgres_with_default_run_
             {
                 'key': {
                     'path': [
+                        'downstream_weekly_partitioned_asset'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
                         'dummy_source_asset'
                     ]
                 }
@@ -336,7 +343,21 @@ snapshots['TestAssetAwareEventLog.test_all_asset_keys[postgres_with_default_run_
             {
                 'key': {
                     'path': [
+                        'unpartitioned_upstream_of_partitioned'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
                         'untyped_asset'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
+                        'upstream_daily_partitioned_asset'
                     ]
                 }
             },
@@ -491,6 +512,13 @@ snapshots['TestAssetAwareEventLog.test_all_asset_keys[postgres_with_default_run_
             {
                 'key': {
                     'path': [
+                        'downstream_weekly_partitioned_asset'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
                         'dummy_source_asset'
                     ]
                 }
@@ -701,7 +729,21 @@ snapshots['TestAssetAwareEventLog.test_all_asset_keys[postgres_with_default_run_
             {
                 'key': {
                     'path': [
+                        'unpartitioned_upstream_of_partitioned'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
                         'untyped_asset'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
+                        'upstream_daily_partitioned_asset'
                     ]
                 }
             },
@@ -856,6 +898,13 @@ snapshots['TestAssetAwareEventLog.test_all_asset_keys[sqlite_with_default_run_la
             {
                 'key': {
                     'path': [
+                        'downstream_weekly_partitioned_asset'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
                         'dummy_source_asset'
                     ]
                 }
@@ -1066,7 +1115,21 @@ snapshots['TestAssetAwareEventLog.test_all_asset_keys[sqlite_with_default_run_la
             {
                 'key': {
                     'path': [
+                        'unpartitioned_upstream_of_partitioned'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
                         'untyped_asset'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
+                        'upstream_daily_partitioned_asset'
                     ]
                 }
             },
@@ -1221,6 +1284,13 @@ snapshots['TestAssetAwareEventLog.test_all_asset_keys[sqlite_with_default_run_la
             {
                 'key': {
                     'path': [
+                        'downstream_weekly_partitioned_asset'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
                         'dummy_source_asset'
                     ]
                 }
@@ -1431,7 +1501,21 @@ snapshots['TestAssetAwareEventLog.test_all_asset_keys[sqlite_with_default_run_la
             {
                 'key': {
                     'path': [
+                        'unpartitioned_upstream_of_partitioned'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
                         'untyped_asset'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
+                        'upstream_daily_partitioned_asset'
                     ]
                 }
             },
@@ -1612,6 +1696,11 @@ snapshots['TestAssetAwareEventLog.test_freshness_info[postgres_with_default_run_
         {
             'freshnessInfo': None,
             'freshnessPolicy': None,
+            'id': 'test.test_repo.["unpartitioned_upstream_of_partitioned"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
             'id': 'test.test_repo.["untyped_asset"]'
         },
         {
@@ -1638,6 +1727,16 @@ snapshots['TestAssetAwareEventLog.test_freshness_info[postgres_with_default_run_
             'freshnessInfo': None,
             'freshnessPolicy': None,
             'id': 'test.test_repo.["dynamic_in_multipartitions_success"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["upstream_daily_partitioned_asset"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["downstream_weekly_partitioned_asset"]'
         },
         {
             'freshnessInfo': None,
@@ -1863,6 +1962,11 @@ snapshots['TestAssetAwareEventLog.test_freshness_info[postgres_with_default_run_
         {
             'freshnessInfo': None,
             'freshnessPolicy': None,
+            'id': 'test.test_repo.["unpartitioned_upstream_of_partitioned"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
             'id': 'test.test_repo.["untyped_asset"]'
         },
         {
@@ -1889,6 +1993,16 @@ snapshots['TestAssetAwareEventLog.test_freshness_info[postgres_with_default_run_
             'freshnessInfo': None,
             'freshnessPolicy': None,
             'id': 'test.test_repo.["dynamic_in_multipartitions_success"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["upstream_daily_partitioned_asset"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["downstream_weekly_partitioned_asset"]'
         },
         {
             'freshnessInfo': None,
@@ -2114,6 +2228,11 @@ snapshots['TestAssetAwareEventLog.test_freshness_info[sqlite_with_default_run_la
         {
             'freshnessInfo': None,
             'freshnessPolicy': None,
+            'id': 'test.test_repo.["unpartitioned_upstream_of_partitioned"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
             'id': 'test.test_repo.["untyped_asset"]'
         },
         {
@@ -2140,6 +2259,16 @@ snapshots['TestAssetAwareEventLog.test_freshness_info[sqlite_with_default_run_la
             'freshnessInfo': None,
             'freshnessPolicy': None,
             'id': 'test.test_repo.["dynamic_in_multipartitions_success"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["upstream_daily_partitioned_asset"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["downstream_weekly_partitioned_asset"]'
         },
         {
             'freshnessInfo': None,
@@ -2365,6 +2494,11 @@ snapshots['TestAssetAwareEventLog.test_freshness_info[sqlite_with_default_run_la
         {
             'freshnessInfo': None,
             'freshnessPolicy': None,
+            'id': 'test.test_repo.["unpartitioned_upstream_of_partitioned"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
             'id': 'test.test_repo.["untyped_asset"]'
         },
         {
@@ -2391,6 +2525,16 @@ snapshots['TestAssetAwareEventLog.test_freshness_info[sqlite_with_default_run_la
             'freshnessInfo': None,
             'freshnessPolicy': None,
             'id': 'test.test_repo.["dynamic_in_multipartitions_success"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["upstream_daily_partitioned_asset"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["downstream_weekly_partitioned_asset"]'
         },
         {
             'freshnessInfo': None,
