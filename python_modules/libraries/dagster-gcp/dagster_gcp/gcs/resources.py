@@ -1,17 +1,20 @@
-from typing import Optional
+from typing import Any, Optional
 
-from dagster import ConfigurableResource, resource
+from dagster import ConfigurableResource, IAttachDifferentObjectToOpContext, resource
 from google.cloud import storage
 from pydantic import Field
 
 from .file_manager import GCSFileManager
 
 
-class GCSResource(ConfigurableResource):
+class GCSResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
     project: Optional[str] = Field(default=None, description="Project name")
 
     def get_client(self) -> storage.Client:
         return _gcs_client_from_config(project=self.project)
+
+    def get_object_to_set_on_execution_context(self) -> Any:
+        return self.get_client()
 
 
 @resource(
@@ -22,7 +25,7 @@ def gcs_resource(init_context) -> storage.Client:
     return GCSResource.from_resource_context(init_context).get_client()
 
 
-class GCSFileManagerResource(ConfigurableResource):
+class GCSFileManagerResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
     project: Optional[str] = Field(default=None, description="Project name")
     gcs_bucket: str = Field(description="GCS bucket to store files")
     gcs_prefix: str = Field(default="dagster", description="Prefix to add to all file paths")
@@ -34,6 +37,9 @@ class GCSFileManagerResource(ConfigurableResource):
             gcs_bucket=self.gcs_bucket,
             gcs_base_key=self.gcs_prefix,
         )
+
+    def get_object_to_set_on_execution_context(self) -> Any:
+        return self.get_client()
 
 
 @resource(config_schema=GCSFileManagerResource.to_config_schema())
