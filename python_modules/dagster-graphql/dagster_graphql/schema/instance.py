@@ -1,4 +1,5 @@
 import sys
+from typing import Mapping, Optional
 
 import dagster._check as check
 import graphene
@@ -88,6 +89,50 @@ class GrapheneDaemonHealth(graphene.ObjectType):
         ]
 
 
+class GrapheneConcurrencyLimit(graphene.ObjectType):
+    id = graphene.NonNull(graphene.String)
+    concurrencyKey = graphene.NonNull(graphene.String)
+    limit = graphene.NonNull(graphene.Int)
+    numActive = graphene.NonNull(graphene.Int)
+    activeRunIds = non_null_list(graphene.String)
+
+    class Meta:
+        name = "ConcurrencyLimit"
+
+    def __init__(self, instance: DagsterInstance, concurrencyKey: str):
+        super().__init__(id=concurrencyKey, concurrencyKey=concurrencyKey)
+        self._instance = instance
+        self._concurrency_info: Optional[Mapping[str, int]] = None
+
+    def resolve_limit(self, _graphene_info: ResolveInfo):
+        if self._concurrency_info is None:
+            self._fetch_concurrency_info()
+        return sum(self._concurrency_info.values()) if self._concurrency_info else 0
+
+    def resolve_numActive(self, _graphene_info: ResolveInfo):
+        if self._concurrency_info is None:
+            self._fetch_concurrency_info()
+        return (
+            sum([v for k, v in self._concurrency_info.items() if k is not None])
+            if self._concurrency_info
+            else 0
+        )
+
+    def resolve_activeRunIds(self, _graphene_info: ResolveInfo):
+        if self._concurrency_info is None:
+            self._fetch_concurrency_info()
+
+        if not self._concurrency_info:
+            return []
+
+        return [run_id for run_id in self._concurrency_info.keys() if run_id is not None]
+
+    def _fetch_concurrency_info(self):
+        self._concurrency_info = self._instance.event_log_storage.get_concurrency_info(
+            self.concurrencyKey
+        )
+
+
 class GrapheneInstance(graphene.ObjectType):
     id = graphene.NonNull(graphene.String)
     info = graphene.Field(graphene.String)
@@ -98,6 +143,7 @@ class GrapheneInstance(graphene.ObjectType):
     hasInfo = graphene.NonNull(graphene.Boolean)
     hasCapturedLogManager = graphene.NonNull(graphene.Boolean)
     autoMaterializePaused = graphene.NonNull(graphene.Boolean)
+    concurrencyLimits = non_null_list(GrapheneConcurrencyLimit)
 
     class Meta:
         name = "Instance"
@@ -138,3 +184,9 @@ class GrapheneInstance(graphene.ObjectType):
 
     def resolve_autoMaterializePaused(self, _graphene_info: ResolveInfo):
         return get_auto_materialize_paused(self._instance)
+
+    def resolve_concurrencyLimits(self, _graphene_info: ResolveInfo):
+        return [
+            GrapheneConcurrencyLimit(self._instance, key)
+            for key in self._instance.event_log_storage.get_concurrency_limited_keys()
+        ]

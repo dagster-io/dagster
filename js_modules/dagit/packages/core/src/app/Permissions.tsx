@@ -25,6 +25,7 @@ export const EXPECTED_PERMISSIONS = {
   cancel_partition_backfill: true,
   edit_dynamic_partitions: true,
   toggle_auto_materialize: true,
+  edit_concurrency_limit: true,
 };
 
 export type PermissionResult = {
@@ -47,6 +48,7 @@ export type PermissionsFromJSON = {
   launch_partition_backfill?: PermissionResult;
   cancel_partition_backfill?: PermissionResult;
   toggle_auto_materialize?: PermissionResult;
+  edit_concurrency_limit?: PermissionResult;
 };
 
 export const DEFAULT_DISABLED_REASON = 'Disabled by your administrator';
@@ -95,6 +97,7 @@ export const extractPermissions = (
     canLaunchPartitionBackfill: permissionOrFallback('launch_partition_backfill'),
     canCancelPartitionBackfill: permissionOrFallback('cancel_partition_backfill'),
     canToggleAutoMaterialize: permissionOrFallback('toggle_auto_materialize'),
+    canEditConcurrencyLimit: permissionOrFallback('edit_concurrency_limit'),
   };
 };
 
