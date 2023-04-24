@@ -50,8 +50,8 @@ if TYPE_CHECKING:
 
 
 class BackfillPartitionsStatus(Enum):
-    REQUESTED = "REQUESTED"
-    COMPLETED = "COMPLETED"
+    IN_PROGRESS = "IN_PROGRESS"
+    MATERIALIZED = "MATERIALIZED"
     FAILED = "FAILED"
 
 
@@ -167,9 +167,9 @@ class AssetBackfillData(NamedTuple):
             )
 
             return {
-                BackfillPartitionsStatus.COMPLETED: len(materialized_subset),
+                BackfillPartitionsStatus.MATERIALIZED: len(materialized_subset),
                 BackfillPartitionsStatus.FAILED: len(failed_partitions),
-                BackfillPartitionsStatus.REQUESTED: len(requested_partitions)
+                BackfillPartitionsStatus.IN_PROGRESS: len(requested_partitions)
                 - (len(failed_partitions & requested_partitions) + len(materialized_subset)),
             }
 
