@@ -38,6 +38,7 @@ interface RunTableProps {
   additionalColumnHeaders?: React.ReactNode[];
   additionalColumnsForRow?: (run: RunTableRunFragment) => React.ReactNode[];
   belowActionBarComponents?: React.ReactNode[];
+  hideCreatedBy?: boolean;
 }
 
 export const RunTable = (props: RunTableProps) => {
@@ -48,6 +49,7 @@ export const RunTable = (props: RunTableProps) => {
     highlightedIds,
     actionBarComponents,
     belowActionBarComponents,
+    hideCreatedBy,
   } = props;
   const allIds = runs.map((r) => r.id);
 
@@ -113,7 +115,7 @@ export const RunTable = (props: RunTableProps) => {
               <th style={{width: 90}}>Run ID</th>
               <th style={{width: 180}}>Created date</th>
               <th>Target</th>
-              <th style={{width: 160}}>Created by</th>
+              {hideCreatedBy ? null : <th style={{width: 160}}>Created by</th>}
               <th style={{width: 120}}>Status</th>
               <th style={{width: 190}}>Duration</th>
               {props.additionalColumnHeaders}
@@ -205,6 +207,7 @@ const RunRow: React.FC<{
   onToggleChecked?: (values: {checked: boolean; shiftKey: boolean}) => void;
   additionalColumns?: React.ReactNode[];
   isHighlighted?: boolean;
+  hideCreatedBy?: boolean;
 }> = ({
   run,
   canTerminateOrDelete,
@@ -213,6 +216,7 @@ const RunRow: React.FC<{
   onToggleChecked,
   additionalColumns,
   isHighlighted,
+  hideCreatedBy,
 }) => {
   const {pipelineName} = run;
   const repo = useRepositoryForRunWithoutSnapshot(run);
@@ -301,9 +305,11 @@ const RunRow: React.FC<{
           />
         </Box>
       </td>
-      <td>
-        <RunCreatedByCell run={run} />
-      </td>
+      {hideCreatedBy ? null : (
+        <td>
+          <RunCreatedByCell run={run} />
+        </td>
+      )}
       <td>
         <RunStatusTagWithStats status={run.status} runId={run.id} />
       </td>

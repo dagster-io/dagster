@@ -37,7 +37,14 @@ export const SensorPreviousRuns: React.FC<{
   }
 
   const runs = data?.pipelineRunsOrError.results;
-  return <RunTable actionBarComponents={tabs} runs={runs} highlightedIds={highlightedIds} />;
+  return (
+    <RunTable
+      actionBarComponents={tabs}
+      runs={runs}
+      highlightedIds={highlightedIds}
+      hideCreatedBy={true}
+    />
+  );
 };
 
 const PREVIOUS_RUNS_FOR_SENSOR_QUERY = gql`
