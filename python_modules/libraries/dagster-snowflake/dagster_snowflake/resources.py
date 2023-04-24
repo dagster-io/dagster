@@ -6,7 +6,12 @@ from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence, Union
 import dagster._check as check
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
-from dagster import ConfigurableResource, resource
+from dagster import (
+    ConfigurableResource,
+    IAttachDifferentObjectToOpContext,
+    get_dagster_logger,
+    resource,
+)
 from dagster._annotations import public
 from dagster._core.storage.event_log.sql_event_log import SqlDbConnection
 from dagster._utils.cached_method import cached_method
@@ -26,7 +31,7 @@ except ImportError:
     raise
 
 
-class SnowflakeResource(ConfigurableResource):
+class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
     """A resource for connecting to the Snowflake data warehouse.
 
     A simple example of loading data into Snowflake and subsequently querying that data is shown below:
@@ -411,6 +416,13 @@ class SnowflakeResource(ConfigurableResource):
             if not self.autocommit:
                 conn.commit()
             conn.close()
+
+    def get_object_to_set_on_execution_context(self) -> Any:
+        return SnowflakeConnection(
+            config=self._resolved_config_dict,
+            log=get_dagster_logger(),
+            snowflake_connection_resource=self,
+        )
 
 
 class SnowflakeConnection:
