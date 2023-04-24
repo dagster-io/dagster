@@ -1,10 +1,11 @@
 import json
 import time
 from contextlib import contextmanager
-from typing import Any, Mapping, Optional
+from typing import Any, Dict, Mapping, Optional
 
+import dagster._check as check
 import yaml
-from dagster import ConfigurableResource, resource
+from dagster import ConfigurableResource, IAttachDifferentObjectToOpContext, resource
 from googleapiclient.discovery import build
 from oauth2client.client import GoogleCredentials
 from pydantic import Field
@@ -155,7 +156,7 @@ class DataprocClient:
             self.delete_cluster()
 
 
-class DataprocResource(ConfigurableResource):
+class DataprocResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
     project_id: str = Field(
         description=(
             "Required. Project ID for the project which the client acts on behalf of. Will be"
@@ -174,7 +175,8 @@ class DataprocResource(ConfigurableResource):
         description=(
             "Full path to a YAML file containing cluster configuration. See"
             " https://cloud.google.com/dataproc/docs/reference/rest/v1/ClusterConfig for"
-            " configuration options."
+            " configuration options. Only one of cluster_config_yaml_path,"
+            " cluster_config_json_path, or cluster_config_dict may be provided."
         ),
     )
     cluster_config_json_path: Optional[str] = Field(
@@ -182,15 +184,17 @@ class DataprocResource(ConfigurableResource):
         description=(
             "Full path to a JSON file containing cluster configuration. See"
             " https://cloud.google.com/dataproc/docs/reference/rest/v1/ClusterConfig for"
-            " configuration options."
+            " configuration options. Only one of cluster_config_yaml_path,"
+            " cluster_config_json_path, or cluster_config_dict may be provided."
         ),
     )
-    cluster_config_dict: Optional[str] = Field(
+    cluster_config_dict: Optional[Dict[str, Any]] = Field(
         default=None,
         description=(
             "Python dictionary containing cluster configuration. See"
             " https://cloud.google.com/dataproc/docs/reference/rest/v1/ClusterConfig for"
-            " configuration options."
+            " configuration options. Only one of cluster_config_yaml_path,"
+            " cluster_config_json_path, or cluster_config_dict may be provided."
         ),
     )
 
@@ -202,7 +206,22 @@ class DataprocResource(ConfigurableResource):
         with open(path, "r", encoding="utf8") as f:
             return json.load(f)
 
-    def get_client(self) -> DataprocClient:
+    def _get_cluster_config(self) -> Optional[Mapping[str, Any]]:
+        methods = 0
+        methods += 1 if self.cluster_config_dict is not None else 0
+        methods += 1 if self.cluster_config_json_path is not None else 0
+        methods += 1 if self.cluster_config_yaml_path is not None else 0
+
+        # ensure that at most 1 method is provided
+        check.invariant(
+            methods <= 1,
+            (
+                "Dataproc Resource: Incorrect config: Cannot provide cluster config multiple ways."
+                " Choose one of cluster_config_dict, cluster_config_json_path, or"
+                " cluster_config_yaml_path"
+            ),
+        )
+
         cluster_config = None
         if self.cluster_config_json_path:
             cluster_config = self._read_json_config(self.cluster_config_json_path)
@@ -210,6 +229,11 @@ class DataprocResource(ConfigurableResource):
             cluster_config = self._read_yaml_config(self.cluster_config_yaml_path)
         elif self.cluster_config_dict:
             cluster_config = self.cluster_config_dict
+
+        return cluster_config
+
+    def get_client(self) -> DataprocClient:
+        cluster_config = self._get_cluster_config()
 
         client_config_dict = {
             "projectId": self.project_id,
@@ -219,6 +243,9 @@ class DataprocResource(ConfigurableResource):
         }
 
         return DataprocClient(config=client_config_dict)
+
+    def get_object_to_set_on_execution_context(self) -> Any:
+        return self.get_client()
 
 
 @resource(
