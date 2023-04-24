@@ -3,6 +3,8 @@ title: dagster_cloud.yaml reference | Dagster Docs
 description: Use dagster_cloud.yaml to configure code locations for Dagster Cloud
 ---
 
+<Note>This reference is applicable to Dagster Cloud.</Note>
+
 # dagster_cloud.yaml
 
 <table
@@ -75,17 +77,7 @@ description: Use dagster_cloud.yaml to configure code locations for Dagster Clou
 
 ---
 
-## Settings schema
-
-<Note>This reference is applicable to Dagster Cloud.</Note>
-
-The `dagster_cloud.yaml` file is used to configure how one or more [code locations](/dagster-cloud/managing-deployments/code-locations) should be built and deployed to [Dagster Cloud](/dagster-cloud), usually as part of CI/CD.
-
-The file is required to tell Dagster where the code sources are to load into Dagster Cloud.
-
-For [Hybrid Deployments](/dagster-cloud/deployment/hybrid), secrets are also configured in this file since secrets are part of a given code location.
-
-### Where to put the dagster_cloud.yaml file
+## File location
 
 The `dagster_cloud.yaml` file should be placed in the root of your Dagster project. Below is an example of a file structure from the [Dagster cloud ETL quickstart](https://github.com/dagster-io/dagster/tree/master/examples/quickstart_etl).
 
@@ -104,15 +96,16 @@ quickstart_etl
 
 If you your repository contains multiple Dagster projects in subdirectories - otherwise known as a monorepository - add the dagster_cloud.yaml file to the root of each project subdirectory.
 
+## Settings schema
+
 ### Code locations
 
 The only **mandatory** section in the `dagster_cloud.yaml` file is the `locations` key. This top-level key specifies a list of code locations that should be deployed to Dagster Cloud.
 At a minimum, each item in `locations` must include the following: 
 - A `location_name` key that specifies the name of the code location
 - A `code_source` key containing either a `module_name` or `file_name` parameter that specifies where to find the definitions in the code location
-Refer to the following table for the full list of parameters a location can have.
 
-Let's put these examples into tabs:
+Refer to the following table for the full list of parameters a location can have.
 
 <TabGroup>
 <TabItem name="Single code location">
