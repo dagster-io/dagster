@@ -7,7 +7,6 @@ import styled from 'styled-components/macro';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {RunsFilter} from '../graphql/types';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
-import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {getPipelineSnapshotLink} from '../pipelines/PipelinePathUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {AnchorButton} from '../ui/AnchorButton';
