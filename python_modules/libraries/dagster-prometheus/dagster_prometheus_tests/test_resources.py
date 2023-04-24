@@ -2,12 +2,12 @@ import time
 
 from dagster import op
 from dagster._utils.test import wrap_op_in_graph_and_execute
-from dagster_prometheus import prometheus_resource
+from dagster_prometheus import PrometheusResource
 from prometheus_client import Counter, Enum, Gauge, Histogram, Info, Summary
 
 EPS = 0.001
-ENV = {"resources": {"prometheus": {"config": {"gateway": "localhost:9091"}}}}
-RESOURCES = {"prometheus": prometheus_resource}
+ENV = {}
+RESOURCES = {"prometheus": PrometheusResource(gateway="localhost:9091")}
 
 
 def test_prometheus_counter():
