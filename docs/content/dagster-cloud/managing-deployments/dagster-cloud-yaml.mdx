@@ -87,7 +87,7 @@ For [Hybrid Deployments](/dagster-cloud/deployment/hybrid), secrets are also con
 
 ### Where to put the dagster_cloud.yaml file
 
-The `dagster_cloud.yaml` file should be placed in your dagster project's repository root. Below is an example of a file structure from the [Dagster cloud ETL quickstart](https://github.com/dagster-io/dagster/tree/master/examples/quickstart_etl).
+The `dagster_cloud.yaml` file should be placed in the root of your Dagster project. Below is an example of a file structure from the [Dagster cloud ETL quickstart](https://github.com/dagster-io/dagster/tree/master/examples/quickstart_etl).
 
 ```shell
 quickstart_etl
@@ -104,7 +104,7 @@ quickstart_etl
 
 If you your repository contains multiple Dagster projects in subdirectories - otherwise known as a monorepository - add the dagster_cloud.yaml file to the root of each project subdirectory.
 
-### Code Locations
+### Code locations
 
 The only **mandatory** section in the `dagster_cloud.yaml` file is the `locations` key. This top-level key specifies a list of code locations that should be deployed to Dagster Cloud.
 At a minimum, each item in `locations` must include the following: 
