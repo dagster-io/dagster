@@ -1,14 +1,14 @@
 from contextlib import contextmanager
-from typing import Iterator, Optional
+from typing import Any, Iterator, Optional
 
-from dagster import ConfigurableResource, resource
+from dagster import ConfigurableResource, IAttachDifferentObjectToOpContext, resource
 from google.cloud import bigquery
 from pydantic import Field
 
 from .utils import setup_gcp_creds
 
 
-class BigQueryResource(ConfigurableResource):
+class BigQueryResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
     """Resource for interacting with Google BigQuery.
 
     Examples:
@@ -74,6 +74,10 @@ class BigQueryResource(ConfigurableResource):
 
         else:
             yield bigquery.Client(project=self.project, location=self.location)
+
+    def get_object_to_set_on_execution_context(self) -> Any:
+        with self.get_client() as client:
+            yield client
 
 
 @resource(
