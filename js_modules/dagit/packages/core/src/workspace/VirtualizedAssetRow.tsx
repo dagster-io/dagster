@@ -279,30 +279,34 @@ function useLiveDataOrLatestMaterializationDebounced(
   const {data: nonSDAData} = useQuery<SingleNonSdaAssetQuery, SingleNonSdaAssetQueryVariables>(
     SINGLE_NON_SDA_ASSET_QUERY,
     {
-      skip: !(type === 'asset_non_sda' && debouncedKeys.length > 0),
+      skip: type !== 'asset_non_sda' || debouncedKeys.length === 0,
       variables: {input: debouncedKeys[0]},
     },
   );
-  const nonSDALastMaterialization = React.useMemo(
-    () =>
-      nonSDAData?.assetOrError.__typename === 'Asset'
-        ? nonSDAData.assetOrError.assetMaterializations[0]
-        : null,
-    [nonSDAData],
-  );
 
   React.useEffect(() => {
+    if (type === 'folder') {
+      return;
+    }
     const timer = setTimeout(() => {
       setDebouncedKeys(path ? [{path}] : []);
     }, LIVE_QUERY_DELAY);
     return () => clearTimeout(timer);
-  }, [path]);
+  }, [type, path]);
 
-  return type === 'asset'
-    ? liveDataByNode[toGraphId({path})]
-    : type === 'asset_non_sda'
-    ? {...MISSING_LIVE_DATA, lastMaterialization: nonSDALastMaterialization}
-    : null;
+  if (type === 'asset') {
+    return liveDataByNode[toGraphId({path})];
+  }
+  if (type === 'asset_non_sda') {
+    return {
+      ...MISSING_LIVE_DATA,
+      lastMaterialization:
+        nonSDAData?.assetOrError.__typename === 'Asset'
+          ? nonSDAData.assetOrError.assetMaterializations[0]
+          : null,
+    };
+  }
+  return null;
 }
 
 export const SINGLE_NON_SDA_ASSET_QUERY = gql`

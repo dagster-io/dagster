@@ -72,12 +72,13 @@ const SingleRunLogObserver: React.FC<{
   runId: string;
   callback: (runId: string, events: ObservedEvent[]) => void;
 }> = React.memo(({runId, callback}) => {
-  // Useful for testing this component:
   const counter = React.useRef(0);
-  React.useEffect(() => {
-    console.log(`Subscribed to ${runId}`);
-    return () => console.log(`Unsubscribed from ${runId} after ${counter.current} messages`);
-  }, [runId]);
+
+  // Useful for testing this component:
+  // React.useEffect(() => {
+  //   console.log(`Subscribed to ${runId}`);
+  //   return () => console.log(`Unsubscribed from ${runId} after ${counter.current} messages`);
+  // }, [runId]);
 
   useSubscription<AssetLiveRunLogsSubscription, AssetLiveRunLogsSubscriptionVariables>(
     ASSET_LIVE_RUN_LOGS_SUBSCRIPTION,
