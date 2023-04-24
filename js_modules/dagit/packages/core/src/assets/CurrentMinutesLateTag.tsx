@@ -5,7 +5,6 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import React from 'react';
 
 import {LiveDataForNode} from '../asset-graph/Utils';
-import {AssetNodeLiveFreshnessPolicyFragment} from '../asset-graph/types/AssetNode.types';
 import {FreshnessPolicy} from '../graphql/types';
 import {humanCronString} from '../schedules/humanCronString';
 
@@ -71,9 +70,7 @@ export const CurrentMinutesLateTag: React.FC<{
   );
 };
 
-export const freshnessPolicyDescription = (
-  freshnessPolicy: AssetNodeLiveFreshnessPolicyFragment | null,
-) => {
+export const freshnessPolicyDescription = (freshnessPolicy: FreshnessPolicy | null) => {
   if (!freshnessPolicy) {
     return '';
   }
