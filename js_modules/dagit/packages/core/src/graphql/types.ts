@@ -461,6 +461,15 @@ export type ComputeLogs = {
   stepKey: Scalars['String'];
 };
 
+export type ConcurrencyLimit = {
+  __typename: 'ConcurrencyLimit';
+  activeRunIds: Array<Scalars['String']>;
+  concurrencyKey: Scalars['String'];
+  id: Scalars['String'];
+  limit: Scalars['Int'];
+  numActive: Scalars['Int'];
+};
+
 export type ConfigType = {
   description: Maybe<Scalars['String']>;
   isSelector: Scalars['Boolean'];
@@ -550,6 +559,7 @@ export type DagitMutation = {
   scheduleDryRun: ScheduleDryRunResult;
   sensorDryRun: SensorDryRunResult;
   setAutoMaterializePaused: Scalars['Boolean'];
+  setConcurrencyLimit: Scalars['Boolean'];
   setNuxSeen: Scalars['Boolean'];
   setSensorCursor: SensorOrError;
   shutdownRepositoryLocation: ShutdownRepositoryLocationMutationResult;
@@ -629,6 +639,11 @@ export type DagitMutationSensorDryRunArgs = {
 
 export type DagitMutationSetAutoMaterializePausedArgs = {
   paused: Scalars['Boolean'];
+};
+
+export type DagitMutationSetConcurrencyLimitArgs = {
+  concurrencyKey: Scalars['String'];
+  limit: Scalars['Int'];
 };
 
 export type DagitMutationSetSensorCursorArgs = {
@@ -1664,6 +1679,7 @@ export type InputTag = {
 export type Instance = {
   __typename: 'Instance';
   autoMaterializePaused: Scalars['Boolean'];
+  concurrencyLimits: Array<ConcurrencyLimit>;
   daemonHealth: DaemonHealth;
   executablePath: Scalars['String'];
   hasCapturedLogManager: Scalars['Boolean'];
@@ -4942,6 +4958,26 @@ export const buildComputeLogs = (
   };
 };
 
+export const buildConcurrencyLimit = (
+  overrides?: Partial<ConcurrencyLimit>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'ConcurrencyLimit'} & ConcurrencyLimit => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ConcurrencyLimit');
+  return {
+    __typename: 'ConcurrencyLimit',
+    activeRunIds:
+      overrides && overrides.hasOwnProperty('activeRunIds') ? overrides.activeRunIds! : [],
+    concurrencyKey:
+      overrides && overrides.hasOwnProperty('concurrencyKey')
+        ? overrides.concurrencyKey!
+        : 'dolorem',
+    id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : 'rem',
+    limit: overrides && overrides.hasOwnProperty('limit') ? overrides.limit! : 7538,
+    numActive: overrides && overrides.hasOwnProperty('numActive') ? overrides.numActive! : 8060,
+  };
+};
+
 export const buildConfigType = (
   overrides?: Partial<ConfigType>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -5189,6 +5225,10 @@ export const buildDagitMutation = (
     setAutoMaterializePaused:
       overrides && overrides.hasOwnProperty('setAutoMaterializePaused')
         ? overrides.setAutoMaterializePaused!
+        : true,
+    setConcurrencyLimit:
+      overrides && overrides.hasOwnProperty('setConcurrencyLimit')
+        ? overrides.setConcurrencyLimit!
         : true,
     setNuxSeen: overrides && overrides.hasOwnProperty('setNuxSeen') ? overrides.setNuxSeen! : true,
     setSensorCursor:
@@ -6917,6 +6957,10 @@ export const buildInstance = (
       overrides && overrides.hasOwnProperty('autoMaterializePaused')
         ? overrides.autoMaterializePaused!
         : true,
+    concurrencyLimits:
+      overrides && overrides.hasOwnProperty('concurrencyLimits')
+        ? overrides.concurrencyLimits!
+        : [],
     daemonHealth:
       overrides && overrides.hasOwnProperty('daemonHealth')
         ? overrides.daemonHealth!

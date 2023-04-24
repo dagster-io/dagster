@@ -709,6 +709,27 @@ class GrapheneSetAutoMaterializePausedMutation(graphene.Mutation):
         return paused
 
 
+class GrapheneSetConcurrencyLimitMutation(graphene.Mutation):
+    """Sets the concurrency limit for a given concurrency key."""
+
+    Output = graphene.NonNull(graphene.Boolean)
+
+    class Meta:
+        name = "SetConcurrencyLimitMutation"
+
+    class Arguments:
+        concurrencyKey = graphene.Argument(graphene.NonNull(graphene.String))
+        limit = graphene.Argument(graphene.NonNull(graphene.Int))
+
+    @capture_error
+    @check_permission(Permissions.EDIT_CONCURRENCY_LIMIT)
+    def mutate(self, graphene_info, concurrencyKey: str, limit: int):
+        graphene_info.context.instance.event_log_storage.allocate_concurrency_slots(
+            concurrencyKey, limit
+        )
+        return True
+
+
 class GrapheneDagitMutation(graphene.ObjectType):
     """The root for all mutations to modify data in your Dagster instance."""
 
@@ -741,3 +762,4 @@ class GrapheneDagitMutation(graphene.ObjectType):
     set_nux_seen = GrapheneSetNuxSeenMutation.Field()
     add_dynamic_partition = GrapheneAddDynamicPartitionMutation.Field()
     setAutoMaterializePaused = GrapheneSetAutoMaterializePausedMutation.Field()
+    setConcurrencyLimit = GrapheneSetConcurrencyLimitMutation.Field()
