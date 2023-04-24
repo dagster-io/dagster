@@ -173,9 +173,9 @@ locations:
 
 ### Build directory
 
-Setting a build directory is useful if your `setup.py` or `requirements.txt` is in a subdirectory instead of the project root. This is common if you have multiple Python packages within a single Dagster project.
+The build registry is applicable to hybrid deployments only. Setting a build directory is useful if your `setup.py` or `requirements.txt` is in a subdirectory instead of the project root. This is common if you have multiple Python packages within a single Dagster project.
 
-The build registry is applicable to hybrid deployments only.
+In the example below, the docker image for the code location is in the root directory and the registry and image defined. 
 
 Example:
 
@@ -188,7 +188,7 @@ locations:
       package_name: quickstart_etl
     build:
       directory: ./
-      registry: your-docker-image-registry/image-name
+      registry: your-docker-image-registry/image-name # e.g. localhost:5000/myimage
 ```
 
 ### Python executable
@@ -208,8 +208,6 @@ locations:
       python_file: ml_model.py
     executable_path: venvs/path/to/ml_tensorflow/bin/python
 ```
-
----
 
 ### Container context
 
@@ -236,7 +234,7 @@ Refer to the configuration reference for your agent for more info:
       </li>
     </ul>
   </ReferenceTableItem>
-      <ReferenceTableItem propertyName="code_source.package_name">
+  <ReferenceTableItem propertyName="code_source.package_name">
     The name of a package containing Dagster code
     <ul>
       <li>
@@ -244,7 +242,7 @@ Refer to the configuration reference for your agent for more info:
       </li>
     </ul>
   </ReferenceTableItem>
- <ReferenceTableItem propertyName="code_source.python_file">
+   <ReferenceTableItem propertyName="code_source.python_file">
      The name of a Python file containing Dagster code, for example: `analytics_pipeline.py` 
     <ul>
       <li>
@@ -260,7 +258,7 @@ Refer to the configuration reference for your agent for more info:
       </li>
     </ul>
   </ReferenceTableItem>
- <ReferenceTableItem propertyName="working_directory">
+   <ReferenceTableItem propertyName="working_directory">
     The path of the directory that Dagster should load the code source from
     <ul>
       <li>
@@ -276,9 +274,10 @@ Refer to the configuration reference for your agent for more info:
       </li>
       <li>
         <strong>Default</strong> - <code>.</code>
+      </li>
     </ul>
   </ReferenceTableItem>
-     <ReferenceTableItem propertyName="build.registry">
+  <ReferenceTableItem propertyName="build.registry">
     <strong>Applicable to Hybrid deployments.</strong> The Docker registry to push your code location to in the registry
     <ul>
       <li>
