@@ -189,28 +189,15 @@ def test_snowflake_resource_no_auth(snowflake_connect):
         snowflake_job.execute_in_process()
 
 
-@mock.patch("snowflake.connector.connect", new_callable=create_mock_connector)
-def test_pydantic_snowflake_resource_no_auth(snowflake_connect):
-    @op
-    def snowflake_op(snowflake: SnowflakeResource):
-        assert snowflake
-        with snowflake.get_connection() as _:
-            pass
-
-    resource = SnowflakeResource(
-        account="foo",
-        user="bar",
-        database="TESTDB",
-        schema="TESTSCHEMA",
-        warehouse="TINY_WAREHOUSE",
-    )
-
-    @job(resource_defs={"snowflake": resource})
-    def snowflake_job():
-        snowflake_op()
-
+def test_pydantic_snowflake_resource_no_auth():
     with pytest.raises(CheckError):
-        snowflake_job.execute_in_process()
+        SnowflakeResource(
+            account="foo",
+            user="bar",
+            database="TESTDB",
+            schema="TESTSCHEMA",
+            warehouse="TINY_WAREHOUSE",
+        )
 
 
 @mock.patch("snowflake.connector.connect", new_callable=create_mock_connector)
@@ -241,30 +228,17 @@ def test_snowflake_resource_duplicate_auth(snowflake_connect):
         snowflake_job.execute_in_process()
 
 
-@mock.patch("snowflake.connector.connect", new_callable=create_mock_connector)
-def test_pydantic_snowflake_resource_duplicate_auth(snowflake_connect):
-    @op
-    def snowflake_op(snowflake: SnowflakeResource):
-        assert snowflake
-        with snowflake.get_connection() as _:
-            pass
-
-    resource = SnowflakeResource(
-        account="foo",
-        user="bar",
-        password="baz",
-        database="TESTDB",
-        schema="TESTSCHEMA",
-        warehouse="TINY_WAREHOUSE",
-        private_key="TESTKEY",
-    )
-
-    @job(resource_defs={"snowflake": resource})
-    def snowflake_job():
-        snowflake_op()
-
+def test_pydantic_snowflake_resource_duplicate_auth():
     with pytest.raises(CheckError):
-        snowflake_job.execute_in_process()
+        SnowflakeResource(
+            account="foo",
+            user="bar",
+            password="baz",
+            database="TESTDB",
+            schema="TESTSCHEMA",
+            warehouse="TINY_WAREHOUSE",
+            private_key="TESTKEY",
+        )
 
 
 @mock.patch("snowflake.connector.connect", new_callable=create_mock_connector)
@@ -290,30 +264,17 @@ def test_snowflake_resource_missing_private_key_password(snowflake_connect):
     def snowflake_job():
         snowflake_op()
 
-    with pytest.raises(DagsterResourceFunctionError):
-        snowflake_job.execute_in_process()
-
-
-@mock.patch("snowflake.connector.connect", new_callable=create_mock_connector)
-def test_pydantic_snowflake_resource_missing_private_key_password(snowflake_connect):
-    @op
-    def snowflake_op(snowflake: SnowflakeResource):
-        assert snowflake
-        with snowflake.get_connection() as _:
-            pass
-
-    resource = SnowflakeResource(
-        account="foo",
-        user="bar",
-        database="TESTDB",
-        schema="TESTSCHEMA",
-        warehouse="TINY_WAREHOUSE",
-        private_key="TESTKEY",
-    )
-
-    @job(resource_defs={"snowflake": resource})
-    def snowflake_job():
-        snowflake_op()
-
     with pytest.raises(TypeError):
         snowflake_job.execute_in_process()
+
+
+def test_pydantic_snowflake_resource_missing_private_key_password():
+    with pytest.raises(TypeError):
+        SnowflakeResource(
+            account="foo",
+            user="bar",
+            database="TESTDB",
+            schema="TESTSCHEMA",
+            warehouse="TINY_WAREHOUSE",
+            private_key="TESTKEY",
+        )
