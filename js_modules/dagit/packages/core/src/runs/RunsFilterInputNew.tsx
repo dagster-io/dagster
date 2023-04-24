@@ -22,6 +22,7 @@ import {TimeRangeState, useTimeRangeFilter} from '../ui/Filters/useTimeRangeFilt
 import {useRepositoryOptions} from '../workspace/WorkspaceContext';
 
 import {DagsterTag} from './RunTag';
+import {UserDisplay} from './UserDisplay';
 import {
   RunTagKeysNewQuery,
   RunTagValuesNewQuery,
@@ -400,7 +401,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
           } else if (value.type === DagsterTag.ScheduleName) {
             icon = <Icon name="schedule" />;
           } else if (value.type === DagsterTag.User) {
-            icon = <SubwayDot label={value.value} />;
+            return <UserDisplay email={value.value} />;
           }
           return (
             <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>

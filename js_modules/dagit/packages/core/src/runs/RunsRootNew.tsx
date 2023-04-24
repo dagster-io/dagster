@@ -166,19 +166,23 @@ export const RunsRoot = () => {
 
   function actionBar() {
     return (
-      <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+      <Box
+        flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between', grow: 1}}
+      >
+        <Box flex={{direction: 'row', gap: 8, alignItems: 'center', grow: 1}}>
+          {filtersSlot}
+          <RunListTabs queuedCount={queuedCount} inProgressCount={inProgressCount} />
+          {activeFiltersJsx.length ? (
+            <ButtonLink
+              onClick={() => {
+                setFilterTokensWithStatus([]);
+              }}
+            >
+              Clear All
+            </ButtonLink>
+          ) : null}
+        </Box>
         <QueryRefreshCountdown refreshState={combinedRefreshState} />
-        <RunListTabs queuedCount={queuedCount} inProgressCount={inProgressCount} />
-        {filtersSlot}
-        {activeFiltersJsx.length ? (
-          <ButtonLink
-            onClick={() => {
-              setFilterTokensWithStatus([]);
-            }}
-          >
-            Clear All
-          </ButtonLink>
-        ) : null}
       </Box>
     );
   }

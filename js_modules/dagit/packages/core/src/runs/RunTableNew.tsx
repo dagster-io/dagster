@@ -16,6 +16,7 @@ import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspac
 
 import {AssetKeyTagCollection} from './AssetKeyTagCollection';
 import {RunActionsMenu, RunBulkActionsMenu} from './RunActionsMenu';
+import {RunCreatedByCell} from './RunCreatedByCell';
 import {RunStatusTagWithStats} from './RunStatusTag';
 import {DagsterTag, TagType} from './RunTag';
 import {RunTags} from './RunTags';
@@ -149,7 +150,6 @@ export const RunTable = (props: RunTableProps) => {
         top={
           <>
             {actionBarComponents}
-            <div style={{flex: 1}} />
             <RunBulkActionsMenu
               selected={selectedFragments}
               clearSelection={() => onToggleAll(false)}
@@ -238,8 +238,6 @@ const RunRow: React.FC<{
       onToggleChecked && onToggleChecked({checked, shiftKey});
     }
   };
-
-  const {RunCreatedByCell} = useLaunchPadHooks();
 
   return (
     <Row highlighted={!!isHighlighted}>

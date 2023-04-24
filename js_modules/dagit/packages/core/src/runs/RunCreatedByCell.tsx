@@ -2,6 +2,8 @@ import {Box, Tag} from '@dagster-io/ui';
 import React from 'react';
 import {Link} from 'react-router-dom';
 
+import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
+
 import {DagsterTag} from './RunTag';
 import {runsPathWithFilters} from './RunsFilterInput';
 import {RunTableRunFragment} from './types/RunTable.types';
@@ -20,12 +22,10 @@ export function RunCreatedByCell(props: Props) {
 
   const jsx = [];
 
+  const {UserDisplay} = useLaunchPadHooks();
+
   if (user) {
-    jsx.push(
-      <Tag key="user" icon="account_circle">
-        {user.value}
-      </Tag>,
-    );
+    jsx.push(<UserDisplay email={user.value} />);
   }
   if (backfillTag) {
     const link = props.run.assetSelection?.length
