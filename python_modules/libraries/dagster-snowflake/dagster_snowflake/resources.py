@@ -15,7 +15,7 @@ from dagster import (
 from dagster._annotations import public
 from dagster._core.storage.event_log.sql_event_log import SqlDbConnection
 from dagster._utils.cached_method import cached_method
-from pydantic import Field, validator
+from pydantic import Field, root_validator, validator
 
 try:
     import snowflake.connector
@@ -255,12 +255,12 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
             )
         return v
 
-    @validator("password", "private_key", "private_key_path")
-    def validate_authentication(cls, v, values):
+    @root_validator
+    def validate_authentication(cls, values):
         auths_set = 0
-        auths_set += 1 if "password" in values else 0
-        auths_set += 1 if "private_key" in values else 0
-        auths_set += 1 if "private_key_path" in values else 0
+        auths_set += 1 if values.get("password") is not None else 0
+        auths_set += 1 if values.get("private_key") is not None else 0
+        auths_set += 1 if values.get("private_key_path") is not None else 0
 
         # ensure at least 1 method is provided
         check.invariant(
@@ -280,7 +280,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
             ),
         )
 
-        return v
+        return values
 
     @property
     @cached_method
