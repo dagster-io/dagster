@@ -43,6 +43,7 @@ describe('useStaticSetFilter', () => {
         value,
         close,
         createPortal,
+        clearSearch: jest.fn(),
       });
     });
     return {close, createPortal};
