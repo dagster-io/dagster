@@ -2134,6 +2134,15 @@ type Instance {
   hasInfo: Boolean!
   hasCapturedLogManager: Boolean!
   autoMaterializePaused: Boolean!
+  concurrencyLimits: [ConcurrencyLimit!]!
+}
+
+type ConcurrencyLimit {
+  id: String!
+  concurrencyKey: String!
+  limit: Int!
+  numActive: Int!
+  activeRunIds: [String!]!
 }
 
 type RunLauncher {
@@ -3166,6 +3175,7 @@ type DagitMutation {
     repositorySelector: RepositorySelector!
   ): AddDynamicPartitionResult!
   setAutoMaterializePaused(paused: Boolean!): Boolean!
+  setConcurrencyLimit(concurrencyKey: String!, limit: Int!): Boolean!
 }
 
 input ReexecutionParams {
