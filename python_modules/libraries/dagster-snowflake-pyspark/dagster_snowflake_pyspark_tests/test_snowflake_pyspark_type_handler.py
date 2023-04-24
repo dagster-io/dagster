@@ -1,4 +1,3 @@
-import logging
 import os
 import uuid
 from contextlib import contextmanager
@@ -32,7 +31,7 @@ from dagster import (
 )
 from dagster._core.storage.db_io_manager import TableSlice
 from dagster_snowflake import build_snowflake_io_manager
-from dagster_snowflake.resources import SnowflakeConnection
+from dagster_snowflake.resources import SnowflakeResource
 from dagster_snowflake_pyspark import (
     SnowflakePySparkIOManager,
     SnowflakePySparkTypeHandler,
@@ -77,10 +76,9 @@ old_snowflake_io_manager = snowflake_pyspark_io_manager.configured(
 
 @contextmanager
 def temporary_snowflake_table(schema_name: str, db_name: str) -> Iterator[str]:
-    snowflake_config = dict(database=db_name, **SHARED_BUILDKITE_SNOWFLAKE_CONF)
     table_name = "test_io_manager_" + str(uuid.uuid4()).replace("-", "_")
-    with SnowflakeConnection(
-        snowflake_config, logging.getLogger("temporary_snowflake_table")
+    with SnowflakeResource(
+        database=db_name, **SHARED_BUILDKITE_SNOWFLAKE_CONF
     ).get_connection() as conn:
         try:
             yield table_name
@@ -236,13 +234,7 @@ def test_time_window_partitioned_asset(spark, io_manager):
         asset_full_name = f"{SCHEMA}__{table_name}"
         snowflake_table_path = f"{SCHEMA}.{table_name}"
 
-        snowflake_config = {
-            **SHARED_BUILDKITE_SNOWFLAKE_CONF,
-            "database": DATABASE,
-        }
-        snowflake_conn = SnowflakeConnection(
-            snowflake_config, logging.getLogger("temporary_snowflake_table")
-        )
+        snowflake_conn = SnowflakeResource(database=DATABASE, **SHARED_BUILDKITE_SNOWFLAKE_CONF)
 
         resource_defs = {"io_manager": io_manager, "fs_io": fs_io_manager}
 
@@ -253,8 +245,12 @@ def test_time_window_partitioned_asset(spark, io_manager):
             run_config={"ops": {asset_full_name: {"config": {"value": "1"}}}},
         )
 
-        out_df = snowflake_conn.execute_query(
-            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
+        out_df = (
+            snowflake_conn.get_connection()
+            .cursor()
+            .execute(
+                f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
+            )
         )
         assert out_df["A"].tolist() == ["1", "1", "1"]
 
@@ -265,8 +261,12 @@ def test_time_window_partitioned_asset(spark, io_manager):
             run_config={"ops": {asset_full_name: {"config": {"value": "2"}}}},
         )
 
-        out_df = snowflake_conn.execute_query(
-            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
+        out_df = (
+            snowflake_conn.get_connection()
+            .cursor()
+            .execute(
+                f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
+            )
         )
         assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
 
@@ -277,8 +277,12 @@ def test_time_window_partitioned_asset(spark, io_manager):
             run_config={"ops": {asset_full_name: {"config": {"value": "3"}}}},
         )
 
-        out_df = snowflake_conn.execute_query(
-            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
+        out_df = (
+            snowflake_conn.get_connection()
+            .cursor()
+            .execute(
+                f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
+            )
         )
         assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3"]
 
@@ -329,13 +333,7 @@ def test_static_partitioned_asset(spark, io_manager):
         asset_full_name = f"{SCHEMA}__{table_name}"
         snowflake_table_path = f"{SCHEMA}.{table_name}"
 
-        snowflake_config = {
-            **SHARED_BUILDKITE_SNOWFLAKE_CONF,
-            "database": DATABASE,
-        }
-        snowflake_conn = SnowflakeConnection(
-            snowflake_config, logging.getLogger("temporary_snowflake_table")
-        )
+        snowflake_conn = SnowflakeResource(database=DATABASE, **SHARED_BUILDKITE_SNOWFLAKE_CONF)
 
         resource_defs = {"io_manager": io_manager, "fs_io": fs_io_manager}
         materialize(
@@ -345,8 +343,12 @@ def test_static_partitioned_asset(spark, io_manager):
             run_config={"ops": {asset_full_name: {"config": {"value": "1"}}}},
         )
 
-        out_df = snowflake_conn.execute_query(
-            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
+        out_df = (
+            snowflake_conn.get_connection()
+            .cursor()
+            .execute(
+                f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
+            )
         )
         assert out_df["A"].tolist() == ["1", "1", "1"]
 
@@ -357,8 +359,12 @@ def test_static_partitioned_asset(spark, io_manager):
             run_config={"ops": {asset_full_name: {"config": {"value": "2"}}}},
         )
 
-        out_df = snowflake_conn.execute_query(
-            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
+        out_df = (
+            snowflake_conn.get_connection()
+            .cursor()
+            .execute(
+                f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
+            )
         )
         assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
 
@@ -369,8 +375,12 @@ def test_static_partitioned_asset(spark, io_manager):
             run_config={"ops": {asset_full_name: {"config": {"value": "3"}}}},
         )
 
-        out_df = snowflake_conn.execute_query(
-            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
+        out_df = (
+            snowflake_conn.get_connection()
+            .cursor()
+            .execute(
+                f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
+            )
         )
         assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3"]
 
@@ -432,13 +442,7 @@ def test_multi_partitioned_asset(spark, io_manager):
         asset_full_name = f"{SCHEMA}__{table_name}"
         snowflake_table_path = f"{SCHEMA}.{table_name}"
 
-        snowflake_config = {
-            **SHARED_BUILDKITE_SNOWFLAKE_CONF,
-            "database": DATABASE,
-        }
-        snowflake_conn = SnowflakeConnection(
-            snowflake_config, logging.getLogger("temporary_snowflake_table")
-        )
+        snowflake_conn = SnowflakeResource(database=DATABASE, **SHARED_BUILDKITE_SNOWFLAKE_CONF)
 
         resource_defs = {"io_manager": io_manager, "fs_io": fs_io_manager}
 
@@ -449,8 +453,12 @@ def test_multi_partitioned_asset(spark, io_manager):
             run_config={"ops": {asset_full_name: {"config": {"value": "1"}}}},
         )
 
-        out_df = snowflake_conn.execute_query(
-            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
+        out_df = (
+            snowflake_conn.get_connection()
+            .cursor()
+            .execute(
+                f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
+            )
         )
         assert out_df["A"].tolist() == ["1", "1", "1"]
 
@@ -461,8 +469,12 @@ def test_multi_partitioned_asset(spark, io_manager):
             run_config={"ops": {asset_full_name: {"config": {"value": "2"}}}},
         )
 
-        out_df = snowflake_conn.execute_query(
-            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
+        out_df = (
+            snowflake_conn.get_connection()
+            .cursor()
+            .execute(
+                f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
+            )
         )
         assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
 
@@ -473,8 +485,12 @@ def test_multi_partitioned_asset(spark, io_manager):
             run_config={"ops": {asset_full_name: {"config": {"value": "3"}}}},
         )
 
-        out_df = snowflake_conn.execute_query(
-            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
+        out_df = (
+            snowflake_conn.get_connection()
+            .cursor()
+            .execute(
+                f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
+            )
         )
         assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2", "3", "3", "3"]
 
@@ -485,8 +501,12 @@ def test_multi_partitioned_asset(spark, io_manager):
             run_config={"ops": {asset_full_name: {"config": {"value": "4"}}}},
         )
 
-        out_df = snowflake_conn.execute_query(
-            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
+        out_df = (
+            snowflake_conn.get_connection()
+            .cursor()
+            .execute(
+                f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
+            )
         )
         assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3", "4", "4", "4"]
 
@@ -540,13 +560,7 @@ def test_dynamic_partitions(spark, io_manager):
         asset_full_name = f"{SCHEMA}__{table_name}"
         snowflake_table_path = f"{SCHEMA}.{table_name}"
 
-        snowflake_config = {
-            **SHARED_BUILDKITE_SNOWFLAKE_CONF,
-            "database": DATABASE,
-        }
-        snowflake_conn = SnowflakeConnection(
-            snowflake_config, logging.getLogger("temporary_snowflake_table")
-        )
+        snowflake_conn = SnowflakeResource(database=DATABASE, **SHARED_BUILDKITE_SNOWFLAKE_CONF)
 
         resource_defs = {"io_manager": io_manager, "fs_io": fs_io_manager}
 
@@ -561,8 +575,14 @@ def test_dynamic_partitions(spark, io_manager):
                 run_config={"ops": {asset_full_name: {"config": {"value": "1"}}}},
             )
 
-            out_df = snowflake_conn.execute_query(
-                f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
+            out_df = (
+                snowflake_conn.get_connection()
+                .cursor()
+                .execute(
+                    f"SELECT * FROM {snowflake_table_path}",
+                    use_pandas_result=True,
+                    fetch_results=True,
+                )
             )
             assert out_df["A"].tolist() == ["1", "1", "1"]
 
@@ -576,8 +596,14 @@ def test_dynamic_partitions(spark, io_manager):
                 run_config={"ops": {asset_full_name: {"config": {"value": "2"}}}},
             )
 
-            out_df = snowflake_conn.execute_query(
-                f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
+            out_df = (
+                snowflake_conn.get_connection()
+                .cursor()
+                .execute(
+                    f"SELECT * FROM {snowflake_table_path}",
+                    use_pandas_result=True,
+                    fetch_results=True,
+                )
             )
             assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
 
@@ -589,8 +615,14 @@ def test_dynamic_partitions(spark, io_manager):
                 run_config={"ops": {asset_full_name: {"config": {"value": "3"}}}},
             )
 
-            out_df = snowflake_conn.execute_query(
-                f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
+            out_df = (
+                snowflake_conn.get_connection()
+                .cursor()
+                .execute(
+                    f"SELECT * FROM {snowflake_table_path}",
+                    use_pandas_result=True,
+                    fetch_results=True,
+                )
             )
             assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3"]
 
@@ -649,13 +681,7 @@ def test_self_dependent_asset(spark, io_manager):
         asset_full_name = f"{SCHEMA}__{table_name}"
         snowflake_table_path = f"{SCHEMA}.{table_name}"
 
-        snowflake_config = {
-            **SHARED_BUILDKITE_SNOWFLAKE_CONF,
-            "database": DATABASE,
-        }
-        snowflake_conn = SnowflakeConnection(
-            snowflake_config, logging.getLogger("temporary_snowflake_table")
-        )
+        snowflake_conn = SnowflakeResource(database=DATABASE, **SHARED_BUILDKITE_SNOWFLAKE_CONF)
 
         resource_defs = {"io_manager": io_manager}
 
@@ -668,8 +694,12 @@ def test_self_dependent_asset(spark, io_manager):
             },
         )
 
-        out_df = snowflake_conn.execute_query(
-            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
+        out_df = (
+            snowflake_conn.get_connection()
+            .cursor()
+            .execute(
+                f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
+            )
         )
         assert sorted(out_df["A"].tolist()) == ["1", "1", "1"]
 
@@ -684,7 +714,11 @@ def test_self_dependent_asset(spark, io_manager):
             },
         )
 
-        out_df = snowflake_conn.execute_query(
-            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
+        out_df = (
+            snowflake_conn.get_connection()
+            .cursor()
+            .execute(
+                f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
+            )
         )
         assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]

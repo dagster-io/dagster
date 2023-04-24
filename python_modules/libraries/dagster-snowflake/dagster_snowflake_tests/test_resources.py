@@ -269,12 +269,23 @@ def test_snowflake_resource_missing_private_key_password(snowflake_connect):
 
 
 def test_pydantic_snowflake_resource_missing_private_key_password():
+    @op
+    def snowflake_op(snowflake: SnowflakeResource):
+        with snowflake.get_connection() as _:
+            pass
+
+    resource = SnowflakeResource(
+        account="foo",
+        user="bar",
+        database="TESTDB",
+        schema="TESTSCHEMA",
+        warehouse="TINY_WAREHOUSE",
+        private_key="TESTKEY",
+    )
+
+    @job(resource_defs={"snowflake": resource})
+    def snowflake_job():
+        snowflake_op()
+
     with pytest.raises(TypeError):
-        SnowflakeResource(
-            account="foo",
-            user="bar",
-            database="TESTDB",
-            schema="TESTSCHEMA",
-            warehouse="TINY_WAREHOUSE",
-            private_key="TESTKEY",
-        )
+        snowflake_job.execute_in_process()
