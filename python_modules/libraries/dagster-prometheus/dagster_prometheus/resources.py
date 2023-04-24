@@ -1,9 +1,9 @@
 import prometheus_client
 from dagster import (
-    _check as check,
-    resource,
     ConfigurableResource,
     IAttachDifferentObjectToOpContext,
+    _check as check,
+    resource,
 )
 from prometheus_client.exposition import default_handler
 from pydantic import Field
@@ -106,11 +106,9 @@ class PrometheusClient:
 
 
 class PrometheusResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
-    """
-    This resource is used to send metrics to a Prometheus Pushgateway.
+    """This resource is used to send metrics to a Prometheus Pushgateway.
 
     Example:
-
     .. code-block:: python
 
         from dagster import job, op, Definitions
