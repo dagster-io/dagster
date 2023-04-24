@@ -32,6 +32,10 @@ class AssetsDefinitionCacheableData(
             ("can_subset", bool),
             ("extra_metadata", Optional[Mapping[Any, Any]]),
             ("freshness_policies_by_output_name", Optional[Mapping[str, FreshnessPolicy]]),
+            (
+                "auto_materialize_policies_by_output_name",
+                Optional[Mapping[str, AutoMaterializePolicy]],
+            ),
         ],
     )
 ):
@@ -50,6 +54,9 @@ class AssetsDefinitionCacheableData(
         can_subset: bool = False,
         extra_metadata: Optional[Mapping[Any, Any]] = None,
         freshness_policies_by_output_name: Optional[Mapping[str, FreshnessPolicy]] = None,
+        auto_materialize_policies_by_output_name: Optional[
+            Mapping[str, AutoMaterializePolicy]
+        ] = None,
     ):
         extra_metadata = check.opt_nullable_mapping_param(extra_metadata, "extra_metadata")
         try:
@@ -86,6 +93,12 @@ class AssetsDefinitionCacheableData(
                 "freshness_policies_by_output_name",
                 key_type=str,
                 value_type=FreshnessPolicy,
+            ),
+            auto_materialize_policies_by_output_name=check.opt_nullable_mapping_param(
+                auto_materialize_policies_by_output_name,
+                "auto_materialize_policies_by_output_name",
+                key_type=str,
+                value_type=AutoMaterializePolicy,
             ),
         )
 
