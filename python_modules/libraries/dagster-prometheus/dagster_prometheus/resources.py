@@ -1,13 +1,15 @@
 import prometheus_client
 from dagster import (
-    Field,
     _check as check,
     resource,
+    ConfigurableResource,
+    IAttachDifferentObjectToOpContext,
 )
 from prometheus_client.exposition import default_handler
+from pydantic import Field
 
 
-class PrometheusResource:
+class PrometheusClient:
     """Integrates with Prometheus via the prometheus_client library."""
 
     def __init__(self, gateway, timeout):
@@ -103,25 +105,53 @@ class PrometheusResource:
         )
 
 
+class PrometheusResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
+    """
+    This resource is used to send metrics to a Prometheus Pushgateway.
+
+    Example:
+
+    .. code-block:: python
+
+        from dagster import job, op, Definitions
+        from dagster_prometheus import PrometheusResource
+
+        @op
+        def example_prometheus_op(prometheus: PrometheusResource):
+            prometheus.get_client().push_to_gateway(job="my_job")
+
+        @job
+        def my_job():
+            example_prometheus_op()
+
+        defs = Definitions(
+            jobs=[my_job],
+            resources={"prometheus": PrometheusResource(gateway="http://pushgateway.local")},
+        )
+
+    """
+
+    gateway: str = Field(
+        description=(
+            "The url for your push gateway. Either of the"
+            " form 'http://pushgateway.local', or 'pushgateway.local'."
+            " Scheme defaults to 'http' if none is provided"
+        )
+    )
+    timeout: int = Field(
+        default=30,
+        description="is how long delete will attempt to connect before giving up. Defaults to 30s.",
+    )
+
+    def get_client(self) -> PrometheusClient:
+        return PrometheusClient(gateway=self.gateway, timeout=self.timeout)
+
+    def get_object_to_set_on_execution_context(self) -> PrometheusClient:
+        return self.get_client()
+
+
 @resource(
-    {
-        "gateway": Field(
-            str,
-            description=(
-                "the url for your push gateway. Either of the form "
-                "'http://pushgateway.local', or 'pushgateway.local'. "
-                "Scheme defaults to 'http' if none is provided"
-            ),
-        ),
-        "timeout": Field(
-            int,
-            default_value=30,
-            is_required=False,
-            description=(
-                "is how long delete will attempt to connect before giving up. Defaults to 30s."
-            ),
-        ),
-    },
+    config_schema=PrometheusResource.to_config_schema(),
     description="""This resource is for sending metrics to a Prometheus Pushgateway.""",
 )
 def prometheus_resource(context):
