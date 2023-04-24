@@ -123,7 +123,7 @@ const SingleRunLogObserver: React.FC<{
   return <span />;
 });
 
-const ASSET_LIVE_RUN_LOGS_SUBSCRIPTION = gql`
+export const ASSET_LIVE_RUN_LOGS_SUBSCRIPTION = gql`
   subscription AssetLiveRunLogsSubscription($runId: ID!) {
     pipelineRunLogs(runId: $runId, cursor: "HEAD") {
       __typename
