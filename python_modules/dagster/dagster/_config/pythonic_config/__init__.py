@@ -201,7 +201,18 @@ class Config(MakeConfigCacheable):
         for key, value in config_dict.items():
             field = self.__fields__.get(key)
             if field and field.field_info.discriminator:
-                nested_items = list(check.is_dict(value).items())
+                nested_dict = value
+
+                discriminator_key = check.not_none(field.discriminator_key)
+                if isinstance(value, Config):
+                    value_dict = value.dict()
+                    value_discriminator = check.not_none(value_dict.get(discriminator_key))
+                    values_without_key = {
+                        k: v for k, v in value_dict.items() if k != discriminator_key
+                    }
+                    nested_dict = {value_discriminator: values_without_key}
+
+                nested_items = list(check.is_dict(nested_dict).items())
                 check.invariant(
                     len(nested_items) == 1, "Discriminated union must have exactly one key"
                 )
@@ -209,7 +220,7 @@ class Config(MakeConfigCacheable):
 
                 modified_data[key] = {
                     **nested_values,
-                    field.discriminator_key: discriminated_value,
+                    discriminator_key: discriminated_value,
                 }
             else:
                 modified_data[key] = value

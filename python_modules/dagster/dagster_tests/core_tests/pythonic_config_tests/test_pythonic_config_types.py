@@ -500,6 +500,28 @@ def test_descriminated_unions() -> None:
         )
 
 
+def test_descriminated_unions_initialization() -> None:
+    class Cat(Config):
+        pet_type: Literal["cat"] = "cat"
+        meows: int
+
+    class Dog(Config):
+        pet_type: Literal["dog"] = "dog"
+        barks: float
+
+    class Lizard(Config):
+        pet_type: Literal["reptile", "lizard"] = "reptile"
+        scales: bool
+
+    class OpConfigWithUnion(Config):
+        pet: Union[Cat, Dog, Lizard] = Field(..., discriminator="pet_type")
+        n: int
+
+    config = OpConfigWithUnion(pet=Cat(meows=3), n=5)
+    assert isinstance(config.pet, Cat)
+    assert config.pet.meows == 3
+
+
 def test_nested_discriminated_unions() -> None:
     class Poodle(Config):
         breed_type: Literal["poodle"]
