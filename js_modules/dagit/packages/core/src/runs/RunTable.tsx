@@ -41,6 +41,7 @@ interface RunTableProps {
   onAddTag?: (token: RunFilterToken) => void;
   actionBarComponents?: React.ReactNode;
   highlightedIds?: string[];
+  hideCreatedBy?: boolean;
   additionalColumnHeaders?: React.ReactNode[];
   additionalColumnsForRow?: (run: RunTableRunFragment) => React.ReactNode[];
 }
