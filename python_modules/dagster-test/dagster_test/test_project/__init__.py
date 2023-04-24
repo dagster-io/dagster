@@ -7,7 +7,7 @@ from typing import Any, Mapping, Optional
 
 import dagster._check as check
 from dagster._core.code_pointer import FileCodePointer
-from dagster._core.definitions.pipeline_definition import PipelineDefinition
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
 from dagster._core.definitions.selector import InstigatorSelector
 from dagster._core.execution.api import create_execution_plan
@@ -39,7 +39,7 @@ IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
 
 def cleanup_memoized_results(
-    pipeline_def: PipelineDefinition, instance: DagsterInstance, run_config: Mapping[str, Any]
+    pipeline_def: JobDefinition, instance: DagsterInstance, run_config: Mapping[str, Any]
 ) -> None:
     # Clean up any memoized outputs from the s3 bucket
     from dagster_aws.s3 import s3_pickle_io_manager, s3_resource

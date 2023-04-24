@@ -151,7 +151,7 @@ def define_circular_dependency_job():
 
 @repository
 def test_repository():
-    return {"pipelines": {"pipeline": define_circular_dependency_job}}
+    return {"jobs": {"circular_dependency_job": define_circular_dependency_job}}
 
 
 def test_pipeline_or_error_by_name(graphql_context: WorkspaceRequestContext):

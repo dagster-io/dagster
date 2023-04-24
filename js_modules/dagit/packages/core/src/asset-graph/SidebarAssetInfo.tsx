@@ -95,9 +95,8 @@ export const SidebarAssetInfo: React.FC<{
       )}
 
       <AssetSidebarActivitySummary
-        assetKey={assetKey}
+        asset={asset}
         assetLastMaterializedAt={lastMaterialization?.timestamp}
-        assetHasDefinedPartitions={!!asset.partitionDefinition}
         isSourceAsset={definition.isSource}
         liveData={liveData}
       />
@@ -224,6 +223,9 @@ const SIDEBAR_ASSET_FRAGMENT = gql`
     ...AssetNodeConfigFragment
     metadataEntries {
       ...MetadataEntryFragment
+    }
+    autoMaterializePolicy {
+      policyType
     }
     partitionDefinition {
       description

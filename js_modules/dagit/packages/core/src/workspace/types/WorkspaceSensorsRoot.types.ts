@@ -28,6 +28,14 @@ export type WorkspaceSensorsQuery = {
           id: string;
           name: string;
           description: string | null;
+          sensorState: {
+            __typename: 'InstigationState';
+            id: string;
+            selectorId: string;
+            status: Types.InstigationStatus;
+            hasStartPermission: boolean;
+            hasStopPermission: boolean;
+          };
         }>;
       }
     | {__typename: 'RepositoryNotFoundError'};

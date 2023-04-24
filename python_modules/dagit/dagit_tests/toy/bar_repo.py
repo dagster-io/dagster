@@ -39,6 +39,6 @@ def define_bar_schedules():
 @repository
 def bar():
     return {
-        "pipelines": {"foo": foo_job, "baz": baz_job},
+        "jobs": {"foo": foo_job, "baz": baz_job},
         "schedules": define_bar_schedules(),
     }

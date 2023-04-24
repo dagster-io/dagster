@@ -20,6 +20,7 @@ import React from 'react';
 import {Link, useParams} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {showCustomAlert} from '../../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
 import {QueryRefreshCountdown, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
@@ -160,7 +161,7 @@ export const BackfillPage = () => {
               />
             }
           />
-          <Detail label="Status" detail={<StatusLabel status={backfill.status} />} />
+          <Detail label="Status" detail={<StatusLabel backfill={backfill} />} />
         </Box>
         <Table>
           <thead>
@@ -238,23 +239,31 @@ const Detail = ({label, detail}: {label: JSX.Element | string; detail: JSX.Eleme
   </Box>
 );
 
-const StatusLabel = ({status}: {status: BulkActionStatus}) => {
-  switch (status) {
+const StatusLabel = ({backfill}: {backfill: PartitionBackfillFragment}) => {
+  switch (backfill.status) {
+    case BulkActionStatus.REQUESTED:
+      return <Tag>In Progress</Tag>;
     case BulkActionStatus.CANCELED:
-      return <Tag intent="warning">Canceled</Tag>;
+    case BulkActionStatus.FAILED:
+      if (backfill.error) {
+        return (
+          <Box margin={{bottom: 12}}>
+            <TagButton
+              onClick={() =>
+                backfill.error &&
+                showCustomAlert({title: 'Error', body: <PythonErrorInfo error={backfill.error} />})
+              }
+            >
+              <Tag intent="danger">{backfill.status === 'FAILED' ? 'Failed' : 'Canceled'}</Tag>
+            </TagButton>
+          </Box>
+        );
+      }
+      break;
     case BulkActionStatus.COMPLETED:
       return <Tag intent="success">Completed</Tag>;
-    case BulkActionStatus.FAILED:
-      return <Tag intent="danger">Failed</Tag>;
-    case BulkActionStatus.REQUESTED:
-      return (
-        <Tag intent="primary" icon="spinner">
-          Requested
-        </Tag>
-      );
-    default:
-      return <Tag intent="warning">Incomplete</Tag>;
   }
+  return null;
 };
 
 function StatusBar({
@@ -325,6 +334,9 @@ export const BACKFILL_DETAILS_QUERY = gql`
     timestamp
     endTimestamp
     numPartitions
+    error {
+      ...PythonErrorFragment
+    }
     assetBackfillData {
       rootAssetTargetedRanges {
         start
@@ -454,3 +466,15 @@ const formatDuration = (duration: number) => {
   }
   return result.trim();
 };
+
+const TagButton = styled.button`
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+
+  :focus {
+    outline: none;
+  }
+`;

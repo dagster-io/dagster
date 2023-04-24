@@ -615,9 +615,7 @@ def test_load_with_secrets_loader_instance_ref():
 
                 # Launch a run and verify that it finishes
 
-                run = create_run_for_test(
-                    instance, pipeline_name="needs_env_var_job", mode="default"
-                )
+                run = create_run_for_test(instance, pipeline_name="needs_env_var_job")
                 run_id = run.run_id
 
                 job_origin = ExternalPipelineOrigin(

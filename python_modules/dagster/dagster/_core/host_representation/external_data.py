@@ -42,8 +42,6 @@ from dagster._config.snap import (
 from dagster._core.definitions import (
     JobDefinition,
     PartitionsDefinition,
-    PipelineDefinition,
-    PresetDefinition,
     RepositoryDefinition,
     ScheduleDefinition,
     SourceAsset,
@@ -68,7 +66,6 @@ from dagster._core.definitions.metadata import (
     MetadataValue,
     normalize_metadata,
 )
-from dagster._core.definitions.mode import DEFAULT_MODE_NAME
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partition import (
@@ -93,6 +90,9 @@ from dagster._core.snap import PipelineSnapshot
 from dagster._core.snap.mode import ResourceDefSnap, build_resource_def_snap
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
+
+DEFAULT_MODE_NAME = "default"
+DEFAULT_PRESET_NAME = "default"
 
 
 @whitelist_for_serdes
@@ -251,7 +251,7 @@ class ExternalPipelineSubsetResult(
         )
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(old_fields={"is_job": True})
 class ExternalPipelineData(
     NamedTuple(
         "_ExternalPipelineData",
@@ -260,7 +260,6 @@ class ExternalPipelineData(
             ("pipeline_snapshot", PipelineSnapshot),
             ("active_presets", Sequence["ExternalPresetData"]),
             ("parent_pipeline_snapshot", Optional[PipelineSnapshot]),
-            ("is_job", bool),
         ],
     )
 ):
@@ -270,7 +269,6 @@ class ExternalPipelineData(
         pipeline_snapshot: PipelineSnapshot,
         active_presets: Sequence["ExternalPresetData"],
         parent_pipeline_snapshot: Optional[PipelineSnapshot],
-        is_job: bool = False,
     ):
         return super(ExternalPipelineData, cls).__new__(
             cls,
@@ -284,7 +282,6 @@ class ExternalPipelineData(
             active_presets=check.sequence_param(
                 active_presets, "active_presets", of_type=ExternalPresetData
             ),
-            is_job=check.bool_param(is_job, "is_job"),
         )
 
 
@@ -311,7 +308,7 @@ class NestedResource(NamedTuple):
     name: str
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(old_fields={"is_legacy_pipeline": False})
 class ExternalJobRef(
     NamedTuple(
         "_ExternalJobRef",
@@ -320,7 +317,6 @@ class ExternalJobRef(
             ("snapshot_id", str),
             ("active_presets", Sequence["ExternalPresetData"]),
             ("parent_snapshot_id", Optional[str]),
-            ("is_legacy_pipeline", bool),
         ],
     )
 ):
@@ -330,7 +326,6 @@ class ExternalJobRef(
         snapshot_id: str,
         active_presets: Sequence["ExternalPresetData"],
         parent_snapshot_id: Optional[str],
-        is_legacy_pipeline: bool = False,
     ):
         return super(ExternalJobRef, cls).__new__(
             cls,
@@ -340,7 +335,6 @@ class ExternalJobRef(
                 active_presets, "active_presets", of_type=ExternalPresetData
             ),
             parent_snapshot_id=check.opt_str_param(parent_snapshot_id, "parent_snapshot_id"),
-            is_legacy_pipeline=check.bool_param(is_legacy_pipeline, "is_legacy"),
         )
 
 
@@ -452,7 +446,7 @@ class ExternalTargetData(
         return super(ExternalTargetData, cls).__new__(
             cls,
             pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
-            mode=check.str_param(mode, "mode"),
+            mode=mode,
             solid_selection=check.opt_nullable_sequence_param(
                 solid_selection, "solid_selection", str
             ),
@@ -1160,7 +1154,7 @@ class NodeHandleResourceUse(NamedTuple):
 
 
 def _get_resource_usage_from_node(
-    pipeline: PipelineDefinition,
+    pipeline: JobDefinition,
     node: Node,
     parent_handle: Optional[NodeHandle] = None,
 ) -> Iterable[NodeHandleResourceUse]:
@@ -1173,7 +1167,7 @@ def _get_resource_usage_from_node(
             yield from _get_resource_usage_from_node(pipeline, nested_node, handle)
 
 
-def _get_resource_job_usage(pipelines: Sequence[PipelineDefinition]) -> ResourceJobUsageMap:
+def _get_resource_job_usage(pipelines: Sequence[JobDefinition]) -> ResourceJobUsageMap:
     resource_job_usage_map: Dict[str, List[ResourceJobUsageEntry]] = defaultdict(list)
 
     for pipeline in pipelines:
@@ -1201,7 +1195,7 @@ def external_repository_data_from_def(
 ) -> ExternalRepositoryData:
     check.inst_param(repository_def, "repository_def", RepositoryDefinition)
 
-    pipelines = repository_def.get_all_pipelines()
+    pipelines = repository_def.get_all_jobs()
     if defer_snapshots:
         pipeline_datas = None
         job_refs = sorted(
@@ -1292,11 +1286,11 @@ def external_repository_data_from_def(
 
 
 def external_asset_graph_from_defs(
-    pipelines: Sequence[PipelineDefinition],
+    pipelines: Sequence[JobDefinition],
     source_assets_by_key: Mapping[AssetKey, SourceAsset],
 ) -> Sequence[ExternalAssetNode]:
     node_defs_by_asset_key: Dict[
-        AssetKey, List[Tuple[NodeOutputHandle, PipelineDefinition]]
+        AssetKey, List[Tuple[NodeOutputHandle, JobDefinition]]
     ] = defaultdict(list)
     asset_info_by_asset_key: Dict[AssetKey, AssetOutputInfo] = dict()
     freshness_policy_by_asset_key: Dict[AssetKey, FreshnessPolicy] = dict()
@@ -1385,7 +1379,7 @@ def external_asset_graph_from_defs(
                     for job_def in pipelines
                     if source_asset.key in job_def.asset_layer.source_assets_by_key
                     and source_asset.partitions_def is None
-                    or source_asset.partitions_def == job_def.partitions_def  # type: ignore
+                    or source_asset.partitions_def == job_def.partitions_def
                 ]
                 if source_asset.node_def is not None
                 else []
@@ -1478,38 +1472,24 @@ def external_asset_graph_from_defs(
     return asset_nodes
 
 
-def external_pipeline_data_from_def(pipeline_def: PipelineDefinition) -> ExternalPipelineData:
-    check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
+def external_pipeline_data_from_def(pipeline_def: JobDefinition) -> ExternalPipelineData:
+    check.inst_param(pipeline_def, "pipeline_def", JobDefinition)
     return ExternalPipelineData(
         name=pipeline_def.name,
         pipeline_snapshot=pipeline_def.get_pipeline_snapshot(),
         parent_pipeline_snapshot=pipeline_def.get_parent_pipeline_snapshot(),
-        active_presets=sorted(
-            list(map(external_preset_data_from_def, pipeline_def.preset_defs)),
-            key=lambda pd: pd.name,
-        ),
-        is_job=isinstance(pipeline_def, JobDefinition),
+        active_presets=active_presets_from_job_def(pipeline_def),
     )
 
 
-def external_job_ref_from_def(pipeline_def: PipelineDefinition) -> ExternalJobRef:
-    check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
-
-    parent = pipeline_def.parent_pipeline_def
-    if parent:
-        parent_snapshot_id = parent.get_pipeline_snapshot_id()
-    else:
-        parent_snapshot_id = None
+def external_job_ref_from_def(pipeline_def: JobDefinition) -> ExternalJobRef:
+    check.inst_param(pipeline_def, "pipeline_def", JobDefinition)
 
     return ExternalJobRef(
         name=pipeline_def.name,
         snapshot_id=pipeline_def.get_pipeline_snapshot_id(),
-        parent_snapshot_id=parent_snapshot_id,
-        active_presets=sorted(
-            list(map(external_preset_data_from_def, pipeline_def.preset_defs)),
-            key=lambda pd: pd.name,
-        ),
-        is_legacy_pipeline=not isinstance(pipeline_def, JobDefinition),
+        parent_snapshot_id=None,
+        active_presets=active_presets_from_job_def(pipeline_def),
     )
 
 
@@ -1626,7 +1606,7 @@ def external_schedule_data_from_def(schedule_def: ScheduleDefinition) -> Externa
         cron_schedule=schedule_def.cron_schedule,
         pipeline_name=schedule_def.job_name,
         solid_selection=schedule_def._target.solid_selection,  # noqa: SLF001
-        mode=schedule_def._target.mode,  # noqa: SLF001
+        mode=DEFAULT_MODE_NAME,
         environment_vars=schedule_def.environment_vars,
         partition_set_name=None,
         execution_timezone=schedule_def.execution_timezone,
@@ -1729,7 +1709,7 @@ def external_partition_set_data_from_def(
         name=external_partition_set_name_for_job_name(job_def.name),
         pipeline_name=job_def.name,
         solid_selection=None,
-        mode=job_def.get_mode_definition().name,
+        mode=DEFAULT_MODE_NAME,
         external_partitions_data=partitions_def_data,
     )
 
@@ -1766,7 +1746,7 @@ def external_sensor_data_from_def(
         target_dict = {
             target.pipeline_name: ExternalTargetData(
                 pipeline_name=target.pipeline_name,
-                mode=target.mode,
+                mode=DEFAULT_MODE_NAME,
                 solid_selection=target.solid_selection,
             )
             for target in sensor_def.targets
@@ -1775,7 +1755,7 @@ def external_sensor_data_from_def(
     return ExternalSensorData(
         name=sensor_def.name,
         pipeline_name=first_target.pipeline_name if first_target else None,
-        mode=first_target.mode if first_target else None,
+        mode=None,
         solid_selection=first_target.solid_selection if first_target else None,
         target_dict=target_dict,
         min_interval=sensor_def.minimum_interval_seconds,
@@ -1786,12 +1766,17 @@ def external_sensor_data_from_def(
     )
 
 
-def external_preset_data_from_def(preset_def: PresetDefinition) -> ExternalPresetData:
-    check.inst_param(preset_def, "preset_def", PresetDefinition)
-    return ExternalPresetData(
-        name=preset_def.name,
-        run_config=preset_def.run_config,
-        solid_selection=preset_def.solid_selection,
-        mode=preset_def.mode,
-        tags=preset_def.tags,
-    )
+def active_presets_from_job_def(job_def: JobDefinition) -> Sequence[ExternalPresetData]:
+    check.inst_param(job_def, "job_def", JobDefinition)
+    if job_def.run_config is None:
+        return []
+    else:
+        return [
+            ExternalPresetData(
+                name=DEFAULT_PRESET_NAME,
+                run_config=job_def.run_config,
+                solid_selection=None,
+                mode=DEFAULT_MODE_NAME,
+                tags={},
+            )
+        ]

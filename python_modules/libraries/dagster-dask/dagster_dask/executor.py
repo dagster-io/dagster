@@ -120,7 +120,6 @@ def query_on_dask_worker(
     pipeline_run,
     run_config,
     step_keys,
-    mode,
     instance_ref,
     known_state,
 ):
@@ -136,7 +135,6 @@ def query_on_dask_worker(
             subset_pipeline,
             run_config=run_config,
             step_keys_to_execute=step_keys,
-            mode=mode,
             known_state=known_state,
         )
 
@@ -248,10 +246,7 @@ class DaskExecutor(Executor):
                         for key in step_input.dependency_keys:
                             dependencies.append(execution_futures_dict[key])
 
-                    if plan_context.pipeline.get_definition().is_job:
-                        run_config = plan_context.run_config
-                    else:
-                        run_config = dict(plan_context.run_config, execution={"in_process": {}})
+                    run_config = plan_context.run_config
 
                     dask_task_name = "%s.%s" % (pipeline_name, step.key)
 
@@ -264,7 +259,6 @@ class DaskExecutor(Executor):
                         plan_context.dagster_run,
                         run_config,
                         [step.key],
-                        plan_context.dagster_run.mode,
                         instance.get_ref(),
                         execution_plan.known_state,
                         key=dask_task_name,

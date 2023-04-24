@@ -215,6 +215,7 @@ class DagsterRunSerializer(NamedTupleSerializer["DagsterRun"]):
     # DagsterRun is serialized as PipelineRun so that it can be read by older (pre 0.13.x) version
     # of Dagster, but is read back in as a DagsterRun.
     storage_name="PipelineRun",
+    old_fields={"mode": None},
 )
 class DagsterRun(
     NamedTuple(
@@ -223,7 +224,6 @@ class DagsterRun(
             ("pipeline_name", str),
             ("run_id", str),
             ("run_config", Mapping[str, object]),
-            ("mode", Optional[str]),
             ("asset_selection", Optional[AbstractSet[AssetKey]]),
             ("solid_selection", Optional[Sequence[str]]),
             ("solids_to_execute", Optional[AbstractSet[str]]),
@@ -249,7 +249,6 @@ class DagsterRun(
         pipeline_name: str,
         run_id: Optional[str] = None,
         run_config: Optional[Mapping[str, object]] = None,
-        mode: Optional[str] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
         solid_selection: Optional[Sequence[str]] = None,
         solids_to_execute: Optional[AbstractSet[str]] = None,
@@ -307,7 +306,6 @@ class DagsterRun(
             pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
             run_id=check.str_param(run_id, "run_id"),
             run_config=check.opt_mapping_param(run_config, "run_config", key_type=str),
-            mode=check.opt_str_param(mode, "mode"),
             solid_selection=solid_selection,
             asset_selection=asset_selection,
             solids_to_execute=solids_to_execute,
@@ -352,9 +350,6 @@ class DagsterRun(
 
         check.inst_param(origin, "origin", ExternalPipelineOrigin)
         return self._replace(external_pipeline_origin=origin)
-
-    def with_mode(self, mode: str) -> Self:
-        return self._replace(mode=mode)
 
     def with_tags(self, tags: Mapping[str, str]) -> Self:
         return self._replace(tags=tags)
@@ -455,7 +450,6 @@ class RunsFilter(
             ("snapshot_id", Optional[str]),
             ("updated_after", Optional[datetime]),
             ("updated_before", Optional[datetime]),
-            ("mode", Optional[str]),
             ("created_after", Optional[datetime]),
             ("created_before", Optional[datetime]),
         ],
@@ -479,7 +473,6 @@ class RunsFilter(
         snapshot_id (Optional[str]): The ID of the job snapshot to query for. Intended for internal use.
         updated_after (Optional[DateTime]): Filter by runs that were last updated before this datetime.
         created_before (Optional[DateTime]): Filter by runs that were created before this datetime.
-        mode (Optional[str]): (deprecated)
         pipeline_name (Optional[str]): (deprecated)
 
     """
@@ -493,7 +486,6 @@ class RunsFilter(
         snapshot_id: Optional[str] = None,
         updated_after: Optional[datetime] = None,
         updated_before: Optional[datetime] = None,
-        mode: Optional[str] = None,
         created_after: Optional[datetime] = None,
         created_before: Optional[datetime] = None,
         pipeline_name: Optional[str] = None,  # for backcompat purposes
@@ -511,7 +503,6 @@ class RunsFilter(
             snapshot_id=check.opt_str_param(snapshot_id, "snapshot_id"),
             updated_after=check.opt_inst_param(updated_after, "updated_after", datetime),
             updated_before=check.opt_inst_param(updated_before, "updated_before", datetime),
-            mode=check.opt_str_param(mode, "mode"),
             created_after=check.opt_inst_param(created_after, "created_after", datetime),
             created_before=check.opt_inst_param(created_before, "created_before", datetime),
         )

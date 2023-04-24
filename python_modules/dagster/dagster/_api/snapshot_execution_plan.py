@@ -4,6 +4,7 @@ import dagster._check as check
 from dagster._core.definitions.events import AssetKey
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.execution.plan.state import KnownExecutionState
+from dagster._core.host_representation.external_data import DEFAULT_MODE_NAME
 from dagster._core.host_representation.origin import ExternalPipelineOrigin
 from dagster._core.instance import DagsterInstance
 from dagster._core.snap.execution_plan_snapshot import (
@@ -21,7 +22,6 @@ def sync_get_external_execution_plan_grpc(
     api_client: "DagsterGrpcClient",
     pipeline_origin: ExternalPipelineOrigin,
     run_config: Mapping[str, Any],
-    mode: str,
     pipeline_snapshot_id: str,
     asset_selection: Optional[AbstractSet[AssetKey]] = None,
     solid_selection: Optional[Sequence[str]] = None,
@@ -38,7 +38,6 @@ def sync_get_external_execution_plan_grpc(
         asset_selection, "asset_selection", of_type=AssetKey
     )
     run_config = check.mapping_param(run_config, "run_config", key_type=str)
-    check.str_param(mode, "mode")
     check.opt_nullable_sequence_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
     check.str_param(pipeline_snapshot_id, "pipeline_snapshot_id")
     check.opt_inst_param(known_state, "known_state", KnownExecutionState)
@@ -50,7 +49,7 @@ def sync_get_external_execution_plan_grpc(
                 pipeline_origin=pipeline_origin,
                 solid_selection=solid_selection,
                 run_config=run_config,
-                mode=mode,
+                mode=DEFAULT_MODE_NAME,
                 step_keys_to_execute=step_keys_to_execute,
                 pipeline_snapshot_id=pipeline_snapshot_id,
                 known_state=known_state,

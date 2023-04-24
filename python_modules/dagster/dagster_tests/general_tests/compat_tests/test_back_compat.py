@@ -634,7 +634,7 @@ def test_external_job_origin_instigator_origin():
             namedtuple("_ExternalJobOrigin", "external_repository_origin job_name")
         ):
             def get_id(self):
-                return create_snapshot_id(self)
+                return create_snapshot_id(self, legacy_env)
 
         @_whitelist_for_serdes(legacy_env)
         class ExternalRepositoryOrigin(

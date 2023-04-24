@@ -102,7 +102,6 @@ def test_execute_run_iterator():
         dagster_run = instance.create_run_for_pipeline(
             pipeline_def=job_def,
             run_config={"loggers": {"callback": {}}},
-            mode="default",
         ).with_status(DagsterRunStatus.SUCCESS)
 
         events = list(
@@ -128,7 +127,6 @@ def test_execute_run_iterator():
             dagster_run = instance.create_run_for_pipeline(
                 pipeline_def=job_def,
                 run_config={"loggers": {"callback": {}}},
-                mode="default",
             ).with_status(DagsterRunStatus.CANCELING)
 
             event = next(
@@ -159,7 +157,6 @@ def test_execute_run_iterator():
         dagster_run = instance.create_run_for_pipeline(
             pipeline_def=job_def,
             run_config={"loggers": {"callback": {}}},
-            mode="default",
         ).with_status(DagsterRunStatus.CANCELED)
 
         events = list(
@@ -188,7 +185,6 @@ def test_restart_running_run_worker():
         pipeline_run = instance.create_run_for_pipeline(
             pipeline_def=pipeline_def,
             run_config={"loggers": {"callback": {}}},
-            mode="default",
         ).with_status(DagsterRunStatus.STARTED)
 
         events = list(
@@ -222,7 +218,6 @@ def test_start_run_worker_after_run_failure():
         pipeline_run = instance.create_run_for_pipeline(
             pipeline_def=pipeline_def,
             run_config={"loggers": {"callback": {}}},
-            mode="default",
         ).with_status(DagsterRunStatus.FAILURE)
 
         event = next(
@@ -249,7 +244,6 @@ def test_execute_canceled_state():
         pipeline_run = instance.create_run_for_pipeline(
             pipeline_def=pipeline_def,
             run_config={"loggers": {"callback": {}}},
-            mode="default",
         ).with_status(DagsterRunStatus.CANCELED)
 
         with pytest.raises(DagsterInvariantViolationError):
@@ -270,7 +264,6 @@ def test_execute_canceled_state():
         iter_run = instance.create_run_for_pipeline(
             pipeline_def=pipeline_def,
             run_config={"loggers": {"callback": {}}},
-            mode="default",
         ).with_status(DagsterRunStatus.CANCELED)
 
         iter_events = list(
@@ -302,7 +295,6 @@ def test_execute_run_bad_state():
         pipeline_run = instance.create_run_for_pipeline(
             pipeline_def=pipeline_def,
             run_config={"loggers": {"callback": {}}},
-            mode="default",
         ).with_status(DagsterRunStatus.SUCCESS)
 
         with pytest.raises(
@@ -364,7 +356,6 @@ def test_run_fails_while_loading_code():
         run = instance.create_run_for_pipeline(
             pipeline_def=simple_job,
             run_config={},
-            mode="default",
         )
 
         gen_execute_run = core_execute_run(recon_pipeline, run, instance, inject_env_vars=False)

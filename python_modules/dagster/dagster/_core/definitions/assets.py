@@ -290,6 +290,9 @@ class AssetsDefinition(ResourceAddable):
         descriptions_by_output_name: Optional[Mapping[str, str]] = None,
         metadata_by_output_name: Optional[Mapping[str, Optional[ArbitraryMetadataMapping]]] = None,
         freshness_policies_by_output_name: Optional[Mapping[str, Optional[FreshnessPolicy]]] = None,
+        auto_materialize_policies_by_output_name: Optional[
+            Mapping[str, Optional[AutoMaterializePolicy]]
+        ] = None,
         can_subset: bool = False,
     ) -> "AssetsDefinition":
         """Constructs an AssetsDefinition from a GraphDefinition.
@@ -338,6 +341,10 @@ class AssetsDefinition(ResourceAddable):
                 FreshnessPolicy to be associated with some or all of the output assets for this node.
                 Keys are the names of the outputs, and values are the FreshnessPolicies to be attached
                 to the associated asset.
+            auto_materialize_policies_by_output_name (Optional[Mapping[str, Optional[AutoMaterializePolicy]]]): Defines an
+                AutoMaterializePolicy to be associated with some or all of the output assets for this node.
+                Keys are the names of the outputs, and values are the AutoMaterializePolicies to be attached
+                to the associated asset.
         """
         if resource_defs is not None:
             experimental_arg_warning("resource_defs", "AssetsDefinition.from_graph")
@@ -355,6 +362,7 @@ class AssetsDefinition(ResourceAddable):
             descriptions_by_output_name=descriptions_by_output_name,
             metadata_by_output_name=metadata_by_output_name,
             freshness_policies_by_output_name=freshness_policies_by_output_name,
+            auto_materialize_policies_by_output_name=auto_materialize_policies_by_output_name,
             can_subset=can_subset,
         )
 
@@ -374,6 +382,9 @@ class AssetsDefinition(ResourceAddable):
         descriptions_by_output_name: Optional[Mapping[str, str]] = None,
         metadata_by_output_name: Optional[Mapping[str, Optional[ArbitraryMetadataMapping]]] = None,
         freshness_policies_by_output_name: Optional[Mapping[str, Optional[FreshnessPolicy]]] = None,
+        auto_materialize_policies_by_output_name: Optional[
+            Mapping[str, Optional[AutoMaterializePolicy]]
+        ] = None,
         can_subset: bool = False,
     ) -> "AssetsDefinition":
         """Constructs an AssetsDefinition from an OpDefinition.
@@ -418,6 +429,10 @@ class AssetsDefinition(ResourceAddable):
                 FreshnessPolicy to be associated with some or all of the output assets for this node.
                 Keys are the names of the outputs, and values are the FreshnessPolicies to be attached
                 to the associated asset.
+            auto_materialize_policies_by_output_name (Optional[Mapping[str, Optional[AutoMaterializePolicy]]]): Defines an
+                AutoMaterializePolicy to be associated with some or all of the output assets for this node.
+                Keys are the names of the outputs, and values are the AutoMaterializePolicies to be attached
+                to the associated asset.
         """
         return AssetsDefinition._from_node(
             node_def=op_def,
@@ -432,6 +447,7 @@ class AssetsDefinition(ResourceAddable):
             descriptions_by_output_name=descriptions_by_output_name,
             metadata_by_output_name=metadata_by_output_name,
             freshness_policies_by_output_name=freshness_policies_by_output_name,
+            auto_materialize_policies_by_output_name=auto_materialize_policies_by_output_name,
             can_subset=can_subset,
         )
 
@@ -451,6 +467,9 @@ class AssetsDefinition(ResourceAddable):
         descriptions_by_output_name: Optional[Mapping[str, str]] = None,
         metadata_by_output_name: Optional[Mapping[str, Optional[ArbitraryMetadataMapping]]] = None,
         freshness_policies_by_output_name: Optional[Mapping[str, Optional[FreshnessPolicy]]] = None,
+        auto_materialize_policies_by_output_name: Optional[
+            Mapping[str, Optional[AutoMaterializePolicy]]
+        ] = None,
         can_subset: bool = False,
     ) -> "AssetsDefinition":
         node_def = check.inst_param(node_def, "node_def", NodeDefinition)
@@ -545,6 +564,13 @@ class AssetsDefinition(ResourceAddable):
                 if freshness_policy is not None
             }
             if freshness_policies_by_output_name
+            else None,
+            auto_materialize_policies_by_key={
+                keys_by_output_name_with_prefix[output_name]: auto_materialize_policy
+                for output_name, auto_materialize_policy in auto_materialize_policies_by_output_name.items()
+                if auto_materialize_policy is not None
+            }
+            if auto_materialize_policies_by_output_name
             else None,
             descriptions_by_key={
                 keys_by_output_name_with_prefix[output_name]: description

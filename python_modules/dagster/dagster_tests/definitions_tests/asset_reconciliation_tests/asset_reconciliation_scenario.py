@@ -367,7 +367,7 @@ def run_request(asset_keys: List[str], partition_key: Optional[str] = None) -> R
 
 def asset_def(
     key: str,
-    deps: Optional[Union[List[str], Mapping[str, PartitionMapping]]] = None,
+    deps: Optional[Union[List[str], Mapping[str, Optional[PartitionMapping]]]] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     freshness_policy: Optional[FreshnessPolicy] = None,
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,

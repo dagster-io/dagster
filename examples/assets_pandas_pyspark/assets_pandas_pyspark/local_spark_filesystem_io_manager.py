@@ -13,7 +13,7 @@ from typing import Union
 import pandas as pd
 from dagster import (
     AssetKey,
-    IOManager,
+    ConfigurableIOManager,
     _check as check,
 )
 from pandas import DataFrame as PandasDF
@@ -23,7 +23,7 @@ from pyspark.sql import (
 )
 
 
-class LocalFileSystemIOManager(IOManager):
+class LocalFileSystemIOManager(ConfigurableIOManager):
     def _get_fs_path(self, asset_key: AssetKey) -> str:
         return os.path.abspath(os.path.join(*asset_key.path))
 

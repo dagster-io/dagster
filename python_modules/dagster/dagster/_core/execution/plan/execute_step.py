@@ -436,7 +436,9 @@ def _asset_key_and_partitions_for_output(
 
     if output_asset_info:
         if not output_asset_info.is_required:
-            output_context.log.warn(f"Materializing unexpected asset key: {output_asset_info.key}.")
+            output_context.log.warning(
+                f"Materializing unexpected asset key: {output_asset_info.key}."
+            )
         return (
             output_asset_info.key,
             output_asset_info.partitions_fn(output_context) or set(),

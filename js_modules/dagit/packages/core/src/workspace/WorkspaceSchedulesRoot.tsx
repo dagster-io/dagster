@@ -8,11 +8,11 @@ import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
+import {filterPermissionedInstigationState} from '../instigation/filterPermissionedInstigationState';
 import {BASIC_INSTIGATION_STATE_FRAGMENT} from '../overview/BasicInstigationStateFragment';
 import {ScheduleBulkActionMenu} from '../schedules/ScheduleBulkActionMenu';
-import {SchedulesCheckAll} from '../schedules/SchedulesCheckAll';
-import {filterPermissionedSchedules} from '../schedules/filterPermissionedSchedules';
 import {makeScheduleKey} from '../schedules/makeScheduleKey';
+import {CheckAllBox} from '../ui/CheckAllBox';
 
 import {VirtualizedScheduleTable} from './VirtualizedScheduleTable';
 import {WorkspaceHeader} from './WorkspaceHeader';
@@ -62,8 +62,12 @@ export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}
     return schedules.filter(({name}) => name.toLocaleLowerCase().includes(searchToLower));
   }, [schedules, sanitizedSearch]);
 
+  const anySchedulesVisible = filteredBySearch.length > 0;
+
   const permissionedSchedules = React.useMemo(() => {
-    return filteredBySearch.filter(filterPermissionedSchedules);
+    return filteredBySearch.filter(({scheduleState}) =>
+      filterPermissionedInstigationState(scheduleState),
+    );
   }, [filteredBySearch]);
 
   const permissionedKeys = React.useMemo(() => {
@@ -133,7 +137,7 @@ export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}
         schedules={filteredBySearch}
         headerCheckbox={
           viewerHasAnyInstigationPermission ? (
-            <SchedulesCheckAll
+            <CheckAllBox
               checkedCount={checkedCount}
               totalCount={permissionedCount}
               onToggleAll={onToggleAll}
@@ -166,12 +170,8 @@ export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}
           style={{width: '340px'}}
         />
         <Tooltip
-          content={
-            viewerHasAnyInstigationPermission
-              ? ''
-              : 'You do not have permission to start or stop these schedules'
-          }
-          canShow={!viewerHasAnyInstigationPermission}
+          content="You do not have permission to start or stop these schedules"
+          canShow={anySchedulesVisible && !viewerHasAnyInstigationPermission}
           placement="top-end"
           useDisabledButtonTooltipFix
         >

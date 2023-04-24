@@ -9,7 +9,7 @@ from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._core.selector import parse_solid_selection
 
 if TYPE_CHECKING:
-    from .pipeline_definition import PipelineDefinition
+    from .job_definition import JobDefinition
 
 
 class IPipeline(ABC):
@@ -20,7 +20,7 @@ class IPipeline(ABC):
     """
 
     @abstractmethod
-    def get_definition(self) -> "PipelineDefinition":
+    def get_definition(self) -> "JobDefinition":
         pass
 
     @abstractmethod
@@ -53,7 +53,7 @@ class IPipeline(ABC):
 class InMemoryPipeline(IPipeline, object):
     def __init__(
         self,
-        pipeline_def: "PipelineDefinition",
+        pipeline_def: "JobDefinition",
         solid_selection: Optional[Sequence[str]] = None,
         solids_to_execute: Optional[AbstractSet[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
@@ -63,21 +63,17 @@ class InMemoryPipeline(IPipeline, object):
         self._solids_to_execute = solids_to_execute
         self._asset_selection = asset_selection
 
-    def get_definition(self) -> "PipelineDefinition":
+    def get_definition(self) -> "JobDefinition":
         return self._pipeline_def
 
-    def _resolve_solid_selection(self, solid_selection: Sequence[str]) -> AbstractSet[str]:
-        # resolve a list of solid selection queries to a frozenset of qualified solid names
-        # e.g. ['foo_solid+'] to {'foo_solid', 'bar_solid'}
-        check.list_param(solid_selection, "solid_selection", of_type=str)
-        solids_to_execute = parse_solid_selection(self.get_definition(), solid_selection)
+    def _resolve_op_selection(self, op_selection: Sequence[str]) -> AbstractSet[str]:
+        # resolve a list of op selection queries to a frozenset of qualified op names
+        # e.g. ['foo_op+'] to {'foo_op', 'bar_op'}
+        check.list_param(op_selection, "op_selection", of_type=str)
+        solids_to_execute = parse_solid_selection(self.get_definition(), op_selection)
         if len(solids_to_execute) == 0:
-            node_type = "ops" if self._pipeline_def.is_job else "solids"
-            selection_type = "op_selection" if self._pipeline_def.is_job else "solid_selection"
             raise DagsterInvalidSubsetError(
-                "No qualified {node_type} to execute found for {selection_type}={requested}".format(
-                    node_type=node_type, requested=solid_selection, selection_type=selection_type
-                )
+                f"No qualified ops to execute found for op_selection={op_selection}"
             )
         return solids_to_execute
 
@@ -89,7 +85,7 @@ class InMemoryPipeline(IPipeline, object):
     ) -> Self:
         if asset_selection:
             return InMemoryPipeline(
-                self._pipeline_def.get_job_def_for_subset_selection(  # type: ignore  # (must be JobDefinition)
+                self._pipeline_def.get_job_def_for_subset_selection(
                     asset_selection=asset_selection
                 ),
                 asset_selection=asset_selection,
@@ -102,7 +98,7 @@ class InMemoryPipeline(IPipeline, object):
             )
 
         return InMemoryPipeline(
-            self._pipeline_def.get_pipeline_subset_def(solids_to_execute),
+            self._pipeline_def.get_pipeline_subset_def(solids_to_execute),  # type: ignore  # (possible none)
             solid_selection=solid_selection,
             solids_to_execute=solids_to_execute,
         )
@@ -121,9 +117,7 @@ class InMemoryPipeline(IPipeline, object):
             "solid_selection and asset_selection cannot both be provided as arguments",
         )
 
-        solids_to_execute = (
-            self._resolve_solid_selection(solid_selection) if solid_selection else None
-        )
+        solids_to_execute = self._resolve_op_selection(solid_selection) if solid_selection else None
         return self._subset_for_execution(solids_to_execute, solid_selection, asset_selection)
 
     def subset_for_execution_from_existing_pipeline(

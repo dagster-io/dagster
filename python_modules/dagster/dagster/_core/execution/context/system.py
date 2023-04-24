@@ -24,14 +24,13 @@ from dagster._annotations import public
 from dagster._core.definitions.dependency import OpNode
 from dagster._core.definitions.events import AssetKey, AssetLineageInfo
 from dagster._core.definitions.hook_definition import HookDefinition
-from dagster._core.definitions.mode import ModeDefinition
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partition_mapping import infer_partition_mapping
 from dagster._core.definitions.pipeline_base import IPipeline
-from dagster._core.definitions.pipeline_definition import PipelineDefinition
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
@@ -67,7 +66,6 @@ if TYPE_CHECKING:
         DataVersion,
     )
     from dagster._core.definitions.dependency import NodeHandle
-    from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.resource_definition import Resources
     from dagster._core.event_api import EventLogRecord
     from dagster._core.execution.plan.plan import ExecutionPlan
@@ -186,8 +184,7 @@ class ExecutionData(NamedTuple):
 
     scoped_resources_builder: ScopedResourcesBuilder
     resolved_run_config: ResolvedRunConfig
-    pipeline_def: PipelineDefinition
-    mode_def: ModeDefinition
+    pipeline_def: JobDefinition
 
 
 class IStepContext(IPlanContext):
@@ -333,7 +330,7 @@ class PlanExecutionContext(IPlanContext):
         )
 
     @property
-    def pipeline_def(self) -> PipelineDefinition:
+    def pipeline_def(self) -> JobDefinition:
         return self._execution_data.pipeline_def
 
     @property
@@ -558,20 +555,12 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return self.solid.definition
 
     @property
-    def pipeline_def(self) -> PipelineDefinition:
+    def pipeline_def(self) -> JobDefinition:
         return self._execution_data.pipeline_def
 
     @property
     def job_def(self) -> "JobDefinition":
-        check.invariant(
-            self._execution_data.pipeline_def.is_job,
-            "Attempted to call job_def property for a pipeline definition.",
-        )
-        return cast("JobDefinition", self._execution_data.pipeline_def)
-
-    @property
-    def mode_def(self) -> ModeDefinition:
-        return self._execution_data.mode_def
+        return self._execution_data.pipeline_def
 
     @property
     def solid(self) -> OpNode:
@@ -799,7 +788,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         # skipped yielding this output. From the logs, we have no easy way to differentiate the fixed
         # path case and the skipping case, until we record the skipping info in KnownExecutionState,
         # i.e. resolve https://github.com/dagster-io/dagster/issues/3511
-        self.log.warn(
+        self.log.warning(
             f"No previously stored outputs found for source {step_output_handle}. "
             "This is either because you are using an IO Manager that does not depend on run ID, "
             "or because all the previous runs have skipped the output in conditional execution."

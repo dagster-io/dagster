@@ -26,7 +26,6 @@ from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets_job import is_base_asset_job_name
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
-from dagster._core.definitions.mode import DEFAULT_MODE_NAME
 from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import PipelineSelector
@@ -129,6 +128,24 @@ class AssetBackfillData(NamedTuple):
             for asset_key, subset in self.target_subset.partitions_subsets_by_asset_key.items()
         }
 
+    def get_targeted_partitioned_asset_keys_topological_order(self) -> Sequence[AssetKey]:
+        """Returns a topological ordering of partitioned asset keys targeted by the backfill.
+
+        Orders keys in the same topological level alphabetically.
+        """
+        toposorted_keys = self.target_subset.asset_graph.toposort_asset_keys()
+
+        targeted_toposorted_keys = []
+        for level_keys in toposorted_keys:
+            for key in sorted(level_keys):
+                if (
+                    key in self.target_subset.asset_keys
+                    and self.target_subset.asset_graph.get_partitions_def(key) is not None
+                ):
+                    targeted_toposorted_keys.append(key)
+
+        return targeted_toposorted_keys
+
     def get_partitions_status_counts_by_asset_key(
         self,
     ) -> Mapping[AssetKey, Mapping[BackfillPartitionsStatus, int]]:
@@ -216,47 +233,63 @@ class AssetBackfillData(NamedTuple):
     def from_asset_partitions(
         cls,
         asset_graph: AssetGraph,
-        partition_names: Sequence[str],
+        partition_names: Optional[Sequence[str]],
         asset_selection: Sequence[AssetKey],
         dynamic_partitions_store: DynamicPartitionsStore,
+        all_partitions: bool,
     ) -> "AssetBackfillData":
-        partitioned_asset_keys = {
-            asset_key
-            for asset_key in asset_selection
-            if asset_graph.get_partitions_def(asset_key) is not None
-        }
-
-        root_partitioned_asset_keys = (
-            AssetSelection.keys(*partitioned_asset_keys).sources().resolve(asset_graph)
+        check.invariant(
+            partition_names is None or all_partitions is False,
+            "Can't provide both a set of partitions and all_partitions=True",
         )
-        root_partitions_defs = {
-            asset_graph.get_partitions_def(asset_key) for asset_key in root_partitioned_asset_keys
-        }
-        if len(root_partitions_defs) > 1:
-            raise DagsterBackfillFailedError(
-                "All the assets at the root of the backfill must have the same PartitionsDefinition"
-            )
 
-        root_partitions_def = next(iter(root_partitions_defs))
-        if not root_partitions_def:
-            raise DagsterBackfillFailedError(
-                "If assets within the backfill have different partitionings, then root assets"
-                " must be partitioned"
+        if all_partitions:
+            target_subset = AssetGraphSubset.from_asset_keys(
+                asset_selection, asset_graph, dynamic_partitions_store
             )
+        elif partition_names is not None:
+            partitioned_asset_keys = {
+                asset_key
+                for asset_key in asset_selection
+                if asset_graph.get_partitions_def(asset_key) is not None
+            }
 
-        root_partitions_subset = root_partitions_def.subset_with_partition_keys(partition_names)
-        target_subset = AssetGraphSubset(
-            asset_graph, non_partitioned_asset_keys=set(asset_selection) - partitioned_asset_keys
-        )
-        for root_asset_key in root_partitioned_asset_keys:
-            target_subset |= asset_graph.bfs_filter_subsets(
-                dynamic_partitions_store,
-                lambda asset_key, _: asset_key in partitioned_asset_keys,
-                AssetGraphSubset(
-                    asset_graph,
-                    partitions_subsets_by_asset_key={root_asset_key: root_partitions_subset},
-                ),
+            root_partitioned_asset_keys = (
+                AssetSelection.keys(*partitioned_asset_keys).sources().resolve(asset_graph)
             )
+            root_partitions_defs = {
+                asset_graph.get_partitions_def(asset_key)
+                for asset_key in root_partitioned_asset_keys
+            }
+            if len(root_partitions_defs) > 1:
+                raise DagsterBackfillFailedError(
+                    "All the assets at the root of the backfill must have the same"
+                    " PartitionsDefinition"
+                )
+
+            root_partitions_def = next(iter(root_partitions_defs))
+            if not root_partitions_def:
+                raise DagsterBackfillFailedError(
+                    "If assets within the backfill have different partitionings, then root assets"
+                    " must be partitioned"
+                )
+
+            root_partitions_subset = root_partitions_def.subset_with_partition_keys(partition_names)
+            target_subset = AssetGraphSubset(
+                asset_graph,
+                non_partitioned_asset_keys=set(asset_selection) - partitioned_asset_keys,
+            )
+            for root_asset_key in root_partitioned_asset_keys:
+                target_subset |= asset_graph.bfs_filter_subsets(
+                    dynamic_partitions_store,
+                    lambda asset_key, _: asset_key in partitioned_asset_keys,
+                    AssetGraphSubset(
+                        asset_graph,
+                        partitions_subsets_by_asset_key={root_asset_key: root_partitions_subset},
+                    ),
+                )
+        else:
+            check.failed("Either partition_names must not be None or all_partitions must be True")
 
         return cls.empty(target_subset)
 
@@ -390,7 +423,6 @@ def submit_run_request(
         external_execution_plan = code_location.get_external_execution_plan(
             external_pipeline,
             {},
-            DEFAULT_MODE_NAME,
             step_keys_to_execute=None,
             known_state=None,
             instance=instance,
@@ -411,7 +443,6 @@ def submit_run_request(
         solids_to_execute=None,
         solid_selection=None,
         run_config={},
-        mode=DEFAULT_MODE_NAME,
         step_keys_to_execute=None,
         tags=run_request.tags,
         root_run_id=None,

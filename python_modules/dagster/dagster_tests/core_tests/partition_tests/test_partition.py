@@ -12,6 +12,8 @@ from dagster import (
     MultiPartitionsDefinition,
     PartitionKeyRange,
     StaticPartitionsDefinition,
+    define_asset_job,
+    job,
 )
 from dagster._check import CheckError
 from dagster._core.definitions.partition import (
@@ -854,3 +856,17 @@ def test_static_partitions_invalid_chars():
         StaticPartitionsDefinition(["foo\nfoo"])
     with pytest.raises(DagsterInvalidDefinitionError, match="b"):
         StaticPartitionsDefinition(["foo\bfoo"])
+
+
+def test_run_request_for_partition_invalid_with_dynamic_partitions():
+    @job(partitions_def=DynamicPartitionsDefinition(name="foo"))
+    def dynamic_partitions_job():
+        pass
+
+    with pytest.raises(CheckError, match="not supported for dynamic partitions"):
+        dynamic_partitions_job.run_request_for_partition("nonexistent")
+
+    asset_job = define_asset_job("my_job", partitions_def=DynamicPartitionsDefinition(name="foo"))
+
+    with pytest.raises(CheckError, match="not supported for dynamic partitions"):
+        asset_job.run_request_for_partition("nonexistent")

@@ -87,8 +87,8 @@ def test_forward_compat_serdes_new_field_with_default():
             def __new__(cls, foo, bar):
                 return super(Quux, cls).__new__(cls, foo, bar)
 
-        assert test_map.has_tuple_entry("Quux")
-        serializer = test_map.get_tuple_entry("Quux")
+        assert test_map.has_tuple_serializer("Quux")
+        serializer = test_map.get_tuple_serializer("Quux")
         assert serializer.klass is Quux
         return Quux("zip", "zow")
 
@@ -100,8 +100,8 @@ def test_forward_compat_serdes_new_field_with_default():
         def __new__(cls, foo, bar, baz=None):
             return super(Quux, cls).__new__(cls, foo, bar, baz=baz)
 
-    assert test_map.has_tuple_entry("Quux")
-    serializer_v2 = test_map.get_tuple_entry("Quux")
+    assert test_map.has_tuple_serializer("Quux")
+    serializer_v2 = test_map.get_tuple_serializer("Quux")
     assert serializer_v2.klass is Quux
 
     deserialized = deserialize_value(serialized, as_type=Quux, whitelist_map=test_map)
@@ -426,6 +426,8 @@ def test_named_tuple() -> None:
     assert deserialized == val
 
 
+# Ensures it is possible to simultaneously have a class Foo and a separate class that serializes to
+# Foo, if Foo has a different storage name.
 def test_named_tuple_storage_name() -> None:
     test_env = WhitelistMap.create()
 
@@ -433,9 +435,19 @@ def test_named_tuple_storage_name() -> None:
     class Foo(NamedTuple):
         color: str
 
+    @_whitelist_for_serdes(test_env, storage_name="Foo")
+    class Bar(NamedTuple):
+        shape: str
+
     val = Foo("red")
     serialized = serialize_value(val, whitelist_map=test_env)
     assert serialized == '{"__class__": "Bar", "color": "red"}'
+    deserialized = deserialize_value(serialized, whitelist_map=test_env)
+    assert deserialized == val
+
+    val = Bar("square")
+    serialized = serialize_value(val, whitelist_map=test_env)
+    assert serialized == '{"__class__": "Foo", "shape": "square"}'
     deserialized = deserialize_value(serialized, whitelist_map=test_env)
     assert deserialized == val
 

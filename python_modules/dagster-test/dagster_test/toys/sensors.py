@@ -108,7 +108,6 @@ def get_toys_sensors():
             [
                 f'Pipeline "{context.pipeline_run.pipeline_name}" failed.',
                 f"error: {context.failure_event.message}",
-                f"mode: {context.pipeline_run.mode}",
                 f"run_page_url: {run_page_url}",
             ]
         )

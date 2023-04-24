@@ -72,7 +72,6 @@ class MultiprocessExecutorChildProcessCommand(ChildProcessCommand):
             execution_plan = create_execution_plan(
                 pipeline=pipeline,
                 run_config=self.run_config,
-                mode=self.pipeline_run.mode,
                 step_keys_to_execute=[self.step_key],
                 known_state=self.known_state,
                 repository_load_data=self.repository_load_data,

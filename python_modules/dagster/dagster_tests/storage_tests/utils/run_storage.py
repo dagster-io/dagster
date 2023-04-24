@@ -110,7 +110,6 @@ class TestRunStorage:
     def build_run(
         run_id,
         pipeline_name,
-        mode="default",
         tags=None,
         status=DagsterRunStatus.NOT_STARTED,
         parent_run_id=None,
@@ -122,7 +121,6 @@ class TestRunStorage:
             pipeline_name=pipeline_name,
             run_id=run_id,
             run_config=None,
-            mode=mode,
             tags=tags,
             status=status,
             root_run_id=root_run_id,

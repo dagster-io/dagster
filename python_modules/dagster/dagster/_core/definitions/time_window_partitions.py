@@ -32,7 +32,11 @@ from dagster._utils.schedules import (
     reverse_cron_string_iterator,
 )
 
-from ..errors import DagsterInvalidDefinitionError, DagsterInvalidDeserializationVersionError
+from ..errors import (
+    DagsterInvalidDefinitionError,
+    DagsterInvalidDeserializationVersionError,
+    DagsterUnknownPartitionError,
+)
 from .partition import (
     DEFAULT_DATE_FORMAT,
     Partition,
@@ -243,6 +247,46 @@ class TimeWindowPartitionsDefinition(
             partitions = partitions[: self.end_offset]
 
         return partitions
+
+    def _get_validated_time_window_for_partition_key(
+        self, partition_key: str, current_time: Optional[datetime] = None
+    ) -> Optional[TimeWindow]:
+        """Returns a TimeWindow for the given partition key if it is valid, otherwise returns None.
+        """
+        try:
+            time_window = self.time_window_for_partition_key(partition_key)
+        except ValueError:
+            return None
+
+        first_partition_window = self.get_first_partition_window(current_time=current_time)
+        last_partition_window = self.get_last_partition_window(current_time=current_time)
+        if (
+            first_partition_window is None
+            or last_partition_window is None
+            or time_window.start < first_partition_window.start
+            or time_window.start > last_partition_window.start
+            or time_window.start.strftime(self.fmt) != partition_key
+        ):
+            return None
+
+        return time_window
+
+    def get_partition(
+        self,
+        partition_key: str,
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> Partition[TimeWindow]:
+        time_window = self._get_validated_time_window_for_partition_key(
+            partition_key, current_time=current_time
+        )
+
+        if time_window is None:
+            raise DagsterUnknownPartitionError(
+                f"Could not find a partition with key `{partition_key}`"
+            )
+
+        return Partition(value=time_window, name=partition_key)
 
     def __str__(self) -> str:
         schedule_str = (
@@ -713,22 +757,8 @@ class TimeWindowPartitionsDefinition(
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> bool:
-        try:
-            time_window = self.time_window_for_partition_key(partition_key)
-        except ValueError:
-            return False
-
-        first_partition_window = self.get_first_partition_window(current_time=current_time)
-        last_partition_window = self.get_last_partition_window(current_time=current_time)
-        if (
-            first_partition_window is None
-            or last_partition_window is None
-            or time_window.start < first_partition_window.start
-            or time_window.start > last_partition_window.start
-        ):
-            return False
-
-        return time_window.start.strftime(self.fmt) == partition_key
+        time_window = self._get_validated_time_window_for_partition_key(partition_key, current_time)
+        return True if time_window else False
 
 
 class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):

@@ -23,7 +23,6 @@ from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.execution.api import execute_job
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
-from dagster._core.storage.pipeline_run import RunsFilter
 from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._utils import file_relative_path
@@ -295,13 +294,6 @@ def test_0_12_0_add_mode_column(hostname, conn_string):
         result = noop_job.execute_in_process(instance=instance)
         assert result.success
         assert len(instance.get_runs()) == 2
-
-        # Ensure that migration required exception throws, since you are trying to use the
-        # migration-required column.
-        with pytest.raises(
-            (db.exc.OperationalError, db.exc.ProgrammingError, db.exc.StatementError)
-        ):
-            instance.get_runs(filters=RunsFilter(mode="the_mode"))
 
         instance.upgrade()
 

@@ -95,7 +95,6 @@ wordcloud  # (quickstart-*)
 # -r examples/deploy_k8s/requirements.txt  # (no reqs)
 -e examples/development_to_production
 -e examples/docs_snippets[full]
-# -e examples/experimental/project_fully_featured_v2_resources
 -e examples/feature_graph_backed_assets
 # -e examples/project_fully_featured
 # -e examples/quickstart_aws  # (analyzed but not installed)

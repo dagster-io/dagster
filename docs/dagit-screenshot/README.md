@@ -27,7 +27,7 @@ screenshot specs.
 
 Specs have the following fields. Only the `id` field requires explicit specification for all specs:
 
-- `id`: Relative identifier for the spec, unique within the defining YAML file. The full ID of the spec is formed by joining the (extensionless) path to the defining YAML file with the relative ID. For the special name `index.yaml`, the `index` part is dropped. For example, a spec with `id` field "baz.png" stored in either `screenshots/foo/bar.yaml` or `screenshots/foo/bar/index.yaml` has the full ID `foo/bar/baz.png`. The full ID can be treated as a relative path that, when further qualified with an output root directory, specifies the path to an image file. The default output root is `next/public/images`, so by default the spec with ID `foo/bar/baz.png` corresponds to an image in `next/public/images/foo/bar/baz.png`.
+- `id`: E.g. `a/b/c.png`, for a screenshot with id "c.png" in `docs/screenshots/a/b.yaml`. The full ID of the spec is formed by joining the (extensionless) path to the defining YAML file with the relative ID. For the special name `index.yaml`, the `index` part is dropped. For example, a spec with `id` field "baz.png" stored in either `screenshots/foo/bar.yaml` or `screenshots/foo/bar/index.yaml` has the full ID `foo/bar/baz.png`. The full ID can be treated as a relative path that, when further qualified with an output root directory, specifies the path to an image file. The default output root is `next/public/images`, so by default the spec with ID `foo/bar/baz.png` corresponds to an image in `next/public/images/foo/bar/baz.png`.
 - `route (optional)` Dagit route (i.e. path part of the URL) that will be loaded before taking a screenshot. Defaults to `/`.
 - `workspace` (optional): path (relative to the repo root) to a python or workspace YAML file that defines the workspace that should be loaded before attempting screenshot capture. The script will pass the path to `dagit --python-file` or `dagit --workspace` (depending on file type) to load a set of Dagster definitions. This is required for screenshots generated from a local Dagit instance, can should be omitted for screenshots generated from a remote Dagit (e.g. at `demo.elementl.show`).
 - `base_url (optional)`: Base url (protocol and host) of a Dagit instance to be targeted for a screenshot. Can point to a local or remote host. Defaults to `http://localhost:3000`.
@@ -41,7 +41,12 @@ Install `dagit-screenshot` into your environment with `pip install -e
 dagit-screenshot`-- this will make the `dagit-screenshot` executable available
 on your path. 
 
-To generate the screenshot for a spec, run `dagit-screenshot capture <id>`.
+To generate the screenshot for a spec, run
+
+```
+dagit-screenshot capture <id>`
+```
+
 This will attempt to render the specified Dagit view using the browser
 automation tool [Selenium](https://www.selenium.dev). If no `steps` are
 specified in the target spec, the screenshot will be automatically captured. If

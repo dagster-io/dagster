@@ -706,7 +706,6 @@ class GrapheneDagitQuery(graphene.ObjectType):
             graphene_info,
             pipeline_selector_from_graphql(pipeline),
             parse_run_config_input(runConfigData or {}, raise_on_error=False),
-            mode,
         )
 
     def resolve_executionPlanOrError(
@@ -720,7 +719,6 @@ class GrapheneDagitQuery(graphene.ObjectType):
             graphene_info,
             pipeline_selector_from_graphql(pipeline),
             parse_run_config_input(runConfigData or {}, raise_on_error=True),  # type: ignore  # (possible str)
-            mode,
         )
 
     def resolve_runConfigSchemaOrError(
@@ -730,9 +728,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
         mode: Optional[str] = None,
     ):
         return resolve_run_config_schema_or_error(
-            graphene_info,
-            pipeline_selector_from_graphql(selector),
-            mode,
+            graphene_info, pipeline_selector_from_graphql(selector), mode
         )
 
     def resolve_instance(self, graphene_info: ResolveInfo):
@@ -746,10 +742,16 @@ class GrapheneDagitQuery(graphene.ObjectType):
         pipeline: Optional[GraphenePipelineSelector] = None,
         assetKeys: Optional[Sequence[GrapheneAssetKeyInput]] = None,
     ) -> Sequence[GrapheneAssetNode]:
-        resolved_asset_keys = set(
-            AssetKey.from_graphql_input(asset_key_input) for asset_key_input in assetKeys or []
-        )
-        use_all_asset_keys = len(resolved_asset_keys) == 0
+        if assetKeys == []:
+            return []
+        elif not assetKeys:
+            use_all_asset_keys = True
+            resolved_asset_keys = None
+        else:
+            use_all_asset_keys = False
+            resolved_asset_keys = set(
+                AssetKey.from_graphql_input(asset_key_input) for asset_key_input in assetKeys or []
+            )
 
         repo = None
 
@@ -798,7 +800,9 @@ class GrapheneDagitQuery(graphene.ObjectType):
 
         # Filter down to requested asset keys
         results = [
-            node for node in results if use_all_asset_keys or node.assetKey in resolved_asset_keys
+            node
+            for node in results
+            if use_all_asset_keys or node.assetKey in check.not_none(resolved_asset_keys)
         ]
 
         if not results:

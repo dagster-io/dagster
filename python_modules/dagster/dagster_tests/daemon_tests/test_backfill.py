@@ -711,7 +711,7 @@ def test_backfill_with_asset_selection(
         assert len(instance.run_ids_for_asset_key(asset_key)) == 0
 
 
-def test_pure_asset_backfill_with_multiple_asset_selections(
+def test_pure_asset_backfill_with_multiple_assets_selected(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
     external_repo: ExternalRepository,
@@ -725,16 +725,17 @@ def test_pure_asset_backfill_with_multiple_asset_selections(
             asset_graph=ExternalAssetGraph.from_workspace(
                 workspace_context.create_request_context()
             ),
-            backfill_id="backfill_with_multiple_asset_selections",
+            backfill_id="backfill_with_multiple_assets_selected",
             tags={"custom_tag_key": "custom_tag_value"},
             backfill_timestamp=pendulum.now().timestamp(),
             asset_selection=asset_selection,
             partition_names=partition_name_list,
             dynamic_partitions_store=instance,
+            all_partitions=False,
         )
     )
     assert instance.get_runs_count() == 0
-    backfill = instance.get_backfill("backfill_with_multiple_asset_selections")
+    backfill = instance.get_backfill("backfill_with_multiple_assets_selected")
     assert backfill
     assert backfill.status == BulkActionStatus.REQUESTED
 
@@ -750,7 +751,7 @@ def test_pure_asset_backfill_with_multiple_asset_selections(
     wait_for_all_runs_to_start(instance, timeout=30)
     wait_for_all_runs_to_finish(instance, timeout=30)
     run = instance.get_runs()[0]
-    assert run.tags[BACKFILL_ID_TAG] == "backfill_with_multiple_asset_selections"
+    assert run.tags[BACKFILL_ID_TAG] == "backfill_with_multiple_assets_selected"
     assert run.tags["custom_tag_key"] == "custom_tag_value"
     assert run.asset_selection == {AssetKey(["asset_a"])}
 
@@ -794,6 +795,7 @@ def test_pure_asset_backfill(
             asset_selection=asset_selection,
             partition_names=partition_name_list,
             dynamic_partitions_store=instance,
+            all_partitions=False,
         )
     )
     assert instance.get_runs_count() == 0

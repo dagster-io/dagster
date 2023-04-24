@@ -126,7 +126,7 @@ describe('BackfillPage', () => {
     expect(getByText('Status')).toBeVisible();
     expect(getByText('Asset name')).toBeVisible();
     expect(getByText('Partitions targeted')).toBeVisible();
-    expect(getAllByText('Requested').length).toBe(2);
+    expect(getAllByText('Requested').length).toBe(1);
     expect(getByText('Completed')).toBeVisible();
     expect(getByText('Failed')).toBeVisible();
 

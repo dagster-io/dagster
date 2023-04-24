@@ -7,13 +7,33 @@ description: Dagster supports data backfills for each partition or subsets of pa
 
 ## Overview
 
-Dagster supports data backfills for each partition or subsets of partitions. After defining a [partitioned job](/concepts/partitions-schedules-sensors/partitions), you can use backfills to submit runs for each partition in the set.
+Dagster supports data backfills for each partition or subsets of partitions. After defining a [partitioned asset or job](/concepts/partitions-schedules-sensors/partitions), you can use backfills to submit runs for each partition in the set.
 
 ---
 
 ## Launching Backfills
 
-### Using Dagit
+### Partitioned Asset Backfills
+
+You can open the backfill modal to launch backfills for a partitioned asset using the "Materialize" button on the [Asset detail page](https://docs.dagster.io/concepts/partitions-schedules-sensors/partitions#materializing-partitioned-assets). Backfills can also be launched for a selection of differently partitioned assets, as long as the roots share the same partitioning. You can select assets to materialize from the lineage tab of your asset group.
+
+<Image
+alt="backfills-launch-modal"
+src="/images/concepts/assets/asset-backfill-partition-selection-modal.png"
+width={856}
+height={689}
+/>
+
+After selecting the partitions you want to backfill you can click on the toast notification to go to the Backfill details page. You can also reach this page via link on the backfills page.
+
+<Image
+alt="backfills-launch-modal"
+src="/images/concepts/assets/asset-backfill-details-page.png"
+width={1737}
+height={335}
+/>
+
+### Partitioned Job Backfills
 
 You can launch and monitor backfills of a job using the [Partitions tab](/concepts/partitions-schedules-sensors/partitions#dagit-partitions-tab).
 

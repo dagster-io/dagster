@@ -18,7 +18,7 @@ from dagster import (
     freshness_policy_sensor,
 )
 from dagster._annotations import experimental
-from dagster._core.definitions import GraphDefinition, PipelineDefinition
+from dagster._core.definitions import GraphDefinition, JobDefinition
 from dagster._core.definitions.run_status_sensor_definition import (
     RunFailureSensorContext,
     run_failure_sensor,
@@ -110,7 +110,7 @@ def make_slack_on_run_failure_sensor(
     monitored_jobs: Optional[
         Sequence[
             Union[
-                PipelineDefinition,
+                JobDefinition,
                 GraphDefinition,
                 UnresolvedAssetJobDefinition,
                 "RepositorySelector",
@@ -122,7 +122,7 @@ def make_slack_on_run_failure_sensor(
     job_selection: Optional[
         Sequence[
             Union[
-                PipelineDefinition,
+                JobDefinition,
                 GraphDefinition,
                 UnresolvedAssetJobDefinition,
                 "RepositorySelector",

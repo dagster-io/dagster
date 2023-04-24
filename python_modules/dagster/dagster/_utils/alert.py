@@ -9,7 +9,7 @@ from dagster._utils.backcompat import deprecation_warning
 
 if TYPE_CHECKING:
     from dagster._core.definitions.graph_definition import GraphDefinition
-    from dagster._core.definitions.pipeline_definition import PipelineDefinition
+    from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.run_status_sensor_definition import RunFailureSensorContext
     from dagster._core.definitions.selector import JobSelector, RepositorySelector
     from dagster._core.definitions.unresolved_asset_job_definition import (
@@ -88,7 +88,7 @@ def make_email_on_run_failure_sensor(
     monitored_jobs: Optional[
         Sequence[
             Union[
-                "PipelineDefinition",
+                "JobDefinition",
                 "GraphDefinition",
                 "UnresolvedAssetJobDefinition",
                 "RepositorySelector",
@@ -99,7 +99,7 @@ def make_email_on_run_failure_sensor(
     job_selection: Optional[
         Sequence[
             Union[
-                "PipelineDefinition",
+                "JobDefinition",
                 "GraphDefinition",
                 "UnresolvedAssetJobDefinition",
                 "RepositorySelector",

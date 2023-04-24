@@ -6,7 +6,6 @@ from dagster import (
 )
 from dagster._cli.config_scaffolder import scaffold_pipeline_config, scaffold_type
 from dagster._config import config_type
-from dagster._core.definitions import create_run_config_schema
 from dagster._core.definitions.graph_definition import GraphDefinition
 
 
@@ -33,7 +32,7 @@ def test_basic_ops_config(snapshot):
         ],
     ).to_job()
 
-    env_config_type = create_run_config_schema(job_def).config_type
+    env_config_type = job_def.run_config_schema.config_type
 
     assert env_config_type.fields["ops"].is_required
     ops_config_type = env_config_type.fields["ops"].config_type

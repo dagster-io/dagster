@@ -254,9 +254,6 @@ class SqlRunStorage(RunStorage):
         if filters.job_name:
             query = query.where(RunsTable.c.pipeline_name == filters.job_name)
 
-        if filters.mode:
-            query = query.where(RunsTable.c.mode == filters.mode)
-
         if filters.statuses:
             query = query.where(
                 RunsTable.c.status.in_([status.value for status in filters.statuses])

@@ -40,6 +40,7 @@ from dbt.main import parse_args as dbt_parse_args
 
 from dagster_dbt.asset_utils import (
     default_asset_key_fn,
+    default_auto_materialize_policy_fn,
     default_freshness_policy_fn,
     default_group_fn,
     default_metadata_fn,
@@ -311,6 +312,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             asset_outs,
             group_names_by_key,
             freshness_policies_by_key,
+            auto_materialize_policies_by_key,
             fqns_by_output_name,
             metadata_by_output_name,
         ) = get_asset_deps(
@@ -320,6 +322,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             node_info_to_group_fn=self._node_info_to_group_fn,
             node_info_to_freshness_policy_fn=self._node_info_to_freshness_policy_fn,
             # TODO: In the future, allow this function to be specified
+            node_info_to_auto_materialize_policy_fn=default_auto_materialize_policy_fn,
             node_info_to_definition_metadata_fn=default_metadata_fn,
             # TODO: In the future, allow the IO manager to be specified.
             io_manager_key=None,
