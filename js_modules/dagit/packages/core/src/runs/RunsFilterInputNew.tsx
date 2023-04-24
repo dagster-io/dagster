@@ -401,7 +401,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
           } else if (value.type === DagsterTag.ScheduleName) {
             icon = <Icon name="schedule" />;
           } else if (value.type === DagsterTag.User) {
-            return <UserDisplay email={value.value} />;
+            return <UserDisplay email={value.value} isFilter />;
           }
           return (
             <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
