@@ -52,7 +52,10 @@ description: Use dagster_cloud.yaml to configure code locations for Dagster Clou
       >
         <strong>Description</strong>
       </td>
-      <td> Similar to the <code>workspace.yaml</code> in open source to define code locations for Dagster Cloud.
+      <td>
+        {" "}
+        Similar to the <code>workspace.yaml</code> in open source to define code
+        locations for Dagster Cloud.
       </td>
     </tr>
     <tr>
@@ -63,13 +66,13 @@ description: Use dagster_cloud.yaml to configure code locations for Dagster Clou
       >
         <strong>Uses</strong>
       </td>
-      <td> Defines multiple code locations for Dagster Cloud. For Hybrid
-        deployments, this file can be used{" "}
-        <a href="/dagster-cloud/managing-deployments/setting-environment-variables-dagster-cloud-agents">
+      <td>
+        {" "}
+        Defines multiple code locations for Dagster Cloud. For Hybrid deployments,
+        this file can be used <a href="/dagster-cloud/managing-deployments/setting-environment-variables-dagster-cloud-agents">
           to manage environment variables/secrets.
         </a>
-        <ul>
-        </ul>
+        <ul></ul>
       </td>
     </tr>
   </tbody>
@@ -102,10 +105,10 @@ If your repository contains multiple Dagster projects in subdirectories - otherw
 
 The only **mandatory** section in the `dagster_cloud.yaml` file is the `locations` key. This top-level key specifies a list of code locations that should be deployed to Dagster Cloud.
 
-At a minimum, each item in `locations` must include the following: 
+At a minimum, each item in `locations` must include the following:
+
 - A `location_name` key that specifies the name of the code location
 - A `code_source` key containing either a `module_name` or `file_name` parameter that specifies where to find the definitions in the code location
-
 
 Refer to the following table for the full list of parameters a location can have.
 
@@ -124,7 +127,7 @@ locations:
 </TabItem>
 <TabItem name="Multiple code locations">
 
-```yaml 
+```yaml
 #dagster_cloud.yaml
 
 locations:
@@ -135,13 +138,13 @@ locations:
     code_source:
       python_file: ml/ml_model.py
 ```
+
 </TabItem>
 </TabGroup>
 
 ### Working directory
 
 Use the `working_directory` setting to load Dagster code from a different directory than the root of your code repository. This setting allows you to specify the directory you want to load your code from.
-
 
 Consider the following project:
 
@@ -175,7 +178,7 @@ locations:
 
 The build registry is applicable to hybrid deployments only. Setting a build directory is useful if your `setup.py` or `requirements.txt` is in a subdirectory instead of the project root. This is common if you have multiple Python packages within a single Dagster project.
 
-In the example below, the docker image for the code location is in the root directory and the registry and image defined. 
+In the example below, the docker image for the code location is in the root directory and the registry and image defined.
 
 Example:
 
@@ -211,15 +214,13 @@ locations:
 
 ### Container context
 
-If using Hybrid deployment, you can define additional configuration options for code locations using 
-the `container_context` parameter. Depending on the Hybrid agent you're using, the configuration settings under `container_context` will vary.
+If using Hybrid deployment, you can define additional configuration options for code locations using the `container_context` parameter. Depending on the Hybrid agent you're using, the configuration settings under `container_context` will vary.
 
-Refer to the configuration reference for your agent for more info: 
+Refer to the configuration reference for your agent for more info:
 
 - [Docker agent configuration reference](/dagster-cloud/deployment/agents/docker/configuration-reference)
 - [Amazon ECS agent configuration reference](/dagster-cloud/deployment/agents/amazon-ecs/configuration-reference)
 - [Kubernetes agent configuration reference](/dagster-cloud/deployment/agents/kubernetes/configuration-reference)
-
 
 ---
 
@@ -227,7 +228,8 @@ Refer to the configuration reference for your agent for more info:
 
 <ReferenceTable>
   <ReferenceTableItem propertyName="location_name">
-    The name of your code location that will appear in the Dagster UI Code locations page 
+    The name of your code location that will appear in the Dagster UI Code
+    locations page
     <ul>
       <li>
         <strong>Format</strong> - <code>string</code>
@@ -242,23 +244,25 @@ Refer to the configuration reference for your agent for more info:
       </li>
     </ul>
   </ReferenceTableItem>
-   <ReferenceTableItem propertyName="code_source.python_file">
-     The name of a Python file containing Dagster code, for example: `analytics_pipeline.py` 
+  <ReferenceTableItem propertyName="code_source.python_file">
+    The name of a Python file containing Dagster code, for example:
+    `analytics_pipeline.py`
     <ul>
       <li>
         <strong>Format</strong> - <code>string</code>(.py file name)
       </li>
     </ul>
   </ReferenceTableItem>
- <ReferenceTableItem propertyName="code_source.module_name">
-    The name of a Python module containing Dagster code, for example: `analytics_etl`
+  <ReferenceTableItem propertyName="code_source.module_name">
+    The name of a Python module containing Dagster code, for example:
+    `analytics_etl`
     <ul>
       <li>
         <strong>Format</strong> - <code>string</code>(module name)
       </li>
     </ul>
   </ReferenceTableItem>
-   <ReferenceTableItem propertyName="working_directory">
+  <ReferenceTableItem propertyName="working_directory">
     The path of the directory that Dagster should load the code source from
     <ul>
       <li>
@@ -266,8 +270,10 @@ Refer to the configuration reference for your agent for more info:
       </li>
     </ul>
   </ReferenceTableItem>
-   <ReferenceTableItem propertyName="build.directory">
-    The path to the directory in your project that you want to deploy. If there are subdirectories, you can specify the path to only deploy a specific project directory. 
+  <ReferenceTableItem propertyName="build.directory">
+    The path to the directory in your project that you want to deploy. If there
+    are subdirectories, you can specify the path to only deploy a specific
+    project directory.
     <ul>
       <li>
         <strong>Format</strong> - <code>string</code>(path)
@@ -278,14 +284,15 @@ Refer to the configuration reference for your agent for more info:
     </ul>
   </ReferenceTableItem>
   <ReferenceTableItem propertyName="build.registry">
-    <strong>Applicable to Hybrid deployments.</strong> The Docker registry to push your code location to in the registry
+    <strong>Applicable to Hybrid deployments.</strong> The Docker registry to
+    push your code location to in the registry
     <ul>
       <li>
         <strong>Format</strong> - <code>string</code>(docker registry)
       </li>
     </ul>
   </ReferenceTableItem>
-       <ReferenceTableItem propertyName="executable_path">
+  <ReferenceTableItem propertyName="executable_path">
     The file path of the Python executable to use
     <ul>
       <li>
