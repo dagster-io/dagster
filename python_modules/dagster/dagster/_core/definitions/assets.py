@@ -907,12 +907,10 @@ class AssetsDefinition(ResourceAddable):
             input_name = input_names_by_key.get(input_key)
             if input_name is None:
                 # there is no input existing for this key, meaning this is something that is
-                # traditionally produced within the op, so we create a new input and remove the
-                # corresponding output
+                # traditionally produced within the op, so we create a new input
                 output_name = output_names_by_key[input_key]
                 ins[output_name] = In(Nothing)
                 input_names_by_key[input_key] = output_name
-                # del outs[output_name]
             else:
                 # just copy over existing input
                 ins[input_name] = self.op.ins[input_name]
