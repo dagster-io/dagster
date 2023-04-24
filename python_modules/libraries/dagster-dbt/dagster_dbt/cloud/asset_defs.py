@@ -20,6 +20,7 @@ from dagster import (
     AssetKey,
     AssetOut,
     AssetsDefinition,
+    AutoMaterializePolicy,
     FreshnessPolicy,
     MetadataValue,
     OpExecutionContext,
@@ -63,6 +64,9 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey],
         node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]],
         node_info_to_freshness_policy_fn: Callable[[Mapping[str, Any]], Optional[FreshnessPolicy]],
+        node_info_to_auto_materialize_policy_fn: Callable[
+            [Mapping[str, Any]], Optional[AutoMaterializePolicy]
+        ],
         partitions_def: Optional[PartitionsDefinition] = None,
         partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
     ):
@@ -76,6 +80,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         self._node_info_to_asset_key = node_info_to_asset_key
         self._node_info_to_group_fn = node_info_to_group_fn
         self._node_info_to_freshness_policy_fn = node_info_to_freshness_policy_fn
+        self._node_info_to_auto_materialize_policy_fn = node_info_to_auto_materialize_policy_fn
         self._partitions_def = partitions_def
         self._partition_key_to_vars_fn = partition_key_to_vars_fn
 
@@ -321,8 +326,8 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             node_info_to_asset_key=self._node_info_to_asset_key,
             node_info_to_group_fn=self._node_info_to_group_fn,
             node_info_to_freshness_policy_fn=self._node_info_to_freshness_policy_fn,
+            node_info_to_auto_materialize_policy_fn=self._node_info_to_auto_materialize_policy_fn,
             # TODO: In the future, allow this function to be specified
-            node_info_to_auto_materialize_policy_fn=default_auto_materialize_policy_fn,
             node_info_to_definition_metadata_fn=default_metadata_fn,
             # TODO: In the future, allow the IO manager to be specified.
             io_manager_key=None,
@@ -365,6 +370,10 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             freshness_policies_by_output_name={
                 asset_outs[asset_key][0]: freshness_policy
                 for asset_key, freshness_policy in freshness_policies_by_key.items()
+            },
+            auto_materialize_policies_by_output_name={
+                asset_outs[asset_key][0]: auto_materialize_policy
+                for asset_key, auto_materialize_policy in auto_materialize_policies_by_key.items()
             },
         )
 
@@ -410,6 +419,12 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
                     group_name=group_names_by_output_name.get(output_name),
                     freshness_policy=(
                         assets_definition_cacheable_data.freshness_policies_by_output_name or {}
+                    ).get(
+                        output_name,
+                    ),
+                    auto_materialize_policy=(
+                        assets_definition_cacheable_data.auto_materialize_policies_by_output_name
+                        or {}
                     ).get(
                         output_name,
                     ),
@@ -531,6 +546,9 @@ def load_assets_from_dbt_cloud_job(
     node_info_to_freshness_policy_fn: Callable[
         [Mapping[str, Any]], Optional[FreshnessPolicy]
     ] = default_freshness_policy_fn,
+    node_info_to_auto_materialize_policy_fn: Callable[
+        [Mapping[str, Any]], Optional[AutoMaterializePolicy]
+    ] = default_auto_materialize_policy_fn,
     partitions_def: Optional[PartitionsDefinition] = None,
     partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
 ) -> CacheableAssetsDefinition:
@@ -556,6 +574,12 @@ def load_assets_from_dbt_cloud_job(
             `dagster_freshness_policy={"maximum_lag_minutes": 60, "cron_schedule": "0 9 * * *"}`
             will result in that model being assigned
             `FreshnessPolicy(maximum_lag_minutes=60, cron_schedule="0 9 * * *")`
+        node_info_to_auto_materialize_policy_fn (Dict[str, Any] -> Optional[AutoMaterializePolicy]):
+            A function that takes a dictionary of dbt node info and optionally returns a AutoMaterializePolicy
+            that should be applied to this node. By default, AutoMaterializePolicies will be created from
+            config applied to dbt models, i.e.:
+            `dagster_auto_materialize_policy={"type": "lazy"}` will result in that model being assigned
+            `AutoMaterializePolicy.lazy()`
         node_info_to_definition_metadata_fn (Dict[str, Any] -> Optional[Dict[str, MetadataUserInput]]):
             A function that takes a dictionary of dbt node info and optionally returns a dictionary
             of metadata to be attached to the corresponding definition. This is added to the default
@@ -608,6 +632,7 @@ def load_assets_from_dbt_cloud_job(
         node_info_to_asset_key=node_info_to_asset_key,
         node_info_to_group_fn=node_info_to_group_fn,
         node_info_to_freshness_policy_fn=node_info_to_freshness_policy_fn,
+        node_info_to_auto_materialize_policy_fn=node_info_to_auto_materialize_policy_fn,
         partitions_def=partitions_def,
         partition_key_to_vars_fn=partition_key_to_vars_fn,
     )
