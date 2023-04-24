@@ -500,28 +500,6 @@ def test_descriminated_unions() -> None:
         )
 
 
-def test_descriminated_unions_initialization() -> None:
-    class Cat(Config):
-        pet_type: Literal["cat"] = "cat"
-        meows: int
-
-    class Dog(Config):
-        pet_type: Literal["dog"] = "dog"
-        barks: float
-
-    class Lizard(Config):
-        pet_type: Literal["reptile", "lizard"] = "reptile"
-        scales: bool
-
-    class OpConfigWithUnion(Config):
-        pet: Union[Cat, Dog, Lizard] = Field(..., discriminator="pet_type")
-        n: int
-
-    config = OpConfigWithUnion(pet=Cat(meows=3), n=5)
-    assert isinstance(config.pet, Cat)
-    assert config.pet.meows == 3
-
-
 def test_nested_discriminated_unions() -> None:
     class Poodle(Config):
         breed_type: Literal["poodle"]
@@ -575,6 +553,59 @@ def test_nested_discriminated_unions() -> None:
         }
     )
     assert executed["yes"]
+
+
+def test_descriminated_unions_direct_instantiation() -> None:
+    class Cat(Config):
+        pet_type: Literal["cat"] = "cat"
+        meows: int
+
+    class Dog(Config):
+        pet_type: Literal["dog"] = "dog"
+        barks: float
+
+    class Lizard(Config):
+        pet_type: Literal["reptile", "lizard"] = "reptile"
+        scales: bool
+
+    class OpConfigWithUnion(Config):
+        pet: Union[Cat, Dog, Lizard] = Field(..., discriminator="pet_type")
+        n: int
+
+    config = OpConfigWithUnion(pet=Cat(meows=3), n=5)
+    assert isinstance(config.pet, Cat)
+    assert config.pet.meows == 3
+
+
+def test_nested_discriminated_config_instantiation() -> None:
+    class Poodle(Config):
+        breed_type: Literal["poodle"] = "poodle"
+        fluffy: bool
+
+    class Dachshund(Config):
+        breed_type: Literal["dachshund"] = "dachshund"
+        long: bool
+
+    class Cat(Config):
+        pet_type: Literal["cat"] = "cat"
+        meows: int
+
+    class Dog(Config):
+        pet_type: Literal["dog"] = "dog"
+        barks: float
+        breed: Union[Poodle, Dachshund] = Field(..., discriminator="breed_type")
+
+    class OpConfigWithUnion(Config):
+        pet: Union[Cat, Dog] = Field(..., discriminator="pet_type")
+        n: int
+
+    config = OpConfigWithUnion(pet=Dog(barks=5.5, breed=Poodle(fluffy=True)), n=3)
+    assert isinstance(config.pet, Dog)
+    assert config.pet.barks == 5.5
+    assert config.pet.pet_type == "dog"
+    assert isinstance(config.pet.breed, Poodle)
+    assert config.pet.breed.fluffy
+    assert config.pet.breed.breed_type == "poodle"
 
 
 def test_struct_config_optional_map() -> None:

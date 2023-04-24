@@ -205,7 +205,7 @@ class Config(MakeConfigCacheable):
 
                 discriminator_key = check.not_none(field.discriminator_key)
                 if isinstance(value, Config):
-                    value_dict = value.dict()
+                    value_dict = value._as_config_dict()  # noqa: SLF001
                     value_discriminator = check.not_none(value_dict.get(discriminator_key))
                     values_without_key = {
                         k: v for k, v in value_dict.items() if k != discriminator_key
