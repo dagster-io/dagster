@@ -240,7 +240,7 @@ class AssetsDefinition(ResourceAddable):
 
         _validate_self_deps(
             input_keys=self._keys_by_input_name.values(),
-            output_keys=self._keys_by_output_name.values(),
+            output_keys=self._selected_asset_keys,
             partition_mappings=self._partition_mappings,
         )
 
@@ -900,7 +900,6 @@ class AssetsDefinition(ResourceAddable):
             dep_key for key in asset_subselection for dep_key in self.asset_deps[key]
         }.difference(asset_subselection)
         ins = {}
-        outs = {**self.op.outs}
 
         input_names_by_key = {v: k for k, v in self.keys_by_input_name.items()}
         output_names_by_key = {v: k for k, v in self.keys_by_output_name.items()}
@@ -910,10 +909,10 @@ class AssetsDefinition(ResourceAddable):
                 # there is no input existing for this key, meaning this is something that is
                 # traditionally produced within the op, so we create a new input and remove the
                 # corresponding output
-                input_name = f"artificial_{'_'.join(input_key.path)}"
-                ins[input_name] = In(Nothing)
-                input_names_by_key[input_key] = input_name
-                del outs[output_names_by_key[input_key]]
+                output_name = output_names_by_key[input_key]
+                ins[output_name] = In(Nothing)
+                input_names_by_key[input_key] = output_name
+                # del outs[output_name]
             else:
                 # just copy over existing input
                 ins[input_name] = self.op.ins[input_name]
@@ -921,7 +920,7 @@ class AssetsDefinition(ResourceAddable):
         # create a hash of the selected keys to generate a unique name for this subsetted op
         suffix = hashlib.md5((str(list(sorted(asset_subselection)))).encode()).hexdigest()[-5:]
         return self.op.with_replaced_properties(
-            name=f"{self.op.name}_subset_{suffix}", ins=ins, outs=outs
+            name=f"{self.op.name}_subset_{suffix}", ins=ins  # , outs=outs
         ), {v: k for k, v in input_names_by_key.items()}
 
     def _subset_graph_backed_asset(
