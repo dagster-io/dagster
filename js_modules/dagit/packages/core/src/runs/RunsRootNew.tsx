@@ -2,11 +2,11 @@ import {ApolloError, gql, useQuery} from '@apollo/client';
 import {
   Alert,
   Box,
+  ButtonLink,
   Colors,
   CursorHistoryControls,
   NonIdealState,
   Page,
-  Tag,
   tokenToString,
 } from '@dagster-io/ui';
 import partition from 'lodash/partition';
@@ -14,7 +14,12 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {
+  FIFTEEN_SECONDS,
+  QueryRefreshCountdown,
+  useMergedRefresh,
+  useQueryRefreshAtInterval,
+} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {usePortalSlot} from '../hooks/usePortalSlot';
 import {InstancePageContext} from '../instance/InstancePageContext';
@@ -22,17 +27,18 @@ import {useCanSeeConfig} from '../instance/useCanSeeConfig';
 import {Loading} from '../ui/Loading';
 import {StickyTableContainer} from '../ui/StickyTableContainer';
 
-import {useSelectedRunsTab} from './RunListTabs';
+import {RUN_TABS_COUNT_QUERY, RunListTabs, useSelectedRunsTab} from './RunListTabs.new';
+import {queuedStatuses, inProgressStatuses} from './RunStatuses';
 import {RunTable, RUN_TABLE_RUN_FRAGMENT} from './RunTableNew';
 import {RunsQueryRefetchContext} from './RunUtils';
 import {
   RunFilterTokenType,
-  RunsFilterInput,
   runsFilterForSearchTokens,
   useQueryPersistedRunFilters,
   RunFilterToken,
+  useRunsFilterInput,
 } from './RunsFilterInputNew';
-import {RunsPageHeader} from './RunsPageHeader';
+import {RunTabsCountQuery, RunTabsCountQueryVariables} from './types/RunListTabs.types';
 import {
   QueueDaemonStatusNewQuery,
   QueueDaemonStatusNewQueryVariables,
@@ -127,18 +133,59 @@ export const RunsRoot = () => {
     return filterTokens;
   }, [filterTokens, staticStatusTags]);
 
-  const [filtersPortal, filtersSlot] = usePortalSlot(
-    <RunsFilterInput
-      tokens={mutableTokens}
-      onChange={setFilterTokensWithStatus}
-      enabledFilters={enabledFilters}
-    />,
+  const runCountResult = useQuery<RunTabsCountQuery, RunTabsCountQueryVariables>(
+    RUN_TABS_COUNT_QUERY,
+    {
+      variables: {
+        queuedFilter: {...filter, statuses: Array.from(queuedStatuses)},
+        inProgressFilter: {...filter, statuses: Array.from(inProgressStatuses)},
+      },
+    },
   );
+
+  const {data: countData} = runCountResult;
+  const {queuedCount, inProgressCount} = React.useMemo(() => {
+    return {
+      queuedCount:
+        countData?.queuedCount?.__typename === 'Runs' ? countData.queuedCount.count : null,
+      inProgressCount:
+        countData?.inProgressCount?.__typename === 'Runs' ? countData.inProgressCount.count : null,
+    };
+  }, [countData]);
+
+  const countRefreshState = useQueryRefreshAtInterval(runCountResult, FIFTEEN_SECONDS);
+  const combinedRefreshState = useMergedRefresh(countRefreshState, refreshState);
+
+  const {button, activeFiltersJsx} = useRunsFilterInput({
+    tokens: mutableTokens,
+    onChange: setFilterTokensWithStatus,
+    enabledFilters,
+  });
+
+  const [filtersPortal, filtersSlot] = usePortalSlot(button);
+
+  function actionBar() {
+    return (
+      <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+        <QueryRefreshCountdown refreshState={combinedRefreshState} />
+        <RunListTabs queuedCount={queuedCount} inProgressCount={inProgressCount} />
+        {filtersSlot}
+        {activeFiltersJsx.length ? (
+          <ButtonLink
+            onClick={() => {
+              setFilterTokensWithStatus([]);
+            }}
+          >
+            Clear All
+          </ButtonLink>
+        ) : null}
+      </Box>
+    );
+  }
 
   return (
     <Page>
       {filtersPortal}
-      <RunsPageHeader refreshStates={[refreshState]} />
       {currentTab === 'queued' && canSeeConfig ? (
         <Box
           flex={{direction: 'column', gap: 8}}
@@ -169,7 +216,7 @@ export const RunsRoot = () => {
                 flex={{direction: 'column', gap: 32}}
                 padding={{vertical: 8, left: 24, right: 12}}
               >
-                {filtersSlot}
+                {actionBar()}
                 <NonIdealState
                   icon="warning"
                   title={badRequest ? 'Invalid run filters' : 'Unexpected error'}
@@ -203,20 +250,8 @@ export const RunsRoot = () => {
                     runs={pipelineRunsOrError.results.slice(0, PAGE_SIZE)}
                     onAddTag={onAddTag}
                     filter={filter}
-                    actionBarComponents={
-                      <Box flex={{direction: 'column', gap: 8}}>
-                        {currentTab !== 'all' ? (
-                          <Box flex={{direction: 'row', gap: 8}}>
-                            {filterTokens
-                              .filter((token) => token.token === 'status')
-                              .map(({token, value}) => (
-                                <Tag key={`${token}:${value}`}>{`${token}:${value}`}</Tag>
-                              ))}
-                          </Box>
-                        ) : null}
-                        {filtersSlot}
-                      </Box>
-                    }
+                    actionBarComponents={actionBar()}
+                    belowActionBarComponents={activeFiltersJsx}
                   />
                 </StickyTableContainer>
                 {pipelineRunsOrError.results.length > 0 ? (

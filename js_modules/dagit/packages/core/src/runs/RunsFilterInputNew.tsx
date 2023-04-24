@@ -6,7 +6,6 @@ import {
   Box,
   Icon,
   SubwayDot,
-  ButtonLink,
 } from '@dagster-io/ui';
 import memoize from 'lodash/memoize';
 import qs from 'qs';
@@ -165,11 +164,7 @@ const tagsToExclude = [
   DagsterTag.Backfill,
 ];
 
-export const RunsFilterInput: React.FC<RunsFilterInputProps> = ({
-  tokens,
-  onChange,
-  enabledFilters,
-}) => {
+export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilterInputProps) => {
   const {options} = useRepositoryOptions();
 
   const [fetchTagKeys, {data: tagKeyData}] = useLazyQuery<RunTagKeysNewQuery>(RUN_TAG_KEYS_QUERY);
@@ -529,21 +524,7 @@ export const RunsFilterInput: React.FC<RunsFilterInputProps> = ({
     ].filter((x) => x) as FilterObject[],
   });
 
-  return (
-    <Box flex={{direction: 'row', gap: 8, wrap: 'wrap', alignItems: 'center'}}>
-      <span onClick={onFocus}>{button}</span>
-      {activeFiltersJsx}
-      {activeFiltersJsx.length ? (
-        <ButtonLink
-          onClick={() => {
-            onChange([]);
-          }}
-        >
-          Clear All
-        </ButtonLink>
-      ) : null}
-    </Box>
-  );
+  return {button: <span onClick={onFocus}>{button}</span>, activeFiltersJsx};
 };
 
 export const RUN_TAG_KEYS_QUERY = gql`

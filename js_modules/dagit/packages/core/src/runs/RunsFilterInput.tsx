@@ -15,7 +15,7 @@ import {RunsFilter, RunStatus} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {DagsterRepoOption, useRepositoryOptions} from '../workspace/WorkspaceContext';
 
-import {RunsFilterInput as RunsFilterInputNew} from './RunsFilterInputNew';
+import {useRunsFilterInput as useRunsFilterInputNew} from './RunsFilterInputNew';
 import {
   RunTagKeysQuery,
   RunTagValuesQuery,
@@ -194,7 +194,7 @@ function searchSuggestionsForRuns(
   return suggestions;
 }
 
-interface RunsFilterInputProps {
+export interface RunsFilterInputProps {
   loading?: boolean;
   tokens: RunFilterToken[];
   onChange: (tokens: RunFilterToken[]) => void;
@@ -203,8 +203,12 @@ interface RunsFilterInputProps {
 
 export const RunsFilterInput = (props: RunsFilterInputProps) => {
   const {flagRunsTableFiltering} = useFeatureFlags();
+  const {button, activeFiltersJsx} = useRunsFilterInputNew(props);
   return flagRunsTableFiltering ? (
-    <RunsFilterInputNew {...props} />
+    <div>
+      {button}
+      {activeFiltersJsx}
+    </div>
   ) : (
     <RunsFilterInputImpl {...props} />
   );

@@ -425,6 +425,7 @@ export const RunBulkActionsMenu: React.FC<{
         <Button
           disabled={disabled || selected.length === 0}
           rightIcon={<Icon name="expand_more" />}
+          intent="primary"
         >
           Actions
         </Button>
