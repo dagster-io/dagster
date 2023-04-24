@@ -80,6 +80,9 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
           setFocusedItemIndex(-1);
           setIsOpen(false);
         },
+        clearSearch: () => {
+          setSearch('');
+        },
         createPortal: (portaledElement) => {
           const portalElement = (
             <React.Fragment key={filter.name}>{portaledElement}</React.Fragment>

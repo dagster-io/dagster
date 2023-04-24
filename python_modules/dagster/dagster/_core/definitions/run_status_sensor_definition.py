@@ -133,6 +133,7 @@ class RunStatusSensorContext:
         ] = None,  # deprecated arg, but we need to keep it for backcompat
         resource_defs: Optional[Mapping[str, "ResourceDefinition"]] = None,
         logger: Optional[logging.Logger] = None,
+        partition_key: Optional[str] = None,
     ) -> None:
         self._exit_stack = ExitStack()
         self._sensor_name = check.str_param(sensor_name, "sensor_name")
@@ -140,6 +141,7 @@ class RunStatusSensorContext:
         self._dagster_event = check.inst_param(dagster_event, "dagster_event", DagsterEvent)
         self._instance = check.inst_param(instance, "instance", DagsterInstance)
         self._logger: Optional[logging.Logger] = logger or (context.log if context else None)
+        self._partition_key = check.opt_str_param(partition_key, "partition_key")
 
         # Wait to set resources unless they're accessed
         self._resource_defs = resource_defs
@@ -154,6 +156,7 @@ class RunStatusSensorContext:
             dagster_event=self._dagster_event,
             instance=self._instance,
             logger=self._logger,
+            partition_key=self._partition_key,
         )
 
     @property
@@ -227,6 +230,11 @@ class RunStatusSensorContext:
 
         return self._logger
 
+    @public
+    @property
+    def partition_key(self) -> Optional[str]:
+        return self._partition_key
+
     @property
     def pipeline_run(self) -> DagsterRun:
         warnings.warn(
@@ -265,6 +273,7 @@ def build_run_status_sensor_context(
     dagster_run: DagsterRun,
     context: Optional[SensorEvaluationContext] = None,
     resources: Optional[Mapping[str, object]] = None,
+    partition_key: Optional[str] = None,
 ) -> RunStatusSensorContext:
     """Builds run status sensor context from provided parameters.
 
@@ -306,6 +315,7 @@ def build_run_status_sensor_context(
         dagster_event=dagster_event,
         resource_defs=wrap_resources_for_execution(resources),
         logger=context.log if context else None,
+        partition_key=partition_key,
     )
 
 
@@ -706,6 +716,7 @@ class RunStatusSensorDefinition(SensorDefinition):
                         instance=context.instance,
                         resource_defs=context.resource_defs,
                         logger=context.log,
+                        partition_key=pipeline_run.tags.get("dagster/partition"),
                     ) as sensor_context, user_code_error_boundary(
                         RunStatusSensorExecutionError,
                         lambda: f'Error occurred during the execution sensor "{name}".',

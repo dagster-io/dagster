@@ -366,6 +366,7 @@ export const RunBulkActionsMenu: React.FC<{
   return (
     <>
       <Popover
+        disabled={disabled || selected.length === 0}
         content={
           <Menu>
             {canTerminateAny ? (

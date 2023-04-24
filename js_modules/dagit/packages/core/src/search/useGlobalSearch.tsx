@@ -1,5 +1,4 @@
 import {gql, useLazyQuery} from '@apollo/client';
-import Fuse from 'fuse.js';
 import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
@@ -8,21 +7,15 @@ import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 import {workspacePath} from '../workspace/workspacePath';
 
+import {WorkerSearchResult, createSearchWorker} from './createSearchWorker';
 import {SearchResult, SearchResultType} from './types';
-import {SearchBootstrapQuery, SearchSecondaryQuery} from './types/useRepoSearch.types';
+import {SearchPrimaryQuery, SearchSecondaryQuery} from './types/useGlobalSearch.types';
 
-const fuseOptions = {
-  keys: ['label', 'segments', 'tags', 'type'],
-  limit: 10,
-  threshold: 0.5,
-  useExtendedSearch: true,
-};
-
-const bootstrapDataToSearchResults = (input: {data?: SearchBootstrapQuery}) => {
+const primaryDataToSearchResults = (input: {data?: SearchPrimaryQuery}) => {
   const {data} = input;
 
   if (!data?.workspaceOrError || data?.workspaceOrError?.__typename !== 'Workspace') {
-    return new Fuse([]);
+    return [];
   }
 
   const {locationEntries} = data.workspaceOrError;
@@ -139,16 +132,17 @@ const bootstrapDataToSearchResults = (input: {data?: SearchBootstrapQuery}) => {
     ];
   }, [] as SearchResult[]);
 
-  return new Fuse(allEntries, fuseOptions);
+  return allEntries;
 };
 
-const secondaryDataToSearchResults = (data?: SearchSecondaryQuery) => {
+const secondaryDataToSearchResults = (input: {data?: SearchSecondaryQuery}) => {
+  const {data} = input;
   if (!data?.assetsOrError || data.assetsOrError.__typename === 'PythonError') {
-    return new Fuse([]);
+    return [];
   }
 
   const {nodes} = data.assetsOrError;
-  const allEntries = nodes.map(({key}) => {
+  return nodes.map(({key}) => {
     return {
       label: displayNameForAssetKey(key),
       href: assetDetailsPathForKey(key),
@@ -157,51 +151,90 @@ const secondaryDataToSearchResults = (data?: SearchSecondaryQuery) => {
       type: SearchResultType.Asset,
     };
   });
-
-  return new Fuse(allEntries, fuseOptions);
 };
 
-export const useRepoSearch = () => {
-  const [
-    performBootstrapQuery,
-    {data: bootstrapData, loading: bootstrapLoading},
-  ] = useLazyQuery<SearchBootstrapQuery>(SEARCH_BOOTSTRAP_QUERY);
+const fuseOptions = {
+  keys: ['label', 'segments', 'tags', 'type'],
+  threshold: 0.3,
+  useExtendedSearch: true,
+};
 
-  const [
-    performSecondaryQuery,
-    {data: secondaryData, loading: secondaryLoading, called: secondaryQueryCalled},
-  ] = useLazyQuery<SearchSecondaryQuery>(SEARCH_SECONDARY_QUERY);
+const EMPTY_RESPONSE = {queryString: '', results: []};
 
-  const bootstrapFuse = React.useMemo(() => bootstrapDataToSearchResults({data: bootstrapData}), [
-    bootstrapData,
-  ]);
-  const secondaryFuse = React.useMemo(() => secondaryDataToSearchResults(secondaryData), [
-    secondaryData,
-  ]);
-  const loading = bootstrapLoading || secondaryLoading;
-  const performSearch = React.useCallback(
-    (queryString: string, buildSecondary?: boolean): Fuse.FuseResult<SearchResult>[] => {
-      if ((queryString || buildSecondary) && !secondaryQueryCalled) {
-        performSecondaryQuery();
+/**
+ * Perform global search populated by two lazy queries, to be initialized upon some
+ * interaction with the search input. Each query result list is packaged and sent to a worker
+ * thread, where we use Fuse.js to respond to querystring searches with matching results.
+ *
+ * This is done in separate queries so that we can provide results quickly for objects
+ * that are already most likely fetched in the app, via the "primary" query.
+ *
+ * Since the queries use our default fetchPolicy of `cache-and-network`, reopening search
+ * will show cached results that can be searched, and the queries will be repeated.
+ * When they are complete, the workers will be updated with the fresh data.
+ *
+ * A `terminate` function is provided, but it's probably not necessary to use it.
+ */
+export const useGlobalSearch = () => {
+  const primarySearch = React.useRef<WorkerSearchResult>();
+  const secondarySearch = React.useRef<WorkerSearchResult>();
+
+  const primary = useLazyQuery<SearchPrimaryQuery>(SEARCH_PRIMARY_QUERY, {
+    onCompleted: (data: SearchPrimaryQuery) => {
+      const results = primaryDataToSearchResults({data});
+      if (!primarySearch.current) {
+        primarySearch.current = createSearchWorker('primary', fuseOptions);
       }
-      const bootstrapResults: Fuse.FuseResult<SearchResult>[] = bootstrapFuse.search(queryString);
-      const secondaryResults: Fuse.FuseResult<SearchResult>[] = secondaryFuse.search(queryString);
-      return [...bootstrapResults, ...secondaryResults];
+      primarySearch.current.update(results);
     },
-    [bootstrapFuse, secondaryFuse, performSecondaryQuery, secondaryQueryCalled],
-  );
+  });
 
-  return {performBootstrapQuery, loading, performSearch};
+  const secondary = useLazyQuery<SearchSecondaryQuery>(SEARCH_SECONDARY_QUERY, {
+    onCompleted: (data: SearchSecondaryQuery) => {
+      const results = secondaryDataToSearchResults({data});
+      if (!secondarySearch.current) {
+        secondarySearch.current = createSearchWorker('secondary', fuseOptions);
+      }
+      secondarySearch.current.update(results);
+    },
+  });
+
+  const [performPrimaryLazyQuery, primaryResult] = primary;
+  const [performSecondaryLazyQuery, secondaryResult] = secondary;
+
+  const initialize = React.useCallback(async () => {
+    performPrimaryLazyQuery();
+    performSecondaryLazyQuery();
+  }, [performPrimaryLazyQuery, performSecondaryLazyQuery]);
+
+  const searchPrimary = React.useCallback(async (queryString: string) => {
+    return primarySearch.current ? primarySearch.current.search(queryString) : EMPTY_RESPONSE;
+  }, []);
+
+  const searchSecondary = React.useCallback(async (queryString: string) => {
+    return secondarySearch.current ? secondarySearch.current.search(queryString) : EMPTY_RESPONSE;
+  }, []);
+
+  const terminate = React.useCallback(() => {
+    primarySearch.current?.terminate();
+    secondarySearch.current?.terminate();
+  }, []);
+
+  return {
+    initialize,
+    loading: primaryResult.loading || secondaryResult.loading,
+    searchPrimary,
+    searchSecondary,
+    terminate,
+  };
 };
 
-const SEARCH_BOOTSTRAP_QUERY = gql`
-  query SearchBootstrapQuery {
+export const SEARCH_PRIMARY_QUERY = gql`
+  query SearchPrimaryQuery {
     workspaceOrError {
-      __typename
       ... on Workspace {
         id
         locationEntries {
-          __typename
           id
           locationOrLoadError {
             ... on RepositoryLocation {
@@ -249,10 +282,9 @@ const SEARCH_BOOTSTRAP_QUERY = gql`
   ${PYTHON_ERROR_FRAGMENT}
 `;
 
-const SEARCH_SECONDARY_QUERY = gql`
+export const SEARCH_SECONDARY_QUERY = gql`
   query SearchSecondaryQuery {
     assetsOrError {
-      __typename
       ... on AssetConnection {
         nodes {
           id

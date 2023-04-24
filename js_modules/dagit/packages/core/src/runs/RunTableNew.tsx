@@ -57,45 +57,86 @@ export const RunTable = (props: RunTableProps) => {
     return runs.some((run) => run.hasTerminatePermission || run.hasDeletePermission);
   }, [runs]);
 
-  if (runs.length === 0) {
-    const anyFilter = Object.keys(filter || {}).length;
-    return (
-      <div>
-        <Box border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}>
-          {actionBarComponents ? (
-            <ActionBar top={actionBarComponents} bottom={belowActionBarComponents} />
-          ) : null}
-        </Box>
-        <Box margin={{vertical: 32}}>
-          {anyFilter ? (
-            <NonIdealState
-              icon="run"
-              title="No matching runs"
-              description="No runs were found for this filter."
-            />
-          ) : (
-            <NonIdealState
-              icon="run"
-              title="No runs found"
-              description={
-                <Box flex={{direction: 'column', gap: 12}}>
-                  <div>You have not launched any runs yet.</div>
-                  <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
-                    <AnchorButton icon={<Icon name="add_circle" />} to="/overview/jobs">
-                      Launch a run
-                    </AnchorButton>
-                    <span>or</span>
-                    <AnchorButton icon={<Icon name="materialization" />} to="/asset-groups">
-                      Materialize an asset
-                    </AnchorButton>
+  function content() {
+    if (runs.length === 0) {
+      const anyFilter = Object.keys(filter || {}).length;
+      return (
+        <div>
+          <Box margin={{vertical: 32}}>
+            {anyFilter ? (
+              <NonIdealState
+                icon="run"
+                title="No matching runs"
+                description="No runs were found for this filter."
+              />
+            ) : (
+              <NonIdealState
+                icon="run"
+                title="No runs found"
+                description={
+                  <Box flex={{direction: 'column', gap: 12}}>
+                    <div>You have not launched any runs yet.</div>
+                    <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
+                      <AnchorButton icon={<Icon name="add_circle" />} to="/overview/jobs">
+                        Launch a run
+                      </AnchorButton>
+                      <span>or</span>
+                      <AnchorButton icon={<Icon name="materialization" />} to="/asset-groups">
+                        Materialize an asset
+                      </AnchorButton>
+                    </Box>
                   </Box>
-                </Box>
-              }
-            />
-          )}
-        </Box>
-      </div>
-    );
+                }
+              />
+            )}
+          </Box>
+        </div>
+      );
+    } else {
+      return (
+        <Table>
+          <thead>
+            <tr>
+              <th style={{width: 42, paddingTop: 0, paddingBottom: 0}}>
+                {canTerminateOrDeleteAny ? (
+                  <Checkbox
+                    indeterminate={checkedIds.size > 0 && checkedIds.size !== runs.length}
+                    checked={checkedIds.size === runs.length}
+                    onChange={(e: React.FormEvent<HTMLInputElement>) => {
+                      if (e.target instanceof HTMLInputElement) {
+                        onToggleAll(e.target.checked);
+                      }
+                    }}
+                  />
+                ) : null}
+              </th>
+              <th style={{width: 90}}>Run ID</th>
+              <th style={{width: 180}}>Created date</th>
+              <th>Target</th>
+              <th style={{width: 160}}>Created by</th>
+              <th style={{width: 120}}>Status</th>
+              <th style={{width: 190}}>Duration</th>
+              {props.additionalColumnHeaders}
+              <th style={{width: 52}} />
+            </tr>
+          </thead>
+          <tbody>
+            {runs.map((run) => (
+              <RunRow
+                canTerminateOrDelete={run.hasTerminatePermission || run.hasDeletePermission}
+                run={run}
+                key={run.id}
+                onAddTag={onAddTag}
+                checked={checkedIds.has(run.id)}
+                additionalColumns={props.additionalColumnsForRow?.(run)}
+                onToggleChecked={onToggleFactory(run.id)}
+                isHighlighted={highlightedIds && highlightedIds.includes(run.id)}
+              />
+            ))}
+          </tbody>
+        </Table>
+      );
+    }
   }
 
   const selectedFragments = runs.filter((run) => checkedIds.has(run.id));
@@ -115,47 +156,7 @@ export const RunTable = (props: RunTableProps) => {
         }
         bottom={belowActionBarComponents}
       />
-      <Table>
-        <thead>
-          <tr>
-            <th style={{width: 42, paddingTop: 0, paddingBottom: 0}}>
-              {canTerminateOrDeleteAny ? (
-                <Checkbox
-                  indeterminate={checkedIds.size > 0 && checkedIds.size !== runs.length}
-                  checked={checkedIds.size === runs.length}
-                  onChange={(e: React.FormEvent<HTMLInputElement>) => {
-                    if (e.target instanceof HTMLInputElement) {
-                      onToggleAll(e.target.checked);
-                    }
-                  }}
-                />
-              ) : null}
-            </th>
-            <th style={{width: 90}}>Run ID</th>
-            <th style={{width: 180}}>Created date</th>
-            <th>Target</th>
-            <th style={{width: 160}}>Created by</th>
-            <th style={{width: 120}}>Status</th>
-            <th style={{width: 190}}>Duration</th>
-            {props.additionalColumnHeaders}
-            <th style={{width: 52}} />
-          </tr>
-        </thead>
-        <tbody>
-          {runs.map((run) => (
-            <RunRow
-              canTerminateOrDelete={run.hasTerminatePermission || run.hasDeletePermission}
-              run={run}
-              key={run.id}
-              onAddTag={onAddTag}
-              checked={checkedIds.has(run.id)}
-              additionalColumns={props.additionalColumnsForRow?.(run)}
-              onToggleChecked={onToggleFactory(run.id)}
-              isHighlighted={highlightedIds && highlightedIds.includes(run.id)}
-            />
-          ))}
-        </tbody>
-      </Table>
+      {content()}
     </>
   );
 };

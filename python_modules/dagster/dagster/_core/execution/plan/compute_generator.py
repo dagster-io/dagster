@@ -276,7 +276,7 @@ def validate_and_coerce_op_result_to_iterator(
                         f"Received instead an object of type {type(element)}."
                     )
                 if result is None and output_def.is_required is False:
-                    context.log.warn(
+                    context.log.warning(
                         'Value "None" returned for non-required output '
                         f'"{output_def.name}" of {context.describe_op()}. '
                         "This value will be passed to downstream "

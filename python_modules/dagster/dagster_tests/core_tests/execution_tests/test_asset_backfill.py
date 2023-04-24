@@ -32,6 +32,7 @@ from dagster_tests.definitions_tests.asset_reconciliation_tests.asset_reconcilia
 )
 from dagster_tests.definitions_tests.asset_reconciliation_tests.exotic_partition_mapping_scenarios import (
     one_asset_self_dependency,
+    root_assets_different_partitions_same_downstream,
     two_assets_in_sequence_fan_in_partitions,
     two_assets_in_sequence_fan_out_partitions,
 )
@@ -109,6 +110,7 @@ scenarios = {
             "2013-01-06-01:00",
         ],
     ),
+    "root_assets_different_partitions": scenario(root_assets_different_partitions_same_downstream),
 }
 
 
@@ -147,6 +149,7 @@ def test_from_asset_partitions_target_subset(
         asset_graph=asset_graph,
         asset_selection=list(asset_graph.all_asset_keys),
         dynamic_partitions_store=MagicMock(),
+        all_partitions=False,
     )
     assert backfill_data.target_subset == AssetGraphSubset.from_asset_partition_set(
         {

@@ -266,6 +266,17 @@ GET_FRESHNESS_INFO = """
     }
 """
 
+GET_AUTO_MATERIALIZE_POLICY = """
+    query AssetNodeQuery {
+        assetNodes {
+            id
+            autoMaterializePolicy {
+                policyType
+            }
+        }
+    }
+"""
+
 GET_ASSET_OBSERVATIONS = """
     query AssetGraphQuery($assetKey: AssetKeyInput!) {
         assetOrError(assetKey: $assetKey) {
@@ -826,7 +837,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
 
         assert result.data
         assert result.data["assetNodes"]
-        assert len(result.data["assetNodes"]) == 2
+        assert len(result.data["assetNodes"]) == 4
         asset_node = result.data["assetNodes"][0]
         assert asset_node["partitionKeys"] and asset_node["partitionKeys"] == [
             "a",
@@ -2062,6 +2073,20 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert result.data["assetNodes"]
 
         snapshot.assert_match(result.data)
+
+    def test_auto_materialize_policy(self, graphql_context: WorkspaceRequestContext):
+        result = execute_dagster_graphql(graphql_context, GET_AUTO_MATERIALIZE_POLICY)
+
+        assert result.data
+        assert result.data["assetNodes"]
+
+        fresh_diamond_bottom = [
+            a
+            for a in result.data["assetNodes"]
+            if a["id"] == 'test.test_repo.["fresh_diamond_bottom"]'
+        ]
+        assert len(fresh_diamond_bottom) == 1
+        assert fresh_diamond_bottom[0]["autoMaterializePolicy"]["policyType"] == "LAZY"
 
 
 class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):

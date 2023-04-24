@@ -96,20 +96,22 @@ class AssetGroup:
         self,
         assets: Sequence[AssetsDefinition],
         source_assets: Optional[Sequence[SourceAsset]] = None,
-        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+        resource_defs: Optional[Mapping[str, Any]] = None,
         executor_def: Optional[ExecutorDefinition] = None,
     ):
+        from dagster._core.execution.build_resources import wrap_resources_for_execution
+
         check.sequence_param(assets, "assets", of_type=AssetsDefinition)
 
         source_assets = check.opt_sequence_param(
             source_assets, "source_assets", of_type=SourceAsset
         )
-        resource_defs = check.opt_mapping_param(
-            resource_defs, "resource_defs", key_type=str, value_type=ResourceDefinition
-        )
-        resource_defs = merge_dicts(
-            {DEFAULT_IO_MANAGER_KEY: default_job_io_manager_with_fs_io_manager_schema},
-            resource_defs,
+        resource_defs = check.opt_mapping_param(resource_defs, "resource_defs", key_type=str)
+        resource_defs = wrap_resources_for_execution(
+            merge_dicts(
+                {DEFAULT_IO_MANAGER_KEY: default_job_io_manager_with_fs_io_manager_schema},
+                resource_defs,
+            )
         )
         executor_def = check.opt_inst_param(executor_def, "executor_def", ExecutorDefinition)
 

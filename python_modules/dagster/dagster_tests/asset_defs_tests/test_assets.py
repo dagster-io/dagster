@@ -34,6 +34,7 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._core.definitions import AssetGroup, AssetIn, SourceAsset, asset, multi_asset
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -137,11 +138,13 @@ def test_retain_freshness_policy():
     )
 
 
-def test_graph_backed_retain_freshness_policy():
+def test_graph_backed_retain_freshness_policy_and_auto_materialize_policy():
     fpa = FreshnessPolicy(maximum_lag_minutes=24.5)
     fpb = FreshnessPolicy(
         maximum_lag_minutes=30.5, cron_schedule="0 0 * * *", cron_schedule_timezone="US/Eastern"
     )
+    ampa = AutoMaterializePolicy.eager()
+    ampb = AutoMaterializePolicy.lazy()
 
     @op
     def foo():
@@ -157,7 +160,9 @@ def test_graph_backed_retain_freshness_policy():
         return bar(f), bar(f), bar(f)
 
     my_graph_asset = AssetsDefinition.from_graph(
-        my_graph, freshness_policies_by_output_name={"a": fpa, "b": fpb}
+        my_graph,
+        freshness_policies_by_output_name={"a": fpa, "b": fpb},
+        auto_materialize_policies_by_output_name={"a": ampa, "b": ampb},
     )
 
     replaced = my_graph_asset.with_attributes(
@@ -170,6 +175,10 @@ def test_graph_backed_retain_freshness_policy():
     assert replaced.freshness_policies_by_key[AssetKey("aa")] == fpa
     assert replaced.freshness_policies_by_key[AssetKey("bb")] == fpb
     assert replaced.freshness_policies_by_key.get(AssetKey("cc")) is None
+
+    assert replaced.auto_materialize_policies_by_key[AssetKey("aa")] == ampa
+    assert replaced.auto_materialize_policies_by_key[AssetKey("bb")] == ampb
+    assert replaced.auto_materialize_policies_by_key.get(AssetKey("cc")) is None
 
 
 def test_retain_metadata_graph():

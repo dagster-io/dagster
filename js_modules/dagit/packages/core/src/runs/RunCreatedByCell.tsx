@@ -44,7 +44,7 @@ export function RunCreatedByCell(props: Props) {
   }
   if (scheduleTag) {
     jsx.push(
-      <Tag icon="calendar" key="schedule">
+      <Tag icon="schedule" key="schedule">
         {scheduleTag.value}
       </Tag>,
     );

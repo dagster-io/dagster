@@ -95,7 +95,7 @@ export function useSuggestionFilter<TValue>({
           }));
       },
 
-      onSelect: async ({value}) => {
+      onSelect: async ({value, clearSearch}) => {
         if (value.final) {
           if (state.includes(value.value)) {
             setState(state.filter((v) => v !== value.value));
@@ -103,6 +103,7 @@ export function useSuggestionFilter<TValue>({
             setState([...state, value.value]);
           }
         } else {
+          clearSearch();
           const result = onSuggestionClicked(value.value);
           if (result) {
             setNextSuggestionsLoading(true);
