@@ -416,7 +416,7 @@ def find_parent_materialized_asset_partitions(
                         )
                     )
                     for child_partition in child_partitions_subset.get_partition_keys():
-                        # we need to see if the child was materialized in the same run, but this is
+                        # we need to see if the child is planned for the same run, but this is
                         # expensive, so we try to avoid doing so in as many situations as possible
                         child_asset_partition = AssetKeyPartitionKey(child, child_partition)
                         if not can_reconcile_fn(child_asset_partition):
