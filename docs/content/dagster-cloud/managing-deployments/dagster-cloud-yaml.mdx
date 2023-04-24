@@ -15,7 +15,7 @@ For [Hybrid Deployments](/dagster-cloud/deployment/hybrid), secrets are also con
 
 ## Where to put the dagster_cloud.yaml file
 
-The dagster_cloud.yaml file should be placed in your dagster project's Github repository root. Below is an example of a file structure from the [Dagster cloud ETL quickstart](https://github.com/dagster-io/dagster/tree/master/examples/quickstart_etl).
+The `dagster_cloud.yaml` file should be placed in your dagster project's Github repository root. Below is an example of a file structure from the [Dagster cloud ETL quickstart](https://github.com/dagster-io/dagster/tree/master/examples/quickstart_etl).
 
 ```shell
 quickstart_etl
@@ -45,7 +45,7 @@ Parameter reference table:
 Example for a single code location:
 
 ```yaml
-#dagster_cloud.yaml
+# dagster_cloud.yaml
 
 locations:
   - location_name: data-eng-pipeline
@@ -67,7 +67,7 @@ locations:
       python_file: ml/ml_model.py
 ```
 
-## Configuring your working directory
+## Working directory
 
 There might be some cases where you want to run your Dagster code from a different directory than the root of your code repository. You can specify the directory you want to run your Dagster code from in the dagster_cloud.yaml file using the `working_directory` option.
 
@@ -105,7 +105,8 @@ locations:
 
 ## Build directory
 
-Setting a build directory is useful if your setup.py or requirements.txt is not at your project root but in a subdirectory. This is common if you have multiple python packages within a single dagster project.
+Setting a build directory is useful if your `setup.py` or `requirements.txt` is in a subdirectory instead of the project root. This is common if you have multiple Python packages within a single Dagster project.
+
 
 The build registry is applicable to hybrid deployments only.
 
@@ -119,7 +120,7 @@ Parameter reference table:
 Example:
 
 ```yaml
-#dagster_cloud.yaml
+# dagster_cloud.yaml
 
 locations:
   - location_name: data-eng-pipeline
@@ -130,7 +131,7 @@ locations:
       registry: your-docker-image-registry/image-name
 ```
 
-## Python Executable
+## Python executable
 
 If you are using Dagster Cloud Serverless, the Python executable to use is specified [here](https://docs.dagster.io/dagster-cloud/deployment/serverless#using-a-different-python-version). For Dagster Cloud Hybrid, the python executable that is installed globally in the image, or the default Python executable on the local system if you use the local agent, will be used. If you want to use a different python executable, you can specify it in the dagster_cloud.yaml file. It might also be useful to have different python executables for different code locations.
 
