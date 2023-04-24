@@ -1,3 +1,4 @@
+import hashlib
 import warnings
 
 import pytest
@@ -317,7 +318,17 @@ def test_asset_group_build_subset_job(job_selection, expected_assets, use_multi,
         if asset_name in expected_assets.split(","):
             # dealing with multi asset
             if output != asset_name:
-                assert result.output_for_node(output.split(".")[0], asset_name)
+                node_def_name = output.split(".")[0]
+                keys_for_node = {AssetKey([*(prefixes or []), c]) for c in node_def_name[:-1]}
+                selected_keys_for_node = keys_for_node.intersection(expected_asset_keys)
+                if selected_keys_for_node != keys_for_node:
+                    node_def_name += (
+                        "_subset_"
+                        + hashlib.md5(
+                            (str(list(sorted(selected_keys_for_node)))).encode()
+                        ).hexdigest()[-5:]
+                    )
+                assert result.output_for_node(node_def_name, asset_name)
             # dealing with regular asset
             else:
                 assert result.output_for_node(output, "result") == value
@@ -403,7 +414,7 @@ def test_subset_cycle_resolution_embed_assets_in_complex_graph():
     result = job.execute_in_process()
 
     assert _all_asset_keys(result) == {AssetKey(x) for x in "a,b,c,d,e,f,g,h,x,y".split(",")}
-    assert result.output_for_node("foo_3", "h") == 12
+    assert result.output_for_node("foo_subset_53118", "h") == 12
 
 
 def test_subset_cycle_resolution_complex():
@@ -474,7 +485,7 @@ def test_subset_cycle_resolution_complex():
     assert _all_asset_keys(result) == {AssetKey(x) for x in "a,b,c,d,e,f,x,y".split(",")}
     assert result.output_for_node("x") == 2
     assert result.output_for_node("y") == 7
-    assert result.output_for_node("foo_3", "f") == 9
+    assert result.output_for_node("foo_subset_e9ef2", "f") == 9
 
 
 def test_subset_cycle_resolution_basic():
@@ -530,10 +541,10 @@ def test_subset_cycle_resolution_basic():
     assert len(list(job.graph.iterate_op_defs())) == 4
 
     result = job.execute_in_process()
-    assert result.output_for_node("foo", "a") == 1
-    assert result.output_for_node("foo_prime", "a_prime") == 2
-    assert result.output_for_node("foo_2", "b") == 3
-    assert result.output_for_node("foo_prime_2", "b_prime") == 4
+    assert result.output_for_node("foo_subset_8e776", "a") == 1
+    assert result.output_for_node("foo_prime_subset_b3f31", "a_prime") == 2
+    assert result.output_for_node("foo_subset_aa707", "b") == 3
+    assert result.output_for_node("foo_prime_subset_52d36", "b_prime") == 4
 
     assert _all_asset_keys(result) == {
         AssetKey("a"),

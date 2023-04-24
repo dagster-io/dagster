@@ -328,7 +328,7 @@ class OpDefinition(NodeDefinition):
             description=description or self.description,
             tags=self.tags,
             required_resource_keys=self.required_resource_keys,
-            code_version=self.version,
+            code_version=self._version,
             retry_policy=self.retry_policy,
         )
 
@@ -462,9 +462,7 @@ class OpDefinition(NodeDefinition):
             and self.config_schema == other.config_schema
             and self.required_resource_keys == other.required_resource_keys
             and self.tags == other.tags
-            and self.version == other.version
             and self.retry_policy == other.retry_policy
-            and self.version == other.version
         )
 
 

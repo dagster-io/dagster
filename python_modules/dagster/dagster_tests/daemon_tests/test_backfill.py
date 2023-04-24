@@ -701,7 +701,7 @@ def test_backfill_with_asset_selection(
         assert run.tags[BACKFILL_ID_TAG] == "backfill_with_asset_selection"
         assert run.tags[PARTITION_NAME_TAG] == partition_name_list[idx]
         assert step_succeeded(instance, run, "foo")
-        assert step_succeeded(instance, run, "reusable")
+        assert step_succeeded(instance, run, "reusable_subset_c6dee")
         assert step_succeeded(instance, run, "bar")
     # selected
     for asset_key in asset_selection:
@@ -815,7 +815,7 @@ def test_pure_asset_backfill(
         assert run.tags[BACKFILL_ID_TAG] == "backfill_with_asset_selection"
         assert run.tags["custom_tag_key"] == "custom_tag_value"
         assert step_succeeded(instance, run, "foo")
-        assert step_succeeded(instance, run, "reusable")
+        assert step_succeeded(instance, run, "reusable_subset_c6dee")
         assert step_succeeded(instance, run, "bar")
     # selected
     for asset_key in asset_selection:
