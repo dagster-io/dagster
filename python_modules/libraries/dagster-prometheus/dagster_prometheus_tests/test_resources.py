@@ -30,6 +30,25 @@ def test_prometheus_counter():
     ).success
 
 
+def test_prometheus_counter_pythonic_res() -> None:
+    @op
+    def prometheus_solid(prometheus: PrometheusResource) -> None:
+        client = prometheus.get_client()
+        c = Counter(
+            "some_counter_seconds",
+            "Description of this counter",
+            registry=client.registry,
+        )
+        c.inc()
+        c.inc(1.6)
+        recorded = client.registry.get_sample_value("some_counter_seconds_total")
+        assert abs(2.6 - recorded) < EPS
+
+    assert wrap_op_in_graph_and_execute(
+        prometheus_solid, run_config=ENV, resources=RESOURCES
+    ).success
+
+
 def test_prometheus_gauge():
     @op(required_resource_keys={"prometheus"})
     def prometheus_solid(context):
