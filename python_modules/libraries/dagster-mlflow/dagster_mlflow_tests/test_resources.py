@@ -14,7 +14,7 @@ import pandas as pd
 import pytest
 from dagster import op
 from dagster._core.definitions.decorators.job_decorator import job
-from dagster_mlflow.resources import MlFlow, mlflow_tracking
+from dagster_mlflow.resources import MlFlowTrackingClient, MLFlowTrackingResource, mlflow_tracking
 
 
 @pytest.fixture
@@ -106,14 +106,14 @@ def test_mlflow_constructor_basic(
     mock_environ_update,
     context,
 ):
-    with patch.object(MlFlow, "_setup") as mock_setup:
-        # Given: a context  passed into the __init__ for MlFlow
-        mlf = MlFlow(context)
+    with patch.object(MlFlowTrackingClient, "_setup") as mock_setup:
+        # Given: a context  passed into the __init__ for MlFlowTrackingClient
+        mlf = MlFlowTrackingClient(context)
         # Then:
         # the _setup() is called once
         mock_setup.assert_called_once()
     # - the mlflow library methods & attributes have been added to the object
-    assert all(hasattr(mlf, attr) for attr in dir(MlFlow) if attr not in ("__name__"))
+    assert all(hasattr(mlf, attr) for attr in dir(MlFlowTrackingClient) if attr not in ("__name__"))
 
     # - the context associated attributes passed have been set
     assert mlf.log == context.log
@@ -146,17 +146,17 @@ def test_mlflow_constructor_basic(
 
 
 def test_mlflow_meta_not_overloading():
-    # Given an MlFlow
+    # Given an MlFlowTrackingClient
     # And: a list of overloaded mlflow methods
     # TODO: find a way to get this list
     over_list = ["log_params"]
     for methods in over_list:
         # then: the function signature is not the same as the mlflow one
-        assert getattr(MlFlow, methods) != getattr(mlflow, methods)
+        assert getattr(MlFlowTrackingClient, methods) != getattr(mlflow, methods)
 
 
 def test_mlflow_meta_overloading():
-    # Given an MlFlow
+    # Given an MlFlowTrackingClient
     # And: a list of inherited mlflow methods
     # TODO: find a way to get this list
     inherited_list = [
@@ -164,14 +164,14 @@ def test_mlflow_meta_overloading():
     ]
 
     for methods in inherited_list:
-        assert getattr(MlFlow, methods) == getattr(mlflow, methods)
+        assert getattr(MlFlowTrackingClient, methods) == getattr(mlflow, methods)
 
 
 @patch("mlflow.start_run")
 def test_start_run(mock_start_run, context):
-    with patch.object(MlFlow, "_setup"):
-        # Given: a context  passed into the __init__ for MlFlow
-        mlf = MlFlow(context)
+    with patch.object(MlFlowTrackingClient, "_setup"):
+        # Given: a context  passed into the __init__ for MlFlowTrackingClient
+        mlf = MlFlowTrackingClient(context)
 
     # When: a run is started
     run_id_1 = str(uuid.uuid4())
@@ -191,9 +191,9 @@ def test_cleanup_on_error(
     context,
     cleanup_mlflow_runs,
 ):
-    with patch.object(MlFlow, "_setup"):
-        # Given: a context  passed into the __init__ for MlFlow
-        mlf = MlFlow(context)
+    with patch.object(MlFlowTrackingClient, "_setup"):
+        # Given: a context  passed into the __init__ for MlFlowTrackingClient
+        mlf = MlFlowTrackingClient(context)
     # When: a run is started
     mlf.start_run()
 
@@ -216,9 +216,9 @@ def test_cleanup_on_error(
 
 @patch("mlflow.set_tags")
 def test_set_all_tags(mock_mlflow_set_tags, context):
-    with patch.object(MlFlow, "_setup"):
-        # Given: a context  passed into the __init__ for MlFlow
-        mlf = MlFlow(context)
+    with patch.object(MlFlowTrackingClient, "_setup"):
+        # Given: a context  passed into the __init__ for MlFlowTrackingClient
+        mlf = MlFlowTrackingClient(context)
     # When all the tags are set
     mlf._set_all_tags()  # noqa: SLF001
 
@@ -238,9 +238,9 @@ def test_set_all_tags(mock_mlflow_set_tags, context):
     "experiment", [None, MagicMock(experiment_id="1"), MagicMock(experiment_id="lol")]
 )
 def test_get_current_run_id(context, experiment, run_df):
-    with patch.object(MlFlow, "_setup"):
+    with patch.object(MlFlowTrackingClient, "_setup"):
         # Given: an initialization of the mlflow object
-        mlf = MlFlow(context)
+        mlf = MlFlowTrackingClient(context)
 
     with patch("mlflow.search_runs", return_value=run_df):
         # when: _get_current_run_id is called
@@ -254,16 +254,16 @@ def test_get_current_run_id(context, experiment, run_df):
 
 @patch("atexit.unregister")
 def test_setup(mock_atexit, context):
-    with patch.object(MlFlow, "_setup"):
-        # Given: a context  passed into the __init__ for MlFlow
-        mlf = MlFlow(context)
+    with patch.object(MlFlowTrackingClient, "_setup"):
+        # Given: a context  passed into the __init__ for MlFlowTrackingClient
+        mlf = MlFlowTrackingClient(context)
 
     with patch.object(
-        MlFlow, "_get_current_run_id", return_value="run_id_mock"
+        MlFlowTrackingClient, "_get_current_run_id", return_value="run_id_mock"
     ) as mock_get_current_run_id, patch.object(
-        MlFlow, "_set_active_run"
+        MlFlowTrackingClient, "_set_active_run"
     ) as mock_set_active_run, patch.object(
-        MlFlow, "_set_all_tags"
+        MlFlowTrackingClient, "_set_all_tags"
     ) as mock_set_all_tags:
         # When _setup is called
         mlf._setup()  # noqa: SLF001
@@ -280,11 +280,11 @@ def test_setup(mock_atexit, context):
 
 @pytest.mark.parametrize("run_id", [None, 0, "12"])
 def test_set_active_run(context, run_id):
-    with patch.object(MlFlow, "_setup"):
-        # Given: a context  passed into the __init__ for MlFlow
-        mlf = MlFlow(context)
+    with patch.object(MlFlowTrackingClient, "_setup"):
+        # Given: a context  passed into the __init__ for MlFlowTrackingClient
+        mlf = MlFlowTrackingClient(context)
 
-    with patch.object(MlFlow, "_start_run") as mock_start_run:
+    with patch.object(MlFlowTrackingClient, "_start_run") as mock_start_run:
         # When _set_active_run is called
         mlf._set_active_run(run_id=run_id)  # noqa: SLF001
 
@@ -306,11 +306,11 @@ def test_set_active_run(context, run_id):
 def test_set_active_run_parent_zero(child_context):
     # Given: a parent_run_id of zero
     child_context.resource_config["parent_run_id"] = 0
-    with patch.object(MlFlow, "_setup"):
-        # Given: a context  passed into the __init__ for MlFlow
-        mlf = MlFlow(child_context)
+    with patch.object(MlFlowTrackingClient, "_setup"):
+        # Given: a context  passed into the __init__ for MlFlowTrackingClient
+        mlf = MlFlowTrackingClient(child_context)
 
-    with patch.object(MlFlow, "_start_run") as mock_start_run:
+    with patch.object(MlFlowTrackingClient, "_start_run") as mock_start_run:
         # And _set_active_run is called with run_id
         mlf._set_active_run(run_id="what-is-an-edge-case")  # noqa: SLF001
         # Then: _start_run_by_id is called with the parent_id
@@ -326,9 +326,9 @@ def test_set_active_run_parent_zero(child_context):
 @patch("mlflow.log_params")
 @pytest.mark.parametrize("num_of_params", (90, 101, 223))
 def test_log_params(mock_log_params, context, num_of_params, string_maker):
-    # Given: init of MlFlow
-    with patch.object(MlFlow, "_setup"):
-        mlf = MlFlow(context)
+    # Given: init of MlFlowTrackingClient
+    with patch.object(MlFlowTrackingClient, "_setup"):
+        mlf = MlFlowTrackingClient(context)
     # And: a set of parameters
     param = {string_maker(5): string_maker(5) for _ in range(num_of_params)}
     # When: log_params is called
@@ -341,8 +341,8 @@ def test_log_params(mock_log_params, context, num_of_params, string_maker):
 @pytest.mark.parametrize("num_of_params", (90, 200))
 def test_chunks(context, num_of_params, string_maker, chunk):
     # Given: init of MLFlow
-    with patch.object(MlFlow, "_setup"):
-        mlf = MlFlow(context)
+    with patch.object(MlFlowTrackingClient, "_setup"):
+        mlf = MlFlowTrackingClient(context)
     # And: a dictionary
     D = {string_maker(5): string_maker(5) for _ in range(num_of_params)}
     # When: dictionary is chunked
@@ -386,6 +386,42 @@ def test_execute_op_with_mlflow_resource():
             }
         },
     )
+    assert result.success
+
+    assert run_id_holder["op1_run_id"] == run_id_holder["op2_run_id"]
+    run = mlflow.get_run(run_id_holder["op1_run_id"])
+    assert run.data.params == params
+    assert set(extra_tags.items()).issubset(run.data.tags.items())
+
+    assert mlflow.get_experiment_by_name("my_experiment")
+
+
+def test_execute_op_with_mlflow_resource_pythonic() -> None:
+    run_id_holder = {}
+
+    params = {"learning_rate": "0.01", "n_estimators": "10"}
+    extra_tags = {"super": "experiment"}
+
+    @op
+    def op1(_, mlflow: MLFlowTrackingResource):
+        with mlflow.get_tracking_client() as client:
+            client.log_params(params)
+            run_id_holder["op1_run_id"] = client.active_run().info.run_id
+
+    @op
+    def op2(_, _arg1, mlflow: MLFlowTrackingResource):
+        with mlflow.get_tracking_client() as client:
+            run_id_holder["op2_run_id"] = client.active_run().info.run_id
+
+    @job(
+        resource_defs={
+            "mlflow": MLFlowTrackingResource(experiment_name="my_experiment", extra_tags=extra_tags)
+        }
+    )
+    def mlf_pipeline():
+        op2(op1())
+
+    result = mlf_pipeline.execute_in_process()
     assert result.success
 
     assert run_id_holder["op1_run_id"] == run_id_holder["op2_run_id"]

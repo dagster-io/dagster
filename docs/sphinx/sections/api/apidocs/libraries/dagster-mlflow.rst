@@ -3,6 +3,8 @@ MLflow (dagster-mlflow)
 
 .. currentmodule:: dagster_mlflow
 
+.. autoclass:: MLFlowTrackingResource
+  
 .. autoconfigurable:: mlflow_tracking
   :annotation: ResourceDefinition
 
