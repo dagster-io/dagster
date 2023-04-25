@@ -1193,6 +1193,10 @@ class GrpcServerProcess:
     ):
         self.port = None
         self.socket = None
+        self._waited = False
+        self._shutdown = False
+        self._heartbeat = heartbeat
+        self._server_process = None
 
         self.loadable_target_origin = check.opt_inst_param(
             loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin
@@ -1200,7 +1204,6 @@ class GrpcServerProcess:
         check.bool_param(force_port, "force_port")
         check.int_param(max_retries, "max_retries")
         check.opt_int_param(max_workers, "max_workers")
-        self._heartbeat = check.bool_param(heartbeat, "heartbeat")
         check.int_param(heartbeat_timeout, "heartbeat_timeout")
         check.invariant(heartbeat_timeout > 0, "heartbeat_timeout must be greater than 0")
         check.opt_str_param(fixed_server_id, "fixed_server_id")
@@ -1250,12 +1253,13 @@ class GrpcServerProcess:
         if server_process is None:
             raise CouldNotStartServerProcess(port=self.port, socket=self.socket)
         else:
-            self.server_process = server_process
+            self._server_process = server_process
 
         self._wait_on_exit = wait_on_exit
 
-        self._waited = False
-        self._shutdown = False
+    @property
+    def server_process(self):
+        return check.not_none(self._server_process)
 
     @property
     def pid(self):
@@ -1276,7 +1280,7 @@ class GrpcServerProcess:
             self.wait()
 
     def shutdown_server(self):
-        if not self._shutdown:
+        if self._server_process and not self._shutdown:
             self._shutdown = True
             if self.server_process.poll() is None:
                 try:
@@ -1285,7 +1289,7 @@ class GrpcServerProcess:
                     pass
 
     def __del__(self):
-        if not self._shutdown and not self._heartbeat:
+        if self._server_process and self._shutdown is False and not self._heartbeat:
             warnings.warn(
                 "GrpcServerProcess without a heartbeat is being destroyed without signalling to the"
                 " server that it should shut down. This may result in server processes living"
@@ -1293,7 +1297,11 @@ class GrpcServerProcess:
                 " contextmanager or call shutdown_server on it."
             )
 
-        if not self._waited and os.getenv("STRICT_GRPC_SERVER_PROCESS_WAIT"):
+        if (
+            self._server_process
+            and not self._waited
+            and os.getenv("STRICT_GRPC_SERVER_PROCESS_WAIT")
+        ):
             warnings.warn(
                 "GrpcServerProcess is being destroyed without waiting for the process to "
                 + "fully terminate. This can cause test instability."
