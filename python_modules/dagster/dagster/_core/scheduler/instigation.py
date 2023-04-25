@@ -33,6 +33,101 @@ class InstigatorStatus(Enum):
     STOPPED = "STOPPED"
 
 
+class DynamicPartitionsAction(Enum):
+    ADDED_PARTITIONS = "ADDED_PARTITIONS"
+    DELETED_PARTITIONS = "DELETED_PARTITIONS"
+    SKIPPED_ADD_PARTITIONS_REQUEST = "SKIPPED_ADD_PARTITIONS_REQUEST"
+    SKIPPED_DELETE_PARTITIONS_REQUEST = "SKIPPED_DELETE_PARTITIONS_REQUEST"
+
+
+class DynamicPartitionsDefinitionAction(
+    NamedTuple(
+        "_DynamicPartitionsDefinitionMutations",
+        [
+            ("partitions_def_name", str),
+            ("added_partitions", Optional[Sequence[str]]),
+            ("deleted_partitions", Optional[Sequence[str]]),
+            ("skipped_add_partitions_request", Optional[Sequence[str]]),
+            ("skipped_delete_partitions_request", Optional[Sequence[str]]),
+        ],
+    )
+):
+    def __new__(
+        cls,
+        partitions_def_name: str,
+        added_partitions: Optional[Sequence[str]] = None,
+        deleted_partitions: Optional[Sequence[str]] = None,
+        skipped_add_partitions_request: Optional[Sequence[str]] = None,
+        skipped_delete_partitions_request: Optional[Sequence[str]] = None,
+    ):
+        return super(DynamicPartitionsDefinitionAction, cls).__new__(
+            cls,
+            check.str_param(partitions_def_name, "partitions_def_name"),
+            check.opt_sequence_param(added_partitions, "added_partitions"),
+            check.opt_sequence_param(deleted_partitions, "deleted_partitions"),
+            check.opt_sequence_param(
+                skipped_add_partitions_request, "skipped_add_partitions_request"
+            ),
+            check.opt_sequence_param(
+                skipped_delete_partitions_request, "skipped_delete_partitions_request"
+            ),
+        )
+
+    def with_added_partitions(
+        self, partition_keys: Sequence[str]
+    ) -> "DynamicPartitionsDefinitionAction":
+        check.list_param(partition_keys, "partition_keys", of_type=str)
+        return DynamicPartitionsDefinitionAction(
+            **merge_dicts(
+                self._asdict(),
+                {"added_partitions": [*(self.added_partitions or []), *partition_keys]},
+            )
+        )
+
+    def with_deleted_partitions(
+        self, partition_keys: Sequence[str]
+    ) -> "DynamicPartitionsDefinitionAction":
+        check.list_param(partition_keys, "partition_keys", of_type=str)
+        return DynamicPartitionsDefinitionAction(
+            **merge_dicts(
+                self._asdict(),
+                {"deleted_partitions": [*(self.deleted_partitions or []), *partition_keys]},
+            )
+        )
+
+    def with_skipped_add_partitions_request(
+        self, partition_keys: Sequence[str]
+    ) -> "DynamicPartitionsDefinitionAction":
+        check.list_param(partition_keys, "partition_keys", of_type=str)
+        return DynamicPartitionsDefinitionAction(
+            **merge_dicts(
+                self._asdict(),
+                {
+                    "skipped_add_partitions_request": [
+                        *(self.skipped_add_partitions_request or []),
+                        *partition_keys,
+                    ]
+                },
+            )
+        )
+
+    def with_skipped_delete_partitions_request(
+        self, partition_keys: Sequence[str]
+    ) -> "DynamicPartitionsDefinitionAction":
+        check.list_param(partition_keys, "partition_keys", of_type=str)
+        return DynamicPartitionsDefinitionAction(
+            **merge_dicts(
+                self._asdict(),
+                {
+                    "skipped_delete_partitions_request": [
+                        *(self.skipped_delete_partitions_request or []),
+                        *partition_keys,
+                    ]
+                },
+            )
+        )
+
+
 @whitelist_for_serdes(old_storage_names={"SensorJobData"})
 class SensorInstigatorData(
     NamedTuple(
@@ -241,6 +336,18 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
     def with_log_key(self, log_key: Sequence[str]) -> "InstigatorTick":
         return self._replace(tick_data=self.tick_data.with_log_key(log_key))
 
+    def with_dynamic_partitions_definition_action(
+        self,
+        partitions_def_name: str,
+        dynamic_partitions_action: DynamicPartitionsAction,
+        partition_keys: Sequence[str],
+    ) -> "InstigatorTick":
+        return self._replace(
+            tick_data=self.tick_data.with_dynamic_partitions_definition_action(
+                partitions_def_name, dynamic_partitions_action, partition_keys
+            )
+        )
+
     @property
     def instigator_origin_id(self) -> str:
         return self.tick_data.instigator_origin_id
@@ -340,6 +447,10 @@ class TickData(
             ("failure_count", int),
             ("selector_id", Optional[str]),
             ("log_key", Optional[List[str]]),
+            (
+                "dynamic_partitions_definitions_actions",
+                Optional[Sequence[DynamicPartitionsDefinitionAction]],
+            ),
         ],
     )
 ):
@@ -360,6 +471,8 @@ class TickData(
         origin_run_ids (List[str]): The runs originated from the schedule/sensor.
         failure_count (int): The number of times this tick has failed. If the status is not
             FAILED, this is the number of previous failures before it reached the current state.
+        TODO update docstring
+
     """
 
     def __new__(
@@ -378,6 +491,9 @@ class TickData(
         failure_count: Optional[int] = None,
         selector_id: Optional[str] = None,
         log_key: Optional[List[str]] = None,
+        dynamic_partitions_definitions_actions: Optional[
+            Sequence[DynamicPartitionsDefinitionAction]
+        ] = None,
     ):
         _validate_tick_args(instigator_type, status, run_ids, error, skip_reason)
         check.opt_list_param(log_key, "log_key", of_type=str)
@@ -397,6 +513,11 @@ class TickData(
             failure_count=check.opt_int_param(failure_count, "failure_count", 0),
             selector_id=check.opt_str_param(selector_id, "selector_id"),
             log_key=log_key,
+            dynamic_partitions_definitions_actions=check.opt_sequence_param(
+                dynamic_partitions_definitions_actions,
+                "dynamic_partitions_definitions_actions",
+                of_type=DynamicPartitionsDefinitionAction,
+            ),
         )
 
     def with_status(
@@ -479,6 +600,49 @@ class TickData(
             **merge_dicts(
                 self._asdict(),
                 {"log_key": check.list_param(log_key, "log_key", of_type=str)},
+            )
+        )
+
+    def with_dynamic_partitions_definition_action(
+        self,
+        partitions_def_name: str,
+        dynamic_partitions_action: DynamicPartitionsAction,
+        partition_keys: Sequence[str],
+    ):
+        matching_partitions_defs_actions = [
+            def_actions
+            for def_actions in (self.dynamic_partitions_definitions_actions or [])
+            if def_actions.partitions_def_name == partitions_def_name
+        ]
+        def_with_new_actions = (
+            next(iter(matching_partitions_defs_actions))
+            if matching_partitions_defs_actions
+            else DynamicPartitionsDefinitionAction(partitions_def_name)
+        )
+
+        if dynamic_partitions_action == DynamicPartitionsAction.ADDED_PARTITIONS:
+            def_with_new_actions = def_with_new_actions.with_added_partitions(partition_keys)
+        elif dynamic_partitions_action == DynamicPartitionsAction.DELETED_PARTITIONS:
+            def_with_new_actions = def_with_new_actions.with_deleted_partitions(partition_keys)
+        elif dynamic_partitions_action == DynamicPartitionsAction.SKIPPED_ADD_PARTITIONS_REQUEST:
+            def_with_new_actions = def_with_new_actions.with_skipped_add_partitions_request(
+                partition_keys
+            )
+        elif dynamic_partitions_action == DynamicPartitionsAction.SKIPPED_DELETE_PARTITIONS_REQUEST:
+            def_with_new_actions = def_with_new_actions.with_skipped_delete_partitions_request(
+                partition_keys
+            )
+
+        new_partitions_defs_actions = [
+            def_actions
+            for def_actions in (self.dynamic_partitions_definitions_actions or [])
+            if def_actions.partitions_def_name != partitions_def_name
+        ] + [def_with_new_actions]
+
+        return TickData(
+            **merge_dicts(
+                self._asdict(),
+                {"dynamic_partitions_definitions_actions": new_partitions_defs_actions},
             )
         )
 
