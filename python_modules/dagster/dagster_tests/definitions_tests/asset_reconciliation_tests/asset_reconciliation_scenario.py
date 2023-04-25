@@ -153,7 +153,7 @@ class AssetReconciliationScenario(NamedTuple):
                 )
 
             else:
-                cursor = AssetReconciliationCursor.empty()
+                cursor = AssetReconciliationCursor.empty(instance)
 
         start = datetime.datetime.now()
 

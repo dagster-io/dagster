@@ -64,11 +64,12 @@ class AssetDaemon(IntervalDaemon):
             {CURSOR_KEY, ASSET_DAEMON_PAUSED_KEY}
         )
         raw_cursor = persisted_info.get(CURSOR_KEY)
-        cursor = (
-            AssetReconciliationCursor.from_serialized(raw_cursor, asset_graph)
-            if raw_cursor
-            else AssetReconciliationCursor.empty()
-        )
+
+        if raw_cursor:
+            cursor = AssetReconciliationCursor.from_serialized(raw_cursor, asset_graph)
+        else:
+            self._logger.info("No cursor for auto materializing. Starting from the latest event")
+            cursor = AssetReconciliationCursor.empty(instance)
 
         run_requests, new_cursor = reconcile(
             asset_graph=asset_graph,

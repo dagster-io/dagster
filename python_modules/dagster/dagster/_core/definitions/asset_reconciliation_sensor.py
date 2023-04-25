@@ -247,9 +247,9 @@ class AssetReconciliationCursor(NamedTuple):
         )
 
     @classmethod
-    def empty(cls) -> "AssetReconciliationCursor":
+    def empty(cls, instance: "DagsterInstance") -> "AssetReconciliationCursor":
         return AssetReconciliationCursor(
-            latest_storage_id=None,
+            latest_storage_id=instance.event_log_storage.get_maximum_record_id(),
             materialized_or_requested_root_partitions_by_asset_key={},
             materialized_or_requested_root_asset_keys=set(),
         )
@@ -1069,7 +1069,7 @@ def build_asset_reconciliation_sensor(
         cursor = (
             AssetReconciliationCursor.from_serialized(context.cursor, asset_graph)
             if context.cursor
-            else AssetReconciliationCursor.empty()
+            else AssetReconciliationCursor.empty(context.instance)
         )
 
         # if there is a auto materialize policy set in the selection, filter down to that. Otherwise, use the
