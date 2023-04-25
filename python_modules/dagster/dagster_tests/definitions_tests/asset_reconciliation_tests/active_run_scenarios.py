@@ -34,7 +34,7 @@ def create_materialization_event_log_entry(
     asset_key: AssetKey, partition: Optional[str] = None, run_id: str = "1"
 ) -> EventLogEntry:
     return EventLogEntry(
-        pipeline_name=DEFAULT_JOB_NAME,
+        job_name=DEFAULT_JOB_NAME,
         run_id="1",
         error_info=None,
         level="INFO",
@@ -42,7 +42,7 @@ def create_materialization_event_log_entry(
         timestamp=datetime.datetime.now().timestamp(),
         dagster_event=DagsterEvent(
             event_type_value="ASSET_MATERIALIZATION",
-            pipeline_name=DEFAULT_JOB_NAME,
+            job_name=DEFAULT_JOB_NAME,
             event_specific_data=StepMaterializationData(
                 materialization=AssetMaterialization(asset_key=asset_key, partition=partition)
             ),
@@ -58,7 +58,7 @@ active_run_scenarios = {
         # manually populate entries here to create an in-progress run for both daily assets
         dagster_runs=[
             DagsterRun(
-                pipeline_name=DEFAULT_JOB_NAME,
+                job_name=DEFAULT_JOB_NAME,
                 run_id="1",
                 status=DagsterRunStatus.STARTED,
                 asset_selection={AssetKey("upstream_daily"), AssetKey("downstream_daily")},

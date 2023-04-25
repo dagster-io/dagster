@@ -64,10 +64,10 @@ baz_partitions = StaticPartitionsDefinition(list(string.ascii_lowercase))
 
 baz_config = PartitionedConfig(
     partitions_def=baz_partitions,
-    run_config_for_partition_fn=lambda partition: {
-        "ops": {"do_input": {"inputs": {"x": {"value": partition.value}}}}
+    run_config_for_partition_key_fn=lambda key: {
+        "ops": {"do_input": {"inputs": {"x": {"value": key}}}}
     },
-    tags_for_partition_fn=lambda _partition: {"foo": "bar"},
+    tags_for_partition_key_fn=lambda _partition: {"foo": "bar"},
 )
 
 

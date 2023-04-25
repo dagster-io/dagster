@@ -415,9 +415,10 @@ def get_partition_config(
                 PartitionExecutionError,
                 lambda: f"Error occurred during the evaluation of the `run_config_for_partition` function for partition set {partition_set_name}",
             ):
-                run_config = partitioned_config.get_run_config_for_partition_key(
+                partitions_def.validate_partition_key(
                     partition_key, dynamic_partitions_store=instance
                 )
+                run_config = partitioned_config.get_run_config_for_partition_key(partition_key)
                 return ExternalPartitionConfigData(name=partition_key, run_config=run_config)
     except Exception:
         return ExternalPartitionExecutionErrorData(
@@ -468,8 +469,11 @@ def get_partition_tags(
                 PartitionExecutionError,
                 lambda: f"Error occurred during the evaluation of the `tags_for_partition` function for partitioned config on job '{job_def.name}'",
             ):
+                partitions_def.validate_partition_key(
+                    partition_name, dynamic_partitions_store=instance
+                )
                 tags = partitioned_config.get_tags_for_partition_key(
-                    partition_name, job_name=job_def.name, dynamic_partitions_store=instance
+                    partition_name, job_name=job_def.name
                 )
                 return ExternalPartitionTagsData(name=partition_name, tags=tags)
 
@@ -526,32 +530,26 @@ def get_partition_set_execution_param_data(
                 PartitionExecutionError,
                 lambda: f"Error occurred during the partition generation for partitioned config on job '{job_def.name}'",
             ):
-                all_partitions = partitions_def.get_partitions(dynamic_partitions_store=instance)
-                partitions = [
-                    partition for partition in all_partitions if partition.name in partition_names
-                ]
+                all_partition_keys = partitions_def.get_partition_keys(
+                    dynamic_partitions_store=instance
+                )
+                partition_keys = [key for key in all_partition_keys if key in partition_names]
 
             partition_data = []
-            for partition in partitions:
+            for key in partition_keys:
 
                 def _error_message_fn(partition_name: str):
                     return (
                         lambda: f"Error occurred during the partition config and tag generation for '{partition_name}' in partitioned config on job '{job_def.name}'"
                     )
 
-                with user_code_error_boundary(
-                    PartitionExecutionError, _error_message_fn(partition.name)
-                ):
-                    run_config = partitioned_config.get_run_config_for_partition_key(
-                        partition.name, instance
-                    )
-                    tags = partitioned_config.get_tags_for_partition_key(
-                        partition.name, instance, job_name=job_def.name
-                    )
+                with user_code_error_boundary(PartitionExecutionError, _error_message_fn(key)):
+                    run_config = partitioned_config.get_run_config_for_partition_key(key)
+                    tags = partitioned_config.get_tags_for_partition_key(key, job_name=job_def.name)
 
                 partition_data.append(
                     ExternalPartitionExecutionParamData(
-                        name=partition.name,
+                        name=key,
                         tags=tags,
                         run_config=run_config,
                     )

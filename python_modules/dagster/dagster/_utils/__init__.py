@@ -734,3 +734,7 @@ def normalize_to_repository(
         return repository
     else:
         return None
+
+
+def xor(a, b):
+    return bool(a) != bool(b)

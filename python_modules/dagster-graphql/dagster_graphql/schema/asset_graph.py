@@ -386,12 +386,9 @@ class GrapheneAssetNode(graphene.ObjectType):
                         start_idx, end_idx
                     )
                 else:
-                    return [
-                        partition.name
-                        for partition in partitions_def_data.get_partitions_definition().get_partitions(
-                            dynamic_partitions_store=self._dynamic_partitions_loader
-                        )
-                    ]
+                    return partitions_def_data.get_partitions_definition().get_partition_keys(
+                        dynamic_partitions_store=self._dynamic_partitions_loader
+                    )
             elif isinstance(partitions_def_data, ExternalDynamicPartitionsDefinitionData):
                 return self._dynamic_partitions_loader.get_dynamic_partitions(
                     partitions_def_name=partitions_def_data.name
