@@ -81,7 +81,7 @@ For example, the connection ID for the URL `https://cloud.airbyte.com/workspaces
   />
 </center>
 
-Then, supply the connection ID and the list of tables which the connection creates in the destination to `build_airbyte_assets`. This utility will generate a set of software-defined-assets corresponding to the tables which Airbyte creates in the destination.
+Then, supply the connection ID and the list of tables which the connection creates in the destination to `build_airbyte_assets`. This utility will generate a set of software-defined assets corresponding to the tables which Airbyte creates in the destination.
 
 ```python startafter=start_manually_define_airbyte_assets_cloud endbefore=end_manually_define_airbyte_assets_cloud file=/integrations/airbyte/airbyte.py dedent=4
 from dagster_airbyte import build_airbyte_assets
