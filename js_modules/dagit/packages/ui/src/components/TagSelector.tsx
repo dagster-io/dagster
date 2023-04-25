@@ -1,5 +1,5 @@
+import {useVirtualizer} from '@tanstack/react-virtual';
 import React from 'react';
-import {List} from 'react-virtualized';
 import styled from 'styled-components/macro';
 
 import {Box} from './Box';
@@ -10,6 +10,7 @@ import {MenuItem, Menu} from './Menu';
 import {Popover} from './Popover';
 import {Tag} from './Tag';
 import {TextInput, TextInputStyles} from './TextInput';
+import {Container as VirtualContainer, Inner, Row} from './VirtualizedTable';
 import {useViewport} from './useViewport';
 
 export type TagSelectorTagProps = {
@@ -92,36 +93,50 @@ export const TagSelector = ({
   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
   const {viewport, containerProps} = useViewport();
 
+  const parentRef = React.useRef<HTMLDivElement | null>(null);
+  const rowVirtualizer = useVirtualizer({
+    count: allTags.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: (_) => rowHeight,
+    overscan: 10,
+  });
+
+  const totalHeight = rowVirtualizer.getTotalSize();
+  const items = rowVirtualizer.getVirtualItems();
+
   const dropdown = React.useMemo(() => {
     const dropdownContent = (
-      <Box
+      <VirtualContainer
+        ref={parentRef}
         style={{
-          maxHeight: '500px',
+          maxHeight: '300px',
           overflowY: 'auto',
           ...dropdownStyles,
         }}
       >
-        <List
-          style={{outline: 'none', marginRight: -5, paddingRight: 5}}
-          rowCount={allTags.length}
-          rowHeight={rowHeight}
-          rowRenderer={(a) => {
-            const tag = allTags[a.index]!;
-            const selected = selectedTags.includes(tag);
-            const toggle = () => {
-              setSelectedTags(
-                selected ? selectedTags.filter((t) => t !== tag) : [...selectedTags, tag],
-              );
-            };
-            if (renderDropdownItem) {
-              return <div key={tag}>{renderDropdownItem(tag, {toggle, selected})}</div>;
+        <Inner $totalHeight={totalHeight}>
+          {items.map(({index, start, end}) => {
+            const tag = allTags[index]!;
+            function content() {
+              const selected = selectedTags.includes(tag);
+              const toggle = () => {
+                setSelectedTags(
+                  selected ? selectedTags.filter((t) => t !== tag) : [...selectedTags, tag],
+                );
+              };
+              if (renderDropdownItem) {
+                return <div>{renderDropdownItem(tag, {toggle, selected})}</div>;
+              }
+              return defaultRenderDropdownItem(tag, {toggle, selected});
             }
-            return defaultRenderDropdownItem(tag, {toggle, selected});
-          }}
-          width={viewport.width}
-          height={Math.min(allTags.length * rowHeight, rowHeight * 7.5)}
-        />
-      </Box>
+            return (
+              <Row key={tag} $height={end - start} $start={start}>
+                {content()}
+              </Row>
+            );
+          })}
+        </Inner>
+      </VirtualContainer>
     );
     if (renderDropdown) {
       return renderDropdown(dropdownContent, {width: viewport.width + 'px', allTags});
@@ -130,11 +145,12 @@ export const TagSelector = ({
   }, [
     allTags,
     dropdownStyles,
+    items,
     renderDropdown,
     renderDropdownItem,
-    rowHeight,
     selectedTags,
     setSelectedTags,
+    totalHeight,
     viewport.width,
   ]);
 
