@@ -82,7 +82,7 @@ def scope_manually_define_airbyte_assets():
 
     airbyte_assets = build_airbyte_assets(
         connection_id="87b7fe85-a22c-420e-8d74-b30e7ede77df",
-        destination_tables=["releases", "tags", "teams"],
+        destination_tables=["releases", "tags", "teams", "stargazers"],
     )
     # end_manually_define_airbyte_assets
 
@@ -111,7 +111,7 @@ def scope_airbyte_manual_config():
     airbyte_assets = with_resources(
         build_airbyte_assets(
             connection_id="87b7fe85-a22c-420e-8d74-b30e7ede77df",
-            destination_tables=["releases", "tags", "teams"],
+            destination_tables=["releases", "tags", "teams", "stargazers"],
         ),
         # Use the airbyte_instance resource we defined in Step 1
         {"airbyte": airbyte_instance},

@@ -27,11 +27,11 @@ This guide focuses on how to work with Airbyte Cloud connections using Dagster's
 
 ---
 
-## Airbyte connections and Dagster software-defined assets
+## Airbyte Cloud connections and Dagster software-defined assets
 
-An [Airbyte connection](https://docs.airbyte.com/understanding-airbyte/connections/) defines a series of data streams which are synced between a source and a destination. During a sync, a replica of the data from each data stream is written to the destination, typically as one or more tables. Dagster represents each of the replicas generated in the destination as a software-defined asset. This enables you to easily:
+An [Airbyte Cloud connection](https://docs.airbyte.com/understanding-airbyte/connections/) defines a series of data streams which are synced between a source and a destination. During a sync, a replica of the data from each data stream is written to the destination, typically as one or more tables. Dagster represents each of the replicas generated in the destination as a software-defined asset. This enables you to easily:
 
-- Visualize the streams involved in an Airbyte connection and execute a sync from Dagster
+- Visualize the streams involved in an Airbyte Cloud connection and execute a sync from Dagster
 - Define downstream computations which depend on replicas produced by Airbyte
 - Track data lineage through Airbyte and other tools
 
@@ -128,7 +128,7 @@ defs = Definitions(assets=[airbyte_assets], resources={"airbyte": airbyte_instan
 
 Once you have loaded your Airbyte Cloud assets into Dagster, you can create assets which depend on them. These can be other assets pulled in from external sources such as [dbt](/integrations/dbt) or assets defined in Python code.
 
-In this case, we have an Airbyte connection that stores data in our Snowflake warehouse's `stargazers` table. We specify the output [I/O manager](/concepts/io-management/io-managers) to tell downstream assets how to retrieve the data.
+In this case, we have an Airbyte Cloud connection that stores data in our Snowflake warehouse's `stargazers` table. We specify the output [I/O manager](/concepts/io-management/io-managers) to tell downstream assets how to retrieve the data.
 
 ```python startafter=start_add_downstream_assets_cloud endbefore=end_add_downstream_assets_cloud file=/integrations/airbyte/airbyte.py dedent=8
 import json
