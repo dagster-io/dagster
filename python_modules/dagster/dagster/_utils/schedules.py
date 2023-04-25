@@ -1,12 +1,22 @@
 import datetime
+import functools
 from typing import Iterator, Optional, Sequence, Union
 
 import pendulum
 import pytz
-from croniter import croniter
+from croniter import croniter as _croniter
 
 import dagster._check as check
 from dagster._seven.compat.pendulum import to_timezone
+
+
+class croniter(_croniter):
+    """Lightweight shim to enable caching certain values that may be calculated many times."""
+
+    @classmethod
+    @functools.lru_cache(maxsize=128)
+    def expand(cls, *args, **kwargs):
+        return super().expand(*args, **kwargs)
 
 
 def is_valid_cron_string(cron_string: str) -> bool:
@@ -38,23 +48,6 @@ def cron_string_iterator(
     utc_datetime = pytz.utc.localize(datetime.datetime.utcfromtimestamp(start_timestamp))
     start_datetime = utc_datetime.astimezone(pytz.timezone(timezone_str))
 
-    date_iter = croniter(cron_string, start_datetime)
-
-    # Go back one iteration so that the next iteration is the first time that is >= start_datetime
-    # and matches the cron schedule
-    next_date = date_iter.get_prev(datetime.datetime)
-
-    if not croniter.match(cron_string, next_date):
-        # Workaround for upstream croniter bug where get_prev sometimes overshoots to a time
-        # that doesn't actually match the cron string (e.g. 3AM on Spring DST day
-        # goes back to 1AM on the previous day) - when this happens, advance to the correct
-        # time that actually matches the cronstring
-        next_date = date_iter.get_next(datetime.datetime)
-
-    check.invariant(start_offset <= 0)
-    for _ in range(-start_offset):
-        next_date = date_iter.get_prev(datetime.datetime)
-
     cron_parts, nth_weekday_of_month = croniter.expand(cron_string)
 
     is_numeric = [len(part) == 1 and part[0] != "*" for part in cron_parts]
@@ -82,6 +75,27 @@ def cron_string_iterator(
 
     if is_numeric[1]:
         expected_hour = int(cron_parts[1][0])
+
+    date_iter = None
+    if delta_fn is not None and start_offset == 0 and croniter.match(cron_string, start_timestamp):
+        next_date = start_datetime
+    else:
+        date_iter = croniter(cron_string, start_datetime)
+
+        # Go back one iteration so that the next iteration is the first time that is >= start_datetime
+        # and matches the cron schedule
+        next_date = date_iter.get_prev(datetime.datetime)
+
+        if not croniter.match(cron_string, next_date):
+            # Workaround for upstream croniter bug where get_prev sometimes overshoots to a time
+            # that doesn't actually match the cron string (e.g. 3AM on Spring DST day
+            # goes back to 1AM on the previous day) - when this happens, advance to the correct
+            # time that actually matches the cronstring
+            next_date = date_iter.get_next(datetime.datetime)
+
+        check.invariant(start_offset <= 0)
+        for _ in range(-start_offset):
+            next_date = date_iter.get_prev(datetime.datetime)
 
     if delta_fn is not None:
         # Use pendulums for intervals when possible
@@ -122,6 +136,7 @@ def cron_string_iterator(
             yield next_date
     else:
         # Otherwise fall back to croniter
+        date_iter = date_iter or croniter(cron_string, next_date)
         while True:
             next_date = to_timezone(
                 pendulum.instance(date_iter.get_next(datetime.datetime)), timezone_str
