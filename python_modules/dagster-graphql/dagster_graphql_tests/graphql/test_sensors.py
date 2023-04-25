@@ -308,6 +308,11 @@ mutation($selectorData: SensorSelector!, $cursor: String) {
           message
           stack
         }
+        dynamicPartitionRequests {
+          partitionKeys
+          partitionsDefName
+          type
+        }
       }
     }
     ... on SensorNotFoundError {
@@ -435,6 +440,28 @@ class TestSensors(NonLaunchableGraphQLContextTestMatrix):
         assert evaluation_result["runRequests"][0]["runConfigYaml"] == "{}\n"
         assert evaluation_result["skipReason"] is None
         assert evaluation_result["error"] is None
+        assert not evaluation_result["dynamicPartitionRequests"] is None
+
+    def test_dry_run_with_dynamic_partition_requests(
+        self, graphql_context: WorkspaceRequestContext
+    ):
+        instigator_selector = infer_sensor_selector(
+            graphql_context, "dynamic_partition_requesting_sensor"
+        )
+        result = execute_dagster_graphql(
+            graphql_context,
+            SENSOR_DRY_RUN_MUTATION,
+            variables={"selectorData": instigator_selector, "cursor": "blah"},
+        )
+        assert result.data
+        assert result.data["sensorDryRun"]["__typename"] == "DryRunInstigationTick"
+        evaluation_result = result.data["sensorDryRun"]["evaluationResult"]
+        assert evaluation_result["cursor"] is None
+        assert len(evaluation_result["runRequests"]) == 1
+        assert evaluation_result["runRequests"][0]["runConfigYaml"] == "{}\n"
+        assert evaluation_result["skipReason"] is None
+        assert evaluation_result["error"] is None
+        assert not evaluation_result["dynamicPartitionRequests"] is None
 
     def test_dry_run_failure(self, graphql_context: WorkspaceRequestContext):
         instigator_selector = infer_sensor_selector(graphql_context, "always_error_sensor")
@@ -448,6 +475,7 @@ class TestSensors(NonLaunchableGraphQLContextTestMatrix):
         evaluation_result = result.data["sensorDryRun"]["evaluationResult"]
         assert not evaluation_result["runRequests"]
         assert not evaluation_result["skipReason"]
+        assert not evaluation_result["dynamicPartitionRequests"]
         assert (
             "Error occurred during the execution of evaluation_fn"
             in evaluation_result["error"]["message"]
