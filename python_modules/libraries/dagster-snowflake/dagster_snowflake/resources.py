@@ -284,7 +284,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
 
     @property
     @cached_method
-    def _connection_args(self):
+    def _connection_args(self) -> Mapping[str, Any]:
         conn_args = {
             k: self._resolved_config_dict.get(k)
             for k in (
@@ -318,7 +318,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
 
     @property
     @cached_method
-    def _sqlalchemy_connection_args(self):
+    def _sqlalchemy_connection_args(self) -> Mapping[str, Any]:
         conn_args: Dict[str, Any] = {
             k: self._resolved_config_dict.get(k)
             for k in (
@@ -339,7 +339,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
 
     @property
     @cached_method
-    def _sqlalchemy_engine_args(self):
+    def _sqlalchemy_engine_args(self) -> Mapping[str, Any]:
         config = self._resolved_config_dict
         sqlalchemy_engine_args = {}
         if (
@@ -348,6 +348,8 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
         ):
             # sqlalchemy passes private key args separately, so store them in a new dict
             sqlalchemy_engine_args["private_key"] = self._snowflake_private_key(config)
+
+        return sqlalchemy_engine_args
 
     def _snowflake_private_key(self, config) -> bytes:
         private_key = config.get("private_key", None)

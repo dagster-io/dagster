@@ -11,7 +11,6 @@ from dagster import (
     AssetKey,
     DailyPartitionsDefinition,
     DynamicPartitionsDefinition,
-    EnvVar,
     IOManagerDefinition,
     MetadataValue,
     MultiPartitionKey,
@@ -67,10 +66,7 @@ DATABASE = "TEST_SNOWFLAKE_IO_MANAGER"
 SCHEMA = "SNOWFLAKE_IO_MANAGER_SCHEMA"
 
 pythonic_snowflake_io_manager = SnowflakePandasIOManager(
-    database=DATABASE,
-    account=EnvVar("SNOWFLAKE_ACCOUNT"),
-    user="BUILDKITE",
-    password=EnvVar("SNOWFLAKE_BUILDKITE_PASSWORD"),
+    database=DATABASE, **SHARED_BUILDKITE_SNOWFLAKE_CONF
 )
 old_snowflake_io_manager = snowflake_pandas_io_manager.configured(
     {**SHARED_BUILDKITE_SNOWFLAKE_CONF, "database": DATABASE}
@@ -391,7 +387,7 @@ def test_time_window_partitioned_asset(io_manager):
         assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3"]
 
 
-@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
+# @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
 @pytest.mark.parametrize(
     "io_manager", [(old_snowflake_io_manager), (pythonic_snowflake_io_manager)]
 )
