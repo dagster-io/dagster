@@ -40,9 +40,9 @@ description: Use dagster_cloud.yaml to configure code locations for Dagster Clou
           width: "15%",
         }}
       >
-        <strong>Required?</strong>
+        <strong>Required</strong>
       </td>
-      <td>Optional for Cloud</td>
+      <td>Required for Cloud</td>
     </tr>
     <tr>
       <td
@@ -101,7 +101,7 @@ If your repository contains multiple Dagster projects in subdirectories - otherw
 
 ---
 
-## Settings schema
+## Settings
 
 ### Code locations
 
@@ -178,7 +178,7 @@ locations:
 
 ### Build directory
 
-**Applicable to Hybrid deployments only**. Setting a build directory is useful if your `setup.py` or `requirements.txt` is in a subdirectory instead of the project root. This is common if you have multiple Python packages within a single Dagster project.
+The build registry is applicable to hybrid deployments only. Setting a build directory is useful if your `setup.py` or `requirements.txt` is in a subdirectory instead of the project root. This is common if you have multiple Python packages within a single Dagster project.
 
 In the example below, the docker image for the code location is in the root directory and the registry and image defined.
 
@@ -264,6 +264,42 @@ Refer to the configuration reference for your agent for more info:
       </li>
     </ul>
   </ReferenceTableItem>
+</ReferenceTable>
+
+### Working directory
+
+Use the `working_directory` setting to load Dagster code from a different directory than the root of your code repository. This setting allows you to specify the directory you want to load your code from.
+
+Consider the following project:
+
+```shell
+quickstart_etl
+├── README.md
+├── project_directory
+│   ├── quickstart_etl
+│     ├── __init__.py
+│     ├── assets
+│   ├── quickstart_etl_tests
+├── dagster_cloud.yaml
+├── pyproject.toml
+├── setup.cfg
+└── setup.py
+```
+
+To load from `/project_directory`, the `dagster_cloud.yaml` code location would look like this:
+
+```yaml
+# dagster_cloud.yaml
+
+locations:
+  - location_name: data-eng-pipeline
+    code_source:
+      package_name: quickstart_etl
+    working_directory: ./project_directory
+```
+
+
+<ReferenceTable>
   <ReferenceTableItem propertyName="working_directory">
     The path of the directory that Dagster should load the code source from
     <ul>
@@ -272,6 +308,30 @@ Refer to the configuration reference for your agent for more info:
       </li>
     </ul>
   </ReferenceTableItem>
+</ReferenceTable>
+
+
+### Build
+
+The build registry is applicable to hybrid deployments only. Setting a build directory is useful if your `setup.py` or `requirements.txt` is in a subdirectory instead of the project root. This is common if you have multiple Python packages within a single Dagster project.
+
+In the example below, the docker image for the code location is in the root directory and the registry and image defined.
+
+Example:
+
+```yaml
+# dagster_cloud.yaml
+
+locations:
+  - location_name: data-eng-pipeline
+    code_source:
+      package_name: quickstart_etl
+    build:
+      directory: ./
+      registry: your-docker-image-registry/image-name # e.g. localhost:5000/myimage
+```
+
+<ReferenceTable>
   <ReferenceTableItem propertyName="build.directory">
     The path to the directory in your project that you want to deploy. If there
     are subdirectories, you can specify the path to only deploy a specific
@@ -294,6 +354,28 @@ Refer to the configuration reference for your agent for more info:
       </li>
     </ul>
   </ReferenceTableItem>
+</ReferenceTable>
+
+### Python executable
+
+For Dagster Cloud Hybrid deployments, the Python executable that is installed globally in the image, or the default Python executable on the local system if you use the local agent, will be used. To use a different Python executable, specify it using the python_executable setting. It can be useful to have different Python executables for different code locations.
+
+For Dagster Cloud Serverless deployments, you can specify a different Python version by [following these instructions](https://docs.dagster.io/dagster-cloud/deployment/serverless#using-a-different-python-version).
+
+```yaml
+# dagster_cloud.yaml
+
+locations:
+  - location_name: data-eng-pipeline
+    code_source:
+      package_name: quickstart_etl
+    executable_path: venvs/path/to/dataengineering_spark_team/bin/python
+  - location_name: machine_learning
+    code_source:
+      python_file: ml_model.py
+    executable_path: venvs/path/to/ml_tensorflow/bin/python
+```
+<ReferenceTable>
   <ReferenceTableItem propertyName="executable_path">
     The file path of the Python executable to use
     <ul>
@@ -303,3 +385,14 @@ Refer to the configuration reference for your agent for more info:
     </ul>
   </ReferenceTableItem>
 </ReferenceTable>
+
+### Container context
+
+If using Hybrid deployment, you can define additional configuration options for code locations using the `container_context` parameter. Depending on the Hybrid agent you're using, the configuration settings under `container_context` will vary.
+
+Refer to the configuration reference for your agent for more info:
+
+- [Docker agent configuration reference](/dagster-cloud/deployment/agents/docker/configuration-reference)
+- [Amazon ECS agent configuration reference](/dagster-cloud/deployment/agents/amazon-ecs/configuration-reference)
+- [Kubernetes agent configuration reference](/dagster-cloud/deployment/agents/kubernetes/configuration-reference)
+
