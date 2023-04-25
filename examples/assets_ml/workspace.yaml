@@ -1,0 +1,5 @@
+load_from:
+  - python_module: 
+      module_name: ml_example
+  - python_module: 
+      module_name: ml_example_mlflow
