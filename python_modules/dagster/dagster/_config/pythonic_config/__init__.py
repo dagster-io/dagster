@@ -121,7 +121,7 @@ class MakeConfigCacheable(BaseModel):
         # Avoid pydantic reading a cached property class as part of the schema
         keep_untouched = (cached_property,)
         # Ensure the class is serializable, for caching purposes
-        frozen = False
+        frozen = True
 
     def __setattr__(self, name: str, value: Any):
         # This is a hack to allow us to set attributes on the class that are not part of the
