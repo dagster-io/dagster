@@ -174,7 +174,7 @@ class MakeConfigCacheable(BaseModel):
 
     def _is_field_internal(self, name: str) -> bool:
         return name.endswith(INTERNAL_MARKER)
-    
+
     def _is_field_private(self, name: str) -> bool:
         return name.startswith("_")
 
@@ -792,6 +792,10 @@ class ConfigurableResourceFactory(
             nested_resources={k: v for k, v in resource_pointers.items()},
             resource_context=None,
         )
+        self.__post_init__()
+
+    def __post_init__(self) -> None:
+        pass
 
     @property
     def _schema(self):

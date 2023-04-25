@@ -48,8 +48,12 @@ class PrometheusResource(ConfigurableResource):
         description="is how long delete will attempt to connect before giving up. Defaults to 30s.",
     )
 
-    def __post__init__(self) -> None:
+    def __post_init__(self) -> None:
         self._registry = prometheus_client.CollectorRegistry()
+
+    @property
+    def registry(self) -> prometheus_client.CollectorRegistry:
+        return self._registry
 
     def push_to_gateway(self, job, grouping_key=None, handler=default_handler) -> None:
         """Push metrics to the given pushgateway.

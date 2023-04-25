@@ -33,15 +33,15 @@ def test_prometheus_counter():
 def test_prometheus_counter_pythonic_res() -> None:
     @op
     def prometheus_solid(prometheus: PrometheusResource) -> None:
-        client = prometheus.get_client()
         c = Counter(
             "some_counter_seconds",
             "Description of this counter",
-            registry=client.registry,
+            registry=prometheus.registry,
         )
         c.inc()
         c.inc(1.6)
-        recorded = client.registry.get_sample_value("some_counter_seconds_total")
+        recorded = prometheus.registry.get_sample_value("some_counter_seconds_total")
+        assert recorded
         assert abs(2.6 - recorded) < EPS
 
     assert wrap_op_in_graph_and_execute(
