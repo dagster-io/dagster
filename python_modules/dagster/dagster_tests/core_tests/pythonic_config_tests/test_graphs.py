@@ -296,3 +296,54 @@ def test_graph_asset() -> None:
     assert result.success
     assert result.asset_value("my_graph_asset") == 5
     assert executed == {"my_op": True, "my_other_op": True}
+
+
+def test_nested_graph_no_mapping() -> None:
+    executed = {}
+
+    class MyOpConfig(Config):
+        foo_str: str
+
+    @op
+    def my_op(config: MyOpConfig):
+        assert config.foo_str == "foo"
+        executed["my_op"] = True
+
+    @graph
+    def my_graph():
+        my_op()
+
+    class MyOtherOpConfig(Config):
+        bar_int: int
+
+    @op
+    def my_other_op(config: MyOtherOpConfig):
+        assert config.bar_int == 2
+        executed["my_other_op"] = True
+
+    @graph
+    def my_wrapper_graph():
+        my_graph()
+        my_other_op()
+
+    @job
+    def my_job():
+        my_wrapper_graph()
+
+    assert my_job.execute_in_process(
+        run_config=RunConfig(
+            ops={
+                "my_wrapper_graph": {
+                    "ops": {
+                        "my_graph": {
+                            "ops": {
+                                "my_op": MyOpConfig(foo_str="foo"),
+                            }
+                        },
+                        "my_other_op": MyOtherOpConfig(bar_int=2),
+                    }
+                }
+            }
+        )
+    ).success
+    assert executed == {"my_op": True, "my_other_op": True}
