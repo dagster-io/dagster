@@ -188,7 +188,7 @@ def check_run_timeout(
         except:
             instance.report_engine_event(
                 "Exception while attempting to terminate run. Run will still be marked as failed.",
-                pipeline_name=run_record.dagster_run.job_name,
+                job_name=run_record.dagster_run.job_name,
                 run_id=run_record.dagster_run.run_id,
                 engine_event_data=EngineEventData(
                     error=serializable_error_info_from_exc_info(sys.exc_info()),

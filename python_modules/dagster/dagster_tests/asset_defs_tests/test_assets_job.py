@@ -1391,8 +1391,8 @@ def test_asset_selection_reconstructable():
         warnings.simplefilter("ignore", category=ExperimentalWarning)
         warnings.simplefilter("ignore", category=DeprecationWarning)
         with instance_for_test() as instance:
-            run = instance.create_run_for_pipeline(
-                pipeline_def=my_job, asset_selection=frozenset([AssetKey("f")])
+            run = instance.create_run_for_job(
+                job_def=my_job, asset_selection=frozenset([AssetKey("f")])
             )
             reconstructable_foo_job = build_reconstructable_job(
                 "dagster_tests.asset_defs_tests.test_assets_job",
@@ -1402,7 +1402,7 @@ def test_asset_selection_reconstructable():
             ).subset_for_execution(asset_selection=frozenset([AssetKey("f")]))
 
             events = list(execute_run_iterator(reconstructable_foo_job, run, instance=instance))
-            assert len([event for event in events if event.is_pipeline_success]) == 1
+            assert len([event for event in events if event.is_job_success]) == 1
 
             materialization_planned = list(
                 instance.get_event_records(

@@ -305,10 +305,8 @@ def test_dagit_logs(_, caplog):
                     repo_hash = metadata.get("repo_hash")
 
                     assert repo_hash in expected_repo_stats
-                    expected_num_pipelines_in_repo = expected_repo_stats.get(repo_hash)
-                    assert metadata.get("num_pipelines_in_repo") == str(
-                        expected_num_pipelines_in_repo
-                    )
+                    expected_num_jobs_in_repo = expected_repo_stats.get(repo_hash)
+                    assert metadata.get("num_pipelines_in_repo") == str(expected_num_jobs_in_repo)
 
                 assert set(message.keys()) == set(
                     [

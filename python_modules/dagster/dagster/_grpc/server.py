@@ -27,7 +27,7 @@ from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.host_representation.external_data import (
     ExternalRepositoryErrorData,
-    external_pipeline_data_from_def,
+    external_job_data_from_def,
     external_repository_data_from_def,
 )
 from dagster._core.host_representation.origin import ExternalRepositoryOrigin
@@ -66,17 +66,17 @@ from .types import (
     CanCancelExecutionResult,
     CancelExecutionRequest,
     CancelExecutionResult,
-    ExecuteExternalPipelineArgs,
+    ExecuteExternalJobArgs,
     ExecutionPlanSnapshotArgs,
     ExternalScheduleExecutionArgs,
     GetCurrentImageResult,
     GetCurrentRunsResult,
+    JobSubsetSnapshotArgs,
     ListRepositoriesResponse,
     LoadableRepositorySymbol,
     PartitionArgs,
     PartitionNamesArgs,
     PartitionSetExecutionParamArgs,
-    PipelineSubsetSnapshotArgs,
     SensorExecutionArgs,
     ShutdownServerResult,
     StartRunResult,
@@ -387,10 +387,8 @@ class DagsterApiServer(DagsterApiServicer):
         )
 
         execution_plan_snapshot_or_error = get_external_execution_plan_snapshot(
-            self._get_repo_for_origin(
-                execution_plan_args.pipeline_origin.external_repository_origin
-            ),
-            execution_plan_args.pipeline_origin.pipeline_name,
+            self._get_repo_for_origin(execution_plan_args.job_origin.external_repository_origin),
+            execution_plan_args.job_origin.job_name,
             execution_plan_args,
         )
         return api_pb2.ExecutionPlanSnapshotReply(
@@ -500,20 +498,20 @@ class DagsterApiServer(DagsterApiServicer):
     def ExternalPipelineSubsetSnapshot(
         self, request: Any, _context
     ) -> api_pb2.ExternalPipelineSubsetSnapshotReply:  # type: ignore
-        pipeline_subset_snapshot_args = deserialize_value(
+        job_subset_snapshot_args = deserialize_value(
             request.serialized_pipeline_subset_snapshot_args,
-            PipelineSubsetSnapshotArgs,
+            JobSubsetSnapshotArgs,
         )
 
         return api_pb2.ExternalPipelineSubsetSnapshotReply(  # type: ignore
             serialized_external_pipeline_subset_result=serialize_value(
                 get_external_pipeline_subset_result(
                     self._get_repo_for_origin(
-                        pipeline_subset_snapshot_args.pipeline_origin.external_repository_origin
+                        job_subset_snapshot_args.job_origin.external_repository_origin
                     ),
-                    pipeline_subset_snapshot_args.pipeline_origin.pipeline_name,
-                    pipeline_subset_snapshot_args.solid_selection,
-                    pipeline_subset_snapshot_args.asset_selection,
+                    job_subset_snapshot_args.job_origin.job_name,
+                    job_subset_snapshot_args.solid_selection,
+                    job_subset_snapshot_args.asset_selection,
                 )
             )
         )
@@ -550,7 +548,7 @@ class DagsterApiServer(DagsterApiServicer):
             )
 
             job_def = self._get_repo_for_origin(repository_origin).get_job(request.job_name)
-            ser_job_data = serialize_value(external_pipeline_data_from_def(job_def))
+            ser_job_data = serialize_value(external_job_data_from_def(job_def))
             return api_pb2.ExternalJobReply(serialized_job_data=ser_job_data)  # type: ignore
         except Exception:
             return api_pb2.ExternalJobReply(  # type: ignore
@@ -708,18 +706,18 @@ class DagsterApiServer(DagsterApiServicer):
             )
 
         try:
-            execute_external_pipeline_args = deserialize_value(
+            execute_external_job_args = deserialize_value(
                 request.serialized_execute_run_args,
-                ExecuteExternalPipelineArgs,
+                ExecuteExternalJobArgs,
             )
-            run_id = execute_external_pipeline_args.pipeline_run_id
+            run_id = execute_external_job_args.run_id
 
             # reconstructable required for handing execution off to subprocess
             recon_repo = check.not_none(self._loaded_repositories).reconstructables_by_name[
-                execute_external_pipeline_args.pipeline_origin.external_repository_origin.repository_name
+                execute_external_job_args.job_origin.external_repository_origin.repository_name
             ]
-            recon_pipeline = recon_repo.get_reconstructable_pipeline(
-                execute_external_pipeline_args.pipeline_origin.pipeline_name
+            recon_job = recon_repo.get_reconstructable_job(
+                execute_external_job_args.job_origin.job_name
             )
 
         except:
@@ -741,7 +739,7 @@ class DagsterApiServer(DagsterApiServicer):
             target=start_run_in_subprocess,
             args=[
                 request.serialized_execute_run_args,
-                recon_pipeline,
+                recon_job,
                 event_queue,
                 termination_event,
             ],
@@ -753,7 +751,7 @@ class DagsterApiServer(DagsterApiServicer):
                 # Cast here to convert `SpawnProcess` from event into regular `Process`-- not sure
                 # why not recognized as subclass, multiprocessing typing is a little rough.
                 cast(multiprocessing.Process, execution_process),
-                check.not_none(execute_external_pipeline_args.instance_ref),
+                check.not_none(execute_external_job_args.instance_ref),
             )
             self._termination_events[run_id] = termination_event
 

@@ -279,12 +279,17 @@ class RunRequest(
         return self.tags.get(PARTITION_NAME_TAG) is not None if self.partition_key else True
 
 
-@whitelist_for_serdes
-class PipelineRunReaction(
+@whitelist_for_serdes(
+    storage_name="PipelineRunReaction",
+    storage_field_names={
+        "dagster_run": "pipeline_run",
+    },
+)
+class DagsterRunReaction(
     NamedTuple(
-        "_PipelineRunReaction",
+        "_DagsterRunReaction",
         [
-            ("pipeline_run", Optional[DagsterRun]),
+            ("dagster_run", Optional[DagsterRun]),
             ("error", Optional[SerializableErrorInfo]),
             ("run_status", Optional[DagsterRunStatus]),
         ],
@@ -294,20 +299,20 @@ class PipelineRunReaction(
     back to the run.
 
     Attributes:
-        pipeline_run (Optional[PipelineRun]): The pipeline run that originates this reaction.
+        dagster_run (Optional[DagsterRun]): The pipeline run that originates this reaction.
         error (Optional[SerializableErrorInfo]): user code execution error.
-        run_status: (Optional[PipelineRunStatus]): The run status that triggered the reaction.
+        run_status: (Optional[DagsterRunStatus]): The run status that triggered the reaction.
     """
 
     def __new__(
         cls,
-        pipeline_run: Optional[DagsterRun],
+        dagster_run: Optional[DagsterRun],
         error: Optional[SerializableErrorInfo] = None,
         run_status: Optional[DagsterRunStatus] = None,
     ):
-        return super(PipelineRunReaction, cls).__new__(
+        return super(DagsterRunReaction, cls).__new__(
             cls,
-            pipeline_run=check.opt_inst_param(pipeline_run, "pipeline_run", DagsterRun),
+            dagster_run=check.opt_inst_param(dagster_run, "dagster_run", DagsterRun),
             error=check.opt_inst_param(error, "error", SerializableErrorInfo),
             run_status=check.opt_inst_param(run_status, "run_status", DagsterRunStatus),
         )

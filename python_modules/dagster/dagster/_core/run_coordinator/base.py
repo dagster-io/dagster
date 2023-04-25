@@ -9,7 +9,7 @@ from dagster._core.workspace.context import IWorkspace, WorkspaceRequestContext
 class SubmitRunContext(NamedTuple):
     """Context available within a run coordinator's submit_run method."""
 
-    pipeline_run: DagsterRun
+    dagster_run: DagsterRun
     workspace: IWorkspace
 
     def get_request_header(self, key: str) -> Optional[str]:

@@ -8,26 +8,26 @@ from typing import Any, Mapping, Optional
 import dagster._check as check
 from dagster._core.code_pointer import FileCodePointer
 from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
+from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
 from dagster._core.definitions.selector import InstigatorSelector
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.build_resources import build_resources
 from dagster._core.execution.context.output import build_output_context
 from dagster._core.host_representation import (
-    ExternalPipeline,
+    ExternalJob,
     ExternalSchedule,
     GrpcServerCodeLocationOrigin,
     InProcessCodeLocationOrigin,
 )
 from dagster._core.host_representation.origin import (
     ExternalInstigatorOrigin,
-    ExternalPipelineOrigin,
+    ExternalJobOrigin,
     ExternalRepositoryOrigin,
 )
 from dagster._core.instance import DagsterInstance
 from dagster._core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
-    PipelinePythonOrigin,
+    JobPythonOrigin,
     RepositoryPythonOrigin,
 )
 from dagster._core.test_utils import in_process_test_workspace
@@ -123,27 +123,27 @@ def get_test_project_recon_job(
     container_image: Optional[str] = None,
     container_context: Optional[Mapping[str, object]] = None,
     filename: Optional[str] = None,
-) -> "ReOriginatedReconstructablePipelineForTest":
+) -> "ReOriginatedReconstructableJobForTest":
     filename = filename or "repo.py"
-    return ReOriginatedReconstructablePipelineForTest(
+    return ReOriginatedReconstructableJobForTest(
         ReconstructableRepository.for_file(
             file_relative_path(__file__, f"test_pipelines/{filename}"),
             "define_demo_execution_repo",
             container_image=container_image,
             container_context=container_context,
-        ).get_reconstructable_pipeline(job_name)
+        ).get_reconstructable_job(job_name)
     )
 
 
-class ReOriginatedReconstructablePipelineForTest(ReconstructablePipeline):
+class ReOriginatedReconstructableJobForTest(ReconstructableJob):
     def __new__(
         cls,
-        reconstructable_pipeline,
+        reconstructable_pipeline: ReconstructableJob,
     ):
-        return super(ReOriginatedReconstructablePipelineForTest, cls).__new__(
+        return super(ReOriginatedReconstructableJobForTest, cls).__new__(
             cls,
             reconstructable_pipeline.repository,
-            reconstructable_pipeline.pipeline_name,
+            reconstructable_pipeline.job_name,
             reconstructable_pipeline.solid_selection_str,
             reconstructable_pipeline.solids_to_execute,
         )
@@ -151,11 +151,11 @@ class ReOriginatedReconstructablePipelineForTest(ReconstructablePipeline):
     def get_python_origin(self):
         """Hack! Inject origin that the docker-celery images will use. The BK image uses a different
         directory structure (/workdir/python_modules/dagster-test/dagster_test/test_project) than
-        the test that creates the ReconstructablePipeline. As a result the normal origin won't
+        the test that creates the ReconstructableJob. As a result the normal origin won't
         work, we need to inject this one.
         """
-        return PipelinePythonOrigin(
-            self.pipeline_name,
+        return JobPythonOrigin(
+            self.job_name,
             RepositoryPythonOrigin(
                 executable_path="python",
                 code_pointer=FileCodePointer(
@@ -169,16 +169,16 @@ class ReOriginatedReconstructablePipelineForTest(ReconstructablePipeline):
         )
 
 
-class ReOriginatedExternalPipelineForTest(ExternalPipeline):
+class ReOriginatedExternalPipelineForTest(ExternalJob):
     def __init__(
-        self, external_pipeline, container_image=None, container_context=None, filename=None
+        self, external_job: ExternalJob, container_image=None, container_context=None, filename=None
     ):
         self._container_image = container_image
         self._container_context = container_context
         self._filename = filename or "repo.py"
         super(ReOriginatedExternalPipelineForTest, self).__init__(
-            external_pipeline.external_pipeline_data,
-            external_pipeline.repository_handle,
+            external_job.external_job_data,
+            external_job.repository_handle,
         )
 
     def get_python_origin(self):
@@ -187,8 +187,8 @@ class ReOriginatedExternalPipelineForTest(ExternalPipeline):
         inside the kind cluster (/dagster_test/test_project). As a result the normal origin won't
         work, we need to inject this one.
         """
-        return PipelinePythonOrigin(
-            self._pipeline_index.name,
+        return JobPythonOrigin(
+            self._job_index.name,
             RepositoryPythonOrigin(
                 executable_path="python",
                 code_pointer=FileCodePointer(
@@ -201,13 +201,13 @@ class ReOriginatedExternalPipelineForTest(ExternalPipeline):
             ),
         )
 
-    def get_external_origin(self):
+    def get_external_origin(self) -> ExternalJobOrigin:
         """Hack! Inject origin that the k8s images will use. The BK image uses a different directory
         structure (/workdir/python_modules/dagster-test/dagster_test/test_project) than the images
         inside the kind cluster (/dagster_test/test_project). As a result the normal origin won't
         work, we need to inject this one.
         """
-        return ExternalPipelineOrigin(
+        return ExternalJobOrigin(
             external_repository_origin=ExternalRepositoryOrigin(
                 code_location_origin=InProcessCodeLocationOrigin(
                     loadable_target_origin=LoadableTargetOrigin(
@@ -220,14 +220,14 @@ class ReOriginatedExternalPipelineForTest(ExternalPipeline):
                 ),
                 repository_name="demo_execution_repo",
             ),
-            pipeline_name=self._pipeline_index.name,
+            job_name=self._job_index.name,
         )
 
 
 class ReOriginatedExternalScheduleForTest(ExternalSchedule):
     def __init__(
         self,
-        external_schedule,
+        external_schedule: ExternalSchedule,
         container_image=None,
     ):
         self._container_image = container_image

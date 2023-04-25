@@ -6,13 +6,13 @@ import pendulum
 from dagster import daily_partitioned_config, job, op, repository
 from dagster._core.definitions.decorators.schedule_decorator import schedule
 from dagster._core.host_representation import (
-    external_pipeline_data_from_def,
+    external_job_data_from_def,
     external_repository_data_from_def,
 )
 from dagster._core.host_representation.external_data import (
     ExternalTimeWindowPartitionsDefinitionData,
 )
-from dagster._core.snap.pipeline_snapshot import create_pipeline_snapshot_id
+from dagster._core.snap.pipeline_snapshot import create_job_snapshot_id
 from dagster._core.test_utils import in_process_test_workspace, instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._serdes import serialize_pp
@@ -53,7 +53,7 @@ def test_external_repository_data(snapshot):
         return [foo_job, foo_schedule]
 
     external_repo_data = external_repository_data_from_def(repo)
-    assert external_repo_data.get_external_pipeline_data("foo_job")
+    assert external_repo_data.get_external_job_data("foo_job")
     assert external_repo_data.get_external_schedule_data("foo_schedule")
 
     job_partition_set_data = external_repo_data.get_external_partition_set_data(
@@ -77,14 +77,14 @@ def test_external_repository_data(snapshot):
 
 
 def test_external_pipeline_data(snapshot):
-    snapshot.assert_match(serialize_pp(external_pipeline_data_from_def(foo_job)))
+    snapshot.assert_match(serialize_pp(external_job_data_from_def(foo_job)))
 
 
-@mock.patch("dagster._core.host_representation.pipeline_index.create_pipeline_snapshot_id")
+@mock.patch("dagster._core.host_representation.pipeline_index.create_job_snapshot_id")
 def test_external_repo_shared_index(snapshot_mock):
     # ensure we don't rebuild indexes / snapshot ids repeatedly
 
-    snapshot_mock.side_effect = create_pipeline_snapshot_id
+    snapshot_mock.side_effect = create_job_snapshot_id
     with instance_for_test() as instance:
         with in_process_test_workspace(
             instance, LoadableTargetOrigin(python_file=__file__)
@@ -93,7 +93,7 @@ def test_external_repo_shared_index(snapshot_mock):
             def _fetch_snap_id():
                 location = workspace.code_locations[0]
                 ex_repo = list(location.get_repositories().values())[0]
-                return ex_repo.get_all_external_jobs()[0].identifying_pipeline_snapshot_id
+                return ex_repo.get_all_external_jobs()[0].identifying_job_snapshot_id
 
             _fetch_snap_id()
             assert snapshot_mock.call_count == 1
@@ -102,11 +102,11 @@ def test_external_repo_shared_index(snapshot_mock):
             assert snapshot_mock.call_count == 1
 
 
-@mock.patch("dagster._core.host_representation.pipeline_index.create_pipeline_snapshot_id")
+@mock.patch("dagster._core.host_representation.pipeline_index.create_job_snapshot_id")
 def test_external_repo_shared_index_threaded(snapshot_mock):
     # ensure we don't rebuild indexes / snapshot ids repeatedly across threads
 
-    snapshot_mock.side_effect = create_pipeline_snapshot_id
+    snapshot_mock.side_effect = create_job_snapshot_id
     with instance_for_test() as instance:
         with in_process_test_workspace(
             instance, LoadableTargetOrigin(python_file=__file__)
@@ -115,7 +115,7 @@ def test_external_repo_shared_index_threaded(snapshot_mock):
             def _fetch_snap_id():
                 location = workspace.code_locations[0]
                 ex_repo = list(location.get_repositories().values())[0]
-                return ex_repo.get_all_external_jobs()[0].identifying_pipeline_snapshot_id
+                return ex_repo.get_all_external_jobs()[0].identifying_job_snapshot_id
 
             with ThreadPoolExecutor() as executor:
                 wait([executor.submit(_fetch_snap_id) for _ in range(100)])

@@ -410,7 +410,7 @@ def test_composition_bug():
 
     my_job = my_graph_final.to_job()
 
-    index = my_job.get_pipeline_index()
+    index = my_job.get_job_index()
     assert index.get_node_def_snap("my_graph1")
     assert index.get_node_def_snap("my_graph2")
 

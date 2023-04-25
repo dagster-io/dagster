@@ -33,16 +33,16 @@ def test_execute_hammer_through_dagit():
                 }
             }
 
-            start_pipeline_result = execute_dagster_graphql(
+            start_job_result = execute_dagster_graphql(
                 context,
                 LAUNCH_PIPELINE_EXECUTION_MUTATION,
                 variables=variables,
             )
 
-            if start_pipeline_result.errors:
-                raise Exception(f"{start_pipeline_result.errors}")
+            if start_job_result.errors:
+                raise Exception(f"{start_job_result.errors}")
 
-            run_id = start_pipeline_result.data["launchPipelineExecution"]["run"]["runId"]
+            run_id = start_job_result.data["launchPipelineExecution"]["run"]["runId"]
 
             context.instance.run_launcher.join(timeout=60)
 

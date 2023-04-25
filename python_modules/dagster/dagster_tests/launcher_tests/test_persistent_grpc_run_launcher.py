@@ -51,11 +51,11 @@ def test_run_always_finishes():
                     .get_full_external_job("slow_job")
                 )
 
-                dagster_run = instance.create_run_for_pipeline(
-                    pipeline_def=slow_job,
+                dagster_run = instance.create_run_for_job(
+                    job_def=slow_job,
                     run_config=None,
-                    external_pipeline_origin=external_job.get_external_origin(),
-                    pipeline_code_origin=external_job.get_python_origin(),
+                    external_job_origin=external_job.get_external_origin(),
+                    job_code_origin=external_job.get_python_origin(),
                 )
                 run_id = dagster_run.run_id
 
@@ -110,7 +110,7 @@ def test_run_from_pending_repository():
                     "my_cool_asset_job"
                 )
                 external_execution_plan = code_location.get_external_execution_plan(
-                    external_pipeline=external_job,
+                    external_job=external_job,
                     run_config={},
                     step_keys_to_execute=None,
                     known_state=None,
@@ -132,7 +132,7 @@ def test_run_from_pending_repository():
                 # using create run here because we don't have easy access to the underlying
                 # pipeline definition
                 dagster_run = instance.create_run(
-                    pipeline_name="my_cool_asset_job",
+                    job_name="my_cool_asset_job",
                     run_id="xyzabc",
                     run_config=None,
                     solids_to_execute=None,
@@ -141,11 +141,11 @@ def test_run_from_pending_repository():
                     tags=None,
                     root_run_id=None,
                     parent_run_id=None,
-                    pipeline_snapshot=external_job.pipeline_snapshot,
+                    job_snapshot=external_job.job_snapshot,
                     execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
-                    parent_pipeline_snapshot=external_job.parent_pipeline_snapshot,
-                    external_pipeline_origin=external_job.get_external_origin(),
-                    pipeline_code_origin=external_job.get_python_origin(),
+                    parent_job_snapshot=external_job.parent_job_snapshot,
+                    external_job_origin=external_job.get_external_origin(),
+                    job_code_origin=external_job.get_python_origin(),
                     asset_selection=None,
                     solid_selection=None,
                 )
@@ -209,11 +209,11 @@ def test_terminate_after_shutdown():
                 .get_full_external_job("sleepy_job")
             )
 
-            dagster_run = instance.create_run_for_pipeline(
-                pipeline_def=sleepy_job,
+            dagster_run = instance.create_run_for_job(
+                job_def=sleepy_job,
                 run_config=None,
-                external_pipeline_origin=external_job.get_external_origin(),
-                pipeline_code_origin=external_job.get_python_origin(),
+                external_job_origin=external_job.get_external_origin(),
+                job_code_origin=external_job.get_python_origin(),
             )
 
             instance.launch_run(dagster_run.run_id, workspace)
@@ -232,11 +232,11 @@ def test_terminate_after_shutdown():
                 .get_full_external_job("math_diamond")
             )
 
-            doomed_to_fail_dagster_run = instance.create_run_for_pipeline(
-                pipeline_def=math_diamond,
+            doomed_to_fail_dagster_run = instance.create_run_for_job(
+                job_def=math_diamond,
                 run_config=None,
-                external_pipeline_origin=external_job.get_external_origin(),
-                pipeline_code_origin=external_job.get_python_origin(),
+                external_job_origin=external_job.get_external_origin(),
+                job_code_origin=external_job.get_python_origin(),
             )
 
             with pytest.raises(DagsterLaunchFailedError):
@@ -281,24 +281,24 @@ def test_server_down():
                     .get_full_external_job("sleepy_job")
                 )
 
-                pipeline_run = instance.create_run_for_pipeline(
-                    pipeline_def=sleepy_job,
+                dagster_run = instance.create_run_for_job(
+                    job_def=sleepy_job,
                     run_config=None,
-                    external_pipeline_origin=external_job.get_external_origin(),
-                    pipeline_code_origin=external_job.get_python_origin(),
+                    external_job_origin=external_job.get_external_origin(),
+                    job_code_origin=external_job.get_python_origin(),
                 )
 
-                instance.launch_run(pipeline_run.run_id, workspace)
+                instance.launch_run(dagster_run.run_id, workspace)
 
-                poll_for_step_start(instance, pipeline_run.run_id)
+                poll_for_step_start(instance, dagster_run.run_id)
 
                 launcher = instance.run_launcher
 
-                original_run_tags = instance.get_run_by_id(pipeline_run.run_id).tags[GRPC_INFO_TAG]
+                original_run_tags = instance.get_run_by_id(dagster_run.run_id).tags[GRPC_INFO_TAG]
 
                 # Replace run tags with an invalid port
                 instance.add_run_tags(
-                    pipeline_run.run_id,
+                    dagster_run.run_id,
                     {
                         GRPC_INFO_TAG: _seven.json.dumps(
                             merge_dicts({"host": "localhost"}, {"port": find_free_port()})
@@ -307,10 +307,10 @@ def test_server_down():
                 )
 
                 instance.add_run_tags(
-                    pipeline_run.run_id,
+                    dagster_run.run_id,
                     {
                         GRPC_INFO_TAG: original_run_tags,
                     },
                 )
 
-                assert launcher.terminate(pipeline_run.run_id)
+                assert launcher.terminate(dagster_run.run_id)

@@ -92,7 +92,7 @@ def def_config_field(
 
 
 class RunConfigSchemaCreationData(NamedTuple):
-    pipeline_name: str
+    job_name: str
     nodes: Sequence[Node]
     graph_def: GraphDefinition
     dependency_structure: DependencyStructure

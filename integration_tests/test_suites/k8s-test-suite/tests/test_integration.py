@@ -38,10 +38,10 @@ def test_k8s_run_launcher_default(
     check.invariant(not celery_pod_names)
 
     run_config = load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml"))
-    pipeline_name = "demo_job"
+    job_name = "demo_job"
 
     run_id = launch_run_over_graphql(
-        dagit_url_for_k8s_run_launcher, run_config=run_config, pipeline_name=pipeline_name
+        dagit_url_for_k8s_run_launcher, run_config=run_config, job_name=job_name
     )
 
     result = wait_for_job_and_get_raw_logs(
@@ -91,7 +91,7 @@ def test_k8s_run_launcher_with_celery_executor_fails(
     job_name = "demo_job_celery_k8s"
 
     run_id = launch_run_over_graphql(
-        dagit_url_for_k8s_run_launcher, run_config=run_config, pipeline_name=job_name
+        dagit_url_for_k8s_run_launcher, run_config=run_config, job_name=job_name
     )
 
     timeout = datetime.timedelta(0, 120)
@@ -99,18 +99,16 @@ def test_k8s_run_launcher_with_celery_executor_fails(
     start_time = datetime.datetime.now()
 
     while True:
-        assert (
-            datetime.datetime.now() < start_time + timeout
-        ), "Timed out waiting for pipeline failure"
+        assert datetime.datetime.now() < start_time + timeout, "Timed out waiting for job failure"
         event_records = dagster_instance_for_k8s_run_launcher.all_logs(run_id)
 
-        found_pipeline_failure = False
+        found_job_failure = False
         for event_record in event_records:
             if event_record.dagster_event:
                 if event_record.dagster_event.event_type == DagsterEventType.PIPELINE_FAILURE:
-                    found_pipeline_failure = True
+                    found_job_failure = True
 
-        if found_pipeline_failure:
+        if found_job_failure:
             break
 
         time.sleep(5)
@@ -129,10 +127,10 @@ def test_failing_k8s_run_launcher(
 ):
     run_config = load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml"))
 
-    pipeline_name = "always_fail_job"
+    job_name = "always_fail_job"
 
     run_id = launch_run_over_graphql(
-        dagit_url_for_k8s_run_launcher, run_config=run_config, pipeline_name=pipeline_name
+        dagit_url_for_k8s_run_launcher, run_config=run_config, job_name=job_name
     )
 
     result = wait_for_job_and_get_raw_logs(
@@ -152,14 +150,14 @@ def test_k8s_run_launcher_terminate(
     user_code_namespace_for_k8s_run_launcher,
     dagit_url_for_k8s_run_launcher,
 ):
-    pipeline_name = "slow_job_k8s"
+    job_name = "slow_job_k8s"
 
     run_config = load_yaml_from_path(
         os.path.join(get_test_project_environments_path(), "env_s3.yaml")
     )
 
     run_id = launch_run_over_graphql(
-        dagit_url_for_k8s_run_launcher, run_config=run_config, pipeline_name=pipeline_name
+        dagit_url_for_k8s_run_launcher, run_config=run_config, job_name=job_name
     )
 
     DagsterKubernetesClient.production_client().wait_for_job(
@@ -177,15 +175,15 @@ def test_k8s_run_launcher_terminate(
     terminate_run_over_graphql(dagit_url_for_k8s_run_launcher, run_id=run_id)
 
     start_time = datetime.datetime.now()
-    pipeline_run = None
+    dagster_run = None
     while True:
         assert datetime.datetime.now() < start_time + timeout, "Timed out waiting for termination"
-        pipeline_run = dagster_instance_for_k8s_run_launcher.get_run_by_id(run_id)
-        if pipeline_run.status == DagsterRunStatus.CANCELED:
+        dagster_run = dagster_instance_for_k8s_run_launcher.get_run_by_id(run_id)
+        if dagster_run.status == DagsterRunStatus.CANCELED:
             break
         time.sleep(5)
 
-    assert pipeline_run.status == DagsterRunStatus.CANCELED
+    assert dagster_run.status == DagsterRunStatus.CANCELED
 
     assert not can_terminate_run_over_graphql(dagit_url_for_k8s_run_launcher, run_id)
 
@@ -202,10 +200,10 @@ def test_k8s_run_launcher_secret_from_deployment(
     run_config = load_yaml_from_path(
         os.path.join(get_test_project_environments_path(), "env_config_from_secrets.yaml")
     )
-    pipeline_name = "demo_job"
+    job_name = "demo_job"
 
     run_id = launch_run_over_graphql(
-        dagit_url_for_k8s_run_launcher, run_config=run_config, pipeline_name=pipeline_name
+        dagit_url_for_k8s_run_launcher, run_config=run_config, job_name=job_name
     )
 
     result = wait_for_job_and_get_raw_logs(

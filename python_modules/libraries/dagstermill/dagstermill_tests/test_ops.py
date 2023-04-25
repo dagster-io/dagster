@@ -9,7 +9,7 @@ import pytest
 from dagster import execute_job, job
 from dagster._check import CheckError
 from dagster._core.definitions.metadata import NotebookMetadataValue, PathMetadataValue
-from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.test_utils import instance_for_test
 from dagster._utils import file_relative_path, safe_tempfile_path
 from dagstermill import DagstermillError
@@ -45,12 +45,12 @@ def cleanup_result_notebook(result):
 @contextmanager
 def exec_for_test(fn_name, env=None, raise_on_error=True, **kwargs):
     result = None
-    recon_pipeline = ReconstructablePipeline.for_module("dagstermill.examples.repository", fn_name)
+    recon_job = ReconstructableJob.for_module("dagstermill.examples.repository", fn_name)
 
     with instance_for_test() as instance:
         try:
             with execute_job(
-                job=recon_pipeline,
+                job=recon_job,
                 run_config=env,
                 instance=instance,
                 raise_on_error=raise_on_error,
@@ -289,15 +289,13 @@ def test_error_notebook():
         assert len(result.get_failed_step_keys()) > 0
 
     result = None
-    recon_pipeline = ReconstructablePipeline.for_module(
-        "dagstermill.examples.repository", "error_job"
-    )
+    recon_job = ReconstructableJob.for_module("dagstermill.examples.repository", "error_job")
 
     # test that the notebook is saved on failure
     with instance_for_test() as instance:
         try:
             result = execute_job(
-                recon_pipeline,
+                recon_job,
                 run_config={"execution": {"config": {"in_process": {}}}},
                 instance=instance,
                 raise_on_error=False,
@@ -353,7 +351,7 @@ def test_hello_world_reexecution():
             )
             reexecution_notebook_file.flush()
 
-            reexecution_job = ReconstructablePipeline.for_file(
+            reexecution_job = ReconstructableJob.for_file(
                 reexecution_notebook_file.name, "reexecution_job"
             )
 

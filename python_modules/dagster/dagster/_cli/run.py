@@ -17,7 +17,7 @@ def run_list_command(limit):
     with DagsterInstance.get() as instance:
         for run in instance.get_runs(limit=limit):
             click.echo(f"Run: {run.run_id}")
-            click.echo(f"     Job: {run.pipeline_name}")
+            click.echo(f"     Job: {run.job_name}")
 
 
 @run_cli.command(

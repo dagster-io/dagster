@@ -50,7 +50,7 @@ from dagster._utils import (
     utc_datetime_from_timestamp,
 )
 
-from ..pipeline_run import PipelineRunStatsSnapshot
+from ..pipeline_run import DagsterRunStatsSnapshot
 from .base import (
     AssetEntry,
     AssetRecord,
@@ -474,7 +474,7 @@ class SqlEventLogStorage(EventLogStorage):
             has_more=bool(limit and len(results) == limit),
         )
 
-    def get_stats_for_run(self, run_id: str) -> PipelineRunStatsSnapshot:
+    def get_stats_for_run(self, run_id: str) -> DagsterRunStatsSnapshot:
         check.str_param(run_id, "run_id")
 
         query = (
@@ -517,7 +517,7 @@ class SqlEventLogStorage(EventLogStorage):
                 ),
             )
 
-            return PipelineRunStatsSnapshot(
+            return DagsterRunStatsSnapshot(
                 run_id=run_id,
                 steps_succeeded=counts.get(DagsterEventType.STEP_SUCCESS.value, 0),
                 steps_failed=counts.get(DagsterEventType.STEP_FAILURE.value, 0),

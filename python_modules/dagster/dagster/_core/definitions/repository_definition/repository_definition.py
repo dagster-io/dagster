@@ -70,8 +70,8 @@ class RepositoryLoadData(
         )
 
     # Allow this to be hashed for use in `lru_cache`. This is needed because:
-    # - `ReconstructablePipeline` uses `lru_cache`
-    # - `ReconstructablePipeline` has a `ReconstructableRepository` attribute
+    # - `ReconstructableJob` uses `lru_cache`
+    # - `ReconstructableJob` has a `ReconstructableRepository` attribute
     # - `ReconstructableRepository` has a `RepositoryLoadData` attribute
     # - `RepositoryLoadData` has collection attributes that are unhashable by default
     def __hash__(self) -> int:
@@ -127,31 +127,11 @@ class RepositoryDefinition:
         # force load of all lazy constructed code artifacts
         self._repository_data.load_all_definitions()
 
-    @property
-    def pipeline_names(self) -> Sequence[str]:
-        """List[str]: Names of all pipelines/jobs in the repository."""
-        return self._repository_data.get_job_names()
-
     @public
     @property
     def job_names(self) -> Sequence[str]:
         """List[str]: Names of all jobs in the repository."""
         return self._repository_data.get_job_names()
-
-    def get_pipeline(self, name: str) -> JobDefinition:
-        """Get a pipeline/job by name.
-
-        If this pipeline/job is present in the lazily evaluated dictionary passed to the
-        constructor, but has not yet been constructed, only this pipeline/job is constructed, and will
-        be cached for future calls.
-
-        Args:
-            name (str): Name of the pipeline/job to retrieve.
-
-        Returns:
-            PipelineDefinition: The pipeline/job definition corresponding to the given name.
-        """
-        return self._repository_data.get_job(name)
 
     def get_top_level_resources(self) -> Mapping[str, ResourceDefinition]:
         return self._repository_data.get_top_level_resources()

@@ -20,7 +20,7 @@ from dagster import (
     resource,
     with_resources,
 )
-from dagster._core.definitions.pipeline_base import InMemoryPipeline
+from dagster._core.definitions.pipeline_base import InMemoryJob
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import execute_plan
 from dagster._core.execution.plan.outputs import StepOutputHandle
@@ -89,20 +89,20 @@ def test_gcs_pickle_io_manager_execution(gcs_bucket):
     run_id = make_new_run_id()
 
     resolved_run_config = ResolvedRunConfig.build(inty_job, run_config=run_config)
-    execution_plan = ExecutionPlan.build(InMemoryPipeline(inty_job), resolved_run_config)
+    execution_plan = ExecutionPlan.build(InMemoryJob(inty_job), resolved_run_config)
 
     assert execution_plan.get_step_by_key("return_one")
 
     step_keys = ["return_one"]
     instance = DagsterInstance.ephemeral()
-    pipeline_run = DagsterRun(pipeline_name=inty_job.name, run_id=run_id, run_config=run_config)
+    dagster_run = DagsterRun(job_name=inty_job.name, run_id=run_id, run_config=run_config)
 
     return_one_step_events = list(
         execute_plan(
             execution_plan.build_subset_plan(step_keys, inty_job, resolved_run_config),
-            pipeline=InMemoryPipeline(inty_job),
+            job=InMemoryJob(inty_job),
             run_config=run_config,
-            dagster_run=pipeline_run,
+            dagster_run=dagster_run,
             instance=instance,
         )
     )
@@ -125,9 +125,9 @@ def test_gcs_pickle_io_manager_execution(gcs_bucket):
     add_one_step_events = list(
         execute_plan(
             execution_plan.build_subset_plan(["add_one"], inty_job, resolved_run_config),
-            pipeline=InMemoryPipeline(inty_job),
+            job=InMemoryJob(inty_job),
             run_config=run_config,
-            dagster_run=pipeline_run,
+            dagster_run=dagster_run,
             instance=instance,
         )
     )

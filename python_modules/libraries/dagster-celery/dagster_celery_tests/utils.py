@@ -40,7 +40,7 @@ def _instance_wrapper(instance: Optional[DagsterInstance]) -> Iterator[DagsterIn
 
 @contextmanager
 def execute_job_on_celery(
-    pipeline_name: str,
+    job_name: str,
     instance: Optional[DagsterInstance] = None,
     run_config: Optional[Mapping[str, Any]] = None,
     tempdir: Optional[str] = None,
@@ -48,7 +48,7 @@ def execute_job_on_celery(
     subset: Optional[Sequence[str]] = None,
 ) -> Iterator[ExecutionResult]:
     with tempdir_wrapper(tempdir) as tempdir:
-        job_def = ReconstructableJob.for_file(REPO_FILE, pipeline_name).subset_for_execution(subset)
+        job_def = ReconstructableJob.for_file(REPO_FILE, job_name).subset_for_execution(subset)
         with _instance_wrapper(instance) as wrapped_instance:
             run_config = run_config or {
                 "resources": {"io_manager": {"config": {"base_dir": tempdir}}},
@@ -65,7 +65,7 @@ def execute_job_on_celery(
 
 @contextmanager
 def execute_eagerly_on_celery(
-    pipeline_name: str,
+    job_name: str,
     instance: Optional[DagsterInstance] = None,
     tempdir: Optional[str] = None,
     tags: Optional[Mapping[str, str]] = None,
@@ -78,7 +78,7 @@ def execute_eagerly_on_celery(
         }
 
         with execute_job_on_celery(
-            pipeline_name,
+            job_name,
             instance=instance,
             run_config=run_config,
             tempdir=tempdir,
@@ -89,14 +89,14 @@ def execute_eagerly_on_celery(
 
 
 def execute_on_thread(
-    pipeline_name: str,
+    job_name: str,
     done: threading.Event,
     instance_ref: InstanceRef,
     tempdir: Optional[str] = None,
     tags: Optional[Mapping[str, str]] = None,
 ) -> None:
     with DagsterInstance.from_ref(instance_ref) as instance:
-        with execute_job_on_celery(pipeline_name, tempdir=tempdir, tags=tags, instance=instance):
+        with execute_job_on_celery(job_name, tempdir=tempdir, tags=tags, instance=instance):
             done.set()
 
 

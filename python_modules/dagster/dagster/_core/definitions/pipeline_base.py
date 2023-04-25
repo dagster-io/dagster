@@ -12,11 +12,11 @@ if TYPE_CHECKING:
     from .job_definition import JobDefinition
 
 
-class IPipeline(ABC):
-    """IPipeline is a wrapper interface for PipelineDefinitions to be used as parameters to Dagster's
+class IJob(ABC):
+    """IJob is a wrapper interface for JobDefinitions to be used as parameters to Dagster's
     core execution APIs.  This enables these execution APIs to operate on both in memory pipeline
     definitions to be executed in the current process (InMemoryPipeline) as well as definitions that
-    can be reconstructed and executed in a different process (ReconstructablePipeline).
+    can be reconstructed and executed in a different process (ReconstructableJob).
     """
 
     @abstractmethod
@@ -28,7 +28,7 @@ class IPipeline(ABC):
         self,
         solid_selection: Optional[Sequence[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
-    ) -> "IPipeline":
+    ) -> "IJob":
         pass
 
     @property
@@ -42,29 +42,29 @@ class IPipeline(ABC):
         pass
 
     @abstractmethod
-    def subset_for_execution_from_existing_pipeline(
+    def subset_for_execution_from_existing_job(
         self,
         solids_to_execute: Optional[AbstractSet[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
-    ) -> "IPipeline":
+    ) -> "IJob":
         pass
 
 
-class InMemoryPipeline(IPipeline, object):
+class InMemoryJob(IJob, object):
     def __init__(
         self,
-        pipeline_def: "JobDefinition",
+        job_def: "JobDefinition",
         solid_selection: Optional[Sequence[str]] = None,
         solids_to_execute: Optional[AbstractSet[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
     ):
-        self._pipeline_def = pipeline_def
+        self._job_def = job_def
         self._solid_selection = solid_selection
         self._solids_to_execute = solids_to_execute
         self._asset_selection = asset_selection
 
     def get_definition(self) -> "JobDefinition":
-        return self._pipeline_def
+        return self._job_def
 
     def _resolve_op_selection(self, op_selection: Sequence[str]) -> AbstractSet[str]:
         # resolve a list of op selection queries to a frozenset of qualified op names
@@ -84,21 +84,19 @@ class InMemoryPipeline(IPipeline, object):
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
     ) -> Self:
         if asset_selection:
-            return InMemoryPipeline(
-                self._pipeline_def.get_job_def_for_subset_selection(
-                    asset_selection=asset_selection
-                ),
+            return InMemoryJob(
+                self._job_def.get_job_def_for_subset_selection(asset_selection=asset_selection),
                 asset_selection=asset_selection,
             )
-        if self._pipeline_def.is_subset_pipeline:
-            return InMemoryPipeline(
-                self._pipeline_def.parent_pipeline_def.get_pipeline_subset_def(solids_to_execute),  # type: ignore  # (possible none)
+        if self._job_def.is_subset_job:
+            return InMemoryJob(
+                self._job_def.parent_job_def.get_pipeline_subset_def(solids_to_execute),  # type: ignore  # (possible none)
                 solid_selection=solid_selection,
                 solids_to_execute=solids_to_execute,
             )
 
-        return InMemoryPipeline(
-            self._pipeline_def.get_pipeline_subset_def(solids_to_execute),  # type: ignore  # (possible none)
+        return InMemoryJob(
+            self._job_def.get_pipeline_subset_def(solids_to_execute),  # type: ignore  # (possible none)
             solid_selection=solid_selection,
             solids_to_execute=solids_to_execute,
         )
@@ -120,7 +118,7 @@ class InMemoryPipeline(IPipeline, object):
         solids_to_execute = self._resolve_op_selection(solid_selection) if solid_selection else None
         return self._subset_for_execution(solids_to_execute, solid_selection, asset_selection)
 
-    def subset_for_execution_from_existing_pipeline(
+    def subset_for_execution_from_existing_job(
         self,
         solids_to_execute: Optional[AbstractSet[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,

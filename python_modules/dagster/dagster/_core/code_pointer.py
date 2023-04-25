@@ -316,8 +316,8 @@ class CustomPointer(
         )
 
     # Allow this to be hashed for use in `lru_cache`. This is needed because:
-    # - `ReconstructablePipeline` uses `lru_cache`
-    # - `ReconstructablePipeline` has a `ReconstructableRepository` attribute
+    # - `ReconstructableJob` uses `lru_cache`
+    # - `ReconstructableJob` has a `ReconstructableRepository` attribute
     # - `ReconstructableRepository` has a `CodePointer` attribute
     # - `CustomCodePointer` has collection attributes that are unhashable by default
     def __hash__(self) -> int:
