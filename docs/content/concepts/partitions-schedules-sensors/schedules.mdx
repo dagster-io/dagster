@@ -402,16 +402,11 @@ Below is a test for the `process_data_schedule` that we defined in the [Using re
 from dagster import build_schedule_context, validate_run_config
 
 def test_process_data_schedule():
-    context = build_schedule_context(
-        scheduled_execution_time=datetime.datetime(2020, 1, 1)
-    )
+    context = build_schedule_context(scheduled_execution_time=datetime.datetime(2020, 1, 1))
     run_request = process_data_schedule(
         context, date_formatter=DateFormatter(format="%Y-%m-%d")
     )
-    assert (
-        run_request.run_config["ops"]["fetch_data"]["config"]["date"]
-        == "2020-01-01"
-    )
+    assert run_request.run_config["ops"]["fetch_data"]["config"]["date"] == "2020-01-01"
 ```
 
 </TabItem>
