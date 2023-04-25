@@ -89,7 +89,7 @@ def _create_command_list(
     if warn_error:
         prefix += ["--warn-error"]
     if json_log_format:
-        prefix += ["--no-use-color", "--log-format", "json"]
+        prefix += ["--no-use-colors", "--log-format", "json"]
     if debug:
         prefix += ["--debug"]
 

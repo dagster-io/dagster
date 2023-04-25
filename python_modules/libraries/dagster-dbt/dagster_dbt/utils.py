@@ -300,7 +300,13 @@ def select_unique_ids_from_manifest(
     graph = graph_selector.Graph(DiGraph(incoming_graph_data=child_map))
 
     # create a parsed selection from the select string
-    flags.INDIRECT_SELECTION = IndirectSelection.Eager
+    try:
+        from dbt.flags import GLOBAL_FLAGS
+
+        setattr(GLOBAL_FLAGS, "INDIRECT_SELECTION", IndirectSelection.Eager)
+    except ImportError:
+        # dbt < 1.5.0 compat
+        flags.INDIRECT_SELECTION = IndirectSelection.Eager
     parsed_spec: SelectionSpec = graph_cli.parse_union([select], True)
 
     if exclude:

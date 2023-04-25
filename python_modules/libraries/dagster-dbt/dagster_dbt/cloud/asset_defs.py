@@ -37,7 +37,6 @@ from dagster._core.definitions.cacheable_assets import (
 from dagster._core.definitions.metadata import MetadataUserInput
 from dagster._core.execution.context.init import build_init_resource_context
 from dagster._utils.backcompat import experimental_arg_warning
-from dbt.main import parse_args as dbt_parse_args
 
 from dagster_dbt.asset_utils import (
     default_asset_key_fn,
@@ -103,6 +102,8 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
 
     @staticmethod
     def parse_dbt_command(dbt_command: str) -> Namespace:
+        from dbt.main import parse_args as dbt_parse_args
+
         return dbt_parse_args(args=shlex.split(dbt_command)[1:])
 
     @staticmethod
