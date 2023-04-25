@@ -544,6 +544,10 @@
             "path": "/integrations/airbyte"
           },
           {
+            "title": "Airbyte Cloud + Dagster",
+            "path": "/integrations/airbyte-cloud"
+          },
+          {
             "title": "Ingestion as code",
             "path": "/guides/dagster/airbyte-ingestion-as-code"
           }
