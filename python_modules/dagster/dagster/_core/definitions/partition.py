@@ -698,22 +698,40 @@ class DynamicPartitionsDefinition(
             )
             return [Partition(key) for key in partitions]
 
+    def get_partition(
+        self,
+        partition_key: str,
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> Partition:
+        if self.has_partition_key(
+            partition_key,
+            dynamic_partitions_store=dynamic_partitions_store,
+        ):
+            return Partition(partition_key)
+
+        raise DagsterUnknownPartitionError(f"Could not find a partition with key `{partition_key}`")
+
     def has_partition_key(
         self,
         partition_key: str,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> bool:
-        if dynamic_partitions_store is None:
-            check.failed(
-                "The instance is not available to load partitions. You may be seeing this error"
-                " when using dynamic partitions with a version of dagit or dagster-cloud that"
-                " is older than 1.1.18."
+        if self.name:
+            if dynamic_partitions_store is None:
+                check.failed(
+                    "The instance is not available to load partitions. You may be seeing this error"
+                    " when using dynamic partitions with a version of dagit or dagster-cloud that"
+                    " is older than 1.1.18."
+                )
+
+            return dynamic_partitions_store.has_dynamic_partition(
+                partitions_def_name=self._validated_name(), partition_key=partition_key
             )
 
-        return dynamic_partitions_store.has_dynamic_partition(
-            partitions_def_name=self._validated_name(), partition_key=partition_key
-        )
+        else:
+            return super().has_partition_key(partition_key, current_time=current_time)
 
     def build_add_request(self, partition_keys: Sequence[str]) -> AddDynamicPartitionsRequest:
         check.sequence_param(partition_keys, "partition_keys", of_type=str)
