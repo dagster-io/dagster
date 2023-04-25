@@ -275,6 +275,13 @@ def test_register_task_definition(ecs):
                 cpu="256",
             )
 
+        # Infrequently, our concurrent futures don't fire fast enough to hit
+        # our stubbed ECS's lock. We can force this flaky behavior by firing
+        # thousands of futures; by the time the later futures launch, the
+        # earlier futures have already completed and released their lock.
+        #
+        # We've marked this test as flaky and retry it once on failure to
+        # try to mitigate this.
         futures = [executor.submit(task) for i in range(2)]
 
     # We successfully registered only 1 task definition revision
