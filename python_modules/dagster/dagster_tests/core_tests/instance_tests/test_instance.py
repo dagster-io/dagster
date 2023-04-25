@@ -6,6 +6,7 @@ import yaml
 from dagster import (
     _check as check,
     _seven,
+    asset,
     execute_job,
     job,
     op,
@@ -13,6 +14,7 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._config import Field
+from dagster._core.definitions import build_assets_job
 from dagster._core.errors import (
     DagsterHomeNotSetError,
     DagsterInvalidConfigError,
@@ -33,6 +35,10 @@ from dagster._core.storage.sqlite_storage import (
     _event_logs_directory,
     _runs_directory,
     _schedule_directory,
+)
+from dagster._core.storage.tags import (
+    ASSET_PARTITION_RANGE_END_TAG,
+    ASSET_PARTITION_RANGE_START_TAG,
 )
 from dagster._core.test_utils import (
     TestSecretsLoader,
@@ -235,6 +241,14 @@ def noop_job():
     noop_op()
 
 
+@asset
+def noop_asset():
+    pass
+
+
+noop_asset_job = build_assets_job(assets=[noop_asset], name="noop_asset_job")
+
+
 def test_create_job_snapshot():
     with instance_for_test() as instance:
         result = execute_job(reconstructable(noop_job), instance=instance)
@@ -293,6 +307,53 @@ def test_submit_run():
 
             assert len(instance.run_coordinator.queue()) == 1
             assert instance.run_coordinator.queue()[0].run_id == "foo-bar"
+
+
+def test_create_run_with_asset_partitions():
+    with instance_for_test() as instance:
+        execution_plan = create_execution_plan(noop_asset_job)
+
+        ep_snapshot = snapshot_from_execution_plan(
+            execution_plan, noop_asset_job.get_pipeline_snapshot_id()
+        )
+
+        with pytest.raises(
+            Exception,
+            match=(
+                "Cannot have dagster/asset_partition_range_start or"
+                " dagster/asset_partition_range_end set without the other"
+            ),
+        ):
+            create_run_for_test(
+                instance=instance,
+                pipeline_name="foo",
+                execution_plan_snapshot=ep_snapshot,
+                pipeline_snapshot=noop_asset_job.get_pipeline_snapshot(),
+                tags={ASSET_PARTITION_RANGE_START_TAG: "partition_0"},
+            )
+
+        with pytest.raises(
+            Exception,
+            match=(
+                "Cannot have dagster/asset_partition_range_start or"
+                " dagster/asset_partition_range_end set without the other"
+            ),
+        ):
+            create_run_for_test(
+                instance=instance,
+                pipeline_name="foo",
+                execution_plan_snapshot=ep_snapshot,
+                pipeline_snapshot=noop_asset_job.get_pipeline_snapshot(),
+                tags={ASSET_PARTITION_RANGE_END_TAG: "partition_0"},
+            )
+
+        create_run_for_test(
+            instance=instance,
+            pipeline_name="foo",
+            execution_plan_snapshot=ep_snapshot,
+            pipeline_snapshot=noop_asset_job.get_pipeline_snapshot(),
+            tags={ASSET_PARTITION_RANGE_START_TAG: "bar", ASSET_PARTITION_RANGE_END_TAG: "foo"},
+        )
 
 
 def test_get_required_daemon_types():
