@@ -4,7 +4,7 @@ from dagster import (
     resource,
 )
 from prometheus_client.exposition import default_handler
-from pydantic import Field
+from pydantic import Field, PrivateAttr
 
 
 class PrometheusClient:
@@ -47,6 +47,7 @@ class PrometheusResource(ConfigurableResource):
         default=30,
         description="is how long delete will attempt to connect before giving up. Defaults to 30s.",
     )
+    _registry: prometheus_client.CollectorRegistry = PrivateAttr(default=None)
 
     def __post_init__(self) -> None:
         self._registry = prometheus_client.CollectorRegistry()

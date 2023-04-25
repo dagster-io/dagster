@@ -121,14 +121,14 @@ class MakeConfigCacheable(BaseModel):
         # Avoid pydantic reading a cached property class as part of the schema
         keep_untouched = (cached_property,)
         # Ensure the class is serializable, for caching purposes
-        frozen = True
+        frozen = False
 
     def __setattr__(self, name: str, value: Any):
         # This is a hack to allow us to set attributes on the class that are not part of the
         # config schema. Pydantic will normally raise an error if you try to set an attribute
         # that is not part of the schema.
 
-        if self._is_field_internal(name) or self._is_field_private(name):
+        if self._is_field_internal(name):
             object.__setattr__(self, name, value)
             return
 
@@ -174,9 +174,6 @@ class MakeConfigCacheable(BaseModel):
 
     def _is_field_internal(self, name: str) -> bool:
         return name.endswith(INTERNAL_MARKER)
-
-    def _is_field_private(self, name: str) -> bool:
-        return name.startswith("_")
 
 
 class Config(MakeConfigCacheable):
