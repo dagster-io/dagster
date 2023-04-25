@@ -3,9 +3,9 @@ title: dagster_cloud.yaml reference | Dagster Docs
 description: Use dagster_cloud.yaml to configure code locations for Dagster Cloud
 ---
 
-# dagster_cloud.yaml
-
 <Note>This reference is applicable to Dagster Cloud.</Note>
+
+# dagster_cloud.yaml
 
 <table
   className="table"
@@ -82,7 +82,7 @@ description: Use dagster_cloud.yaml to configure code locations for Dagster Clou
 
 ## File location
 
-The `dagster_cloud.yaml` file should be placed in the root of your Dagster project. Below is an example of a file structure from the [Dagster Cloud ETL quickstart](https://github.com/dagster-io/dagster/tree/master/examples/quickstart_etl).
+The `dagster_cloud.yaml` file should be placed in the root of your Dagster project. Below is an example of a file structure modified from the [Dagster Cloud ETL quickstart](https://github.com/dagster-io/dagster/tree/master/examples/quickstart_etl).
 
 ```shell
 quickstart_etl
@@ -90,6 +90,12 @@ quickstart_etl
 ├── quickstart_etl
 │   ├── __init__.py
 │   ├── assets
+│   ├── docker_image
+├── ml_project
+│   ├── quickstart_ml
+│     ├── __init__.py
+│     ├── ml_assets
+├── random_assets.py
 ├── quickstart_etl_tests
 ├── dagster_cloud.yaml
 ├── pyproject.toml
@@ -97,22 +103,87 @@ quickstart_etl
 └── setup.py
 ```
 
-If your repository contains multiple Dagster projects in subdirectories - otherwise known as a monorepository - add the `dagster_cloud.yaml` file to the root of each project subdirectory.
+If your repository contains multiple Dagster projects in subdirectories - otherwise known as a monorepository - add the `dagster_cloud.yaml` file to the root of where the Dagster projects are stored.
+
+---
+
+## File structure
+
+Settings are formatted using YAML. For example, using the file structure above as an example:
+
+```yaml
+# dagster_cloud.yaml
+
+locations:
+  - location_name: data-eng-pipeline
+    code_source:
+      package_name: quickstart_etl
+    build:
+      directory: ./quickstart_etl
+      registry: localhost:5000/docker_image
+  - location_name: ml-pipeline
+    code_source:
+      package_name: quickstart_ml
+    working_directory: ./ml_project
+    executable_path: venvs/path/to/ml_tensorflow/bin/python
+  - location_name: my_random_assets
+    code_source:
+      python_file: random_assets.py 
+    container_context:
+      k8s:
+        env_vars:
+          - database_name
+          - database_username=hooli_testing
+        env_secrets:
+          - database_password
+```
 
 ---
 
 ## Settings
 
-### Code locations
+For each deployment, you can configure settings for: 
 
-The only **mandatory** section in the `dagster_cloud.yaml` file is the `locations` key. This top-level key specifies a list of code locations that should be deployed to Dagster Cloud.
+- [Location name](#location-name)
+- [Code source](#code-source)
+- [Working directory](#working-directory)
+- [Build](#build)
+- [Python executable](#python-executable)
+- [Container context](#container-context)
 
-At a minimum, each item in `locations` must include the following:
+### Location name 
 
-- A `location_name` key that specifies the name of the code location
-- A `code_source` key containing either a `module_name` or `file_name` parameter that specifies where to find the definitions in the code location
+The `location_name` key that specifies the name of the code location and a **mandatory** section in the `dagster_cloud.yaml`. The location name will always be paired with a [code source](#code-source)
 
-Refer to the following table for the full list of parameters a location can have.
+Example:
+
+```yaml
+# dagster_cloud.yaml
+
+locations:
+  - location_name: data-eng-pipeline
+    code_source:
+      package_name: quickstart_etl
+```
+
+<ReferenceTable>
+  <ReferenceTableItem propertyName="location_name">
+    The name of your code location that will appear in the Dagster UI Code
+    locations page
+    <ul>
+      <li>
+        <strong>Format</strong> - <code>string</code>
+      </li>
+    </ul>
+  </ReferenceTableItem>
+</ReferenceTable>
+
+
+### Code source
+
+This is a **mandatory** section in the `dagster_cloud.yaml` file. This specifies the code sources that should be deployed to Dagster Cloud.
+
+A `code_source` key containing either a `module_name` or `file_name` parameter that specifies where to find the definitions in the code location.
 
 <TabGroup>
 <TabItem name="Single code location">
@@ -144,100 +215,8 @@ locations:
 </TabItem>
 </TabGroup>
 
-### Working directory
-
-Use the `working_directory` setting to load Dagster code from a different directory than the root of your code repository. This setting allows you to specify the directory you want to load your code from.
-
-Consider the following project:
-
-```shell
-quickstart_etl
-├── README.md
-├── project_directory
-│   ├── quickstart_etl
-│     ├── __init__.py
-│     ├── assets
-│   ├── quickstart_etl_tests
-├── dagster_cloud.yaml
-├── pyproject.toml
-├── setup.cfg
-└── setup.py
-```
-
-To load from `/project_directory`, the `dagster_cloud.yaml` code location would look like this:
-
-```yaml
-# dagster_cloud.yaml
-
-locations:
-  - location_name: data-eng-pipeline
-    code_source:
-      package_name: quickstart_etl
-    working_directory: ./project_directory
-```
-
-### Build directory
-
-The build registry is applicable to hybrid deployments only. Setting a build directory is useful if your `setup.py` or `requirements.txt` is in a subdirectory instead of the project root. This is common if you have multiple Python packages within a single Dagster project.
-
-In the example below, the docker image for the code location is in the root directory and the registry and image defined.
-
-Example:
-
-```yaml
-# dagster_cloud.yaml
-
-locations:
-  - location_name: data-eng-pipeline
-    code_source:
-      package_name: quickstart_etl
-    build:
-      directory: ./
-      registry: your-docker-image-registry/image-name # e.g. localhost:5000/myimage
-```
-
-### Python executable
-
-If you are using Dagster Cloud Serverless, the Python executable to use is specified [here](https://docs.dagster.io/dagster-cloud/deployment/serverless#using-a-different-python-version). For Dagster Cloud Hybrid, the python executable that is installed globally in the image, or the default Python executable on the local system if you use the local agent, will be used. If you want to use a different python executable, you can specify it in the dagster_cloud.yaml file. It might also be useful to have different python executables for different code locations.
-
-```yaml
-# dagster_cloud.yaml
-
-locations:
-  - location_name: data-eng-pipeline
-    code_source:
-      package_name: quickstart_etl
-    executable_path: venvs/path/to/dataengineering_spark_team/bin/python
-  - location_name: machine_learning
-    code_source:
-      python_file: ml_model.py
-    executable_path: venvs/path/to/ml_tensorflow/bin/python
-```
-
-### Container context
-
-If using Hybrid deployment, you can define additional configuration options for code locations using the `container_context` parameter. Depending on the Hybrid agent you're using, the configuration settings under `container_context` will vary.
-
-Refer to the configuration reference for your agent for more info:
-
-- [Docker agent configuration reference](/dagster-cloud/deployment/agents/docker/configuration-reference)
-- [Amazon ECS agent configuration reference](/dagster-cloud/deployment/agents/amazon-ecs/configuration-reference)
-- [Kubernetes agent configuration reference](/dagster-cloud/deployment/agents/kubernetes/configuration-reference)
-
----
-
-## Settings
 
 <ReferenceTable>
-  <ReferenceTableItem propertyName="location_name">
-    The name of your code location that will appear in the Dagster UI Code
-    locations page
-    <ul>
-      <li>
-        <strong>Format</strong> - <code>string</code>
-      </li>
-    </ul>
-  </ReferenceTableItem>
   <ReferenceTableItem propertyName="code_source.package_name">
     The name of a package containing Dagster code
     <ul>
@@ -315,9 +294,7 @@ locations:
 
 The build registry is applicable to hybrid deployments only. Setting a build directory is useful if your `setup.py` or `requirements.txt` is in a subdirectory instead of the project root. This is common if you have multiple Python packages within a single Dagster project.
 
-In the example below, the docker image for the code location is in the root directory and the registry and image defined.
-
-Example:
+In the example below, the Docker image for the code location is in the root directory and the registry and image defined:
 
 ```yaml
 # dagster_cloud.yaml
