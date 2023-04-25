@@ -1193,15 +1193,20 @@ class DagsterInstance(DynamicPartitionsStore):
                             ASSET_PARTITION_RANGE_START_TAG
                         ), dagster_run.tags.get(ASSET_PARTITION_RANGE_END_TAG)
 
-                        check.invariant(
-                            not (partition_tag and partition_range_start),
-                            "Cannot have both a partition and a partition range",
-                        )
-
-                        if partition_range_start:
-                            check.invariant(
-                                partition_range_end, "Partition range start set but not end"
+                        if partition_tag and (partition_range_start or partition_range_end):
+                            raise DagsterInvariantViolationError(
+                                f"Cannot have {ASSET_PARTITION_RANGE_START_TAG} or"
+                                f" {ASSET_PARTITION_RANGE_END_TAG} set along with"
+                                f" {PARTITION_NAME_TAG}"
                             )
+
+                        if partition_range_start or partition_range_end:
+                            if not partition_range_start or not partition_range_end:
+                                raise DagsterInvariantViolationError(
+                                    f"Cannot have {ASSET_PARTITION_RANGE_START_TAG} or"
+                                    f" {ASSET_PARTITION_RANGE_END_TAG} set without the other"
+                                )
+
                             # TODO: resolve which partitions are in the range, and emit an event for each
 
                         partition = (
