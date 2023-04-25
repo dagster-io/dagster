@@ -500,7 +500,13 @@
               },
               {
                 "title": "Code locations",
-                "path": "/dagster-cloud/managing-deployments/code-locations"
+                "path": "/dagster-cloud/managing-deployments/code-locations",
+                "children": [ 
+                  {
+                    "title": "Dagster-cloud-yaml",
+                    "path": "/dagster-cloud/managing-deployments/Dagster-cloud-yaml"
+                  }
+                ]
               },
               {
                 "title": "Branch deployments",
