@@ -128,7 +128,7 @@ locations:
     executable_path: venvs/path/to/ml_tensorflow/bin/python
   - location_name: my_random_assets
     code_source:
-      python_file: random_assets.py 
+      python_file: random_assets.py
     container_context:
       k8s:
         env_vars:
@@ -142,7 +142,7 @@ locations:
 
 ## Settings
 
-For each deployment, you can configure settings for: 
+For each deployment, you can configure settings for:
 
 - [Location name](#location-name)
 - [Code source](#code-source)
@@ -151,7 +151,7 @@ For each deployment, you can configure settings for:
 - [Python executable](#python-executable)
 - [Container context](#container-context)
 
-### Location name 
+### Location name
 
 The `location_name` key that specifies the name of the code location and a **mandatory** section in the `dagster_cloud.yaml`. The location name will always be paired with a [code source](#code-source)
 
@@ -177,7 +177,6 @@ locations:
     </ul>
   </ReferenceTableItem>
 </ReferenceTable>
-
 
 ### Code source
 
@@ -214,7 +213,6 @@ locations:
 
 </TabItem>
 </TabGroup>
-
 
 <ReferenceTable>
   <ReferenceTableItem propertyName="code_source.package_name">
@@ -277,7 +275,6 @@ locations:
     working_directory: ./project_directory
 ```
 
-
 <ReferenceTable>
   <ReferenceTableItem propertyName="working_directory">
     The path of the directory that Dagster should load the code source from
@@ -288,7 +285,6 @@ locations:
     </ul>
   </ReferenceTableItem>
 </ReferenceTable>
-
 
 ### Build
 
@@ -352,6 +348,7 @@ locations:
       python_file: ml_model.py
     executable_path: venvs/path/to/ml_tensorflow/bin/python
 ```
+
 <ReferenceTable>
   <ReferenceTableItem propertyName="executable_path">
     The file path of the Python executable to use
@@ -372,4 +369,3 @@ Refer to the configuration reference for your agent for more info:
 - [Docker agent configuration reference](/dagster-cloud/deployment/agents/docker/configuration-reference)
 - [Amazon ECS agent configuration reference](/dagster-cloud/deployment/agents/amazon-ecs/configuration-reference)
 - [Kubernetes agent configuration reference](/dagster-cloud/deployment/agents/kubernetes/configuration-reference)
-
