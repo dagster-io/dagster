@@ -258,7 +258,6 @@ class RunFailureSensorContext(RunStatusSensorContext):
     Attributes:
         sensor_name (str): the name of the sensor.
         dagster_run (DagsterRun): the failed run.
-        failure_event (DagsterEvent): the failure event.
     """
 
     @public
