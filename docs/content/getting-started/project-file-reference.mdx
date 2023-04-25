@@ -57,7 +57,7 @@ Let's take a look at what each of these files and directories does:
     <tr>
       <td>my_dagster_project/</td>
       <td>
-        A Python package that contains Dagster code.
+        A Python module that contains Dagster code.
         <br /><br />
         This directory also contains the following:
         <table
@@ -84,8 +84,8 @@ Let's take a look at what each of these files and directories does:
       <td>__init__.py</td>
       <td>
         The <code>__init__.py</code> file includes a{" "}
-        <PyObject object="Definitions" /> object that contains all the definitions defined within your project. A definition can be an asset, a job, a schedule, a sensor, or a resource. This allows Dagster to load the definitions in an installed package.
-        <br />
+        <PyObject object="Definitions" /> object that contains all the definitions defined within your project. A definition can be an asset, a job, a schedule, a sensor, or a resource. This allows Dagster to load the definitions in a module.
+        <br /><br />
         Refer to the <a href="/concepts/code-locations#load-definitions-in-an-installed-package">Code locations documentation</a> to learn other ways to deploy and load your Dagster code.
       </td>
     </tr>
@@ -96,12 +96,15 @@ Let's take a look at what each of these files and directories does:
         <a href="/concepts/assets/software-defined-assets">software-defined assets</a>.
         <br />
         <br />
-        <strong>Note:</strong> As your project grows, we recommend organizing assets in sub-packages or sub-modules.
+        <strong>Note:</strong> As your project grows, we recommend organizing assets in sub-modules.
         For example, you can put all analytics-related assets in a <code>my_dagster_project/assets/analytics/</code>
         folder and use <PyObject object="load_assets_from_package_module" /> in the top-level definitions
         to load them, rather than needing to manually add assets to the top-level definitions every time
-        you define one. Similarly, you can also use <PyObject object="load_assets_from_modules" /> to
-        load assets from single Python files. Refer to the <a href="/guides/dagster/example_project">Fully Featured Project guide</a> for more info and best practices.
+        you define one. 
+        <br />
+        <br />
+        Similarly, you can also use <PyObject object="load_assets_from_modules" /> to
+        load assets from single Python files. Refer to the <a href="/guides/dagster/example_project">Fully featured project guide</a> for more info and best practices.
       </td>
     </tr>
 
@@ -112,7 +115,7 @@ Let's take a look at what each of these files and directories does:
     <tr>
       <td>my_dagster_project_tests/</td>
       <td>
-        A Python package that contains tests for <code>my_dagster_project</code>
+        A Python module that contains tests for <code>my_dagster_project</code>
         .
       </td>
     </tr>
@@ -128,7 +131,7 @@ Let's take a look at what each of these files and directories does:
         <br />
         <br />
         This file includes a <code>tool.dagster</code> section which references the
-        Python package with your Dagster definitions defined and discoverable at
+        Python module with your Dagster definitions defined and discoverable at
         the top level. This allows you to use the
         <code>dagster dev</code> command to load your Dagster code without any
         parameters. Refer to the{" "}
@@ -149,9 +152,9 @@ Let's take a look at what each of these files and directories does:
       <td>setup.py</td>
       <td>
         A build script with Python package dependencies for your new project as
-        a package.
+        a package. Use this file to specify dependencies.
         <br /><br />
-        <strong>Note</strong>: If using Dagster Cloud, <code>dagster-cloud</code> as a dependency.
+        <strong>Note</strong>: If using Dagster Cloud, add <code>dagster-cloud</code> as a dependency.
       </td>
     </tr>
     <tr>
@@ -214,8 +217,8 @@ Depending on your use case or if you're using Dagster Cloud, you may also need t
       <td>
         Configures your Dagster instance, including defining storage locations,
         run launchers, sensors, and schedules. Refer to the{" "}
-        <a href="somelinkhere">dagster.yaml reference</a> for more info,
-        including a list of use cases and available options.
+        <a href="/deployment/dagster-instance">dagster.yaml reference</a> for
+        more info, including a list of use cases and available options.
         <br />
         <br />
         For Dagster Cloud <a href="/dagster-cloud/deployment/hybrid">
@@ -229,16 +232,9 @@ Depending on your use case or if you're using Dagster Cloud, you may also need t
     </tr>
     <tr>
       <td>dagster_cloud.yaml</td>
-      <td>
-        Defines multiple code locations for Dagster Cloud. For Hybrid
-        deployments, this file can be used{" "}
-        <a href="/dagster-cloud/managing-deployments/setting-environment-variables-dagster-cloud-agents">
-          to manage environment variables/secrets
-        </a>
-        .
-      </td>
+      <td>Defines code locations for Dagster Cloud.</td>
       <td>n/a</td>
-      <td>Optional</td>
+      <td>Recommended</td>
     </tr>
     <tr>
       <td>deployment_settings.yaml</td>
