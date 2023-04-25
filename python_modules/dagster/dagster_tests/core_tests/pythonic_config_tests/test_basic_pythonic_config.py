@@ -7,6 +7,7 @@ import pydantic
 import pytest
 from dagster import (
     AssetOut,
+    EnvVar,
     _check as check,
     asset,
     job,
@@ -890,6 +891,85 @@ def test_direct_op_invocation_kwarg_with_config() -> None:
         executed["yes"] = True
 
     an_op(config=MyConfig(num=1))
+
+    assert executed["yes"]
+
+
+def test_direct_op_invocation_arg_complex() -> None:
+    class MyConfig(Config):
+        num: int
+
+    class MyOuterConfig(Config):
+        inner: MyConfig
+        string: str
+
+    executed = {}
+
+    @op
+    def an_op(config: MyOuterConfig) -> None:
+        assert config.inner.num == 1
+        assert config.string == "foo"
+        executed["yes"] = True
+
+    an_op(MyOuterConfig(inner=MyConfig(num=1), string="foo"))
+
+    assert executed["yes"]
+
+
+def test_direct_op_invocation_kwarg_complex() -> None:
+    class MyConfig(Config):
+        num: int
+
+    class MyOuterConfig(Config):
+        inner: MyConfig
+        string: str
+
+    executed = {}
+
+    @op
+    def an_op(config: MyOuterConfig) -> None:
+        assert config.inner.num == 1
+        assert config.string == "foo"
+        executed["yes"] = True
+
+    an_op(config=MyOuterConfig(inner=MyConfig(num=1), string="foo"))
+
+    assert executed["yes"]
+
+
+def test_direct_op_invocation_kwarg_very_complex() -> None:
+    class MyConfig(Config):
+        num: int
+
+    class MyOuterConfig(Config):
+        inner: MyConfig
+        string: str
+
+    class MyOutermostConfig(Config):
+        inner: MyOuterConfig
+        boolean: bool
+
+    executed = {}
+
+    @op
+    def an_op(config: MyOutermostConfig) -> None:
+        assert config.inner.inner.num == 2
+        assert config.inner.string == "foo"
+        assert config.boolean is False
+        executed["yes"] = True
+
+    os.environ["ENV_VARIABLE_FOR_TEST_INT"] = "2"
+    try:
+        an_op(
+            config=MyOutermostConfig(
+                inner=MyOuterConfig(
+                    inner=MyConfig(num=EnvVar.int("ENV_VARIABLE_FOR_TEST_INT")), string="foo"
+                ),
+                boolean=False,
+            )
+        )
+    finally:
+        del os.environ["ENV_VARIABLE_FOR_TEST_INT"]
 
     assert executed["yes"]
 
