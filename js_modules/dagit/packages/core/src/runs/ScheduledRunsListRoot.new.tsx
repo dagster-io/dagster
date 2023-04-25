@@ -1,10 +1,14 @@
 import {gql, useQuery} from '@apollo/client';
-import {Page, Alert, ButtonLink, Colors, Group} from '@dagster-io/ui';
+import {Page, Alert, ButtonLink, Colors, Group, Box} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {
+  FIFTEEN_SECONDS,
+  QueryRefreshCountdown,
+  useQueryRefreshAtInterval,
+} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
@@ -15,7 +19,9 @@ import {
 } from '../schedules/SchedulesNextTicks';
 import {Loading} from '../ui/Loading';
 
-import {RunsPageHeader} from './RunsPageHeader';
+import {RUN_TABS_COUNT_QUERY, RunListTabs} from './RunListTabs.new';
+import {inProgressStatuses, queuedStatuses} from './RunStatuses';
+import {RunTabsCountQuery, RunTabsCountQueryVariables} from './types/RunListTabs.types';
 import {
   ScheduledRunsListQuery,
   ScheduledRunsListQueryVariables,
@@ -35,9 +41,35 @@ export const ScheduledRunListRoot = () => {
 
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
+  const runCountResult = useQuery<RunTabsCountQuery, RunTabsCountQueryVariables>(
+    RUN_TABS_COUNT_QUERY,
+    {
+      variables: {
+        queuedFilter: {statuses: Array.from(queuedStatuses)},
+        inProgressFilter: {statuses: Array.from(inProgressStatuses)},
+      },
+    },
+  );
+
+  const {data: countData} = runCountResult;
+  const {queuedCount, inProgressCount} = React.useMemo(() => {
+    return {
+      queuedCount:
+        countData?.queuedCount?.__typename === 'Runs' ? countData.queuedCount.count : null,
+      inProgressCount:
+        countData?.inProgressCount?.__typename === 'Runs' ? countData.inProgressCount.count : null,
+    };
+  }, [countData]);
+
   return (
     <Page>
-      <RunsPageHeader refreshStates={[refreshState]} />
+      <Box
+        flex={{direction: 'row', gap: 8, alignItems: 'center', justifyContent: 'space-between'}}
+        padding={{vertical: 8, left: 24, right: 12}}
+      >
+        <RunListTabs queuedCount={queuedCount} inProgressCount={inProgressCount} />
+        <QueryRefreshCountdown refreshState={refreshState} />
+      </Box>
       <Loading queryResult={queryResult}>
         {(result) => {
           const {repositoriesOrError, instance} = result;
