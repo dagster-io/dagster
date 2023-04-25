@@ -503,8 +503,8 @@
                 "path": "/dagster-cloud/managing-deployments/code-locations",
                 "children": [ 
                   {
-                    "title": "Dagster-cloud-yaml",
-                    "path": "/dagster-cloud/managing-deployments/Dagster-cloud-yaml"
+                    "title": "dagster_cloud.yaml",
+                    "path": "/dagster-cloud/managing-deployments/dagster-cloud-yaml"
                   }
                 ]
               },

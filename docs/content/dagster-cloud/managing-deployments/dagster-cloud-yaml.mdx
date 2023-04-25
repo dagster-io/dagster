@@ -153,9 +153,8 @@ For each deployment, you can configure settings for:
 
 ### Location name
 
-The `location_name` key that specifies the name of the code location and a **mandatory** section in the `dagster_cloud.yaml`. The location name will always be paired with a [code source](#code-source)
+**This key is required.** The `location_name` key specifies the name of the code location. The location name will always be paired with a [code source](#code-source).
 
-Example:
 
 ```yaml
 # dagster_cloud.yaml
@@ -180,9 +179,9 @@ locations:
 
 ### Code source
 
-This is a **mandatory** section in the `dagster_cloud.yaml` file. This specifies the code sources that should be deployed to Dagster Cloud.
+**This section is required.** The `code_source` defines how a code location is sourced.
 
-A `code_source` key containing either a `module_name` or `file_name` parameter that specifies where to find the definitions in the code location.
+A `code_source` key must contain either a `module_name`, `package_name`, or `file_name` parameter that specifies where to find the definitions in the code location.
 
 <TabGroup>
 <TabItem name="Single code location">
@@ -225,7 +224,7 @@ locations:
   </ReferenceTableItem>
   <ReferenceTableItem propertyName="code_source.python_file">
     The name of a Python file containing Dagster code, for example:
-    `analytics_pipeline.py`
+    <code>analytics_pipeline.py</code>
     <ul>
       <li>
         <strong>Format</strong> - <code>string</code>(.py file name)
@@ -234,7 +233,7 @@ locations:
   </ReferenceTableItem>
   <ReferenceTableItem propertyName="code_source.module_name">
     The name of a Python module containing Dagster code, for example:
-    `analytics_etl`
+    <code>analytics_etl</code>
     <ul>
       <li>
         <strong>Format</strong> - <code>string</code>(module name)
@@ -288,7 +287,10 @@ locations:
 
 ### Build
 
-The build registry is applicable to hybrid deployments only. Setting a build directory is useful if your `setup.py` or `requirements.txt` is in a subdirectory instead of the project root. This is common if you have multiple Python packages within a single Dagster project.
+The `build` section contains two parameters:
+
+- `directory` - Setting a build directory is useful if your `setup.py` or `requirements.txt` is in a subdirectory instead of the project root. This is common if you have multiple Python modules within a single Dagster project.
+- `registry` - **Applicable only to Hybrid deployments.** Specifies the Docker registry to push the code location to.
 
 In the example below, the Docker image for the code location is in the root directory and the registry and image defined:
 
@@ -320,7 +322,7 @@ locations:
   </ReferenceTableItem>
   <ReferenceTableItem propertyName="build.registry">
     <strong>Applicable to Hybrid deployments.</strong> The Docker registry to
-    push your code location to in the registry
+    push your code location to
     <ul>
       <li>
         <strong>Format</strong> - <code>string</code>(docker registry)
@@ -331,7 +333,7 @@ locations:
 
 ### Python executable
 
-For Dagster Cloud Hybrid deployments, the Python executable that is installed globally in the image, or the default Python executable on the local system if you use the local agent, will be used. To use a different Python executable, specify it using the python_executable setting. It can be useful to have different Python executables for different code locations.
+For Dagster Cloud Hybrid deployments, the Python executable that is installed globally in the image, or the default Python executable on the local system if you use the local agent, will be used. To use a different Python executable, specify it using the `python_executable` setting. It can be useful to have different Python executables for different code locations.
 
 For Dagster Cloud Serverless deployments, you can specify a different Python version by [following these instructions](/dagster-cloud/deployment/serverless#using-a-different-python-version).
 
