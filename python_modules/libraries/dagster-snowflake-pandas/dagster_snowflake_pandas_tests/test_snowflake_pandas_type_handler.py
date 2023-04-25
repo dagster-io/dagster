@@ -345,14 +345,11 @@ def test_time_window_partitioned_asset(io_manager):
             run_config={"ops": {asset_full_name: {"config": {"value": "1"}}}},
         )
 
-        out_df = (
-            snowflake_conn.get_connection()
-            .cursor()
-            .execute(
-                f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
+        with snowflake_conn.get_connection() as conn:
+            out_df = (
+                conn.cursor().execute(f"SELECT * FROM {snowflake_table_path}").fetch_pandas_all()
             )
-        )
-        assert out_df["A"].tolist() == ["1", "1", "1"]
+            assert out_df["A"].tolist() == ["1", "1", "1"]
 
         materialize(
             [daily_partitioned, downstream_partitioned],
@@ -361,14 +358,11 @@ def test_time_window_partitioned_asset(io_manager):
             run_config={"ops": {asset_full_name: {"config": {"value": "2"}}}},
         )
 
-        out_df = (
-            snowflake_conn.get_connection()
-            .cursor()
-            .execute(
-                f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
+        with snowflake_conn.get_connection() as conn:
+            out_df = (
+                conn.cursor().execute(f"SELECT * FROM {snowflake_table_path}").fetch_pandas_all()
             )
-        )
-        assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
+            assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
 
         materialize(
             [daily_partitioned, downstream_partitioned],
@@ -377,17 +371,14 @@ def test_time_window_partitioned_asset(io_manager):
             run_config={"ops": {asset_full_name: {"config": {"value": "3"}}}},
         )
 
-        out_df = (
-            snowflake_conn.get_connection()
-            .cursor()
-            .execute(
-                f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
+        with snowflake_conn.get_connection() as conn:
+            out_df = (
+                conn.cursor().execute(f"SELECT * FROM {snowflake_table_path}").fetch_pandas_all()
             )
-        )
-        assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3"]
+            assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3"]
 
 
-# @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
+@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
 @pytest.mark.parametrize(
     "io_manager", [(old_snowflake_io_manager), (pythonic_snowflake_io_manager)]
 )
@@ -439,14 +430,11 @@ def test_static_partitioned_asset(io_manager):
             run_config={"ops": {asset_full_name: {"config": {"value": "1"}}}},
         )
 
-        out_df = (
-            snowflake_conn.get_connection()
-            .cursor()
-            .execute(
-                f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
-            )
-        )
-        assert out_df["A"].tolist() == ["1", "1", "1"]
+        with snowflake_conn.get_connection() as conn:
+            out_df = (
+                conn.cursor().execute(f"SELECT * FROM {snowflake_table_path}")
+            ).fetch_pandas_all()
+            assert out_df["A"].tolist() == ["1", "1", "1"]
 
         materialize(
             [static_partitioned, downstream_partitioned],
@@ -455,14 +443,11 @@ def test_static_partitioned_asset(io_manager):
             run_config={"ops": {asset_full_name: {"config": {"value": "2"}}}},
         )
 
-        out_df = (
-            snowflake_conn.get_connection()
-            .cursor()
-            .execute(
-                f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
-            )
-        )
-        assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
+        with snowflake_conn.get_connection() as conn:
+            out_df = (
+                conn.cursor().execute(f"SELECT * FROM {snowflake_table_path}")
+            ).fetch_pandas_all()
+            assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
 
         materialize(
             [static_partitioned, downstream_partitioned],
@@ -471,14 +456,11 @@ def test_static_partitioned_asset(io_manager):
             run_config={"ops": {asset_full_name: {"config": {"value": "3"}}}},
         )
 
-        out_df = (
-            snowflake_conn.get_connection()
-            .cursor()
-            .execute(
-                f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
-            )
-        )
-        assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3"]
+        with snowflake_conn.get_connection() as conn:
+            out_df = (
+                conn.cursor().execute(f"SELECT * FROM {snowflake_table_path}")
+            ).fetch_pandas_all()
+            assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3"]
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
@@ -539,14 +521,11 @@ def test_multi_partitioned_asset(io_manager):
             run_config={"ops": {asset_full_name: {"config": {"value": "1"}}}},
         )
 
-        out_df = (
-            snowflake_conn.get_connection()
-            .cursor()
-            .execute(
-                f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
-            )
-        )
-        assert out_df["A"].tolist() == ["1", "1", "1"]
+        with snowflake_conn.get_connection() as conn:
+            out_df = (
+                conn.cursor().execute(f"SELECT * FROM {snowflake_table_path}")
+            ).fetch_pandas_all()
+            assert out_df["A"].tolist() == ["1", "1", "1"]
 
         materialize(
             [multi_partitioned, downstream_partitioned],
@@ -555,14 +534,11 @@ def test_multi_partitioned_asset(io_manager):
             run_config={"ops": {asset_full_name: {"config": {"value": "2"}}}},
         )
 
-        out_df = (
-            snowflake_conn.get_connection()
-            .cursor()
-            .execute(
-                f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
-            )
-        )
-        assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
+        with snowflake_conn.get_connection() as conn:
+            out_df = (
+                conn.cursor().execute(f"SELECT * FROM {snowflake_table_path}")
+            ).fetch_pandas_all()
+            assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
 
         materialize(
             [multi_partitioned, downstream_partitioned],
@@ -571,14 +547,11 @@ def test_multi_partitioned_asset(io_manager):
             run_config={"ops": {asset_full_name: {"config": {"value": "3"}}}},
         )
 
-        out_df = (
-            snowflake_conn.get_connection()
-            .cursor()
-            .execute(
-                f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
-            )
-        )
-        assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2", "3", "3", "3"]
+        with snowflake_conn.get_connection() as conn:
+            out_df = (
+                conn.cursor().execute(f"SELECT * FROM {snowflake_table_path}")
+            ).fetch_pandas_all()
+            assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2", "3", "3", "3"]
 
         materialize(
             [multi_partitioned, downstream_partitioned],
@@ -587,14 +560,11 @@ def test_multi_partitioned_asset(io_manager):
             run_config={"ops": {asset_full_name: {"config": {"value": "4"}}}},
         )
 
-        out_df = (
-            snowflake_conn.get_connection()
-            .cursor()
-            .execute(
-                f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
-            )
-        )
-        assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3", "4", "4", "4"]
+        with snowflake_conn.get_connection() as conn:
+            out_df = (
+                conn.cursor().execute(f"SELECT * FROM {snowflake_table_path}")
+            ).fetch_pandas_all()
+            assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3", "4", "4", "4"]
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
@@ -653,16 +623,15 @@ def test_dynamic_partitions(io_manager):
                 run_config={"ops": {asset_full_name: {"config": {"value": "1"}}}},
             )
 
-            out_df = (
-                snowflake_conn.get_connection()
-                .cursor()
-                .execute(
-                    f"SELECT * FROM {snowflake_table_path}",
-                    use_pandas_result=True,
-                    fetch_results=True,
+            with snowflake_conn.get_connection() as conn:
+                out_df = (
+                    conn.cursor()
+                    .execute(
+                        f"SELECT * FROM {snowflake_table_path}",
+                    )
+                    .fetch_pandas_all()
                 )
-            )
-            assert out_df["A"].tolist() == ["1", "1", "1"]
+                assert out_df["A"].tolist() == ["1", "1", "1"]
 
             instance.add_dynamic_partitions(dynamic_fruits.name, ["orange"])
 
@@ -674,15 +643,14 @@ def test_dynamic_partitions(io_manager):
                 run_config={"ops": {asset_full_name: {"config": {"value": "2"}}}},
             )
 
-            out_df = (
-                snowflake_conn.get_connection()
-                .cursor()
-                .execute(
-                    f"SELECT * FROM {snowflake_table_path}",
-                    use_pandas_result=True,
-                    fetch_results=True,
+            with snowflake_conn.get_connection() as conn:
+                out_df = (
+                    conn.cursor()
+                    .execute(
+                        f"SELECT * FROM {snowflake_table_path}",
+                    )
+                    .fetch_pandas_all()
                 )
-            )
             assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
 
             materialize(
@@ -693,16 +661,15 @@ def test_dynamic_partitions(io_manager):
                 run_config={"ops": {asset_full_name: {"config": {"value": "3"}}}},
             )
 
-            out_df = (
-                snowflake_conn.get_connection()
-                .cursor()
-                .execute(
-                    f"SELECT * FROM {snowflake_table_path}",
-                    use_pandas_result=True,
-                    fetch_results=True,
+            with snowflake_conn.get_connection() as conn:
+                out_df = (
+                    conn.cursor()
+                    .execute(
+                        f"SELECT * FROM {snowflake_table_path}",
+                    )
+                    .fetch_pandas_all()
                 )
-            )
-            assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3"]
+                assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3"]
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
@@ -767,14 +734,11 @@ def test_self_dependent_asset(io_manager):
             },
         )
 
-        out_df = (
-            snowflake_conn.get_connection()
-            .cursor()
-            .execute(
-                f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
+        with snowflake_conn.get_connection() as conn:
+            out_df = (
+                conn.cursor().execute(f"SELECT * FROM {snowflake_table_path}").fetch_pandas_all()
             )
-        )
-        assert sorted(out_df["A"].tolist()) == ["1", "1", "1"]
+            assert sorted(out_df["A"].tolist()) == ["1", "1", "1"]
 
         materialize(
             [self_dependent_asset],
@@ -787,11 +751,8 @@ def test_self_dependent_asset(io_manager):
             },
         )
 
-        out_df = (
-            snowflake_conn.get_connection()
-            .cursor()
-            .execute(
-                f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
+        with snowflake_conn.get_connection() as conn:
+            out_df = (
+                conn.cursor().execute(f"SELECT * FROM {snowflake_table_path}").fetch_pandas_all()
             )
-        )
-        assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
+            assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
