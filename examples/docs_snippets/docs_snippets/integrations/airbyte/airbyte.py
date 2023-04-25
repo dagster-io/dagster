@@ -87,7 +87,6 @@ def scope_manually_define_airbyte_assets():
     # end_manually_define_airbyte_assets
 
 
-
 def scope_manually_define_airbyte_assets_cloud():
     # start_manually_define_airbyte_assets_cloud
     from dagster_airbyte import build_airbyte_assets
