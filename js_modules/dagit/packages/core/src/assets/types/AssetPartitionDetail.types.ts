@@ -33,7 +33,7 @@ export type AssetPartitionDetailQuery = {
             | {
                 __typename: 'Run';
                 id: string;
-                mode: string;
+                mode: string | null;
                 status: Types.RunStatus;
                 pipelineName: string;
                 pipelineSnapshotId: string | null;
@@ -188,7 +188,7 @@ export type AssetPartitionDetailQuery = {
             | {
                 __typename: 'Run';
                 id: string;
-                mode: string;
+                mode: string | null;
                 status: Types.RunStatus;
                 pipelineName: string;
                 pipelineSnapshotId: string | null;

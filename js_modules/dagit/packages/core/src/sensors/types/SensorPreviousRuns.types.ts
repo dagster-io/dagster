@@ -23,7 +23,7 @@ export type PreviousRunsForSensorQuery = {
           hasReExecutePermission: boolean;
           hasTerminatePermission: boolean;
           hasDeletePermission: boolean;
-          mode: string;
+          mode: string | null;
           rootRunId: string | null;
           parentRunId: string | null;
           pipelineSnapshotId: string | null;

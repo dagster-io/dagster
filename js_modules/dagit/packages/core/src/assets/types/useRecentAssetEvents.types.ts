@@ -16,7 +16,7 @@ export type AssetMaterializationFragment = {
     | {
         __typename: 'Run';
         id: string;
-        mode: string;
+        mode: string | null;
         status: Types.RunStatus;
         pipelineName: string;
         pipelineSnapshotId: string | null;
@@ -152,7 +152,7 @@ export type AssetObservationFragment = {
     | {
         __typename: 'Run';
         id: string;
-        mode: string;
+        mode: string | null;
         status: Types.RunStatus;
         pipelineName: string;
         pipelineSnapshotId: string | null;
@@ -297,7 +297,7 @@ export type AssetEventsQuery = {
             | {
                 __typename: 'Run';
                 id: string;
-                mode: string;
+                mode: string | null;
                 status: Types.RunStatus;
                 pipelineName: string;
                 pipelineSnapshotId: string | null;
@@ -447,7 +447,7 @@ export type AssetEventsQuery = {
             | {
                 __typename: 'Run';
                 id: string;
-                mode: string;
+                mode: string | null;
                 status: Types.RunStatus;
                 pipelineName: string;
                 pipelineSnapshotId: string | null;

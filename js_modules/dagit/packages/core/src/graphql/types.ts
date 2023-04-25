@@ -2565,7 +2565,7 @@ export type PipelineRun = {
   executionPlan: Maybe<ExecutionPlan>;
   id: Scalars['ID'];
   jobName: Scalars['String'];
-  mode: Scalars['String'];
+  mode: Maybe<Scalars['String']>;
   parentRunId: Maybe<Scalars['String']>;
   pipeline: PipelineReference;
   pipelineName: Scalars['String'];
@@ -3024,7 +3024,7 @@ export type Run = PipelineRun & {
   hasTerminatePermission: Scalars['Boolean'];
   id: Scalars['ID'];
   jobName: Scalars['String'];
-  mode: Scalars['String'];
+  mode: Maybe<Scalars['String']>;
   parentPipelineSnapshotId: Maybe<Scalars['String']>;
   parentRunId: Maybe<Scalars['String']>;
   pipeline: PipelineReference;

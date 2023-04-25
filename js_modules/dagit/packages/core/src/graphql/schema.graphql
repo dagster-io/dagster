@@ -1001,7 +1001,7 @@ interface PipelineRun {
   stepKeysToExecute: [String!]
   runConfigYaml: String!
   runConfig: RunConfigData!
-  mode: String!
+  mode: String
   tags: [PipelineTag!]!
   rootRunId: String
   parentRunId: String
@@ -1227,7 +1227,7 @@ type Run implements PipelineRun {
   stepKeysToExecute: [String!]
   runConfigYaml: String!
   runConfig: RunConfigData!
-  mode: String!
+  mode: String
   tags: [PipelineTag!]!
   rootRunId: String
   parentRunId: String

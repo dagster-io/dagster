@@ -22,7 +22,7 @@ export type ConfigForRunQuery = {
     | {
         __typename: 'Run';
         id: string;
-        mode: string;
+        mode: string | null;
         runConfigYaml: string;
         solidSelection: Array<string> | null;
       }

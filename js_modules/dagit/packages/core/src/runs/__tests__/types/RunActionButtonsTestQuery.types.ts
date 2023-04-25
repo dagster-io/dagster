@@ -18,7 +18,7 @@ export type RunActionButtonsTestQuery = {
         hasTerminatePermission: boolean;
         hasDeletePermission: boolean;
         status: Types.RunStatus;
-        mode: string;
+        mode: string | null;
         rootRunId: string | null;
         parentRunId: string | null;
         pipelineName: string;
