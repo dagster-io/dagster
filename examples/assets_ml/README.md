@@ -1,48 +1,30 @@
-# ml_example
+# Machine Learning Examples
 
-This is a [Dagster](https://dagster.io/) project scaffolded with [`dagster project scaffold`](https://docs.dagster.io/getting-started/create-new-project).
+These are examples of Machine Learning assets and shows how to build the Dagster's [Software-Defined Assets](https://docs.dagster.io/concepts/assets/software-defined-assets) for Machine Learning). 
+
+Examples:
+- Machine learning pipeline example
+- Machine learning pipeline with Mlflow example 
+
+View a guide for machine learning in the Dagster docs at [Building machine learning pipelines with Dagster](https://docs.dagster.io/guides/dagster/ml-pipeline).
 
 ## Getting started
 
-First, install your Dagster code location as a Python package. By using the --editable flag, pip will install your Python package in ["editable mode"](https://pip.pypa.io/en/latest/topics/local-project-installs/#editable-installs) so that as you develop, local code changes will automatically apply.
+You can run:
 
-```bash
-pip install -e ".[dev]"
+```
+dagster dev -w workspace.yaml
 ```
 
-Then, start the Dagster UI web server:
+to load both examples into the Dagster UI.
 
-```bash
-dagster dev
-```
+## Asset groups
 
-Open http://localhost:3000 with your browser to see the project.
+It contains two asset groups:
 
-You can start writing assets in `ml_example/assets.py`. The assets are automatically loaded into the Dagster code location as you define them.
+- `ml_example`
+  - A machine learning model using Hacker News data assets that predicts the number of comments based on a story's title
+- `ml_example_mlflow`
+  - The same machine learning model as `ml_example` with mlflow capabilities integrated 
 
-## Development
 
-
-### Adding new Python dependencies
-
-You can specify new Python dependencies in `setup.py`.
-
-### Unit testing
-
-Tests are in the `ml_example_tests` directory and you can run tests using `pytest`:
-
-```bash
-pytest ml_example_tests
-```
-
-### Schedules and sensors
-
-If you want to enable Dagster [Schedules](https://docs.dagster.io/concepts/partitions-schedules-sensors/schedules) or [Sensors](https://docs.dagster.io/concepts/partitions-schedules-sensors/sensors) for your jobs, the [Dagster Daemon](https://docs.dagster.io/deployment/dagster-daemon) process must be running. This is done automatically when you run `dagster dev`.
-
-Once your Dagster Daemon is running, you can start turning on schedules and sensors for your jobs.
-
-## Deploy on Dagster Cloud
-
-The easiest way to deploy your Dagster project is to use Dagster Cloud.
-
-Check out the [Dagster Cloud Documentation](https://docs.dagster.cloud) to learn more.
