@@ -159,6 +159,8 @@ class ScheduleEvaluationContext:
             from both the actual execution time and the time at which the run config is computed.
             Not available in all schedulers - currently only set in deployments using
             DagsterDaemonScheduler.
+        resources (Optional[Dict[str, Any]]): Mapping of resource name to resource
+            definitions to be made available during schedule execution.
 
     Example:
         .. code-block:: python
@@ -238,6 +240,7 @@ class ScheduleEvaluationContext:
     def resource_defs(self) -> Optional[Mapping[str, "ResourceDefinition"]]:
         return self._resource_defs
 
+    @public
     @property
     def resources(self) -> Resources:
         from dagster._core.definitions.scoped_resources_builder import (

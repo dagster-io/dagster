@@ -115,6 +115,8 @@ class SensorEvaluationContext:
         definitions (Optional[Definitions]): `Definitions` object that the sensor is defined in.
             If needed by the sensor, top-level resource definitions will be pulled from these
             definitions. You can provide either this or `repository_def`.
+        resources (Optional[Dict[str, Any]]): A dict of resource keys to resource
+            definitions to be made available during sensor execution.
 
     Example:
         .. code-block:: python
@@ -216,6 +218,7 @@ class SensorEvaluationContext:
             },
         )
 
+    @public
     @property
     def resources(self) -> Resources:
         from dagster._core.definitions.scoped_resources_builder import (
