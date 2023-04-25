@@ -544,7 +544,7 @@ quux_asset_job = define_asset_job("quux_asset_job", [quux_asset], partitions_def
 def add_dynamic_partitions_sensor(context):
     return SensorResult(
         dynamic_partitions_requests=[
-            quux.build_add_request(["baz"]),
+            quux.build_add_request(["baz", "foo"]),
         ],
     )
 
@@ -554,7 +554,7 @@ def add_delete_dynamic_partitions_and_yield_run_requests_sensor(context):
     return SensorResult(
         dynamic_partitions_requests=[
             quux.build_add_request(["1"]),
-            quux.build_delete_request(["2"]),
+            quux.build_delete_request(["2", "3"]),
         ],
         run_requests=[RunRequest(partition_key="1")],
     )
@@ -2984,7 +2984,9 @@ def test_add_dynamic_partitions_sensor(
     caplog, executor, instance, workspace_context, external_repo
 ):
     foo_job.execute_in_process(instance=instance)  # creates event log storage tables
-    assert set(instance.get_dynamic_partitions("quux")) == set()
+    instance.add_dynamic_partitions("quux", ["foo"])
+    assert set(instance.get_dynamic_partitions("quux")) == set(["foo"])
+
     external_sensor = external_repo.get_external_sensor("add_dynamic_partitions_sensor")
     instance.add_instigator_state(
         InstigatorState(
@@ -3000,12 +3002,17 @@ def test_add_dynamic_partitions_sensor(
 
     evaluate_sensors(workspace_context, executor)
 
-    assert set(instance.get_dynamic_partitions("quux")) == set(["baz"])
+    assert set(instance.get_dynamic_partitions("quux")) == set(["baz", "foo"])
     ticks = instance.get_ticks(
         external_sensor.get_external_origin_id(), external_sensor.selector_id
     )
 
     assert "Added partition keys to dynamic partitions definition 'quux': ['baz']" in caplog.text
+    assert (
+        "Skipping addition of partition keys for dynamic partitions definition 'quux' that already"
+        " exist: ['foo']"
+        in caplog.text
+    )
 
 
 @pytest.mark.parametrize("executor", get_sensor_executors())
@@ -3039,8 +3046,14 @@ def test_add_dynamic_partitions_and_launch_runs(
     assert set(instance.get_dynamic_partitions("quux")) == set(["1"])
 
     assert instance.get_runs_count() == 2
+
     assert "Added partition keys to dynamic partitions definition 'quux': ['1']" in caplog.text
     assert "Deleted partition keys from dynamic partitions definition 'quux': ['2']" in caplog.text
+    assert (
+        "Skipping deletion of partition keys for dynamic partitions definition 'quux' that do not"
+        " exist: ['3']"
+        in caplog.text
+    )
     run = instance.get_runs()[0]
     assert run.run_config == {}
     assert run.tags

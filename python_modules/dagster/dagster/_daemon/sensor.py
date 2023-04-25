@@ -590,24 +590,48 @@ def _evaluate_sensor(
 
     if sensor_runtime_data.dynamic_partitions_requests:
         for request in sensor_runtime_data.dynamic_partitions_requests:
-            if isinstance(request, AddDynamicPartitionsRequest):
-                instance.add_dynamic_partitions(
-                    request.partitions_def_name,
-                    request.partition_keys,
-                )
-                context.logger.info(
-                    "Added partition keys to dynamic partitions definition"
-                    f" '{request.partitions_def_name}': {request.partition_keys}"
-                )
-            elif isinstance(request, DeleteDynamicPartitionsRequest):
-                # TODO add a bulk delete method to the instance
-                for partition in request.partition_keys:
-                    instance.delete_dynamic_partition(request.partitions_def_name, partition)
+            existent_partitions = []
+            nonexistent_partitions = []
+            for partition_key in request.partition_keys:
+                if instance.has_dynamic_partition(request.partitions_def_name, partition_key):
+                    existent_partitions.append(partition_key)
+                else:
+                    nonexistent_partitions.append(partition_key)
 
-                context.logger.info(
-                    "Deleted partition keys from dynamic partitions definition"
-                    f" '{request.partitions_def_name}': {request.partition_keys}"
-                )
+            if isinstance(request, AddDynamicPartitionsRequest):
+                if nonexistent_partitions:
+                    instance.add_dynamic_partitions(
+                        request.partitions_def_name,
+                        nonexistent_partitions,
+                    )
+                    context.logger.info(
+                        "Added partition keys to dynamic partitions definition"
+                        f" '{request.partitions_def_name}': {nonexistent_partitions}"
+                    )
+
+                if existent_partitions:
+                    context.logger.info(
+                        "Skipping addition of partition keys for dynamic partitions definition"
+                        f" '{request.partitions_def_name}' that already exist:"
+                        f" {existent_partitions}"
+                    )
+            elif isinstance(request, DeleteDynamicPartitionsRequest):
+                if existent_partitions:
+                    # TODO add a bulk delete method to the instance
+                    for partition in existent_partitions:
+                        instance.delete_dynamic_partition(request.partitions_def_name, partition)
+
+                    context.logger.info(
+                        "Deleted partition keys from dynamic partitions definition"
+                        f" '{request.partitions_def_name}': {existent_partitions}"
+                    )
+
+                if nonexistent_partitions:
+                    context.logger.info(
+                        "Skipping deletion of partition keys for dynamic partitions definition"
+                        f" '{request.partitions_def_name}' that do not exist:"
+                        f" {nonexistent_partitions}"
+                    )
             else:
                 check.failed(f"Unexpected action {request.action} for dynamic partition request")
     if not sensor_runtime_data.run_requests:
