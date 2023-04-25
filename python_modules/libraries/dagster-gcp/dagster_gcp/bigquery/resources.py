@@ -32,9 +32,11 @@ class BigQueryResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
 
     project: Optional[str] = Field(
         default=None,
-        description="""Project ID for the project which the client acts on behalf of. Will be passed
-        when creating a dataset / job. If not passed, falls back to the default inferred from the
-        environment.""",
+        description=(
+            "Project ID for the project which the client acts on behalf of. Will be passed when"
+            " creating a dataset / job. If not passed, falls back to the default inferred from the"
+            " environment."
+        ),
     )
 
     location: Optional[str] = Field(
