@@ -41,6 +41,7 @@ from dagster._core.host_representation.external import ExternalJob, ExternalSens
 from dagster._core.host_representation.external_data import ExternalTargetData
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler.instigation import (
+    DynamicPartitionsAction,
     InstigatorState,
     InstigatorStatus,
     InstigatorTick,
@@ -142,6 +143,16 @@ class SensorLaunchContext:
 
     def add_log_info(self, log_key: Sequence[str]) -> None:
         self._tick = self._tick.with_log_key(log_key)
+
+    def add_dynamic_partitions_definition_action(
+        self,
+        partitions_def_name: str,
+        dynamic_partitions_action: DynamicPartitionsAction,
+        partition_keys: Sequence[str],
+    ) -> None:
+        self._tick = self._tick.with_dynamic_partitions_definition_action(
+            partitions_def_name, dynamic_partitions_action, partition_keys
+        )
 
     def set_should_update_cursor_on_failure(self, should_update_cursor_on_failure: bool) -> None:
         self._should_update_cursor_on_failure = should_update_cursor_on_failure
@@ -608,12 +619,22 @@ def _evaluate_sensor(
                         "Added partition keys to dynamic partitions definition"
                         f" '{request.partitions_def_name}': {nonexistent_partitions}"
                     )
+                    context.add_dynamic_partitions_definition_action(
+                        request.partitions_def_name,
+                        DynamicPartitionsAction.ADDED_PARTITIONS,
+                        nonexistent_partitions,
+                    )
 
                 if existent_partitions:
                     context.logger.info(
                         "Skipping addition of partition keys for dynamic partitions definition"
                         f" '{request.partitions_def_name}' that already exist:"
                         f" {existent_partitions}"
+                    )
+                    context.add_dynamic_partitions_definition_action(
+                        request.partitions_def_name,
+                        DynamicPartitionsAction.SKIPPED_ADD_PARTITIONS_REQUEST,
+                        existent_partitions,
                     )
             elif isinstance(request, DeleteDynamicPartitionsRequest):
                 if existent_partitions:
@@ -625,12 +646,22 @@ def _evaluate_sensor(
                         "Deleted partition keys from dynamic partitions definition"
                         f" '{request.partitions_def_name}': {existent_partitions}"
                     )
+                    context.add_dynamic_partitions_definition_action(
+                        request.partitions_def_name,
+                        DynamicPartitionsAction.DELETED_PARTITIONS,
+                        existent_partitions,
+                    )
 
                 if nonexistent_partitions:
                     context.logger.info(
                         "Skipping deletion of partition keys for dynamic partitions definition"
                         f" '{request.partitions_def_name}' that do not exist:"
                         f" {nonexistent_partitions}"
+                    )
+                    context.add_dynamic_partitions_definition_action(
+                        request.partitions_def_name,
+                        DynamicPartitionsAction.SKIPPED_DELETE_PARTITIONS_REQUEST,
+                        nonexistent_partitions,
                     )
             else:
                 check.failed(f"Unexpected action {request.action} for dynamic partition request")
