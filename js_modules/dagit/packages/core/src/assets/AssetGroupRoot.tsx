@@ -1,3 +1,4 @@
+import {gql, useQuery} from '@apollo/client';
 import {Page, PageHeader, Heading, Box, Tag, Tabs} from '@dagster-io/ui';
 import * as React from 'react';
 import {useHistory, useParams} from 'react-router-dom';
@@ -5,6 +6,7 @@ import {useHistory, useParams} from 'react-router-dom';
 import {useTrackPageView} from '../app/analytics';
 import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
 import {AssetLocation} from '../asset-graph/useFindAssetLocation';
+import {AssetGroupSelector} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {
@@ -19,7 +21,12 @@ import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {AssetGlobalLineageLink} from './AssetPageHeader';
 import {AssetsCatalogTable} from './AssetsCatalogTable';
+import {AutomaterializeDaemonStatusTag} from './AutomaterializeDaemonStatusTag';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
+import {
+  AssetGroupMetadataQuery,
+  AssetGroupMetadataQueryVariables,
+} from './types/AssetGroupRoot.types';
 
 interface AssetGroupRootParams {
   groupName: string;
@@ -82,11 +89,7 @@ export const AssetGroupRoot: React.FC<{repoAddress: RepoAddress; tab: 'lineage' 
             <ReloadAllButton label="Reload definitions" />
           </div>
         }
-        tags={
-          <Tag icon="asset_group">
-            Asset Group in <RepositoryLink repoAddress={repoAddress} />
-          </Tag>
-        }
+        tags={<AssetGroupTags groupSelector={groupSelector} repoAddress={repoAddress} />}
         tabs={
           <Box
             flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
@@ -118,5 +121,37 @@ export const AssetGroupRoot: React.FC<{repoAddress: RepoAddress; tab: 'lineage' 
         />
       )}
     </Page>
+  );
+};
+
+const ASSET_GROUP_METADATA_QUERY = gql`
+  query AssetGroupMetadataQuery($selector: AssetGroupSelector!) {
+    assetNodes(group: $selector) {
+      id
+      autoMaterializePolicy {
+        policyType
+      }
+    }
+  }
+`;
+
+const AssetGroupTags: React.FC<{groupSelector: AssetGroupSelector; repoAddress: RepoAddress}> = ({
+  repoAddress,
+  groupSelector,
+}) => {
+  const {data} = useQuery<AssetGroupMetadataQuery, AssetGroupMetadataQueryVariables>(
+    ASSET_GROUP_METADATA_QUERY,
+    {variables: {selector: groupSelector}},
+  );
+
+  return (
+    <>
+      <Tag icon="asset_group">
+        Asset Group in <RepositoryLink repoAddress={repoAddress} />
+      </Tag>
+      {data?.assetNodes?.some((a) => !!a.autoMaterializePolicy) && (
+        <AutomaterializeDaemonStatusTag />
+      )}
+    </>
   );
 };
