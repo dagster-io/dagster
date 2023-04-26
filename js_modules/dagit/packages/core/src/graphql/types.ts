@@ -1057,10 +1057,10 @@ export type DynamicPartitionRequest = {
   __typename: 'DynamicPartitionRequest';
   partitionKeys: Maybe<Array<Scalars['String']>>;
   partitionsDefName: Scalars['String'];
-  type: DynamicPartitionRequestType;
+  type: DynamicPartitionsRequestType;
 };
 
-export enum DynamicPartitionRequestType {
+export enum DynamicPartitionsRequestType {
   ADD_PARTITIONS = 'ADD_PARTITIONS',
   DELETE_PARTITIONS = 'DELETE_PARTITIONS',
 }
@@ -5834,7 +5834,7 @@ export const buildDynamicPartitionRequest = (
     type:
       overrides && overrides.hasOwnProperty('type')
         ? overrides.type!
-        : DynamicPartitionRequestType.ADD_PARTITIONS,
+        : DynamicPartitionsRequestType.ADD_PARTITIONS,
   };
 };
 
