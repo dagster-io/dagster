@@ -224,17 +224,22 @@ class Config(MakeConfigCacheable):
         super().__init__(**modified_data)
 
     def _as_config_dict_deep(self) -> Mapping[str, Any]:
+        """Returns a dictionary representation of this config object, ignoring any private fields.
+        Inner fields are recursively converted to dictionaries, meaning nested config objects
+        or EnvVars will be converted to the appropriate dictionary representation.
+        """
         return self._as_config_dict_inner(None, True)
 
     def _as_config_dict_shallow(self) -> Mapping[str, Any]:
+        """Returns a dictionary representation of this config object,
+        ignoring any private fields. Inner fields are returned as-is in the dictionary,
+        meaning any nested config objects will be returned as config objects, not dictionaries.
+        """
         return self._as_config_dict_inner(None, False)
 
     def _as_config_dict_inner(
         self, discriminator_key: Optional[str] = None, deep: Optional[bool] = False
     ) -> Mapping[str, Any]:
-        """Returns a dictionary representation of this config object,
-        ignoring any private fields.
-        """
         output = {}
         for key, value in self.__dict__.items():
             if self._is_field_internal(key):
@@ -243,9 +248,7 @@ class Config(MakeConfigCacheable):
             if field and value is None and not _is_pydantic_field_required(field):
                 continue
 
-            output_value = (
-                _config_value_to_dict_representation(self, field, value) if deep else value
-            )
+            output_value = _config_value_to_dict_representation(field, value) if deep else value
 
             if field:
                 output[field.alias] = output_value
@@ -270,19 +273,20 @@ class Config(MakeConfigCacheable):
         return cast(Shape, cls.to_config_schema().as_field().config_type).fields
 
 
-def _config_value_to_dict_representation(
-    parent: Optional[Config], field: Optional[ModelField], value: Any
-):
+def _config_value_to_dict_representation(field: Optional[ModelField], value: Any):
+    """Converts a config value to a dictionary representation. If a field is provided, it will be used
+    to determine the appropriate dictionary representation in the case of discriminated unions.
+    """
     from dagster._config.field_utils import EnvVar, IntEnvVar
 
     if isinstance(value, dict):
         return {
-            k: _config_value_to_dict_representation(None, None, v)
+            k: _config_value_to_dict_representation(None, v)
             for k, v in value.items()
             if v is not None
         }
     elif isinstance(value, list):
-        return [_config_value_to_dict_representation(None, None, v) for v in value]
+        return [_config_value_to_dict_representation(None, v) for v in value]
     elif isinstance(value, EnvVar):
         return {"env": str(value)}
     elif isinstance(value, IntEnvVar):
