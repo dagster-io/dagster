@@ -37,7 +37,7 @@ interface RunTableProps {
   highlightedIds?: string[];
   additionalColumnHeaders?: React.ReactNode[];
   additionalColumnsForRow?: (run: RunTableRunFragment) => React.ReactNode[];
-  belowActionBarComponents?: React.ReactNode[];
+  belowActionBarComponents?: React.ReactNode;
   hideCreatedBy?: boolean;
 }
 
@@ -326,13 +326,13 @@ const Row = styled.tr<{highlighted: boolean}>`
     highlighted ? `box-shadow: inset 3px 3px #bfccd6, inset -3px -3px #bfccd6;` : null}
 `;
 
-function ActionBar({top, bottom}: {top: React.ReactNode; bottom?: React.ReactNode[]}) {
+function ActionBar({top, bottom}: {top: React.ReactNode; bottom?: React.ReactNode}) {
   return (
     <Box flex={{direction: 'column'}} padding={{vertical: 12}}>
       <Box flex={{alignItems: 'center', gap: 12}} padding={{left: 24, right: 24}}>
         {top}
       </Box>
-      {bottom && bottom.length > 0 ? (
+      {bottom ? (
         <Box
           margin={{top: 12}}
           padding={{left: 24, right: 12, top: 8}}

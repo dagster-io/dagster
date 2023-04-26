@@ -1,10 +1,15 @@
 import {gql, useQuery} from '@apollo/client';
-import {Page, Alert, ButtonLink, Colors, Group} from '@dagster-io/ui';
+import {Page, Alert, ButtonLink, Colors, Group, Box} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {
+  FIFTEEN_SECONDS,
+  QueryRefreshCountdown,
+  useMergedRefresh,
+  useQueryRefreshAtInterval,
+} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
@@ -15,7 +20,7 @@ import {
 } from '../schedules/SchedulesNextTicks';
 import {Loading} from '../ui/Loading';
 
-import {RunsPageHeader} from './RunsPageHeader';
+import {useRunListTabs} from './RunListTabs.new';
 import {
   ScheduledRunsListQuery,
   ScheduledRunsListQueryVariables,
@@ -35,9 +40,19 @@ export const ScheduledRunListRoot = () => {
 
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
+  const {tabs, queryResult: runQueryResult} = useRunListTabs();
+  const countRefreshState = useQueryRefreshAtInterval(runQueryResult, FIFTEEN_SECONDS);
+  const combinedRefreshState = useMergedRefresh(countRefreshState, refreshState);
+
   return (
     <Page>
-      <RunsPageHeader refreshStates={[refreshState]} />
+      <Box
+        flex={{direction: 'row', gap: 8, alignItems: 'center', justifyContent: 'space-between'}}
+        padding={{vertical: 8, left: 24, right: 12}}
+      >
+        {tabs}
+        <QueryRefreshCountdown refreshState={combinedRefreshState} />
+      </Box>
       <Loading queryResult={queryResult}>
         {(result) => {
           const {repositoriesOrError, instance} = result;
