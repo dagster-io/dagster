@@ -7,22 +7,19 @@ platform_type: "cloud"
 
 <Note>This guide is applicable to Dagster Cloud.</Note>
 
-Each Dagster Cloud full deployment (e.g., `prod`) needs to have at least one agent running. A single agent is adequate for many use cases, but you may want to run multiple agents for the following reasons:
-
-- Provide redundancy
-- Distribute runs across multiple Kubernetes clusters, ECS clusters, EC2 instances, or other environments
+Each Dagster Cloud full deployment (e.g., `prod`) needs to have at least one agent running. A single agent is adequate for many use cases, but you may want to run multiple agents to provide redundancy if a single agent goes down.
 
 It's recommended to only use multiple agents of the same type (e.g. multiple Kubernetes agents). Submitting runs to a specific agent isn't currently supported.
 
 ---
 
-## Multiple agents in the same environments
+## Multiple agents in the same environment
 
 If you want to run multiple agents in the same environment (e.g., multiple Kubernetes agents in the same namespace), you can set the number of replicas in the configuration for your particular agent type:
 
 ### In Docker
 
-In docker, you can set the number of replicas for a service in the `docker-compose.yaml` file if the deployment mode is set to `replicated` (which is the default):
+In Docker, you can set the number of replicas for a service in the `docker-compose.yaml` file if the deployment mode is set to `replicated` (which is the default):
 
 ```yaml
 services:
@@ -51,9 +48,9 @@ dagsterCloudAgent:
   replicas: 2
 ```
 
-### In ECS
+### In Amazon ECS
 
-In ECS, the number of replicas can be set via the cloudformation template:
+In Amazon ECS, the number of replicas can be set via the CloudFormation template:
 
 ```yaml
 DagsterCloudAgent:
@@ -63,18 +60,17 @@ DagsterCloudAgent:
     DesiredCount: 2
 ```
 
-If using the cloudformation template provided by Dagster, the number of replicas can be set via the `NumReplicas` parameter in the AWS UI.
+If using the CloudFormation template provided by Dagster, the number of replicas can be set via the `NumReplicas` parameter in the Amazon Web Services (AWS) UI.
 
 ---
 
 ## Multiple agents in different environments
 
-<Note>
-  This feature requires dagster-cloud version 0.13.0 or later for both agents
-  and job code. Sending requests to specific agents is not supported.{" "}
-</Note>
+If you want to run multiple agents in an environment where each agent can not access the others' resources (for example, multiple kubernetes namespaces or different clusters), you need to enable the `isolated_agents` option. This is supported for all agent types.
 
-If you want to run multiple agents in different environments (e.g., multiple Kubernetes agents in different namespaces), you need to enable the `isolated_agents` option. This is currently only supported for local, docker and kubernetes agents.
+<Note>
+  It is not currently possible to control which agent a request goes to.
+</Note>
 
 ### In Docker
 
@@ -109,3 +105,7 @@ isolatedAgents:
 dagsterCloud:
   agentLabel: "My agent" # optional, only supported on 0.13.14 and later
 ```
+
+### In Amazon ECS
+
+The `isolated_agents` option can be set as per-deployment configuration on the `dagster.yaml` file used by your agent. See the [ECS configuration reference](/dagster-cloud/deployment/agents/amazon-ecs/configuration-reference#per-deployment-configuration) guide for more information.
