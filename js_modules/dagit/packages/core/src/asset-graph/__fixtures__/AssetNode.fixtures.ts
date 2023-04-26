@@ -78,7 +78,6 @@ export const LiveDataForNodeRunStartedNotMaterializing: LiveDataForNode = {
   staleStatus: null,
   staleCauses: [],
   freshnessInfo: null,
-  freshnessPolicy: null,
   partitionStats: null,
 };
 
@@ -93,7 +92,6 @@ export const LiveDataForNodeRunStartedMaterializing: LiveDataForNode = {
   staleStatus: null,
   staleCauses: [],
   freshnessInfo: null,
-  freshnessPolicy: null,
   partitionStats: null,
 };
 
@@ -113,7 +111,6 @@ export const LiveDataForNodeRunFailed: LiveDataForNode = {
   staleStatus: null,
   staleCauses: [],
   freshnessInfo: null,
-  freshnessPolicy: null,
   partitionStats: null,
 };
 
@@ -128,7 +125,6 @@ export const LiveDataForNodeNeverMaterialized: LiveDataForNode = {
   staleStatus: StaleStatus.MISSING,
   staleCauses: [],
   freshnessInfo: null,
-  freshnessPolicy: null,
   partitionStats: null,
 };
 
@@ -147,7 +143,6 @@ export const LiveDataForNodeMaterialized: LiveDataForNode = {
   staleStatus: StaleStatus.FRESH,
   staleCauses: [],
   freshnessInfo: null,
-  freshnessPolicy: null,
   partitionStats: null,
 };
 
@@ -166,7 +161,6 @@ export const LiveDataForNodeMaterializedAndStale: LiveDataForNode = {
   staleStatus: StaleStatus.STALE,
   staleCauses: [MockStaleReasonCode],
   freshnessInfo: null,
-  freshnessPolicy: null,
   partitionStats: null,
 };
 
@@ -187,12 +181,6 @@ export const LiveDataForNodeMaterializedAndStaleAndOverdue: LiveDataForNode = {
   freshnessInfo: {
     __typename: 'AssetFreshnessInfo',
     currentMinutesLate: 12,
-  },
-  freshnessPolicy: {
-    __typename: 'FreshnessPolicy',
-    maximumLagMinutes: 10,
-    cronSchedule: null,
-    cronScheduleTimezone: null,
   },
   partitionStats: null,
 };
@@ -215,12 +203,6 @@ export const LiveDataForNodeMaterializedAndStaleAndFresh: LiveDataForNode = {
     __typename: 'AssetFreshnessInfo',
     currentMinutesLate: 0,
   },
-  freshnessPolicy: {
-    __typename: 'FreshnessPolicy',
-    maximumLagMinutes: 10,
-    cronSchedule: null,
-    cronScheduleTimezone: null,
-  },
   partitionStats: null,
 };
 
@@ -242,12 +224,6 @@ export const LiveDataForNodeMaterializedAndFresh: LiveDataForNode = {
     __typename: 'AssetFreshnessInfo',
     currentMinutesLate: 0,
   },
-  freshnessPolicy: {
-    __typename: 'FreshnessPolicy',
-    maximumLagMinutes: 10,
-    cronSchedule: null,
-    cronScheduleTimezone: null,
-  },
   partitionStats: null,
 };
 
@@ -268,12 +244,6 @@ export const LiveDataForNodeMaterializedAndOverdue: LiveDataForNode = {
   freshnessInfo: {
     __typename: 'AssetFreshnessInfo',
     currentMinutesLate: 12,
-  },
-  freshnessPolicy: {
-    __typename: 'FreshnessPolicy',
-    maximumLagMinutes: 10,
-    cronSchedule: null,
-    cronScheduleTimezone: null,
   },
   partitionStats: null,
 };
@@ -297,12 +267,6 @@ export const LiveDataForNodeFailedAndOverdue: LiveDataForNode = {
     __typename: 'AssetFreshnessInfo',
     currentMinutesLate: 12,
   },
-  freshnessPolicy: {
-    __typename: 'FreshnessPolicy',
-    maximumLagMinutes: 10,
-    cronSchedule: null,
-    cronScheduleTimezone: null,
-  },
   partitionStats: null,
 };
 
@@ -317,7 +281,7 @@ export const LiveDataForNodeSourceNeverObserved: LiveDataForNode = {
   staleStatus: StaleStatus.MISSING,
   staleCauses: [],
   freshnessInfo: null,
-  freshnessPolicy: null,
+
   partitionStats: null,
 };
 
@@ -332,7 +296,6 @@ export const LiveDataForNodeSourceObservationRunning: LiveDataForNode = {
   staleStatus: StaleStatus.MISSING,
   staleCauses: [],
   freshnessInfo: null,
-  freshnessPolicy: null,
   partitionStats: null,
 };
 export const LiveDataForNodeSourceObservedUpToDate: LiveDataForNode = {
@@ -350,7 +313,7 @@ export const LiveDataForNodeSourceObservedUpToDate: LiveDataForNode = {
   staleStatus: StaleStatus.FRESH,
   staleCauses: [],
   freshnessInfo: null,
-  freshnessPolicy: null,
+
   partitionStats: null,
 };
 
@@ -369,7 +332,6 @@ export const LiveDataForNodePartitionedSomeMissing: LiveDataForNode = {
   staleStatus: StaleStatus.FRESH,
   staleCauses: [],
   freshnessInfo: null,
-  freshnessPolicy: null,
   partitionStats: {
     numMaterialized: 6,
     numMaterializing: 0,
@@ -393,7 +355,6 @@ export const LiveDataForNodePartitionedSomeFailed: LiveDataForNode = {
   staleStatus: StaleStatus.FRESH,
   staleCauses: [],
   freshnessInfo: null,
-  freshnessPolicy: null,
   partitionStats: {
     numMaterialized: 6,
     numMaterializing: 0,
@@ -417,7 +378,6 @@ export const LiveDataForNodePartitionedNoneMissing: LiveDataForNode = {
   staleStatus: StaleStatus.FRESH,
   staleCauses: [],
   freshnessInfo: null,
-  freshnessPolicy: null,
   partitionStats: {
     numMaterialized: 1500,
     numMaterializing: 0,
@@ -437,7 +397,6 @@ export const LiveDataForNodePartitionedNeverMaterialized: LiveDataForNode = {
   staleStatus: StaleStatus.MISSING,
   staleCauses: [],
   freshnessInfo: null,
-  freshnessPolicy: null,
   partitionStats: {
     numMaterialized: 0,
     numMaterializing: 0,
@@ -457,7 +416,6 @@ export const LiveDataForNodePartitionedMaterializing: LiveDataForNode = {
   staleStatus: StaleStatus.MISSING,
   staleCauses: [],
   freshnessInfo: null,
-  freshnessPolicy: null,
   partitionStats: {
     numMaterialized: 0,
     numMaterializing: 5,
@@ -481,7 +439,6 @@ export const LiveDataForNodePartitionedStale: LiveDataForNode = {
   staleStatus: StaleStatus.STALE,
   staleCauses: [MockStaleReasonData],
   freshnessInfo: null,
-  freshnessPolicy: null,
   partitionStats: {
     numMaterialized: 1500,
     numMaterializing: 0,
@@ -507,12 +464,6 @@ export const LiveDataForNodePartitionedOverdue: LiveDataForNode = {
   freshnessInfo: {
     __typename: 'AssetFreshnessInfo',
     currentMinutesLate: 12,
-  },
-  freshnessPolicy: {
-    __typename: 'FreshnessPolicy',
-    maximumLagMinutes: 10,
-    cronSchedule: null,
-    cronScheduleTimezone: null,
   },
   partitionStats: {
     numMaterialized: 1500,
@@ -540,12 +491,6 @@ export const LiveDataForNodePartitionedFresh: LiveDataForNode = {
     __typename: 'AssetFreshnessInfo',
     currentMinutesLate: 0,
   },
-  freshnessPolicy: {
-    __typename: 'FreshnessPolicy',
-    maximumLagMinutes: 10,
-    cronSchedule: null,
-    cronScheduleTimezone: null,
-  },
   partitionStats: {
     numMaterialized: 1500,
     numMaterializing: 0,
@@ -570,7 +515,6 @@ export const LiveDataForNodePartitionedLatestRunFailed: LiveDataForNode = {
   staleStatus: null,
   staleCauses: [],
   freshnessInfo: null,
-  freshnessPolicy: null,
   partitionStats: {
     numMaterialized: 1495,
     numMaterializing: 0,
