@@ -1,7 +1,7 @@
 import {Box, Colors, Icon, Subheading, Table, Tag} from '@dagster-io/ui';
 import React from 'react';
 
-import {PartitionRequestType} from '../graphql/types';
+import {DynamicPartitionsRequestType} from '../graphql/types';
 
 import {DynamicPartitionRequestFragment} from './types/SensorDryRunDialog.types';
 
@@ -14,7 +14,7 @@ export function DynamicPartitionRequests({
     if (!requests.length) {
       return [];
     }
-    const rows: {key: string; def: string; type: PartitionRequestType}[] = [];
+    const rows: {key: string; def: string; type: DynamicPartitionsRequestType}[] = [];
     requests.forEach(({partitionKeys, partitionsDefName, type}) => {
       partitionKeys?.forEach((key) => {
         rows.push({
@@ -52,7 +52,7 @@ export function DynamicPartitionRequests({
                 <td>{key}</td>
                 <td>{def}</td>
                 <td>
-                  {type === PartitionRequestType.ADD_PARTITIONS ? (
+                  {type === DynamicPartitionsRequestType.ADD_PARTITIONS ? (
                     <Tag intent="success">
                       <span>Add Partition</span>
                     </Tag>

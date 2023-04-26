@@ -215,7 +215,7 @@ const SensorDryRun: React.FC<Props> = ({repoAddress, name, currentCursor, onClos
       const numRunRequests = runRequests?.length || 0;
       const didSkip = !error && numRunRequests === 0;
       const dynamicPartitionRequests =
-        sensorExecutionData?.evaluationResult?.dynamicPartitionRequests;
+        sensorExecutionData?.evaluationResult?.dynamicPartitionsRequests;
       return (
         <Box flex={{direction: 'column', gap: 8}}>
           <Box>
@@ -374,7 +374,7 @@ export const EVALUATE_SENSOR_MUTATION = gql`
           error {
             ...PythonErrorFragment
           }
-          dynamicPartitionRequests {
+          dynamicPartitionsRequests {
             ...DynamicPartitionRequestFragment
           }
         }

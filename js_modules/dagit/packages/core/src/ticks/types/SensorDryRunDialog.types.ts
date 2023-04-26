@@ -34,11 +34,11 @@ export type SensorDryRunMutation = {
               error: {__typename: 'PythonError'; message: string; stack: Array<string>};
             }>;
           } | null;
-          dynamicPartitionRequests: Array<{
+          dynamicPartitionsRequests: Array<{
             __typename: 'DynamicPartitionRequest';
             partitionKeys: Array<string> | null;
             partitionsDefName: string;
-            type: Types.PartitionRequestType;
+            type: Types.DynamicPartitionsRequestType;
           }> | null;
         } | null;
       }
@@ -59,5 +59,5 @@ export type DynamicPartitionRequestFragment = {
   __typename: 'DynamicPartitionRequest';
   partitionKeys: Array<string> | null;
   partitionsDefName: string;
-  type: Types.PartitionRequestType;
+  type: Types.DynamicPartitionsRequestType;
 };

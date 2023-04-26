@@ -26,7 +26,7 @@ export type DynamicPartitionRequestFragment = {
   __typename: 'DynamicPartitionRequest';
   partitionKeys: Array<string> | null;
   partitionsDefName: string;
-  type: Types.PartitionRequestType;
+  type: Types.DynamicPartitionsRequestType;
 };
 
 export type LaunchedRunListQueryVariables = Types.Exact<{

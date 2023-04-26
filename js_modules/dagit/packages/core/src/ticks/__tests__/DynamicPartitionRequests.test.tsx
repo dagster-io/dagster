@@ -1,7 +1,7 @@
 import {getByText, render, screen} from '@testing-library/react';
 import React from 'react';
 
-import {PartitionRequestType, buildDynamicPartitionRequest} from '../../graphql/types';
+import {DynamicPartitionsRequestType, buildDynamicPartitionRequest} from '../../graphql/types';
 import {DynamicPartitionRequests} from '../DynamicPartitionRequests';
 
 describe('DynamicPartitionRequests', () => {
@@ -15,12 +15,12 @@ describe('DynamicPartitionRequests', () => {
       buildDynamicPartitionRequest({
         partitionKeys: ['part1', 'part2'],
         partitionsDefName: 'def1',
-        type: PartitionRequestType.ADD_PARTITIONS,
+        type: DynamicPartitionsRequestType.ADD_PARTITIONS,
       }),
       buildDynamicPartitionRequest({
         partitionKeys: ['part3'],
         partitionsDefName: 'def2',
-        type: PartitionRequestType.DELETE_PARTITIONS,
+        type: DynamicPartitionsRequestType.DELETE_PARTITIONS,
       }),
     ];
 
