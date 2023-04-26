@@ -613,17 +613,24 @@ def construct_config_type_dictionary(
     return type_dict_by_name, type_dict_by_key
 
 
-def _convert_config_classes(configs: Dict[str, Any]) -> Dict[str, Any]:
+def _convert_config_classes_inner(configs: Any) -> Any:
+    if not isinstance(configs, dict):
+        return configs
+
     return {
         k: {
             "config": config_dictionary_from_values(
                 v._as_config_dict(), v.to_config_schema().as_field()  # noqa: SLF001
             )
-            if isinstance(v, Config)
-            else v
         }
+        if isinstance(v, Config)
+        else _convert_config_classes_inner(v)
         for k, v in configs.items()
     }
+
+
+def _convert_config_classes(configs: Dict[str, Any]) -> Dict[str, Any]:
+    return _convert_config_classes_inner(configs)
 
 
 class RunConfig:
