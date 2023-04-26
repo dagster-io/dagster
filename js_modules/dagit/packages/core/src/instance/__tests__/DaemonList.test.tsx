@@ -2,13 +2,13 @@ import {MockedResponse, MockedProvider} from '@apollo/client/testing';
 import {fireEvent, render, waitFor} from '@testing-library/react';
 import React from 'react';
 
-import {buildDaemonStatus, buildInstance} from '../../graphql/types';
 import {
-  DaemonList,
   AUTOMATERIALIZE_PAUSED_QUERY,
   SET_AUTOMATERIALIZE_PAUSED_MUTATION,
-} from '../DaemonList';
-import {GetAutoMaterializePausedQuery} from '../types/DaemonList.types';
+} from '../../assets/AutomaterializeDaemonStatusTag';
+import {GetAutoMaterializePausedQuery} from '../../assets/types/AutomaterializeDaemonStatusTag.types';
+import {buildDaemonStatus, buildInstance} from '../../graphql/types';
+import {DaemonList} from '../DaemonList';
 
 let mockResolveConfirmation = (_any: any) => {};
 beforeEach(() => {
