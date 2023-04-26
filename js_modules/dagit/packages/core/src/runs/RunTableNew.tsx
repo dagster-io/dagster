@@ -332,7 +332,7 @@ function ActionBar({top, bottom}: {top: React.ReactNode; bottom?: React.ReactNod
       <Box flex={{alignItems: 'center', gap: 12}} padding={{left: 24, right: 24}}>
         {top}
       </Box>
-      {bottom && bottom.length > 0 ? (
+      {bottom ? (
         <Box
           margin={{top: 12}}
           padding={{left: 24, right: 12, top: 8}}
