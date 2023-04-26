@@ -268,8 +268,9 @@ class RunFailureSensorContext(RunStatusSensorContext):
         Examples:
             .. code-block:: python
 
-                error_messages_by_step_key = {
-                    event.step_key: event.message
+                error_strings_by_step_key = {
+                    # includes the stack trace
+                    event.step_key: event.event_specific_data.error.to_string()
                     for event in context.get_step_failure_events()
                 }
         """
