@@ -4,6 +4,8 @@ from typing import Any, Dict, Generator
 import pytest
 from dagster import (
     ConfigurableResource,
+    Definitions,
+    RunConfig,
     job,
     op,
 )
@@ -326,6 +328,77 @@ def test_nested_resources_init_with_privateattr() -> None:
         load_from_s3_op()
 
     result = load_from_s3_job.execute_in_process()
+    assert result.success
+    assert log == [
+        "fetch_jwt with my_key and my_secret",
+        "pre_execute with jwt my_jwt",
+        "load_from_s3_op",
+        "get_object my-bucket my-key with jwt my_jwt",
+    ]
+
+
+def test_nested_resources_init_with_privateattr_runtime_config() -> None:
+    log = []
+
+    def fetch_jwt(access_key: str, secret_key: str) -> str:
+        log.append(f"fetch_jwt with {access_key} and {secret_key}")
+        return "my_jwt"
+
+    class S3Client:
+        def __init__(self, jwt: str):
+            self.jwt = jwt
+
+    class AWSCredentialsResource(ConfigurableResource):
+        access_key: str
+        secret_key: str
+
+        _jwt: str = PrivateAttr()
+
+        def pre_execute(self, context: InitResourceContext) -> None:
+            self._jwt = fetch_jwt(self.access_key, self.secret_key)
+
+        @property
+        def jwt(self) -> str:
+            return self._jwt
+
+    class S3Resource(ConfigurableResource):
+        credentials: AWSCredentialsResource
+
+        _s3_client: Any = PrivateAttr()
+
+        def pre_execute(self, context: InitResourceContext) -> None:
+            log.append(f"pre_execute with jwt {self.credentials.jwt}")
+            self._s3_client = S3Client(self.credentials.jwt)
+
+        def get_object(self, bucket: str, key: str) -> Dict[str, Any]:
+            log.append(f"get_object {bucket} {key} with jwt {self.credentials.jwt}")
+            return {"foo": "bar"}
+
+    @op
+    def load_from_s3_op(s3: S3Resource) -> Dict[str, Any]:
+        log.append("load_from_s3_op")
+        res = s3.get_object("my-bucket", "my-key")
+        assert res == {"foo": "bar"}
+        return res
+
+    credentials = AWSCredentialsResource.configure_at_launch()
+
+    @job
+    def load_from_s3_job() -> None:
+        load_from_s3_op()
+
+    defs = Definitions(
+        jobs=[load_from_s3_job],
+        resources={"credentials": credentials, "s3": S3Resource(credentials=credentials)},
+    )
+
+    result = defs.get_job_def("load_from_s3_job").execute_in_process(
+        run_config=RunConfig(
+            resources={
+                "credentials": AWSCredentialsResource(access_key="my_key", secret_key="my_secret")
+            }
+        )
+    )
     assert result.success
     assert log == [
         "fetch_jwt with my_key and my_secret",
