@@ -27,7 +27,7 @@ import {useCanSeeConfig} from '../instance/useCanSeeConfig';
 import {Loading} from '../ui/Loading';
 import {StickyTableContainer} from '../ui/StickyTableContainer';
 
-import {RunListTabs, useRunListTabs, useSelectedRunsTab} from './RunListTabs.new';
+import {useRunListTabs, useSelectedRunsTab} from './RunListTabs.new';
 import {RunTable, RUN_TABLE_RUN_FRAGMENT} from './RunTableNew';
 import {RunsQueryRefetchContext} from './RunUtils';
 import {
