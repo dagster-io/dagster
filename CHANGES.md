@@ -1,5 +1,46 @@
 # Changelog
 
+# 1.3.2 (core) / 0.19.2 (libraries)
+
+### New
+
+- Added performance improvements for yielding time-partitioned run requests.
+- The asset backfill page now displays targeted assets in topological order.
+- Replicas can now be specified on Hybrid ECS and K8s agents. In ECS, use the `NumReplicas` parameter on the agent template in CloudFormation, or the `dagsterCloudAgent.replicas` field in Helm.
+- Zero-downtime agent updates can now be configured for the ECS agent. Just set the `enableZeroDowntimeDeploys` parameter to true in the CloudFormation stack for your agent.
+- The `AssetsDefinition.from_graph`, as well as the`@graph_asset` and `@graph_multi_asset` decorators now support specifying `AutoMaterializePolicy`s.
+- [dagstermill] Pythonic resource variant of the dagstermill I/O manager is now available.
+- [dagster-duckdb] New DuckDBResource for connecting to and querying DuckDB databases.
+- [ui] Sensor / Schedule overview pages now allow you to select and start/stop multiple sensors/schedules at once.
+- [ui] Performance improvements to global search for big workspaces.
+
+### Bugfixes
+
+- `async def` ops/assets no longer prematurely finalize async generators during execution.
+- In some cases, the AutoMaterialize Daemon (and the `build_asset_reconciliation_sensor`) could incorrectly launch new runs for partitions that already had an in-progress run. This has been fixed.
+
+### Breaking Changes
+
+
+- Yielding run requests for experimental dynamic partitions via `run_request_for_partition` now throws an error. Instead, users should yield directly instantiated run requests via `RunRequest(partition_key=...)`.
+- `graph_asset` and `graph_multi_asset` now support specifying `resource_defs` directly (thanks [@kmontag42](https://github.com/KMontag42))!
+
+### Community Contributions
+
+- A new `node_info_to_auto_materialize_policy_fn` param added to `load_assets_from_dbt_*` functions. (thanks [@askvinni](https://github.com/askvinni))!
+- Added `partition_key` field to `RunStatusSensorContext` (thanks [@pdstrnadJC](https://github.com/pdstrnadJC))!
+
+### Experimental
+
+- For multi-partitioned assets with a time dimension, the auto-materialize policy now only kicks off materializations for the latest time partition window. Previously, all partitions would be targeted.
+- Added performance improvements to the multi-asset sensor context’s `latest_materialization_records_by_key` method.
+- The GraphQL API for launching a backfill no longer errors when the backfill targets assets instead of a job and the `allPartitions` argument is provided.
+
+### Documentation
+
+- Fixed a few typos in various guides.
+- Fixed a formatting issue in the Automating pipelines guide that was causing a 404.
+
 # 1.3.1 (core) / 0.19.1 (libraries)
 
 ### New
