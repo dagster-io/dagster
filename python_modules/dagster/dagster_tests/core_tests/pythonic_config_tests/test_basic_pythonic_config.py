@@ -663,6 +663,7 @@ def test_schema_aliased_field():
 
 def test_env_var():
     with environ({"ENV_VARIABLE_FOR_TEST_INT": "2", "ENV_VARIABLE_FOR_TEST": "foo"}):
+
         class AnAssetConfig(Config):
             a_string: str
             an_int: int
@@ -695,7 +696,7 @@ def test_env_var():
         )
 
         assert executed["yes"]
-  
+
 
 def test_structured_run_config_ops():
     class ANewConfigOpConfig(Config):
@@ -961,7 +962,7 @@ def test_direct_op_invocation_kwarg_very_complex() -> None:
                 boolean=False,
             )
         )
-   
+
     assert executed["yes"]
 
 
