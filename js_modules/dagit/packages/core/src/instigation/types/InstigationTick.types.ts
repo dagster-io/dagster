@@ -22,6 +22,13 @@ export type TickTagFragment = {
   } | null;
 };
 
+export type DynamicPartitionRequestFragment = {
+  __typename: 'DynamicPartitionRequest';
+  partitionKeys: Array<string> | null;
+  partitionsDefName: string;
+  type: Types.PartitionRequestType;
+};
+
 export type LaunchedRunListQueryVariables = Types.Exact<{
   filter: Types.RunsFilter;
 }>;

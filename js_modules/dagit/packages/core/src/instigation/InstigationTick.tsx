@@ -223,6 +223,14 @@ export const TICK_TAG_FRAGMENT = gql`
   ${PYTHON_ERROR_FRAGMENT}
 `;
 
+export const DYNAMIC_PARTITION_REQUESTS_FRAGMENT = gql`
+  fragment DynamicPartitionRequestFragment on DynamicPartitionRequest {
+    partitionKeys
+    partitionsDefName
+    type
+  }
+`;
+
 const LAUNCHED_RUN_LIST_QUERY = gql`
   query LaunchedRunListQuery($filter: RunsFilter!) {
     pipelineRunsOrError(filter: $filter, limit: 500) {

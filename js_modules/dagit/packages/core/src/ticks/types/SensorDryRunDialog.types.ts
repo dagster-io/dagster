@@ -34,6 +34,12 @@ export type SensorDryRunMutation = {
               error: {__typename: 'PythonError'; message: string; stack: Array<string>};
             }>;
           } | null;
+          dynamicPartitionRequests: Array<{
+            __typename: 'DynamicPartitionRequest';
+            partitionKeys: Array<string> | null;
+            partitionsDefName: string;
+            type: Types.PartitionRequestType;
+          }> | null;
         } | null;
       }
     | {
@@ -47,4 +53,11 @@ export type SensorDryRunMutation = {
         }>;
       }
     | {__typename: 'SensorNotFoundError'};
+};
+
+export type DynamicPartitionRequestFragment = {
+  __typename: 'DynamicPartitionRequest';
+  partitionKeys: Array<string> | null;
+  partitionsDefName: string;
+  type: Types.PartitionRequestType;
 };

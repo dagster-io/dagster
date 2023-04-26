@@ -33,6 +33,7 @@ import {testId} from '../testing/testId';
 import {RepoAddress} from '../workspace/types';
 
 import {RunRequestTable} from './DryRunRequestTable';
+import {DynamicPartitionRequests} from './DynamicPartitionRequests';
 import {RUN_REQUEST_FRAGMENT} from './RunRequestFragment';
 import {
   SensorDryRunMutation,
@@ -213,6 +214,8 @@ const SensorDryRun: React.FC<Props> = ({repoAddress, name, currentCursor, onClos
       const runRequests = sensorExecutionData?.evaluationResult?.runRequests;
       const numRunRequests = runRequests?.length || 0;
       const didSkip = !error && numRunRequests === 0;
+      const dynamicPartitionRequests =
+        sensorExecutionData?.evaluationResult?.dynamicPartitionRequests;
       return (
         <Box flex={{direction: 'column', gap: 8}}>
           <Box>
@@ -289,6 +292,9 @@ const SensorDryRun: React.FC<Props> = ({repoAddress, name, currentCursor, onClos
                 isJob={true}
                 repoAddress={repoAddress}
               />
+            ) : null}
+            {dynamicPartitionRequests?.length ? (
+              <DynamicPartitionRequests requests={dynamicPartitionRequests} />
             ) : null}
           </Box>
         </Box>
@@ -368,11 +374,21 @@ export const EVALUATE_SENSOR_MUTATION = gql`
           error {
             ...PythonErrorFragment
           }
+          dynamicPartitionRequests {
+            ...DynamicPartitionRequestFragment
+          }
         }
       }
       ...PythonErrorFragment
     }
   }
+
+  fragment DynamicPartitionRequestFragment on DynamicPartitionRequest {
+    partitionKeys
+    partitionsDefName
+    type
+  }
+
   ${RUN_REQUEST_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
 `;
