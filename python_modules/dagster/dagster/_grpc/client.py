@@ -24,13 +24,13 @@ from .server import GrpcServerProcess
 from .types import (
     CanCancelExecutionRequest,
     CancelExecutionRequest,
-    ExecuteExternalPipelineArgs,
+    ExecuteExternalJobArgs,
     ExecutionPlanSnapshotArgs,
     ExternalScheduleExecutionArgs,
+    JobSubsetSnapshotArgs,
     PartitionArgs,
     PartitionNamesArgs,
     PartitionSetExecutionParamArgs,
-    PipelineSubsetSnapshotArgs,
     SensorExecutionArgs,
 )
 from .utils import default_grpc_timeout, max_rx_bytes, max_send_bytes
@@ -285,7 +285,7 @@ class DagsterGrpcClient:
         check.inst_param(
             pipeline_subset_snapshot_args,
             "pipeline_subset_snapshot_args",
-            PipelineSubsetSnapshotArgs,
+            JobSubsetSnapshotArgs,
         )
 
         res = self._query(
@@ -445,8 +445,8 @@ class DagsterGrpcClient:
 
         return res.serialized_can_cancel_execution_result
 
-    def start_run(self, execute_run_args: ExecuteExternalPipelineArgs):
-        check.inst_param(execute_run_args, "execute_run_args", ExecuteExternalPipelineArgs)
+    def start_run(self, execute_run_args: ExecuteExternalJobArgs):
+        check.inst_param(execute_run_args, "execute_run_args", ExecuteExternalJobArgs)
 
         with DagsterInstance.from_ref(execute_run_args.instance_ref) as instance:  # type: ignore  # (possible none)
             try:
@@ -458,10 +458,10 @@ class DagsterGrpcClient:
                 return res.serialized_start_run_result
 
             except Exception:
-                pipeline_run = instance.get_run_by_id(execute_run_args.pipeline_run_id)
+                dagster_run = instance.get_run_by_id(execute_run_args.run_id)
                 instance.report_engine_event(
                     message="Unexpected error in IPC client",
-                    pipeline_run=pipeline_run,
+                    dagster_run=dagster_run,
                     engine_event_data=EngineEventData.engine_error(
                         serializable_error_info_from_exc_info(sys.exc_info())
                     ),

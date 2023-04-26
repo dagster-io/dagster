@@ -1,17 +1,18 @@
 import os
 import time
-from typing import List, Tuple
+from typing import List, Optional, Tuple, cast
 
 from dagster import (
     AssetKey,
     Output,
-    StaticPartitionsDefinition,
+    _check as check,
     asset,
     define_asset_job,
 )
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.execution.asset_backfill import (
     AssetBackfillData,
+    AssetBackfillIterationResult,
     execute_asset_backfill_iteration_inner,
 )
 from dagster._core.execution.backfill import (
@@ -56,6 +57,7 @@ PARTITION_PROGRESS_QUERY = """
         }
         hasCancelPermission
         hasResumePermission
+        user
       }
       ... on PythonError {
         message
@@ -167,6 +169,64 @@ def _get_run_stats(partition_statuses):
             [status for status in partition_statuses if status["runStatus"] == "CANCELED"]
         ),
     }
+
+
+def _execute_asset_backfill_iteration(
+    graphql_context, backfill_id: str, asset_graph: ExternalAssetGraph
+):
+    backfill = graphql_context.instance.get_backfill(backfill_id)
+    asset_backfill_data = AssetBackfillData.from_serialized(
+        backfill.serialized_asset_backfill_data, asset_graph
+    )
+    result = None
+    for result in execute_asset_backfill_iteration_inner(
+        backfill_id=backfill_id,
+        asset_backfill_data=asset_backfill_data,
+        instance=graphql_context.instance,
+        asset_graph=asset_graph,
+        run_tags=backfill.tags,
+    ):
+        pass
+
+    if not isinstance(result, AssetBackfillIterationResult):
+        check.failed(
+            "Expected execute_asset_backfill_iteration_inner to return an"
+            " AssetBackfillIterationResult"
+        )
+
+    updated_backfill = backfill.with_asset_backfill_data(
+        cast(AssetBackfillIterationResult, result).backfill_data,
+        dynamic_partitions_store=graphql_context.instance,
+    )
+    graphql_context.instance.update_backfill(updated_backfill)
+
+
+def _mock_asset_backfill_runs(
+    graphql_context,
+    asset_key: AssetKey,
+    asset_graph: ExternalAssetGraph,
+    backfill_id: str,
+    status: DagsterRunStatus,
+    partition_key: Optional[str],
+):
+    partitions_def = asset_graph.get_partitions_def(asset_key)
+
+    @asset(
+        partitions_def=partitions_def,
+        name=asset_key.path[-1],
+        key_prefix=asset_key.path[:-1] if len(asset_key.path) > 1 else None,
+    )
+    def dummy_asset():
+        if status == DagsterRunStatus.FAILURE:
+            raise Exception("fail")
+        return Output(5)
+
+    define_asset_job("my_job", [dummy_asset]).resolve([dummy_asset], []).execute_in_process(
+        tags={**DagsterRun.tags_for_backfill_id(backfill_id)},
+        partition_key=partition_key,
+        raise_on_error=False,
+        instance=graphql_context.instance,
+    )
 
 
 class TestPartitionBackillReadonlyFailure(ReadonlyGraphQLContextTestMatrix):
@@ -535,7 +595,14 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         )
         assert result.data["partitionBackfillOrError"]["status"] == "COMPLETED"
 
-    def test_asset_backfill_partition_stats(self, graphql_context):
+    def test_asset_backfill_stats_in_topological_order(self, graphql_context):
+        asset_key_paths_in_topo_order = [
+            ["upstream_static_partitioned_asset"],
+            ["middle_static_partitioned_asset_1"],
+            ["middle_static_partitioned_asset_2"],
+            ["downstream_static_partitioned_asset"],
+        ]
+
         partitions = ["a", "b", "c", "d", "e", "f"]
         result = execute_dagster_graphql(
             graphql_context,
@@ -544,9 +611,39 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
                 "backfillParams": {
                     "partitionNames": partitions,
                     "assetSelection": [
-                        key.to_graphql_input()
-                        for key in [AssetKey("upstream_static_partitioned_asset")]
+                        AssetKey(path).to_graphql_input() for path in asset_key_paths_in_topo_order
                     ],
+                }
+            },
+        )
+        assert not result.errors
+        assert result.data
+        assert result.data["launchPartitionBackfill"]["__typename"] == "LaunchBackfillSuccess"
+        backfill_id = result.data["launchPartitionBackfill"]["backfillId"]
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            BACKFILL_PARTITION_STATUS_COUNTS_BY_ASSET,
+            variables={"backfillId": backfill_id},
+        )
+
+        asset_status_counts = result.data["partitionBackfillOrError"]["assetBackfillData"][
+            "assetPartitionsStatusCounts"
+        ]
+        assert len(asset_status_counts) == 4
+        for i, path in enumerate(asset_key_paths_in_topo_order):
+            assert asset_status_counts[i]["assetKey"]["path"] == path
+
+    def test_asset_backfill_partition_stats(self, graphql_context):
+        asset_key = AssetKey("upstream_static_partitioned_asset")
+        partitions = ["a", "b", "c", "d", "e", "f"]
+        result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PARTITION_BACKFILL_MUTATION,
+            variables={
+                "backfillParams": {
+                    "partitionNames": partitions,
+                    "assetSelection": [asset_key.to_graphql_input()],
                 }
             },
         )
@@ -560,42 +657,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         repository = code_location.get_repository("test_repo")
         asset_graph = ExternalAssetGraph.from_external_repository(repository)
 
-        def _execute_iteration_asset_backfill():
-            backfill = graphql_context.instance.get_backfill(backfill_id)
-            asset_backfill_data = AssetBackfillData.from_serialized(
-                backfill.serialized_asset_backfill_data, asset_graph
-            )
-            result = None
-            for result in execute_asset_backfill_iteration_inner(
-                backfill_id=backfill_id,
-                asset_backfill_data=asset_backfill_data,
-                instance=graphql_context.instance,
-                asset_graph=asset_graph,
-                run_tags=backfill.tags,
-            ):
-                pass
-            updated_backfill = backfill.with_asset_backfill_data(
-                result.backfill_data, dynamic_partitions_store=graphql_context.instance
-            )
-            graphql_context.instance.update_backfill(updated_backfill)
-
-        def _test_partitioned_asset_run(partition, status):
-            @asset(partitions_def=StaticPartitionsDefinition(partitions))
-            def upstream_static_partitioned_asset():
-                if status == DagsterRunStatus.FAILURE:
-                    raise Exception("fail")
-                return Output(5)
-
-            define_asset_job("my_job", [upstream_static_partitioned_asset]).resolve(
-                [upstream_static_partitioned_asset], []
-            ).execute_in_process(
-                tags={**DagsterRun.tags_for_backfill_id(backfill_id)},
-                partition_key=partition,
-                raise_on_error=False,
-                instance=graphql_context.instance,
-            )
-
-        _execute_iteration_asset_backfill()
+        _execute_asset_backfill_iteration(graphql_context, backfill_id, asset_graph)
 
         for partition, status in [
             ("a", DagsterRunStatus.SUCCESS),
@@ -604,9 +666,11 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
             ("e", DagsterRunStatus.SUCCESS),
             ("f", DagsterRunStatus.FAILURE),
         ]:
-            _test_partitioned_asset_run(partition, status)
+            _mock_asset_backfill_runs(
+                graphql_context, asset_key, asset_graph, backfill_id, status, partition
+            )
 
-        _execute_iteration_asset_backfill()
+        _execute_asset_backfill_iteration(graphql_context, backfill_id, asset_graph)
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -630,6 +694,85 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         assert asset_partition_status_counts[0]["numPartitionsRequested"] == 1
         assert asset_partition_status_counts[0]["numPartitionsCompleted"] == 3
         assert asset_partition_status_counts[0]["numPartitionsFailed"] == 2
+
+    def test_asset_backfill_status_with_upstream_failure(self, graphql_context):
+        code_location = graphql_context.get_code_location("test")
+        repository = code_location.get_repository("test_repo")
+        asset_graph = ExternalAssetGraph.from_external_repository(repository)
+
+        asset_keys = [
+            AssetKey("unpartitioned_upstream_of_partitioned"),
+            AssetKey("upstream_daily_partitioned_asset"),
+            AssetKey("downstream_weekly_partitioned_asset"),
+        ]
+        partitions = ["2023-01-09"]
+        result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PARTITION_BACKFILL_MUTATION,
+            variables={
+                "backfillParams": {
+                    "partitionNames": partitions,
+                    "assetSelection": [asset_key.to_graphql_input() for asset_key in asset_keys],
+                }
+            },
+        )
+
+        assert not result.errors
+        assert result.data
+        assert result.data["launchPartitionBackfill"]["__typename"] == "LaunchBackfillSuccess"
+        backfill_id = result.data["launchPartitionBackfill"]["backfillId"]
+
+        _execute_asset_backfill_iteration(graphql_context, backfill_id, asset_graph)
+        _mock_asset_backfill_runs(
+            graphql_context,
+            AssetKey("unpartitioned_upstream_of_partitioned"),
+            asset_graph,
+            backfill_id,
+            DagsterRunStatus.SUCCESS,
+            None,
+        )
+        _execute_asset_backfill_iteration(graphql_context, backfill_id, asset_graph)
+        _mock_asset_backfill_runs(
+            graphql_context,
+            AssetKey("upstream_daily_partitioned_asset"),
+            asset_graph,
+            backfill_id,
+            DagsterRunStatus.FAILURE,
+            "2023-01-09",
+        )
+        _execute_asset_backfill_iteration(graphql_context, backfill_id, asset_graph)
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            BACKFILL_PARTITION_STATUS_COUNTS_BY_ASSET,
+            variables={"backfillId": backfill_id},
+        )
+
+        assert not result.errors
+        assert result.data
+        backfill_data = result.data["partitionBackfillOrError"]["assetBackfillData"]
+
+        assert backfill_data["rootAssetTargetedRanges"] == [
+            {"start": "2023-01-09", "end": "2023-01-09"}
+        ]
+
+        asset_partition_status_counts = backfill_data["assetPartitionsStatusCounts"]
+        assert len(asset_partition_status_counts) == 2
+        assert asset_partition_status_counts[0]["assetKey"]["path"] == [
+            "upstream_daily_partitioned_asset"
+        ]
+        assert asset_partition_status_counts[0]["numPartitionsTargeted"] == 1
+        assert asset_partition_status_counts[0]["numPartitionsRequested"] == 0
+        assert asset_partition_status_counts[0]["numPartitionsCompleted"] == 0
+        assert asset_partition_status_counts[0]["numPartitionsFailed"] == 1
+
+        assert asset_partition_status_counts[1]["assetKey"]["path"] == [
+            "downstream_weekly_partitioned_asset"
+        ]
+        assert asset_partition_status_counts[1]["numPartitionsTargeted"] == 1
+        assert asset_partition_status_counts[1]["numPartitionsRequested"] == 0
+        assert asset_partition_status_counts[1]["numPartitionsCompleted"] == 0
+        assert asset_partition_status_counts[1]["numPartitionsFailed"] == 1
 
     def test_backfill_run_completed(self, graphql_context):
         repository_selector = infer_repository_selector(graphql_context)
@@ -742,6 +885,41 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         assert run_stats.get("success") == 3
         assert run_stats.get("failure") == 0
         assert run_stats.get("canceled") == 1
+
+    def test_fetch_user_tag_from_backfill(self, graphql_context):
+        user_email = "user123@abc.com"
+        repository_selector = infer_repository_selector(graphql_context)
+        result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PARTITION_BACKFILL_MUTATION,
+            variables={
+                "backfillParams": {
+                    "selector": {
+                        "repositorySelector": repository_selector,
+                        "partitionSetName": "integers_partition_set",
+                    },
+                    "partitionNames": ["2", "3"],
+                    "tags": [{"key": "user", "value": user_email}],
+                }
+            },
+        )
+
+        assert not result.errors
+        assert result.data
+        assert result.data["launchPartitionBackfill"]["__typename"] == "LaunchBackfillSuccess"
+        backfill_id = result.data["launchPartitionBackfill"]["backfillId"]
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            PARTITION_PROGRESS_QUERY,
+            variables={"backfillId": backfill_id},
+        )
+
+        assert not result.errors
+        assert result.data
+        assert result.data["partitionBackfillOrError"]["__typename"] == "PartitionBackfill"
+        assert result.data["partitionBackfillOrError"]["id"] == backfill_id
+        assert result.data["partitionBackfillOrError"]["user"] == user_email
 
 
 class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):

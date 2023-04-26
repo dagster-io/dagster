@@ -6,7 +6,7 @@ import '@testing-library/jest-dom/extend-expect';
 import {FilterDropdown, FilterDropdownButton} from '../FilterDropdown';
 import {FilterObject} from '../useFilter';
 
-let mockFilters: FilterObject<any>[];
+let mockFilters: FilterObject[];
 beforeEach(() => {
   mockFilters = [
     {

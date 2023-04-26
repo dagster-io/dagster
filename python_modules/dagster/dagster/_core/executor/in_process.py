@@ -43,7 +43,7 @@ class InProcessExecutor(Executor):
                     execution_plan=plan_context.execution_plan,
                     iterator=inner_plan_execution_iterator,
                     execution_context_manager=PlanExecutionContextManager(
-                        pipeline=plan_context.pipeline,
+                        job=plan_context.job,
                         retry_mode=plan_context.retry_mode,
                         execution_plan=plan_context.execution_plan,
                         run_config=plan_context.run_config,

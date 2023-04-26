@@ -23,7 +23,6 @@ from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
-from dagster._core.definitions.pipeline_definition import PipelineDefinition
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.schedule_definition import ScheduleDefinition
 from dagster._core.definitions.sensor_definition import SensorDefinition
@@ -31,7 +30,6 @@ from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.utils import check_valid_name
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.instance import DagsterInstance
-from dagster._core.selector import parse_solid_selection
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils import hash_collection
 
@@ -72,8 +70,8 @@ class RepositoryLoadData(
         )
 
     # Allow this to be hashed for use in `lru_cache`. This is needed because:
-    # - `ReconstructablePipeline` uses `lru_cache`
-    # - `ReconstructablePipeline` has a `ReconstructableRepository` attribute
+    # - `ReconstructableJob` uses `lru_cache`
+    # - `ReconstructableJob` has a `ReconstructableRepository` attribute
     # - `ReconstructableRepository` has a `RepositoryLoadData` attribute
     # - `RepositoryLoadData` has collection attributes that are unhashable by default
     def __hash__(self) -> int:
@@ -129,53 +127,11 @@ class RepositoryDefinition:
         # force load of all lazy constructed code artifacts
         self._repository_data.load_all_definitions()
 
-    @property
-    def pipeline_names(self) -> Sequence[str]:
-        """List[str]: Names of all pipelines/jobs in the repository."""
-        return self._repository_data.get_pipeline_names()
-
     @public
     @property
     def job_names(self) -> Sequence[str]:
         """List[str]: Names of all jobs in the repository."""
         return self._repository_data.get_job_names()
-
-    def has_pipeline(self, name: str) -> bool:
-        """Check if a pipeline/job with a given name is present in the repository.
-
-        Args:
-            name (str): The name of the pipeline/job.
-
-        Returns:
-            bool
-        """
-        return self._repository_data.has_pipeline(name)
-
-    def get_pipeline(self, name: str) -> PipelineDefinition:
-        """Get a pipeline/job by name.
-
-        If this pipeline/job is present in the lazily evaluated dictionary passed to the
-        constructor, but has not yet been constructed, only this pipeline/job is constructed, and will
-        be cached for future calls.
-
-        Args:
-            name (str): Name of the pipeline/job to retrieve.
-
-        Returns:
-            PipelineDefinition: The pipeline/job definition corresponding to the given name.
-        """
-        return self._repository_data.get_pipeline(name)
-
-    def get_all_pipelines(self) -> Sequence[PipelineDefinition]:
-        """Return all pipelines/jobs in the repository as a list.
-
-        Note that this will construct any pipeline/job in the lazily evaluated dictionary that
-        has not yet been constructed.
-
-        Returns:
-            List[PipelineDefinition]: All pipelines/jobs in the repository.
-        """
-        return self._repository_data.get_all_pipelines()
 
     def get_top_level_resources(self) -> Mapping[str, ResourceDefinition]:
         return self._repository_data.get_top_level_resources()
@@ -319,19 +275,8 @@ class RepositoryDefinition:
         solids_to_execute: Optional[AbstractSet[str]] = None,
     ):
         # named job forward expecting pipeline distinction to be removed soon
-        defn = self.get_pipeline(job_name)
-        if isinstance(defn, JobDefinition):
-            return defn.get_job_def_for_subset_selection(op_selection, asset_selection)
-
-        check.invariant(
-            asset_selection is None,
-            f"Asset selection cannot be provided with a pipeline {asset_selection}",
-        )
-        # pipelines use post-resolved selection, should be removed soon
-        if op_selection and solids_to_execute is None:
-            solids_to_execute = parse_solid_selection(defn, op_selection)
-
-        return defn.get_pipeline_subset_def(solids_to_execute)
+        defn = self.get_job(job_name)
+        return defn.get_job_def_for_subset_selection(op_selection, asset_selection)
 
     @public
     def load_asset_value(

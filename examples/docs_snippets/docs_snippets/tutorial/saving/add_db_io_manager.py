@@ -8,7 +8,7 @@ from dagster import (
     ScheduleDefinition,
     define_asset_job,
     load_assets_from_modules,
-    fs_io_manager,  # Update the imports at the top of the file to also include this
+    FilesystemIOManager,  # Update the imports at the top of the file to also include this
 )
 
 hackernews_job = define_asset_job("hackernews_job", selection=AssetSelection.all())
@@ -17,22 +17,18 @@ hackernews_schedule = ScheduleDefinition(
     job=hackernews_job, cron_schedule="0 * * * *"  # every hour
 )
 
-io_manager = fs_io_manager.configured(
-    {
-        "base_dir": "data",  # Path is built relative to where `dagster dev` is run
-    }
+io_manager = FilesystemIOManager(
+    base_dir="data",  # Path is built relative to where `dagster dev` is run
 )
 
 # start_imports_and_definitions
-from dagster_duckdb_pandas import duckdb_pandas_io_manager
+from dagster_duckdb_pandas import DuckDBPandasIOManager
 
 # Add the imports to the top
 # These imports let you define how Dagster communicates with DuckDB
 
 # Insert this section anywhere above your `defs = Definitions(...)`
-database_io_manager = duckdb_pandas_io_manager.configured(
-    {"database": "analytics.hackernews"}
-)
+database_io_manager = DuckDBPandasIOManager(database="analytics.hackernews")
 
 # Update your Definitions
 defs = Definitions(

@@ -23,9 +23,9 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._core.definitions import ExecutorDefinition, ModeDefinition, PipelineDefinition
+from dagster._core.definitions import ExecutorDefinition, JobDefinition
 from dagster._core.definitions.executor_definition import check_cross_process_constraints
-from dagster._core.definitions.pipeline_base import IPipeline
+from dagster._core.definitions.pipeline_base import IJob
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
 from dagster._core.errors import DagsterError, DagsterUserCodeExecutionError
 from dagster._core.events import DagsterEvent
@@ -75,29 +75,6 @@ def initialize_console_manager(
     return DagsterLogManager.create(loggers=loggers, dagster_run=dagster_run, instance=instance)
 
 
-def executor_def_from_config(
-    mode_definition: ModeDefinition, resolved_run_config: ResolvedRunConfig
-) -> ExecutorDefinition:
-    selected_executor = resolved_run_config.execution.execution_engine_name
-    if selected_executor is None:
-        if len(mode_definition.executor_defs) == 1:
-            return mode_definition.executor_defs[0]
-
-        check.failed(
-            f"No executor selected but there are {len(mode_definition.executor_defs)} options."
-        )
-
-    else:
-        for executor_def in mode_definition.executor_defs:
-            if executor_def.name == selected_executor:
-                return executor_def
-
-        check.failed(
-            f'Could not find executor "{selected_executor}". This should have been caught at config'
-            " validation time."
-        )
-
-
 # This represents all the data that is passed *into* context creation process.
 # The remainder of the objects generated (e.g. loggers, resources) are created
 # using user-defined code that may fail at runtime and result in the emission
@@ -105,42 +82,39 @@ def executor_def_from_config(
 # over the place during the context creation process so grouping here for
 # ease of argument passing etc.
 class ContextCreationData(NamedTuple):
-    pipeline: IPipeline
+    job: IJob
     resolved_run_config: ResolvedRunConfig
     dagster_run: DagsterRun
-    mode_def: ModeDefinition
     executor_def: ExecutorDefinition
     instance: DagsterInstance
     resource_keys_to_init: AbstractSet[str]
     execution_plan: ExecutionPlan
 
     @property
-    def pipeline_def(self) -> PipelineDefinition:
-        return self.pipeline.get_definition()
+    def job_def(self) -> JobDefinition:
+        return self.job.get_definition()
 
 
 def create_context_creation_data(
-    pipeline: IPipeline,
+    job: IJob,
     execution_plan: ExecutionPlan,
     run_config: Mapping[str, object],
     dagster_run: DagsterRun,
     instance: DagsterInstance,
 ) -> "ContextCreationData":
-    pipeline_def = pipeline.get_definition()
-    resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config, mode=dagster_run.mode)
+    job_def = job.get_definition()
+    resolved_run_config = ResolvedRunConfig.build(job_def, run_config)
 
-    mode_def = pipeline_def.get_mode_definition(dagster_run.mode)
-    executor_def = executor_def_from_config(mode_def, resolved_run_config)
+    executor_def = job_def.executor_def
 
     return ContextCreationData(
-        pipeline=pipeline,
+        job=job,
         resolved_run_config=resolved_run_config,
         dagster_run=dagster_run,
-        mode_def=mode_def,
         executor_def=executor_def,
         instance=instance,
         resource_keys_to_init=get_required_resource_keys_to_init(
-            execution_plan, pipeline_def, resolved_run_config
+            execution_plan, job_def, resolved_run_config
         ),
         execution_plan=execution_plan,
     )
@@ -150,7 +124,7 @@ def create_plan_data(
     context_creation_data: "ContextCreationData", raise_on_error: bool, retry_mode: RetryMode
 ) -> PlanData:
     return PlanData(
-        pipeline=context_creation_data.pipeline,
+        job=context_creation_data.job,
         dagster_run=context_creation_data.dagster_run,
         instance=context_creation_data.instance,
         execution_plan=context_creation_data.execution_plan,
@@ -166,10 +140,7 @@ def create_execution_data(
     return ExecutionData(
         scoped_resources_builder=scoped_resources_builder,
         resolved_run_config=context_creation_data.resolved_run_config,
-        pipeline_def=context_creation_data.pipeline_def,
-        mode_def=context_creation_data.pipeline_def.get_mode_definition(
-            context_creation_data.resolved_run_config.mode
-        ),
+        job_def=context_creation_data.job_def,
     )
 
 
@@ -205,7 +176,7 @@ class ExecutionContextManager(Generic[TContextType], ABC):
 
 
 def execution_context_event_generator(
-    pipeline: IPipeline,
+    job: IJob,
     execution_plan: ExecutionPlan,
     run_config: Mapping[str, object],
     dagster_run: DagsterRun,
@@ -227,7 +198,7 @@ def execution_context_event_generator(
     )
 
     execution_plan = check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
-    pipeline_def = pipeline.get_definition()
+    job_def = job.get_definition()
 
     run_config = check.mapping_param(run_config, "run_config", key_type=str)
     dagster_run = check.inst_param(dagster_run, "dagster_run", DagsterRun)
@@ -236,7 +207,7 @@ def execution_context_event_generator(
     raise_on_error = check.bool_param(raise_on_error, "raise_on_error")
 
     context_creation_data = create_context_creation_data(
-        pipeline,
+        job,
         execution_plan,
         run_config,
         dagster_run,
@@ -244,9 +215,7 @@ def execution_context_event_generator(
     )
 
     log_manager = create_log_manager(context_creation_data)
-    resource_defs = pipeline_def.get_required_resource_defs_for_mode(
-        check.not_none(context_creation_data.resolved_run_config.mode)
-    )
+    resource_defs = job_def.get_required_resource_defs()
 
     resources_manager = scoped_resources_builder_cm(
         resource_defs=resource_defs,
@@ -281,7 +250,7 @@ class PlanOrchestrationContextManager(ExecutionContextManager[PlanOrchestrationC
             ...,
             Iterator[Union[DagsterEvent, PlanOrchestrationContext]],
         ],
-        pipeline: IPipeline,
+        job: IJob,
         execution_plan: ExecutionPlan,
         run_config: Mapping[str, object],
         dagster_run: DagsterRun,
@@ -292,7 +261,7 @@ class PlanOrchestrationContextManager(ExecutionContextManager[PlanOrchestrationC
         resume_from_failure=False,
     ):
         event_generator = context_event_generator(
-            pipeline,
+            job,
             execution_plan,
             run_config,
             dagster_run,
@@ -310,7 +279,7 @@ class PlanOrchestrationContextManager(ExecutionContextManager[PlanOrchestrationC
 
 
 def orchestration_context_event_generator(
-    pipeline: IPipeline,
+    job: IJob,
     execution_plan: ExecutionPlan,
     run_config: Mapping[str, object],
     dagster_run: DagsterRun,
@@ -322,7 +291,7 @@ def orchestration_context_event_generator(
 ) -> Iterator[Union[DagsterEvent, PlanOrchestrationContext]]:
     check.invariant(executor_defs is None)
     context_creation_data = create_context_creation_data(
-        pipeline,
+        job,
         execution_plan,
         run_config,
         dagster_run,
@@ -355,11 +324,11 @@ def orchestration_context_event_generator(
         )
         error_info = serializable_error_info_from_exc_info(user_facing_exc_info)
 
-        event = DagsterEvent.pipeline_failure(
-            pipeline_context_or_name=dagster_run.pipeline_name,
+        event = DagsterEvent.job_failure(
+            job_context_or_name=dagster_run.job_name,
             context_msg=(
                 "Pipeline failure during initialization for pipeline"
-                f' "{dagster_run.pipeline_name}". This may be due to a failure in initializing the'
+                f' "{dagster_run.job_name}". This may be due to a failure in initializing the'
                 " executor or one of the loggers."
             ),
             error_info=error_info,
@@ -376,7 +345,7 @@ def orchestration_context_event_generator(
 class PlanExecutionContextManager(ExecutionContextManager[PlanExecutionContext]):
     def __init__(
         self,
-        pipeline: IPipeline,
+        job: IJob,
         execution_plan: ExecutionPlan,
         run_config: Mapping[str, object],
         dagster_run: DagsterRun,
@@ -390,7 +359,7 @@ class PlanExecutionContextManager(ExecutionContextManager[PlanExecutionContext])
     ):
         super(PlanExecutionContextManager, self).__init__(
             execution_context_event_generator(
-                pipeline,
+                job,
                 execution_plan,
                 run_config,
                 dagster_run,
@@ -408,16 +377,14 @@ class PlanExecutionContextManager(ExecutionContextManager[PlanExecutionContext])
 
 
 # perform any plan validation that is dependent on access to the pipeline context
-def _validate_plan_with_context(
-    pipeline_context: IPlanContext, execution_plan: ExecutionPlan
-) -> None:
-    validate_reexecution_memoization(pipeline_context, execution_plan)
+def _validate_plan_with_context(job_context: IPlanContext, execution_plan: ExecutionPlan) -> None:
+    validate_reexecution_memoization(job_context, execution_plan)
 
 
 def create_executor(context_creation_data: ContextCreationData) -> "Executor":
     check.inst_param(context_creation_data, "context_creation_data", ContextCreationData)
     init_context = InitExecutorContext(
-        job=context_creation_data.pipeline,
+        job=context_creation_data.job,
         executor_def=context_creation_data.executor_def,
         executor_config=context_creation_data.resolved_run_config.execution.execution_engine_config,
         instance=context_creation_data.instance,
@@ -428,9 +395,9 @@ def create_executor(context_creation_data: ContextCreationData) -> "Executor":
 
 
 @contextmanager
-def scoped_pipeline_context(
+def scoped_job_context(
     execution_plan: ExecutionPlan,
-    pipeline: IPipeline,
+    job: IJob,
     run_config: Mapping[str, object],
     dagster_run: DagsterRun,
     instance: DagsterInstance,
@@ -447,14 +414,14 @@ def scoped_pipeline_context(
     events (e.g. PipelineExecutionResult, dagstermill, unit tests, etc)
     """
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
-    check.inst_param(pipeline, "pipeline", IPipeline)
+    check.inst_param(job, "job", IJob)
     check.mapping_param(run_config, "run_config", key_type=str)
     check.inst_param(dagster_run, "dagster_run", DagsterRun)
     check.inst_param(instance, "instance", DagsterInstance)
     check.callable_param(scoped_resources_builder_cm, "scoped_resources_builder_cm")
 
     initialization_manager = PlanExecutionContextManager(
-        pipeline,
+        job,
         execution_plan,
         run_config,
         dagster_run,
@@ -478,9 +445,8 @@ def create_log_manager(
 ) -> DagsterLogManager:
     check.inst_param(context_creation_data, "context_creation_data", ContextCreationData)
 
-    pipeline_def, mode_def, resolved_run_config, dagster_run = (
-        context_creation_data.pipeline_def,
-        context_creation_data.mode_def,
+    pipeline_def, resolved_run_config, dagster_run = (
+        context_creation_data.job_def,
         context_creation_data.resolved_run_config,
         context_creation_data.dagster_run,
     )
@@ -491,14 +457,14 @@ def create_log_manager(
     # via ConfigurableDefinition (@configured) to incoming logger configs. See docstring for more details.
 
     loggers = []
-    for logger_key, logger_def in mode_def.loggers.items() or default_loggers().items():
+    for logger_key, logger_def in pipeline_def.loggers.items() or default_loggers().items():
         if logger_key in resolved_run_config.loggers:
             loggers.append(
                 logger_def.logger_fn(
                     InitLoggerContext(
                         resolved_run_config.loggers.get(logger_key, {}).get("config"),
                         logger_def,
-                        pipeline_def=pipeline_def,
+                        job_def=pipeline_def,
                         run_id=dagster_run.run_id,
                     )
                 )
@@ -511,7 +477,7 @@ def create_log_manager(
                     InitLoggerContext(
                         logger_config,
                         logger_def,
-                        pipeline_def=pipeline_def,
+                        job_def=pipeline_def,
                         run_id=dagster_run.run_id,
                     )
                 )
@@ -530,7 +496,7 @@ def create_context_free_log_manager(
 
     Args:
         dagster_run (PipelineRun)
-        pipeline_def (PipelineDefinition)
+        pipeline_def (JobDefinition)
     """
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(dagster_run, "dagster_run", DagsterRun)
@@ -543,7 +509,7 @@ def create_context_free_log_manager(
                 InitLoggerContext(
                     logger_config,
                     logger_def,
-                    pipeline_def=None,
+                    job_def=None,
                     run_id=dagster_run.run_id,
                 )
             )

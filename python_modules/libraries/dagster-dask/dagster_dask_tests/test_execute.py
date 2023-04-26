@@ -185,13 +185,13 @@ def test_dask_terminate():
     result_types = []
 
     with instance_for_test() as instance:
-        dagster_run = instance.create_run_for_pipeline(
+        dagster_run = instance.create_run_for_job(
             sleepy_dask_job(),
             run_config=run_config,
         )
 
         for event in execute_run_iterator(
-            pipeline=reconstructable(sleepy_dask_job),
+            i_job=reconstructable(sleepy_dask_job),
             dagster_run=dagster_run,
             instance=instance,
         ):

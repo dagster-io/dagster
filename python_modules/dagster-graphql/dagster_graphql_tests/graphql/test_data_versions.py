@@ -99,7 +99,7 @@ def test_stale_status():
                 {
                     "key": {"path": ["foo"]},
                     "category": "DATA",
-                    "reason": "updated data version",
+                    "reason": "has a new materialization",
                     "dependency": None,
                 }
             ]
@@ -155,9 +155,9 @@ def test_partitioned_self_dep():
 
 
 def get_observable_source_asset_repo():
-    @observable_source_asset(partitions_def=StaticPartitionsDefinition(["1"]))
+    @asset(partitions_def=StaticPartitionsDefinition(["1"]))
     def foo():
-        return DataVersion("1")
+        return 1
 
     @observable_source_asset
     def bar():

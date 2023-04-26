@@ -226,10 +226,21 @@ class AssetGraphSubset:
     def all(
         cls, asset_graph: AssetGraph, dynamic_partitions_store: DynamicPartitionsStore
     ) -> "AssetGraphSubset":
+        return cls.from_asset_keys(
+            asset_graph.non_source_asset_keys, asset_graph, dynamic_partitions_store
+        )
+
+    @classmethod
+    def from_asset_keys(
+        cls,
+        asset_keys: Iterable[AssetKey],
+        asset_graph: AssetGraph,
+        dynamic_partitions_store: DynamicPartitionsStore,
+    ) -> "AssetGraphSubset":
         partitions_subsets_by_asset_key: Dict[AssetKey, PartitionsSubset] = {}
         non_partitioned_asset_keys: Set[AssetKey] = set()
 
-        for asset_key in asset_graph.non_source_asset_keys:
+        for asset_key in asset_keys:
             partitions_def = asset_graph.get_partitions_def(asset_key)
             if partitions_def:
                 partitions_subsets_by_asset_key[

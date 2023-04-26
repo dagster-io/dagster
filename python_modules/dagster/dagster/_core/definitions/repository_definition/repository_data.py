@@ -6,13 +6,11 @@ from typing import (
     Any,
     Callable,
     Dict,
-    List,
     Mapping,
     Optional,
     Sequence,
     TypeVar,
     Union,
-    cast,
 )
 
 import dagster._check as check
@@ -22,7 +20,6 @@ from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.graph_definition import SubselectedGraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
-from dagster._core.definitions.pipeline_definition import PipelineDefinition
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.schedule_definition import ScheduleDefinition
 from dagster._core.definitions.sensor_definition import SensorDefinition
@@ -48,14 +45,6 @@ class RepositoryData(ABC):
     """
 
     @abstractmethod
-    def get_all_pipelines(self) -> Sequence[PipelineDefinition]:
-        """Return all pipelines/jobs in the repository as a list.
-
-        Returns:
-            List[PipelineDefinition]: All pipelines/jobs in the repository.
-        """
-
-    @abstractmethod
     def get_resource_key_mapping(self) -> Mapping[int, str]:
         pass
 
@@ -72,6 +61,7 @@ class RepositoryData(ABC):
     def get_env_vars_by_top_level_resource(self) -> Mapping[str, AbstractSet[str]]:
         pass
 
+    @abstractmethod
     @public
     def get_all_jobs(self) -> Sequence[JobDefinition]:
         """Return all jobs in the repository as a list.
@@ -79,15 +69,6 @@ class RepositoryData(ABC):
         Returns:
             List[JobDefinition]: All jobs in the repository.
         """
-        return [job for job in self.get_all_pipelines() if isinstance(job, JobDefinition)]
-
-    def get_pipeline_names(self) -> Sequence[str]:
-        """Get the names of all pipelines/jobs in the repository.
-
-        Returns:
-            List[str]
-        """
-        return [pipeline_def.name for pipeline_def in self.get_all_pipelines()]
 
     @public
     def get_job_names(self) -> Sequence[str]:
@@ -97,17 +78,6 @@ class RepositoryData(ABC):
             List[str]
         """
         return [job_def.name for job_def in self.get_all_jobs()]
-
-    def has_pipeline(self, pipeline_name: str) -> bool:
-        """Check if a pipeline/job with a given name is present in the repository.
-
-        Args:
-            pipeline_name (str): The name of the pipeline/job.
-
-        Returns:
-            bool
-        """
-        return pipeline_name in self.get_pipeline_names()
 
     @public
     def has_job(self, job_name: str) -> bool:
@@ -120,24 +90,6 @@ class RepositoryData(ABC):
             bool
         """
         return job_name in self.get_job_names()
-
-    def get_pipeline(self, pipeline_name) -> PipelineDefinition:
-        """Get a pipeline/job by name.
-
-        Args:
-            pipeline_name (str): Name of the pipeline/job to retrieve.
-
-        Returns:
-            PipelineDefinition: The pipeline/job definition corresponding to the given name.
-        """
-        pipelines_with_name = [
-            pipeline for pipeline in self.get_all_pipelines() if pipeline.name == pipeline_name
-        ]
-        if not pipelines_with_name:
-            raise DagsterInvariantViolationError(
-                f"Could not find pipeline/job {pipeline_name} in repository"
-            )
-        return pipelines_with_name[0]
 
     @public
     def get_job(self, job_name: str) -> JobDefinition:
@@ -227,7 +179,6 @@ class RepositoryData(ABC):
 
     def load_all_definitions(self):
         # force load of all lazy constructed code artifacts
-        self.get_all_pipelines()
         self.get_all_jobs()
         self.get_all_schedules()
         self.get_all_sensors()
@@ -239,11 +190,10 @@ class CachingRepositoryData(RepositoryData):
     """
 
     _all_jobs: Optional[Sequence[JobDefinition]]
-    _all_pipelines: Optional[Sequence[PipelineDefinition]]
+    _all_pipelines: Optional[Sequence[JobDefinition]]
 
     def __init__(
         self,
-        pipelines: Mapping[str, Union[PipelineDefinition, Resolvable[PipelineDefinition]]],
         jobs: Mapping[str, Union[JobDefinition, Resolvable[JobDefinition]]],
         schedules: Mapping[str, Union[ScheduleDefinition, Resolvable[ScheduleDefinition]]],
         sensors: Mapping[str, Union[SensorDefinition, Resolvable[SensorDefinition]]],
@@ -265,8 +215,6 @@ class CachingRepositoryData(RepositoryData):
         at retrieval time.
 
         Args:
-            pipelines (Mapping[str, Union[PipelineDefinition, Callable[[], PipelineDefinition]]]):
-                The pipeline definitions belonging to the repository.
             jobs (Mapping[str, Union[JobDefinition, Callable[[], JobDefinition]]]):
                 The job definitions belonging to the repository.
             schedules (Mapping[str, Union[ScheduleDefinition, Callable[[], ScheduleDefinition]]]):
@@ -281,9 +229,6 @@ class CachingRepositoryData(RepositoryData):
         """
         from dagster._core.definitions import AssetsDefinition
 
-        check.mapping_param(
-            pipelines, "pipelines", key_type=str, value_type=(PipelineDefinition, FunctionType)
-        )
         check.mapping_param(jobs, "jobs", key_type=str, value_type=(JobDefinition, FunctionType))
         check.mapping_param(
             schedules, "schedules", key_type=str, value_type=(ScheduleDefinition, FunctionType)
@@ -307,14 +252,6 @@ class CachingRepositoryData(RepositoryData):
         )
         check.mapping_param(
             resource_key_mapping, "resource_key_mapping", key_type=int, value_type=str
-        )
-
-        self._pipelines = CacheingDefinitionIndex(
-            PipelineDefinition,
-            "PipelineDefinition",
-            "pipeline",
-            pipelines,
-            self._validate_pipeline,
         )
 
         self._jobs = CacheingDefinitionIndex(
@@ -351,7 +288,6 @@ class CachingRepositoryData(RepositoryData):
         # load all sensors to force validation
         self._sensors.get_all_definitions()
 
-        self._all_pipelines = None
         self._all_jobs = None
 
     @staticmethod
@@ -362,7 +298,6 @@ class CachingRepositoryData(RepositoryData):
             repository_definition (Dict[str, Dict[str, ...]]): A dict of the form:
 
                 {
-                    'pipelines': Dict[str, Callable[[], PipelineDefinition]],
                     'jobs': Dict[str, Callable[[], JobDefinition]],
                     'schedules': Dict[str, Callable[[], ScheduleDefinition]]
                 }
@@ -387,8 +322,8 @@ class CachingRepositoryData(RepositoryData):
         """Static constructor.
 
         Args:
-            repository_definitions (List[Union[PipelineDefinition, ScheduleDefinition, SensorDefinition, AssetGroup, GraphDefinition]]):
-                Use this constructor when you have no need to lazy load pipelines/jobs or other
+            repository_definitions (List[Union[JobDefinition, ScheduleDefinition, SensorDefinition, AssetGroup, GraphDefinition]]):
+                Use this constructor when you have no need to lazy load jobs or other
                 definitions.
             top_level_resources (Optional[Mapping[str, ResourceDefinition]]): A dict of top-level
                 resource keys to defintions, for resources which should be displayed in the UI.
@@ -406,14 +341,6 @@ class CachingRepositoryData(RepositoryData):
     def get_env_vars_by_top_level_resource(self) -> Mapping[str, AbstractSet[str]]:
         return self._utilized_env_vars
 
-    def get_pipeline_names(self) -> Sequence[str]:
-        """Get the names of all pipelines/jobs in the repository.
-
-        Returns:
-            List[str]
-        """
-        return [*self._pipelines.get_definition_names(), *self.get_job_names()]
-
     def get_resource_key_mapping(self) -> Mapping[int, str]:
         return self._resource_key_mapping
 
@@ -424,21 +351,6 @@ class CachingRepositoryData(RepositoryData):
             List[str]
         """
         return self._jobs.get_definition_names()
-
-    def has_pipeline(self, pipeline_name: str) -> bool:
-        """Check if a pipeline/job with a given name is present in the repository.
-
-        Args:
-            pipeline_name (str): The name of the pipeline/job.
-
-        Returns:
-            bool
-        """
-        check.str_param(pipeline_name, "pipeline_name")
-
-        return self._pipelines.has_definition(pipeline_name) or self._jobs.has_definition(
-            pipeline_name
-        )
 
     def has_job(self, job_name: str) -> bool:
         """Check if a job with a given name is present in the repository.
@@ -455,26 +367,6 @@ class CachingRepositoryData(RepositoryData):
     def get_top_level_resources(self) -> Mapping[str, ResourceDefinition]:
         return self._top_level_resources
 
-    def get_all_pipelines(self) -> Sequence[PipelineDefinition]:
-        """Return all pipelines/jobs in the repository as a list.
-
-        Note that this will construct any pipeline/job that has not yet been constructed.
-
-        Returns:
-            List[PipelineDefinition]: All pipelines/jobs in the repository.
-        """
-        if self._all_pipelines is not None:
-            return self._all_pipelines
-
-        self._all_jobs = self._jobs.get_all_definitions()
-        pipelines: List[PipelineDefinition] = [
-            *self._pipelines.get_all_definitions(),
-            *self._all_jobs,
-        ]
-        self._check_solid_defs(pipelines)
-        self._all_pipelines = pipelines
-        return self._all_pipelines
-
     def get_all_jobs(self) -> Sequence[JobDefinition]:
         """Return all jobs in the repository as a list.
 
@@ -486,32 +378,9 @@ class CachingRepositoryData(RepositoryData):
         if self._all_jobs is not None:
             return self._all_jobs
 
-        # _check_solid_defs enforces that pipeline and graph definition names are
-        # unique within a repository. Loads pipelines in the line below to enforce
-        # pipeline/job/graph uniqueness.
-        self.get_all_pipelines()
-
-        # The `get_all_pipelines` call ensures _all_jobs is set.
-        return cast(Sequence[JobDefinition], self._all_jobs)
-
-    def get_pipeline(self, pipeline_name: str) -> PipelineDefinition:
-        """Get a pipeline/job by name.
-
-        If this pipeline/job has not yet been constructed, only this pipeline/job is constructed, and will
-        be cached for future calls.
-
-        Args:
-            pipeline_name (str): Name of the pipeline/job to retrieve.
-
-        Returns:
-            PipelineDefinition: The pipeline/job definition corresponding to the given name.
-        """
-        check.str_param(pipeline_name, "pipeline_name")
-
-        if self._jobs.has_definition(pipeline_name):
-            return self._jobs.get_definition(pipeline_name)
-        else:
-            return self._pipelines.get_definition(pipeline_name)
+        self._all_jobs = self._jobs.get_all_definitions()
+        self._check_node_defs(self._all_jobs)
+        return self._all_jobs
 
     def get_job(self, job_name: str) -> JobDefinition:
         """Get a job by name.
@@ -585,58 +454,53 @@ class CachingRepositoryData(RepositoryData):
     def get_assets_defs_by_key(self) -> Mapping[AssetKey, "AssetsDefinition"]:
         return self._assets_defs_by_key
 
-    def _check_solid_defs(self, pipelines: Sequence[PipelineDefinition]) -> None:
-        solid_defs = {}
-        solid_to_pipeline = {}
-        for pipeline in pipelines:
-            for solid_def in [*pipeline.all_node_defs, pipeline.graph]:
+    def _check_node_defs(self, job_defs: Sequence[JobDefinition]) -> None:
+        node_defs = {}
+        node_to_job = {}
+        for job_def in job_defs:
+            for node_def in [*job_def.all_node_defs, job_def.graph]:
                 # skip checks for subselected graphs because they don't have their own names
-                if isinstance(solid_def, SubselectedGraphDefinition):
+                if isinstance(node_def, SubselectedGraphDefinition):
                     break
 
-                if solid_def.name not in solid_defs:
-                    solid_defs[solid_def.name] = solid_def
-                    solid_to_pipeline[solid_def.name] = pipeline.name
+                if node_def.name not in node_defs:
+                    node_defs[node_def.name] = node_def
+                    node_to_job[node_def.name] = job_def.name
 
-                if solid_defs[solid_def.name] is not solid_def:
-                    first_name, second_name = sorted(
-                        [solid_to_pipeline[solid_def.name], pipeline.name]
-                    )
+                if node_defs[node_def.name] is not node_def:
+                    first_name, second_name = sorted([node_to_job[node_def.name], job_def.name])
                     raise DagsterInvalidDefinitionError(
-                        f"Conflicting definitions found in repository with name '{solid_def.name}'."
+                        f"Conflicting definitions found in repository with name '{node_def.name}'."
                         " Op/Graph definition names must be unique within a repository."
-                        f" {solid_def.__class__.__name__} is defined in"
-                        f" {pipeline.target_type} '{first_name}' and in"
-                        f" {pipeline.target_type} '{second_name}'."
+                        f" {node_def.__class__.__name__} is defined in"
+                        f" job '{first_name}' and in"
+                        f" job '{second_name}'."
                     )
-
-    def _validate_pipeline(self, pipeline: PipelineDefinition) -> PipelineDefinition:
-        return pipeline
 
     def _validate_job(self, job: JobDefinition) -> JobDefinition:
         return job
 
     def _validate_schedule(self, schedule: ScheduleDefinition) -> ScheduleDefinition:
-        pipelines = self.get_pipeline_names()
+        job_names = self.get_job_names()
 
-        if schedule.job_name not in pipelines:
+        if schedule.job_name not in job_names:
             raise DagsterInvalidDefinitionError(
-                f'ScheduleDefinition "{schedule.name}" targets job/pipeline "{schedule.job_name}" '
+                f'ScheduleDefinition "{schedule.name}" targets job "{schedule.job_name}" '
                 "which was not found in this repository."
             )
 
         return schedule
 
     def _validate_sensor(self, sensor: SensorDefinition) -> SensorDefinition:
-        pipelines = self.get_pipeline_names()
+        job_names = self.get_job_names()
         if len(sensor.targets) == 0:
-            # skip validation when the sensor does not target a pipeline
+            # skip validation when the sensor does not target a job
             return sensor
 
         for target in sensor.targets:
-            if target.pipeline_name not in pipelines:
+            if target.job_name not in job_names:
                 raise DagsterInvalidDefinitionError(
-                    f'SensorDefinition "{sensor.name}" targets job/pipeline "{sensor.job_name}" '
+                    f'SensorDefinition "{sensor.name}" targets job "{sensor.job_name}" '
                     "which was not found in this repository."
                 )
 

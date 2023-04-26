@@ -134,7 +134,7 @@ multi_code_location_scenarios = {
                 AutoMaterializePolicy(
                     for_freshness=True,
                     on_missing=False,
-                    on_upstream_data_newer=False,
+                    on_new_parent_data=False,
                     time_window_partition_scope_minutes=0,
                 ),
             ),
@@ -143,7 +143,7 @@ multi_code_location_scenarios = {
                 AutoMaterializePolicy(
                     for_freshness=True,
                     on_missing=False,
-                    on_upstream_data_newer=False,
+                    on_new_parent_data=False,
                     time_window_partition_scope_minutes=0,
                 ),
             ),
@@ -159,7 +159,7 @@ multi_code_location_scenarios = {
                 AutoMaterializePolicy(
                     for_freshness=True,
                     on_missing=False,
-                    on_upstream_data_newer=False,
+                    on_new_parent_data=False,
                     time_window_partition_scope_minutes=0,
                 ),
             ),
@@ -168,7 +168,7 @@ multi_code_location_scenarios = {
                 AutoMaterializePolicy(
                     for_freshness=True,
                     on_missing=False,
-                    on_upstream_data_newer=False,
+                    on_new_parent_data=False,
                     time_window_partition_scope_minutes=0,
                 ),
             ),

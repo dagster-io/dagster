@@ -3,7 +3,6 @@ from typing import Mapping, NamedTuple, Optional, Union
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.events import AssetMaterialization, AssetObservation
-from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.utils import coerce_valid_log_level
 from dagster._serdes.serdes import (
@@ -27,6 +26,7 @@ from dagster._utils.log import (
     # machinery from events that are yielded by user code
     old_storage_names={"DagsterEventRecord", "LogMessageRecord", "EventRecord"},
     old_fields={"message": ""},
+    storage_field_names={"job_name": "pipeline_name"},
 )
 class EventLogEntry(
     NamedTuple(
@@ -38,7 +38,7 @@ class EventLogEntry(
             ("run_id", PublicAttr[str]),
             ("timestamp", PublicAttr[float]),
             ("step_key", PublicAttr[Optional[str]]),
-            ("pipeline_name", Optional[str]),
+            ("job_name", PublicAttr[Optional[str]]),
             ("dagster_event", PublicAttr[Optional[DagsterEvent]]),
         ],
     )
@@ -74,17 +74,9 @@ class EventLogEntry(
         run_id,
         timestamp,
         step_key=None,
-        pipeline_name=None,
-        dagster_event=None,
         job_name=None,
+        dagster_event=None,
     ):
-        if pipeline_name and job_name:
-            raise DagsterInvariantViolationError(
-                "Provided both `pipeline_name` and `job_name` parameters to `EventLogEntry` "
-                "initialization. Please provide only one or the other."
-            )
-
-        pipeline_name = pipeline_name or job_name
         return super(EventLogEntry, cls).__new__(
             cls,
             check.opt_inst_param(error_info, "error_info", SerializableErrorInfo),
@@ -93,7 +85,7 @@ class EventLogEntry(
             check.str_param(run_id, "run_id"),
             check.float_param(timestamp, "timestamp"),
             check.opt_str_param(step_key, "step_key"),
-            check.opt_str_param(pipeline_name, "pipeline_name"),
+            check.opt_str_param(job_name, "job_name"),
             check.opt_inst_param(dagster_event, "dagster_event", DagsterEvent),
         )
 
@@ -101,11 +93,6 @@ class EventLogEntry(
     @property
     def is_dagster_event(self) -> bool:
         return bool(self.dagster_event)
-
-    @public
-    @property
-    def job_name(self) -> Optional[str]:
-        return self.pipeline_name
 
     @public
     def get_dagster_event(self) -> DagsterEvent:
@@ -186,7 +173,7 @@ def construct_event_record(logger_message: StructuredLoggerMessage) -> EventLogE
         run_id=logger_message.meta["run_id"],
         timestamp=logger_message.record.created,
         step_key=logger_message.meta.get("step_key"),
-        job_name=logger_message.meta.get("pipeline_name"),
+        job_name=logger_message.meta.get("job_name"),
         dagster_event=logger_message.meta.get("dagster_event"),
         error_info=None,
     )

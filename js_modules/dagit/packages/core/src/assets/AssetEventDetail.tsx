@@ -146,7 +146,7 @@ export const AssetEventDetailEmpty = () => (
       border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
       flex={{alignItems: 'center', justifyContent: 'space-between'}}
     >
-      <Heading color={Colors.Gray400}>No Event Selected</Heading>
+      <Heading color={Colors.Gray400}>No event selected</Heading>
     </Box>
     <Box
       style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 16}}

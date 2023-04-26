@@ -17,8 +17,7 @@ from typing import (
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._core.definitions import InputDefinition, NodeHandle, PipelineDefinition
-from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions import InputDefinition, JobDefinition, NodeHandle
 from dagster._core.definitions.version_strategy import ResourceVersionContext
 from dagster._core.errors import (
     DagsterExecutionLoadInputError,
@@ -109,14 +108,14 @@ class StepInputSource(ABC):
     ) -> Iterator[object]:
         ...
 
-    def required_resource_keys(self, _pipeline_def: PipelineDefinition) -> AbstractSet[str]:
+    def required_resource_keys(self, _job_def: JobDefinition) -> AbstractSet[str]:
         return set()
 
     @abstractmethod
     def compute_version(
         self,
         step_versions: Mapping[str, Optional[str]],
-        pipeline_def: PipelineDefinition,
+        job_def: JobDefinition,
         resolved_run_config: ResolvedRunConfig,
     ) -> Optional[str]:
         """See resolve_step_versions in resolve_versions.py for explanation of step_versions."""
@@ -145,7 +144,7 @@ class FromSourceAsset(
         from dagster._core.events import DagsterEvent
         from dagster._core.execution.context.output import OutputContext
 
-        asset_layer = step_context.pipeline_def.asset_layer
+        asset_layer = step_context.job_def.asset_layer
 
         input_asset_key = asset_layer.asset_key_for_input(
             self.node_handle, input_name=self.input_name
@@ -199,16 +198,14 @@ class FromSourceAsset(
     def compute_version(
         self,
         step_versions: Mapping[str, Optional[str]],
-        pipeline_def: PipelineDefinition,
+        job_def: JobDefinition,
         resolved_run_config: ResolvedRunConfig,
     ) -> Optional[str]:
         from ..resolve_versions import check_valid_version, resolve_config_version
 
-        op = pipeline_def.get_node(self.node_handle)
+        op = job_def.get_node(self.node_handle)
         input_manager_key = check.not_none(op.input_def_named(self.input_name).input_manager_key)
-        io_manager_def = pipeline_def.get_mode_definition(resolved_run_config.mode).resource_defs[
-            input_manager_key
-        ]
+        io_manager_def = job_def.resource_defs[input_manager_key]
 
         op_config = check.not_none(resolved_run_config.ops.get(op.name))
         input_config = op_config.inputs.get(self.input_name)
@@ -220,10 +217,8 @@ class FromSourceAsset(
             resource_config=resource_config,
         )
 
-        if pipeline_def.version_strategy is not None:
-            io_manager_def_version = pipeline_def.version_strategy.get_resource_version(
-                version_context
-            )
+        if job_def.version_strategy is not None:
+            io_manager_def_version = job_def.version_strategy.get_resource_version(version_context)
         else:
             io_manager_def_version = io_manager_def.version
 
@@ -241,10 +236,8 @@ class FromSourceAsset(
             io_manager_def_version,
         )
 
-    def required_resource_keys(self, pipeline_def: PipelineDefinition) -> Set[str]:
-        input_asset_key = pipeline_def.asset_layer.asset_key_for_input(
-            self.node_handle, self.input_name
-        )
+    def required_resource_keys(self, job_def: JobDefinition) -> Set[str]:
+        input_asset_key = job_def.asset_layer.asset_key_for_input(self.node_handle, self.input_name)
         if input_asset_key is None:
             check.failed(
                 (
@@ -253,11 +246,11 @@ class FromSourceAsset(
                 ),
             )
 
-        input_def = pipeline_def.get_node(self.node_handle).input_def_named(self.input_name)
+        input_def = job_def.get_node(self.node_handle).input_def_named(self.input_name)
         if input_def.input_manager_key is not None:
             input_manager_key = input_def.input_manager_key
         else:
-            input_manager_key = pipeline_def.asset_layer.io_manager_key_for_asset(input_asset_key)
+            input_manager_key = job_def.asset_layer.io_manager_key_for_asset(input_asset_key)
 
         if input_manager_key is None:
             check.failed(
@@ -332,20 +325,18 @@ class FromRootInputManager(
     def compute_version(
         self,
         step_versions: Mapping[str, Optional[str]],
-        pipeline_def: PipelineDefinition,
+        job_def: JobDefinition,
         resolved_run_config: ResolvedRunConfig,
     ) -> Optional[str]:
         from ..resolve_versions import check_valid_version, resolve_config_version
 
-        solid = pipeline_def.get_node(self.node_handle)
+        solid = job_def.get_node(self.node_handle)
         input_manager_key: str = check.not_none(
             solid.input_def_named(self.input_name).root_manager_key
             if solid.input_def_named(self.input_name).root_manager_key
             else solid.input_def_named(self.input_name).input_manager_key
         )
-        input_manager_def = pipeline_def.get_mode_definition(
-            resolved_run_config.mode
-        ).resource_defs[input_manager_key]
+        input_manager_def = job_def.resource_defs[input_manager_key]
 
         solid_config = resolved_run_config.ops[solid.name]
         input_config = solid_config.inputs.get(self.input_name)
@@ -358,8 +349,8 @@ class FromRootInputManager(
             resource_config=resource_config,
         )
 
-        if pipeline_def.version_strategy is not None:
-            root_manager_def_version = pipeline_def.version_strategy.get_resource_version(
+        if job_def.version_strategy is not None:
+            root_manager_def_version = job_def.version_strategy.get_resource_version(
                 version_context
             )
         else:
@@ -379,8 +370,8 @@ class FromRootInputManager(
             root_manager_def_version,
         )
 
-    def required_resource_keys(self, pipeline_def: PipelineDefinition) -> Set[str]:
-        input_def = pipeline_def.get_node(self.node_handle).input_def_named(self.input_name)
+    def required_resource_keys(self, job_def: JobDefinition) -> Set[str]:
+        input_def = job_def.get_node(self.node_handle).input_def_named(self.input_name)
 
         input_manager_key: str = check.not_none(
             input_def.root_manager_key
@@ -446,7 +437,7 @@ class FromStepOutput(
     ) -> "InputContext":
         resolved_io_manager_key = (
             step_context.execution_plan.get_manager_key(
-                self.step_output_handle, step_context.pipeline_def
+                self.step_output_handle, step_context.job_def
             )
             if io_manager_key is None
             else io_manager_key
@@ -492,7 +483,7 @@ class FromStepOutput(
             )
         else:
             manager_key = step_context.execution_plan.get_manager_key(
-                source_handle, step_context.pipeline_def
+                source_handle, step_context.job_def
             )
             input_manager = step_context.get_io_manager(source_handle)
             check.invariant(
@@ -524,7 +515,7 @@ class FromStepOutput(
     def compute_version(
         self,
         step_versions: Mapping[str, Optional[str]],
-        pipeline_def: PipelineDefinition,
+        job_def: JobDefinition,
         resolved_run_config: ResolvedRunConfig,
     ) -> Optional[str]:
         if (
@@ -537,7 +528,7 @@ class FromStepOutput(
                 step_versions[self.step_output_handle.step_key], self.step_output_handle.output_name
             )
 
-    def required_resource_keys(self, _pipeline_def: PipelineDefinition) -> Set[str]:
+    def required_resource_keys(self, _job_def: JobDefinition) -> Set[str]:
         return set()
 
 
@@ -564,14 +555,14 @@ class FromConfig(
             input_name=input_name,
         )
 
-    def get_associated_input_def(self, pipeline_def: PipelineDefinition) -> InputDefinition:
+    def get_associated_input_def(self, job_def: JobDefinition) -> InputDefinition:
         """Returns the InputDefinition along the potential composition InputMapping chain
         that the config was provided at.
         """
         if self.node_handle:
-            return pipeline_def.get_node(self.node_handle).input_def_named(self.input_name)
+            return job_def.get_node(self.node_handle).input_def_named(self.input_name)
         else:
-            return pipeline_def.graph.input_def_named(self.input_name)
+            return job_def.graph.input_def_named(self.input_name)
 
     def get_associated_config(self, resolved_run_config: ResolvedRunConfig):
         """Returns the config specified, potentially specified at any point along graph composition
@@ -594,25 +585,25 @@ class FromConfig(
             msg_fn=lambda: f'Error occurred while loading input "{self.input_name}" of step "{step_context.step.key}":',
             log_manager=step_context.log,
         ):
-            dagster_type = self.get_associated_input_def(step_context.pipeline_def).dagster_type
+            dagster_type = self.get_associated_input_def(step_context.job_def).dagster_type
             config_data = self.get_associated_config(step_context.resolved_run_config)
             loader = check.not_none(dagster_type.loader)
             yield loader.construct_from_config_value(
                 step_context.get_type_loader_context(), config_data
             )
 
-    def required_resource_keys(self, pipeline_def: PipelineDefinition) -> AbstractSet[str]:
-        dagster_type = self.get_associated_input_def(pipeline_def).dagster_type
+    def required_resource_keys(self, job_def: JobDefinition) -> AbstractSet[str]:
+        dagster_type = self.get_associated_input_def(job_def).dagster_type
         return dagster_type.loader.required_resource_keys() if dagster_type.loader else set()
 
     def compute_version(
         self,
         step_versions: Mapping[str, Optional[str]],
-        pipeline_def: PipelineDefinition,
+        job_def: JobDefinition,
         resolved_run_config: ResolvedRunConfig,
     ) -> Optional[str]:
         config_data = self.get_associated_config(resolved_run_config)
-        input_def = self.get_associated_input_def(pipeline_def)
+        input_def = self.get_associated_input_def(job_def)
         dagster_type = input_def.dagster_type
         loader = check.not_none(dagster_type.loader)
 
@@ -638,22 +629,16 @@ class FromDirectInputValue(
     def load_input_object(
         self, step_context: "StepExecutionContext", input_def: InputDefinition
     ) -> Iterator[object]:
-        pipeline_def = step_context.pipeline_def
-        if not pipeline_def.is_job:
-            raise DagsterInvariantViolationError(
-                "Using input values with pipeline API, which is unsupported."
-            )
-
-        job_def = cast(JobDefinition, pipeline_def)
+        job_def = step_context.job_def
         yield job_def.get_direct_input_value(self.input_name)
 
-    def required_resource_keys(self, _pipeline_def: PipelineDefinition) -> Set[str]:
+    def required_resource_keys(self, _job_def: JobDefinition) -> Set[str]:
         return set()
 
     def compute_version(
         self,
         step_versions: Mapping[str, Optional[str]],
-        pipeline_def: PipelineDefinition,
+        job_def: JobDefinition,
         resolved_run_config: ResolvedRunConfig,
     ) -> Optional[str]:
         return str(self.input_name)
@@ -675,7 +660,7 @@ class FromDefaultValue(
     def __new__(cls, node_handle: NodeHandle, input_name: str):
         return super(FromDefaultValue, cls).__new__(cls, node_handle, input_name)
 
-    def _load_value(self, pipeline_def: PipelineDefinition):
+    def _load_value(self, pipeline_def: JobDefinition):
         return pipeline_def.get_node(self.node_handle).definition.default_value_for_input(
             self.input_name
         )
@@ -685,15 +670,15 @@ class FromDefaultValue(
         step_context: "StepExecutionContext",
         input_def: InputDefinition,
     ) -> Iterator[object]:
-        yield self._load_value(step_context.pipeline_def)
+        yield self._load_value(step_context.job_def)
 
     def compute_version(
         self,
         step_versions: Mapping[str, Optional[str]],
-        pipeline_def: PipelineDefinition,
+        job_def: JobDefinition,
         resolved_run_config: ResolvedRunConfig,
     ) -> Optional[str]:
-        return join_and_hash(repr(self._load_value(pipeline_def)))
+        return join_and_hash(repr(self._load_value(job_def)))
 
 
 @whitelist_for_serdes(storage_field_names={"node_handle": "solid_handle"})
@@ -783,21 +768,21 @@ class FromMultipleSources(
 
         yield values
 
-    def required_resource_keys(self, pipeline_def: PipelineDefinition) -> Set[str]:
+    def required_resource_keys(self, job_def: JobDefinition) -> Set[str]:
         resource_keys: Set[str] = set()
         for source in self.sources:
-            resource_keys = resource_keys.union(source.required_resource_keys(pipeline_def))
+            resource_keys = resource_keys.union(source.required_resource_keys(job_def))
         return resource_keys
 
     def compute_version(
         self,
         step_versions: Mapping[str, Optional[str]],
-        pipeline_def: PipelineDefinition,
+        job_def: JobDefinition,
         resolved_run_config: ResolvedRunConfig,
     ) -> Optional[str]:
         return join_and_hash(
             *[
-                inner_source.compute_version(step_versions, pipeline_def, resolved_run_config)
+                inner_source.compute_version(step_versions, job_def, resolved_run_config)
                 for inner_source in self.sources
             ]
         )
@@ -885,7 +870,7 @@ class FromPendingDynamicStepOutput(
         # None mapping_key on StepOutputHandle acts as placeholder
         return self.step_output_handle
 
-    def required_resource_keys(self, _pipeline_def: PipelineDefinition) -> Set[str]:
+    def required_resource_keys(self, _job_def: JobDefinition) -> Set[str]:
         return set()
 
 
@@ -944,7 +929,7 @@ class FromUnresolvedStepOutput(
     def get_step_output_handle_dep_with_placeholder(self) -> StepOutputHandle:
         return self.unresolved_step_output_handle.get_step_output_handle_with_placeholder()
 
-    def required_resource_keys(self, _pipeline_def: PipelineDefinition) -> Set[str]:
+    def required_resource_keys(self, _job_def: JobDefinition) -> Set[str]:
         return set()
 
 
@@ -988,7 +973,7 @@ class FromDynamicCollect(
     def get_step_output_handle_dep_with_placeholder(self) -> StepOutputHandle:
         return self.source.get_step_output_handle_dep_with_placeholder()
 
-    def required_resource_keys(self, _pipeline_def: PipelineDefinition) -> Set[str]:
+    def required_resource_keys(self, _job_def: JobDefinition) -> Set[str]:
         return set()
 
     def resolve(self, mapping_keys: Optional[Sequence[str]]):

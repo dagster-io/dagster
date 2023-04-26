@@ -16,7 +16,7 @@ from dagster._config import (
     RuntimeMismatchErrorData,
     SelectorTypeErrorData,
 )
-from dagster._core.host_representation.represented import RepresentedPipeline
+from dagster._core.host_representation.represented import RepresentedJob
 from dagster._utils.error import SerializableErrorInfo
 from graphene.types.generic import GenericScalar
 
@@ -304,7 +304,7 @@ class GrapheneRunConfigValidationInvalid(graphene.ObjectType):
 
     @staticmethod
     def for_validation_errors(represented_pipeline, errors):
-        check.inst_param(represented_pipeline, "represented_pipeline", RepresentedPipeline)
+        check.inst_param(represented_pipeline, "represented_pipeline", RepresentedJob)
         check.list_param(errors, "errors", of_type=DagsterEvaluationError)
         return GrapheneRunConfigValidationInvalid(
             pipeline_name=represented_pipeline.name,

@@ -307,7 +307,7 @@ def expected_outer_prefix():
 def test_single():
     with instance_for_test() as instance:
         job_name = "foo_job"
-        dagster_run = create_run_for_test(instance, pipeline_name=job_name)
+        dagster_run = create_run_for_test(instance, job_name=job_name)
 
         step_keys = ["A", "B", "C"]
 
@@ -348,7 +348,7 @@ def test_compute_log_base_with_spaces():
             },
         ) as instance:
             job_name = "foo_job"
-            dagster_run = create_run_for_test(instance, pipeline_name=job_name)
+            dagster_run = create_run_for_test(instance, job_name=job_name)
 
             step_keys = ["A", "B", "C"]
 
@@ -381,7 +381,7 @@ def test_multi():
 
     with instance_for_test() as instance:
         job_name = "foo_job"
-        dagster_run = create_run_for_test(instance, pipeline_name=job_name)
+        dagster_run = create_run_for_test(instance, job_name=job_name)
 
         step_keys = ["A", "B", "C"]
 

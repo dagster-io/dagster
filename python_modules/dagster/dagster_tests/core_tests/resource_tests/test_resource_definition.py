@@ -24,7 +24,7 @@ from dagster import (
     reconstructable,
     resource,
 )
-from dagster._core.definitions.pipeline_base import InMemoryPipeline
+from dagster._core.definitions.pipeline_base import InMemoryJob
 from dagster._core.definitions.resource_definition import make_values_resource
 from dagster._core.errors import DagsterConfigMappingFunctionError, DagsterInvalidDefinitionError
 from dagster._core.events.log import EventLogEntry, construct_event_logger
@@ -648,7 +648,7 @@ def test_resource_init_failure():
 
     instance = DagsterInstance.ephemeral()
     execution_plan = create_execution_plan(the_job)
-    dagster_run = instance.create_run_for_pipeline(the_job, execution_plan=execution_plan)
+    dagster_run = instance.create_run_for_job(the_job, execution_plan=execution_plan)
 
     with pytest.raises(
         DagsterResourceFunctionError,
@@ -656,7 +656,7 @@ def test_resource_init_failure():
     ):
         execute_plan(
             execution_plan,
-            InMemoryPipeline(the_job),
+            InMemoryJob(the_job),
             dagster_run=dagster_run,
             instance=instance,
         )
@@ -1101,28 +1101,28 @@ def test_resource_op_subset():
         bar_op()
         baz_op()
 
-    assert set(nested.get_required_resource_defs_for_mode("default").keys()) == {
+    assert set(nested.get_required_resource_defs().keys()) == {
         "foo",
         "bar",
         "baz",
         "io_manager",
     }
 
-    assert nested.get_job_def_for_subset_selection(["foo_op"]).get_required_resource_defs_for_mode(
-        "default"
-    ).keys() == {
+    assert nested.get_job_def_for_subset_selection(
+        ["foo_op"]
+    ).get_required_resource_defs().keys() == {
         "foo",
         "bar",
         "io_manager",
     }
 
-    assert nested.get_job_def_for_subset_selection(["bar_op"]).get_required_resource_defs_for_mode(
-        "default"
-    ).keys() == {"bar", "io_manager"}
+    assert nested.get_job_def_for_subset_selection(
+        ["bar_op"]
+    ).get_required_resource_defs().keys() == {"bar", "io_manager"}
 
-    assert nested.get_job_def_for_subset_selection(["baz_op"]).get_required_resource_defs_for_mode(
-        "default"
-    ).keys() == {"baz", "io_manager"}
+    assert nested.get_job_def_for_subset_selection(
+        ["baz_op"]
+    ).get_required_resource_defs().keys() == {"baz", "io_manager"}
 
 
 def test_config_with_no_schema():

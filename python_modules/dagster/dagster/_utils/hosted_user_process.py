@@ -11,23 +11,23 @@ to be the case.
 from typing import TYPE_CHECKING
 
 import dagster._check as check
-from dagster._core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
-from dagster._core.host_representation import ExternalPipeline, ExternalRepository
+from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
+from dagster._core.host_representation import ExternalJob, ExternalRepository
 from dagster._core.host_representation.external_data import (
-    external_pipeline_data_from_def,
+    external_job_data_from_def,
     external_repository_data_from_def,
 )
-from dagster._core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
+from dagster._core.origin import JobPythonOrigin, RepositoryPythonOrigin
 
 if TYPE_CHECKING:
     from dagster._core.definitions.repository_definition import RepositoryDefinition
     from dagster._core.host_representation.handle import RepositoryHandle
 
 
-def recon_pipeline_from_origin(origin: PipelinePythonOrigin) -> ReconstructablePipeline:
-    check.inst_param(origin, "origin", PipelinePythonOrigin)
+def recon_job_from_origin(origin: JobPythonOrigin) -> ReconstructableJob:
+    check.inst_param(origin, "origin", JobPythonOrigin)
     recon_repo = recon_repository_from_origin(origin.repository_origin)
-    return recon_repo.get_reconstructable_pipeline(origin.pipeline_name)
+    return recon_repo.get_reconstructable_job(origin.job_name)
 
 
 def recon_repository_from_origin(origin: RepositoryPythonOrigin) -> "ReconstructableRepository":
@@ -47,18 +47,18 @@ def external_repo_from_def(
     return ExternalRepository(external_repository_data_from_def(repository_def), repository_handle)
 
 
-def external_pipeline_from_recon_pipeline(
-    recon_pipeline, solid_selection, repository_handle, asset_selection=None
+def external_job_from_recon_job(
+    recon_job, solid_selection, repository_handle, asset_selection=None
 ):
     if solid_selection or asset_selection:
-        sub_pipeline = recon_pipeline.subset_for_execution(
+        sub_recon_job = recon_job.subset_for_execution(
             solid_selection=solid_selection, asset_selection=asset_selection
         )
-        pipeline_def = sub_pipeline.get_definition()
+        job_def = sub_recon_job.get_definition()
     else:
-        pipeline_def = recon_pipeline.get_definition()
+        job_def = recon_job.get_definition()
 
-    return ExternalPipeline(
-        external_pipeline_data_from_def(pipeline_def),
+    return ExternalJob(
+        external_job_data_from_def(job_def),
         repository_handle=repository_handle,
     )

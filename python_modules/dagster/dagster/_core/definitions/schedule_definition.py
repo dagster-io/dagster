@@ -46,8 +46,7 @@ from ..instance import DagsterInstance
 from ..instance.ref import InstanceRef
 from ..storage.pipeline_run import DagsterRun
 from .graph_definition import GraphDefinition
-from .mode import DEFAULT_MODE_NAME
-from .pipeline_definition import PipelineDefinition
+from .job_definition import JobDefinition
 from .run_request import RunRequest, SkipReason
 from .target import DirectTarget, ExecutableDefinition, RepoRelativeTarget
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
@@ -545,8 +544,7 @@ class ScheduleDefinition:
             self._target: Union[DirectTarget, RepoRelativeTarget] = DirectTarget(job)
         else:
             self._target = RepoRelativeTarget(
-                pipeline_name=check.str_param(job_name, "job_name"),
-                mode=DEFAULT_MODE_NAME,
+                job_name=check.str_param(job_name, "job_name"),
                 solid_selection=None,
             )
 
@@ -726,7 +724,7 @@ class ScheduleDefinition:
     @public
     @property
     def job_name(self) -> str:
-        return self._target.pipeline_name
+        return self._target.job_name
 
     @public
     @property
@@ -756,7 +754,7 @@ class ScheduleDefinition:
 
     @public
     @property
-    def job(self) -> Union[GraphDefinition, PipelineDefinition, UnresolvedAssetJobDefinition]:
+    def job(self) -> Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]:
         if isinstance(self._target, DirectTarget):
             return self._target.target
         raise DagsterInvalidDefinitionError("No job was provided to ScheduleDefinition.")
@@ -827,7 +825,7 @@ class ScheduleDefinition:
                         " partitioned run requests"
                     )
 
-                scheduled_target = context.repository_def.get_job(self._target.pipeline_name)
+                scheduled_target = context.repository_def.get_job(self._target.job_name)
                 resolved_request = run_request.with_resolved_tags_and_config(
                     target_definition=scheduled_target,
                     dynamic_partitions_requests=[],
@@ -860,7 +858,7 @@ class ScheduleDefinition:
 
     def load_target(
         self,
-    ) -> Union[GraphDefinition, PipelineDefinition, UnresolvedAssetJobDefinition]:
+    ) -> Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]:
         if isinstance(self._target, DirectTarget):
             return self._target.load()
 

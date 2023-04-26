@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, Colors, NonIdealState, Spinner, TextInput} from '@dagster-io/ui';
+import {Box, Colors, NonIdealState, Spinner, TextInput, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
@@ -7,6 +7,12 @@ import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {useSelectionReducer} from '../hooks/useSelectionReducer';
+import {filterPermissionedInstigationState} from '../instigation/filterPermissionedInstigationState';
+import {BASIC_INSTIGATION_STATE_FRAGMENT} from '../overview/BasicInstigationStateFragment';
+import {SensorBulkActionMenu} from '../sensors/SensorBulkActionMenu';
+import {makeSensorKey} from '../sensors/makeSensorKey';
+import {CheckAllBox} from '../ui/CheckAllBox';
 
 import {VirtualizedSensorTable} from './VirtualizedSensorTable';
 import {WorkspaceHeader} from './WorkspaceHeader';
@@ -56,6 +62,35 @@ export const WorkspaceSensorsRoot = ({repoAddress}: {repoAddress: RepoAddress}) 
     return sensors.filter(({name}) => name.toLocaleLowerCase().includes(searchToLower));
   }, [sensors, sanitizedSearch]);
 
+  const anySensorsVisible = filteredBySearch.length > 0;
+
+  const permissionedSensors = React.useMemo(() => {
+    return filteredBySearch.filter(({sensorState}) =>
+      filterPermissionedInstigationState(sensorState),
+    );
+  }, [filteredBySearch]);
+
+  const permissionedKeys = React.useMemo(() => {
+    return permissionedSensors.map(({name}) => makeSensorKey(repoAddress, name));
+  }, [permissionedSensors, repoAddress]);
+
+  const [{checkedIds: checkedKeys}, {onToggleFactory, onToggleAll}] = useSelectionReducer(
+    permissionedKeys,
+  );
+
+  const checkedSensors = React.useMemo(() => {
+    return permissionedSensors
+      .filter(({name}) => checkedKeys.has(makeSensorKey(repoAddress, name)))
+      .map(({name, sensorState}) => {
+        return {repoAddress, sensorName: name, sensorState};
+      });
+  }, [permissionedSensors, checkedKeys, repoAddress]);
+
+  const permissionedCount = permissionedKeys.length;
+  const checkedCount = checkedKeys.size;
+
+  const viewerHasAnyInstigationPermission = permissionedKeys.length > 0;
+
   const content = () => {
     if (loading && !data) {
       return (
@@ -96,7 +131,23 @@ export const WorkspaceSensorsRoot = ({repoAddress}: {repoAddress: RepoAddress}) 
       );
     }
 
-    return <VirtualizedSensorTable repoAddress={repoAddress} sensors={filteredBySearch} />;
+    return (
+      <VirtualizedSensorTable
+        repoAddress={repoAddress}
+        sensors={filteredBySearch}
+        headerCheckbox={
+          viewerHasAnyInstigationPermission ? (
+            <CheckAllBox
+              checkedCount={checkedCount}
+              totalCount={permissionedCount}
+              onToggleAll={onToggleAll}
+            />
+          ) : undefined
+        }
+        checkedKeys={checkedKeys}
+        onToggleCheckFactory={onToggleFactory}
+      />
+    );
   };
 
   return (
@@ -107,7 +158,7 @@ export const WorkspaceSensorsRoot = ({repoAddress}: {repoAddress: RepoAddress}) 
         refreshState={refreshState}
         queryData={queryResultOverview}
       />
-      <Box padding={{horizontal: 24, vertical: 16}}>
+      <Box padding={{horizontal: 24, vertical: 16}} flex={{justifyContent: 'space-between'}}>
         <TextInput
           icon="search"
           value={searchValue}
@@ -115,6 +166,14 @@ export const WorkspaceSensorsRoot = ({repoAddress}: {repoAddress: RepoAddress}) 
           placeholder="Filter by sensor name…"
           style={{width: '340px'}}
         />
+        <Tooltip
+          content="You do not have permission to start or stop these sensors"
+          canShow={anySensorsVisible && !viewerHasAnyInstigationPermission}
+          placement="top-end"
+          useDisabledButtonTooltipFix
+        >
+          <SensorBulkActionMenu sensors={checkedSensors} onDone={() => refreshState.refetch()} />
+        </Tooltip>
       </Box>
       {loading && !data ? (
         <Box padding={64}>
@@ -137,11 +196,16 @@ const WORKSPACE_SENSORS_QUERY = gql`
           id
           name
           description
+          sensorState {
+            id
+            ...BasicInstigationStateFragment
+          }
         }
       }
       ...PythonErrorFragment
     }
   }
 
+  ${BASIC_INSTIGATION_STATE_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
 `;

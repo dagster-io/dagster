@@ -32,9 +32,9 @@ def test_sync_run_launcher_run():
 
             run = create_run_for_test(
                 instance=instance,
-                pipeline_name=external_pipeline.name,
-                external_pipeline_origin=external_pipeline.get_external_origin(),
-                pipeline_code_origin=external_pipeline.get_python_origin(),
+                job_name=external_pipeline.name,
+                external_job_origin=external_pipeline.get_external_origin(),
+                job_code_origin=external_pipeline.get_python_origin(),
             )
 
             run = instance.launch_run(run_id=run.run_id, workspace=workspace)

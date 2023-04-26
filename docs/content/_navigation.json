@@ -504,7 +504,13 @@
               },
               {
                 "title": "Code locations",
-                "path": "/dagster-cloud/managing-deployments/code-locations"
+                "path": "/dagster-cloud/managing-deployments/code-locations",
+                "children": [ 
+                  {
+                    "title": "dagster_cloud.yaml",
+                    "path": "/dagster-cloud/managing-deployments/dagster-cloud-yaml"
+                  }
+                ]
               },
               {
                 "title": "Branch deployments",
@@ -546,6 +552,10 @@
           {
             "title": "Airbyte + Dagster",
             "path": "/integrations/airbyte"
+          },
+          {
+            "title": "Airbyte Cloud + Dagster",
+            "path": "/integrations/airbyte-cloud"
           },
           {
             "title": "Ingestion as code",
@@ -701,6 +711,10 @@
             "path": "/guides/dagster/enriching-with-software-defined-assets"
           },
           {
+            "title": "Migrating to Pythonic resources and config",
+            "path": "/guides/dagster/migrating-to-pythonic-resources-and-config"
+          },
+          {
             "title": "Testing assets",
             "path": "/guides/dagster/testing-assets"
           },
@@ -754,8 +768,8 @@
             "path": "/guides/dagster/recommended-project-structure"
           },
           {
-          "title": "Building machine learning pipelines",
-          "path": "/guides/dagster/ml-pipeline"
+            "title": "Building machine learning pipelines",
+            "path": "/guides/dagster/ml-pipeline"
           },
           {
             "title": "Using environment variables and secrets",

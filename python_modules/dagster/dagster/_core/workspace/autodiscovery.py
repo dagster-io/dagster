@@ -5,7 +5,6 @@ from typing import Callable, NamedTuple, Optional, Sequence, Tuple, Type, Union
 from dagster import (
     DagsterInvariantViolationError,
     GraphDefinition,
-    JobDefinition,
     RepositoryDefinition,
 )
 from dagster._core.code_pointer import load_python_file, load_python_module
@@ -53,7 +52,7 @@ def loadable_targets_from_python_package(
 
 
 def loadable_targets_from_loaded_module(module: ModuleType) -> Sequence[LoadableTarget]:
-    from dagster._legacy import PipelineDefinition
+    from dagster._core.definitions import JobDefinition
 
     loadable_defs = _loadable_targets_of_type(module, Definitions)
 
@@ -71,13 +70,13 @@ def loadable_targets_from_loaded_module(module: ModuleType) -> Sequence[Loadable
     if loadable_repos:
         return loadable_repos
 
-    loadable_pipelines = _loadable_targets_of_type(module, PipelineDefinition)
+    loadable_jobs = _loadable_targets_of_type(module, JobDefinition)
     loadable_jobs = _loadable_targets_of_type(module, JobDefinition)
 
-    if len(loadable_pipelines) == 1:
-        return loadable_pipelines
+    if len(loadable_jobs) == 1:
+        return loadable_jobs
 
-    elif len(loadable_pipelines) > 1:
+    elif len(loadable_jobs) > 1:
         target_type = "job" if len(loadable_jobs) > 1 else "pipeline"
         raise DagsterInvariantViolationError(
             (
@@ -87,7 +86,7 @@ def loadable_targets_from_loaded_module(module: ModuleType) -> Sequence[Loadable
                 " {pipeline_symbols}."
             ).format(
                 module_name=module.__name__,
-                pipeline_symbols=repr([p.attribute for p in loadable_pipelines]),
+                pipeline_symbols=repr([p.attribute for p in loadable_jobs]),
                 target_type=target_type,
             )
         )

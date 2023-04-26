@@ -7,6 +7,7 @@ import responses
 from dagster import (
     AssetKey,
     AssetSelection,
+    AutoMaterializePolicy,
     DailyPartitionsDefinition,
     FreshnessPolicy,
     MetadataValue,
@@ -484,6 +485,28 @@ def test_custom_freshness_policy(dbt_cloud, dbt_cloud_service):
     assert dbt_cloud_assets[0].freshness_policies_by_key == {
         key: FreshnessPolicy(maximum_lag_minutes=len(key.path[-1]))
         for key in dbt_cloud_assets[0].keys
+    }
+
+
+@responses.activate
+def test_custom_auto_materialize_policy(dbt_cloud, dbt_cloud_service):
+    _add_dbt_cloud_job_responses(
+        dbt_cloud_service=dbt_cloud_service,
+        dbt_commands=["dbt build"],
+    )
+
+    dbt_cloud_cacheable_assets = load_assets_from_dbt_cloud_job(
+        dbt_cloud=dbt_cloud,
+        job_id=DBT_CLOUD_JOB_ID,
+        node_info_to_auto_materialize_policy_fn=lambda _: AutoMaterializePolicy.eager(),
+    )
+    dbt_assets_definition_cacheable_data = dbt_cloud_cacheable_assets.compute_cacheable_data()
+    dbt_cloud_assets = dbt_cloud_cacheable_assets.build_definitions(
+        dbt_assets_definition_cacheable_data
+    )
+
+    assert dbt_cloud_assets[0].auto_materialize_policies_by_key == {
+        key: AutoMaterializePolicy.eager() for key in dbt_cloud_assets[0].keys
     }
 
 

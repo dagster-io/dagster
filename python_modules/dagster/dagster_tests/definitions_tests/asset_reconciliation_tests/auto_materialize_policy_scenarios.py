@@ -89,7 +89,7 @@ auto_materialize_policy_scenarios = {
             AutoMaterializePolicy(
                 on_missing=True,
                 for_freshness=True,
-                on_upstream_data_newer=True,
+                on_new_parent_data=True,
                 time_window_partition_scope_minutes=24 * 2 * 60,
             ),
         ),
@@ -108,7 +108,7 @@ auto_materialize_policy_scenarios = {
             AutoMaterializePolicy(
                 on_missing=True,
                 for_freshness=True,
-                on_upstream_data_newer=False,
+                on_new_parent_data=False,
                 time_window_partition_scope_minutes=24 * 2 * 60,
             ),
         ),

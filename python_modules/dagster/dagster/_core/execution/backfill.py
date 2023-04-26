@@ -12,6 +12,7 @@ from dagster._core.errors import (
 from dagster._core.execution.bulk_actions import BulkActionType
 from dagster._core.host_representation.origin import ExternalPartitionSetOrigin
 from dagster._core.instance import DynamicPartitionsStore
+from dagster._core.storage.tags import USER_TAG
 from dagster._core.workspace.workspace import IWorkspace
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
@@ -119,6 +120,12 @@ class PartitionBackfill(
 
         return self.partition_set_origin.partition_set_name
 
+    @property
+    def user(self) -> Optional[str]:
+        if self.tags:
+            return self.tags.get(USER_TAG)
+        return None
+
     def is_valid_serialization(self, workspace: IWorkspace) -> bool:
         if self.serialized_asset_backfill_data is not None:
             return AssetBackfillData.is_valid_serialization(
@@ -130,6 +137,9 @@ class PartitionBackfill(
     def get_partitions_status_counts_and_totals_by_asset(
         self, workspace: IWorkspace
     ) -> Mapping[AssetKey, Tuple[Mapping[BackfillPartitionsStatus, int], int]]:
+        """Returns a list of tuples of the form (asset_key, partitions_status_counts, total_partitions)
+        in topological order of the asset graph. Includes only partitioned assets.
+        """
         if not self.is_valid_serialization(workspace):
             return {}
 
@@ -148,10 +158,16 @@ class PartitionBackfill(
             num_targeted_partitions_by_asset_key = (
                 asset_backfill_data.get_num_targeted_partitions_by_asset_key()
             )
+            topological_order = (
+                asset_backfill_data.get_targeted_partitioned_asset_keys_topological_order()
+            )
 
             check.invariant(
                 partitions_status_counts_by_asset_key.keys()
                 == num_targeted_partitions_by_asset_key.keys()
+            )
+            check.invariant(
+                set(partitions_status_counts_by_asset_key.keys()) == set(topological_order)
             )
 
             return {
@@ -159,7 +175,7 @@ class PartitionBackfill(
                     partitions_status_counts_by_asset_key[asset_key],
                     num_targeted_partitions_by_asset_key[asset_key],
                 )
-                for asset_key in partitions_status_counts_by_asset_key
+                for asset_key in topological_order
             }
 
         else:
@@ -321,11 +337,12 @@ class PartitionBackfill(
         cls,
         backfill_id: str,
         asset_graph: AssetGraph,
-        partition_names: Sequence[str],
+        partition_names: Optional[Sequence[str]],
         asset_selection: Sequence[AssetKey],
         backfill_timestamp: float,
         tags: Mapping[str, str],
         dynamic_partitions_store: DynamicPartitionsStore,
+        all_partitions: bool,
     ) -> "PartitionBackfill":
         """If all the selected assets that have PartitionsDefinitions have the same partitioning, then
         the backfill will target the provided partition_names for all those assets.
@@ -347,5 +364,6 @@ class PartitionBackfill(
                 partition_names=partition_names,
                 asset_selection=asset_selection,
                 dynamic_partitions_store=dynamic_partitions_store,
+                all_partitions=all_partitions,
             ).serialize(dynamic_partitions_store=dynamic_partitions_store),
         )

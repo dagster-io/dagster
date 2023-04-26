@@ -256,7 +256,7 @@ class EcsContainerContext(
         return {env_var_tuple[0]: env_var_tuple[1] for env_var_tuple in parsed_env_var_tuples}
 
     @staticmethod
-    def create_for_run(pipeline_run: DagsterRun, run_launcher: Optional["EcsRunLauncher[Any]"]):
+    def create_for_run(dagster_run: DagsterRun, run_launcher: Optional["EcsRunLauncher[Any]"]):
         context = EcsContainerContext()
         if run_launcher:
             context = context.merge(
@@ -275,8 +275,8 @@ class EcsContainerContext(
             )
 
         run_container_context = (
-            pipeline_run.pipeline_code_origin.repository_origin.container_context
-            if pipeline_run.pipeline_code_origin
+            dagster_run.job_code_origin.repository_origin.container_context
+            if dagster_run.job_code_origin
             else None
         )
 

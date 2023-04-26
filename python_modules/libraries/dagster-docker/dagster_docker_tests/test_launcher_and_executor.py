@@ -72,11 +72,9 @@ def test_image_on_pipeline(monkeypatch, aws_env, from_pending_repository, asset_
         }
     ) as instance:
         filename = "pending_repo.py" if from_pending_repository else "repo.py"
-        recon_pipeline = get_test_project_recon_job(
-            "demo_job_docker", docker_image, filename=filename
-        )
-        repository_load_data = recon_pipeline.repository.get_definition().repository_load_data
-        recon_pipeline = recon_pipeline.with_repository_load_data(repository_load_data)
+        recon_job = get_test_project_recon_job("demo_job_docker", docker_image, filename=filename)
+        repository_load_data = recon_job.repository.get_definition().repository_load_data
+        recon_job = recon_job.with_repository_load_data(repository_load_data)
 
         with get_test_project_workspace_and_external_pipeline(
             instance,
@@ -87,15 +85,15 @@ def test_image_on_pipeline(monkeypatch, aws_env, from_pending_repository, asset_
             workspace,
             orig_pipeline,
         ):
-            external_pipeline = ReOriginatedExternalPipelineForTest(
+            external_job = ReOriginatedExternalPipelineForTest(
                 orig_pipeline, container_image=docker_image, filename=filename
             )
 
-            run = instance.create_run_for_pipeline(
-                pipeline_def=recon_pipeline.get_definition(),
+            run = instance.create_run_for_job(
+                job_def=recon_job.get_definition(),
                 run_config=run_config,
-                external_pipeline_origin=external_pipeline.get_external_origin(),
-                pipeline_code_origin=external_pipeline.get_python_origin(),
+                external_job_origin=external_job.get_external_origin(),
+                job_code_origin=external_job.get_python_origin(),
                 repository_load_data=repository_load_data,
                 asset_selection=frozenset(asset_selection) if asset_selection else None,
             )
@@ -143,7 +141,7 @@ def test_container_context_on_pipeline(aws_env):
             }
         }
     ) as instance:
-        recon_pipeline = get_test_project_recon_job(
+        recon_job = get_test_project_recon_job(
             "demo_job_docker",
             docker_image,
             container_context={
@@ -163,15 +161,15 @@ def test_container_context_on_pipeline(aws_env):
             workspace,
             orig_pipeline,
         ):
-            external_pipeline = ReOriginatedExternalPipelineForTest(
+            external_job = ReOriginatedExternalPipelineForTest(
                 orig_pipeline, container_image=docker_image
             )
 
-            run = instance.create_run_for_pipeline(
-                pipeline_def=recon_pipeline.get_definition(),
+            run = instance.create_run_for_job(
+                job_def=recon_job.get_definition(),
                 run_config=run_config,
-                external_pipeline_origin=external_pipeline.get_external_origin(),
-                pipeline_code_origin=recon_pipeline.get_python_origin(),
+                external_job_origin=external_job.get_external_origin(),
+                job_code_origin=recon_job.get_python_origin(),
             )
 
             instance.launch_run(run.run_id, workspace)
@@ -224,22 +222,22 @@ def test_recovery(aws_env):
             "run_monitoring": {"enabled": True},
         }
     ) as instance:
-        recon_pipeline = get_test_project_recon_job("demo_slow_job_docker", docker_image)
+        recon_job = get_test_project_recon_job("demo_slow_job_docker", docker_image)
         with get_test_project_workspace_and_external_pipeline(
             instance, "demo_slow_job_docker", container_image=docker_image
         ) as (
             workspace,
             orig_pipeline,
         ):
-            external_pipeline = ReOriginatedExternalPipelineForTest(
+            external_job = ReOriginatedExternalPipelineForTest(
                 orig_pipeline, container_image=docker_image
             )
 
-            run = instance.create_run_for_pipeline(
-                pipeline_def=recon_pipeline.get_definition(),
+            run = instance.create_run_for_job(
+                job_def=recon_job.get_definition(),
                 run_config=run_config,
-                external_pipeline_origin=external_pipeline.get_external_origin(),
-                pipeline_code_origin=external_pipeline.get_python_origin(),
+                external_job_origin=external_job.get_external_origin(),
+                job_code_origin=external_job.get_python_origin(),
             )
 
             instance.launch_run(run.run_id, workspace)

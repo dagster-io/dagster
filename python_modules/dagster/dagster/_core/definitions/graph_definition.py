@@ -549,7 +549,7 @@ class GraphDefinition(NodeDefinition):
         description: Optional[str] = None,
         resource_defs: Optional[Mapping[str, object]] = None,
         config: Optional[
-            Union["RunConfig", ConfigMapping, Mapping[str, object], "PartitionedConfig[T]"]
+            Union["RunConfig", ConfigMapping, Mapping[str, object], "PartitionedConfig"]
         ] = None,
         tags: Optional[Mapping[str, str]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
@@ -559,7 +559,7 @@ class GraphDefinition(NodeDefinition):
         op_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,
         op_selection: Optional[Sequence[str]] = None,
-        partitions_def: Optional["PartitionsDefinition[T]"] = None,
+        partitions_def: Optional["PartitionsDefinition"] = None,
         asset_layer: Optional["AssetLayer"] = None,
         input_values: Optional[Mapping[str, object]] = None,
         _asset_selection_data: Optional[AssetSelectionData] = None,

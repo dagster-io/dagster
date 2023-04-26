@@ -5,6 +5,11 @@ description: Integrate your Airbyte connections into Dagster.
 
 # Using Airbyte with Dagster
 
+<Note>
+  Using Airbyte Cloud? Check out the{" "}
+  <a href="/integrations/airbyte-cloud">Airbyte Cloud with Dagster guide</a>!
+</Note>
+
 Dagster can orchestrate your Airbyte connections, making it easy to chain an Airbyte sync with upstream or downstream steps in your workflow.
 
 This guide focuses on how to work with Airbyte connections using Dagster's [software-defined asset (SDA)](/concepts/assets/software-defined-assets) framework.
@@ -151,7 +156,7 @@ from dagster_airbyte import build_airbyte_assets
 
 airbyte_assets = build_airbyte_assets(
     connection_id="87b7fe85-a22c-420e-8d74-b30e7ede77df",
-    destination_tables=["releases", "tags", "teams"],
+    destination_tables=["releases", "tags", "teams", "stargazers"],
 )
 ```
 
@@ -162,14 +167,18 @@ Manually built Airbyte assets require an `AirbyteResource`, which defines how to
 We can add the Airbyte resource we configured above to our Airbyte assets by doing the following:
 
 ```python startafter=start_airbyte_manual_config endbefore=end_airbyte_manual_config file=/integrations/airbyte/airbyte.py dedent=4
-from dagster_airbyte import build_airbyte_assets
+from dagster_airbyte import build_airbyte_assets, AirbyteResource
 
 from dagster import with_resources
 
+airbyte_instance = AirbyteResource(
+    host="localhost",
+    port="8000",
+)
 airbyte_assets = with_resources(
     build_airbyte_assets(
         connection_id="87b7fe85-a22c-420e-8d74-b30e7ede77df",
-        destination_tables=["releases", "tags", "teams"],
+        destination_tables=["releases", "tags", "teams", "stargazers"],
     ),
     # Use the airbyte_instance resource we defined in Step 1
     {"airbyte": airbyte_instance},

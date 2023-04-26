@@ -112,7 +112,7 @@ def test_docker_monitoring():
             },
         }
     ) as instance:
-        recon_pipeline = get_test_project_recon_job("demo_slow_job_docker", docker_image)
+        recon_job = get_test_project_recon_job("demo_slow_job_docker", docker_image)
         with get_test_project_workspace_and_external_pipeline(
             instance, "demo_slow_job_docker", container_image=docker_image
         ) as (
@@ -120,15 +120,15 @@ def test_docker_monitoring():
             orig_pipeline,
         ):
             with start_daemon():
-                external_pipeline = ReOriginatedExternalPipelineForTest(
+                external_job = ReOriginatedExternalPipelineForTest(
                     orig_pipeline, container_image=docker_image
                 )
 
-                run = instance.create_run_for_pipeline(
-                    pipeline_def=recon_pipeline.get_definition(),
+                run = instance.create_run_for_job(
+                    job_def=recon_job.get_definition(),
                     run_config=run_config,
-                    external_pipeline_origin=external_pipeline.get_external_origin(),
-                    pipeline_code_origin=external_pipeline.get_python_origin(),
+                    external_job_origin=external_job.get_external_origin(),
+                    job_code_origin=external_job.get_python_origin(),
                 )
 
                 with log_run_events(instance, run.run_id):
@@ -199,7 +199,7 @@ def test_docker_monitoring_run_out_of_attempts():
             },
         }
     ) as instance:
-        recon_pipeline = get_test_project_recon_job("demo_slow_job_docker", docker_image)
+        recon_job = get_test_project_recon_job("demo_slow_job_docker", docker_image)
         with get_test_project_workspace_and_external_pipeline(
             instance, "demo_slow_job_docker", container_image=docker_image
         ) as (
@@ -207,15 +207,15 @@ def test_docker_monitoring_run_out_of_attempts():
             orig_pipeline,
         ):
             with start_daemon():
-                external_pipeline = ReOriginatedExternalPipelineForTest(
+                external_job = ReOriginatedExternalPipelineForTest(
                     orig_pipeline, container_image=docker_image
                 )
 
-                run = instance.create_run_for_pipeline(
-                    pipeline_def=recon_pipeline.get_definition(),
+                run = instance.create_run_for_job(
+                    job_def=recon_job.get_definition(),
                     run_config=run_config,
-                    external_pipeline_origin=external_pipeline.get_external_origin(),
-                    pipeline_code_origin=external_pipeline.get_python_origin(),
+                    external_job_origin=external_job.get_external_origin(),
+                    job_code_origin=external_job.get_python_origin(),
                 )
 
                 with log_run_events(instance, run.run_id):

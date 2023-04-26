@@ -18,6 +18,7 @@ from dagster import (
     AssetOut,
     AssetsDefinition,
     AssetSelection,
+    AutoMaterializePolicy,
     Bool,
     DagsterInstance,
     DailyPartitionsDefinition,
@@ -52,6 +53,7 @@ from dagster import (
     TableConstraints,
     TableRecord,
     TableSchema,
+    WeeklyPartitionsDefinition,
     _check as check,
     asset,
     asset_sensor,
@@ -1339,7 +1341,7 @@ def asset_two(asset_one):
 two_assets_job = build_assets_job(name="two_assets_job", assets=[asset_one, asset_two])
 
 
-static_partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d"])
+static_partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d", "e", "f"])
 
 
 @asset(partitions_def=static_partitions_def)
@@ -1348,15 +1350,31 @@ def upstream_static_partitioned_asset():
 
 
 @asset(partitions_def=static_partitions_def)
+def middle_static_partitioned_asset_1(upstream_static_partitioned_asset):
+    return 1
+
+
+@asset(partitions_def=static_partitions_def)
+def middle_static_partitioned_asset_2(upstream_static_partitioned_asset):
+    return 1
+
+
+@asset(partitions_def=static_partitions_def)
 def downstream_static_partitioned_asset(
-    upstream_static_partitioned_asset,
+    middle_static_partitioned_asset_1, middle_static_partitioned_asset_2
 ):
-    assert upstream_static_partitioned_asset
+    assert middle_static_partitioned_asset_1
+    assert middle_static_partitioned_asset_2
 
 
 static_partitioned_assets_job = build_assets_job(
     "static_partitioned_assets_job",
-    assets=[upstream_static_partitioned_asset, downstream_static_partitioned_asset],
+    assets=[
+        upstream_static_partitioned_asset,
+        middle_static_partitioned_asset_1,
+        middle_static_partitioned_asset_2,
+        downstream_static_partitioned_asset,
+    ],
 )
 
 
@@ -1417,6 +1435,23 @@ time_partitioned_assets_job = build_assets_job(
     "time_partitioned_assets_job",
     [upstream_time_partitioned_asset, downstream_time_partitioned_asset],
 )
+
+
+@asset
+def unpartitioned_upstream_of_partitioned():
+    return 1
+
+
+@asset(partitions_def=DailyPartitionsDefinition("2023-01-01"))
+def upstream_daily_partitioned_asset(unpartitioned_upstream_of_partitioned):
+    return unpartitioned_upstream_of_partitioned
+
+
+@asset(partitions_def=WeeklyPartitionsDefinition("2023-01-01"))
+def downstream_weekly_partitioned_asset(
+    upstream_daily_partitioned_asset,
+):
+    return upstream_daily_partitioned_asset + 1
 
 
 @asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c", "d"]))
@@ -1548,32 +1583,32 @@ failure_assets_job = build_assets_job(
 
 
 @asset
-def foo(context):
-    assert context.pipeline_def.asset_selection_data is not None
+def foo(context: OpExecutionContext):
+    assert context.job_def.asset_selection_data is not None
     return 5
 
 
 @asset
-def bar(context):
-    assert context.pipeline_def.asset_selection_data is not None
+def bar(context: OpExecutionContext):
+    assert context.job_def.asset_selection_data is not None
     return 10
 
 
 @asset
-def foo_bar(context, foo, bar):
-    assert context.pipeline_def.asset_selection_data is not None
+def foo_bar(context: OpExecutionContext, foo, bar):
+    assert context.job_def.asset_selection_data is not None
     return foo + bar
 
 
 @asset
-def baz(context, foo_bar):
-    assert context.pipeline_def.asset_selection_data is not None
+def baz(context: OpExecutionContext, foo_bar):
+    assert context.job_def.asset_selection_data is not None
     return foo_bar
 
 
 @asset
-def unconnected(context):
-    assert context.pipeline_def.asset_selection_data is not None
+def unconnected(context: OpExecutionContext):
+    assert context.job_def.asset_selection_data is not None
 
 
 asset_group_job = AssetGroup([foo, bar, foo_bar, baz, unconnected]).build_job("foo_job")
@@ -1634,7 +1669,10 @@ def fresh_diamond_right(fresh_diamond_top):
     return fresh_diamond_top + 1
 
 
-@asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=30))
+@asset(
+    freshness_policy=FreshnessPolicy(maximum_lag_minutes=30),
+    auto_materialize_policy=AutoMaterializePolicy.lazy(),
+)
 def fresh_diamond_bottom(fresh_diamond_left, fresh_diamond_right):
     return fresh_diamond_left + fresh_diamond_right
 
@@ -1825,6 +1863,9 @@ def define_asset_jobs():
         define_asset_job(
             "fresh_diamond_assets", AssetSelection.assets(fresh_diamond_bottom).upstream()
         ),
+        upstream_daily_partitioned_asset,
+        downstream_weekly_partitioned_asset,
+        unpartitioned_upstream_of_partitioned,
     ]
 
 

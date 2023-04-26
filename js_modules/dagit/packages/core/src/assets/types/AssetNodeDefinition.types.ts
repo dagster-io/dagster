@@ -15,6 +15,10 @@ export type AssetNodeDefinitionFragment = {
   isPartitioned: boolean;
   isObservable: boolean;
   isSource: boolean;
+  autoMaterializePolicy: {
+    __typename: 'AutoMaterializePolicy';
+    policyType: Types.AutoMaterializePolicyType;
+  } | null;
   partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
   repository: {
     __typename: 'Repository';

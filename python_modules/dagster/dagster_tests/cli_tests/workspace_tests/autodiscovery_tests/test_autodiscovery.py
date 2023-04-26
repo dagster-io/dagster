@@ -90,9 +90,9 @@ def test_single_graph():
 
 
 def test_double_graph():
-    double_pipeline_path = file_relative_path(__file__, "double_graph.py")
+    double_job_path = file_relative_path(__file__, "double_graph.py")
     with pytest.raises(DagsterInvariantViolationError) as exc_info:
-        loadable_targets_from_python_file(double_pipeline_path)
+        loadable_targets_from_python_file(double_job_path)
 
     assert (
         str(exc_info.value)

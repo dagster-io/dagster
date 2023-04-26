@@ -11,6 +11,8 @@ import {
   DialogFooter,
   Dialog,
   StyledReadOnlyCodeMirror,
+  JoinedButtons,
+  DialogBody,
 } from '@dagster-io/ui';
 import * as React from 'react';
 import {useHistory} from 'react-router-dom';
@@ -21,6 +23,7 @@ import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
 import {useCopyToClipboard} from '../app/browser';
 import {ReexecutionStrategy} from '../graphql/types';
 import {NO_LAUNCH_PERMISSION_MESSAGE} from '../launchpad/LaunchRootExecutionButton';
+import {AnchorButton} from '../ui/AnchorButton';
 import {MenuLink} from '../ui/MenuLink';
 import {isThisThingAJob} from '../workspace/WorkspaceContext';
 import {useRepositoryForRunWithParentSnapshot} from '../workspace/useRepositoryForRun';
@@ -29,12 +32,14 @@ import {workspacePathFromRunDetails} from '../workspace/workspacePath';
 import {DeletionDialog} from './DeletionDialog';
 import {ReexecutionDialog} from './ReexecutionDialog';
 import {doneStatuses, failedStatuses} from './RunStatuses';
+import {RunTags} from './RunTags';
 import {
   LAUNCH_PIPELINE_REEXECUTION_MUTATION,
   RunsQueryRefetchContext,
   getReexecutionVariables,
   handleLaunchResult,
 } from './RunUtils';
+import {RunFilterToken} from './RunsFilterInput';
 import {TerminationDialog} from './TerminationDialog';
 import {
   PipelineEnvironmentQuery,
@@ -49,10 +54,11 @@ import {useJobAvailabilityErrorForRun} from './useJobAvailabilityErrorForRun';
 
 export const RunActionsMenu: React.FC<{
   run: RunTableRunFragment;
-}> = React.memo(({run}) => {
+  onAddTag?: (token: RunFilterToken) => void;
+}> = React.memo(({run, onAddTag}) => {
   const {refetch} = React.useContext(RunsQueryRefetchContext);
   const [visibleDialog, setVisibleDialog] = React.useState<
-    'none' | 'terminate' | 'delete' | 'config'
+    'none' | 'terminate' | 'delete' | 'config' | 'tags'
   >('none');
 
   const {rootServerURI} = React.useContext(AppContext);
@@ -112,108 +118,119 @@ export const RunActionsMenu: React.FC<{
 
   return (
     <>
-      <Popover
-        content={
-          <Menu>
-            <MenuItem
-              tagName="button"
-              text={loading ? 'Loading configuration...' : 'View configuration...'}
-              disabled={!runConfigYaml}
-              icon="open_in_new"
-              onClick={() => setVisibleDialog('config')}
-            />
-            <MenuDivider />
-            <>
-              <Tooltip
-                content={
-                  run.hasReExecutePermission ? OPEN_LAUNCHPAD_UNKNOWN : NO_LAUNCH_PERMISSION_MESSAGE
-                }
-                position="left"
-                disabled={infoReady && run.hasReExecutePermission}
-                targetTagName="div"
-              >
-                <MenuLink
-                  text="Open in Launchpad..."
-                  disabled={!infoReady || !run.hasReExecutePermission}
-                  icon="edit"
-                  to={workspacePathFromRunDetails({
-                    id: run.id,
-                    pipelineName: run.pipelineName,
-                    repositoryName: repoMatch?.match.repository.name,
-                    repositoryLocationName: repoMatch?.match.repositoryLocation.name,
-                    isJob,
-                  })}
-                />
-              </Tooltip>
-              <Tooltip
-                content={reexecutionDisabledState.message || ''}
-                position="left"
-                canShow={reexecutionDisabledState.disabled}
-                targetTagName="div"
-              >
-                <MenuItem
-                  tagName="button"
-                  text="Re-execute"
-                  disabled={reexecutionDisabledState.disabled}
-                  icon="refresh"
-                  onClick={async () => {
-                    if (repoMatch && runConfigYaml) {
-                      const result = await reexecute({
-                        variables: getReexecutionVariables({
-                          run: {...run, runConfigYaml},
-                          style: {type: 'all'},
-                          repositoryLocationName: repoMatch.match.repositoryLocation.name,
-                          repositoryName: repoMatch.match.repository.name,
-                        }),
-                      });
-                      handleLaunchResult(
-                        run.pipelineName,
-                        result.data?.launchPipelineReexecution,
-                        history,
-                        {
-                          behavior: 'open',
-                        },
-                      );
-                    }
-                  }}
-                />
-              </Tooltip>
-              {isFinished || !run.hasTerminatePermission ? null : (
-                <MenuItem
-                  tagName="button"
-                  icon="cancel"
-                  text="Terminate"
-                  onClick={() => setVisibleDialog('terminate')}
-                />
-              )}
-              <MenuDivider />
-            </>
-            <MenuExternalLink
-              text="Download debug file"
-              icon="download_for_offline"
-              download
-              href={`${rootServerURI}/download_debug/${run.id}`}
-            />
-            {run.hasDeletePermission ? (
+      <JoinedButtons>
+        <AnchorButton to={`/runs/${run.id}`}>View run</AnchorButton>
+        <Popover
+          content={
+            <Menu>
               <MenuItem
                 tagName="button"
-                icon="delete"
-                text="Delete"
-                intent="danger"
-                onClick={() => setVisibleDialog('delete')}
+                text={loading ? 'Loading configuration...' : 'View configuration...'}
+                disabled={!runConfigYaml}
+                icon="open_in_new"
+                onClick={() => setVisibleDialog('config')}
               />
-            ) : null}
-          </Menu>
-        }
-        position="bottom-right"
-        onOpening={() => {
-          if (!called) {
-            loadEnv();
+              <MenuItem
+                tagName="button"
+                text="View all tags"
+                icon="tag"
+                onClick={() => setVisibleDialog('tags')}
+              />
+              <MenuDivider />
+              <>
+                <Tooltip
+                  content={
+                    run.hasReExecutePermission
+                      ? OPEN_LAUNCHPAD_UNKNOWN
+                      : NO_LAUNCH_PERMISSION_MESSAGE
+                  }
+                  position="left"
+                  disabled={infoReady && run.hasReExecutePermission}
+                  targetTagName="div"
+                >
+                  <MenuLink
+                    text="Open in Launchpad..."
+                    disabled={!infoReady || !run.hasReExecutePermission}
+                    icon="edit"
+                    to={workspacePathFromRunDetails({
+                      id: run.id,
+                      pipelineName: run.pipelineName,
+                      repositoryName: repoMatch?.match.repository.name,
+                      repositoryLocationName: repoMatch?.match.repositoryLocation.name,
+                      isJob,
+                    })}
+                  />
+                </Tooltip>
+                <Tooltip
+                  content={reexecutionDisabledState.message || ''}
+                  position="left"
+                  canShow={reexecutionDisabledState.disabled}
+                  targetTagName="div"
+                >
+                  <MenuItem
+                    tagName="button"
+                    text="Re-execute"
+                    disabled={reexecutionDisabledState.disabled}
+                    icon="refresh"
+                    onClick={async () => {
+                      if (repoMatch && runConfigYaml) {
+                        const result = await reexecute({
+                          variables: getReexecutionVariables({
+                            run: {...run, runConfigYaml},
+                            style: {type: 'all'},
+                            repositoryLocationName: repoMatch.match.repositoryLocation.name,
+                            repositoryName: repoMatch.match.repository.name,
+                          }),
+                        });
+                        handleLaunchResult(
+                          run.pipelineName,
+                          result.data?.launchPipelineReexecution,
+                          history,
+                          {
+                            behavior: 'open',
+                          },
+                        );
+                      }
+                    }}
+                  />
+                </Tooltip>
+                {isFinished || !run.hasTerminatePermission ? null : (
+                  <MenuItem
+                    tagName="button"
+                    icon="cancel"
+                    text="Terminate"
+                    onClick={() => setVisibleDialog('terminate')}
+                  />
+                )}
+                <MenuDivider />
+              </>
+              <MenuExternalLink
+                text="Download debug file"
+                icon="download_for_offline"
+                download
+                href={`${rootServerURI}/download_debug/${run.id}`}
+              />
+              {run.hasDeletePermission ? (
+                <MenuItem
+                  tagName="button"
+                  icon="delete"
+                  text="Delete"
+                  intent="danger"
+                  onClick={() => setVisibleDialog('delete')}
+                />
+              ) : null}
+            </Menu>
           }
-        }}
-      >
-        <Button icon={<Icon name="expand_more" />} />
-      </Popover>
+          position="bottom-right"
+          onOpening={() => {
+            if (!called) {
+              loadEnv();
+            }
+          }}
+        >
+          <Button icon={<Icon name="expand_more" />} />
+        </Popover>
+      </JoinedButtons>
       {run.hasTerminatePermission ? (
         <TerminationDialog
           isOpen={visibleDialog === 'terminate'}
@@ -231,6 +248,26 @@ export const RunActionsMenu: React.FC<{
           selectedRuns={{[run.id]: run.canTerminate}}
         />
       ) : null}
+      <Dialog
+        isOpen={visibleDialog === 'tags'}
+        title="Tags"
+        canOutsideClickClose
+        canEscapeKeyClose
+        onClose={closeDialogs}
+      >
+        <DialogBody>
+          <RunTags
+            tags={run.tags}
+            mode={isJob ? (run.mode !== 'default' ? run.mode : null) : run.mode}
+            onAddTag={onAddTag}
+          />
+        </DialogBody>
+        <DialogFooter topBorder>
+          <Button intent="primary" onClick={closeDialogs}>
+            Close
+          </Button>
+        </DialogFooter>
+      </Dialog>
       <Dialog
         isOpen={visibleDialog === 'config'}
         title="Config"
@@ -329,6 +366,7 @@ export const RunBulkActionsMenu: React.FC<{
   return (
     <>
       <Popover
+        disabled={disabled || selected.length === 0}
         content={
           <Menu>
             {canTerminateAny ? (
@@ -387,6 +425,7 @@ export const RunBulkActionsMenu: React.FC<{
         <Button
           disabled={disabled || selected.length === 0}
           rightIcon={<Icon name="expand_more" />}
+          intent="primary"
         >
           Actions
         </Button>

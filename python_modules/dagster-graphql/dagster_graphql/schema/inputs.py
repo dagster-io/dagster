@@ -53,12 +53,11 @@ class GrapheneRunsFilter(graphene.InputObjectType):
 
         return RunsFilter(
             run_ids=self.runIds if self.runIds else None,
-            pipeline_name=self.pipelineName,
+            job_name=self.pipelineName,
             tags=tags,
             statuses=statuses,
             snapshot_id=self.snapshotId,
             updated_after=updated_after,
-            mode=self.mode,
             created_before=created_before,
         )
 

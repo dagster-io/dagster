@@ -6,7 +6,13 @@ import {createAppCache} from '../../app/AppCache';
 import {buildPartitionHealthMock} from '../../assets/__fixtures__/PartitionHealthQuery.fixtures';
 import {AssetEventsQuery} from '../../assets/types/useRecentAssetEvents.types';
 import {ASSET_EVENTS_QUERY} from '../../assets/useRecentAssetEvents';
-import {AssetNode, RunStatus, buildAssetNode} from '../../graphql/types';
+import {
+  AssetNode,
+  AutoMaterializePolicyType,
+  RunStatus,
+  buildAssetNode,
+  buildAutoMaterializePolicy,
+} from '../../graphql/types';
 import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
 import {SIDEBAR_ASSET_QUERY, SidebarAssetInfo} from '../SidebarAssetInfo';
 import {GraphNode} from '../Utils';
@@ -41,7 +47,9 @@ const buildGraphNodeMock = (definitionOverrides: Partial<AssetNode>): GraphNode 
   }),
 });
 
-const SidebarQueryMock: MockedResponse<SidebarAssetQuery> = {
+const buildSidebarQueryMock = (
+  overrides: Partial<SidebarAssetQuery['assetNodeOrError']> = {},
+): MockedResponse<SidebarAssetQuery> => ({
   request: {
     query: SIDEBAR_ASSET_QUERY,
     variables: {
@@ -57,21 +65,9 @@ const SidebarQueryMock: MockedResponse<SidebarAssetQuery> = {
         __typename: 'AssetNode',
         id: 'test.py.repo.["asset1"]',
         description: null,
-        configField: {
-          name: 'config',
-          isRequired: false,
-          configType: {
-            __typename: 'RegularConfigType',
-            givenName: 'Any',
-            key: 'Any',
-            description: null,
-            isSelector: false,
-            typeParamKeys: [],
-            recursiveConfigTypes: [],
-          },
-          __typename: 'ConfigTypeField',
-        },
+        configField: null,
         metadataEntries: [],
+        autoMaterializePolicy: null,
         partitionDefinition: null,
         assetKey: {
           path: ['asset1'],
@@ -120,10 +116,11 @@ const SidebarQueryMock: MockedResponse<SidebarAssetQuery> = {
           __typename: 'RegularDagsterType',
           innerTypes: [],
         },
+        ...overrides,
       },
     },
   },
-};
+});
 
 const EventsMock: MockedResponse<AssetEventsQuery> = {
   request: {
@@ -206,10 +203,15 @@ const EventsMock: MockedResponse<AssetEventsQuery> = {
   },
 };
 
-const TestContainer: React.FC = ({children}) => (
+const TestContainer: React.FC<{mocks?: MockedResponse<Record<string, any>>[]}> = ({
+  children,
+  mocks,
+}) => (
   <MockedProvider
     cache={createAppCache()}
-    mocks={[SidebarQueryMock, EventsMock, buildPartitionHealthMock(MockAssetKey.path[0])]}
+    mocks={
+      mocks || [EventsMock, buildPartitionHealthMock(MockAssetKey.path[0]), buildSidebarQueryMock()]
+    }
   >
     <WorkspaceProvider>
       <Box style={{width: 400}}>{children}</Box>
@@ -220,6 +222,24 @@ const TestContainer: React.FC = ({children}) => (
 export const AssetWithMaterializations = () => {
   return (
     <TestContainer>
+      <SidebarAssetInfo graphNode={buildGraphNodeMock({})} liveData={undefined} />
+    </TestContainer>
+  );
+};
+
+export const AssetWithPolicies = () => {
+  return (
+    <TestContainer
+      mocks={[
+        EventsMock,
+        buildPartitionHealthMock(MockAssetKey.path[0]),
+        buildSidebarQueryMock({
+          autoMaterializePolicy: buildAutoMaterializePolicy({
+            policyType: AutoMaterializePolicyType.EAGER,
+          }),
+        }),
+      ]}
+    >
       <SidebarAssetInfo graphNode={buildGraphNodeMock({})} liveData={undefined} />
     </TestContainer>
   );

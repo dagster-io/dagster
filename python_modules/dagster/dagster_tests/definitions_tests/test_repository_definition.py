@@ -183,7 +183,7 @@ def test_bad_schedule():
     with pytest.raises(
         # DagsterInvalidDefinitionError,
         Exception,
-        match='targets job/pipeline "foo" which was not found in this repository',
+        match='targets job "foo" which was not found in this repository',
     ):
 
         @repository
@@ -200,7 +200,7 @@ def test_bad_sensor():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match='targets job/pipeline "foo" which was not found in this repository',
+        match='targets job "foo" which was not found in this repository',
     ):
 
         @repository
@@ -410,7 +410,7 @@ def test_job_with_partitions():
                 resource_defs={},
                 config=PartitionedConfig(
                     partitions_def=StaticPartitionsDefinition(["abc"]),
-                    run_config_for_partition_fn=lambda _: {},
+                    run_config_for_partition_key_fn=lambda _: {},
                 ),
             )
         ]
@@ -1358,7 +1358,7 @@ def test_default_loggers_assets_repo():
     assert the_repo.get_job("no_logger_provided").loggers == {"foo": basic}
 
 
-def test_default_loggers_jobs_and_jobs():
+def test_default_loggers_for_jobs():
     @asset
     def the_asset():
         pass
@@ -1374,11 +1374,11 @@ def test_default_loggers_jobs_and_jobs():
         pass
 
     @job(logger_defs={"bar": custom_logger})
-    def op_job_with_loggers():
+    def job_with_loggers():
         pass
 
     @job
-    def op_job_no_loggers():
+    def job_no_loggers():
         pass
 
     @job(logger_defs=default_loggers())
@@ -1389,17 +1389,17 @@ def test_default_loggers_jobs_and_jobs():
     def the_repo():
         return [
             the_asset,
-            op_job_with_loggers,
-            op_job_no_loggers,
+            job_with_loggers,
+            job_no_loggers,
             unresolved_job,
             job_explicitly_specifies_default_loggers,
         ]
 
     assert the_repo.get_job("asset_job").loggers == {"foo": other_custom_logger}
 
-    assert the_repo.get_job("op_job_with_loggers").loggers == {"bar": custom_logger}
+    assert the_repo.get_job("job_with_loggers").loggers == {"bar": custom_logger}
 
-    assert the_repo.get_job("op_job_no_loggers").loggers == {"foo": other_custom_logger}
+    assert the_repo.get_job("job_no_loggers").loggers == {"foo": other_custom_logger}
 
     assert the_repo.get_job("job_explicitly_specifies_default_loggers").loggers == default_loggers()
 

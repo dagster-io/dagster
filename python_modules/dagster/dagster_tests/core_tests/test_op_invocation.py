@@ -684,17 +684,16 @@ def test_output_sent_multiple_times():
 @pytest.mark.parametrize(
     "property_or_method_name,val_to_pass",
     [
-        ("pipeline_run", None),
+        ("dagster_run", None),
         ("step_launcher", None),
-        ("pipeline_def", None),
-        ("pipeline_name", None),
-        ("mode_def", None),
+        ("job_def", None),
+        ("job_name", None),
         ("node_handle", None),
         ("op", None),
         ("get_step_execution_context", None),
     ],
 )
-def test_invalid_properties_on_context(property_or_method_name, val_to_pass):
+def test_invalid_properties_on_context(property_or_method_name: str, val_to_pass: object):
     @op
     def op_fails_getting_property(context):
         result = getattr(context, property_or_method_name)

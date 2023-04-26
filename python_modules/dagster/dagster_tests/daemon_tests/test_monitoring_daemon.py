@@ -6,7 +6,6 @@ from typing import Any, Mapping, Optional, cast
 
 import pendulum
 import pytest
-from dagster import _seven as seven
 from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.instance import DagsterInstance
@@ -115,13 +114,13 @@ def logger():
 def report_starting_event(instance, run, timestamp):
     launch_started_event = DagsterEvent(
         event_type_value=DagsterEventType.PIPELINE_STARTING.value,
-        pipeline_name=run.pipeline_name,
+        job_name=run.job_name,
     )
 
     event_record = EventLogEntry(
         user_message="",
         level=logging.INFO,
-        pipeline_name=run.pipeline_name,
+        job_name=run.job_name,
         run_id=run.run_id,
         error_info=None,
         timestamp=timestamp,
@@ -134,13 +133,13 @@ def report_starting_event(instance, run, timestamp):
 def report_started_event(instance: DagsterInstance, run: DagsterRun, timestamp: float) -> None:
     launch_started_event = DagsterEvent(
         event_type_value=DagsterEventType.PIPELINE_START.value,
-        pipeline_name=run.pipeline_name,
+        job_name=run.job_name,
     )
 
     event_record = EventLogEntry(
         user_message="",
         level=logging.INFO,
-        pipeline_name=run.pipeline_name,
+        job_name=run.job_name,
         run_id=run.run_id,
         error_info=None,
         timestamp=timestamp,
@@ -153,7 +152,7 @@ def report_started_event(instance: DagsterInstance, run: DagsterRun, timestamp: 
 def test_monitor_starting(instance: DagsterInstance, logger: Logger):
     run = create_run_for_test(
         instance,
-        pipeline_name="foo",
+        job_name="foo",
     )
     report_starting_event(instance, run, timestamp=time.time())
     monitor_starting_run(
@@ -165,7 +164,7 @@ def test_monitor_starting(instance: DagsterInstance, logger: Logger):
     assert run
     assert run.status == DagsterRunStatus.STARTING
 
-    run = create_run_for_test(instance, pipeline_name="foo")
+    run = create_run_for_test(instance, job_name="foo")
     report_starting_event(instance, run, timestamp=time.time() - 1000)
 
     monitor_starting_run(
@@ -181,9 +180,7 @@ def test_monitor_starting(instance: DagsterInstance, logger: Logger):
 def test_monitor_started(
     instance: DagsterInstance, workspace_context: WorkspaceProcessContext, logger: Logger
 ):
-    run_id = create_run_for_test(
-        instance, pipeline_name="foo", status=DagsterRunStatus.STARTED
-    ).run_id
+    run_id = create_run_for_test(instance, job_name="foo", status=DagsterRunStatus.STARTED).run_id
     run_record = instance.get_run_record_by_id(run_id)
     assert run_record is not None
     workspace = workspace_context.create_request_context()
@@ -226,27 +223,26 @@ def test_monitor_started(
     assert run_launcher.resume_run_calls == 3
 
 
-@pytest.mark.skipif(seven.IS_WINDOWS, reason="Cannot report started event on Windows")
 def test_long_running_termination(
     instance: DagsterInstance, workspace_context: WorkspaceProcessContext, logger: Logger
 ):
     with environ({"DAGSTER_TEST_RUN_HEALTH_CHECK_RESULT": "healthy"}):
-        initial = pendulum.now().subtract(1000)
+        initial = pendulum.datetime(2021, 1, 1, tz="UTC")
         with pendulum.test(initial):
             too_long_run = create_run_for_test(
                 instance,
-                pipeline_name="foo",
+                job_name="foo",
                 status=DagsterRunStatus.STARTING,
                 tags={MAX_RUNTIME_SECONDS_TAG: "500"},
             )
             okay_run = create_run_for_test(
                 instance,
-                pipeline_name="foo",
+                job_name="foo",
                 status=DagsterRunStatus.STARTING,
                 tags={MAX_RUNTIME_SECONDS_TAG: "1000"},
             )
             run_no_tag = create_run_for_test(
-                instance, pipeline_name="foo", status=DagsterRunStatus.STARTING
+                instance, job_name="foo", status=DagsterRunStatus.STARTING
             )
         started_time = initial.add(seconds=1)
         with pendulum.test(started_time):
@@ -307,7 +303,6 @@ def test_long_running_termination(
             assert event.message == "Exceeded maximum runtime of 500 seconds."
 
 
-@pytest.mark.skipif(seven.IS_WINDOWS, reason="Cannot report started event on Windows")
 @pytest.mark.parametrize("failure_case", ["fail_termination", "termination_exception"])
 def test_long_running_termination_failure(
     instance: DagsterInstance,
@@ -320,11 +315,11 @@ def test_long_running_termination_failure(
             instance.run_launcher.should_fail_termination = True  # type: ignore
         else:
             instance.run_launcher.should_except_termination = True  # type: ignore
-        initial = pendulum.now().subtract(1000)
+        initial = pendulum.datetime(2021, 1, 1, tz="UTC")
         with pendulum.test(initial):
             too_long_run = create_run_for_test(
                 instance,
-                pipeline_name="foo",
+                job_name="foo",
                 status=DagsterRunStatus.STARTING,
                 tags={MAX_RUNTIME_SECONDS_TAG: "500"},
             )

@@ -14,9 +14,10 @@ from dagster import (
 )
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
+from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.execution.context.init import build_init_resource_context
 from dagster._core.execution.with_resources import with_resources
-from dagster_airbyte import AirbyteResource, airbyte_resource
+from dagster_airbyte import AirbyteCloudResource, AirbyteResource, airbyte_resource
 from dagster_airbyte.asset_defs import AirbyteConnectionMetadata, load_assets_from_airbyte_instance
 
 from .utils import (
@@ -241,3 +242,13 @@ def test_load_from_instance(
     assert load_calls == [
         AssetKey("G_dagster_tags" if connection_to_asset_key_fn else "dagster_tags")
     ]
+
+
+def test_load_from_instance_cloud() -> None:
+    airbyte_cloud_instance = AirbyteCloudResource(api_key="foo")
+
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match="load_assets_from_airbyte_instance is not yet supported for AirbyteCloudResource",
+    ):
+        load_assets_from_airbyte_instance(airbyte_cloud_instance)  # type: ignore

@@ -28,7 +28,6 @@ from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
-from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
 from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
     TimeWindowPartitionsDefinition,
@@ -57,7 +56,7 @@ def get_implicit_auto_materialize_policy(
     if auto_materialize_policy is None:
         return AutoMaterializePolicy(
             on_missing=True,
-            on_upstream_data_newer=not bool(
+            on_new_parent_data=not bool(
                 asset_graph.get_downstream_freshness_policies(asset_key=asset_key)
             ),
             for_freshness=True,
@@ -417,14 +416,16 @@ def find_parent_materialized_asset_partitions(
                         )
                     )
                     for child_partition in child_partitions_subset.get_partition_keys():
-                        # we need to see if the child was materialized in the same run, but this is
+                        # we need to see if the child is planned for the same run, but this is
                         # expensive, so we try to avoid doing so in as many situations as possible
                         child_asset_partition = AssetKeyPartitionKey(child, child_partition)
                         if not can_reconcile_fn(child_asset_partition):
                             continue
-                        # cannot materialize in the same run if different partitions defs
-                        elif child_partitions_def != partitions_def or not isinstance(
-                            partition_mapping, IdentityPartitionMapping
+                        # cannot materialize in the same run if different partitions defs or
+                        # different partition keys
+                        elif (
+                            child_partitions_def != partitions_def
+                            or child_partition not in materialized_partitions
                         ):
                             result_asset_partitions.add(child_asset_partition)
                         else:
@@ -617,7 +618,7 @@ def determine_asset_partitions_to_reconcile(
             auto_materialize_policy.on_missing
             and not instance_queryer.materialization_exists(asset_partition=candidate)
         ) or (
-            auto_materialize_policy.on_upstream_data_newer
+            auto_materialize_policy.on_new_parent_data
             and not instance_queryer.is_reconciled(
                 asset_partition=candidate, asset_graph=asset_graph
             )

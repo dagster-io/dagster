@@ -113,11 +113,11 @@ def build_assets_job(
     resource_defs: Optional[Mapping[str, object]] = None,
     description: Optional[str] = None,
     config: Optional[
-        Union[ConfigMapping, Mapping[str, object], PartitionedConfig[object], "RunConfig"]
+        Union[ConfigMapping, Mapping[str, object], PartitionedConfig, "RunConfig"]
     ] = None,
     tags: Optional[Mapping[str, str]] = None,
     executor_def: Optional[ExecutorDefinition] = None,
-    partitions_def: Optional[PartitionsDefinition[object]] = None,
+    partitions_def: Optional[PartitionsDefinition] = None,
     _asset_selection_data: Optional[AssetSelectionData] = None,
 ) -> JobDefinition:
     """Builds a job that materializes the given assets.
@@ -219,7 +219,7 @@ def build_assets_job(
             asset_layer=asset_layer,
             _asset_selection_data=_asset_selection_data,
             metadata=original_job.metadata,
-            logger_defs=original_job.get_mode_definition().loggers,
+            logger_defs=original_job.loggers,
             hooks=original_job.hook_defs,
             op_retry_policy=original_job._op_retry_policy,  # noqa: SLF001
             version_strategy=original_job.version_strategy,
@@ -318,7 +318,7 @@ def build_source_asset_observation_job(
             asset_layer=asset_layer,
             _asset_selection_data=_asset_selection_data,
             metadata=original_job.metadata,
-            logger_defs=original_job.get_mode_definition().loggers,
+            logger_defs=original_job.loggers,
             hooks=original_job.hook_defs,
             op_retry_policy=original_job._op_retry_policy,  # noqa: SLF001
             version_strategy=original_job.version_strategy,

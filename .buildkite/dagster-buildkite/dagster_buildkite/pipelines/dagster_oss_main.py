@@ -1,7 +1,6 @@
 import os
 import re
-import subprocess
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
 from dagster_buildkite.steps.dagit_ui import build_dagit_ui_steps, skip_if_no_dagit_changes
 from dagster_buildkite.steps.dagster import build_dagster_steps, build_repo_wide_steps
@@ -28,7 +27,7 @@ def build_dagster_oss_main_steps() -> List[BuildkiteStep]:
         async_step = True
     else:  # feature branch
         pipeline_name = "oss-internal-compatibility"
-        trigger_branch = _get_internal_branch_specifier() or "master"
+        trigger_branch = _get_setting("INTERNAL_BRANCH") or "master"
         async_step = False
 
     steps.append(
@@ -40,6 +39,7 @@ def build_dagster_oss_main_steps() -> List[BuildkiteStep]:
                 "DAGSTER_BRANCH": branch_name,
                 "DAGSTER_COMMIT_HASH": commit_hash,
                 "DAGIT_ONLY_OSS_CHANGE": "1" if not skip_if_no_dagit_changes() else "",
+                "DAGSTER_CHECKOUT_DEPTH": _get_setting("DAGSTER_CHECKOUT_DEPTH") or "100",
             },
         ),
     )
@@ -53,29 +53,14 @@ def build_dagster_oss_main_steps() -> List[BuildkiteStep]:
     return steps
 
 
-def _is_path_only_diff(paths: Tuple[str, ...]) -> bool:
-    base_branch = safe_getenv("BUILDKITE_PULL_REQUEST_BASE_BRANCH")
-
-    try:
-        pr_commit = safe_getenv("BUILDKITE_COMMIT")
-        origin_base = "origin/" + base_branch
-        diff_files = (
-            subprocess.check_output(["git", "diff", origin_base, pr_commit, "--name-only"])
-            .decode("utf-8")
-            .strip()
-            .split("\n")
-        )
-        return all(filepath.startswith(paths) for (filepath) in diff_files)
-
-    except subprocess.CalledProcessError:
-        return False
-
-
-def _get_internal_branch_specifier() -> Optional[str]:
-    direct_specifier = os.getenv("INTERNAL_BRANCH")
+def _get_setting(name: str) -> Optional[str]:
+    """Load a setting defined either as an environment variable or in a `[<key>=<value>]`
+    string in the commit message.
+    """
+    direct_specifier = os.getenv(name)
     commit_message = safe_getenv("BUILDKITE_MESSAGE")
     if direct_specifier:
         return direct_specifier
     else:
-        m = re.search(r"\[INTERNAL_BRANCH=(\S+)\]", commit_message)
+        m = re.search(r"\[" + name + r"=(\S+)\]", commit_message)
         return m.group(1) if m else None

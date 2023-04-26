@@ -3,7 +3,7 @@ from threading import Thread
 from unittest import mock
 
 import pytest
-from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.errors import DagsterSubprocessError
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import execute_job, execute_run_iterator
@@ -78,7 +78,7 @@ def test_execute_fails_pipeline_on_celery(dagster_celery_worker):
 def test_terminate_pipeline_on_celery(
     dagster_celery_worker, instance: DagsterInstance, tempdir: str
 ):
-    recon_job = ReconstructablePipeline.for_file(REPO_FILE, "interrupt_job")
+    recon_job = ReconstructableJob.for_file(REPO_FILE, "interrupt_job")
 
     run_config = {
         "resources": {"io_manager": {"config": {"base_dir": tempdir}}},
@@ -88,8 +88,8 @@ def test_terminate_pipeline_on_celery(
     result_types = []
     interrupt_thread = None
 
-    dagster_run = instance.create_run_for_pipeline(
-        pipeline_def=recon_job.get_definition(),
+    dagster_run = instance.create_run_for_job(
+        job_def=recon_job.get_definition(),
         run_config=run_config,
     )
 
@@ -235,7 +235,7 @@ def test_engine_error(instance: DagsterInstance, tempdir: str):
         with pytest.raises(DagsterSubprocessError):
             storage = os.path.join(tempdir, "flakey_storage")
             execute_job(
-                ReconstructablePipeline.for_file(REPO_FILE, "engine_error"),
+                ReconstructableJob.for_file(REPO_FILE, "engine_error"),
                 run_config={
                     "resources": {"io_manager": {"config": {"base_dir": storage}}},
                     "execution": {"config": {"config_source": {"task_always_eager": True}}},

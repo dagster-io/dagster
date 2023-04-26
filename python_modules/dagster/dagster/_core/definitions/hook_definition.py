@@ -54,7 +54,7 @@ class HookDefinition(
 
         We currently support hooks to decorate the following:
 
-        - PipelineDefinition: when the hook decorates a job definition, it will be added to
+        - JobDefinition: when the hook decorates a job definition, it will be added to
             all the op invocations within the job.
 
         Example:
@@ -73,9 +73,9 @@ class HookDefinition(
         from ..execution.context.hook import HookContext
         from .graph_definition import GraphDefinition
         from .hook_invocation import hook_invocation_result
-        from .pipeline_definition import PipelineDefinition
+        from .job_definition import JobDefinition
 
-        if len(args) > 0 and isinstance(args[0], (PipelineDefinition, GraphDefinition)):
+        if len(args) > 0 and isinstance(args[0], (JobDefinition, GraphDefinition)):
             # when it decorates a pipeline, we apply this hook to all the solid invocations within
             # the pipeline.
             return args[0].with_hooks({self})

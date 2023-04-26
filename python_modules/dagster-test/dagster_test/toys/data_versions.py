@@ -18,7 +18,7 @@ def observable_different_version():
 
 @observable_source_asset
 def observable_same_version():
-    return "5"
+    return DataVersion("5")
 
 
 non_observable_source = SourceAsset("non_observable_source")

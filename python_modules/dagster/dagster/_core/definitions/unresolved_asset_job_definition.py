@@ -6,7 +6,6 @@ import dagster._check as check
 from dagster._core.definitions import AssetKey
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._core.instance import DagsterInstance
 from dagster._utils.backcompat import deprecation_warning
 
 from .asset_layer import build_asset_selection_job
@@ -83,7 +82,6 @@ class UnresolvedAssetJobDefinition(
         tags: Optional[Mapping[str, str]] = None,
         asset_selection: Optional[Sequence[AssetKey]] = None,
         run_config: Optional[Mapping[str, Any]] = None,
-        instance: Optional[DagsterInstance] = None,
         current_time: Optional[datetime] = None,
     ) -> RunRequest:
         """Creates a RunRequest object for a run that processes the given partition.
@@ -126,28 +124,25 @@ class UnresolvedAssetJobDefinition(
         if (
             isinstance(self.partitions_def, DynamicPartitionsDefinition)
             and self.partitions_def.name
-            and not instance
         ):
+            # Do not support using run_request_for_partition with dynamic partitions,
+            # since this requires querying the instance once per run request for the
+            # existent dynamic partitions
             check.failed(
-                "Must provide a dagster instance when calling run_request_for_partition on a "
-                "dynamic partition set"
+                "run_request_for_partition is not supported for dynamic partitions. Instead, use"
+                " RunRequest(partition_key=...)"
             )
 
-        partition = self.partitions_def.get_partition(
-            partition_key, dynamic_partitions_store=instance, current_time=current_time
-        )
+        self.partitions_def.validate_partition_key(partition_key, current_time=current_time)
+
         run_config = (
             run_config
             if run_config is not None
-            else partitioned_config.get_run_config_for_partition_key(
-                partition.name, dynamic_partitions_store=instance, current_time=current_time
-            )
+            else partitioned_config.get_run_config_for_partition_key(partition_key)
         )
         run_request_tags = {
             **(tags or {}),
-            **partitioned_config.get_tags_for_partition_key(
-                partition_key, instance, current_time=current_time, job_name=self.name
-            ),
+            **partitioned_config.get_tags_for_partition_key(partition_key),
         }
 
         return RunRequest(
@@ -245,11 +240,11 @@ def define_asset_job(
     name: str,
     selection: Optional["CoercibleToAssetSelection"] = None,
     config: Optional[
-        Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig[object]", "RunConfig"]
+        Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig", "RunConfig"]
     ] = None,
     description: Optional[str] = None,
     tags: Optional[Mapping[str, Any]] = None,
-    partitions_def: Optional["PartitionsDefinition[Any]"] = None,
+    partitions_def: Optional["PartitionsDefinition"] = None,
     executor_def: Optional["ExecutorDefinition"] = None,
 ) -> UnresolvedAssetJobDefinition:
     """Creates a definition of a job which will either materialize a selection of assets or observe

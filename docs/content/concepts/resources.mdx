@@ -8,7 +8,12 @@ description: Resources enable you to separate graph logic from environment, and 
 <Note>
   This guide covers using the new Pythonic resources system introduced in
   Dagster 1.3. If your code is still using the legacy resources system, see the{" "}
-  <a href="/concepts/resources-legacy">legacy resources guide</a>.
+  <a href="/concepts/resources-legacy">legacy resources guide</a>. To migrate
+  your code, refer to the{" "}
+  <a href="/guides/dagster/migrating-to-pythonic-resources-and-config">
+    migrating to Pythonic resources and config
+  </a>{" "}
+  guide.
 </Note>
 
 Resources are objects that are shared across the implementations of multiple [software-defined assets](/concepts/assets/software-defined-assets), [ops](/concepts/ops-jobs-graphs/ops), [schedules](/concepts/partitions-schedules-sensors/schedules), and [sensors](/concepts/partitions-schedules-sensors/sensors). These resources can be plugged in after the definitions of your assets or ops, and can be easily swapped out.

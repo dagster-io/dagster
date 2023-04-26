@@ -130,5 +130,4 @@ def wrap_resources_for_execution(
             resource_defs[resource_key] = IOManagerDefinition.hardcoded_io_manager(resource)
         else:
             resource_defs[resource_key] = ResourceDefinition.hardcoded_resource(resource)
-
     return resource_defs

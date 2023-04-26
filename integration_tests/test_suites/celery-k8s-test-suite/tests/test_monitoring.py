@@ -83,12 +83,10 @@ def test_run_monitoring_fails_on_interrupt(
         get_celery_job_engine_config(dagster_docker_image=dagster_docker_image),
     )
 
-    pipeline_name = "demo_job_celery_k8s"
+    job_name = "demo_job_celery_k8s"
 
     try:
-        run_id = launch_run_over_graphql(
-            dagit_url, run_config=run_config, pipeline_name=pipeline_name
-        )
+        run_id = launch_run_over_graphql(dagit_url, run_config=run_config, job_name=job_name)
         start_time = time.time()
         while time.time() - start_time < 60:
             run = dagster_instance.get_run_by_id(run_id)
@@ -122,12 +120,10 @@ def test_run_monitoring_startup_fail(
         ),
     )
 
-    pipeline_name = "demo_job_celery_k8s"
+    job_name = "demo_job_celery_k8s"
 
     try:
-        run_id = launch_run_over_graphql(
-            dagit_url, run_config=run_config, pipeline_name=pipeline_name
-        )
+        run_id = launch_run_over_graphql(dagit_url, run_config=run_config, job_name=job_name)
         start_time = time.time()
         while time.time() - start_time < 60:
             run = dagster_instance.get_run_by_id(run_id)

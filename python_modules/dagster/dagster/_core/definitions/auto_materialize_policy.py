@@ -1,13 +1,30 @@
 import datetime
+from enum import Enum
 from typing import NamedTuple, Optional
 
-from dagster._annotations import experimental
+import dagster._check as check
+from dagster._annotations import experimental, public
 from dagster._serdes.serdes import whitelist_for_serdes
+
+
+class AutoMaterializePolicyType(Enum):
+    EAGER = "EAGER"
+    LAZY = "LAZY"
 
 
 @experimental
 @whitelist_for_serdes
-class AutoMaterializePolicy(NamedTuple):
+class AutoMaterializePolicy(
+    NamedTuple(
+        "_AutoMaterializePolicy",
+        [
+            ("on_missing", bool),
+            ("on_new_parent_data", bool),
+            ("for_freshness", bool),
+            ("time_window_partition_scope_minutes", Optional[float]),
+        ],
+    )
+):
     """An AutoMaterializePolicy specifies how Dagster should attempt to keep an asset up-to-date.
 
     There are two main modes of reconciliation: eager and lazy.
@@ -38,10 +55,25 @@ class AutoMaterializePolicy(NamedTuple):
     AutoMaterializePolicy.eager() and AutoMaterializePolicy.lazy() are the recommended API.
     """
 
-    on_missing: bool
-    on_upstream_data_newer: bool
-    for_freshness: bool
-    time_window_partition_scope_minutes: Optional[float]
+    def __new__(
+        cls,
+        on_missing: bool,
+        on_new_parent_data: bool,
+        for_freshness: bool,
+        time_window_partition_scope_minutes: Optional[float],
+    ):
+        check.invariant(
+            on_new_parent_data or for_freshness,
+            "One of on_new_parent_data or for_freshness must be True",
+        )
+
+        return super(AutoMaterializePolicy, cls).__new__(
+            cls,
+            on_missing=on_missing,
+            on_new_parent_data=on_new_parent_data,
+            for_freshness=for_freshness,
+            time_window_partition_scope_minutes=time_window_partition_scope_minutes,
+        )
 
     @property
     def time_window_partition_scope(self) -> Optional[datetime.timedelta]:
@@ -49,20 +81,28 @@ class AutoMaterializePolicy(NamedTuple):
             return None
         return datetime.timedelta(minutes=self.time_window_partition_scope_minutes)
 
+    @public
     @staticmethod
     def eager() -> "AutoMaterializePolicy":
         return AutoMaterializePolicy(
             on_missing=True,
-            on_upstream_data_newer=True,
+            on_new_parent_data=True,
             for_freshness=True,
             time_window_partition_scope_minutes=datetime.timedelta.resolution.total_seconds() / 60,
         )
 
+    @public
     @staticmethod
     def lazy() -> "AutoMaterializePolicy":
         return AutoMaterializePolicy(
             on_missing=True,
-            on_upstream_data_newer=False,
+            on_new_parent_data=False,
             for_freshness=True,
             time_window_partition_scope_minutes=datetime.timedelta.resolution.total_seconds() / 60,
         )
+
+    @property
+    def policy_type(self) -> AutoMaterializePolicyType:
+        if self.on_new_parent_data is True:
+            return AutoMaterializePolicyType.EAGER
+        return AutoMaterializePolicyType.LAZY

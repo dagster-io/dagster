@@ -344,7 +344,7 @@ def test_execute_using_repository_data():
             "dagster_tests.execution_tests.engine_tests.test_step_delegating_executor",
             fn_name="pending_repo",
         )
-        recon_job = ReconstructableJob(repository=recon_repo, pipeline_name="all_asset_job")
+        recon_job = ReconstructableJob(repository=recon_repo, job_name="all_asset_job")
 
         with execute_job(
             recon_job,

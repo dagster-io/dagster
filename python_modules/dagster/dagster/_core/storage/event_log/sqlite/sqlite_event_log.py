@@ -146,7 +146,8 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def has_table(self, table_name: str) -> bool:
         conn_string = self.conn_string_for_shard(INDEX_SHARD_NAME)
         engine = create_engine(conn_string, poolclass=NullPool)
-        return bool(engine.dialect.has_table(engine.connect(), table_name))
+        with engine.connect() as conn:
+            return bool(engine.dialect.has_table(conn, table_name))
 
     def path_for_shard(self, run_id: str) -> str:
         return os.path.join(self._base_dir, f"{run_id}.db")
@@ -167,7 +168,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
                     if not (db_revision and head_revision):
                         SqlEventLogStorageMetadata.create_all(engine)
-                        engine.execute("PRAGMA journal_mode=WAL;")
+                        connection.execute("PRAGMA journal_mode=WAL;")
                         stamp_alembic_rev(alembic_config, connection)
 
                 break

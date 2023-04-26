@@ -134,9 +134,6 @@ def create_and_launch_partition_backfill(
         if backfill_params.get("fromFailure"):
             raise DagsterError("fromFailure is not supported for pure asset backfills")
 
-        if backfill_params.get("allPartitions"):
-            raise DagsterError("allPartitions is not supported for pure asset backfills")
-
         asset_graph = ExternalAssetGraph.from_workspace(graphene_info.context)
 
         location_names = set(
@@ -161,8 +158,9 @@ def create_and_launch_partition_backfill(
             tags=tags,
             backfill_timestamp=backfill_timestamp,
             asset_selection=asset_selection,
-            partition_names=backfill_params["partitionNames"],
+            partition_names=backfill_params.get("partitionNames"),
             dynamic_partitions_store=CachingInstanceQueryer(graphene_info.context.instance),
+            all_partitions=backfill_params.get("allPartitions", False),
         )
     else:
         raise DagsterError(
