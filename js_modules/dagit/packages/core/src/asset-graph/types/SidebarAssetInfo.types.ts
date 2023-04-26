@@ -110,6 +110,12 @@ export type SidebarAssetFragment = {
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
+  freshnessPolicy: {
+    __typename: 'FreshnessPolicy';
+    maximumLagMinutes: number;
+    cronSchedule: string | null;
+    cronScheduleTimezone: string | null;
+  } | null;
   autoMaterializePolicy: {
     __typename: 'AutoMaterializePolicy';
     policyType: Types.AutoMaterializePolicyType;
@@ -15662,6 +15668,12 @@ export type SidebarAssetQuery = {
             }
           | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
         >;
+        freshnessPolicy: {
+          __typename: 'FreshnessPolicy';
+          maximumLagMinutes: number;
+          cronSchedule: string | null;
+          cronScheduleTimezone: string | null;
+        } | null;
         autoMaterializePolicy: {
           __typename: 'AutoMaterializePolicy';
           policyType: Types.AutoMaterializePolicyType;

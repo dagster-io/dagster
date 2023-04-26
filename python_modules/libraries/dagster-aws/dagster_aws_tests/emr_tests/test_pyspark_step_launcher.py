@@ -13,7 +13,7 @@ EVENTS = [
         level=20,
         user_message="foo",
         timestamp=1.0,
-        dagster_event=DagsterEvent(event_type_value="STEP_START", pipeline_name="foo"),
+        dagster_event=DagsterEvent(event_type_value="STEP_START", job_name="foo"),
     ),
     EventLogEntry(
         run_id="1",
@@ -31,7 +31,7 @@ EVENTS = [
         timestamp=3.0,
         dagster_event=DagsterEvent(
             event_type_value="STEP_SUCCESS",
-            pipeline_name="foo",
+            job_name="foo",
             event_specific_data=StepSuccessData(duration_ms=2.0),
         ),
     ),

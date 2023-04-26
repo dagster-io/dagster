@@ -1,16 +1,17 @@
-import {gql} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import {Colors, JoinedButtons, TokenizingFieldValue} from '@dagster-io/ui';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {useLocation} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {RunStatus} from '../graphql/types';
+import {RunStatus, RunsFilter} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {AnchorButton} from '../ui/AnchorButton';
 
 import {doneStatuses, inProgressStatuses, queuedStatuses} from './RunStatuses';
 import {runsPathWithFilters, useQueryPersistedRunFilters} from './RunsFilterInput';
+import {RunTabsCountQuery, RunTabsCountQueryVariables} from './types/RunListTabs.types';
 
 const getDocumentTitle = (selected: ReturnType<typeof useSelectedRunsTab>) => {
   switch (selected) {
@@ -29,12 +30,27 @@ const getDocumentTitle = (selected: ReturnType<typeof useSelectedRunsTab>) => {
   }
 };
 
-interface Props {
-  queuedCount: number | null;
-  inProgressCount: number | null;
-}
+export const useRunListTabs = (filter: RunsFilter = {}) => {
+  const queryResult = useQuery<RunTabsCountQuery, RunTabsCountQueryVariables>(
+    RUN_TABS_COUNT_QUERY,
+    {
+      variables: {
+        queuedFilter: {...filter, statuses: Array.from(queuedStatuses)},
+        inProgressFilter: {...filter, statuses: Array.from(inProgressStatuses)},
+      },
+    },
+  );
 
-export const RunListTabs: React.FC<Props> = React.memo(({queuedCount, inProgressCount}) => {
+  const {data: countData} = queryResult;
+  const {queuedCount, inProgressCount} = React.useMemo(() => {
+    return {
+      queuedCount:
+        countData?.queuedCount?.__typename === 'Runs' ? countData.queuedCount.count : null,
+      inProgressCount:
+        countData?.inProgressCount?.__typename === 'Runs' ? countData.inProgressCount.count : null,
+    };
+  }, [countData]);
+
   const [filterTokens] = useQueryPersistedRunFilters();
   const selectedTab = useSelectedRunsTab(filterTokens);
 
@@ -46,7 +62,7 @@ export const RunListTabs: React.FC<Props> = React.memo(({queuedCount, inProgress
     return runsPathWithFilters([...statusTokens, ...tokensMinusStatus]);
   };
 
-  return (
+  const tabs = (
     <JoinedButtons>
       <Button to={urlForStatus([])} id="all" $active={selectedTab === 'all'}>
         All runs
@@ -82,7 +98,9 @@ export const RunListTabs: React.FC<Props> = React.memo(({queuedCount, inProgress
       </Button>
     </JoinedButtons>
   );
-});
+
+  return {tabs, queryResult};
+};
 
 const Button = styled(AnchorButton)<{$active: boolean}>`
   ${(props) =>

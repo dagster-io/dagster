@@ -3,7 +3,7 @@ import React from 'react';
 
 import {GenericError} from '../app/PythonErrorInfo';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
-import {RunCreatedByCell} from '../runs/RunCreatedByCell';
+import {UserDisplay} from '../runs/UserDisplay';
 
 import {LaunchRootExecutionButton} from './LaunchRootExecutionButton';
 import {useLaunchWithTelemetry} from './useLaunchWithTelemetry';
@@ -11,12 +11,14 @@ import {useLaunchWithTelemetry} from './useLaunchWithTelemetry';
 type LaunchpadHooksContextValue = {
   LaunchRootExecutionButton?: typeof LaunchRootExecutionButton;
   useLaunchWithTelemetry?: typeof useLaunchWithTelemetry;
-  RunCreatedByCell?: typeof RunCreatedByCell;
+  UserDisplay?: typeof UserDisplay;
   MaterializeButton?: typeof Button;
   PythonErrorInfoHeader?: React.FC<{
     error: GenericError | PythonErrorFragment;
     fallback?: React.ReactNode;
   }>;
+  // TODO (salazarm): Remove this prop after cloud PR lands to override UserDisplay instead
+  RunCreatedByCell?: any;
 };
 
 export const LaunchpadHooksContext = React.createContext<LaunchpadHooksContextValue>({
@@ -29,7 +31,7 @@ export function useLaunchPadHooks() {
     LaunchRootExecutionButton: overrideLaunchRootExecutionButton,
     useLaunchWithTelemetry: overrideUseLaunchWithTelemetry,
     MaterializeButton: OverrideMaterializeButton,
-    RunCreatedByCell: OverrideCreatedByCell,
+    UserDisplay: OverrideUserDisplay,
     PythonErrorInfoHeader,
   } = React.useContext(LaunchpadHooksContext);
 
@@ -38,6 +40,6 @@ export function useLaunchPadHooks() {
     useLaunchWithTelemetry: overrideUseLaunchWithTelemetry ?? useLaunchWithTelemetry,
     MaterializeButton: OverrideMaterializeButton ?? Button,
     PythonErrorInfoHeader,
-    RunCreatedByCell: OverrideCreatedByCell ?? RunCreatedByCell,
+    UserDisplay: OverrideUserDisplay ?? UserDisplay,
   };
 }

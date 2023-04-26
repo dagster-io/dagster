@@ -36,12 +36,12 @@ from dagster._core.errors import (
 )
 from dagster._core.events import EVENT_TYPE_TO_PIPELINE_RUN_STATUS, DagsterEvent, DagsterEventType
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
-from dagster._core.host_representation.origin import ExternalPipelineOrigin
+from dagster._core.host_representation.origin import ExternalJobOrigin
 from dagster._core.snap import (
     ExecutionPlanSnapshot,
-    PipelineSnapshot,
+    JobSnapshot,
     create_execution_plan_snapshot_id,
-    create_pipeline_snapshot_id,
+    create_job_snapshot_id,
 )
 from dagster._core.storage.sql import SqlAlchemyQuery, SqlAlchemyRow
 from dagster._core.storage.tags import (
@@ -121,28 +121,26 @@ class SqlRunStorage(RunStorage):
 
         return row
 
-    def add_run(self, pipeline_run: DagsterRun) -> DagsterRun:
-        check.inst_param(pipeline_run, "pipeline_run", DagsterRun)
+    def add_run(self, dagster_run: DagsterRun) -> DagsterRun:
+        check.inst_param(dagster_run, "dagster_run", DagsterRun)
 
-        if pipeline_run.pipeline_snapshot_id and not self.has_pipeline_snapshot(
-            pipeline_run.pipeline_snapshot_id
-        ):
+        if dagster_run.job_snapshot_id and not self.has_job_snapshot(dagster_run.job_snapshot_id):
             raise DagsterSnapshotDoesNotExist(
                 "Snapshot {ss_id} does not exist in run storage".format(
-                    ss_id=pipeline_run.pipeline_snapshot_id
+                    ss_id=dagster_run.job_snapshot_id
                 )
             )
 
-        has_tags = pipeline_run.tags and len(pipeline_run.tags) > 0
-        partition = pipeline_run.tags.get(PARTITION_NAME_TAG) if has_tags else None
-        partition_set = pipeline_run.tags.get(PARTITION_SET_TAG) if has_tags else None
+        has_tags = dagster_run.tags and len(dagster_run.tags) > 0
+        partition = dagster_run.tags.get(PARTITION_NAME_TAG) if has_tags else None
+        partition_set = dagster_run.tags.get(PARTITION_SET_TAG) if has_tags else None
 
         runs_insert = RunsTable.insert().values(
-            run_id=pipeline_run.run_id,
-            pipeline_name=pipeline_run.pipeline_name,
-            status=pipeline_run.status.value,
-            run_body=serialize_value(pipeline_run),
-            snapshot_id=pipeline_run.pipeline_snapshot_id,
+            run_id=dagster_run.run_id,
+            pipeline_name=dagster_run.job_name,
+            status=dagster_run.status.value,
+            run_body=serialize_value(dagster_run),
+            snapshot_id=dagster_run.job_snapshot_id,
             partition=partition,
             partition_set=partition_set,
         )
@@ -152,17 +150,17 @@ class SqlRunStorage(RunStorage):
             except db_exc.IntegrityError as exc:
                 raise DagsterRunAlreadyExists from exc
 
-            tags_to_insert = pipeline_run.tags_for_storage()
+            tags_to_insert = dagster_run.tags_for_storage()
             if tags_to_insert:
                 conn.execute(
                     RunTagsTable.insert(),
                     [
-                        dict(run_id=pipeline_run.run_id, key=k, value=v)
+                        dict(run_id=dagster_run.run_id, key=k, value=v)
                         for k, v in tags_to_insert.items()
                     ],
                 )
 
-        return pipeline_run
+        return dagster_run
 
     def handle_run_event(self, run_id: str, event: DagsterEvent) -> None:
         check.str_param(run_id, "run_id")
@@ -176,7 +174,7 @@ class SqlRunStorage(RunStorage):
             # TODO log?
             return
 
-        new_pipeline_status = EVENT_TYPE_TO_PIPELINE_RUN_STATUS[event.event_type]
+        new_job_status = EVENT_TYPE_TO_PIPELINE_RUN_STATUS[event.event_type]
 
         run_stats_cols_in_index = self.has_run_stats_index_cols()
 
@@ -201,8 +199,8 @@ class SqlRunStorage(RunStorage):
                 RunsTable.update()
                 .where(RunsTable.c.run_id == run_id)
                 .values(
-                    run_body=serialize_value(run.with_status(new_pipeline_status)),
-                    status=new_pipeline_status.value,
+                    run_body=serialize_value(run.with_status(new_job_status)),
+                    status=new_job_status.value,
                     update_timestamp=now,
                     **kwargs,
                 )
@@ -602,14 +600,14 @@ class SqlRunStorage(RunStorage):
 
     def get_run_group(self, run_id: str) -> Tuple[str, Sequence[DagsterRun]]:
         check.str_param(run_id, "run_id")
-        pipeline_run = self._get_run_by_id(run_id)
-        if not pipeline_run:
+        dagster_run = self._get_run_by_id(run_id)
+        if not dagster_run:
             raise DagsterRunNotFoundError(
                 f"Run {run_id} was not found in instance.", invalid_run_id=run_id
             )
 
         # find root_run
-        root_run_id = pipeline_run.root_run_id if pipeline_run.root_run_id else pipeline_run.run_id
+        root_run_id = dagster_run.root_run_id if dagster_run.root_run_id else dagster_run.run_id
         root_run = self._get_run_by_id(root_run_id)
         if not root_run:
             raise DagsterRunNotFoundError(
@@ -777,13 +775,13 @@ class SqlRunStorage(RunStorage):
         root_run_id_to_group: Dict[str, List[DagsterRun]] = defaultdict(list)
         root_run_id_to_count: Dict[str, int] = defaultdict(int)
         for row in res:
-            pipeline_run = self._row_to_run(row)
-            root_run_id = pipeline_run.get_root_run_id()
+            dagster_run = self._row_to_run(row)
+            root_run_id = dagster_run.get_root_run_id()
             if root_run_id is not None:
-                root_run_id_to_group[root_run_id].append(pipeline_run)
+                root_run_id_to_group[root_run_id].append(dagster_run)
             else:
-                root_run_id_to_group[pipeline_run.run_id].append(pipeline_run)
-                root_run_id_to_count[pipeline_run.run_id] = row["child_counts"] + 1
+                root_run_id_to_group[dagster_run.run_id].append(dagster_run)
+                root_run_id_to_count[dagster_run.run_id] = row["child_counts"] + 1
 
         return {
             root_run_id: {
@@ -803,28 +801,26 @@ class SqlRunStorage(RunStorage):
         with self.connect() as conn:
             conn.execute(query)
 
-    def has_pipeline_snapshot(self, pipeline_snapshot_id: str) -> bool:
-        check.str_param(pipeline_snapshot_id, "pipeline_snapshot_id")
-        return self._has_snapshot_id(pipeline_snapshot_id)
+    def has_job_snapshot(self, job_snapshot_id: str) -> bool:
+        check.str_param(job_snapshot_id, "job_snapshot_id")
+        return self._has_snapshot_id(job_snapshot_id)
 
-    def add_pipeline_snapshot(
-        self, pipeline_snapshot: PipelineSnapshot, snapshot_id: Optional[str] = None
-    ) -> str:
-        check.inst_param(pipeline_snapshot, "pipeline_snapshot", PipelineSnapshot)
+    def add_job_snapshot(self, job_snapshot: JobSnapshot, snapshot_id: Optional[str] = None) -> str:
+        check.inst_param(job_snapshot, "job_snapshot", JobSnapshot)
         check.opt_str_param(snapshot_id, "snapshot_id")
 
         if not snapshot_id:
-            snapshot_id = create_pipeline_snapshot_id(pipeline_snapshot)
+            snapshot_id = create_job_snapshot_id(job_snapshot)
 
         return self._add_snapshot(
             snapshot_id=snapshot_id,
-            snapshot_obj=pipeline_snapshot,
+            snapshot_obj=job_snapshot,
             snapshot_type=SnapshotType.PIPELINE,
         )
 
-    def get_pipeline_snapshot(self, pipeline_snapshot_id: str) -> PipelineSnapshot:
-        check.str_param(pipeline_snapshot_id, "pipeline_snapshot_id")
-        return self._get_snapshot(pipeline_snapshot_id)  # type: ignore  # (allowed to return None?)
+    def get_job_snapshot(self, job_snapshot_id: str) -> JobSnapshot:
+        check.str_param(job_snapshot_id, "job_snapshot_id")
+        return self._get_snapshot(job_snapshot_id)  # type: ignore  # (allowed to return None?)
 
     def has_execution_plan_snapshot(self, execution_plan_snapshot_id: str) -> bool:
         check.str_param(execution_plan_snapshot_id, "execution_plan_snapshot_id")
@@ -883,7 +879,7 @@ class SqlRunStorage(RunStorage):
 
         return bool(row)
 
-    def _get_snapshot(self, snapshot_id: str) -> Optional[PipelineSnapshot]:
+    def _get_snapshot(self, snapshot_id: str) -> Optional[JobSnapshot]:
         query = db.select([SnapshotsTable.c.snapshot_body]).where(
             SnapshotsTable.c.snapshot_id == snapshot_id
         )
@@ -1160,7 +1156,7 @@ class SqlRunStorage(RunStorage):
                 )
 
     # Migrating run history
-    def replace_job_origin(self, run: DagsterRun, job_origin: ExternalPipelineOrigin) -> None:
+    def replace_job_origin(self, run: DagsterRun, job_origin: ExternalJobOrigin) -> None:
         new_label = job_origin.external_repository_origin.get_label()
         with self.connect() as conn:
             conn.execute(
@@ -1183,7 +1179,7 @@ GET_PIPELINE_SNAPSHOT_QUERY_ID = "get-pipeline-snapshot"
 
 def defensively_unpack_execution_plan_snapshot_query(
     logger: logging.Logger, row: SqlAlchemyRow
-) -> Optional[Union[ExecutionPlanSnapshot, PipelineSnapshot]]:
+) -> Optional[Union[ExecutionPlanSnapshot, JobSnapshot]]:
     # no checking here because sqlalchemy returns a special
     # row proxy and don't want to instance check on an internal
     # implementation detail
@@ -1208,7 +1204,7 @@ def defensively_unpack_execution_plan_snapshot_query(
         return None
 
     try:
-        return deserialize_value(decoded_str, (ExecutionPlanSnapshot, PipelineSnapshot))
+        return deserialize_value(decoded_str, (ExecutionPlanSnapshot, JobSnapshot))
     except JSONDecodeError:
         _warn("Could not parse json in snapshot table.")
         return None

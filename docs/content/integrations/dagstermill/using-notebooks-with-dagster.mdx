@@ -157,7 +157,7 @@ Open the `/tutorial_template/repository.py` file and add the following code:
 ```python
 # tutorial_template/repository.py
 
-from dagstermill import local_output_notebook_io_manager
+from dagstermill import ConfigurableLocalOutputNotebookIOManager
 from dagster import repository, with_resources
 from . import assets
 
@@ -167,14 +167,14 @@ def template_tutorial():
         with_resources(
             load_assets_from_package_module(assets),
             resource_defs={
-                "output_notebook_io_manager": local_output_notebook_io_manager,
+                "output_notebook_io_manager": ConfigurableLocalOutputNotebookIOManager(),
             },
         ),
 ```
 
 Let's take a look at what's happening here:
 
-- Using <PyObject object="with_resources"/>, we've provided resources to the assets in the repository. In this example, that's the <PyObject module="dagstermill" object="local_output_notebook_io_manager" /> resource.
+- Using <PyObject object="with_resources"/>, we've provided resources to the assets in the repository. In this example, that's the <PyObject module="dagstermill" object="ConfigurableLocalOutputNotebookIOManager" /> resource.
 
   This I/O manager, bound to the `output_notebook_io_manager` key, is responsible for handling the storage of the notebook asset's resulting `.ipynb` file.
 

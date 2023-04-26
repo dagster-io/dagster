@@ -55,7 +55,7 @@ class GraphExecutionResult:
         container: GraphDefinition,
         event_list: Sequence[DagsterEvent],
         reconstruct_context: ReconstructContextFn,
-        pipeline_def: JobDefinition,
+        job_def: JobDefinition,
         handle: Optional[NodeHandle] = None,
         output_capture: Optional[Dict[StepOutputHandle, object]] = None,
     ):
@@ -65,7 +65,7 @@ class GraphExecutionResult:
             reconstruct_context,
             "reconstruct_context",
         )
-        self.pipeline_def = check.inst_param(pipeline_def, "pipeline_def", JobDefinition)
+        self.job_def = check.inst_param(job_def, "job_def", JobDefinition)
         self.handle = check.opt_inst_param(handle, "handle", NodeHandle)
         self.output_capture = check.opt_dict_param(
             output_capture, "output_capture", key_type=StepOutputHandle
@@ -155,7 +155,7 @@ class GraphExecutionResult:
                 events,
                 events_by_kind,
                 self.reconstruct_context,
-                self.pipeline_def,
+                self.job_def,
                 handle=handle.with_ancestor(self.handle),
                 output_capture=self.output_capture,
             )
@@ -170,7 +170,7 @@ class GraphExecutionResult:
                 node,
                 events_by_kind,
                 self.reconstruct_context,
-                self.pipeline_def,
+                self.job_def,
                 output_capture=self.output_capture,
             )
         else:
@@ -209,20 +209,20 @@ class PipelineExecutionResult(GraphExecutionResult):
 
     def __init__(
         self,
-        pipeline_def: JobDefinition,
+        job_def: JobDefinition,
         run_id: str,
         event_list: Sequence[DagsterEvent],
         reconstruct_context: ReconstructContextFn,
         output_capture: Optional[Dict[StepOutputHandle, object]] = None,
     ):
         self.run_id = check.str_param(run_id, "run_id")
-        check.inst_param(pipeline_def, "pipeline_def", JobDefinition)
+        check.inst_param(job_def, "job_def", JobDefinition)
 
         super(PipelineExecutionResult, self).__init__(
-            container=pipeline_def.graph,
+            container=job_def.graph,
             event_list=event_list,
             reconstruct_context=reconstruct_context,
-            pipeline_def=pipeline_def,
+            job_def=job_def,
             output_capture=output_capture,
         )
 
@@ -239,7 +239,7 @@ class CompositeSolidExecutionResult(GraphExecutionResult):
         event_list: Sequence[DagsterEvent],
         step_events_by_kind: Mapping[StepKind, Sequence[DagsterEvent]],
         reconstruct_context: ReconstructContextFn,
-        pipeline_def: JobDefinition,
+        job_def: JobDefinition,
         handle: Optional[NodeHandle] = None,
         output_capture: Optional[Dict[StepOutputHandle, object]] = None,
     ):
@@ -255,7 +255,7 @@ class CompositeSolidExecutionResult(GraphExecutionResult):
             container=node.definition,
             event_list=event_list,
             reconstruct_context=reconstruct_context,
-            pipeline_def=pipeline_def,
+            job_def=job_def,
             handle=handle,
             output_capture=output_capture,
         )
@@ -336,7 +336,7 @@ class OpExecutionResult:
         node: OpNode,
         step_events_by_kind: Mapping[StepKind, Sequence[DagsterEvent]],
         reconstruct_context: ReconstructContextFn,
-        pipeline_def: JobDefinition,
+        job_def: JobDefinition,
         output_capture: Optional[Dict[StepOutputHandle, object]] = None,
     ):
         check.inst_param(node, "node", OpNode)
@@ -349,7 +349,7 @@ class OpExecutionResult:
             "reconstruct_context",
         )
         self.output_capture = check.opt_dict_param(output_capture, "output_capture")
-        self.pipeline_def = check.inst_param(pipeline_def, "pipeline_def", JobDefinition)
+        self.job_def = check.inst_param(job_def, "job_def", JobDefinition)
 
     @property
     def compute_input_event_dict(self) -> Mapping[str, DagsterEvent]:
@@ -602,7 +602,7 @@ class OpExecutionResult:
         if self.output_capture and step_output_handle in self.output_capture:
             return self.output_capture[step_output_handle]
         manager = context.get_io_manager(step_output_handle)
-        manager_key = context.execution_plan.get_manager_key(step_output_handle, self.pipeline_def)
+        manager_key = context.execution_plan.get_manager_key(step_output_handle, self.job_def)
         res = manager.load_input(
             context.for_input_manager(
                 name=None,  # type: ignore

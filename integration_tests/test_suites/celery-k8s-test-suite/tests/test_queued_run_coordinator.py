@@ -48,7 +48,7 @@ def test_execute_queued_run_on_celery_k8s(
     )
 
     run_id = launch_run_over_graphql(
-        dagit_url_for_daemon, run_config=run_config, pipeline_name="demo_job_celery_k8s"
+        dagit_url_for_daemon, run_config=run_config, job_name="demo_job_celery_k8s"
     )
 
     wait_for_job_and_get_raw_logs(

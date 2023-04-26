@@ -27,12 +27,12 @@ def test_successful_expectation_in_compute_step():
     def success_expectation_op(_context):
         yield ExpectationResult(success=True, description="This is always true.")
 
-    pipeline_def = GraphDefinition(
+    job_def = GraphDefinition(
         name="success_expectation_in_compute_pipeline",
         node_defs=[success_expectation_op],
     ).to_job()
 
-    result = pipeline_def.execute_in_process()
+    result = job_def.execute_in_process()
 
     assert result
     assert result.success
@@ -50,12 +50,12 @@ def test_failed_expectation_in_compute_step():
     def failure_expectation_op(_context):
         yield ExpectationResult(success=False, description="This is always false.")
 
-    pipeline_def = GraphDefinition(
+    job_def = GraphDefinition(
         name="failure_expectation_in_compute_pipeline",
         node_defs=[failure_expectation_op],
     ).to_job()
 
-    result = pipeline_def.execute_in_process()
+    result = job_def.execute_in_process()
 
     assert result
     assert result.success
@@ -72,7 +72,7 @@ def test_return_expectation_failure():
     def return_expectation_failure(_context):
         return ExpectationResult(success=True, description="This is always true.")
 
-    pipeline_def = GraphDefinition(
+    job_def = GraphDefinition(
         name="success_expectation_in_compute_pipeline",
         node_defs=[return_expectation_failure],
     ).to_job()
@@ -84,4 +84,4 @@ def test_return_expectation_failure():
             " yield them directly"
         ),
     ):
-        pipeline_def.execute_in_process()
+        job_def.execute_in_process()

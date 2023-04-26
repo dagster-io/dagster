@@ -76,9 +76,7 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
     applyingEmptyDefault,
   } = useAssetGraphData(props.explorerPath.opsQuery, props.fetchOptions);
 
-  const {liveDataByNode, liveDataRefreshState, runWatchers} = useLiveDataForAssetKeys(
-    graphAssetKeys,
-  );
+  const {liveDataByNode, liveDataRefreshState} = useLiveDataForAssetKeys(graphAssetKeys);
 
   return (
     <Loading allowStaleData queryResult={fetchResult}>
@@ -99,19 +97,16 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
           );
         }
         return (
-          <>
-            <AssetGraphExplorerWithData
-              key={props.explorerPath.pipelineName}
-              assetGraphData={assetGraphData}
-              allAssetKeys={allAssetKeys}
-              graphQueryItems={graphQueryItems}
-              applyingEmptyDefault={applyingEmptyDefault}
-              liveDataRefreshState={liveDataRefreshState}
-              liveDataByNode={liveDataByNode}
-              {...props}
-            />
-            {runWatchers}
-          </>
+          <AssetGraphExplorerWithData
+            key={props.explorerPath.pipelineName}
+            assetGraphData={assetGraphData}
+            allAssetKeys={allAssetKeys}
+            graphQueryItems={graphQueryItems}
+            applyingEmptyDefault={applyingEmptyDefault}
+            liveDataRefreshState={liveDataRefreshState}
+            liveDataByNode={liveDataByNode}
+            {...props}
+          />
         );
       }}
     </Loading>

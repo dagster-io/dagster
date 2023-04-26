@@ -6,7 +6,7 @@ from pydantic import Field
 from dagster_airbyte.types import AirbyteOutput
 from dagster_airbyte.utils import _get_attempt, generate_materializations
 
-from .resources import DEFAULT_POLL_INTERVAL_SECONDS, AirbyteResource
+from .resources import DEFAULT_POLL_INTERVAL_SECONDS, BaseAirbyteResource
 
 
 class AirbyteSyncConfig(Config):
@@ -62,7 +62,9 @@ class AirbyteSyncConfig(Config):
     ),
     tags={"kind": "airbyte"},
 )
-def airbyte_sync_op(context, config: AirbyteSyncConfig, airbyte: AirbyteResource) -> Iterable[Any]:
+def airbyte_sync_op(
+    context, config: AirbyteSyncConfig, airbyte: BaseAirbyteResource
+) -> Iterable[Any]:
     """Executes a Airbyte job sync for a given ``connection_id``, and polls until that sync
     completes, raising an error if it is unsuccessful. It outputs a AirbyteOutput which contains
     the job details for a given ``connection_id``.

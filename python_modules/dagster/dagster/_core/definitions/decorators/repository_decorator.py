@@ -100,7 +100,7 @@ class _Repository:
             Callable[[], RepositoryDictSpec],
         ],
     ) -> Union[RepositoryDefinition, PendingRepositoryDefinition]:
-        from dagster._core.definitions import AssetGroup, AssetsDefinition, SourceAsset
+        from dagster._core.definitions import AssetsDefinition, SourceAsset
         from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 
         check.callable_param(fn, "fn")
@@ -126,7 +126,6 @@ class _Repository:
                         UnresolvedPartitionedAssetScheduleDefinition,
                         SensorDefinition,
                         GraphDefinition,
-                        AssetGroup,
                         AssetsDefinition,
                         SourceAsset,
                         UnresolvedAssetJobDefinition,

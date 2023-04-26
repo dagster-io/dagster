@@ -3,7 +3,7 @@
 import os
 import sys
 from contextlib import contextmanager
-from typing import Generator, Iterator, Optional, Sequence, Tuple, Union
+from typing import Any, Generator, Iterator, Optional, Sequence, Tuple, Union
 
 import pendulum
 
@@ -17,7 +17,7 @@ from dagster._core.definitions.partition import (
     PartitionedConfig,
     PartitionsDefinition,
 )
-from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.definitions.sensor_definition import SensorEvaluationContext
 from dagster._core.errors import (
@@ -30,15 +30,15 @@ from dagster._core.errors import (
 )
 from dagster._core.events import DagsterEvent, EngineEventData
 from dagster._core.execution.api import create_execution_plan, execute_run_iterator
-from dagster._core.host_representation import external_pipeline_data_from_def
+from dagster._core.host_representation import external_job_data_from_def
 from dagster._core.host_representation.external_data import (
+    ExternalJobSubsetResult,
     ExternalPartitionConfigData,
     ExternalPartitionExecutionErrorData,
     ExternalPartitionExecutionParamData,
     ExternalPartitionNamesData,
     ExternalPartitionSetExecutionParamData,
     ExternalPartitionTagsData,
-    ExternalPipelineSubsetResult,
     ExternalScheduleExecutionErrorData,
     ExternalSensorExecutionErrorData,
     job_name_for_external_partition_set_name,
@@ -58,7 +58,7 @@ from dagster._utils import start_termination_thread
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.interrupts import capture_interrupts
 
-from .types import ExecuteExternalPipelineArgs
+from .types import ExecuteExternalJobArgs
 
 
 class RunInSubprocessComplete:
@@ -73,27 +73,27 @@ def _report_run_failed_if_not_finished(
     instance: DagsterInstance, pipeline_run_id: str
 ) -> Generator[DagsterEvent, None, None]:
     check.inst_param(instance, "instance", DagsterInstance)
-    pipeline_run = instance.get_run_by_id(pipeline_run_id)
-    if pipeline_run and (not pipeline_run.is_finished):
-        yield instance.report_run_failed(pipeline_run)
+    dagster_run = instance.get_run_by_id(pipeline_run_id)
+    if dagster_run and (not dagster_run.is_finished):
+        yield instance.report_run_failed(dagster_run)
 
 
 def core_execute_run(
-    recon_pipeline: ReconstructablePipeline,
-    pipeline_run: DagsterRun,
+    recon_job: ReconstructableJob,
+    dagster_run: DagsterRun,
     instance: DagsterInstance,
     inject_env_vars: bool,
     resume_from_failure: bool = False,
 ) -> Generator[DagsterEvent, None, None]:
-    check.inst_param(recon_pipeline, "recon_pipeline", ReconstructablePipeline)
-    check.inst_param(pipeline_run, "pipeline_run", DagsterRun)
+    check.inst_param(recon_job, "recon_job", ReconstructableJob)
+    check.inst_param(dagster_run, "pipeline_run", DagsterRun)
     check.inst_param(instance, "instance", DagsterInstance)
 
     if inject_env_vars:
         try:
             location_name = (
-                pipeline_run.external_pipeline_origin.location_name
-                if pipeline_run.external_pipeline_origin
+                dagster_run.external_job_origin.location_name
+                if dagster_run.external_job_origin
                 else None
             )
 
@@ -101,47 +101,47 @@ def core_execute_run(
         except Exception:
             yield instance.report_engine_event(
                 "Error while loading environment variables.",
-                pipeline_run,
+                dagster_run,
                 EngineEventData.engine_error(serializable_error_info_from_exc_info(sys.exc_info())),
             )
-            yield from _report_run_failed_if_not_finished(instance, pipeline_run.run_id)
+            yield from _report_run_failed_if_not_finished(instance, dagster_run.run_id)
             raise
 
     # try to load the pipeline definition early
     try:
         # add in cached metadata to load repository more efficiently
-        if pipeline_run.has_repository_load_data:
+        if dagster_run.has_repository_load_data:
             execution_plan_snapshot = instance.get_execution_plan_snapshot(
-                check.not_none(pipeline_run.execution_plan_snapshot_id)
+                check.not_none(dagster_run.execution_plan_snapshot_id)
             )
-            recon_pipeline = recon_pipeline.with_repository_load_data(
+            recon_job = recon_job.with_repository_load_data(
                 execution_plan_snapshot.repository_load_data,
             )
-        recon_pipeline.get_definition()
+        recon_job.get_definition()
     except Exception:
         yield instance.report_engine_event(
             "Could not load pipeline definition.",
-            pipeline_run,
+            dagster_run,
             EngineEventData.engine_error(serializable_error_info_from_exc_info(sys.exc_info())),
         )
-        yield from _report_run_failed_if_not_finished(instance, pipeline_run.run_id)
+        yield from _report_run_failed_if_not_finished(instance, dagster_run.run_id)
         raise
 
     # Reload the run to verify that its status didn't change while the pipeline was loaded
-    pipeline_run = check.not_none(
-        instance.get_run_by_id(pipeline_run.run_id),
-        f"Pipeline run with id '{pipeline_run.run_id}' was deleted after the run worker started.",
+    dagster_run = check.not_none(
+        instance.get_run_by_id(dagster_run.run_id),
+        f"Pipeline run with id '{dagster_run.run_id}' was deleted after the run worker started.",
     )
 
     try:
         yield from execute_run_iterator(
-            recon_pipeline, pipeline_run, instance, resume_from_failure=resume_from_failure
+            recon_job, dagster_run, instance, resume_from_failure=resume_from_failure
         )
     except (KeyboardInterrupt, DagsterExecutionInterruptedError):
-        yield from _report_run_failed_if_not_finished(instance, pipeline_run.run_id)
+        yield from _report_run_failed_if_not_finished(instance, dagster_run.run_id)
         yield instance.report_engine_event(
             message="Run execution terminated by interrupt",
-            pipeline_run=pipeline_run,
+            dagster_run=dagster_run,
         )
         raise
     except Exception:
@@ -150,10 +150,10 @@ def core_execute_run(
                 "An exception was thrown during execution that is likely a framework error, "
                 "rather than an error in user code."
             ),
-            pipeline_run,
+            dagster_run,
             EngineEventData.engine_error(serializable_error_info_from_exc_info(sys.exc_info())),
         )
-        yield from _report_run_failed_if_not_finished(instance, pipeline_run.run_id)
+        yield from _report_run_failed_if_not_finished(instance, dagster_run.run_id)
         raise
 
 
@@ -171,17 +171,15 @@ def _instance_from_ref_for_dynamic_partitions(
 
 
 def _run_in_subprocess(
-    serialized_execute_run_args,
-    recon_pipeline,
-    termination_event,
+    serialized_execute_run_args: str,
+    recon_pipeline: ReconstructableJob,
+    termination_event: Any,
     subprocess_status_handler,
     run_event_handler,
-):
+) -> None:
     start_termination_thread(termination_event)
     try:
-        execute_run_args = deserialize_value(
-            serialized_execute_run_args, ExecuteExternalPipelineArgs
-        )
+        execute_run_args = deserialize_value(serialized_execute_run_args, ExecuteExternalJobArgs)
 
         with (
             DagsterInstance.from_ref(execute_run_args.instance_ref)
@@ -189,15 +187,15 @@ def _run_in_subprocess(
             else nullcontext()
         ) as instance:
             instance = check.not_none(instance)  # noqa: PLW2901
-            pipeline_run = instance.get_run_by_id(execute_run_args.pipeline_run_id)
+            dagster_run = instance.get_run_by_id(execute_run_args.run_id)
 
-            if not pipeline_run:
+            if not dagster_run:
                 raise DagsterRunNotFoundError(
                     "gRPC server could not load run {run_id} in order to execute it. Make sure that"
                     " the gRPC server has access to your run storage.".format(
-                        run_id=execute_run_args.pipeline_run_id
+                        run_id=execute_run_args.run_id
                     ),
-                    invalid_run_id=execute_run_args.pipeline_run_id,
+                    invalid_run_id=execute_run_args.run_id,
                 )
 
             pid = os.getpid()
@@ -219,7 +217,7 @@ def _run_in_subprocess(
     run_event_handler(
         instance.report_engine_event(
             f"Started process for run (pid: {pid}).",
-            pipeline_run,
+            dagster_run,
             EngineEventData.in_process(pid),
         )
     )
@@ -228,9 +226,7 @@ def _run_in_subprocess(
     # https://amir.rachum.com/blog/2017/03/03/generator-cleanup/
     closed = False
     try:
-        for event in core_execute_run(
-            recon_pipeline, pipeline_run, instance, inject_env_vars=False
-        ):
+        for event in core_execute_run(recon_pipeline, dagster_run, instance, inject_env_vars=False):
             run_event_handler(event)
     except GeneratorExit:
         closed = True
@@ -243,7 +239,7 @@ def _run_in_subprocess(
             run_event_handler(
                 instance.report_engine_event(
                     f"Process for run exited (pid: {pid}).",
-                    pipeline_run,
+                    dagster_run,
                 )
             )
         subprocess_status_handler(RunInSubprocessComplete())
@@ -275,12 +271,10 @@ def get_external_pipeline_subset_result(
             op_selection=solid_selection,
             asset_selection=frozenset(asset_selection) if asset_selection else None,
         )
-        external_pipeline_data = external_pipeline_data_from_def(definition)
-        return ExternalPipelineSubsetResult(
-            success=True, external_pipeline_data=external_pipeline_data
-        )
+        external_job_data = external_job_data_from_def(definition)
+        return ExternalJobSubsetResult(success=True, external_job_data=external_job_data)
     except Exception:
-        return ExternalPipelineSubsetResult(
+        return ExternalJobSubsetResult(
             success=False, error=serializable_error_info_from_exc_info(sys.exc_info())
         )
 
@@ -421,9 +415,10 @@ def get_partition_config(
                 PartitionExecutionError,
                 lambda: f"Error occurred during the evaluation of the `run_config_for_partition` function for partition set {partition_set_name}",
             ):
-                run_config = partitioned_config.get_run_config_for_partition_key(
+                partitions_def.validate_partition_key(
                     partition_key, dynamic_partitions_store=instance
                 )
+                run_config = partitioned_config.get_run_config_for_partition_key(partition_key)
                 return ExternalPartitionConfigData(name=partition_key, run_config=run_config)
     except Exception:
         return ExternalPartitionExecutionErrorData(
@@ -474,8 +469,11 @@ def get_partition_tags(
                 PartitionExecutionError,
                 lambda: f"Error occurred during the evaluation of the `tags_for_partition` function for partitioned config on job '{job_def.name}'",
             ):
+                partitions_def.validate_partition_key(
+                    partition_name, dynamic_partitions_store=instance
+                )
                 tags = partitioned_config.get_tags_for_partition_key(
-                    partition_name, job_name=job_def.name, dynamic_partitions_store=instance
+                    partition_name, job_name=job_def.name
                 )
                 return ExternalPartitionTagsData(name=partition_name, tags=tags)
 
@@ -506,7 +504,7 @@ def get_external_execution_plan_snapshot(
                 instance_ref=args.instance_ref,
                 repository_load_data=repo_def.repository_load_data,
             ),
-            args.pipeline_snapshot_id,
+            args.job_snapshot_id,
         )
     except:
         return ExecutionPlanSnapshotErrorData(
@@ -532,32 +530,26 @@ def get_partition_set_execution_param_data(
                 PartitionExecutionError,
                 lambda: f"Error occurred during the partition generation for partitioned config on job '{job_def.name}'",
             ):
-                all_partitions = partitions_def.get_partitions(dynamic_partitions_store=instance)
-                partitions = [
-                    partition for partition in all_partitions if partition.name in partition_names
-                ]
+                all_partition_keys = partitions_def.get_partition_keys(
+                    dynamic_partitions_store=instance
+                )
+                partition_keys = [key for key in all_partition_keys if key in partition_names]
 
             partition_data = []
-            for partition in partitions:
+            for key in partition_keys:
 
                 def _error_message_fn(partition_name: str):
                     return (
                         lambda: f"Error occurred during the partition config and tag generation for '{partition_name}' in partitioned config on job '{job_def.name}'"
                     )
 
-                with user_code_error_boundary(
-                    PartitionExecutionError, _error_message_fn(partition.name)
-                ):
-                    run_config = partitioned_config.get_run_config_for_partition_key(
-                        partition.name, instance
-                    )
-                    tags = partitioned_config.get_tags_for_partition_key(
-                        partition.name, instance, job_name=job_def.name
-                    )
+                with user_code_error_boundary(PartitionExecutionError, _error_message_fn(key)):
+                    run_config = partitioned_config.get_run_config_for_partition_key(key)
+                    tags = partitioned_config.get_tags_for_partition_key(key, job_name=job_def.name)
 
                 partition_data.append(
                     ExternalPartitionExecutionParamData(
-                        name=partition.name,
+                        name=key,
                         tags=tags,
                         run_config=run_config,
                     )

@@ -5,13 +5,13 @@ import pytest
 from dagster._check import CheckError
 from dagster._core.code_pointer import ModuleCodePointer
 from dagster._core.host_representation.origin import (
-    ExternalPipelineOrigin,
+    ExternalJobOrigin,
     ExternalRepositoryOrigin,
     InProcessCodeLocationOrigin,
 )
 from dagster._core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
-    PipelinePythonOrigin,
+    JobPythonOrigin,
     RepositoryPythonOrigin,
 )
 from dagster._core.storage.pipeline_run import (
@@ -27,7 +27,7 @@ from dagster._serdes import deserialize_value, serialize_value
 
 def test_queued_pipeline_origin_check():
     code_pointer = ModuleCodePointer("fake", "fake", working_directory=None)
-    fake_pipeline_origin = ExternalPipelineOrigin(
+    fake_job_origin = ExternalJobOrigin(
         ExternalRepositoryOrigin(
             InProcessCodeLocationOrigin(
                 LoadableTargetOrigin(
@@ -40,8 +40,8 @@ def test_queued_pipeline_origin_check():
         "foo",
     )
 
-    fake_code_origin = PipelinePythonOrigin(
-        pipeline_name="foo",
+    fake_code_origin = JobPythonOrigin(
+        job_name="foo",
         repository_origin=RepositoryPythonOrigin(
             sys.executable,
             code_pointer,
@@ -50,17 +50,17 @@ def test_queued_pipeline_origin_check():
     )
 
     DagsterRun(
-        pipeline_name="foo",
+        job_name="foo",
         status=DagsterRunStatus.QUEUED,
-        external_pipeline_origin=fake_pipeline_origin,
-        pipeline_code_origin=fake_code_origin,
+        external_job_origin=fake_job_origin,
+        job_code_origin=fake_code_origin,
     )
 
     with pytest.raises(check.CheckError):
-        DagsterRun(pipeline_name="foo", status=DagsterRunStatus.QUEUED)
+        DagsterRun(job_name="foo", status=DagsterRunStatus.QUEUED)
 
     with pytest.raises(check.CheckError):
-        DagsterRun(pipeline_name="foo").with_status(DagsterRunStatus.QUEUED)
+        DagsterRun(job_name="foo").with_status(DagsterRunStatus.QUEUED)
 
 
 def test_in_progress_statuses():

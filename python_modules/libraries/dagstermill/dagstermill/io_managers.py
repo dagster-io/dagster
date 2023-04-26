@@ -93,7 +93,7 @@ class ConfigurableLocalOutputNotebookIOManager(ConfigurableIOManagerFactory):
         ),
     )
     asset_key_prefix: List[str] = Field(
-        [],
+        default=[],
         description=(
             "Asset key prefix to apply to assets materialized for output notebooks. Defaults to no"
             " prefix."

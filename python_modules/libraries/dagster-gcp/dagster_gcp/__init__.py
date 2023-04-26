@@ -12,7 +12,10 @@ from .bigquery.ops import (
     import_file_to_bq as import_file_to_bq,
     import_gcs_paths_to_bq as import_gcs_paths_to_bq,
 )
-from .bigquery.resources import bigquery_resource as bigquery_resource
+from .bigquery.resources import (
+    BigQueryResource as BigQueryResource,
+    bigquery_resource as bigquery_resource,
+)
 from .bigquery.types import BigQueryError as BigQueryError
 from .dataproc.ops import dataproc_op as dataproc_op
 from .dataproc.resources import dataproc_resource as dataproc_resource

@@ -77,6 +77,7 @@ from dagster import (
     usable_as_dagster_type,
 )
 from dagster._core.definitions.decorators.sensor_decorator import sensor
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import Failure
 from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
@@ -93,7 +94,6 @@ from dagster._core.storage.tags import RESUME_RETRY_TAG
 from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
 from dagster._core.workspace.load_target import PythonFileTarget
 from dagster._legacy import (
-    AssetGroup,
     build_assets_job,
 )
 from dagster._seven import get_system_temp_directory
@@ -1331,13 +1331,14 @@ def downstream_asset(hanging_graph):
     return 1
 
 
-hanging_graph_asset_job = AssetGroup(
-    [hanging_graph_asset, downstream_asset],
+hanging_graph_asset_job = build_assets_job(
+    name="hanging_graph_asset_job",
+    assets=[hanging_graph_asset, downstream_asset],
     resource_defs={
         "hanging_asset_resource": hanging_asset_resource,
         "io_manager": IOManagerDefinition.hardcoded_io_manager(DummyIOManager()),
     },
-).build_job("hanging_graph_asset_job")
+)
 
 
 @asset
@@ -1595,35 +1596,35 @@ failure_assets_job = build_assets_job(
 
 
 @asset
-def foo(context):
-    assert context.pipeline_def.asset_selection_data is not None
+def foo(context: OpExecutionContext):
+    assert context.job_def.asset_selection_data is not None
     return 5
 
 
 @asset
-def bar(context):
-    assert context.pipeline_def.asset_selection_data is not None
+def bar(context: OpExecutionContext):
+    assert context.job_def.asset_selection_data is not None
     return 10
 
 
 @asset
-def foo_bar(context, foo, bar):
-    assert context.pipeline_def.asset_selection_data is not None
+def foo_bar(context: OpExecutionContext, foo, bar):
+    assert context.job_def.asset_selection_data is not None
     return foo + bar
 
 
 @asset
-def baz(context, foo_bar):
-    assert context.pipeline_def.asset_selection_data is not None
+def baz(context: OpExecutionContext, foo_bar):
+    assert context.job_def.asset_selection_data is not None
     return foo_bar
 
 
 @asset
-def unconnected(context):
-    assert context.pipeline_def.asset_selection_data is not None
+def unconnected(context: OpExecutionContext):
+    assert context.job_def.asset_selection_data is not None
 
 
-asset_group_job = AssetGroup([foo, bar, foo_bar, baz, unconnected]).build_job("foo_job")
+foo_job = build_assets_job("foo_job", [foo, bar, foo_bar, baz, unconnected])
 
 
 @asset(group_name="group_1")
@@ -1745,17 +1746,16 @@ def dynamic_in_multipartitions_fail(context, dynamic_in_multipartitions_success)
     raise Exception("oops")
 
 
-# For now the only way to add assets to repositories is via AssetGroup
-# When AssetGroup is removed, these assets should be added directly to repository_with_named_groups
-named_groups_job = AssetGroup(
+named_groups_job = build_assets_job(
+    "named_groups_job",
     [
         grouped_asset_1,
         grouped_asset_2,
         ungrouped_asset_3,
         grouped_asset_4,
         ungrouped_asset_5,
-    ]
-).build_job("named_groups_job")
+    ],
+)
 
 
 @repository
@@ -1822,7 +1822,7 @@ def define_jobs():
         hanging_partition_asset_job,
         observation_job,
         failure_assets_job,
-        asset_group_job,
+        foo_job,
         hanging_graph_asset_job,
         named_groups_job,
         memoization_job,
@@ -1884,6 +1884,9 @@ def define_asset_jobs():
 @repository
 def test_repo():
     return [*define_jobs(), *define_schedules(), *define_sensors(), *define_asset_jobs()]
+
+
+defs = Definitions()
 
 
 @repository

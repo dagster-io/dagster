@@ -203,7 +203,7 @@ def test_execution_plan_snapshot_backcompat():
                 _validate_execution_plan(new_plan)
 
                 # Create a snapshot and rebuild it, validate the rebuilt plan
-                new_plan_snapshot = snapshot_from_execution_plan(new_plan, run.pipeline_snapshot_id)
+                new_plan_snapshot = snapshot_from_execution_plan(new_plan, run.job_snapshot_id)
                 rebuilt_plan = ExecutionPlan.rebuild_from_snapshot("dynamic_job", new_plan_snapshot)
                 _validate_execution_plan(rebuilt_plan)
 
@@ -232,8 +232,8 @@ if __name__ == "__main__":
     with DagsterInstance.get() as gen_instance:
         empty_runs = gen_instance.get_runs()
         assert len(empty_runs) == 0
-        gen_instance.create_run_for_pipeline(
-            pipeline_def=get_dynamic_job(),
+        gen_instance.create_run_for_job(
+            job_def=get_dynamic_job(),
             run_config={"ops": {"emit": {"inputs": {"range_input": 5}}}},
         )
 

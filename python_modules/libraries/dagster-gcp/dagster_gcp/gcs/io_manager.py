@@ -1,94 +1,71 @@
 import pickle
-from typing import Union
+from typing import Any, Optional, Union
 
 from dagster import (
     Field,
     InputContext,
-    IOManager,
     OutputContext,
     StringSource,
     _check as check,
     io_manager,
 )
+from dagster._core.storage.upath_io_manager import UPathIOManager
 from dagster._utils import PICKLE_PROTOCOL
 from dagster._utils.backoff import backoff
 from google.api_core.exceptions import Forbidden, ServiceUnavailable, TooManyRequests
 from google.cloud import storage
+from upath import UPath
 
 DEFAULT_LEASE_DURATION = 60  # One minute
 
 
-class PickledObjectGCSIOManager(IOManager):
-    def __init__(self, bucket, client=None, prefix="dagster"):
+class PickledObjectGCSIOManager(UPathIOManager):
+    def __init__(self, bucket: str, client: Optional[Any] = None, prefix: str = "dagster"):
         self.bucket = check.str_param(bucket, "bucket")
         self.client = client or storage.Client()
         self.bucket_obj = self.client.bucket(bucket)
         check.invariant(self.bucket_obj.exists())
         self.prefix = check.str_param(prefix, "prefix")
+        super().__init__(base_path=UPath(self.prefix))
 
-    def _get_path(self, context: Union[InputContext, OutputContext]) -> str:
-        if context.has_asset_key:
-            path = context.get_asset_identifier()
-        else:
-            parts = context.get_identifier()
-            run_id = parts[0]
-            output_parts = parts[1:]
-
-            path = ["storage", run_id, "files", *output_parts]
-
-        return "/".join([self.prefix, *path])
-
-    def _rm_object(self, key):
-        check.str_param(key, "key")
-        check.param_invariant(len(key) > 0, "key")
-
+    def unlink(self, path: UPath) -> None:
+        key = str(path)
         if self.bucket_obj.blob(key).exists():
             self.bucket_obj.blob(key).delete()
 
-    def _has_object(self, key):
-        check.str_param(key, "key")
-        check.param_invariant(len(key) > 0, "key")
+    def path_exists(self, path: UPath) -> bool:
+        key = str(path)
         blobs = self.client.list_blobs(self.bucket, prefix=key)
         return len(list(blobs)) > 0
 
-    def _uri_for_key(self, key):
-        check.str_param(key, "key")
-        return "gs://" + self.bucket + "/" + f"{key}"
+    def get_op_output_relative_path(self, context: Union[InputContext, OutputContext]) -> UPath:
+        parts = context.get_identifier()
+        run_id = parts[0]
+        output_parts = parts[1:]
+        return UPath("storage", run_id, "files", *output_parts)
 
-    def load_input(self, context):
-        if context.dagster_type.typing_type == type(None):
-            return None
+    def get_loading_input_log_message(self, path: UPath) -> str:
+        return f"Loading GCS object from: {self._uri_for_path(path)}"
 
-        key = self._get_path(context)
-        context.log.debug(f"Loading GCS object from: {self._uri_for_key(key)}")
+    def get_writing_output_log_message(self, path: UPath) -> str:
+        return f"Writing GCS object at: {self._uri_for_path(path)}"
 
-        bytes_obj = self.bucket_obj.blob(key).download_as_bytes()
-        obj = pickle.loads(bytes_obj)
+    def _uri_for_path(self, path: UPath) -> str:
+        return f"gs://{self.bucket}/{path}"
 
-        return obj
+    def load_from_path(self, context: InputContext, path: UPath) -> Any:
+        bytes_obj = self.bucket_obj.blob(str(path)).download_as_bytes()
+        return pickle.loads(bytes_obj)
 
-    def handle_output(self, context, obj):
-        if context.dagster_type.typing_type == type(None):
-            check.invariant(
-                obj is None,
-                (
-                    "Output had Nothing type or 'None' annotation, but handle_output received"
-                    f" value that was not None and was of type {type(obj)}."
-                ),
-            )
-            return None
-
-        key = self._get_path(context)
-        context.log.debug(f"Writing GCS object at: {self._uri_for_key(key)}")
-
-        if self._has_object(key):
-            context.log.warning(f"Removing existing GCS key: {key}")
-            self._rm_object(key)
+    def dump_to_path(self, context: OutputContext, obj: Any, path: UPath) -> None:
+        if self.path_exists(path):
+            context.log.warning(f"Removing existing GCS key: {path}")
+            self.unlink(path)
 
         pickled_obj = pickle.dumps(obj, PICKLE_PROTOCOL)
 
         backoff(
-            self.bucket_obj.blob(key).upload_from_string,
+            self.bucket_obj.blob(str(path)).upload_from_string,
             args=[pickled_obj],
             retry_on=(TooManyRequests, Forbidden, ServiceUnavailable),
         )

@@ -352,13 +352,13 @@ class ActiveExecution:
         return sorted(steps, key=self._sort_key_fn)
 
     def plan_events_iterator(
-        self, pipeline_context: Union[PlanExecutionContext, PlanOrchestrationContext]
+        self, job_context: Union[PlanExecutionContext, PlanOrchestrationContext]
     ) -> Iterator[DagsterEvent]:
         """Process all steps that can be skipped and abandoned."""
         steps_to_skip = self.get_steps_to_skip()
         while steps_to_skip:
             for step in steps_to_skip:
-                step_context = pipeline_context.for_step(step)
+                step_context = job_context.for_step(step)
                 step_context.log.info(
                     f"Skipping step {step.key} due to skipped dependencies:"
                     f" {self._skipped_deps[step.key]}."
@@ -372,7 +372,7 @@ class ActiveExecution:
         steps_to_abandon = self.get_steps_to_abandon()
         while steps_to_abandon:
             for step in steps_to_abandon:
-                step_context = pipeline_context.for_step(step)
+                step_context = job_context.for_step(step)
                 failed_inputs: List[str] = []
                 for step_input in step.step_inputs:
                     failed_inputs.extend(self._failed.intersection(step_input.dependency_keys))
@@ -490,11 +490,11 @@ class ActiveExecution:
                     ],
                 ).append(dagster_event.step_output_data.step_output_handle.mapping_key)
 
-    def verify_complete(self, pipeline_context: IPlanContext, step_key: str) -> None:
+    def verify_complete(self, job_context: IPlanContext, step_key: str) -> None:
         """Ensure that a step has reached a terminal state, if it has not mark it as an unexpected failure.
         """
         if step_key in self._in_flight:
-            pipeline_context.log.error(
+            job_context.log.error(
                 "Step {key} finished without success or failure event. Downstream steps will not"
                 " execute.".format(key=step_key)
             )

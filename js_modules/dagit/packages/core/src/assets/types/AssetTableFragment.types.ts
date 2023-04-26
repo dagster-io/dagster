@@ -6,8 +6,10 @@ export type AssetTableDefinitionFragment = {
   __typename: 'AssetNode';
   id: string;
   groupName: string | null;
+  opNames: Array<string>;
   isSource: boolean;
   isObservable: boolean;
+  computeKind: string | null;
   hasMaterializePermission: boolean;
   description: string | null;
   partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
@@ -27,8 +29,10 @@ export type AssetTableFragment = {
     __typename: 'AssetNode';
     id: string;
     groupName: string | null;
+    opNames: Array<string>;
     isSource: boolean;
     isObservable: boolean;
+    computeKind: string | null;
     hasMaterializePermission: boolean;
     description: string | null;
     partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;

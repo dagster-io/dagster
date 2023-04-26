@@ -200,11 +200,11 @@ def migrate_run_repo_tags(run_storage: RunStorage, print_fn: Optional[PrintFn] =
 
 
 def write_repo_tag(conn: Connection, run: DagsterRun) -> None:
-    if not run.external_pipeline_origin:
+    if not run.external_job_origin:
         # nothing to do
         return
 
-    repository_label = run.external_pipeline_origin.external_repository_origin.get_label()
+    repository_label = run.external_job_origin.external_repository_origin.get_label()
     try:
         conn.execute(
             RunTagsTable.insert().values(

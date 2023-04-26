@@ -62,8 +62,11 @@ def test_daily_schedule():
     assert keys[0] == "2021-05-05"
     assert keys[1] == "2021-05-06"
 
-    partitions = my_partitioned_config.partitions_def.get_partitions()
-    assert partitions[0].value == time_window("2021-05-05", "2021-05-06")
+    partitions_def = my_partitioned_config.partitions_def
+    partition_keys = partitions_def.get_partition_keys()
+    assert partitions_def.time_window_for_partition_key(partition_keys[0]) == time_window(
+        "2021-05-05", "2021-05-06"
+    )
 
     assert my_partitioned_config.get_run_config_for_partition_key(keys[0]) == {
         "start": "2021-05-05T00:00:00+00:00",
@@ -100,8 +103,9 @@ def test_daily_schedule_with_offsets():
     assert keys[0] == "2021-05-05"
     assert keys[1] == "2021-05-06"
 
-    partitions = my_partitioned_config.partitions_def.get_partitions()
-    assert partitions[0].value == time_window("2021-05-05T02:15:00", "2021-05-06T02:15:00")
+    assert my_partitioned_config.partitions_def.time_window_for_partition_key(
+        keys[0]
+    ) == time_window("2021-05-05T02:15:00", "2021-05-06T02:15:00")
 
     assert my_partitioned_config.get_run_config_for_partition_key(keys[0]) == {
         "start": "2021-05-05T02:15:00+00:00",
@@ -137,8 +141,9 @@ def test_hourly_schedule():
     assert keys[0] == "2021-05-05-00:00"
     assert keys[1] == "2021-05-05-01:00"
 
-    partitions = my_partitioned_config.partitions_def.get_partitions()
-    assert partitions[0].value == time_window("2021-05-05T00:00:00", "2021-05-05T01:00:00")
+    assert my_partitioned_config.partitions_def.time_window_for_partition_key(
+        keys[0]
+    ) == time_window("2021-05-05T00:00:00", "2021-05-05T01:00:00")
 
     assert my_partitioned_config.get_run_config_for_partition_key(keys[0]) == {
         "start": "2021-05-05T00:00:00+00:00",
@@ -173,9 +178,9 @@ def test_hourly_schedule_with_offsets():
     keys = my_partitioned_config.get_partition_keys()
     assert keys[0] == "2021-05-05-00:20"
     assert keys[1] == "2021-05-05-01:20"
-
-    partitions = my_partitioned_config.partitions_def.get_partitions()
-    assert partitions[0].value == time_window("2021-05-05T00:20:00", "2021-05-05T01:20:00")
+    assert my_partitioned_config.partitions_def.time_window_for_partition_key(
+        keys[0]
+    ) == time_window("2021-05-05T00:20:00", "2021-05-05T01:20:00")
 
     assert my_partitioned_config.get_run_config_for_partition_key(keys[0]) == {
         "start": "2021-05-05T00:20:00+00:00",
@@ -207,9 +212,9 @@ def test_weekly_schedule():
     keys = my_partitioned_config.get_partition_keys()
     assert keys[0] == "2021-05-09"
     assert keys[1] == "2021-05-16"
-
-    partitions = my_partitioned_config.partitions_def.get_partitions()
-    assert partitions[0].value == time_window("2021-05-09", "2021-05-16")
+    assert my_partitioned_config.partitions_def.time_window_for_partition_key(
+        keys[0]
+    ) == time_window("2021-05-09", "2021-05-16")
 
     assert my_partitioned_config.get_run_config_for_partition_key(keys[0]) == {
         "start": "2021-05-09T00:00:00+00:00",
@@ -245,9 +250,9 @@ def test_weekly_schedule_with_offsets():
     keys = my_partitioned_config.get_partition_keys()
     assert keys[0] == "2021-05-05"
     assert keys[1] == "2021-05-12"
-
-    partitions = my_partitioned_config.partitions_def.get_partitions()
-    assert partitions[0].value == time_window("2021-05-05T13:10:00", "2021-05-12T13:10:00")
+    assert my_partitioned_config.partitions_def.time_window_for_partition_key(
+        keys[0]
+    ) == time_window("2021-05-05T13:10:00", "2021-05-12T13:10:00")
 
     assert my_partitioned_config.get_run_config_for_partition_key(keys[0]) == {
         "start": "2021-05-05T13:10:00+00:00",
@@ -281,9 +286,9 @@ def test_monthly_schedule():
     keys = my_partitioned_config.get_partition_keys()
     assert keys[0] == "2021-06-01"
     assert keys[1] == "2021-07-01"
-
-    partitions = my_partitioned_config.partitions_def.get_partitions()
-    assert partitions[0].value == time_window("2021-06-01", "2021-07-01")
+    assert my_partitioned_config.partitions_def.time_window_for_partition_key(
+        keys[0]
+    ) == time_window("2021-06-01", "2021-07-01")
 
     assert my_partitioned_config.get_run_config_for_partition_key(keys[0]) == {
         "start": "2021-06-01T00:00:00+00:00",
@@ -319,9 +324,9 @@ def test_monthly_schedule_with_offsets():
     keys = my_partitioned_config.get_partition_keys()
     assert keys[0] == "2021-05-12"
     assert keys[1] == "2021-06-12"
-
-    partitions = my_partitioned_config.partitions_def.get_partitions()
-    assert partitions[0].value == time_window("2021-05-12T16:15:00", "2021-06-12T16:15:00")
+    assert my_partitioned_config.partitions_def.time_window_for_partition_key(
+        keys[0]
+    ) == time_window("2021-05-12T16:15:00", "2021-06-12T16:15:00")
 
     assert my_partitioned_config.get_run_config_for_partition_key(keys[0]) == {
         "start": "2021-05-12T16:15:00+00:00",

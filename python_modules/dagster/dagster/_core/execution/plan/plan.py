@@ -19,8 +19,8 @@ from typing import (
 import dagster._check as check
 from dagster._core.definitions import (
     GraphDefinition,
+    IJob,
     InputDefinition,
-    IPipeline,
     Node,
     NodeHandle,
     NodeOutput,
@@ -30,7 +30,7 @@ from dagster._core.definitions.composition import MappedInputPlaceholder
 from dagster._core.definitions.dependency import DependencyStructure
 from dagster._core.definitions.executor_definition import ExecutorRequirement
 from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.repository_definition import RepositoryLoadData
 from dagster._core.errors import (
     DagsterExecutionStepNotFoundError,
@@ -100,7 +100,7 @@ class _PlanBuilder:
 
     def __init__(
         self,
-        pipeline: IPipeline,
+        job: IJob,
         resolved_run_config: ResolvedRunConfig,
         step_keys_to_execute: Optional[Sequence[str]],
         known_state: KnownExecutionState,
@@ -108,16 +108,16 @@ class _PlanBuilder:
         tags: Mapping[str, str],
         repository_load_data: Optional[RepositoryLoadData],
     ):
-        if isinstance(pipeline, ReconstructablePipeline) and repository_load_data is not None:
+        if isinstance(job, ReconstructableJob) and repository_load_data is not None:
             check.invariant(
-                pipeline.repository.repository_load_data == repository_load_data,
+                job.repository.repository_load_data == repository_load_data,
                 (
                     "When building an ExecutionPlan with explicit repository_load_data and a"
-                    " ReconstructablePipeline, the repository_load_data on the pipeline must be"
+                    " ReconstructableJob, the repository_load_data on the job must be"
                     " identical to passed-in repository_load_data."
                 ),
             )
-        self.pipeline = check.inst_param(pipeline, "pipeline", IPipeline)
+        self.job = check.inst_param(job, "job", IJob)
         self.resolved_run_config = check.inst_param(
             resolved_run_config, "resolved_run_config", ResolvedRunConfig
         )
@@ -136,8 +136,8 @@ class _PlanBuilder:
         )
 
     @property
-    def pipeline_name(self) -> str:
-        return self.pipeline.get_definition().name
+    def job_name(self) -> str:
+        return self.job.get_definition().name
 
     def add_step(self, step: IExecutionStep) -> None:
         # Keep track of the step keys we've seen so far to ensure we don't add duplicates
@@ -158,21 +158,21 @@ class _PlanBuilder:
     def build(self) -> "ExecutionPlan":
         """Builds the execution plan."""
         _check_persistent_storage_requirement(
-            self.pipeline,
+            self.job,
             self.resolved_run_config,
         )
 
-        pipeline_def = self.pipeline.get_definition()
+        job_def = self.job.get_definition()
         root_inputs: List[
             Union[StepInput, UnresolvedMappedStepInput, UnresolvedCollectStepInput]
         ] = []
         # Recursively build the execution plan starting at the root pipeline
-        for input_def in pipeline_def.graph.input_defs:
+        for input_def in job_def.graph.input_defs:
             input_name = input_def.name
 
             input_source = get_root_graph_input_source(
                 plan_builder=self,
-                pipeline_def=pipeline_def,
+                job_def=job_def,
                 input_name=input_name,
                 input_def=input_def,
             )
@@ -191,8 +191,8 @@ class _PlanBuilder:
             )
 
         self._build_from_sorted_nodes(
-            pipeline_def.nodes_in_topological_order,
-            pipeline_def.dependency_structure,
+            job_def.nodes_in_topological_order,
+            job_def.dependency_structure,
             parent_step_inputs=root_inputs,
         )
 
@@ -220,7 +220,7 @@ class _PlanBuilder:
                 step_dict,
                 step_dict_by_key,
                 step_handles_to_execute,
-                pipeline_def,
+                job_def,
                 self.resolved_run_config,
                 executable_map,
             ),
@@ -230,12 +230,12 @@ class _PlanBuilder:
 
         if self.step_keys_to_execute is not None:
             plan = plan.build_subset_plan(
-                self.step_keys_to_execute, pipeline_def, self.resolved_run_config
+                self.step_keys_to_execute, job_def, self.resolved_run_config
             )
 
         # Expects that if step_keys_to_execute was set, that the `plan` variable will have the
         # reflected step_keys_to_execute
-        if pipeline_def.is_using_memoization(self._tags) and len(step_output_versions) == 0:
+        if job_def.is_using_memoization(self._tags) and len(step_output_versions) == 0:
             if self._instance_ref is None:
                 raise DagsterInvariantViolationError(
                     "Attempted to build memoized execution plan without providing a persistent "
@@ -243,7 +243,7 @@ class _PlanBuilder:
                 )
             instance = DagsterInstance.from_ref(self._instance_ref)
             plan = plan.build_memoized_plan(
-                pipeline_def, self.resolved_run_config, instance, self.step_keys_to_execute
+                job_def, self.resolved_run_config, instance, self.step_keys_to_execute
             )
 
         return plan
@@ -255,7 +255,7 @@ class _PlanBuilder:
         parent_handle: Optional[NodeHandle] = None,
         parent_step_inputs: Optional[Sequence[StepInputUnion]] = None,
     ) -> None:
-        asset_layer = self.pipeline.get_definition().asset_layer
+        asset_layer = self.job.get_definition().asset_layer
         step_output_map: Dict[NodeOutput, Union[StepOutputHandle, UnresolvedStepOutputHandle]] = {}
         for node in nodes:
             handle = NodeHandle(node.name, parent_handle)
@@ -267,7 +267,7 @@ class _PlanBuilder:
             step_inputs: List[StepInputUnion] = []
             for input_name, input_def in node.definition.input_dict.items():
                 step_input_source = get_step_input_source(
-                    self.pipeline.get_definition(),
+                    self.job.get_definition(),
                     node,
                     input_name,
                     input_def,
@@ -331,7 +331,7 @@ class _PlanBuilder:
                 elif has_unresolved_input:
                     new_step = UnresolvedMappedExecutionStep(
                         handle=UnresolvedStepHandle(node_handle=handle),
-                        pipeline_name=self.pipeline_name,
+                        job_name=self.job_name,
                         step_inputs=cast(
                             List[Union[StepInput, UnresolvedMappedStepInput]], step_inputs
                         ),
@@ -341,7 +341,7 @@ class _PlanBuilder:
                 elif has_pending_input:
                     new_step = UnresolvedCollectExecutionStep(
                         handle=StepHandle(node_handle=handle),
-                        pipeline_name=self.pipeline_name,
+                        job_name=self.job_name,
                         step_inputs=cast(
                             List[Union[StepInput, UnresolvedCollectStepInput]], step_inputs
                         ),
@@ -351,7 +351,7 @@ class _PlanBuilder:
                 else:
                     new_step = ExecutionStep(
                         handle=StepHandle(node_handle=handle),
-                        pipeline_name=self.pipeline_name,
+                        job_name=self.job_name,
                         step_inputs=cast(List[StepInput], step_inputs),
                         step_outputs=step_outputs,
                         tags=node.tags,
@@ -409,9 +409,9 @@ def get_root_graph_input_source(
     plan_builder: _PlanBuilder,
     input_name: str,
     input_def: InputDefinition,
-    pipeline_def: JobDefinition,
+    job_def: JobDefinition,
 ) -> Optional[Union[FromConfig, FromDirectInputValue]]:
-    input_values = pipeline_def.input_values
+    input_values = job_def.input_values
     if input_values and input_name in input_values:
         return FromDirectInputValue(input_name=input_name)
 
@@ -429,7 +429,7 @@ def get_root_graph_input_source(
             "In top-level graph of {described_target}, input {input_name} "
             "must get a value from the inputs section of its configuration."
         ).format(
-            described_target=plan_builder.pipeline.get_definition().describe_target(),
+            described_target=plan_builder.job.get_definition().describe_target(),
             input_name=input_name,
         )
     )
@@ -665,9 +665,9 @@ class ExecutionPlan(
     def get_manager_key(
         self,
         step_output_handle: StepOutputHandle,
-        pipeline_def: JobDefinition,
+        job_def: JobDefinition,
     ) -> str:
-        return _get_manager_key(self.step_dict_by_key, step_output_handle, pipeline_def)
+        return _get_manager_key(self.step_dict_by_key, step_output_handle, job_def)
 
     def has_step(self, handle: StepHandleUnion) -> bool:
         check.inst_param(handle, "handle", StepHandleTypes)
@@ -744,7 +744,7 @@ class ExecutionPlan(
     def build_subset_plan(
         self,
         step_keys_to_execute: Sequence[str],
-        pipeline_def: JobDefinition,
+        job_def: JobDefinition,
         resolved_run_config: ResolvedRunConfig,
         step_output_versions: Optional[Mapping[StepOutputHandle, Optional[str]]] = None,
     ) -> "ExecutionPlan":
@@ -823,7 +823,7 @@ class ExecutionPlan(
                 self.step_dict,
                 self.step_dict_by_key,
                 step_handles_to_execute,
-                pipeline_def,
+                job_def,
                 resolved_run_config,
                 executable_map,
             ),
@@ -838,7 +838,7 @@ class ExecutionPlan(
 
     def build_memoized_plan(
         self,
-        pipeline_def: JobDefinition,
+        job_def: JobDefinition,
         resolved_run_config: ResolvedRunConfig,
         instance: DagsterInstance,
         selected_step_keys: Optional[Sequence[str]],
@@ -852,10 +852,10 @@ class ExecutionPlan(
 
         # Memoization cannot be used with dynamic orchestration yet.
         # Tracking: https://github.com/dagster-io/dagster/issues/4451
-        for node_def in pipeline_def.all_node_defs:
-            if pipeline_def.dependency_structure.is_dynamic_mapped(
+        for node_def in job_def.all_node_defs:
+            if job_def.dependency_structure.is_dynamic_mapped(
                 node_def.name
-            ) or pipeline_def.dependency_structure.has_dynamic_downstreams(node_def.name):
+            ) or job_def.dependency_structure.has_dynamic_downstreams(node_def.name):
                 raise DagsterInvariantViolationError(
                     "Attempted to use memoization with dynamic orchestration, which is not yet "
                     "supported."
@@ -865,7 +865,7 @@ class ExecutionPlan(
 
         log_manager = initialize_console_manager(None)
 
-        step_output_versions = resolve_step_output_versions(pipeline_def, self, resolved_run_config)
+        step_output_versions = resolve_step_output_versions(job_def, self, resolved_run_config)
 
         resource_defs_to_init = {}
         io_manager_keys = {}  # Map step output handles to io manager keys
@@ -874,13 +874,13 @@ class ExecutionPlan(
             for output_name in cast(ExecutionStepUnion, step).step_output_dict.keys():
                 step_output_handle = StepOutputHandle(step.key, output_name)
 
-                io_manager_key = self.get_manager_key(step_output_handle, pipeline_def)
+                io_manager_key = self.get_manager_key(step_output_handle, job_def)
                 io_manager_keys[step_output_handle] = io_manager_key
 
-                resource_deps = resolve_resource_dependencies(pipeline_def.resource_defs)
+                resource_deps = resolve_resource_dependencies(job_def.resource_defs)
                 resource_keys_to_init = get_dependencies(io_manager_key, resource_deps)
                 for resource_key in resource_keys_to_init:
-                    resource_defs_to_init[resource_key] = pipeline_def.resource_defs[resource_key]
+                    resource_defs_to_init[resource_key] = job_def.resource_defs[resource_key]
 
         all_resources_config = resolved_run_config.to_dict().get("resources", {})
         resource_config = {
@@ -899,7 +899,7 @@ class ExecutionPlan(
                 io_manager = getattr(resources, io_manager_key)
                 if not isinstance(io_manager, MemoizableIOManager):
                     raise DagsterInvariantViolationError(
-                        f"{pipeline_def.describe_target().capitalize()} uses memoization, but IO"
+                        f"{job_def.describe_target().capitalize()} uses memoization, but IO"
                         " manager "
                         f"'{io_manager_key}' is not a MemoizableIOManager. In order to use "
                         "memoization, all io managers need to subclass MemoizableIOManager. "
@@ -908,7 +908,7 @@ class ExecutionPlan(
                     )
                 context = get_output_context(
                     execution_plan=self,
-                    pipeline_def=pipeline_def,
+                    job_def=job_def,
                     resolved_run_config=resolved_run_config,
                     step_output_handle=step_output_handle,
                     run_id=None,
@@ -927,7 +927,7 @@ class ExecutionPlan(
             step_keys_to_execute = list(unmemoized_step_keys)
         return self.build_subset_plan(
             step_keys_to_execute,
-            pipeline_def,
+            job_def,
             resolved_run_config,
             step_output_versions=step_output_versions,
         )
@@ -968,7 +968,7 @@ class ExecutionPlan(
 
     @staticmethod
     def build(
-        pipeline: IPipeline,
+        job: IJob,
         resolved_run_config: ResolvedRunConfig,
         step_keys_to_execute: Optional[Sequence[str]] = None,
         known_state: Optional[KnownExecutionState] = None,
@@ -976,15 +976,15 @@ class ExecutionPlan(
         tags: Optional[Mapping[str, str]] = None,
         repository_load_data: Optional[RepositoryLoadData] = None,
     ) -> "ExecutionPlan":
-        """Here we build a new ExecutionPlan from a pipeline definition and the resolved run config.
+        """Here we build a new ExecutionPlan from a job definition and the resolved run config.
 
-        To do this, we iterate through the pipeline's nodes in topological order, and hand off the
+        To do this, we iterate through the job's nodes in topological order, and hand off the
         execution steps for each node to a companion _PlanBuilder object.
 
-        Once we've processed the entire pipeline, we invoke _PlanBuilder.build() to construct the
+        Once we've processed the entire job, we invoke _PlanBuilder.build() to construct the
         ExecutionPlan object.
         """
-        check.inst_param(pipeline, "pipeline", IPipeline)
+        check.inst_param(job, "job", IJob)
         check.inst_param(resolved_run_config, "resolved_run_config", ResolvedRunConfig)
         check.opt_nullable_sequence_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
         known_state = check.opt_inst_param(
@@ -1000,7 +1000,7 @@ class ExecutionPlan(
         )
 
         plan_builder = _PlanBuilder(
-            pipeline,
+            job,
             resolved_run_config=resolved_run_config,
             step_keys_to_execute=step_keys_to_execute,
             known_state=known_state,
@@ -1047,7 +1047,7 @@ class ExecutionPlan(
 
     @staticmethod
     def rebuild_from_snapshot(
-        pipeline_name: str,
+        job_name: str,
         execution_plan_snapshot: "ExecutionPlanSnapshot",
     ) -> "ExecutionPlan":
         if not execution_plan_snapshot.can_reconstruct_plan:
@@ -1086,7 +1086,7 @@ class ExecutionPlan(
                         ),
                         ttype=(StepHandle, ResolvedFromDynamicStepHandle),
                     ),
-                    pipeline_name,
+                    job_name,
                     step_inputs,  # type: ignore  # (plain StepInput only)
                     step_outputs,
                     step_snap.tags,
@@ -1097,7 +1097,7 @@ class ExecutionPlan(
                         cast(UnresolvedStepHandle, step_snap.step_handle),
                         ttype=UnresolvedStepHandle,
                     ),
-                    pipeline_name,
+                    job_name,
                     step_inputs,  # type: ignore  # (StepInput or UnresolvedMappedStepInput only)
                     step_outputs,
                     step_snap.tags,
@@ -1105,7 +1105,7 @@ class ExecutionPlan(
             elif step_snap.kind == StepKind.UNRESOLVED_COLLECT:
                 step = UnresolvedCollectExecutionStep(
                     check.inst(cast(StepHandle, step_snap.step_handle), ttype=StepHandle),
-                    pipeline_name,
+                    job_name,
                     step_inputs,  # type: ignore  # (StepInput or UnresolvedCollectStepInput only)
                     step_outputs,
                     step_snap.tags,
@@ -1180,7 +1180,7 @@ def _update_from_resolved_dynamic_outputs(
         del resolvable_map[key_set]
 
 
-def can_isolate_steps(pipeline_def: JobDefinition) -> bool:
+def can_isolate_steps(job_def: JobDefinition) -> bool:
     """Returns true if every output definition in the pipeline uses an IO manager that's not
     the mem_io_manager.
 
@@ -1188,28 +1188,28 @@ def can_isolate_steps(pipeline_def: JobDefinition) -> bool:
     outputs will be available to other processes.
     """
     output_defs = [
-        output_def for node_def in pipeline_def.all_node_defs for output_def in node_def.output_defs
+        output_def for node_def in job_def.all_node_defs for output_def in node_def.output_defs
     ]
     for output_def in output_defs:
-        if pipeline_def.resource_defs[output_def.io_manager_key] == mem_io_manager:
+        if job_def.resource_defs[output_def.io_manager_key] == mem_io_manager:
             return False
 
     return True
 
 
 def _check_persistent_storage_requirement(
-    pipeline: IPipeline,
+    pipeline: IJob,
     resolved_run_config: ResolvedRunConfig,
 ) -> None:
-    pipeline_def = pipeline.get_definition()
-    executor_def = pipeline_def.executor_def
+    job_def = pipeline.get_definition()
+    executor_def = job_def.executor_def
     requirements_lst = executor_def.get_requirements(
         resolved_run_config.execution.execution_engine_config
     )
     if ExecutorRequirement.PERSISTENT_OUTPUTS not in requirements_lst:
         return
 
-    if not can_isolate_steps(pipeline_def):
+    if not can_isolate_steps(job_def):
         raise DagsterUnmetExecutorRequirementsError(
             "You have attempted to use an executor that uses multiple processes, but your"
             " job includes op outputs that will not be stored somewhere where other"

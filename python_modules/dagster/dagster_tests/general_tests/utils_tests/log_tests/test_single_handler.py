@@ -31,7 +31,7 @@ def test_log_level_filtering():
             InitLoggerContext(
                 {},
                 logger_def,
-                pipeline_def=GraphDefinition(node_defs=[], name="test").to_job(),
+                job_def=GraphDefinition(node_defs=[], name="test").to_job(),
                 run_id="",
             )
         )

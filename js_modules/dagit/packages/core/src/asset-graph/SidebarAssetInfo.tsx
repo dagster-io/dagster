@@ -224,6 +224,11 @@ const SIDEBAR_ASSET_FRAGMENT = gql`
     metadataEntries {
       ...MetadataEntryFragment
     }
+    freshnessPolicy {
+      maximumLagMinutes
+      cronSchedule
+      cronScheduleTimezone
+    }
     autoMaterializePolicy {
       policyType
     }

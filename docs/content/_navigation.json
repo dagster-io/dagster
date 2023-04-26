@@ -14,8 +14,12 @@
         "path": "/getting-started/install"
       },
       {
-        "title": "Create a New Project",
+        "title": "Create a new project",
         "path": "/getting-started/create-new-project"
+      },
+      {
+        "title": "Project files",
+        "path": "/getting-started/project-file-reference"
       },
       {
         "title": "Telemetry",
@@ -500,7 +504,13 @@
               },
               {
                 "title": "Code locations",
-                "path": "/dagster-cloud/managing-deployments/code-locations"
+                "path": "/dagster-cloud/managing-deployments/code-locations",
+                "children": [ 
+                  {
+                    "title": "dagster_cloud.yaml",
+                    "path": "/dagster-cloud/managing-deployments/dagster-cloud-yaml"
+                  }
+                ]
               },
               {
                 "title": "Branch deployments",
@@ -542,6 +552,10 @@
           {
             "title": "Airbyte + Dagster",
             "path": "/integrations/airbyte"
+          },
+          {
+            "title": "Airbyte Cloud + Dagster",
+            "path": "/integrations/airbyte-cloud"
           },
           {
             "title": "Ingestion as code",
@@ -681,89 +695,15 @@
     "path": "/guides",
     "children": [
       {
-        "title": "General",
-        "path": "/guides/general",
+        "title": "Development environment",
         "children": [
           {
             "title": "Running Dagster locally",
             "path": "/guides/running-dagster-locally"
           },
           {
-            "title": "Understanding assets, ops, and graphs",
-            "path": "/guides/dagster/how-assets-relate-to-ops-and-graphs"
-          },
-          {
-            "title": "Moving to Software-defined assets",
-            "path": "/guides/dagster/enriching-with-software-defined-assets"
-          },
-          {
-            "title": "Migrating to Pythonic resources and config",
-            "path": "/guides/dagster/migrating-to-pythonic-resources-and-config"
-          },
-          {
-            "title": "Testing assets",
-            "path": "/guides/dagster/testing-assets"
-          },
-          {
-            "title": "Assets without I/O",
-            "path": "/guides/dagster/non-argument-deps"
-          },
-          {
-            "title": "Software-defined assets with Pandas & PySpark",
-            "path": "/guides/dagster/software-defined-assets"
-          },
-          {
-            "title": "Re-executing jobs",
-            "path": "/guides/dagster/re-execution"
-          },
-          {
-            "title": "Intro to ops and jobs",
-            "path": "/guides/dagster/intro-to-ops-jobs",
-            "children": [
-              {
-                "title": "Write and execute a single-op job",
-                "path": "/guides/dagster/intro-to-ops-jobs/single-op-job"
-              },
-              {
-                "title": "Connecting ops in jobs",
-                "path": "/guides/dagster/intro-to-ops-jobs/connecting-ops"
-              },
-              {
-                "title": "Testing ops and jobs",
-                "path": "/guides/dagster/intro-to-ops-jobs/testable"
-              }
-            ]
-          },
-          {
-            "title": "Migrating to graphs, jobs, ops",
-            "path": "https://docs.dagster.io/0.15.7/guides/dagster/graph_job_op",
-            "isExternalLink": true
-          }
-        ]
-      },
-      {
-        "title": "Best practices",
-        "path": "/guides/best-practices",
-        "children": [
-          {
-            "title": "Automating your data pipelines",
-            "path": "/guides/dagster/automating-pipelines"
-          },
-          {
-            "title": "Structuring your Dagster project",
-            "path": "/guides/dagster/recommended-project-structure"
-          },
-          {
-            "title": "Building machine learning pipelines",
-            "path": "/guides/dagster/ml-pipeline"
-          },
-          {
             "title": "Using environment variables and secrets",
             "path": "/guides/dagster/using-environment-variables-and-secrets"
-          },
-          {
-            "title": "Exploring a Dagster project",
-            "path": "/guides/dagster/example_project"
           },
           {
             "title": "Transitioning from dev to prod",
@@ -776,8 +716,98 @@
         ]
       },
       {
+        "title": "Working with data assets",
+        "children": [
+          {
+            "title": "Understanding assets, ops, and graphs",
+            "path": "/guides/dagster/how-assets-relate-to-ops-and-graphs"
+          },
+          {
+            "title": "Moving to Software-defined assets",
+            "path": "/guides/dagster/enriching-with-software-defined-assets"
+          },
+          {
+            "title": "Software-defined assets with Pandas & PySpark",
+            "path": "/guides/dagster/software-defined-assets"
+          },
+          {
+            "title": "Testing assets",
+            "path": "/guides/dagster/testing-assets"
+          },
+          {
+            "title": "Assets without I/O",
+            "path": "/guides/dagster/non-argument-deps"
+          },
+          {
+            "title": "Migrating to Pythonic resources and config",
+            "path": "/guides/dagster/migrating-to-pythonic-resources-and-config"
+          }
+        ]
+      },
+      {
+        "title": "Working with tasks",
+        "children": [
+          {
+            "title": "Intro to ops and jobs",
+            "path": "/guides/dagster/intro-to-ops-jobs",
+            "children": [
+              {
+                "title": "Write and execute a single-op job",
+                "path": "/guides/dagster/intro-to-ops-jobs/single-op-job"
+              },
+              {
+                "title": "Testing ops and jobs",
+                "path": "/guides/dagster/intro-to-ops-jobs/testable"
+              },
+              {
+                "title": "Connecting ops in jobs",
+                "path": "/guides/dagster/intro-to-ops-jobs/connecting-ops"
+              }
+            ]
+          },
+          {
+            "title": "Migrating to graphs, jobs, ops",
+            "path": "https://docs.dagster.io/0.15.7/guides/dagster/graph_job_op",
+            "isExternalLink": true
+          },
+          {
+            "title": "Re-executing jobs",
+            "path": "/guides/dagster/re-execution"
+          }
+        ]
+      },
+      {
+        "title": "Migrating to Dagster",
+        "children": [
+          {
+            "title": "Migrating from Airflow",
+            "path": "/integrations/airflow/migrating-to-dagster"
+          }
+        ]
+      },
+      {
+        "title": "Best practices",
+        "children": [
+          {
+            "title": "Structuring your project",
+            "path": "/guides/dagster/recommended-project-structure"
+          },
+          {
+            "title": "Automating your pipelines",
+            "path": "/guides/dagster/automating-pipelines"
+          },
+          {
+            "title": "Building machine learning pipelines",
+            "path": "/guides/dagster/ml-pipeline"
+          },
+          {
+            "title": "Exploring a Dagster project",
+            "path": "/guides/dagster/example_project"
+          }
+        ]
+      },
+      {
         "title": "Advanced & experimental",
-        "path": "/guides/experimental-features",
         "children": [
           {
             "title": "Advanced features",

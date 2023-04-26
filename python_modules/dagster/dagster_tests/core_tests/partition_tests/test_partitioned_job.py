@@ -21,9 +21,7 @@ RUN_CONFIG = {"ops": {"my_op": {"config": "hello"}}}
 
 
 def test_static_partitioned_job():
-    @static_partitioned_config(
-        ["blah"], tags_for_partition_fn=lambda partition_key: {"foo": partition_key}
-    )
+    @static_partitioned_config(["blah"], tags_for_partition_key_fn=lambda key: {"foo": key})
     def my_static_partitioned_config(_partition_key: str):
         return RUN_CONFIG
 
@@ -78,9 +76,7 @@ def test_dynamic_partitioned_config():
     def partition_fn(_current_time=None):
         return ["blah"]
 
-    @dynamic_partitioned_config(
-        partition_fn, tags_for_partition_fn=lambda partition_key: {"foo": partition_key}
-    )
+    @dynamic_partitioned_config(partition_fn, tags_for_partition_key_fn=lambda key: {"foo": key})
     def my_dynamic_partitioned_config(_partition_key):
         return RUN_CONFIG
 
@@ -106,7 +102,7 @@ def test_dict_partitioned_config_tags():
         return ["blah"]
 
     @dynamic_partitioned_config(
-        partition_fn, tags_for_partition_fn=lambda partition_key: {"foo": {"bar": partition_key}}
+        partition_fn, tags_for_partition_key_fn=lambda key: {"foo": {"bar": key}}
     )
     def my_dynamic_partitioned_config(_partition_key):
         return RUN_CONFIG

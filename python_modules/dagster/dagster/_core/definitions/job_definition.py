@@ -94,9 +94,9 @@ if TYPE_CHECKING:
     from dagster._core.definitions.run_config import RunConfig
     from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
     from dagster._core.execution.resources_init import InitResourceContext
-    from dagster._core.host_representation.pipeline_index import PipelineIndex
+    from dagster._core.host_representation.pipeline_index import JobIndex
     from dagster._core.instance import DagsterInstance
-    from dagster._core.snap import PipelineSnapshot
+    from dagster._core.snap import JobSnapshot
 
     from .run_config_schema import RunConfigSchema
 
@@ -618,22 +618,23 @@ class JobDefinition:
         if partition_key:
             if not (self.partitions_def and self.partitioned_config):
                 check.failed("Attempted to execute a partitioned run for a non-partitioned job")
+            self.partitions_def.validate_partition_key(
+                partition_key, dynamic_partitions_store=instance
+            )
 
             run_config = (
                 run_config
                 if run_config
-                else self.partitioned_config.get_run_config_for_partition_key(
-                    partition_key, instance
-                )
+                else self.partitioned_config.get_run_config_for_partition_key(partition_key)
             )
             merged_tags.update(
                 self.partitioned_config.get_tags_for_partition_key(
-                    partition_key, instance, job_name=self.name
+                    partition_key, job_name=self.name
                 )
             )
 
         return core_execute_in_process(
-            ephemeral_pipeline=ephemeral_job,
+            ephemeral_job=ephemeral_job,
             run_config=run_config,
             instance=instance,
             output_capturing_enabled=True,
@@ -660,7 +661,7 @@ class JobDefinition:
         )
 
     @property
-    def is_subset_pipeline(self) -> bool:
+    def is_subset_job(self) -> bool:
         return bool(self._subset_selection_data)
 
     def get_job_def_for_subset_selection(
@@ -815,22 +816,17 @@ class JobDefinition:
                 " RunRequest(partition_key=...)"
             )
 
-        partition = self.partitions_def.get_partition(
-            partition_key, dynamic_partitions_store=None, current_time=current_time
-        )
+        self.partitions_def.validate_partition_key(partition_key, current_time=current_time)
+
         run_config = (
             run_config
             if run_config is not None
-            else self.partitioned_config.get_run_config_for_partition_key(
-                partition.name, dynamic_partitions_store=None, current_time=current_time
-            )
+            else self.partitioned_config.get_run_config_for_partition_key(partition_key)
         )
         run_request_tags = {
             **(tags or {}),
             **self.partitioned_config.get_tags_for_partition_key(
                 partition_key,
-                dynamic_partitions_store=None,
-                current_time=current_time,
                 job_name=self.name,
             ),
         }
@@ -845,27 +841,25 @@ class JobDefinition:
         )
 
     def get_config_schema_snapshot(self) -> "ConfigSchemaSnapshot":
-        return self.get_pipeline_snapshot().config_schema_snapshot
+        return self.get_job_snapshot().config_schema_snapshot
 
-    def get_pipeline_snapshot(self) -> "PipelineSnapshot":
-        return self.get_pipeline_index().pipeline_snapshot
+    def get_job_snapshot(self) -> "JobSnapshot":
+        return self.get_job_index().job_snapshot
 
-    def get_pipeline_index(self) -> "PipelineIndex":
-        from dagster._core.host_representation import PipelineIndex
-        from dagster._core.snap import PipelineSnapshot
+    def get_job_index(self) -> "JobIndex":
+        from dagster._core.host_representation import JobIndex
+        from dagster._core.snap import JobSnapshot
 
-        return PipelineIndex(
-            PipelineSnapshot.from_pipeline_def(self), self.get_parent_pipeline_snapshot()
-        )
+        return JobIndex(JobSnapshot.from_job_def(self), self.get_parent_job_snapshot())
 
-    def get_pipeline_snapshot_id(self) -> str:
-        return self.get_pipeline_index().pipeline_snapshot_id
+    def get_job_snapshot_id(self) -> str:
+        return self.get_job_index().job_snapshot_id
 
-    def get_parent_pipeline_snapshot(self) -> Optional["PipelineSnapshot"]:
+    def get_parent_job_snapshot(self) -> Optional["JobSnapshot"]:
         if self.op_selection_data:
-            return self.op_selection_data.parent_job_def.get_pipeline_snapshot()
+            return self.op_selection_data.parent_job_def.get_job_snapshot()
         elif self.asset_selection_data:
-            return self.asset_selection_data.parent_job_def.get_pipeline_snapshot()
+            return self.asset_selection_data.parent_job_def.get_job_snapshot()
         else:
             return None
 
@@ -1283,7 +1277,7 @@ def _create_run_config_schema(
     # from the original pipeline as ignored to allow execution with
     # run config that is valid for the original
     ignored_nodes: Sequence[Node] = []
-    if job_def.is_subset_pipeline:
+    if job_def.is_subset_job:
         if isinstance(job_def.graph, SubselectedGraphDefinition):  # op selection provided
             ignored_nodes = job_def.graph.get_top_level_omitted_nodes()
         elif job_def.asset_selection_data:
@@ -1299,7 +1293,7 @@ def _create_run_config_schema(
 
     run_config_schema_type = define_run_config_schema_type(
         RunConfigSchemaCreationData(
-            pipeline_name=job_def.name,
+            job_name=job_def.name,
             nodes=job_def.graph.nodes,
             graph_def=job_def.graph,
             dependency_structure=job_def.graph.dependency_structure,

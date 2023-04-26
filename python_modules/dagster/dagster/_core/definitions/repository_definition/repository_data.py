@@ -322,9 +322,8 @@ class CachingRepositoryData(RepositoryData):
         """Static constructor.
 
         Args:
-            repository_definitions (List[Union[PipelineDefinition, ScheduleDefinition, SensorDefinition, AssetGroup, GraphDefinition]]):
-                Use this constructor when you have no need to lazy load jobs or other
-                definitions.
+            repository_definitions (List[Union[JobDefinition, ScheduleDefinition, SensorDefinition, GraphDefinition]]):
+                Use this constructor when you have no need to lazy load jobs or other definitions.
             top_level_resources (Optional[Mapping[str, ResourceDefinition]]): A dict of top-level
                 resource keys to defintions, for resources which should be displayed in the UI.
         """
@@ -373,7 +372,7 @@ class CachingRepositoryData(RepositoryData):
         Note that this will construct any job that has not yet been constructed.
 
         Returns:
-            List[PipelineDefinition]: All jobs in the repository.
+            List[JobDefinition]: All jobs in the repository.
         """
         if self._all_jobs is not None:
             return self._all_jobs
@@ -498,7 +497,7 @@ class CachingRepositoryData(RepositoryData):
             return sensor
 
         for target in sensor.targets:
-            if target.pipeline_name not in job_names:
+            if target.job_name not in job_names:
                 raise DagsterInvalidDefinitionError(
                     f'SensorDefinition "{sensor.name}" targets job "{sensor.job_name}" '
                     "which was not found in this repository."

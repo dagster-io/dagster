@@ -2,7 +2,7 @@ from enum import Enum
 from typing import Any, Dict
 
 import pytest
-from dagster import Config, RunConfig, config_mapping, graph, job, op
+from dagster import Config, RunConfig, config_mapping, graph, graph_asset, job, materialize, op
 from dagster._check import CheckError
 
 
@@ -210,3 +210,140 @@ def test_config_mapping_return_run_config_nested() -> None:
     )
     assert result.success
     assert result.output_for_node("do_it_all_with_simplified_config.do_something") == "foo"
+
+
+def test_graph_no_mapping() -> None:
+    executed = {}
+
+    class MyOpConfig(Config):
+        foo_str: str
+
+    @op
+    def my_op(config: MyOpConfig):
+        assert config.foo_str == "foo"
+        executed["my_op"] = True
+
+    class MyOtherOpConfig(Config):
+        bar_int: int
+
+    @op
+    def my_other_op(config: MyOtherOpConfig):
+        assert config.bar_int == 2
+        executed["my_other_op"] = True
+
+    @graph
+    def my_graph():
+        my_op()
+        my_other_op()
+
+    @job
+    def my_job():
+        my_graph()
+
+    assert my_job.execute_in_process(
+        run_config=RunConfig(
+            ops={
+                "my_graph": {
+                    "ops": {
+                        "my_op": MyOpConfig(foo_str="foo"),
+                        "my_other_op": MyOtherOpConfig(bar_int=2),
+                    }
+                }
+            }
+        )
+    ).success
+    assert executed == {"my_op": True, "my_other_op": True}
+
+
+def test_graph_asset() -> None:
+    executed = {}
+
+    class MyOpConfig(Config):
+        foo_str: str
+
+    @op
+    def my_op(config: MyOpConfig) -> int:
+        assert config.foo_str == "foo"
+        executed["my_op"] = True
+        return len(config.foo_str)
+
+    class MyOtherOpConfig(Config):
+        bar_int: int
+
+    @op
+    def my_other_op(my_in: int, config: MyOtherOpConfig) -> int:
+        assert config.bar_int == 2
+        executed["my_other_op"] = True
+        return my_in + config.bar_int
+
+    @graph_asset
+    def my_graph_asset() -> int:
+        return my_other_op(my_op())
+
+    result = materialize(
+        assets=[my_graph_asset],
+        run_config=RunConfig(
+            ops={
+                "my_graph_asset": {
+                    "ops": {
+                        "my_op": MyOpConfig(foo_str="foo"),
+                        "my_other_op": MyOtherOpConfig(bar_int=2),
+                    }
+                }
+            }
+        ),
+    )
+    assert result.success
+    assert result.asset_value("my_graph_asset") == 5
+    assert executed == {"my_op": True, "my_other_op": True}
+
+
+def test_nested_graph_no_mapping() -> None:
+    executed = {}
+
+    class MyOpConfig(Config):
+        foo_str: str
+
+    @op
+    def my_op(config: MyOpConfig):
+        assert config.foo_str == "foo"
+        executed["my_op"] = True
+
+    @graph
+    def my_graph():
+        my_op()
+
+    class MyOtherOpConfig(Config):
+        bar_int: int
+
+    @op
+    def my_other_op(config: MyOtherOpConfig):
+        assert config.bar_int == 2
+        executed["my_other_op"] = True
+
+    @graph
+    def my_wrapper_graph():
+        my_graph()
+        my_other_op()
+
+    @job
+    def my_job():
+        my_wrapper_graph()
+
+    assert my_job.execute_in_process(
+        run_config=RunConfig(
+            ops={
+                "my_wrapper_graph": {
+                    "ops": {
+                        "my_graph": {
+                            "ops": {
+                                "my_op": MyOpConfig(foo_str="foo"),
+                            }
+                        },
+                        "my_other_op": MyOtherOpConfig(bar_int=2),
+                    }
+                }
+            }
+        )
+    ).success
+    assert executed == {"my_op": True, "my_other_op": True}

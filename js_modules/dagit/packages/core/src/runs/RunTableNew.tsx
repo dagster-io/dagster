@@ -7,7 +7,6 @@ import styled from 'styled-components/macro';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {RunsFilter} from '../graphql/types';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
-import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {getPipelineSnapshotLink} from '../pipelines/PipelinePathUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {AnchorButton} from '../ui/AnchorButton';
@@ -16,6 +15,7 @@ import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspac
 
 import {AssetKeyTagCollection} from './AssetKeyTagCollection';
 import {RunActionsMenu, RunBulkActionsMenu} from './RunActionsMenu';
+import {RunCreatedByCell} from './RunCreatedByCell';
 import {RunStatusTagWithStats} from './RunStatusTag';
 import {DagsterTag, TagType} from './RunTag';
 import {RunTags} from './RunTags';
@@ -37,7 +37,7 @@ interface RunTableProps {
   highlightedIds?: string[];
   additionalColumnHeaders?: React.ReactNode[];
   additionalColumnsForRow?: (run: RunTableRunFragment) => React.ReactNode[];
-  belowActionBarComponents?: React.ReactNode[];
+  belowActionBarComponents?: React.ReactNode;
   hideCreatedBy?: boolean;
 }
 
@@ -149,7 +149,6 @@ export const RunTable = (props: RunTableProps) => {
         top={
           <>
             {actionBarComponents}
-            <div style={{flex: 1}} />
             <RunBulkActionsMenu
               selected={selectedFragments}
               clearSelection={() => onToggleAll(false)}
@@ -239,8 +238,6 @@ const RunRow: React.FC<{
     }
   };
 
-  const {RunCreatedByCell} = useLaunchPadHooks();
-
   return (
     <Row highlighted={!!isHighlighted}>
       <td>
@@ -329,13 +326,13 @@ const Row = styled.tr<{highlighted: boolean}>`
     highlighted ? `box-shadow: inset 3px 3px #bfccd6, inset -3px -3px #bfccd6;` : null}
 `;
 
-function ActionBar({top, bottom}: {top: React.ReactNode; bottom?: React.ReactNode[]}) {
+function ActionBar({top, bottom}: {top: React.ReactNode; bottom?: React.ReactNode}) {
   return (
     <Box flex={{direction: 'column'}} padding={{vertical: 12}}>
       <Box flex={{alignItems: 'center', gap: 12}} padding={{left: 24, right: 24}}>
         {top}
       </Box>
-      {bottom && bottom.length > 0 ? (
+      {bottom ? (
         <Box
           margin={{top: 12}}
           padding={{left: 24, right: 12, top: 8}}
