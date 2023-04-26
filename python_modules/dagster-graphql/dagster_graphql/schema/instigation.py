@@ -135,6 +135,9 @@ class GraphenePartitionRequestType(graphene.Enum):
     ADD_PARTITIONS = "ADD_PARTITIONS"
     DELETE_PARTITIONS = "DELETE_PARTITIONS"
 
+    class Meta:
+        name = "PartitionRequestType"
+
 
 class GrapheneDynamicPartitionRequest(graphene.ObjectType):
     partitionKeys = graphene.List(graphene.NonNull(graphene.String))
