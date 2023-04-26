@@ -2140,10 +2140,22 @@ type DryRunInstigationTick {
 }
 
 type TickEvaluation {
+  dynamicPartitionsRequests: [DynamicPartitionRequest!]
   runRequests: [RunRequest!]
   skipReason: String
   error: PythonError
   cursor: String
+}
+
+type DynamicPartitionRequest {
+  partitionKeys: [String!]
+  partitionsDefName: String!
+  type: DynamicPartitionsRequestType!
+}
+
+enum DynamicPartitionsRequestType {
+  ADD_PARTITIONS
+  DELETE_PARTITIONS
 }
 
 type RunRequest {

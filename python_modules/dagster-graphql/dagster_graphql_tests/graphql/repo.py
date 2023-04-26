@@ -44,6 +44,7 @@ from dagster import (
     Output,
     PythonObjectDagsterType,
     ScheduleDefinition,
+    SensorResult,
     SourceAsset,
     SourceHashVersionStrategy,
     StaticPartitionsDefinition,
@@ -1123,6 +1124,16 @@ def define_sensors():
     def never_no_config_sensor(_):
         return SkipReason("never")
 
+    @sensor(job_name="dynamic_partitioned_assets_job")
+    def dynamic_partition_requesting_sensor(_):
+        yield SensorResult(
+            run_requests=[RunRequest(partition_key="new_key")],
+            dynamic_partitions_requests=[
+                DynamicPartitionsDefinition(name="foo").build_add_request(["new_key", "new_key2"]),
+                DynamicPartitionsDefinition(name="foo").build_delete_request(["old_key"]),
+            ],
+        )
+
     @sensor(job_name="no_config_job")
     def multi_no_config_sensor(_):
         yield RunRequest(run_key="A")
@@ -1172,6 +1183,7 @@ def define_sensors():
         always_error_sensor,
         once_no_config_sensor,
         never_no_config_sensor,
+        dynamic_partition_requesting_sensor,
         multi_no_config_sensor,
         custom_interval_sensor,
         running_in_code_sensor,
