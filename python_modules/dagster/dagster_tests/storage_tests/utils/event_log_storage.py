@@ -33,9 +33,11 @@ from dagster import (
 )
 from dagster._core.assets import AssetDetails
 from dagster._core.definitions import ExpectationResult
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
 from dagster._core.definitions.pipeline_base import InMemoryJob
+from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.events import (
     AssetMaterializationPlannedData,
     DagsterEvent,
@@ -66,7 +68,7 @@ from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 from dagster._core.test_utils import create_run_for_test, instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import make_new_run_id
-from dagster._legacy import AssetGroup, build_assets_job
+from dagster._legacy import build_assets_job
 from dagster._loggers import colored_console_logger
 from dagster._serdes.serdes import deserialize_value
 from dagster._utils import datetime_as_float
@@ -2371,11 +2373,17 @@ class TestEventLogStorage:
             run_id_1 = make_new_run_id()
             run_id_2 = make_new_run_id()
             with create_and_delete_test_runs(instance, [run_id_1, run_id_2]):
-                asset_group = AssetGroup([my_asset, second_asset])
+                defs = Definitions(
+                    assets=[my_asset, second_asset],
+                    jobs=[
+                        define_asset_job("one_asset_job", ["my_asset"]),
+                        define_asset_job("two_asset_job"),
+                    ],
+                )
                 result = _execute_job_and_store_events(
                     created_instance,
                     storage,
-                    asset_group.build_job(name="one_asset_job", selection=["my_asset"]),
+                    defs.get_job_def("one_asset_job"),
                     run_id=run_id_1,
                 )
                 records = storage.get_asset_records([my_asset_key])
@@ -2407,7 +2415,7 @@ class TestEventLogStorage:
                     result = _execute_job_and_store_events(
                         created_instance,
                         storage,
-                        asset_group.build_job(name="two_asset_job"),
+                        defs.get_job_def("two_asset_job"),
                         run_id=run_id_2,
                     )
                     records = storage.get_asset_records([my_asset_key])

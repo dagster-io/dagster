@@ -23,14 +23,15 @@ from dagster import (
     with_resources,
 )
 from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.pipeline_base import InMemoryJob
+from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import execute_plan
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.types.dagster_type import resolve_dagster_type
 from dagster._core.utils import make_new_run_id
-from dagster._legacy import AssetGroup
 from dagster_azure.adls2 import create_adls2_client
 from dagster_azure.adls2.fake_adls2_resource import fake_adls2_resource
 from dagster_azure.adls2.io_manager import PickledObjectADLS2IOManager, adls2_pickle_io_manager
@@ -275,11 +276,11 @@ def test_asset_io_manager(storage_account, file_system, credential):
         assert upstream == 7
         return 1 + upstream
 
-    asset_group = AssetGroup(
-        [upstream, downstream, AssetsDefinition.from_graph(graph_asset)],
-        resource_defs={"io_manager": adls2_pickle_io_manager, "adls2": adls2_resource},
-    )
-    asset_job = asset_group.build_job(name="my_asset_job")
+    asset_job = Definitions(
+        assets=[upstream, downstream, AssetsDefinition.from_graph(graph_asset)],
+        resources={"io_manager": adls2_pickle_io_manager, "adls2": adls2_resource},
+        jobs=[define_asset_job("my_asset_job")],
+    ).get_job_def("my_asset_job")
 
     run_config = {
         "resources": {

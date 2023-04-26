@@ -86,7 +86,6 @@ def execute_materialize_command(instance: DagsterInstance, kwargs: Mapping[str, 
 @click.option("--select", help="Asset selection to target", required=False)
 def asset_list_command(**kwargs):
     repository_origin = get_repository_python_origin_from_kwargs(kwargs)
-
     recon_repo = recon_repository_from_origin(repository_origin)
     repo_def = recon_repo.get_definition()
 

@@ -244,29 +244,6 @@ snapshots['test_all_snapshot_ids 1'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Selector.2571019f1a5201853d11032145ac3e534067f214": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": true,
-            "name": "env",
-            "type_key": "String"
-          }
-        ],
-        "given_name": null,
-        "key": "Selector.2571019f1a5201853d11032145ac3e534067f214",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SELECTOR"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Selector.8318f5aff6cd0698a5c7fedfb9bdc75fd8006db8": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -600,23 +577,23 @@ snapshots['test_all_snapshot_ids 1'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851": {
+      "Shape.1578133c1c71e8e3c9cf3ad46c216eb51b48c778": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
         "fields": [
           {
             "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": "Built-in filesystem IO manager that stores and retrieves values using pickling.",
             "is_required": false,
-            "name": "base_dir",
-            "type_key": "StringSourceType"
+            "name": "io_manager",
+            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
           }
         ],
         "given_name": null,
-        "key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851",
+        "key": "Shape.1578133c1c71e8e3c9cf3ad46c216eb51b48c778",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -698,29 +675,6 @@ snapshots['test_all_snapshot_ids 1'] = '''{
         ],
         "given_name": null,
         "key": "Shape.44f24ac55059da1634e84af6c1bf7e0ed332251c",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.44f2a71367507edd1b8e64f739222c4312b3691b": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.44f2a71367507edd1b8e64f739222c4312b3691b",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -921,30 +875,30 @@ snapshots['test_all_snapshot_ids 1'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.9e00b33fd8fe1958a32d37ed3540c2e198824a62": {
+      "Shape.743e47901855cb245064dd633e217bfcb49a11a7": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
         "fields": [
           {
             "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {}}",
-            "description": "Built-in filesystem IO manager that stores and retrieves values using pickling.",
+            "default_provided": false,
+            "default_value_as_json_str": null,
+            "description": null,
             "is_required": false,
-            "name": "io_manager",
-            "type_key": "Shape.44f2a71367507edd1b8e64f739222c4312b3691b"
+            "name": "config",
+            "type_key": "Any"
           }
         ],
         "given_name": null,
-        "key": "Shape.9e00b33fd8fe1958a32d37ed3540c2e198824a62",
+        "key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.d9518f17515dc6351b95980184001c227282bbaa": {
+      "Shape.7f7d55fd2eed9b75066e0566309dd5197498e627": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
@@ -982,15 +936,15 @@ snapshots['test_all_snapshot_ids 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
-            "default_value_as_json_str": "{\\"io_manager\\": {\\"config\\": {}}}",
+            "default_value_as_json_str": "{\\"io_manager\\": {}}",
             "description": "Configure how shared resources are implemented within a run.",
             "is_required": false,
             "name": "resources",
-            "type_key": "Shape.9e00b33fd8fe1958a32d37ed3540c2e198824a62"
+            "type_key": "Shape.1578133c1c71e8e3c9cf3ad46c216eb51b48c778"
           }
         ],
         "given_name": null,
-        "key": "Shape.d9518f17515dc6351b95980184001c227282bbaa",
+        "key": "Shape.7f7d55fd2eed9b75066e0566309dd5197498e627",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -1096,22 +1050,6 @@ snapshots['test_all_snapshot_ids 1'] = '''{
           "__enum__": "ConfigScalarKind.STRING"
         },
         "type_param_keys": null
-      },
-      "StringSourceType": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": null,
-        "given_name": null,
-        "key": "StringSourceType",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SCALAR_UNION"
-        },
-        "scalar_kind": null,
-        "type_param_keys": [
-          "String",
-          "Selector.2571019f1a5201853d11032145ac3e534067f214"
-        ]
       }
     }
   },
@@ -1394,18 +1332,18 @@ snapshots['test_all_snapshot_ids 1'] = '''{
           "__class__": "ResourceDefSnap",
           "config_field_snap": {
             "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
+            "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
             "name": "config",
-            "type_key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851"
+            "type_key": "Any"
           },
           "description": "Built-in filesystem IO manager that stores and retrieves values using pickling.",
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.d9518f17515dc6351b95980184001c227282bbaa"
+      "root_config_key": "Shape.7f7d55fd2eed9b75066e0566309dd5197498e627"
     }
   ],
   "name": "__ASSET_JOB_0",
@@ -1717,7 +1655,7 @@ snapshots['test_all_snapshot_ids 1'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 10'] = '2c2f944cd8f6d79c5c574a86c574a52814a07ea4'
+snapshots['test_all_snapshot_ids 10'] = 'daddf4d992213095f8e70196ab627423b972ad09'
 
 snapshots['test_all_snapshot_ids 100'] = 'dd30d32b2c9d5e79e9ef3341452cb72856bbf3f2'
 
@@ -34639,7 +34577,7 @@ snapshots['test_all_snapshot_ids 19'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 2'] = '173c8675838a4f789c66d2c9ec5e482139f81cba'
+snapshots['test_all_snapshot_ids 2'] = 'e0528fef82fc30920254077e1271a4882b8c4f3d'
 
 snapshots['test_all_snapshot_ids 20'] = '27a0fd6cc30f606f468d0306e3581b5c11d3d95e'
 
@@ -41077,29 +41015,6 @@ snapshots['test_all_snapshot_ids 3'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Selector.2571019f1a5201853d11032145ac3e534067f214": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": true,
-            "name": "env",
-            "type_key": "String"
-          }
-        ],
-        "given_name": null,
-        "key": "Selector.2571019f1a5201853d11032145ac3e534067f214",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SELECTOR"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Selector.8318f5aff6cd0698a5c7fedfb9bdc75fd8006db8": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -41433,23 +41348,76 @@ snapshots['test_all_snapshot_ids 3'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851": {
+      "Shape.152bc6321232cd1649ff3f07e8db20287c32d924": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "field_aliases": {
+          "ops": "solids"
+        },
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"config\\": {\\"multiprocess\\": {\\"max_concurrent\\": 0, \\"retries\\": {\\"enabled\\": {}}}}}",
+            "description": "Configure how steps are executed within a run.",
+            "is_required": false,
+            "name": "execution",
+            "type_key": "Shape.f74882eed6db21825b8461f675d1a11e200f2f1b"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": "Configure how loggers emit messages within a run.",
+            "is_required": false,
+            "name": "loggers",
+            "type_key": "Shape.e895d95ee6d0eff1b884c76f44a2ab7089f0c49b"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"fresh_diamond_bottom\\": {}, \\"fresh_diamond_left\\": {}, \\"fresh_diamond_right\\": {}, \\"fresh_diamond_top\\": {}, \\"multipartitions_1\\": {}, \\"multipartitions_2\\": {}, \\"multipartitions_fail\\": {}, \\"typed_asset\\": {}, \\"typed_multi_asset\\": {\\"config\\": {}}, \\"unpartitioned_upstream_of_partitioned\\": {}, \\"untyped_asset\\": {}}",
+            "description": "Configure runtime parameters for ops or assets.",
+            "is_required": false,
+            "name": "ops",
+            "type_key": "Shape.74ae94b887562230e7ab07bf00c72cad9e8b285a"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"io_manager\\": {}}",
+            "description": "Configure how shared resources are implemented within a run.",
+            "is_required": false,
+            "name": "resources",
+            "type_key": "Shape.1578133c1c71e8e3c9cf3ad46c216eb51b48c778"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.152bc6321232cd1649ff3f07e8db20287c32d924",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
+      "Shape.1578133c1c71e8e3c9cf3ad46c216eb51b48c778": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
         "fields": [
           {
             "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": "Built-in filesystem IO manager that stores and retrieves values using pickling.",
             "is_required": false,
-            "name": "base_dir",
-            "type_key": "StringSourceType"
+            "name": "io_manager",
+            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
           }
         ],
         "given_name": null,
-        "key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851",
+        "key": "Shape.1578133c1c71e8e3c9cf3ad46c216eb51b48c778",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -41537,29 +41505,6 @@ snapshots['test_all_snapshot_ids 3'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.44f2a71367507edd1b8e64f739222c4312b3691b": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.44f2a71367507edd1b8e64f739222c4312b3691b",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Shape.4b53b73df342381d0d05c5f36183dc99cb9676e2": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -41600,59 +41545,6 @@ snapshots['test_all_snapshot_ids 3'] = '''{
         ],
         "given_name": null,
         "key": "Shape.4b5c35afb20df31266eeee7e8c1060f1b490d054",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.5ca707a13ed9f5bced480969173e27fecf9d6e35": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "field_aliases": {
-          "ops": "solids"
-        },
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {\\"multiprocess\\": {\\"max_concurrent\\": 0, \\"retries\\": {\\"enabled\\": {}}}}}",
-            "description": "Configure how steps are executed within a run.",
-            "is_required": false,
-            "name": "execution",
-            "type_key": "Shape.f74882eed6db21825b8461f675d1a11e200f2f1b"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": "Configure how loggers emit messages within a run.",
-            "is_required": false,
-            "name": "loggers",
-            "type_key": "Shape.e895d95ee6d0eff1b884c76f44a2ab7089f0c49b"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"fresh_diamond_bottom\\": {}, \\"fresh_diamond_left\\": {}, \\"fresh_diamond_right\\": {}, \\"fresh_diamond_top\\": {}, \\"multipartitions_1\\": {}, \\"multipartitions_2\\": {}, \\"multipartitions_fail\\": {}, \\"typed_asset\\": {}, \\"typed_multi_asset\\": {\\"config\\": {}}, \\"unpartitioned_upstream_of_partitioned\\": {}, \\"untyped_asset\\": {}}",
-            "description": "Configure runtime parameters for ops or assets.",
-            "is_required": false,
-            "name": "ops",
-            "type_key": "Shape.74ae94b887562230e7ab07bf00c72cad9e8b285a"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"io_manager\\": {\\"config\\": {}}}",
-            "description": "Configure how shared resources are implemented within a run.",
-            "is_required": false,
-            "name": "resources",
-            "type_key": "Shape.9e00b33fd8fe1958a32d37ed3540c2e198824a62"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.5ca707a13ed9f5bced480969173e27fecf9d6e35",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -41703,6 +41595,29 @@ snapshots['test_all_snapshot_ids 3'] = '''{
         ],
         "given_name": null,
         "key": "Shape.60acefe08e1243b47034a632522b12985eb4acd1",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
+      "Shape.743e47901855cb245064dd633e217bfcb49a11a7": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": false,
+            "default_value_as_json_str": null,
+            "description": null,
+            "is_required": false,
+            "name": "config",
+            "type_key": "Any"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -41825,29 +41740,6 @@ snapshots['test_all_snapshot_ids 3'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.9e00b33fd8fe1958a32d37ed3540c2e198824a62": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {}}",
-            "description": "Built-in filesystem IO manager that stores and retrieves values using pickling.",
-            "is_required": false,
-            "name": "io_manager",
-            "type_key": "Shape.44f2a71367507edd1b8e64f739222c4312b3691b"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.9e00b33fd8fe1958a32d37ed3540c2e198824a62",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Shape.da39a3ee5e6b4b0d3255bfef95601890afd80709": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -41947,22 +41839,6 @@ snapshots['test_all_snapshot_ids 3'] = '''{
           "__enum__": "ConfigScalarKind.STRING"
         },
         "type_param_keys": null
-      },
-      "StringSourceType": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": null,
-        "given_name": null,
-        "key": "StringSourceType",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SCALAR_UNION"
-        },
-        "scalar_kind": null,
-        "type_param_keys": [
-          "String",
-          "Selector.2571019f1a5201853d11032145ac3e534067f214"
-        ]
       }
     }
   },
@@ -42274,18 +42150,18 @@ snapshots['test_all_snapshot_ids 3'] = '''{
           "__class__": "ResourceDefSnap",
           "config_field_snap": {
             "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
+            "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
             "name": "config",
-            "type_key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851"
+            "type_key": "Any"
           },
           "description": "Built-in filesystem IO manager that stores and retrieves values using pickling.",
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.5ca707a13ed9f5bced480969173e27fecf9d6e35"
+      "root_config_key": "Shape.152bc6321232cd1649ff3f07e8db20287c32d924"
     }
   ],
   "name": "__ASSET_JOB_1",
@@ -49241,7 +49117,7 @@ snapshots['test_all_snapshot_ids 39'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 4'] = '0cb1a43bac861b5f6c039afef0877ddd703fad84'
+snapshots['test_all_snapshot_ids 4'] = 'a350bdde8817e9f4d91e73d94192f3cb9566a903'
 
 snapshots['test_all_snapshot_ids 40'] = '0618c6ad16569ab60394b825d022abc14388b1b5'
 
@@ -51380,29 +51256,6 @@ snapshots['test_all_snapshot_ids 45'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Selector.2571019f1a5201853d11032145ac3e534067f214": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": true,
-            "name": "env",
-            "type_key": "String"
-          }
-        ],
-        "given_name": null,
-        "key": "Selector.2571019f1a5201853d11032145ac3e534067f214",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SELECTOR"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Selector.8318f5aff6cd0698a5c7fedfb9bdc75fd8006db8": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -51736,23 +51589,23 @@ snapshots['test_all_snapshot_ids 45'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851": {
+      "Shape.1578133c1c71e8e3c9cf3ad46c216eb51b48c778": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
         "fields": [
           {
             "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": "Built-in filesystem IO manager that stores and retrieves values using pickling.",
             "is_required": false,
-            "name": "base_dir",
-            "type_key": "StringSourceType"
+            "name": "io_manager",
+            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
           }
         ],
         "given_name": null,
-        "key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851",
+        "key": "Shape.1578133c1c71e8e3c9cf3ad46c216eb51b48c778",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -51834,29 +51687,6 @@ snapshots['test_all_snapshot_ids 45'] = '''{
         ],
         "given_name": null,
         "key": "Shape.44f24ac55059da1634e84af6c1bf7e0ed332251c",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.44f2a71367507edd1b8e64f739222c4312b3691b": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.44f2a71367507edd1b8e64f739222c4312b3691b",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -51959,23 +51789,23 @@ snapshots['test_all_snapshot_ids 45'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.9e00b33fd8fe1958a32d37ed3540c2e198824a62": {
+      "Shape.743e47901855cb245064dd633e217bfcb49a11a7": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
         "fields": [
           {
             "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {}}",
-            "description": "Built-in filesystem IO manager that stores and retrieves values using pickling.",
+            "default_provided": false,
+            "default_value_as_json_str": null,
+            "description": null,
             "is_required": false,
-            "name": "io_manager",
-            "type_key": "Shape.44f2a71367507edd1b8e64f739222c4312b3691b"
+            "name": "config",
+            "type_key": "Any"
           }
         ],
         "given_name": null,
-        "key": "Shape.9e00b33fd8fe1958a32d37ed3540c2e198824a62",
+        "key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -52044,7 +51874,43 @@ snapshots['test_all_snapshot_ids 45'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.bfa830656037072b2e7f88d6faf9abc0695f4bde": {
+      "Shape.da39a3ee5e6b4b0d3255bfef95601890afd80709": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": [],
+        "given_name": null,
+        "key": "Shape.da39a3ee5e6b4b0d3255bfef95601890afd80709",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
+      "Shape.e895d95ee6d0eff1b884c76f44a2ab7089f0c49b": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": false,
+            "default_value_as_json_str": null,
+            "description": null,
+            "is_required": false,
+            "name": "console",
+            "type_key": "Shape.0fe8353d6b542accfad9becbdbaeb92f649ebb9a"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.e895d95ee6d0eff1b884c76f44a2ab7089f0c49b",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
+      "Shape.f600ba72d185090eff780355e0b357928e7ff89b": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
@@ -52082,51 +51948,15 @@ snapshots['test_all_snapshot_ids 45'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
-            "default_value_as_json_str": "{\\"io_manager\\": {\\"config\\": {}}}",
+            "default_value_as_json_str": "{\\"io_manager\\": {}}",
             "description": "Configure how shared resources are implemented within a run.",
             "is_required": false,
             "name": "resources",
-            "type_key": "Shape.9e00b33fd8fe1958a32d37ed3540c2e198824a62"
+            "type_key": "Shape.1578133c1c71e8e3c9cf3ad46c216eb51b48c778"
           }
         ],
         "given_name": null,
-        "key": "Shape.bfa830656037072b2e7f88d6faf9abc0695f4bde",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.da39a3ee5e6b4b0d3255bfef95601890afd80709": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [],
-        "given_name": null,
-        "key": "Shape.da39a3ee5e6b4b0d3255bfef95601890afd80709",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.e895d95ee6d0eff1b884c76f44a2ab7089f0c49b": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "console",
-            "type_key": "Shape.0fe8353d6b542accfad9becbdbaeb92f649ebb9a"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.e895d95ee6d0eff1b884c76f44a2ab7089f0c49b",
+        "key": "Shape.f600ba72d185090eff780355e0b357928e7ff89b",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -52170,22 +52000,6 @@ snapshots['test_all_snapshot_ids 45'] = '''{
           "__enum__": "ConfigScalarKind.STRING"
         },
         "type_param_keys": null
-      },
-      "StringSourceType": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": null,
-        "given_name": null,
-        "key": "StringSourceType",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SCALAR_UNION"
-        },
-        "scalar_kind": null,
-        "type_param_keys": [
-          "String",
-          "Selector.2571019f1a5201853d11032145ac3e534067f214"
-        ]
       }
     }
   },
@@ -52361,7 +52175,7 @@ snapshots['test_all_snapshot_ids 45'] = '''{
       }
     ]
   },
-  "description": "",
+  "description": null,
   "graph_def_name": "foo_job",
   "lineage_snapshot": null,
   "mode_def_snaps": [
@@ -52390,18 +52204,18 @@ snapshots['test_all_snapshot_ids 45'] = '''{
           "__class__": "ResourceDefSnap",
           "config_field_snap": {
             "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
+            "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
             "name": "config",
-            "type_key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851"
+            "type_key": "Any"
           },
           "description": "Built-in filesystem IO manager that stores and retrieves values using pickling.",
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.bfa830656037072b2e7f88d6faf9abc0695f4bde"
+      "root_config_key": "Shape.f600ba72d185090eff780355e0b357928e7ff89b"
     }
   ],
   "name": "foo_job",
@@ -52569,7 +52383,7 @@ snapshots['test_all_snapshot_ids 45'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 46'] = '722b1bcb2178984375d4aa14b23965fa94bc4980'
+snapshots['test_all_snapshot_ids 46'] = '97f5aec48d7e1ba28248f3d967ea117c143b0600'
 
 snapshots['test_all_snapshot_ids 47'] = '''{
   "__class__": "PipelineSnapshot",
@@ -55132,7 +54946,7 @@ snapshots['test_all_snapshot_ids 49'] = '''{
       }
     ]
   },
-  "description": "",
+  "description": null,
   "graph_def_name": "hanging_graph_asset_job",
   "lineage_snapshot": null,
   "mode_def_snaps": [
@@ -55650,29 +55464,6 @@ snapshots['test_all_snapshot_ids 5'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Selector.2571019f1a5201853d11032145ac3e534067f214": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": true,
-            "name": "env",
-            "type_key": "String"
-          }
-        ],
-        "given_name": null,
-        "key": "Selector.2571019f1a5201853d11032145ac3e534067f214",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SELECTOR"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Selector.8318f5aff6cd0698a5c7fedfb9bdc75fd8006db8": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -56006,23 +55797,23 @@ snapshots['test_all_snapshot_ids 5'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851": {
+      "Shape.1578133c1c71e8e3c9cf3ad46c216eb51b48c778": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
         "fields": [
           {
             "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": "Built-in filesystem IO manager that stores and retrieves values using pickling.",
             "is_required": false,
-            "name": "base_dir",
-            "type_key": "StringSourceType"
+            "name": "io_manager",
+            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
           }
         ],
         "given_name": null,
-        "key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851",
+        "key": "Shape.1578133c1c71e8e3c9cf3ad46c216eb51b48c778",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -56104,29 +55895,6 @@ snapshots['test_all_snapshot_ids 5'] = '''{
         ],
         "given_name": null,
         "key": "Shape.44f24ac55059da1634e84af6c1bf7e0ed332251c",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.44f2a71367507edd1b8e64f739222c4312b3691b": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.44f2a71367507edd1b8e64f739222c4312b3691b",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -56229,7 +55997,7 @@ snapshots['test_all_snapshot_ids 5'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.68abe3b8be0fe4bb5aa23c65d9a78aa7ab0425a5": {
+      "Shape.6b57e4fe3d5c776d50762ca9d53c0aabbcfdfd21": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
@@ -56267,38 +56035,38 @@ snapshots['test_all_snapshot_ids 5'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
-            "default_value_as_json_str": "{\\"io_manager\\": {\\"config\\": {}}}",
+            "default_value_as_json_str": "{\\"io_manager\\": {}}",
             "description": "Configure how shared resources are implemented within a run.",
             "is_required": false,
             "name": "resources",
-            "type_key": "Shape.9e00b33fd8fe1958a32d37ed3540c2e198824a62"
+            "type_key": "Shape.1578133c1c71e8e3c9cf3ad46c216eb51b48c778"
           }
         ],
         "given_name": null,
-        "key": "Shape.68abe3b8be0fe4bb5aa23c65d9a78aa7ab0425a5",
+        "key": "Shape.6b57e4fe3d5c776d50762ca9d53c0aabbcfdfd21",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.9e00b33fd8fe1958a32d37ed3540c2e198824a62": {
+      "Shape.743e47901855cb245064dd633e217bfcb49a11a7": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
         "fields": [
           {
             "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {}}",
-            "description": "Built-in filesystem IO manager that stores and retrieves values using pickling.",
+            "default_provided": false,
+            "default_value_as_json_str": null,
+            "description": null,
             "is_required": false,
-            "name": "io_manager",
-            "type_key": "Shape.44f2a71367507edd1b8e64f739222c4312b3691b"
+            "name": "config",
+            "type_key": "Any"
           }
         ],
         "given_name": null,
-        "key": "Shape.9e00b33fd8fe1958a32d37ed3540c2e198824a62",
+        "key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -56511,22 +56279,6 @@ snapshots['test_all_snapshot_ids 5'] = '''{
           "__enum__": "ConfigScalarKind.STRING"
         },
         "type_param_keys": null
-      },
-      "StringSourceType": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": null,
-        "given_name": null,
-        "key": "StringSourceType",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SCALAR_UNION"
-        },
-        "scalar_kind": null,
-        "type_param_keys": [
-          "String",
-          "Selector.2571019f1a5201853d11032145ac3e534067f214"
-        ]
       }
     }
   },
@@ -56830,18 +56582,18 @@ snapshots['test_all_snapshot_ids 5'] = '''{
           "__class__": "ResourceDefSnap",
           "config_field_snap": {
             "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
+            "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
             "name": "config",
-            "type_key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851"
+            "type_key": "Any"
           },
           "description": "Built-in filesystem IO manager that stores and retrieves values using pickling.",
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.68abe3b8be0fe4bb5aa23c65d9a78aa7ab0425a5"
+      "root_config_key": "Shape.6b57e4fe3d5c776d50762ca9d53c0aabbcfdfd21"
     }
   ],
   "name": "__ASSET_JOB_2",
@@ -57187,7 +56939,7 @@ snapshots['test_all_snapshot_ids 5'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 50'] = '16e44fd6ed220d26b245834d83ecca1cde0a31ef'
+snapshots['test_all_snapshot_ids 50'] = '059ab36b59fc4da4abed068e7eab7391cf26b6fd'
 
 snapshots['test_all_snapshot_ids 51'] = '''{
   "__class__": "PipelineSnapshot",
@@ -62775,7 +62527,7 @@ snapshots['test_all_snapshot_ids 59'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 6'] = 'cb3abda571c5e478ad98d4ab4fdff37224f9f999'
+snapshots['test_all_snapshot_ids 6'] = '44ad29e80992e076778ba6e0036746921eece127'
 
 snapshots['test_all_snapshot_ids 60'] = '5bed77a6777bc8f0d46170eb39efca202c69ecdc'
 
@@ -68855,29 +68607,6 @@ snapshots['test_all_snapshot_ids 7'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Selector.2571019f1a5201853d11032145ac3e534067f214": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": true,
-            "name": "env",
-            "type_key": "String"
-          }
-        ],
-        "given_name": null,
-        "key": "Selector.2571019f1a5201853d11032145ac3e534067f214",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SELECTOR"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Selector.8318f5aff6cd0698a5c7fedfb9bdc75fd8006db8": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -69211,23 +68940,23 @@ snapshots['test_all_snapshot_ids 7'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851": {
+      "Shape.1578133c1c71e8e3c9cf3ad46c216eb51b48c778": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
         "fields": [
           {
             "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": "Built-in filesystem IO manager that stores and retrieves values using pickling.",
             "is_required": false,
-            "name": "base_dir",
-            "type_key": "StringSourceType"
+            "name": "io_manager",
+            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
           }
         ],
         "given_name": null,
-        "key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851",
+        "key": "Shape.1578133c1c71e8e3c9cf3ad46c216eb51b48c778",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -69309,29 +69038,6 @@ snapshots['test_all_snapshot_ids 7'] = '''{
         ],
         "given_name": null,
         "key": "Shape.44f24ac55059da1634e84af6c1bf7e0ed332251c",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.44f2a71367507edd1b8e64f739222c4312b3691b": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.44f2a71367507edd1b8e64f739222c4312b3691b",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -69434,7 +69140,7 @@ snapshots['test_all_snapshot_ids 7'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.6acf087a125443bdd567bf85e0eafd73501fc1a3": {
+      "Shape.6fc11e531edee3a401ca1bf8d7f229b766587ccd": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
@@ -69472,38 +69178,38 @@ snapshots['test_all_snapshot_ids 7'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
-            "default_value_as_json_str": "{\\"io_manager\\": {\\"config\\": {}}}",
+            "default_value_as_json_str": "{\\"io_manager\\": {}}",
             "description": "Configure how shared resources are implemented within a run.",
             "is_required": false,
             "name": "resources",
-            "type_key": "Shape.9e00b33fd8fe1958a32d37ed3540c2e198824a62"
+            "type_key": "Shape.1578133c1c71e8e3c9cf3ad46c216eb51b48c778"
           }
         ],
         "given_name": null,
-        "key": "Shape.6acf087a125443bdd567bf85e0eafd73501fc1a3",
+        "key": "Shape.6fc11e531edee3a401ca1bf8d7f229b766587ccd",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.9e00b33fd8fe1958a32d37ed3540c2e198824a62": {
+      "Shape.743e47901855cb245064dd633e217bfcb49a11a7": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
         "fields": [
           {
             "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {}}",
-            "description": "Built-in filesystem IO manager that stores and retrieves values using pickling.",
+            "default_provided": false,
+            "default_value_as_json_str": null,
+            "description": null,
             "is_required": false,
-            "name": "io_manager",
-            "type_key": "Shape.44f2a71367507edd1b8e64f739222c4312b3691b"
+            "name": "config",
+            "type_key": "Any"
           }
         ],
         "given_name": null,
-        "key": "Shape.9e00b33fd8fe1958a32d37ed3540c2e198824a62",
+        "key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -69707,22 +69413,6 @@ snapshots['test_all_snapshot_ids 7'] = '''{
           "__enum__": "ConfigScalarKind.STRING"
         },
         "type_param_keys": null
-      },
-      "StringSourceType": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": null,
-        "given_name": null,
-        "key": "StringSourceType",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SCALAR_UNION"
-        },
-        "scalar_kind": null,
-        "type_param_keys": [
-          "String",
-          "Selector.2571019f1a5201853d11032145ac3e534067f214"
-        ]
       }
     }
   },
@@ -70018,18 +69708,18 @@ snapshots['test_all_snapshot_ids 7'] = '''{
           "__class__": "ResourceDefSnap",
           "config_field_snap": {
             "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
+            "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
             "name": "config",
-            "type_key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851"
+            "type_key": "Any"
           },
           "description": "Built-in filesystem IO manager that stores and retrieves values using pickling.",
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.6acf087a125443bdd567bf85e0eafd73501fc1a3"
+      "root_config_key": "Shape.6fc11e531edee3a401ca1bf8d7f229b766587ccd"
     }
   ],
   "name": "__ASSET_JOB_3",
@@ -76138,7 +75828,7 @@ snapshots['test_all_snapshot_ids 79'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 8'] = 'd7454be59f7edf55dc21e855996cf8f157bb341b'
+snapshots['test_all_snapshot_ids 8'] = '1033d7350046861565ed4cff4e44f63563b03cd2'
 
 snapshots['test_all_snapshot_ids 80'] = 'c5585ee2f56dd032ecbcbc02763cf306d836d7f6'
 
@@ -82397,29 +82087,6 @@ snapshots['test_all_snapshot_ids 9'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Selector.2571019f1a5201853d11032145ac3e534067f214": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": true,
-            "name": "env",
-            "type_key": "String"
-          }
-        ],
-        "given_name": null,
-        "key": "Selector.2571019f1a5201853d11032145ac3e534067f214",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SELECTOR"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Selector.8318f5aff6cd0698a5c7fedfb9bdc75fd8006db8": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -82730,59 +82397,6 @@ snapshots['test_all_snapshot_ids 9'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.0c8de28003ba6e2c72ed80d88a26c807d9ff91ed": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "field_aliases": {
-          "ops": "solids"
-        },
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {\\"multiprocess\\": {\\"max_concurrent\\": 0, \\"retries\\": {\\"enabled\\": {}}}}}",
-            "description": "Configure how steps are executed within a run.",
-            "is_required": false,
-            "name": "execution",
-            "type_key": "Shape.f74882eed6db21825b8461f675d1a11e200f2f1b"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": "Configure how loggers emit messages within a run.",
-            "is_required": false,
-            "name": "loggers",
-            "type_key": "Shape.e895d95ee6d0eff1b884c76f44a2ab7089f0c49b"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"downstream_weekly_partitioned_asset\\": {}, \\"fresh_diamond_bottom\\": {}, \\"fresh_diamond_left\\": {}, \\"fresh_diamond_right\\": {}, \\"fresh_diamond_top\\": {}, \\"typed_asset\\": {}, \\"typed_multi_asset\\": {\\"config\\": {}}, \\"unpartitioned_upstream_of_partitioned\\": {}, \\"untyped_asset\\": {}}",
-            "description": "Configure runtime parameters for ops or assets.",
-            "is_required": false,
-            "name": "ops",
-            "type_key": "Shape.570005e820e62d883d3b4a8a8066382d4c54a004"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"io_manager\\": {\\"config\\": {}}}",
-            "description": "Configure how shared resources are implemented within a run.",
-            "is_required": false,
-            "name": "resources",
-            "type_key": "Shape.9e00b33fd8fe1958a32d37ed3540c2e198824a62"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.0c8de28003ba6e2c72ed80d88a26c807d9ff91ed",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Shape.0fe8353d6b542accfad9becbdbaeb92f649ebb9a": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -82806,23 +82420,23 @@ snapshots['test_all_snapshot_ids 9'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851": {
+      "Shape.1578133c1c71e8e3c9cf3ad46c216eb51b48c778": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
         "fields": [
           {
             "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": "Built-in filesystem IO manager that stores and retrieves values using pickling.",
             "is_required": false,
-            "name": "base_dir",
-            "type_key": "StringSourceType"
+            "name": "io_manager",
+            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
           }
         ],
         "given_name": null,
-        "key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851",
+        "key": "Shape.1578133c1c71e8e3c9cf3ad46c216eb51b48c778",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -82904,29 +82518,6 @@ snapshots['test_all_snapshot_ids 9'] = '''{
         ],
         "given_name": null,
         "key": "Shape.44f24ac55059da1634e84af6c1bf7e0ed332251c",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.44f2a71367507edd1b8e64f739222c4312b3691b": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.44f2a71367507edd1b8e64f739222c4312b3691b",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -83127,23 +82718,23 @@ snapshots['test_all_snapshot_ids 9'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.9e00b33fd8fe1958a32d37ed3540c2e198824a62": {
+      "Shape.743e47901855cb245064dd633e217bfcb49a11a7": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
         "fields": [
           {
             "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {}}",
-            "description": "Built-in filesystem IO manager that stores and retrieves values using pickling.",
+            "default_provided": false,
+            "default_value_as_json_str": null,
+            "description": null,
             "is_required": false,
-            "name": "io_manager",
-            "type_key": "Shape.44f2a71367507edd1b8e64f739222c4312b3691b"
+            "name": "config",
+            "type_key": "Any"
           }
         ],
         "given_name": null,
-        "key": "Shape.9e00b33fd8fe1958a32d37ed3540c2e198824a62",
+        "key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -83157,6 +82748,59 @@ snapshots['test_all_snapshot_ids 9'] = '''{
         "fields": [],
         "given_name": null,
         "key": "Shape.da39a3ee5e6b4b0d3255bfef95601890afd80709",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
+      "Shape.e38aa3a7fd31d0aa7aff40edd408c3ff99df2f92": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "field_aliases": {
+          "ops": "solids"
+        },
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"config\\": {\\"multiprocess\\": {\\"max_concurrent\\": 0, \\"retries\\": {\\"enabled\\": {}}}}}",
+            "description": "Configure how steps are executed within a run.",
+            "is_required": false,
+            "name": "execution",
+            "type_key": "Shape.f74882eed6db21825b8461f675d1a11e200f2f1b"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": "Configure how loggers emit messages within a run.",
+            "is_required": false,
+            "name": "loggers",
+            "type_key": "Shape.e895d95ee6d0eff1b884c76f44a2ab7089f0c49b"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"downstream_weekly_partitioned_asset\\": {}, \\"fresh_diamond_bottom\\": {}, \\"fresh_diamond_left\\": {}, \\"fresh_diamond_right\\": {}, \\"fresh_diamond_top\\": {}, \\"typed_asset\\": {}, \\"typed_multi_asset\\": {\\"config\\": {}}, \\"unpartitioned_upstream_of_partitioned\\": {}, \\"untyped_asset\\": {}}",
+            "description": "Configure runtime parameters for ops or assets.",
+            "is_required": false,
+            "name": "ops",
+            "type_key": "Shape.570005e820e62d883d3b4a8a8066382d4c54a004"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"io_manager\\": {}}",
+            "description": "Configure how shared resources are implemented within a run.",
+            "is_required": false,
+            "name": "resources",
+            "type_key": "Shape.1578133c1c71e8e3c9cf3ad46c216eb51b48c778"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.e38aa3a7fd31d0aa7aff40edd408c3ff99df2f92",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -83249,22 +82893,6 @@ snapshots['test_all_snapshot_ids 9'] = '''{
           "__enum__": "ConfigScalarKind.STRING"
         },
         "type_param_keys": null
-      },
-      "StringSourceType": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": null,
-        "given_name": null,
-        "key": "StringSourceType",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SCALAR_UNION"
-        },
-        "scalar_kind": null,
-        "type_param_keys": [
-          "String",
-          "Selector.2571019f1a5201853d11032145ac3e534067f214"
-        ]
       }
     }
   },
@@ -83554,18 +83182,18 @@ snapshots['test_all_snapshot_ids 9'] = '''{
           "__class__": "ResourceDefSnap",
           "config_field_snap": {
             "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
+            "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
             "name": "config",
-            "type_key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851"
+            "type_key": "Any"
           },
           "description": "Built-in filesystem IO manager that stores and retrieves values using pickling.",
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.0c8de28003ba6e2c72ed80d88a26c807d9ff91ed"
+      "root_config_key": "Shape.e38aa3a7fd31d0aa7aff40edd408c3ff99df2f92"
     }
   ],
   "name": "__ASSET_JOB_4",
@@ -84123,29 +83751,6 @@ snapshots['test_all_snapshot_ids 91'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Selector.2571019f1a5201853d11032145ac3e534067f214": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": true,
-            "name": "env",
-            "type_key": "String"
-          }
-        ],
-        "given_name": null,
-        "key": "Selector.2571019f1a5201853d11032145ac3e534067f214",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SELECTOR"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Selector.8318f5aff6cd0698a5c7fedfb9bdc75fd8006db8": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -84479,23 +84084,23 @@ snapshots['test_all_snapshot_ids 91'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851": {
+      "Shape.1578133c1c71e8e3c9cf3ad46c216eb51b48c778": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
         "fields": [
           {
             "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": "Built-in filesystem IO manager that stores and retrieves values using pickling.",
             "is_required": false,
-            "name": "base_dir",
-            "type_key": "StringSourceType"
+            "name": "io_manager",
+            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
           }
         ],
         "given_name": null,
-        "key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851",
+        "key": "Shape.1578133c1c71e8e3c9cf3ad46c216eb51b48c778",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -84577,29 +84182,6 @@ snapshots['test_all_snapshot_ids 91'] = '''{
         ],
         "given_name": null,
         "key": "Shape.44f24ac55059da1634e84af6c1bf7e0ed332251c",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.44f2a71367507edd1b8e64f739222c4312b3691b": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.44f2a71367507edd1b8e64f739222c4312b3691b",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -84702,7 +84284,7 @@ snapshots['test_all_snapshot_ids 91'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.89d44b84a8e502b1aeda204e358439dbf5fa1f98": {
+      "Shape.6aff25df06400082ed5209eb52fc3c7baaa1f5b0": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
@@ -84740,38 +84322,38 @@ snapshots['test_all_snapshot_ids 91'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
-            "default_value_as_json_str": "{\\"io_manager\\": {\\"config\\": {}}}",
+            "default_value_as_json_str": "{\\"io_manager\\": {}}",
             "description": "Configure how shared resources are implemented within a run.",
             "is_required": false,
             "name": "resources",
-            "type_key": "Shape.9e00b33fd8fe1958a32d37ed3540c2e198824a62"
+            "type_key": "Shape.1578133c1c71e8e3c9cf3ad46c216eb51b48c778"
           }
         ],
         "given_name": null,
-        "key": "Shape.89d44b84a8e502b1aeda204e358439dbf5fa1f98",
+        "key": "Shape.6aff25df06400082ed5209eb52fc3c7baaa1f5b0",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.9e00b33fd8fe1958a32d37ed3540c2e198824a62": {
+      "Shape.743e47901855cb245064dd633e217bfcb49a11a7": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
         "fields": [
           {
             "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {}}",
-            "description": "Built-in filesystem IO manager that stores and retrieves values using pickling.",
+            "default_provided": false,
+            "default_value_as_json_str": null,
+            "description": null,
             "is_required": false,
-            "name": "io_manager",
-            "type_key": "Shape.44f2a71367507edd1b8e64f739222c4312b3691b"
+            "name": "config",
+            "type_key": "Any"
           }
         ],
         "given_name": null,
-        "key": "Shape.9e00b33fd8fe1958a32d37ed3540c2e198824a62",
+        "key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -84913,22 +84495,6 @@ snapshots['test_all_snapshot_ids 91'] = '''{
           "__enum__": "ConfigScalarKind.STRING"
         },
         "type_param_keys": null
-      },
-      "StringSourceType": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": null,
-        "given_name": null,
-        "key": "StringSourceType",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SCALAR_UNION"
-        },
-        "scalar_kind": null,
-        "type_param_keys": [
-          "String",
-          "Selector.2571019f1a5201853d11032145ac3e534067f214"
-        ]
       }
     }
   },
@@ -85066,7 +84632,7 @@ snapshots['test_all_snapshot_ids 91'] = '''{
       }
     ]
   },
-  "description": "",
+  "description": null,
   "graph_def_name": "named_groups_job",
   "lineage_snapshot": null,
   "mode_def_snaps": [
@@ -85095,18 +84661,18 @@ snapshots['test_all_snapshot_ids 91'] = '''{
           "__class__": "ResourceDefSnap",
           "config_field_snap": {
             "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
+            "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
             "name": "config",
-            "type_key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851"
+            "type_key": "Any"
           },
           "description": "Built-in filesystem IO manager that stores and retrieves values using pickling.",
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.89d44b84a8e502b1aeda204e358439dbf5fa1f98"
+      "root_config_key": "Shape.6aff25df06400082ed5209eb52fc3c7baaa1f5b0"
     }
   ],
   "name": "named_groups_job",
@@ -85254,7 +84820,7 @@ snapshots['test_all_snapshot_ids 91'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 92'] = '0a6ce0be54324c701f21f64cb55419f586c82eeb'
+snapshots['test_all_snapshot_ids 92'] = 'fe46687ef64b29e53c9b8a569b4c26be62347440'
 
 snapshots['test_all_snapshot_ids 93'] = '''{
   "__class__": "PipelineSnapshot",
