@@ -441,7 +441,7 @@ class TestSensors(NonLaunchableGraphQLContextTestMatrix):
         assert evaluation_result["runRequests"][0]["runConfigYaml"] == "{}\n"
         assert evaluation_result["skipReason"] is None
         assert evaluation_result["error"] is None
-        assert evaluation_result["dynamicPartitionsRequests"] is None
+        assert evaluation_result["dynamicPartitionsRequests"] == []
 
     def test_dry_run_with_dynamic_partition_requests(
         self, graphql_context: WorkspaceRequestContext
@@ -491,7 +491,7 @@ class TestSensors(NonLaunchableGraphQLContextTestMatrix):
         evaluation_result = result.data["sensorDryRun"]["evaluationResult"]
         assert not evaluation_result["runRequests"]
         assert not evaluation_result["skipReason"]
-        assert not evaluation_result["dynamicPartitionsRequests"]
+        assert evaluation_result["dynamicPartitionsRequests"] == []
         assert (
             "Error occurred during the execution of evaluation_fn"
             in evaluation_result["error"]["message"]
