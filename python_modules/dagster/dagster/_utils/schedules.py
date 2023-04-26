@@ -19,6 +19,16 @@ class CroniterShim(_croniter):
         return super().expand(*args, **kwargs)
 
 
+def exact_match(cron_expression: str, dt: datetime.datetime) -> bool:
+    """The default croniter match function only checks that the given datetime is within 60 seconds
+    of a cron schedule tick. This function checks that the given datetime is exactly on a cron tick.
+    """
+    cron = CroniterShim(
+        cron_expression, dt + datetime.timedelta(microseconds=1), ret_type=datetime.datetime
+    )
+    return dt == cron.get_prev()
+
+
 def is_valid_cron_string(cron_string: str) -> bool:
     if not CroniterShim.is_valid(cron_string):
         return False
@@ -77,11 +87,7 @@ def cron_string_iterator(
         expected_hour = int(cron_parts[1][0])
 
     date_iter = CroniterShim(cron_string, start_datetime)
-    if (
-        delta_fn is not None
-        and start_offset == 0
-        and CroniterShim.match(cron_string, start_timestamp)
-    ):
+    if delta_fn is not None and start_offset == 0 and exact_match(cron_string, start_datetime):
         # In simple cases, where you're already on a cron boundary, the below logic is unnecessary
         # and slow
         next_date = start_datetime
