@@ -798,8 +798,12 @@ class ConfigurableResourceFactory(
 
     @cached_method
     def get_resource_definition(self) -> ConfigurableResourceFactoryResourceDefinition:
+        is_cm_resource = (
+            self.__class__.yield_for_execution != ConfigurableResourceFactory.yield_for_execution
+            or self.__class__.post_execute != ConfigurableResourceFactory.post_execute
+        )
         return ConfigurableResourceFactoryResourceDefinition(
-            resource_fn=self._initialize_and_run,
+            resource_fn=self._initialize_and_run_cm if is_cm_resource else self._initialize_and_run,
             config_schema=self._config_schema,
             description=self.__doc__,
             resolve_resource_keys=self._resolve_required_resource_keys,
@@ -887,8 +891,8 @@ class ConfigurableResourceFactory(
         with contextlib.ExitStack() as stack:
             resources_to_update, _ = separate_resource_params(self.__dict__)
             resources_to_update = {
-                attr_name: stack.enter_context(
-                    _call_resource_fn_with_default(coerce_to_resource(resource), context)
+                attr_name: _call_resource_fn_with_default(
+                    stack, coerce_to_resource(resource), context
                 )
                 for attr_name, resource in resources_to_update.items()
                 if attr_name not in partial_resources_to_update
@@ -909,8 +913,19 @@ class ConfigurableResourceFactory(
         )
         return copy
 
+    def _initialize_and_run(self, context: InitResourceContext) -> TResValue:
+        with self._resolve_and_update_nested_resources(context) as has_nested_resource:
+            updated_resource = has_nested_resource.with_resource_context(  # noqa: SLF001
+                context
+            )._resolve_and_update_env_vars()
+
+            updated_resource.pre_execute(context)
+            return updated_resource.create_resource(context)
+
     @contextlib.contextmanager
-    def _initialize_and_run(self, context: InitResourceContext) -> Generator[TResValue, None, None]:
+    def _initialize_and_run_cm(
+        self, context: InitResourceContext
+    ) -> Generator[TResValue, None, None]:
         with self._resolve_and_update_nested_resources(context) as has_nested_resource:
             updated_resource = has_nested_resource.with_resource_context(  # noqa: SLF001
                 context
@@ -1670,16 +1685,27 @@ def separate_resource_params(data: Dict[str, Any]) -> SeparatedResourceParams:
     )
 
 
-def _call_resource_fn_with_default(obj: ResourceDefinition, context: InitResourceContext) -> Any:
+def _call_resource_fn_with_default(
+    stack: contextlib.ExitStack, obj: ResourceDefinition, context: InitResourceContext
+) -> Any:
     if isinstance(obj.config_schema, ConfiguredDefinitionConfigSchema):
         value = cast(Dict[str, Any], obj.config_schema.resolve_config({}).value)
         context = context.replace_config(value["config"])
     elif obj.config_schema.default_provided:
         context = context.replace_config(obj.config_schema.default_value)
-    if has_at_least_one_parameter(obj.resource_fn):
-        return cast(ResourceFunctionWithContext, obj.resource_fn)(context)
+
+    is_fn_generator = inspect.isgenerator(obj.resource_fn) or isinstance(
+        obj.resource_fn, contextlib.ContextDecorator
+    )
+    if has_at_least_one_parameter(obj.resource_fn):  # type: ignore[unreachable]
+        result = cast(ResourceFunctionWithContext, obj.resource_fn)(context)
     else:
-        return cast(ResourceFunctionWithoutContext, obj.resource_fn)()
+        result = cast(ResourceFunctionWithoutContext, obj.resource_fn)()
+
+    if is_fn_generator:
+        return stack.enter_context(cast(contextlib.AbstractContextManager, result))
+    else:
+        return result
 
 
 LateBoundTypesForResourceTypeChecking.set_actual_types_for_type_checking(
