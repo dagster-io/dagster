@@ -91,6 +91,8 @@ def cron_string_iterator(
         # In simple cases, where you're already on a cron boundary, the below logic is unnecessary
         # and slow
         next_date = start_datetime
+        # This is already on a cron boundary, so yield it
+        yield to_timezone(pendulum.instance(next_date), timezone_str)
     else:
         # Go back one iteration so that the next iteration is the first time that is >= start_datetime
         # and matches the cron schedule
@@ -110,8 +112,6 @@ def cron_string_iterator(
     if delta_fn is not None:
         # Use pendulums for intervals when possible
         next_date = to_timezone(pendulum.instance(next_date), timezone_str)
-        if next_date >= start_datetime:
-            yield next_date
         while True:
             curr_hour = next_date.hour
 
