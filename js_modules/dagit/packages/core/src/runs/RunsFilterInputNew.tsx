@@ -5,7 +5,6 @@ import {
   tokenizedValuesFromStringArray,
   Box,
   Icon,
-  SubwayDot,
 } from '@dagster-io/ui';
 import memoize from 'lodash/memoize';
 import qs from 'qs';
@@ -14,6 +13,7 @@ import * as React from 'react';
 import {__ASSET_JOB_PREFIX} from '../asset-graph/Utils';
 import {RunsFilter, RunStatus} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {useFilters} from '../ui/Filters';
 import {FilterObject} from '../ui/Filters/useFilter';
 import {capitalizeFirstLetter, useStaticSetFilter} from '../ui/Filters/useStaticSetFilter';
@@ -169,6 +169,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
 
   const [fetchTagKeys, {data: tagKeyData}] = useLazyQuery<RunTagKeysNewQuery>(RUN_TAG_KEYS_QUERY);
   const client = useApolloClient();
+  const {UserDisplay} = useLaunchPadHooks();
 
   const fetchTagValues = React.useCallback(
     async (tagKey: string) => {
@@ -400,7 +401,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
           } else if (value.type === DagsterTag.ScheduleName) {
             icon = <Icon name="schedule" />;
           } else if (value.type === DagsterTag.User) {
-            icon = <SubwayDot label={value.value} />;
+            return <UserDisplay email={value.value} isFilter />;
           }
           return (
             <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
