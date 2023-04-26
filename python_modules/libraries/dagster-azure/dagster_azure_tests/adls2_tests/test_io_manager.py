@@ -24,7 +24,9 @@ from dagster import (
 )
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.definitions.pipeline_base import InMemoryJob
+from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import execute_plan
@@ -37,6 +39,7 @@ from dagster_azure.adls2.fake_adls2_resource import fake_adls2_resource
 from dagster_azure.adls2.io_manager import PickledObjectADLS2IOManager, adls2_pickle_io_manager
 from dagster_azure.adls2.resources import adls2_resource
 from dagster_azure.blob import create_blob_client
+from upath import UPath
 
 
 def fake_io_manager_factory(io_manager):
@@ -142,14 +145,12 @@ def test_adls2_pickle_io_manager_deletes_recursively(storage_account, file_syste
 
     # Verify that when the IO manager needs to delete recursively, it is able to do so,
     # by removing the whole path for the run
-    recursive_path = "/".join(
-        [
-            io_manager.prefix,
-            "storage",
-            run_id,
-        ]
+    recursive_path = UPath(
+        io_manager.prefix,
+        "storage",
+        run_id,
     )
-    io_manager._rm_object(recursive_path)  # noqa: SLF001
+    io_manager.unlink(recursive_path)
 
 
 @pytest.mark.nettest
@@ -268,13 +269,32 @@ def test_asset_io_manager(storage_account, file_system, credential):
     def upstream(asset3):
         return asset3 + 1
 
+    SourceAsset(f"source1_{_id}", partitions_def=StaticPartitionsDefinition(["foo", "bar"]))
+
+    # prepopulate storage with source asset
+    io_manager = PickledObjectADLS2IOManager(
+        file_system=file_system,
+        adls2_client=create_adls2_client(storage_account, credential),
+        blob_client=create_blob_client(storage_account, credential),
+        lease_client_constructor=DataLakeLeaseClient,
+    )
+    for partition_key in ["foo", "bar"]:
+        context = build_output_context(
+            step_key=f"source1_{_id}",
+            name="result",
+            run_id=make_new_run_id(),
+            dagster_type=resolve_dagster_type(int),
+            partition_key=partition_key,
+        )
+        io_manager.handle_output(context, 1)
+
     @asset(
         name=f"downstream_{_id}",
         ins={"upstream": AssetIn(asset_key=AssetKey([f"upstream_{_id}"]))},
     )
-    def downstream(upstream):
+    def downstream(upstream, source):
         assert upstream == 7
-        return 1 + upstream
+        return 1 + upstream + source["foo"] + source["bar"]
 
     asset_job = Definitions(
         assets=[upstream, downstream, AssetsDefinition.from_graph(graph_asset)],

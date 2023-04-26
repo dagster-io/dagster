@@ -63,7 +63,7 @@ def cleanup_memoized_results(
             )
 
             key = io_manager._get_path(output_context)  # noqa: SLF001
-            io_manager._rm_object(key)  # noqa: SLF001
+            io_manager.unlink(key)
 
 
 def get_test_repo_path():
