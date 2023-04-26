@@ -205,12 +205,9 @@ class Config(MakeConfigCacheable):
 
                 discriminator_key = check.not_none(field.discriminator_key)
                 if isinstance(value, Config):
-                    value_dict = value._as_config_dict()  # noqa: SLF001
-                    value_discriminator = check.not_none(value_dict.get(discriminator_key))
-                    values_without_key = {
-                        k: v for k, v in value_dict.items() if k != discriminator_key
-                    }
-                    nested_dict = {value_discriminator: values_without_key}
+                    nested_dict = value._as_config_dict_inner(  # noqa: SLF001
+                        discriminator_key=field.discriminator_key, deep=False
+                    )
 
                 nested_items = list(check.is_dict(nested_dict).items())
                 check.invariant(
@@ -226,7 +223,15 @@ class Config(MakeConfigCacheable):
                 modified_data[key] = value
         super().__init__(**modified_data)
 
-    def _as_config_dict(self) -> Mapping[str, Any]:
+    def _as_config_dict_deep(self) -> Mapping[str, Any]:
+        return self._as_config_dict_inner(None, True)
+
+    def _as_config_dict_shallow(self) -> Mapping[str, Any]:
+        return self._as_config_dict_inner(None, False)
+
+    def _as_config_dict_inner(
+        self, discriminator_key: Optional[str] = None, deep: Optional[bool] = False
+    ) -> Mapping[str, Any]:
         """Returns a dictionary representation of this config object,
         ignoring any private fields.
         """
@@ -237,10 +242,18 @@ class Config(MakeConfigCacheable):
             field = self.__fields__.get(key)
             if field and value is None and not _is_pydantic_field_required(field):
                 continue
+
+            output_value = (
+                _config_value_to_dict_representation(self, field, value) if deep else value
+            )
+
             if field:
-                output[field.alias] = value
+                output[field.alias] = output_value
             else:
-                output[key] = value
+                output[key] = output_value
+        if discriminator_key:
+            discriminator_value = output.pop(discriminator_key)
+            output = {discriminator_value: output}
         return output
 
     @classmethod
@@ -255,6 +268,36 @@ class Config(MakeConfigCacheable):
         want the source of truth to be a config class.
         """
         return cast(Shape, cls.to_config_schema().as_field().config_type).fields
+
+
+def _config_value_to_dict_representation(
+    parent: Optional[Config], field: Optional[ModelField], value: Any
+):
+    from dagster._config.field_utils import EnvVar, IntEnvVar
+
+    if isinstance(value, dict):
+        return {
+            k: _config_value_to_dict_representation(None, None, v)
+            for k, v in value.items()
+            if v is not None
+        }
+    elif isinstance(value, list):
+        return [_config_value_to_dict_representation(None, None, v) for v in value]
+    elif isinstance(value, EnvVar):
+        return {"env": str(value)}
+    elif isinstance(value, IntEnvVar):
+        return {"env": value.name}
+    if isinstance(value, Config):
+        return {
+            k: v
+            for k, v in value._as_config_dict_inner(  # noqa: SLF001
+                field.discriminator_key if field else None, True
+            ).items()
+        }
+    elif isinstance(value, Enum):
+        return value.name
+
+    return value
 
 
 class PermissiveConfig(Config):
@@ -692,7 +735,7 @@ class ConfigurableResourceFactory(
         # We pull the values from the Pydantic config object, which may cast values
         # to the correct type under the hood - useful in particular for enums
         casted_data_without_resources = {
-            k: v for k, v in self._as_config_dict().items() if k in data_without_resources
+            k: v for k, v in self._as_config_dict_deep().items() if k in data_without_resources
         }
         resolved_config_dict = config_dictionary_from_values(casted_data_without_resources, schema)
 
@@ -770,7 +813,7 @@ class ConfigurableResourceFactory(
         # Since Resource extends BaseModel and is a dataclass, we know that the
         # signature of any __init__ method will always consist of the fields
         # of this class. We can therefore safely pass in the values as kwargs.
-        out = self.__class__(**{**self._as_config_dict(), **values})
+        out = self.__class__(**{**self._as_config_dict_shallow(), **values})
         out._state__internal__ = out._state__internal__._replace(  # noqa: SLF001
             resource_context=self._state__internal__.resource_context
         )

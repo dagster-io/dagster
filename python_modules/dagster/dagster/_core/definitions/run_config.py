@@ -620,7 +620,7 @@ def _convert_config_classes_inner(configs: Any) -> Any:
     return {
         k: {
             "config": config_dictionary_from_values(
-                v._as_config_dict(), v.to_config_schema().as_field()  # noqa: SLF001
+                v._as_config_dict_shallow(), v.to_config_schema().as_field()  # noqa: SLF001
             )
         }
         if isinstance(v, Config)
