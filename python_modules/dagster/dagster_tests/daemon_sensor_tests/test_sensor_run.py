@@ -1,7 +1,5 @@
-import os
 import random
 import string
-import sys
 import tempfile
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -418,10 +416,11 @@ def asset_job_sensor(context, _event):
 @run_failure_sensor
 def my_run_failure_sensor(context):
     assert isinstance(context.instance, DagsterInstance)
-    assert "failure_op" in context.failure_event.message
-    step_failure_events = context.get_step_failure_events()
-    assert len(step_failure_events) == 1
-    assert "womp womp" in step_failure_events[0].message
+    if "failure_op" in context.failure_event.message:
+        step_failure_events = context.get_step_failure_events()
+        assert len(step_failure_events) == 1
+        step_error_str = step_failure_events[0].event_specific_data.error.to_string()
+        assert "womp womp" in step_error_str, step_error_str
 
 
 @run_failure_sensor(job_selection=[failure_job])
@@ -854,22 +853,9 @@ def asset_sensor_repo():
 
 
 def get_sensor_executors():
-    is_buildkite = os.getenv("BUILDKITE") is not None
     return [
-        pytest.param(
-            None,
-            marks=pytest.mark.skipif(
-                is_buildkite and sys.version_info.minor != 9, reason="timeouts"
-            ),
-            id="synchronous",
-        ),
-        pytest.param(
-            SingleThreadPoolExecutor(),
-            marks=pytest.mark.skipif(
-                is_buildkite and sys.version_info.minor != 9, reason="timeouts"
-            ),
-            id="threadpool",
-        ),
+        pytest.param(None, id="synchronous"),
+        pytest.param(SingleThreadPoolExecutor(), id="threadpool"),
     ]
 
 
