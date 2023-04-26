@@ -1,6 +1,8 @@
-import {Box, Colors} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
+
+import {Box} from './Box';
+import {Colors} from './Colors';
 
 export const HeaderCell = ({children}: {children?: React.ReactNode}) => (
   <CellBox
