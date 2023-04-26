@@ -655,7 +655,6 @@ class ConfigurableResourceFactory(
 
     def __init__(self, **data: Any):
         resource_pointers, data_without_resources = separate_resource_params(data)
-      
 
         schema = infer_schema_from_config_class(
             self.__class__, fields_to_omit=set(resource_pointers.keys())
@@ -796,7 +795,9 @@ class ConfigurableResourceFactory(
         with contextlib.ExitStack() as stack:
             resources_to_update, _ = separate_resource_params(self.__dict__)
             resources_to_update = {
-                attr_name: stack.enter_context(_call_resource_fn_with_default(coerce_to_resource(resource), context))
+                attr_name: stack.enter_context(
+                    _call_resource_fn_with_default(coerce_to_resource(resource), context)
+                )
                 for attr_name, resource in resources_to_update.items()
                 if attr_name not in partial_resources_to_update
             }
@@ -819,10 +820,9 @@ class ConfigurableResourceFactory(
     @contextlib.contextmanager
     def _initialize_and_run(self, context: InitResourceContext) -> Generator[TResValue, None, None]:
         with self._resolve_and_update_nested_resources(context) as has_nested_resource:
-            updated_resource = (
-                has_nested_resource.with_resource_context(context)
-                ._resolve_and_update_env_vars()
-            )
+            updated_resource = has_nested_resource.with_resource_context(  # noqa: SLF001
+                context
+            )._resolve_and_update_env_vars()
 
             with updated_resource.yield_for_execution(context) as value:
                 yield value
@@ -842,7 +842,7 @@ class ConfigurableResourceFactory(
         """
         pass
 
-    @ contextlib.contextmanager
+    @contextlib.contextmanager
     def yield_for_execution(self, context: InitResourceContext) -> Generator[TResValue, None, None]:
         """Optionally override this method to perform any lifecycle steps
         before or after the resource is used in execution. By default, calls
