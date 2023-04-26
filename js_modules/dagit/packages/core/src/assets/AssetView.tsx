@@ -94,7 +94,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
 
   // Observe the live state of the visible assets. Note: We use the "last materialization"
   // provided by this hook to trigger resets of the datasets inside the Activity / Plots tabs
-  const {liveDataRefreshState, liveDataByNode, runWatchers} = useLiveDataForAssetKeys(
+  const {liveDataRefreshState, liveDataByNode} = useLiveDataForAssetKeys(
     visibleAssetGraph.graphAssetKeys,
   );
 
@@ -205,7 +205,6 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
 
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', width: '100%', overflowY: 'auto'}}>
-      {runWatchers}
       <AssetPageHeader
         assetKey={assetKey}
         tags={
@@ -487,7 +486,13 @@ const AssetViewPageHeaderTags: React.FC<{
           </Link>
         </Tag>
       )}
-      {liveData?.freshnessPolicy && <CurrentMinutesLateTag liveData={liveData} policyOnHover />}
+      {definition && definition.freshnessPolicy && (
+        <CurrentMinutesLateTag
+          liveData={liveData}
+          policy={definition.freshnessPolicy}
+          policyOnHover
+        />
+      )}
       {definition && (
         <StaleReasonsTags
           liveData={liveData}

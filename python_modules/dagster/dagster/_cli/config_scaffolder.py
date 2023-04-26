@@ -5,15 +5,15 @@ from dagster._config import ConfigType, ConfigTypeKind
 from dagster._core.definitions import JobDefinition
 
 
-def scaffold_pipeline_config(
-    pipeline_def: JobDefinition,
+def scaffold_job_config(
+    job_def: JobDefinition,
     skip_non_required: bool = True,
     mode: Optional[str] = None,
 ):
-    check.inst_param(pipeline_def, "pipeline_def", JobDefinition)
+    check.inst_param(job_def, "pipeline_def", JobDefinition)
     check.bool_param(skip_non_required, "skip_non_required")
 
-    env_config_type = pipeline_def.run_config_schema.config_type
+    env_config_type = job_def.run_config_schema.config_type
 
     env_dict = {}
 

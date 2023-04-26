@@ -1486,7 +1486,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             ],
         )
         run = graphql_context.instance.get_run_by_id(run_id)
-        assert run and run.is_finished
+        assert run and run.is_success
 
         # Generate materializations with subselection of foo and baz
         run_id = _create_run(

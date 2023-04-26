@@ -98,7 +98,7 @@ def toys_repository():
             model_job,
             multi_inputs_outputs_job,
             hello_world_notebook_pipeline,
-            software_defined_assets,
+            *software_defined_assets,
             with_metadata,
             succeeds_job,
             return_run_request_succeeds_sensor,

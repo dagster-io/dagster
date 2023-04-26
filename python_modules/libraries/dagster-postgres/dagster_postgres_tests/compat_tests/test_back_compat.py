@@ -87,7 +87,7 @@ def test_0_7_6_postgres_pre_add_pipeline_snapshot(hostname, conn_string):
         run = instance.get_run_by_id(run_id)
 
         assert run.run_id == run_id
-        assert run.pipeline_snapshot_id is None
+        assert run.job_snapshot_id is None
         result = noop_job.execute_in_process(instance=instance)
 
         assert result.success
@@ -99,7 +99,7 @@ def test_0_7_6_postgres_pre_add_pipeline_snapshot(hostname, conn_string):
 
         new_run = instance.get_run_by_id(new_run_id)
 
-        assert new_run.pipeline_snapshot_id
+        assert new_run.job_snapshot_id
 
 
 def test_0_9_22_postgres_pre_asset_partition(hostname, conn_string):

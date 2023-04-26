@@ -17,7 +17,6 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._core.definitions.partition import (
-    Partition,
     ScheduleTimeBasedPartitionsDefinition,
     ScheduleType,
 )
@@ -26,17 +25,13 @@ from dagster._seven.compat.pendulum import create_pendulum_time
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITH_TIMEZONE
 
 
-def assert_expected_partitions(
-    generated_partitions: Sequence[Partition], expected_partitions: Sequence[str]
+def assert_expected_partition_keys(
+    generated_partition_keys: Sequence[str], expected_partition_keys: Sequence[str]
 ):
-    assert all(
-        isinstance(generated_partition, Partition) for generated_partition in generated_partitions
-    )
-    assert len(generated_partitions) == len(expected_partitions)
-    for generated_partition, expected_partition_name in zip(
-        generated_partitions, expected_partitions
-    ):
-        assert generated_partition.name == expected_partition_name
+    assert all(isinstance(generated_key, str) for generated_key in generated_partition_keys)
+    assert len(generated_partition_keys) == len(expected_partition_keys)
+    for generated_key, expected_key in zip(generated_partition_keys, expected_partition_keys):
+        assert generated_key == expected_key
 
 
 @pytest.mark.parametrize(
@@ -46,9 +41,6 @@ def assert_expected_partitions(
 def test_static_partitions(partition_keys: Sequence[str]):
     static_partitions = StaticPartitionsDefinition(partition_keys)
 
-    assert [(p.name, p.value) for p in static_partitions.get_partitions()] == [
-        (p, p) for p in partition_keys
-    ]
     assert static_partitions.get_partition_keys() == partition_keys
 
 
@@ -135,7 +127,7 @@ def test_time_based_partitions_invariants(
         "end",
         "partition_days_offset",
         "current_time",
-        "expected_partitions",
+        "expected_partition_keys",
         "timezone",
     ],
     ids=[
@@ -307,7 +299,7 @@ def test_time_partitions_daily_partitions(
     end: Optional[datetime],
     partition_days_offset: Optional[int],
     current_time,
-    expected_partitions: Sequence[str],
+    expected_partition_keys: Sequence[str],
     timezone: Optional[str],
 ):
     with pendulum.test(current_time):
@@ -320,7 +312,7 @@ def test_time_partitions_daily_partitions(
             timezone=timezone,
         )
 
-        assert_expected_partitions(partitions.get_partitions(), expected_partitions)
+        assert_expected_partition_keys(partitions.get_partition_keys(), expected_partition_keys)
 
 
 @pytest.mark.parametrize(
@@ -329,7 +321,7 @@ def test_time_partitions_daily_partitions(
         "end",
         "partition_months_offset",
         "current_time",
-        "expected_partitions",
+        "expected_partition_keys",
     ],
     ids=[
         "partition months offset == 0",
@@ -413,7 +405,7 @@ def test_time_partitions_monthly_partitions(
     end: datetime,
     partition_months_offset: Optional[int],
     current_time,
-    expected_partitions: Sequence[str],
+    expected_partition_keys: Sequence[str],
 ):
     with pendulum.test(current_time):
         partitions = ScheduleTimeBasedPartitionsDefinition(
@@ -425,7 +417,7 @@ def test_time_partitions_monthly_partitions(
             offset=partition_months_offset,
         )
 
-        assert_expected_partitions(partitions.get_partitions(), expected_partitions)
+        assert_expected_partition_keys(partitions.get_partition_keys(), expected_partition_keys)
 
 
 @pytest.mark.parametrize(
@@ -434,7 +426,7 @@ def test_time_partitions_monthly_partitions(
         "end",
         "partition_weeks_offset",
         "current_time",
-        "expected_partitions",
+        "expected_partition_keys",
     ],
     ids=[
         "partition weeks offset == 0",
@@ -518,7 +510,7 @@ def test_time_partitions_weekly_partitions(
     end: datetime,
     partition_weeks_offset: Optional[int],
     current_time,
-    expected_partitions: Sequence[str],
+    expected_partition_keys: Sequence[str],
 ):
     with pendulum.test(current_time):
         partitions = ScheduleTimeBasedPartitionsDefinition(
@@ -530,7 +522,7 @@ def test_time_partitions_weekly_partitions(
             offset=partition_weeks_offset,
         )
 
-        assert_expected_partitions(partitions.get_partitions(), expected_partitions)
+        assert_expected_partition_keys(partitions.get_partition_keys(), expected_partition_keys)
 
 
 @pytest.mark.parametrize(
@@ -540,7 +532,7 @@ def test_time_partitions_weekly_partitions(
         "timezone",
         "partition_hours_offset",
         "current_time",
-        "expected_partitions",
+        "expected_partition_keys",
     ],
     ids=[
         "partition hours offset == 0",
@@ -723,7 +715,7 @@ def test_time_partitions_hourly_partitions(
     timezone: Optional[str],
     partition_hours_offset: int,
     current_time,
-    expected_partitions: Sequence[str],
+    expected_partition_keys: Sequence[str],
 ):
     with pendulum.test(current_time):
         partitions = ScheduleTimeBasedPartitionsDefinition(
@@ -736,7 +728,7 @@ def test_time_partitions_hourly_partitions(
             offset=partition_hours_offset,
         )
 
-        assert_expected_partitions(partitions.get_partitions(), expected_partitions)
+        assert_expected_partition_keys(partitions.get_partition_keys(), expected_partition_keys)
 
 
 def test_partitions_def_to_string():

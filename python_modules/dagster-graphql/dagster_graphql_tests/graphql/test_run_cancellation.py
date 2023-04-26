@@ -326,7 +326,7 @@ class TestRunVariantTermination(RunTerminationTestSuite):
         recon_job = ReconstructableRepository.for_file(
             file_relative_path(__file__, "repo.py"),
             "test_repo",
-        ).get_reconstructable_pipeline("noop_job")
+        ).get_reconstructable_job("noop_job")
 
         with execute_job(recon_job, instance=instance) as exec_result:
             assert exec_result.success

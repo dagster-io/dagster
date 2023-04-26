@@ -1,5 +1,5 @@
 from dagster import load_assets_from_package_module, repository, with_resources
-from dagstermill import local_output_notebook_io_manager
+from dagstermill import ConfigurableLocalOutputNotebookIOManager
 
 from . import assets
 from .jobs import ping_noteable
@@ -11,7 +11,7 @@ def template_tutorial():
         with_resources(
             load_assets_from_package_module(assets),
             resource_defs={
-                "output_notebook_io_manager": local_output_notebook_io_manager,
+                "output_notebook_io_manager": ConfigurableLocalOutputNotebookIOManager(),
             },
         ),
         ping_noteable,

@@ -74,11 +74,10 @@ from .output import (
     OutputDefinition as OutputDefinition,
     OutputMapping as OutputMapping,
 )
-from .pipeline_base import IPipeline as IPipeline
+from .pipeline_base import IJob as IJob
 from .reconstruct import (
-    ReconstructablePipeline as ReconstructablePipeline,
+    ReconstructableJob as ReconstructableJob,
     build_reconstructable_job as build_reconstructable_job,
-    build_reconstructable_pipeline as build_reconstructable_pipeline,
     reconstructable as reconstructable,
 )
 from .repository_definition import (
@@ -115,7 +114,6 @@ from .sensor_definition import (
 )
 
 # isort: split
-from .asset_group import AssetGroup as AssetGroup
 from .asset_in import AssetIn as AssetIn
 from .asset_out import AssetOut as AssetOut
 from .asset_selection import AssetSelection as AssetSelection

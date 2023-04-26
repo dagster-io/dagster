@@ -7,7 +7,7 @@ from dagster import get_dagster_logger, reconstructable, resource
 from dagster._core.definitions.decorators import op
 from dagster._core.definitions.decorators.job_decorator import job
 from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.execution.api import execute_job
 from dagster._core.test_utils import instance_for_test
 
@@ -28,7 +28,7 @@ def reset_logging():
 
 
 def get_log_records(
-    job_def: Union[JobDefinition, ReconstructablePipeline],
+    job_def: Union[JobDefinition, ReconstructableJob],
     managed_loggers: Optional[Sequence[str]] = None,
     python_logging_level: Optional[str] = None,
     run_config: Optional[Mapping[str, object]] = None,

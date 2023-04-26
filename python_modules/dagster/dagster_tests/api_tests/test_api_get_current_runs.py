@@ -2,7 +2,7 @@ import time
 
 from dagster._core.host_representation.handle import JobHandle
 from dagster._core.test_utils import create_run_for_test, instance_for_test, poll_for_event
-from dagster._grpc.server import ExecuteExternalPipelineArgs
+from dagster._grpc.server import ExecuteExternalJobArgs
 from dagster._grpc.types import CancelExecutionRequest, CancelExecutionResult, StartRunResult
 from dagster._serdes.serdes import deserialize_value
 
@@ -15,16 +15,16 @@ def test_launch_run_grpc():
             job_handle = JobHandle("forever", code_location.get_repository("bar_repo").handle)
             api_client = code_location.client
 
-            run = create_run_for_test(instance, pipeline_name="forever")
+            run = create_run_for_test(instance, job_name="forever")
             run_id = run.run_id
 
             assert code_location.get_current_runs() == []
 
             res = deserialize_value(
                 api_client.start_run(
-                    ExecuteExternalPipelineArgs(
-                        pipeline_origin=job_handle.get_external_origin(),
-                        pipeline_run_id=run_id,
+                    ExecuteExternalJobArgs(
+                        job_origin=job_handle.get_external_origin(),
+                        run_id=run_id,
                         instance_ref=instance.get_ref(),
                     )
                 ),

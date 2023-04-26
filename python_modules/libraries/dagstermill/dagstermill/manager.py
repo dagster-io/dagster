@@ -20,11 +20,11 @@ from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.definitions.op_definition import OpDefinition
-from dagster._core.definitions.pipeline_base import InMemoryPipeline
-from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.definitions.pipeline_base import InMemoryJob
+from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
 from dagster._core.events import DagsterEvent
-from dagster._core.execution.api import scoped_pipeline_context
+from dagster._core.execution.api import scoped_job_context
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.plan.step import ExecutionStep
@@ -67,9 +67,9 @@ class DagstermillResourceEventGenerationManager(EventGenerationManager):
 
 class Manager:
     def __init__(self):
-        self.pipeline = None
+        self.job = None
         self.op_def: Optional[NodeDefinition] = None
-        self.in_pipeline: bool = False
+        self.in_job: bool = False
         self.marshal_dir: Optional[str] = None
         self.context = None
         self.resource_manager = None
@@ -104,10 +104,10 @@ class Manager:
         )
         return self.resource_manager
 
-    def reconstitute_pipeline_context(
+    def reconstitute_job_context(
         self,
         executable_dict: Mapping[str, Any],
-        pipeline_run_dict: Mapping[str, Any],
+        job_run_dict: Mapping[str, Any],
         node_handle_kwargs: Mapping[str, Any],
         instance_ref_dict: Mapping[str, Any],
         step_key: str,
@@ -117,26 +117,26 @@ class Manager:
     ):
         """Reconstitutes a context for dagstermill-managed execution.
 
-        You'll see this function called to reconstruct a pipeline context within the ``injected
+        You'll see this function called to reconstruct a job context within the ``injected
         parameters`` cell of a dagstermill output notebook. Users should not call this function
         interactively except when debugging output notebooks.
 
         Use :func:`dagstermill.get_context` in the ``parameters`` cell of your notebook to define a
         context for interactive exploration and development. This call will be replaced by one to
-        :func:`dagstermill.reconstitute_pipeline_context` when the notebook is executed by
+        :func:`dagstermill.reconstitute_job_context` when the notebook is executed by
         dagstermill.
         """
         check.opt_str_param(output_log_path, "output_log_path")
         check.opt_str_param(marshal_dir, "marshal_dir")
         run_config = check.opt_mapping_param(run_config, "run_config", key_type=str)
-        check.mapping_param(pipeline_run_dict, "pipeline_run_dict")
+        check.mapping_param(job_run_dict, "job_run_dict")
         check.mapping_param(executable_dict, "executable_dict")
         check.mapping_param(node_handle_kwargs, "node_handle_kwargs")
         check.mapping_param(instance_ref_dict, "instance_ref_dict")
         check.str_param(step_key, "step_key")
 
-        pipeline = ReconstructablePipeline.from_dict(executable_dict)
-        pipeline_def = pipeline.get_definition()
+        job = ReconstructableJob.from_dict(executable_dict)
+        job_def = job.get_definition()
 
         try:
             instance_ref = unpack_value(instance_ref_dict, InstanceRef)
@@ -146,49 +146,49 @@ class Manager:
                 "Error when attempting to resolve DagsterInstance from serialized InstanceRef"
             ) from err
 
-        dagster_run = unpack_value(pipeline_run_dict, DagsterRun)
+        dagster_run = unpack_value(job_run_dict, DagsterRun)
 
         node_handle = NodeHandle.from_dict(node_handle_kwargs)
-        op = pipeline_def.get_node(node_handle)
+        op = job_def.get_node(node_handle)
         op_def = op.definition
 
         self.marshal_dir = marshal_dir
-        self.in_pipeline = True
+        self.in_job = True
         self.op_def = op_def
-        self.pipeline = pipeline
+        self.job = job
 
-        resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config)
+        resolved_run_config = ResolvedRunConfig.build(job_def, run_config)
 
         execution_plan = ExecutionPlan.build(
-            self.pipeline,
+            self.job,
             resolved_run_config,
             step_keys_to_execute=dagster_run.step_keys_to_execute,
         )
 
-        with scoped_pipeline_context(
+        with scoped_job_context(
             execution_plan,
-            pipeline,
+            job,
             run_config,
             dagster_run,
             instance,
             scoped_resources_builder_cm=self._setup_resources,
             # Set this flag even though we're not in test for clearer error reporting
             raise_on_error=True,
-        ) as pipeline_context:
+        ) as job_context:
             self.context = DagstermillRuntimeExecutionContext(
-                pipeline_context=pipeline_context,
-                pipeline_def=pipeline_def,
+                job_context=job_context,
+                job_def=job_def,
                 op_config=run_config.get("ops", {}).get(op.name, {}).get("config"),
                 resource_keys_to_init=get_required_resource_keys_to_init(
                     execution_plan,
-                    pipeline_def,
+                    job_def,
                     resolved_run_config,
                 ),
                 op_name=op.name,
                 node_handle=node_handle,
                 step_context=cast(
                     StepExecutionContext,
-                    pipeline_context.for_step(
+                    job_context.for_step(
                         cast(ExecutionStep, execution_plan.get_step_by_key(step_key))
                     ),
                 ),
@@ -238,7 +238,7 @@ class Manager:
             required_resource_keys=set(resource_defs.keys()),
         )
 
-        pipeline_def = JobDefinition(
+        job_def = JobDefinition(
             graph_def=GraphDefinition(name="ephemeral_dagstermill_pipeline", node_defs=[op_def]),
             logger_defs=logger_defs,
             resource_defs=resource_defs,
@@ -249,8 +249,8 @@ class Manager:
         # construct stubbed PipelineRun for notebook exploration...
         # The actual pipeline run during pipeline execution will be serialized and reconstituted
         # in the `reconstitute_pipeline_context` call
-        pipeline_run = DagsterRun(
-            pipeline_name=pipeline_def.name,
+        dagster_run = DagsterRun(
+            job_name=job_def.name,
             run_id=run_id,
             run_config=run_config,
             step_keys_to_execute=None,
@@ -258,30 +258,30 @@ class Manager:
             tags=None,
         )
 
-        self.in_pipeline = False
+        self.in_job = False
         self.op_def = op_def
-        self.pipeline = pipeline_def
+        self.job = job_def
 
-        resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config)
+        resolved_run_config = ResolvedRunConfig.build(job_def, run_config)
 
-        pipeline = InMemoryPipeline(pipeline_def)
-        execution_plan = ExecutionPlan.build(pipeline, resolved_run_config)
+        job = InMemoryJob(job_def)
+        execution_plan = ExecutionPlan.build(job, resolved_run_config)
 
-        with scoped_pipeline_context(
+        with scoped_job_context(
             execution_plan,
-            pipeline,
+            job,
             run_config,
-            pipeline_run,
+            dagster_run,
             DagsterInstance.ephemeral(),
             scoped_resources_builder_cm=self._setup_resources,
-        ) as pipeline_context:
+        ) as job_context:
             self.context = DagstermillExecutionContext(
-                pipeline_context=pipeline_context,
-                pipeline_def=pipeline_def,
+                job_context=job_context,
+                job_def=job_def,
                 op_config=op_config,
                 resource_keys_to_init=get_required_resource_keys_to_init(
                     execution_plan,
-                    pipeline_def,
+                    job_def,
                     resolved_run_config,
                 ),
                 op_name=op_def.name,
@@ -299,7 +299,7 @@ class Manager:
             value (Any): The value to yield.
             output_name (Optional[str]): The name of the result to yield (default: ``'result'``).
         """
-        if not self.in_pipeline:
+        if not self.in_job:
             return value
 
         # deferred import for perf
@@ -356,7 +356,7 @@ class Manager:
                 f" type, one of {valid_types}."
             )
 
-        if not self.in_pipeline:
+        if not self.in_job:
             return dagster_event
 
         # deferred import for perf

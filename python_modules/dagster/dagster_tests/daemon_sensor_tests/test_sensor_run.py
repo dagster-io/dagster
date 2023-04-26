@@ -418,6 +418,10 @@ def asset_job_sensor(context, _event):
 @run_failure_sensor
 def my_run_failure_sensor(context):
     assert isinstance(context.instance, DagsterInstance)
+    assert "failure_op" in context.failure_event.message
+    step_failure_events = context.get_step_failure_events()
+    assert len(step_failure_events) == 1
+    assert "womp womp" in step_failure_events[0].message
 
 
 @run_failure_sensor(job_selection=[failure_job])

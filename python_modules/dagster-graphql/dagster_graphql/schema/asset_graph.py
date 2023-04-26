@@ -17,7 +17,7 @@ from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import EventRecordsFilter
 from dagster._core.events import DagsterEventType
 from dagster._core.host_representation import CodeLocation, ExternalRepository
-from dagster._core.host_representation.external import ExternalPipeline
+from dagster._core.host_representation.external import ExternalJob
 from dagster._core.host_representation.external_data import (
     ExternalAssetNode,
     ExternalDynamicPartitionsDefinitionData,
@@ -178,7 +178,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     _depended_by_loader: Optional[CrossRepoAssetDependedByLoader]
     _external_asset_node: ExternalAssetNode
     _node_definition_snap: Optional[Union[GraphDefSnap, OpDefSnap]]
-    _external_pipeline: Optional[ExternalPipeline]
+    _external_job: Optional[ExternalJob]
     _external_repository: ExternalRepository
     _latest_materialization_loader: Optional[BatchMaterializationLoader]
     _stale_status_loader: Optional[StaleStatusLoader]
@@ -286,7 +286,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         self._dynamic_partitions_loader = check.opt_inst_param(
             dynamic_partitions_loader, "dynamic_partitions_loader", CachingDynamicPartitionsLoader
         )
-        self._external_pipeline = None  # lazily loaded
+        self._external_job = None  # lazily loaded
         self._node_definition_snap = None  # lazily loaded
 
         super().__init__(
@@ -320,16 +320,16 @@ class GrapheneAssetNode(graphene.ObjectType):
         )
         return loader
 
-    def get_external_pipeline(self) -> ExternalPipeline:
-        if self._external_pipeline is None:
+    def get_external_job(self) -> ExternalJob:
+        if self._external_job is None:
             check.invariant(
                 len(self._external_asset_node.job_names) >= 1,
                 "Asset must be part of at least one job",
             )
-            self._external_pipeline = self._external_repository.get_full_external_job(
+            self._external_job = self._external_repository.get_full_external_job(
                 self._external_asset_node.job_names[0]
             )
-        return self._external_pipeline
+        return self._external_job
 
     def get_node_definition_snap(
         self,
@@ -341,7 +341,7 @@ class GrapheneAssetNode(graphene.ObjectType):
                 or self._external_asset_node.graph_name
                 or self._external_asset_node.op_name
             )
-            self._node_definition_snap = self.get_external_pipeline().get_node_def_snap(node_key)
+            self._node_definition_snap = self.get_external_job().get_node_def_snap(node_key)
         # weird mypy bug causes mistyped _node_definition_snap
         return check.not_none(self._node_definition_snap)
 
@@ -386,12 +386,9 @@ class GrapheneAssetNode(graphene.ObjectType):
                         start_idx, end_idx
                     )
                 else:
-                    return [
-                        partition.name
-                        for partition in partitions_def_data.get_partitions_definition().get_partitions(
-                            dynamic_partitions_store=self._dynamic_partitions_loader
-                        )
-                    ]
+                    return partitions_def_data.get_partitions_definition().get_partition_keys(
+                        dynamic_partitions_store=self._dynamic_partitions_loader
+                    )
             elif isinstance(partitions_def_data, ExternalDynamicPartitionsDefinitionData):
                 return self._dynamic_partitions_loader.get_dynamic_partitions(
                     partitions_def_name=partitions_def_data.name
@@ -423,7 +420,7 @@ class GrapheneAssetNode(graphene.ObjectType):
                 inv.node_def_name
                 for inv in node_def_snap.dep_structure_snapshot.node_invocation_snaps
             ]
-            external_pipeline = self.get_external_pipeline()
+            external_pipeline = self.get_external_job()
             constituent_resource_key_sets = [
                 self.get_required_resource_keys_rec(external_pipeline.get_node_def_snap(name))
                 for name in constituent_node_names
@@ -563,7 +560,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_configField(self, _graphene_info: ResolveInfo) -> Optional[GrapheneConfigTypeField]:
         if self.is_source_asset():
             return None
-        external_pipeline = self.get_external_pipeline()
+        external_pipeline = self.get_external_job()
         node_def_snap = self.get_node_definition_snap()
         return (
             GrapheneConfigTypeField(
@@ -886,7 +883,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     ) -> Optional[Union[GrapheneSolidDefinition, GrapheneCompositeSolidDefinition]]:
         if self.is_source_asset():
             return None
-        external_pipeline = self.get_external_pipeline()
+        external_pipeline = self.get_external_job()
         node_def_snap = self.get_node_definition_snap()
         if isinstance(node_def_snap, OpDefSnap):
             return GrapheneSolidDefinition(external_pipeline, node_def_snap.name)
@@ -978,13 +975,13 @@ class GrapheneAssetNode(graphene.ObjectType):
     ]:
         if self.is_source_asset():
             return None
-        external_pipeline = self.get_external_pipeline()
+        external_pipeline = self.get_external_job()
         output_name = self.external_asset_node.output_name
         if output_name:
             for output_def in self.get_node_definition_snap().output_def_snaps:
                 if output_def.name == output_name:
                     return to_dagster_type(
-                        external_pipeline.pipeline_snapshot,
+                        external_pipeline.job_snapshot,
                         output_def.dagster_type_key,
                     )
         return None

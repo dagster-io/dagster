@@ -2,7 +2,7 @@ from typing import Any, Dict, FrozenSet, Mapping, Optional, cast
 
 from dagster._core.definitions import GraphDefinition, JobDefinition, Node, NodeHandle, OpDefinition
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.pipeline_base import InMemoryPipeline
+from dagster._core.definitions.pipeline_base import InMemoryJob
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.instance import DagsterInstance
@@ -13,7 +13,7 @@ from .api import (
     ExecuteRunWithPlanIterable,
     create_execution_plan,
     ephemeral_instance_if_missing,
-    pipeline_execution_iterator,
+    job_execution_iterator,
 )
 from .context_creation_pipeline import (
     PlanOrchestrationContextManager,
@@ -24,7 +24,7 @@ from .execute_in_process_result import ExecuteInProcessResult
 
 def core_execute_in_process(
     run_config: Mapping[str, object],
-    ephemeral_pipeline: JobDefinition,
+    ephemeral_job: JobDefinition,
     instance: Optional[DagsterInstance],
     output_capturing_enabled: bool,
     raise_on_error: bool,
@@ -32,13 +32,13 @@ def core_execute_in_process(
     run_id: Optional[str] = None,
     asset_selection: Optional[FrozenSet[AssetKey]] = None,
 ) -> ExecuteInProcessResult:
-    job_def = ephemeral_pipeline
-    pipeline = InMemoryPipeline(job_def)
+    job_def = ephemeral_job
+    job = InMemoryJob(job_def)
 
     _check_top_level_inputs(job_def)
 
     execution_plan = create_execution_plan(
-        pipeline,
+        job,
         run_config=run_config,
         instance_ref=instance.get_ref() if instance and instance.is_persistent else None,
     )
@@ -46,8 +46,8 @@ def core_execute_in_process(
     output_capture: Dict[StepOutputHandle, Any] = {}
 
     with ephemeral_instance_if_missing(instance) as execute_instance:
-        run = execute_instance.create_run_for_pipeline(
-            pipeline_def=job_def,
+        run = execute_instance.create_run_for_job(
+            job_def=job_def,
             run_config=run_config,
             tags={**job_def.tags, **(run_tags or {})},
             run_id=run_id,
@@ -58,10 +58,10 @@ def core_execute_in_process(
 
         execute_run_iterable = ExecuteRunWithPlanIterable(
             execution_plan=execution_plan,
-            iterator=pipeline_execution_iterator,
+            iterator=job_execution_iterator,
             execution_context_manager=PlanOrchestrationContextManager(
                 context_event_generator=orchestration_context_event_generator,
-                pipeline=pipeline,
+                job=job,
                 execution_plan=execution_plan,
                 dagster_run=run,
                 instance=execute_instance,
@@ -75,7 +75,7 @@ def core_execute_in_process(
         run = execute_instance.get_run_by_id(run_id)
 
     return ExecuteInProcessResult(
-        job_def=ephemeral_pipeline,
+        job_def=ephemeral_job,
         event_list=event_list,
         dagster_run=cast(DagsterRun, run),
         output_capture=output_capture,

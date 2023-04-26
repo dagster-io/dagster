@@ -12,9 +12,10 @@ from dagster._core.host_representation import (
     ManagedGrpcPythonEnvCodeLocationOrigin,
 )
 from dagster._core.host_representation.external import ExternalRepository
-from dagster._core.host_representation.external_data import ExternalPipelineData
+from dagster._core.host_representation.external_data import ExternalJobData
 from dagster._core.host_representation.handle import RepositoryHandle
 from dagster._core.host_representation.origin import ExternalRepositoryOrigin
+from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._serdes.serdes import deserialize_value
@@ -100,7 +101,7 @@ def test_giant_external_repository_streaming_grpc():
             assert external_repository_data.name == "giant_repo"
 
 
-def test_defer_snapshots(instance):
+def test_defer_snapshots(instance: DagsterInstance):
     with get_bar_repo_code_location(instance) as code_location:
         repo_origin = ExternalRepositoryOrigin(
             code_location.origin,
@@ -120,12 +121,14 @@ def test_defer_snapshots(instance):
                 repo_origin,
                 ref.name,
             )
-            return deserialize_value(reply.serialized_job_data, ExternalPipelineData)
+            return deserialize_value(reply.serialized_job_data, ExternalJobData)
 
         external_repository_data = deserialize_value(ser_repo_data, ExternalRepositoryData)
-
-        assert len(external_repository_data.external_job_refs) == 6
-        assert external_repository_data.external_pipeline_datas is None
+        assert (
+            external_repository_data.external_job_refs
+            and len(external_repository_data.external_job_refs) == 6
+        )
+        assert external_repository_data.external_job_datas is None
 
         repo = ExternalRepository(
             external_repository_data,
@@ -139,7 +142,7 @@ def test_defer_snapshots(instance):
         job = jobs[0]
 
         # basic accessors should not cause a fetch
-        _ = job.computed_pipeline_snapshot_id
+        _ = job.computed_job_snapshot_id
         assert _state.get("cnt", 0) == 0
 
         _ = job.name
@@ -148,14 +151,14 @@ def test_defer_snapshots(instance):
         _ = job.active_presets
         assert _state.get("cnt", 0) == 0
 
-        _ = job.pipeline_snapshot
+        _ = job.job_snapshot
         assert _state.get("cnt", 0) == 1
 
         # access should be memoized
-        _ = job.pipeline_snapshot
+        _ = job.job_snapshot
         assert _state.get("cnt", 0) == 1
 
         # refetching job should share fetched data
         job = repo.get_all_external_jobs()[0]
-        _ = job.pipeline_snapshot
+        _ = job.job_snapshot
         assert _state.get("cnt", 0) == 1

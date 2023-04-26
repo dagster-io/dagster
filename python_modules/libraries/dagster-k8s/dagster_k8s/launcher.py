@@ -192,20 +192,22 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         return cls(inst_data=inst_data, **config_value)
 
     @property
-    def inst_data(self):
+    def inst_data(self) -> Optional[ConfigurableClassData]:
         return self._inst_data
 
     def get_container_context_for_run(self, pipeline_run: DagsterRun) -> K8sContainerContext:
         return K8sContainerContext.create_for_run(pipeline_run, self, include_run_tags=True)
 
-    def _launch_k8s_job_with_args(self, job_name, args, run) -> None:
+    def _launch_k8s_job_with_args(
+        self, job_name: str, args: Optional[Sequence[str]], run: DagsterRun
+    ) -> None:
         container_context = self.get_container_context_for_run(run)
 
         pod_name = job_name
 
-        pipeline_origin = run.pipeline_code_origin
+        job_origin = check.not_none(run.job_code_origin)
         user_defined_k8s_config = container_context.get_run_user_defined_k8s_config()
-        repository_origin = pipeline_origin.repository_origin
+        repository_origin = job_origin.repository_origin
 
         job_config = container_context.get_k8s_job_config(
             job_image=repository_origin.container_image, run_launcher=self
@@ -224,13 +226,13 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             component="run_worker",
             user_defined_k8s_config=user_defined_k8s_config,
             labels={
-                "dagster/job": pipeline_origin.pipeline_name,
+                "dagster/job": job_origin.job_name,
                 "dagster/run-id": run.run_id,
             },
             env_vars=[
                 {
                     "name": "DAGSTER_RUN_JOB_NAME",
-                    "value": pipeline_origin.pipeline_name,
+                    "value": job_origin.job_name,
                 },
                 *container_context.env,
             ],
@@ -261,11 +263,11 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
     def launch_run(self, context: LaunchRunContext) -> None:
         run = context.dagster_run
         job_name = get_job_name_from_run_id(run.run_id)
-        pipeline_origin = check.not_none(run.pipeline_code_origin)
+        job_origin = check.not_none(run.job_code_origin)
 
         args = ExecuteRunArgs(
-            pipeline_origin=pipeline_origin,
-            pipeline_run_id=run.run_id,
+            job_origin=job_origin,
+            run_id=run.run_id,
             instance_ref=self._instance.get_ref(),
             set_exit_code_on_failure=self._fail_pod_on_run_failure,
         ).get_command_args()
@@ -281,11 +283,11 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         job_name = get_job_name_from_run_id(
             run.run_id, resume_attempt_number=context.resume_attempt_number
         )
-        pipeline_origin = check.not_none(run.pipeline_code_origin)
+        job_origin = check.not_none(run.job_code_origin)
 
         args = ResumeRunArgs(
-            pipeline_origin=pipeline_origin,
-            pipeline_run_id=run.run_id,
+            job_origin=job_origin,
+            run_id=run.run_id,
             instance_ref=self._instance.get_ref(),
             set_exit_code_on_failure=self._fail_pod_on_run_failure,
         ).get_command_args()
@@ -296,10 +298,10 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
     def can_terminate(self, run_id):
         check.str_param(run_id, "run_id")
 
-        pipeline_run = self._instance.get_run_by_id(run_id)
-        if not pipeline_run:
+        dagster_run = self._instance.get_run_by_id(run_id)
+        if not dagster_run:
             return False
-        if pipeline_run.status != DagsterRunStatus.STARTED:
+        if dagster_run.status != DagsterRunStatus.STARTED:
             return False
         return True
 
@@ -316,7 +318,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         if not can_terminate:
             self._instance.report_engine_event(
                 message=f"Unable to terminate run; can_terminate returned {can_terminate}",
-                pipeline_run=run,
+                dagster_run=run,
                 cls=self.__class__,
             )
             return False
@@ -334,7 +336,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             if termination_result:
                 self._instance.report_engine_event(
                     message="Run was terminated successfully.",
-                    pipeline_run=run,
+                    dagster_run=run,
                     cls=self.__class__,
                 )
             else:
@@ -342,14 +344,14 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
                     message="Run was not terminated successfully; delete_job returned {}".format(
                         termination_result
                     ),
-                    pipeline_run=run,
+                    dagster_run=run,
                     cls=self.__class__,
                 )
             return termination_result
         except Exception:
             self._instance.report_engine_event(
                 message="Run was not terminated successfully; encountered error in delete_job",
-                pipeline_run=run,
+                dagster_run=run,
                 engine_event_data=EngineEventData.engine_error(
                     serializable_error_info_from_exc_info(sys.exc_info())
                 ),

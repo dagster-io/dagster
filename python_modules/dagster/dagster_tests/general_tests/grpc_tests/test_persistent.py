@@ -10,7 +10,7 @@ from dagster import _seven
 from dagster._api.list_repositories import sync_list_repositories_grpc
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.host_representation.origin import (
-    ExternalPipelineOrigin,
+    ExternalJobOrigin,
     ExternalRepositoryOrigin,
     GrpcServerCodeLocationOrigin,
     RegisteredCodeLocationOrigin,
@@ -26,7 +26,7 @@ from dagster._core.test_utils import (
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.client import DagsterGrpcClient
 from dagster._grpc.server import (
-    ExecuteExternalPipelineArgs,
+    ExecuteExternalJobArgs,
     open_server_process,
     wait_for_grpc_server,
 )
@@ -615,11 +615,11 @@ def test_load_with_secrets_loader_instance_ref():
 
                 # Launch a run and verify that it finishes
 
-                run = create_run_for_test(instance, pipeline_name="needs_env_var_job")
+                run = create_run_for_test(instance, job_name="needs_env_var_job")
                 run_id = run.run_id
 
-                job_origin = ExternalPipelineOrigin(
-                    pipeline_name="needs_env_var_job",
+                job_origin = ExternalJobOrigin(
+                    job_name="needs_env_var_job",
                     external_repository_origin=ExternalRepositoryOrigin(
                         repository_name="needs_env_var_repo",
                         code_location_origin=RegisteredCodeLocationOrigin("not_used"),
@@ -628,9 +628,9 @@ def test_load_with_secrets_loader_instance_ref():
 
                 res = deserialize_value(
                     client.start_run(
-                        ExecuteExternalPipelineArgs(
-                            pipeline_origin=job_origin,
-                            pipeline_run_id=run.run_id,
+                        ExecuteExternalJobArgs(
+                            job_origin=job_origin,
+                            run_id=run.run_id,
                             instance_ref=instance.get_ref(),
                         )
                     ),

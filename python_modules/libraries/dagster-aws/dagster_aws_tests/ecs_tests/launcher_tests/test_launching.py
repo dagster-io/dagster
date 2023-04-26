@@ -11,7 +11,7 @@ from dagster._core.code_pointer import FileCodePointer
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.launcher import LaunchRunContext
 from dagster._core.launcher.base import WorkerStatus
-from dagster._core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
+from dagster._core.origin import JobPythonOrigin, RepositoryPythonOrigin
 from dagster_aws.ecs import EcsEventualConsistencyTimeout
 from dagster_aws.ecs.launcher import (
     DEFAULT_LINUX_RESOURCES,
@@ -87,7 +87,7 @@ def test_default_launcher(
         )
         assert ecs.list_tags_for_resource(resourceArn=task_arn)["tags"][0]["value"] == run.run_id
 
-    # We set pipeline-specific overides
+    # We set job-specific overides
     overrides = task["overrides"]["containerOverrides"]
     assert len(overrides) == 1
     override = overrides[0]
@@ -113,17 +113,17 @@ def test_launcher_fargate_spot(
     ecs,
     instance_fargate_spot,
     workspace,
-    external_pipeline,
-    pipeline,
+    external_job,
+    job,
     subnet,
     image,
     environment,
 ):
     instance = instance_fargate_spot
-    run = instance.create_run_for_pipeline(
-        pipeline,
-        external_pipeline_origin=external_pipeline.get_external_origin(),
-        pipeline_code_origin=external_pipeline.get_python_origin(),
+    run = instance.create_run_for_job(
+        job,
+        external_job_origin=external_job.get_external_origin(),
+        job_code_origin=external_job.get_python_origin(),
     )
     initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
     initial_tasks = ecs.list_tasks()["taskArns"]
@@ -147,10 +147,10 @@ def test_launcher_fargate_spot(
     assert task["capacityProviderName"] == "FARGATE_SPOT"
 
     # Override capacity provider strategy with tags
-    run = instance.create_run_for_pipeline(
-        pipeline,
-        external_pipeline_origin=external_pipeline.get_external_origin(),
-        pipeline_code_origin=external_pipeline.get_python_origin(),
+    run = instance.create_run_for_job(
+        job,
+        external_job_origin=external_job.get_external_origin(),
+        job_code_origin=external_job.get_python_origin(),
     )
     instance.add_run_tags(
         run.run_id,
@@ -189,17 +189,17 @@ def test_launcher_dont_use_current_task(
     ecs,
     instance_dont_use_current_task,
     workspace,
-    external_pipeline,
-    pipeline,
+    external_job,
+    job,
     subnet,
     image,
     environment,
 ):
     instance = instance_dont_use_current_task
-    run = instance.create_run_for_pipeline(
-        pipeline,
-        external_pipeline_origin=external_pipeline.get_external_origin(),
-        pipeline_code_origin=external_pipeline.get_python_origin(),
+    run = instance.create_run_for_job(
+        job,
+        external_job_origin=external_job.get_external_origin(),
+        job_code_origin=external_job.get_python_origin(),
     )
 
     cluster = instance.run_launcher.run_task_kwargs["cluster"]
@@ -253,7 +253,7 @@ def test_launcher_dont_use_current_task(
     assert ecs.list_tags_for_resource(resourceArn=task_arn)["tags"][0]["key"] == "dagster/run_id"
     assert ecs.list_tags_for_resource(resourceArn=task_arn)["tags"][0]["value"] == run.run_id
 
-    # We set pipeline-specific overides
+    # We set job-specific overides
     overrides = task["overrides"]["containerOverrides"]
     assert len(overrides) == 1
     override = overrides[0]
@@ -551,9 +551,7 @@ def test_reuse_task_definition(instance, ecs):
     )
 
 
-def test_default_task_definition_resources(
-    ecs, instance_cm, run, workspace, pipeline, external_pipeline
-):
+def test_default_task_definition_resources(ecs, instance_cm, run, workspace, job, external_job):
     task_role_arn = "fake-task-role"
     execution_role_arn = "fake-execution-role"
     with instance_cm(
@@ -564,10 +562,10 @@ def test_default_task_definition_resources(
             },
         }
     ) as instance:
-        run = instance.create_run_for_pipeline(
-            pipeline,
-            external_pipeline_origin=external_pipeline.get_external_origin(),
-            pipeline_code_origin=external_pipeline.get_python_origin(),
+        run = instance.create_run_for_job(
+            job,
+            external_job_origin=external_job.get_external_origin(),
+            job_code_origin=external_job.get_python_origin(),
         )
         initial_tasks = ecs.list_tasks()["taskArns"]
 
@@ -598,10 +596,10 @@ def test_default_task_definition_resources(
             },
         }
     ) as instance:
-        run = instance.create_run_for_pipeline(
-            pipeline,
-            external_pipeline_origin=external_pipeline.get_external_origin(),
-            pipeline_code_origin=external_pipeline.get_python_origin(),
+        run = instance.create_run_for_job(
+            job,
+            external_job_origin=external_job.get_external_origin(),
+            job_code_origin=external_job.get_python_origin(),
         )
         initial_tasks = ecs.list_tasks()["taskArns"]
 
@@ -632,10 +630,10 @@ def test_default_task_definition_resources(
             "run_resources": {"cpu": "2048", "memory": "4096", "ephemeral_storage": 36},
         }
     ) as instance:
-        run = instance.create_run_for_pipeline(
-            pipeline,
-            external_pipeline_origin=external_pipeline.get_external_origin(),
-            pipeline_code_origin=external_pipeline.get_python_origin(),
+        run = instance.create_run_for_job(
+            job,
+            external_job_origin=external_job.get_external_origin(),
+            job_code_origin=external_job.get_python_origin(),
         )
         initial_tasks = ecs.list_tasks()["taskArns"]
 
@@ -657,9 +655,7 @@ def test_default_task_definition_resources(
         assert task_definition["ephemeralStorage"]["sizeInGiB"] == 36
 
 
-def test_launching_with_task_definition_dict(
-    ecs, instance_cm, run, workspace, pipeline, external_pipeline
-):
+def test_launching_with_task_definition_dict(ecs, instance_cm, run, workspace, job, external_job):
     container_name = "dagster"
 
     task_role_arn = "fake-task-role"
@@ -706,10 +702,10 @@ def test_launching_with_task_definition_dict(
             "container_name": container_name,
         }
     ) as instance:
-        run = instance.create_run_for_pipeline(
-            pipeline,
-            external_pipeline_origin=external_pipeline.get_external_origin(),
-            pipeline_code_origin=external_pipeline.get_python_origin(),
+        run = instance.create_run_for_job(
+            job,
+            external_job_origin=external_job.get_external_origin(),
+            job_code_origin=external_job.get_python_origin(),
         )
 
         initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
@@ -748,7 +744,7 @@ def test_launching_with_task_definition_dict(
             sidecar["name"],
         ]
 
-        # We set pipeline-specific overides
+        # We set job-specific overides
         overrides = task["overrides"]["containerOverrides"]
         assert len(overrides) == 1
         override = overrides[0]
@@ -756,10 +752,10 @@ def test_launching_with_task_definition_dict(
         assert "execute_run" in override["command"]
         assert run.run_id in str(override["command"])
 
-        second_run = run = instance.create_run_for_pipeline(
-            pipeline,
-            external_pipeline_origin=external_pipeline.get_external_origin(),
-            pipeline_code_origin=external_pipeline.get_python_origin(),
+        second_run = run = instance.create_run_for_job(
+            job,
+            external_job_origin=external_job.get_external_origin(),
+            job_code_origin=external_job.get_python_origin(),
         )
 
         instance.launch_run(second_run.run_id, workspace)
@@ -768,9 +764,7 @@ def test_launching_with_task_definition_dict(
         assert ecs.list_task_definitions()["taskDefinitionArns"] == new_task_definitions
 
 
-def test_launching_custom_task_definition(
-    ecs, instance_cm, run, workspace, pipeline, external_pipeline
-):
+def test_launching_custom_task_definition(ecs, instance_cm, run, workspace, job, external_job):
     container_name = "override_container"
 
     task_definition = ecs.register_task_definition(
@@ -801,10 +795,10 @@ def test_launching_custom_task_definition(
     with instance_cm(
         {"task_definition": task_definition_arn, "container_name": container_name}
     ) as instance:
-        run = instance.create_run_for_pipeline(
-            pipeline,
-            external_pipeline_origin=external_pipeline.get_external_origin(),
-            pipeline_code_origin=external_pipeline.get_python_origin(),
+        run = instance.create_run_for_job(
+            job,
+            external_job_origin=external_job.get_external_origin(),
+            job_code_origin=external_job.get_python_origin(),
         )
 
         initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
@@ -822,7 +816,7 @@ def test_launching_custom_task_definition(
         task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
         assert task["taskDefinitionArn"] == task_definition["taskDefinitionArn"]
 
-        # We set pipeline-specific overides
+        # We set job-specific overides
         overrides = task["overrides"]["containerOverrides"]
         assert len(overrides) == 1
         override = overrides[0]
@@ -891,14 +885,14 @@ def test_launcher_run_resources(
     ecs,
     instance_with_resources,
     workspace,
-    external_pipeline,
-    pipeline,
+    external_job,
+    job,
 ):
     instance = instance_with_resources
-    run = instance.create_run_for_pipeline(
-        pipeline,
-        external_pipeline_origin=external_pipeline.get_external_origin(),
-        pipeline_code_origin=external_pipeline.get_python_origin(),
+    run = instance.create_run_for_job(
+        job,
+        external_job_origin=external_job.get_external_origin(),
+        job_code_origin=external_job.get_python_origin(),
     )
 
     existing_tasks = ecs.list_tasks()["taskArns"]
@@ -1023,17 +1017,17 @@ def test_memory_and_cpu(ecs, instance, workspace, run, task_definition):
 def test_status(
     ecs,
     instance_with_log_group,
-    pipeline,
-    external_pipeline,
+    job,
+    external_job,
     cloudwatch_client,
     log_group,
 ):
     instance = instance_with_log_group
 
-    run = instance.create_run_for_pipeline(
-        pipeline,
-        external_pipeline_origin=external_pipeline.get_external_origin(),
-        pipeline_code_origin=external_pipeline.get_python_origin(),
+    run = instance.create_run_for_job(
+        job,
+        external_job_origin=external_job.get_external_origin(),
+        job_code_origin=external_job.get_python_origin(),
     )
 
     instance.run_launcher.launch_run(LaunchRunContext(dagster_run=run, workspace=None))
@@ -1104,13 +1098,13 @@ def test_status(
 def test_overrides_too_long(
     instance,
     workspace,
-    pipeline,
-    external_pipeline,
+    job,
+    external_job,
 ):
     large_container_context = {i: "boom" for i in range(10000)}
 
-    mock_pipeline_code_origin = PipelinePythonOrigin(
-        pipeline_name="test",
+    mock_job_code_origin = JobPythonOrigin(
+        job_name="test",
         repository_origin=RepositoryPythonOrigin(
             executable_path="/",
             code_pointer=FileCodePointer(
@@ -1122,10 +1116,10 @@ def test_overrides_too_long(
         ),
     )
 
-    run = instance.create_run_for_pipeline(
-        pipeline,
-        external_pipeline_origin=external_pipeline.get_external_origin(),
-        pipeline_code_origin=mock_pipeline_code_origin,
+    run = instance.create_run_for_job(
+        job,
+        external_job_origin=external_job.get_external_origin(),
+        job_code_origin=mock_job_code_origin,
     )
 
     instance.launch_run(run.run_id, workspace)

@@ -4,7 +4,7 @@ from dagster import (
     ResourceDefinition,
     _check as check,
 )
-from dagster._cli.config_scaffolder import scaffold_pipeline_config, scaffold_type
+from dagster._cli.config_scaffolder import scaffold_job_config, scaffold_type
 from dagster._config import config_type
 from dagster._core.definitions.graph_definition import GraphDefinition
 
@@ -54,7 +54,7 @@ def test_basic_ops_config(snapshot):
 
     assert set(console_logger_config_config_type.fields.keys()) == set(["log_level", "name"])
 
-    snapshot.assert_match(scaffold_pipeline_config(job_def, skip_non_required=False))
+    snapshot.assert_match(scaffold_job_config(job_def, skip_non_required=False))
 
 
 def dummy_resource(config_field):

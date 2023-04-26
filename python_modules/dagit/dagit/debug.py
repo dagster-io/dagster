@@ -38,7 +38,7 @@ def dagit_debug_command(input_files, port):
 
             click.echo(
                 "\trun_id: {} \n\tdagster version: {}".format(
-                    debug_payload.pipeline_run.run_id, debug_payload.version
+                    debug_payload.dagster_run.run_id, debug_payload.version
                 )
             )
             debug_payloads.append(debug_payload)

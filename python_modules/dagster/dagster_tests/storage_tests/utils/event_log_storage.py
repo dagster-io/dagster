@@ -33,9 +33,11 @@ from dagster import (
 )
 from dagster._core.assets import AssetDetails
 from dagster._core.definitions import ExpectationResult
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
-from dagster._core.definitions.pipeline_base import InMemoryPipeline
+from dagster._core.definitions.pipeline_base import InMemoryJob
+from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.events import (
     AssetMaterializationPlannedData,
     DagsterEvent,
@@ -51,7 +53,7 @@ from dagster._core.execution.plan.objects import StepFailureData, StepSuccessDat
 from dagster._core.execution.results import PipelineExecutionResult
 from dagster._core.execution.stats import StepEventStatus
 from dagster._core.host_representation.origin import (
-    ExternalPipelineOrigin,
+    ExternalJobOrigin,
     ExternalRepositoryOrigin,
     InProcessCodeLocationOrigin,
 )
@@ -66,7 +68,7 @@ from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 from dagster._core.test_utils import create_run_for_test, instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import make_new_run_id
-from dagster._legacy import AssetGroup, build_assets_job
+from dagster._legacy import build_assets_job
 from dagster._loggers import colored_console_logger
 from dagster._serdes.serdes import deserialize_value
 from dagster._utils import datetime_as_float
@@ -85,7 +87,7 @@ def create_and_delete_test_runs(instance: DagsterInstance, run_ids: Sequence[str
             create_run_for_test(
                 instance,
                 run_id=run_id,
-                external_pipeline_origin=ExternalPipelineOrigin(
+                external_job_origin=ExternalJobOrigin(
                     ExternalRepositoryOrigin(
                         InProcessCodeLocationOrigin(
                             LoadableTargetOrigin(
@@ -187,7 +189,7 @@ def _stats_records(run_id):
 
 
 def _event_record(run_id, op_name, timestamp, event_type, event_specific_data=None):
-    pipeline_name = "pipeline_name"
+    job_name = "pipeline_name"
     node_handle = NodeHandle(op_name, None)
     step_handle = StepHandle(node_handle)
     return EventLogEntry(
@@ -197,10 +199,10 @@ def _event_record(run_id, op_name, timestamp, event_type, event_specific_data=No
         run_id=run_id,
         timestamp=timestamp,
         step_key=step_handle.to_key(),
-        pipeline_name=pipeline_name,
+        job_name=job_name,
         dagster_event=DagsterEvent(
             event_type.value,
-            pipeline_name,
+            job_name,
             node_handle=node_handle,
             step_handle=step_handle,
             event_specific_data=event_specific_data,
@@ -252,8 +254,8 @@ def _synthesize_events(
             **(run_config if run_config else {}),
         }
 
-        pipeline_run = instance.create_run_for_pipeline(a_job, run_id=run_id, run_config=run_config)
-        result = execute_run(InMemoryPipeline(a_job), pipeline_run, instance)
+        dagster_run = instance.create_run_for_job(a_job, run_id=run_id, run_config=run_config)
+        result = execute_run(InMemoryJob(a_job), dagster_run, instance)
 
         if check_success:
             assert result.success
@@ -1343,8 +1345,8 @@ class TestEventLogStorage:
 
             # first run
             execute_run(
-                InMemoryPipeline(a_job),
-                instance.create_run_for_pipeline(
+                InMemoryJob(a_job),
+                instance.create_run_for_job(
                     a_job,
                     run_id="1",
                     run_config={"loggers": {"callback": {}, "console": {}}},
@@ -1361,8 +1363,8 @@ class TestEventLogStorage:
             # second run
             events = []
             execute_run(
-                InMemoryPipeline(a_job),
-                instance.create_run_for_pipeline(
+                InMemoryJob(a_job),
+                instance.create_run_for_job(
                     a_job,
                     run_id="2",
                     run_config={"loggers": {"callback": {}, "console": {}}},
@@ -1377,8 +1379,8 @@ class TestEventLogStorage:
             # third run
             events = []
             execute_run(
-                InMemoryPipeline(a_job),
-                instance.create_run_for_pipeline(
+                InMemoryJob(a_job),
+                instance.create_run_for_job(
                     a_job,
                     run_id="3",
                     run_config={"loggers": {"callback": {}, "console": {}}},
@@ -1529,7 +1531,7 @@ class TestEventLogStorage:
                 storage.register_instance(instance)
 
             run_id = make_new_run_id()
-            run = instance.create_run_for_pipeline(a_job, run_id=run_id)
+            run = instance.create_run_for_job(a_job, run_id=run_id)
 
             instance.report_engine_event(
                 "blah blah",
@@ -2371,11 +2373,17 @@ class TestEventLogStorage:
             run_id_1 = make_new_run_id()
             run_id_2 = make_new_run_id()
             with create_and_delete_test_runs(instance, [run_id_1, run_id_2]):
-                asset_group = AssetGroup([my_asset, second_asset])
+                defs = Definitions(
+                    assets=[my_asset, second_asset],
+                    jobs=[
+                        define_asset_job("one_asset_job", ["my_asset"]),
+                        define_asset_job("two_asset_job"),
+                    ],
+                )
                 result = _execute_job_and_store_events(
                     created_instance,
                     storage,
-                    asset_group.build_job(name="one_asset_job", selection=["my_asset"]),
+                    defs.get_job_def("one_asset_job"),
                     run_id=run_id_1,
                 )
                 records = storage.get_asset_records([my_asset_key])
@@ -2407,7 +2415,7 @@ class TestEventLogStorage:
                     result = _execute_job_and_store_events(
                         created_instance,
                         storage,
-                        asset_group.build_job(name="two_asset_job"),
+                        defs.get_job_def("two_asset_job"),
                         run_id=run_id_2,
                     )
                     records = storage.get_asset_records([my_asset_key])

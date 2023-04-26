@@ -167,7 +167,7 @@ def _step_handler_context(pipeline, pipeline_run, instance, executor):
 
     plan_context = PlanOrchestrationContext(
         plan_data=PlanData(
-            pipeline=pipeline,
+            job=pipeline,
             dagster_run=pipeline_run,
             instance=instance,
             execution_plan=execution_plan,
@@ -209,8 +209,8 @@ def test_executor_init(k8s_run_launcher_instance):
 
     run = create_run_for_test(
         k8s_run_launcher_instance,
-        pipeline_name="bar",
-        pipeline_code_origin=reconstructable(bar).get_python_origin(),
+        job_name="bar",
+        job_code_origin=reconstructable(bar).get_python_origin(),
     )
 
     step_handler_context = _step_handler_context(
@@ -258,8 +258,8 @@ def test_executor_init_container_context(
 
     run = create_run_for_test(
         k8s_run_launcher_instance,
-        pipeline_name="bar",
-        pipeline_code_origin=python_origin_with_container_context,
+        job_name="bar",
+        job_code_origin=python_origin_with_container_context,
     )
 
     step_handler_context = _step_handler_context(
@@ -336,8 +336,8 @@ def test_step_handler(kubeconfig_file, k8s_instance):
 
     run = create_run_for_test(
         k8s_instance,
-        pipeline_name="bar",
-        pipeline_code_origin=reconstructable(bar).get_python_origin(),
+        job_name="bar",
+        job_code_origin=reconstructable(bar).get_python_origin(),
     )
     list(
         handler.launch_step(
@@ -381,8 +381,8 @@ def test_step_handler_user_defined_config(kubeconfig_file, k8s_instance):
     with environ({"FOO_TEST": "bar"}):
         run = create_run_for_test(
             k8s_instance,
-            pipeline_name="bar",
-            pipeline_code_origin=reconstructable(bar_with_resources).get_python_origin(),
+            job_name="bar",
+            job_code_origin=reconstructable(bar_with_resources).get_python_origin(),
         )
         list(
             handler.launch_step(
@@ -426,8 +426,8 @@ def test_step_handler_image_override(kubeconfig_file, k8s_instance):
 
     run = create_run_for_test(
         k8s_instance,
-        pipeline_name="bar",
-        pipeline_code_origin=reconstructable(bar_with_images).get_python_origin(),
+        job_name="bar",
+        job_code_origin=reconstructable(bar_with_images).get_python_origin(),
     )
     list(
         handler.launch_step(
@@ -470,8 +470,8 @@ def test_step_handler_with_container_context(
         # Additional env vars come from container context on the run
         run = create_run_for_test(
             k8s_instance,
-            pipeline_name="bar",
-            pipeline_code_origin=python_origin_with_container_context,
+            job_name="bar",
+            job_code_origin=python_origin_with_container_context,
         )
         list(
             handler.launch_step(
@@ -527,8 +527,8 @@ def test_step_raw_k8s_config_inheritance(
 
     run = create_run_for_test(
         k8s_run_launcher_instance,
-        pipeline_name="bar_with_tags_in_job_and_op",
-        pipeline_code_origin=python_origin_with_container_context,
+        job_name="bar_with_tags_in_job_and_op",
+        job_code_origin=python_origin_with_container_context,
     )
 
     step_handler_context = _step_handler_context(

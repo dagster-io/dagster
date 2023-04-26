@@ -24,7 +24,7 @@ from dagster import (
     reconstructable,
     resource,
 )
-from dagster._core.definitions.pipeline_base import InMemoryPipeline
+from dagster._core.definitions.pipeline_base import InMemoryJob
 from dagster._core.definitions.resource_definition import make_values_resource
 from dagster._core.errors import DagsterConfigMappingFunctionError, DagsterInvalidDefinitionError
 from dagster._core.events.log import EventLogEntry, construct_event_logger
@@ -648,7 +648,7 @@ def test_resource_init_failure():
 
     instance = DagsterInstance.ephemeral()
     execution_plan = create_execution_plan(the_job)
-    dagster_run = instance.create_run_for_pipeline(the_job, execution_plan=execution_plan)
+    dagster_run = instance.create_run_for_job(the_job, execution_plan=execution_plan)
 
     with pytest.raises(
         DagsterResourceFunctionError,
@@ -656,7 +656,7 @@ def test_resource_init_failure():
     ):
         execute_plan(
             execution_plan,
-            InMemoryPipeline(the_job),
+            InMemoryJob(the_job),
             dagster_run=dagster_run,
             instance=instance,
         )

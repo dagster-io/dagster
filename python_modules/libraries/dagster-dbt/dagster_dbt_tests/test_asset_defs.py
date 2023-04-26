@@ -15,8 +15,10 @@ from dagster import (
     repository,
 )
 from dagster._core.definitions import build_assets_job
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.metadata import MetadataValue
-from dagster._legacy import AssetGroup
+from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
+from dagster._core.execution.with_resources import with_resources
 from dagster._utils import file_relative_path
 from dagster_dbt import dbt_cli_resource
 from dagster_dbt.asset_defs import load_assets_from_dbt_manifest, load_assets_from_dbt_project
@@ -427,11 +429,16 @@ def test_multiple_select_from_project(dbt_seed, test_project_dir, dbt_config_dir
     @repository
     def foo():
         return [
-            AssetGroup(dbt_assets_a, resource_defs={"dbt": dbt_cli_resource}).build_job("a"),
-            AssetGroup(dbt_assets_b, resource_defs={"dbt": dbt_cli_resource}).build_job("b"),
+            *with_resources(
+                # dbt_assets_b is a subset of dbt_assets_a
+                [*dbt_assets_a],
+                resource_defs={"dbt": dbt_cli_resource},
+            ),
+            define_asset_job("a", dbt_assets_a),
+            define_asset_job("b", dbt_assets_b),
         ]
 
-    assert len(foo.get_all_jobs()) == 2
+    assert len(foo.get_all_jobs()) == 3
 
 
 def test_dbt_ls_fail_fast():
@@ -568,15 +575,16 @@ def test_subsetting(
         return None
 
     result = (
-        AssetGroup(
-            dbt_assets + [hanger1, hanger2],
-            resource_defs={
+        Definitions(
+            assets=[*dbt_assets, hanger1, hanger2],
+            resources={
                 "dbt": dbt_cli_resource.configured(
                     {"project_dir": test_project_dir, "profiles_dir": dbt_config_dir}
                 )
             },
+            jobs=[define_asset_job("dbt_job", job_selection)],
         )
-        .build_job(name="dbt_job", selection=job_selection)
+        .get_job_def("dbt_job")
         .execute_in_process()
     )
 
@@ -725,15 +733,16 @@ def test_dbt_selections(
     assert dbt_assets[0].keys == expected_asset_keys
 
     result = (
-        AssetGroup(
-            dbt_assets,
-            resource_defs={
+        Definitions(
+            assets=dbt_assets,
+            resources={
                 "dbt": dbt_cli_resource.configured(
                     {"project_dir": test_project_dir, "profiles_dir": dbt_config_dir}
                 )
             },
+            jobs=[define_asset_job("dbt_job")],
         )
-        .build_job(name="dbt_job")
+        .get_job_def("dbt_job")
         .execute_in_process()
     )
 
@@ -816,9 +825,9 @@ def test_python_interleaving(dbt_seed_python, test_python_project_dir, dbt_pytho
 
         return bot_labeled_users_df
 
-    job = AssetGroup(
-        [*dbt_assets, bot_labeled_users],
-        resource_defs={
+    job_def = Definitions(
+        assets=[*dbt_assets, bot_labeled_users],
+        resources={
             "io_manager": duckdb_io_manager.configured(
                 {"database": os.path.join(test_python_project_dir, "test.duckdb")}
             ),
@@ -829,9 +838,10 @@ def test_python_interleaving(dbt_seed_python, test_python_project_dir, dbt_pytho
                 }
             ),
         },
-    ).build_job("interleave_job")
+        jobs=[define_asset_job("interleave_job")],
+    ).get_job_def("interleave_job")
 
-    result = job.execute_in_process()
+    result = job_def.execute_in_process()
     assert result.success
     all_keys = {
         event.event_specific_data.materialization.asset_key

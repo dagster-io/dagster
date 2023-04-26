@@ -41,8 +41,8 @@ def test_docker_executor(aws_env):
 
     with environ({"DOCKER_LAUNCHER_NETWORK": "container:test-postgres-db-docker"}):
         with docker_postgres_instance() as instance:
-            recon_pipeline = get_test_project_recon_job("demo_job_docker", docker_image)
-            with execute_job(recon_pipeline, run_config=run_config, instance=instance) as result:
+            recon_job = get_test_project_recon_job("demo_job_docker", docker_image)
+            with execute_job(recon_job, run_config=run_config, instance=instance) as result:
                 assert result.success
 
 
@@ -74,8 +74,8 @@ def test_docker_executor_check_step_health(aws_env):
 
     with environ({"DOCKER_LAUNCHER_NETWORK": "container:test-postgres-db-docker"}):
         with docker_postgres_instance() as instance:
-            recon_pipeline = get_test_project_recon_job("demo_job_docker", docker_image)
-            with execute_job(recon_pipeline, run_config=run_config, instance=instance) as result:
+            recon_job = get_test_project_recon_job("demo_job_docker", docker_image)
+            with execute_job(recon_job, run_config=run_config, instance=instance) as result:
                 assert not result.success
 
 
@@ -101,7 +101,7 @@ def test_docker_executor_config_on_container_context(aws_env):
 
     with environ({"DOCKER_LAUNCHER_NETWORK": "container:test-postgres-db-docker"}):
         with docker_postgres_instance() as instance:
-            recon_pipeline = get_test_project_recon_job(
+            recon_job = get_test_project_recon_job(
                 "demo_job_docker",
                 docker_image,
                 container_context={
@@ -111,7 +111,7 @@ def test_docker_executor_config_on_container_context(aws_env):
                     }
                 },
             )
-            with execute_job(recon_pipeline, run_config=run_config, instance=instance) as result:
+            with execute_job(recon_job, run_config=run_config, instance=instance) as result:
                 assert result.success
 
 
@@ -140,6 +140,6 @@ def test_docker_executor_retries(aws_env):
 
     with environ({"DOCKER_LAUNCHER_NETWORK": "container:test-postgres-db-docker"}):
         with docker_postgres_instance() as instance:
-            recon_pipeline = get_test_project_recon_job("step_retries_job_docker", docker_image)
-            with execute_job(recon_pipeline, run_config=run_config, instance=instance) as result:
+            recon_job = get_test_project_recon_job("step_retries_job_docker", docker_image)
+            with execute_job(recon_job, run_config=run_config, instance=instance) as result:
                 assert result.success

@@ -30,7 +30,7 @@ from dagster_k8s import DagsterK8sJobConfig, construct_dagster_k8s_job
 from dagster_k8s.client import (
     DagsterK8sAPIRetryLimitExceeded,
     DagsterK8sError,
-    DagsterK8sPipelineStatusException,
+    DagsterK8sJobStatusException,
     DagsterK8sTimeoutError,
     DagsterK8sUnrecoverableAPIError,
     DagsterKubernetesClient,
@@ -198,11 +198,11 @@ class CeleryK8sJobExecutor(Executor):
 def _submit_task_k8s_job(app, plan_context, step, queue, priority, known_state):
     user_defined_k8s_config = get_user_defined_k8s_config(step.tags)
 
-    pipeline_origin = plan_context.reconstructable_pipeline.get_python_origin()
+    job_origin = plan_context.reconstructable_job.get_python_origin()
 
     execute_step_args = ExecuteStepArgs(
-        pipeline_origin=pipeline_origin,
-        pipeline_run_id=plan_context.dagster_run.run_id,
+        job_origin=job_origin,
+        run_id=plan_context.dagster_run.run_id,
         step_keys_to_execute=[step.key],
         instance_ref=plan_context.instance.get_ref(),
         retry_mode=plan_context.executor.retries.for_inner_plan(),
@@ -212,7 +212,7 @@ def _submit_task_k8s_job(app, plan_context, step, queue, priority, known_state):
 
     job_config = plan_context.executor.job_config
     if not job_config.job_image:
-        job_config = job_config.with_image(pipeline_origin.repository_origin.container_image)
+        job_config = job_config.with_image(job_origin.repository_origin.container_image)
 
     if not job_config.job_image:
         raise Exception("No image included in either executor config or the dagster job")
@@ -238,7 +238,7 @@ def _submit_task_k8s_job(app, plan_context, step, queue, priority, known_state):
 def construct_step_failure_event_and_handle(pipeline_run, step_key, err, instance):
     step_failure_event = DagsterEvent(
         event_type_value=DagsterEventType.STEP_FAILURE.value,
-        pipeline_name=pipeline_run.pipeline_name,
+        job_name=pipeline_run.job_name,
         step_key=step_key,
         event_specific_data=StepFailureData(
             error=serializable_error_info_from_exc_info(sys.exc_info()),
@@ -248,7 +248,7 @@ def construct_step_failure_event_and_handle(pipeline_run, step_key, err, instanc
     event_record = EventLogEntry(
         user_message=str(err),
         level=logging.ERROR,
-        pipeline_name=pipeline_run.pipeline_name,
+        job_name=pipeline_run.job_name,
         run_id=pipeline_run.run_id,
         error_info=None,
         step_key=step_key,
@@ -309,12 +309,12 @@ def create_k8s_job_task(celery_app, **task_kwargs):
 
         api_client = DagsterKubernetesClient.production_client()
         instance = DagsterInstance.from_ref(execute_step_args.instance_ref)
-        pipeline_run = instance.get_run_by_id(execute_step_args.pipeline_run_id)
+        dagster_run = instance.get_run_by_id(execute_step_args.run_id)
 
         check.inst(
-            pipeline_run,
+            dagster_run,
             DagsterRun,
-            f"Could not load run {execute_step_args.pipeline_run_id}",
+            f"Could not load run {execute_step_args.run_id}",
         )
         step_key = execute_step_args.step_keys_to_execute[0]
 
@@ -322,7 +322,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
         celery_pod_name = os.environ.get("HOSTNAME")
         instance.report_engine_event(
             f"Task for step {step_key} picked up by Celery",
-            pipeline_run,
+            dagster_run,
             EngineEventData(
                 {
                     "Celery worker name": celery_worker_name,
@@ -333,10 +333,10 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             step_key=step_key,
         )
 
-        if pipeline_run.status != DagsterRunStatus.STARTED:
+        if dagster_run.status != DagsterRunStatus.STARTED:
             instance.report_engine_event(
                 "Not scheduling step because dagster run status is not STARTED",
-                pipeline_run,
+                dagster_run,
                 EngineEventData(
                     {
                         "Step key": step_key,
@@ -348,7 +348,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             return []
 
         # Ensure we stay below k8s name length limits
-        k8s_name_key = get_k8s_job_name(execute_step_args.pipeline_run_id, step_key)
+        k8s_name_key = get_k8s_job_name(execute_step_args.run_id, step_key)
 
         retry_state = execute_step_args.known_state.get_retry_state()
 
@@ -370,14 +370,14 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             pod_name,
             component="step_worker",
             labels={
-                "dagster/job": pipeline_run.pipeline_name,
+                "dagster/job": dagster_run.job_name,
                 "dagster/op": step_key,
-                "dagster/run-id": execute_step_args.pipeline_run_id,
+                "dagster/run-id": execute_step_args.run_id,
             },
             env_vars=[
                 {
                     "name": "DAGSTER_RUN_JOB_NAME",
-                    "value": pipeline_run.job_name,
+                    "value": dagster_run.job_name,
                 },
                 {"name": "DAGSTER_RUN_STEP_KEY", "value": step_key},
             ],
@@ -390,7 +390,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
         job_name = job.metadata.name
         engine_event = instance.report_engine_event(
             f'Executing step "{step_key}" in Kubernetes job {job_name}.',
-            pipeline_run,
+            dagster_run,
             EngineEventData(
                 {
                     "Step key": step_key,
@@ -416,7 +416,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
                 instance.report_engine_event(
                     "Did not create Kubernetes job {} for step {} since job name already "
                     "exists, proceeding with existing job.".format(job_name, step_key),
-                    pipeline_run,
+                    dagster_run,
                     EngineEventData(
                         {
                             "Step key": step_key,
@@ -431,7 +431,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
                 instance.report_engine_event(
                     "Encountered unexpected error while creating Kubernetes job {} for step {}, "
                     "exiting.".format(job_name, step_key),
-                    pipeline_run,
+                    dagster_run,
                     EngineEventData(
                         {
                             "Step key": step_key,
@@ -448,18 +448,18 @@ def create_k8s_job_task(celery_app, **task_kwargs):
                 job_name=job_name,
                 namespace=job_namespace,
                 instance=instance,
-                run_id=execute_step_args.pipeline_run_id,
+                run_id=execute_step_args.run_id,
                 wait_timeout=job_wait_timeout,
             )
         except (DagsterK8sError, DagsterK8sTimeoutError) as err:
             step_failure_event = construct_step_failure_event_and_handle(
-                pipeline_run, step_key, err, instance=instance
+                dagster_run, step_key, err, instance=instance
             )
             events.append(step_failure_event)
-        except DagsterK8sPipelineStatusException:
+        except DagsterK8sJobStatusException:
             instance.report_engine_event(
                 "Terminating Kubernetes Job because dagster run status is not STARTED",
-                pipeline_run,
+                dagster_run,
                 EngineEventData(
                     {
                         "Step key": step_key,
@@ -483,7 +483,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             instance.report_engine_event(
                 "Encountered unexpected error while waiting on Kubernetes job {} for step {}, "
                 "exiting.".format(job_name, step_key),
-                pipeline_run,
+                dagster_run,
                 EngineEventData(
                     {
                         "Step key": step_key,
@@ -501,7 +501,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             instance.report_engine_event(
                 "Encountered unexpected error retreiving Pods for Kubernetes job {} for step {}, "
                 "exiting.".format(job_name, step_key),
-                pipeline_run,
+                dagster_run,
                 EngineEventData(
                     {
                         "Step key": step_key,
@@ -516,7 +516,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
         # Post engine event for log retrieval
         engine_event = instance.report_engine_event(
             "Retrieving logs from Kubernetes Job pods",
-            pipeline_run,
+            dagster_run,
             EngineEventData({"Pod names": "\n".join(pod_names)}),
             CeleryK8sJobExecutor,
             step_key=step_key,
@@ -534,7 +534,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
                     "Pod name {} for step {}. Will attempt to continue with other pods.".format(
                         job_name, pod_name, step_key
                     ),
-                    pipeline_run,
+                    dagster_run,
                     EngineEventData(
                         {
                             "Step key": step_key,

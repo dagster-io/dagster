@@ -40,7 +40,7 @@ def test_sensor_result_one_run_request():
         assert len(sensor_data.run_requests) == 1
         assert sensor_data.run_requests[0].run_key == "foo"
         assert not sensor_data.skip_message
-        assert not sensor_data.pipeline_run_reactions
+        assert not sensor_data.dagster_run_reactions
         assert not sensor_data.cursor
 
 
@@ -60,7 +60,7 @@ def test_sensor_result_skip_reason():
         sensor_data = test_sensor.evaluate_tick(ctx)
         assert not sensor_data.run_requests
         assert sensor_data.skip_message == skip_reason.skip_message
-        assert not sensor_data.pipeline_run_reactions
+        assert not sensor_data.dagster_run_reactions
         assert not sensor_data.cursor
 
 
