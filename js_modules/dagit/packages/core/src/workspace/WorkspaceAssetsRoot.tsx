@@ -9,7 +9,7 @@ import {useAssetNodeSearch} from '../assets/useAssetSearch';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 
-import {VirtualizedRepoAssetTable} from './VirtualizedRepoAssetTable';
+import {REPO_ASSET_TABLE_FRAGMENT, VirtualizedRepoAssetTable} from './VirtualizedRepoAssetTable';
 import {WorkspaceHeader} from './WorkspaceHeader';
 import {repoAddressAsHumanString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
@@ -133,15 +133,13 @@ const WORKSPACE_ASSETS_QUERY = gql`
         name
         assetNodes {
           id
-          assetKey {
-            path
-          }
-          groupName
+          ...RepoAssetTableFragment
         }
       }
       ...PythonErrorFragment
     }
   }
 
+  ${REPO_ASSET_TABLE_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
 `;

@@ -4,8 +4,10 @@ export const ASSET_TABLE_DEFINITION_FRAGMENT = gql`
   fragment AssetTableDefinitionFragment on AssetNode {
     id
     groupName
+    opNames
     isSource
     isObservable
+    computeKind
     hasMaterializePermission
     partitionDefinition {
       description

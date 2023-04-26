@@ -17,7 +17,7 @@ import {humanizedLateString, isAssetLate} from '../assets/CurrentMinutesLateTag'
 import {StaleReasonsTags} from '../assets/Stale';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetComputeKindTag} from '../graph/OpTags';
-import {AssetKey} from '../graphql/types';
+import {AssetKeyInput} from '../graphql/types';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
 
@@ -113,8 +113,12 @@ interface StatusRowProps {
   liveData: LiveDataForNode | undefined;
 }
 
-const AssetNodeStatusRow: React.FC<StatusRowProps> = (props) => {
-  const {content, background} = buildAssetNodeStatusContent(props);
+const AssetNodeStatusRow: React.FC<StatusRowProps> = ({definition, liveData}) => {
+  const {content, background} = buildAssetNodeStatusContent({
+    assetKey: definition.assetKey,
+    definition,
+    liveData,
+  });
   return <AssetNodeStatusBox background={background}>{content}</AssetNodeStatusBox>;
 };
 
@@ -126,11 +130,13 @@ function getStepKey(definition: {opNames: string[]}) {
 }
 
 export function buildAssetNodeStatusContent({
+  assetKey,
   definition,
   liveData,
   expanded,
 }: {
-  definition: {assetKey: AssetKey; opNames: string[]; isSource: boolean; isObservable: boolean};
+  assetKey: AssetKeyInput;
+  definition: {opNames: string[]; isSource: boolean; isObservable: boolean};
   liveData: LiveDataForNode | null | undefined;
   expanded?: boolean;
 }) {
@@ -273,7 +279,7 @@ export function buildAssetNodeStatusContent({
       border,
       content: (
         <Link
-          to={assetDetailsPathForKey(definition.assetKey, {view: 'partitions'})}
+          to={assetDetailsPathForKey(assetKey, {view: 'partitions'})}
           style={{color: foreground}}
           target="_blank"
           rel="noreferrer"
@@ -399,7 +405,7 @@ export const AssetNodeMinimal: React.FC<{
   definition: AssetNodeFragment;
 }> = ({selected, definition, liveData}) => {
   const {isSource, assetKey} = definition;
-  const {border, background} = buildAssetNodeStatusContent({definition, liveData});
+  const {border, background} = buildAssetNodeStatusContent({assetKey, definition, liveData});
   const displayName = assetKey.path[assetKey.path.length - 1];
   return (
     <AssetInsetForHoverEffect>
