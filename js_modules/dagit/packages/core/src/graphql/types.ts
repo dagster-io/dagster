@@ -1057,7 +1057,7 @@ export type DynamicPartitionRequest = {
   __typename: 'DynamicPartitionRequest';
   partitionKeys: Maybe<Array<Scalars['String']>>;
   partitionsDefName: Scalars['String'];
-  type: GraphenePartitionRequestType;
+  type: PartitionRequestType;
 };
 
 export type EngineEvent = DisplayableEvent &
@@ -1445,11 +1445,6 @@ export type GraphSelector = {
   repositoryLocationName: Scalars['String'];
   repositoryName: Scalars['String'];
 };
-
-export enum GraphenePartitionRequestType {
-  ADD_PARTITIONS = 'ADD_PARTITIONS',
-  DELETE_PARTITIONS = 'DELETE_PARTITIONS',
-}
 
 export type HandledOutputEvent = DisplayableEvent &
   MessageEvent &
@@ -2351,6 +2346,11 @@ export enum PartitionRangeStatus {
   FAILED = 'FAILED',
   MATERIALIZED = 'MATERIALIZED',
   MATERIALIZING = 'MATERIALIZING',
+}
+
+export enum PartitionRequestType {
+  ADD_PARTITIONS = 'ADD_PARTITIONS',
+  DELETE_PARTITIONS = 'DELETE_PARTITIONS',
 }
 
 export type PartitionRun = {
@@ -5834,7 +5834,7 @@ export const buildDynamicPartitionRequest = (
     type:
       overrides && overrides.hasOwnProperty('type')
         ? overrides.type!
-        : GraphenePartitionRequestType.ADD_PARTITIONS,
+        : PartitionRequestType.ADD_PARTITIONS,
   };
 };
 
