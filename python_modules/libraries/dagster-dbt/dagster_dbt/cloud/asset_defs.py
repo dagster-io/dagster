@@ -195,8 +195,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         #
         # Since we're only doing this to generate the dependency structure, just use an arbitrary
         # partition key (e.g. the last one) to retrieve the partition variable.
-        dbt_vars = json.loads(parsed_args.vars or "{}")
-        if dbt_vars:
+        if parsed_args.vars:
             raise DagsterDbtCloudJobInvariantViolationError(
                 f"The dbt Cloud job '{dbt_cloud_job['name']}' ({dbt_cloud_job['id']}) must not have"
                 " variables defined from `--vars` in its `dbt run` or `dbt build` command."
