@@ -145,19 +145,11 @@ export const RunsRoot = () => {
 
   function actionBar() {
     return (
-      <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-        <QueryRefreshCountdown refreshState={combinedRefreshState} />
+      <Box
+        flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between', grow: 1}}
+      >
         {tabs}
         {filtersSlot}
-        {activeFiltersJsx.length ? (
-          <ButtonLink
-            onClick={() => {
-              setFilterTokensWithStatus([]);
-            }}
-          >
-            Clear All
-          </ButtonLink>
-        ) : null}
       </Box>
     );
   }
@@ -230,7 +222,20 @@ export const RunsRoot = () => {
                     onAddTag={onAddTag}
                     filter={filter}
                     actionBarComponents={actionBar()}
-                    belowActionBarComponents={activeFiltersJsx}
+                    belowActionBarComponents={
+                      <>
+                        {activeFiltersJsx}
+                        {activeFiltersJsx.length ? (
+                          <ButtonLink
+                            onClick={() => {
+                              setFilterTokensWithStatus([]);
+                            }}
+                          >
+                            Clear All
+                          </ButtonLink>
+                        ) : null}
+                      </>
+                    }
                   />
                 </StickyTableContainer>
                 {pipelineRunsOrError.results.length > 0 ? (
