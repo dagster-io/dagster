@@ -136,7 +136,7 @@ class GrapheneDynamicPartitionsRequestType(graphene.Enum):
     DELETE_PARTITIONS = "DELETE_PARTITIONS"
 
     class Meta:
-        name = "DynamicPartitionRequestType"
+        name = "DynamicPartitionsRequestType"
 
 
 class GrapheneDynamicPartitionsRequest(graphene.ObjectType):
