@@ -491,7 +491,7 @@ class TestSensors(NonLaunchableGraphQLContextTestMatrix):
         evaluation_result = result.data["sensorDryRun"]["evaluationResult"]
         assert not evaluation_result["runRequests"]
         assert not evaluation_result["skipReason"]
-        assert evaluation_result["dynamicPartitionsRequests"] == None
+        assert evaluation_result["dynamicPartitionsRequests"] is None
         assert (
             "Error occurred during the execution of evaluation_fn"
             in evaluation_result["error"]["message"]
