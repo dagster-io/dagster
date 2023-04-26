@@ -1,4 +1,3 @@
-import os
 import sys
 from typing import List, Optional
 
@@ -32,6 +31,7 @@ from dagster._core.errors import (
     DagsterInvalidPythonicConfigDefinitionError,
 )
 from dagster._core.execution.context.invocation import build_op_context
+from dagster._core.test_utils import environ
 from dagster._utils.cached_method import cached_method
 from pydantic import (
     BaseModel,
@@ -662,10 +662,7 @@ def test_schema_aliased_field():
 
 
 def test_env_var():
-    os.environ["ENV_VARIABLE_FOR_TEST"] = "foo"
-    os.environ["ENV_VARIABLE_FOR_TEST_INT"] = "2"
-    try:
-
+    with environ({"ENV_VARIABLE_FOR_TEST_INT": "2", "ENV_VARIABLE_FOR_TEST": "foo"}):
         class AnAssetConfig(Config):
             a_string: str
             an_int: int
@@ -698,10 +695,7 @@ def test_env_var():
         )
 
         assert executed["yes"]
-    finally:
-        del os.environ["ENV_VARIABLE_FOR_TEST"]
-        del os.environ["ENV_VARIABLE_FOR_TEST_INT"]
-
+  
 
 def test_structured_run_config_ops():
     class ANewConfigOpConfig(Config):
@@ -958,8 +952,7 @@ def test_direct_op_invocation_kwarg_very_complex() -> None:
         assert config.boolean is False
         executed["yes"] = True
 
-    os.environ["ENV_VARIABLE_FOR_TEST_INT"] = "2"
-    try:
+    with environ({"ENV_VARIABLE_FOR_TEST_INT": "2"}):
         an_op(
             config=MyOutermostConfig(
                 inner=MyOuterConfig(
@@ -968,9 +961,7 @@ def test_direct_op_invocation_kwarg_very_complex() -> None:
                 boolean=False,
             )
         )
-    finally:
-        del os.environ["ENV_VARIABLE_FOR_TEST_INT"]
-
+   
     assert executed["yes"]
 
 
