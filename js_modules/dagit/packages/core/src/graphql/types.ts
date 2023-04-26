@@ -1053,6 +1053,13 @@ export type DuplicateDynamicPartitionError = Error & {
   partitionsDefName: Scalars['String'];
 };
 
+export type DynamicPartitionRequest = {
+  __typename: 'DynamicPartitionRequest';
+  partitionKeys: Maybe<Array<Scalars['String']>>;
+  partitionsDefName: Scalars['String'];
+  type: GraphenePartitionRequestType;
+};
+
 export type EngineEvent = DisplayableEvent &
   ErrorEvent &
   MarkerEvent &
@@ -1438,6 +1445,11 @@ export type GraphSelector = {
   repositoryLocationName: Scalars['String'];
   repositoryName: Scalars['String'];
 };
+
+export enum GraphenePartitionRequestType {
+  ADD_PARTITIONS = 'ADD_PARTITIONS',
+  DELETE_PARTITIONS = 'DELETE_PARTITIONS',
+}
 
 export type HandledOutputEvent = DisplayableEvent &
   MessageEvent &
@@ -3834,6 +3846,7 @@ export type TextMetadataEntry = MetadataEntry & {
 export type TickEvaluation = {
   __typename: 'TickEvaluation';
   cursor: Maybe<Scalars['String']>;
+  dynamicPartitionRequests: Maybe<Array<DynamicPartitionRequest>>;
   error: Maybe<PythonError>;
   runRequests: Maybe<Array<RunRequest>>;
   skipReason: Maybe<Scalars['String']>;
@@ -5801,6 +5814,27 @@ export const buildDuplicateDynamicPartitionError = (
       overrides && overrides.hasOwnProperty('partitionsDefName')
         ? overrides.partitionsDefName!
         : 'natus',
+  };
+};
+
+export const buildDynamicPartitionRequest = (
+  overrides?: Partial<DynamicPartitionRequest>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'DynamicPartitionRequest'} & DynamicPartitionRequest => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('DynamicPartitionRequest');
+  return {
+    __typename: 'DynamicPartitionRequest',
+    partitionKeys:
+      overrides && overrides.hasOwnProperty('partitionKeys') ? overrides.partitionKeys! : ['ut'],
+    partitionsDefName:
+      overrides && overrides.hasOwnProperty('partitionsDefName')
+        ? overrides.partitionsDefName!
+        : 'ut',
+    type:
+      overrides && overrides.hasOwnProperty('type')
+        ? overrides.type!
+        : GraphenePartitionRequestType.ADD_PARTITIONS,
   };
 };
 
@@ -12604,6 +12638,14 @@ export const buildTickEvaluation = (
   return {
     __typename: 'TickEvaluation',
     cursor: overrides && overrides.hasOwnProperty('cursor') ? overrides.cursor! : 'est',
+    dynamicPartitionRequests:
+      overrides && overrides.hasOwnProperty('dynamicPartitionRequests')
+        ? overrides.dynamicPartitionRequests!
+        : [
+            relationshipsToOmit.has('DynamicPartitionRequest')
+              ? ({} as DynamicPartitionRequest)
+              : buildDynamicPartitionRequest({}, relationshipsToOmit),
+          ],
     error:
       overrides && overrides.hasOwnProperty('error')
         ? overrides.error!
