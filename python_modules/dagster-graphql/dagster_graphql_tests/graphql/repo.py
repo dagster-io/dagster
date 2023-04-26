@@ -1129,9 +1129,7 @@ def define_sensors():
         yield SensorResult(
             run_requests=[RunRequest(partition_key="new_key")],
             dynamic_partitions_requests=[
-                DynamicPartitionsDefinition(name="foo").build_add_request(
-                    ["new_key", "new_key2"]
-                ),
+                DynamicPartitionsDefinition(name="foo").build_add_request(["new_key", "new_key2"]),
                 DynamicPartitionsDefinition(name="foo").build_delete_request(["old_key"]),
             ],
         )
