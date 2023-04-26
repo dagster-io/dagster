@@ -12,6 +12,7 @@ from dagster import (
     io_manager,
     materialize,
 )
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 from dagster._core.errors import DagsterInvalidInvocationError
@@ -49,12 +50,16 @@ def airbyte_instance_fixture(request) -> AirbyteResource:
 @pytest.mark.parametrize(
     "connection_to_freshness_policy_fn", [None, lambda _: TEST_FRESHNESS_POLICY]
 )
+@pytest.mark.parametrize(
+    "connection_to_auto_materialize_policy_fn", [None, lambda _: AutoMaterializePolicy.lazy()]
+)
 def test_load_from_instance(
     use_normalization_tables,
     connection_to_group_fn,
     filter_connection,
     connection_to_asset_key_fn,
     connection_to_freshness_policy_fn,
+    connection_to_auto_materialize_policy_fn,
     airbyte_instance: AirbyteResource,
 ):
     load_calls = []
@@ -99,6 +104,7 @@ def test_load_from_instance(
             connection_to_io_manager_key_fn=(lambda _: "test_io_manager"),
             connection_to_asset_key_fn=connection_to_asset_key_fn,
             connection_to_freshness_policy_fn=connection_to_freshness_policy_fn,
+            connection_to_auto_materialize_policy_fn=connection_to_auto_materialize_policy_fn,
         )
     else:
         ab_cacheable_assets = load_assets_from_airbyte_instance(
@@ -108,6 +114,7 @@ def test_load_from_instance(
             io_manager_key="test_io_manager",
             connection_to_asset_key_fn=connection_to_asset_key_fn,
             connection_to_freshness_policy_fn=connection_to_freshness_policy_fn,
+            connection_to_auto_materialize_policy_fn=connection_to_auto_materialize_policy_fn,
         )
     ab_assets = ab_cacheable_assets.build_definitions(ab_cacheable_assets.compute_cacheable_data())
     ab_assets = list(with_resources(ab_assets, {"test_io_manager": test_io_manager}))
@@ -209,6 +216,15 @@ def test_load_from_instance(
     expected_freshness_policy = TEST_FRESHNESS_POLICY if connection_to_freshness_policy_fn else None
     freshness_policies = ab_assets[0].freshness_policies_by_key
     assert all(freshness_policies[key] == expected_freshness_policy for key in freshness_policies)
+
+    expected_auto_materialize_policy = (
+        AutoMaterializePolicy.lazy() if connection_to_auto_materialize_policy_fn else None
+    )
+    auto_materialize_policies_by_key = ab_assets[0].auto_materialize_policies_by_key
+    assert all(
+        auto_materialize_policies_by_key[key] == expected_auto_materialize_policy
+        for key in auto_materialize_policies_by_key
+    )
 
     responses.add(
         method=responses.POST,
