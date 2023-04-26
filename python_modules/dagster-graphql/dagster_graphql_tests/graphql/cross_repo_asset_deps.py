@@ -2,26 +2,26 @@ from dagster import AssetKey, SourceAsset, asset, repository
 
 
 @asset
-def upstream_asset():
+def derived_asset():
     return 5
 
 
 @repository
 def upstream_assets_repository():
-    return [upstream_asset]
+    return [derived_asset]
 
 
-source_assets = [SourceAsset(AssetKey("upstream_asset"))]
-
-
-@asset
-def downstream_asset1(upstream_asset):
-    assert upstream_asset
+source_assets = [SourceAsset(AssetKey("derived_asset")), SourceAsset("always_source_asset")]
 
 
 @asset
-def downstream_asset2(upstream_asset):
-    assert upstream_asset
+def downstream_asset1(derived_asset, always_source_asset):
+    assert derived_asset
+
+
+@asset
+def downstream_asset2(derived_asset, always_source_asset):
+    assert derived_asset
 
 
 @repository

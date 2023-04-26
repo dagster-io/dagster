@@ -353,73 +353,85 @@ class CrossRepoAssetDependedByLoader:
         Dict[AssetKey, ExternalAssetNode],
         Dict[Tuple[str, str], Dict[AssetKey, List[ExternalAssetDependedBy]]],
     ]:
-        """This method constructs a sink asset as an ExternalAssetNode for every asset immediately
-        downstream of a source asset that is defined in another repository as a derived asset.
-
-        In Dagit, sink assets will display as ForeignAssets, which are external from the repository.
+        """For asset X, find all "sink assets" and define them as ExternalAssetNodes. A "sink asset" is
+        any asset that depends on X and exists in other repository. This enables displaying cross-repo
+        dependencies for a source asset in a given repository.
 
         This method also stores a mapping from source asset key to ExternalAssetDependedBy nodes
-        that depend on the asset with that key. When get_cross_repo_dependent_assets is called with a derived
-        asset's asset key and its location, all dependent ExternalAssetDependedBy nodes are returned.
+        that depend on that asset key. When get_cross_repo_dependent_assets is called with
+        a source asset key and its location, all dependent ExternalAssetDependedBy nodes outside of the
+        source asset location are returned.
         """
-        depended_by_assets_by_source_asset: Dict[AssetKey, List[ExternalAssetDependedBy]] = {}
+        depended_by_assets_by_location_by_source_asset: Dict[
+            AssetKey, Dict[Tuple[str, str], List[ExternalAssetDependedBy]]
+        ] = defaultdict(lambda: defaultdict(list))
 
-        map_defined_asset_to_location: Dict[
+        # A mapping containing all derived (non-source) assets and their location
+        map_derived_asset_to_location: Dict[
             AssetKey, Tuple[str, str]
         ] = {}  # key is asset key, value is tuple (location_name, repo_name)
 
-        external_asset_node_by_asset_key: Dict[
-            AssetKey, ExternalAssetNode
-        ] = {}  # only contains derived assets
         for location in self._context.code_locations:
             repositories = location.get_repositories()
             for repo_name, external_repo in repositories.items():
                 asset_nodes = external_repo.get_external_asset_nodes()
                 for asset_node in asset_nodes:
+                    location_tuple = (location.name, repo_name)
                     if not asset_node.op_name:  # is source asset
-                        if asset_node.asset_key not in depended_by_assets_by_source_asset:
-                            depended_by_assets_by_source_asset[asset_node.asset_key] = []
-                        depended_by_assets_by_source_asset[asset_node.asset_key].extend(
-                            asset_node.depended_by
-                        )
-                    else:
-                        map_defined_asset_to_location[asset_node.asset_key] = (
-                            location.name,
-                            repo_name,
-                        )
-                        external_asset_node_by_asset_key[asset_node.asset_key] = asset_node
+                        depended_by_assets_by_location_by_source_asset[asset_node.asset_key][
+                            location_tuple
+                        ].extend(asset_node.depended_by)
+                    else:  # derived asset
+                        map_derived_asset_to_location[asset_node.asset_key] = location_tuple
 
         sink_assets: Dict[AssetKey, ExternalAssetNode] = {}
         external_asset_deps: Dict[
             Tuple[str, str], Dict[AssetKey, List[ExternalAssetDependedBy]]
-        ] = (
-            {}
+        ] = defaultdict(
+            lambda: defaultdict(list)
         )  # nested dict that maps dependedby assets by asset key by location tuple (repo_location.name, repo_name)
 
-        for source_asset, depended_by_assets in depended_by_assets_by_source_asset.items():
-            asset_def_location = map_defined_asset_to_location.get(source_asset, None)
-            if asset_def_location:  # source asset is defined as asset in another repository
-                if asset_def_location not in external_asset_deps:
-                    external_asset_deps[asset_def_location] = {}
-                if source_asset not in external_asset_deps[asset_def_location]:
-                    external_asset_deps[asset_def_location][source_asset] = []
-                external_asset_deps[asset_def_location][source_asset].extend(depended_by_assets)
-                for asset in depended_by_assets:
-                    # SourceAssets defined as ExternalAssetNodes contain no definition data (e.g.
-                    # no output or partition definition data) and no job_names. Dagit displays
-                    # all ExternalAssetNodes with no job_names as foreign assets, so sink assets
-                    # are defined as ExternalAssetNodes with no definition data.
-                    sink_assets[asset.downstream_asset_key] = ExternalAssetNode(
-                        asset_key=asset.downstream_asset_key,
-                        dependencies=[
-                            ExternalAssetDependency(
-                                upstream_asset_key=source_asset,
-                                input_name=asset.input_name,
-                                output_name=asset.output_name,
-                            )
-                        ],
-                        depended_by=[],
+        for (
+            source_asset,
+            depended_by_assets_by_location,
+        ) in depended_by_assets_by_location_by_source_asset.items():
+            all_depended_by_assets = set()
+            for depended_by_assets in depended_by_assets_by_location.values():
+                all_depended_by_assets = all_depended_by_assets | set(depended_by_assets)
+
+            # source_asset_locations contains a list of all locations where the source asset is defined,
+            # including the location where it is defined as a derived asset
+            source_asset_locations = set(depended_by_assets_by_location.keys())
+            if source_asset in map_derived_asset_to_location:
+                source_asset_locations.add(map_derived_asset_to_location[source_asset])
+
+            for source_asset_location in source_asset_locations:
+                # Map each source asset location and asset key to all assets outside of that location
+                # that depend on the source asset
+                external_asset_deps[source_asset_location][source_asset].extend(
+                    list(
+                        all_depended_by_assets
+                        - set(depended_by_assets_by_location[source_asset_location])
                     )
+                )
+
+            for asset in all_depended_by_assets:
+                # SourceAssets defined as ExternalAssetNodes contain no definition data (e.g.
+                # no output or partition definition data) and no job_names. Dagit displays
+                # all ExternalAssetNodes with no job_names as foreign assets, so sink assets
+                # are defined as ExternalAssetNodes with no definition data.
+                sink_assets[asset.downstream_asset_key] = ExternalAssetNode(
+                    asset_key=asset.downstream_asset_key,
+                    dependencies=[
+                        ExternalAssetDependency(
+                            upstream_asset_key=source_asset,
+                            input_name=asset.input_name,
+                            output_name=asset.output_name,
+                        )
+                    ],
+                    depended_by=[],
+                )
+
         return sink_assets, external_asset_deps
 
     def get_sink_asset(self, asset_key: AssetKey) -> ExternalAssetNode:
