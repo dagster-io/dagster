@@ -171,13 +171,7 @@ Let's take a look at what each of these files and directories does:
 
 ## Configuration files
 
-<Note>
-  <strong>Not sure where to put these files?</strong> Unless otherwise noted,
-  all configuration files should be placed in the root of your Dagster project
-  directory.
-</Note>
-
-Depending on your use case or if you're using Dagster Cloud, you may also need to add additional configuration files to your project:
+Depending on your use case or if you're using Dagster Cloud, you may also need to add additional configuration files to your project. Refer to the [Example project structures section](#example-project-structures) for a look at how these files might fit into your projects.
 
 <table
   className="table"
@@ -232,7 +226,13 @@ Depending on your use case or if you're using Dagster Cloud, you may also need t
     </tr>
     <tr>
       <td>dagster_cloud.yaml</td>
-      <td>Defines code locations for Dagster Cloud.</td>
+      <td>
+        Defines code locations for Dagster Cloud. Refer to the{" "}
+        <a href="/dagster-cloud/managing-deployments/dagster-cloud-yaml">
+          <code>dagster_cloud.yaml</code> reference
+        </a>{" "}
+        for more info.
+      </td>
       <td>n/a</td>
       <td>Recommended</td>
     </tr>
@@ -274,6 +274,8 @@ Depending on your use case or if you're using Dagster Cloud, you may also need t
 ## Example project structures
 
 Using the default project skeleton, let's take a look at how some example Dagster projects would be structured in different scenarios.
+
+**Note**: With the exception of `dagster_cloud.yaml`, it's not necessary for configuration files to be located with your project files. These files typically need to be located in `DAGSTER_HOME`. For example, in larger deployments, `DAGSTER_HOME` and Dagster infrastructure configuration can be managed separately from the code locations they support.
 
 ### Local development
 
