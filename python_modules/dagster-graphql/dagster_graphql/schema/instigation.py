@@ -131,18 +131,18 @@ class GrapheneInstigationEventConnection(graphene.ObjectType):
     hasMore = graphene.NonNull(graphene.Boolean)
 
 
-class GraphenePartitionRequestType(graphene.Enum):
+class GrapheneDynamicPartitionsRequestType(graphene.Enum):
     ADD_PARTITIONS = "ADD_PARTITIONS"
     DELETE_PARTITIONS = "DELETE_PARTITIONS"
 
     class Meta:
-        name = "PartitionRequestType"
+        name = "DynamicPartitionRequestType"
 
 
 class GrapheneDynamicPartitionsRequest(graphene.ObjectType):
     partitionKeys = graphene.List(graphene.NonNull(graphene.String))
     partitionsDefName = graphene.NonNull(graphene.String)
-    type = graphene.NonNull(GraphenePartitionRequestType)
+    type = graphene.NonNull(GrapheneDynamicPartitionsRequestType)
 
     class Meta:
         name = "DynamicPartitionRequest"
@@ -154,9 +154,9 @@ class GrapheneDynamicPartitionsRequest(graphene.ObjectType):
         ],
     ):
         super().__init__(
-            type=GraphenePartitionRequestType.ADD_PARTITIONS
+            type=GrapheneDynamicPartitionsRequestType.ADD_PARTITIONS
             if isinstance(dynamic_partition_request, AddDynamicPartitionsRequest)
-            else GraphenePartitionRequestType.DELETE_PARTITIONS,
+            else GrapheneDynamicPartitionsRequestType.DELETE_PARTITIONS,
             partitionKeys=dynamic_partition_request.partition_keys,
             partitionsDefName=dynamic_partition_request.partitions_def_name,
         )

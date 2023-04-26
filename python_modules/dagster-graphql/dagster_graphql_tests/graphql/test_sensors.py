@@ -23,7 +23,7 @@ from dagster._daemon.sensor import execute_sensor_iteration
 from dagster._utils import Counter, traced_counter
 from dagster._utils.error import SerializableErrorInfo
 from dagster_graphql.implementation.utils import UserFacingGraphQLError
-from dagster_graphql.schema.instigation import GraphenePartitionRequestType
+from dagster_graphql.schema.instigation import GrapheneDynamicPartitionsRequestType
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
     infer_repository_selector,
@@ -470,13 +470,13 @@ class TestSensors(NonLaunchableGraphQLContextTestMatrix):
         assert evaluation_result["dynamicPartitionsRequests"][0]["partitionsDefName"] == "foo"
         assert (
             evaluation_result["dynamicPartitionsRequests"][0]["type"]
-            == GraphenePartitionRequestType.ADD_PARTITIONS
+            == GrapheneDynamicPartitionsRequestType.ADD_PARTITIONS
         )
         assert evaluation_result["dynamicPartitionsRequests"][1]["partitionKeys"] == ["old_key"]
         assert evaluation_result["dynamicPartitionsRequests"][1]["partitionsDefName"] == "foo"
         assert (
             evaluation_result["dynamicPartitionsRequests"][1]["type"]
-            == GraphenePartitionRequestType.DELETE_PARTITIONS
+            == GrapheneDynamicPartitionsRequestType.DELETE_PARTITIONS
         )
 
     def test_dry_run_failure(self, graphql_context: WorkspaceRequestContext):

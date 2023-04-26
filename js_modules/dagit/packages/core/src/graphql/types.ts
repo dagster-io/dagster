@@ -1057,8 +1057,13 @@ export type DynamicPartitionRequest = {
   __typename: 'DynamicPartitionRequest';
   partitionKeys: Maybe<Array<Scalars['String']>>;
   partitionsDefName: Scalars['String'];
-  type: PartitionRequestType;
+  type: DynamicPartitionRequestType;
 };
+
+export enum DynamicPartitionRequestType {
+  ADD_PARTITIONS = 'ADD_PARTITIONS',
+  DELETE_PARTITIONS = 'DELETE_PARTITIONS',
+}
 
 export type EngineEvent = DisplayableEvent &
   ErrorEvent &
@@ -2346,11 +2351,6 @@ export enum PartitionRangeStatus {
   FAILED = 'FAILED',
   MATERIALIZED = 'MATERIALIZED',
   MATERIALIZING = 'MATERIALIZING',
-}
-
-export enum PartitionRequestType {
-  ADD_PARTITIONS = 'ADD_PARTITIONS',
-  DELETE_PARTITIONS = 'DELETE_PARTITIONS',
 }
 
 export type PartitionRun = {
@@ -5834,7 +5834,7 @@ export const buildDynamicPartitionRequest = (
     type:
       overrides && overrides.hasOwnProperty('type')
         ? overrides.type!
-        : PartitionRequestType.ADD_PARTITIONS,
+        : DynamicPartitionRequestType.ADD_PARTITIONS,
   };
 };
 

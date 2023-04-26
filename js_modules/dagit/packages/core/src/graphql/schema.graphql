@@ -2150,10 +2150,10 @@ type TickEvaluation {
 type DynamicPartitionRequest {
   partitionKeys: [String!]
   partitionsDefName: String!
-  type: PartitionRequestType!
+  type: DynamicPartitionRequestType!
 }
 
-enum PartitionRequestType {
+enum DynamicPartitionRequestType {
   ADD_PARTITIONS
   DELETE_PARTITIONS
 }
