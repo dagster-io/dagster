@@ -1,44 +1,49 @@
 from pathlib import Path
+from typing import Any
 
-from dagster import Definitions, IOManager, ResourceDefinition, graph, io_manager, op
+from dagster import (
+    ConfigurableIOManager,
+    Definitions,
+    ResourceDefinition,
+    ResourceParam,
+    graph,
+    op,
+)
 from dagster_aws.emr import emr_pyspark_step_launcher
-from dagster_aws.s3 import s3_resource
-from dagster_pyspark import pyspark_resource
+from dagster_aws.s3 import S3Resource
+from dagster_pyspark import PySparkResource
 from pyspark.sql import DataFrame, Row
 from pyspark.sql.types import IntegerType, StringType, StructField, StructType
 
 
-class ParquetIOManager(IOManager):
-    def _get_path(self, context):
-        return "/".join(
-            [context.resource_config["path_prefix"], context.run_id, context.step_key, context.name]
-        )
+class ParquetIOManager(ConfigurableIOManager):
+    pyspark: PySparkResource
+    path_prefix: str
+
+    def _get_path(self, context) -> str:
+        return "/".join([self.path_prefix, context.run_id, context.step_key, context.name])
 
     def handle_output(self, context, obj):
         obj.write.parquet(self._get_path(context))
 
     def load_input(self, context):
-        spark = context.resources.pyspark.spark_session
+        spark = self.pyspark.get_client().spark_session
         return spark.read.parquet(self._get_path(context.upstream_output))
 
 
-@io_manager(required_resource_keys={"pyspark"}, config_schema={"path_prefix": str})
-def parquet_io_manager():
-    return ParquetIOManager()
-
-
-@op(required_resource_keys={"pyspark", "pyspark_step_launcher"})
-def make_people(context) -> DataFrame:
+@op
+def make_people(pyspark: PySparkResource, pyspark_step_launcher: ResourceParam[Any]) -> DataFrame:
     schema = StructType([StructField("name", StringType()), StructField("age", IntegerType())])
     rows = [Row(name="Thom", age=51), Row(name="Jonny", age=48), Row(name="Nigel", age=49)]
-    return context.resources.pyspark.spark_session.createDataFrame(rows, schema)
+    return pyspark.get_client().spark_session.createDataFrame(rows, schema)
 
 
-@op(required_resource_keys={"pyspark_step_launcher"})
-def filter_over_50(people: DataFrame) -> DataFrame:
+@op
+def filter_over_50(pyspark_step_launcher: ResourceParam[Any], people: DataFrame) -> DataFrame:
     return people.filter(people["age"] > 50)
 
 
+emr_pyspark = PySparkResource(spark_config={"spark.executor.memory": "2g"})
 emr_resource_defs = {
     "pyspark_step_launcher": emr_pyspark_step_launcher.configured(
         {
@@ -50,15 +55,16 @@ emr_resource_defs = {
             "wait_for_logs": True,
         }
     ),
-    "pyspark": pyspark_resource.configured({"spark_conf": {"spark.executor.memory": "2g"}}),
-    "s3": s3_resource,
-    "io_manager": parquet_io_manager.configured({"path_prefix": "s3://my-s3-bucket"}),
+    "pyspark": emr_pyspark,
+    "s3": S3Resource(),
+    "io_manager": ParquetIOManager(pyspark=emr_pyspark, path_prefix="s3://my-s3-bucket"),
 }
 
+local_pyspark = PySparkResource(spark_config={"spark.default.parallelism": 1})
 local_resource_defs = {
     "pyspark_step_launcher": ResourceDefinition.none_resource(),
-    "pyspark": pyspark_resource.configured({"spark_conf": {"spark.default.parallelism": 1}}),
-    "io_manager": parquet_io_manager.configured({"path_prefix": "."}),
+    "pyspark": local_pyspark,
+    "io_manager": ParquetIOManager(pyspark=local_pyspark, path_prefix="."),
 }
 
 
