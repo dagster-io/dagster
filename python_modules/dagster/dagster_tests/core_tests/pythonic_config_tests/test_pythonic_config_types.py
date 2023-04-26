@@ -3,10 +3,12 @@ from typing import Any, Dict, List, Mapping, Optional, Type, Union
 
 import pytest
 from dagster import (
+    Definitions,
     Field as LegacyDagsterField,
     IntSource,
     Map,
     Shape,
+    asset,
     job,
     op,
 )
@@ -630,13 +632,32 @@ def test_nested_discriminated_resource_instantiation() -> None:
         pet: Union[Cat, Dog] = Field(..., discriminator="pet_type")
         n: int
 
-    config = ResourceWithUnion(pet=Dog(barks=5.5, breed=Poodle(fluffy=True)), n=3)
-    assert isinstance(config.pet, Dog)
-    assert config.pet.barks == 5.5
-    assert config.pet.pet_type == "dog"
-    assert isinstance(config.pet.breed, Poodle)
-    assert config.pet.breed.fluffy
-    assert config.pet.breed.breed_type == "poodle"
+    resource_with_union = ResourceWithUnion(pet=Dog(barks=5.5, breed=Poodle(fluffy=True)), n=3)
+    assert isinstance(resource_with_union.pet, Dog)
+    assert resource_with_union.pet.barks == 5.5
+    assert resource_with_union.pet.pet_type == "dog"
+    assert isinstance(resource_with_union.pet.breed, Poodle)
+    assert resource_with_union.pet.breed.fluffy
+    assert resource_with_union.pet.breed.breed_type == "poodle"
+
+    executed = {}
+
+    @asset
+    def my_asset_uses_resource(resource_with_union: ResourceWithUnion):
+        assert isinstance(resource_with_union.pet, Dog)
+        assert resource_with_union.pet.barks == 5.5
+        assert resource_with_union.pet.pet_type == "dog"
+        assert isinstance(resource_with_union.pet.breed, Poodle)
+        assert resource_with_union.pet.breed.fluffy
+        assert resource_with_union.pet.breed.breed_type == "poodle"
+        executed["yes"] = True
+
+    defs = Definitions(
+        assets=[my_asset_uses_resource],
+        resources={"resource_with_union": resource_with_union},
+    )
+    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert executed["yes"]
 
 
 def test_struct_config_optional_map() -> None:

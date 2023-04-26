@@ -470,7 +470,7 @@ def config_dictionary_from_values(
 
     from dagster._config.pythonic_config import _config_value_to_dict_representation
 
-    return check.is_dict(_config_value_to_dict_representation(None, None, values))
+    return check.is_dict(_config_value_to_dict_representation(None, values))
 
 
 class IntEnvVar(int):
