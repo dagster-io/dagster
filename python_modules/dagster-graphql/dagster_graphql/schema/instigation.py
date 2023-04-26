@@ -6,9 +6,9 @@ import dagster._check as check
 import graphene
 import pendulum
 from dagster._core.definitions.run_request import (
-    RunRequest,
     AddDynamicPartitionsRequest,
     DeleteDynamicPartitionsRequest,
+    RunRequest,
 )
 from dagster._core.definitions.schedule_definition import ScheduleExecutionData
 from dagster._core.definitions.selector import ScheduleSelector, SensorSelector
@@ -131,7 +131,7 @@ class GrapheneInstigationEventConnection(graphene.ObjectType):
     hasMore = graphene.NonNull(graphene.Boolean)
 
 
-class GrapheneStepKind(graphene.Enum):
+class GraphenePartitionRequestType(graphene.Enum):
     ADD_PARTITIONS = "ADD_PARTITIONS"
     DELETE_PARTITIONS = "DELETE_PARTITIONS"
 
@@ -139,7 +139,7 @@ class GrapheneStepKind(graphene.Enum):
 class GrapheneDynamicPartitionRequest(graphene.ObjectType):
     partitionKeys = graphene.List(graphene.NonNull(graphene.String))
     partitionsDefName = graphene.NonNull(graphene.String)
-    type = graphene.NonNull(GrapheneStepKind)
+    type = graphene.NonNull(GraphenePartitionRequestType)
 
     class Meta:
         name = "DynamicPartitionRequest"
@@ -151,9 +151,9 @@ class GrapheneDynamicPartitionRequest(graphene.ObjectType):
         ],
     ):
         super().__init__(
-            type=GrapheneStepKind.ADD_PARTITIONS
+            type=GraphenePartitionRequestType.ADD_PARTITIONS
             if isinstance(dynamic_partition_request, AddDynamicPartitionsRequest)
-            else GrapheneStepKind.DELETE_PARTITIONS,
+            else GraphenePartitionRequestType.DELETE_PARTITIONS,
             partitionKeys=dynamic_partition_request.partition_keys,
             partitionsDefName=dynamic_partition_request.partitions_def_name,
         )

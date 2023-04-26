@@ -23,6 +23,7 @@ from dagster._daemon.sensor import execute_sensor_iteration
 from dagster._utils import Counter, traced_counter
 from dagster._utils.error import SerializableErrorInfo
 from dagster_graphql.implementation.utils import UserFacingGraphQLError
+from dagster_graphql.schema.instigation import GraphenePartitionRequestType
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
     infer_repository_selector,
@@ -440,7 +441,7 @@ class TestSensors(NonLaunchableGraphQLContextTestMatrix):
         assert evaluation_result["runRequests"][0]["runConfigYaml"] == "{}\n"
         assert evaluation_result["skipReason"] is None
         assert evaluation_result["error"] is None
-        assert not evaluation_result["dynamicPartitionRequests"] is None
+        assert evaluation_result["dynamicPartitionRequests"] is None
 
     def test_dry_run_with_dynamic_partition_requests(
         self, graphql_context: WorkspaceRequestContext
@@ -461,7 +462,22 @@ class TestSensors(NonLaunchableGraphQLContextTestMatrix):
         assert evaluation_result["runRequests"][0]["runConfigYaml"] == "{}\n"
         assert evaluation_result["skipReason"] is None
         assert evaluation_result["error"] is None
-        assert not evaluation_result["dynamicPartitionRequests"] is None
+        assert len(evaluation_result["dynamicPartitionRequests"]) == 2
+        assert evaluation_result["dynamicPartitionRequests"][0]["partitionKeys"] == [
+            "new_key",
+            "new_key2",
+        ]
+        assert evaluation_result["dynamicPartitionRequests"][0]["partitionsDefName"] == "foo"
+        assert (
+            evaluation_result["dynamicPartitionRequests"][0]["type"]
+            == GraphenePartitionRequestType.ADD_PARTITIONS
+        )
+        assert evaluation_result["dynamicPartitionRequests"][1]["partitionKeys"] == ["old_key"]
+        assert evaluation_result["dynamicPartitionRequests"][1]["partitionsDefName"] == "foo"
+        assert (
+            evaluation_result["dynamicPartitionRequests"][1]["type"]
+            == GraphenePartitionRequestType.DELETE_PARTITIONS
+        )
 
     def test_dry_run_failure(self, graphql_context: WorkspaceRequestContext):
         instigator_selector = infer_sensor_selector(graphql_context, "always_error_sensor")
