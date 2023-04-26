@@ -33,7 +33,7 @@ export function DynamicPartitionRequests({
 
   return (
     <Box flex={{direction: 'column', gap: 12, grow: 1}} margin={{top: 24}}>
-      <Box flex={{direction: 'row', alignItems: 'center'}}>
+      <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
         <Icon name="partition" />
         <Subheading>Dynamic Partition Requests</Subheading>
       </Box>
