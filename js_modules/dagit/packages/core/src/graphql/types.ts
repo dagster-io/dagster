@@ -3846,7 +3846,7 @@ export type TextMetadataEntry = MetadataEntry & {
 export type TickEvaluation = {
   __typename: 'TickEvaluation';
   cursor: Maybe<Scalars['String']>;
-  dynamicPartitionRequests: Maybe<Array<DynamicPartitionRequest>>;
+  dynamicPartitionsRequests: Maybe<Array<DynamicPartitionRequest>>;
   error: Maybe<PythonError>;
   runRequests: Maybe<Array<RunRequest>>;
   skipReason: Maybe<Scalars['String']>;
@@ -12638,9 +12638,9 @@ export const buildTickEvaluation = (
   return {
     __typename: 'TickEvaluation',
     cursor: overrides && overrides.hasOwnProperty('cursor') ? overrides.cursor! : 'est',
-    dynamicPartitionRequests:
-      overrides && overrides.hasOwnProperty('dynamicPartitionRequests')
-        ? overrides.dynamicPartitionRequests!
+    dynamicPartitionsRequests:
+      overrides && overrides.hasOwnProperty('dynamicPartitionsRequests')
+        ? overrides.dynamicPartitionsRequests!
         : [
             relationshipsToOmit.has('DynamicPartitionRequest')
               ? ({} as DynamicPartitionRequest)

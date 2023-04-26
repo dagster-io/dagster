@@ -139,7 +139,7 @@ class GraphenePartitionRequestType(graphene.Enum):
         name = "PartitionRequestType"
 
 
-class GrapheneDynamicPartitionRequest(graphene.ObjectType):
+class GrapheneDynamicPartitionsRequest(graphene.ObjectType):
     partitionKeys = graphene.List(graphene.NonNull(graphene.String))
     partitionsDefName = graphene.NonNull(graphene.String)
     type = graphene.NonNull(GraphenePartitionRequestType)
@@ -302,7 +302,7 @@ class GrapheneDryRunInstigationTick(graphene.ObjectType):
 
 
 class GrapheneTickEvaluation(graphene.ObjectType):
-    dynamicPartitionRequests = graphene.List(graphene.NonNull(GrapheneDynamicPartitionRequest))
+    dynamicPartitionsRequests = graphene.List(graphene.NonNull(GrapheneDynamicPartitionsRequest))
     runRequests = graphene.List(lambda: graphene.NonNull(GrapheneRunRequest))
     skipReason = graphene.String()
     error = graphene.Field(GraphenePythonError)
@@ -335,10 +335,10 @@ class GrapheneTickEvaluation(graphene.ObjectType):
             if not isinstance(execution_data, SerializableErrorInfo)
             else None
         )
-        dynamicPartitionRequests = None
+        dynamicPartitionsRequests = None
         if isinstance(execution_data, SensorExecutionData):
-            dynamicPartitionRequests = [
-                GrapheneDynamicPartitionRequest(request)
+            dynamicPartitionsRequests = [
+                GrapheneDynamicPartitionsRequest(request)
                 for request in execution_data.dynamic_partitions_requests
             ]
         cursor = execution_data.cursor if isinstance(execution_data, SensorExecutionData) else None
@@ -346,7 +346,7 @@ class GrapheneTickEvaluation(graphene.ObjectType):
             skipReason=skip_reason,
             error=error,
             cursor=cursor,
-            dynamicPartitionRequests=dynamicPartitionRequests,
+            dynamicPartitionsRequests=dynamicPartitionsRequests,
         )
 
     def resolve_runRequests(self, _graphene_info: ResolveInfo):

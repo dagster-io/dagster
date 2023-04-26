@@ -309,7 +309,7 @@ mutation($selectorData: SensorSelector!, $cursor: String) {
           message
           stack
         }
-        dynamicPartitionRequests {
+        dynamicPartitionsRequests {
           partitionKeys
           partitionsDefName
           type
@@ -441,7 +441,7 @@ class TestSensors(NonLaunchableGraphQLContextTestMatrix):
         assert evaluation_result["runRequests"][0]["runConfigYaml"] == "{}\n"
         assert evaluation_result["skipReason"] is None
         assert evaluation_result["error"] is None
-        assert evaluation_result["dynamicPartitionRequests"] is None
+        assert evaluation_result["dynamicPartitionsRequests"] is None
 
     def test_dry_run_with_dynamic_partition_requests(
         self, graphql_context: WorkspaceRequestContext
@@ -462,20 +462,20 @@ class TestSensors(NonLaunchableGraphQLContextTestMatrix):
         assert evaluation_result["runRequests"][0]["runConfigYaml"] == "{}\n"
         assert evaluation_result["skipReason"] is None
         assert evaluation_result["error"] is None
-        assert len(evaluation_result["dynamicPartitionRequests"]) == 2
-        assert evaluation_result["dynamicPartitionRequests"][0]["partitionKeys"] == [
+        assert len(evaluation_result["dynamicPartitionsRequests"]) == 2
+        assert evaluation_result["dynamicPartitionsRequests"][0]["partitionKeys"] == [
             "new_key",
             "new_key2",
         ]
-        assert evaluation_result["dynamicPartitionRequests"][0]["partitionsDefName"] == "foo"
+        assert evaluation_result["dynamicPartitionsRequests"][0]["partitionsDefName"] == "foo"
         assert (
-            evaluation_result["dynamicPartitionRequests"][0]["type"]
+            evaluation_result["dynamicPartitionsRequests"][0]["type"]
             == GraphenePartitionRequestType.ADD_PARTITIONS
         )
-        assert evaluation_result["dynamicPartitionRequests"][1]["partitionKeys"] == ["old_key"]
-        assert evaluation_result["dynamicPartitionRequests"][1]["partitionsDefName"] == "foo"
+        assert evaluation_result["dynamicPartitionsRequests"][1]["partitionKeys"] == ["old_key"]
+        assert evaluation_result["dynamicPartitionsRequests"][1]["partitionsDefName"] == "foo"
         assert (
-            evaluation_result["dynamicPartitionRequests"][1]["type"]
+            evaluation_result["dynamicPartitionsRequests"][1]["type"]
             == GraphenePartitionRequestType.DELETE_PARTITIONS
         )
 
@@ -491,7 +491,7 @@ class TestSensors(NonLaunchableGraphQLContextTestMatrix):
         evaluation_result = result.data["sensorDryRun"]["evaluationResult"]
         assert not evaluation_result["runRequests"]
         assert not evaluation_result["skipReason"]
-        assert not evaluation_result["dynamicPartitionRequests"]
+        assert not evaluation_result["dynamicPartitionsRequests"]
         assert (
             "Error occurred during the execution of evaluation_fn"
             in evaluation_result["error"]["message"]

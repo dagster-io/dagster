@@ -2140,7 +2140,7 @@ type DryRunInstigationTick {
 }
 
 type TickEvaluation {
-  dynamicPartitionRequests: [DynamicPartitionRequest!]
+  dynamicPartitionsRequests: [DynamicPartitionRequest!]
   runRequests: [RunRequest!]
   skipReason: String
   error: PythonError
