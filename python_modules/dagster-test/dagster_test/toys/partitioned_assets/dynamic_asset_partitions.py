@@ -1,6 +1,5 @@
 import click
 from dagster import (
-    AssetKey,
     AssetSelection,
     DagsterInstance,
     DailyPartitionsDefinition,
@@ -14,12 +13,12 @@ customers_partitions_def = DynamicPartitionsDefinition(name="customers")
 
 
 @asset(partitions_def=customers_partitions_def, group_name="dynamic_asset_partitions")
-def dynamic_partitions_asset1():
+def customers_dynamic_partitions_asset1():
     ...
 
 
 @asset(partitions_def=customers_partitions_def, group_name="dynamic_asset_partitions")
-def dynamic_partitions_asset2(dynamic_partitions_asset1):
+def customers_dynamic_partitions_asset2(customers_dynamic_partitions_asset1):
     ...
 
 
@@ -44,10 +43,10 @@ def ints_dynamic_asset():
     return 1
 
 
-dynamic_partitions_job = define_asset_job(
-    "dynamic_partitions_job",
-    selection=AssetSelection.keys(
-        AssetKey("dynamic_partitions_asset1"), AssetKey("dynamic_partitions_asset2")
+customers_dynamic_partitions_job = define_asset_job(
+    "customers_dynamic_partitions_job",
+    selection=AssetSelection.assets(
+        customers_dynamic_partitions_asset1, customers_dynamic_partitions_asset2
     ),
     partitions_def=customers_partitions_def,
 )

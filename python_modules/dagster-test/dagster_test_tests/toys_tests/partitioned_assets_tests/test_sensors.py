@@ -1,15 +1,18 @@
 from dagster import build_sensor_context
 from dagster._core.test_utils import instance_for_test
 from dagster_test.toys.partitioned_assets.partitioned_run_request_sensors import (
-    ints_asset_selection_sensor,
-    ints_job_sensor,
+    ints_dynamic_partitions_asset_selection_sensor,
+    ints_dynamic_partitions_job_sensor,
     upstream_daily_partitioned_asset_sensor,
 )
 from dagster_test.toys.repo import partitioned_assets_repository
 
 
 def test_ints_sensors():
-    ints_sensors = [ints_asset_selection_sensor, ints_job_sensor]
+    ints_sensors = [
+        ints_dynamic_partitions_asset_selection_sensor,
+        ints_dynamic_partitions_job_sensor,
+    ]
     with instance_for_test() as instance:
         with build_sensor_context(
             instance=instance,

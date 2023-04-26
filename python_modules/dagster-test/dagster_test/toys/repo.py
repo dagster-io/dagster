@@ -133,9 +133,9 @@ def partitioned_assets_repository():
 
     return [
         load_assets_from_modules([partitioned_assets]),
-        partitioned_assets.dynamic_partitions_job,
-        partitioned_assets.ints_job_sensor,
-        partitioned_assets.ints_asset_selection_sensor,
+        partitioned_assets.customers_dynamic_partitions_job,
+        partitioned_assets.ints_dynamic_partitions_job_sensor,
+        partitioned_assets.ints_dynamic_partitions_asset_selection_sensor,
         partitioned_assets.upstream_daily_partitioned_asset_sensor,
     ]
 

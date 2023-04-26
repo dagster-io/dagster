@@ -4,9 +4,9 @@ from dagster import (
     materialize_to_memory,
 )
 from dagster_test.toys.partitioned_assets.dynamic_asset_partitions import (
+    customers_dynamic_partitions_asset1,
+    customers_dynamic_partitions_asset2,
     customers_partitions_def,
-    dynamic_partitions_asset1,
-    dynamic_partitions_asset2,
     multipartitioned_with_dynamic_dimension,
 )
 from dagster_test.toys.repo import partitioned_assets_repository
@@ -17,7 +17,7 @@ def test_assets():
         instance.add_dynamic_partitions(customers_partitions_def.name, ["pepsi", "coca_cola"])
 
         assert materialize_to_memory(
-            [dynamic_partitions_asset1, dynamic_partitions_asset2],
+            [customers_dynamic_partitions_asset1, customers_dynamic_partitions_asset2],
             partition_key="pepsi",
             instance=instance,
         ).success
@@ -32,7 +32,7 @@ def test_job():
     with DagsterInstance.ephemeral() as instance:
         instance.add_dynamic_partitions(customers_partitions_def.name, ["pepsi", "coca_cola"])
         assert (
-            partitioned_assets_repository.get_job("dynamic_partitions_job")
+            partitioned_assets_repository.get_job("customers_dynamic_partitions_job")
             .execute_in_process(partition_key="pepsi", instance=instance)
             .success
         )

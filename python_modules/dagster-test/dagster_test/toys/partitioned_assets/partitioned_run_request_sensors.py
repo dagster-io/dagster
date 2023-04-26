@@ -9,7 +9,7 @@ from .hourly_and_daily_and_unpartitioned import (
 
 
 @sensor(asset_selection=AssetSelection.assets(ints_dynamic_asset))
-def ints_asset_selection_sensor(context):
+def ints_dynamic_partitions_asset_selection_sensor(context):
     new_partition_key = str(random.randint(0, 100))
     return SensorResult(
         run_requests=[RunRequest(partition_key=new_partition_key)],
@@ -21,12 +21,12 @@ def ints_asset_selection_sensor(context):
 
 @sensor(
     job=define_asset_job(
-        "ints_job",
+        "ints_dynamic_partitions_job",
         AssetSelection.assets(ints_dynamic_asset),
         partitions_def=ints_dynamic_partitions_def,
     )
 )
-def ints_job_sensor():
+def ints_dynamic_partitions_job_sensor():
     new_partition_key = str(random.randint(0, 100))
     return SensorResult(
         run_requests=[
