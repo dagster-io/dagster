@@ -1,3 +1,4 @@
+import contextlib
 import inspect
 import re
 from enum import Enum
@@ -654,6 +655,7 @@ class ConfigurableResourceFactory(
 
     def __init__(self, **data: Any):
         resource_pointers, data_without_resources = separate_resource_params(data)
+      
 
         schema = infer_schema_from_config_class(
             self.__class__, fields_to_omit=set(resource_pointers.keys())
@@ -761,9 +763,10 @@ class ConfigurableResourceFactory(
         )
         return self._with_updated_values(post_processed_data)
 
+    @contextlib.contextmanager
     def _resolve_and_update_nested_resources(
         self, context: InitResourceContext
-    ) -> "ConfigurableResourceFactory[TResValue]":
+    ) -> Generator["ConfigurableResourceFactory[TResValue]", None, None]:
         """Updates any nested resources with the resource values from the context.
         In this case, populating partially configured resources or
         resources that return plain Python types.
@@ -790,15 +793,16 @@ class ConfigurableResourceFactory(
             }
 
         # Also evaluate any resources that are not partial
-        resources_to_update, _ = separate_resource_params(self.__dict__)
-        resources_to_update = {
-            attr_name: _call_resource_fn_with_default(coerce_to_resource(resource), context)
-            for attr_name, resource in resources_to_update.items()
-            if attr_name not in partial_resources_to_update
-        }
+        with contextlib.ExitStack() as stack:
+            resources_to_update, _ = separate_resource_params(self.__dict__)
+            resources_to_update = {
+                attr_name: stack.enter_context(_call_resource_fn_with_default(coerce_to_resource(resource), context))
+                for attr_name, resource in resources_to_update.items()
+                if attr_name not in partial_resources_to_update
+            }
 
-        to_update = {**resources_to_update, **partial_resources_to_update}
-        return self._with_updated_values(to_update)
+            to_update = {**resources_to_update, **partial_resources_to_update}
+            yield self._with_updated_values(to_update)
 
     def with_resource_context(
         self, resource_context: InitResourceContext
@@ -812,14 +816,16 @@ class ConfigurableResourceFactory(
         )
         return copy
 
+    @contextlib.contextmanager
     def _initialize_and_run(self, context: InitResourceContext) -> Generator[TResValue, None, None]:
-        updated_resource = (
-            self._resolve_and_update_nested_resources(context)  # noqa: SLF001
-            .with_resource_context(context)
-            ._resolve_and_update_env_vars()
-        )
+        with self._resolve_and_update_nested_resources(context) as has_nested_resource:
+            updated_resource = (
+                has_nested_resource.with_resource_context(context)
+                ._resolve_and_update_env_vars()
+            )
 
-        yield from updated_resource.yield_for_execution(context)
+            with updated_resource.yield_for_execution(context) as value:
+                yield value
 
     def pre_execute(self, context: InitResourceContext) -> None:
         """Optionally override this method to perform any pre-execution steps
@@ -836,6 +842,7 @@ class ConfigurableResourceFactory(
         """
         pass
 
+    @ contextlib.contextmanager
     def yield_for_execution(self, context: InitResourceContext) -> Generator[TResValue, None, None]:
         """Optionally override this method to perform any lifecycle steps
         before or after the resource is used in execution. By default, calls
