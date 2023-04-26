@@ -76,8 +76,9 @@ def cron_string_iterator(
     if is_numeric[1]:
         expected_hour = int(cron_parts[1][0])
 
-    date_iter = None
     if delta_fn is not None and start_offset == 0 and croniter.match(cron_string, start_timestamp):
+        # In simple cases, where you're already on a cron boundary, the below logic is unnecessary
+        # and slow
         next_date = start_datetime
     else:
         date_iter = croniter(cron_string, start_datetime)
@@ -136,7 +137,7 @@ def cron_string_iterator(
             yield next_date
     else:
         # Otherwise fall back to croniter
-        date_iter = date_iter or croniter(cron_string, next_date)
+        date_iter = croniter(cron_string, next_date)
         while True:
             next_date = to_timezone(
                 pendulum.instance(date_iter.get_next(datetime.datetime)), timezone_str
