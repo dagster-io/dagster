@@ -305,6 +305,7 @@ def select_unique_ids_from_manifest(
         # dbt < 1.5.0 compat
         import dbt.flags as GLOBAL_FLAGS
     setattr(GLOBAL_FLAGS, "INDIRECT_SELECTION", IndirectSelection.Eager)
+    setattr(GLOBAL_FLAGS, "WARN_ERROR", True)
     parsed_spec: SelectionSpec = graph_cli.parse_union([select], True)
 
     if exclude:

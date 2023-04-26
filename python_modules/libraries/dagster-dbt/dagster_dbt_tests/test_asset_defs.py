@@ -758,7 +758,7 @@ def test_dbt_selections(
 @pytest.mark.parametrize(
     "select,error_match",
     [
-        ("tag:nonexist", "No dbt models match"),
+        ("tag:nonexist", r"(No dbt models match|does not match any nodes)"),
         ("asjdlhalskujh:z", "not a valid method name"),
     ],
 )
