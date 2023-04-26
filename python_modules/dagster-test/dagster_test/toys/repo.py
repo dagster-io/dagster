@@ -131,7 +131,13 @@ def basic_assets_repository():
 def partitioned_assets_repository():
     from . import partitioned_assets
 
-    return load_assets_from_modules([partitioned_assets])
+    return [
+        load_assets_from_modules([partitioned_assets]),
+        partitioned_assets.customers_dynamic_partitions_job,
+        partitioned_assets.ints_dynamic_partitions_job_sensor,
+        partitioned_assets.ints_dynamic_partitions_asset_selection_sensor,
+        partitioned_assets.upstream_daily_partitioned_asset_sensor,
+    ]
 
 
 @repository
