@@ -7,6 +7,7 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {
   FIFTEEN_SECONDS,
   QueryRefreshCountdown,
+  useMergedRefresh,
   useQueryRefreshAtInterval,
 } from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
@@ -19,9 +20,7 @@ import {
 } from '../schedules/SchedulesNextTicks';
 import {Loading} from '../ui/Loading';
 
-import {RUN_TABS_COUNT_QUERY, RunListTabs} from './RunListTabs.new';
-import {inProgressStatuses, queuedStatuses} from './RunStatuses';
-import {RunTabsCountQuery, RunTabsCountQueryVariables} from './types/RunListTabs.types';
+import {useRunListTabs} from './RunListTabs.new';
 import {
   ScheduledRunsListQuery,
   ScheduledRunsListQueryVariables,
@@ -41,25 +40,9 @@ export const ScheduledRunListRoot = () => {
 
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
-  const runCountResult = useQuery<RunTabsCountQuery, RunTabsCountQueryVariables>(
-    RUN_TABS_COUNT_QUERY,
-    {
-      variables: {
-        queuedFilter: {statuses: Array.from(queuedStatuses)},
-        inProgressFilter: {statuses: Array.from(inProgressStatuses)},
-      },
-    },
-  );
-
-  const {data: countData} = runCountResult;
-  const {queuedCount, inProgressCount} = React.useMemo(() => {
-    return {
-      queuedCount:
-        countData?.queuedCount?.__typename === 'Runs' ? countData.queuedCount.count : null,
-      inProgressCount:
-        countData?.inProgressCount?.__typename === 'Runs' ? countData.inProgressCount.count : null,
-    };
-  }, [countData]);
+  const {tabs, queryResult: runQueryResult} = useRunListTabs();
+  const countRefreshState = useQueryRefreshAtInterval(runQueryResult, FIFTEEN_SECONDS);
+  const combinedRefreshState = useMergedRefresh(countRefreshState, refreshState);
 
   return (
     <Page>
@@ -67,8 +50,8 @@ export const ScheduledRunListRoot = () => {
         flex={{direction: 'row', gap: 8, alignItems: 'center', justifyContent: 'space-between'}}
         padding={{vertical: 8, left: 24, right: 12}}
       >
-        <RunListTabs queuedCount={queuedCount} inProgressCount={inProgressCount} />
-        <QueryRefreshCountdown refreshState={refreshState} />
+        {tabs}
+        <QueryRefreshCountdown refreshState={combinedRefreshState} />
       </Box>
       <Loading queryResult={queryResult}>
         {(result) => {
