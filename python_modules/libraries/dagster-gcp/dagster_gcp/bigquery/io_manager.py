@@ -249,6 +249,8 @@ class BigQueryIOManager(ConfigurableIOManagerFactory):
     def default_load_type() -> Optional[Type]:
         return None
 
+    ### IN BASE CLASS
+
     def pre_execute(self, context):
         # optionally override in derived class
         pass
@@ -265,6 +267,8 @@ class BigQueryIOManager(ConfigurableIOManagerFactory):
         finally:
             # what to do if post_execute throws
             self.post_execute(context)
+
+    ### END IN BASE CLASS
 
     def yield_for_execution(self, context):
         # However if you need the full power of a context manager, you can override this
