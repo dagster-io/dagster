@@ -316,7 +316,9 @@ def _find_modules_in_package(package_module: ModuleType) -> Iterable[ModuleType]
 
 
 def prefix_assets(
-    assets_defs: Sequence[AssetsDefinition], key_prefix: CoercibleToAssetKeyPrefix
+    assets_defs: Sequence[AssetsDefinition],
+    key_prefix: CoercibleToAssetKeyPrefix,
+    source_assets: Optional[Sequence[SourceAsset]],
 ) -> Sequence[AssetsDefinition]:
     """Given a list of assets, prefix the input and output asset keys with key_prefix.
     The prefix is not added to source assets.
@@ -354,6 +356,8 @@ def prefix_assets(
 
     """
     asset_keys = {asset_key for assets_def in assets_defs for asset_key in assets_def.keys}
+    if source_assets:
+        asset_keys |= {source_asset.key for source_asset in source_assets}
 
     if isinstance(key_prefix, str):
         key_prefix = [key_prefix]
@@ -377,6 +381,10 @@ def prefix_assets(
                 input_asset_key_replacements=input_asset_key_replacements,
             )
         )
+
+    if source_assets:
+        ...
+
     return result_assets
 
 
