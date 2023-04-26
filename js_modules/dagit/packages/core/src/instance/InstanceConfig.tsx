@@ -15,10 +15,12 @@ import * as codemirror from 'codemirror';
 import * as React from 'react';
 import {createGlobalStyle} from 'styled-components/macro';
 
+import {useFeatureFlags} from '../app/Flags';
 import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 
+import {ConcurrencyLimits} from './ConcurrencyLimits';
 import {InstancePageContext} from './InstancePageContext';
 import {InstanceTabs} from './InstanceTabs';
 import {InstanceConfigQuery, InstanceConfigQueryVariables} from './types/InstanceConfig.types';
@@ -38,6 +40,7 @@ const InstanceConfigStyle = createGlobalStyle`
 export const InstanceConfig = React.memo(() => {
   useTrackPageView();
   useDocumentTitle('Configuration');
+  const {flagInstanceConcurrencyLimits} = useFeatureFlags();
 
   const {pageTitle} = React.useContext(InstancePageContext);
   const queryResult = useQuery<InstanceConfigQuery, InstanceConfigQueryVariables>(
@@ -93,6 +96,7 @@ export const InstanceConfig = React.memo(() => {
         options={{lineNumbers: true, mode: 'yaml'}}
         theme={['instance-config']}
       />
+      {flagInstanceConcurrencyLimits ? <ConcurrencyLimits /> : null}
     </>
   );
 });
