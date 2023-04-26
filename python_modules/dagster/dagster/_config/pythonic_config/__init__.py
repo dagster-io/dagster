@@ -6,6 +6,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Generator,
     Generic,
     Iterable,
     Mapping,
@@ -811,17 +812,44 @@ class ConfigurableResourceFactory(
         )
         return copy
 
-    def _initialize_and_run(self, context: InitResourceContext) -> TResValue:
+    def _initialize_and_run(self, context: InitResourceContext) -> Generator[TResValue, None, None]:
         updated_resource = (
             self._resolve_and_update_nested_resources(context)  # noqa: SLF001
             .with_resource_context(context)
             ._resolve_and_update_env_vars()
         )
 
-        return updated_resource._create_object_fn(context)  # noqa: SLF001
+        yield from updated_resource.yield_for_execution(context)
 
-    def _create_object_fn(self, context: InitResourceContext) -> TResValue:
-        return self.create_resource(context)
+    def pre_execute(self, context: InitResourceContext) -> None:
+        """Optionally override this method to perform any pre-execution steps
+        needed before the resource is used in execution.
+        """
+        pass
+
+    def post_execute(self, context: InitResourceContext) -> None:
+        """Optionally override this method to perform any post-execution steps
+        needed after the resource is used in execution.
+
+        post_execute will be called even if the resource fails to initialize in the
+        pre_execute step, and if any part of the run fails.
+        """
+        pass
+
+    def yield_for_execution(self, context: InitResourceContext) -> Generator[TResValue, None, None]:
+        """Optionally override this method to perform any lifecycle steps
+        before or after the resource is used in execution. By default, calls
+        pre_execute before yielding, and post_execute after yielding.
+
+        Note that if you override this method and want pre_execute or
+        post_execute to be called, you must invoke them yourself.
+        """
+        try:
+            self.pre_execute(context)
+            yield self.create_resource(context)
+        finally:
+            # what to do if post_execute throws
+            self.post_execute(context)
 
     def get_resource_context(self) -> InitResourceContext:
         """Returns the context that this resource was initialized with."""
@@ -848,7 +876,7 @@ class ConfigurableResourceFactory(
                 return MyResource.from_resource_context(context)
 
         """
-        return cls(**context.resource_config or {})._create_object_fn(context)  # noqa: SLF001
+        return cls(**context.resource_config or {}).create_resource(context)
 
 
 class ConfigurableResource(ConfigurableResourceFactory[TResValue]):
@@ -1092,13 +1120,8 @@ class ConfigurableIOManagerFactory(ConfigurableResourceFactory[TIOManagerValue])
         """Implement as one would implement a @io_manager decorator function."""
         raise NotImplementedError()
 
-    def _create_object_fn(self, context: InitResourceContext) -> TIOManagerValue:
-        return self.create_io_manager(context)
-
     def create_resource(self, context: InitResourceContext) -> TIOManagerValue:
-        # I/O manager factories execute a different code path that does not
-        # call create_resource
-        raise NotImplementedError()
+        return self.create_io_manager(context)
 
     @classmethod
     def configure_at_launch(cls: "Type[Self]", **kwargs) -> "PartialIOManager[Self]":
