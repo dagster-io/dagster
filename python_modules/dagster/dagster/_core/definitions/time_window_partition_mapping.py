@@ -97,6 +97,7 @@ class TimeWindowPartitionMapping(
         self,
         downstream_partitions_subset: Optional[PartitionsSubset],
         upstream_partitions_def: PartitionsDefinition,
+        current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> PartitionsSubset:
         if not isinstance(downstream_partitions_subset, TimeWindowPartitionsSubset):
@@ -122,6 +123,7 @@ class TimeWindowPartitionMapping(
         self,
         upstream_partitions_subset: PartitionsSubset,
         downstream_partitions_def: Optional[PartitionsDefinition],
+        current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> PartitionsSubset:
         if not isinstance(downstream_partitions_def, TimeWindowPartitionsDefinition):
