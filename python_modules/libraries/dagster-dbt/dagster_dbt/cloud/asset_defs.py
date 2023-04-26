@@ -102,10 +102,16 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
 
     @staticmethod
     def parse_dbt_command(dbt_command: str) -> Namespace:
-        # defer import as it fails in dbt-core>=1.5.0
-        from dbt.main import parse_args as dbt_parse_args
+        args = shlex.split(dbt_command)[1:]
+        try:
+            from dbt.cli.flags import Flags, args_to_context
 
-        return dbt_parse_args(args=shlex.split(dbt_command)[1:])
+            return Namespace(**vars(Flags(args_to_context(args))))
+        except ImportError:
+            # dbt < 1.5.0 compat
+            from dbt.main import parse_args
+
+            return parse_args(args=args)
 
     @staticmethod
     def get_job_materialization_command_step(execute_steps: List[str]) -> int:
@@ -134,8 +140,11 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         if excluded_models:
             dbt_compile_options.append(f"--exclude {' '.join(excluded_models)}")
 
-        if parsed_args.selector_name:
-            dbt_compile_options.append(f"--selector {parsed_args.selector_name}")
+        selector = getattr(parsed_args, "selector_name", None) or getattr(
+            parsed_args, "selector", None
+        )
+        if selector:
+            dbt_compile_options.append(f"--selector {selector}")
 
         return dbt_compile_options
 

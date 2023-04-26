@@ -442,7 +442,7 @@ def test_multiple_select_from_project(dbt_seed, test_project_dir, dbt_config_dir
 
 
 def test_dbt_ls_fail_fast():
-    with pytest.raises(DagsterDbtCliFatalRuntimeError, match="Invalid --project-dir flag."):
+    with pytest.raises(DagsterDbtCliFatalRuntimeError, match=r"Invalid.*--project-dir"):
         load_assets_from_dbt_project("bad_project_dir", "bad_config_dir")
 
 

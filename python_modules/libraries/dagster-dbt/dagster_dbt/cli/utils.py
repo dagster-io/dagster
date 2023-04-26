@@ -123,6 +123,11 @@ def _core_execute_cli(
     # Execute the dbt CLI command in a subprocess.
     messages: List[str] = []
 
+    if project_dir is not None and os.path.exists(project_dir):
+        cwd = project_dir
+    else:
+        cwd = None
+
     # run dbt with unbuffered output
     passenv = os.environ.copy()
     passenv["PYTHONUNBUFFERED"] = "1"
@@ -131,7 +136,7 @@ def _core_execute_cli(
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         env=passenv,
-        cwd=project_dir,
+        cwd=cwd,
     )
     for raw_line in process.stdout or []:
         line = raw_line.decode().strip()
