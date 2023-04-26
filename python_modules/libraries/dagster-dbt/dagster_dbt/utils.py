@@ -247,7 +247,6 @@ def select_unique_ids_from_manifest(
     manifest_json: Optional[Mapping[str, Any]] = None,
 ) -> AbstractSet[str]:
     """Method to apply a selection string to an existing manifest.json file."""
-    import dbt.flags as flags
     import dbt.graph.cli as graph_cli
     import dbt.graph.selector as graph_selector
     from dbt.contracts.graph.manifest import Manifest, WritableManifest
@@ -302,11 +301,10 @@ def select_unique_ids_from_manifest(
     # create a parsed selection from the select string
     try:
         from dbt.flags import GLOBAL_FLAGS
-
-        setattr(GLOBAL_FLAGS, "INDIRECT_SELECTION", IndirectSelection.Eager)
     except ImportError:
         # dbt < 1.5.0 compat
-        flags.INDIRECT_SELECTION = IndirectSelection.Eager
+        import dbt.flags as GLOBAL_FLAGS
+    setattr(GLOBAL_FLAGS, "INDIRECT_SELECTION", IndirectSelection.Eager)
     parsed_spec: SelectionSpec = graph_cli.parse_union([select], True)
 
     if exclude:

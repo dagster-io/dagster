@@ -102,6 +102,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
 
     @staticmethod
     def parse_dbt_command(dbt_command: str) -> Namespace:
+        # defer import as it fails in dbt-core>=1.5.0
         from dbt.main import parse_args as dbt_parse_args
 
         return dbt_parse_args(args=shlex.split(dbt_command)[1:])
