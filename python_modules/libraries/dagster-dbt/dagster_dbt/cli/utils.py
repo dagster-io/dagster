@@ -117,26 +117,23 @@ def _core_execute_cli(
     command_list: Sequence[str],
     ignore_handled_error: bool,
     json_log_format: bool,
-    project_dir: Optional[str] = None,
+    target_path: Optional[str] = None,
 ) -> Iterator[Union[DbtCliEvent, int]]:
     """Runs a dbt command in a subprocess and yields parsed output line by line."""
     # Execute the dbt CLI command in a subprocess.
     messages: List[str] = []
 
-    if project_dir is not None and os.path.exists(project_dir):
-        cwd = project_dir
-    else:
-        cwd = None
-
     # run dbt with unbuffered output
     passenv = os.environ.copy()
     passenv["PYTHONUNBUFFERED"] = "1"
+    # 1.5.* compat
+    if target_path:
+        passenv["DBT_TARGET_PATH"] = target_path
     process = subprocess.Popen(
         command_list,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         env=passenv,
-        cwd=cwd,
     )
     for raw_line in process.stdout or []:
         line = raw_line.decode().strip()
@@ -187,7 +184,6 @@ def execute_cli_stream(
         command_list=command_list,
         json_log_format=json_log_format,
         ignore_handled_error=ignore_handled_error,
-        project_dir=flags_dict.get("project-dir"),
     ):
         if isinstance(event, int):
             return_code = event
@@ -235,7 +231,7 @@ def execute_cli(
         command_list=command_list,
         json_log_format=json_log_format,
         ignore_handled_error=ignore_handled_error,
-        project_dir=flags_dict.get("project-dir"),
+        target_path=os.path.join(flags_dict["project-dir"], target_path),
     ):
         if isinstance(event, int):
             return_code = event

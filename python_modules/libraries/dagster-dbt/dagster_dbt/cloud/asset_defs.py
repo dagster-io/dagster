@@ -106,7 +106,8 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         try:
             from dbt.cli.flags import Flags, args_to_context
 
-            return Namespace(**vars(Flags(args_to_context(args))))
+            # dbt >= 1.5.0 requires that profiles-dir is set to an existing directory
+            return Namespace(**vars(Flags(args_to_context(args + ["--profiles-dir", "."]))))
         except ImportError:
             # dbt < 1.5.0 compat
             from dbt.main import parse_args
