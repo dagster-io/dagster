@@ -249,6 +249,45 @@ class BigQueryIOManager(ConfigurableIOManagerFactory):
     def default_load_type() -> Optional[Type]:
         return None
 
+    def pre_execute(self, context):
+        # optionally override in derived class
+        pass
+
+    def post_execute(self, context):
+        # optionally override in derived class
+        pass
+
+    def _yield_for_execution(self, context):
+        # implementation of yield_for_execution in base class
+        self.pre_execute(context)
+        try:
+            yield self
+        finally:
+            # what to do if post_execute throws
+            self.post_execute(context)
+
+    def yield_for_execution(self, context):
+        # However if you need the full power of a context manager, you can override this
+        self._inner_manager = DbIOManager(
+            db_client=BigQueryClient(),
+            io_manager_name="BigQueryIOManager",
+            database=self.project,
+            schema=self.dataset,
+            type_handlers=self.type_handlers(),
+            default_load_type=self.default_load_type(),
+        )
+        if self.gcp_credentials:
+            with setup_gcp_creds(self.gcp_credentials):
+                yield self
+        else:
+            yield self
+
+    def load_input(self, context):
+        return self._inner_manager.load_input(context)
+
+    def handle_output(self, context, obj):
+        return self._inner_manager.handle_output(context, obj)
+
     def create_io_manager(self, context) -> Generator:
         mgr = DbIOManager(
             db_client=BigQueryClient(),

@@ -251,6 +251,22 @@ class SnowflakeIOManager(ConfigurableIOManagerFactory):
         """
         return None
 
+    def pre_execute(self, context):
+        self._inner_manager = DbIOManager(
+            db_client=SnowflakeDbClient(),
+            io_manager_name="SnowflakeIOManager",
+            database=self.database,
+            schema=self.schema_,
+            type_handlers=self.type_handlers(),
+            default_load_type=self.default_load_type(),
+        )
+
+    def load_input(self, context):
+        return self._inner_manager.load_input(context)
+
+    def handle_output(self, context, obj):
+        return self._inner_manager.handle_output(context, obj)
+
     def create_io_manager(self, context) -> DbIOManager:
         return DbIOManager(
             db_client=SnowflakeDbClient(),

@@ -851,6 +851,13 @@ class ConfigurableResourceFactory(
         return cls(**context.resource_config or {})._create_object_fn(context)  # noqa: SLF001
 
 
+class FunctionNotImplementedSentinel:
+    pass
+
+
+FUNCTION_NOT_IMPLEMENTED_SENTINEL = FunctionNotImplementedSentinel()
+
+
 class ConfigurableResource(ConfigurableResourceFactory[TResValue]):
     """Base class for Dagster resources that utilize structured config.
 
@@ -881,7 +888,13 @@ class ConfigurableResource(ConfigurableResourceFactory[TResValue]):
 
     """
 
-    def create_resource(self, context: InitResourceContext) -> TResValue:
+    def post_execute(self, context: InitResourceContext) -> Any:
+        return ...
+
+    def pre_execute(self, context: InitResourceContext) -> Any:
+        return ...
+
+    def create_resource(self, context: InitResourceContext) -> Any:
         """Returns the object that this resource hands to user code, accessible by ops or assets
         through the context or resource parameters. This works like the function decorated
         with @resource when using function-based resources.
@@ -889,7 +902,14 @@ class ConfigurableResource(ConfigurableResourceFactory[TResValue]):
         For ConfigurableResource, this function will return itself, passing
         the actual ConfigurableResource object to user code.
         """
-        return cast(TResValue, self)
+        retval = self.pre_execute(context)
+        if retval is Ellipsis:
+            return cast(TResValue, self)
+
+        try:
+            yield cast(TResValue, self)
+        finally:
+            self.post_execute(context)
 
 
 def _is_fully_configured(resource: CoercibleToResource) -> bool:
