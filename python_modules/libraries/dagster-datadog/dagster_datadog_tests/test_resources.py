@@ -5,7 +5,7 @@ from dagster_datadog import datadog_resource
 from dagster_datadog.resources import DatadogResource
 
 
-def assert_datadog_client_class(
+def assert_datadog_resource_class(
     datadog_client,
     event,
     gauge,
@@ -83,7 +83,7 @@ def test_datadog_resource(
     @op(required_resource_keys={"datadog"})
     def datadog_op(context: OpExecutionContext):
         assert context.resources.datadog
-        assert_datadog_client_class(
+        assert_datadog_resource_class(
             context.resources.datadog,
             event,
             gauge,
@@ -134,10 +134,9 @@ def test_datadog_pythonic_resource_standalone_op(
 
     @op
     def datadog_op(datadog_resource: DatadogResource):
-        datadog_client = datadog_resource.get_client()
-        assert datadog_client
-        assert_datadog_client_class(
-            datadog_client,
+        assert datadog_resource
+        assert_datadog_resource_class(
+            datadog_resource,
             event,
             gauge,
             increment,
@@ -152,9 +151,7 @@ def test_datadog_pythonic_resource_standalone_op(
         executed["yes"] = True
         return True
 
-    # https://github.com/dagster-io/dagster/issues/13384
-    # assert datadog_op(DatadogClient(api_key="NOT_USED", app_key="NOT_USED")) # does not work
-    assert datadog_op(datadog_resource=DatadogResource(api_key="NOT_USED", app_key="NOT_USED"))
+    assert datadog_op(DatadogResource(api_key="NOT_USED", app_key="NOT_USED"))
     assert executed["yes"]
 
 
@@ -184,12 +181,11 @@ def test_datadog_pythonic_resource_factory_op_in_job(
 
     @op
     def datadog_op(datadog_resource: DatadogResource):
-        datadog_client = datadog_resource.get_client()
-        assert datadog_client
-        assert datadog_client.api_key == "FOO"
-        assert datadog_client.app_key == "BAR"
-        assert_datadog_client_class(
-            datadog_client,
+        assert datadog_resource
+        assert datadog_resource.api_key == "FOO"
+        assert datadog_resource.app_key == "BAR"
+        assert_datadog_resource_class(
+            datadog_resource,
             event,
             gauge,
             increment,

@@ -1,9 +1,16 @@
-from dagster import ConfigurableResource, resource
+from typing import Iterator
+
+from dagster import ConfigurableResource, InitResourceContext, resource
 from datadog import DogStatsd, initialize, statsd
 from pydantic import Field
 
 
+# for backwards compatibility
 class DatadogClient:
+    pass
+
+
+class DatadogResource(DatadogClient, ConfigurableResource):
     # Mirroring levels from the dogstatsd library
     OK, WARNING, CRITICAL, UNKNOWN = (
         DogStatsd.OK,
@@ -12,28 +19,6 @@ class DatadogClient:
         DogStatsd.UNKNOWN,
     )
 
-    def __init__(self, api_key: str, app_key: str):
-        self.api_key = api_key
-        self.app_key = app_key
-        initialize(api_key=api_key, app_key=app_key)
-
-        # Pull in methods from the dogstatsd library
-        for method in [
-            "event",
-            "gauge",
-            "increment",
-            "decrement",
-            "histogram",
-            "distribution",
-            "set",
-            "service_check",
-            "timed",
-            "timing",
-        ]:
-            setattr(self, method, getattr(statsd, method))
-
-
-class DatadogResource(ConfigurableResource):
     """This resource is a thin wrapper over the
     `dogstatsd library <https://datadogpy.readthedocs.io/en/latest/>`_.
 
@@ -85,15 +70,34 @@ class DatadogResource(ConfigurableResource):
         )
     )
 
+    def pre_execute(self, _: InitResourceContext) -> None:
+        initialize(api_key=self.api_key, app_key=self.app_key)
+
+        # Pull in methods from the dogstatsd library
+        for method in [
+            "event",
+            "gauge",
+            "increment",
+            "decrement",
+            "histogram",
+            "distribution",
+            "set",
+            "service_check",
+            "timed",
+            "timing",
+        ]:
+            # can't use setattr because of Pydantic
+            object.__setattr__(self, method, getattr(statsd, method))
+
     def get_client(self) -> DatadogClient:
-        return DatadogClient(self.api_key, self.app_key)
+        return self
 
 
 @resource(
     config_schema=DatadogResource.to_config_schema(),
     description="This resource is for publishing to DataDog",
 )
-def datadog_resource(context) -> DatadogClient:
+def datadog_resource(context) -> Iterator[DatadogResource]:
     """This legacy resource is a thin wrapper over the
     `dogstatsd library <https://datadogpy.readthedocs.io/en/latest/>`_.
 
@@ -136,4 +140,6 @@ def datadog_resource(context) -> DatadogClient:
             )
 
     """
-    return DatadogResource.from_resource_context(context).get_client()
+    resource = DatadogResource.from_resource_context(context)
+    resource.pre_execute(context)
+    return resource
