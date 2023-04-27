@@ -231,7 +231,11 @@ class Config(MakeConfigCacheable):
         Inner fields are recursively converted to dictionaries, meaning nested config objects
         or EnvVars will be converted to the appropriate dictionary representation.
         """
-        return self._convert_to_config_dictionary_inner()
+        public_fields = self._get_non_none_public_field_values()
+        return {
+            k: _config_value_to_dict_representation(self.__fields__.get(k), v)
+            for k, v in public_fields.items()
+        }
 
     def _get_non_none_public_field_values(self) -> Mapping[str, Any]:
         """Returns a dictionary representation of this config object,
@@ -252,25 +256,6 @@ class Config(MakeConfigCacheable):
                 output[field.alias] = value
             else:
                 output[key] = value
-        return output
-
-    def _convert_to_config_dictionary_inner(
-        self,
-    ) -> Mapping[str, Any]:
-        output = {}
-        for key, value in self.__dict__.items():
-            if self._is_field_internal(key):
-                continue
-            field = self.__fields__.get(key)
-            if field and value is None and not _is_pydantic_field_required(field):
-                continue
-
-            output_value = _config_value_to_dict_representation(field, value)
-
-            if field:
-                output[field.alias] = output_value
-            else:
-                output[key] = output_value
         return output
 
     @classmethod
@@ -327,13 +312,11 @@ def _config_value_to_dict_representation(field: Optional[ModelField], value: Any
                 k: v
                 for k, v in _discriminated_union_config_dict_to_selector_config_dict(
                     field.discriminator_key,
-                    value._convert_to_config_dictionary_inner(),  # noqa: SLF001
+                    value._convert_to_config_dictionary(),  # noqa: SLF001
                 ).items()
             }
         else:
-            return {
-                k: v for k, v in value._convert_to_config_dictionary_inner().items()  # noqa: SLF001
-            }
+            return {k: v for k, v in value._convert_to_config_dictionary().items()}  # noqa: SLF001
     elif isinstance(value, Enum):
         return value.name
 
