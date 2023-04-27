@@ -28,7 +28,7 @@ export function RunCreatedByCell(props: Props) {
       // Backwards compatibility
       (tag.key === DagsterTag.CreatedBy && tag.value === 'auto_materialize'),
   );
-  const createdBy = tags.find((tag) => tag.key === 'created_by');
+  const createdBy = tags.find((tag) => tag.key === DagsterTag.CreatedBy);
 
   const {UserDisplay} = useLaunchPadHooks();
 
