@@ -4,7 +4,7 @@ import pickle
 import sys
 import tempfile
 import uuid
-from typing import Any, Callable, Iterable, Mapping, Optional, Sequence, Set, Union, cast
+from typing import Any, Callable, Iterable, Mapping, Optional, Sequence, Set, Type, Union, cast
 
 import nbformat
 import papermill
@@ -16,9 +16,11 @@ from dagster import (
     _check as check,
     _seven,
 )
+from dagster._config.pythonic_config import Config, infer_schema_from_config_class
+from dagster._config.pythonic_config.utils import safe_is_subclass
 from dagster._core.definitions.events import AssetMaterialization, Failure, RetryRequested
 from dagster._core.definitions.metadata import MetadataValue
-from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.utils import validate_tags
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.execution.context.input import build_input_context
@@ -121,7 +123,7 @@ def get_papermill_parameters(
     marshal_dir = os.path.normpath(os.path.join(temp_dir, "dagstermill", str(run_id), "marshal"))
     mkdir_p(marshal_dir)
 
-    if not isinstance(step_context.pipeline, ReconstructablePipeline):
+    if not isinstance(step_context.job, ReconstructableJob):
         if compute_descriptor == "asset":
             raise DagstermillError(
                 "Can't execute a dagstermill asset that is not reconstructable. "
@@ -133,7 +135,7 @@ def get_papermill_parameters(
                 "Use the reconstructable() function if executing from python"
             )
 
-    dm_executable_dict = step_context.pipeline.to_dict()
+    dm_executable_dict = step_context.job.to_dict()
 
     dm_context_dict = {
         "output_log_path": output_log_path,
@@ -429,6 +431,9 @@ def define_dagstermill_op(
             ),
         )
     default_tags = {"notebook_path": _clean_path_for_windows(notebook_path), "kind": "ipynb"}
+
+    if safe_is_subclass(config_schema, Config):
+        config_schema = infer_schema_from_config_class(cast(Type[Config], config_schema))
 
     return OpDefinition(
         name=name,

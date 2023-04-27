@@ -74,10 +74,6 @@ class HookContext:
             self._required_resource_keys
         )
 
-    @property
-    def pipeline_name(self) -> str:
-        return self.job_name
-
     @public
     @property
     def job_name(self) -> str:
@@ -248,7 +244,7 @@ class UnboundHookContext(HookContext):
 
     @property
     def job_name(self) -> str:
-        return self.pipeline_name
+        return self.job_name
 
     @property
     def run_id(self) -> str:

@@ -726,3 +726,38 @@ def test_graph_backed_asset_resources():
         ),
     ):
         Definitions([the_asset, other_asset])
+
+
+def test_job_with_reserved_name():
+    @graph
+    def the_graph():
+        pass
+
+    the_job = the_graph.to_job(name="__ASSET_JOB")
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=(
+            "Attempted to provide job called __ASSET_JOB to repository, which is a reserved name."
+        ),
+    ):
+        Definitions(jobs=[the_job])
+
+
+def test_asset_cycle():
+    from toposort import CircularDependencyError
+
+    @asset
+    def a(s, c):
+        return s + c
+
+    @asset
+    def b(a):
+        return a + 1
+
+    @asset
+    def c(b):
+        return b + 1
+
+    s = SourceAsset(key="s")
+    with pytest.raises(CircularDependencyError):
+        Definitions(assets=[a, b, c, s])

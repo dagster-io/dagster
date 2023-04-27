@@ -33,7 +33,7 @@ In computationally expensive data pipelining, this approach can yield tremendous
 
 ---
 
-## Step one: Understanding staleness
+## Step one: Understanding data versions
 
 By default, Dagster automatically computes a data version for each materialization of a software-defined asset. It does this by hashing a code version together with the data versions of any input assets.
 
@@ -84,6 +84,8 @@ def versioned_number():
 
 Now, materialize the asset. The user-defined code version `v1` will be associated with the latest materialization:
 
+<!-- ![Simple asset data version with code version](/images/guides/asset-versioning-and-caching/simple-asset-with-code-version-in-catalog.png) -->
+
 <Image
 alt="Simple asset data version with code version"
 src="/images/guides/asset-versioning-and-caching/simple-asset-with-code-version-in-catalog.png"
@@ -104,22 +106,24 @@ def versioned_number():
 
 Click **Reload definitions** to pick up the changes.
 
+<!-- ![Simple asset data version with code version](/images/guides/asset-versioning-and-caching/simple-asset-with-code-version-in-asset-graph.png) -->
+
 <Image
 alt="Simple asset data version with code version (v2)"
 src="/images/guides/asset-versioning-and-caching/simple-asset-with-code-version-in-asset-graph.png"
-width={2655}
-height={1747}
+width={2662}
+height={1618}
 />
 
-The asset is now marked as stale. That is because it hasn't been materialized since the code version was updated. We can see this in both asset graph and the sidebar, where details about the last materialization of a selected node are visible. You can see the code version associated with the last materialization of `versioned_number` is `v1`, but its current code version is `v2`. This is also explained in the tooltip that appears if you hover over the `(i)` icon on the **Stale** indicator tag.
+The asset is now has a label to indicate that its code version has changed since it was last materialized. We can see this in both asset graph and the sidebar, where details about the last materialization of a selected node are visible. You can see the code version associated with the last materialization of `versioned_number` is `v1`, but its current code version is `v2`. This is also explained in the tooltip that appears if you hover over the `(i)` icon on the indicator tag.
 
-The `versioned_number` asset must be materialized again to become up-to-date. Click the toggle to the right side of the **Materialize** button to display the **Materialize stale and missing** option. Click this to materialize all stale and missing assets in the asset graph, including `versioned_number`. This will update the latest materialization `code_version` shown in the sidebar to `v2` and bring the asset up-to-date.
+The `versioned_number` asset must be materialized again to become up-to-date. Click the toggle to the right side of the **Materialize** button to display the **Propagate changes** option. Clicking this will propagate the changed code version by materializing `versioned_number`. This will update the latest materialization `code_version` shown in the sidebar to `v2` and bring the asset up-to-date.
 
 ---
 
-## Step two: Staleness with dependencies
+## Step two: data versions with dependencies
 
-Staleness computation becomes more powerful when there are dependencies in play. Let's add an asset downstream of our first asset:
+Tracking changes becomes more powerful when there are dependencies in play. Let's add an asset downstream of our first asset:
 
 ```python file=/guides/dagster/asset_versioning_and_caching/dependencies_code_version_only.py
 from dagster import asset
@@ -137,7 +141,7 @@ def multiplied_number(versioned_number):
 
 In the Dagster UI, click **Reload definitions**. The `multipled_number` asset will be marked as **Never materialized**.
 
-Next, click the toggle to the right side of the **Materialize** button to display the **Materialize stale and missing** option. As the **Materialize** button ignores versioning, we need this option to ensure the `multipled_number` asset is properly materialized.
+Next, click the toggle to the right side of the **Materialize** button to display the **Propagate changes** option. As the **Materialize** button ignores versioning, we need this option to ensure the `multipled_number` asset is properly materialized.
 
 In the created run, only the step associated with `multiplied_number` is run. The system knows that `versioned_number` is up to date and therefore can safely skip that computation. You can see this on the details page for the run:
 
@@ -164,16 +168,18 @@ def multiplied_number(versioned_number):
     return versioned_number * 2
 ```
 
-This will cause `versioned_number` to become stale. But since `multiplied_number` depends on `versioned_number`, it must be recomputed as well, and so is also marked stale. If you hover over the **Stale** tag on `multiplied_number`, you will see the reason for staleness. In this case, the upstream asset `versioned_number` has an updated code version:
+As before, this will cause `versioned_number` to get a label indicating that its code version has changed since its latest materialization. But since `multiplied_number` depends on `versioned_number`, it must be recomputed as well, and so gets a label indicating that the code version of an upstream asset has changed. If you hover over the **Upstream code version** tag on `multiplied_number`, you will see the upstream asset whose code version has changed:
+
+<!-- ![Dependencies code version only](/images/guides/asset-versioning-and-caching/dependencies-code-version-only.png) -->
 
 <Image
 alt="Dependencies code version only"
 src="/images/guides/asset-versioning-and-caching/dependencies-code-version-only.png"
-width={2661}
-height={1748}
+width={2662}
+height={1618}
 />
 
-Click **Materialize stale and missing** to get both assets up-to-date again.
+Click **Propagate changes** to get both assets up-to-date again.
 
 ---
 
@@ -200,13 +206,15 @@ def multiplied_number(versioned_number):
     return versioned_number * 2
 ```
 
-Because you updated the code version of `versioned_number`, both assets are again stale. Let's re-materialize them both to make them fresh. Notice the `DataVersion` of `versioned_number` is now `20`:
+Both assets get labels to indicate that they're impacted by the new code version of `versioned_number`. Let's re-materialize them both to make them fresh. Notice the `DataVersion` of `versioned_number` is now `20`:
+
+<!-- ![Manual data versions 1](/images/guides/asset-versioning-and-caching/manual-data-versions-1.png) -->
 
 <Image
 alt="Manual data versions 1"
 src="/images/guides/asset-versioning-and-caching/manual-data-versions-1.png"
 width={2662}
-height={1748}
+height={1618}
 />
 
 Let's simulate a cosmetic refactor by updating `versioned_number` again, but without changing the returned value. Bump the code version to `v5` and change `20` to `10 + 10`:
@@ -226,24 +234,26 @@ def multiplied_number(versioned_number):
     return versioned_number * 2
 ```
 
-Once again, both assets are now marked stale. Dagster doesn't know that `v5` of the versioned number will return the same value as `v4`, as it only knows about code versions and data versions.
+Once again, both assets have labels to indicate the change in code version. Dagster doesn't know that `v5` of the versioned number will return the same value as `v4`, as it only knows about code versions and data versions.
 
 Let's see what happens if only `versioned_number` is materialized. Select it in the asset graph and click **Materialize selected**. The sidebar shows the latest materialization now has a code_version of `v5`, and the data version is again `20`:
+
+<!-- ![Manual data versions 2](/images/guides/asset-versioning-and-caching/manual-data-versions-2.png) -->
 
 <Image
 alt="Manual data versions 2"
 src="/images/guides/asset-versioning-and-caching/manual-data-versions-2.png"
 width={2662}
-height={1748}
+height={1618}
 />
 
-Notice that `multiplied_number` is no longer stale, even though we didn't materialize it! Here's what happened: `versioned_number` is no longer stale, so `multiplied_number` is no longer automatically stale. Dagster then compared the data version of `versioned_number` last used to materialize `multiplied_number` to the current data version of `versioned_number`. Since this comparison shows that the data version of `versioned_number` hasn't changed, Dagster knows that `multiplied_number` isn't stale.
+Notice that `multiplied_number` no longer has a label, even though we didn't materialize it! Here's what happened: the new materialization of `versioned_number` with the explicitly supplied data version supercedes the code version of `versioned_number`. Dagster then compared the data version of `versioned_number` last used to materialize `multiplied_number` to the current data version of `versioned_number`. Since this comparison shows that the data version of `versioned_number` hasn't changed, Dagster knows that the change to the code version of `versioned_number` doesn't affect `multiplied_number`.
 
-If `versioned_number` had used a Dagster-generated data version, `multiplied_number` would be stale. The data version of `versioned_number` would have changed due to its updated code version, despite the fact that the returned value did not change. `multiplied_number` would then register as stale based on the updated data version of `versioned_number`.
+If `versioned_number` had used a Dagster-generated data version, the data version of `versioned_number` would have changed due to its updated code version, despite the fact that the returned value did not change. `multiplied_number` would have a label indicating that an upstream data version had changed.
 
 ---
 
-## Step four: Staleness with source assets
+## Step four: data versions with source assets
 
 In the real world, data pipelines depend on external upstream data. So far in this guide, we haven't used any external data; we've been substituting hardcoded data in the asset at the root of our graph and using a code version as a stand-in for the version of that data. We can do better than this.
 
@@ -298,11 +308,13 @@ def multiplied_number(versioned_number):
 
 Adding an observable source asset to an asset graph will cause a new button, **Observe sources**, to appear:
 
+<!-- ![Source asset in graph](/images/guides/asset-versioning-and-caching/source-asset-in-graph.png) -->
+
 <Image
 alt="Source asset in graph"
 src="/images/guides/asset-versioning-and-caching/source-asset-in-graph.png"
 width={2662}
-height={1748}
+height={1618}
 />
 
 Click this button to kick off a run that executes the observation function of `input_number`. Let's look at the entry in the asset catalog for `input_number`:
@@ -316,7 +328,7 @@ height={1748}
 
 Take note of the `data_version` listed here that you computed.
 
-If we return to the asset graph, we see that `versioned_number` and `multiplied_number` are stale. Click **Materialize all** to bring them up to date.
+We also see that `versioned_number` and `multiplied_number` have labels indicating that they have new usptream dependencies (because we added the observable source asset to the graph). Click **Materialize all** to bring them up to date.
 
 Finally, let's manually alter the file to simulate the activity of an external process. Change the content of `input_number.txt`:
 
@@ -324,4 +336,4 @@ Finally, let's manually alter the file to simulate the activity of an external p
 15397
 ```
 
-If we click the **Observe Sources** button again, the downstream assets will again be marked as stale. The observation run generated a new data version for `input_number`, because its content changed.
+If we click the **Observe Sources** button again, the downstream assets will again have labels indicating that upstream data has changed. The observation run generated a new data version for `input_number`, because its content changed.

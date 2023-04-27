@@ -4,6 +4,7 @@ import React from 'react';
 
 import {StorybookProvider} from '../../testing/StorybookProvider';
 import {VirtualizedRepoAssetTable} from '../../workspace/VirtualizedRepoAssetTable';
+import {RepoAssetTableFragment} from '../../workspace/types/VirtualizedRepoAssetTable.types';
 import {AssetsCatalogTable} from '../AssetsCatalogTable';
 import {
   AssetCatalogGroupTableMock,
@@ -48,17 +49,17 @@ export const GlobalCatalogWithPrefix = () => {
 };
 
 export const RepoAssets = () => {
+  const assets: RepoAssetTableFragment[] = AssetCatalogTableMockAssets.filter(
+    (a) => !!a.definition,
+  ).map((a) => ({...a.definition!, assetKey: a.key}));
+
   return (
     <StorybookProvider routerProps={{initialEntries: ['/']}}>
       <MockedProvider mocks={MOCKS}>
         <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
           <VirtualizedRepoAssetTable
             repoAddress={{name: 'repo', location: 'test.py'}}
-            assets={AssetCatalogTableMockAssets.filter((a) => !!a.definition).map((a) => ({
-              id: a.id,
-              assetKey: a.key,
-              groupName: a.definition!.groupName,
-            }))}
+            assets={assets}
           />
         </Box>
       </MockedProvider>

@@ -70,7 +70,7 @@ def asset(
     io_manager_key: Optional[str] = ...,
     compute_kind: Optional[str] = ...,
     dagster_type: Optional[DagsterType] = ...,
-    partitions_def: Optional[PartitionsDefinition[Any]] = ...,
+    partitions_def: Optional[PartitionsDefinition] = ...,
     op_tags: Optional[Mapping[str, Any]] = ...,
     group_name: Optional[str] = ...,
     output_required: bool = ...,
@@ -98,7 +98,7 @@ def asset(
     io_manager_key: Optional[str] = None,
     compute_kind: Optional[str] = None,
     dagster_type: Optional[DagsterType] = None,
-    partitions_def: Optional[PartitionsDefinition[Any]] = None,
+    partitions_def: Optional[PartitionsDefinition] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
     group_name: Optional[str] = None,
     output_required: bool = True,
@@ -383,7 +383,7 @@ def multi_asset(
     required_resource_keys: Optional[Set[str]] = None,
     compute_kind: Optional[str] = None,
     internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
-    partitions_def: Optional[PartitionsDefinition[object]] = None,
+    partitions_def: Optional[PartitionsDefinition] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
     can_subset: bool = False,
     resource_defs: Optional[Mapping[str, object]] = None,
@@ -555,6 +555,11 @@ def multi_asset(
             for output_name, out in outs.items()
             if isinstance(out, AssetOut) and out.freshness_policy is not None
         }
+        auto_materialize_policies_by_key = {
+            keys_by_output_name[output_name]: out.auto_materialize_policy
+            for output_name, out in outs.items()
+            if isinstance(out, AssetOut) and out.auto_materialize_policy is not None
+        }
         partition_mappings = {
             keys_by_input_name[input_name]: asset_in.partition_mapping
             for input_name, asset_in in (ins or {}).items()
@@ -572,6 +577,7 @@ def multi_asset(
             resource_defs=resource_defs,
             group_names_by_key=group_names_by_key,
             freshness_policies_by_key=freshness_policies_by_key,
+            auto_materialize_policies_by_key=auto_materialize_policies_by_key,
         )
 
     return inner
@@ -665,6 +671,7 @@ def graph_asset(
     group_name: Optional[str] = None,
     metadata: Optional[MetadataUserInput] = ...,
     freshness_policy: Optional[FreshnessPolicy] = ...,
+    auto_materialize_policy: Optional[AutoMaterializePolicy] = ...,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     ...
 
@@ -680,6 +687,8 @@ def graph_asset(
     group_name: Optional[str] = None,
     metadata: Optional[MetadataUserInput] = None,
     freshness_policy: Optional[FreshnessPolicy] = None,
+    auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
+    resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Creates a software-defined asset that's computed using a graph of ops.
 
@@ -702,8 +711,10 @@ def graph_asset(
             not provided, the name "default" is used.
         metadata (Optional[MetadataUserInput]): Dictionary of metadata to be associated with
             the asset.
-        freshness_policy (FreshnessPolicy): A constraint telling Dagster how often this asset is
+        freshness_policy (Optional[FreshnessPolicy]): A constraint telling Dagster how often this asset is
             intended to be updated with respect to its root data.
+        auto_materialize_policy (Optional[AutoMaterializePolicy]): The AutoMaterializePolicy to use
+            for this asset.
 
     Examples:
         .. code-block:: python
@@ -733,6 +744,8 @@ def graph_asset(
             group_name=group_name,
             metadata=metadata,
             freshness_policy=freshness_policy,
+            auto_materialize_policy=auto_materialize_policy,
+            resource_defs=resource_defs,
         )(fn)
 
     return inner
@@ -749,6 +762,8 @@ class _GraphBackedAsset:
         group_name: Optional[str] = None,
         metadata: Optional[MetadataUserInput] = None,
         freshness_policy: Optional[FreshnessPolicy] = None,
+        auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
+        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     ):
         self.name = name
 
@@ -761,6 +776,8 @@ class _GraphBackedAsset:
         self.group_name = group_name
         self.metadata = metadata
         self.freshness_policy = freshness_policy
+        self.auto_materialize_policy = auto_materialize_policy
+        self.resource_defs = resource_defs
 
     def __call__(self, fn: Callable) -> AssetsDefinition:
         asset_name = self.name or fn.__name__
@@ -790,7 +807,11 @@ class _GraphBackedAsset:
             freshness_policies_by_output_name={"result": self.freshness_policy}
             if self.freshness_policy
             else None,
+            auto_materialize_policies_by_output_name={"result": self.auto_materialize_policy}
+            if self.auto_materialize_policy
+            else None,
             descriptions_by_output_name={"result": self.description} if self.description else None,
+            resource_defs=self.resource_defs,
         )
 
 
@@ -799,9 +820,10 @@ def graph_multi_asset(
     outs: Mapping[str, AssetOut],
     name: Optional[str] = None,
     ins: Optional[Mapping[str, AssetIn]] = None,
-    partitions_def: Optional[PartitionsDefinition[object]] = None,
+    partitions_def: Optional[PartitionsDefinition] = None,
     group_name: Optional[str] = None,
     can_subset: bool = False,
+    resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a combined definition of multiple assets that are computed using the same graph of
     ops, and the same upstream assets.
@@ -853,6 +875,13 @@ def graph_multi_asset(
             if isinstance(out, AssetOut) and out.freshness_policy is not None
         }
 
+        # source auto materialize policies from the AssetOuts (if any)
+        auto_materialize_policies_by_output_name = {
+            output_name: out.auto_materialize_policy
+            for output_name, out in outs.items()
+            if isinstance(out, AssetOut) and out.auto_materialize_policy is not None
+        }
+
         # source descriptions from the AssetOuts (if any)
         descriptions_by_output_name = {
             output_name: out.description
@@ -872,7 +901,9 @@ def graph_multi_asset(
             can_subset=can_subset,
             metadata_by_output_name=metadata_by_output_name,
             freshness_policies_by_output_name=freshness_policies_by_output_name,
+            auto_materialize_policies_by_output_name=auto_materialize_policies_by_output_name,
             descriptions_by_output_name=descriptions_by_output_name,
+            resource_defs=resource_defs,
         )
 
     return inner

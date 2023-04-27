@@ -172,7 +172,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
   const displayedPartitionDefinition = displayedBaseAsset?.partitionDefinition;
 
   const knownDimensions = partitionedAssets[0].partitionDefinition?.dimensionTypes || [];
-  const [missingFailedOnly, setMissingFailedOnly] = React.useState(true);
+  const [missingFailedOnly, setMissingFailedOnly] = React.useState(false);
 
   const [selections, setSelections] = usePartitionDimensionSelections({
     knownDimensionNames: knownDimensions.map((d) => d.name),

@@ -52,6 +52,8 @@ from dagster_test.toys.sleepy import sleepy_job
 from dagster_test.toys.software_defined_assets import software_defined_assets
 from dagster_test.toys.unreliable import unreliable_job
 
+from .auto_materializing.repo_1 import auto_materialize_repo_1 as auto_materialize_repo_1
+from .auto_materializing.repo_2 import auto_materialize_repo_2 as auto_materialize_repo_2
 from .schedules import get_toys_schedules
 from .sensors import get_toys_sensors
 
@@ -96,7 +98,7 @@ def toys_repository():
             model_job,
             multi_inputs_outputs_job,
             hello_world_notebook_pipeline,
-            software_defined_assets,
+            *software_defined_assets,
             with_metadata,
             succeeds_job,
             return_run_request_succeeds_sensor,
@@ -129,7 +131,13 @@ def basic_assets_repository():
 def partitioned_assets_repository():
     from . import partitioned_assets
 
-    return load_assets_from_modules([partitioned_assets])
+    return [
+        load_assets_from_modules([partitioned_assets]),
+        partitioned_assets.customers_dynamic_partitions_job,
+        partitioned_assets.ints_dynamic_partitions_job_sensor,
+        partitioned_assets.ints_dynamic_partitions_asset_selection_sensor,
+        partitioned_assets.upstream_daily_partitioned_asset_sensor,
+    ]
 
 
 @repository

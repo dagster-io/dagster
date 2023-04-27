@@ -25,8 +25,7 @@ def test_execution_plan_error_grpc(instance: DagsterInstance):
                 job_handle.get_external_origin(),
                 run_config={},
                 asset_selection={AssetKey("fake")},
-                mode="made_up_mode",
-                pipeline_snapshot_id="12345",
+                job_snapshot_id="12345",
             )
 
 
@@ -39,8 +38,7 @@ def test_execution_plan_snapshot_api_grpc(instance: DagsterInstance):
             api_client,
             job_handle.get_external_origin(),
             run_config={},
-            mode="default",
-            pipeline_snapshot_id="12345",
+            job_snapshot_id="12345",
         )
 
         assert isinstance(execution_plan_snapshot, ExecutionPlanSnapshot)
@@ -60,8 +58,7 @@ def test_execution_plan_with_step_keys_to_execute_snapshot_api_grpc(instance: Da
             api_client,
             job_handle.get_external_origin(),
             run_config={},
-            mode="default",
-            pipeline_snapshot_id="12345",
+            job_snapshot_id="12345",
             step_keys_to_execute=["do_something"],
         )
 
@@ -81,8 +78,7 @@ def test_execution_plan_with_subset_snapshot_api_grpc(instance: DagsterInstance)
             api_client,
             job_handle.get_external_origin(),
             run_config={"ops": {"do_input": {"inputs": {"x": {"value": "test"}}}}},
-            mode="default",
-            pipeline_snapshot_id="12345",
+            job_snapshot_id="12345",
             solid_selection=["do_input"],
         )
 

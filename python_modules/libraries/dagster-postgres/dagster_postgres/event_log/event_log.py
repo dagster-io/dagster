@@ -1,4 +1,4 @@
-from typing import Any, ContextManager, Mapping, Optional
+from typing import Any, ContextManager, Mapping, Optional, Sequence
 
 import dagster._check as check
 import sqlalchemy as db
@@ -12,12 +12,14 @@ from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.config import pg_config
 from dagster._core.storage.event_log import (
     AssetKeyTable,
+    DynamicPartitionsTable,
     SqlEventLogStorage,
     SqlEventLogStorageMetadata,
     SqlEventLogStorageTable,
 )
 from dagster._core.storage.event_log.base import EventLogCursor
 from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
+from dagster._core.storage.event_log.polling_event_watcher import SqlPollingEventWatcher
 from dagster._core.storage.sql import (
     AlembicVersion,
     check_alembic_revision,
@@ -36,7 +38,6 @@ from ..utils import (
     retry_pg_connection_fn,
     retry_pg_creation_fn,
 )
-from .event_watcher import PostgresEventWatcher
 
 CHANNEL_NAME = "run_events"
 
@@ -89,8 +90,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             self.postgres_url, isolation_level="AUTOCOMMIT", poolclass=db_pool.NullPool
         )
 
-        # lazy init
-        self._event_watcher: Optional[PostgresEventWatcher] = None
+        self._event_watcher = SqlPollingEventWatcher(self)
 
         self._secondary_index_cache = {}
 
@@ -180,6 +180,8 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             )
             res = result.fetchone()
             result.close()
+
+            # LISTEN/NOTIFY no longer used for pg event watch - preserved here to support version skew
             conn.execute(
                 f"""NOTIFY {CHANNEL_NAME}, %s; """,
                 (res[0] + "_" + str(res[1]),),  # type: ignore
@@ -252,6 +254,26 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 query = query.on_conflict_do_nothing()
             conn.execute(query)
 
+    def add_dynamic_partitions(
+        self, partitions_def_name: str, partition_keys: Sequence[str]
+    ) -> None:
+        if not partition_keys:
+            return
+
+        # Overload base implementation to push upsert logic down into the db layer
+        self._check_partitions_table()
+        with self.index_connection() as conn:
+            conn.execute(
+                db_dialects.postgresql.insert(DynamicPartitionsTable)
+                .values(
+                    [
+                        dict(partitions_def_name=partitions_def_name, partition=partition_key)
+                        for partition_key in partition_keys
+                    ]
+                )
+                .on_conflict_do_nothing(),
+            )
+
     def _connect(self) -> ContextManager[Connection]:
         return create_pg_connection(self._engine)
 
@@ -285,13 +307,6 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         if cursor and EventLogCursor.parse(cursor).is_offset_cursor():
             check.failed("Cannot call `watch` with an offset cursor")
 
-        if self._event_watcher is None:
-            self._event_watcher = PostgresEventWatcher(
-                self.postgres_url,
-                [CHANNEL_NAME],
-                self._gen_event_log_entry_from_cursor,
-            )
-
         self._event_watcher.watch_run(run_id, cursor, callback)
 
     def _gen_event_log_entry_from_cursor(self, cursor) -> EventLogEntry:
@@ -304,9 +319,6 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             return deserialize_value(cursor_res.scalar(), EventLogEntry)  # type: ignore
 
     def end_watch(self, run_id: str, handler: EventHandlerFn) -> None:
-        if self._event_watcher is None:
-            return
-
         self._event_watcher.unwatch_run(run_id, handler)
 
     def __del__(self) -> None:
@@ -316,8 +328,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def dispose(self) -> None:
         if not self._disposed:
             self._disposed = True
-            if self._event_watcher:
-                self._event_watcher.close()
+            self._event_watcher.close()
 
     def alembic_version(self) -> AlembicVersion:
         alembic_config = pg_alembic_config(__file__)

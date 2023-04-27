@@ -1,7 +1,5 @@
-import os
 import random
 import string
-import sys
 import tempfile
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -18,6 +16,7 @@ from dagster import (
     AssetSelection,
     CodeLocationSelector,
     DagsterRunStatus,
+    DailyPartitionsDefinition,
     DynamicPartitionsDefinition,
     Field,
     HourlyPartitionsDefinition,
@@ -35,6 +34,7 @@ from dagster import (
     repository,
     run_failure_sensor,
 )
+from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.decorators import op
 from dagster._core.definitions.decorators.job_decorator import job
 from dagster._core.definitions.decorators.sensor_decorator import asset_sensor, sensor
@@ -416,6 +416,11 @@ def asset_job_sensor(context, _event):
 @run_failure_sensor
 def my_run_failure_sensor(context):
     assert isinstance(context.instance, DagsterInstance)
+    if "failure_op" in context.failure_event.message:
+        step_failure_events = context.get_step_failure_events()
+        assert len(step_failure_events) == 1
+        step_error_str = step_failure_events[0].event_specific_data.error.to_string()
+        assert "womp womp" in step_error_str, step_error_str
 
 
 @run_failure_sensor(job_selection=[failure_job])
@@ -565,6 +570,25 @@ def error_on_deleted_dynamic_partitions_run_requests_sensor(context):
     )
 
 
+daily_partitions_def = DailyPartitionsDefinition(start_date="2022-08-01")
+
+
+@asset(partitions_def=daily_partitions_def)
+def partitioned_asset():
+    return 1
+
+
+daily_partitioned_job = define_asset_job(
+    "daily_partitioned_job",
+    partitions_def=daily_partitions_def,
+).resolve(asset_graph=AssetGraph.from_assets([partitioned_asset]))
+
+
+@run_status_sensor(run_status=DagsterRunStatus.SUCCESS, monitored_jobs=[daily_partitioned_job])
+def partitioned_pipeline_success_sensor(_context):
+    assert _context.partition_key == "2022-08-01"
+
+
 @repository
 def the_repo():
     return [
@@ -620,6 +644,8 @@ def the_repo():
         add_dynamic_partitions_sensor,
         quux_asset_job,
         error_on_deleted_dynamic_partitions_run_requests_sensor,
+        partitioned_pipeline_success_sensor,
+        daily_partitioned_job,
     ]
 
 
@@ -827,22 +853,9 @@ def asset_sensor_repo():
 
 
 def get_sensor_executors():
-    is_buildkite = os.getenv("BUILDKITE") is not None
     return [
-        pytest.param(
-            None,
-            marks=pytest.mark.skipif(
-                is_buildkite and sys.version_info.minor != 9, reason="timeouts"
-            ),
-            id="synchronous",
-        ),
-        pytest.param(
-            SingleThreadPoolExecutor(),
-            marks=pytest.mark.skipif(
-                is_buildkite and sys.version_info.minor != 9, reason="timeouts"
-            ),
-            id="threadpool",
-        ),
+        pytest.param(None, id="synchronous"),
+        pytest.param(SingleThreadPoolExecutor(), id="threadpool"),
     ]
 
 
@@ -873,7 +886,7 @@ def validate_tick(
     assert tick_data.instigator_origin_id == external_sensor.get_external_origin_id()
     assert tick_data.instigator_name == external_sensor.name
     assert tick_data.instigator_type == InstigatorType.SENSOR
-    assert tick_data.status == expected_status
+    assert tick_data.status == expected_status, tick_data.error
     if expected_datetime:
         assert tick_data.timestamp == expected_datetime.timestamp()
     if expected_run_ids is not None:

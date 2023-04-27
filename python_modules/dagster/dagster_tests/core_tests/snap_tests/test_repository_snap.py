@@ -12,7 +12,7 @@ from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.execution.context.init import InitResourceContext
 from dagster._core.host_representation import (
-    ExternalPipelineData,
+    ExternalJobData,
     external_repository_data_from_def,
 )
 from dagster._core.host_representation.external_data import (
@@ -20,7 +20,7 @@ from dagster._core.host_representation.external_data import (
     NestedResourceType,
     ResourceJobUsageEntry,
 )
-from dagster._core.snap import PipelineSnapshot
+from dagster._core.snap import JobSnapshot
 
 
 def test_repository_snap_all_props():
@@ -39,14 +39,14 @@ def test_repository_snap_all_props():
     external_repo_data = external_repository_data_from_def(noop_repo)
 
     assert external_repo_data.name == "noop_repo"
-    assert len(external_repo_data.external_pipeline_datas) == 1
-    assert isinstance(external_repo_data.external_pipeline_datas[0], ExternalPipelineData)
+    assert len(external_repo_data.external_job_datas) == 1
+    assert isinstance(external_repo_data.external_job_datas[0], ExternalJobData)
 
-    pipeline_snapshot = external_repo_data.external_pipeline_datas[0].pipeline_snapshot
-    assert isinstance(pipeline_snapshot, PipelineSnapshot)
-    assert pipeline_snapshot.name == "noop_job"
-    assert pipeline_snapshot.description is None
-    assert pipeline_snapshot.tags == {}
+    job_snapshot = external_repo_data.external_job_datas[0].job_snapshot
+    assert isinstance(job_snapshot, JobSnapshot)
+    assert job_snapshot.name == "noop_job"
+    assert job_snapshot.description is None
+    assert job_snapshot.tags == {}
 
 
 def resolve_pending_repo_if_required(definitions: Definitions) -> RepositoryDefinition:
@@ -270,7 +270,7 @@ def test_repository_snap_empty():
 
     external_repo_data = external_repository_data_from_def(empty_repo)
     assert external_repo_data.name == "empty_repo"
-    assert len(external_repo_data.external_pipeline_datas) == 0
+    assert len(external_repo_data.external_job_datas) == 0
     assert len(external_repo_data.external_resource_data) == 0
 
 

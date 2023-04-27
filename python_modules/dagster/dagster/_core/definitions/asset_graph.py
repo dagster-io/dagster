@@ -380,7 +380,7 @@ class AssetGraph:
         return set()
 
     def get_code_version(self, asset_key: AssetKey) -> Optional[str]:
-        return self._code_versions_by_key[asset_key]
+        return self._code_versions_by_key.get(asset_key)
 
     @cached_method
     def toposort_asset_keys(self) -> Sequence[AbstractSet[AssetKey]]:

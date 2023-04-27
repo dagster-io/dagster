@@ -18,13 +18,13 @@ from dagster import (
     AssetKey,
     _check as check,
 )
-from dagster._core.definitions.selector import PipelineSelector
+from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.errors import DagsterRunNotFoundError
 from dagster._core.execution.stats import RunStepKeyStatsSnapshot, StepEventStatus
 from dagster._core.storage.pipeline_run import DagsterRunStatus, RunRecord, RunsFilter
 from dagster._core.storage.tags import TagType, get_tag_type
 
-from .external import ensure_valid_config, get_external_pipeline_or_raise
+from .external import ensure_valid_config, get_external_job_or_raise
 from .utils import capture_error
 
 if TYPE_CHECKING:
@@ -333,38 +333,33 @@ def get_run_groups(
 @capture_error
 def validate_pipeline_config(
     graphene_info: "ResolveInfo",
-    selector: PipelineSelector,
+    selector: JobSubsetSelector,
     run_config: Union[str, Mapping[str, object]],
-    mode: Optional[str],
 ) -> "GraphenePipelineConfigValidationValid":
     from ..schema.pipelines.config import GraphenePipelineConfigValidationValid
 
-    check.inst_param(selector, "selector", PipelineSelector)
-    check.opt_str_param(mode, "mode")
+    check.inst_param(selector, "selector", JobSubsetSelector)
 
-    external_pipeline = get_external_pipeline_or_raise(graphene_info, selector)
-    ensure_valid_config(external_pipeline, mode, run_config)
-    return GraphenePipelineConfigValidationValid(pipeline_name=external_pipeline.name)
+    external_job = get_external_job_or_raise(graphene_info, selector)
+    ensure_valid_config(external_job, run_config)
+    return GraphenePipelineConfigValidationValid(pipeline_name=external_job.name)
 
 
 @capture_error
 def get_execution_plan(
     graphene_info: "ResolveInfo",
-    selector: PipelineSelector,
+    selector: JobSubsetSelector,
     run_config: Mapping[str, Any],
-    mode: Optional[str],
 ) -> "GrapheneExecutionPlan":
     from ..schema.execution import GrapheneExecutionPlan
 
-    check.inst_param(selector, "selector", PipelineSelector)
-    check.opt_str_param(mode, "mode")
+    check.inst_param(selector, "selector", JobSubsetSelector)
 
-    external_pipeline = get_external_pipeline_or_raise(graphene_info, selector)
-    ensure_valid_config(external_pipeline, mode, run_config)
+    external_job = get_external_job_or_raise(graphene_info, selector)
+    ensure_valid_config(external_job, run_config)
     return GrapheneExecutionPlan(
         graphene_info.context.get_external_execution_plan(
-            external_pipeline=external_pipeline,
-            mode=mode,  # type: ignore  # (unclear if None accepted)
+            external_job=external_job,
             run_config=run_config,
             step_keys_to_execute=None,
             known_state=None,
@@ -408,9 +403,7 @@ def get_logs_for_run(
 
     conn = instance.get_records_for_run(run_id, cursor=cursor, limit=limit)
     return GrapheneEventConnection(
-        events=[
-            from_event_record(record.event_log_entry, run.pipeline_name) for record in conn.records
-        ],
+        events=[from_event_record(record.event_log_entry, run.job_name) for record in conn.records],
         cursor=conn.cursor,
         hasMore=conn.has_more,
     )

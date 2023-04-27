@@ -31,7 +31,7 @@ from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.instance import DagsterInstance
 from dagster._core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
-    PipelinePythonOrigin,
+    JobPythonOrigin,
     RepositoryPythonOrigin,
 )
 from dagster._core.workspace.context import WorkspaceRequestContext
@@ -52,7 +52,7 @@ from dagster._utils.hosted_user_process import recon_repository_from_origin
 if TYPE_CHECKING:
     from dagster._core.workspace.context import WorkspaceProcessContext
 
-from dagster._core.host_representation.external import ExternalPipeline
+from dagster._core.host_representation.external import ExternalJob
 
 WORKSPACE_TARGET_WARNING = (
     "Can only use ONE of --workspace/-w, --python-file/-f, --module-name/-m, --grpc-port,"
@@ -527,17 +527,17 @@ def job_target_argument(f: T_Callable) -> T_Callable:
     return apply_click_params(job_repository_target_argument(f), job_option())
 
 
-def get_job_python_origin_from_kwargs(kwargs: ClickArgMapping) -> PipelinePythonOrigin:
+def get_job_python_origin_from_kwargs(kwargs: ClickArgMapping) -> JobPythonOrigin:
     repository_origin = get_repository_python_origin_from_kwargs(kwargs)
     provided_name = kwargs.get("job_name")
 
     recon_repo = recon_repository_from_origin(repository_origin)
     repo_definition = recon_repo.get_definition()
 
-    job_names = set(repo_definition.pipeline_names)  # pipeline (all) vs job (non legacy)
+    job_names = set(repo_definition.job_names)  # job (all) vs job (non legacy)
 
     if provided_name is None and len(job_names) == 1:
-        pipeline_name = next(iter(job_names))
+        job_name = next(iter(job_names))
     elif provided_name is None:
         raise click.UsageError(
             "Must provide --job as there is more than one job "
@@ -549,9 +549,9 @@ def get_job_python_origin_from_kwargs(kwargs: ClickArgMapping) -> PipelinePython
             f"Found {_sorted_quoted(job_names)} instead."
         )
     else:
-        pipeline_name = provided_name
+        job_name = provided_name
 
-    return PipelinePythonOrigin(pipeline_name, repository_origin=repository_origin)
+    return JobPythonOrigin(job_name, repository_origin=repository_origin)
 
 
 def _get_code_pointer_dict_from_kwargs(kwargs: ClickArgMapping) -> Mapping[str, CodePointer]:
@@ -771,35 +771,35 @@ def get_external_repository_from_kwargs(
 def get_external_job_from_external_repo(
     external_repo: ExternalRepository,
     provided_name: Optional[str],
-) -> ExternalPipeline:
+) -> ExternalJob:
     check.inst_param(external_repo, "external_repo", ExternalRepository)
     check.opt_str_param(provided_name, "provided_name")
 
-    external_pipelines = {ep.name: ep for ep in (external_repo.get_all_external_jobs())}
+    external_jobs = {ep.name: ep for ep in (external_repo.get_all_external_jobs())}
 
-    check.invariant(external_pipelines)
+    check.invariant(external_jobs)
 
-    if provided_name is None and len(external_pipelines) == 1:
-        return next(iter(external_pipelines.values()))
+    if provided_name is None and len(external_jobs) == 1:
+        return next(iter(external_jobs.values()))
 
     if provided_name is None:
         raise click.UsageError(
             "Must provide --job as there is more than one job "
-            f"in {external_repo.name}. Options are: {_sorted_quoted(external_pipelines.keys())}."
+            f"in {external_repo.name}. Options are: {_sorted_quoted(external_jobs.keys())}."
         )
 
-    if provided_name not in external_pipelines:
+    if provided_name not in external_jobs:
         raise click.UsageError(
             f'Job "{provided_name}" not found in repository "{external_repo.name}". '
-            f"Found {_sorted_quoted(external_pipelines.keys())} instead."
+            f"Found {_sorted_quoted(external_jobs.keys())} instead."
         )
 
-    return external_pipelines[provided_name]
+    return external_jobs[provided_name]
 
 
 @contextmanager
 def get_external_job_from_kwargs(instance: DagsterInstance, version: str, kwargs: ClickArgMapping):
-    # Instance isn't strictly required to load an ExternalPipeline, but is included
+    # Instance isn't strictly required to load an ExternalJob, but is included
     # to satisfy the WorkspaceProcessContext / WorkspaceRequestContext requirements
     with get_external_repository_from_kwargs(instance, version, kwargs) as external_repo:
         provided_name = check.opt_str_elem(kwargs, "job_name")

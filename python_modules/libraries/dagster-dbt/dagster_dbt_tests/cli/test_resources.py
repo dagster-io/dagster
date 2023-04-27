@@ -50,7 +50,10 @@ def test_ls(test_project_dir, dbt_config_dir):
 
     context = get_dbt_solid_context(test_project_dir, dbt_config_dir)
     dbt_result = my_dbt_solid(context)
-    assert len(dbt_result.raw_output.split("\n\n")) == 25
+    # slightly different output formats between dbt versions result in raw log output shifting
+    expected_results = 25
+    raw_lines = len(dbt_result.raw_output.split("\n\n"))
+    assert raw_lines == expected_results or raw_lines == expected_results + 2
 
 
 def test_ls_resource_type(test_project_dir, dbt_config_dir):
@@ -60,7 +63,10 @@ def test_ls_resource_type(test_project_dir, dbt_config_dir):
 
     context = get_dbt_solid_context(test_project_dir, dbt_config_dir)
     dbt_result = my_dbt_solid(context)
-    assert len(dbt_result.raw_output.split("\n\n")) == 6
+    # slightly different output formats between dbt versions result in raw log output shifting
+    expected_results = 6
+    raw_lines = len(dbt_result.raw_output.split("\n\n"))
+    assert raw_lines == expected_results or raw_lines == expected_results + 2
 
 
 def test_test(dbt_seed, test_project_dir, dbt_config_dir):
@@ -147,7 +153,10 @@ def test_extra_args_run(dbt_seed, test_project_dir, dbt_config_dir):
     context = get_dbt_solid_context(test_project_dir, dbt_config_dir)
     dbt_result = my_dbt_solid(context)
     assert len(dbt_result.result["results"]) == 4
-    assert json.loads(dbt_result.result["args"]["vars"]) == my_vars
+
+    # vars can be stored as a dict or a json-encoded string depending on dbt version
+    result_vars = dbt_result.result["args"]["vars"]
+    assert result_vars == my_vars or json.loads(result_vars) == my_vars
 
 
 def test_models_and_extra_run(dbt_seed, test_project_dir, dbt_config_dir):
@@ -161,7 +170,9 @@ def test_models_and_extra_run(dbt_seed, test_project_dir, dbt_config_dir):
     dbt_result = my_dbt_solid(context)
 
     assert len(dbt_result.result["results"]) == 2
-    assert json.loads(dbt_result.result["args"]["vars"]) == my_vars
+    # vars can be stored as a dict or a json-encoded string depending on dbt version
+    result_vars = dbt_result.result["args"]["vars"]
+    assert result_vars == my_vars or json.loads(result_vars) == my_vars
 
 
 def test_exclude_run(dbt_seed, test_project_dir, dbt_config_dir):
@@ -175,7 +186,9 @@ def test_exclude_run(dbt_seed, test_project_dir, dbt_config_dir):
     dbt_result = my_dbt_solid(context)
 
     assert len(dbt_result.result["results"]) == 3
-    assert json.loads(dbt_result.result["args"]["vars"]) == my_vars
+    # vars can be stored as a dict or a json-encoded string depending on dbt version
+    result_vars = dbt_result.result["args"]["vars"]
+    assert result_vars == my_vars or json.loads(result_vars) == my_vars
 
 
 def test_merged_extra_flags_run(dbt_seed, test_project_dir, dbt_config_dir):
@@ -192,4 +205,6 @@ def test_merged_extra_flags_run(dbt_seed, test_project_dir, dbt_config_dir):
     assert len(dbt_result.result["results"]) == 4
     for key in my_vars.keys():
         assert key in dbt_result.command
-    assert json.loads(dbt_result.result["args"]["vars"]) == my_vars
+    # vars can be stored as a dict or a json-encoded string depending on dbt version
+    result_vars = dbt_result.result["args"]["vars"]
+    assert result_vars == my_vars or json.loads(result_vars) == my_vars

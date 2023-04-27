@@ -66,7 +66,7 @@ If you make any changes to your dbt project that change the structure of the pro
 
 ---
 
-## Using the dbt_cli_resource for dbt CLI commands
+## Using the DbtCliClientResource for dbt CLI commands
 
 <Note>
   Check out{" "}
@@ -76,16 +76,16 @@ If you make any changes to your dbt project that change the structure of the pro
   to see this concept in context.
 </Note>
 
-Assets loaded from dbt require a dbt resource, which is responsible for firing off dbt CLI commands. The `dagster-dbt` integration provides the <PyObject module="dagster_dbt" object="dbt_cli_resource" /> for this purpose. This resource can be configured with CLI flags that are passed into every dbt invocation.
+Assets loaded from dbt require a dbt resource, which is responsible for firing off dbt CLI commands. The `dagster-dbt` integration provides the <PyObject module="dagster_dbt" object="DbtCliClientResource" /> for this purpose. This resource can be configured with CLI flags that are passed into every dbt invocation.
 
-The most important flag to set is the `project_dir` flag, which points Dagster at the directory of your dbt project. You can also use the `target` flag to point at an explicit dbt [target](https://docs.getdbt.com/reference/dbt-jinja-functions/target). For a full list of configuration options, refer to the <PyObject module="dagster_dbt" object="dbt_cli_resource" /> API docs.
+The most important flag to set is the `project_dir` flag, which points Dagster at the directory of your dbt project. You can also use the `target` flag to point at an explicit dbt [target](https://docs.getdbt.com/reference/dbt-jinja-functions/target). For a full list of configuration options, refer to the <PyObject module="dagster_dbt" object="DbtCliClientResource" /> API docs.
 
 You can configure this resource and add it to your dbt assets by doing the following:
 
 ```python startafter=start_dbt_cli_resource endbefore=end_dbt_cli_resource file=/integrations/dbt/dbt.py dedent=4
 import os
 
-from dagster_dbt import dbt_cli_resource, load_assets_from_dbt_project
+from dagster_dbt import DbtCliClientResource, load_assets_from_dbt_project
 
 from dagster import with_resources
 
@@ -95,11 +95,9 @@ DBT_TARGET = "hive" if os.getenv("EXECUTION_ENV") == "prod" else "duckdb"
 dbt_assets = with_resources(
     load_assets_from_dbt_project(DBT_PROJECT_PATH),
     {
-        "dbt": dbt_cli_resource.configured(
-            {
-                "project_dir": DBT_PROJECT_PATH,
-                "target": DBT_TARGET,
-            },
+        "dbt": DbtCliClientResource(
+            project_dir=DBT_PROJECT_PATH,
+            target=DBT_TARGET,
         )
     },
 )
@@ -200,7 +198,7 @@ dbt_assets = load_assets_from_dbt_project(
 
 ## dbt models, code versions, and staleness
 
-Note that Dagster allows the optional specification of a [`code_version`](/guides/dagster/scheduling-assets#step-5-change-code-versions) for each software-defined asset, which are used to track changes. The `code_version` for an asset arising from a dbt model is defined automatically as the hash of the SQL defining the DBT model. This allows the asset graph in the UI to indicate which dbt models have new SQL since they were last materialized.
+Note that Dagster allows the optional specification of a [`code_version`](/concepts/assets/software-defined-assets#asset-code-versions) for each software-defined asset, which are used to track changes. The `code_version` for an asset arising from a dbt model is defined automatically as the hash of the SQL defining the DBT model. This allows the asset graph in the UI to indicate which dbt models have new SQL since they were last materialized.
 
 ---
 
@@ -288,11 +286,10 @@ A simple I/O manager implementation that loads data from a dbt-managed table int
 ```python startafter=start_input_manager endbefore=end_input_manager file=/integrations/dbt/dbt.py dedent=4
 import pandas as pd
 
-from dagster import IOManager, io_manager
+from dagster import ConfigurableIOManager
 
-class PandasIOManager(IOManager):
-    def __init__(self, con_string: str):
-        self._con = con_string
+class PandasIOManager(ConfigurableIOManager):
+    connection_str: str
 
     def handle_output(self, context, obj):
         # dbt handles outputs for us
@@ -301,29 +298,23 @@ class PandasIOManager(IOManager):
     def load_input(self, context) -> pd.DataFrame:
         """Load the contents of a table as a pandas DataFrame."""
         table_name = context.asset_key.path[-1]
-        return pd.read_sql(f"SELECT * FROM {table_name}", con=self._con)
-
-@io_manager(config_schema={"con_string": str})
-def pandas_io_manager(context):
-    return PandasIOManager(context.resource_config["con_string"])
+        return pd.read_sql(f"SELECT * FROM {table_name}", con=self.connection_str)
 ```
 
 Once the I/O manager is defined, you can supply it like any other resource when calling <PyObject object="with_resources"/> :
 
 ```python startafter=start_input_manager_resources endbefore=end_input_manager_resources file=/integrations/dbt/dbt.py dedent=4
-from dagster_dbt import dbt_cli_resource, load_assets_from_dbt_project
+from dagster_dbt import DbtCliClientResource, load_assets_from_dbt_project
 
 from dagster import with_resources
 
 dbt_assets = with_resources(
     load_assets_from_dbt_project(...),
     {
-        "dbt": dbt_cli_resource.configured(
-            {"project_dir": "path/to/dbt_project"},
+        "dbt": DbtCliClientResource(
+            project_dir="path/to/dbt_project",
         ),
-        "pandas_df_manager": pandas_io_manager.configured(
-            {"con_string": "..."},
-        ),
+        "pandas_df_manager": PandasIOManager(connection_str=...),
     },
 )
 ```

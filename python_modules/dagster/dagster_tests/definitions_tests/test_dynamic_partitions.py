@@ -27,10 +27,6 @@ def test_dynamic_partitions_partitions(
 ):
     partitions = DynamicPartitionsDefinition(partition_fn)
 
-    assert [(p.name, p.value) for p in partitions.get_partitions()] == [
-        (p.name, p.value) for p in partition_fn(None)
-    ]
-
     assert partitions.get_partition_keys() == [p.name for p in partition_fn(None)]
 
 
@@ -44,10 +40,6 @@ def test_dynamic_partitions_partitions(
 def test_dynamic_partitions_keys(partition_fn: Callable[[Optional[datetime]], Sequence[str]]):
     partitions = DynamicPartitionsDefinition(partition_fn)
 
-    assert [(p.name, p.value) for p in partitions.get_partitions()] == [
-        (p, p) for p in partition_fn(None)
-    ]
-
     assert partitions.get_partition_keys() == partition_fn(None)
 
 
@@ -55,14 +47,14 @@ def test_dynamic_partitions_def_methods():
     foo = DynamicPartitionsDefinition(name="foo")
     with instance_for_test() as instance:
         instance.add_dynamic_partitions("foo", ["a", "b"])
-        assert set([p.name for p in foo.get_partitions(dynamic_partitions_store=instance)]) == {
+        assert set(foo.get_partition_keys(dynamic_partitions_store=instance)) == {
             "a",
             "b",
         }
         assert instance.has_dynamic_partition("foo", "a")
 
         instance.delete_dynamic_partition("foo", "a")
-        assert set([p.name for p in foo.get_partitions(dynamic_partitions_store=instance)]) == {"b"}
+        assert set(foo.get_partition_keys(dynamic_partitions_store=instance)) == {"b"}
         assert instance.has_dynamic_partition("foo", "a") is False
 
 
@@ -148,7 +140,7 @@ def test_dynamic_partitions_no_instance_provided():
     partitions_def = DynamicPartitionsDefinition(name="fruits")
 
     with pytest.raises(CheckError, match="instance"):
-        partitions_def.get_partitions()
+        partitions_def.get_partition_keys()
 
 
 def test_dynamic_partitions_mapping():

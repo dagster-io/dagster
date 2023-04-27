@@ -124,5 +124,18 @@ export type ReloadRepositoryLocationMutation = {
         __typename: 'WorkspaceLocationEntry';
         id: string;
         loadStatus: Types.RepositoryLocationLoadStatus;
+        locationOrLoadError:
+          | {
+              __typename: 'PythonError';
+              message: string;
+              stack: Array<string>;
+              errorChain: Array<{
+                __typename: 'ErrorChainLink';
+                isExplicitLink: boolean;
+                error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+              }>;
+            }
+          | {__typename: 'RepositoryLocation'; id: string}
+          | null;
       };
 };

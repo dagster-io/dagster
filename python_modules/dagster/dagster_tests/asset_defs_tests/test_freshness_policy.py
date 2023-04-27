@@ -119,7 +119,7 @@ def test_policies_available_equals_evaluation_time(
     evaluation_time,
     expected_minutes_late,
 ):
-    minutes_late = policy.minutes_late(
+    minutes_late = policy.minutes_overdue(
         data_time=used_data_time,
         evaluation_time=evaluation_time,
     )

@@ -11,3 +11,6 @@ This library provides an integration with the `DuckDB <hhttps://duckdb.org/>`_ d
 
 .. autoconfigurable:: build_duckdb_io_manager
   :annotation: IOManagerDefinition
+
+.. autoconfigurable:: DuckDBResource
+  :annotation: ResourceDefinition

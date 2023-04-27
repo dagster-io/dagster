@@ -7,7 +7,7 @@ from dagster._config import EvaluateValueResult, process_config
 from dagster._core.definitions.asset_layer import AssetLayer
 from dagster._core.definitions.dependency import GraphNode, Node, NodeHandle, OpNode
 from dagster._core.definitions.graph_definition import GraphDefinition, SubselectedGraphDefinition
-from dagster._core.definitions.pipeline_definition import PipelineDefinition
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.run_config import define_node_shape
 from dagster._core.errors import (
@@ -38,19 +38,19 @@ _ROOT_HANDLE = NodeHandle("root", None)
 
 
 class DescentStack(
-    NamedTuple("_DescentStack", [("pipeline_def", PipelineDefinition), ("handle", NodeHandle)])
+    NamedTuple("_DescentStack", [("job_def", JobDefinition), ("handle", NodeHandle)])
 ):
-    def __new__(cls, pipeline_def: PipelineDefinition, handle: NodeHandle):
+    def __new__(cls, job_def: JobDefinition, handle: NodeHandle):
         return super(DescentStack, cls).__new__(
             cls,
-            pipeline_def=check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition),
+            job_def=check.inst_param(job_def, "job_def", JobDefinition),
             handle=check.inst_param(handle, "handle", NodeHandle),
         )
 
     @property
     def current_container(self) -> GraphDefinition:
         if self.handle == _ROOT_HANDLE:
-            return self.pipeline_def.graph
+            return self.job_def.graph
         else:
             assert isinstance(self.current_node, GraphNode)
             return self.current_node.definition
@@ -58,7 +58,7 @@ class DescentStack(
     @property
     def current_node(self) -> Node:
         assert self.handle is not None
-        return self.pipeline_def.get_node(self.handle)
+        return self.job_def.get_node(self.handle)
 
     @property
     def current_handle_str(self) -> str:
@@ -70,7 +70,7 @@ class DescentStack(
 
 
 def composite_descent(
-    pipeline_def: PipelineDefinition,
+    job_def: JobDefinition,
     ops_config: Mapping[str, RawNodeConfig],
     resource_defs: Mapping[str, ResourceDefinition],
 ) -> Mapping[str, OpConfig]:
@@ -80,7 +80,7 @@ def composite_descent(
     config for child solids of composites.
 
     Args:
-        pipeline_def (PipelineDefinition): PipelineDefinition
+        job_def (JobDefinition): JobDefinition
         ops_config (dict): Configuration for the ops in the pipeline. The "ops" entry
             of the run_config. Assumed to have already been validated.
 
@@ -89,27 +89,25 @@ def composite_descent(
             OpConfig objects. It includes an entry for ops at every level of the
             composite tree - i.e. not just leaf ops, but composite ops as well
     """
-    check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
+    check.inst_param(job_def, "job_def", JobDefinition)
     check.dict_param(ops_config, "solids_config")
     check.dict_param(resource_defs, "resource_defs", key_type=str, value_type=ResourceDefinition)
 
     # If top-level graph has config mapping, apply that config mapping before descending.
-    if pipeline_def.graph.has_config_mapping:
+    if job_def.graph.has_config_mapping:
         ops_config = _apply_top_level_config_mapping(
-            pipeline_def,
+            job_def,
             ops_config,
             resource_defs,
-            pipeline_def.is_job,
         )
 
     return {
         handle.to_string(): op_config
         for handle, op_config in _composite_descent(
-            parent_stack=DescentStack(pipeline_def, _ROOT_HANDLE),
+            parent_stack=DescentStack(job_def, _ROOT_HANDLE),
             ops_config_dict=ops_config,
             resource_defs=resource_defs,
-            is_using_graph_job_op_apis=pipeline_def.is_job,
-            asset_layer=pipeline_def.asset_layer,
+            asset_layer=job_def.asset_layer,
         )
     }
 
@@ -118,7 +116,6 @@ def _composite_descent(
     parent_stack: DescentStack,
     ops_config_dict: Mapping[str, RawNodeConfig],
     resource_defs: Mapping[str, ResourceDefinition],
-    is_using_graph_job_op_apis: bool,
     asset_layer: AssetLayer,
 ) -> Iterator[OpConfigEntry]:
     """The core implementation of composite_descent. This yields a stream of OpConfigEntry. This is
@@ -164,7 +161,6 @@ def _composite_descent(
                     }
                 ),
             )
-            node_key = "ops" if is_using_graph_job_op_apis else "solids"
 
             # If there is a config mapping, invoke it and get the descendent solids
             # config that way. Else just grabs the solids entry of the current config
@@ -174,18 +170,16 @@ def _composite_descent(
                     current_stack,
                     current_op_config,
                     resource_defs,
-                    is_using_graph_job_op_apis,
                     asset_layer,
                 )
                 if node.definition.has_config_mapping
-                else cast(Mapping[str, RawNodeConfig], current_op_config.get(node_key, {}))
+                else cast(Mapping[str, RawNodeConfig], current_op_config.get("ops", {}))
             )
 
             yield from _composite_descent(
                 current_stack,
                 mapped_nodes_config,
                 resource_defs,
-                is_using_graph_job_op_apis,
                 asset_layer,
             )
         else:
@@ -193,12 +187,11 @@ def _composite_descent(
 
 
 def _apply_top_level_config_mapping(
-    pipeline_def: PipelineDefinition,
+    job_def: JobDefinition,
     outer_config: Mapping[str, Mapping[str, object]],
     resource_defs: Mapping[str, ResourceDefinition],
-    is_using_graph_job_op_apis: bool,
 ) -> Mapping[str, RawNodeConfig]:
-    graph_def = pipeline_def.graph
+    graph_def = job_def.graph
     config_mapping = graph_def.config_mapping
     if config_mapping is None:
         return outer_config
@@ -213,7 +206,7 @@ def _apply_top_level_config_mapping(
             )
 
         with user_code_error_boundary(
-            DagsterConfigMappingFunctionError, _get_top_level_error_lambda(pipeline_def)
+            DagsterConfigMappingFunctionError, _get_top_level_error_lambda(job_def)
         ):
             mapped_graph_config = config_mapping.resolve_from_validated_config(
                 mapped_config_evr.value.get("config", {})  # type: ignore  # (possible none)
@@ -227,8 +220,7 @@ def _apply_top_level_config_mapping(
             ignored_nodes=None,
             dependency_structure=graph_def.dependency_structure,
             resource_defs=resource_defs,
-            is_using_graph_job_op_apis=is_using_graph_job_op_apis,
-            asset_layer=pipeline_def.asset_layer,
+            asset_layer=job_def.asset_layer,
             node_input_source_assets=graph_def.node_input_source_assets,
         )
 
@@ -237,7 +229,7 @@ def _apply_top_level_config_mapping(
         evr = process_config(type_to_evaluate_against, mapped_graph_config)
 
         if not evr.success:
-            raise_top_level_config_error(pipeline_def, mapped_graph_config, evr)
+            raise_top_level_config_error(job_def, mapped_graph_config, evr)
 
         return evr.value  # type: ignore  # (unknown evr type)
 
@@ -247,7 +239,6 @@ def _apply_config_mapping(
     current_stack: DescentStack,
     current_node_config: RawNodeConfig,
     resource_defs: Mapping[str, ResourceDefinition],
-    is_using_graph_job_op_apis: bool,
     asset_layer: AssetLayer,
 ) -> Mapping[str, RawNodeConfig]:
     # the spec of the config mapping function is that it takes the dictionary at:
@@ -297,7 +288,6 @@ def _apply_config_mapping(
         dependency_structure=graph_def.dependency_structure,
         parent_handle=current_stack.handle,
         resource_defs=resource_defs,
-        is_using_graph_job_op_apis=is_using_graph_job_op_apis,
         asset_layer=asset_layer,
         node_input_source_assets=graph_def.node_input_source_assets,
     )
@@ -319,22 +309,22 @@ def _get_error_lambda(current_stack: DescentStack) -> Callable[[], str]:
         'instantiated at stack "{stack_str}".'
     ).format(
         described_node=current_stack.current_node.describe_node(),
-        described_target=current_stack.pipeline_def.describe_target(),
+        described_target=current_stack.job_def.describe_target(),
         stack_str=":".join(current_stack.handle.path),
     )
 
 
-def _get_top_level_error_lambda(pipeline_def: PipelineDefinition) -> Callable[[], str]:
+def _get_top_level_error_lambda(job_def: JobDefinition) -> Callable[[], str]:
     return (
-        lambda: f"The config mapping function on top-level graph {pipeline_def.graph.name} in job {pipeline_def.name} has thrown an unexpected error during its execution."
+        lambda: f"The config mapping function on top-level graph {job_def.graph.name} in job {job_def.name} has thrown an unexpected error during its execution."
     )
 
 
 def raise_top_level_config_error(
-    pipeline_def: PipelineDefinition, failed_config_value: object, evr: EvaluateValueResult
+    job_def: JobDefinition, failed_config_value: object, evr: EvaluateValueResult
 ) -> NoReturn:
     message = (
-        f"In job '{pipeline_def.name}', top level graph '{pipeline_def.graph.name}' has a "
+        f"In job '{job_def.name}', top level graph '{job_def.graph.name}' has a "
         "configuration error."
     )
 
@@ -349,7 +339,7 @@ def raise_composite_descent_config_error(
 
     solid = descent_stack.current_node
     message = "In job {job_name} at stack {stack}: \n".format(
-        job_name=descent_stack.pipeline_def.name,
+        job_name=descent_stack.job_def.name,
         stack=":".join(descent_stack.handle.path),
     )
     message += (

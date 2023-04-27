@@ -17,7 +17,7 @@ import {humanizedLateString, isAssetLate} from '../assets/CurrentMinutesLateTag'
 import {StaleReasonsTags} from '../assets/Stale';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetComputeKindTag} from '../graph/OpTags';
-import {AssetKey} from '../graphql/types';
+import {AssetKeyInput} from '../graphql/types';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
 
@@ -113,8 +113,12 @@ interface StatusRowProps {
   liveData: LiveDataForNode | undefined;
 }
 
-const AssetNodeStatusRow: React.FC<StatusRowProps> = (props) => {
-  const {content, background} = buildAssetNodeStatusContent(props);
+const AssetNodeStatusRow: React.FC<StatusRowProps> = ({definition, liveData}) => {
+  const {content, background} = buildAssetNodeStatusContent({
+    assetKey: definition.assetKey,
+    definition,
+    liveData,
+  });
   return <AssetNodeStatusBox background={background}>{content}</AssetNodeStatusBox>;
 };
 
@@ -126,11 +130,13 @@ function getStepKey(definition: {opNames: string[]}) {
 }
 
 export function buildAssetNodeStatusContent({
+  assetKey,
   definition,
   liveData,
   expanded,
 }: {
-  definition: {assetKey: AssetKey; opNames: string[]; isSource: boolean; isObservable: boolean};
+  assetKey: AssetKeyInput;
+  definition: {opNames: string[]; isSource: boolean; isObservable: boolean};
   liveData: LiveDataForNode | null | undefined;
   expanded?: boolean;
 }) {
@@ -164,7 +170,7 @@ export function buildAssetNodeStatusContent({
         border: Colors.Gray300,
         content: (
           <>
-            <AssetLatestRunSpinner liveData={liveData} />
+            <AssetLatestRunSpinner liveData={liveData} purpose="caption-text" />
             <span style={{flex: 1}} color={Colors.Gray800}>
               Observing...
             </span>
@@ -238,7 +244,9 @@ export function buildAssetNodeStatusContent({
       border: Colors.Blue500,
       content: (
         <>
-          <AssetLatestRunSpinner liveData={liveData} />
+          <div style={{marginLeft: -1, marginRight: -1}}>
+            <AssetLatestRunSpinner liveData={liveData} purpose="caption-text" />
+          </div>
           <span style={{flex: 1}} color={Colors.Gray800}>
             {numMaterializing === 1
               ? `Materializing 1 partition...`
@@ -271,7 +279,7 @@ export function buildAssetNodeStatusContent({
       border,
       content: (
         <Link
-          to={assetDetailsPathForKey(definition.assetKey, {view: 'partitions'})}
+          to={assetDetailsPathForKey(assetKey, {view: 'partitions'})}
           style={{color: foreground}}
           target="_blank"
           rel="noreferrer"
@@ -320,12 +328,19 @@ export function buildAssetNodeStatusContent({
             />
           )}
 
-          {late ? (
+          {late && runWhichFailedToMaterialize ? (
             <Tooltip
               position="top"
               content={humanizedLateString(liveData.freshnessInfo.currentMinutesLate)}
             >
-              <span style={{color: Colors.Red700}}>{late ? `Failed, Overdue` : 'Overdue'}</span>
+              <span style={{color: Colors.Red700}}>Failed, Overdue</span>
+            </Tooltip>
+          ) : late ? (
+            <Tooltip
+              position="top"
+              content={humanizedLateString(liveData.freshnessInfo.currentMinutesLate)}
+            >
+              <span style={{color: Colors.Red700}}>Overdue</span>
             </Tooltip>
           ) : runWhichFailedToMaterialize ? (
             <span style={{color: Colors.Red700}}>Failed</span>
@@ -390,7 +405,7 @@ export const AssetNodeMinimal: React.FC<{
   definition: AssetNodeFragment;
 }> = ({selected, definition, liveData}) => {
   const {isSource, assetKey} = definition;
-  const {border, background} = buildAssetNodeStatusContent({definition, liveData});
+  const {border, background} = buildAssetNodeStatusContent({assetKey, definition, liveData});
   const displayName = assetKey.path[assetKey.path.length - 1];
   return (
     <AssetInsetForHoverEffect>
@@ -407,7 +422,13 @@ export const AssetNodeMinimal: React.FC<{
             $background={background}
             $border={border}
           >
-            <div style={{position: 'absolute', bottom: 6, left: 6}}>
+            <div
+              style={{
+                position: 'absolute',
+                top: '50%',
+                transform: 'translate(8px, -16px)',
+              }}
+            >
               <AssetLatestRunSpinner liveData={liveData} purpose="section" />
             </div>
             <MinimalName style={{fontSize: 30}} $isSource={isSource}>
@@ -433,14 +454,11 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
     assetMaterializations(limit: 1) {
       ...AssetNodeLiveMaterialization
     }
-    freshnessPolicy {
-      ...AssetNodeLiveFreshnessPolicy
+    assetObservations(limit: 1) {
+      ...AssetNodeLiveObservation
     }
     freshnessInfo {
       ...AssetNodeLiveFreshnessInfo
-    }
-    assetObservations(limit: 1) {
-      ...AssetNodeLiveObservation
     }
     staleStatus
     staleCauses {
@@ -459,12 +477,6 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
       numPartitions
       numFailed
     }
-  }
-
-  fragment AssetNodeLiveFreshnessPolicy on FreshnessPolicy {
-    maximumLagMinutes
-    cronSchedule
-    cronScheduleTimezone
   }
 
   fragment AssetNodeLiveFreshnessInfo on AssetFreshnessInfo {

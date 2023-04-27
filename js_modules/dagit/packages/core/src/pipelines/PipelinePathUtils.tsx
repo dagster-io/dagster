@@ -65,17 +65,21 @@ export function useStripSnapshotFromPath(params: {pipelinePath: string}) {
   }, [history, pipelinePath]);
 }
 
+export function getPipelineSnapshotLink(pipelineName: string, snapshotId: string) {
+  return `/snapshots/${explorerPathToString({
+    pipelineName,
+    snapshotId,
+    opsQuery: '',
+    opNames: [],
+  })}`;
+}
+
 export const PipelineSnapshotLink: React.FC<{
   pipelineName: string;
   snapshotId: string;
   size: 'small' | 'normal';
 }> = (props) => {
-  const snapshotLink = `/snapshots/${explorerPathToString({
-    pipelineName: props.pipelineName,
-    snapshotId: props.snapshotId,
-    opsQuery: '',
-    opNames: [],
-  })}`;
+  const snapshotLink = getPipelineSnapshotLink(props.pipelineName, props.snapshotId);
 
   return (
     <Mono style={{fontSize: props.size === 'small' ? '14px' : '16px'}}>

@@ -33,20 +33,19 @@ cat ~/.gcp/key.json | base64
 Then you can [set an environment variable](/guides/dagster/using-environment-variables-and-secrets) in your Dagster deployment (for example `GCP_CREDS`) to the encoded key and provide it to the BigQuery I/O manager:
 
 ```python file=/integrations/bigquery/config_auth.py startafter=start_example endbefore=end_example
-from dagster_gcp_pandas import bigquery_pandas_io_manager
+from dagster_gcp_pandas import BigQueryPandasIOManager
 
-from dagster import Definitions
+from dagster import Definitions, EnvVar
 
 defs = Definitions(
     assets=[iris_data],
     resources={
-        "io_manager": bigquery_pandas_io_manager.configured(
-            {
-                "project": "my-gcp-project",
-                "location": "us-east5",
-                "dataset": "IRIS",
-                "gcp_credential": {"env": "GCP_CREDS"},
-            }
+        "io_manager": BigQueryPandasIOManager(
+            project="my-gcp-project",
+            location="us-east5",
+            dataset="IRIS",
+            timeout=15.0,
+            gcp_credentials=EnvVar("GCP_CREDS"),
         )
     },
 )
@@ -71,20 +70,20 @@ from dagster import AssetIn, asset
     ins={
         "iris_sepal": AssetIn(
             key="iris_data",
-            metadata={"columns": ["Sepal length (cm)", "Sepal width (cm)"]},
+            metadata={"columns": ["sepal_length_cm", "sepal_width_cm"]},
         )
     }
 )
 def sepal_data(iris_sepal: pd.DataFrame) -> pd.DataFrame:
-    iris_sepal["Sepal area (cm2)"] = (
-        iris_sepal["Sepal length (cm)"] * iris_sepal["Sepal width (cm)"]
+    iris_sepal["sepal_area_cm2"] = (
+        iris_sepal["sepal_length_cm"] * iris_sepal["sepal_width_cm"]
     )
     return iris_sepal
 ```
 
 In this example, we only use the columns containing sepal data from the `IRIS_DATA` table created in [Step 2: Create tables in BigQuery](/integrations/bigquery/using-bigquery-with-dagster#store-a-dagster-asset-as-a-table-in-bigquery) of the [Using Dagster with BigQuery tutorial](/integrations/bigquery/using-bigquery-with-dagster). Fetching the entire table would be unnecessarily costly, so to select specific columns, we can add metadata to the input asset. We do this in the `metadata` parameter of the `AssetIn` that loads the `iris_data` asset in the `ins` parameter. We supply the key `columns` with a list of names of the columns we want to fetch.
 
-When Dagster materializes `sepal_data` and loads the `iris_data` asset using the BigQuery I/O manager, it will only fetch the `Sepal length (cm)` and `Sepal width (cm)` columns of the `IRIS.IRIS_DATA` table and pass them to `sepal_data` as a Pandas DataFrame.
+When Dagster materializes `sepal_data` and loads the `iris_data` asset using the BigQuery I/O manager, it will only fetch the `sepal_length_cm` and `sepal_width_cm` columns of the `IRIS.IRIS_DATA` table and pass them to `sepal_data` as a Pandas DataFrame.
 
 ---
 
@@ -117,15 +116,15 @@ def iris_data_partitioned(context) -> pd.DataFrame:
     full_df = pd.read_csv(
         "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data",
         names=[
-            "Sepal length (cm)",
-            "Sepal width (cm)",
-            "Petal length (cm)",
-            "Petal width (cm)",
-            "Species",
+            "sepal_length_cm",
+            "sepal_width_cm",
+            "petal_length_cm",
+            "petal_width_cm",
+            "species",
         ],
     )
 
-    return full_df[full_df["Species"] == species]
+    return full_df[full_df["species"] == species]
 
 
 @asset
@@ -241,7 +240,7 @@ def iris_data_partitioned(context) -> pd.DataFrame:
     # the time of the row as an integer of seconds since epoch
     full_df = get_iris_data_for_date(date)
 
-    return full_df[full_df["Species"] == species]
+    return full_df[full_df["species"] == species]
 
 
 @asset
@@ -286,11 +285,11 @@ def iris_data() -> pd.DataFrame:
     return pd.read_csv(
         "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data",
         names=[
-            "Sepal length (cm)",
-            "Sepal width (cm)",
-            "Petal length (cm)",
-            "Petal width (cm)",
-            "Species",
+            "sepal_length_cm",
+            "sepal_width_cm",
+            "petal_length_cm",
+            "petal_width_cm",
+            "species",
         ],
     )
 ```
@@ -314,7 +313,7 @@ You may have assets that you don't want to store in BigQuery. You can provide an
 ```python file=/integrations/bigquery/multiple_io_managers.py startafter=start_example endbefore=end_example
 import pandas as pd
 from dagster_aws.s3.io_manager import s3_pickle_io_manager
-from dagster_gcp_pandas import bigquery_pandas_io_manager
+from dagster_gcp_pandas import BigQueryPandasIOManager
 
 from dagster import Definitions, asset
 
@@ -324,11 +323,11 @@ def iris_data() -> pd.DataFrame:
     return pd.read_csv(
         "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data",
         names=[
-            "Sepal length (cm)",
-            "Sepal width (cm)",
-            "Petal length (cm)",
-            "Petal width (cm)",
-            "Species",
+            "sepal_length_cm",
+            "sepal_width_cm",
+            "petal_length_cm",
+            "petal_width_cm",
+            "species",
         ],
     )
 
@@ -343,11 +342,9 @@ def iris_plots(iris_data):
 defs = Definitions(
     assets=[iris_data, iris_plots],
     resources={
-        "warehouse_io_manager": bigquery_pandas_io_manager.configured(
-            {
-                "project": "my-gcp-project",
-                "dataset": "IRIS",
-            }
+        "warehouse_io_manager": BigQueryPandasIOManager(
+            project="my-gcp-project",
+            dataset="IRIS",
         ),
         "blob_io_manager": s3_pickle_io_manager,
     },
@@ -369,20 +366,18 @@ pip install dagster-gcp-pyspark
 Then you can use the `gcp_pyspark_io_manager` in your `Definitions` as in [Step 1: Configure the BigQuery I/O manager](/integrations/bigquery/using-bigquery-with-dagster#step-1-configure-the-bigquery-io-manager) of the [Using Dagster with BigQuery tutorial](/integrations/bigquery/using-bigquery-with-dagster).
 
 ```python file=/integrations/bigquery/pyspark_configuration.py startafter=start_configuration endbefore=end_configuration
-from dagster_gcp_pyspark import bigquery_pyspark_io_manager
+from dagster_gcp_pyspark import BigQueryPySparkIOManager
 
 from dagster import Definitions
 
 defs = Definitions(
     assets=[iris_data],
     resources={
-        "io_manager": bigquery_pyspark_io_manager.configured(
-            {
-                "project": "my-gcp-project",  # required
-                "location": "us-east5",  # optional, defaults to the default location for the project - see https://cloud.google.com/bigquery/docs/locations for a list of locations
-                "data": "IRIS",  # optional, defaults to PUBLIC
-                "temporary_gcs_bucket": "my-gcs-bucket",  # optional, defaults to None, which will result in a direct write to BigQuery
-            }
+        "io_manager": BigQueryPySparkIOManager(
+            project="my-gcp-project",  # required
+            location="us-east5",  # optional, defaults to the default location for the project - see https://cloud.google.com/bigquery/docs/locations for a list of locations
+            dataset="IRIS",  # optional, defaults to PUBLIC
+            temporary_gcs_bucket="my-gcs-bucket",  # optional, defaults to None, which will result in a direct write to BigQuery
         )
     },
 )
@@ -392,7 +387,13 @@ defs = Definitions(
   When using the <code>bigquery_pyspark_io_manager</code> you may provide the{" "}
   <code>temporary_gcs_bucket</code> configuration. This will store the data is a
   temporary GCS bucket, then all of the data into BigQuery in one operation. If
-  not provided, data will be directly written to BigQuery.
+  not provided, data will be directly written to BigQuery. If you choose to use
+  a temporary GCS bucket, you must include the{" "}
+  <a href="https://github.com/GoogleCloudDataproc/hadoop-connectors/tree/master/gcs">
+    GCS Hadoop connector
+  </a>{" "}
+  in your Spark Session, in addition to the BigQuery connector (described
+  below).
 </Note>
 
 The `bigquery_pyspark_io_manager` requires that a `SparkSession` be active and configured with the [BigQuery connector for Spark](https://cloud.google.com/dataproc/docs/tutorials/bigquery-connector-spark-example). You can either create your own `SparkSession` or use the <PyObject module="dagster_spark" object="spark_resource"/>.
@@ -401,7 +402,7 @@ The `bigquery_pyspark_io_manager` requires that a `SparkSession` be active and c
 <TabItem name="With the spark_resource">
 
 ```python file=/integrations/bigquery/pyspark_with_spark_resource.py
-from dagster_gcp_pyspark import bigquery_pyspark_io_manager
+from dagster_gcp_pyspark import BigQueryPySparkIOManager
 from dagster_pyspark import pyspark_resource
 from pyspark import SparkFiles
 from pyspark.sql import (
@@ -426,11 +427,11 @@ def iris_data(context) -> DataFrame:
 
     schema = StructType(
         [
-            StructField("Sepal length (cm)", DoubleType()),
-            StructField("Sepal width (cm)", DoubleType()),
-            StructField("Petal length (cm)", DoubleType()),
-            StructField("Petal width (cm)", DoubleType()),
-            StructField("Species", StringType()),
+            StructField("sepal_length_cm", DoubleType()),
+            StructField("sepal_width_cm", DoubleType()),
+            StructField("petal_length_cm", DoubleType()),
+            StructField("petal_width_cm", DoubleType()),
+            StructField("species", StringType()),
         ]
     )
 
@@ -443,11 +444,9 @@ def iris_data(context) -> DataFrame:
 defs = Definitions(
     assets=[iris_data],
     resources={
-        "io_manager": bigquery_pyspark_io_manager.configured(
-            {
-                "project": "my-gcp-project",
-                "dataset": "IRIS",
-            }
+        "io_manager": BigQueryPySparkIOManager(
+            project="my-gcp-project",
+            location="us-east5",
         ),
         "pyspark": pyspark_resource.configured(
             {"spark_conf": {"spark.jars.packages": BIGQUERY_JARS}}
@@ -460,7 +459,7 @@ defs = Definitions(
 <TabItem name="With your own SparkSession">
 
 ```python file=/integrations/bigquery/pyspark_with_spark_session.py
-from dagster_gcp_pyspark import bigquery_pyspark_io_manager
+from dagster_gcp_pyspark import BigQueryPySparkIOManager
 from pyspark import SparkFiles
 from pyspark.sql import (
     DataFrame,
@@ -487,11 +486,11 @@ def iris_data() -> DataFrame:
 
     schema = StructType(
         [
-            StructField("Sepal length (cm)", DoubleType()),
-            StructField("Sepal width (cm)", DoubleType()),
-            StructField("Petal length (cm)", DoubleType()),
-            StructField("Petal width (cm)", DoubleType()),
-            StructField("Species", StringType()),
+            StructField("sepal_length_cm", DoubleType()),
+            StructField("sepal_width_cm", DoubleType()),
+            StructField("petal_length_cm", DoubleType()),
+            StructField("petal_width_cm", DoubleType()),
+            StructField("species", StringType()),
         ]
     )
 
@@ -504,11 +503,9 @@ def iris_data() -> DataFrame:
 defs = Definitions(
     assets=[iris_data],
     resources={
-        "io_manager": bigquery_pyspark_io_manager.configured(
-            {
-                "project": "my-gcp-project",
-                "dataset": "IRIS",
-            }
+        "io_manager": BigQueryPySparkIOManager(
+            project="my-gcp-project",
+            location="us-east5",
         ),
     },
 )
@@ -521,38 +518,54 @@ defs = Definitions(
   <strong>Note:</strong> In order to load data from BigQuery as a PySpark
   DataFrame, the BigQuery PySpark connector will create a view containing the
   data. This will result in the creation of a temporary table in your BigQuery
-  dataset. See the BigQuery PySpark connector
+  dataset. See the BigQuery PySpark connector{" "}
   <a href="https://github.com/GoogleCloudDataproc/spark-bigquery-connector#reading-data-from-a-bigquery-query">
     documentation
-  </a> for more details.
+  </a>{" "}
+  for more details.
 </Note>
 
 ---
 
 ## Using Pandas and PySpark DataFrames with BigQuery
 
-If you work with both Pandas and PySpark DataFrames and want a single I/O manager to handle storing and loading these DataFrames in BigQuery, you can construct a BigQuery I/O manager using <PyObject module="dagster_gcp" object="build_bigquery_io_manager" />:
+If you work with both Pandas and PySpark DataFrames and want a single I/O manager to handle storing and loading these DataFrames in BigQuery, you can write a new I/O manager that handles both types. To do this, inherit from the <PyObject module="dagster_gcp" object="BigQueryIOManager" /> base class and implement the `type_handlers` and `default_load_type` methods. The resulting I/O manager will inherit the configuration fields of the base `BigQueryIOManager`.
 
 ```python file=/integrations/bigquery/pandas_and_pyspark.py startafter=start_example endbefore=end_example
-from dagster_gcp import build_bigquery_io_manager
+from typing import Optional, Sequence, Type
+
+import pandas as pd
+from dagster_gcp import BigQueryIOManager
 from dagster_gcp_pandas import BigQueryPandasTypeHandler
 from dagster_gcp_pyspark import BigQueryPySparkTypeHandler
 
-from dagster import Definitions
+from dagster import DbTypeHandler, Definitions
 
-bigquery_io_manager = build_bigquery_io_manager(
-    [BigQueryPandasTypeHandler(), BigQueryPySparkTypeHandler()]
-)
+
+class MyBigQueryIOManager(BigQueryIOManager):
+    @staticmethod
+    def type_handlers() -> Sequence[DbTypeHandler]:
+        """type_handlers should return a list of the TypeHandlers that the I/O manager can use.
+
+        Here we return the BigQueryPandasTypeHandler and BigQueryPySparkTypeHandler so that the I/O
+        manager can store Pandas DataFrames and PySpark DataFrames.
+        """
+        return [BigQueryPandasTypeHandler(), BigQueryPySparkTypeHandler()]
+
+    @staticmethod
+    def default_load_type() -> Optional[Type]:
+        """If an asset is not annotated with an return type, default_load_type will be used to
+        determine which TypeHandler to use to store and load the output.
+
+        In this case, unannotated assets will be stored and loaded as Pandas DataFrames.
+        """
+        return pd.DataFrame
+
 
 defs = Definitions(
     assets=[iris_data, rose_data],
     resources={
-        "io_manager": bigquery_io_manager.configured(
-            {
-                "project": "my-gcp-project",
-                "data": "IRIS",
-            }
-        )
+        "io_manager": MyBigQueryIOManager(project="my-gcp-project", dataset="FLOWERS")
     },
 )
 ```
@@ -564,7 +577,7 @@ defs = Definitions(
 In addition to the BigQuery I/O manager, Dagster also provides a BigQuery [resource](/concepts/resources) for executing custom SQL queries.
 
 ```python file=/integrations/bigquery/resource.py
-from dagster_gcp import bigquery_resource
+from dagster_gcp import BigQueryResource
 
 from dagster import Definitions, asset
 
@@ -572,24 +585,23 @@ from dagster import Definitions, asset
 # Using Dagster with BigQuery tutorial
 
 
-@asset(required_resource_keys={"bigquery"})
-def small_petals(context):
-    return context.resources.bigquery.query(
-        (
-            'SELECT * FROM IRIS.IRIS_DATA WHERE "Petal length (cm)" < 1 AND "Petal'
-            ' width (cm)" < 1'
-        ),
-    ).result()
+@asset
+def small_petals(bigquery: BigQueryResource):
+    with bigquery.get_client() as client:
+        return client.query(
+            (
+                'SELECT * FROM IRIS.IRIS_DATA WHERE "petal_length_cm" < 1 AND'
+                ' "petal_width_cm" < 1'
+            ),
+        ).result()
 
 
 defs = Definitions(
     assets=[small_petals],
     resources={
-        "bigquery": bigquery_resource.configured(
-            {
-                "project": "my-gcp-project",
-                "location": "us-east5",
-            }
+        "bigquery": BigQueryResource(
+            project="my-gcp-project",
+            location="us-east5",
         )
     },
 )

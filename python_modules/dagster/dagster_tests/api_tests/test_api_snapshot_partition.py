@@ -139,7 +139,7 @@ def test_dynamic_partition_set_grpc(instance: DagsterInstance):
         assert isinstance(data, ExternalPartitionSetExecutionParamData)
         assert data.partition_data == []
 
-        with pytest.raises(DagsterUserCodeProcessError, match="No partition for partition key"):
+        with pytest.raises(DagsterUserCodeProcessError, match="Could not find a partition"):
             sync_get_external_partition_config_grpc(
                 code_location.client,
                 repository_handle,
@@ -148,7 +148,7 @@ def test_dynamic_partition_set_grpc(instance: DagsterInstance):
                 instance,
             )
 
-        with pytest.raises(DagsterUserCodeProcessError, match="No partition for partition key"):
+        with pytest.raises(DagsterUserCodeProcessError, match="Could not find a partition"):
             sync_get_external_partition_tags_grpc(
                 code_location.client,
                 repository_handle,

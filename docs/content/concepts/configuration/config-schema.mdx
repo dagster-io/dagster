@@ -11,7 +11,9 @@ description: Job run configuration allows providing parameters to jobs at the ti
   <a href="/concepts/configuration/config-schema-legacy">
     legacy configuration guide
   </a>
-  .
+  . To migrate your code, refer to the <a href="/guides/dagster/migrating-to-pythonic-resources-and-config">
+    migrating to Pythonic resources and config
+  </a> guide.
 </Note>
 
 Run configuration allows providing parameters to jobs at the time they're executed.
@@ -89,7 +91,7 @@ class MyDatabaseResource(ConfigurableResource):
         return get_engine(self.connection_url).execute(query)
 ```
 
-For more information on using resources, see [the Pythonic resources guide](/guides/dagster/pythonic-resources).
+For more information on using resources, refer to the [Resources guide](/concepts/resources).
 
 ---
 

@@ -59,7 +59,7 @@ RETRY_STRATEGY_TAG = f"{SYSTEM_TAG_PREFIX}retry_strategy"
 
 MAX_RUNTIME_SECONDS_TAG = f"{SYSTEM_TAG_PREFIX}max_runtime"
 
-CREATED_BY_TAG = f"{SYSTEM_TAG_PREFIX}created_by"
+AUTO_MATERIALIZE_TAG = f"{SYSTEM_TAG_PREFIX}auto_materialize"
 
 USER_EDITABLE_SYSTEM_TAGS = [
     PRIORITY_TAG,
@@ -67,6 +67,10 @@ USER_EDITABLE_SYSTEM_TAGS = [
     RETRY_STRATEGY_TAG,
     MAX_RUNTIME_SECONDS_TAG,
 ]
+
+# In cloud, we tag runs with the email of the user who triggered the run
+# This is used to display the user in the UI
+USER_TAG = "user"
 
 
 class TagType(Enum):

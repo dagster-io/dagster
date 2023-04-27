@@ -67,25 +67,28 @@ class RepositoryPythonOrigin(
     def get_id(self) -> str:
         return create_snapshot_id(self)
 
-    def get_pipeline_origin(self, pipeline_name: str) -> "PipelinePythonOrigin":
-        check.str_param(pipeline_name, "pipeline_name")
-        return PipelinePythonOrigin(pipeline_name, self)
+    def get_job_origin(self, job_name: str) -> "JobPythonOrigin":
+        check.str_param(job_name, "pipeline_name")
+        return JobPythonOrigin(job_name, self)
 
 
-@whitelist_for_serdes
-class PipelinePythonOrigin(
+@whitelist_for_serdes(
+    storage_name="PipelinePythonOrigin",
+    storage_field_names={"job_name": "pipeline_name"},
+)
+class JobPythonOrigin(
     NamedTuple(
-        "_PipelinePythonOrigin",
+        "_JobPythonOrigin",
         [
-            ("pipeline_name", str),
+            ("job_name", str),
             ("repository_origin", RepositoryPythonOrigin),
         ],
     )
 ):
-    def __new__(cls, pipeline_name: str, repository_origin: RepositoryPythonOrigin):
-        return super(PipelinePythonOrigin, cls).__new__(
+    def __new__(cls, job_name: str, repository_origin: RepositoryPythonOrigin):
+        return super(JobPythonOrigin, cls).__new__(
             cls,
-            check.str_param(pipeline_name, "pipeline_name"),
+            check.str_param(job_name, "job_name"),
             check.inst_param(repository_origin, "repository_origin", RepositoryPythonOrigin),
         )
 

@@ -34,6 +34,7 @@ export * from './components/Slider';
 export * from './components/Spinner';
 export * from './components/SplitPanelContainer';
 export * from './components/StyledButton';
+export * from './components/SubwayDot';
 export * from './components/Suggest';
 export * from './components/Table';
 export * from './components/Tabs';

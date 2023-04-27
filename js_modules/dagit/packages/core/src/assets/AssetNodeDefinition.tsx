@@ -22,6 +22,10 @@ import {
   metadataForAssetNode,
 } from './AssetMetadata';
 import {AssetNodeList} from './AssetNodeList';
+import {
+  automaterializePolicyDescription,
+  AutomaterializePolicyTag,
+} from './AutomaterializePolicyTag';
 import {CurrentMinutesLateTag, freshnessPolicyDescription} from './CurrentMinutesLateTag';
 import {DependsOnSelfBanner} from './DependsOnSelfBanner';
 import {UnderlyingOpsOrGraph} from './UnderlyingOpsOrGraph';
@@ -87,17 +91,44 @@ export const AssetNodeDefinition: React.FC<{
               </Box>
             </>
           )}
-          {liveDataForNode?.freshnessPolicy && (
+          {assetNode.freshnessPolicy && (
             <>
               <Box
                 padding={{vertical: 16, horizontal: 24}}
                 border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
               >
-                <Subheading>Freshness Policy</Subheading>
+                <Subheading>Freshness policy</Subheading>
               </Box>
-              <Box padding={{vertical: 16, horizontal: 24}} flex={{gap: 12, alignItems: 'center'}}>
-                <CurrentMinutesLateTag liveData={liveDataForNode} />
-                <Body>{freshnessPolicyDescription(liveDataForNode.freshnessPolicy)}</Body>
+              <Box
+                padding={{vertical: 16, horizontal: 24}}
+                flex={{gap: 12, alignItems: 'flex-start'}}
+              >
+                <Body style={{flex: 1}}>
+                  {freshnessPolicyDescription(assetNode.freshnessPolicy)}
+                </Body>
+                <CurrentMinutesLateTag
+                  liveData={liveDataForNode}
+                  policy={assetNode.freshnessPolicy}
+                />
+              </Box>
+            </>
+          )}
+          {assetNode.autoMaterializePolicy && (
+            <>
+              <Box
+                padding={{vertical: 16, horizontal: 24}}
+                border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+              >
+                <Subheading>Auto-materialize policy</Subheading>
+              </Box>
+              <Box
+                padding={{vertical: 16, horizontal: 24}}
+                flex={{gap: 12, alignItems: 'flex-start'}}
+              >
+                <Body style={{flex: 1}}>
+                  {automaterializePolicyDescription(assetNode.autoMaterializePolicy)}
+                </Body>
+                <AutomaterializePolicyTag policy={assetNode.autoMaterializePolicy} />
               </Box>
             </>
           )}
@@ -107,7 +138,7 @@ export const AssetNodeDefinition: React.FC<{
             flex={{justifyContent: 'space-between', gap: 8}}
           >
             <Subheading>
-              Upstream Assets{upstream?.length ? ` (${upstream.length})` : ''}
+              Upstream assets{upstream?.length ? ` (${upstream.length})` : ''}
             </Subheading>
             <Link to="?view=lineage&lineageScope=upstream">
               <Box flex={{gap: 4, alignItems: 'center'}}>
@@ -124,7 +155,7 @@ export const AssetNodeDefinition: React.FC<{
             flex={{justifyContent: 'space-between', gap: 8}}
           >
             <Subheading>
-              Downstream Assets{downstream?.length ? ` (${downstream.length})` : ''}
+              Downstream assets{downstream?.length ? ` (${downstream.length})` : ''}
             </Subheading>
             <Link to="?view=lineage&lineageScope=downstream">
               <Box flex={{gap: 4, alignItems: 'center'}}>
@@ -263,6 +294,15 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
     opNames
     opVersion
     jobNames
+    autoMaterializePolicy {
+      policyType
+    }
+    freshnessPolicy {
+      maximumLagMinutes
+      cronSchedule
+      cronScheduleTimezone
+    }
+
     partitionDefinition {
       description
     }

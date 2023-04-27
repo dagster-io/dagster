@@ -155,7 +155,7 @@ class GithubClient:
         )
 
 
-class GithubClientResource(ConfigurableResource):
+class GithubResource(ConfigurableResource):
     github_app_id: int = Field(
         description="Github Application ID, for more info see https://developer.github.com/apps/",
     )
@@ -191,8 +191,8 @@ class GithubClientResource(ConfigurableResource):
 
 
 @resource(
-    config_schema=GithubClientResource.to_config_schema(),
+    config_schema=GithubResource.to_config_schema(),
     description="This resource is for connecting to Github",
 )
 def github_resource(context) -> GithubClient:
-    return GithubClientResource(**context.resource_config).get_client()
+    return GithubResource(**context.resource_config).get_client()

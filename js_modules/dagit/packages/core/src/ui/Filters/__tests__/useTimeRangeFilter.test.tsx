@@ -63,7 +63,12 @@ describe('useTimeRangeFilter', () => {
     let filter = result.current;
 
     act(() => {
-      filter.onSelect({value: 'YESTERDAY', close: () => {}, createPortal: () => () => {}});
+      filter.onSelect({
+        value: 'YESTERDAY',
+        close: () => {},
+        createPortal: () => () => {},
+        clearSearch: () => {},
+      });
     });
     filter = result.current;
 

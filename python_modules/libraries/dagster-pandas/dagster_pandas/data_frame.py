@@ -16,6 +16,7 @@ from dagster._annotations import experimental
 from dagster._config import Selector
 from dagster._core.definitions.metadata import normalize_metadata
 from dagster._utils import dict_without_keys
+from dagster._utils.backcompat import canonicalize_backcompat_args
 
 from dagster_pandas.constraints import (
     CONSTRAINT_METADATA_KEY,
@@ -146,9 +147,10 @@ def create_dagster_pandas_dataframe_type(
     name,
     description=None,
     columns=None,
-    event_metadata_fn=None,
+    metadata_fn=None,
     dataframe_constraints=None,
     loader=None,
+    event_metadata_fn=None,
 ):
     """Constructs a custom pandas dataframe dagster type.
 
@@ -157,10 +159,9 @@ def create_dagster_pandas_dataframe_type(
         description (Optional[str]): A markdown-formatted string, displayed in tooling.
         columns (Optional[List[PandasColumn]]): A list of :py:class:`~dagster.PandasColumn` objects
             which express dataframe column schemas and constraints.
-        event_metadata_fn (Optional[Callable[[], Union[Dict[str, Union[str, float, int, Dict, MetadataValue]])
+        metadata_fn (Optional[Callable[[], Union[Dict[str, Union[str, float, int, Dict, MetadataValue]])
             A callable which takes your dataframe and returns a dict with string label keys and
-            MetadataValue values. Can optionally return a `List[MetadataEntry]`, but this format is
-            deprecated.
+            MetadataValue values.
         dataframe_constraints (Optional[List[DataFrameConstraint]]): A list of objects that inherit from
             :py:class:`~dagster.DataFrameConstraint`. This allows you to express dataframe-level constraints.
         loader (Optional[DagsterTypeLoader]): An instance of a class that
@@ -171,7 +172,10 @@ def create_dagster_pandas_dataframe_type(
     # dataframes via configuration their own way if the default configs don't suffice. This is
     # purely optional.
     check.str_param(name, "name")
-    event_metadata_fn = check.opt_callable_param(event_metadata_fn, "event_metadata_fn")
+    metadata_fn = canonicalize_backcompat_args(
+        metadata_fn, "metadata_fn", event_metadata_fn, "event_metadata_fn", "1.4.0"
+    )
+    metadata_fn = check.opt_callable_param(metadata_fn, "metadata_fn")
     description = create_dagster_pandas_dataframe_description(
         check.opt_str_param(description, "description", default=""),
         check.opt_list_param(columns, "columns", of_type=PandasColumn),
@@ -197,9 +201,7 @@ def create_dagster_pandas_dataframe_type(
 
         return TypeCheck(
             success=True,
-            metadata=_execute_summary_stats(name, value, event_metadata_fn)
-            if event_metadata_fn
-            else None,
+            metadata=_execute_summary_stats(name, value, metadata_fn) if metadata_fn else None,
         )
 
     return DagsterType(
@@ -290,17 +292,13 @@ def create_structured_dataframe_type(
     )
 
 
-def _execute_summary_stats(type_name, value, event_metadata_fn):
-    if not event_metadata_fn:
+def _execute_summary_stats(type_name, value, metadata_fn):
+    if not metadata_fn:
         return []
 
-    user_metadata = event_metadata_fn(value)
-
+    user_metadata = metadata_fn(value)
     try:
-        metadata_dict, metadata_entries = (
-            ({}, user_metadata) if isinstance(user_metadata, list) else (user_metadata, [])
-        )
-        return normalize_metadata(metadata_dict, metadata_entries)
+        return normalize_metadata(user_metadata)
     except:
         raise DagsterInvariantViolationError(
             "The return value of the user-defined summary_statistics function for pandas "

@@ -45,15 +45,16 @@ import {AssetLineageScope} from './AssetNodeLineageGraph';
 import {AssetPageHeader} from './AssetPageHeader';
 import {AssetPartitions} from './AssetPartitions';
 import {AssetPlots} from './AssetPlots';
+import {AutomaterializeDaemonStatusTag} from './AutomaterializeDaemonStatusTag';
 import {CurrentMinutesLateTag} from './CurrentMinutesLateTag';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {LaunchAssetObservationButton} from './LaunchAssetObservationButton';
 import {UNDERLYING_OPS_ASSET_NODE_FRAGMENT} from './UnderlyingOpsOrGraph';
 import {AssetKey} from './types';
 import {
-  AssetViewDefinitionNodeFragment,
   AssetViewDefinitionQuery,
   AssetViewDefinitionQueryVariables,
+  AssetViewDefinitionNodeFragment,
 } from './types/AssetView.types';
 import {healthRefreshHintFromLiveData} from './usePartitionHealthData';
 
@@ -94,7 +95,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
 
   // Observe the live state of the visible assets. Note: We use the "last materialization"
   // provided by this hook to trigger resets of the datasets inside the Activity / Plots tabs
-  const {liveDataRefreshState, liveDataByNode, runWatchers} = useLiveDataForAssetKeys(
+  const {liveDataRefreshState, liveDataByNode} = useLiveDataForAssetKeys(
     visibleAssetGraph.graphAssetKeys,
   );
 
@@ -205,7 +206,6 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
 
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', width: '100%', overflowY: 'auto'}}>
-      {runWatchers}
       <AssetPageHeader
         assetKey={assetKey}
         tags={
@@ -487,7 +487,14 @@ const AssetViewPageHeaderTags: React.FC<{
           </Link>
         </Tag>
       )}
-      {liveData?.freshnessPolicy && <CurrentMinutesLateTag liveData={liveData} policyOnHover />}
+      {definition && definition.autoMaterializePolicy && <AutomaterializeDaemonStatusTag />}
+      {definition && definition.freshnessPolicy && (
+        <CurrentMinutesLateTag
+          liveData={liveData}
+          policy={definition.freshnessPolicy}
+          policyOnHover
+        />
+      )}
       {definition && (
         <StaleReasonsTags
           liveData={liveData}

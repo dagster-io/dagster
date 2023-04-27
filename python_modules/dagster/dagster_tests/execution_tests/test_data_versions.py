@@ -33,10 +33,15 @@ from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.events import AssetKey, Output
 from dagster._core.definitions.observe import observe
 from dagster._core.definitions.partition import StaticPartitionsDefinition
+from dagster._core.events import DagsterEventType
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 from dagster._core.instance_for_test import instance_for_test
 from typing_extensions import Literal
+
+from dagster_tests.core_tests.instance_tests.test_instance_data_versions import (
+    create_test_event_log_entry,
+)
 
 # ########################
 # ##### HELPERS
@@ -471,10 +476,10 @@ def test_stale_status_general() -> None:
             StaleCause(
                 asset1.key,
                 StaleCauseCategory.DATA,
-                "updated dependency data version",
+                "has a new dependency data version",
                 source1.key,
                 [
-                    StaleCause(source1.key, StaleCauseCategory.DATA, "updated data version"),
+                    StaleCause(source1.key, StaleCauseCategory.DATA, "has a new data version"),
                 ],
             ),
         ]
@@ -489,11 +494,11 @@ def test_stale_status_general() -> None:
                     StaleCause(
                         asset1.key,
                         StaleCauseCategory.DATA,
-                        "updated dependency data version",
+                        "has a new dependency data version",
                         source1.key,
                         [
                             StaleCause(
-                                source1.key, StaleCauseCategory.DATA, "updated data version"
+                                source1.key, StaleCauseCategory.DATA, "has a new data version"
                             ),
                         ],
                     ),
@@ -512,7 +517,7 @@ def test_stale_status_general() -> None:
         status_resolver = get_stale_status_resolver(instance, all_assets_v2)
         assert status_resolver.get_status(asset1.key) == StaleStatus.STALE
         assert status_resolver.get_stale_causes(asset1.key) == [
-            StaleCause(asset1.key, StaleCauseCategory.CODE, "updated code version"),
+            StaleCause(asset1.key, StaleCauseCategory.CODE, "has a new code version"),
         ]
         assert status_resolver.get_status(asset2.key) == StaleStatus.STALE
         assert status_resolver.get_stale_causes(asset2.key) == [
@@ -522,7 +527,7 @@ def test_stale_status_general() -> None:
                 "stale dependency",
                 asset1.key,
                 [
-                    StaleCause(asset1.key, StaleCauseCategory.CODE, "updated code version"),
+                    StaleCause(asset1.key, StaleCauseCategory.CODE, "has a new code version"),
                 ],
             ),
         ]
@@ -541,12 +546,15 @@ def test_stale_status_general() -> None:
         assert status_resolver.get_status(asset2.key) == StaleStatus.STALE
         assert status_resolver.get_stale_causes(asset2.key) == [
             StaleCause(
-                asset2.key, StaleCauseCategory.DEPENDENCIES, "removed dependency", asset1.key
+                asset2.key,
+                StaleCauseCategory.DEPENDENCIES,
+                "removed dependency on asset1",
+                asset1.key,
             ),
             StaleCause(
                 asset2.key,
                 StaleCauseCategory.DEPENDENCIES,
-                "new dependency",
+                "has a new dependency on asset3",
                 asset3.key,
             ),
         ]
@@ -580,10 +588,10 @@ def test_stale_status_no_code_versions() -> None:
             StaleCause(
                 asset2.key,
                 StaleCauseCategory.DATA,
-                "updated dependency data version",
+                "has a new dependency materialization",
                 asset1.key,
                 [
-                    StaleCause(asset1.key, StaleCauseCategory.DATA, "updated data version"),
+                    StaleCause(asset1.key, StaleCauseCategory.DATA, "has a new materialization"),
                 ],
             ),
         ]
@@ -701,10 +709,10 @@ def test_stale_status_manually_versioned() -> None:
             StaleCause(
                 asset2.key,
                 StaleCauseCategory.DATA,
-                "updated dependency data version",
+                "has a new dependency data version",
                 asset1.key,
                 [
-                    StaleCause(asset1.key, StaleCauseCategory.DATA, "updated data version"),
+                    StaleCause(asset1.key, StaleCauseCategory.DATA, "has a new data version"),
                 ],
             ),
         ]
@@ -759,33 +767,33 @@ def test_stale_status_root_causes_general() -> None:
         status_resolver = get_stale_status_resolver(instance, all_assets)
         assert status_resolver.get_status(asset1.key) == StaleStatus.STALE
         assert status_resolver.get_stale_root_causes(asset1.key) == [
-            StaleCause(asset1.key, StaleCauseCategory.CODE, "updated code version")
+            StaleCause(asset1.key, StaleCauseCategory.CODE, "has a new code version")
         ]
         assert status_resolver.get_status(asset2.key) == StaleStatus.STALE
         assert status_resolver.get_stale_root_causes(asset2.key) == [
-            StaleCause(asset1.key, StaleCauseCategory.CODE, "updated code version")
+            StaleCause(asset1.key, StaleCauseCategory.CODE, "has a new code version")
         ]
         assert status_resolver.get_status(asset3.key) == StaleStatus.STALE
         assert status_resolver.get_stale_root_causes(asset3.key) == [
-            StaleCause(asset1.key, StaleCauseCategory.CODE, "updated code version")
+            StaleCause(asset1.key, StaleCauseCategory.CODE, "has a new code version")
         ]
 
         observe([source1], instance=instance)
         status_resolver = get_stale_status_resolver(instance, all_assets)
         assert status_resolver.get_status(asset1.key) == StaleStatus.STALE
         assert status_resolver.get_stale_root_causes(asset1.key) == [
-            StaleCause(asset1.key, StaleCauseCategory.CODE, "updated code version"),
-            StaleCause(source1.key, StaleCauseCategory.DATA, "updated data version"),
+            StaleCause(asset1.key, StaleCauseCategory.CODE, "has a new code version"),
+            StaleCause(source1.key, StaleCauseCategory.DATA, "has a new data version"),
         ]
         assert status_resolver.get_status(asset2.key) == StaleStatus.STALE
         assert status_resolver.get_stale_root_causes(asset2.key) == [
-            StaleCause(asset1.key, StaleCauseCategory.CODE, "updated code version"),
-            StaleCause(source1.key, StaleCauseCategory.DATA, "updated data version"),
+            StaleCause(asset1.key, StaleCauseCategory.CODE, "has a new code version"),
+            StaleCause(source1.key, StaleCauseCategory.DATA, "has a new data version"),
         ]
         assert status_resolver.get_status(asset3.key) == StaleStatus.STALE
         assert status_resolver.get_stale_root_causes(asset3.key) == [
-            StaleCause(asset1.key, StaleCauseCategory.CODE, "updated code version"),
-            StaleCause(source1.key, StaleCauseCategory.DATA, "updated data version"),
+            StaleCause(asset1.key, StaleCauseCategory.CODE, "has a new code version"),
+            StaleCause(source1.key, StaleCauseCategory.DATA, "has a new data version"),
         ]
 
         # Simulate updating an asset with a new code version
@@ -796,9 +804,9 @@ def test_stale_status_root_causes_general() -> None:
         all_assets = [source1, asset1_v2, asset2, asset3_v2]
         status_resolver = get_stale_status_resolver(instance, all_assets)
         assert status_resolver.get_stale_root_causes(asset3.key) == [
-            StaleCause(asset3.key, StaleCauseCategory.CODE, "updated code version"),
-            StaleCause(asset1.key, StaleCauseCategory.CODE, "updated code version"),
-            StaleCause(source1.key, StaleCauseCategory.DATA, "updated data version"),
+            StaleCause(asset3.key, StaleCauseCategory.CODE, "has a new code version"),
+            StaleCause(asset1.key, StaleCauseCategory.CODE, "has a new code version"),
+            StaleCause(source1.key, StaleCauseCategory.DATA, "has a new data version"),
         ]
 
 
@@ -831,7 +839,7 @@ def test_stale_status_root_causes_dedup() -> None:
         materialize_assets([asset1], instance=instance)
         status_resolver = get_stale_status_resolver(instance, all_assets)
         assert status_resolver.get_stale_root_causes(asset4.key) == [
-            StaleCause(asset1.key, StaleCauseCategory.DATA, "updated data version"),
+            StaleCause(asset1.key, StaleCauseCategory.DATA, "has a new data version"),
         ]
 
         # Test dedup from updated code version
@@ -842,8 +850,24 @@ def test_stale_status_root_causes_dedup() -> None:
         all_assets = [asset1_v2, asset2, asset3, asset4]
         status_resolver = get_stale_status_resolver(instance, all_assets)
         assert status_resolver.get_stale_root_causes(asset4.key) == [
-            StaleCause(asset1.key, StaleCauseCategory.CODE, "updated code version"),
+            StaleCause(asset1.key, StaleCauseCategory.CODE, "has a new code version"),
         ]
+
+
+def test_no_provenance_stale_status():
+    @asset
+    def foo(bar):
+        return 1
+
+    bar = SourceAsset(AssetKey(["bar"]))
+
+    with instance_for_test() as instance:
+        materialization = AssetMaterialization(asset_key=AssetKey(["foo"]))
+        entry = create_test_event_log_entry(DagsterEventType.ASSET_MATERIALIZATION, materialization)
+        instance.store_event(entry)
+        status_resolver = get_stale_status_resolver(instance, [foo, bar])
+        assert status_resolver.get_status(foo.key) == StaleStatus.FRESH
+        assert status_resolver.get_stale_root_causes(foo.key) == []
 
 
 def test_get_data_provenance_inside_op():
@@ -905,5 +929,15 @@ def test_legacy_data_version_tags():
         assert record
         assert extract_data_version_from_entry(record.event_log_entry) == DataVersion("beta")
         assert extract_data_provenance_from_entry(record.event_log_entry) == DataProvenance(
-            code_version="1", input_data_versions={AssetKey(["foo"]): DataVersion("alpha")}
+            code_version="1",
+            input_data_versions={AssetKey(["foo"]): DataVersion("alpha")},
+            is_user_provided=True,
         )
+
+
+def test_stale_cause_comparison():
+    cause_1 = StaleCause(key=AssetKey(["foo"]), category=StaleCauseCategory.CODE, reason="ok")
+
+    cause_2 = StaleCause(key=AssetKey(["foo"]), category=StaleCauseCategory.DATA, reason="ok")
+
+    assert cause_1 < cause_2

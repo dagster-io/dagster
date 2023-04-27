@@ -194,6 +194,7 @@ export type AssetNode = {
   assetMaterializations: Array<MaterializationEvent>;
   assetObservations: Array<ObservationEvent>;
   assetPartitionStatuses: AssetPartitionStatuses;
+  autoMaterializePolicy: Maybe<AutoMaterializePolicy>;
   computeKind: Maybe<Scalars['String']>;
   configField: Maybe<ConfigTypeField>;
   currentDataVersion: Maybe<Scalars['String']>;
@@ -298,6 +299,16 @@ export type AssetWipeSuccess = {
 };
 
 export type AssetsOrError = AssetConnection | PythonError;
+
+export type AutoMaterializePolicy = {
+  __typename: 'AutoMaterializePolicy';
+  policyType: AutoMaterializePolicyType;
+};
+
+export enum AutoMaterializePolicyType {
+  EAGER = 'EAGER',
+  LAZY = 'LAZY',
+}
 
 export type BoolMetadataEntry = MetadataEntry & {
   __typename: 'BoolMetadataEntry';
@@ -1041,6 +1052,18 @@ export type DuplicateDynamicPartitionError = Error & {
   partitionName: Scalars['String'];
   partitionsDefName: Scalars['String'];
 };
+
+export type DynamicPartitionRequest = {
+  __typename: 'DynamicPartitionRequest';
+  partitionKeys: Maybe<Array<Scalars['String']>>;
+  partitionsDefName: Scalars['String'];
+  type: DynamicPartitionsRequestType;
+};
+
+export enum DynamicPartitionsRequestType {
+  ADD_PARTITIONS = 'ADD_PARTITIONS',
+  DELETE_PARTITIONS = 'DELETE_PARTITIONS',
+}
 
 export type EngineEvent = DisplayableEvent &
   ErrorEvent &
@@ -2283,6 +2306,7 @@ export type PartitionBackfill = {
   status: BulkActionStatus;
   timestamp: Scalars['Float'];
   unfinishedRuns: Array<Run>;
+  user: Maybe<Scalars['String']>;
 };
 
 export type PartitionBackfillRunsArgs = {
@@ -2307,7 +2331,6 @@ export type PartitionDefinition = {
   description: Scalars['String'];
   dimensionTypes: Array<DimensionDefinitionType>;
   name: Maybe<Scalars['String']>;
-  timeWindowMetadata: Maybe<TimePartitionsDefinitionMetadata>;
   type: PartitionDefinitionType;
 };
 
@@ -3823,6 +3846,7 @@ export type TextMetadataEntry = MetadataEntry & {
 export type TickEvaluation = {
   __typename: 'TickEvaluation';
   cursor: Maybe<Scalars['String']>;
+  dynamicPartitionsRequests: Maybe<Array<DynamicPartitionRequest>>;
   error: Maybe<PythonError>;
   runRequests: Maybe<Array<RunRequest>>;
   skipReason: Maybe<Scalars['String']>;
@@ -3840,14 +3864,6 @@ export type TimePartitionRange = {
 export type TimePartitions = {
   __typename: 'TimePartitions';
   ranges: Array<TimePartitionRange>;
-};
-
-export type TimePartitionsDefinitionMetadata = {
-  __typename: 'TimePartitionsDefinitionMetadata';
-  endKey: Scalars['String'];
-  endTime: Scalars['Float'];
-  startKey: Scalars['String'];
-  startTime: Scalars['Float'];
 };
 
 export type TypeCheck = DisplayableEvent & {
@@ -4387,6 +4403,12 @@ export const buildAssetNode = (
         : relationshipsToOmit.has('DefaultPartitions')
         ? ({} as DefaultPartitions)
         : buildDefaultPartitions({}, relationshipsToOmit),
+    autoMaterializePolicy:
+      overrides && overrides.hasOwnProperty('autoMaterializePolicy')
+        ? overrides.autoMaterializePolicy!
+        : relationshipsToOmit.has('AutoMaterializePolicy')
+        ? ({} as AutoMaterializePolicy)
+        : buildAutoMaterializePolicy({}, relationshipsToOmit),
     computeKind:
       overrides && overrides.hasOwnProperty('computeKind') ? overrides.computeKind! : 'quasi',
     configField:
@@ -4645,6 +4667,21 @@ export const buildAssetWipeSuccess = (
               ? ({} as AssetKey)
               : buildAssetKey({}, relationshipsToOmit),
           ],
+  };
+};
+
+export const buildAutoMaterializePolicy = (
+  overrides?: Partial<AutoMaterializePolicy>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AutoMaterializePolicy'} & AutoMaterializePolicy => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AutoMaterializePolicy');
+  return {
+    __typename: 'AutoMaterializePolicy',
+    policyType:
+      overrides && overrides.hasOwnProperty('policyType')
+        ? overrides.policyType!
+        : AutoMaterializePolicyType.EAGER,
   };
 };
 
@@ -5777,6 +5814,27 @@ export const buildDuplicateDynamicPartitionError = (
       overrides && overrides.hasOwnProperty('partitionsDefName')
         ? overrides.partitionsDefName!
         : 'natus',
+  };
+};
+
+export const buildDynamicPartitionRequest = (
+  overrides?: Partial<DynamicPartitionRequest>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'DynamicPartitionRequest'} & DynamicPartitionRequest => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('DynamicPartitionRequest');
+  return {
+    __typename: 'DynamicPartitionRequest',
+    partitionKeys:
+      overrides && overrides.hasOwnProperty('partitionKeys') ? overrides.partitionKeys! : ['ut'],
+    partitionsDefName:
+      overrides && overrides.hasOwnProperty('partitionsDefName')
+        ? overrides.partitionsDefName!
+        : 'ut',
+    type:
+      overrides && overrides.hasOwnProperty('type')
+        ? overrides.type!
+        : DynamicPartitionsRequestType.ADD_PARTITIONS,
   };
 };
 
@@ -8849,6 +8907,7 @@ export const buildPartitionBackfill = (
       overrides && overrides.hasOwnProperty('unfinishedRuns')
         ? overrides.unfinishedRuns!
         : [relationshipsToOmit.has('Run') ? ({} as Run) : buildRun({}, relationshipsToOmit)],
+    user: overrides && overrides.hasOwnProperty('user') ? overrides.user! : 'eius',
   };
 };
 
@@ -8890,12 +8949,6 @@ export const buildPartitionDefinition = (
               : buildDimensionDefinitionType({}, relationshipsToOmit),
           ],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'facilis',
-    timeWindowMetadata:
-      overrides && overrides.hasOwnProperty('timeWindowMetadata')
-        ? overrides.timeWindowMetadata!
-        : relationshipsToOmit.has('TimePartitionsDefinitionMetadata')
-        ? ({} as TimePartitionsDefinitionMetadata)
-        : buildTimePartitionsDefinitionMetadata({}, relationshipsToOmit),
     type:
       overrides && overrides.hasOwnProperty('type')
         ? overrides.type!
@@ -12585,6 +12638,14 @@ export const buildTickEvaluation = (
   return {
     __typename: 'TickEvaluation',
     cursor: overrides && overrides.hasOwnProperty('cursor') ? overrides.cursor! : 'est',
+    dynamicPartitionsRequests:
+      overrides && overrides.hasOwnProperty('dynamicPartitionsRequests')
+        ? overrides.dynamicPartitionsRequests!
+        : [
+            relationshipsToOmit.has('DynamicPartitionRequest')
+              ? ({} as DynamicPartitionRequest)
+              : buildDynamicPartitionRequest({}, relationshipsToOmit),
+          ],
     error:
       overrides && overrides.hasOwnProperty('error')
         ? overrides.error!
@@ -12639,21 +12700,6 @@ export const buildTimePartitions = (
               ? ({} as TimePartitionRange)
               : buildTimePartitionRange({}, relationshipsToOmit),
           ],
-  };
-};
-
-export const buildTimePartitionsDefinitionMetadata = (
-  overrides?: Partial<TimePartitionsDefinitionMetadata>,
-  _relationshipsToOmit: Set<string> = new Set(),
-): {__typename: 'TimePartitionsDefinitionMetadata'} & TimePartitionsDefinitionMetadata => {
-  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
-  relationshipsToOmit.add('TimePartitionsDefinitionMetadata');
-  return {
-    __typename: 'TimePartitionsDefinitionMetadata',
-    endKey: overrides && overrides.hasOwnProperty('endKey') ? overrides.endKey! : 'nobis',
-    endTime: overrides && overrides.hasOwnProperty('endTime') ? overrides.endTime! : 4.51,
-    startKey: overrides && overrides.hasOwnProperty('startKey') ? overrides.startKey! : 'atque',
-    startTime: overrides && overrides.hasOwnProperty('startTime') ? overrides.startTime! : 3.29,
   };
 };
 

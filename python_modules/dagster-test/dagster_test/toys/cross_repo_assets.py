@@ -8,17 +8,22 @@ def upstream_asset():
 
 upstream_repo_assets = [upstream_asset]
 
-source_assets = [SourceAsset(AssetKey("upstream_asset"))]
+source_assets = [
+    SourceAsset(AssetKey("upstream_asset")),
+    SourceAsset(AssetKey("always_source_asset")),
+]
 
 
 @asset
-def downstream_asset1(upstream_asset):
+def downstream_asset1(upstream_asset, always_source_asset):
     assert upstream_asset
+    assert always_source_asset
 
 
 @asset
-def downstream_asset2(upstream_asset):
+def downstream_asset2(upstream_asset, always_source_asset):
     assert upstream_asset
+    assert always_source_asset
 
 
 downstream_repo1_assets = [downstream_asset1, source_assets]

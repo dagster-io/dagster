@@ -5,16 +5,16 @@ import * as React from 'react';
 
 import {ScheduleStateChangeDialog} from '../ScheduleStateChangeDialog';
 import {
-  buildTurnOffDelawareSuccess,
-  buildTurnOffHawaiiError,
-  buildTurnOffHawaiiSuccess,
-  buildTurnOnAlaskaSuccess,
-  buildTurnOnColoradoError,
-  buildTurnOnColoradoSuccess,
-  scheduleAlaskaCurrentlyOff,
-  scheduleColoradoCurrentlyOff,
-  scheduleDelawareCurrentlyOn,
-  scheduleHawaiiCurrentlyOn,
+  buildStopDelawareSuccess,
+  buildStopHawaiiError,
+  buildStopHawaiiSuccess,
+  buildStartAlaskaSuccess,
+  buildStartColoradoError,
+  buildStartColoradoSuccess,
+  scheduleAlaskaCurrentlyStopped,
+  scheduleColoradoCurrentlyStopped,
+  scheduleDelawareCurrentlyRunning,
+  scheduleHawaiiCurrentlyRunning,
 } from '../__fixtures__/ScheduleState.fixtures';
 
 jest.mock('../..//runs/NavigationBlock', () => ({
@@ -23,12 +23,12 @@ jest.mock('../..//runs/NavigationBlock', () => ({
 
 describe('ScheduleStateChangeDialog', () => {
   describe('Initial rendering', () => {
-    it('shows content when turning on single schedule', () => {
+    it('shows content when starting single schedule', () => {
       render(
         <MockedProvider>
           <ScheduleStateChangeDialog
-            openWithIntent="turn-on"
-            schedules={[scheduleAlaskaCurrentlyOff]}
+            openWithIntent="start"
+            schedules={[scheduleAlaskaCurrentlyStopped]}
             onClose={jest.fn()}
             onComplete={jest.fn()}
           />
@@ -36,18 +36,18 @@ describe('ScheduleStateChangeDialog', () => {
       );
 
       expect(
-        screen.getByText(/1 schedule will be turned on\. do you wish to continue\?/i),
+        screen.getByText(/1 schedule will be started\. do you want to continue\?/i),
       ).toBeVisible();
 
-      expect(screen.getByRole('button', {name: /turn on 1 schedule/i})).toBeVisible();
+      expect(screen.getByRole('button', {name: /start 1 schedule/i})).toBeVisible();
     });
 
-    it('shows content when turning on multiple schedules', () => {
+    it('shows content when starting multiple schedules', () => {
       render(
         <MockedProvider>
           <ScheduleStateChangeDialog
-            openWithIntent="turn-on"
-            schedules={[scheduleAlaskaCurrentlyOff, scheduleColoradoCurrentlyOff]}
+            openWithIntent="start"
+            schedules={[scheduleAlaskaCurrentlyStopped, scheduleColoradoCurrentlyStopped]}
             onClose={jest.fn()}
             onComplete={jest.fn()}
           />
@@ -55,18 +55,18 @@ describe('ScheduleStateChangeDialog', () => {
       );
 
       expect(
-        screen.getByText(/2 schedules will be turned on\. do you wish to continue\?/i),
+        screen.getByText(/2 schedules will be started\. do you want to continue\?/i),
       ).toBeVisible();
 
-      expect(screen.getByRole('button', {name: /turn on 2 schedules/i})).toBeVisible();
+      expect(screen.getByRole('button', {name: /start 2 schedules/i})).toBeVisible();
     });
 
-    it('shows content when turning off single schedule', () => {
+    it('shows content when stopping single schedule', () => {
       render(
         <MockedProvider>
           <ScheduleStateChangeDialog
-            openWithIntent="turn-off"
-            schedules={[scheduleDelawareCurrentlyOn]}
+            openWithIntent="stop"
+            schedules={[scheduleDelawareCurrentlyRunning]}
             onClose={jest.fn()}
             onComplete={jest.fn()}
           />
@@ -74,18 +74,18 @@ describe('ScheduleStateChangeDialog', () => {
       );
 
       expect(
-        screen.getByText(/1 schedule will be turned off\. do you wish to continue\?/i),
+        screen.getByText(/1 schedule will be stopped\. do you want to continue\?/i),
       ).toBeVisible();
 
-      expect(screen.getByRole('button', {name: /turn off 1 schedule/i})).toBeVisible();
+      expect(screen.getByRole('button', {name: /stop 1 schedule/i})).toBeVisible();
     });
 
-    it('shows content when turning off multiple schedules', () => {
+    it('shows content when stopping multiple schedules', () => {
       render(
         <MockedProvider>
           <ScheduleStateChangeDialog
-            openWithIntent="turn-off"
-            schedules={[scheduleDelawareCurrentlyOn, scheduleHawaiiCurrentlyOn]}
+            openWithIntent="stop"
+            schedules={[scheduleDelawareCurrentlyRunning, scheduleHawaiiCurrentlyRunning]}
             onClose={jest.fn()}
             onComplete={jest.fn()}
           />
@@ -93,70 +93,70 @@ describe('ScheduleStateChangeDialog', () => {
       );
 
       expect(
-        screen.getByText(/2 schedules will be turned off\. do you wish to continue\?/i),
+        screen.getByText(/2 schedules will be stopped\. do you want to continue\?/i),
       ).toBeVisible();
 
-      expect(screen.getByRole('button', {name: /turn off 2 schedules/i})).toBeVisible();
+      expect(screen.getByRole('button', {name: /stop 2 schedules/i})).toBeVisible();
     });
   });
 
-  describe('Mutation: turn on', () => {
-    it('turns on schedules', async () => {
-      const mocks = [buildTurnOnAlaskaSuccess(100), buildTurnOnColoradoSuccess(100)];
+  describe('Mutation: start', () => {
+    it('starts schedules', async () => {
+      const mocks = [buildStartAlaskaSuccess(100), buildStartColoradoSuccess(100)];
 
       render(
         <MockedProvider mocks={mocks}>
           <ScheduleStateChangeDialog
-            openWithIntent="turn-on"
-            schedules={[scheduleAlaskaCurrentlyOff, scheduleColoradoCurrentlyOff]}
+            openWithIntent="start"
+            schedules={[scheduleAlaskaCurrentlyStopped, scheduleColoradoCurrentlyStopped]}
             onClose={jest.fn()}
             onComplete={jest.fn()}
           />
         </MockedProvider>,
       );
 
-      const confirmButton = screen.getByRole('button', {name: /turn on/i});
+      const confirmButton = screen.getByRole('button', {name: /start/i});
       userEvent.click(confirmButton);
 
       await waitFor(() => {
-        const button = screen.getByRole('button', {name: /turning on/i});
+        const button = screen.getByRole('button', {name: /starting/i});
         expect(button).toBeVisible();
         expect(button).toBeDisabled();
       });
 
       await waitFor(() => {
-        expect(screen.getByText(/successfully turned on 2 schedules/i)).toBeVisible();
+        expect(screen.getByText(/successfully started 2 schedules/i)).toBeVisible();
       });
     });
 
-    it('shows error when turning on a schedule fails', async () => {
-      const mocks = [buildTurnOnAlaskaSuccess(100), buildTurnOnColoradoError(100)];
+    it('shows error when starting a schedule fails', async () => {
+      const mocks = [buildStartAlaskaSuccess(100), buildStartColoradoError(100)];
 
       render(
         <MockedProvider mocks={mocks}>
           <ScheduleStateChangeDialog
-            openWithIntent="turn-on"
-            schedules={[scheduleAlaskaCurrentlyOff, scheduleColoradoCurrentlyOff]}
+            openWithIntent="start"
+            schedules={[scheduleAlaskaCurrentlyStopped, scheduleColoradoCurrentlyStopped]}
             onClose={jest.fn()}
             onComplete={jest.fn()}
           />
         </MockedProvider>,
       );
 
-      const confirmButton = screen.getByRole('button', {name: /turn on/i});
+      const confirmButton = screen.getByRole('button', {name: /start/i});
       userEvent.click(confirmButton);
 
       await waitFor(() => {
-        const button = screen.getByRole('button', {name: /turning on/i});
+        const button = screen.getByRole('button', {name: /starting/i});
         expect(button).toBeVisible();
         expect(button).toBeDisabled();
       });
 
       await waitFor(() => {
-        expect(screen.getByText(/successfully turned on 1 schedule/i)).toBeVisible();
+        expect(screen.getByText(/successfully started 1 schedule/i)).toBeVisible();
       });
 
-      expect(screen.getByText(/could not turn on 1 schedule/i)).toBeVisible();
+      expect(screen.getByText(/could not start 1 schedule/i)).toBeVisible();
       const errorItem = screen.getByRole('listitem');
 
       expect(errorItem.textContent).toMatch(/colorado/i);
@@ -164,63 +164,63 @@ describe('ScheduleStateChangeDialog', () => {
     });
   });
 
-  describe('Mutation: turn off', () => {
-    it('turns off schedules', async () => {
-      const mocks = [buildTurnOffDelawareSuccess(100), buildTurnOffHawaiiSuccess(100)];
+  describe('Mutation: stop', () => {
+    it('stops schedules', async () => {
+      const mocks = [buildStopDelawareSuccess(100), buildStopHawaiiSuccess(100)];
 
       render(
         <MockedProvider mocks={mocks}>
           <ScheduleStateChangeDialog
-            openWithIntent="turn-off"
-            schedules={[scheduleDelawareCurrentlyOn, scheduleHawaiiCurrentlyOn]}
+            openWithIntent="stop"
+            schedules={[scheduleDelawareCurrentlyRunning, scheduleHawaiiCurrentlyRunning]}
             onClose={jest.fn()}
             onComplete={jest.fn()}
           />
         </MockedProvider>,
       );
 
-      const confirmButton = screen.getByRole('button', {name: /turn off/i});
+      const confirmButton = screen.getByRole('button', {name: /stop/i});
       userEvent.click(confirmButton);
 
       await waitFor(() => {
-        const button = screen.getByRole('button', {name: /turning off/i});
+        const button = screen.getByRole('button', {name: /stopping/i});
         expect(button).toBeVisible();
         expect(button).toBeDisabled();
       });
 
       await waitFor(() => {
-        expect(screen.getByText(/successfully turned off 2 schedules/i)).toBeVisible();
+        expect(screen.getByText(/successfully stopped 2 schedules/i)).toBeVisible();
       });
     });
 
-    it('shows error when turning off a schedule fails', async () => {
-      const mocks = [buildTurnOffDelawareSuccess(100), buildTurnOffHawaiiError(100)];
+    it('shows error when stopping a schedule fails', async () => {
+      const mocks = [buildStopDelawareSuccess(100), buildStopHawaiiError(100)];
 
       render(
         <MockedProvider mocks={mocks}>
           <ScheduleStateChangeDialog
-            openWithIntent="turn-off"
-            schedules={[scheduleDelawareCurrentlyOn, scheduleHawaiiCurrentlyOn]}
+            openWithIntent="stop"
+            schedules={[scheduleDelawareCurrentlyRunning, scheduleHawaiiCurrentlyRunning]}
             onClose={jest.fn()}
             onComplete={jest.fn()}
           />
         </MockedProvider>,
       );
 
-      const confirmButton = screen.getByRole('button', {name: /turn off/i});
+      const confirmButton = screen.getByRole('button', {name: /stop/i});
       userEvent.click(confirmButton);
 
       await waitFor(() => {
-        const button = screen.getByRole('button', {name: /turning off/i});
+        const button = screen.getByRole('button', {name: /stopping/i});
         expect(button).toBeVisible();
         expect(button).toBeDisabled();
       });
 
       await waitFor(() => {
-        expect(screen.getByText(/successfully turned off 1 schedule/i)).toBeVisible();
+        expect(screen.getByText(/successfully stopped 1 schedule/i)).toBeVisible();
       });
 
-      expect(screen.getByText(/could not turn off 1 schedule/i)).toBeVisible();
+      expect(screen.getByText(/could not stop 1 schedule/i)).toBeVisible();
       const errorItem = screen.getByRole('listitem');
 
       expect(errorItem.textContent).toMatch(/hawaii/i);

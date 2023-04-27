@@ -165,7 +165,9 @@ const ConfigEditorPartitionPicker: React.FC<ConfigEditorPartitionPickerProps> = 
       variables: {
         repositorySelector,
         partitionSetName,
-        assetKeys: assetSelection?.map((selection) => ({path: selection.assetKey.path})),
+        assetKeys: assetSelection
+          ? assetSelection.map((selection) => ({path: selection.assetKey.path}))
+          : [],
       },
       fetchPolicy: 'network-only',
     });

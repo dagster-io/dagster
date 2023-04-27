@@ -9,14 +9,13 @@ from dagster import (
     IOManager,
     OutputContext,
     asset,
-    build_init_resource_context,
     io_manager,
 )
 from dagster._core.definitions.assets_job import build_assets_job
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 from dagster._core.execution.with_resources import with_resources
-from dagster_fivetran import fivetran_resource
+from dagster_fivetran import FivetranResource
 from dagster_fivetran.asset_defs import (
     FivetranConnectionMetadata,
     load_assets_from_fivetran_instance,
@@ -24,9 +23,11 @@ from dagster_fivetran.asset_defs import (
 
 from dagster_fivetran_tests.utils import (
     DEFAULT_CONNECTOR_ID,
+    DEFAULT_CONNECTOR_ID_2,
     get_complex_sample_connector_schema_config,
     get_sample_connector_response,
     get_sample_connectors_response,
+    get_sample_connectors_response_multiple,
     get_sample_groups_response,
     get_sample_sync_response,
     get_sample_update_response,
@@ -43,7 +44,10 @@ from dagster_fivetran_tests.utils import (
         lambda conn, name: AssetKey([*conn.name.split("."), *name.split(".")]),
     ],
 )
-def test_load_from_instance(connector_to_group_fn, filter_connector, connector_to_asset_key_fn):
+@pytest.mark.parametrize("multiple_connectors", [True, False])
+def test_load_from_instance(
+    connector_to_group_fn, filter_connector, connector_to_asset_key_fn, multiple_connectors
+):
     load_calls = []
 
     @io_manager
@@ -59,20 +63,7 @@ def test_load_from_instance(connector_to_group_fn, filter_connector, connector_t
 
         return TestIOManager()
 
-    ft_resource = fivetran_resource(
-        build_init_resource_context(
-            config={
-                "api_key": "some_key",
-                "api_secret": "some_secret",
-            }
-        )
-    )
-    ft_instance = fivetran_resource.configured(
-        {
-            "api_key": "some_key",
-            "api_secret": "some_secret",
-        }
-    )
+    ft_resource = FivetranResource(api_key="some_key", api_secret="some_secret")
 
     with responses.RequestsMock() as rsps:
         rsps.add(
@@ -84,7 +75,9 @@ def test_load_from_instance(connector_to_group_fn, filter_connector, connector_t
         rsps.add(
             method=rsps.GET,
             url=ft_resource.api_base_url + "groups/some_group/connectors",
-            json=get_sample_connectors_response(),
+            json=get_sample_connectors_response_multiple()
+            if multiple_connectors
+            else get_sample_connectors_response(),
             status=200,
         )
         rsps.add(
@@ -92,10 +85,16 @@ def test_load_from_instance(connector_to_group_fn, filter_connector, connector_t
             f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID}/schemas",
             json=get_complex_sample_connector_schema_config(),
         )
+        if multiple_connectors:
+            rsps.add(
+                rsps.GET,
+                f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID_2}/schemas",
+                json=get_complex_sample_connector_schema_config(),
+            )
 
         if connector_to_group_fn:
             ft_cacheable_assets = load_assets_from_fivetran_instance(
-                ft_instance,
+                ft_resource,
                 connector_to_group_fn=connector_to_group_fn,
                 connector_filter=(lambda _: False) if filter_connector else None,
                 connector_to_asset_key_fn=connector_to_asset_key_fn,
@@ -103,7 +102,7 @@ def test_load_from_instance(connector_to_group_fn, filter_connector, connector_t
             )
         else:
             ft_cacheable_assets = load_assets_from_fivetran_instance(
-                ft_instance,
+                ft_resource,
                 connector_filter=(lambda _: False) if filter_connector else None,
                 connector_to_asset_key_fn=connector_to_asset_key_fn,
                 io_manager_key="test_io_manager",
@@ -179,26 +178,31 @@ def test_load_from_instance(connector_to_group_fn, filter_connector, connector_t
 
     # Kick off a run to materialize all assets
     final_data = {"succeeded_at": "2021-01-01T02:00:00.0Z"}
-    api_prefix = f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID}"
     fivetran_sync_job = build_assets_job(
         name="fivetran_assets_job",
         assets=all_assets,
     )
 
     with responses.RequestsMock() as rsps:
-        rsps.add(rsps.PATCH, api_prefix, json=get_sample_update_response())
-        rsps.add(rsps.POST, f"{api_prefix}/force", json=get_sample_sync_response())
-        # connector schema
-        rsps.add(
-            rsps.GET, f"{api_prefix}/schemas", json=get_complex_sample_connector_schema_config()
-        )
-        # initial state
-        rsps.add(rsps.GET, api_prefix, json=get_sample_connector_response())
-        # n polls before updating
-        for _ in range(2):
+        api_prefixes = [
+            f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID}",
+        ]
+        if multiple_connectors:
+            api_prefixes.append(f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID_2}")
+        for api_prefix in api_prefixes:
+            rsps.add(rsps.PATCH, api_prefix, json=get_sample_update_response())
+            rsps.add(rsps.POST, f"{api_prefix}/force", json=get_sample_sync_response())
+            # connector schema
+            rsps.add(
+                rsps.GET, f"{api_prefix}/schemas", json=get_complex_sample_connector_schema_config()
+            )
+            # initial state
             rsps.add(rsps.GET, api_prefix, json=get_sample_connector_response())
-        # final state will be updated
-        rsps.add(rsps.GET, api_prefix, json=get_sample_connector_response(data=final_data))
+            # n polls before updating
+            for _ in range(2):
+                rsps.add(rsps.GET, api_prefix, json=get_sample_connector_response())
+            # final state will be updated
+            rsps.add(rsps.GET, api_prefix, json=get_sample_connector_response(data=final_data))
 
         result = fivetran_sync_job.execute_in_process()
         asset_materializations = [

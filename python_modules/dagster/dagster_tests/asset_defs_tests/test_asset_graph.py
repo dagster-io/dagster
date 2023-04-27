@@ -38,7 +38,7 @@ def to_external_asset_graph(assets) -> AssetGraph:
         return assets
 
     external_asset_nodes = external_asset_graph_from_defs(
-        repo.get_all_pipelines(), source_assets_by_key={}
+        repo.get_all_jobs(), source_assets_by_key={}
     )
     return ExternalAssetGraph.from_repository_handles_and_external_asset_nodes(
         [(MagicMock(), asset_node) for asset_node in external_asset_nodes]

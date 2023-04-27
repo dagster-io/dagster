@@ -26,6 +26,7 @@ from dagster._core.definitions import (
 )
 from dagster._core.definitions.data_version import (
     CODE_VERSION_TAG,
+    DATA_VERSION_IS_USER_PROVIDED_TAG,
     DATA_VERSION_TAG,
     DEFAULT_DATA_VERSION,
     DataVersion,
@@ -37,7 +38,6 @@ from dagster._core.definitions.data_version import (
 from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 from dagster._core.definitions.events import DynamicOutput
 from dagster._core.definitions.metadata import (
-    MetadataEntry,
     MetadataValue,
     normalize_metadata,
 )
@@ -101,7 +101,7 @@ def _step_output_error_checked_user_event_sequence(
             )
 
         step_output = step.step_output_named(cast(str, output.output_name))
-        output_def = step_context.pipeline_def.get_node(step_output.node_handle).output_def_named(
+        output_def = step_context.job_def.get_node(step_output.node_handle).output_def_named(
             step_output.name
         )
 
@@ -416,9 +416,9 @@ def _type_check_and_store_output(
 
     version = (
         resolve_step_output_versions(
-            step_context.pipeline_def, step_context.execution_plan, step_context.resolved_run_config
+            step_context.job_def, step_context.execution_plan, step_context.resolved_run_config
         ).get(step_output_handle)
-        if MEMOIZED_RUN_TAG in step_context.pipeline.get_definition().tags
+        if MEMOIZED_RUN_TAG in step_context.job.get_definition().tags
         else None
     )
 
@@ -436,7 +436,9 @@ def _asset_key_and_partitions_for_output(
 
     if output_asset_info:
         if not output_asset_info.is_required:
-            output_context.log.warn(f"Materializing unexpected asset key: {output_asset_info.key}.")
+            output_context.log.warning(
+                f"Materializing unexpected asset key: {output_asset_info.key}."
+            )
         return (
             output_asset_info.key,
             output_asset_info.partitions_fn(output_context) or set(),
@@ -462,7 +464,7 @@ def _get_output_asset_materializations(
     tags: Dict[str, str]
     if (
         step_context.is_external_input_asset_records_loaded
-        and asset_key in step_context.pipeline_def.asset_layer.asset_keys
+        and asset_key in step_context.job_def.asset_layer.asset_keys
     ):
         assert isinstance(output, Output)
         code_version = _get_code_version(asset_key, step_context)
@@ -475,7 +477,9 @@ def _get_output_asset_materializations(
             if output.data_version is None
             else output.data_version
         )
-        tags = _build_data_version_tags(data_version, code_version, input_provenance_data)
+        tags = _build_data_version_tags(
+            data_version, code_version, input_provenance_data, output.data_version is not None
+        )
         if not step_context.has_data_version(asset_key):
             data_version = DataVersion(tags[DATA_VERSION_TAG])
             step_context.set_data_version(asset_key, data_version)
@@ -512,7 +516,7 @@ def _get_output_asset_materializations(
 
 def _get_code_version(asset_key: AssetKey, step_context: StepExecutionContext) -> str:
     return (
-        step_context.pipeline_def.asset_layer.code_version_for_asset(asset_key)
+        step_context.job_def.asset_layer.code_version_for_asset(asset_key)
         or step_context.dagster_run.run_id
     )
 
@@ -526,7 +530,7 @@ def _get_input_provenance_data(
     asset_key: AssetKey, step_context: StepExecutionContext
 ) -> Mapping[AssetKey, _InputProvenanceData]:
     input_provenance: Dict[AssetKey, _InputProvenanceData] = {}
-    deps = step_context.pipeline_def.asset_layer.upstream_assets_for_asset(asset_key)
+    deps = step_context.job_def.asset_layer.upstream_assets_for_asset(asset_key)
     for key in deps:
         # For deps external to this step, this will retrieve the cached record that was stored prior
         # to step execution. For inputs internal to this step, it may trigger a query to retrieve
@@ -551,6 +555,7 @@ def _build_data_version_tags(
     data_version: DataVersion,
     code_version: str,
     input_provenance_data: Mapping[AssetKey, _InputProvenanceData],
+    data_version_is_user_provided: bool,
 ) -> Dict[str, str]:
     tags: Dict[str, str] = {}
     tags[CODE_VERSION_TAG] = code_version
@@ -560,6 +565,8 @@ def _build_data_version_tags(
             str(meta["storage_id"]) if meta["storage_id"] else "NULL"
         )
     tags[DATA_VERSION_TAG] = data_version.value
+    if data_version_is_user_provided:
+        tags[DATA_VERSION_IS_USER_PROVIDED_TAG] = "true"
     return tags
 
 
@@ -611,11 +618,6 @@ def _store_output(
             yield elt
         elif isinstance(elt, AssetMaterialization):
             manager_materializations.append(elt)
-        elif isinstance(elt, MetadataEntry):  # should remove this?
-            experimental_functionality_warning(
-                "Yielding metadata from an IOManager's handle_output() function"
-            )
-            manager_metadata[elt.label] = elt.value
         elif isinstance(elt, dict):  # should remove this?
             experimental_functionality_warning(
                 "Yielding metadata from an IOManager's handle_output() function"
@@ -625,7 +627,7 @@ def _store_output(
             raise DagsterInvariantViolationError(
                 f"IO manager on output {output_def.name} has returned "
                 f"value {elt} of type {type(elt).__name__}. The return type can only be "
-                "one of AssetMaterialization, MetadataEntry."
+                "one of AssetMaterialization, Dict[str, MetadataValue]."
             )
 
     for event in output_context.consume_events():

@@ -28,12 +28,12 @@ from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
-from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
 from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
     TimeWindowPartitionsDefinition,
     has_one_dimension_time_window_partitioning,
 )
+from dagster._utils.backcompat import deprecation_warning
 from dagster._utils.schedules import cron_string_iterator
 
 from .asset_selection import AssetGraph, AssetSelection
@@ -56,7 +56,7 @@ def get_implicit_auto_materialize_policy(
     if auto_materialize_policy is None:
         return AutoMaterializePolicy(
             on_missing=True,
-            on_upstream_data_newer=not bool(
+            on_new_parent_data=not bool(
                 asset_graph.get_downstream_freshness_policies(asset_key=asset_key)
             ),
             for_freshness=True,
@@ -273,9 +273,16 @@ class AssetReconciliationCursor(NamedTuple):
             if partitions_def is None:
                 continue
 
-            materialized_or_requested_root_partitions_by_asset_key[
-                key
-            ] = partitions_def.deserialize_subset(serialized_subset)
+            try:
+                # in the case that the partitions def has changed, we may not be able to deserialize
+                # the corresponding subset. in this case, we just use an empty subset
+                materialized_or_requested_root_partitions_by_asset_key[
+                    key
+                ] = partitions_def.deserialize_subset(serialized_subset)
+            except:
+                materialized_or_requested_root_partitions_by_asset_key[
+                    key
+                ] = partitions_def.empty_subset()
         return cls(
             latest_storage_id=latest_storage_id,
             materialized_or_requested_root_asset_keys={
@@ -409,14 +416,16 @@ def find_parent_materialized_asset_partitions(
                         )
                     )
                     for child_partition in child_partitions_subset.get_partition_keys():
-                        # we need to see if the child was materialized in the same run, but this is
+                        # we need to see if the child is planned for the same run, but this is
                         # expensive, so we try to avoid doing so in as many situations as possible
                         child_asset_partition = AssetKeyPartitionKey(child, child_partition)
                         if not can_reconcile_fn(child_asset_partition):
                             continue
-                        # cannot materialize in the same run if different partitions defs
-                        elif child_partitions_def != partitions_def or not isinstance(
-                            partition_mapping, IdentityPartitionMapping
+                        # cannot materialize in the same run if different partitions defs or
+                        # different partition keys
+                        elif (
+                            child_partitions_def != partitions_def
+                            or child_partition not in materialized_partitions
                         ):
                             result_asset_partitions.add(child_asset_partition)
                         else:
@@ -609,7 +618,7 @@ def determine_asset_partitions_to_reconcile(
             auto_materialize_policy.on_missing
             and not instance_queryer.materialization_exists(asset_partition=candidate)
         ) or (
-            auto_materialize_policy.on_upstream_data_newer
+            auto_materialize_policy.on_new_parent_data
             and not instance_queryer.is_reconciled(
                 asset_partition=candidate, asset_graph=asset_graph
             )
@@ -1045,6 +1054,9 @@ def build_asset_reconciliation_sensor(
     """
     check_valid_name(name)
     check.opt_mapping_param(run_tags, "run_tags", key_type=str, value_type=str)
+    deprecation_warning(
+        "build_asset_reconciliation_sensor", "1.4", "Use AutoMaterializePolicys instead."
+    )
 
     @sensor(
         name=name,

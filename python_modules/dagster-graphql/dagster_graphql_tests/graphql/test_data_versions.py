@@ -8,8 +8,11 @@ from dagster import (
     asset,
     repository,
 )
-from dagster._core.definitions.data_version import DATA_VERSION_TAG
+from dagster._core.definitions.data_version import DATA_VERSION_TAG, DataVersion
+from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.test_utils import instance_for_test, wait_for_runs_to_finish
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
@@ -19,9 +22,10 @@ from dagster_graphql.test.utils import (
     define_out_of_process_context,
     execute_dagster_graphql,
     infer_job_or_pipeline_selector,
+    infer_repository_selector,
 )
 
-from dagster_graphql_tests.graphql.test_assets import GET_ASSET_DATA_VERSIONS
+from dagster_graphql_tests.graphql.test_assets import GET_ASSET_DATA_VERSIONS, GET_ASSET_JOB_NAMES
 
 
 def get_repo_v1():
@@ -95,7 +99,7 @@ def test_stale_status():
                 {
                     "key": {"path": ["foo"]},
                     "category": "DATA",
-                    "reason": "updated data version",
+                    "reason": "has a new materialization",
                     "dependency": None,
                 }
             ]
@@ -150,6 +154,50 @@ def test_partitioned_self_dep():
             assert _get_asset_node("b", result)["staleStatus"] == "MISSING"
 
 
+def get_observable_source_asset_repo():
+    @asset(partitions_def=StaticPartitionsDefinition(["1"]))
+    def foo():
+        return 1
+
+    @observable_source_asset
+    def bar():
+        return DataVersion("1")
+
+    @asset(partitions_def=StaticPartitionsDefinition(["2"]))
+    def baz():
+        return 1
+
+    defs = Definitions(assets=[foo, bar, baz])
+    return defs.get_repository_def()
+
+
+def test_source_asset_job_name():
+    get_observable_source_asset_repo()
+
+    with instance_for_test() as instance:
+        with define_out_of_process_context(
+            __file__, "get_observable_source_asset_repo", instance
+        ) as context:
+            selector = infer_repository_selector(context)
+            result = execute_dagster_graphql(
+                context,
+                GET_ASSET_JOB_NAMES,
+                variables={
+                    "selector": selector,
+                },
+            )
+            assert result and result.data
+            foo_jobs = _get_asset_node("foo", result.data["repositoryOrError"])["jobNames"]
+            bar_jobs = _get_asset_node("bar", result.data["repositoryOrError"])["jobNames"]
+            baz_jobs = _get_asset_node("baz", result.data["repositoryOrError"])["jobNames"]
+
+            # All nodes should have separate job sets since there are two different partitions defs
+            # and a non-partitioned observable.
+            assert foo_jobs and foo_jobs != bar_jobs and foo_jobs != baz_jobs
+            assert bar_jobs and bar_jobs != foo_jobs and bar_jobs != baz_jobs
+            assert baz_jobs and baz_jobs != foo_jobs and baz_jobs != bar_jobs
+
+
 def _materialize_assets(
     context: WorkspaceRequestContext,
     repo: RepositoryDefinition,
@@ -186,4 +234,5 @@ def _fetch_data_versions(context: WorkspaceRequestContext, repo: RepositoryDefin
 
 
 def _get_asset_node(key: str, result: Any) -> Mapping[str, Any]:
-    return next((node for node in result.data["assetNodes"] if node["assetKey"]["path"] == [key]))
+    to_check = result if isinstance(result, dict) else result.data  # GqlResult
+    return next((node for node in to_check["assetNodes"] if node["assetKey"]["path"] == [key]))

@@ -16,9 +16,9 @@ from typing import (
 from typing_extensions import Self
 
 import dagster._check as check
-from dagster._annotations import public
+from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.events import AssetKey
-from dagster._core.origin import PipelinePythonOrigin
+from dagster._core.origin import JobPythonOrigin
 from dagster._core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 from dagster._core.utils import make_new_run_id
 from dagster._serdes.serdes import (
@@ -36,7 +36,7 @@ from .tags import (
 
 if TYPE_CHECKING:
     from dagster._core.host_representation.external import ExternalSchedule, ExternalSensor
-    from dagster._core.host_representation.origin import ExternalPipelineOrigin
+    from dagster._core.host_representation.origin import ExternalJobOrigin
 
 
 @whitelist_for_serdes(storage_name="PipelineRunStatus")
@@ -96,10 +96,10 @@ FINISHED_STATUSES = [
 ]
 
 
-@whitelist_for_serdes
-class PipelineRunStatsSnapshot(
+@whitelist_for_serdes(storage_name="PipelineRunStatsSnapshot")
+class DagsterRunStatsSnapshot(
     NamedTuple(
-        "_PipelineRunStatsSnapshot",
+        "_DagsterRunStatsSnapshot",
         [
             ("run_id", str),
             ("steps_succeeded", int),
@@ -125,7 +125,7 @@ class PipelineRunStatsSnapshot(
         start_time: Optional[float],
         end_time: Optional[float],
     ):
-        return super(PipelineRunStatsSnapshot, cls).__new__(
+        return super(DagsterRunStatsSnapshot, cls).__new__(
             cls,
             run_id=check.str_param(run_id, "run_id"),
             steps_succeeded=check.int_param(steps_succeeded, "steps_succeeded"),
@@ -178,15 +178,15 @@ class DagsterRunSerializer(NamedTupleSerializer["DagsterRun"]):
             selector_name = selector.name
             selector_subset = selector.solid_subset
 
-            pipeline_name = unpacked_dict.get("pipeline_name")
+            job_name = unpacked_dict.get("pipeline_name")
             check.invariant(
-                pipeline_name is None or selector_name == pipeline_name,
+                job_name is None or selector_name == job_name,
                 (
-                    f"Conflicting pipeline name {pipeline_name} in arguments to PipelineRun: "
+                    f"Conflicting pipeline name {job_name} in arguments to PipelineRun: "
                     f"selector was passed with pipeline {selector_name}"
                 ),
             )
-            if pipeline_name is None:
+            if job_name is None:
                 unpacked_dict["pipeline_name"] = selector_name
 
             solids_to_execute = unpacked_dict.get("solids_to_execute")
@@ -215,15 +215,21 @@ class DagsterRunSerializer(NamedTupleSerializer["DagsterRun"]):
     # DagsterRun is serialized as PipelineRun so that it can be read by older (pre 0.13.x) version
     # of Dagster, but is read back in as a DagsterRun.
     storage_name="PipelineRun",
+    old_fields={"mode": None},
+    storage_field_names={
+        "job_name": "pipeline_name",
+        "job_snapshot_id": "pipeline_snapshot_id",
+        "external_job_origin": "external_pipeline_origin",
+        "job_code_origin": "pipeline_code_origin",
+    },
 )
 class DagsterRun(
     NamedTuple(
         "_DagsterRun",
         [
-            ("pipeline_name", str),
+            ("job_name", PublicAttr[str]),
             ("run_id", str),
             ("run_config", Mapping[str, object]),
-            ("mode", Optional[str]),
             ("asset_selection", Optional[AbstractSet[AssetKey]]),
             ("solid_selection", Optional[Sequence[str]]),
             ("solids_to_execute", Optional[AbstractSet[str]]),
@@ -232,10 +238,10 @@ class DagsterRun(
             ("tags", Mapping[str, str]),
             ("root_run_id", Optional[str]),
             ("parent_run_id", Optional[str]),
-            ("pipeline_snapshot_id", Optional[str]),
+            ("job_snapshot_id", Optional[str]),
             ("execution_plan_snapshot_id", Optional[str]),
-            ("external_pipeline_origin", Optional["ExternalPipelineOrigin"]),
-            ("pipeline_code_origin", Optional[PipelinePythonOrigin]),
+            ("external_job_origin", Optional["ExternalJobOrigin"]),
+            ("job_code_origin", Optional[JobPythonOrigin]),
             ("has_repository_load_data", bool),
         ],
     )
@@ -246,10 +252,9 @@ class DagsterRun(
 
     def __new__(
         cls,
-        pipeline_name: str,
+        job_name: str,
         run_id: Optional[str] = None,
         run_config: Optional[Mapping[str, object]] = None,
-        mode: Optional[str] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
         solid_selection: Optional[Sequence[str]] = None,
         solids_to_execute: Optional[AbstractSet[str]] = None,
@@ -258,10 +263,10 @@ class DagsterRun(
         tags: Optional[Mapping[str, str]] = None,
         root_run_id: Optional[str] = None,
         parent_run_id: Optional[str] = None,
-        pipeline_snapshot_id: Optional[str] = None,
+        job_snapshot_id: Optional[str] = None,
         execution_plan_snapshot_id: Optional[str] = None,
-        external_pipeline_origin: Optional["ExternalPipelineOrigin"] = None,
-        pipeline_code_origin: Optional[PipelinePythonOrigin] = None,
+        external_job_origin: Optional["ExternalJobOrigin"] = None,
+        job_code_origin: Optional[JobPythonOrigin] = None,
         has_repository_load_data: Optional[bool] = None,
     ):
         check.invariant(
@@ -289,14 +294,14 @@ class DagsterRun(
 
         # Placing this with the other imports causes a cyclic import
         # https://github.com/dagster-io/dagster/issues/3181
-        from dagster._core.host_representation.origin import ExternalPipelineOrigin
+        from dagster._core.host_representation.origin import ExternalJobOrigin
 
         if status == DagsterRunStatus.QUEUED:
             check.inst_param(
-                external_pipeline_origin,
-                "external_pipeline_origin",
-                ExternalPipelineOrigin,
-                "external_pipeline_origin is required for queued runs",
+                external_job_origin,
+                "external_job_origin",
+                ExternalJobOrigin,
+                "external_job_origin is required for queued runs",
             )
 
         if run_id is None:
@@ -304,10 +309,9 @@ class DagsterRun(
 
         return super(DagsterRun, cls).__new__(
             cls,
-            pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
+            job_name=check.str_param(job_name, "job_name"),
             run_id=check.str_param(run_id, "run_id"),
             run_config=check.opt_mapping_param(run_config, "run_config", key_type=str),
-            mode=check.opt_str_param(mode, "mode"),
             solid_selection=solid_selection,
             asset_selection=asset_selection,
             solids_to_execute=solids_to_execute,
@@ -318,15 +322,15 @@ class DagsterRun(
             tags=check.opt_mapping_param(tags, "tags", key_type=str, value_type=str),
             root_run_id=check.opt_str_param(root_run_id, "root_run_id"),
             parent_run_id=check.opt_str_param(parent_run_id, "parent_run_id"),
-            pipeline_snapshot_id=check.opt_str_param(pipeline_snapshot_id, "pipeline_snapshot_id"),
+            job_snapshot_id=check.opt_str_param(job_snapshot_id, "job_snapshot_id"),
             execution_plan_snapshot_id=check.opt_str_param(
                 execution_plan_snapshot_id, "execution_plan_snapshot_id"
             ),
-            external_pipeline_origin=check.opt_inst_param(
-                external_pipeline_origin, "external_pipeline_origin", ExternalPipelineOrigin
+            external_job_origin=check.opt_inst_param(
+                external_job_origin, "external_job_origin", ExternalJobOrigin
             ),
-            pipeline_code_origin=check.opt_inst_param(
-                pipeline_code_origin, "pipeline_code_origin", PipelinePythonOrigin
+            job_code_origin=check.opt_inst_param(
+                job_code_origin, "job_code_origin", JobPythonOrigin
             ),
             has_repository_load_data=check.opt_bool_param(
                 has_repository_load_data, "has_repository_load_data", default=False
@@ -337,24 +341,21 @@ class DagsterRun(
         if status == DagsterRunStatus.QUEUED:
             # Placing this with the other imports causes a cyclic import
             # https://github.com/dagster-io/dagster/issues/3181
-            from dagster._core.host_representation.origin import ExternalPipelineOrigin
+            from dagster._core.host_representation.origin import ExternalJobOrigin
 
             check.inst(
-                self.external_pipeline_origin,
-                ExternalPipelineOrigin,
+                self.external_job_origin,
+                ExternalJobOrigin,
                 "external_pipeline_origin is required for queued runs",
             )
 
         return self._replace(status=status)
 
-    def with_job_origin(self, origin: "ExternalPipelineOrigin") -> Self:
-        from dagster._core.host_representation.origin import ExternalPipelineOrigin
+    def with_job_origin(self, origin: "ExternalJobOrigin") -> Self:
+        from dagster._core.host_representation.origin import ExternalJobOrigin
 
-        check.inst_param(origin, "origin", ExternalPipelineOrigin)
-        return self._replace(external_pipeline_origin=origin)
-
-    def with_mode(self, mode: str) -> Self:
-        return self._replace(mode=mode)
+        check.inst_param(origin, "origin", ExternalJobOrigin)
+        return self._replace(external_job_origin=origin)
 
     def with_tags(self, tags: Mapping[str, str]) -> Self:
         return self._replace(tags=tags)
@@ -367,12 +368,12 @@ class DagsterRun(
 
     def tags_for_storage(self) -> Mapping[str, str]:
         repository_tags = {}
-        if self.external_pipeline_origin:
+        if self.external_job_origin:
             # tag the run with a label containing the repository name / location name, to allow for
             # per-repository filtering of runs from dagit.
             repository_tags[
                 REPOSITORY_LABEL_TAG
-            ] = self.external_pipeline_origin.external_repository_origin.get_label()
+            ] = self.external_job_origin.external_repository_origin.get_label()
 
         if not self.tags:
             return repository_tags
@@ -408,11 +409,6 @@ class DagsterRun(
     def previous_run_id(self) -> Optional[str]:
         # Compat
         return self.parent_run_id
-
-    @public
-    @property
-    def job_name(self) -> str:
-        return self.pipeline_name
 
     @staticmethod
     def tags_for_schedule(schedule) -> Mapping[str, str]:
@@ -455,7 +451,6 @@ class RunsFilter(
             ("snapshot_id", Optional[str]),
             ("updated_after", Optional[datetime]),
             ("updated_before", Optional[datetime]),
-            ("mode", Optional[str]),
             ("created_after", Optional[datetime]),
             ("created_before", Optional[datetime]),
         ],
@@ -479,8 +474,6 @@ class RunsFilter(
         snapshot_id (Optional[str]): The ID of the job snapshot to query for. Intended for internal use.
         updated_after (Optional[DateTime]): Filter by runs that were last updated before this datetime.
         created_before (Optional[DateTime]): Filter by runs that were created before this datetime.
-        mode (Optional[str]): (deprecated)
-        pipeline_name (Optional[str]): (deprecated)
 
     """
 
@@ -493,13 +486,9 @@ class RunsFilter(
         snapshot_id: Optional[str] = None,
         updated_after: Optional[datetime] = None,
         updated_before: Optional[datetime] = None,
-        mode: Optional[str] = None,
         created_after: Optional[datetime] = None,
         created_before: Optional[datetime] = None,
-        pipeline_name: Optional[str] = None,  # for backcompat purposes
     ):
-        job_name = job_name or pipeline_name
-
         check.invariant(run_ids != [], "When filtering on run ids, a non-empty list must be used.")
 
         return super(RunsFilter, cls).__new__(
@@ -511,14 +500,9 @@ class RunsFilter(
             snapshot_id=check.opt_str_param(snapshot_id, "snapshot_id"),
             updated_after=check.opt_inst_param(updated_after, "updated_after", datetime),
             updated_before=check.opt_inst_param(updated_before, "updated_before", datetime),
-            mode=check.opt_str_param(mode, "mode"),
             created_after=check.opt_inst_param(created_after, "created_after", datetime),
             created_before=check.opt_inst_param(created_before, "created_before", datetime),
         )
-
-    @property
-    def pipeline_name(self) -> Optional[str]:
-        return self.job_name
 
     @staticmethod
     def for_schedule(schedule: "ExternalSchedule") -> "RunsFilter":

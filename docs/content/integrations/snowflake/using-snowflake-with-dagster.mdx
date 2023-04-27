@@ -60,25 +60,21 @@ The Snowflake I/O manager requires some configuration to connect to your Snowfla
 You can also provide some optional configuration to further customize the Snowflake I/O manager. You can specify a `warehouse` and `schema` where data should be stored, and a `role` for the I/O manager.
 
 ```python file=/integrations/snowflake/configuration.py startafter=start_example endbefore=end_example
-from dagster_snowflake_pandas import snowflake_pandas_io_manager
+from dagster_snowflake_pandas import SnowflakePandasIOManager
 
-from dagster import Definitions
+from dagster import Definitions, EnvVar
 
 defs = Definitions(
     assets=[iris_dataset],
     resources={
-        "io_manager": snowflake_pandas_io_manager.configured(
-            {
-                "account": "abc1234.us-east-1",  # required
-                "user": {"env": "SNOWFLAKE_USER"},  # required
-                "password": {
-                    "env": "SNOWFLAKE_PASSWORD"
-                },  # password or private key required
-                "database": "FLOWERS",  # required
-                "role": "writer",  # optional, defaults to the default role for the account
-                "warehouse": "PLANTS",  # optional, defaults to default warehouse for the account
-                "schema": "IRIS,",  # optional, defaults to PUBLIC
-            }
+        "io_manager": SnowflakePandasIOManager(
+            account="abc1234.us-east-1",  # required
+            user=EnvVar("SNOWFLAKE_USER"),  # required
+            password=EnvVar("SNOWFLAKE_PASSWORD"),  # password or private key required
+            database="FLOWERS",  # required
+            role="writer",  # optional, defaults to the default role for the account
+            warehouse="PLANTS",  # optional, defaults to default warehouse for the account
+            schema="IRIS",  # optional, defaults to PUBLIC
         )
     },
 )
@@ -115,11 +111,11 @@ def iris_dataset() -> pd.DataFrame:
     return pd.read_csv(
         "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data",
         names=[
-            "Sepal length (cm)",
-            "Sepal width (cm)",
-            "Petal length (cm)",
-            "Petal width (cm)",
-            "Species",
+            "sepal_length_cm",
+            "sepal_width_cm",
+            "petal_length_cm",
+            "petal_width_cm",
+            "species",
         ],
     )
 ```
@@ -182,9 +178,9 @@ When finished, your code should look like the following:
 
 ```python file=/integrations/snowflake/full_example.py
 import pandas as pd
-from dagster_snowflake_pandas import snowflake_pandas_io_manager
+from dagster_snowflake_pandas import SnowflakePandasIOManager
 
-from dagster import Definitions, SourceAsset, asset
+from dagster import Definitions, EnvVar, SourceAsset, asset
 
 iris_harvest_data = SourceAsset(key="iris_harvest_data")
 
@@ -194,11 +190,11 @@ def iris_dataset() -> pd.DataFrame:
     return pd.read_csv(
         "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data",
         names=[
-            "Sepal length (cm)",
-            "Sepal width (cm)",
-            "Petal length (cm)",
-            "Petal width (cm)",
-            "Species",
+            "sepal_length_cm",
+            "sepal_width_cm",
+            "petal_length_cm",
+            "petal_width_cm",
+            "species",
         ],
     )
 
@@ -211,14 +207,14 @@ def iris_cleaned(iris_dataset: pd.DataFrame):
 defs = Definitions(
     assets=[iris_dataset, iris_harvest_data, iris_cleaned],
     resources={
-        "io_manager": snowflake_pandas_io_manager.configured(
-            {
-                "account": "abc1234.us-east-1",
-                "user": {"env": "SNOWFLAKE_USER"},
-                "password": {"env": "SNOWFLAKE_PASSWORD"},
-                "database": "FLOWERS",
-                "schema": "IRIS,",
-            }
+        "io_manager": SnowflakePandasIOManager(
+            account="abc1234.us-east-1",
+            user=EnvVar("SNOWFLAKE_USER"),
+            password=EnvVar("SNOWFLAKE_PASSWORD"),
+            database="FLOWERS",
+            role="writer",
+            warehouse="PLANTS",
+            schema="IRIS",
         )
     },
 )

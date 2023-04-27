@@ -104,7 +104,7 @@ def execute_docker_container(
             of available options.
     """
     run_container_context = DockerContainerContext.create_for_run(
-        context.pipeline_run,
+        context.dagster_run,
         context.instance.run_launcher
         if isinstance(context.instance.run_launcher, DockerRunLauncher)
         else None,

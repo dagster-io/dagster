@@ -424,7 +424,7 @@ def test_validate_run_config():
     }
 
     result_with_runconfig = validate_run_config(
-        job_requires_config, RunConfig(ops={"requires_config": {"foo": "bar"}})
+        job_requires_config, RunConfig(ops={"requires_config": {"config": {"foo": "bar"}}})
     )
     assert result_with_runconfig == result
 
@@ -976,3 +976,22 @@ def test_truthy_and_falsey_defaults() -> None:
     assert false_default_field.is_required is False
     assert false_default_field.default_provided is True
     assert false_default_field.default_value is False
+
+
+def execution_run_config() -> None:
+    from dagster import RunConfig, job, op
+
+    @op
+    def foo_op():
+        pass
+
+    @job
+    def foo_job():
+        foo_op()
+
+    result = foo_job.execute_in_process(
+        run_config=RunConfig(
+            execution={"config": {"multiprocess": {"config": {"max_concurrent": 0}}}}
+        ),
+    )
+    assert result.success

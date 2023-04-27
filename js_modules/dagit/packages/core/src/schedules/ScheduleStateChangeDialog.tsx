@@ -1,9 +1,13 @@
 import {useMutation} from '@apollo/client';
 // eslint-disable-next-line no-restricted-imports
 import {ProgressBar} from '@blueprintjs/core';
-import {Button, Colors, DialogBody, DialogFooter, Dialog, Group, Icon, Mono} from '@dagster-io/ui';
+import {Button, Colors, DialogBody, DialogFooter, Dialog, Group, Icon} from '@dagster-io/ui';
 import * as React from 'react';
 
+import {
+  OpenWithIntent,
+  useInstigationStateReducer,
+} from '../instigation/useInstigationStateReducer';
 import {BasicInstigationStateFragment} from '../overview/types/BasicInstigationStateFragment.types';
 import {NavigationBlock} from '../runs/NavigationBlock';
 import {RepoAddress} from '../workspace/types';
@@ -22,75 +26,25 @@ export type ScheduleInfo = {
   scheduleState: BasicInstigationStateFragment;
 };
 
-export type OpenWithIntent = 'not-open' | 'turn-on' | 'turn-off';
-
 export interface Props {
   openWithIntent: OpenWithIntent;
   onClose: () => void;
-  onComplete: (completionState: CompletionState) => void;
+  onComplete: () => void;
   schedules: ScheduleInfo[];
 }
-
-export type CompletionState = {completed: number; errors: {[id: string]: string}};
-
-type DialogState = {
-  step: 'initial' | 'updating' | 'completed';
-  completion: CompletionState;
-};
-
-const initialState: DialogState = {
-  step: 'initial',
-  completion: {completed: 0, errors: {}},
-};
-
-type DialogAction =
-  | {type: 'reset'}
-  | {type: 'start'}
-  | {type: 'update-success'}
-  | {type: 'update-error'; name: string; error: string}
-  | {type: 'complete'};
-
-const reducer = (prevState: DialogState, action: DialogAction): DialogState => {
-  switch (action.type) {
-    case 'reset':
-      return initialState;
-    case 'start':
-      return {...prevState, step: 'updating'};
-    case 'update-success': {
-      const {completion} = prevState;
-      return {
-        step: 'updating',
-        completion: {...completion, completed: completion.completed + 1},
-      };
-    }
-    case 'update-error': {
-      const {completion} = prevState;
-      return {
-        step: 'updating',
-        completion: {
-          ...completion,
-          completed: completion.completed + 1,
-          errors: {...completion.errors, [action.name]: action.error},
-        },
-      };
-    }
-    case 'complete':
-      return {...prevState, step: 'completed'};
-  }
-};
 
 export const ScheduleStateChangeDialog = (props: Props) => {
   const {openWithIntent, onClose, onComplete, schedules} = props;
   const count = schedules.length;
 
-  const [state, dispatch] = React.useReducer(reducer, initialState);
+  const [state, dispatch] = useInstigationStateReducer();
 
   // If the dialog is newly closed, reset state.
   React.useEffect(() => {
     if (openWithIntent === 'not-open') {
       dispatch({type: 'reset'});
     }
-  }, [openWithIntent]);
+  }, [openWithIntent, dispatch]);
 
   const [startSchedule] = useMutation<
     StartThisScheduleMutation,
@@ -158,7 +112,7 @@ export const ScheduleStateChangeDialog = (props: Props) => {
     dispatch({type: 'start'});
     for (let ii = 0; ii < schedules.length; ii++) {
       const schedule = schedules[ii];
-      if (openWithIntent === 'turn-on') {
+      if (openWithIntent === 'start') {
         await start(schedule);
       } else {
         await stop(schedule);
@@ -166,7 +120,7 @@ export const ScheduleStateChangeDialog = (props: Props) => {
     }
 
     dispatch({type: 'complete'});
-    onComplete(state.completion);
+    onComplete();
   };
 
   const progressContent = () => {
@@ -176,12 +130,12 @@ export const ScheduleStateChangeDialog = (props: Props) => {
 
     switch (state.step) {
       case 'initial':
-        if (openWithIntent === 'turn-on') {
+        if (openWithIntent === 'stop') {
           return (
             <div>
               {`${count} ${
                 count === 1 ? 'schedule' : 'schedules'
-              } will be turned on. Do you wish to continue?`}
+              } will be stopped. Do you want to continue?`}
             </div>
           );
         }
@@ -189,7 +143,7 @@ export const ScheduleStateChangeDialog = (props: Props) => {
           <div>
             {`${count} ${
               count === 1 ? 'schedule' : 'schedules'
-            } will be turned off. Do you wish to continue?`}
+            } will be started. Do you want to continue?`}
           </div>
         );
       case 'updating':
@@ -216,9 +170,9 @@ export const ScheduleStateChangeDialog = (props: Props) => {
     switch (state.step) {
       case 'initial': {
         const label =
-          openWithIntent === 'turn-on'
-            ? `Turn on ${count === 1 ? '1 schedule' : `${count} schedules`}`
-            : `Turn off ${count === 1 ? '1 schedule' : `${count} schedules`}`;
+          openWithIntent === 'start'
+            ? `Start ${count === 1 ? '1 schedule' : `${count} schedules`}`
+            : `Stop ${count === 1 ? '1 schedule' : `${count} schedules`}`;
         return (
           <>
             <Button intent="none" onClick={onClose}>
@@ -232,9 +186,9 @@ export const ScheduleStateChangeDialog = (props: Props) => {
       }
       case 'updating': {
         const label =
-          openWithIntent === 'turn-on'
-            ? `Turning on ${count === 1 ? '1 schedule' : `${count} schedules`}`
-            : `Turning off ${count === 1 ? '1 schedule' : `${count} schedules`}`;
+          openWithIntent === 'start'
+            ? `Starting ${count === 1 ? '1 schedule' : `${count} schedules`}`
+            : `Stopping ${count === 1 ? '1 schedule' : `${count} schedules`}`;
         return (
           <Button intent="primary" disabled>
             {label}
@@ -273,11 +227,11 @@ export const ScheduleStateChangeDialog = (props: Props) => {
           <Group direction="row" spacing={8} alignItems="flex-start">
             <Icon name="check_circle" color={Colors.Green500} />
             <div>
-              {openWithIntent === 'turn-on'
-                ? `Successfully turned on ${
+              {openWithIntent === 'start'
+                ? `Successfully started ${
                     successCount === 1 ? '1 schedule' : `${successCount} schedules`
                   }.`
-                : `Successfully turned off ${
+                : `Successfully stopped ${
                     successCount === 1 ? '1 schedule' : `${successCount} schedules`
                   }.`}
             </div>
@@ -288,11 +242,11 @@ export const ScheduleStateChangeDialog = (props: Props) => {
             <Group direction="row" spacing={8} alignItems="flex-start">
               <Icon name="warning" color={Colors.Yellow500} />
               <div>
-                {openWithIntent === 'turn-on'
-                  ? `Could not turn on ${
+                {openWithIntent === 'start'
+                  ? `Could not start ${
                       errorCount === 1 ? '1 schedule' : `${errorCount} schedules`
                     }.`
-                  : `Could not turn off ${
+                  : `Could not stop ${
                       errorCount === 1 ? '1 schedule' : `${errorCount} schedules`
                     }.`}
               </div>
@@ -301,7 +255,7 @@ export const ScheduleStateChangeDialog = (props: Props) => {
               {Object.keys(errors).map((scheduleName) => (
                 <li key={scheduleName}>
                   <Group direction="row" spacing={8}>
-                    <Mono>{scheduleName}</Mono>
+                    <strong>{scheduleName}:</strong>
                     {errors[scheduleName] ? <div>{errors[scheduleName]}</div> : null}
                   </Group>
                 </li>
@@ -318,7 +272,7 @@ export const ScheduleStateChangeDialog = (props: Props) => {
   return (
     <Dialog
       isOpen={openWithIntent !== 'not-open'}
-      title={openWithIntent === 'turn-on' ? 'Turn on schedules' : 'Turn off schedules'}
+      title={openWithIntent === 'start' ? 'Start schedules' : 'Stop schedules'}
       canEscapeKeyClose={canQuicklyClose}
       canOutsideClickClose={canQuicklyClose}
       onClose={onClose}

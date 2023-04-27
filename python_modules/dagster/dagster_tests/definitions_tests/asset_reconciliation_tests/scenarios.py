@@ -1,6 +1,7 @@
 from dagster import Definitions
 from dagster._core.definitions.executor_definition import in_process_executor
 
+from .active_run_scenarios import active_run_scenarios
 from .auto_materialize_policy_scenarios import auto_materialize_policy_scenarios
 from .basic_scenarios import basic_scenarios
 from .definition_change_scenarios import definition_change_scenarios
@@ -18,6 +19,7 @@ ASSET_RECONCILIATION_SCENARIOS = {
     **auto_materialize_policy_scenarios,
     **observable_source_asset_scenarios,
     **definition_change_scenarios,
+    **active_run_scenarios,
 }
 
 # put repos in the global namespace so that the daemon can load them with LoadableTargetOrigin

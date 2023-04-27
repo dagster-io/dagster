@@ -1,5 +1,4 @@
 import copy
-import datetime
 from typing import Sequence
 
 from dagster import (
@@ -87,7 +86,12 @@ auto_materialize_policy_scenarios = {
     "auto_materialize_policy_with_custom_scope_hourly_to_daily_partitions_never_materialized": AssetReconciliationScenario(
         assets=with_auto_materialize_policy(
             hourly_to_daily_partitions,
-            AutoMaterializePolicy.eager(time_window_partition_scope=datetime.timedelta(days=2)),
+            AutoMaterializePolicy(
+                on_missing=True,
+                for_freshness=True,
+                on_new_parent_data=True,
+                time_window_partition_scope_minutes=24 * 2 * 60,
+            ),
         ),
         unevaluated_runs=[],
         current_time=create_pendulum_time(year=2013, month=1, day=7, hour=4),
@@ -101,7 +105,12 @@ auto_materialize_policy_scenarios = {
     "auto_materialize_policy_with_custom_scope_hourly_to_daily_partitions_never_materialized2": AssetReconciliationScenario(
         assets=with_auto_materialize_policy(
             hourly_to_daily_partitions,
-            AutoMaterializePolicy.lazy(time_window_partition_scope=datetime.timedelta(days=2)),
+            AutoMaterializePolicy(
+                on_missing=True,
+                for_freshness=True,
+                on_new_parent_data=False,
+                time_window_partition_scope_minutes=24 * 2 * 60,
+            ),
         ),
         unevaluated_runs=[],
         current_time=create_pendulum_time(year=2013, month=1, day=7, hour=4),

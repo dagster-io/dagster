@@ -1,6 +1,7 @@
 import sys
 import threading
 import time
+from unittest import mock
 
 import pytest
 from dagster import file_relative_path, job, repository
@@ -13,6 +14,7 @@ from dagster._core.host_representation.origin import (
 )
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._grpc.server import GrpcServerProcess
 
 
 @job
@@ -247,3 +249,19 @@ def test_custom_loadable_target_origin(instance):
     registry.wait_for_processes()
     assert not _can_connect(origin, endpoint_one)
     assert not _can_connect(origin, endpoint_two)
+
+
+def test_failure_on_open_server_process(instance):
+    loadable_target_origin = LoadableTargetOrigin(
+        executable_path=sys.executable,
+        attribute="repo",
+        python_file=file_relative_path(__file__, "test_grpc_server_registry.py"),
+    )
+    with mock.patch("dagster._grpc.server.open_server_process") as mock_open_server_process:
+        mock_open_server_process.side_effect = Exception("OOPS")
+        with pytest.raises(Exception, match="OOPS"):
+            with GrpcServerProcess(
+                instance_ref=instance.get_ref(),
+                loadable_target_origin=loadable_target_origin,
+            ):
+                pass

@@ -1,4 +1,4 @@
-from dagster_gcp import bigquery_resource
+from dagster_gcp import BigQueryResource
 
 from dagster import Definitions, asset
 
@@ -6,24 +6,23 @@ from dagster import Definitions, asset
 # Using Dagster with BigQuery tutorial
 
 
-@asset(required_resource_keys={"bigquery"})
-def small_petals(context):
-    return context.resources.bigquery.query(
-        (
-            'SELECT * FROM IRIS.IRIS_DATA WHERE "Petal length (cm)" < 1 AND "Petal'
-            ' width (cm)" < 1'
-        ),
-    ).result()
+@asset
+def small_petals(bigquery: BigQueryResource):
+    with bigquery.get_client() as client:
+        return client.query(
+            (
+                'SELECT * FROM IRIS.IRIS_DATA WHERE "petal_length_cm" < 1 AND'
+                ' "petal_width_cm" < 1'
+            ),
+        ).result()
 
 
 defs = Definitions(
     assets=[small_petals],
     resources={
-        "bigquery": bigquery_resource.configured(
-            {
-                "project": "my-gcp-project",
-                "location": "us-east5",
-            }
+        "bigquery": BigQueryResource(
+            project="my-gcp-project",
+            location="us-east5",
         )
     },
 )

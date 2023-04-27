@@ -20,17 +20,17 @@ import dateutil
 from dagster import (
     AssetKey,
     AssetsDefinition,
+    AutoMaterializePolicy,
     FreshnessPolicy,
     In,
     OpExecutionContext,
     Out,
     PartitionsDefinition,
+    PermissiveConfig,
     _check as check,
     get_dagster_logger,
     op,
 )
-from dagster._config.field import Field
-from dagster._config.field_utils import Permissive
 from dagster._core.definitions.events import (
     AssetMaterialization,
     AssetObservation,
@@ -45,6 +45,7 @@ from dagster._utils.merger import deep_merge_dicts
 
 from dagster_dbt.asset_utils import (
     default_asset_key_fn,
+    default_auto_materialize_policy_fn,
     default_freshness_policy_fn,
     default_group_fn,
     default_metadata_fn,
@@ -197,7 +198,7 @@ def _events_for_structured_json_line(
             output_name=output_name_fn(compiled_node_info),
             metadata=metadata,
         )
-    elif node_resource_type == "test" and runtime_node_info.get("node_finished_at") is not None:
+    elif node_resource_type == "test" and runtime_node_info.get("node_finished_at"):
         upstream_unique_ids = (
             manifest_json["nodes"][unique_id].get("depends_on", {}).get("nodes", [])
         )
@@ -243,6 +244,18 @@ def _stream_event_iterator(
         )
 
 
+class DbtOpConfig(PermissiveConfig):
+    """Keyword arguments to pass to the underlying dbt command. Additional arguments not listed in the schema will
+    be passed through as well, e.g. {'bool_flag': True, 'string_flag': 'hi'} will result in the flags
+    '--bool_flag --string_flag hi' being passed to the dbt command.
+    """
+
+    select: Optional[str] = None
+    exclude: Optional[str] = None
+    vars: Optional[Dict[str, Any]] = None
+    full_refresh: Optional[bool] = None
+
+
 def _get_dbt_op(
     op_name: str,
     ins: Mapping[str, In],
@@ -264,25 +277,8 @@ def _get_dbt_op(
         ins=ins,
         out=outs,
         required_resource_keys={dbt_resource_key},
-        config_schema=Field(
-            Permissive(
-                {
-                    "select": Field(str, is_required=False),
-                    "exclude": Field(str, is_required=False),
-                    "vars": Field(dict, is_required=False),
-                    "full_refresh": Field(bool, is_required=False),
-                }
-            ),
-            default_value={},
-            description=(
-                "Keyword arguments to pass to the underlying dbt command. Additional arguments not"
-                " listed in the schema will be passed through as well, e.g. {'bool_flag': True,"
-                " 'string_flag': 'hi'} will result in the flags '--bool-flag --string-flag hi'"
-                " being passed into the underlying execution"
-            ),
-        ),
     )
-    def _dbt_op(context):
+    def _dbt_op(context, config: DbtOpConfig):
         dbt_resource = getattr(context.resources, dbt_resource_key)
         # clean up any run results from the last run
         dbt_resource.remove_run_results_json()
@@ -346,6 +342,9 @@ def _dbt_nodes_to_assets(
     node_info_to_freshness_policy_fn: Callable[
         [Mapping[str, Any]], Optional[FreshnessPolicy]
     ] = default_freshness_policy_fn,
+    node_info_to_auto_materialize_policy_fn: Callable[
+        [Mapping[str, Any]], Optional[AutoMaterializePolicy]
+    ] = default_auto_materialize_policy_fn,
     node_info_to_definition_metadata_fn: Callable[
         [Mapping[str, Any]], Mapping[str, MetadataUserInput]
     ] = default_metadata_fn,
@@ -366,6 +365,7 @@ def _dbt_nodes_to_assets(
         asset_outs,
         group_names_by_key,
         freshness_policies_by_key,
+        auto_materialize_policies_by_key,
         fqns_by_output_name,
         _,
     ) = get_asset_deps(
@@ -374,6 +374,7 @@ def _dbt_nodes_to_assets(
         node_info_to_asset_key=node_info_to_asset_key,
         node_info_to_group_fn=node_info_to_group_fn,
         node_info_to_freshness_policy_fn=node_info_to_freshness_policy_fn,
+        node_info_to_auto_materialize_policy_fn=node_info_to_auto_materialize_policy_fn,
         node_info_to_definition_metadata_fn=node_info_to_definition_metadata_fn,
         io_manager_key=io_manager_key,
         display_raw_sql=display_raw_sql,
@@ -410,6 +411,7 @@ def _dbt_nodes_to_assets(
         asset_deps=asset_deps,
         group_names_by_key=group_names_by_key,
         freshness_policies_by_key=freshness_policies_by_key,
+        auto_materialize_policies_by_key=auto_materialize_policies_by_key,
         partitions_def=partitions_def,
     )
 
@@ -434,6 +436,9 @@ def load_assets_from_dbt_project(
     node_info_to_freshness_policy_fn: Callable[
         [Mapping[str, Any]], Optional[FreshnessPolicy]
     ] = default_freshness_policy_fn,
+    node_info_to_auto_materialize_policy_fn: Callable[
+        [Mapping[str, Any]], Optional[AutoMaterializePolicy]
+    ] = default_auto_materialize_policy_fn,
     node_info_to_definition_metadata_fn: Callable[
         [Mapping[str, Any]], Mapping[str, MetadataUserInput]
     ] = default_metadata_fn,
@@ -486,6 +491,12 @@ def load_assets_from_dbt_project(
             `dagster_freshness_policy={"maximum_lag_minutes": 60, "cron_schedule": "0 9 * * *"}`
             will result in that model being assigned
             `FreshnessPolicy(maximum_lag_minutes=60, cron_schedule="0 9 * * *")`
+        node_info_to_auto_materialize_policy_fn (Dict[str, Any] -> Optional[AutoMaterializePolicy]):
+            A function that takes a dictionary of dbt node info and optionally returns a AutoMaterializePolicy
+            that should be applied to this node. By default, AutoMaterializePolicies will be created from
+            config applied to dbt models, i.e.:
+            `dagster_auto_materialize_policy={"type": "lazy"}` will result in that model being assigned
+            `AutoMaterializePolicy.lazy()`
         node_info_to_definition_metadata_fn (Dict[str, Any] -> Optional[Dict[str, MetadataUserInput]]):
             A function that takes a dictionary of dbt node info and optionally returns a dictionary
             of metadata to be attached to the corresponding definition. This is added to the default
@@ -521,6 +532,7 @@ def load_assets_from_dbt_project(
         use_build_command=use_build_command,
         partitions_def=partitions_def,
         partition_key_to_vars_fn=partition_key_to_vars_fn,
+        node_info_to_auto_materialize_policy_fn=node_info_to_auto_materialize_policy_fn,
         node_info_to_group_fn=node_info_to_group_fn,
         node_info_to_freshness_policy_fn=node_info_to_freshness_policy_fn,
         node_info_to_definition_metadata_fn=node_info_to_definition_metadata_fn,
@@ -548,6 +560,9 @@ def load_assets_from_dbt_manifest(
     node_info_to_freshness_policy_fn: Callable[
         [Mapping[str, Any]], Optional[FreshnessPolicy]
     ] = default_freshness_policy_fn,
+    node_info_to_auto_materialize_policy_fn: Callable[
+        [Mapping[str, Any]], Optional[AutoMaterializePolicy]
+    ] = default_auto_materialize_policy_fn,
     node_info_to_definition_metadata_fn: Callable[
         [Mapping[str, Any]], Mapping[str, MetadataUserInput]
     ] = default_metadata_fn,
@@ -598,6 +613,12 @@ def load_assets_from_dbt_manifest(
             `dagster_freshness_policy={"maximum_lag_minutes": 60, "cron_schedule": "0 9 * * *"}`
             will result in that model being assigned
             `FreshnessPolicy(maximum_lag_minutes=60, cron_schedule="0 9 * * *")`
+        node_info_to_auto_materialize_policy_fn (Dict[str, Any] -> Optional[AutoMaterializePolicy]):
+            A function that takes a dictionary of dbt node info and optionally returns a AutoMaterializePolicy
+            that should be applied to this node. By default, AutoMaterializePolicies will be created from
+            config applied to dbt models, i.e.:
+            `dagster_auto_materialize_policy={"type": "lazy"}` will result in that model being assigned
+            `AutoMaterializePolicy.lazy()`
         node_info_to_definition_metadata_fn (Dict[str, Any] -> Optional[Dict[str, MetadataUserInput]]):
             A function that takes a dictionary of dbt node info and optionally returns a dictionary
             of metadata to be attached to the corresponding definition. This is added to the default
@@ -660,6 +681,7 @@ def load_assets_from_dbt_manifest(
         partition_key_to_vars_fn=partition_key_to_vars_fn,
         node_info_to_group_fn=node_info_to_group_fn,
         node_info_to_freshness_policy_fn=node_info_to_freshness_policy_fn,
+        node_info_to_auto_materialize_policy_fn=node_info_to_auto_materialize_policy_fn,
         node_info_to_definition_metadata_fn=node_info_to_definition_metadata_fn,
         display_raw_sql=display_raw_sql,
     )
