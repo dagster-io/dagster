@@ -5,8 +5,12 @@ import graphene
 from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsSubset,
 )
+from dagster._core.execution.asset_backfill import (
+    AssetBackfillStatus,
+    PartitionedAssetBackfillStatus,
+    UnpartitionedAssetBackfillStatus,
+)
 from dagster._core.execution.backfill import (
-    BackfillPartitionsStatus,
     BulkActionStatus,
     PartitionBackfill,
 )
@@ -307,33 +311,40 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         if not self._backfill_job.is_asset_backfill:
             return None
 
-        status_counts_by_asset = self._backfill_job.get_status_by_asset(graphene_info.context)
+        status_per_asset = self._backfill_job.get_backfill_status_per_asset_key(
+            graphene_info.context
+        )
 
         asset_partition_status_counts = []
 
-        for asset_key, asset_status in status_counts_by_asset.items():
-            if isinstance(asset_status, tuple):
-                (counts_by_status, total_num_partitions) = asset_status
+        for asset_status in status_per_asset:
+            if isinstance(asset_status, PartitionedAssetBackfillStatus):
                 asset_partition_status_counts.append(
                     GrapheneAssetPartitionsStatusCounts(
-                        assetKey=asset_key,
-                        numPartitionsTargeted=total_num_partitions,
-                        numPartitionsInProgress=counts_by_status[
-                            BackfillPartitionsStatus.IN_PROGRESS
+                        assetKey=asset_status.asset_key,
+                        numPartitionsTargeted=asset_status.num_targeted_partitions,
+                        numPartitionsInProgress=asset_status.partitions_counts_by_status[
+                            AssetBackfillStatus.IN_PROGRESS
                         ],
-                        numPartitionsMaterialized=counts_by_status[
-                            BackfillPartitionsStatus.MATERIALIZED
+                        numPartitionsMaterialized=asset_status.partitions_counts_by_status[
+                            AssetBackfillStatus.MATERIALIZED
                         ],
-                        numPartitionsFailed=counts_by_status[BackfillPartitionsStatus.FAILED],
+                        numPartitionsFailed=asset_status.partitions_counts_by_status[
+                            AssetBackfillStatus.FAILED
+                        ],
                     )
                 )
             else:
+                if not isinstance(asset_status, UnpartitionedAssetBackfillStatus):
+                    check.failed(f"Unexpected asset status type {type(asset_status)}")
+
                 asset_partition_status_counts.append(
                     GrapheneUnpartitionedAssetStatus(
-                        assetKey=asset_key,
-                        inProgress=asset_status is BackfillPartitionsStatus.IN_PROGRESS,
-                        materialized=asset_status is BackfillPartitionsStatus.MATERIALIZED,
-                        failed=asset_status is BackfillPartitionsStatus.FAILED,
+                        assetKey=asset_status.asset_key,
+                        inProgress=asset_status.backfill_status is AssetBackfillStatus.IN_PROGRESS,
+                        materialized=asset_status.backfill_status
+                        is AssetBackfillStatus.MATERIALIZED,
+                        failed=asset_status.backfill_status is AssetBackfillStatus.FAILED,
                     )
                 )
 

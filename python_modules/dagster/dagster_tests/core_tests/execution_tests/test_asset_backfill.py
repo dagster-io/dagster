@@ -21,7 +21,7 @@ from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.execution.asset_backfill import (
     AssetBackfillData,
     AssetBackfillIterationResult,
-    BackfillPartitionsStatus,
+    AssetBackfillStatus,
     execute_asset_backfill_iteration_inner,
 )
 from dagster._core.host_representation.external_data import external_asset_graph_from_defs
@@ -633,30 +633,19 @@ def test_asset_backfill_status_counts():
         ],
     )
 
-    counts = completed_backfill_data.get_status_by_asset_key()
+    counts = completed_backfill_data.get_backfill_status_per_asset_key()
 
-    assert (
-        counts[unpartitioned_upstream_of_partitioned.key] == BackfillPartitionsStatus.MATERIALIZED
-    )
+    assert counts[0].asset_key == unpartitioned_upstream_of_partitioned.key
+    assert counts[0].backfill_status == AssetBackfillStatus.MATERIALIZED
 
-    assert (
-        counts[upstream_daily_partitioned_asset.key][0][BackfillPartitionsStatus.MATERIALIZED] == 0
-    )
-    assert counts[upstream_daily_partitioned_asset.key][0][BackfillPartitionsStatus.FAILED] == 1
-    assert (
-        counts[upstream_daily_partitioned_asset.key][0][BackfillPartitionsStatus.IN_PROGRESS] == 0
-    )
-    assert (
-        counts[upstream_daily_partitioned_asset.key][1] == 1
-    )  # total number of targeted partitions
+    assert counts[1].asset_key == upstream_daily_partitioned_asset.key
+    assert counts[1].partitions_counts_by_status[AssetBackfillStatus.MATERIALIZED] == 0
+    assert counts[1].partitions_counts_by_status[AssetBackfillStatus.FAILED] == 1
+    assert counts[1].partitions_counts_by_status[AssetBackfillStatus.IN_PROGRESS] == 0
+    assert counts[1].num_targeted_partitions == 1
 
-    assert (
-        counts[downstream_weekly_partitioned_asset.key][0][BackfillPartitionsStatus.MATERIALIZED]
-        == 0
-    )
-    assert counts[downstream_weekly_partitioned_asset.key][0][BackfillPartitionsStatus.FAILED] == 1
-    assert (
-        counts[downstream_weekly_partitioned_asset.key][0][BackfillPartitionsStatus.IN_PROGRESS]
-        == 0
-    )
-    assert counts[downstream_weekly_partitioned_asset.key][1] == 1
+    assert counts[2].asset_key == downstream_weekly_partitioned_asset.key
+    assert counts[2].partitions_counts_by_status[AssetBackfillStatus.MATERIALIZED] == 0
+    assert counts[2].partitions_counts_by_status[AssetBackfillStatus.FAILED] == 1
+    assert counts[2].partitions_counts_by_status[AssetBackfillStatus.IN_PROGRESS] == 0
+    assert counts[2].num_targeted_partitions == 1
