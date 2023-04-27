@@ -257,6 +257,9 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def add_dynamic_partitions(
         self, partitions_def_name: str, partition_keys: Sequence[str]
     ) -> None:
+        if not partition_keys:
+            return
+
         # Overload base implementation to push upsert logic down into the db layer
         self._check_partitions_table()
         with self.index_connection() as conn:

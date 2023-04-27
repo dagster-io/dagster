@@ -3246,6 +3246,9 @@ class TestEventLogStorage:
 
         assert set(storage.get_dynamic_partitions("baz")) == set()
 
+        # Adding no partitions is a no-op
+        storage.add_dynamic_partitions(partitions_def_name="foo", partition_keys=[])
+
     def test_delete_dynamic_partitions(self, storage):
         assert storage
 
