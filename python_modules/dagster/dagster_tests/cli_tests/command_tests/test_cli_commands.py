@@ -64,7 +64,7 @@ def foo_job():
     do_input(do_something())
 
 
-def define_foo_pipeline():
+def define_foo_job():
     return foo_job
 
 
