@@ -26,12 +26,11 @@ from dagster import (
     OpExecutionContext,
     Out,
     PartitionsDefinition,
+    PermissiveConfig,
     _check as check,
     get_dagster_logger,
     op,
 )
-from dagster._config.field import Field
-from dagster._config.field_utils import Permissive
 from dagster._core.definitions.events import (
     AssetMaterialization,
     AssetObservation,
@@ -245,6 +244,18 @@ def _stream_event_iterator(
         )
 
 
+class DbtOpConfig(PermissiveConfig):
+    """Keyword arguments to pass to the underlying dbt command. Additional arguments not listed in the schema will
+    be passed through as well, e.g. {'bool_flag': True, 'string_flag': 'hi'} will result in the flags
+    '--bool_flag --string_flag hi' being passed to the dbt command.
+    """
+
+    select: Optional[str] = None
+    exclude: Optional[str] = None
+    vars: Optional[Dict[str, Any]] = None
+    full_refresh: Optional[bool] = None
+
+
 def _get_dbt_op(
     op_name: str,
     ins: Mapping[str, In],
@@ -266,25 +277,8 @@ def _get_dbt_op(
         ins=ins,
         out=outs,
         required_resource_keys={dbt_resource_key},
-        config_schema=Field(
-            Permissive(
-                {
-                    "select": Field(str, is_required=False),
-                    "exclude": Field(str, is_required=False),
-                    "vars": Field(dict, is_required=False),
-                    "full_refresh": Field(bool, is_required=False),
-                }
-            ),
-            default_value={},
-            description=(
-                "Keyword arguments to pass to the underlying dbt command. Additional arguments not"
-                " listed in the schema will be passed through as well, e.g. {'bool_flag': True,"
-                " 'string_flag': 'hi'} will result in the flags '--bool-flag --string-flag hi'"
-                " being passed into the underlying execution"
-            ),
-        ),
     )
-    def _dbt_op(context):
+    def _dbt_op(context, config: DbtOpConfig):
         dbt_resource = getattr(context.resources, dbt_resource_key)
         # clean up any run results from the last run
         dbt_resource.remove_run_results_json()
