@@ -199,7 +199,7 @@ def _events_for_structured_json_line(
             output_name=output_name_fn(compiled_node_info),
             metadata=metadata,
         )
-    elif node_resource_type == "test" and runtime_node_info.get("node_finished_at") is not None:
+    elif node_resource_type == "test" and runtime_node_info.get("node_finished_at"):
         upstream_unique_ids = (
             manifest_json["nodes"][unique_id].get("depends_on", {}).get("nodes", [])
         )
