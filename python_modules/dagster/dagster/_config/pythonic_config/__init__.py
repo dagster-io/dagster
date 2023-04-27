@@ -796,14 +796,17 @@ class ConfigurableResourceFactory(
     def _resolved_config_dict(self):
         return self._state__internal__.resolved_config_dict
 
-    @cached_method
-    def get_resource_definition(self) -> ConfigurableResourceFactoryResourceDefinition:
+    def _get_initialize_and_run_fn(self) -> Callable:
         is_cm_resource = (
             self.__class__.yield_for_execution != ConfigurableResourceFactory.yield_for_execution
             or self.__class__.post_execute != ConfigurableResourceFactory.post_execute
         )
+        return self._initialize_and_run_cm if is_cm_resource else self._initialize_and_run
+
+    @cached_method
+    def get_resource_definition(self) -> ConfigurableResourceFactoryResourceDefinition:
         return ConfigurableResourceFactoryResourceDefinition(
-            resource_fn=self._initialize_and_run_cm if is_cm_resource else self._initialize_and_run,
+            resource_fn=self._get_initialize_and_run_fn(),
             config_schema=self._config_schema,
             description=self.__doc__,
             resolve_resource_keys=self._resolve_required_resource_keys,
@@ -1070,7 +1073,7 @@ class PartialResource(Generic[TResValue], AllowDelayedDependencies, MakeConfigCa
 
         def resource_fn(context: InitResourceContext):
             instantiated = resource_cls(**context.resource_config, **data)
-            return instantiated._initialize_and_run(context)  # noqa: SLF001
+            return instantiated._get_initialize_and_run_fn()(context)  # noqa: SLF001
 
         self._state__internal__ = PartialResourceState(
             # We keep track of any resources we depend on which are not fully configured
@@ -1247,7 +1250,7 @@ class ConfigurableIOManagerFactory(ConfigurableResourceFactory[TIOManagerValue])
     @cached_method
     def get_resource_definition(self) -> ConfigurableIOManagerFactoryResourceDefinition:
         return ConfigurableIOManagerFactoryResourceDefinition(
-            resource_fn=self._initialize_and_run,
+            resource_fn=self._get_initialize_and_run_fn(),
             config_schema=self._config_schema,
             description=self.__doc__,
             resolve_resource_keys=self._resolve_required_resource_keys,
