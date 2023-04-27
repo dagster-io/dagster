@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Box, Checkbox, Colors, Icon, NonIdealState, Table, Mono} from '@dagster-io/ui';
+import {Box, Checkbox, Colors, Icon, NonIdealState, Table, Mono, Tag} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -238,6 +238,8 @@ const RunRow: React.FC<{
     }
   };
 
+  const isReexecution = run.tags.some((tag) => tag.key === DagsterTag.ParentRunId);
+
   return (
     <Row highlighted={!!isHighlighted}>
       <td>
@@ -251,7 +253,14 @@ const RunRow: React.FC<{
         </Link>
       </td>
       <td>
-        <RunTime run={run} />
+        <Box flex={{direction: 'column', gap: 8}}>
+          <RunTime run={run} />
+          {isReexecution ? (
+            <div>
+              <Tag icon="cached">Re-execution</Tag>
+            </div>
+          ) : null}
+        </Box>
       </td>
       <td>
         <Box flex={{direction: 'column', gap: 5}}>
