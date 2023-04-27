@@ -404,7 +404,7 @@ class OutputContext:
         if self._step_context is not None:
             return self._step_context.has_asset_partitions_for_output(self.name)
         else:
-            return False
+            return self._partition_key is not None and self.has_asset_key
 
     @public
     @property

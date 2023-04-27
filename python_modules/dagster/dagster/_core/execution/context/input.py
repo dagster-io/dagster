@@ -608,6 +608,10 @@ def build_input_context(
         )
     elif asset_partition_key_range:
         asset_partitions_subset = KeyRangeNoPartitionsDefPartitionsSubset(asset_partition_key_range)
+    elif partition_key:
+        asset_partitions_subset = KeyRangeNoPartitionsDefPartitionsSubset(
+            PartitionKeyRange(partition_key, partition_key)
+        )
     else:
         asset_partitions_subset = None
 
