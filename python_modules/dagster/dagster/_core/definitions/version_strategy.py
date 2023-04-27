@@ -51,7 +51,7 @@ class VersionStrategy(ABC):
     `get_op_version` should ingest an OpVersionContext, and `get_resource_version` should ingest a
     ResourceVersionContext. From that,  each synthesize a unique string called
     a `version`, which will
-    be tagged to outputs of that solid in the pipeline. Providing a
+    be tagged to outputs of that op in the job. Providing a
     `VersionStrategy` instance to a
     job will enable memoization on that job, such that only steps whose
     outputs do not have an up-to-date version will run.

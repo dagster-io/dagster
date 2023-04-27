@@ -137,7 +137,7 @@ class GraphDefinition(NodeDefinition):
     Args:
         name (str): The name of the graph. Must be unique within any :py:class:`GraphDefinition`
             or :py:class:`JobDefinition` containing the graph.
-        description (Optional[str]): A human-readable description of the pipeline.
+        description (Optional[str]): A human-readable description of the job.
         node_defs (Optional[Sequence[NodeDefinition]]): The set of ops / graphs used in this graph.
         dependencies (Optional[Dict[Union[str, NodeInvocation], Dict[str, DependencyDefinition]]]):
             A structure that declares the dependencies of each op's inputs on the outputs of other

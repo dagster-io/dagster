@@ -507,14 +507,14 @@ def _create_external_run(
     )
 
     job_name = external_job.name
-    pipeline_selector = JobSubsetSelector(
+    job_subset_selector = JobSubsetSelector(
         location_name=code_location.name,
         repository_name=external_repo.name,
         job_name=job_name,
         solid_selection=solid_selection,
     )
 
-    external_job = code_location.get_external_job(pipeline_selector)
+    external_job = code_location.get_external_job(job_subset_selector)
 
     external_execution_plan = code_location.get_external_execution_plan(
         external_job,

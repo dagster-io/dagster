@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 
 class ExecutorRequirement(PyEnum):
     """An ExecutorDefinition can include a list of requirements that the system uses to
-    check whether the executor will be able to work for a particular job/pipeline execution.
+    check whether the executor will be able to work for a particular job execution.
     """
 
     # The passed in IJob must be reconstructable across process boundaries
@@ -45,7 +45,7 @@ class ExecutorRequirement(PyEnum):
     # The DagsterInstance must be loadable in a different process
     NON_EPHEMERAL_INSTANCE = "NON_EPHEMERAL_INSTANCE"
 
-    # Any solid outputs on the pipeline must be persisted
+    # Any op outputs on the job must be persisted
     PERSISTENT_OUTPUTS = "PERSISTENT_OUTPUTS"
 
 
@@ -71,7 +71,7 @@ class ExecutorDefinition(NamedConfigurableDefinition):
             available in `init_context.executor_config`. If not set, Dagster will accept any config
             provided.
         requirements (Optional[List[ExecutorRequirement]]): Any requirements that must
-            be met in order for the executor to be usable for a particular pipeline execution.
+            be met in order for the executor to be usable for a particular job execution.
         executor_creation_fn(Optional[Callable]): Should accept an :py:class:`InitExecutorContext`
             and return an instance of :py:class:`Executor`
         required_resource_keys (Optional[Set[str]]): Keys for the resources required by the
@@ -224,7 +224,7 @@ def executor(
         config_schema (Optional[ConfigSchema]): The schema for the config. Configuration data available in
             `init_context.executor_config`. If not set, Dagster will accept any config provided for.
         requirements (Optional[List[ExecutorRequirement]]): Any requirements that must
-            be met in order for the executor to be usable for a particular pipeline execution.
+            be met in order for the executor to be usable for a particular job execution.
     """
     if callable(name):
         check.invariant(config_schema is None)
@@ -291,8 +291,7 @@ IN_PROC_CONFIG = Field(
 def in_process_executor(init_context):
     """The in-process executor executes all steps in a single process.
 
-    For legacy pipelines, this will be the default executor. To select it explicitly,
-    include the following top-level fragment in config:
+    To select it, include the following top-level fragment in config:
 
     .. code-block:: yaml
 
@@ -405,8 +404,8 @@ def multiprocess_executor(init_context):
     """The multiprocess executor executes each step in an individual process.
 
     Any job that does not specify custom executors will use the multiprocess_executor by default.
-    For jobs or legacy pipelines, to configure the multiprocess executor, include a fragment such
-    as the following in your run config:
+    To configure the multiprocess executor, include a fragment such as the following in your run
+    config:
 
     .. code-block:: yaml
 
@@ -433,25 +432,21 @@ def check_cross_process_constraints(init_context: "InitExecutorContext") -> None
     requirements_lst = init_context.executor_def.get_requirements(init_context.executor_config)
 
     if ExecutorRequirement.RECONSTRUCTABLE_JOB in requirements_lst:
-        _check_intra_process_pipeline(init_context.job)
+        _check_intra_process_job(init_context.job)
 
     if ExecutorRequirement.NON_EPHEMERAL_INSTANCE in requirements_lst:
         _check_non_ephemeral_instance(init_context.instance)
 
 
-def _check_intra_process_pipeline(pipeline: IJob) -> None:
-    from dagster._core.definitions import JobDefinition
-
-    if not isinstance(pipeline, ReconstructableJob):
-        target = "job" if isinstance(pipeline.get_definition(), JobDefinition) else "pipeline"
+def _check_intra_process_job(job: IJob) -> None:
+    if not isinstance(job, ReconstructableJob):
         raise DagsterUnmetExecutorRequirementsError(
-            "You have attempted to use an executor that uses multiple processes with the {target}"
-            ' "{name}" that is not reconstructable. {target_cap} must be loaded in a way that'
-            " allows dagster to reconstruct them in a new process. This means: \n  * using the"
-            " file, module, or repository.yaml arguments of dagit/dagster-graphql/dagster\n  *"
-            " loading the {target} through the reconstructable() function\n".format(
-                target=target, name=pipeline.get_definition().name, target_cap=target.capitalize()
-            )
+            "You have attempted to use an executor that uses multiple processes with the job"
+            f' "{job.get_definition().name}" that is not reconstructable. Job must be loaded in a'
+            " way that allows dagster to reconstruct them in a new process. This means: \n  *"
+            " using the file, module, or repository.yaml arguments of"
+            " dagit/dagster-graphql/dagster\n  * loading the job through the reconstructable()"
+            " function\n"
         )
 
 
