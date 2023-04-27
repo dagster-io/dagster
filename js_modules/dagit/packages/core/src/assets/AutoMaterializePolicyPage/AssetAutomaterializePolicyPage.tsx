@@ -157,7 +157,7 @@ const RightPanelDetail = ({
 
 const MiddlePanel = () => {
   return (
-    <Box flex={{direction: 'column'}}>
+    <Box flex={{direction: 'column', grow: 1}}>
       <CollapsibleSection
         header="Result"
         headerRightSide={
