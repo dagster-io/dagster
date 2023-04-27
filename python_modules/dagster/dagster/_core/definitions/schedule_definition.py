@@ -512,6 +512,7 @@ class ScheduleDefinition:
             description=self.description,
             job=new_job,
             default_status=self.default_status,
+            required_resource_keys=self.required_resource_keys
         )
 
     def __init__(
