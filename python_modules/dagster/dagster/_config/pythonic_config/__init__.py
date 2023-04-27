@@ -205,7 +205,7 @@ class Config(MakeConfigCacheable):
 
                 discriminator_key = check.not_none(field.discriminator_key)
                 if isinstance(value, Config):
-                    nested_dict = _discriminated_union_config_dict_to_config(
+                    nested_dict = _discriminated_union_config_dict_to_selector_config_dict(
                         discriminator_key,
                         value._get_non_none_public_field_values(),  # noqa: SLF001
                     )
@@ -287,9 +287,16 @@ class Config(MakeConfigCacheable):
         return cast(Shape, cls.to_config_schema().as_field().config_type).fields
 
 
-def _discriminated_union_config_dict_to_config(
+def _discriminated_union_config_dict_to_selector_config_dict(
     discriminator_key: str, config_dict: Mapping[str, Any]
 ):
+    """Remaps a config dictionary which is a member of a discriminated union to
+    the appropriate structure for a Dagster config selector.
+
+    A discriminated union with key "my_key" and value "my_value" will be represented
+    as {"my_key": "my_value", "my_field": "my_field_value"}. When converted to a selector,
+    this should be represented as {"my_value": {"my_field": "my_field_value"}}.
+    """
     updated_dict = dict(config_dict)
     discriminator_value = updated_dict.pop(discriminator_key)
     wrapped_dict = {discriminator_value: updated_dict}
@@ -318,7 +325,7 @@ def _config_value_to_dict_representation(field: Optional[ModelField], value: Any
         if field and field.discriminator_key:
             return {
                 k: v
-                for k, v in _discriminated_union_config_dict_to_config(
+                for k, v in _discriminated_union_config_dict_to_selector_config_dict(
                     field.discriminator_key,
                     value._convert_to_config_dictionary_inner(),  # noqa: SLF001
                 ).items()
