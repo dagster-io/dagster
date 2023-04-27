@@ -28,7 +28,7 @@ from dagster._core.run_coordinator.queued_run_coordinator import QueuedRunCoordi
 from dagster._core.secrets.env_file import EnvFileLoader
 from dagster._core.snap import (
     create_execution_plan_snapshot_id,
-    create_pipeline_snapshot_id,
+    create_job_snapshot_id,
     snapshot_from_execution_plan,
 )
 from dagster._core.storage.sqlite_storage import (
@@ -58,7 +58,7 @@ def test_get_run_by_id():
     instance = DagsterInstance.ephemeral()
 
     assert instance.get_runs() == []
-    run = create_run_for_test(instance, pipeline_name="foo_job", run_id="new_run")
+    run = create_run_for_test(instance, job_name="foo_job", run_id="new_run")
 
     assert instance.get_runs() == [run]
 
@@ -72,10 +72,10 @@ def do_test_single_write_read(instance):
     def job_def():
         pass
 
-    instance.create_run_for_pipeline(pipeline_def=job_def, run_id=run_id)
+    instance.create_run_for_job(job_def=job_def, run_id=run_id)
     run = instance.get_run_by_id(run_id)
     assert run.run_id == run_id
-    assert run.pipeline_name == "job_def"
+    assert run.job_name == "job_def"
     assert list(instance.get_runs()) == [run]
     instance.wipe()
     assert list(instance.get_runs()) == []
@@ -256,18 +256,14 @@ def test_create_job_snapshot():
 
         run = instance.get_run_by_id(result.run_id)
 
-        assert run.pipeline_snapshot_id == create_pipeline_snapshot_id(
-            noop_job.get_pipeline_snapshot()
-        )
+        assert run.job_snapshot_id == create_job_snapshot_id(noop_job.get_job_snapshot())
 
 
 def test_create_execution_plan_snapshot():
     with instance_for_test() as instance:
         execution_plan = create_execution_plan(noop_job)
 
-        ep_snapshot = snapshot_from_execution_plan(
-            execution_plan, noop_job.get_pipeline_snapshot_id()
-        )
+        ep_snapshot = snapshot_from_execution_plan(execution_plan, noop_job.get_job_snapshot_id())
         ep_snapshot_id = create_execution_plan_snapshot_id(ep_snapshot)
 
         result = execute_job(reconstructable(noop_job), instance=instance)
@@ -297,10 +293,10 @@ def test_submit_run():
 
             run = create_run_for_test(
                 instance=instance,
-                pipeline_name=external_job.name,
+                job_name=external_job.name,
                 run_id="foo-bar",
-                external_pipeline_origin=external_job.get_external_origin(),
-                pipeline_code_origin=external_job.get_python_origin(),
+                external_job_origin=external_job.get_external_origin(),
+                job_code_origin=external_job.get_python_origin(),
             )
 
             instance.submit_run(run.run_id, workspace)
@@ -314,7 +310,7 @@ def test_create_run_with_asset_partitions():
         execution_plan = create_execution_plan(noop_asset_job)
 
         ep_snapshot = snapshot_from_execution_plan(
-            execution_plan, noop_asset_job.get_pipeline_snapshot_id()
+            execution_plan, noop_asset_job.get_job_snapshot_id()
         )
 
         with pytest.raises(
@@ -326,9 +322,9 @@ def test_create_run_with_asset_partitions():
         ):
             create_run_for_test(
                 instance=instance,
-                pipeline_name="foo",
+                job_name="foo",
                 execution_plan_snapshot=ep_snapshot,
-                pipeline_snapshot=noop_asset_job.get_pipeline_snapshot(),
+                job_snapshot=noop_asset_job.get_job_snapshot(),
                 tags={ASSET_PARTITION_RANGE_START_TAG: "partition_0"},
             )
 
@@ -341,17 +337,17 @@ def test_create_run_with_asset_partitions():
         ):
             create_run_for_test(
                 instance=instance,
-                pipeline_name="foo",
+                job_name="foo",
                 execution_plan_snapshot=ep_snapshot,
-                pipeline_snapshot=noop_asset_job.get_pipeline_snapshot(),
+                job_snapshot=noop_asset_job.get_job_snapshot(),
                 tags={ASSET_PARTITION_RANGE_END_TAG: "partition_0"},
             )
 
         create_run_for_test(
             instance=instance,
-            pipeline_name="foo",
+            job_name="foo",
             execution_plan_snapshot=ep_snapshot,
-            pipeline_snapshot=noop_asset_job.get_pipeline_snapshot(),
+            job_snapshot=noop_asset_job.get_job_snapshot(),
             tags={ASSET_PARTITION_RANGE_START_TAG: "bar", ASSET_PARTITION_RANGE_END_TAG: "foo"},
         )
 

@@ -165,7 +165,12 @@ class GraphenePartition(graphene.ObjectType):
     class Meta:
         name = "Partition"
 
-    def __init__(self, external_repository_handle, external_partition_set, partition_name):
+    def __init__(
+        self,
+        external_repository_handle: RepositoryHandle,
+        external_partition_set: ExternalPartitionSet,
+        partition_name: str,
+    ):
         self._external_repository_handle = check.inst_param(
             external_repository_handle, "external_respository_handle", RepositoryHandle
         )
@@ -212,7 +217,7 @@ class GraphenePartition(graphene.ObjectType):
             selector = filter.to_selector()
             runs_filter = RunsFilter(
                 run_ids=selector.run_ids,
-                pipeline_name=selector.job_name,
+                job_name=selector.job_name,
                 statuses=selector.statuses,
                 tags=merge_dicts(selector.tags, partition_tags),
             )
@@ -260,7 +265,11 @@ class GraphenePartitionSet(graphene.ObjectType):
     class Meta:
         name = "PartitionSet"
 
-    def __init__(self, external_repository_handle, external_partition_set):
+    def __init__(
+        self,
+        external_repository_handle: RepositoryHandle,
+        external_partition_set: ExternalPartitionSet,
+    ):
         self._external_repository_handle = check.inst_param(
             external_repository_handle, "external_respository_handle", RepositoryHandle
         )
@@ -270,7 +279,7 @@ class GraphenePartitionSet(graphene.ObjectType):
 
         super().__init__(
             name=external_partition_set.name,
-            pipeline_name=external_partition_set.pipeline_name,
+            pipeline_name=external_partition_set.job_name,
             solid_selection=external_partition_set.solid_selection,
             mode=external_partition_set.mode,
         )
@@ -294,7 +303,7 @@ class GraphenePartitionSet(graphene.ObjectType):
             reverse=reverse or False,
         )
 
-    def resolve_partition(self, graphene_info: ResolveInfo, partition_name):
+    def resolve_partition(self, graphene_info: ResolveInfo, partition_name: str):
         return get_partition_by_name(
             graphene_info,
             self._external_repository_handle,

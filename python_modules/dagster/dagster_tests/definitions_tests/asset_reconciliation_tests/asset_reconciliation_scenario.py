@@ -153,7 +153,7 @@ class AssetReconciliationScenario(NamedTuple):
                     with_external_asset_graph=with_external_asset_graph,
                 )
                 for run_request in run_requests:
-                    instance.create_run_for_pipeline(
+                    instance.create_run_for_job(
                         prior_repo.get_implicit_job_def_for_assets(run_request.asset_selection),
                         asset_selection=set(run_request.asset_selection),
                         tags=run_request.tags,

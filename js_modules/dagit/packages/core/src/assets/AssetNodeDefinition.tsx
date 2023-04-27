@@ -91,7 +91,7 @@ export const AssetNodeDefinition: React.FC<{
               </Box>
             </>
           )}
-          {liveDataForNode?.freshnessPolicy && (
+          {assetNode.freshnessPolicy && (
             <>
               <Box
                 padding={{vertical: 16, horizontal: 24}}
@@ -104,9 +104,12 @@ export const AssetNodeDefinition: React.FC<{
                 flex={{gap: 12, alignItems: 'flex-start'}}
               >
                 <Body style={{flex: 1}}>
-                  {freshnessPolicyDescription(liveDataForNode.freshnessPolicy)}
+                  {freshnessPolicyDescription(assetNode.freshnessPolicy)}
                 </Body>
-                <CurrentMinutesLateTag liveData={liveDataForNode} />
+                <CurrentMinutesLateTag
+                  liveData={liveDataForNode}
+                  policy={assetNode.freshnessPolicy}
+                />
               </Box>
             </>
           )}
@@ -116,7 +119,7 @@ export const AssetNodeDefinition: React.FC<{
                 padding={{vertical: 16, horizontal: 24}}
                 border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
               >
-                <Subheading>Auto-materialization policy</Subheading>
+                <Subheading>Auto-materialize policy</Subheading>
               </Box>
               <Box
                 padding={{vertical: 16, horizontal: 24}}
@@ -294,6 +297,12 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
     autoMaterializePolicy {
       policyType
     }
+    freshnessPolicy {
+      maximumLagMinutes
+      cronSchedule
+      cronScheduleTimezone
+    }
+
     partitionDefinition {
       description
     }

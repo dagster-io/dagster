@@ -3,7 +3,7 @@ from unittest import mock
 import pytest
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._seven import json
-from dagster_graphql.implementation.fetch_pipelines import _get_pipeline_snapshot_from_instance
+from dagster_graphql.implementation.fetch_pipelines import _get_job_snapshot_from_instance
 from dagster_graphql.implementation.utils import UserFacingGraphQLError
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
@@ -68,12 +68,12 @@ def test_fetch_snapshot_or_error_by_snapshot_id_success(
     result = noop_job.execute_in_process(instance=instance)
     assert result.success
     run = instance.get_run_by_id(result.run_id)
-    assert run and run.pipeline_snapshot_id
+    assert run and run.job_snapshot_id
 
     result = execute_dagster_graphql(
         graphql_context,
         SNAPSHOT_OR_ERROR_QUERY_BY_SNAPSHOT_ID,
-        {"snapshotId": run.pipeline_snapshot_id},
+        {"snapshotId": run.job_snapshot_id},
     )
 
     assert not result.errors
@@ -147,8 +147,8 @@ def test_fetch_snapshot_or_error_by_active_pipeline_name_not_found(
 def test_temporary_error_or_deletion_after_instance_check():
     instance = mock.MagicMock()
 
-    instance.has_historical_pipeline.return_value = True
-    instance.get_historical_pipeline.return_value = None
+    instance.has_historical_job.return_value = True
+    instance.get_historical_job.return_value = None
 
     with pytest.raises(UserFacingGraphQLError):
-        _get_pipeline_snapshot_from_instance(instance, "kjdkfjd")
+        _get_job_snapshot_from_instance(instance, "kjdkfjd")

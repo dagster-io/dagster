@@ -933,7 +933,7 @@ def test_back_compat_external_sensor():
     assert "my_pipeline" in external_sensor_data.target_dict
     target = external_sensor_data.target_dict["my_pipeline"]
     assert isinstance(target, ExternalTargetData)
-    assert target.pipeline_name == "my_pipeline"
+    assert target.job_name == "my_pipeline"
 
 
 def _check_partitions_def_equal(

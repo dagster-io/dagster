@@ -41,7 +41,7 @@ def test_k8s_run_monitoring_startup_fail(
         run_id = launch_run_over_graphql(
             dagit_url_for_k8s_run_launcher,
             run_config=run_config,
-            pipeline_name="slow_job_k8s",
+            job_name="slow_job_k8s",
             tags={
                 "dagster-k8s/config": json.dumps(
                     {
@@ -101,7 +101,7 @@ def _launch_run_and_wait_for_resume(
         run_id = launch_run_over_graphql(
             dagit_url_for_k8s_run_launcher,
             run_config=run_config,
-            pipeline_name=pipeline_name,
+            job_name=pipeline_name,
         )
 
         start_time = time.time()

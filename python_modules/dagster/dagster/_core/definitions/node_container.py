@@ -101,7 +101,7 @@ def create_execution_structure(
     graph_definition: "GraphDefinition",
 ) -> Tuple[DependencyStructure, Mapping[str, Node]]:
     """This builder takes the dependencies dictionary specified during creation of the
-    PipelineDefinition object and builds (1) the execution structure and (2) a node dependency
+    JobDefinition object and builds (1) the execution structure and (2) a node dependency
     dictionary.
 
     For example, for the following dependencies:

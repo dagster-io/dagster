@@ -40,6 +40,6 @@ class RunConfigSchema(NamedTuple):
 
 
 def create_run_config_schema(
-    pipeline_def: JobDefinition,
+    job_def: JobDefinition,
 ) -> RunConfigSchema:
-    return pipeline_def.run_config_schema
+    return job_def.run_config_schema

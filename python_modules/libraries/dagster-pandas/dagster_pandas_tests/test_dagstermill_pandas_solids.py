@@ -1,14 +1,14 @@
 import tempfile
 
 import pandas as pd
-from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.execution.api import execute_job
 from dagster._core.test_utils import instance_for_test
 from dagster._utils import file_relative_path
 
 
 def test_papermill_pandas_hello_world_pipeline():
-    recon_job = ReconstructablePipeline.for_module(
+    recon_job = ReconstructableJob.for_module(
         "dagster_pandas.examples", "papermill_pandas_hello_world_test"
     )
 

@@ -1,4 +1,4 @@
-import {gql, useQuery, useMutation} from '@apollo/client';
+import {gql} from '@apollo/client';
 import {Box, Checkbox, Group, Spinner, Table, Tag} from '@dagster-io/ui';
 import * as React from 'react';
 
@@ -6,16 +6,11 @@ import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {useUnscopedPermissions} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {Timestamp} from '../app/time/Timestamp';
+import {useAutomaterializeDaemonStatus} from '../assets/AutomaterializeDaemonStatusTag';
 import {TimeFromNow} from '../ui/TimeFromNow';
 
 import {DaemonHealth} from './DaemonHealth';
-import {
-  DaemonStatusForListFragment,
-  GetAutoMaterializePausedQuery,
-  GetAutoMaterializePausedQueryVariables,
-  SetAutoMaterializePausedMutation,
-  SetAutoMaterializePausedMutationVariables,
-} from './types/DaemonList.types';
+import {DaemonStatusForListFragment} from './types/DaemonList.types';
 
 interface DaemonLabelProps {
   daemon: DaemonStatusForListFragment;
@@ -49,20 +44,7 @@ interface Props {
 const TIME_FORMAT = {showSeconds: true, showTimezone: false};
 
 export const DaemonList: React.FC<Props> = ({daemonStatuses, showTimestampColumn = true}) => {
-  const {data, loading, refetch} = useQuery<
-    GetAutoMaterializePausedQuery,
-    GetAutoMaterializePausedQueryVariables
-  >(AUTOMATERIALIZE_PAUSED_QUERY);
-
-  const [setAutoMaterializePaused] = useMutation<
-    SetAutoMaterializePausedMutation,
-    SetAutoMaterializePausedMutationVariables
-  >(SET_AUTOMATERIALIZE_PAUSED_MUTATION, {
-    onCompleted: () => {
-      refetch();
-    },
-  });
-
+  const automaterialize = useAutomaterializeDaemonStatus();
   const assetDaemon = daemonStatuses?.filter((daemon) => daemon.daemonType === 'ASSET')[0];
   const nonAssetDaemons = daemonStatuses?.filter((daemon) => daemon.daemonType !== 'ASSET');
 
@@ -85,12 +67,12 @@ export const DaemonList: React.FC<Props> = ({daemonStatuses, showTimestampColumn
             <td>
               <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
                 Auto-materializing
-                {loading ? (
+                {automaterialize.loading ? (
                   <Spinner purpose="body-text" />
                 ) : (
                   <Checkbox
                     format="switch"
-                    checked={!data?.instance?.autoMaterializePaused}
+                    checked={!automaterialize.paused}
                     disabled={!canToggleAutoMaterialize}
                     onChange={async (e) => {
                       const checked = e.target.checked;
@@ -101,18 +83,14 @@ export const DaemonList: React.FC<Props> = ({daemonStatuses, showTimestampColumn
                             'Pausing Auto-materializing will prevent new materializations triggered by an Auto-materializing policy.',
                         });
                       }
-                      setAutoMaterializePaused({
-                        variables: {
-                          paused: !checked,
-                        },
-                      });
+                      automaterialize.setPaused(!checked);
                     }}
                   />
                 )}
               </Box>
             </td>
             <td>
-              {data?.instance.autoMaterializePaused ? (
+              {automaterialize.paused ? (
                 <Tag intent="warning">Paused</Tag>
               ) : (
                 <DaemonHealth daemon={assetDaemon} />
@@ -194,19 +172,4 @@ export const DAEMON_HEALTH_FRAGMENT = gql`
   }
 
   ${PYTHON_ERROR_FRAGMENT}
-`;
-
-export const AUTOMATERIALIZE_PAUSED_QUERY = gql`
-  query GetAutoMaterializePausedQuery {
-    instance {
-      id
-      autoMaterializePaused
-    }
-  }
-`;
-
-export const SET_AUTOMATERIALIZE_PAUSED_MUTATION = gql`
-  mutation SetAutoMaterializePausedMutation($paused: Boolean!) {
-    setAutoMaterializePaused(paused: $paused)
-  }
 `;

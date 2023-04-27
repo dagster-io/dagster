@@ -339,8 +339,8 @@ def execute_job_with_steps(
     plan = create_execution_plan(
         recon_job, step_keys_to_execute=step_keys_to_execute, run_config=run_config
     )
-    dagster_run = instance.create_run_for_pipeline(
-        pipeline_def=recon_job.get_definition(),
+    dagster_run = instance.create_run_for_job(
+        job_def=recon_job.get_definition(),
         run_id=run_id,
         # the backfill flow can inject run group info
         parent_run_id=parent_run_id,
@@ -650,7 +650,7 @@ def test_get_output_context_with_resources():
     ):
         get_output_context(
             execution_plan=create_execution_plan(basic_job),
-            pipeline_def=basic_job,
+            job_def=basic_job,
             resolved_run_config=ResolvedRunConfig.build(basic_job),
             step_output_handle=StepOutputHandle("basic_op", "result"),
             run_id=None,

@@ -26,15 +26,14 @@ class UPathIOManager(MemoizableIOManager):
 
     """
 
-    extension: str = ""  # override in child class
+    extension: Optional[str] = None  # override in child class
 
     def __init__(
         self,
-        base_path: UPath,
+        base_path: Optional[UPath] = None,
     ):
-        assert self.extension == "" or "." in self.extension
-
-        self._base_path = base_path
+        assert not self.extension or "." in self.extension
+        self._base_path = base_path or UPath(".")
 
     @abstractmethod
     def dump_to_path(self, context: OutputContext, obj: Any, path: UPath):
@@ -52,26 +51,53 @@ class UPathIOManager(MemoizableIOManager):
         """Child classes should override this method to add custom metadata to the outputs."""
         return {}
 
+    # Read/write operations on paths can generally be handled by methods on the
+    # UPath class, but when the backend requires credentials, this isn't
+    # always possible. Override these path_* methods to provide custom
+    # implementations for targeting backends that require authentication.
+
+    def unlink(self, path: UPath) -> None:
+        """Remove the file or object at the provided path."""
+        path.unlink()
+
+    def path_exists(self, path: UPath) -> bool:
+        """Check if a file or object exists at the provided path."""
+        return path.exists()
+
+    def make_directory(self, path: UPath):
+        """Create a directory at the provided path.
+
+        Override as a no-op if the target backend doesn't use directories.
+        """
+        path.mkdir(parents=True, exist_ok=True)
+
     def has_output(self, context: OutputContext) -> bool:
-        return self._get_path(context).exists()
+        return self.path_exists(self._get_path(context))
 
     def _with_extension(self, path: UPath) -> UPath:
-        # Can't just call path.with_suffix(self.extension) because if
-        # self.extension is "" then this trims off any extension that
-        # was in the path previously.
-        return path.parent / (path.name + self.extension)
+        return UPath(f"{path}{self.extension}") if self.extension else path
 
     def _get_path_without_extension(self, context: Union[InputContext, OutputContext]) -> UPath:
         if context.has_asset_key:
-            # we are dealing with an asset
-
-            # we are not using context.get_asset_identifier() because it already includes the partition_key
-            context_path = list(context.asset_key.path)
+            context_path = self.get_asset_relative_path(context)
         else:
             # we are dealing with an op output
-            context_path = list(context.get_identifier())
+            context_path = self.get_op_output_relative_path(context)
 
-        return self._base_path.joinpath(*context_path)
+        return self._base_path.joinpath(context_path)
+
+    def get_asset_relative_path(self, context: Union[InputContext, OutputContext]) -> UPath:
+        # we are not using context.get_asset_identifier() because it already includes the partition_key
+        return UPath(*context.asset_key.path)
+
+    def get_op_output_relative_path(self, context: Union[InputContext, OutputContext]) -> UPath:
+        return UPath(*context.get_identifier())
+
+    def get_loading_input_log_message(self, path: UPath) -> str:
+        return f"Loading file from: {path}"
+
+    def get_writing_output_log_message(self, path: UPath) -> str:
+        return f"Writing file at: {path}"
 
     def _get_path(self, context: Union[InputContext, OutputContext]) -> UPath:
         """Returns the I/O path for a given context.
@@ -129,7 +155,7 @@ class UPathIOManager(MemoizableIOManager):
     def _load_single_input(
         self, path: UPath, context: InputContext, backcompat_path: Optional[UPath] = None
     ) -> Any:
-        context.log.debug(f"Loading file from: {path}")
+        context.log.debug(self.get_loading_input_log_message(path))
         try:
             obj = self.load_from_path(context=context, path=path)
         except FileNotFoundError as e:
@@ -185,39 +211,34 @@ class UPathIOManager(MemoizableIOManager):
         return objs
 
     def load_input(self, context: InputContext) -> Union[Any, Dict[str, Any]]:
-        if not context.has_asset_key:
-            # we are dealing with an op output which is always non-partitioned
+        # If no asset key, we are dealing with an op output which is always non-partitioned
+        if not context.has_asset_key or not context.has_asset_partitions:
             path = self._get_path(context)
             return self._load_single_input(path, context)
         else:
-            if not context.has_asset_partitions:
-                # we are dealing with a non-partitioned asset
-                path = self._get_path(context)
-                return self._load_single_input(path, context)
-            else:
-                asset_partition_keys = context.asset_partition_keys
-                if len(asset_partition_keys) == 0:
-                    return None
-                elif len(asset_partition_keys) == 1:
-                    paths = self._get_paths_for_partitions(context)
-                    check.invariant(len(paths) == 1, f"Expected 1 path, but got {len(paths)}")
-                    path = list(paths.values())[0]
-                    backcompat_paths = self._get_multipartition_backcompat_paths(context)
-                    backcompat_path = (
-                        None if not backcompat_paths else list(backcompat_paths.values())[0]
+            asset_partition_keys = context.asset_partition_keys
+            if len(asset_partition_keys) == 0:
+                return None
+            elif len(asset_partition_keys) == 1:
+                paths = self._get_paths_for_partitions(context)
+                check.invariant(len(paths) == 1, f"Expected 1 path, but got {len(paths)}")
+                path = list(paths.values())[0]
+                backcompat_paths = self._get_multipartition_backcompat_paths(context)
+                backcompat_path = (
+                    None if not backcompat_paths else list(backcompat_paths.values())[0]
+                )
+
+                return self._load_single_input(path, context, backcompat_path)
+            else:  # we are dealing with multiple partitions of an asset
+                type_annotation = context.dagster_type.typing_type
+                if type_annotation != Any and not is_dict_type(type_annotation):
+                    check.failed(
+                        "Loading an input that corresponds to multiple partitions, but the"
+                        " type annotation on the op input is not a dict, Dict, Mapping, or"
+                        f" Any: is '{type_annotation}'."
                     )
 
-                    return self._load_single_input(path, context, backcompat_path)
-                else:  # we are dealing with multiple partitions of an asset
-                    type_annotation = context.dagster_type.typing_type
-                    if type_annotation != Any and not is_dict_type(type_annotation):
-                        check.failed(
-                            "Loading an input that corresponds to multiple partitions, but the"
-                            " type annotation on the op input is not a dict, Dict, Mapping, or"
-                            f" Any: is '{type_annotation}'."
-                        )
-
-                    return self._load_multiple_inputs(context)
+                return self._load_multiple_inputs(context)
 
     def handle_output(self, context: OutputContext, obj: Any):
         if context.dagster_type.typing_type == type(None):
@@ -236,8 +257,8 @@ class UPathIOManager(MemoizableIOManager):
             path = list(paths.values())[0]
         else:
             path = self._get_path(context)
-        path.parent.mkdir(parents=True, exist_ok=True)
-        context.log.debug(f"Writing file at: {path}")
+        self.make_directory(path.parent)
+        context.log.debug(self.get_writing_output_log_message(path))
         self.dump_to_path(context=context, obj=obj, path=path)
 
         metadata = {"path": MetadataValue.path(str(path))}

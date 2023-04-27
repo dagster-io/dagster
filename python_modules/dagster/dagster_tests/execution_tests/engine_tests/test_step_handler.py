@@ -29,18 +29,18 @@ def _get_executor(instance, pipeline, executor_config=None):
 
 
 def test_step_handler_context():
-    recon_pipeline = reconstructable(foo_pipline)
+    recon_job = reconstructable(foo_pipline)
     with instance_for_test() as instance:
-        run = create_run_for_test(instance, pipeline_code_origin=recon_pipeline.get_python_origin())
+        run = create_run_for_test(instance, job_code_origin=recon_job.get_python_origin())
 
-        execution_plan = create_execution_plan(recon_pipeline)
+        execution_plan = create_execution_plan(recon_job)
         log_manager = create_context_free_log_manager(instance, run)
 
-        executor = _get_executor(instance, recon_pipeline)
+        executor = _get_executor(instance, recon_job)
 
         plan_context = PlanOrchestrationContext(
             plan_data=PlanData(
-                pipeline=recon_pipeline,
+                job=recon_job,
                 dagster_run=run,
                 instance=instance,
                 execution_plan=execution_plan,
@@ -53,8 +53,8 @@ def test_step_handler_context():
         )
 
         args = ExecuteStepArgs(
-            pipeline_origin=recon_pipeline.get_python_origin(),
-            pipeline_run_id=run.run_id,
+            job_origin=recon_job.get_python_origin(),
+            run_id=run.run_id,
             step_keys_to_execute=run.step_keys_to_execute,
             instance_ref=None,
         )

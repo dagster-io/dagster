@@ -103,8 +103,8 @@ class AssetsDefinitionCacheableData(
         )
 
     # Allow this to be hashed for use in `lru_cache`. This is needed because:
-    # - `ReconstructablePipeline` uses `lru_cache`
-    # - `ReconstructablePipeline` has a `ReconstructableRepository` attribute
+    # - `ReconstructableJob` uses `lru_cache`
+    # - `ReconstructableJob` has a `ReconstructableRepository` attribute
     # - `ReconstructableRepository` has a `RepositoryLoadData` attribute
     # - `RepositoryLoadData` has a `Mapping` attribute containing `AssetsDefinitionCacheableData`
     # - `AssetsDefinitionCacheableData` has collection attributes that are unhashable by default

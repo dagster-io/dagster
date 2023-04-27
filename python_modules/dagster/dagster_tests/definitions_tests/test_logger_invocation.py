@@ -2,7 +2,6 @@ import logging
 
 import pytest
 from dagster import Field, build_init_logger_context, graph, job, logger, op
-from dagster._check import CheckError
 from dagster._core.errors import DagsterInvalidConfigError, DagsterInvalidInvocationError
 from dagster._core.utils import coerce_valid_log_level
 
@@ -133,29 +132,13 @@ def sample_graph():
     my_op()
 
 
-def test_logger_pipeline_def():
-    @logger
-    def pipe_logger(init_context):
-        assert init_context.pipeline_def.name == "sample_job"
-
-    pipe_logger(build_init_logger_context(pipeline_def=sample_job))
-
-    with pytest.raises(AssertionError):
-        pipe_logger(build_init_logger_context(pipeline_def=sample_graph.to_job()))
-
-
 def test_logger_job_def():
     @logger
     def job_logger(init_context):
         assert init_context.job_def.name == "sample_job"
 
     job_logger(build_init_logger_context(job_def=sample_graph.to_job(name="sample_job")))
-    job_logger(build_init_logger_context(pipeline_def=sample_graph.to_job(name="sample_job")))
+    job_logger(build_init_logger_context(job_def=sample_graph.to_job(name="sample_job")))
 
     with pytest.raises(AssertionError):
         job_logger(build_init_logger_context(job_def=sample_graph.to_job(name="foo")))
-
-
-def test_logger_both_def():
-    with pytest.raises(CheckError, match="pipeline_def and job_def"):
-        build_init_logger_context(pipeline_def=sample_job, job_def=sample_graph.to_job())

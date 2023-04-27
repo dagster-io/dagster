@@ -33,6 +33,7 @@ from dagster._config.source import BoolSource, IntSource, StringSource
 from dagster._config.validate import process_config, validate_config
 from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.definition_config_schema import (
+    CoercableToConfigSchema,
     ConfiguredDefinitionConfigSchema,
     DefinitionConfigSchema,
 )
@@ -570,9 +571,25 @@ class ConfigurableIOManagerFactoryResourceDefinition(IOManagerDefinition, AllowD
         description: Optional[str],
         resolve_resource_keys: Callable[[Mapping[int, str]], AbstractSet[str]],
         nested_resources: Mapping[str, CoercibleToResource],
+        input_config_schema: Optional[Union[CoercableToConfigSchema, Type[Config]]] = None,
+        output_config_schema: Optional[Union[CoercableToConfigSchema, Type[Config]]] = None,
     ):
+        input_config_schema_resolved: CoercableToConfigSchema = (
+            cast(Type[Config], input_config_schema).to_config_schema()
+            if safe_is_subclass(input_config_schema, Config)
+            else cast(CoercableToConfigSchema, input_config_schema)
+        )
+        output_config_schema_resolved: CoercableToConfigSchema = (
+            cast(Type[Config], output_config_schema).to_config_schema()
+            if safe_is_subclass(output_config_schema, Config)
+            else cast(CoercableToConfigSchema, output_config_schema)
+        )
         super().__init__(
-            resource_fn=resource_fn, config_schema=config_schema, description=description
+            resource_fn=resource_fn,
+            config_schema=config_schema,
+            description=description,
+            input_config_schema=input_config_schema_resolved,
+            output_config_schema=output_config_schema_resolved,
         )
         self._resolve_resource_keys = resolve_resource_keys
         self._nested_resources = nested_resources
@@ -1115,7 +1132,17 @@ class ConfigurableIOManagerFactory(ConfigurableResourceFactory[TIOManagerValue])
             description=self.__doc__,
             resolve_resource_keys=self._resolve_required_resource_keys,
             nested_resources=self.nested_resources,
+            input_config_schema=self.__class__.input_config_schema(),
+            output_config_schema=self.__class__.output_config_schema(),
         )
+
+    @classmethod
+    def input_config_schema(cls) -> Optional[Union[CoercableToConfigSchema, Type[Config]]]:
+        return None
+
+    @classmethod
+    def output_config_schema(cls) -> Optional[Union[CoercableToConfigSchema, Type[Config]]]:
+        return None
 
 
 class PartialIOManager(Generic[TResValue], PartialResource[TResValue]):
@@ -1126,12 +1153,23 @@ class PartialIOManager(Generic[TResValue], PartialResource[TResValue]):
 
     @cached_method
     def get_resource_definition(self) -> ConfigurableIOManagerFactoryResourceDefinition:
+        input_config_schema = None
+        output_config_schema = None
+        if safe_is_subclass(self.resource_cls, ConfigurableIOManagerFactory):
+            factory_cls: Type[ConfigurableIOManagerFactory] = cast(
+                Type[ConfigurableIOManagerFactory], self.resource_cls
+            )
+            input_config_schema = factory_cls.input_config_schema()
+            output_config_schema = factory_cls.output_config_schema()
+
         return ConfigurableIOManagerFactoryResourceDefinition(
             resource_fn=self._state__internal__.resource_fn,
             config_schema=self._state__internal__.config_schema,
             description=self._state__internal__.description,
             resolve_resource_keys=self._resolve_required_resource_keys,
             nested_resources=self._state__internal__.nested_resources,
+            input_config_schema=input_config_schema,
+            output_config_schema=output_config_schema,
         )
 
 
@@ -1333,6 +1371,7 @@ def _config_type_for_type_on_pydantic_field(
 
 def _is_pydantic_field_required(pydantic_field: ModelField) -> bool:
     # required is of type BoolUndefined = Union[bool, UndefinedType] in Pydantic
+
     if isinstance(pydantic_field.required, bool):
         return pydantic_field.required
 

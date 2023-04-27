@@ -204,9 +204,15 @@ describe('LaunchAssetExecutionButton', () => {
       await clickMaterializeButton();
       await waitFor(() => screen.findByTestId('choose-partitions-dialog'));
 
-      // uncheck missing only
+      const launchButton = await screen.findByTestId('launch-button');
+
+      // verify that the missing only checkbox updates the number of runs
+      expect(launchButton.textContent).toEqual('Launch 1148-run backfill');
+      await (await screen.getByTestId('missing-only-checkbox')).click();
+      expect(launchButton.textContent).toEqual('Launch 1046-run backfill');
       await (await screen.getByTestId('missing-only-checkbox')).click();
 
+      // verify that the executed mutation is correct
       await expectLaunchExecutesMutationAndCloses('Launch 1148-run backfill', launchMock);
     });
 
@@ -255,7 +261,8 @@ describe('LaunchAssetExecutionButton', () => {
       await waitFor(() => screen.findByTestId('choose-partitions-dialog'));
 
       // missing-and-failed only option is available
-      await (await screen.getByTestId('missing-only-checkbox')).click();
+      expect(await screen.getByTestId('missing-only-checkbox')).toBeEnabled();
+
       // ranges-as-tags option is available
       const rangesAsTags = await screen.getByTestId('ranges-as-tags-true-radio');
       await waitFor(async () => expect(rangesAsTags).toBeEnabled());

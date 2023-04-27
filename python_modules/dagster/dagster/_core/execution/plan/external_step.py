@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Callable, Iterator, Optional, Sequence, cast
 import dagster._check as check
 from dagster._config import Field, StringSource
 from dagster._core.code_pointer import FileCodePointer, ModuleCodePointer
-from dagster._core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
+from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
 from dagster._core.definitions.resource_definition import resource
 from dagster._core.definitions.step_launcher import StepLauncher, StepRunRef
 from dagster._core.errors import raise_execution_interrupts
@@ -112,7 +112,7 @@ def step_context_to_step_run_ref(
         step_context (StepExecutionContext): The step context.
         package_dir (Optional[str]): If set, the reconstruction file code pointer will be converted
             to be relative a module pointer relative to the package root.  This enables executing
-            steps in remote setups where the package containing the pipeline resides at a different
+            steps in remote setups where the package containing the job resides at a different
             location on the filesystem in the remote environment than in the environment executing
             the plan process.
 
@@ -123,28 +123,28 @@ def step_context_to_step_run_ref(
 
     retry_mode = step_context.retry_mode
 
-    recon_pipeline = step_context.pipeline
+    recon_job = step_context.job
     if package_dir:
-        if isinstance(recon_pipeline, ReconstructablePipeline) and isinstance(
-            recon_pipeline.repository.pointer, FileCodePointer
+        if isinstance(recon_job, ReconstructableJob) and isinstance(
+            recon_job.repository.pointer, FileCodePointer
         ):
-            recon_pipeline = ReconstructablePipeline(
+            recon_job = ReconstructableJob(
                 repository=ReconstructableRepository(
                     pointer=ModuleCodePointer(
                         _module_in_package_dir(
-                            recon_pipeline.repository.pointer.python_file, package_dir
+                            recon_job.repository.pointer.python_file, package_dir
                         ),
-                        recon_pipeline.repository.pointer.fn_name,
+                        recon_job.repository.pointer.fn_name,
                         working_directory=os.getcwd(),
                     ),
-                    container_image=recon_pipeline.repository.container_image,
-                    executable_path=recon_pipeline.repository.executable_path,
-                    entry_point=recon_pipeline.repository.entry_point,
-                    container_context=recon_pipeline.repository.container_context,
+                    container_image=recon_job.repository.container_image,
+                    executable_path=recon_job.repository.executable_path,
+                    entry_point=recon_job.repository.entry_point,
+                    container_context=recon_job.repository.container_context,
                     repository_load_data=step_context.plan_data.execution_plan.repository_load_data,
                 ),
-                pipeline_name=recon_pipeline.pipeline_name,
-                solids_to_execute=recon_pipeline.solids_to_execute,
+                job_name=recon_job.job_name,
+                solids_to_execute=recon_job.solids_to_execute,
             )
 
     return StepRunRef(
@@ -153,7 +153,7 @@ def step_context_to_step_run_ref(
         run_id=step_context.dagster_run.run_id,
         step_key=step_context.step.key,
         retry_mode=retry_mode,
-        recon_pipeline=recon_pipeline,  # type: ignore
+        recon_job=recon_job,  # type: ignore
         known_state=step_context.get_known_state(),
     )
 
@@ -184,28 +184,28 @@ def step_run_ref_to_step_context(
 ) -> StepExecutionContext:
     check.inst_param(instance, "instance", DagsterInstance)
 
-    pipeline = step_run_ref.recon_pipeline
+    job = step_run_ref.recon_job
 
     solids_to_execute = step_run_ref.dagster_run.solids_to_execute
     if solids_to_execute or step_run_ref.dagster_run.asset_selection:
-        pipeline = step_run_ref.recon_pipeline.subset_for_execution_from_existing_pipeline(
+        job = step_run_ref.recon_job.subset_for_execution_from_existing_job(
             frozenset(solids_to_execute) if solids_to_execute else None,
             asset_selection=step_run_ref.dagster_run.asset_selection,
         )
 
     execution_plan = create_execution_plan(
-        pipeline,
+        job,
         step_run_ref.run_config,
         step_keys_to_execute=[step_run_ref.step_key],
         known_state=step_run_ref.known_state,
-        # we packaged repository_load_data onto the reconstructable pipeline when creating the
+        # we packaged repository_load_data onto the reconstructable job when creating the
         # StepRunRef, rather than putting it in a separate field
-        repository_load_data=pipeline.repository.repository_load_data,
+        repository_load_data=job.repository.repository_load_data,
     )
 
     initialization_manager = PlanExecutionContextManager(
         retry_mode=step_run_ref.retry_mode.for_inner_plan(),
-        pipeline=pipeline,
+        job=job,
         execution_plan=execution_plan,
         run_config=step_run_ref.run_config,
         dagster_run=step_run_ref.dagster_run,
