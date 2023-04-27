@@ -63,7 +63,15 @@ interface Props {
 }
 
 export interface AssetViewParams {
-  view?: 'events' | 'definition' | 'lineage' | 'overview' | 'plots' | 'partitions';
+  view?:
+    | 'events'
+    | 'definition'
+    | 'lineage'
+    | 'overview'
+    | 'plots'
+    | 'partitions'
+    | 'auto-materialize-policy';
+
   lineageScope?: AssetLineageScope;
   lineageDepth?: number;
   partition?: string;
@@ -204,8 +212,18 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
     );
   };
 
+  // const renderAutomaterializePolicyTab = () => {
+  //   if (definitionQueryResult.loading && !definitionQueryResult.previousData) {
+  //     return <AssetLoadingDefinitionState />;
+  //   }
+  //   return <AssetAutomaterializePolicyPage />;
+  // };
+
   return (
-    <Box flex={{direction: 'column'}} style={{height: '100%', width: '100%', overflowY: 'auto'}}>
+    <Box
+      flex={{direction: 'column', grow: 1}}
+      style={{height: '100%', width: '100%', overflowY: 'auto'}}
+    >
       <AssetPageHeader
         assetKey={assetKey}
         tags={
@@ -243,6 +261,12 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
                 onClick={() => setParams({...params, view: 'lineage'})}
                 disabled={!definition}
               />
+              {/* <Tab
+                id="auto-materialize-policy"
+                title="Auto-materialize policy"
+                onClick={() => setParams({...params, view: 'auto-materialize-policy'})}
+                disabled={!definition}
+              /> */}
             </Tabs>
             {refreshState && (
               <Box padding={{bottom: 8}}>
@@ -283,6 +307,8 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
         ) : selectedTab === 'plots' ? (
           renderPlotsTab()
         ) : (
+          // ) : selectedTab === 'auto-materialize-policy' ? (
+          //   renderAutomaterializePolicyTab()
           <span />
         )}
       </ErrorBoundary>
