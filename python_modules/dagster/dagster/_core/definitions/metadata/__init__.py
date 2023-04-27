@@ -132,6 +132,9 @@ def normalize_metadata_value(raw_value: RawMetadataValue) -> "MetadataValue[Any]
         "MetadataValue type."
     )
 
+def metadata_to_raw(metadata: "MetadataMapping") -> Dict[str, PackableValue]:
+    return {k: v.value for k, v in metadata.items()}
+
 
 # ########################
 # ##### METADATA VALUE

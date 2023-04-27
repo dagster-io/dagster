@@ -7,8 +7,10 @@ from contextlib import contextmanager
 import pytest
 from dagster import (
     DagsterInvalidConfigError,
+    IOManager,
     _check as check,
     execute_job,
+    io_manager,
     job,
     op,
     reconstructable,
@@ -18,7 +20,6 @@ from dagster._core.definitions import NodeHandle
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.context.logger import InitLoggerContext
 from dagster._core.execution.plan.objects import StepFailureData
-from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._core.test_utils import instance_for_test
@@ -361,16 +362,29 @@ def test_resource_logging(capsys):
 
 
 def test_io_context_logging(capsys):
-    @op
-    def logged_op(context):
-        context.get_step_execution_context().get_output_context(
-            StepOutputHandle("logged_op", "result")
-        ).log.debug("test OUTPUT debug logging from logged_op.")
-        context.get_step_execution_context().for_input_manager(
-            "logged_op", {}, {}, None, source_handle=None
-        ).log.debug("test INPUT debug logging from logged_op.")
+    @io_manager
+    def the_io_manager():
+        class MyIOManager(IOManager):
+            def load_input(self, context):
+                context.log.debug("test INPUT debug logging from logged_op.")
 
-    result = wrap_op_in_graph_and_execute(logged_op)
+            def handle_output(self, context, obj):
+                context.log.debug("test OUTPUT debug logging from logged_op.")
+
+        return MyIOManager()
+    @op
+    def start():
+        pass
+
+    @op
+    def downstream(x):
+        pass
+
+    @job(resource_defs={"io_manager": the_io_manager})
+    def the_job():
+        downstream(start())
+
+    result = the_job.execute_in_process()
     assert result.success
 
     captured = capsys.readouterr()

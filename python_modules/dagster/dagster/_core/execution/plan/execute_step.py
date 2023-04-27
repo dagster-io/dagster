@@ -65,6 +65,7 @@ from dagster._core.storage.tags import BACKFILL_ID_TAG, MEMOIZED_RUN_TAG
 from dagster._core.types.dagster_type import DagsterType
 from dagster._utils import iterate_with_context
 from dagster._utils.backcompat import ExperimentalWarning, experimental_functionality_warning
+from dagster._utils.merger import merge_dicts
 from dagster._utils.timing import time_execution_scope
 
 from .compute import OpOutputUnion
@@ -128,8 +129,8 @@ def _step_output_error_checked_user_event_sequence(
                     value=output.value,
                     output_name=output.output_name,
                     metadata={
-                        **output.metadata,
-                        **normalize_metadata(metadata or {}),
+                        **output.raw_metadata,
+                        **(metadata or {}),
                     },
                     data_version=output.data_version,
                 )
@@ -151,7 +152,7 @@ def _step_output_error_checked_user_event_sequence(
             output = DynamicOutput(
                 value=output.value,
                 output_name=output.output_name,
-                metadata={**output.metadata, **normalize_metadata(metadata or {})},
+                metadata={**output._raw_metadata, **(metadata or {})}, # noqa
                 mapping_key=output.mapping_key,
             )
 
@@ -257,7 +258,7 @@ def _type_checked_event_sequence_for_input(
 def _type_check_output(
     step_context: StepExecutionContext,
     step_output_handle: StepOutputHandle,
-    output: Any,
+    output: Union[Output, DynamicOutput],
     version: Optional[str],
 ) -> Iterator[DagsterEvent]:
     check.inst_param(step_context, "step_context", StepExecutionContext)
@@ -289,7 +290,7 @@ def _type_check_output(
                 metadata=type_check.metadata if type_check else {},
             ),
             version=version,
-            metadata=output.metadata,
+            metadata=merge_dicts(step_output_def.metadata, output.raw_metadata),
         ),
     )
 
@@ -577,7 +578,7 @@ def _store_output(
 ) -> Iterator[DagsterEvent]:
     output_def = step_context.op_def.output_def_named(step_output_handle.output_name)
     output_manager = step_context.get_io_manager(step_output_handle)
-    output_context = step_context.get_output_context(step_output_handle)
+    output_context = step_context.get_output_context(step_output_handle, output)
 
     manager_materializations = []
     manager_metadata: Dict[str, MetadataValue] = {}

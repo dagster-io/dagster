@@ -915,6 +915,7 @@ class ExecutionPlan(
                     log_manager=log_manager,
                     step_context=None,
                     resources=resources,
+                    output_metadata=None,
                     version=step_output_versions[step_output_handle],
                 )
                 if not io_manager.has_output(context):

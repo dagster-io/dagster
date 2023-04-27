@@ -18,6 +18,7 @@ from dagster import (
     IOManagerDefinition,
     Nothing,
     Out,
+    Output,
     ReexecutionOptions,
     asset,
     build_input_context,
@@ -44,6 +45,37 @@ from dagster._core.storage.io_manager import IOManager, io_manager
 from dagster._core.storage.mem_io_manager import InMemoryIOManager, mem_io_manager
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.test_utils import instance_for_test
+
+
+def test_io_manager_output_metadata():
+    @op(out=Out(io_manager_key="io_manager", metadata={"foo": "baz", "blah": "bar"}))
+    def my_op():
+        return Output(5, metadata={"foo": "bar"})
+
+    @op
+    def downstream(x):
+        pass
+
+    expected_metadata = {"foo": "bar", "blah": "bar"}
+
+    class MyIOManager(IOManager):
+        def load_input(self, context):
+            assert context.upstream_output.metadata == expected_metadata
+            return 1
+
+        def handle_output(self, context, obj):
+            assert context.metadata == expected_metadata
+
+    @io_manager
+    def my_io_manager():
+        return MyIOManager()
+
+    @job(resource_defs={"io_manager": my_io_manager})
+    def my_job():
+        downstream(my_op())
+
+    result = my_job.execute_in_process()
+    assert result.success
 
 
 def test_io_manager_with_config():

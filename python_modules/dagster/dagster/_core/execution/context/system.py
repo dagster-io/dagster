@@ -22,7 +22,7 @@ from typing import (
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.dependency import OpNode
-from dagster._core.definitions.events import AssetKey, AssetLineageInfo
+from dagster._core.definitions.events import AssetKey, AssetLineageInfo, DynamicOutput, Output
 from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
@@ -41,6 +41,7 @@ from dagster._core.definitions.time_window_partitions import (
     has_one_dimension_time_window_partitioning,
 )
 from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.events import DagsterEventType
 from dagster._core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.execution.plan.step import ExecutionStep
@@ -576,7 +577,9 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         output_manager = getattr(self.resources, io_manager_key)
         return check.inst(output_manager, IOManager)
 
-    def get_output_context(self, step_output_handle: StepOutputHandle) -> OutputContext:
+    def get_output_context(
+        self, step_output_handle: StepOutputHandle, output: Union[Output, DynamicOutput]
+    ) -> OutputContext:
         return get_output_context(
             self.execution_plan,
             self.job_def,
@@ -587,6 +590,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             step_context=self,
             resources=None,
             version=self.execution_plan.get_version_for_step_output_handle(step_output_handle),
+            output_metadata=output.raw_metadata, # type: ignore
         )
 
     def for_input_manager(
@@ -608,6 +612,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         if source_handle is not None:
             version = self.execution_plan.get_version_for_step_output_handle(source_handle)
 
+            output_metadata = [output_event.dagster_event for output_event in self.instance.all_logs(self.run_id, of_type=DagsterEventType.STEP_OUTPUT) if output_event.dagster_event.step_output_data.step_output_handle == source_handle].pop().metadata # type: ignore
             # NOTE: this is using downstream step_context for upstream OutputContext. step_context
             # will be set to None for 0.15 release.
             upstream_output = get_output_context(
@@ -620,6 +625,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                 step_context=self,
                 resources=None,
                 version=version,
+                output_metadata=output_metadata,
                 warn_on_step_context_use=True,
             )
         else:

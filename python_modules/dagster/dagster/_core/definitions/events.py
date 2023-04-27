@@ -5,6 +5,7 @@ from typing import (
     AbstractSet,
     Any,
     Callable,
+    Dict,
     Generic,
     List,
     Mapping,
@@ -22,7 +23,7 @@ from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.data_version import DataVersion
 from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX, SYSTEM_TAG_PREFIX
 from dagster._serdes import whitelist_for_serdes
-from dagster._serdes.serdes import NamedTupleSerializer
+from dagster._serdes.serdes import NamedTupleSerializer, PackableValue
 from dagster._utils.backcompat import experimental_class_param_warning
 
 from .metadata import (
@@ -30,6 +31,7 @@ from .metadata import (
     MetadataMapping,
     MetadataValue,
     RawMetadataValue,
+    metadata_to_raw,
     normalize_metadata,
 )
 from .utils import DEFAULT_OUTPUT, check_valid_name
@@ -254,7 +256,7 @@ class Output(Generic[T]):
             experimental_class_param_warning("data_version", "Output")
         self._data_version = check.opt_inst_param(data_version, "data_version", DataVersion)
         self._metadata = normalize_metadata(
-            check.opt_mapping_param(metadata, "metadata", key_type=str),
+            check.opt_mapping_param(metadata, "metadata", key_type=str), allow_invalid=True,
         )
 
     @property
@@ -283,6 +285,10 @@ class Output(Generic[T]):
             and self.output_name == other.output_name
             and self.metadata == other.metadata
         )
+
+    @property
+    def raw_metadata(self) -> Dict[str, PackableValue]:
+        return metadata_to_raw(self.metadata)
 
 
 class DynamicOutput(Generic[T]):
@@ -350,6 +356,10 @@ class DynamicOutput(Generic[T]):
             and self.mapping_key == other.mapping_key
             and self.metadata == other.metadata
         )
+
+    @property
+    def raw_metadata(self) -> Dict[str, PackableValue]:
+        return metadata_to_raw(self.metadata)
 
 
 @whitelist_for_serdes(

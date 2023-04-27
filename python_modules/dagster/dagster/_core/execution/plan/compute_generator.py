@@ -262,7 +262,7 @@ def validate_and_coerce_op_result_to_iterator(
                     yield Output(
                         output_name=output_def.name,
                         value=element.value,
-                        metadata=element.metadata,
+                        metadata=element.raw_metadata, # type: ignore
                         data_version=element.data_version,
                     )
             else:

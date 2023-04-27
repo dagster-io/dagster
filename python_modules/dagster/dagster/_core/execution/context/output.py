@@ -29,6 +29,7 @@ from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.errors import DagsterInvalidMetadata, DagsterInvariantViolationError
 from dagster._core.execution.plan.utils import build_resources_for_manager
+from dagster._utils.merger import merge_dicts
 
 if TYPE_CHECKING:
     from dagster._core.definitions import JobDefinition, PartitionsDefinition
@@ -718,6 +719,7 @@ def get_output_context(
     step_context: Optional["StepExecutionContext"],
     resources: Optional["Resources"],
     version: Optional[str],
+    output_metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     warn_on_step_context_use: bool = False,
 ) -> "OutputContext":
     """Args:
@@ -761,7 +763,7 @@ def get_output_context(
         name=step_output_handle.output_name,
         job_name=job_def.name,
         run_id=run_id,
-        metadata=output_def.metadata,
+        metadata=merge_dicts(output_def.metadata, output_metadata or {}),
         mapping_key=step_output_handle.mapping_key,
         config=output_config,
         op_def=job_def.get_node(step.node_handle).definition,  # type: ignore  # (should be OpDefinition not NodeDefinition)
