@@ -6,7 +6,7 @@ from dagster_datadog.resources import DatadogResource
 
 
 def assert_datadog_resource_class(
-    datadog_client,
+    datadog_resource,
     event,
     gauge,
     increment,
@@ -18,37 +18,37 @@ def assert_datadog_resource_class(
     timed,
     timing,
 ) -> None:
-    datadog_client.event("Man down!", "This server needs assistance.")
+    datadog_resource.event("Man down!", "This server needs assistance.")
     event.assert_called_with("Man down!", "This server needs assistance.")
 
     # gauge
-    datadog_client.gauge("users.online", 1001, tags=["protocol:http"])
+    datadog_resource.gauge("users.online", 1001, tags=["protocol:http"])
     gauge.assert_called_with("users.online", 1001, tags=["protocol:http"])
 
     # increment
-    datadog_client.increment("page.views")
+    datadog_resource.increment("page.views")
     increment.assert_called_with("page.views")
 
     # decrement
-    datadog_client.decrement("page.views")
+    datadog_resource.decrement("page.views")
     decrement.assert_called_with("page.views")
 
-    datadog_client.histogram("album.photo.count", 26, tags=["gender:female"])
+    datadog_resource.histogram("album.photo.count", 26, tags=["gender:female"])
     histogram.assert_called_with("album.photo.count", 26, tags=["gender:female"])
 
-    datadog_client.distribution("album.photo.count", 26, tags=["color:blue"])
+    datadog_resource.distribution("album.photo.count", 26, tags=["color:blue"])
     distribution.assert_called_with("album.photo.count", 26, tags=["color:blue"])
 
-    datadog_client.set("visitors.uniques", 999, tags=["browser:ie"])
+    datadog_resource.set("visitors.uniques", 999, tags=["browser:ie"])
     statsd_set.assert_called_with("visitors.uniques", 999, tags=["browser:ie"])
 
-    datadog_client.service_check("svc.check_name", datadog_client.WARNING)
-    service_check.assert_called_with("svc.check_name", datadog_client.WARNING)
+    datadog_resource.service_check("svc.check_name", datadog_resource.WARNING)
+    service_check.assert_called_with("svc.check_name", datadog_resource.WARNING)
 
-    datadog_client.timing("query.response.time", 1234)
+    datadog_resource.timing("query.response.time", 1234)
     timing.assert_called_with("query.response.time", 1234)
 
-    @datadog_client.timed("run_fn")
+    @datadog_resource.timed("run_fn")
     def run_fn() -> None:
         pass
 

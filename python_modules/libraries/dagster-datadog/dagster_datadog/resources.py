@@ -5,7 +5,7 @@ from datadog import DogStatsd, initialize, statsd
 from pydantic import Field
 
 
-# for backwards compatibility
+# for backwards compatibility to pass instanceof checks
 class DatadogClient:
     pass
 
@@ -89,6 +89,7 @@ class DatadogResource(DatadogClient, ConfigurableResource):
             # can't use setattr because of Pydantic
             object.__setattr__(self, method, getattr(statsd, method))
 
+    # for any callsites of get_client to continue working
     def get_client(self) -> DatadogClient:
         return self
 
