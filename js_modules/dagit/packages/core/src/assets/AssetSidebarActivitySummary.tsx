@@ -86,7 +86,7 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
       )}
 
       {asset.autoMaterializePolicy && (
-        <SidebarSection title="Auto-materialization policy">
+        <SidebarSection title="Auto-materialize policy">
           <Box margin={{horizontal: 24, vertical: 12}} flex={{gap: 12, alignItems: 'flex-start'}}>
             <Body style={{flex: 1}}>
               {automaterializePolicyDescription(asset.autoMaterializePolicy)}
