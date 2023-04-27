@@ -43,7 +43,7 @@ if TYPE_CHECKING:
         TickStatus,
     )
     from dagster._core.snap.execution_plan_snapshot import ExecutionPlanSnapshot
-    from dagster._core.snap.pipeline_snapshot import JobSnapshot
+    from dagster._core.snap.job_snapshot import JobSnapshot
     from dagster._core.storage.dagster_run import (
         DagsterRun,
         DagsterRunStatsSnapshot,

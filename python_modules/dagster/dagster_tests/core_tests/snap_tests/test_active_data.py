@@ -12,7 +12,7 @@ from dagster._core.host_representation import (
 from dagster._core.host_representation.external_data import (
     ExternalTimeWindowPartitionsDefinitionData,
 )
-from dagster._core.snap.pipeline_snapshot import create_job_snapshot_id
+from dagster._core.snap.job_snapshot import create_job_snapshot_id
 from dagster._core.test_utils import in_process_test_workspace, instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._serdes import serialize_pp
