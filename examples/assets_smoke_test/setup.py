@@ -9,7 +9,7 @@ setup(
         "dagster-pandas",
         "dagster-dbt",
         "pandas",
-        "dbt-snowflake>=1.2",
+        "dbt-snowflake",
         "dagster-snowflake",
         "dagster-snowflake-pandas",
     ],

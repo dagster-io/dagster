@@ -23,8 +23,8 @@ setup(
         "dagster-pyspark",
         "dagster-slack",
         "dagster-postgres",
-        "dbt-duckdb>=1.2",
-        "dbt-snowflake>=1.2",
+        "dbt-duckdb",
+        "dbt-snowflake",
         "duckdb!=0.3.3, <= 6.0.0",  # missing wheels
         "mock",
         # DataFrames were not written to Snowflake, causing errors

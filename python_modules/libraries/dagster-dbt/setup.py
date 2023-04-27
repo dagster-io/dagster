@@ -36,7 +36,7 @@ setup(
     install_requires=[
         "dagster==1.3.2",
         # Follow the version support constraints for dbt Core: https://docs.getdbt.com/docs/dbt-versions/core
-        "dbt-core>=1.2,<1.6",
+        "dbt-core<1.6",
         "networkx",
         "requests",
         "typer[all]",
