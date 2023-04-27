@@ -9,7 +9,7 @@ from dagster._core.snap.mode import ModeDefSnap
 from dagster._core.snap.node import GraphDefSnap, OpDefSnap
 from dagster._core.snap.pipeline_snapshot import JobSnapshot
 
-from .pipeline_index import JobIndex
+from .job_index import JobIndex
 
 
 class RepresentedJob(ABC):
