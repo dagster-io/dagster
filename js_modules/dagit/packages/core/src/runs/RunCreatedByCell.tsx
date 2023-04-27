@@ -37,8 +37,9 @@ export function RunCreatedByCell(props: Props) {
   if (isReexecution || user) {
     /**
      * If this is a re-executed run then it was created by a user manually.
-     * It will still have the original sensor/backfill/schedule tags but we don't show them
-     * since they're only responsible for the original run
+     * It will still have the original sensor/backfill/schedule tags because
+     * they're copied over from the original but we don't show them because
+     * they're only responsible for the original run
      */
     if (user) {
       creator = <UserDisplay email={user.value} />;
