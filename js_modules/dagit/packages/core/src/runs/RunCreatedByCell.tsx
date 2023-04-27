@@ -15,10 +15,13 @@ type Props = {
 export function RunCreatedByCell(props: Props) {
   const tags = props.run.tags || [];
 
+  const isReexecution = tags.some((tag) => tag.key === DagsterTag.ParentRunId);
+
   const backfillTag = tags.find((tag) => tag.key === DagsterTag.Backfill);
   const scheduleTag = tags.find((tag) => tag.key === DagsterTag.ScheduleName);
   const sensorTag = tags.find((tag) => tag.key === DagsterTag.SensorName);
   const user = tags.find((tag) => tag.key === DagsterTag.User);
+
   const automaterialize = tags.find(
     (tag) =>
       tag.key === DagsterTag.Automaterialize ||
@@ -31,8 +34,17 @@ export function RunCreatedByCell(props: Props) {
 
   let creator;
 
-  if (user) {
-    creator = <UserDisplay email={user.value} />;
+  if (isReexecution || user) {
+    /**
+     * If this is a re-executed run then it was created by a user manually.
+     * It will still have the original sensor/backfill/schedule tags but we don't show them
+     * since they're only responsible for the original run
+     */
+    if (user) {
+      creator = <UserDisplay email={user.value} />;
+    } else {
+      creator = <Tag icon="account_circle">Launchpad</Tag>;
+    }
   } else if (backfillTag) {
     const link = props.run.assetSelection?.length
       ? `/overview/backfills/${backfillTag.value}`
