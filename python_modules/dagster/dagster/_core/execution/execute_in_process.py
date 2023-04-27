@@ -15,7 +15,7 @@ from .api import (
     ephemeral_instance_if_missing,
     job_execution_iterator,
 )
-from .context_creation_pipeline import (
+from .context_creation_job import (
     PlanOrchestrationContextManager,
     orchestration_context_event_generator,
 )

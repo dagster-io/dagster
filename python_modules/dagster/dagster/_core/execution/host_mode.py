@@ -30,7 +30,7 @@ from dagster._utils.error import serializable_error_info_from_exc_info
 from .api import ExecuteRunWithPlanIterable, job_execution_iterator
 from .context.logger import InitLoggerContext
 from .context.system import PlanData, PlanOrchestrationContext
-from .context_creation_pipeline import PlanOrchestrationContextManager
+from .context_creation_job import PlanOrchestrationContextManager
 
 
 def _get_host_mode_executor(

@@ -79,7 +79,7 @@ class UnboundOpExecutionContext(OpExecutionContext):
         assets_def: Optional[AssetsDefinition],
     ):
         from dagster._core.execution.api import ephemeral_instance_if_missing
-        from dagster._core.execution.context_creation_pipeline import initialize_console_manager
+        from dagster._core.execution.context_creation_job import initialize_console_manager
 
         self._op_config = op_config
         self._mapping_key = mapping_key

@@ -130,7 +130,7 @@ class UnboundInitResourceContext(InitResourceContext):
             build_resources,
             wrap_resources_for_execution,
         )
-        from dagster._core.execution.context_creation_pipeline import initialize_console_manager
+        from dagster._core.execution.context_creation_job import initialize_console_manager
 
         self._instance_provided = (
             check.opt_inst_param(instance, "instance", DagsterInstance) is not None

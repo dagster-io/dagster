@@ -205,7 +205,7 @@ class UnboundHookContext(HookContext):
         instance: Optional["DagsterInstance"],
     ):
         from ..build_resources import build_resources, wrap_resources_for_execution
-        from ..context_creation_pipeline import initialize_console_manager
+        from ..context_creation_job import initialize_console_manager
 
         self._op = None
         if op is not None:

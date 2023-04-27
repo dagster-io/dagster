@@ -39,7 +39,7 @@ from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.interrupts import capture_interrupts
 from dagster._utils.merger import merge_dicts
 
-from .context_creation_pipeline import (
+from .context_creation_job import (
     ExecutionContextManager,
     PlanExecutionContextManager,
     PlanOrchestrationContextManager,

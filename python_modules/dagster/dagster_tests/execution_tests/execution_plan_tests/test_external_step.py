@@ -45,7 +45,7 @@ from dagster._core.execution.api import (
     execute_run_iterator,
 )
 from dagster._core.execution.context.system import IStepContext
-from dagster._core.execution.context_creation_pipeline import PlanExecutionContextManager
+from dagster._core.execution.context_creation_job import PlanExecutionContextManager
 from dagster._core.execution.plan.external_step import (
     LocalExternalStepLauncher,
     local_external_step_launcher,

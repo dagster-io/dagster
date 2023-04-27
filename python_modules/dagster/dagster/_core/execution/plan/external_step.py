@@ -16,7 +16,7 @@ from dagster._core.events import DagsterEvent
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.context.system import StepExecutionContext
-from dagster._core.execution.context_creation_pipeline import PlanExecutionContextManager
+from dagster._core.execution.context_creation_job import PlanExecutionContextManager
 from dagster._core.execution.plan.execute_plan import dagster_event_sequence_for_step
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance import DagsterInstance

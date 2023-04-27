@@ -26,7 +26,7 @@ from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.context.system import PlanExecutionContext
-from dagster._core.execution.context_creation_pipeline import (
+from dagster._core.execution.context_creation_job import (
     create_context_creation_data,
     create_execution_data,
     create_executor,

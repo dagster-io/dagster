@@ -18,7 +18,7 @@ from dagster._core.storage.io_manager import IOManager, IOManagerDefinition
 from dagster._core.system_config.objects import ResourceConfig, config_map_resources
 
 from .api import ephemeral_instance_if_missing
-from .context_creation_pipeline import initialize_console_manager
+from .context_creation_job import initialize_console_manager
 
 
 def get_mapped_resource_config(
