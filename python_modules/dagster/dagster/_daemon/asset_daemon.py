@@ -7,7 +7,7 @@ from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.pipeline_run import DagsterRunStatus
-from dagster._core.storage.tags import CREATED_BY_TAG
+from dagster._core.storage.tags import AUTO_MATERIALIZE_TAG
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._daemon.daemon import DaemonIterator, IntervalDaemon
 
@@ -107,7 +107,7 @@ class AssetDaemon(IntervalDaemon):
 
             tags = {
                 **run_request.tags,
-                CREATED_BY_TAG: "auto_materialize",
+                AUTO_MATERIALIZE_TAG: "true",
                 **instance.auto_materialize_run_tags,
             }
 
