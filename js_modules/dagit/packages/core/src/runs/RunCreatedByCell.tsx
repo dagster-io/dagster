@@ -26,7 +26,7 @@ export function RunCreatedByCell(props: Props) {
     (tag) =>
       tag.key === DagsterTag.Automaterialize ||
       // Backwards compatibility
-      (tag.key === 'created_by' && tag.value === 'auto_materialize'),
+      (tag.key === DagsterTag.CreatedBy && tag.value === 'auto_materialize'),
   );
   const createdBy = tags.find((tag) => tag.key === 'created_by');
 
