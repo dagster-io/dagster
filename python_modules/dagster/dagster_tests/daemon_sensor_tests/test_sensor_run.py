@@ -50,7 +50,13 @@ from dagster._core.host_representation.origin import (
 )
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DAGSTER_META_KEY
-from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus, TickStatus
+from dagster._core.scheduler.instigation import (
+    AddDynamicPartitionsRequestResult,
+    DeleteDynamicPartitionsRequestResult,
+    InstigatorState,
+    InstigatorStatus,
+    TickStatus,
+)
 from dagster._core.storage.event_log.base import EventRecordsFilter
 from dagster._core.test_utils import (
     SingleThreadPoolExecutor,
@@ -3013,6 +3019,9 @@ def test_add_dynamic_partitions_sensor(
         " exist: ['foo']"
         in caplog.text
     )
+    assert ticks[0].tick_data.dynamic_partitions_request_results == [
+        AddDynamicPartitionsRequestResult("quux", ["baz"], ["foo"]),
+    ]
 
 
 @pytest.mark.parametrize("executor", get_sensor_executors())
@@ -3054,6 +3063,11 @@ def test_add_dynamic_partitions_and_launch_runs(
         " exist: ['3']"
         in caplog.text
     )
+    assert ticks[0].tick_data.dynamic_partitions_request_results == [
+        AddDynamicPartitionsRequestResult("quux", ["1"], []),
+        DeleteDynamicPartitionsRequestResult("quux", ["2"], ["3"]),
+    ]
+
     run = instance.get_runs()[0]
     assert run.run_config == {}
     assert run.tags
