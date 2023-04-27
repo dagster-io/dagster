@@ -12,7 +12,6 @@ from typing import (
     Callable,
     Generic,
     Iterable,
-    List,
     Mapping,
     NamedTuple,
     Optional,
@@ -23,7 +22,6 @@ from typing import (
     cast,
 )
 
-import pendulum
 from dateutil.relativedelta import relativedelta
 from typing_extensions import TypeVar
 
@@ -37,7 +35,6 @@ from dagster._core.definitions.run_request import (
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
 from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
 from dagster._serdes import whitelist_for_serdes
-from dagster._seven.compat.pendulum import PendulumDateTime, to_timezone
 from dagster._utils import xor
 from dagster._utils.backcompat import (
     canonicalize_backcompat_args,
@@ -45,13 +42,11 @@ from dagster._utils.backcompat import (
     experimental_arg_warning,
 )
 from dagster._utils.cached_method import cached_method
-from dagster._utils.schedules import schedule_execution_time_iterator
 
 from ..errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidDeserializationVersionError,
     DagsterInvalidInvocationError,
-    DagsterInvariantViolationError,
     DagsterUnknownPartitionError,
 )
 from .config import ConfigMapping
@@ -102,72 +97,6 @@ class Partition(Generic[T_cov]):
             return False
         else:
             return self.value == other.value and self.name == other.name
-
-
-def schedule_partition_range(
-    start: datetime,
-    end: Optional[datetime],
-    cron_schedule: str,
-    fmt: str,
-    timezone: Optional[str],
-    execution_time_to_partition_fn: Callable[[datetime], datetime],
-    current_time: Optional[datetime],
-) -> Sequence[str]:
-    if end and start > end:
-        raise DagsterInvariantViolationError(
-            'Selected date range start "{start}" is after date range end "{end}'.format(
-                start=start.strftime(fmt),
-                end=end.strftime(fmt),
-            )
-        )
-
-    tz = timezone if timezone else "UTC"
-
-    _current_time = current_time if current_time else pendulum.now(tz)
-
-    # Coerce to the definition timezone
-    _start = (
-        to_timezone(start, tz)
-        if isinstance(start, PendulumDateTime)
-        else pendulum.instance(start, tz=tz)
-    )
-    _current_time = (
-        to_timezone(_current_time, tz)
-        if isinstance(_current_time, PendulumDateTime)
-        else pendulum.instance(_current_time, tz=tz)
-    )
-
-    # The end partition time should be before the last partition that
-    # executes before the current time
-    end_partition_time = execution_time_to_partition_fn(_current_time)
-
-    # The partition set has an explicit end time that represents the end of the partition range
-    if end:
-        _end = (
-            to_timezone(end, tz)
-            if isinstance(end, PendulumDateTime)
-            else pendulum.instance(end, tz=tz)
-        )
-
-        # If the explicit end time is before the last partition time,
-        # update the end partition time
-        end_partition_time = min(_end, end_partition_time)
-
-    end_timestamp = end_partition_time.timestamp()
-
-    partitions: List[str] = []
-    for next_time in schedule_execution_time_iterator(_start.timestamp(), cron_schedule, tz):
-        partition_time = execution_time_to_partition_fn(next_time)
-
-        if partition_time.timestamp() > end_timestamp:
-            break
-
-        if partition_time.timestamp() < _start.timestamp():
-            continue
-
-        partitions.append(partition_time.strftime(fmt))
-
-    return partitions
 
 
 @whitelist_for_serdes

@@ -17,15 +17,6 @@ from dagster._check import CheckError
 from dagster._core.test_utils import instance_for_test
 
 
-def assert_expected_partition_keys(
-    generated_partition_keys: Sequence[str], expected_partition_keys: Sequence[str]
-):
-    assert all(isinstance(generated_key, str) for generated_key in generated_partition_keys)
-    assert len(generated_partition_keys) == len(expected_partition_keys)
-    for generated_key, expected_key in zip(generated_partition_keys, expected_partition_keys):
-        assert generated_key == expected_key
-
-
 @pytest.mark.parametrize(
     argnames=["partition_keys"],
     argvalues=[(["a_partition"],), ([str(x) for x in range(10)],)],
