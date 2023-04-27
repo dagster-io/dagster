@@ -1,3 +1,4 @@
+import base64
 import sys
 import warnings
 from contextlib import closing, contextmanager
@@ -120,7 +121,9 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
         description=(
             "Raw private key password to use. See"
             " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details. Required for"
-            " both private_key and private_key_path."
+            " both private_key and private_key_path. To avoid issues with newlines in the keys, you"
+            " must base64 encode the key. You can retrieve the base64 encoded key with this shell"
+            " command: cat rsa_key.pub | base64"
         ),
     )
 
@@ -352,12 +355,14 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
         return sqlalchemy_engine_args
 
     def _snowflake_private_key(self, config) -> bytes:
-        private_key = config.get("private_key", None)
         # If the user has defined a path to a private key, we will use that.
         if config.get("private_key_path", None) is not None:
             # read the file from the path.
             with open(config.get("private_key_path"), "rb") as key:
                 private_key = key.read()
+        else:
+            private_key_encoded = config.get("private_key", None)
+            private_key = base64.b64decode(private_key_encoded)
 
         kwargs = {}
         if config.get("private_key_password", None) is not None:
