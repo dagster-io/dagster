@@ -471,15 +471,17 @@ class SensorDefinition:
             job (ExecutableDefinition): The job that should execute when this
                 schedule runs.
         """
-        return SensorDefinition(
+        return SensorDefinition.internal_init(
             name=self.name,
             evaluation_fn=self._evaluation_fn,
             minimum_interval_seconds=self.minimum_interval_seconds,
             description=self.description,
+            job_name=None,  # if original init was passed job name, was resolved to a job
             jobs=new_jobs if len(new_jobs) > 1 else None,
             job=new_jobs[0] if len(new_jobs) == 1 else None,
             default_status=self.default_status,
             asset_selection=self.asset_selection,
+            required_resource_keys=self.required_resource_keys,
         )
 
     def with_updated_job(self, new_job: ExecutableDefinition) -> "SensorDefinition":
@@ -490,6 +492,33 @@ class SensorDefinition:
                 schedule runs.
         """
         return self.with_updated_jobs([new_job])
+
+    @staticmethod
+    def internal_init(
+        *,
+        name: Optional[str],
+        evaluation_fn: Optional[RawSensorEvaluationFunction],
+        job_name: Optional[str],
+        minimum_interval_seconds: Optional[int],
+        description: Optional[str],
+        job: Optional[ExecutableDefinition],
+        jobs: Optional[Sequence[ExecutableDefinition]],
+        default_status: DefaultSensorStatus,
+        asset_selection: Optional[AssetSelection],
+        required_resource_keys: Optional[Set[str]],
+    ):
+        return SensorDefinition(
+            name=name,
+            evaluation_fn=evaluation_fn,
+            job_name=job_name,
+            minimum_interval_seconds=minimum_interval_seconds,
+            description=description,
+            job=job,
+            jobs=jobs,
+            default_status=default_status,
+            asset_selection=asset_selection,
+            required_resource_keys=required_resource_keys,
+        )
 
     def __init__(
         self,
