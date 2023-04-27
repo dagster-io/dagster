@@ -21,8 +21,8 @@ from dagster._core.definitions import (
 )
 from dagster._core.definitions.dependency import Node
 from dagster._core.definitions.executor_definition import in_process_executor
+from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.logger_definition import LoggerDefinition
-from dagster._core.definitions.pipeline_base import InMemoryJob
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.context.system import PlanExecutionContext

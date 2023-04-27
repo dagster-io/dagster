@@ -18,7 +18,7 @@ from dagster import (
     resource,
 )
 from dagster._core.definitions.executor_definition import in_process_executor
-from dagster._core.definitions.pipeline_base import InMemoryJob
+from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.errors import DagsterExecutionInterruptedError, raise_execution_interrupts
 from dagster._core.execution.api import execute_job, execute_run_iterator
 from dagster._core.test_utils import instance_for_test

@@ -2,7 +2,7 @@ from typing import Any, Dict, FrozenSet, Mapping, Optional, cast
 
 from dagster._core.definitions import GraphDefinition, JobDefinition, Node, NodeHandle, OpDefinition
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.pipeline_base import InMemoryJob
+from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.instance import DagsterInstance

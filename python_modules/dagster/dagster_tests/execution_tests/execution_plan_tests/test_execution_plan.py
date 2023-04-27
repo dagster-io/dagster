@@ -9,8 +9,8 @@ from dagster import (
     op,
 )
 from dagster._core.definitions.decorators.graph_decorator import graph
+from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.output import GraphOut
-from dagster._core.definitions.pipeline_base import InMemoryJob
 from dagster._core.errors import (
     DagsterInvalidConfigError,
     DagsterInvariantViolationError,

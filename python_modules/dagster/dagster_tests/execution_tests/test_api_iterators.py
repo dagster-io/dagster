@@ -11,7 +11,7 @@ from dagster import (
     resource,
 )
 from dagster._core.definitions.executor_definition import in_process_executor
-from dagster._core.definitions.pipeline_base import InMemoryJob
+from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.events import (
     DagsterEvent,

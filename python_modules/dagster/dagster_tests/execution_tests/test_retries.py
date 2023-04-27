@@ -22,7 +22,7 @@ from dagster import (
     success_hook,
 )
 from dagster._core.definitions.events import HookExecutionResult
-from dagster._core.definitions.pipeline_base import InMemoryJob
+from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.api import (

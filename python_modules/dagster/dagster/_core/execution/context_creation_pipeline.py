@@ -25,7 +25,7 @@ from typing import (
 import dagster._check as check
 from dagster._core.definitions import ExecutorDefinition, JobDefinition
 from dagster._core.definitions.executor_definition import check_cross_process_constraints
-from dagster._core.definitions.pipeline_base import IJob
+from dagster._core.definitions.job_base import IJob
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
 from dagster._core.errors import DagsterError, DagsterUserCodeExecutionError
 from dagster._core.events import DagsterEvent
