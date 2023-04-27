@@ -397,6 +397,33 @@ query TickLogsQuery($sensorSelector: SensorSelector!) {
 }
 """
 
+GET_TICK_DYNAMIC_PARTITIONS_REQUEST_RESULTS_QUERY = """
+query TickDynamicPartitionsRequestResultsQuery($sensorSelector: SensorSelector!) {
+  sensorOrError(sensorSelector: $sensorSelector) {
+    __typename
+    ... on PythonError {
+      message
+      stack
+    }
+    ... on Sensor {
+      id
+      sensorState {
+        id
+        ticks {
+          id
+          dynamicPartitionsRequestResults {
+            partitionsDefName
+            partitionKeys
+            skippedPartitionKeys
+            type
+          }
+        }
+      }
+    }
+  }
+}
+"""
+
 
 class TestSensors(NonLaunchableGraphQLContextTestMatrix):
     @pytest.mark.parametrize(
@@ -1149,3 +1176,44 @@ def test_sensor_tick_logs(graphql_context: WorkspaceRequestContext):
     log_messages = tick["logEvents"]["events"]
     assert len(log_messages) == 1
     assert log_messages[0]["message"] == "hello hello"
+
+
+def test_sensor_dynamic_partitions_request_results(graphql_context: WorkspaceRequestContext):
+    instance = graphql_context.instance
+    external_repository = graphql_context.get_code_location(
+        main_repo_location_name()
+    ).get_repository(main_repo_name())
+
+    sensor_name = "dynamic_partition_requesting_sensor"
+    external_sensor = external_repository.get_external_sensor(sensor_name)
+    sensor_selector = infer_sensor_selector(graphql_context, sensor_name)
+
+    instance.add_dynamic_partitions("foo", ["existent_key", "old_key"])
+
+    # turn the sensor on
+    instance.add_instigator_state(
+        InstigatorState(
+            external_sensor.get_external_origin(), InstigatorType.SENSOR, InstigatorStatus.RUNNING
+        )
+    )
+
+    _create_tick(graphql_context)
+
+    result = execute_dagster_graphql(
+        graphql_context,
+        GET_TICK_DYNAMIC_PARTITIONS_REQUEST_RESULTS_QUERY,
+        variables={"sensorSelector": sensor_selector},
+    )
+    assert len(result.data["sensorOrError"]["sensorState"]["ticks"]) == 1
+    tick = result.data["sensorOrError"]["sensorState"]["ticks"][0]
+    results = tick["dynamicPartitionsRequestResults"]
+    assert len(results) == 2
+    assert results[0]["partitionsDefName"] == "foo"
+    assert results[0]["type"] == "ADD_PARTITIONS"
+    assert results[0]["partitionKeys"] == ["new_key", "new_key2"]
+    assert results[0]["skippedPartitionKeys"] == ["existent_key"]
+
+    assert results[1]["partitionsDefName"] == "foo"
+    assert results[1]["type"] == "DELETE_PARTITIONS"
+    assert results[1]["partitionKeys"] == ["old_key"]
+    assert results[1]["skippedPartitionKeys"] == ["nonexistent_key"]

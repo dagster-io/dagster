@@ -2236,6 +2236,7 @@ type InstigationTick {
   originRunIds: [String!]!
   logKey: [String!]
   logEvents: InstigationEventConnection!
+  dynamicPartitionsRequestResults: [DynamicPartitionsRequestResult!]!
 }
 
 type InstigationEventConnection {
@@ -2248,6 +2249,13 @@ type InstigationEvent {
   message: String!
   timestamp: String!
   level: LogLevel!
+}
+
+type DynamicPartitionsRequestResult {
+  partitionsDefName: String!
+  type: DynamicPartitionsRequestType!
+  partitionKeys: [String!]!
+  skippedPartitionKeys: [String!]!
 }
 
 type ScheduleData {
