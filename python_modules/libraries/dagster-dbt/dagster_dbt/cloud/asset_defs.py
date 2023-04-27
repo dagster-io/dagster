@@ -37,7 +37,6 @@ from dagster._core.definitions.cacheable_assets import (
 from dagster._core.definitions.metadata import MetadataUserInput
 from dagster._core.execution.context.init import build_init_resource_context
 from dagster._utils.backcompat import experimental_arg_warning
-from dbt.main import parse_args as dbt_parse_args
 
 from dagster_dbt.asset_utils import (
     default_asset_key_fn,
@@ -103,7 +102,21 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
 
     @staticmethod
     def parse_dbt_command(dbt_command: str) -> Namespace:
-        return dbt_parse_args(args=shlex.split(dbt_command)[1:])
+        args = shlex.split(dbt_command)[1:]
+        try:
+            from dbt.cli.flags import (  # pyright: ignore [reportMissingImports]
+                Flags,
+                args_to_context,
+            )
+
+            # nasty hack to get dbt to parse the args
+            # dbt >= 1.5.0 requires that profiles-dir is set to an existing directory
+            return Namespace(**vars(Flags(args_to_context(args + ["--profiles-dir", "."]))))
+        except ImportError:
+            # dbt < 1.5.0 compat
+            from dbt.main import parse_args
+
+            return parse_args(args=args)
 
     @staticmethod
     def get_job_materialization_command_step(execute_steps: List[str]) -> int:
@@ -132,8 +145,11 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         if excluded_models:
             dbt_compile_options.append(f"--exclude {' '.join(excluded_models)}")
 
-        if parsed_args.selector_name:
-            dbt_compile_options.append(f"--selector {parsed_args.selector_name}")
+        selector = getattr(parsed_args, "selector_name", None) or getattr(
+            parsed_args, "selector", None
+        )
+        if selector:
+            dbt_compile_options.append(f"--selector {selector}")
 
         return dbt_compile_options
 
@@ -179,8 +195,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         #
         # Since we're only doing this to generate the dependency structure, just use an arbitrary
         # partition key (e.g. the last one) to retrieve the partition variable.
-        dbt_vars = json.loads(parsed_args.vars or "{}")
-        if dbt_vars:
+        if parsed_args.vars and parsed_args.vars != "{}":
             raise DagsterDbtCloudJobInvariantViolationError(
                 f"The dbt Cloud job '{dbt_cloud_job['name']}' ({dbt_cloud_job['id']}) must not have"
                 " variables defined from `--vars` in its `dbt run` or `dbt build` command."
