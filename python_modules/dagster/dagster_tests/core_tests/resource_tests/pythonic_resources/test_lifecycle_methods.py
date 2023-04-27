@@ -14,15 +14,15 @@ from dagster._core.execution.context.init import InitResourceContext
 from pydantic import PrivateAttr
 
 
-def test_basic_pre_teardown_for_execution() -> None:
+def test_basic_pre_teardown_after_execution() -> None:
     log = []
 
     class MyResource(ConfigurableResource):
         def setup_for_execution(self, context: InitResourceContext) -> None:
             log.append("setup_for_execution")
 
-        def teardown_for_execution(self, context: InitResourceContext) -> None:
-            log.append("teardown_for_execution")
+        def teardown_after_execution(self, context: InitResourceContext) -> None:
+            log.append("teardown_after_execution")
 
     @op
     def hello_world_op(res: MyResource):
@@ -37,7 +37,7 @@ def test_basic_pre_teardown_for_execution() -> None:
     assert log == [
         "setup_for_execution",
         "hello_world_op",
-        "teardown_for_execution",
+        "teardown_after_execution",
     ]
 
 
@@ -51,7 +51,7 @@ def test_basic_yield() -> None:
         ) -> Generator["MyResource", None, None]:
             log.append("setup_for_execution")
             yield self
-            log.append("teardown_for_execution")
+            log.append("teardown_after_execution")
 
     @op
     def hello_world_op(res: MyResource):
@@ -66,19 +66,19 @@ def test_basic_yield() -> None:
     assert log == [
         "setup_for_execution",
         "hello_world_op",
-        "teardown_for_execution",
+        "teardown_after_execution",
     ]
 
 
-def test_basic_pre_teardown_for_execution_multi_op() -> None:
+def test_basic_pre_teardown_after_execution_multi_op() -> None:
     log = []
 
     class MyResource(ConfigurableResource):
         def setup_for_execution(self, context: InitResourceContext) -> None:
             log.append("setup_for_execution")
 
-        def teardown_for_execution(self, context: InitResourceContext) -> None:
-            log.append("teardown_for_execution")
+        def teardown_after_execution(self, context: InitResourceContext) -> None:
+            log.append("teardown_after_execution")
 
     @op
     def hello_world_op(res: MyResource):
@@ -98,7 +98,7 @@ def test_basic_pre_teardown_for_execution_multi_op() -> None:
         "setup_for_execution",
         "hello_world_op",
         "another_hello_world_op",
-        "teardown_for_execution",
+        "teardown_after_execution",
     ]
 
 
@@ -112,7 +112,7 @@ def test_basic_yield_multi_op() -> None:
         ) -> Generator["MyResource", None, None]:
             log.append("setup_for_execution")
             yield self
-            log.append("teardown_for_execution")
+            log.append("teardown_after_execution")
 
     @op
     def hello_world_op(res: MyResource):
@@ -132,12 +132,12 @@ def test_basic_yield_multi_op() -> None:
         "setup_for_execution",
         "hello_world_op",
         "another_hello_world_op",
-        "teardown_for_execution",
+        "teardown_after_execution",
     ]
 
 
-def test_pre_teardown_for_execution_with_op_execution_error() -> None:
-    # If an op raises an error, we should still call teardown_for_execution on the resource
+def test_pre_teardown_after_execution_with_op_execution_error() -> None:
+    # If an op raises an error, we should still call teardown_after_execution on the resource
 
     log = []
 
@@ -145,8 +145,8 @@ def test_pre_teardown_for_execution_with_op_execution_error() -> None:
         def setup_for_execution(self, context: InitResourceContext) -> None:
             log.append("setup_for_execution")
 
-        def teardown_for_execution(self, context: InitResourceContext) -> None:
-            log.append("teardown_for_execution")
+        def teardown_after_execution(self, context: InitResourceContext) -> None:
+            log.append("teardown_after_execution")
 
     @op
     def my_erroring_op(res: MyResource):
@@ -167,7 +167,7 @@ def test_pre_teardown_for_execution_with_op_execution_error() -> None:
     assert log == [
         "setup_for_execution",
         "my_erroring_op",
-        "teardown_for_execution",
+        "teardown_after_execution",
     ]
 
 
@@ -182,8 +182,8 @@ def test_setup_for_execution_with_error() -> None:
             log.append("setup_for_execution")
             raise Exception("foo")
 
-        def teardown_for_execution(self, context: InitResourceContext) -> None:
-            log.append("teardown_for_execution")
+        def teardown_after_execution(self, context: InitResourceContext) -> None:
+            log.append("teardown_after_execution")
 
     @op
     def my_never_run_op(res: MyResource):
@@ -198,12 +198,12 @@ def test_setup_for_execution_with_error() -> None:
 
     assert log == [
         "setup_for_execution",
-        "teardown_for_execution",
+        "teardown_after_execution",
     ]
 
 
-def test_teardown_for_execution_with_error() -> None:
-    # If an error occurs in teardown_for_execution, this error will manifest as a DagsterResourceFunctionError
+def test_teardown_after_execution_with_error() -> None:
+    # If an error occurs in teardown_after_execution, this error will manifest as a DagsterResourceFunctionError
 
     log = []
 
@@ -211,8 +211,8 @@ def test_teardown_for_execution_with_error() -> None:
         def setup_for_execution(self, context: InitResourceContext) -> None:
             log.append("setup_for_execution")
 
-        def teardown_for_execution(self, context: InitResourceContext) -> None:
-            log.append("teardown_for_execution")
+        def teardown_after_execution(self, context: InitResourceContext) -> None:
+            log.append("teardown_after_execution")
             raise Exception("foo")
 
     @op
@@ -228,7 +228,7 @@ def test_teardown_for_execution_with_error() -> None:
     assert log == [
         "setup_for_execution",
         "my_hello_world_op",
-        "teardown_for_execution",
+        "teardown_after_execution",
     ]
 
 
