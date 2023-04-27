@@ -1,8 +1,26 @@
 import os
 import tempfile
+from typing import Type
 
-from dagster import Definitions, FilesystemIOManager, In, RunConfig, asset, job, op
+from dagster import (
+    Config,
+    Definitions,
+    FilesystemIOManager,
+    In,
+    IOManagerDefinition,
+    RunConfig,
+    StringSource,
+    asset,
+    io_manager,
+    job,
+    op,
+)
 from dagster._config.pythonic_config import ConfigurableIOManager, ConfigurableResource
+from dagster._config.type_printer import print_config_type_to_string
+
+
+def type_string_from_config_schema(config_schema):
+    return print_config_type_to_string(config_schema.config_type)
 
 
 def test_load_input_handle_output():
@@ -201,3 +219,211 @@ def test_pythonic_fs_io_manager_runtime_config() -> None:
             .success
         )
         assert os.path.exists(os.path.join(tmpdir_path, "hello_world_asset"))
+
+
+def test_config_schemas() -> None:
+    # Decorator-based IO manager definition
+    @io_manager(
+        config_schema={"base_dir": StringSource},
+        output_config_schema={"path": StringSource},
+        input_config_schema={"format": StringSource},
+    )
+    def an_io_manager():
+        pass
+
+    class OutputConfigSchema(Config):
+        path: str
+
+    class InputConfigSchema(Config):
+        format: str
+
+    class MyIOManager(ConfigurableIOManager):
+        base_dir: str
+
+        @classmethod
+        def input_config_schema(cls) -> Type[Config]:
+            return InputConfigSchema
+
+        @classmethod
+        def output_config_schema(cls) -> Type[Config]:
+            return OutputConfigSchema
+
+        def handle_output(self, context, obj):
+            pass
+
+        def load_input(self, context):
+            pass
+
+    configured_io_manager = MyIOManager(base_dir="/a/b/c").get_resource_definition()
+
+    # Check that the config schemas are the same
+    assert isinstance(configured_io_manager, IOManagerDefinition)
+    assert type_string_from_config_schema(
+        configured_io_manager.output_config_schema
+    ) == type_string_from_config_schema(an_io_manager.output_config_schema)
+    assert type_string_from_config_schema(
+        configured_io_manager.input_config_schema
+    ) == type_string_from_config_schema(an_io_manager.input_config_schema)
+
+    class MyIOManagerNonPythonicSchemas(ConfigurableIOManager):
+        base_dir: str
+
+        @classmethod
+        def input_config_schema(cls):
+            return {"format": StringSource}
+
+        @classmethod
+        def output_config_schema(cls):
+            return {"path": StringSource}
+
+        def handle_output(self, context, obj):
+            pass
+
+        def load_input(self, context):
+            pass
+
+    configured_io_manager_non_pythonic = MyIOManagerNonPythonicSchemas(
+        base_dir="/a/b/c"
+    ).get_resource_definition()
+
+    # Check that the config schemas are the same
+    assert isinstance(configured_io_manager_non_pythonic, IOManagerDefinition)
+    assert type_string_from_config_schema(
+        configured_io_manager_non_pythonic.output_config_schema
+    ) == type_string_from_config_schema(an_io_manager.output_config_schema)
+    assert type_string_from_config_schema(
+        configured_io_manager_non_pythonic.input_config_schema
+    ) == type_string_from_config_schema(an_io_manager.input_config_schema)
+
+
+import pytest
+from dagster import InputContext, Out, OutputContext
+from dagster._core.errors import DagsterInvalidConfigError
+
+
+def test_load_input_handle_output_input_config() -> None:
+    class MyIOManager(ConfigurableIOManager):
+        def handle_output(self, context, obj):
+            pass
+
+        def load_input(self, context):
+            assert False, "should not be called"
+
+    class InputConfigSchema(Config):
+        config_value: int
+
+    class MyInputManager(MyIOManager):
+        def load_input(self, context):
+            if context.upstream_output is None:
+                assert False, "upstream output should not be None"
+            else:
+                return context.config["config_value"]
+
+        @classmethod
+        def input_config_schema(cls) -> Type[Config]:
+            return InputConfigSchema
+
+    did_run = {}
+
+    @op
+    def first_op():
+        did_run["first_op"] = True
+        return 1
+
+    @op(ins={"an_input": In(input_manager_key="my_input_manager")})
+    def second_op(an_input):
+        assert an_input == 6
+        did_run["second_op"] = True
+
+    @job(
+        resource_defs={
+            "io_manager": MyIOManager(),
+            "my_input_manager": MyInputManager(),
+        }
+    )
+    def check_input_managers():
+        out = first_op()
+        second_op(out)
+
+    check_input_managers.execute_in_process(
+        run_config={"ops": {"second_op": {"inputs": {"an_input": {"config_value": 6}}}}}
+    )
+    assert did_run["first_op"]
+    assert did_run["second_op"]
+
+    with pytest.raises(DagsterInvalidConfigError):
+        check_input_managers.execute_in_process(
+            run_config={
+                "ops": {"second_op": {"inputs": {"an_input": {"config_value": "a_string"}}}}
+            }
+        )
+
+
+def test_config_param_load_input_handle_output_config() -> None:
+    storage = {}
+
+    class InputConfigSchema(Config):
+        prefix_input: str
+
+    class OutputConfigSchema(Config):
+        postfix_output: str
+
+    class MyIOManager(ConfigurableIOManager):
+        prefix_output: str
+
+        @classmethod
+        def input_config_schema(cls) -> Type[Config]:
+            return InputConfigSchema
+
+        @classmethod
+        def output_config_schema(cls) -> Type[Config]:
+            return OutputConfigSchema
+
+        def load_input(self, context: InputContext):
+            return f"{context.config['prefix_input']}{storage[context.name]}"
+
+        def handle_output(self, context: OutputContext, obj: str):
+            storage[context.name] = f"{self.prefix_output}{obj}{context.config['postfix_output']}"
+
+    did_run = {}
+
+    @op(out={"first_op": Out(io_manager_key="io_manager")})
+    def first_op():
+        did_run["first_op"] = True
+        return "foo"
+
+    @op(
+        ins={"first_op": In(input_manager_key="io_manager")},
+        out={"second_op": Out(io_manager_key="io_manager")},
+    )
+    def second_op(first_op):
+        assert first_op == "barprefoopost"
+        did_run["second_op"] = True
+        return first_op
+
+    @job(
+        resource_defs={
+            "io_manager": MyIOManager(
+                prefix_output="pre",
+            ),
+        }
+    )
+    def check_input_managers():
+        out = first_op()
+        second_op(out)
+
+    check_input_managers.execute_in_process(
+        run_config={
+            "ops": {
+                "first_op": {"outputs": {"first_op": {"postfix_output": "post"}}},
+                "second_op": {
+                    "inputs": {"first_op": {"prefix_input": "bar"}},
+                    "outputs": {"second_op": {"postfix_output": "post"}},
+                },
+            }
+        }
+    )
+    assert did_run["first_op"]
+    assert did_run["second_op"]
+    assert storage["first_op"] == "prefoopost"
+    assert storage["second_op"] == "prebarprefoopostpost"
