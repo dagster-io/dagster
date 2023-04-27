@@ -799,7 +799,8 @@ class ConfigurableResourceFactory(
     def _get_initialize_and_run_fn(self) -> Callable:
         is_cm_resource = (
             self.__class__.yield_for_execution != ConfigurableResourceFactory.yield_for_execution
-            or self.__class__.post_execute != ConfigurableResourceFactory.post_execute
+            or self.__class__.teardown_for_execution
+            != ConfigurableResourceFactory.teardown_for_execution
         )
         return self._initialize_and_run_cm if is_cm_resource else self._initialize_and_run
 
@@ -922,7 +923,7 @@ class ConfigurableResourceFactory(
                 context
             )._resolve_and_update_env_vars()
 
-            updated_resource.pre_execute(context)
+            updated_resource.setup_for_execution(context)
             return updated_resource.create_resource(context)
 
     @contextlib.contextmanager
@@ -937,18 +938,18 @@ class ConfigurableResourceFactory(
             with updated_resource.yield_for_execution(context) as value:
                 yield value
 
-    def pre_execute(self, context: InitResourceContext) -> None:
+    def setup_for_execution(self, context: InitResourceContext) -> None:
         """Optionally override this method to perform any pre-execution steps
         needed before the resource is used in execution.
         """
         pass
 
-    def post_execute(self, context: InitResourceContext) -> None:
+    def teardown_for_execution(self, context: InitResourceContext) -> None:
         """Optionally override this method to perform any post-execution steps
         needed after the resource is used in execution.
 
-        post_execute will be called even if the resource fails to initialize in the
-        pre_execute step, and if any part of the run fails.
+        teardown_for_execution will be called even if the resource fails to initialize in the
+        setup_for_execution step, and if any part of the run fails.
         """
         pass
 
@@ -956,17 +957,17 @@ class ConfigurableResourceFactory(
     def yield_for_execution(self, context: InitResourceContext) -> Generator[TResValue, None, None]:
         """Optionally override this method to perform any lifecycle steps
         before or after the resource is used in execution. By default, calls
-        pre_execute before yielding, and post_execute after yielding.
+        setup_for_execution before yielding, and teardown_for_execution after yielding.
 
-        Note that if you override this method and want pre_execute or
-        post_execute to be called, you must invoke them yourself.
+        Note that if you override this method and want setup_for_execution or
+        teardown_for_execution to be called, you must invoke them yourself.
         """
         try:
-            self.pre_execute(context)
+            self.setup_for_execution(context)
             yield self.create_resource(context)
         finally:
-            # what to do if post_execute throws
-            self.post_execute(context)
+            # what to do if teardown_for_execution throws
+            self.teardown_for_execution(context)
 
     def get_resource_context(self) -> InitResourceContext:
         """Returns the context that this resource was initialized with."""

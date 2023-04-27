@@ -14,15 +14,15 @@ from dagster._core.execution.context.init import InitResourceContext
 from pydantic import PrivateAttr
 
 
-def test_basic_pre_post_execute() -> None:
+def test_basic_pre_teardown_for_execution() -> None:
     log = []
 
     class MyResource(ConfigurableResource):
-        def pre_execute(self, context: InitResourceContext) -> None:
-            log.append("pre_execute")
+        def setup_for_execution(self, context: InitResourceContext) -> None:
+            log.append("setup_for_execution")
 
-        def post_execute(self, context: InitResourceContext) -> None:
-            log.append("post_execute")
+        def teardown_for_execution(self, context: InitResourceContext) -> None:
+            log.append("teardown_for_execution")
 
     @op
     def hello_world_op(res: MyResource):
@@ -35,9 +35,9 @@ def test_basic_pre_post_execute() -> None:
     result = hello_world_job.execute_in_process()
     assert result.success
     assert log == [
-        "pre_execute",
+        "setup_for_execution",
         "hello_world_op",
-        "post_execute",
+        "teardown_for_execution",
     ]
 
 
@@ -49,9 +49,9 @@ def test_basic_yield() -> None:
         def yield_for_execution(
             self, context: InitResourceContext
         ) -> Generator["MyResource", None, None]:
-            log.append("pre_execute")
+            log.append("setup_for_execution")
             yield self
-            log.append("post_execute")
+            log.append("teardown_for_execution")
 
     @op
     def hello_world_op(res: MyResource):
@@ -64,21 +64,21 @@ def test_basic_yield() -> None:
     result = hello_world_job.execute_in_process()
     assert result.success
     assert log == [
-        "pre_execute",
+        "setup_for_execution",
         "hello_world_op",
-        "post_execute",
+        "teardown_for_execution",
     ]
 
 
-def test_basic_pre_post_execute_multi_op() -> None:
+def test_basic_pre_teardown_for_execution_multi_op() -> None:
     log = []
 
     class MyResource(ConfigurableResource):
-        def pre_execute(self, context: InitResourceContext) -> None:
-            log.append("pre_execute")
+        def setup_for_execution(self, context: InitResourceContext) -> None:
+            log.append("setup_for_execution")
 
-        def post_execute(self, context: InitResourceContext) -> None:
-            log.append("post_execute")
+        def teardown_for_execution(self, context: InitResourceContext) -> None:
+            log.append("teardown_for_execution")
 
     @op
     def hello_world_op(res: MyResource):
@@ -95,10 +95,10 @@ def test_basic_pre_post_execute_multi_op() -> None:
     result = hello_world_job.execute_in_process()
     assert result.success
     assert log == [
-        "pre_execute",
+        "setup_for_execution",
         "hello_world_op",
         "another_hello_world_op",
-        "post_execute",
+        "teardown_for_execution",
     ]
 
 
@@ -110,9 +110,9 @@ def test_basic_yield_multi_op() -> None:
         def yield_for_execution(
             self, context: InitResourceContext
         ) -> Generator["MyResource", None, None]:
-            log.append("pre_execute")
+            log.append("setup_for_execution")
             yield self
-            log.append("post_execute")
+            log.append("teardown_for_execution")
 
     @op
     def hello_world_op(res: MyResource):
@@ -129,24 +129,24 @@ def test_basic_yield_multi_op() -> None:
     result = hello_world_job.execute_in_process()
     assert result.success
     assert log == [
-        "pre_execute",
+        "setup_for_execution",
         "hello_world_op",
         "another_hello_world_op",
-        "post_execute",
+        "teardown_for_execution",
     ]
 
 
-def test_pre_post_execute_with_op_execution_error() -> None:
-    # If an op raises an error, we should still call post_execute on the resource
+def test_pre_teardown_for_execution_with_op_execution_error() -> None:
+    # If an op raises an error, we should still call teardown_for_execution on the resource
 
     log = []
 
     class MyResource(ConfigurableResource):
-        def pre_execute(self, context: InitResourceContext) -> None:
-            log.append("pre_execute")
+        def setup_for_execution(self, context: InitResourceContext) -> None:
+            log.append("setup_for_execution")
 
-        def post_execute(self, context: InitResourceContext) -> None:
-            log.append("post_execute")
+        def teardown_for_execution(self, context: InitResourceContext) -> None:
+            log.append("teardown_for_execution")
 
     @op
     def my_erroring_op(res: MyResource):
@@ -165,25 +165,25 @@ def test_pre_post_execute_with_op_execution_error() -> None:
         erroring_job.execute_in_process()
 
     assert log == [
-        "pre_execute",
+        "setup_for_execution",
         "my_erroring_op",
-        "post_execute",
+        "teardown_for_execution",
     ]
 
 
-def test_pre_execute_with_error() -> None:
-    # If an error occurs in pre_execute, this error will manifest as a DagsterResourceFunctionError and
+def test_setup_for_execution_with_error() -> None:
+    # If an error occurs in setup_for_execution, this error will manifest as a DagsterResourceFunctionError and
     # the resource teardown will be called
 
     log = []
 
     class MyResource(ConfigurableResource):
-        def pre_execute(self, context: InitResourceContext) -> None:
-            log.append("pre_execute")
+        def setup_for_execution(self, context: InitResourceContext) -> None:
+            log.append("setup_for_execution")
             raise Exception("foo")
 
-        def post_execute(self, context: InitResourceContext) -> None:
-            log.append("post_execute")
+        def teardown_for_execution(self, context: InitResourceContext) -> None:
+            log.append("teardown_for_execution")
 
     @op
     def my_never_run_op(res: MyResource):
@@ -197,22 +197,22 @@ def test_pre_execute_with_error() -> None:
         hello_world_job.execute_in_process()
 
     assert log == [
-        "pre_execute",
-        "post_execute",
+        "setup_for_execution",
+        "teardown_for_execution",
     ]
 
 
-def test_post_execute_with_error() -> None:
-    # If an error occurs in post_execute, this error will manifest as a DagsterResourceFunctionError
+def test_teardown_for_execution_with_error() -> None:
+    # If an error occurs in teardown_for_execution, this error will manifest as a DagsterResourceFunctionError
 
     log = []
 
     class MyResource(ConfigurableResource):
-        def pre_execute(self, context: InitResourceContext) -> None:
-            log.append("pre_execute")
+        def setup_for_execution(self, context: InitResourceContext) -> None:
+            log.append("setup_for_execution")
 
-        def post_execute(self, context: InitResourceContext) -> None:
-            log.append("post_execute")
+        def teardown_for_execution(self, context: InitResourceContext) -> None:
+            log.append("teardown_for_execution")
             raise Exception("foo")
 
     @op
@@ -226,9 +226,9 @@ def test_post_execute_with_error() -> None:
     hello_world_job.execute_in_process()
 
     assert log == [
-        "pre_execute",
+        "setup_for_execution",
         "my_hello_world_op",
-        "post_execute",
+        "teardown_for_execution",
     ]
 
 
@@ -246,8 +246,8 @@ def test_basic_init_with_privateattr() -> None:
 
         _connection: Connection = PrivateAttr()
 
-        def pre_execute(self, context: InitResourceContext) -> None:
-            log.append(f"pre_execute with {self.username} and {self.password}")
+        def setup_for_execution(self, context: InitResourceContext) -> None:
+            log.append(f"setup_for_execution with {self.username} and {self.password}")
             self._connection = Connection(self.username, self.password)
 
         def query(self, query: str) -> Dict[str, Any]:
@@ -268,7 +268,7 @@ def test_basic_init_with_privateattr() -> None:
     result = hello_world_job.execute_in_process()
     assert result.success
     assert log == [
-        "pre_execute with foo and bar",
+        "setup_for_execution with foo and bar",
         "query select * from table with foo and bar",
     ]
 
@@ -290,7 +290,7 @@ def test_nested_resources_init_with_privateattr() -> None:
 
         _jwt: str = PrivateAttr()
 
-        def pre_execute(self, context: InitResourceContext) -> None:
+        def setup_for_execution(self, context: InitResourceContext) -> None:
             self._jwt = fetch_jwt(self.access_key, self.secret_key)
 
         @property
@@ -302,8 +302,8 @@ def test_nested_resources_init_with_privateattr() -> None:
 
         _s3_client: Any = PrivateAttr()
 
-        def pre_execute(self, context: InitResourceContext) -> None:
-            log.append(f"pre_execute with jwt {self.credentials.jwt}")
+        def setup_for_execution(self, context: InitResourceContext) -> None:
+            log.append(f"setup_for_execution with jwt {self.credentials.jwt}")
             self._s3_client = S3Client(self.credentials.jwt)
 
         def get_object(self, bucket: str, key: str) -> Dict[str, Any]:
@@ -331,7 +331,7 @@ def test_nested_resources_init_with_privateattr() -> None:
     assert result.success
     assert log == [
         "fetch_jwt with my_key and my_secret",
-        "pre_execute with jwt my_jwt",
+        "setup_for_execution with jwt my_jwt",
         "load_from_s3_op",
         "get_object my-bucket my-key with jwt my_jwt",
     ]
@@ -354,7 +354,7 @@ def test_nested_resources_init_with_privateattr_runtime_config() -> None:
 
         _jwt: str = PrivateAttr()
 
-        def pre_execute(self, context: InitResourceContext) -> None:
+        def setup_for_execution(self, context: InitResourceContext) -> None:
             self._jwt = fetch_jwt(self.access_key, self.secret_key)
 
         @property
@@ -366,8 +366,8 @@ def test_nested_resources_init_with_privateattr_runtime_config() -> None:
 
         _s3_client: Any = PrivateAttr()
 
-        def pre_execute(self, context: InitResourceContext) -> None:
-            log.append(f"pre_execute with jwt {self.credentials.jwt}")
+        def setup_for_execution(self, context: InitResourceContext) -> None:
+            log.append(f"setup_for_execution with jwt {self.credentials.jwt}")
             self._s3_client = S3Client(self.credentials.jwt)
 
         def get_object(self, bucket: str, key: str) -> Dict[str, Any]:
@@ -402,7 +402,7 @@ def test_nested_resources_init_with_privateattr_runtime_config() -> None:
     assert result.success
     assert log == [
         "fetch_jwt with my_key and my_secret",
-        "pre_execute with jwt my_jwt",
+        "setup_for_execution with jwt my_jwt",
         "load_from_s3_op",
         "get_object my-bucket my-key with jwt my_jwt",
     ]
