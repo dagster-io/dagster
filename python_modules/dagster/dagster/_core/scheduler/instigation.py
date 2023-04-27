@@ -375,6 +375,12 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
     def is_success(self) -> bool:
         return self.tick_data.status == TickStatus.SUCCESS
 
+    @property
+    def dynamic_partitions_request_results(
+        self,
+    ) -> Sequence[Union[AddDynamicPartitionsRequestResult, DeleteDynamicPartitionsRequestResult]]:
+        return self.tick_data.dynamic_partitions_request_results
+
 
 @whitelist_for_serdes(
     old_storage_names={"JobTickData"},

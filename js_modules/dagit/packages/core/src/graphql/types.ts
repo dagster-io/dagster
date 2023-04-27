@@ -1060,6 +1060,14 @@ export type DynamicPartitionRequest = {
   type: DynamicPartitionsRequestType;
 };
 
+export type DynamicPartitionsRequestResult = {
+  __typename: 'DynamicPartitionsRequestResult';
+  partitionKeys: Array<Scalars['String']>;
+  partitionsDefName: Scalars['String'];
+  skippedPartitionKeys: Array<Scalars['String']>;
+  type: DynamicPartitionsRequestType;
+};
+
 export enum DynamicPartitionsRequestType {
   ADD_PARTITIONS = 'ADD_PARTITIONS',
   DELETE_PARTITIONS = 'DELETE_PARTITIONS',
@@ -1676,6 +1684,7 @@ export enum InstigationStatus {
 export type InstigationTick = {
   __typename: 'InstigationTick';
   cursor: Maybe<Scalars['String']>;
+  dynamicPartitionsRequestResults: Array<DynamicPartitionsRequestResult>;
   error: Maybe<PythonError>;
   id: Scalars['ID'];
   logEvents: InstigationEventConnection;
@@ -5838,6 +5847,31 @@ export const buildDynamicPartitionRequest = (
   };
 };
 
+export const buildDynamicPartitionsRequestResult = (
+  overrides?: Partial<DynamicPartitionsRequestResult>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'DynamicPartitionsRequestResult'} & DynamicPartitionsRequestResult => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('DynamicPartitionsRequestResult');
+  return {
+    __typename: 'DynamicPartitionsRequestResult',
+    partitionKeys:
+      overrides && overrides.hasOwnProperty('partitionKeys') ? overrides.partitionKeys! : ['non'],
+    partitionsDefName:
+      overrides && overrides.hasOwnProperty('partitionsDefName')
+        ? overrides.partitionsDefName!
+        : 'necessitatibus',
+    skippedPartitionKeys:
+      overrides && overrides.hasOwnProperty('skippedPartitionKeys')
+        ? overrides.skippedPartitionKeys!
+        : ['aliquam'],
+    type:
+      overrides && overrides.hasOwnProperty('type')
+        ? overrides.type!
+        : DynamicPartitionsRequestType.ADD_PARTITIONS,
+  };
+};
+
 export const buildEngineEvent = (
   overrides?: Partial<EngineEvent>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -7311,6 +7345,14 @@ export const buildInstigationTick = (
   return {
     __typename: 'InstigationTick',
     cursor: overrides && overrides.hasOwnProperty('cursor') ? overrides.cursor! : 'voluptatem',
+    dynamicPartitionsRequestResults:
+      overrides && overrides.hasOwnProperty('dynamicPartitionsRequestResults')
+        ? overrides.dynamicPartitionsRequestResults!
+        : [
+            relationshipsToOmit.has('DynamicPartitionsRequestResult')
+              ? ({} as DynamicPartitionsRequestResult)
+              : buildDynamicPartitionsRequestResult({}, relationshipsToOmit),
+          ],
     error:
       overrides && overrides.hasOwnProperty('error')
         ? overrides.error!
