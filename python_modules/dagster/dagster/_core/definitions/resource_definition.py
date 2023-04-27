@@ -21,6 +21,7 @@ from dagster._core.decorator_utils import format_docstring_for_description
 from dagster._core.definitions.config import is_callable_valid_config_arg
 from dagster._core.definitions.configurable import AnonymousConfigurableDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
+from dagster._utils import IHasInternalInit
 from dagster._utils.backcompat import experimental_arg_warning
 
 from ..decorator_utils import (
@@ -58,7 +59,7 @@ ResourceFunction: TypeAlias = Union[
 ]
 
 
-class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources):
+class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources, IHasInternalInit):
     """Core class for defining resources.
 
     Resources are scoped ways to make external resources (like database connections) available to
@@ -105,6 +106,23 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources):
         self._version = check.opt_str_param(version, "version")
         if version:
             experimental_arg_warning("version", "ResourceDefinition.__init__")
+
+    @staticmethod
+    def internal_init(
+        *,
+        resource_fn: ResourceFunction,
+        config_schema: CoercableToConfigSchema,
+        description: Optional[str],
+        required_resource_keys: Optional[AbstractSet[str]],
+        version: Optional[str],
+    ) -> "ResourceDefinition":
+        return ResourceDefinition(
+            resource_fn=resource_fn,
+            config_schema=config_schema,
+            description=description,
+            required_resource_keys=required_resource_keys,
+            version=version,
+        )
 
     @property
     def resource_fn(self) -> ResourceFunction:
@@ -188,7 +206,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources):
         description: Optional[str],
         config_schema: CoercableToConfigSchema,
     ) -> "ResourceDefinition":
-        return ResourceDefinition(
+        return ResourceDefinition.internal_init(
             config_schema=config_schema,
             description=description or self.description,
             resource_fn=self.resource_fn,
@@ -286,7 +304,7 @@ class _ResourceDecoratorCallable:
                 f" {', '.join(positional_arg_name_list(required_extras))}"
             )
 
-        resource_def = ResourceDefinition(
+        resource_def = ResourceDefinition.internal_init(
             resource_fn=resource_fn,
             config_schema=self.config_schema,
             description=self.description or format_docstring_for_description(resource_fn),

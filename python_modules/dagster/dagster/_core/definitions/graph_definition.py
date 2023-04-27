@@ -628,7 +628,7 @@ class GraphDefinition(NodeDefinition):
 
         wrapped_resource_defs = wrap_resources_for_execution(resource_defs)
 
-        return JobDefinition(
+        return JobDefinition.internal_init(
             name=name,
             description=description or self.description,
             graph_def=self,
@@ -645,6 +645,7 @@ class GraphDefinition(NodeDefinition):
             asset_layer=asset_layer,
             input_values=input_values,
             _subset_selection_data=_asset_selection_data,
+            _was_explicitly_provided_resources=None,
         ).get_job_def_for_subset_selection(op_selection)
 
     def coerce_to_job(self) -> "JobDefinition":

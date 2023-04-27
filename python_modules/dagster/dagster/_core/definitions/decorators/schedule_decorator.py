@@ -171,7 +171,7 @@ def schedule(
             has_context_arg=has_context_arg,
         )
 
-        schedule_def = ScheduleDefinition(
+        schedule_def = ScheduleDefinition.internal_init(
             name=schedule_name,
             cron_schedule=cron_schedule,
             job_name=job_name,
@@ -182,6 +182,11 @@ def schedule(
             job=job,
             default_status=default_status,
             required_resource_keys=required_resource_keys,
+            run_config=None,
+            run_config_fn=None,
+            tags=None,
+            tags_fn=None,
+            should_execute=None,
         )
 
         update_wrapper(schedule_def, wrapped=fn)

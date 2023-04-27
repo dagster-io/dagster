@@ -355,7 +355,7 @@ class _Asset:
             if asset_in.partition_mapping is not None
         }
 
-        return AssetsDefinition(
+        return AssetsDefinition.internal_init(
             keys_by_input_name=keys_by_input_name,
             keys_by_output_name={"result": out_asset_key},
             node_def=op,
@@ -369,6 +369,11 @@ class _Asset:
             auto_materialize_policies_by_key={out_asset_key: self.auto_materialize_policy}
             if self.auto_materialize_policy
             else None,
+            asset_deps=None,
+            selected_asset_keys=None,
+            can_subset=False,
+            metadata_by_key=None,
+            descriptions_by_key=None,
         )
 
 
@@ -566,7 +571,7 @@ def multi_asset(
             if asset_in.partition_mapping is not None
         }
 
-        return AssetsDefinition(
+        return AssetsDefinition.internal_init(
             keys_by_input_name=keys_by_input_name,
             keys_by_output_name=keys_by_output_name,
             node_def=op,
@@ -578,6 +583,9 @@ def multi_asset(
             group_names_by_key=group_names_by_key,
             freshness_policies_by_key=freshness_policies_by_key,
             auto_materialize_policies_by_key=auto_materialize_policies_by_key,
+            selected_asset_keys=None,
+            descriptions_by_key=None,
+            metadata_by_key=None,
         )
 
     return inner

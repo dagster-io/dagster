@@ -66,6 +66,7 @@ from dagster._core.storage.io_manager import IOManagerDefinition, io_manager
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.types.dagster_type import DagsterType
 from dagster._core.utils import str_format_set
+from dagster._utils import IHasInternalInit
 from dagster._utils.backcompat import deprecation_warning, experimental_class_warning
 from dagster._utils.merger import merge_dicts
 
@@ -103,7 +104,7 @@ if TYPE_CHECKING:
 DEFAULT_EXECUTOR_DEF = multi_or_in_process_executor
 
 
-class JobDefinition:
+class JobDefinition(IHasInternalInit):
     """Defines a Dagster job."""
 
     _name: str
@@ -258,6 +259,48 @@ class JobDefinition:
                     f"Error when constructing JobDefinition '{self.name}': Input value provided for"
                     f" key '{input_name}', but job has no top-level input with that name."
                 )
+
+    def internal_init(
+        *,
+        graph_def: GraphDefinition,
+        resource_defs: Optional[Mapping[str, ResourceDefinition]],
+        executor_def: Optional[ExecutorDefinition],
+        logger_defs: Optional[Mapping[str, LoggerDefinition]],
+        name: Optional[str],
+        config: Optional[
+            Union[ConfigMapping, Mapping[str, object], PartitionedConfig, "RunConfig"]
+        ],
+        description: Optional[str],
+        partitions_def: Optional[PartitionsDefinition],
+        tags: Optional[Mapping[str, Any]],
+        metadata: Optional[Mapping[str, RawMetadataValue]],
+        hook_defs: Optional[AbstractSet[HookDefinition]],
+        op_retry_policy: Optional[RetryPolicy],
+        version_strategy: Optional[VersionStrategy],
+        _subset_selection_data: Optional[Union[OpSelectionData, AssetSelectionData]],
+        asset_layer: Optional[AssetLayer],
+        input_values: Optional[Mapping[str, object]],
+        _was_explicitly_provided_resources: Optional[bool],
+    ) -> "JobDefinition":
+        return JobDefinition(
+            graph_def=graph_def,
+            resource_defs=resource_defs,
+            executor_def=executor_def,
+            logger_defs=logger_defs,
+            name=name,
+            config=config,
+            description=description,
+            partitions_def=partitions_def,
+            tags=tags,
+            metadata=metadata,
+            hook_defs=hook_defs,
+            op_retry_policy=op_retry_policy,
+            version_strategy=version_strategy,
+            _subset_selection_data=_subset_selection_data,
+            asset_layer=asset_layer,
+            input_values=input_values,
+            _was_explicitly_provided_resources=_was_explicitly_provided_resources,
+        )
 
     @property
     def name(self) -> str:
@@ -594,7 +637,7 @@ class JobDefinition:
         input_values = merge_dicts(self.input_values, input_values)
 
         bound_resource_defs = dict(self.resource_defs)
-        ephemeral_job = JobDefinition(
+        ephemeral_job = JobDefinition.internal_init(
             name=self._name,
             graph_def=self._graph_def,
             resource_defs={**_swap_default_io_man(bound_resource_defs, self), **resource_defs},
@@ -607,6 +650,11 @@ class JobDefinition:
             version_strategy=self.version_strategy,
             asset_layer=self.asset_layer,
             input_values=input_values,
+            description=self.description,
+            partitions_def=None,
+            metadata=None,
+            _subset_selection_data=None,
+            _was_explicitly_provided_resources=None,
         )
 
         ephemeral_job = ephemeral_job.get_job_def_for_subset_selection(
@@ -892,6 +940,8 @@ class JobDefinition:
             _subset_selection_data=self._subset_selection_data,
             asset_layer=self.asset_layer,
             input_values=self.input_values,
+            partitions_def=self.partitions_def,
+            _was_explicitly_provided_resources=None,
         )
         resolved_kwargs = {**base_kwargs, **kwargs}  # base kwargs overwritten for conflicts
         job_def = JobDefinition(**resolved_kwargs)

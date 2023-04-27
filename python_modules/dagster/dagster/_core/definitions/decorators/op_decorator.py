@@ -123,7 +123,7 @@ class _Op:
         )
         resolved_resource_keys = decorator_resource_keys.union(arg_resource_keys)
 
-        op_def = OpDefinition(
+        op_def = OpDefinition.internal_init(
             name=self.name,
             ins=self.ins,
             outs=outs,
@@ -134,6 +134,7 @@ class _Op:
             tags=self.tags,
             code_version=self.code_version,
             retry_policy=self.retry_policy,
+            version = None # code_version has replaced version
         )
         update_wrapper(op_def, compute_fn.decorated_fn)
         return op_def
