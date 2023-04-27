@@ -443,6 +443,17 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         )
 
     @public
+    def asset_partitions_time_window_for_input(self, input_name: str = "result") -> TimeWindow:
+        """The time window for the partitions of the input asset.
+
+        Raises an error if either of the following are true:
+        - The input asset has no partitioning.
+        - The input asset is not partitioned with a TimeWindowPartitionsDefinition or a
+        MultiPartitionsDefinition with one time-partitioned dimension.
+        """
+        return self._step_execution_context.asset_partitions_time_window_for_input(input_name)
+
+    @public
     def has_tag(self, key: str) -> bool:
         """Check if a logging tag is set.
 
