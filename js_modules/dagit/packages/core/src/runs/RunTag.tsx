@@ -4,6 +4,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 export enum DagsterTag {
+  Automaterialize = 'dagster/auto_materialize',
   Namespace = 'dagster/',
   Backfill = 'dagster/backfill',
   SolidSelection = 'dagster/solid_selection',

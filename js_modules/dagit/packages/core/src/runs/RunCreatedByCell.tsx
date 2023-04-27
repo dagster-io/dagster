@@ -19,15 +19,21 @@ export function RunCreatedByCell(props: Props) {
   const scheduleTag = tags.find((tag) => tag.key === DagsterTag.ScheduleName);
   const sensorTag = tags.find((tag) => tag.key === DagsterTag.SensorName);
   const user = tags.find((tag) => tag.key === DagsterTag.User);
-
-  const jsx = [];
+  const automaterialize = tags.find(
+    (tag) =>
+      tag.key === DagsterTag.Automaterialize ||
+      // Backwards compatibility
+      (tag.key === 'created_by' && tag.value === 'auto_materialize'),
+  );
+  const createdBy = tags.find((tag) => tag.key === 'created_by');
 
   const {UserDisplay} = useLaunchPadHooks();
 
+  let creator;
+
   if (user) {
-    jsx.push(<UserDisplay email={user.value} />);
-  }
-  if (backfillTag) {
+    creator = <UserDisplay email={user.value} />;
+  } else if (backfillTag) {
     const link = props.run.assetSelection?.length
       ? `/overview/backfills/${backfillTag.value}`
       : runsPathWithFilters([
@@ -36,27 +42,32 @@ export function RunCreatedByCell(props: Props) {
             value: `dagster/backfill=${backfillTag.value}`,
           },
         ]);
-    jsx.push(
+    creator = (
       <div key="backfill">
         Backfill: <Link to={link}>{backfillTag.value}</Link>
-      </div>,
+      </div>
     );
-  }
-  if (scheduleTag) {
-    jsx.push(
+  } else if (scheduleTag) {
+    creator = (
       <Tag icon="schedule" key="schedule">
         {scheduleTag.value}
-      </Tag>,
+      </Tag>
     );
-  }
-
-  if (sensorTag) {
-    jsx.push(
+  } else if (sensorTag) {
+    creator = (
       <Tag icon="sensors" key="sensor">
         {sensorTag.value}
-      </Tag>,
+      </Tag>
+    );
+  } else if (automaterialize) {
+    creator = (
+      <Tag icon="auto_materialize_policy" key="automaterialize">
+        Auto-materialize policy
+      </Tag>
     );
   }
 
-  return <Box flex={{direction: 'column', alignItems: 'flex-start'}}>{jsx}</Box>;
+  return (
+    <Box flex={{direction: 'column', alignItems: 'flex-start'}}>{creator || createdBy?.value}</Box>
+  );
 }
