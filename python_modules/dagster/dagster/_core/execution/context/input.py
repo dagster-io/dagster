@@ -13,7 +13,7 @@ from typing import (
 
 import dagster._check as check
 from dagster._annotations import public
-from dagster._core.definitions.events import AssetKey, AssetObservation
+from dagster._core.definitions.events import AssetKey, AssetObservation, CoercibleToAssetKey
 from dagster._core.definitions.metadata import (
     ArbitraryMetadataMapping,
     MetadataValue,
@@ -538,7 +538,7 @@ def build_input_context(
     resources: Optional[Mapping[str, Any]] = None,
     op_def: Optional["OpDefinition"] = None,
     step_context: Optional["StepExecutionContext"] = None,
-    asset_key: Optional["AssetKey"] = None,
+    asset_key: Optional[CoercibleToAssetKey] = None,
     partition_key: Optional[str] = None,
     asset_partition_key_range: Optional[PartitionKeyRange] = None,
     asset_partitions_def: Optional["PartitionsDefinition"] = None,
@@ -564,7 +564,7 @@ def build_input_context(
         resources (Optional[Dict[str, Any]]): The resources to make available from the context.
             For a given key, you can provide either an actual instance of an object, or a resource
             definition.
-        asset_key (Optional[AssetKey]): The asset key attached to the InputDefinition.
+        asset_key (Optional[Union[AssetKey, Sequence[str], str]]): The asset key attached to the InputDefinition.
         op_def (Optional[OpDefinition]): The definition of the op that's loading the input.
         step_context (Optional[StepExecutionContext]): For internal use.
         partition_key (Optional[str]): String value representing partition key to execute with.
@@ -594,7 +594,7 @@ def build_input_context(
     resources = check.opt_mapping_param(resources, "resources", key_type=str)
     op_def = check.opt_inst_param(op_def, "op_def", OpDefinition)
     step_context = check.opt_inst_param(step_context, "step_context", StepExecutionContext)
-    asset_key = check.opt_inst_param(asset_key, "asset_key", AssetKey)
+    asset_key = AssetKey.from_coerceable(asset_key) if asset_key else None
     partition_key = check.opt_str_param(partition_key, "partition_key")
     asset_partition_key_range = check.opt_inst_param(
         asset_partition_key_range, "asset_partition_key_range", PartitionKeyRange
