@@ -420,6 +420,8 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
             conn.close()
 
     def get_object_to_set_on_execution_context(self) -> Any:
+        # Directly create a SnowflakeConnection here for backcompat since the SnowflakeConnection
+        # has methods this resource does not have
         return SnowflakeConnection(
             config=self._resolved_config_dict,
             log=get_dagster_logger(),
