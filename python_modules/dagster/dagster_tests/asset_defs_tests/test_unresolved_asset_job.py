@@ -415,7 +415,12 @@ def test_define_selection_job(job_selection, expected_assets, use_multi, prefixe
                 node_def_name = output.split(".")[0]
                 keys_for_node = {AssetKey([*(prefixes or []), c]) for c in node_def_name[:-1]}
                 selected_keys_for_node = keys_for_node.intersection(expected_asset_keys)
-                if selected_keys_for_node != keys_for_node:
+                if (
+                    selected_keys_for_node != keys_for_node
+                    # too much of a pain to explicitly encode the cases where we need to create a
+                    # new node definition
+                    and not result.job_def.has_node_named(node_def_name)
+                ):
                     node_def_name += (
                         "_subset_"
                         + hashlib.md5(
@@ -735,3 +740,99 @@ def test_job_partitions_def_unpartitioned_assets():
     @repository
     def my_repo():
         return [my_asset, my_job]
+
+
+@pytest.mark.parametrize("use_multi", [True])
+@pytest.mark.parametrize(
+    "job_selection,expected_assets,prefixes",
+    [
+        ("start*", "start,a,d,f,final", None),
+    ],
+)
+def test_foo(job_selection, expected_assets, use_multi, prefixes):
+    _, io_manager_def = asset_aware_io_manager()
+    # for these, if we have multi assets, we'll always allow them to be subset
+    prefixed_assets = _get_assets_defs(use_multi=use_multi, allow_subset=use_multi)
+    # apply prefixes
+    for prefix in reversed(prefixes or []):
+        prefixed_assets = prefix_assets(prefixed_assets, prefix)
+
+    final_assets = with_resources(
+        prefixed_assets,
+        resource_defs={"io_manager": io_manager_def},
+    )
+
+    # run once so values exist to load from
+    define_asset_job("initial").resolve(final_assets, source_assets=[]).execute_in_process()
+
+    # now build the subset job
+    job = define_asset_job("asset_job", selection=job_selection).resolve(
+        final_assets, source_assets=[]
+    )
+
+    with instance_for_test() as instance:
+        result = job.execute_in_process(instance=instance)
+        planned_asset_keys = {
+            record.event_log_entry.dagster_event.event_specific_data.asset_key
+            for record in instance.get_event_records(
+                EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION_PLANNED)
+            )
+        }
+
+    expected_asset_keys = set(
+        (AssetKey([*(prefixes or []), a]) for a in expected_assets.split(","))
+    )
+    # make sure we've planned on the correct set of keys
+    assert planned_asset_keys == expected_asset_keys
+
+    # make sure we've generated the correct set of keys
+    assert _all_asset_keys(result) == expected_asset_keys
+
+    if use_multi:
+        expected_outputs = {
+            "start": 1,
+            "abc_.a": 2,
+            "abc_.b": 1,
+            "abc_.c": 2,
+            "def_.d": 3,
+            "def_.e": 3,
+            "def_.f": 6,
+            "final": 5,
+        }
+    else:
+        expected_outputs = {
+            "start": 1,
+            "a": 2,
+            "b": 1,
+            "c": 2,
+            "d": 3,
+            "e": 3,
+            "f": 6,
+            "final": 5,
+        }
+
+    # check if the output values are as we expect
+    for output, value in expected_outputs.items():
+        asset_name = output.split(".")[-1]
+        if asset_name in expected_assets.split(","):
+            # dealing with multi asset
+            if output != asset_name:
+                node_def_name = output.split(".")[0]
+                keys_for_node = {AssetKey([*(prefixes or []), c]) for c in node_def_name[:-1]}
+                selected_keys_for_node = keys_for_node.intersection(expected_asset_keys)
+                if (
+                    selected_keys_for_node != keys_for_node
+                    # too much of a pain to explicitly encode the cases where we need to create a
+                    # new node definition
+                    and not result.job_def.has_node_named(node_def_name)
+                ):
+                    node_def_name += (
+                        "_subset_"
+                        + hashlib.md5(
+                            (str(list(sorted(selected_keys_for_node)))).encode()
+                        ).hexdigest()[-5:]
+                    )
+                assert result.output_for_node(node_def_name, asset_name)
+            # dealing with regular asset
+            else:
+                assert result.output_for_node(output, "result") == value

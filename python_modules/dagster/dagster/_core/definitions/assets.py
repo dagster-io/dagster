@@ -12,7 +12,6 @@ from typing import (
     Optional,
     Sequence,
     Set,
-    Tuple,
     Union,
     cast,
 )
@@ -890,11 +889,14 @@ class AssetsDefinition(ResourceAddable):
             descriptions_by_key=replaced_descriptions_by_key,
         )
 
-    def _subset_op_with_new_inputs(
-        self,
-        *,
-        asset_subselection: AbstractSet[AssetKey],
-    ) -> Tuple[OpDefinition, Mapping[str, AssetKey]]:
+    def _subset_op_backed_asset(
+        self, asset_subselection: AbstractSet[AssetKey]
+    ) -> "AssetsDefinition":
+        """Creates a new AssetsDefinition which will only materialize the given asset keys. In some
+        cases, this subset will have a new set of root assets, which were previously produced within
+        the subset itself. In this case, we will create new inputs for those assets, and generate a
+        new copy of the op with the new inputs.
+        """
         # the set of keys that are not selected but are upstream of the selected keys
         input_keys = {
             dep_key for key in asset_subselection for dep_key in self.asset_deps[key]
@@ -903,11 +905,16 @@ class AssetsDefinition(ResourceAddable):
 
         input_names_by_key = {v: k for k, v in self.keys_by_input_name.items()}
         output_names_by_key = {v: k for k, v in self.keys_by_output_name.items()}
+        op_valid = True
+        print("\n", asset_subselection)
         for input_key in input_keys:
             input_name = input_names_by_key.get(input_key)
+            print(input_key, input_name)
             if input_name is None:
-                # there is no input existing for this key, meaning this is something that is
-                # traditionally produced within the op, so we create a new input
+                # there is no input existing for this key, meaning this is something that is produced
+                # within the op if it is not subsetted. this requires us to create a new input, and
+                # therefore a new copy of the underlying op.
+                op_valid = False
                 output_name = output_names_by_key[input_key]
                 ins[output_name] = In(Nothing)
                 input_names_by_key[input_key] = output_name
@@ -915,11 +922,36 @@ class AssetsDefinition(ResourceAddable):
                 # just copy over existing input
                 ins[input_name] = self.op.ins[input_name]
 
-        # create a hash of the selected keys to generate a unique name for this subsetted op
-        suffix = hashlib.md5((str(list(sorted(asset_subselection)))).encode()).hexdigest()[-5:]
-        return self.op.with_replaced_properties(
-            name=f"{self.op.name}_subset_{suffix}", ins=ins  # , outs=outs
-        ), {v: k for k, v in input_names_by_key.items()}
+        # must create a new copy of the op
+        if op_valid:
+            op_def = self.op
+        else:
+            print("CREATING NEW OP")
+            # create a hash of the selected keys to generate a unique name for this subsetted op
+            suffix = hashlib.md5((str(list(sorted(asset_subselection)))).encode()).hexdigest()[-5:]
+            print(suffix)
+            op_def = self.op.with_replaced_properties(
+                name=f"{self.op.name}_subset_{suffix}", ins=ins
+            )
+            for k, v in ins.items():
+                print(k, v)
+
+        return AssetsDefinition(
+            keys_by_input_name={**{v: k for k, v in input_names_by_key.items()}},
+            # keep track of the original mapping
+            keys_by_output_name=self.keys_by_output_name,
+            node_def=op_def,
+            partitions_def=self.partitions_def,
+            partition_mappings=self._partition_mappings,
+            asset_deps=self._asset_deps,
+            can_subset=self.can_subset,
+            selected_asset_keys=asset_subselection,
+            resource_defs=self.resource_defs,
+            group_names_by_key=self.group_names_by_key,
+            metadata_by_key=self.metadata_by_key,
+            freshness_policies_by_key=self.freshness_policies_by_key,
+            auto_materialize_policies_by_key=self.auto_materialize_policies_by_key,
+        )
 
     def _subset_graph_backed_asset(
         self,
@@ -1034,31 +1066,7 @@ class AssetsDefinition(ResourceAddable):
             )
         else:
             # multi_asset subsetting
-            op_def, keys_by_input_name = self._subset_op_with_new_inputs(
-                asset_subselection=frozenset(asset_subselection)
-            )
-            keys_by_output_name = {
-                k: v for k, v in self._keys_by_output_name.items() if k in op_def.outs
-            }
-            asset_deps = {
-                k: v for k, v in self.asset_deps.items() if k in keys_by_output_name.values()
-            }
-            return AssetsDefinition(
-                # keep track of the original mapping
-                keys_by_input_name=keys_by_input_name,
-                keys_by_output_name=keys_by_output_name,
-                node_def=op_def,
-                partitions_def=self.partitions_def,
-                partition_mappings=self._partition_mappings,
-                asset_deps=asset_deps,
-                can_subset=self.can_subset,
-                selected_asset_keys=asset_subselection,
-                resource_defs=self.resource_defs,
-                group_names_by_key=self.group_names_by_key,
-                metadata_by_key=self.metadata_by_key,
-                freshness_policies_by_key=self.freshness_policies_by_key,
-                auto_materialize_policies_by_key=self.auto_materialize_policies_by_key,
-            )
+            return self._subset_op_backed_asset(asset_subselection)
 
     @public
     def to_source_assets(self) -> Sequence[SourceAsset]:
