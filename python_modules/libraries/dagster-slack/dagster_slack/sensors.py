@@ -131,6 +131,7 @@ def make_slack_on_run_failure_sensor(
             ]
         ]
     ] = None,
+    monitor_all_repositories: bool = False,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
 ):
     """Create a sensor on job failures that will message the given Slack channel.
@@ -162,6 +163,9 @@ def make_slack_on_run_failure_sensor(
         job_selection (Optional[List[Union[JobDefinition, GraphDefinition, RepositorySelector, JobSelector, CodeLocationSensor]]]): (deprecated in favor of monitored_jobs)
             The jobs in the current repository that will be monitored by this failure sensor. Defaults to None, which means the alert will
             be sent when any job in the repository fails.
+        monitor_all_repositories (bool): If set to True, the sensor will monitor all runs in the
+            Dagster instance. If set to True, an error will be raised if you also specify
+            monitored_jobs or job_selection. Defaults to False.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
 
@@ -204,6 +208,7 @@ def make_slack_on_run_failure_sensor(
         name=name,
         minimum_interval_seconds=minimum_interval_seconds,
         monitored_jobs=jobs,
+        monitor_all_repositories=monitor_all_repositories,
         default_status=default_status,
     )
     def slack_on_run_failure(context: RunFailureSensorContext):
