@@ -11,7 +11,7 @@ def echo(_context, x):
     return x
 
 
-def test_pipeline_autoalias():
+def test_job_autoalias():
     @job
     def autopipe():
         echo(echo(echo(hello())))

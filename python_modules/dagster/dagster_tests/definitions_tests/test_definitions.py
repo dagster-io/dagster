@@ -116,7 +116,7 @@ def test_solid_def_receives_version():
     assert op_with_version.version == "42"
 
 
-def test_pipeline_types():
+def test_job_types():
     @op
     def produce_string():
         return "foo"

@@ -34,7 +34,7 @@ def solid_a_b_list():
     ]
 
 
-def test_create_pipeline_with_bad_solids_list():
+def test_create_job_with_bad_solids_list():
     with pytest.raises(
         ParameterCheckError,
         match=r'Param "node_defs" is not one of \[\'Sequence\'\]',

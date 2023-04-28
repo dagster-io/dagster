@@ -79,7 +79,7 @@ def _asset_keys_for_node(result, node_name):
     return ret
 
 
-def test_single_asset_pipeline():
+def test_single_asset_job():
     @asset
     def asset1(context):
         assert context.asset_key_for_output() == AssetKey(["asset1"])
@@ -90,7 +90,7 @@ def test_single_asset_pipeline():
     assert job.execute_in_process().success
 
 
-def test_two_asset_pipeline():
+def test_two_asset_job():
     @asset
     def asset1():
         return 1
@@ -108,7 +108,7 @@ def test_two_asset_pipeline():
     assert job.execute_in_process().success
 
 
-def test_single_asset_pipeline_with_config():
+def test_single_asset_job_with_config():
     @asset(config_schema={"foo": Field(StringSource)})
     def asset1(context):
         return context.op_config["foo"]

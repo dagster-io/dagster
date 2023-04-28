@@ -232,7 +232,7 @@ def test_scalar_union():
     assert_inner_types(scalar_union_type, String, Int, non_scalar_type)
 
 
-def test_test_type_pipeline_construction():
+def test_test_type_job_construction():
     assert define_test_type_pipeline()
 
 

@@ -218,7 +218,7 @@ def test_solid_definition_errors():
         pass
 
 
-def test_wrong_argument_to_pipeline():
+def test_wrong_argument_to_job():
     def non_solid_func():
         pass
 
