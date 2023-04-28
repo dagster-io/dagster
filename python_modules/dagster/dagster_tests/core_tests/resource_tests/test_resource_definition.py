@@ -729,7 +729,7 @@ def test_resource_init_failure_with_teardown():
     assert cleaned == ["B", "A"]
 
 
-def test_solid_failure_resource_teardown():
+def test_op_failure_resource_teardown():
     called = []
     cleaned = []
 
@@ -774,7 +774,7 @@ def test_solid_failure_resource_teardown():
     assert cleaned == ["B", "A"]
 
 
-def test_solid_failure_resource_teardown_raise():
+def test_op_failure_resource_teardown_raise():
     """Test that teardown is invoked in resources for tests that raise_on_error."""
     called = []
     cleaned = []

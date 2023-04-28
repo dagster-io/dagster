@@ -5,7 +5,7 @@ from dagster_test.test_project import (
 )
 
 
-def test_reoriginated_external_pipeline():
+def test_reoriginated_external_job():
     with instance_for_test() as instance:
         with get_test_project_workspace_and_external_job(instance, "demo_job_celery_k8s") as (
             _workspace,

@@ -12,7 +12,7 @@ from dagster import (
 )
 
 
-def test_basic_solid_with_config():
+def test_basic_op_with_config():
     did_get = {}
 
     @op(
@@ -59,7 +59,7 @@ def test_config_arg_mismatch():
         )
 
 
-def test_solid_not_found():
+def test_op_not_found():
     @op(name="find_me_op", ins={}, out={})
     def find_me_op(_):
         raise Exception("should not reach")

@@ -99,7 +99,7 @@ def test_parse_clause_invalid():
     assert parse_clause("1+some_solid") is None
 
 
-def test_parse_solid_selection_single():
+def test_parse_op_selection_single():
     solid_selection_single = parse_solid_selection(foo_job, ["add_nums"])
     assert len(solid_selection_single) == 1
     assert solid_selection_single == {"add_nums"}
@@ -118,7 +118,7 @@ def test_parse_solid_selection_single():
     }
 
 
-def test_parse_solid_selection_multi():
+def test_parse_op_selection_multi():
     solid_selection_multi_disjoint = parse_solid_selection(foo_job, ["return_one", "add_nums+"])
     assert len(solid_selection_multi_disjoint) == 3
     assert set(solid_selection_multi_disjoint) == {
@@ -142,7 +142,7 @@ def test_parse_solid_selection_multi():
         parse_solid_selection(foo_job, ["*add_nums", "a"])
 
 
-def test_parse_solid_selection_invalid():
+def test_parse_op_selection_invalid():
     with pytest.raises(
         DagsterInvalidSubsetError,
         match="No qualified ops to execute found for op_selection",

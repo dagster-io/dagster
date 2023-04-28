@@ -73,7 +73,7 @@ def test_shell_command_retcode(factory):
 
 
 @pytest.mark.parametrize("shell_defn", [shell_op])
-def test_shell_solid_retcode(shell_defn):
+def test_shell_op_retcode(shell_defn):
     with pytest.raises(Failure, match="Shell command execution failed"):
         wrap_op_in_graph_and_execute(shell_defn, input_values={"shell_command": "exit 1"})
 
@@ -99,7 +99,7 @@ def test_shell_command_stream_logs(factory):
 
 
 @pytest.mark.parametrize("factory", [create_shell_script_op])
-def test_shell_script_solid(factory):
+def test_shell_script_op(factory):
     script_dir = os.path.dirname(os.path.abspath(__file__))
     op_def = factory(os.path.join(script_dir, "test.sh"), name="foobar")
     result = wrap_op_in_graph_and_execute(
@@ -110,7 +110,7 @@ def test_shell_script_solid(factory):
 
 
 @pytest.mark.parametrize("factory", [create_shell_script_op])
-def test_shell_script_solid_no_config(factory):
+def test_shell_script_op_no_config(factory):
     script_dir = os.path.dirname(os.path.abspath(__file__))
     op_def = factory(os.path.join(script_dir, "test.sh"), name="foobar")
     result = wrap_op_in_graph_and_execute(op_def)
@@ -118,7 +118,7 @@ def test_shell_script_solid_no_config(factory):
 
 
 @pytest.mark.parametrize("factory", [create_shell_script_op])
-def test_shell_script_solid_no_config_composite(factory):
+def test_shell_script_op_no_config_composite(factory):
     script_dir = os.path.dirname(os.path.abspath(__file__))
     op_def = factory(os.path.join(script_dir, "test.sh"), name="foobar")
 
@@ -137,7 +137,7 @@ def test_shell_script_solid_no_config_composite(factory):
 
 
 @pytest.mark.parametrize("factory", [create_shell_command_op])
-def test_shell_command_solid_overrides(factory):
+def test_shell_command_op_overrides(factory):
     op_def = factory(
         'echo "this is a test message: $MY_ENV_VAR"',
         name="foobar",
@@ -152,7 +152,7 @@ def test_shell_command_solid_overrides(factory):
 
 
 @pytest.mark.parametrize("factory", [create_shell_script_op])
-def test_shell_script_solid_run_time_config(factory, monkeypatch):
+def test_shell_script_op_run_time_config(factory, monkeypatch):
     monkeypatch.setattr(os, "environ", {"MY_ENV_VAR": "foobar"})
     script_dir = os.path.dirname(os.path.abspath(__file__))
     op_def = factory(os.path.join(script_dir, "test.sh"), name="foobar")
@@ -161,7 +161,7 @@ def test_shell_script_solid_run_time_config(factory, monkeypatch):
 
 
 @pytest.mark.parametrize("factory", [create_shell_script_op])
-def test_shell_script_solid_run_time_config_composite(factory, monkeypatch):
+def test_shell_script_op_run_time_config_composite(factory, monkeypatch):
     monkeypatch.setattr(os, "environ", {"MY_ENV_VAR": "foobar"})
     script_dir = os.path.dirname(os.path.abspath(__file__))
     op_def = factory(os.path.join(script_dir, "test.sh"), name="foobar")

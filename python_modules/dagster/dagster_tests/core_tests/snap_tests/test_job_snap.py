@@ -338,7 +338,7 @@ def test_deserialize_node_def_snaps_selector():
     )
 
 
-def test_deserialize_solid_def_snaps_permissive():
+def test_deserialize_op_def_snaps_permissive():
     @op(config_schema=Field(Permissive({"foo": Field(str)})))
     def noop_op(_):
         pass
