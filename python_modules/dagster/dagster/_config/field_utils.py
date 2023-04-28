@@ -113,7 +113,7 @@ class Shape(_ConfigHasFields):
             The specification of the config dict.
         field_aliases (Dict[str, str]):
             Maps a string key to an alias that can be used instead of the original key. For example,
-            an entry {"solids": "ops"} means that someone could use "ops" instead of "solids" as a
+            an entry {"foo": "bar"} means that someone could use "bar" instead of "foo" as a
             top level string key.
     """
 

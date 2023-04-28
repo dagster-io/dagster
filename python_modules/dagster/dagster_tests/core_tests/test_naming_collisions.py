@@ -36,7 +36,7 @@ def test_execute_op_with_input_same_name():
         a_thing(pass_value())
 
     result = pipe.execute_in_process(
-        run_config={"solids": {"pass_value": {"config": {"value": "foo"}}}}
+        run_config={"ops": {"pass_value": {"config": {"value": "foo"}}}}
     )
 
     assert result.output_for_node("a_thing") == "foofoo"
@@ -58,7 +58,7 @@ def test_execute_two_ops_with_same_input_name():
 
     result = pipe.execute_in_process(
         run_config={
-            "solids": {
+            "ops": {
                 "pass_to_one": {"config": {"value": "foo"}},
                 "pass_to_two": {"config": {"value": "bar"}},
             }
@@ -86,7 +86,7 @@ def test_execute_dep_op_different_input_name():
         second_op(first_op(pass_to_first()))
 
     result = foo_job.execute_in_process(
-        run_config={"solids": {"pass_to_first": {"config": {"value": "bar"}}}}
+        run_config={"ops": {"pass_to_first": {"config": {"value": "bar"}}}}
     )
 
     assert result.success

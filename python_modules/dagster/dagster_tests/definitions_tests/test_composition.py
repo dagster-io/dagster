@@ -408,7 +408,7 @@ def test_deep_graph():
         )
 
     result = GraphDefinition(node_defs=[test], name="test").execute_in_process(
-        run_config={"ops": {"test": {"solids": {"download_num": {"config": 123}}}}}
+        run_config={"ops": {"test": {"ops": {"download_num": {"config": 123}}}}}
     )
     assert result.output_for_node("test.canonicalize_num") == 123
     assert result.output_for_node("test.load_num") == 126

@@ -86,7 +86,7 @@ class TestQueuedRunTermination(QueuedRunCoordinatorTestSuite):
                     "executionParams": {
                         "selector": selector,
                         "mode": "default",
-                        "runConfigData": {"solids": {"loop": {"config": {"file": path}}}},
+                        "runConfigData": {"ops": {"loop": {"config": {"file": path}}}},
                     }
                 },
             )
@@ -118,7 +118,7 @@ class TestQueuedRunTermination(QueuedRunCoordinatorTestSuite):
                     "executionParams": {
                         "selector": selector,
                         "mode": "default",
-                        "runConfigData": {"solids": {"loop": {"config": {"file": path}}}},
+                        "runConfigData": {"ops": {"loop": {"config": {"file": path}}}},
                     }
                 },
             )
@@ -181,7 +181,7 @@ class TestRunVariantTermination(RunTerminationTestSuite):
                     "executionParams": {
                         "selector": selector,
                         "mode": "default",
-                        "runConfigData": {"solids": {"loop": {"config": {"file": path}}}},
+                        "runConfigData": {"ops": {"loop": {"config": {"file": path}}}},
                     }
                 },
             )
@@ -214,7 +214,7 @@ class TestRunVariantTermination(RunTerminationTestSuite):
                     "executionParams": {
                         "selector": selector,
                         "mode": "default",
-                        "runConfigData": {"solids": {"loop": {"config": {"file": path}}}},
+                        "runConfigData": {"ops": {"loop": {"config": {"file": path}}}},
                     }
                 },
             )
@@ -276,7 +276,7 @@ class TestRunVariantTermination(RunTerminationTestSuite):
                     "executionParams": {
                         "selector": selector,
                         "mode": "default",
-                        "runConfigData": {"solids": {"loop": {"config": {"file": path}}}},
+                        "runConfigData": {"ops": {"loop": {"config": {"file": path}}}},
                     }
                 },
             )
@@ -372,7 +372,7 @@ class TestRunVariantTermination(RunTerminationTestSuite):
                     "executionParams": {
                         "selector": selector,
                         "mode": "default",
-                        "runConfigData": {"solids": {"loop": {"config": {"file": path}}}},
+                        "runConfigData": {"ops": {"loop": {"config": {"file": path}}}},
                     }
                 },
             )
