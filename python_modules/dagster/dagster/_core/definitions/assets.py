@@ -906,10 +906,8 @@ class AssetsDefinition(ResourceAddable):
         input_names_by_key = {v: k for k, v in self.keys_by_input_name.items()}
         output_names_by_key = {v: k for k, v in self.keys_by_output_name.items()}
         op_valid = True
-        print("\n", asset_subselection)
         for input_key in input_keys:
             input_name = input_names_by_key.get(input_key)
-            print(input_key, input_name)
             if input_name is None:
                 # there is no input existing for this key, meaning this is something that is produced
                 # within the op if it is not subsetted. this requires us to create a new input, and
@@ -926,15 +924,11 @@ class AssetsDefinition(ResourceAddable):
         if op_valid:
             op_def = self.op
         else:
-            print("CREATING NEW OP")
             # create a hash of the selected keys to generate a unique name for this subsetted op
             suffix = hashlib.md5((str(list(sorted(asset_subselection)))).encode()).hexdigest()[-5:]
-            print(suffix)
             op_def = self.op.with_replaced_properties(
                 name=f"{self.op.name}_subset_{suffix}", ins=ins
             )
-            for k, v in ins.items():
-                print(k, v)
 
         return AssetsDefinition(
             keys_by_input_name={**{v: k for k, v in input_names_by_key.items()}},
