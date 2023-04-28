@@ -21,6 +21,11 @@ sys.meta_path.insert(
             "dagster.serdes": "dagster._serdes",
             "dagster.seven": "dagster._seven",
             "dagster.utils": "dagster._utils",
+            # Added in 1.3.4 for backcompat when `_core.storage.pipeline_run` was renamed to
+            # `_core.storage.dagster_run`. This was necessary because some docs (incorrectly)
+            # demonstarted a direct import from `dagster._core.storage.pipeline_run` instead of
+            # using the top-level import.
+            "dagster._core.storage.pipeline_run": "dagster.core.storage.dagster_run",
         }
     ),
 )

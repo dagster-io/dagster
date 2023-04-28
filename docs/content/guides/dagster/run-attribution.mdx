@@ -21,7 +21,7 @@ In this use case, we'd like to add a hook to customize submitted runs while stil
 
 ```python file=/guides/dagster/run_attribution/custom_run_coordinator_skeleton.py startafter=start_custom_run_coordinator_marker endbefore=end_custom_run_coordinator_marker
 from dagster._core.run_coordinator import QueuedRunCoordinator, SubmitRunContext
-from dagster._core.storage.pipeline_run import DagsterRun
+from dagster._core.storage.dagster_run import DagsterRun
 
 
 class CustomRunCoordinator(QueuedRunCoordinator):
