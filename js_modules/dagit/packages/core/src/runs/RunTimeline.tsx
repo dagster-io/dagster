@@ -788,7 +788,7 @@ const RunHoverContent = (props: RunHoverContentProps) => {
       </div>
       {remaining > 0 ? (
         <Box padding={12} border={{side: 'top', width: 1, color: Colors.KeylineGray}}>
-          <Link to={`${job.path}runs`}>+ {remaining} more</Link>
+          <Link to={`${job.path}/runs`}>+ {remaining} more</Link>
         </Box>
       ) : null}
     </Box>
