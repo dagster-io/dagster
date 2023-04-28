@@ -36,6 +36,9 @@ setup(
         f"dagster-pandas{pin}",
         "pandas",
         "great_expectations >=0.11.9, !=0.12.8, !=0.13.17, !=0.13.27",
+        # 8.13+ explicitly does not support python 3.8
+        # Can remove when this resolves https://github.com/ipython/ipython/issues/14053
+        "ipython<=8.12; python_version<='3.8'",
     ],
     zip_safe=False,
 )
