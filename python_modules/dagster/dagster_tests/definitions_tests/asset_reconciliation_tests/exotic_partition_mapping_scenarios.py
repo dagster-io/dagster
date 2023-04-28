@@ -15,7 +15,11 @@ from .asset_reconciliation_scenario import (
     run_request,
     single_asset_run,
 )
-from .partition_scenarios import one_partition_partitions_def
+from .partition_scenarios import (
+    one_partition_partitions_def,
+    other_two_partitions_partitions_def,
+    two_partitions_partitions_def,
+)
 
 fanned_out_partitions_def = StaticPartitionsDefinition(["a_1", "a_2", "a_3"])
 
@@ -53,6 +57,16 @@ one_asset_self_dependency = [
         partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"),
         deps={"asset1": TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)},
     )
+]
+
+root_assets_different_partitions_same_downstream = [
+    asset_def("root1", partitions_def=two_partitions_partitions_def),
+    asset_def("root2", partitions_def=other_two_partitions_partitions_def),
+    asset_def(
+        "downstream",
+        {"root1": None, "root2": StaticPartitionMapping({"1": "a", "2": "b"})},
+        partitions_def=two_partitions_partitions_def,
+    ),
 ]
 
 

@@ -33,7 +33,6 @@ from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.definitions.partitioned_schedule import (
     UnresolvedPartitionedAssetScheduleDefinition,
 )
-from dagster._core.definitions.pipeline_definition import PipelineDefinition
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.schedule_definition import ScheduleDefinition
 from dagster._core.definitions.sensor_definition import SensorDefinition
@@ -100,13 +99,13 @@ def build_caching_repository_data_from_list(
     top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
     resource_key_mapping: Optional[Mapping[int, str]] = None,
 ) -> CachingRepositoryData:
-    from dagster._core.definitions import AssetGroup, AssetsDefinition
+    from dagster._core.definitions import AssetsDefinition
     from dagster._core.definitions.partitioned_schedule import (
         UnresolvedPartitionedAssetScheduleDefinition,
     )
 
     schedule_and_sensor_names: Set[str] = set()
-    pipelines_or_jobs: Dict[str, Union[PipelineDefinition, JobDefinition]] = {}
+    jobs: Dict[str, JobDefinition] = {}
     coerced_graphs: Dict[str, JobDefinition] = {}
     unresolved_jobs: Dict[str, UnresolvedAssetJobDefinition] = {}
     schedules: Dict[str, ScheduleDefinition] = {}
@@ -117,23 +116,20 @@ def build_caching_repository_data_from_list(
     assets_defs: List[AssetsDefinition] = []
     asset_keys: Set[AssetKey] = set()
     source_assets: List[SourceAsset] = []
-    combined_asset_group = None
     for definition in repository_definitions:
-        if isinstance(definition, PipelineDefinition):
+        if isinstance(definition, JobDefinition):
             if (
-                definition.name in pipelines_or_jobs
-                and pipelines_or_jobs[definition.name] != definition
+                definition.name in jobs and jobs[definition.name] != definition
             ) or definition.name in unresolved_jobs:
                 raise DagsterInvalidDefinitionError(
-                    f"Duplicate {definition.target_type} definition found for"
-                    f" {definition.describe_target()}"
+                    f"Duplicate job definition found for {definition.describe_target()}"
                 )
             if is_base_asset_job_name(definition.name):
                 raise DagsterInvalidDefinitionError(
                     f"Attempted to provide job called {definition.name} to repository, which "
                     "is a reserved name. Please rename the job."
                 )
-            pipelines_or_jobs[definition.name] = definition
+            jobs[definition.name] = definition
         elif isinstance(definition, SensorDefinition):
             if definition.name in schedule_and_sensor_names:
                 raise DagsterInvalidDefinitionError(
@@ -160,24 +156,19 @@ def build_caching_repository_data_from_list(
             unresolved_partitioned_asset_schedules[definition.name] = definition
         elif isinstance(definition, GraphDefinition):
             coerced = definition.coerce_to_job()
-            if coerced.name in pipelines_or_jobs:
+            if coerced.name in jobs:
                 raise DagsterInvalidDefinitionError(
-                    f"Duplicate {coerced.target_type} definition found for graph '{coerced.name}'"
+                    f"Duplicate job definition found for graph '{coerced.name}'"
                 )
-            pipelines_or_jobs[coerced.name] = coerced
+            jobs[coerced.name] = coerced
             coerced_graphs[coerced.name] = coerced
         elif isinstance(definition, UnresolvedAssetJobDefinition):
-            if definition.name in pipelines_or_jobs or definition.name in unresolved_jobs:
+            if definition.name in jobs or definition.name in unresolved_jobs:
                 raise DagsterInvalidDefinitionError(
                     f"Duplicate definition found for unresolved job '{definition.name}'"
                 )
             # we can only resolve these once we have all assets
             unresolved_jobs[definition.name] = definition
-        elif isinstance(definition, AssetGroup):
-            if combined_asset_group:
-                combined_asset_group += definition
-            else:
-                combined_asset_group = definition
         elif isinstance(definition, AssetsDefinition):
             for key in definition.keys:
                 if key in asset_keys:
@@ -191,31 +182,16 @@ def build_caching_repository_data_from_list(
             check.failed(f"Unexpected repository entry {definition}")
 
     if assets_defs or source_assets:
-        if combined_asset_group is not None:
-            raise DagsterInvalidDefinitionError(
-                "A repository can't have both an AssetGroup and direct asset defs"
-            )
-        combined_asset_group = AssetGroup(
+        for job_def in get_base_asset_jobs(
             assets=assets_defs,
             source_assets=source_assets,
             executor_def=default_executor_def,
-        )
-
-    if combined_asset_group:
-        for job_def in get_base_asset_jobs(
-            assets=combined_asset_group.assets,
-            source_assets=combined_asset_group.source_assets,
-            executor_def=combined_asset_group.executor_def,
-            resource_defs=combined_asset_group.resource_defs,
+            resource_defs={},  # ????
         ):
-            pipelines_or_jobs[job_def.name] = job_def
+            jobs[job_def.name] = job_def
 
-        source_assets_by_key = {
-            source_asset.key: source_asset for source_asset in combined_asset_group.source_assets
-        }
-        assets_defs_by_key = {
-            key: asset for asset in combined_asset_group.assets for key in asset.keys
-        }
+        source_assets_by_key = {source_asset.key: source_asset for source_asset in source_assets}
+        assets_defs_by_key = {key: asset for asset in assets_defs for key in asset.keys}
     else:
         source_assets_by_key = {}
         assets_defs_by_key = {}
@@ -225,21 +201,17 @@ def build_caching_repository_data_from_list(
             targets = sensor_def.load_targets()
             for target in targets:
                 _process_and_validate_target(
-                    sensor_def, coerced_graphs, unresolved_jobs, pipelines_or_jobs, target
+                    sensor_def, coerced_graphs, unresolved_jobs, jobs, target
                 )
 
     for name, schedule_def in schedules.items():
         if schedule_def.has_loadable_target():
             target = schedule_def.load_target()
             _process_and_validate_target(
-                schedule_def, coerced_graphs, unresolved_jobs, pipelines_or_jobs, target
+                schedule_def, coerced_graphs, unresolved_jobs, jobs, target
             )
 
-    asset_graph = AssetGraph.from_assets(
-        [*combined_asset_group.assets, *combined_asset_group.source_assets]
-        if combined_asset_group
-        else []
-    )
+    asset_graph = AssetGraph.from_assets([*assets_defs, *source_assets])
 
     if unresolved_partitioned_asset_schedules:
         for (
@@ -250,7 +222,7 @@ def build_caching_repository_data_from_list(
                 unresolved_partitioned_asset_schedule,
                 coerced_graphs,
                 unresolved_jobs,
-                pipelines_or_jobs,
+                jobs,
                 unresolved_partitioned_asset_schedule.job,
             )
 
@@ -260,7 +232,7 @@ def build_caching_repository_data_from_list(
             resolved_job = unresolved_job_def.resolve(
                 asset_graph=asset_graph, default_executor_def=default_executor_def
             )
-            pipelines_or_jobs[name] = resolved_job
+            jobs[name] = resolved_job
 
     # resolve all the UnresolvedPartitionedAssetScheduleDefinitions using
     # the resolved job containing the partitions def
@@ -269,30 +241,22 @@ def build_caching_repository_data_from_list(
             name,
             unresolved_partitioned_asset_schedule,
         ) in unresolved_partitioned_asset_schedules.items():
-            resolved_job = pipelines_or_jobs[unresolved_partitioned_asset_schedule.job.name]
+            resolved_job = jobs[unresolved_partitioned_asset_schedule.job.name]
             schedules[name] = unresolved_partitioned_asset_schedule.resolve(
                 cast(JobDefinition, resolved_job)
             )
 
-    for pipeline_or_job in pipelines_or_jobs.values():
-        pipeline_or_job.validate_resource_requirements_satisfied()
-
-    pipelines: Dict[str, PipelineDefinition] = {}
-    jobs: Dict[str, JobDefinition] = {}
-    for name, pipeline_or_job in pipelines_or_jobs.items():
-        if isinstance(pipeline_or_job, JobDefinition):
-            jobs[name] = pipeline_or_job
-        else:
-            pipelines[name] = pipeline_or_job
+    for job_def in jobs.values():
+        job_def.validate_resource_requirements_satisfied()
 
     if default_executor_def:
         for name, job_def in jobs.items():
-            if not job_def._executor_def_specified:  # noqa: SLF001
+            if not job_def.has_specified_executor:
                 jobs[name] = job_def.with_executor_def(default_executor_def)
 
     if default_logger_defs:
         for name, job_def in jobs.items():
-            if not job_def._logger_defs_specified:  # noqa: SLF001
+            if not job_def.has_specified_loggers:
                 jobs[name] = job_def.with_logger_defs(default_logger_defs)
 
     top_level_resources = top_level_resources or {}
@@ -305,7 +269,6 @@ def build_caching_repository_data_from_list(
             utilized_env_vars[env_var].add(resource_key)
 
     return CachingRepositoryData(
-        pipelines=pipelines,
         jobs=jobs,
         schedules=schedules,
         sensors=sensors,
@@ -348,32 +311,26 @@ def build_caching_repository_data_from_dict(
             f" {', '.join(duplicate_keys)}"
         )
 
-    # merge jobs in to pipelines while they are just implemented as pipelines
-    for key, job in repository_definitions["jobs"].items():
-        if key in repository_definitions["pipelines"]:
-            raise DagsterInvalidDefinitionError(
-                f'Conflicting entries for name {key} in "jobs" and "pipelines".'
-            )
-
-        if isinstance(job, GraphDefinition):
-            repository_definitions["jobs"][key] = job.coerce_to_job()
-        elif isinstance(job, UnresolvedAssetJobDefinition):
-            repository_definitions["jobs"][key] = job.resolve(
+    for key, raw_job_def in repository_definitions["jobs"].items():
+        if isinstance(raw_job_def, GraphDefinition):
+            repository_definitions["jobs"][key] = raw_job_def.coerce_to_job()
+        elif isinstance(raw_job_def, UnresolvedAssetJobDefinition):
+            repository_definitions["jobs"][key] = raw_job_def.resolve(
                 # TODO: https://github.com/dagster-io/dagster/issues/8263
                 assets=[],
                 source_assets=[],
                 default_executor_def=None,
             )
-        elif not isinstance(job, JobDefinition) and not isfunction(job):
+        elif not isinstance(raw_job_def, JobDefinition) and not isfunction(raw_job_def):
             raise DagsterInvalidDefinitionError(
                 f"Object mapped to {key} is not an instance of JobDefinition or GraphDefinition."
             )
 
     # Late validate all jobs' resource requirements are satisfied, since
     # they may not be applied until now
-    for pipeline_or_job in repository_definitions["jobs"].values():
-        if isinstance(pipeline_or_job, PipelineDefinition):
-            pipeline_or_job.validate_resource_requirements_satisfied()
+    for job_def in repository_definitions["jobs"].values():
+        if isinstance(job_def, JobDefinition):
+            job_def.validate_resource_requirements_satisfied()
 
     return CachingRepositoryData(
         **repository_definitions,
@@ -391,11 +348,10 @@ def _process_and_validate_target(
     ],
     coerced_graphs: Dict[str, JobDefinition],
     unresolved_jobs: Dict[str, UnresolvedAssetJobDefinition],
-    pipelines_or_jobs: Dict[str, PipelineDefinition],
-    target: Union[GraphDefinition, PipelineDefinition, UnresolvedAssetJobDefinition],
+    jobs: Dict[str, JobDefinition],
+    target: Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition],
 ):
-    """This function modifies the state of coerced_graphs, unresolved_jobs, and pipelines_or_jobs.
-    """
+    """This function modifies the state of coerced_graphs, unresolved_jobs, and jobs."""
     targeter = (
         f"schedule '{schedule_or_sensor_def.name}'"
         if isinstance(schedule_or_sensor_def, ScheduleDefinition)
@@ -405,12 +361,9 @@ def _process_and_validate_target(
         if target.name not in coerced_graphs:
             # Since this is a graph we have to coerce, it is not possible to be
             # the same definition by reference equality
-            if target.name in pipelines_or_jobs:
-                dupe_target_type = pipelines_or_jobs[target.name].target_type
+            if target.name in jobs:
                 raise DagsterInvalidDefinitionError(
-                    _get_error_msg_for_target_conflict(
-                        targeter, "graph", target.name, dupe_target_type
-                    )
+                    _get_error_msg_for_target_conflict(targeter, "graph", target.name, "job")
                 )
         elif coerced_graphs[target.name].graph != target:
             raise DagsterInvalidDefinitionError(
@@ -418,16 +371,15 @@ def _process_and_validate_target(
             )
         coerced_job = target.coerce_to_job()
         coerced_graphs[target.name] = coerced_job
-        pipelines_or_jobs[target.name] = coerced_job
+        jobs[target.name] = coerced_job
     elif isinstance(target, UnresolvedAssetJobDefinition):
         if target.name not in unresolved_jobs:
             # Since this is an unresolved job we have to resolve, it is not possible to
             # be the same definition by reference equality
-            if target.name in pipelines_or_jobs:
-                dupe_target_type = pipelines_or_jobs[target.name].target_type
+            if target.name in jobs:
                 raise DagsterInvalidDefinitionError(
                     _get_error_msg_for_target_conflict(
-                        targeter, "unresolved asset job", target.name, dupe_target_type
+                        targeter, "unresolved asset job", target.name, "job"
                     )
                 )
         elif unresolved_jobs[target.name].selection != target.selection:
@@ -438,20 +390,18 @@ def _process_and_validate_target(
             )
         unresolved_jobs[target.name] = target
     else:
-        if target.name in pipelines_or_jobs and pipelines_or_jobs[target.name] != target:
+        if target.name in jobs and jobs[target.name] != target:
             dupe_target_type = (
                 "graph"
                 if target.name in coerced_graphs
                 else "unresolved asset job"
                 if target.name in unresolved_jobs
-                else pipelines_or_jobs[target.name].target_type
+                else "job"
             )
             raise DagsterInvalidDefinitionError(
-                _get_error_msg_for_target_conflict(
-                    targeter, target.target_type, target.name, dupe_target_type
-                )
+                _get_error_msg_for_target_conflict(targeter, "job", target.name, dupe_target_type)
             )
-        pipelines_or_jobs[target.name] = target
+        jobs[target.name] = target
 
 
 def _get_error_msg_for_target_conflict(targeter, target_type, target_name, dupe_target_type):

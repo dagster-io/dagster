@@ -87,15 +87,15 @@ def test_correctly_fetch_decompress_parse_snapshot():
     def noop_job():
         noop_op()
 
-    noop_pipeline_snapshot = noop_job.get_pipeline_snapshot()
+    noop_job_snapshot = noop_job.get_job_snapshot()
 
     mock_logger = mock.MagicMock()
     assert (
         defensively_unpack_execution_plan_snapshot_query(
             mock_logger,
-            [zlib.compress(serialize_value(noop_pipeline_snapshot).encode("utf-8"))],
+            [zlib.compress(serialize_value(noop_job_snapshot).encode("utf-8"))],
         )
-        == noop_pipeline_snapshot
+        == noop_job_snapshot
     )
 
     assert mock_logger.warning.call_count == 0

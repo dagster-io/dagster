@@ -660,6 +660,7 @@ type AssetNode {
   description: String
   freshnessInfo: AssetFreshnessInfo
   freshnessPolicy: FreshnessPolicy
+  autoMaterializePolicy: AutoMaterializePolicy
   graphName: String
   groupName: String
   id: ID!
@@ -708,6 +709,15 @@ type FreshnessPolicy {
   maximumLagMinutes: Float!
   cronSchedule: String
   cronScheduleTimezone: String
+}
+
+type AutoMaterializePolicy {
+  policyType: AutoMaterializePolicyType!
+}
+
+enum AutoMaterializePolicyType {
+  EAGER
+  LAZY
 }
 
 union AssetPartitionStatuses = DefaultPartitions | MultiPartitions | TimePartitions
@@ -763,7 +773,6 @@ type PartitionDefinition {
   description: String!
   type: PartitionDefinitionType!
   dimensionTypes: [DimensionDefinitionType!]!
-  timeWindowMetadata: TimePartitionsDefinitionMetadata
   name: String
 }
 
@@ -780,13 +789,6 @@ type DimensionDefinitionType {
   type: PartitionDefinitionType!
   isPrimaryDimension: Boolean!
   dynamicPartitionsDefinitionName: String
-}
-
-type TimePartitionsDefinitionMetadata {
-  startTime: Float!
-  endTime: Float!
-  startKey: String!
-  endKey: String!
 }
 
 type DimensionPartitionKeys {
@@ -2138,10 +2140,22 @@ type DryRunInstigationTick {
 }
 
 type TickEvaluation {
+  dynamicPartitionsRequests: [DynamicPartitionRequest!]
   runRequests: [RunRequest!]
   skipReason: String
   error: PythonError
   cursor: String
+}
+
+type DynamicPartitionRequest {
+  partitionKeys: [String!]
+  partitionsDefName: String!
+  type: DynamicPartitionsRequestType!
+}
+
+enum DynamicPartitionsRequestType {
+  ADD_PARTITIONS
+  DELETE_PARTITIONS
 }
 
 type RunRequest {
@@ -2412,6 +2426,7 @@ type PartitionBackfill {
   assetBackfillData: AssetBackfillData
   hasCancelPermission: Boolean!
   hasResumePermission: Boolean!
+  user: String
 }
 
 enum BulkActionStatus {
@@ -2422,17 +2437,26 @@ enum BulkActionStatus {
 }
 
 type AssetBackfillData {
-  assetPartitionsStatusCounts: [AssetPartitionsStatusCounts!]!
+  assetBackfillStatuses: [AssetBackfillStatus!]!
   rootAssetTargetedRanges: [PartitionKeyRange!]
   rootAssetTargetedPartitions: [String!]
 }
 
+union AssetBackfillStatus = AssetPartitionsStatusCounts | UnpartitionedAssetStatus
+
 type AssetPartitionsStatusCounts {
   assetKey: AssetKey!
   numPartitionsTargeted: Int!
-  numPartitionsRequested: Int!
-  numPartitionsCompleted: Int!
+  numPartitionsInProgress: Int!
+  numPartitionsMaterialized: Int!
   numPartitionsFailed: Int!
+}
+
+type UnpartitionedAssetStatus {
+  assetKey: AssetKey!
+  inProgress: Boolean!
+  materialized: Boolean!
+  failed: Boolean!
 }
 
 type PartitionKeyRange {

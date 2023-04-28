@@ -16,21 +16,21 @@ from dagster._api.snapshot_partition import (
     sync_get_external_partition_set_execution_param_data_grpc,
     sync_get_external_partition_tags_grpc,
 )
-from dagster._api.snapshot_pipeline import sync_get_external_pipeline_subset_grpc
+from dagster._api.snapshot_pipeline import sync_get_external_job_subset_grpc
 from dagster._api.snapshot_repository import sync_get_streaming_external_repositories_data_grpc
 from dagster._api.snapshot_schedule import sync_get_external_schedule_execution_data_grpc
 from dagster._core.code_pointer import CodePointer
-from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.repository_definition import RepositoryDefinition
-from dagster._core.definitions.selector import PipelineSelector
+from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.errors import DagsterInvariantViolationError, DagsterUserCodeProcessError
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.plan.state import KnownExecutionState
-from dagster._core.host_representation import ExternalPipelineSubsetResult
+from dagster._core.host_representation import ExternalJobSubsetResult
 from dagster._core.host_representation.external import (
     ExternalExecutionPlan,
+    ExternalJob,
     ExternalPartitionSet,
-    ExternalPipeline,
     ExternalRepository,
 )
 from dagster._core.host_representation.external_data import (
@@ -115,44 +115,43 @@ class CodeLocation(AbstractContextManager):
     @abstractmethod
     def get_external_execution_plan(
         self,
-        external_pipeline: ExternalPipeline,
+        external_job: ExternalJob,
         run_config: Mapping[str, object],
-        mode: str,
         step_keys_to_execute: Optional[Sequence[str]],
         known_state: Optional[KnownExecutionState],
         instance: Optional[DagsterInstance] = None,
     ) -> ExternalExecutionPlan:
         pass
 
-    def get_external_pipeline(self, selector: PipelineSelector) -> ExternalPipeline:
+    def get_external_job(self, selector: JobSubsetSelector) -> ExternalJob:
         """Return the ExternalPipeline for a specific pipeline. Subclasses only
         need to implement get_subset_external_pipeline_result to handle the case where
-        a solid selection is specified, which requires access to the underlying PipelineDefinition
+        a solid selection is specified, which requires access to the underlying JobDefinition
         to generate the subsetted pipeline snapshot.
         """
         if not selector.solid_selection and not selector.asset_selection:
             return self.get_repository(selector.repository_name).get_full_external_job(
-                selector.pipeline_name
+                selector.job_name
             )
 
         repo_handle = self.get_repository(selector.repository_name).handle
 
-        subset_result = self.get_subset_external_pipeline_result(selector)
-        external_data = subset_result.external_pipeline_data
+        subset_result = self.get_subset_external_job_result(selector)
+        external_data = subset_result.external_job_data
         if external_data is None:
             check.failed(
                 f"Failed to fetch subset data, success: {subset_result.success} error:"
                 f" {subset_result.error}"
             )
 
-        return ExternalPipeline(external_data, repo_handle)
+        return ExternalJob(external_data, repo_handle)
 
     @abstractmethod
-    def get_subset_external_pipeline_result(
-        self, selector: PipelineSelector
-    ) -> ExternalPipelineSubsetResult:
+    def get_subset_external_job_result(
+        self, selector: JobSubsetSelector
+    ) -> ExternalJobSubsetResult:
         """Returns a snapshot about an ExternalPipeline with a solid selection, which requires
-        access to the underlying PipelineDefinition. Callsites should likely use
+        access to the underlying JobDefinition. Callsites should likely use
         `get_external_pipeline` instead.
         """
 
@@ -336,12 +335,10 @@ class InProcessCodeLocation(CodeLocation):
     def repository_code_pointer_dict(self) -> Mapping[str, CodePointer]:
         return self._repository_code_pointer_dict
 
-    def get_reconstructable_pipeline(
-        self, repository_name: str, name: str
-    ) -> ReconstructablePipeline:
+    def get_reconstructable_job(self, repository_name: str, name: str) -> ReconstructableJob:
         return self._loaded_repositories.reconstructables_by_name[
             repository_name
-        ].get_reconstructable_pipeline(name)
+        ].get_reconstructable_job(name)
 
     def _get_repo_def(self, name: str) -> RepositoryDefinition:
         return self._loaded_repositories.definitions_by_name[name]
@@ -355,10 +352,10 @@ class InProcessCodeLocation(CodeLocation):
     def get_repositories(self) -> Mapping[str, ExternalRepository]:
         return self._repositories
 
-    def get_subset_external_pipeline_result(
-        self, selector: PipelineSelector
-    ) -> ExternalPipelineSubsetResult:
-        check.inst_param(selector, "selector", PipelineSelector)
+    def get_subset_external_job_result(
+        self, selector: JobSubsetSelector
+    ) -> ExternalJobSubsetResult:
+        check.inst_param(selector, "selector", JobSubsetSelector)
         check.invariant(
             selector.location_name == self.name,
             "PipelineSelector location_name mismatch, got {selector.location_name} expected"
@@ -369,23 +366,21 @@ class InProcessCodeLocation(CodeLocation):
 
         return get_external_pipeline_subset_result(
             self._get_repo_def(selector.repository_name),
-            selector.pipeline_name,
+            selector.job_name,
             selector.solid_selection,
             selector.asset_selection,
         )
 
     def get_external_execution_plan(
         self,
-        external_pipeline: ExternalPipeline,
+        external_job: ExternalJob,
         run_config: Mapping[str, object],
-        mode: str,
         step_keys_to_execute: Optional[Sequence[str]],
         known_state: Optional[KnownExecutionState],
         instance: Optional[DagsterInstance] = None,
     ) -> ExternalExecutionPlan:
-        check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
+        check.inst_param(external_job, "external_job", ExternalJob)
         check.mapping_param(run_config, "run_config")
-        check.str_param(mode, "mode")
         step_keys_to_execute = check.opt_nullable_sequence_param(
             step_keys_to_execute, "step_keys_to_execute", of_type=str
         )
@@ -393,14 +388,13 @@ class InProcessCodeLocation(CodeLocation):
         check.opt_inst_param(instance, "instance", DagsterInstance)
 
         execution_plan = create_execution_plan(
-            pipeline=self.get_reconstructable_pipeline(
-                external_pipeline.repository_handle.repository_name, external_pipeline.name
-            ).subset_for_execution_from_existing_pipeline(
-                external_pipeline.solids_to_execute,
-                external_pipeline.asset_selection,
+            job=self.get_reconstructable_job(
+                external_job.repository_handle.repository_name, external_job.name
+            ).subset_for_execution_from_existing_job(
+                external_job.solids_to_execute,
+                external_job.asset_selection,
             ),
             run_config=run_config,
-            mode=mode,
             step_keys_to_execute=step_keys_to_execute,
             known_state=known_state,
             instance_ref=instance.get_ref() if instance and instance.is_persistent else None,
@@ -408,7 +402,7 @@ class InProcessCodeLocation(CodeLocation):
         return ExternalExecutionPlan(
             execution_plan_snapshot=snapshot_from_execution_plan(
                 execution_plan,
-                external_pipeline.identifying_pipeline_snapshot_id,
+                external_job.identifying_job_snapshot_id,
             )
         )
 
@@ -720,34 +714,31 @@ class GrpcServerCodeLocation(CodeLocation):
 
     def get_external_execution_plan(
         self,
-        external_pipeline: ExternalPipeline,
+        external_job: ExternalJob,
         run_config: Mapping[str, Any],
-        mode: str,
         step_keys_to_execute: Optional[Sequence[str]],
         known_state: Optional[KnownExecutionState],
         instance: Optional[DagsterInstance] = None,
     ) -> ExternalExecutionPlan:
-        check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
+        check.inst_param(external_job, "external_job", ExternalJob)
         run_config = check.mapping_param(run_config, "run_config")
-        check.str_param(mode, "mode")
         check.opt_nullable_sequence_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
         check.opt_inst_param(known_state, "known_state", KnownExecutionState)
         check.opt_inst_param(instance, "instance", DagsterInstance)
 
         asset_selection = (
-            frozenset(check.opt_set_param(external_pipeline.asset_selection, "asset_selection"))
-            if external_pipeline.asset_selection is not None
+            frozenset(check.opt_set_param(external_job.asset_selection, "asset_selection"))
+            if external_job.asset_selection is not None
             else None
         )
 
         execution_plan_snapshot_or_error = sync_get_external_execution_plan_grpc(
             api_client=self.client,
-            pipeline_origin=external_pipeline.get_external_origin(),
+            job_origin=external_job.get_external_origin(),
             run_config=run_config,
-            mode=mode,
-            pipeline_snapshot_id=external_pipeline.identifying_pipeline_snapshot_id,
+            job_snapshot_id=external_job.identifying_job_snapshot_id,
             asset_selection=asset_selection,
-            solid_selection=external_pipeline.solid_selection,
+            solid_selection=external_job.solid_selection,
             step_keys_to_execute=step_keys_to_execute,
             known_state=known_state,
             instance=instance,
@@ -755,10 +746,10 @@ class GrpcServerCodeLocation(CodeLocation):
 
         return ExternalExecutionPlan(execution_plan_snapshot=execution_plan_snapshot_or_error)
 
-    def get_subset_external_pipeline_result(
-        self, selector: PipelineSelector
-    ) -> "ExternalPipelineSubsetResult":
-        check.inst_param(selector, "selector", PipelineSelector)
+    def get_subset_external_job_result(
+        self, selector: JobSubsetSelector
+    ) -> "ExternalJobSubsetResult":
+        check.inst_param(selector, "selector", JobSubsetSelector)
         check.invariant(
             selector.location_name == self.name,
             "PipelineSelector location_name mismatch, got {selector.location_name} expected"
@@ -766,8 +757,8 @@ class GrpcServerCodeLocation(CodeLocation):
         )
 
         external_repository = self.get_repository(selector.repository_name)
-        job_handle = JobHandle(selector.pipeline_name, external_repository.handle)
-        return sync_get_external_pipeline_subset_grpc(
+        job_handle = JobHandle(selector.job_name, external_repository.handle)
+        return sync_get_external_job_subset_grpc(
             self.client,
             job_handle.get_external_origin(),
             selector.solid_selection,

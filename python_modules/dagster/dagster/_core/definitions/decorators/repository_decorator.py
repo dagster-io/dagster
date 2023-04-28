@@ -22,9 +22,9 @@ from dagster._core.errors import DagsterInvalidDefinitionError
 
 from ..executor_definition import ExecutorDefinition
 from ..graph_definition import GraphDefinition
+from ..job_definition import JobDefinition
 from ..logger_definition import LoggerDefinition
 from ..partitioned_schedule import UnresolvedPartitionedAssetScheduleDefinition
-from ..pipeline_definition import PipelineDefinition
 from ..repository_definition import (
     VALID_REPOSITORY_DATA_DICT_KEYS,
     CachingRepositoryData,
@@ -100,7 +100,7 @@ class _Repository:
             Callable[[], RepositoryDictSpec],
         ],
     ) -> Union[RepositoryDefinition, PendingRepositoryDefinition]:
-        from dagster._core.definitions import AssetGroup, AssetsDefinition, SourceAsset
+        from dagster._core.definitions import AssetsDefinition, SourceAsset
         from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 
         check.callable_param(fn, "fn")
@@ -121,12 +121,11 @@ class _Repository:
                 elif not isinstance(
                     definition,
                     (
-                        PipelineDefinition,
+                        JobDefinition,
                         ScheduleDefinition,
                         UnresolvedPartitionedAssetScheduleDefinition,
                         SensorDefinition,
                         GraphDefinition,
-                        AssetGroup,
                         AssetsDefinition,
                         SourceAsset,
                         UnresolvedAssetJobDefinition,
@@ -142,7 +141,7 @@ class _Repository:
                 )
                 raise DagsterInvalidDefinitionError(
                     "Bad return value from repository construction function: all elements of list "
-                    "must be of type JobDefinition, GraphDefinition, PipelineDefinition, "
+                    "must be of type JobDefinition, GraphDefinition, "
                     "ScheduleDefinition, SensorDefinition, "
                     "AssetsDefinition, or SourceAsset."
                     f"Got {bad_definitions_str}."
@@ -164,7 +163,7 @@ class _Repository:
             if not set(repository_definitions.keys()).issubset(VALID_REPOSITORY_DATA_DICT_KEYS):
                 raise DagsterInvalidDefinitionError(
                     "Bad return value from repository construction function: dict must not contain "
-                    "keys other than {{'pipelines', 'schedules', 'jobs'}}: found "
+                    "keys other than {{'schedules', 'sensors', 'jobs'}}: found "
                     "{bad_keys}".format(
                         bad_keys=", ".join(
                             [
@@ -254,7 +253,7 @@ def repository(
     The decorated function should take no arguments and its return value should one of:
 
     1. ``List[Union[JobDefinition, ScheduleDefinition, SensorDefinition]]``.
-    Use this form when you have no need to lazy load pipelines or other definitions. This is the
+    Use this form when you have no need to lazy load jobs or other definitions. This is the
     typical use case.
 
     2. A dict of the form:
@@ -359,7 +358,7 @@ def repository(
                 def __init__(self, yaml_directory):
                     self._yaml_directory = yaml_directory
 
-                def get_all_pipelines(self):
+                def get_all_jobs(self):
                     return [
                         self._construct_job_def_from_yaml_file(
                           self._yaml_file_for_job_name(file_name)

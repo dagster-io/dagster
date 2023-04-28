@@ -97,7 +97,8 @@ UnpackedValue: TypeAlias = Union[
 
 
 class WhitelistMap(NamedTuple):
-    tuples: Dict[str, "NamedTupleSerializer"]
+    tuple_serializers: Dict[str, "NamedTupleSerializer"]
+    tuple_deserializers: Dict[str, "NamedTupleSerializer"]
     enums: Dict[str, "EnumSerializer"]
 
     def register_tuple(
@@ -131,18 +132,24 @@ class WhitelistMap(NamedTuple):
             if field_serializers
             else None,
         )
-        self.tuples[name] = serializer
-        if storage_name:
-            self.tuples[storage_name] = serializer
+        self.tuple_serializers[name] = serializer
+        deserializer_name = storage_name or name
+        self.tuple_deserializers[deserializer_name] = serializer
         if old_storage_names:
             for old_storage_name in old_storage_names:
-                self.tuples[old_storage_name] = serializer
+                self.tuple_deserializers[old_storage_name] = serializer
 
-    def has_tuple_entry(self, name: str) -> bool:
-        return name in self.tuples
+    def has_tuple_serializer(self, name: str) -> bool:
+        return name in self.tuple_serializers
 
-    def get_tuple_entry(self, name: str) -> "NamedTupleSerializer":
-        return self.tuples[name]
+    def has_tuple_deserializer(self, name: str) -> bool:
+        return name in self.tuple_deserializers
+
+    def get_tuple_serializer(self, name: str) -> "NamedTupleSerializer":
+        return self.tuple_serializers[name]
+
+    def get_tuple_deserializer(self, name: str) -> "NamedTupleSerializer":
+        return self.tuple_deserializers[name]
 
     def register_enum(
         self,
@@ -172,7 +179,7 @@ class WhitelistMap(NamedTuple):
 
     @staticmethod
     def create() -> "WhitelistMap":
-        return WhitelistMap(tuples={}, enums={})
+        return WhitelistMap(tuple_serializers={}, tuple_deserializers={}, enums={})
 
 
 _WHITELIST_MAP: Final[WhitelistMap] = WhitelistMap.create()
@@ -656,14 +663,14 @@ def _pack_value(
     # inlined is_named_tuple_instance
     if isinstance(val, tuple) and hasattr(val, "_fields"):
         klass_name = val.__class__.__name__
-        if not whitelist_map.has_tuple_entry(klass_name):
+        if not whitelist_map.has_tuple_serializer(klass_name):
             raise SerializationError(
                 (
                     "Can only serialize whitelisted namedtuples, received"
                     f" {val}.\nDescent path: {descent_path}"
                 ),
             )
-        serializer = whitelist_map.get_tuple_entry(klass_name)
+        serializer = whitelist_map.get_tuple_serializer(klass_name)
         return serializer.pack(cast(NamedTuple, val), whitelist_map, descent_path)
     if isinstance(val, Enum):
         klass_name = val.__class__.__name__
@@ -793,7 +800,7 @@ class UnknownSerdesValue:
 def _unpack_object(val: dict, whitelist_map: WhitelistMap, context: UnpackContext):
     if "__class__" in val:
         klass_name = cast(str, val["__class__"])
-        if not whitelist_map.has_tuple_entry(klass_name):
+        if not whitelist_map.has_tuple_deserializer(klass_name):
             return context.observe_unknown_value(
                 UnknownSerdesValue(
                     f'Attempted to deserialize class "{klass_name}" which is not in the whitelist.',
@@ -802,8 +809,8 @@ def _unpack_object(val: dict, whitelist_map: WhitelistMap, context: UnpackContex
             )
 
         val.pop("__class__")
-        serializer = whitelist_map.get_tuple_entry(klass_name)
-        return serializer.unpack(val, whitelist_map, context)
+        deserializer = whitelist_map.get_tuple_deserializer(klass_name)
+        return deserializer.unpack(val, whitelist_map, context)
 
     if "__enum__" in val:
         enum = cast(str, val["__enum__"])

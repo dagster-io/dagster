@@ -4,7 +4,6 @@ import json
 from abc import ABC, abstractmethod
 from datetime import (
     datetime,
-    time,
     timedelta,
 )
 from enum import Enum
@@ -13,23 +12,21 @@ from typing import (
     Callable,
     Generic,
     Iterable,
-    List,
     Mapping,
     NamedTuple,
     Optional,
     Sequence,
     Set,
     Type,
-    TypeVar,
     Union,
     cast,
 )
 
-import pendulum
 from dateutil.relativedelta import relativedelta
+from typing_extensions import TypeVar
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, public
+from dagster._annotations import PublicAttr, deprecated, public
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.run_request import (
     AddDynamicPartitionsRequest,
@@ -38,16 +35,18 @@ from dagster._core.definitions.run_request import (
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
 from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
 from dagster._serdes import whitelist_for_serdes
-from dagster._seven.compat.pendulum import PendulumDateTime, to_timezone
-from dagster._utils.backcompat import deprecation_warning, experimental_arg_warning
+from dagster._utils import xor
+from dagster._utils.backcompat import (
+    canonicalize_backcompat_args,
+    deprecation_warning,
+    experimental_arg_warning,
+)
 from dagster._utils.cached_method import cached_method
-from dagster._utils.schedules import schedule_execution_time_iterator
 
 from ..errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidDeserializationVersionError,
     DagsterInvalidInvocationError,
-    DagsterInvariantViolationError,
     DagsterUnknownPartitionError,
 )
 from .config import ConfigMapping
@@ -55,8 +54,14 @@ from .utils import validate_tags
 
 DEFAULT_DATE_FORMAT = "%Y-%m-%d"
 
-T_cov = TypeVar("T_cov", covariant=True)
-
+T_cov = TypeVar("T_cov", default=Any, covariant=True)
+T_str = TypeVar("T_str", bound=str, default=str, covariant=True)
+T_PartitionsDefinition = TypeVar(
+    "T_PartitionsDefinition",
+    bound="PartitionsDefinition",
+    default="PartitionsDefinition",
+    covariant=True,
+)
 
 # Dagit selects partition ranges following the format '2022-01-13...2022-01-14'
 # "..." is an invalid substring in partition keys
@@ -64,6 +69,7 @@ T_cov = TypeVar("T_cov", covariant=True)
 INVALID_PARTITION_SUBSTRINGS = ["...", "\a", "\b", "\f", "\n", "\r", "\t", "\v", "\0"]
 
 
+@deprecated
 class Partition(Generic[T_cov]):
     """A Partition represents a single slice of the entire set of a job's possible work. It consists
     of a value, which is an object that represents that partition, and an optional name, which is
@@ -74,7 +80,7 @@ class Partition(Generic[T_cov]):
         name (str): Name for this partition
     """
 
-    def __init__(self, value: T_cov, name: Optional[str] = None):
+    def __init__(self, value: Any, name: Optional[str] = None):
         self._value = value
         self._name = check.str_param(name or str(value), "name")
 
@@ -90,74 +96,7 @@ class Partition(Generic[T_cov]):
         if not isinstance(other, Partition):
             return False
         else:
-            other = cast(Partition[object], other)
             return self.value == other.value and self.name == other.name
-
-
-def schedule_partition_range(
-    start: datetime,
-    end: Optional[datetime],
-    cron_schedule: str,
-    fmt: str,
-    timezone: Optional[str],
-    execution_time_to_partition_fn: Callable[[datetime], datetime],
-    current_time: Optional[datetime],
-) -> Sequence[Partition[datetime]]:
-    if end and start > end:
-        raise DagsterInvariantViolationError(
-            'Selected date range start "{start}" is after date range end "{end}'.format(
-                start=start.strftime(fmt),
-                end=end.strftime(fmt),
-            )
-        )
-
-    tz = timezone if timezone else "UTC"
-
-    _current_time = current_time if current_time else pendulum.now(tz)
-
-    # Coerce to the definition timezone
-    _start = (
-        to_timezone(start, tz)
-        if isinstance(start, PendulumDateTime)
-        else pendulum.instance(start, tz=tz)
-    )
-    _current_time = (
-        to_timezone(_current_time, tz)
-        if isinstance(_current_time, PendulumDateTime)
-        else pendulum.instance(_current_time, tz=tz)
-    )
-
-    # The end partition time should be before the last partition that
-    # executes before the current time
-    end_partition_time = execution_time_to_partition_fn(_current_time)
-
-    # The partition set has an explicit end time that represents the end of the partition range
-    if end:
-        _end = (
-            to_timezone(end, tz)
-            if isinstance(end, PendulumDateTime)
-            else pendulum.instance(end, tz=tz)
-        )
-
-        # If the explicit end time is before the last partition time,
-        # update the end partition time
-        end_partition_time = min(_end, end_partition_time)
-
-    end_timestamp = end_partition_time.timestamp()
-
-    partitions: List[Partition[datetime]] = []
-    for next_time in schedule_execution_time_iterator(_start.timestamp(), cron_schedule, tz):
-        partition_time = execution_time_to_partition_fn(next_time)
-
-        if partition_time.timestamp() > end_timestamp:
-            break
-
-        if partition_time.timestamp() < _start.timestamp():
-            continue
-
-        partitions.append(Partition(value=partition_time, name=partition_time.strftime(fmt)))
-
-    return partitions
 
 
 @whitelist_for_serdes
@@ -193,80 +132,50 @@ class ScheduleType(Enum):
         return self.ordinal < other.ordinal
 
 
-class PartitionsDefinition(ABC, Generic[T_cov]):
+class PartitionsDefinition(ABC, Generic[T_str]):
     """Defines a set of partitions, which can be attached to a software-defined asset or job.
 
     Abstract class with implementations for different kinds of partitions.
     """
 
     @property
-    def partitions_subset_class(self) -> Type["PartitionsSubset"]:
-        return DefaultPartitionsSubset
+    def partitions_subset_class(self) -> Type["PartitionsSubset[T_str]"]:
+        return DefaultPartitionsSubset[T_str]
 
     @abstractmethod
-    def get_partitions(
-        self,
-        current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> Sequence[Partition[T_cov]]:
-        ...
-
-    def get_partition(
-        self,
-        partition_key: str,
-        current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> Partition[T_cov]:
-        for partition in self.get_partitions(
-            current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
-        ):
-            if partition.name == partition_key:
-                return partition
-
-        raise DagsterUnknownPartitionError(f"Could not find a partition with key `{partition_key}`")
-
-    def __str__(self) -> str:
-        joined_keys = ", ".join([f"'{key}'" for key in self.get_partition_keys()])
-        return joined_keys
-
     @public
     def get_partition_keys(
         self,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> Sequence[str]:
-        return [
-            partition.name
-            for partition in self.get_partitions(current_time, dynamic_partitions_store)
-        ]
+    ) -> Sequence[T_str]:
+        ...
+
+    def __str__(self) -> str:
+        joined_keys = ", ".join([f"'{key}'" for key in self.get_partition_keys()])
+        return joined_keys
 
     def get_last_partition_key(
         self,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> Optional[str]:
-        partitions = self.get_partitions(current_time, dynamic_partitions_store)
-        if partitions:
-            return partitions[-1].name
-        else:
-            return None
+    ) -> Optional[T_str]:
+        partition_keys = self.get_partition_keys(current_time, dynamic_partitions_store)
+        return partition_keys[-1] if partition_keys else None
 
     def get_first_partition_key(
         self,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> Optional[str]:
-        partitions = self.get_partitions(current_time, dynamic_partitions_store)
-        if partitions:
-            return partitions[0].name
-        else:
-            return None
+    ) -> Optional[T_str]:
+        partition_keys = self.get_partition_keys(current_time, dynamic_partitions_store)
+        return partition_keys[0] if partition_keys else None
 
     def get_partition_keys_in_range(
         self,
         partition_key_range: PartitionKeyRange,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> Sequence[str]:
+    ) -> Sequence[T_str]:
         partition_keys = self.get_partition_keys(dynamic_partitions_store=dynamic_partitions_store)
 
         keys_exist = {
@@ -287,23 +196,23 @@ class PartitionsDefinition(ABC, Generic[T_cov]):
             + 1
         ]
 
-    def empty_subset(self) -> "PartitionsSubset[T_cov]":
+    def empty_subset(self) -> "PartitionsSubset[T_str]":
         return self.partitions_subset_class.empty_subset(self)
 
     def subset_with_partition_keys(
         self, partition_keys: Iterable[str]
-    ) -> "PartitionsSubset[T_cov]":
+    ) -> "PartitionsSubset[T_str]":
         return self.empty_subset().with_partition_keys(partition_keys)
 
     def subset_with_all_partitions(
         self,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> "PartitionsSubset[T_cov]":
+    ) -> "PartitionsSubset[T_str]":
         return self.subset_with_partition_keys(
             self.get_partition_keys(dynamic_partitions_store=dynamic_partitions_store)
         )
 
-    def deserialize_subset(self, serialized: str) -> "PartitionsSubset[T_cov]":
+    def deserialize_subset(self, serialized: str) -> "PartitionsSubset[T_str]":
         return self.partitions_subset_class.from_serialized(self, serialized)
 
     def can_deserialize_subset(
@@ -350,6 +259,17 @@ class PartitionsDefinition(ABC, Generic[T_cov]):
             dynamic_partitions_store=dynamic_partitions_store,
         )
 
+    def validate_partition_key(
+        self,
+        partition_key: str,
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> None:
+        if not self.has_partition_key(partition_key, current_time, dynamic_partitions_store):
+            raise DagsterUnknownPartitionError(
+                f"Could not find a partition with key `{partition_key}`."
+            )
+
 
 def raise_error_on_invalid_partition_key_substring(partition_keys: Sequence[str]) -> None:
     for partition_key in partition_keys:
@@ -387,25 +307,26 @@ class StaticPartitionsDefinition(PartitionsDefinition[str]):
         # TODO 1.3.0 enforce that partition keys are unique
         raise_error_on_invalid_partition_key_substring(partition_keys)
 
-        self._partitions = [Partition(key) for key in partition_keys]
+        self._partition_keys = partition_keys
 
-    def get_partitions(
+    @public
+    def get_partition_keys(
         self,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> Sequence[Partition[str]]:
-        return self._partitions
+    ) -> Sequence[str]:
+        return self._partition_keys
 
     def __hash__(self):
         return hash(self.__repr__())
 
     def __eq__(self, other) -> bool:
         return isinstance(other, StaticPartitionsDefinition) and (
-            self is other or self._partitions == other.get_partitions()
+            self is other or self._partition_keys == other.get_partition_keys()
         )
 
     def __repr__(self) -> str:
-        return f"{type(self).__name__}(partition_keys={[p.name for p in self._partitions]})"
+        return f"{type(self).__name__}(partition_keys={self._partition_keys})"
 
     def get_num_partitions(
         self,
@@ -416,144 +337,6 @@ class StaticPartitionsDefinition(PartitionsDefinition[str]):
         # in a static partitions definition, though we will at 1.3.0.
         # This ensures that partition counts are correct in Dagit.
         return len(set(self.get_partition_keys(current_time, dynamic_partitions_store)))
-
-
-class ScheduleTimeBasedPartitionsDefinition(
-    PartitionsDefinition[datetime],
-    NamedTuple(
-        "_ScheduleTimeBasedPartitionsDefinition",
-        [
-            ("schedule_type", ScheduleType),
-            ("start", datetime),
-            ("execution_time", time),
-            ("execution_day", Optional[int]),
-            ("end", Optional[datetime]),
-            ("fmt", str),
-            ("timezone", str),
-            ("offset", int),
-        ],
-    ),
-):
-    """Computes the partitions backwards from the scheduled execution times."""
-
-    def __new__(
-        cls,
-        schedule_type: ScheduleType,
-        start: datetime,
-        execution_time: Optional[time] = None,
-        execution_day: Optional[int] = None,
-        end: Optional[datetime] = None,
-        fmt: Optional[str] = None,
-        timezone: Optional[str] = None,
-        offset: Optional[int] = None,
-    ):
-        if end is not None:
-            check.invariant(
-                start <= end,
-                f'Selected date range start "{start}" is after date range end "{end}"'.format(
-                    start=start.strftime(fmt) if fmt is not None else start,
-                    end=cast(datetime, end).strftime(fmt) if fmt is not None else end,
-                ),
-            )
-        if schedule_type in [ScheduleType.HOURLY, ScheduleType.DAILY]:
-            check.invariant(
-                not execution_day,
-                f'Execution day should not be provided for schedule type "{schedule_type}"',
-            )
-        elif schedule_type is ScheduleType.WEEKLY:
-            execution_day = execution_day if execution_day is not None else 0
-            check.invariant(
-                execution_day is not None and 0 <= execution_day <= 6,
-                (
-                    f'Execution day "{execution_day}" must be between 0 and 6 for '
-                    f'schedule type "{schedule_type}"'
-                ),
-            )
-        elif schedule_type is ScheduleType.MONTHLY:
-            execution_day = execution_day if execution_day is not None else 1
-            check.invariant(
-                execution_day is not None and 1 <= execution_day <= 31,
-                (
-                    f'Execution day "{execution_day}" must be between 1 and 31 for '
-                    f'schedule type "{schedule_type}"'
-                ),
-            )
-
-        return super(ScheduleTimeBasedPartitionsDefinition, cls).__new__(
-            cls,
-            check.inst_param(schedule_type, "schedule_type", ScheduleType),
-            check.inst_param(start, "start", datetime),
-            check.opt_inst_param(execution_time, "execution_time", time, time(0, 0)),
-            check.opt_int_param(
-                execution_day,
-                "execution_day",
-            ),
-            check.opt_inst_param(end, "end", datetime),
-            check.opt_str_param(fmt, "fmt", default=DEFAULT_DATE_FORMAT),
-            check.opt_str_param(timezone, "timezone", default="UTC"),
-            check.opt_int_param(offset, "offset", default=1),
-        )
-
-    def get_partitions(
-        self,
-        current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> Sequence[Partition[datetime]]:
-        check.opt_inst_param(current_time, "current_time", datetime)
-
-        return schedule_partition_range(
-            start=self.start,
-            end=self.end,
-            cron_schedule=self.get_cron_schedule(),
-            fmt=self.fmt,
-            timezone=self.timezone,
-            execution_time_to_partition_fn=self.get_execution_time_to_partition_fn(),
-            current_time=current_time,
-        )
-
-    def get_cron_schedule(self) -> str:
-        return cron_schedule_from_schedule_type_and_offsets(
-            schedule_type=self.schedule_type,
-            minute_offset=self.execution_time.minute,
-            hour_offset=self.execution_time.hour,
-            day_offset=self.execution_day,
-        )
-
-    def get_execution_time_to_partition_fn(self) -> Callable[[datetime], datetime]:
-        if self.schedule_type is ScheduleType.HOURLY:
-            # Using subtract(minutes=d.minute) here instead of .replace(minute=0) because on
-            # pendulum 1, replace(minute=0) sometimes changes the timezone:
-            # >>> a = create_pendulum_time(2021, 11, 7, 0, 0, tz="US/Central")
-            #
-            # >>> a.add(hours=1)
-            # <Pendulum [2021-11-07T01:00:00-05:00]>
-            # >>> a.add(hours=1).replace(minute=0)
-            # <Pendulum [2021-11-07T01:00:00-06:00]>
-            return lambda d: pendulum.instance(d).subtract(hours=self.offset, minutes=d.minute)
-        elif self.schedule_type is ScheduleType.DAILY:
-            return (
-                lambda d: pendulum.instance(d).replace(hour=0, minute=0).subtract(days=self.offset)
-            )
-        elif self.schedule_type is ScheduleType.WEEKLY:
-            execution_day = cast(int, self.execution_day)
-            day_difference = (execution_day - (self.start.weekday() + 1)) % 7
-            return (
-                lambda d: pendulum.instance(d)
-                .replace(hour=0, minute=0)
-                .subtract(
-                    weeks=self.offset,
-                    days=day_difference,
-                )
-            )
-        elif self.schedule_type is ScheduleType.MONTHLY:
-            execution_day = cast(int, self.execution_day)
-            return (
-                lambda d: pendulum.instance(d)
-                .replace(hour=0, minute=0)
-                .subtract(months=self.offset, days=execution_day - 1)
-            )
-        else:
-            check.assert_never(self.schedule_type)
 
 
 class CachingDynamicPartitionsLoader(DynamicPartitionsStore):
@@ -670,17 +453,18 @@ class DynamicPartitionsDefinition(
         else:
             return super().__str__()
 
-    def get_partitions(
+    @public
+    def get_partition_keys(
         self,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> Sequence[Partition]:
+    ) -> Sequence[str]:
         if self.partition_fn:
             partitions = self.partition_fn(current_time)
             if all(isinstance(partition, Partition) for partition in partitions):
-                return cast(Sequence[Partition], partitions)
+                return [partition.name for partition in partitions]  # type: ignore  # (illegible conditional)
             else:
-                return [Partition(p) for p in partitions]
+                return partitions  # type: ignore  # (illegible conditional)
         else:
             check.opt_inst_param(
                 dynamic_partitions_store, "dynamic_partitions_store", DynamicPartitionsStore
@@ -693,10 +477,9 @@ class DynamicPartitionsDefinition(
                     " is older than 1.1.18."
                 )
 
-            partitions = dynamic_partitions_store.get_dynamic_partitions(
+            return dynamic_partitions_store.get_dynamic_partitions(
                 partitions_def_name=self._validated_name()
             )
-            return [Partition(key) for key in partitions]
 
     def has_partition_key(
         self,
@@ -704,16 +487,19 @@ class DynamicPartitionsDefinition(
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> bool:
-        if dynamic_partitions_store is None:
-            check.failed(
-                "The instance is not available to load partitions. You may be seeing this error"
-                " when using dynamic partitions with a version of dagit or dagster-cloud that"
-                " is older than 1.1.18."
-            )
+        if self.partition_fn:
+            return partition_key in self.get_partition_keys(current_time)
+        else:
+            if dynamic_partitions_store is None:
+                check.failed(
+                    "The instance is not available to load partitions. You may be seeing this error"
+                    " when using dynamic partitions with a version of dagit or dagster-cloud that"
+                    " is older than 1.1.18."
+                )
 
-        return dynamic_partitions_store.has_dynamic_partition(
-            partitions_def_name=self._validated_name(), partition_key=partition_key
-        )
+            return dynamic_partitions_store.has_dynamic_partition(
+                partitions_def_name=self._validated_name(), partition_key=partition_key
+            )
 
     def build_add_request(self, partition_keys: Sequence[str]) -> AddDynamicPartitionsRequest:
         check.sequence_param(partition_keys, "partition_keys", of_type=str)
@@ -726,7 +512,7 @@ class DynamicPartitionsDefinition(
         return DeleteDynamicPartitionsRequest(validated_name, partition_keys)
 
 
-class PartitionedConfig(Generic[T_cov]):
+class PartitionedConfig(Generic[T_PartitionsDefinition]):
     """Defines a way of configuring a job where the job can be run on one of a discrete set of
     partitions, and each partition corresponds to run configuration for the job.
 
@@ -736,117 +522,138 @@ class PartitionedConfig(Generic[T_cov]):
 
     def __init__(
         self,
-        partitions_def: PartitionsDefinition[T_cov],
-        run_config_for_partition_fn: Callable[[Partition[T_cov]], Mapping[str, Any]],
+        partitions_def: T_PartitionsDefinition,
+        run_config_for_partition_fn: Optional[Callable[[Partition], Mapping[str, Any]]] = None,
         decorated_fn: Optional[Callable[..., Mapping[str, Any]]] = None,
-        tags_for_partition_fn: Optional[Callable[[Partition[T_cov]], Mapping[str, str]]] = None,
+        tags_for_partition_fn: Optional[Callable[[Partition[Any]], Mapping[str, str]]] = None,
+        run_config_for_partition_key_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
+        tags_for_partition_key_fn: Optional[Callable[[str], Mapping[str, str]]] = None,
     ):
         self._partitions = check.inst_param(partitions_def, "partitions_def", PartitionsDefinition)
-        self._run_config_for_partition_fn = check.callable_param(
+        self._decorated_fn = decorated_fn
+
+        check.invariant(
+            xor(run_config_for_partition_fn, run_config_for_partition_key_fn),
+            (
+                "Must provide exactly one of run_config_for_partition_fn or"
+                " run_config_for_partition_key_fn"
+            ),
+        )
+        check.invariant(
+            not (tags_for_partition_fn and tags_for_partition_key_fn),
+            "Cannot provide both of tags_for_partition_fn or tags_for_partition_key_fn",
+        )
+        if run_config_for_partition_fn:
+            deprecation_warning(
+                "run_config_for_partition_fn", "2.0", "Use run_config_for_partition_key_fn instead"
+            )
+        if tags_for_partition_fn:
+            deprecation_warning(
+                "tags_for_partition_fn", "2.0", "Use tags_for_partition_key_fn instead"
+            )
+
+        self._run_config_for_partition_fn = check.opt_callable_param(
             run_config_for_partition_fn, "run_config_for_partition_fn"
         )
-        self._decorated_fn = decorated_fn
+        self._run_config_for_partition_key_fn = check.opt_callable_param(
+            run_config_for_partition_key_fn, "run_config_for_partition_key_fn"
+        )
         self._tags_for_partition_fn = check.opt_callable_param(
             tags_for_partition_fn, "tags_for_partition_fn"
+        )
+        self._tags_for_partition_key_fn = check.opt_callable_param(
+            tags_for_partition_key_fn, "tags_for_partition_key_fn"
         )
 
     @public
     @property
     def partitions_def(
         self,
-    ) -> PartitionsDefinition[T_cov]:
+    ) -> T_PartitionsDefinition:
         return self._partitions
 
+    @deprecated
     @public
     @property
-    def run_config_for_partition_fn(self) -> Callable[[Partition[T_cov]], Mapping[str, Any]]:
+    def run_config_for_partition_fn(
+        self,
+    ) -> Optional[Callable[[Partition], Mapping[str, Any]]]:
         return self._run_config_for_partition_fn
 
     @public
     @property
-    def tags_for_partition_fn(self) -> Optional[Callable[[Partition[T_cov]], Mapping[str, str]]]:
+    def run_config_for_partition_key_fn(
+        self,
+    ) -> Optional[Callable[[str], Mapping[str, Any]]]:
+        return self._run_config_for_partition_key_fn
+
+    @deprecated
+    @public
+    @property
+    def tags_for_partition_fn(self) -> Optional[Callable[[Partition], Mapping[str, str]]]:
         return self._tags_for_partition_fn
 
-    def get_partition_keys(self, current_time: Optional[datetime] = None) -> Sequence[str]:
-        return [partition.name for partition in self.partitions_def.get_partitions(current_time)]
+    @public
+    @property
+    def tags_for_partition_key_fn(
+        self,
+    ) -> Optional[Callable[[str], Mapping[str, str]]]:
+        return self._tags_for_partition_key_fn
 
+    @public
+    def get_partition_keys(self, current_time: Optional[datetime] = None) -> Sequence[str]:
+        return self.partitions_def.get_partition_keys(current_time)
+
+    # Assumes partition key already validated
     def get_run_config_for_partition_key(
         self,
         partition_key: str,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-        current_time: Optional[datetime] = None,
     ) -> Mapping[str, Any]:
         """Generates the run config corresponding to a partition key.
 
         Args:
             partition_key (str): the key for a partition that should be used to generate a run config.
         """
-        partition = self._key_to_partition(partition_key, current_time, dynamic_partitions_store)
-        return self.get_run_config_for_partition(partition)
+        # _run_config_for_partition_fn is deprecated, we can remove this branching logic in 2.0
+        if self._run_config_for_partition_fn:
+            run_config = self._run_config_for_partition_fn(Partition(partition_key))
+        elif self._run_config_for_partition_key_fn:
+            run_config = self._run_config_for_partition_key_fn(partition_key)
+        else:
+            check.failed("Unreachable.")  # one of the above funcs always defined
+        return copy.deepcopy(run_config)
 
-    def get_run_config_for_partition(
+    # Assumes partition key already validated
+    def get_tags_for_partition_key(
         self,
-        partition: Partition,
-    ) -> Mapping[str, Any]:
-        """Generates the run config corresponding to a partition.
-
-        Args:
-            partition: the partition that should be used to generate a run config.
-        """
-        return copy.deepcopy(self.run_config_for_partition_fn(partition))
-
-    def get_tags_for_partition(
-        self,
-        partition: Partition,
+        partition_key: str,
         job_name: Optional[str] = None,
     ) -> Mapping[str, str]:
         from dagster._core.host_representation.external_data import (
             external_partition_set_name_for_job_name,
         )
 
-        user_tags = (
-            validate_tags(self._tags_for_partition_fn(partition), allow_reserved_tags=False)
-            if self._tags_for_partition_fn
-            else {}
-        )
+        # _tags_for_partition_fn is deprecated, we can remove this branching logic in 2.0
+        if self._tags_for_partition_fn:
+            user_tags = self._tags_for_partition_fn(Partition(partition_key))
+        elif self._tags_for_partition_key_fn:
+            user_tags = self._tags_for_partition_key_fn(partition_key)
+        else:
+            user_tags = {}
+        user_tags = validate_tags(user_tags, allow_reserved_tags=False)
+
         system_tags = {
-            **self.partitions_def.get_tags_for_partition_key(partition.name),
+            **self.partitions_def.get_tags_for_partition_key(partition_key),
             **(
+                # `PartitionSetDefinition` has been deleted but we still need to attach this special tag in
+                # order for reexecution against partitions to work properly.
                 {PARTITION_SET_TAG: external_partition_set_name_for_job_name(job_name)}
                 if job_name
                 else {}
             ),
         }
-        # `PartitionSetDefinition` has been deleted but we still need to attach this special tag in
-        # order for reexecution against partitions to work properly.
+
         return {**user_tags, **system_tags}
-
-    def get_tags_for_partition_key(
-        self,
-        partition_key: str,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-        current_time: Optional[datetime] = None,
-        job_name: Optional[str] = None,
-    ) -> Mapping[str, str]:
-        partition = self._key_to_partition(partition_key, current_time, dynamic_partitions_store)
-        return self.get_tags_for_partition(partition, job_name)
-
-    def _key_to_partition(
-        self,
-        partition_key: str,
-        current_time: Optional[datetime],
-        dynamic_partitions_store: Optional[DynamicPartitionsStore],
-    ) -> Partition[T_cov]:
-        matches = [
-            p
-            for p in self.partitions_def.get_partitions(
-                current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
-            )
-            if p.name == partition_key
-        ]
-        if len(matches) == 0:
-            raise DagsterUnknownPartitionError(f"No partition for partition key `{partition_key}`.")
-        return matches[0]
 
     @classmethod
     def from_flexible_config(
@@ -870,7 +677,10 @@ class PartitionedConfig(Generic[T_cov]):
             return config
         else:
             hardcoded_config = config if config else {}
-            return cls(partitions_def, lambda _: cast(Mapping, hardcoded_config))
+            return cls(
+                partitions_def,
+                run_config_for_partition_key_fn=lambda _: cast(Mapping, hardcoded_config),
+            )
 
     def __call__(self, *args, **kwargs):
         if self._decorated_fn is None:
@@ -885,7 +695,8 @@ class PartitionedConfig(Generic[T_cov]):
 def static_partitioned_config(
     partition_keys: Sequence[str],
     tags_for_partition_fn: Optional[Callable[[str], Mapping[str, str]]] = None,
-) -> Callable[[Callable[[str], Mapping[str, Any]]], PartitionedConfig]:
+    tags_for_partition_key_fn: Optional[Callable[[str], Mapping[str, str]]] = None,
+) -> Callable[[Callable[[str], Mapping[str, Any]]], PartitionedConfig[StaticPartitionsDefinition]]:
     """Creates a static partitioned config for a job.
 
     The provided partition_keys is a static list of strings identifying the set of partitions. The
@@ -901,7 +712,10 @@ def static_partitioned_config(
     Args:
         partition_keys (Sequence[str]): A list of valid partition keys, which serve as the range of
             values that can be provided to the decorated run config function.
-        tags_for_partition_fn (Optional[Callable[[str], Mapping[str, str]]]): A function that
+        tags_for_partition_fn (Optional[Callable[[str], Mapping[str, str]]]): (deprecated) A function that
+            accepts a partition key and returns a dictionary of tags to attach to runs for that
+            partition.
+        tags_for_partition_key_fn (Optional[Callable[[str], Mapping[str, str]]]): A function that
             accepts a partition key and returns a dictionary of tags to attach to runs for that
             partition.
 
@@ -910,20 +724,22 @@ def static_partitioned_config(
     """
     check.sequence_param(partition_keys, "partition_keys", str)
 
-    def inner(fn: Callable[[str], Mapping[str, Any]]) -> PartitionedConfig:
-        check.callable_param(fn, "fn")
+    tags_for_partition_key_fn = canonicalize_backcompat_args(
+        tags_for_partition_key_fn,
+        "tags_for_partition_key_fn",
+        tags_for_partition_fn,
+        "tags_for_partition_fn",
+        "2.0",
+    )
 
-        def _run_config_wrapper(partition: Partition) -> Mapping[str, Any]:
-            return fn(partition.name)
-
-        def _tag_wrapper(partition: Partition) -> Mapping[str, str]:
-            return tags_for_partition_fn(partition.name) if tags_for_partition_fn else {}
-
+    def inner(
+        fn: Callable[[str], Mapping[str, Any]]
+    ) -> PartitionedConfig[StaticPartitionsDefinition]:
         return PartitionedConfig(
             partitions_def=StaticPartitionsDefinition(partition_keys),
-            run_config_for_partition_fn=_run_config_wrapper,
+            run_config_for_partition_key_fn=fn,
             decorated_fn=fn,
-            tags_for_partition_fn=_tag_wrapper,
+            tags_for_partition_key_fn=tags_for_partition_key_fn,
         )
 
     return inner
@@ -932,6 +748,7 @@ def static_partitioned_config(
 def dynamic_partitioned_config(
     partition_fn: Callable[[Optional[datetime]], Sequence[str]],
     tags_for_partition_fn: Optional[Callable[[str], Mapping[str, str]]] = None,
+    tags_for_partition_key_fn: Optional[Callable[[str], Mapping[str, str]]] = None,
 ) -> Callable[[Callable[[str], Mapping[str, Any]]], PartitionedConfig]:
     """Creates a dynamic partitioned config for a job.
 
@@ -955,18 +772,20 @@ def dynamic_partitioned_config(
     """
     check.callable_param(partition_fn, "partition_fn")
 
+    tags_for_partition_key_fn = canonicalize_backcompat_args(
+        tags_for_partition_key_fn,
+        "tags_for_partition_key_fn",
+        tags_for_partition_fn,
+        "tags_for_partition_fn",
+        "2.0",
+    )
+
     def inner(fn: Callable[[str], Mapping[str, Any]]) -> PartitionedConfig:
-        def _run_config_wrapper(partition: Partition) -> Mapping[str, Any]:
-            return fn(partition.name)
-
-        def _tag_wrapper(partition: Partition) -> Mapping[str, str]:
-            return tags_for_partition_fn(partition.name) if tags_for_partition_fn else {}
-
         return PartitionedConfig(
             partitions_def=DynamicPartitionsDefinition(partition_fn),
-            run_config_for_partition_fn=_run_config_wrapper,
+            run_config_for_partition_key_fn=fn,
             decorated_fn=fn,
-            tags_for_partition_fn=_tag_wrapper,
+            tags_for_partition_key_fn=tags_for_partition_key_fn,
         )
 
     return inner
@@ -990,7 +809,7 @@ def cron_schedule_from_schedule_type_and_offsets(
         check.assert_never(schedule_type)
 
 
-class PartitionsSubset(ABC, Generic[T_cov]):
+class PartitionsSubset(ABC, Generic[T_str]):
     """Represents a subset of the partitions within a PartitionsDefinition."""
 
     @abstractmethod
@@ -998,11 +817,12 @@ class PartitionsSubset(ABC, Generic[T_cov]):
         self,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> Iterable[str]:
+    ) -> Iterable[T_str]:
         ...
 
     @abstractmethod
-    def get_partition_keys(self, current_time: Optional[datetime] = None) -> Iterable[str]:
+    @public
+    def get_partition_keys(self, current_time: Optional[datetime] = None) -> Iterable[T_str]:
         ...
 
     @abstractmethod
@@ -1014,21 +834,21 @@ class PartitionsSubset(ABC, Generic[T_cov]):
         ...
 
     @abstractmethod
-    def with_partition_keys(self, partition_keys: Iterable[str]) -> "PartitionsSubset[T_cov]":
+    def with_partition_keys(self, partition_keys: Iterable[str]) -> "PartitionsSubset[T_str]":
         ...
 
     def with_partition_key_range(
         self,
         partition_key_range: PartitionKeyRange,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> "PartitionsSubset[T_cov]":
+    ) -> "PartitionsSubset[T_str]":
         return self.with_partition_keys(
             self.partitions_def.get_partition_keys_in_range(
                 partition_key_range, dynamic_partitions_store=dynamic_partitions_store
             )
         )
 
-    def __or__(self, other: "PartitionsSubset") -> "PartitionsSubset[T_cov]":
+    def __or__(self, other: "PartitionsSubset") -> "PartitionsSubset[T_str]":
         if self is other:
             return self
         return self.with_partition_keys(other.get_partition_keys())
@@ -1040,8 +860,8 @@ class PartitionsSubset(ABC, Generic[T_cov]):
     @classmethod
     @abstractmethod
     def from_serialized(
-        cls, partitions_def: PartitionsDefinition, serialized: str
-    ) -> "PartitionsSubset":
+        cls, partitions_def: PartitionsDefinition[T_str], serialized: str
+    ) -> "PartitionsSubset[T_str]":
         ...
 
     @classmethod
@@ -1057,7 +877,7 @@ class PartitionsSubset(ABC, Generic[T_cov]):
 
     @property
     @abstractmethod
-    def partitions_def(self) -> PartitionsDefinition[T_cov]:
+    def partitions_def(self) -> PartitionsDefinition[T_str]:
         ...
 
     @abstractmethod
@@ -1070,17 +890,17 @@ class PartitionsSubset(ABC, Generic[T_cov]):
 
     @classmethod
     @abstractmethod
-    def empty_subset(cls, partitions_def: PartitionsDefinition) -> "PartitionsSubset[T_cov]":
+    def empty_subset(cls, partitions_def: PartitionsDefinition[T_str]) -> "PartitionsSubset[T_str]":
         ...
 
 
-class DefaultPartitionsSubset(PartitionsSubset[T_cov]):
+class DefaultPartitionsSubset(PartitionsSubset[T_str]):
     # Every time we change the serialization format, we should increment the version number.
     # This will ensure that we can gracefully degrade when deserializing old data.
     SERIALIZATION_VERSION = 1
 
     def __init__(
-        self, partitions_def: PartitionsDefinition[T_cov], subset: Optional[Set[str]] = None
+        self, partitions_def: PartitionsDefinition[T_str], subset: Optional[Set[T_str]] = None
     ):
         check.opt_set_param(subset, "subset")
         self._partitions_def = partitions_def
@@ -1131,7 +951,7 @@ class DefaultPartitionsSubset(PartitionsSubset[T_cov]):
 
     def with_partition_keys(
         self, partition_keys: Iterable[str]
-    ) -> "DefaultPartitionsSubset[T_cov]":
+    ) -> "DefaultPartitionsSubset[T_str]":
         return DefaultPartitionsSubset(
             self._partitions_def,
             self._subset | set(partition_keys),
@@ -1144,8 +964,8 @@ class DefaultPartitionsSubset(PartitionsSubset[T_cov]):
 
     @classmethod
     def from_serialized(
-        cls, partitions_def: PartitionsDefinition[T_cov], serialized: str
-    ) -> "PartitionsSubset[T_cov]":
+        cls, partitions_def: PartitionsDefinition[T_str], serialized: str
+    ) -> "PartitionsSubset[T_str]":
         # Check the version number, so only valid versions can be deserialized.
         data = json.loads(serialized)
 
@@ -1163,7 +983,7 @@ class DefaultPartitionsSubset(PartitionsSubset[T_cov]):
     @classmethod
     def can_deserialize(
         cls,
-        partitions_def: PartitionsDefinition[T_cov],
+        partitions_def: PartitionsDefinition[T_str],
         serialized: str,
         serialized_partitions_def_unique_id: Optional[str],
         serialized_partitions_def_class_name: Optional[str],
@@ -1177,7 +997,7 @@ class DefaultPartitionsSubset(PartitionsSubset[T_cov]):
         )
 
     @property
-    def partitions_def(self) -> PartitionsDefinition[T_cov]:
+    def partitions_def(self) -> PartitionsDefinition[T_str]:
         return self._partitions_def
 
     def __eq__(self, other: object) -> bool:
@@ -1199,5 +1019,5 @@ class DefaultPartitionsSubset(PartitionsSubset[T_cov]):
         )
 
     @classmethod
-    def empty_subset(cls, partitions_def: PartitionsDefinition[T_cov]) -> "PartitionsSubset[T_cov]":
+    def empty_subset(cls, partitions_def: PartitionsDefinition[T_str]) -> "PartitionsSubset[T_str]":
         return cls(partitions_def=partitions_def)

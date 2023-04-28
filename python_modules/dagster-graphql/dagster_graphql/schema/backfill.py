@@ -5,8 +5,12 @@ import graphene
 from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsSubset,
 )
+from dagster._core.execution.asset_backfill import (
+    AssetBackfillStatus,
+    PartitionedAssetBackfillStatus,
+    UnpartitionedAssetBackfillStatus,
+)
 from dagster._core.execution.backfill import (
-    BackfillPartitionsStatus,
     BulkActionStatus,
     PartitionBackfill,
 )
@@ -113,8 +117,8 @@ class GrapheneAssetBackfillData(graphene.ObjectType):
     class Meta:
         name = "AssetBackfillData"
 
-    assetPartitionsStatusCounts = non_null_list(
-        "dagster_graphql.schema.partition_sets.GrapheneAssetPartitionsStatusCounts"
+    assetBackfillStatuses = non_null_list(
+        "dagster_graphql.schema.partition_sets.GrapheneAssetBackfillStatus"
     )
     rootAssetTargetedRanges = graphene.List(
         graphene.NonNull("dagster_graphql.schema.partition_sets.GraphenePartitionKeyRange")
@@ -159,6 +163,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
 
     hasCancelPermission = graphene.NonNull(graphene.Boolean)
     hasResumePermission = graphene.NonNull(graphene.Boolean)
+    user = graphene.Field(graphene.String)
 
     def __init__(self, backfill_job: PartitionBackfill):
         self._backfill_job = check.inst_param(backfill_job, "backfill_job", PartitionBackfill)
@@ -294,31 +299,54 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     def resolve_isAssetBackfill(self, _graphene_info: ResolveInfo) -> bool:
         return self._backfill_job.is_asset_backfill
 
-    def resolve_assetBackfillData(self, graphene_info: ResolveInfo) -> GrapheneAssetBackfillData:
+    def resolve_assetBackfillData(
+        self, graphene_info: ResolveInfo
+    ) -> Optional[GrapheneAssetBackfillData]:
         from dagster_graphql.schema.partition_sets import (
             GrapheneAssetPartitionsStatusCounts,
             GraphenePartitionKeyRange,
+            GrapheneUnpartitionedAssetStatus,
         )
 
-        status_counts_by_asset = (
-            self._backfill_job.get_partitions_status_counts_and_totals_by_asset(
-                graphene_info.context
-            )
+        if not self._backfill_job.is_asset_backfill:
+            return None
+
+        status_per_asset = self._backfill_job.get_backfill_status_per_asset_key(
+            graphene_info.context
         )
 
         asset_partition_status_counts = []
 
-        for asset_key, partitions_counts in status_counts_by_asset.items():
-            counts_by_status = partitions_counts[0]
-            asset_partition_status_counts.append(
-                GrapheneAssetPartitionsStatusCounts(
-                    assetKey=asset_key,
-                    numPartitionsTargeted=partitions_counts[1],
-                    numPartitionsRequested=counts_by_status[BackfillPartitionsStatus.REQUESTED],
-                    numPartitionsCompleted=counts_by_status[BackfillPartitionsStatus.COMPLETED],
-                    numPartitionsFailed=counts_by_status[BackfillPartitionsStatus.FAILED],
+        for asset_status in status_per_asset:
+            if isinstance(asset_status, PartitionedAssetBackfillStatus):
+                asset_partition_status_counts.append(
+                    GrapheneAssetPartitionsStatusCounts(
+                        assetKey=asset_status.asset_key,
+                        numPartitionsTargeted=asset_status.num_targeted_partitions,
+                        numPartitionsInProgress=asset_status.partitions_counts_by_status[
+                            AssetBackfillStatus.IN_PROGRESS
+                        ],
+                        numPartitionsMaterialized=asset_status.partitions_counts_by_status[
+                            AssetBackfillStatus.MATERIALIZED
+                        ],
+                        numPartitionsFailed=asset_status.partitions_counts_by_status[
+                            AssetBackfillStatus.FAILED
+                        ],
+                    )
                 )
-            )
+            else:
+                if not isinstance(asset_status, UnpartitionedAssetBackfillStatus):
+                    check.failed(f"Unexpected asset status type {type(asset_status)}")
+
+                asset_partition_status_counts.append(
+                    GrapheneUnpartitionedAssetStatus(
+                        assetKey=asset_status.asset_key,
+                        inProgress=asset_status.backfill_status is AssetBackfillStatus.IN_PROGRESS,
+                        materialized=asset_status.backfill_status
+                        is AssetBackfillStatus.MATERIALIZED,
+                        failed=asset_status.backfill_status is AssetBackfillStatus.FAILED,
+                    )
+                )
 
         root_partitions_subset = self._backfill_job.get_target_root_partitions_subset(
             graphene_info.context
@@ -338,7 +366,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             root_targeted_partitions = root_partitions_subset.get_partition_keys()
 
         return GrapheneAssetBackfillData(
-            assetPartitionsStatusCounts=asset_partition_status_counts,
+            assetBackfillStatuses=asset_partition_status_counts,
             rootAssetTargetedRanges=root_targeted_ranges,
             rootAssetTargetedPartitions=root_targeted_partitions,
         )
@@ -363,6 +391,9 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         return graphene_info.context.has_permission_for_location(
             Permissions.LAUNCH_PARTITION_BACKFILL, location_name
         )
+
+    def resolve_user(self, _graphene_info: ResolveInfo) -> Optional[str]:
+        return self._backfill_job.user
 
 
 class GraphenePartitionBackfillOrError(graphene.Union):

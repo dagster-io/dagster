@@ -247,15 +247,19 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
             self._monitored_asset_keys = monitored_assets
 
         self._assets_by_key: Dict[AssetKey, Optional[AssetsDefinition]] = {}
+        self._partitions_def_by_asset_key: Dict[AssetKey, Optional[PartitionsDefinition]] = {}
         for asset_key in self._monitored_asset_keys:
             assets_def = self._repository_def.assets_defs_by_key.get(asset_key)
             self._assets_by_key[asset_key] = assets_def
 
-        self._partitions_def_by_asset_key = {
-            asset_key: asset_def.partitions_def
-            for asset_key, asset_def in self._assets_by_key.items()
-            if asset_def is not None
-        }
+            source_asset_def = self._repository_def.source_assets_by_key.get(asset_key)
+            self._partitions_def_by_asset_key[asset_key] = (
+                assets_def.partitions_def
+                if assets_def
+                else source_asset_def.partitions_def
+                if source_asset_def
+                else None
+            )
 
         # Cursor object with utility methods for updating and retrieving cursor information.
         # At the end of each tick, must call update_cursor_after_evaluation to update the serialized
@@ -383,8 +387,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
             materialization event for the asset. If there is no materialization event for the asset,
             the value in the mapping will be None.
         """
-        from dagster._core.events import DagsterEventType
-        from dagster._core.storage.event_log.base import EventRecordsFilter
+        from dagster._core.storage.event_log.base import EventLogRecord
 
         # Do not evaluate unconsumed events, only events newer than the cursor
         # if there are no new events after the cursor, the cursor points to the most
@@ -395,19 +398,20 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         else:
             asset_keys = check.opt_sequence_param(asset_keys, "asset_keys", of_type=AssetKey)
 
-        asset_event_records = {}
-        for a in asset_keys:
-            event_records = self.instance.get_event_records(
-                EventRecordsFilter(
-                    event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                    asset_key=a,
-                    after_cursor=self._get_cursor(a).latest_consumed_event_id,
-                ),
-                ascending=False,
-                limit=1,
-            )
+        asset_records = self.instance.get_asset_records(asset_keys)
 
-            asset_event_records[a] = next(iter(event_records), None)
+        asset_event_records: Dict[AssetKey, Optional[EventLogRecord]] = {
+            asset_key: None for asset_key in asset_keys
+        }
+        for record in asset_records:
+            if (
+                record.asset_entry.last_materialization_record
+                and record.asset_entry.last_materialization_record.storage_id
+                > (self._get_cursor(record.asset_entry.asset_key).latest_consumed_event_id or 0)
+            ):
+                asset_event_records[
+                    record.asset_entry.asset_key
+                ] = record.asset_entry.last_materialization_record
 
         return asset_event_records
 

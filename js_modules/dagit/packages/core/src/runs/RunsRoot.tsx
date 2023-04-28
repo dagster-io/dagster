@@ -13,6 +13,7 @@ import partition from 'lodash/partition';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {useFeatureFlags} from '../app/Flags';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
@@ -32,6 +33,7 @@ import {
   RunFilterToken,
 } from './RunsFilterInput';
 import {RunsPageHeader} from './RunsPageHeader';
+import RunsRootNew from './RunsRootNew';
 import {
   QueueDaemonStatusQuery,
   QueueDaemonStatusQueryVariables,
@@ -43,6 +45,11 @@ import {useCursorPaginatedQuery} from './useCursorPaginatedQuery';
 const PAGE_SIZE = 25;
 
 export const RunsRoot = () => {
+  const {flagRunsTableFiltering} = useFeatureFlags();
+  return flagRunsTableFiltering ? <RunsRootNew /> : <RunsRootImpl />;
+};
+
+const RunsRootImpl = () => {
   useTrackPageView();
 
   const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters();

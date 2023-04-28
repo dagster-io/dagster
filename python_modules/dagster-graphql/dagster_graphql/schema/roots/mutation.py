@@ -24,7 +24,7 @@ from ...implementation.execution import (
     terminate_pipeline_execution,
     wipe_assets,
 )
-from ...implementation.external import fetch_workspace, get_full_external_pipeline_or_raise
+from ...implementation.external import fetch_workspace, get_full_external_job_or_raise
 from ...implementation.telemetry import log_dagit_telemetry_event
 from ...implementation.utils import (
     ExecutionMetadata,
@@ -101,7 +101,7 @@ def create_execution_params(graphene_info, graphql_execution_params):
                 )
             )
 
-        external_pipeline = get_full_external_pipeline_or_raise(
+        external_pipeline = get_full_external_job_or_raise(
             graphene_info,
             selector,
         )

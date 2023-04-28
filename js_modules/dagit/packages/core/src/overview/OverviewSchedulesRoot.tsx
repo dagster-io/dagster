@@ -26,11 +26,11 @@ import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {RepoFilterButton} from '../instance/RepoFilterButton';
 import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
 import {UnloadableSchedules} from '../instigation/Unloadable';
+import {filterPermissionedInstigationState} from '../instigation/filterPermissionedInstigationState';
 import {ScheduleBulkActionMenu} from '../schedules/ScheduleBulkActionMenu';
 import {SchedulerInfo} from '../schedules/SchedulerInfo';
-import {SchedulesCheckAll} from '../schedules/SchedulesCheckAll';
-import {filterPermissionedSchedules} from '../schedules/filterPermissionedSchedules';
 import {makeScheduleKey} from '../schedules/makeScheduleKey';
+import {CheckAllBox} from '../ui/CheckAllBox';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
@@ -91,16 +91,23 @@ export const OverviewSchedulesRoot = () => {
       .filter(({schedules}) => schedules.length > 0);
   }, [repoBuckets, sanitizedSearch]);
 
+  const anySchedulesVisible = React.useMemo(
+    () => filteredBySearch.some(({schedules}) => schedules.length > 0),
+    [filteredBySearch],
+  );
+
   // Collect all schedules across visible code locations that the viewer has permission
   // to start or stop.
   const allPermissionedSchedules = React.useMemo(() => {
     return repoBuckets
       .map(({repoAddress, schedules}) => {
-        return schedules.filter(filterPermissionedSchedules).map(({name, scheduleState}) => ({
-          repoAddress,
-          scheduleName: name,
-          scheduleState,
-        }));
+        return schedules
+          .filter(({scheduleState}) => filterPermissionedInstigationState(scheduleState))
+          .map(({name, scheduleState}) => ({
+            repoAddress,
+            scheduleName: name,
+            scheduleState,
+          }));
       })
       .flat();
   }, [repoBuckets]);
@@ -201,7 +208,7 @@ export const OverviewSchedulesRoot = () => {
       <OverviewScheduleTable
         headerCheckbox={
           viewerHasAnyInstigationPermission ? (
-            <SchedulesCheckAll
+            <CheckAllBox
               checkedCount={checkedCount}
               totalCount={permissionedKeysOnScreen.length}
               onToggleAll={onToggleAll}
@@ -240,7 +247,7 @@ export const OverviewSchedulesRoot = () => {
         </Box>
         <Tooltip
           content="You do not have permission to start or stop these schedules"
-          canShow={!viewerHasAnyInstigationPermission}
+          canShow={anySchedulesVisible && !viewerHasAnyInstigationPermission}
           placement="top-end"
           useDisabledButtonTooltipFix
         >

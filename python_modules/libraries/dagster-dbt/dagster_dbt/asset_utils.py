@@ -4,6 +4,7 @@ from typing import AbstractSet, Any, Dict, FrozenSet, List, Mapping, Optional, S
 
 from dagster import (
     AssetKey,
+    AutoMaterializePolicy,
     FreshnessPolicy,
     In,
     MetadataValue,
@@ -76,6 +77,17 @@ def default_freshness_policy_fn(node_info: Mapping[str, Any]) -> Optional[Freshn
             cron_schedule=freshness_policy_config.get("cron_schedule"),
             cron_schedule_timezone=freshness_policy_config.get("cron_schedule_timezone"),
         )
+    return None
+
+
+def default_auto_materialize_policy_fn(
+    node_info: Mapping[str, Any]
+) -> Optional[AutoMaterializePolicy]:
+    auto_materialize_policy = node_info["config"].get("dagster_auto_materialize_policy", {})
+    if auto_materialize_policy.get("type") == "eager":
+        return AutoMaterializePolicy.eager()
+    elif auto_materialize_policy.get("type") == "lazy":
+        return AutoMaterializePolicy.lazy()
     return None
 
 
@@ -160,6 +172,7 @@ def get_asset_deps(
     node_info_to_asset_key,
     node_info_to_group_fn,
     node_info_to_freshness_policy_fn,
+    node_info_to_auto_materialize_policy_fn,
     node_info_to_definition_metadata_fn,
     io_manager_key,
     display_raw_sql,
@@ -169,6 +182,7 @@ def get_asset_deps(
     Dict[AssetKey, Tuple[str, Out]],
     Dict[AssetKey, str],
     Dict[AssetKey, FreshnessPolicy],
+    Dict[AssetKey, AutoMaterializePolicy],
     Dict[str, List[str]],
     Dict[str, Dict[str, Any]],
 ]:
@@ -180,6 +194,7 @@ def get_asset_deps(
     # metadata that we need to store for reference.
     group_names_by_key: Dict[AssetKey, str] = {}
     freshness_policies_by_key: Dict[AssetKey, FreshnessPolicy] = {}
+    auto_materialize_policies_by_key: Dict[AssetKey, AutoMaterializePolicy] = {}
     fqns_by_output_name: Dict[str, List[str]] = {}
     metadata_by_output_name: Dict[str, Dict[str, Any]] = {}
 
@@ -222,6 +237,10 @@ def get_asset_deps(
         if freshness_policy is not None:
             freshness_policies_by_key[asset_key] = freshness_policy
 
+        auto_materialize_policy = node_info_to_auto_materialize_policy_fn(node_info)
+        if auto_materialize_policy is not None:
+            auto_materialize_policies_by_key[asset_key] = auto_materialize_policy
+
         for parent_unique_id in parent_unique_ids:
             parent_node_info = dbt_nodes[parent_unique_id]
             parent_asset_key = node_info_to_asset_key(parent_node_info)
@@ -239,6 +258,7 @@ def get_asset_deps(
         asset_outs,
         group_names_by_key,
         freshness_policies_by_key,
+        auto_materialize_policies_by_key,
         fqns_by_output_name,
         metadata_by_output_name,
     )

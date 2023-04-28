@@ -177,8 +177,13 @@ def _attach_resources_to_jobs_and_instigator_jobs(
         for schedule in schedules
     ]
     updated_sensors = [
-        sensor.with_updated_job(unsatisfied_job_to_resource_bound_job[id(sensor.job)])
-        if sensor.has_loadable_targets() and sensor.job in unsatisfied_jobs
+        sensor.with_updated_jobs(
+            [
+                unsatisfied_job_to_resource_bound_job[id(job)] if job in unsatisfied_jobs else job
+                for job in sensor.jobs
+            ]
+        )
+        if sensor.has_loadable_targets() and any(job in unsatisfied_jobs for job in sensor.jobs)
         else sensor
         for sensor in sensors
     ]
@@ -210,7 +215,6 @@ def _create_repository_using_definitions_args(
     check.opt_iterable_param(jobs, "jobs", (JobDefinition, UnresolvedAssetJobDefinition))
 
     check.opt_inst_param(executor, "executor", (ExecutorDefinition, Executor))
-
     executor_def = (
         executor
         if isinstance(executor, ExecutorDefinition) or executor is None

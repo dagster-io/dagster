@@ -4,6 +4,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {useFeatureFlags} from '../app/Flags';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {RunsFilter} from '../graphql/types';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
@@ -22,6 +23,7 @@ import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspac
 import {AssetKeyTagCollection} from './AssetKeyTagCollection';
 import {RunActionsMenu, RunBulkActionsMenu} from './RunActionsMenu';
 import {RunStatusTagWithStats} from './RunStatusTag';
+import {RunTable as RunTableNew} from './RunTableNew';
 import {RunTags} from './RunTags';
 import {
   assetKeysForRun,
@@ -39,11 +41,16 @@ interface RunTableProps {
   onAddTag?: (token: RunFilterToken) => void;
   actionBarComponents?: React.ReactNode;
   highlightedIds?: string[];
+  hideCreatedBy?: boolean;
   additionalColumnHeaders?: React.ReactNode[];
   additionalColumnsForRow?: (run: RunTableRunFragment) => React.ReactNode[];
 }
-
 export const RunTable = (props: RunTableProps) => {
+  const {flagRunsTableFiltering} = useFeatureFlags();
+  return flagRunsTableFiltering ? <RunTableNew {...props} /> : <RunTableImpl {...props} />;
+};
+
+const RunTableImpl = (props: RunTableProps) => {
   const {runs, filter, onAddTag, highlightedIds, actionBarComponents} = props;
   const allIds = runs.map((r) => r.id);
 

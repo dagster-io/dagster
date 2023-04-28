@@ -136,7 +136,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
                     docker_image=docker_image,
                 )
             ),
-            pipeline_run=run,
+            dagster_run=run,
             cls=self.__class__,
         )
 
@@ -149,12 +149,12 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
 
     def launch_run(self, context: LaunchRunContext) -> None:
         run = context.dagster_run
-        pipeline_code_origin = check.not_none(context.pipeline_code_origin)
-        docker_image = self._get_docker_image(pipeline_code_origin)
+        job_code_origin = check.not_none(context.job_code_origin)
+        docker_image = self._get_docker_image(job_code_origin)
 
         command = ExecuteRunArgs(
-            pipeline_origin=pipeline_code_origin,
-            pipeline_run_id=run.run_id,
+            job_origin=job_code_origin,
+            run_id=run.run_id,
             instance_ref=self._instance.get_ref(),
         ).get_command_args()
 
@@ -166,12 +166,12 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
 
     def resume_run(self, context: ResumeRunContext) -> None:
         run = context.dagster_run
-        pipeline_code_origin = check.not_none(context.pipeline_code_origin)
-        docker_image = self._get_docker_image(pipeline_code_origin)
+        job_code_origin = check.not_none(context.job_code_origin)
+        docker_image = self._get_docker_image(job_code_origin)
 
         command = ResumeRunArgs(
-            pipeline_origin=pipeline_code_origin,
-            pipeline_run_id=run.run_id,
+            job_origin=job_code_origin,
+            run_id=run.run_id,
             instance_ref=self._instance.get_ref(),
         ).get_command_args()
 
@@ -200,7 +200,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
         if not container:
             self._instance.report_engine_event(
                 message="Unable to get docker container to send termination request to.",
-                pipeline_run=run,
+                dagster_run=run,
                 cls=self.__class__,
             )
             return False

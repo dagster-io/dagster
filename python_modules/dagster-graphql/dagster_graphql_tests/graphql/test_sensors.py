@@ -23,6 +23,7 @@ from dagster._daemon.sensor import execute_sensor_iteration
 from dagster._utils import Counter, traced_counter
 from dagster._utils.error import SerializableErrorInfo
 from dagster_graphql.implementation.utils import UserFacingGraphQLError
+from dagster_graphql.schema.instigation import GrapheneDynamicPartitionsRequestType
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
     infer_repository_selector,
@@ -308,6 +309,11 @@ mutation($selectorData: SensorSelector!, $cursor: String) {
           message
           stack
         }
+        dynamicPartitionsRequests {
+          partitionKeys
+          partitionsDefName
+          type
+        }
       }
     }
     ... on SensorNotFoundError {
@@ -435,6 +441,43 @@ class TestSensors(NonLaunchableGraphQLContextTestMatrix):
         assert evaluation_result["runRequests"][0]["runConfigYaml"] == "{}\n"
         assert evaluation_result["skipReason"] is None
         assert evaluation_result["error"] is None
+        assert evaluation_result["dynamicPartitionsRequests"] == []
+
+    def test_dry_run_with_dynamic_partition_requests(
+        self, graphql_context: WorkspaceRequestContext
+    ):
+        instigator_selector = infer_sensor_selector(
+            graphql_context, "dynamic_partition_requesting_sensor"
+        )
+        result = execute_dagster_graphql(
+            graphql_context,
+            SENSOR_DRY_RUN_MUTATION,
+            variables={"selectorData": instigator_selector, "cursor": "blah"},
+        )
+        assert result.data
+        assert result.data["sensorDryRun"]["__typename"] == "DryRunInstigationTick"
+        evaluation_result = result.data["sensorDryRun"]["evaluationResult"]
+        assert evaluation_result["cursor"] is None
+        assert len(evaluation_result["runRequests"]) == 1
+        assert evaluation_result["runRequests"][0]["runConfigYaml"] == "{}\n"
+        assert evaluation_result["skipReason"] is None
+        assert evaluation_result["error"] is None
+        assert len(evaluation_result["dynamicPartitionsRequests"]) == 2
+        assert evaluation_result["dynamicPartitionsRequests"][0]["partitionKeys"] == [
+            "new_key",
+            "new_key2",
+        ]
+        assert evaluation_result["dynamicPartitionsRequests"][0]["partitionsDefName"] == "foo"
+        assert (
+            evaluation_result["dynamicPartitionsRequests"][0]["type"]
+            == GrapheneDynamicPartitionsRequestType.ADD_PARTITIONS
+        )
+        assert evaluation_result["dynamicPartitionsRequests"][1]["partitionKeys"] == ["old_key"]
+        assert evaluation_result["dynamicPartitionsRequests"][1]["partitionsDefName"] == "foo"
+        assert (
+            evaluation_result["dynamicPartitionsRequests"][1]["type"]
+            == GrapheneDynamicPartitionsRequestType.DELETE_PARTITIONS
+        )
 
     def test_dry_run_failure(self, graphql_context: WorkspaceRequestContext):
         instigator_selector = infer_sensor_selector(graphql_context, "always_error_sensor")
@@ -448,6 +491,7 @@ class TestSensors(NonLaunchableGraphQLContextTestMatrix):
         evaluation_result = result.data["sensorDryRun"]["evaluationResult"]
         assert not evaluation_result["runRequests"]
         assert not evaluation_result["skipReason"]
+        assert evaluation_result["dynamicPartitionsRequests"] is None
         assert (
             "Error occurred during the execution of evaluation_fn"
             in evaluation_result["error"]["message"]

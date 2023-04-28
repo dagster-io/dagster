@@ -4,7 +4,7 @@ import {FilterDropdownButton} from './FilterDropdown';
 import {FilterObject} from './useFilter';
 
 interface UseFiltersProps {
-  filters: FilterObject<any>[];
+  filters: FilterObject[];
 }
 
 export const useFilters = ({filters}: UseFiltersProps) => {

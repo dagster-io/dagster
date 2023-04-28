@@ -1,4 +1,4 @@
-import {Tooltip, Spinner, CaptionMono} from '@dagster-io/ui';
+import {Tooltip, Spinner, FontFamily} from '@dagster-io/ui';
 import React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -37,6 +37,10 @@ export const AssetRunLink: React.FC<{
     target="_blank"
     rel="noreferrer"
   >
-    {children || <CaptionMono>{titleForRun({id: runId})}</CaptionMono>}
+    {children || (
+      <span style={{fontSize: '1.2em', fontFamily: FontFamily.monospace}}>
+        {titleForRun({id: runId})}
+      </span>
+    )}
   </Link>
 );

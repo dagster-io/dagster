@@ -1,46 +1,36 @@
-import random
-
 import click
 from dagster import (
     AssetSelection,
     DagsterInstance,
     DailyPartitionsDefinition,
-    Definitions,
     DynamicPartitionsDefinition,
     MultiPartitionsDefinition,
-    RunRequest,
-    SensorResult,
     asset,
     define_asset_job,
-    load_assets_from_current_module,
-    sensor,
 )
 
 customers_partitions_def = DynamicPartitionsDefinition(name="customers")
 
 
 @asset(partitions_def=customers_partitions_def, group_name="dynamic_asset_partitions")
-def dynamic_partitions_asset1():
+def customers_dynamic_partitions_asset1():
     ...
 
 
 @asset(partitions_def=customers_partitions_def, group_name="dynamic_asset_partitions")
-def dynamic_partitions_asset2(dynamic_partitions_asset1):
+def customers_dynamic_partitions_asset2(customers_dynamic_partitions_asset1):
     ...
 
-
-dynamic_partitions_job = define_asset_job(
-    "dynamic_partitions_job",
-    selection=AssetSelection.groups("dynamic_asset_partitions"),
-    partitions_def=customers_partitions_def,
-)
 
 multipartition_w_dynamic_partitions_def = MultiPartitionsDefinition(
     {"customers": customers_partitions_def, "daily": DailyPartitionsDefinition("2023-01-01")}
 )
 
 
-@asset(partitions_def=multipartition_w_dynamic_partitions_def)
+@asset(
+    partitions_def=multipartition_w_dynamic_partitions_def,
+    group_name="dynamic_asset_partitions",
+)
 def multipartitioned_with_dynamic_dimension():
     return 1
 
@@ -48,33 +38,17 @@ def multipartitioned_with_dynamic_dimension():
 ints_dynamic_partitions_def = DynamicPartitionsDefinition(name="ints")
 
 
-@asset(partitions_def=ints_dynamic_partitions_def)
+@asset(partitions_def=ints_dynamic_partitions_def, group_name="dynamic_asset_partitions")
 def ints_dynamic_asset():
     return 1
 
 
-ints_job = define_asset_job(
-    "ints_job",
-    AssetSelection.assets(ints_dynamic_asset),
-    partitions_def=ints_dynamic_partitions_def,
-)
-
-
-@sensor(job=ints_job)
-def ints_new_dynamic_partitions_sensor():
-    new_partition_key = str(random.randint(0, 100))
-    return SensorResult(
-        run_requests=[RunRequest(partition_key=new_partition_key)],
-        dynamic_partitions_requests=[
-            ints_dynamic_partitions_def.build_add_request([new_partition_key])
-        ],
-    )
-
-
-defs = Definitions(
-    assets=load_assets_from_current_module(),
-    jobs=[dynamic_partitions_job],
-    sensors=[ints_new_dynamic_partitions_sensor],
+customers_dynamic_partitions_job = define_asset_job(
+    "customers_dynamic_partitions_job",
+    selection=AssetSelection.assets(
+        customers_dynamic_partitions_asset1, customers_dynamic_partitions_asset2
+    ),
+    partitions_def=customers_partitions_def,
 )
 
 

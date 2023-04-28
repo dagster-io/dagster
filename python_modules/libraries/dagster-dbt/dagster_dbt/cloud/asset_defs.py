@@ -12,6 +12,7 @@ from typing import (
     Sequence,
     Set,
     Tuple,
+    Union,
     cast,
 )
 
@@ -20,6 +21,7 @@ from dagster import (
     AssetKey,
     AssetOut,
     AssetsDefinition,
+    AutoMaterializePolicy,
     FreshnessPolicy,
     MetadataValue,
     OpExecutionContext,
@@ -36,10 +38,10 @@ from dagster._core.definitions.cacheable_assets import (
 from dagster._core.definitions.metadata import MetadataUserInput
 from dagster._core.execution.context.init import build_init_resource_context
 from dagster._utils.backcompat import experimental_arg_warning
-from dbt.main import parse_args as dbt_parse_args
 
 from dagster_dbt.asset_utils import (
     default_asset_key_fn,
+    default_auto_materialize_policy_fn,
     default_freshness_policy_fn,
     default_group_fn,
     default_metadata_fn,
@@ -49,7 +51,7 @@ from dagster_dbt.asset_utils import (
 
 from ..errors import DagsterDbtCloudJobInvariantViolationError
 from ..utils import ASSET_RESOURCE_TYPES, result_to_events
-from .resources import DbtCloudResource, DbtCloudRunStatus
+from .resources import DbtCloudClient, DbtCloudClientResource, DbtCloudRunStatus
 
 DAGSTER_DBT_COMPILE_RUN_ID_ENV_VAR = "DBT_DAGSTER_COMPILE_RUN_ID"
 
@@ -57,16 +59,29 @@ DAGSTER_DBT_COMPILE_RUN_ID_ENV_VAR = "DBT_DAGSTER_COMPILE_RUN_ID"
 class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
     def __init__(
         self,
-        dbt_cloud_resource_def: ResourceDefinition,
+        dbt_cloud_resource_def: Union[DbtCloudClientResource, ResourceDefinition],
         job_id: int,
         node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey],
         node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]],
         node_info_to_freshness_policy_fn: Callable[[Mapping[str, Any]], Optional[FreshnessPolicy]],
+        node_info_to_auto_materialize_policy_fn: Callable[
+            [Mapping[str, Any]], Optional[AutoMaterializePolicy]
+        ],
         partitions_def: Optional[PartitionsDefinition] = None,
         partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
     ):
-        self._dbt_cloud_resource_def = dbt_cloud_resource_def
-        self._dbt_cloud: DbtCloudResource = dbt_cloud_resource_def(build_init_resource_context())
+        self._dbt_cloud_resource_def: ResourceDefinition = (
+            dbt_cloud_resource_def.get_resource_definition()
+            if isinstance(dbt_cloud_resource_def, DbtCloudClientResource)
+            else dbt_cloud_resource_def
+        )
+        self._dbt_cloud: DbtCloudClient = (
+            dbt_cloud_resource_def.with_resource_context(
+                build_init_resource_context()
+            ).get_dbt_client()  # type: ignore
+            if isinstance(dbt_cloud_resource_def, DbtCloudClientResource)
+            else dbt_cloud_resource_def(build_init_resource_context())
+        )
         self._job_id = job_id
         self._project_id: int
         self._has_generate_docs: bool
@@ -75,6 +90,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         self._node_info_to_asset_key = node_info_to_asset_key
         self._node_info_to_group_fn = node_info_to_group_fn
         self._node_info_to_freshness_policy_fn = node_info_to_freshness_policy_fn
+        self._node_info_to_auto_materialize_policy_fn = node_info_to_auto_materialize_policy_fn
         self._partitions_def = partitions_def
         self._partition_key_to_vars_fn = partition_key_to_vars_fn
 
@@ -97,7 +113,21 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
 
     @staticmethod
     def parse_dbt_command(dbt_command: str) -> Namespace:
-        return dbt_parse_args(args=shlex.split(dbt_command)[1:])
+        args = shlex.split(dbt_command)[1:]
+        try:
+            from dbt.cli.flags import (  # pyright: ignore [reportMissingImports]
+                Flags,
+                args_to_context,
+            )
+
+            # nasty hack to get dbt to parse the args
+            # dbt >= 1.5.0 requires that profiles-dir is set to an existing directory
+            return Namespace(**vars(Flags(args_to_context(args + ["--profiles-dir", "."]))))
+        except ImportError:
+            # dbt < 1.5.0 compat
+            from dbt.main import parse_args
+
+            return parse_args(args=args)
 
     @staticmethod
     def get_job_materialization_command_step(execute_steps: List[str]) -> int:
@@ -126,8 +156,11 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         if excluded_models:
             dbt_compile_options.append(f"--exclude {' '.join(excluded_models)}")
 
-        if parsed_args.selector_name:
-            dbt_compile_options.append(f"--selector {parsed_args.selector_name}")
+        selector = getattr(parsed_args, "selector_name", None) or getattr(
+            parsed_args, "selector", None
+        )
+        if selector:
+            dbt_compile_options.append(f"--selector {selector}")
 
         return dbt_compile_options
 
@@ -173,8 +206,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         #
         # Since we're only doing this to generate the dependency structure, just use an arbitrary
         # partition key (e.g. the last one) to retrieve the partition variable.
-        dbt_vars = json.loads(parsed_args.vars or "{}")
-        if dbt_vars:
+        if parsed_args.vars and parsed_args.vars != "{}":
             raise DagsterDbtCloudJobInvariantViolationError(
                 f"The dbt Cloud job '{dbt_cloud_job['name']}' ({dbt_cloud_job['id']}) must not have"
                 " variables defined from `--vars` in its `dbt run` or `dbt build` command."
@@ -311,6 +343,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             asset_outs,
             group_names_by_key,
             freshness_policies_by_key,
+            auto_materialize_policies_by_key,
             fqns_by_output_name,
             metadata_by_output_name,
         ) = get_asset_deps(
@@ -319,6 +352,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             node_info_to_asset_key=self._node_info_to_asset_key,
             node_info_to_group_fn=self._node_info_to_group_fn,
             node_info_to_freshness_policy_fn=self._node_info_to_freshness_policy_fn,
+            node_info_to_auto_materialize_policy_fn=self._node_info_to_auto_materialize_policy_fn,
             # TODO: In the future, allow this function to be specified
             node_info_to_definition_metadata_fn=default_metadata_fn,
             # TODO: In the future, allow the IO manager to be specified.
@@ -362,6 +396,10 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             freshness_policies_by_output_name={
                 asset_outs[asset_key][0]: freshness_policy
                 for asset_key, freshness_policy in freshness_policies_by_key.items()
+            },
+            auto_materialize_policies_by_output_name={
+                asset_outs[asset_key][0]: auto_materialize_policy
+                for asset_key, auto_materialize_policy in auto_materialize_policies_by_key.items()
             },
         )
 
@@ -410,6 +448,12 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
                     ).get(
                         output_name,
                     ),
+                    auto_materialize_policy=(
+                        assets_definition_cacheable_data.auto_materialize_policies_by_output_name
+                        or {}
+                    ).get(
+                        output_name,
+                    ),
                     metadata=(assets_definition_cacheable_data.metadata_by_output_name or {}).get(
                         output_name
                     ),
@@ -431,7 +475,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             compute_kind="dbt",
         )
         def _assets(context: OpExecutionContext):
-            dbt_cloud = cast(DbtCloudResource, context.resources.dbt_cloud)
+            dbt_cloud = cast(DbtCloudClient, context.resources.dbt_cloud)
 
             # Add the partition variable as a variable to the dbt Cloud job command.
             dbt_options: List[str] = []
@@ -528,6 +572,9 @@ def load_assets_from_dbt_cloud_job(
     node_info_to_freshness_policy_fn: Callable[
         [Mapping[str, Any]], Optional[FreshnessPolicy]
     ] = default_freshness_policy_fn,
+    node_info_to_auto_materialize_policy_fn: Callable[
+        [Mapping[str, Any]], Optional[AutoMaterializePolicy]
+    ] = default_auto_materialize_policy_fn,
     partitions_def: Optional[PartitionsDefinition] = None,
     partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
 ) -> CacheableAssetsDefinition:
@@ -553,6 +600,12 @@ def load_assets_from_dbt_cloud_job(
             `dagster_freshness_policy={"maximum_lag_minutes": 60, "cron_schedule": "0 9 * * *"}`
             will result in that model being assigned
             `FreshnessPolicy(maximum_lag_minutes=60, cron_schedule="0 9 * * *")`
+        node_info_to_auto_materialize_policy_fn (Dict[str, Any] -> Optional[AutoMaterializePolicy]):
+            A function that takes a dictionary of dbt node info and optionally returns a AutoMaterializePolicy
+            that should be applied to this node. By default, AutoMaterializePolicies will be created from
+            config applied to dbt models, i.e.:
+            `dagster_auto_materialize_policy={"type": "lazy"}` will result in that model being assigned
+            `AutoMaterializePolicy.lazy()`
         node_info_to_definition_metadata_fn (Dict[str, Any] -> Optional[Dict[str, MetadataUserInput]]):
             A function that takes a dictionary of dbt node info and optionally returns a dictionary
             of metadata to be attached to the corresponding definition. This is added to the default
@@ -605,6 +658,7 @@ def load_assets_from_dbt_cloud_job(
         node_info_to_asset_key=node_info_to_asset_key,
         node_info_to_group_fn=node_info_to_group_fn,
         node_info_to_freshness_policy_fn=node_info_to_freshness_policy_fn,
+        node_info_to_auto_materialize_policy_fn=node_info_to_auto_materialize_policy_fn,
         partitions_def=partitions_def,
         partition_key_to_vars_fn=partition_key_to_vars_fn,
     )

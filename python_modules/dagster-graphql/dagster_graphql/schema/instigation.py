@@ -5,7 +5,11 @@ from typing import Optional, Union
 import dagster._check as check
 import graphene
 import pendulum
-from dagster._core.definitions.run_request import RunRequest
+from dagster._core.definitions.run_request import (
+    AddDynamicPartitionsRequest,
+    DeleteDynamicPartitionsRequest,
+    RunRequest,
+)
 from dagster._core.definitions.schedule_definition import ScheduleExecutionData
 from dagster._core.definitions.selector import ScheduleSelector, SensorSelector
 from dagster._core.definitions.sensor_definition import SensorExecutionData
@@ -125,6 +129,37 @@ class GrapheneInstigationEventConnection(graphene.ObjectType):
     events = non_null_list(GrapheneInstigationEvent)
     cursor = graphene.NonNull(graphene.String)
     hasMore = graphene.NonNull(graphene.Boolean)
+
+
+class GrapheneDynamicPartitionsRequestType(graphene.Enum):
+    ADD_PARTITIONS = "ADD_PARTITIONS"
+    DELETE_PARTITIONS = "DELETE_PARTITIONS"
+
+    class Meta:
+        name = "DynamicPartitionsRequestType"
+
+
+class GrapheneDynamicPartitionsRequest(graphene.ObjectType):
+    partitionKeys = graphene.List(graphene.NonNull(graphene.String))
+    partitionsDefName = graphene.NonNull(graphene.String)
+    type = graphene.NonNull(GrapheneDynamicPartitionsRequestType)
+
+    class Meta:
+        name = "DynamicPartitionRequest"
+
+    def __init__(
+        self,
+        dynamic_partition_request: Union[
+            AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest
+        ],
+    ):
+        super().__init__(
+            type=GrapheneDynamicPartitionsRequestType.ADD_PARTITIONS
+            if isinstance(dynamic_partition_request, AddDynamicPartitionsRequest)
+            else GrapheneDynamicPartitionsRequestType.DELETE_PARTITIONS,
+            partitionKeys=dynamic_partition_request.partition_keys,
+            partitionsDefName=dynamic_partition_request.partitions_def_name,
+        )
 
 
 class GrapheneInstigationTick(graphene.ObjectType):
@@ -267,10 +302,13 @@ class GrapheneDryRunInstigationTick(graphene.ObjectType):
 
 
 class GrapheneTickEvaluation(graphene.ObjectType):
+    dynamicPartitionsRequests = graphene.List(graphene.NonNull(GrapheneDynamicPartitionsRequest))
     runRequests = graphene.List(lambda: graphene.NonNull(GrapheneRunRequest))
     skipReason = graphene.String()
     error = graphene.Field(GraphenePythonError)
     cursor = graphene.String()
+
+    _execution_data: Union[ScheduleExecutionData, SensorExecutionData, SerializableErrorInfo]
 
     class Meta:
         name = "TickEvaluation"
@@ -291,13 +329,25 @@ class GrapheneTickEvaluation(graphene.ObjectType):
             if not isinstance(execution_data, SerializableErrorInfo)
             else None
         )
+        self._execution_data = execution_data
         self._run_requests = (
             execution_data.run_requests
             if not isinstance(execution_data, SerializableErrorInfo)
             else None
         )
+        dynamicPartitionsRequests = None
+        if isinstance(execution_data, SensorExecutionData):
+            dynamicPartitionsRequests = [
+                GrapheneDynamicPartitionsRequest(request)
+                for request in execution_data.dynamic_partitions_requests
+            ]
         cursor = execution_data.cursor if isinstance(execution_data, SensorExecutionData) else None
-        super().__init__(skipReason=skip_reason, error=error, cursor=cursor)
+        super().__init__(
+            skipReason=skip_reason,
+            error=error,
+            cursor=cursor,
+            dynamicPartitionsRequests=dynamicPartitionsRequests,
+        )
 
     def resolve_runRequests(self, _graphene_info: ResolveInfo):
         if not self._run_requests:

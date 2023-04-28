@@ -1,107 +1,80 @@
 import io
 import pickle
-from typing import Any, Sequence, Union
+from typing import Any, Dict, Optional, Union
 
 from dagster import (
     ConfigurableIOManager,
     InputContext,
-    MemoizableIOManager,
     MetadataValue,
     OutputContext,
     ResourceDependency,
     _check as check,
     io_manager,
 )
+from dagster._core.storage.upath_io_manager import UPathIOManager
 from dagster._utils import PICKLE_PROTOCOL
 from dagster._utils.cached_method import cached_method
 from pydantic import Field
+from upath import UPath
 
 from .resources import S3Resource
 
 
-class PickledObjectS3IOManager(MemoizableIOManager):
+class PickledObjectS3IOManager(UPathIOManager):
     def __init__(
         self,
-        s3_bucket,
-        s3_session,
-        s3_prefix=None,
+        s3_bucket: str,
+        s3_session: Any,
+        s3_prefix: Optional[str] = None,
     ):
         self.bucket = check.str_param(s3_bucket, "s3_bucket")
-        self.s3_prefix = check.opt_str_param(s3_prefix, "s3_prefix")
+        check.opt_str_param(s3_prefix, "s3_prefix")
         self.s3 = s3_session
-        self.s3.list_objects(Bucket=self.bucket, Prefix=self.s3_prefix, MaxKeys=1)
+        self.s3.list_objects(Bucket=s3_bucket, Prefix=s3_prefix, MaxKeys=1)
+        base_path = UPath(s3_prefix) if s3_prefix else None
+        super().__init__(base_path=base_path)
 
-    def _get_path(self, context: Union[InputContext, OutputContext]) -> str:
-        path: Sequence[str]
-        if context.has_asset_key:
-            path = context.get_asset_identifier()
-        else:
-            path = ["storage", *context.get_identifier()]
+    def load_from_path(self, context: InputContext, path: UPath) -> Any:
+        return pickle.loads(self.s3.get_object(Bucket=self.bucket, Key=str(path))["Body"].read())
 
-        return "/".join([self.s3_prefix, *path])
-
-    def has_output(self, context):
-        key = self._get_path(context)
-        return self._has_object(key)
-
-    def _rm_object(self, key):
-        check.str_param(key, "key")
-        check.param_invariant(len(key) > 0, "key")
-
-        # delete_object wont fail even if the item has been deleted.
-        self.s3.delete_object(Bucket=self.bucket, Key=key)
-
-    def _has_object(self, key):
-        check.str_param(key, "key")
-        check.param_invariant(len(key) > 0, "key")
-
-        found_object = False
-
-        try:
-            self.s3.get_object(Bucket=self.bucket, Key=key)
-            found_object = True
-        except self.s3.exceptions.NoSuchKey:
-            found_object = False
-
-        return found_object
-
-    def _uri_for_key(self, key):
-        check.str_param(key, "key")
-        return "s3://" + self.bucket + "/" + f"{key}"
-
-    def load_input(self, context):
-        if context.dagster_type.typing_type == type(None):
-            return None
-
-        key = self._get_path(context)
-        context.log.debug(f"Loading S3 object from: {self._uri_for_key(key)}")
-        obj = pickle.loads(self.s3.get_object(Bucket=self.bucket, Key=key)["Body"].read())
-
-        return obj
-
-    def handle_output(self, context, obj):
-        if context.dagster_type.typing_type == type(None):
-            check.invariant(
-                obj is None,
-                (
-                    "Output had Nothing type or 'None' annotation, but handle_output received"
-                    f" value that was not None and was of type {type(obj)}."
-                ),
-            )
-            return None
-
-        key = self._get_path(context)
-        path = self._uri_for_key(key)
-        context.log.debug(f"Writing S3 object at: {path}")
-
-        if self._has_object(key):
-            context.log.warning(f"Removing existing S3 key: {key}")
-            self._rm_object(key)
+    def dump_to_path(self, context: OutputContext, obj: Any, path: UPath) -> None:
+        if self.path_exists(path):
+            context.log.warning(f"Removing existing S3 object: {path}")
+            self.unlink(path)
 
         pickled_obj = pickle.dumps(obj, PICKLE_PROTOCOL)
         pickled_obj_bytes = io.BytesIO(pickled_obj)
-        self.s3.upload_fileobj(pickled_obj_bytes, self.bucket, key)
-        context.add_output_metadata({"uri": MetadataValue.path(path)})
+        self.s3.upload_fileobj(pickled_obj_bytes, self.bucket, str(path))
+
+    def path_exists(self, path: UPath) -> bool:
+        try:
+            self.s3.get_object(Bucket=self.bucket, Key=str(path))
+        except self.s3.exceptions.NoSuchKey:
+            return False
+        return True
+
+    def get_loading_input_log_message(self, path: UPath) -> str:
+        return f"Loading S3 object from: {self._uri_for_path(path)}"
+
+    def get_writing_output_log_message(self, path: UPath) -> str:
+        return f"Writing S3 object at: {self._uri_for_path(path)}"
+
+    def unlink(self, path: UPath) -> None:
+        self.s3.delete_object(Bucket=self.bucket, Key=str(path))
+
+    def make_directory(self, path: UPath) -> None:
+        # It is not necessary to create directories in S3
+        return None
+
+    def get_metadata(self, context: OutputContext, obj: Any) -> Dict[str, MetadataValue]:
+        path = self._get_path(context)
+        return {"uri": MetadataValue.path(self._uri_for_path(path))}
+
+    def get_op_output_relative_path(self, context: Union[InputContext, OutputContext]) -> UPath:
+        return UPath("storage", super().get_op_output_relative_path(context))
+
+    def _uri_for_path(self, path: UPath) -> str:
+        return f"s3://{self.bucket}/{path}"
 
 
 class ConfigurablePickledObjectS3IOManager(ConfigurableIOManager):

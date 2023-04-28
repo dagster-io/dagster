@@ -15,6 +15,16 @@ export type AssetNodeDefinitionFragment = {
   isPartitioned: boolean;
   isObservable: boolean;
   isSource: boolean;
+  autoMaterializePolicy: {
+    __typename: 'AutoMaterializePolicy';
+    policyType: Types.AutoMaterializePolicyType;
+  } | null;
+  freshnessPolicy: {
+    __typename: 'FreshnessPolicy';
+    maximumLagMinutes: number;
+    cronSchedule: string | null;
+    cronScheduleTimezone: string | null;
+  } | null;
   partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
   repository: {
     __typename: 'Repository';

@@ -6,10 +6,10 @@ from dagster._core.definitions import (
     GraphDefinition,
     InputDefinition,
     InputMapping,
+    JobDefinition,
     OpDefinition,
     OutputDefinition,
     OutputMapping,
-    PipelineDefinition,
 )
 from dagster._core.definitions.metadata import (
     MetadataFieldSerializer,
@@ -346,11 +346,11 @@ class NodeDefsSnapshot(
         )
 
 
-def build_node_defs_snapshot(pipeline_def: PipelineDefinition) -> NodeDefsSnapshot:
-    check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
+def build_node_defs_snapshot(job_def: JobDefinition) -> NodeDefsSnapshot:
+    check.inst_param(job_def, "job_def", JobDefinition)
     op_def_snaps = []
     graph_def_snaps = []
-    for node_def in pipeline_def.all_node_defs:
+    for node_def in job_def.all_node_defs:
         if isinstance(node_def, OpDefinition):
             op_def_snaps.append(build_op_def_snap(node_def))
         elif isinstance(node_def, GraphDefinition):

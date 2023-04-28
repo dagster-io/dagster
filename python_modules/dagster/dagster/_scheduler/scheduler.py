@@ -14,12 +14,12 @@ import pendulum
 import dagster._check as check
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
-from dagster._core.definitions.selector import PipelineSelector
+from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.definitions.utils import validate_tags
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.host_representation import ExternalSchedule
 from dagster._core.host_representation.code_location import CodeLocation
-from dagster._core.host_representation.external import ExternalPipeline
+from dagster._core.host_representation.external import ExternalJob
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler.instigation import (
     InstigatorState,
@@ -627,14 +627,14 @@ def _schedule_runs_at_time(
         else:
             run_request = raw_run_request
 
-        pipeline_selector = PipelineSelector(
+        pipeline_selector = JobSubsetSelector(
             location_name=schedule_origin.external_repository_origin.code_location_origin.location_name,
             repository_name=schedule_origin.external_repository_origin.repository_name,
-            pipeline_name=external_schedule.pipeline_name,
+            job_name=external_schedule.job_name,
             solid_selection=external_schedule.solid_selection,
             asset_selection=run_request.asset_selection,
         )
-        external_pipeline = code_location.get_external_pipeline(pipeline_selector)
+        external_job = code_location.get_external_job(pipeline_selector)
 
         run = _get_existing_run_for_request(instance, external_schedule, schedule_time, run_request)
         if run:
@@ -661,7 +661,7 @@ def _schedule_runs_at_time(
                 schedule_time,
                 code_location,
                 external_schedule,
-                external_pipeline,
+                external_job,
                 run_request,
             )
 
@@ -706,12 +706,12 @@ def _get_existing_run_for_request(
     matching_runs = []
     for run in existing_runs:
         # if the run doesn't have an origin consider it a match
-        if run.external_pipeline_origin is None:
+        if run.external_job_origin is None:
             matching_runs.append(run)
         # otherwise prevent the same named schedule (with the same execution time) across repos from effecting each other
         elif (
             external_schedule.get_external_origin().external_repository_origin.get_selector_id()
-            == run.external_pipeline_origin.external_repository_origin.get_selector_id()
+            == run.external_job_origin.external_repository_origin.get_selector_id()
         ):
             matching_runs.append(run)
 
@@ -726,7 +726,7 @@ def _create_scheduler_run(
     schedule_time: datetime.datetime,
     code_location: CodeLocation,
     external_schedule: ExternalSchedule,
-    external_pipeline: ExternalPipeline,
+    external_pipeline: ExternalJob,
     run_request: RunRequest,
 ) -> DagsterRun:
     from dagster._daemon.daemon import get_telemetry_daemon_session_id
@@ -737,7 +737,6 @@ def _create_scheduler_run(
     external_execution_plan = code_location.get_external_execution_plan(
         external_pipeline,
         run_config,
-        check.not_none(external_schedule.mode),
         step_keys_to_execute=None,
         known_state=None,
     )
@@ -764,10 +763,9 @@ def _create_scheduler_run(
     )
 
     return instance.create_run(
-        pipeline_name=external_schedule.pipeline_name,
+        job_name=external_schedule.job_name,
         run_id=None,
         run_config=run_config,
-        mode=external_schedule.mode,
         solids_to_execute=external_pipeline.solids_to_execute,
         step_keys_to_execute=None,
         solid_selection=external_pipeline.solid_selection,
@@ -775,11 +773,11 @@ def _create_scheduler_run(
         root_run_id=None,
         parent_run_id=None,
         tags=tags,
-        pipeline_snapshot=external_pipeline.pipeline_snapshot,
+        job_snapshot=external_pipeline.job_snapshot,
         execution_plan_snapshot=execution_plan_snapshot,
-        parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
-        external_pipeline_origin=external_pipeline.get_external_origin(),
-        pipeline_code_origin=external_pipeline.get_python_origin(),
+        parent_job_snapshot=external_pipeline.parent_job_snapshot,
+        external_job_origin=external_pipeline.get_external_origin(),
+        job_code_origin=external_pipeline.get_python_origin(),
         asset_selection=frozenset(run_request.asset_selection)
         if run_request.asset_selection
         else None,

@@ -193,7 +193,7 @@ def test_snapshot_0_7_6_pre_add_pipeline_snapshot():
         run = instance.get_run_by_id(run_id)
 
         assert run.run_id == run_id
-        assert run.pipeline_snapshot_id is None
+        assert run.job_snapshot_id is None
 
         result = noop_job.execute_in_process(instance=instance)
 
@@ -206,7 +206,7 @@ def test_snapshot_0_7_6_pre_add_pipeline_snapshot():
 
         new_run = instance.get_run_by_id(new_run_id)
 
-        assert new_run.pipeline_snapshot_id
+        assert new_run.job_snapshot_id
 
 
 def test_downgrade_and_upgrade():
@@ -321,14 +321,14 @@ def test_mode_column_migration():
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
         assert "mode" not in set(get_sqlite3_columns(db_path, "runs"))
         assert instance.get_run_records()
-        assert instance.create_run_for_pipeline(_test)
+        assert instance.create_run_for_job(_test)
 
         instance.upgrade()
 
         # Make sure the schema is migrated
         assert "mode" in set(get_sqlite3_columns(db_path, "runs"))
         assert instance.get_run_records()
-        assert instance.create_run_for_pipeline(_test)
+        assert instance.create_run_for_job(_test)
 
         instance._run_storage._alembic_downgrade(rev="72686963a802")
 
@@ -545,7 +545,7 @@ def test_op_handle_node_handle():
 
 def test_pipeline_run_dagster_run():
     # serialize in current code
-    test_run = DagsterRun(pipeline_name="test")
+    test_run = DagsterRun(job_name="test")
     test_str = serialize_value(test_run)
 
     # deserialize in "legacy" code
@@ -572,7 +572,7 @@ def test_pipeline_run_dagster_run():
 
     result = deserialize_value(test_str, whitelist_map=legacy_env)
     assert isinstance(result, PipelineRun)
-    assert result.pipeline_name == test_run.pipeline_name
+    assert result.pipeline_name == test_run.job_name
 
 
 def test_pipeline_run_status_dagster_run_status():
@@ -610,14 +610,14 @@ def test_start_time_end_time():
         assert "start_time" not in set(get_sqlite3_columns(db_path, "runs"))
         assert "end_time" not in set(get_sqlite3_columns(db_path, "runs"))
         assert instance.get_run_records()
-        assert instance.create_run_for_pipeline(_test)
+        assert instance.create_run_for_job(_test)
 
         instance.upgrade()
 
         # Make sure the schema is migrated
         assert "start_time" in set(get_sqlite3_columns(db_path, "runs"))
         assert instance.get_run_records()
-        assert instance.create_run_for_pipeline(_test)
+        assert instance.create_run_for_job(_test)
 
         instance._run_storage._alembic_downgrade(rev="7f2b1a4ca7a5")
 
@@ -634,7 +634,7 @@ def test_external_job_origin_instigator_origin():
             namedtuple("_ExternalJobOrigin", "external_repository_origin job_name")
         ):
             def get_id(self):
-                return create_snapshot_id(self)
+                return create_snapshot_id(self, legacy_env)
 
         @_whitelist_for_serdes(legacy_env)
         class ExternalRepositoryOrigin(

@@ -22,7 +22,7 @@ from dagster import (
     success_hook,
 )
 from dagster._core.definitions.events import HookExecutionResult
-from dagster._core.definitions.pipeline_base import InMemoryPipeline
+from dagster._core.definitions.pipeline_base import InMemoryJob
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.api import (
@@ -206,8 +206,8 @@ def test_retry_deferral():
         job_def = define_retry_limit_job()
         events = execute_plan(
             create_execution_plan(job_def),
-            InMemoryPipeline(job_def),
-            dagster_run=DagsterRun(pipeline_name="retry_limits", run_id="42"),
+            InMemoryJob(job_def),
+            dagster_run=DagsterRun(job_name="retry_limits", run_id="42"),
             retry_mode=RetryMode.DEFERRED,
             instance=instance,
         )
@@ -248,9 +248,7 @@ def test_step_retry_fixed_wait(environment):
             env = dict(environment)
             env["ops"] = {"fail_first_and_wait": {"config": tempdir}}
 
-            dagster_run = instance.create_run_for_pipeline(
-                define_retry_wait_fixed_job(), run_config=env
-            )
+            dagster_run = instance.create_run_for_job(define_retry_wait_fixed_job(), run_config=env)
 
             event_iter = execute_run_iterator(
                 reconstructable(define_retry_wait_fixed_job),
@@ -265,7 +263,7 @@ def test_step_retry_fixed_wait(environment):
                     start_wait = time.time()
                 if event.is_step_restarted:
                     end_wait = time.time()
-                if event.is_pipeline_success:
+                if event.is_job_success:
                     success = True
 
             assert success

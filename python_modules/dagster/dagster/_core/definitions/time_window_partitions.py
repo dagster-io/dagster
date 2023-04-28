@@ -32,10 +32,12 @@ from dagster._utils.schedules import (
     reverse_cron_string_iterator,
 )
 
-from ..errors import DagsterInvalidDefinitionError, DagsterInvalidDeserializationVersionError
+from ..errors import (
+    DagsterInvalidDefinitionError,
+    DagsterInvalidDeserializationVersionError,
+)
 from .partition import (
     DEFAULT_DATE_FORMAT,
-    Partition,
     PartitionedConfig,
     PartitionsDefinition,
     PartitionsSubset,
@@ -58,7 +60,7 @@ class TimeWindow(NamedTuple):
 
 
 class TimeWindowPartitionsDefinition(
-    PartitionsDefinition[TimeWindow],
+    PartitionsDefinition,
     NamedTuple(
         "_TimeWindowPartitionsDefinition",
         [
@@ -125,11 +127,6 @@ class TimeWindowPartitionsDefinition(
                     "hour_offset, and day_offset can't also be provided"
                 ),
             )
-            if not is_valid_cron_schedule(cron_schedule):
-                raise DagsterInvalidDefinitionError(
-                    f"Found invalid cron schedule '{cron_schedule}' for a"
-                    " TimeWindowPartitionsDefinition."
-                )
         else:
             if schedule_type is None:
                 check.failed("One of schedule_type and cron_schedule must be provided")
@@ -139,6 +136,12 @@ class TimeWindowPartitionsDefinition(
                 minute_offset=minute_offset or 0,
                 hour_offset=hour_offset or 0,
                 day_offset=day_offset or 0,
+            )
+
+        if not is_valid_cron_schedule(cron_schedule):
+            raise DagsterInvalidDefinitionError(
+                f"Found invalid cron schedule '{cron_schedule}' for a"
+                " TimeWindowPartitionsDefinition."
             )
 
         return super(TimeWindowPartitionsDefinition, cls).__new__(
@@ -216,23 +219,21 @@ class TimeWindowPartitionsDefinition(
 
         return partition_keys
 
-    def get_partitions(
+    def get_partition_keys(
         self,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> Sequence[Partition[TimeWindow]]:
+    ) -> Sequence[str]:
         current_timestamp = self.get_current_timestamp(current_time=current_time)
 
         partitions_past_current_time = 0
-        partitions: List[Partition[TimeWindow]] = []
+        partition_keys: List[str] = []
         for time_window in self._iterate_time_windows(self.start):
             if (
                 time_window.end.timestamp() <= current_timestamp
                 or partitions_past_current_time < self.end_offset
             ):
-                partitions.append(
-                    Partition(value=time_window, name=time_window.start.strftime(self.fmt))
-                )
+                partition_keys.append(time_window.start.strftime(self.fmt))
 
                 if time_window.end.timestamp() > current_timestamp:
                     partitions_past_current_time += 1
@@ -240,9 +241,32 @@ class TimeWindowPartitionsDefinition(
                 break
 
         if self.end_offset < 0:
-            partitions = partitions[: self.end_offset]
+            partition_keys = partition_keys[: self.end_offset]
 
-        return partitions
+        return partition_keys
+
+    def _get_validated_time_window_for_partition_key(
+        self, partition_key: str, current_time: Optional[datetime] = None
+    ) -> Optional[TimeWindow]:
+        """Returns a TimeWindow for the given partition key if it is valid, otherwise returns None.
+        """
+        try:
+            time_window = self.time_window_for_partition_key(partition_key)
+        except ValueError:
+            return None
+
+        first_partition_window = self.get_first_partition_window(current_time=current_time)
+        last_partition_window = self.get_last_partition_window(current_time=current_time)
+        if (
+            first_partition_window is None
+            or last_partition_window is None
+            or time_window.start < first_partition_window.start
+            or time_window.start > last_partition_window.start
+            or time_window.start.strftime(self.fmt) != partition_key
+        ):
+            return None
+
+        return time_window
 
     def __str__(self) -> str:
         schedule_str = (
@@ -713,22 +737,7 @@ class TimeWindowPartitionsDefinition(
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> bool:
-        try:
-            time_window = self.time_window_for_partition_key(partition_key)
-        except ValueError:
-            return False
-
-        first_partition_window = self.get_first_partition_window(current_time=current_time)
-        last_partition_window = self.get_last_partition_window(current_time=current_time)
-        if (
-            first_partition_window is None
-            or last_partition_window is None
-            or time_window.start < first_partition_window.start
-            or time_window.start > last_partition_window.start
-        ):
-            return False
-
-        return time_window.start.strftime(self.fmt) == partition_key
+        return bool(self._get_validated_time_window_for_partition_key(partition_key, current_time))
 
 
 class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):
@@ -786,13 +795,28 @@ class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):
         )
 
 
+def wrap_time_window_run_config_fn(
+    run_config_fn: Optional[Callable[[datetime, datetime], Mapping[str, Any]]],
+    partitions_def: TimeWindowPartitionsDefinition,
+) -> Callable[[str], Mapping[str, Any]]:
+    def _run_config_wrapper(key: str) -> Mapping[str, Any]:
+        if not run_config_fn:
+            return {}
+        time_window = partitions_def.time_window_for_partition_key(key)
+        return run_config_fn(time_window.start, time_window.end)
+
+    return _run_config_wrapper
+
+
 def wrap_time_window_tags_fn(
-    tags_fn: Optional[Callable[[datetime, datetime], Mapping[str, str]]]
-) -> Callable[[Partition], Mapping[str, str]]:
-    def _tag_wrapper(partition: Partition) -> Mapping[str, str]:
+    tags_fn: Optional[Callable[[datetime, datetime], Mapping[str, str]]],
+    partitions_def: TimeWindowPartitionsDefinition,
+) -> Callable[[str], Mapping[str, str]]:
+    def _tag_wrapper(key: str) -> Mapping[str, str]:
         if not tags_fn:
             return {}
-        return tags_fn(cast(datetime, partition.value[0]), cast(datetime, partition.value[1]))
+        time_window = partitions_def.time_window_for_partition_key(key)
+        return tags_fn(time_window.start, time_window.end)
 
     return _tag_wrapper
 
@@ -805,7 +829,10 @@ def daily_partitioned_config(
     fmt: Optional[str] = None,
     end_offset: int = 0,
     tags_for_partition_fn: Optional[Callable[[datetime, datetime], Mapping[str, str]]] = None,
-) -> Callable[[Callable[[datetime, datetime], Mapping[str, Any]]], PartitionedConfig]:
+) -> Callable[
+    [Callable[[datetime, datetime], Mapping[str, Any]]],
+    PartitionedConfig[DailyPartitionsDefinition],
+]:
     """Defines run config over a set of daily partitions.
 
     The decorated function should accept a start datetime and end datetime, which represent the bounds
@@ -846,23 +873,27 @@ def daily_partitioned_config(
         # creates partitions (2022-03-12-16:15, 2022-03-13-16:15), (2022-03-13-16:15, 2022-03-14-16:15), ...
     """
 
-    def inner(fn: Callable[[datetime, datetime], Mapping[str, Any]]) -> PartitionedConfig:
+    def inner(
+        fn: Callable[[datetime, datetime], Mapping[str, Any]]
+    ) -> PartitionedConfig[DailyPartitionsDefinition]:
         check.callable_param(fn, "fn")
 
+        partitions_def = DailyPartitionsDefinition(
+            start_date=start_date,
+            minute_offset=minute_offset,
+            hour_offset=hour_offset,
+            timezone=timezone,
+            fmt=fmt,
+            end_offset=end_offset,
+        )
+
         return PartitionedConfig(
-            run_config_for_partition_fn=lambda partition: fn(
-                partition.value[0], partition.value[1]
-            ),
-            partitions_def=DailyPartitionsDefinition(
-                start_date=start_date,
-                minute_offset=minute_offset,
-                hour_offset=hour_offset,
-                timezone=timezone,
-                fmt=fmt,
-                end_offset=end_offset,
-            ),
+            run_config_for_partition_key_fn=wrap_time_window_run_config_fn(fn, partitions_def),
+            partitions_def=partitions_def,
             decorated_fn=fn,
-            tags_for_partition_fn=wrap_time_window_tags_fn(tags_for_partition_fn),
+            tags_for_partition_key_fn=wrap_time_window_tags_fn(
+                tags_for_partition_fn, partitions_def
+            ),
         )
 
     return inner
@@ -927,7 +958,10 @@ def hourly_partitioned_config(
     fmt: Optional[str] = None,
     end_offset: int = 0,
     tags_for_partition_fn: Optional[Callable[[datetime, datetime], Mapping[str, str]]] = None,
-) -> Callable[[Callable[[datetime, datetime], Mapping[str, Any]]], PartitionedConfig]:
+) -> Callable[
+    [Callable[[datetime, datetime], Mapping[str, Any]]],
+    PartitionedConfig[HourlyPartitionsDefinition],
+]:
     """Defines run config over a set of hourly partitions.
 
     The decorated function should accept a start datetime and end datetime, which represent the date
@@ -967,22 +1001,25 @@ def hourly_partitioned_config(
         # creates partitions (2022-03-12-00:15, 2022-03-12-01:15), (2022-03-12-01:15, 2022-03-12-02:15), ...
     """
 
-    def inner(fn: Callable[[datetime, datetime], Mapping[str, Any]]) -> PartitionedConfig:
+    def inner(
+        fn: Callable[[datetime, datetime], Mapping[str, Any]]
+    ) -> PartitionedConfig[HourlyPartitionsDefinition]:
         check.callable_param(fn, "fn")
 
+        partitions_def = HourlyPartitionsDefinition(
+            start_date=start_date,
+            minute_offset=minute_offset,
+            timezone=timezone,
+            fmt=fmt,
+            end_offset=end_offset,
+        )
         return PartitionedConfig(
-            run_config_for_partition_fn=lambda partition: fn(
-                partition.value[0], partition.value[1]
-            ),
-            partitions_def=HourlyPartitionsDefinition(
-                start_date=start_date,
-                minute_offset=minute_offset,
-                timezone=timezone,
-                fmt=fmt,
-                end_offset=end_offset,
-            ),
+            run_config_for_partition_key_fn=wrap_time_window_run_config_fn(fn, partitions_def),
+            partitions_def=partitions_def,
             decorated_fn=fn,
-            tags_for_partition_fn=wrap_time_window_tags_fn(tags_for_partition_fn),
+            tags_for_partition_key_fn=wrap_time_window_tags_fn(
+                tags_for_partition_fn, partitions_def
+            ),
         )
 
     return inner
@@ -1057,7 +1094,10 @@ def monthly_partitioned_config(
     fmt: Optional[str] = None,
     end_offset: int = 0,
     tags_for_partition_fn: Optional[Callable[[datetime, datetime], Mapping[str, str]]] = None,
-) -> Callable[[Callable[[datetime, datetime], Mapping[str, Any]]], PartitionedConfig]:
+) -> Callable[
+    [Callable[[datetime, datetime], Mapping[str, Any]]],
+    PartitionedConfig[MonthlyPartitionsDefinition],
+]:
     """Defines run config over a set of monthly partitions.
 
     The decorated function should accept a start datetime and end datetime, which represent the date
@@ -1101,24 +1141,28 @@ def monthly_partitioned_config(
         # creates partitions (2022-04-05-03:15, 2022-05-05-03:15), (2022-05-05-03:15, 2022-06-05-03:15), ...
     """
 
-    def inner(fn: Callable[[datetime, datetime], Mapping[str, Any]]) -> PartitionedConfig:
+    def inner(
+        fn: Callable[[datetime, datetime], Mapping[str, Any]]
+    ) -> PartitionedConfig[MonthlyPartitionsDefinition]:
         check.callable_param(fn, "fn")
 
+        partitions_def = MonthlyPartitionsDefinition(
+            start_date=start_date,
+            minute_offset=minute_offset,
+            hour_offset=hour_offset,
+            day_offset=day_offset,
+            timezone=timezone,
+            fmt=fmt,
+            end_offset=end_offset,
+        )
+
         return PartitionedConfig(
-            run_config_for_partition_fn=lambda partition: fn(
-                partition.value[0], partition.value[1]
-            ),
-            partitions_def=MonthlyPartitionsDefinition(
-                start_date=start_date,
-                minute_offset=minute_offset,
-                hour_offset=hour_offset,
-                day_offset=day_offset,
-                timezone=timezone,
-                fmt=fmt,
-                end_offset=end_offset,
-            ),
+            run_config_for_partition_key_fn=wrap_time_window_run_config_fn(fn, partitions_def),
+            partitions_def=partitions_def,
             decorated_fn=fn,
-            tags_for_partition_fn=wrap_time_window_tags_fn(tags_for_partition_fn),
+            tags_for_partition_key_fn=wrap_time_window_tags_fn(
+                tags_for_partition_fn, partitions_def
+            ),
         )
 
     return inner
@@ -1194,7 +1238,10 @@ def weekly_partitioned_config(
     fmt: Optional[str] = None,
     end_offset: int = 0,
     tags_for_partition_fn: Optional[Callable[[datetime, datetime], Mapping[str, str]]] = None,
-) -> Callable[[Callable[[datetime, datetime], Mapping[str, Any]]], PartitionedConfig]:
+) -> Callable[
+    [Callable[[datetime, datetime], Mapping[str, Any]]],
+    PartitionedConfig[WeeklyPartitionsDefinition],
+]:
     """Defines run config over a set of weekly partitions.
 
     The decorated function should accept a start datetime and end datetime, which represent the date
@@ -1239,24 +1286,27 @@ def weekly_partitioned_config(
         # creates partitions (2022-03-12-03:15, 2022-03-19-03:15), (2022-03-19-03:15, 2022-03-26-03:15), ...
     """
 
-    def inner(fn: Callable[[datetime, datetime], Mapping[str, Any]]) -> PartitionedConfig:
+    def inner(
+        fn: Callable[[datetime, datetime], Mapping[str, Any]]
+    ) -> PartitionedConfig[WeeklyPartitionsDefinition]:
         check.callable_param(fn, "fn")
 
+        partitions_def = WeeklyPartitionsDefinition(
+            start_date=start_date,
+            minute_offset=minute_offset,
+            hour_offset=hour_offset,
+            day_offset=day_offset,
+            timezone=timezone,
+            fmt=fmt,
+            end_offset=end_offset,
+        )
         return PartitionedConfig(
-            run_config_for_partition_fn=lambda partition: fn(
-                partition.value[0], partition.value[1]
-            ),
-            partitions_def=WeeklyPartitionsDefinition(
-                start_date=start_date,
-                minute_offset=minute_offset,
-                hour_offset=hour_offset,
-                day_offset=day_offset,
-                timezone=timezone,
-                fmt=fmt,
-                end_offset=end_offset,
-            ),
+            run_config_for_partition_key_fn=wrap_time_window_run_config_fn(fn, partitions_def),
+            partitions_def=partitions_def,
             decorated_fn=fn,
-            tags_for_partition_fn=wrap_time_window_tags_fn(tags_for_partition_fn),
+            tags_for_partition_key_fn=wrap_time_window_tags_fn(
+                tags_for_partition_fn, partitions_def
+            ),
         )
 
     return inner
@@ -1356,6 +1406,7 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
             partition_keys.extend(self._partitions_def.get_partition_keys_in_time_window(tw))
         return partition_keys
 
+    @public
     def get_partition_keys(self, current_time: Optional[datetime] = None) -> Iterable[str]:
         if self._included_partition_keys is None:
             return [

@@ -3,6 +3,7 @@ import {Page, Alert, ButtonLink, Colors, Group} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
+import {useFeatureFlags} from '../app/Flags';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
@@ -16,12 +17,18 @@ import {
 import {Loading} from '../ui/Loading';
 
 import {RunsPageHeader} from './RunsPageHeader';
+import {ScheduledRunListRoot as ScheduledRunListRootNew} from './ScheduledRunsListRoot.new';
 import {
   ScheduledRunsListQuery,
   ScheduledRunsListQueryVariables,
 } from './types/ScheduledRunListRoot.types';
 
 export const ScheduledRunListRoot = () => {
+  const {flagRunsTableFiltering} = useFeatureFlags();
+  return flagRunsTableFiltering ? <ScheduledRunListRootNew /> : <ScheduledRunListRootImpl />;
+};
+
+export const ScheduledRunListRootImpl = () => {
   useTrackPageView();
   useDocumentTitle('Runs | Scheduled');
 

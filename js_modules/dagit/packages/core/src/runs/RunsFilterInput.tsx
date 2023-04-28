@@ -9,10 +9,13 @@ import {
 import qs from 'qs';
 import * as React from 'react';
 
+import {useFeatureFlags} from '../app/Flags';
+import {__ASSET_JOB_PREFIX} from '../asset-graph/Utils';
 import {RunsFilter, RunStatus} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {DagsterRepoOption, useRepositoryOptions} from '../workspace/WorkspaceContext';
 
+import {useRunsFilterInput as useRunsFilterInputNew} from './RunsFilterInputNew';
 import {
   RunTagKeysQuery,
   RunTagValuesQuery,
@@ -25,7 +28,16 @@ type RunTags = Array<{
   values: Array<string>;
 }>;
 
-export type RunFilterTokenType = 'id' | 'status' | 'pipeline' | 'job' | 'snapshotId' | 'tag';
+export type RunFilterTokenType =
+  | 'id'
+  | 'status'
+  | 'pipeline'
+  | 'job'
+  | 'snapshotId'
+  | 'tag'
+  | 'backfill'
+  | 'created_date_before'
+  | 'created_date_after';
 
 export type RunFilterToken = {
   token?: RunFilterTokenType;
@@ -182,18 +194,31 @@ function searchSuggestionsForRuns(
   return suggestions;
 }
 
-interface RunsFilterInputProps {
+export interface RunsFilterInputProps {
   loading?: boolean;
   tokens: RunFilterToken[];
   onChange: (tokens: RunFilterToken[]) => void;
   enabledFilters?: RunFilterTokenType[];
 }
 
-export const RunsFilterInput: React.FC<RunsFilterInputProps> = ({
-  loading,
+export const RunsFilterInput = (props: RunsFilterInputProps) => {
+  const {flagRunsTableFiltering} = useFeatureFlags();
+  const {button, activeFiltersJsx} = useRunsFilterInputNew(props);
+  return flagRunsTableFiltering ? (
+    <div>
+      {button}
+      {activeFiltersJsx}
+    </div>
+  ) : (
+    <RunsFilterInputImpl {...props} />
+  );
+};
+
+const RunsFilterInputImpl: React.FC<RunsFilterInputProps> = ({
   tokens,
   onChange,
   enabledFilters,
+  loading,
 }) => {
   const {options} = useRepositoryOptions();
   const [selectedTagKey, setSelectedTagKey] = React.useState<string | undefined>();
@@ -275,7 +300,7 @@ export const RunsFilterInput: React.FC<RunsFilterInputProps> = ({
   );
 };
 
-const RUN_TAG_KEYS_QUERY = gql`
+export const RUN_TAG_KEYS_QUERY = gql`
   query RunTagKeysQuery {
     runTagKeysOrError {
       ... on RunTagKeys {
@@ -285,7 +310,7 @@ const RUN_TAG_KEYS_QUERY = gql`
   }
 `;
 
-const RUN_TAG_VALUES_QUERY = gql`
+export const RUN_TAG_VALUES_QUERY = gql`
   query RunTagValuesQuery($tagKeys: [String!]!) {
     runTagsOrError(tagKeys: $tagKeys) {
       __typename

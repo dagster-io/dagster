@@ -20,6 +20,7 @@ import React from 'react';
 import {Link, useParams} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {showCustomAlert} from '../../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
 import {QueryRefreshCountdown, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
@@ -160,7 +161,7 @@ export const BackfillPage = () => {
               />
             }
           />
-          <Detail label="Status" detail={<StatusLabel status={backfill.status} />} />
+          <Detail label="Status" detail={<StatusLabel backfill={backfill} />} />
         </Box>
         <Table>
           <thead>
@@ -181,31 +182,33 @@ export const BackfillPage = () => {
             </tr>
           </thead>
           <tbody>
-            {backfill.assetBackfillData?.assetPartitionsStatusCounts.map((asset) => (
-              <tr key={asset.assetKey.path.join('/')}>
-                <td>
-                  <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
-                    <div>
-                      <a href={assetDetailsPathForKey(asset.assetKey)}>
-                        {asset.assetKey.path.join('/')}
-                      </a>
-                    </div>
-                    <div>
-                      <StatusBar
-                        targeted={asset.numPartitionsTargeted}
-                        requested={asset.numPartitionsRequested}
-                        completed={asset.numPartitionsCompleted}
-                        failed={asset.numPartitionsFailed}
-                      />
-                    </div>
-                  </Box>
-                </td>
-                <td>{asset.numPartitionsTargeted}</td>
-                <td>{asset.numPartitionsRequested}</td>
-                <td>{asset.numPartitionsCompleted}</td>
-                <td>{asset.numPartitionsFailed}</td>
-              </tr>
-            ))}
+            {backfill.assetBackfillData?.assetBackfillStatuses.map((asset) => {
+              return asset.__typename === 'AssetPartitionsStatusCounts' ? (
+                <tr key={asset.assetKey.path.join('/')}>
+                  <td>
+                    <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
+                      <div>
+                        <a href={assetDetailsPathForKey(asset.assetKey)}>
+                          {asset.assetKey.path.join('/')}
+                        </a>
+                      </div>
+                      <div>
+                        <StatusBar
+                          targeted={asset.numPartitionsTargeted}
+                          requested={asset.numPartitionsInProgress}
+                          completed={asset.numPartitionsMaterialized}
+                          failed={asset.numPartitionsFailed}
+                        />
+                      </div>
+                    </Box>
+                  </td>
+                  <td>{asset.numPartitionsTargeted}</td>
+                  <td>{asset.numPartitionsInProgress}</td>
+                  <td>{asset.numPartitionsMaterialized}</td>
+                  <td>{asset.numPartitionsFailed}</td>
+                </tr>
+              ) : null;
+            })}
           </tbody>
         </Table>
       </>
@@ -238,23 +241,31 @@ const Detail = ({label, detail}: {label: JSX.Element | string; detail: JSX.Eleme
   </Box>
 );
 
-const StatusLabel = ({status}: {status: BulkActionStatus}) => {
-  switch (status) {
+const StatusLabel = ({backfill}: {backfill: PartitionBackfillFragment}) => {
+  switch (backfill.status) {
+    case BulkActionStatus.REQUESTED:
+      return <Tag>In Progress</Tag>;
     case BulkActionStatus.CANCELED:
-      return <Tag intent="warning">Canceled</Tag>;
+    case BulkActionStatus.FAILED:
+      if (backfill.error) {
+        return (
+          <Box margin={{bottom: 12}}>
+            <TagButton
+              onClick={() =>
+                backfill.error &&
+                showCustomAlert({title: 'Error', body: <PythonErrorInfo error={backfill.error} />})
+              }
+            >
+              <Tag intent="danger">{backfill.status === 'FAILED' ? 'Failed' : 'Canceled'}</Tag>
+            </TagButton>
+          </Box>
+        );
+      }
+      break;
     case BulkActionStatus.COMPLETED:
       return <Tag intent="success">Completed</Tag>;
-    case BulkActionStatus.FAILED:
-      return <Tag intent="danger">Failed</Tag>;
-    case BulkActionStatus.REQUESTED:
-      return (
-        <Tag intent="primary" icon="spinner">
-          Requested
-        </Tag>
-      );
-    default:
-      return <Tag intent="warning">Incomplete</Tag>;
   }
+  return null;
 };
 
 function StatusBar({
@@ -325,20 +336,25 @@ export const BACKFILL_DETAILS_QUERY = gql`
     timestamp
     endTimestamp
     numPartitions
+    error {
+      ...PythonErrorFragment
+    }
     assetBackfillData {
       rootAssetTargetedRanges {
         start
         end
       }
       rootAssetTargetedPartitions
-      assetPartitionsStatusCounts {
-        assetKey {
-          path
+      assetBackfillStatuses {
+        ... on AssetPartitionsStatusCounts {
+          assetKey {
+            path
+          }
+          numPartitionsTargeted
+          numPartitionsInProgress
+          numPartitionsMaterialized
+          numPartitionsFailed
         }
-        numPartitionsTargeted
-        numPartitionsRequested
-        numPartitionsCompleted
-        numPartitionsFailed
       }
     }
   }
@@ -454,3 +470,15 @@ const formatDuration = (duration: number) => {
   }
   return result.trim();
 };
+
+const TagButton = styled.button`
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+
+  :focus {
+    outline: none;
+  }
+`;

@@ -23,17 +23,12 @@ setup(
         "dagster-pyspark",
         "dagster-slack",
         "dagster-postgres",
-        "dagster-duckdb",
-        "dagster-duckdb-pandas",
-        "dagster-duckdb-pyspark",
-        "dagster-snowflake",
-        "dagster-snowflake-pandas",
-        "dagster-snowflake-pyspark",
-        "dbt-core",
         "dbt-duckdb",
         "dbt-snowflake",
+        "duckdb!=0.3.3, <= 6.0.0",  # missing wheels
         "mock",
         # DataFrames were not written to Snowflake, causing errors
+        "pandas<1.4.0",
         "pyarrow>=4.0.0",
         "pyspark",
         "requests",
@@ -42,14 +37,8 @@ setup(
         "s3fs",
         "scipy",
         "scikit-learn",
+        "sqlalchemy!=1.4.42",  # workaround for https://github.com/snowflakedb/snowflake-sqlalchemy/issues/350
+        "snowflake-sqlalchemy",
     ],
-    extras_require={
-        "dev": ["dagit", "pytest"],
-        "tests": [
-            "mypy",
-            "pylint",
-            "pytest",
-            "snowflake-connector-python[secure-local-storage]==2.8.1",  # magic pin to force deps to resolve well
-        ],
-    },
+    extras_require={"dev": ["dagit", "pytest"], "tests": ["mypy", "pylint", "pytest"]},
 )

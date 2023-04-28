@@ -426,16 +426,16 @@ const RequestedPartitionStatusBar = ({all, requested}: {all: string[]; requested
   return <PartitionStatus small hideStatusTooltip partitionNames={all} health={health} />;
 };
 
-const BackfillStatusTag = ({
+export const BackfillStatusTag = ({
   backfill,
   counts,
 }: {
-  backfill: BackfillTableFragment;
+  backfill: Pick<BackfillTableFragment, 'status' | 'error' | 'partitionNames'>;
   counts: {[status: string]: number} | null;
 }) => {
   switch (backfill.status) {
     case BulkActionStatus.REQUESTED:
-      return <Tag>Requested</Tag>;
+      return <Tag>In Progress</Tag>;
     case BulkActionStatus.CANCELED:
     case BulkActionStatus.FAILED:
       return (

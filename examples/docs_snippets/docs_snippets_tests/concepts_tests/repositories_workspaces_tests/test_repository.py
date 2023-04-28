@@ -15,8 +15,7 @@ def test_jobs():
 
 def test_my_repository():
     assert my_repository
-    assert len(my_repository.get_all_pipelines()) == 4
+    assert len(my_repository.get_all_jobs()) == 4
     assert len(my_repository.schedule_defs) == 1
     assert len(my_repository.sensor_defs) == 1
-    assert len(my_repository.get_all_jobs()) == 4
     assert len(my_repository.get_top_level_resources()) == 0

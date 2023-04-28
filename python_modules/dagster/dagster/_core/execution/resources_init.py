@@ -16,7 +16,7 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._core.definitions.pipeline_definition import PipelineDefinition
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.resource_definition import (
     ResourceDefinition,
     ScopedResourcesBuilder,
@@ -136,7 +136,7 @@ def _core_resource_initialization_event_generator(
     instance: Optional[DagsterInstance],
     emit_persistent_events: Optional[bool],
 ):
-    pipeline_name = ""  # Must be initialized to a string to satisfy typechecker
+    job_name = ""  # Must be initialized to a string to satisfy typechecker
     contains_generator = False
     if emit_persistent_events:
         check.invariant(
@@ -146,21 +146,20 @@ def _core_resource_initialization_event_generator(
                 " provided"
             ),
         )
-        pipeline_name = cast(DagsterRun, dagster_run).pipeline_name
+        job_name = cast(DagsterRun, dagster_run).job_name
     resource_keys_to_init = check.opt_set_param(resource_keys_to_init, "resource_keys_to_init")
     resource_instances: Dict[str, "InitializedResource"] = {}
     resource_init_times = {}
     try:
         if emit_persistent_events and resource_keys_to_init:
             yield DagsterEvent.resource_init_start(
-                pipeline_name,
+                job_name,
                 cast(ExecutionPlan, execution_plan),
                 resource_log_manager,
                 resource_keys_to_init,
             )
 
         resource_dependencies = resolve_resource_dependencies(resource_defs)
-
         for level in toposort(resource_dependencies):
             for resource_name in level:
                 resource_def = resource_defs[resource_name]
@@ -197,7 +196,7 @@ def _core_resource_initialization_event_generator(
 
         if emit_persistent_events and resource_keys_to_init:
             yield DagsterEvent.resource_init_success(
-                pipeline_name,
+                job_name,
                 cast(ExecutionPlan, execution_plan),
                 resource_log_manager,
                 resource_instances,
@@ -215,7 +214,7 @@ def _core_resource_initialization_event_generator(
         # resource_keys_to_init cannot be empty
         if emit_persistent_events:
             yield DagsterEvent.resource_init_failure(
-                pipeline_name,
+                job_name,
                 cast(ExecutionPlan, execution_plan),
                 resource_log_manager,
                 resource_keys_to_init,
@@ -284,7 +283,7 @@ def resource_initialization_event_generator(
                     error = dagster_user_error
             if error and emit_persistent_events:
                 yield DagsterEvent.resource_teardown_failure(
-                    cast(DagsterRun, dagster_run).pipeline_name,
+                    cast(DagsterRun, dagster_run).job_name,
                     cast(ExecutionPlan, execution_plan),
                     resource_log_manager,
                     resource_keys_to_init,
@@ -360,7 +359,7 @@ def single_resource_event_generator(
 
 def get_required_resource_keys_to_init(
     execution_plan: ExecutionPlan,
-    pipeline_def: PipelineDefinition,
+    pipeline_def: JobDefinition,
     resolved_run_config: ResolvedRunConfig,
 ) -> AbstractSet[str]:
     resource_keys: Set[str] = set()
@@ -377,8 +376,9 @@ def get_required_resource_keys_to_init(
             get_required_resource_keys_for_step(pipeline_def, step, execution_plan)
         )
 
-    resource_defs = pipeline_def.get_mode_definition(resolved_run_config.mode).resource_defs
-    return frozenset(get_transitive_required_resource_keys(resource_keys, resource_defs))
+    return frozenset(
+        get_transitive_required_resource_keys(resource_keys, pipeline_def.resource_defs)
+    )
 
 
 def get_transitive_required_resource_keys(
@@ -398,7 +398,7 @@ def get_transitive_required_resource_keys(
 
 
 def get_required_resource_keys_for_step(
-    pipeline_def: PipelineDefinition, execution_step: IExecutionStep, execution_plan: ExecutionPlan
+    pipeline_def: JobDefinition, execution_step: IExecutionStep, execution_plan: ExecutionPlan
 ) -> AbstractSet[str]:
     resource_keys: Set[str] = set()
 

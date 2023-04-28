@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Sequence, Set, T
 from typing_extensions import Self
 
 import dagster._check as check
-from dagster._core.definitions.selector import PipelineSelector
+from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.errors import (
     DagsterCodeLocationLoadError,
     DagsterCodeLocationNotFoundError,
@@ -20,8 +20,8 @@ from dagster._core.host_representation import (
     CodeLocation,
     CodeLocationOrigin,
     ExternalExecutionPlan,
+    ExternalJob,
     ExternalPartitionSet,
-    ExternalPipeline,
     GrpcServerCodeLocation,
     RepositoryHandle,
 )
@@ -205,37 +205,35 @@ class BaseWorkspaceRequestContext(IWorkspace):
         self.process_context.reload_workspace()
         return self.process_context.create_request_context()
 
-    def has_external_job(self, selector: PipelineSelector) -> bool:
-        check.inst_param(selector, "selector", PipelineSelector)
+    def has_external_job(self, selector: JobSubsetSelector) -> bool:
+        check.inst_param(selector, "selector", JobSubsetSelector)
         if not self.has_code_location(selector.location_name):
             return False
 
         loc = self.get_code_location(selector.location_name)
         return loc.has_repository(selector.repository_name) and loc.get_repository(
             selector.repository_name
-        ).has_external_job(selector.pipeline_name)
+        ).has_external_job(selector.job_name)
 
-    def get_full_external_job(self, selector: PipelineSelector) -> ExternalPipeline:
+    def get_full_external_job(self, selector: JobSubsetSelector) -> ExternalJob:
         return (
             self.get_code_location(selector.location_name)
             .get_repository(selector.repository_name)
-            .get_full_external_job(selector.pipeline_name)
+            .get_full_external_job(selector.job_name)
         )
 
     def get_external_execution_plan(
         self,
-        external_pipeline: ExternalPipeline,
+        external_job: ExternalJob,
         run_config: Mapping[str, object],
-        mode: str,
         step_keys_to_execute: Optional[Sequence[str]],
         known_state: Optional[KnownExecutionState],
     ) -> ExternalExecutionPlan:
         return self.get_code_location(
-            external_pipeline.handle.location_name
+            external_job.handle.location_name
         ).get_external_execution_plan(
-            external_pipeline=external_pipeline,
+            external_job=external_job,
             run_config=run_config,
-            mode=mode,
             step_keys_to_execute=step_keys_to_execute,
             known_state=known_state,
             instance=self.instance,

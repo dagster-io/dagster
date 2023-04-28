@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Callable, Optional, Sequence, Union
 
 from dagster import DefaultSensorStatus
-from dagster._core.definitions import GraphDefinition, PipelineDefinition
+from dagster._core.definitions import GraphDefinition, JobDefinition
 from dagster._core.definitions.run_status_sensor_definition import (
     RunFailureSensorContext,
     run_failure_sensor,
@@ -38,7 +38,7 @@ def make_teams_on_run_failure_sensor(
     monitored_jobs: Optional[
         Sequence[
             Union[
-                PipelineDefinition,
+                JobDefinition,
                 GraphDefinition,
                 UnresolvedAssetJobDefinition,
                 "RepositorySelector",
@@ -64,7 +64,7 @@ def make_teams_on_run_failure_sensor(
             messages to include deeplinks to the failed run.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
-        monitored_jobs (Optional[List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition, RepositorySelector, JobSelector]]]):
+        monitored_jobs (Optional[List[Union[JobDefinition, GraphDefinition, UnresolvedAssetJobDefinition, RepositorySelector, JobSelector]]]):
             Jobs in the current repository that will be monitored by this sensor. Defaults to None,
             which means the alert will be sent when any job in the repository matches the requested
             run_status. To monitor jobs in external repositories, use RepositorySelector and JobSelector.

@@ -1,5 +1,7 @@
 import pytest
 from dagster import DagsterResourceFunctionError, DagsterTypeCheckDidNotPass, multiprocess_executor
+from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.events import DagsterEventType
 from dagster._core.storage.fs_io_manager import fs_io_manager
 from dagster._utils import file_relative_path
@@ -274,4 +276,12 @@ def test_retry_job(executor_def):
 
 
 def test_software_defined_assets_job():
-    assert software_defined_assets.build_job("all_assets").execute_in_process().success
+    assert (
+        Definitions(
+            assets=software_defined_assets,
+            jobs=[define_asset_job("all_assets")],
+        )
+        .get_job_def("all_assets")
+        .execute_in_process()
+        .success
+    )

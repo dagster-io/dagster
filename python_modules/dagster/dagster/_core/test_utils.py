@@ -39,7 +39,7 @@ from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.events import DagsterEvent
 from dagster._core.host_representation.origin import (
-    ExternalPipelineOrigin,
+    ExternalJobOrigin,
     InProcessCodeLocationOrigin,
 )
 from dagster._core.instance import DagsterInstance
@@ -50,7 +50,6 @@ from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, Run
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
-from dagster._legacy import ModeDefinition
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
 from dagster._seven.compat.pendulum import create_pendulum_time, mock_pendulum_timezone
@@ -96,7 +95,7 @@ def step_output_event_filter(pipe_iterator: Iterator[DagsterEvent]):
 
 
 def nesting_graph(depth: int, num_children: int, name: Optional[str] = None) -> GraphDefinition:
-    """Creates a pipeline of nested composite solids up to "depth" layers, with a fan-out of
+    """Creates a job of nested graphs up to "depth" layers, with a fan-out of
     num_children at each layer.
 
     Total number of solids will be num_children ^ depth
@@ -127,45 +126,43 @@ def nesting_graph(depth: int, num_children: int, name: Optional[str] = None) -> 
     return nested_graph
 
 
-TEST_PIPELINE_NAME = "_test_pipeline_"
+TEST_JOB_NAME = "_test_job_"
 
 
 def create_run_for_test(
     instance: DagsterInstance,
-    pipeline_name: str = TEST_PIPELINE_NAME,
+    job_name: str = TEST_JOB_NAME,
     run_id=None,
     run_config=None,
-    mode=None,
     solids_to_execute=None,
     step_keys_to_execute=None,
     status=None,
     tags=None,
     root_run_id=None,
     parent_run_id=None,
-    pipeline_snapshot=None,
+    job_snapshot=None,
     execution_plan_snapshot=None,
-    parent_pipeline_snapshot=None,
-    external_pipeline_origin=None,
-    pipeline_code_origin=None,
+    parent_job_snapshot=None,
+    external_job_origin=None,
+    job_code_origin=None,
     asset_selection=None,
     solid_selection=None,
 ):
     return instance.create_run(
-        pipeline_name=pipeline_name,
+        job_name=job_name,
         run_id=run_id,
         run_config=run_config,
-        mode=mode,
         solids_to_execute=solids_to_execute,
         step_keys_to_execute=step_keys_to_execute,
         status=status,
         tags=tags,
         root_run_id=root_run_id,
         parent_run_id=parent_run_id,
-        pipeline_snapshot=pipeline_snapshot,
+        job_snapshot=job_snapshot,
         execution_plan_snapshot=execution_plan_snapshot,
-        parent_pipeline_snapshot=parent_pipeline_snapshot,
-        external_pipeline_origin=external_pipeline_origin,
-        pipeline_code_origin=pipeline_code_origin,
+        parent_job_snapshot=parent_job_snapshot,
+        external_job_origin=external_job_origin,
+        job_code_origin=job_code_origin,
         asset_selection=asset_selection,
         solid_selection=solid_selection,
     )
@@ -173,32 +170,30 @@ def create_run_for_test(
 
 def register_managed_run_for_test(
     instance,
-    pipeline_name=TEST_PIPELINE_NAME,
+    job_name=TEST_JOB_NAME,
     run_id=None,
     run_config=None,
-    mode=None,
     solids_to_execute=None,
     step_keys_to_execute=None,
     tags=None,
     root_run_id=None,
     parent_run_id=None,
-    pipeline_snapshot=None,
+    job_snapshot=None,
     execution_plan_snapshot=None,
-    parent_pipeline_snapshot=None,
+    parent_job_snapshot=None,
 ):
     return instance.register_managed_run(
-        pipeline_name,
+        job_name,
         run_id,
         run_config,
-        mode,
         solids_to_execute,
         step_keys_to_execute,
         tags,
         root_run_id,
         parent_run_id,
-        pipeline_snapshot,
+        job_snapshot,
         execution_plan_snapshot,
-        parent_pipeline_snapshot,
+        parent_job_snapshot,
     )
 
 
@@ -400,10 +395,10 @@ class MockedRunCoordinator(RunCoordinator, ConfigurableClass):
         super().__init__()
 
     def submit_run(self, context: SubmitRunContext):
-        pipeline_run = context.pipeline_run
-        check.inst(pipeline_run.external_pipeline_origin, ExternalPipelineOrigin)
-        self._queue.append(pipeline_run)
-        return pipeline_run
+        dagster_run = context.dagster_run
+        check.inst(dagster_run.external_job_origin, ExternalJobOrigin)
+        self._queue.append(dagster_run)
+        return dagster_run
 
     def queue(self):
         return self._queue
@@ -538,7 +533,6 @@ def remove_none_recursively(obj: T) -> T:
         return obj
 
 
-default_mode_def_for_test = ModeDefinition(resource_defs={"io_manager": fs_io_manager})
 default_resources_for_test = {"io_manager": fs_io_manager}
 
 

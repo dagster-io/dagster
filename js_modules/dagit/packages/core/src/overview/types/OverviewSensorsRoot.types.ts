@@ -48,6 +48,14 @@ export type OverviewSensorsQuery = {
                     name: string;
                     description: string | null;
                     sensorType: Types.SensorType;
+                    sensorState: {
+                      __typename: 'InstigationState';
+                      id: string;
+                      selectorId: string;
+                      status: Types.InstigationStatus;
+                      hasStartPermission: boolean;
+                      hasStopPermission: boolean;
+                    };
                   }>;
                 }>;
               }

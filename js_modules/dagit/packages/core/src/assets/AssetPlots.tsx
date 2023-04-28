@@ -40,7 +40,7 @@ export const AssetPlots: React.FC<Props> = ({
           padding={{vertical: 16, left: 24, right: 12}}
           style={{marginBottom: -1}}
         >
-          <Subheading>Asset Plots</Subheading>
+          <Subheading>Asset plots</Subheading>
         </Box>
         <Box padding={{vertical: 48}}>
           <Spinner purpose="page" />
@@ -57,7 +57,7 @@ export const AssetPlots: React.FC<Props> = ({
         padding={{vertical: 16, left: 24, right: 12}}
         style={{marginBottom: -1}}
       >
-        <Subheading>Asset Plots</Subheading>
+        <Subheading>Asset plots</Subheading>
 
         {assetHasDefinedPartitions ? (
           <div style={{margin: '-6px 0 '}}>

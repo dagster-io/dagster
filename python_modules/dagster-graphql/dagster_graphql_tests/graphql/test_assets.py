@@ -266,6 +266,17 @@ GET_FRESHNESS_INFO = """
     }
 """
 
+GET_AUTO_MATERIALIZE_POLICY = """
+    query AssetNodeQuery {
+        assetNodes {
+            id
+            autoMaterializePolicy {
+                policyType
+            }
+        }
+    }
+"""
+
 GET_ASSET_OBSERVATIONS = """
     query AssetGraphQuery($assetKey: AssetKeyInput!) {
         assetOrError(assetKey: $assetKey) {
@@ -321,10 +332,6 @@ GET_1D_ASSET_PARTITIONS = """
             }
             partitionDefinition {
                 name
-                timeWindowMetadata {
-                    startTime
-                    startKey
-                }
             }
         }
     }
@@ -830,13 +837,15 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
 
         assert result.data
         assert result.data["assetNodes"]
-        assert len(result.data["assetNodes"]) == 2
+        assert len(result.data["assetNodes"]) == 4
         asset_node = result.data["assetNodes"][0]
         assert asset_node["partitionKeys"] and asset_node["partitionKeys"] == [
             "a",
             "b",
             "c",
             "d",
+            "e",
+            "f",
         ]
         asset_node = result.data["assetNodes"][1]
         assert asset_node["partitionKeys"] and asset_node["partitionKeys"] == [
@@ -844,6 +853,8 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             "b",
             "c",
             "d",
+            "e",
+            "f",
         ]
 
         selector = infer_pipeline_selector(graphql_context, "time_partitioned_assets_job")
@@ -1293,14 +1304,6 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert materialized_ranges[0]["startTime"] == _get_datetime_float(time_0)
         assert materialized_ranges[0]["endTime"] == _get_datetime_float(time_3)
 
-        time_partitions_def_metadata = result.data["assetNodes"][0]["partitionDefinition"][
-            "timeWindowMetadata"
-        ]
-        assert time_partitions_def_metadata is not None
-        start_time = "2021-05-05-01:00"
-        assert time_partitions_def_metadata["startTime"] == _get_datetime_float(start_time)
-        assert time_partitions_def_metadata["startKey"] == start_time
-
     def test_asset_observations(self, graphql_context: WorkspaceRequestContext):
         _create_run(graphql_context, "observation_job")
         result = execute_dagster_graphql(
@@ -1483,7 +1486,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             ],
         )
         run = graphql_context.instance.get_run_by_id(run_id)
-        assert run and run.is_finished
+        assert run and run.is_success
 
         # Generate materializations with subselection of foo and baz
         run_id = _create_run(
@@ -1613,6 +1616,30 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         counts = traced_counter.get().counts()
         assert len(counts) == 1
         assert counts.get("DagsterInstance.get_asset_records") == 1
+
+    def test_batch_empty_list(self, graphql_context: WorkspaceRequestContext):
+        traced_counter.set(Counter())
+        result = execute_dagster_graphql(
+            graphql_context,
+            BATCH_LOAD_ASSETS,
+            variables={
+                "assetKeys": [],
+            },
+        )
+        assert result.data
+        assert len(result.data["assetNodes"]) == 0
+
+    def test_batch_null_keys(self, graphql_context: WorkspaceRequestContext):
+        traced_counter.set(Counter())
+        result = execute_dagster_graphql(
+            graphql_context,
+            BATCH_LOAD_ASSETS,
+            variables={
+                "assetKeys": None,
+            },
+        )
+        assert result.data
+        assert len(result.data["assetNodes"]) > 0
 
     def test_get_partitions_by_dimension(self, graphql_context: WorkspaceRequestContext):
         result = execute_dagster_graphql(
@@ -2051,6 +2078,20 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
 
         snapshot.assert_match(result.data)
 
+    def test_auto_materialize_policy(self, graphql_context: WorkspaceRequestContext):
+        result = execute_dagster_graphql(graphql_context, GET_AUTO_MATERIALIZE_POLICY)
+
+        assert result.data
+        assert result.data["assetNodes"]
+
+        fresh_diamond_bottom = [
+            a
+            for a in result.data["assetNodes"]
+            if a["id"] == 'test.test_repo.["fresh_diamond_bottom"]'
+        ]
+        assert len(fresh_diamond_bottom) == 1
+        assert fresh_diamond_bottom[0]["autoMaterializePolicy"]["policyType"] == "LAZY"
+
 
 class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):
     def test_asset_in_progress(self, graphql_context: WorkspaceRequestContext):
@@ -2261,24 +2302,16 @@ class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):
 
 
 class TestCrossRepoAssetDependedBy(AllRepositoryGraphQLContextTestMatrix):
-    def test_cross_repo_assets(self, graphql_context: WorkspaceRequestContext):
-        code_location = graphql_context.get_code_location("cross_asset_repos")
-        repository = code_location.get_repository("upstream_assets_repository")
-
-        selector = {
-            "repositoryLocationName": code_location.name,
-            "repositoryName": repository.name,
-        }
+    def test_cross_repo_derived_asset_dependencies(self, graphql_context: WorkspaceRequestContext):
         result = execute_dagster_graphql(
             graphql_context,
             CROSS_REPO_ASSET_GRAPH,
-            variables={"repositorySelector": selector},
         )
         asset_nodes = result.data["assetNodes"]
-        upstream_asset = [
+        derived_asset = [
             node
             for node in asset_nodes
-            if node["id"] == 'cross_asset_repos.upstream_assets_repository.["upstream_asset"]'
+            if node["id"] == 'cross_asset_repos.upstream_assets_repository.["derived_asset"]'
         ][0]
         dependent_asset_keys = [
             {"path": ["downstream_asset1"]},
@@ -2286,7 +2319,26 @@ class TestCrossRepoAssetDependedBy(AllRepositoryGraphQLContextTestMatrix):
         ]
 
         result_dependent_keys = sorted(
-            upstream_asset["dependedByKeys"], key=lambda node: node.get("path")[0]
+            derived_asset["dependedByKeys"], key=lambda node: node.get("path")[0]
+        )
+        assert result_dependent_keys == dependent_asset_keys
+
+    def test_cross_repo_source_asset_dependencies(self, graphql_context: WorkspaceRequestContext):
+        result = execute_dagster_graphql(
+            graphql_context,
+            CROSS_REPO_ASSET_GRAPH,
+        )
+        asset_nodes = result.data["assetNodes"]
+        always_source_asset = [node for node in asset_nodes if "always_source_asset" in node["id"]][
+            0
+        ]
+        dependent_asset_keys = [
+            {"path": ["downstream_asset1"]},
+            {"path": ["downstream_asset2"]},
+        ]
+
+        result_dependent_keys = sorted(
+            always_source_asset["dependedByKeys"], key=lambda node: node.get("path")[0]
         )
         assert result_dependent_keys == dependent_asset_keys
 

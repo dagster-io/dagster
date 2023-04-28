@@ -16,6 +16,16 @@ export type BackfillStatusesByAssetQuery = {
         timestamp: number;
         endTimestamp: number | null;
         numPartitions: number | null;
+        error: {
+          __typename: 'PythonError';
+          message: string;
+          stack: Array<string>;
+          errorChain: Array<{
+            __typename: 'ErrorChainLink';
+            isExplicitLink: boolean;
+            error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+          }>;
+        } | null;
         assetBackfillData: {
           __typename: 'AssetBackfillData';
           rootAssetTargetedPartitions: Array<string> | null;
@@ -24,14 +34,17 @@ export type BackfillStatusesByAssetQuery = {
             start: string;
             end: string;
           }> | null;
-          assetPartitionsStatusCounts: Array<{
-            __typename: 'AssetPartitionsStatusCounts';
-            numPartitionsTargeted: number;
-            numPartitionsRequested: number;
-            numPartitionsCompleted: number;
-            numPartitionsFailed: number;
-            assetKey: {__typename: 'AssetKey'; path: Array<string>};
-          }>;
+          assetBackfillStatuses: Array<
+            | {
+                __typename: 'AssetPartitionsStatusCounts';
+                numPartitionsTargeted: number;
+                numPartitionsInProgress: number;
+                numPartitionsMaterialized: number;
+                numPartitionsFailed: number;
+                assetKey: {__typename: 'AssetKey'; path: Array<string>};
+              }
+            | {__typename: 'UnpartitionedAssetStatus'}
+          >;
         } | null;
       }
     | {
@@ -53,6 +66,16 @@ export type PartitionBackfillFragment = {
   timestamp: number;
   endTimestamp: number | null;
   numPartitions: number | null;
+  error: {
+    __typename: 'PythonError';
+    message: string;
+    stack: Array<string>;
+    errorChain: Array<{
+      __typename: 'ErrorChainLink';
+      isExplicitLink: boolean;
+      error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+    }>;
+  } | null;
   assetBackfillData: {
     __typename: 'AssetBackfillData';
     rootAssetTargetedPartitions: Array<string> | null;
@@ -61,13 +84,16 @@ export type PartitionBackfillFragment = {
       start: string;
       end: string;
     }> | null;
-    assetPartitionsStatusCounts: Array<{
-      __typename: 'AssetPartitionsStatusCounts';
-      numPartitionsTargeted: number;
-      numPartitionsRequested: number;
-      numPartitionsCompleted: number;
-      numPartitionsFailed: number;
-      assetKey: {__typename: 'AssetKey'; path: Array<string>};
-    }>;
+    assetBackfillStatuses: Array<
+      | {
+          __typename: 'AssetPartitionsStatusCounts';
+          numPartitionsTargeted: number;
+          numPartitionsInProgress: number;
+          numPartitionsMaterialized: number;
+          numPartitionsFailed: number;
+          assetKey: {__typename: 'AssetKey'; path: Array<string>};
+        }
+      | {__typename: 'UnpartitionedAssetStatus'}
+    >;
   } | null;
 };

@@ -33,7 +33,8 @@ from dagster import (
     with_resources,
 )
 from dagster._check import CheckError
-from dagster._core.definitions import AssetGroup, AssetIn, SourceAsset, asset, multi_asset
+from dagster._core.definitions import AssetIn, SourceAsset, asset, multi_asset
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -137,11 +138,13 @@ def test_retain_freshness_policy():
     )
 
 
-def test_graph_backed_retain_freshness_policy():
+def test_graph_backed_retain_freshness_policy_and_auto_materialize_policy():
     fpa = FreshnessPolicy(maximum_lag_minutes=24.5)
     fpb = FreshnessPolicy(
         maximum_lag_minutes=30.5, cron_schedule="0 0 * * *", cron_schedule_timezone="US/Eastern"
     )
+    ampa = AutoMaterializePolicy.eager()
+    ampb = AutoMaterializePolicy.lazy()
 
     @op
     def foo():
@@ -157,7 +160,9 @@ def test_graph_backed_retain_freshness_policy():
         return bar(f), bar(f), bar(f)
 
     my_graph_asset = AssetsDefinition.from_graph(
-        my_graph, freshness_policies_by_output_name={"a": fpa, "b": fpb}
+        my_graph,
+        freshness_policies_by_output_name={"a": fpa, "b": fpb},
+        auto_materialize_policies_by_output_name={"a": ampa, "b": ampb},
     )
 
     replaced = my_graph_asset.with_attributes(
@@ -170,6 +175,10 @@ def test_graph_backed_retain_freshness_policy():
     assert replaced.freshness_policies_by_key[AssetKey("aa")] == fpa
     assert replaced.freshness_policies_by_key[AssetKey("bb")] == fpb
     assert replaced.freshness_policies_by_key.get(AssetKey("cc")) is None
+
+    assert replaced.auto_materialize_policies_by_key[AssetKey("aa")] == ampa
+    assert replaced.auto_materialize_policies_by_key[AssetKey("bb")] == ampb
+    assert replaced.auto_materialize_policies_by_key.get(AssetKey("cc")) is None
 
 
 def test_retain_metadata_graph():
@@ -399,7 +408,7 @@ def test_asset_with_io_manager_def():
     def the_asset():
         pass
 
-    result = AssetGroup([the_asset]).materialize()
+    result = materialize([the_asset])
     assert result.success
     assert events == ["entered for the_asset"]
 
@@ -423,7 +432,7 @@ def test_multiple_assets_io_manager_defs():
     def other_asset():
         return 6
 
-    AssetGroup([the_asset, other_asset]).materialize()
+    materialize([the_asset, other_asset])
 
     assert num_times[0] == 2
 
@@ -445,7 +454,7 @@ def test_asset_with_io_manager_key_only():
     def the_asset():
         return 5
 
-    AssetGroup([the_asset], resource_defs={"the_key": the_io_manager}).materialize()
+    materialize([the_asset], resources={"the_key": the_io_manager})
 
     assert list(io_manager_inst.values.values())[0] == 5
 

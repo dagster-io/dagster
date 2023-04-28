@@ -1,11 +1,13 @@
 from typing import Any, Iterator, Mapping, Optional, Sequence, Set
 
 import dagster._check as check
-from dagster import Field, Permissive, StringSource, resource
+from dagster import resource
 from dagster._annotations import public
+from dagster._config.pythonic_config import ConfigurableResource, IAttachDifferentObjectToOpContext
 from dagster._utils.merger import merge_dicts
+from pydantic import Field
 
-from ..dbt_resource import DbtResource
+from ..dbt_resource import DbtClient
 from .types import DbtCliOutput
 from .utils import (
     DEFAULT_DBT_TARGET_PATH,
@@ -25,115 +27,104 @@ DBT_RUN_RESULTS_COMMANDS = ["run", "test", "seed", "snapshot", "docs generate", 
 # The following config fields correspond to flags that apply to all dbt CLI commands. For details
 # on dbt CLI flags, see
 # https://github.com/fishtown-analytics/dbt/blob/1f8e29276e910c697588c43f08bc881379fff178/core/dbt/main.py#L260-L329
-CLI_COMMON_FLAGS_CONFIG_SCHEMA = {
-    "project-dir": Field(
-        config=StringSource,
-        is_required=False,
+
+COMMON_OPTION_KEYS = {
+    "warn_error",
+    "dbt_executable",
+    "ignore_handled_error",
+    "target_path",
+    "docs_url",
+    "json_log_format",
+    "capture_logs",
+    "debug",
+}
+
+
+class ConfigurableResourceWithCliFlags(ConfigurableResource):
+    project_dir: str = Field(
+        default=".",
         description=(
             "Which directory to look in for the dbt_project.yml file. Default is the current "
             "working directory and its parents."
         ),
-        default_value=".",
-    ),
-    "profiles-dir": Field(
-        config=StringSource,
-        is_required=False,
+    )
+    profiles_dir: Optional[str] = Field(
+        default=None,
         description=(
             "Which directory to look in for the profiles.yml file. Default = $DBT_PROFILES_DIR or "
             "$HOME/.dbt"
         ),
-    ),
-    "profile": Field(
-        config=StringSource,
-        is_required=False,
-        description="Which profile to load. Overrides setting in dbt_project.yml.",
-    ),
-    "target": Field(
-        config=StringSource,
-        is_required=False,
-        description="Which target to load for the given profile.",
-    ),
-    "vars": Field(
-        config=Permissive({}),
-        is_required=False,
+    )
+    profile: Optional[str] = Field(
+        default=None, description="Which profile to load. Overrides setting in dbt_project.yml."
+    )
+    target: Optional[str] = Field(
+        default=None, description="Which target to load for the given profile."
+    )
+    vars: Optional[Mapping[str, Any]] = Field(
+        default=None,
         description=(
             "Supply variables to the project. This argument overrides variables defined in your "
             "dbt_project.yml file. This argument should be a dictionary, eg. "
             "{'my_variable': 'my_value'}"
         ),
-    ),
-    "bypass-cache": Field(
-        config=bool,
-        is_required=False,
-        description="If set, bypass the adapter-level cache of database state",
-        default_value=False,
-    ),
-}
-
-# The following config fields correspond to options that apply to all CLI solids, but should not be
-# formatted as CLI flags.
-CLI_COMMON_OPTIONS_CONFIG_SCHEMA = {
-    "warn-error": Field(
-        config=bool,
-        is_required=False,
+    )
+    bypass_cache: bool = Field(
+        default=False, description="If set, bypass the adapter-level cache of database state"
+    )
+    warn_error: bool = Field(
+        default=False,
         description=(
             "If dbt would normally warn, instead raise an exception. Examples include --models "
             "that selects nothing, deprecations, configurations with no associated models, "
             "invalid test configurations, and missing sources/refs in tests."
         ),
-        default_value=False,
-    ),
-    "dbt_executable": Field(
-        config=StringSource,
-        is_required=False,
+    )
+    dbt_executable: str = Field(
+        default=DEFAULT_DBT_EXECUTABLE,
         description=f"Path to the dbt executable. Default is {DEFAULT_DBT_EXECUTABLE}",
-        default_value=DEFAULT_DBT_EXECUTABLE,
-    ),
-    "ignore_handled_error": Field(
-        config=bool,
-        is_required=False,
+    )
+    ignore_handled_error: bool = Field(
+        default=False,
         description=(
             "When True, will not raise an exception when the dbt CLI returns error code 1. "
             "Default is False."
         ),
-        default_value=False,
-    ),
-    "target-path": Field(
-        config=StringSource,
-        is_required=False,
-        default_value=DEFAULT_DBT_TARGET_PATH,
+    )
+    target_path: str = Field(
+        default=DEFAULT_DBT_TARGET_PATH,
         description=(
             "The directory path for target if different from the default `target-path` in "
             "your dbt project configuration file."
         ),
-    ),
-    "docs_url": Field(
-        config=StringSource,
-        is_required=False,
-        description="The url for where dbt docs are being served for this project.",
-    ),
-    "json_log_format": Field(
-        config=bool,
+    )
+    docs_url: Optional[str] = Field(
+        default=None, description="The url for where dbt docs are being served for this project."
+    )
+    json_log_format: bool = Field(
+        default=True,
         description=(
             "When True, dbt will invoked with the `--log-format json` flag, allowing "
             "Dagster to parse the log messages and emit simpler log messages to the event log."
         ),
-        default_value=True,
-    ),
-    "capture_logs": Field(
-        config=bool,
-        description="When True, logs emitted from dbt will be logged to the Dagster event log.",
-        default_value=True,
-    ),
-    "debug": Field(
-        config=bool,
-        description="When True, dbt will be invoked with the `--debug` flag.",
-        default_value=False,
-    ),
-}
+    )
+    capture_logs: bool = Field(
+        default=False,
+        description=(
+            "When True, dbt will invoked with the `--capture-output` flag, allowing "
+            "Dagster to capture the logs and emit them to the event log."
+        ),
+    )
+    debug: bool = Field(
+        default=False,
+        description=(
+            "When True, dbt will invoked with the `--debug` flag, which will print "
+            "additional debug information to the console."
+        ),
+    )
 
 
-class DbtCliResource(DbtResource):
+class DbtCliClient(DbtClient):
     """A resource that allows you to execute dbt cli commands.
 
     For the most up-to-date documentation on the specific parameters available to you for each
@@ -476,23 +467,47 @@ class DbtCliResource(DbtResource):
         return parse_manifest(project_dir, target_path)
 
 
-@resource(
-    config_schema=Permissive(
-        {
-            k.replace("-", "_"): v
-            for k, v in dict(
-                **CLI_COMMON_FLAGS_CONFIG_SCHEMA, **CLI_COMMON_OPTIONS_CONFIG_SCHEMA
-            ).items()
+class DbtCliResource(DbtCliClient):
+    pass
+
+
+class DbtCliClientResource(ConfigurableResourceWithCliFlags, IAttachDifferentObjectToOpContext):
+    """Resource which issues dbt CLI commands against a configured dbt project."""
+
+    class Config:
+        extra = "allow"
+
+    def get_dbt_client(self) -> DbtCliClient:
+        context = self.get_resource_context()
+        default_flags = {
+            k: v for k, v in self._as_config_dict().items() if k not in COMMON_OPTION_KEYS
         }
-    )
-)
-def dbt_cli_resource(context) -> DbtCliResource:
+
+        return DbtCliClient(
+            executable=self.dbt_executable,
+            default_flags=default_flags,
+            warn_error=self.warn_error,
+            ignore_handled_error=self.ignore_handled_error,
+            target_path=self.target_path,
+            docs_url=self.docs_url,
+            logger=context.log,
+            json_log_format=self.json_log_format,
+            capture_logs=self.capture_logs,
+            debug=self.debug,
+        )
+
+    def get_object_to_set_on_execution_context(self) -> Any:
+        return self.get_dbt_client()
+
+
+@resource(config_schema=DbtCliClientResource.to_config_schema())
+def dbt_cli_resource(context) -> DbtCliClient:
     """This resource issues dbt CLI commands against a configured dbt project."""
-    # set of options in the config schema that are not flags
-    non_flag_options = {k.replace("-", "_") for k in CLI_COMMON_OPTIONS_CONFIG_SCHEMA}
     # all config options that are intended to be used as flags for dbt commands
-    default_flags = {k: v for k, v in context.resource_config.items() if k not in non_flag_options}
-    return DbtCliResource(
+    default_flags = {
+        k: v for k, v in context.resource_config.items() if k not in COMMON_OPTION_KEYS
+    }
+    return DbtCliClient(
         executable=context.resource_config["dbt_executable"],
         default_flags=default_flags,
         warn_error=context.resource_config["warn_error"],

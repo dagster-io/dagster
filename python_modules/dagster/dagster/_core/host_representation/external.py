@@ -38,12 +38,12 @@ from dagster._core.definitions.sensor_definition import (
 from dagster._core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
 from dagster._core.host_representation.origin import (
     ExternalInstigatorOrigin,
+    ExternalJobOrigin,
     ExternalPartitionSetOrigin,
-    ExternalPipelineOrigin,
     ExternalRepositoryOrigin,
 )
 from dagster._core.instance import DagsterInstance
-from dagster._core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
+from dagster._core.origin import JobPythonOrigin, RepositoryPythonOrigin
 from dagster._core.snap import ExecutionPlanSnapshot
 from dagster._core.snap.execution_plan_snapshot import ExecutionStepSnap
 from dagster._core.utils import toposort
@@ -52,11 +52,12 @@ from dagster._utils.cached_method import cached_method
 from dagster._utils.schedules import schedule_execution_time_iterator
 
 from .external_data import (
+    DEFAULT_MODE_NAME,
     EnvVarConsumer,
     ExternalAssetNode,
+    ExternalJobData,
     ExternalJobRef,
     ExternalPartitionSetData,
-    ExternalPipelineData,
     ExternalPresetData,
     ExternalRepositoryData,
     ExternalResourceData,
@@ -69,8 +70,8 @@ from .external_data import (
     ResourceJobUsageEntry,
 )
 from .handle import InstigatorHandle, JobHandle, PartitionSetHandle, RepositoryHandle
-from .pipeline_index import PipelineIndex
-from .represented import RepresentedPipeline
+from .pipeline_index import JobIndex
+from .represented import RepresentedJob
 
 if TYPE_CHECKING:
     from dagster._core.scheduler.instigation import InstigatorState
@@ -86,15 +87,15 @@ class ExternalRepository:
         self,
         external_repository_data: ExternalRepositoryData,
         repository_handle: RepositoryHandle,
-        ref_to_data_fn: Optional[Callable[[ExternalJobRef], ExternalPipelineData]] = None,
+        ref_to_data_fn: Optional[Callable[[ExternalJobRef], ExternalJobData]] = None,
     ):
         self.external_repository_data = check.inst_param(
             external_repository_data, "external_repository_data", ExternalRepositoryData
         )
 
-        if external_repository_data.external_pipeline_datas is not None:
-            self._job_map: Dict[str, Union[ExternalPipelineData, ExternalJobRef]] = {
-                d.name: d for d in external_repository_data.external_pipeline_datas
+        if external_repository_data.external_job_datas is not None:
+            self._job_map: Dict[str, Union[ExternalJobData, ExternalJobRef]] = {
+                d.name: d for d in external_repository_data.external_job_datas
             }
             self._deferred_snapshots: bool = False
             self._ref_to_data_fn = None
@@ -123,7 +124,7 @@ class ExternalRepository:
 
         # memoize job instances to share instances
         self._memo_lock: RLock = RLock()
-        self._cached_jobs: Dict[str, ExternalPipeline] = {}
+        self._cached_jobs: Dict[str, ExternalJob] = {}
 
     @property
     def name(self) -> str:
@@ -211,7 +212,7 @@ class ExternalRepository:
     def has_external_job(self, job_name: str) -> bool:
         return job_name in self._job_map
 
-    def get_full_external_job(self, job_name: str) -> ExternalPipeline:
+    def get_full_external_job(self, job_name: str) -> ExternalJob:
         check.str_param(job_name, "job_name")
         check.invariant(
             self.has_external_job(job_name), f'No external job named "{job_name}" found'
@@ -223,15 +224,15 @@ class ExternalRepository:
                     if not isinstance(job_item, ExternalJobRef):
                         check.failed("unexpected job item")
                     external_ref = job_item
-                    external_data: Optional[ExternalPipelineData] = None
+                    external_data: Optional[ExternalJobData] = None
                 else:
-                    if not isinstance(job_item, ExternalPipelineData):
+                    if not isinstance(job_item, ExternalJobData):
                         check.failed("unexpected job item")
                     external_data = job_item
                     external_ref = None
 
-                self._cached_jobs[job_name] = ExternalPipeline(
-                    external_pipeline_data=external_data,
+                self._cached_jobs[job_name] = ExternalJob(
+                    external_job_data=external_data,
                     repository_handle=self.handle,
                     external_job_ref=external_ref,
                     ref_to_data_fn=self._ref_to_data_fn,
@@ -239,7 +240,7 @@ class ExternalRepository:
 
             return self._cached_jobs[job_name]
 
-    def get_all_external_jobs(self) -> Sequence[ExternalPipeline]:
+    def get_all_external_jobs(self) -> Sequence[ExternalJob]:
         return [self.get_full_external_job(pn) for pn in self._job_map]
 
     @property
@@ -285,41 +286,39 @@ class ExternalRepository:
         return self.handle.display_metadata
 
 
-class ExternalPipeline(RepresentedPipeline):
-    """ExternalPipeline is a object that represents a loaded job definition that
+class ExternalJob(RepresentedJob):
+    """ExternalJob is a object that represents a loaded job definition that
     is resident in another process or container. Host processes such as dagit use
     objects such as these to interact with user-defined artifacts.
     """
 
     def __init__(
         self,
-        external_pipeline_data: Optional[ExternalPipelineData],
+        external_job_data: Optional[ExternalJobData],
         repository_handle: RepositoryHandle,
         external_job_ref: Optional[ExternalJobRef] = None,
-        ref_to_data_fn: Optional[Callable[[ExternalJobRef], ExternalPipelineData]] = None,
+        ref_to_data_fn: Optional[Callable[[ExternalJobRef], ExternalJobData]] = None,
     ):
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
-        check.opt_inst_param(external_pipeline_data, "external_pipeline_data", ExternalPipelineData)
+        check.opt_inst_param(external_job_data, "external_job_data", ExternalJobData)
 
         self._repository_handle = repository_handle
 
         self._memo_lock = RLock()
-        self._index: Optional[PipelineIndex] = None
+        self._index: Optional[JobIndex] = None
 
-        self._data = external_pipeline_data
+        self._data = external_job_data
         self._ref = external_job_ref
         self._ref_to_data_fn = ref_to_data_fn
 
-        if external_pipeline_data:
-            self._active_preset_dict = {ap.name: ap for ap in external_pipeline_data.active_presets}
-            self._name = external_pipeline_data.name
-            self._is_job = external_pipeline_data.is_job
-            self._snapshot_id = self._pipeline_index.pipeline_snapshot_id
+        if external_job_data:
+            self._active_preset_dict = {ap.name: ap for ap in external_job_data.active_presets}
+            self._name = external_job_data.name
+            self._snapshot_id = self._job_index.job_snapshot_id
 
         elif external_job_ref:
             self._active_preset_dict = {ap.name: ap for ap in external_job_ref.active_presets}
             self._name = external_job_ref.name
-            self._is_job = not external_job_ref.is_legacy_pipeline
             if ref_to_data_fn is None:
                 check.failed("ref_to_data_fn must be passed when using deferred snapshots")
             self._snapshot_id = external_job_ref.snapshot_id
@@ -329,12 +328,12 @@ class ExternalPipeline(RepresentedPipeline):
         self._handle = JobHandle(self._name, repository_handle)
 
     @property
-    def _pipeline_index(self) -> PipelineIndex:
+    def _job_index(self) -> JobIndex:
         with self._memo_lock:
             if self._index is None:
-                self._index = PipelineIndex(
-                    self.external_pipeline_data.pipeline_snapshot,
-                    self.external_pipeline_data.parent_pipeline_snapshot,
+                self._index = JobIndex(
+                    self.external_job_data.job_snapshot,
+                    self.external_job_data.parent_job_snapshot,
                 )
             return self._index
 
@@ -344,14 +343,14 @@ class ExternalPipeline(RepresentedPipeline):
 
     @property
     def description(self):
-        return self._pipeline_index.pipeline_snapshot.description
+        return self._job_index.job_snapshot.description
 
     @property
     def solid_names_in_topological_order(self):
-        return self._pipeline_index.pipeline_snapshot.node_names_in_topological_order
+        return self._job_index.job_snapshot.node_names_in_topological_order
 
     @property
-    def external_pipeline_data(self):
+    def external_job_data(self):
         with self._memo_lock:
             if self._data is None:
                 if self._ref is None or self._ref_to_data_fn is None:
@@ -367,24 +366,24 @@ class ExternalPipeline(RepresentedPipeline):
     @property
     def solid_selection(self) -> Optional[Sequence[str]]:
         return (
-            self._pipeline_index.pipeline_snapshot.lineage_snapshot.node_selection
-            if self._pipeline_index.pipeline_snapshot.lineage_snapshot
+            self._job_index.job_snapshot.lineage_snapshot.node_selection
+            if self._job_index.job_snapshot.lineage_snapshot
             else None
         )
 
     @property
     def solids_to_execute(self) -> Optional[AbstractSet[str]]:
         return (
-            self._pipeline_index.pipeline_snapshot.lineage_snapshot.nodes_to_execute
-            if self._pipeline_index.pipeline_snapshot.lineage_snapshot
+            self._job_index.job_snapshot.lineage_snapshot.nodes_to_execute
+            if self._job_index.job_snapshot.lineage_snapshot
             else None
         )
 
     @property
     def asset_selection(self) -> Optional[AbstractSet[AssetKey]]:
         return (
-            self._pipeline_index.pipeline_snapshot.lineage_snapshot.asset_selection
-            if self._pipeline_index.pipeline_snapshot.lineage_snapshot
+            self._job_index.job_snapshot.lineage_snapshot.asset_selection
+            if self._job_index.job_snapshot.lineage_snapshot
             else None
         )
 
@@ -394,11 +393,11 @@ class ExternalPipeline(RepresentedPipeline):
 
     @property
     def solid_names(self) -> Sequence[str]:
-        return self._pipeline_index.pipeline_snapshot.node_names
+        return self._job_index.job_snapshot.node_names
 
     def has_solid_invocation(self, solid_name: str):
         check.str_param(solid_name, "solid_name")
-        return self._pipeline_index.has_solid_invocation(solid_name)
+        return self._job_index.has_solid_invocation(solid_name)
 
     def has_preset(self, preset_name: str) -> bool:
         check.str_param(preset_name, "preset_name")
@@ -409,55 +408,38 @@ class ExternalPipeline(RepresentedPipeline):
         return self._active_preset_dict[preset_name]
 
     @property
-    def available_modes(self) -> Sequence[str]:
-        return self._pipeline_index.available_modes
-
-    def has_mode(self, mode_name: str) -> bool:
-        check.str_param(mode_name, "mode_name")
-        return self._pipeline_index.has_mode_def(mode_name)
-
-    def root_config_key_for_mode(self, mode_name: Optional[str]) -> Optional[str]:
-        check.opt_str_param(mode_name, "mode_name")
-        return self.get_mode_def_snap(
-            mode_name if mode_name else self.get_default_mode_name()
-        ).root_config_key
-
-    def get_default_mode_name(self) -> str:
-        return self._pipeline_index.get_default_mode_name()
+    def root_config_key(self) -> Optional[str]:
+        return self.get_mode_def_snap(DEFAULT_MODE_NAME).root_config_key
 
     @property
     def tags(self) -> Mapping[str, object]:
-        return self._pipeline_index.pipeline_snapshot.tags
+        return self._job_index.job_snapshot.tags
 
     @property
     def metadata(self) -> Mapping[str, MetadataValue]:
-        return self._pipeline_index.pipeline_snapshot.metadata
+        return self._job_index.job_snapshot.metadata
 
     @property
-    def computed_pipeline_snapshot_id(self) -> str:
+    def computed_job_snapshot_id(self) -> str:
         return self._snapshot_id
 
     @property
-    def identifying_pipeline_snapshot_id(self) -> str:
+    def identifying_job_snapshot_id(self) -> str:
         return self._snapshot_id
 
     @property
     def handle(self) -> JobHandle:
         return self._handle
 
-    def get_python_origin(self) -> PipelinePythonOrigin:
+    def get_python_origin(self) -> JobPythonOrigin:
         repository_python_origin = self.repository_handle.get_python_origin()
-        return PipelinePythonOrigin(self.name, repository_python_origin)
+        return JobPythonOrigin(self.name, repository_python_origin)
 
-    def get_external_origin(self) -> ExternalPipelineOrigin:
+    def get_external_origin(self) -> ExternalJobOrigin:
         return self.handle.get_external_origin()
 
     def get_external_origin_id(self) -> str:
         return self.get_external_origin().get_id()
-
-    @property
-    def is_job(self) -> bool:
-        return self._is_job
 
 
 class ExternalExecutionPlan:
@@ -630,8 +612,8 @@ class ExternalSchedule:
         return self._external_schedule_data.solid_selection
 
     @property
-    def pipeline_name(self) -> str:
-        return self._external_schedule_data.pipeline_name
+    def job_name(self) -> str:
+        return self._external_schedule_data.job_name
 
     @property
     def mode(self) -> Optional[str]:
@@ -747,9 +729,9 @@ class ExternalSensor:
         return self._handle
 
     @property
-    def pipeline_name(self) -> Optional[str]:
+    def job_name(self) -> Optional[str]:
         target = self._get_single_target()
-        return target.pipeline_name if target else None
+        return target.job_name if target else None
 
     @property
     def mode(self) -> Optional[str]:
@@ -767,9 +749,9 @@ class ExternalSensor:
         else:
             return None
 
-    def get_target_data(self, pipeline_name: Optional[str] = None) -> Optional[ExternalTargetData]:
-        if pipeline_name:
-            return self._external_sensor_data.target_dict[pipeline_name]
+    def get_target_data(self, job_name: Optional[str] = None) -> Optional[ExternalTargetData]:
+        if job_name:
+            return self._external_sensor_data.target_dict[job_name]
         else:
             return self._get_single_target()
 
@@ -890,8 +872,8 @@ class ExternalPartitionSet:
         return self._external_partition_set_data.mode
 
     @property
-    def pipeline_name(self) -> str:
-        return self._external_partition_set_data.pipeline_name
+    def job_name(self) -> str:
+        return self._external_partition_set_data.job_name
 
     @property
     def repository_handle(self) -> RepositoryHandle:

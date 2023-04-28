@@ -19,11 +19,9 @@ from dagster._core.definitions.events import (
     UserEvent,
 )
 from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.mode import ModeDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.pipeline_definition import PipelineDefinition
 from dagster._core.definitions.step_launcher import StepLauncher
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.errors import (
@@ -125,14 +123,14 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         return self._step_execution_context.op_config
 
     @property
-    def pipeline_run(self) -> DagsterRun:
+    def dagster_run(self) -> DagsterRun:
         """PipelineRun: The current pipeline run."""
         return self._step_execution_context.dagster_run
 
     @property
     def run(self) -> DagsterRun:
         """DagsterRun: The current run."""
-        return self.pipeline_run
+        return self.dagster_run
 
     @public
     @property
@@ -192,38 +190,15 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         return self._step_execution_context.run_config
 
     @property
-    def pipeline_def(self) -> PipelineDefinition:
-        """PipelineDefinition: The currently executing pipeline."""
-        return self._step_execution_context.pipeline_def
-
-    @public
-    @property
     def job_def(self) -> JobDefinition:
-        """JobDefinition: The currently executing job."""
-        return cast(
-            JobDefinition,
-            check.inst(
-                self.pipeline_def,
-                JobDefinition,
-                "Accessing job_def inside a legacy pipeline. Use pipeline_def instead.",
-            ),
-        )
-
-    @property
-    def pipeline_name(self) -> str:
-        """str: The name of the currently executing pipeline."""
-        return self._step_execution_context.pipeline_name
+        """JobDefinition: The currently executing pipeline."""
+        return self._step_execution_context.job_def
 
     @public
     @property
     def job_name(self) -> str:
-        """str: The name of the currently executing job."""
-        return self.pipeline_name
-
-    @property
-    def mode_def(self) -> ModeDefinition:
-        """ModeDefinition: The mode of the current execution."""
-        return self._step_execution_context.mode_def
+        """str: The name of the currently executing pipeline."""
+        return self._step_execution_context.job_name
 
     @public
     @property
@@ -254,7 +229,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         :meta private:
 
         """
-        return self._step_execution_context.pipeline_def.get_node(self.node_handle)
+        return self._step_execution_context.job_def.get_node(self.node_handle)
 
     @property
     def op(self) -> Node:
@@ -347,7 +322,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
     @public
     def asset_key_for_output(self, output_name: str = "result") -> AssetKey:
-        asset_output_info = self.pipeline_def.asset_layer.asset_info_for_output(
+        asset_output_info = self.job_def.asset_layer.asset_info_for_output(
             node_handle=self.op_handle, output_name=output_name
         )
         if asset_output_info is None:
@@ -357,7 +332,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
     @public
     def asset_key_for_input(self, input_name: str) -> AssetKey:
-        key = self.pipeline_def.asset_layer.asset_key_for_input(
+        key = self.job_def.asset_layer.asset_key_for_input(
             node_handle=self.op_handle, input_name=input_name
         )
         if key is None:
@@ -422,7 +397,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     def asset_partitions_def_for_output(self, output_name: str = "result") -> PartitionsDefinition:
         """The PartitionsDefinition on the upstream asset corresponding to this input."""
         asset_key = self.asset_key_for_output(output_name)
-        result = self._step_execution_context.pipeline_def.asset_layer.partitions_def_for_asset(
+        result = self._step_execution_context.job_def.asset_layer.partitions_def_for_asset(
             asset_key
         )
         if result is None:
@@ -437,7 +412,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     def asset_partitions_def_for_input(self, input_name: str) -> PartitionsDefinition:
         """The PartitionsDefinition on the upstream asset corresponding to this input."""
         asset_key = self.asset_key_for_input(input_name)
-        result = self._step_execution_context.pipeline_def.asset_layer.partitions_def_for_asset(
+        result = self._step_execution_context.job_def.asset_layer.partitions_def_for_asset(
             asset_key
         )
         if result is None:
@@ -466,6 +441,17 @@ class OpExecutionContext(AbstractComputeExecutionContext):
                 input_name
             ).get_partition_keys()
         )
+
+    @public
+    def asset_partitions_time_window_for_input(self, input_name: str = "result") -> TimeWindow:
+        """The time window for the partitions of the input asset.
+
+        Raises an error if either of the following are true:
+        - The input asset has no partitioning.
+        - The input asset is not partitioned with a TimeWindowPartitionsDefinition or a
+        MultiPartitionsDefinition with one time-partitioned dimension.
+        """
+        return self._step_execution_context.asset_partitions_time_window_for_input(input_name)
 
     @public
     def has_tag(self, key: str) -> bool:

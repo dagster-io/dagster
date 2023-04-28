@@ -128,9 +128,25 @@ class GrapheneAssetPartitionsStatusCounts(graphene.ObjectType):
 
     assetKey = graphene.NonNull(GrapheneAssetKey)
     numPartitionsTargeted = graphene.NonNull(graphene.Int)
-    numPartitionsRequested = graphene.NonNull(graphene.Int)
-    numPartitionsCompleted = graphene.NonNull(graphene.Int)
+    numPartitionsInProgress = graphene.NonNull(graphene.Int)
+    numPartitionsMaterialized = graphene.NonNull(graphene.Int)
     numPartitionsFailed = graphene.NonNull(graphene.Int)
+
+
+class GrapheneUnpartitionedAssetStatus(graphene.ObjectType):
+    class Meta:
+        name = "UnpartitionedAssetStatus"
+
+    assetKey = graphene.NonNull(GrapheneAssetKey)
+    inProgress = graphene.NonNull(graphene.Boolean)
+    materialized = graphene.NonNull(graphene.Boolean)
+    failed = graphene.NonNull(graphene.Boolean)
+
+
+class GrapheneAssetBackfillStatus(graphene.Union):
+    class Meta:
+        types = (GrapheneAssetPartitionsStatusCounts, GrapheneUnpartitionedAssetStatus)
+        name = "AssetBackfillStatus"
 
 
 class GraphenePartitionKeyRange(graphene.ObjectType):
@@ -165,7 +181,12 @@ class GraphenePartition(graphene.ObjectType):
     class Meta:
         name = "Partition"
 
-    def __init__(self, external_repository_handle, external_partition_set, partition_name):
+    def __init__(
+        self,
+        external_repository_handle: RepositoryHandle,
+        external_partition_set: ExternalPartitionSet,
+        partition_name: str,
+    ):
         self._external_repository_handle = check.inst_param(
             external_repository_handle, "external_respository_handle", RepositoryHandle
         )
@@ -212,7 +233,7 @@ class GraphenePartition(graphene.ObjectType):
             selector = filter.to_selector()
             runs_filter = RunsFilter(
                 run_ids=selector.run_ids,
-                pipeline_name=selector.job_name,
+                job_name=selector.job_name,
                 statuses=selector.statuses,
                 tags=merge_dicts(selector.tags, partition_tags),
             )
@@ -260,7 +281,11 @@ class GraphenePartitionSet(graphene.ObjectType):
     class Meta:
         name = "PartitionSet"
 
-    def __init__(self, external_repository_handle, external_partition_set):
+    def __init__(
+        self,
+        external_repository_handle: RepositoryHandle,
+        external_partition_set: ExternalPartitionSet,
+    ):
         self._external_repository_handle = check.inst_param(
             external_repository_handle, "external_respository_handle", RepositoryHandle
         )
@@ -270,7 +295,7 @@ class GraphenePartitionSet(graphene.ObjectType):
 
         super().__init__(
             name=external_partition_set.name,
-            pipeline_name=external_partition_set.pipeline_name,
+            pipeline_name=external_partition_set.job_name,
             solid_selection=external_partition_set.solid_selection,
             mode=external_partition_set.mode,
         )
@@ -294,7 +319,7 @@ class GraphenePartitionSet(graphene.ObjectType):
             reverse=reverse or False,
         )
 
-    def resolve_partition(self, graphene_info: ResolveInfo, partition_name):
+    def resolve_partition(self, graphene_info: ResolveInfo, partition_name: str):
         return get_partition_by_name(
             graphene_info,
             self._external_repository_handle,
@@ -388,47 +413,19 @@ class GrapheneDimensionDefinitionType(graphene.ObjectType):
         name = "DimensionDefinitionType"
 
 
-class GrapheneTimePartitionsDefinitionMetadata(graphene.ObjectType):
-    startTime = graphene.NonNull(graphene.Float)
-    endTime = graphene.NonNull(graphene.Float)
-    startKey = graphene.NonNull(graphene.String)
-    endKey = graphene.NonNull(graphene.String)
-
-    class Meta:
-        name = "TimePartitionsDefinitionMetadata"
-
-
 class GraphenePartitionDefinition(graphene.ObjectType):
     description = graphene.NonNull(graphene.String)
     type = graphene.NonNull(GraphenePartitionDefinitionType)
     dimensionTypes = non_null_list(GrapheneDimensionDefinitionType)
-    timeWindowMetadata = graphene.Field(GrapheneTimePartitionsDefinitionMetadata)
     name = graphene.Field(graphene.String)
 
     class Meta:
         name = "PartitionDefinition"
 
-    def __init__(self, partition_def_data: ExternalPartitionsDefinitionData):
-        def _get_time_partitions_metadata(partition_def_data):
-            check.inst_param(
-                partition_def_data, "partition_def_data", ExternalTimeWindowPartitionsDefinitionData
-            )
-
-            partitions_def = partition_def_data.get_partitions_definition()
-            return GrapheneTimePartitionsDefinitionMetadata(
-                startTime=partitions_def.start.timestamp(),
-                endTime=partitions_def.get_current_timestamp(),
-                startKey=partitions_def.get_first_partition_key(),
-                endKey=partitions_def.get_last_partition_key(),
-            )
-
-        super().__init__(
-            description=str(partition_def_data.get_partitions_definition()),
-            type=GraphenePartitionDefinitionType.from_partition_def_data(partition_def_data),
-            name=partition_def_data.name
-            if isinstance(partition_def_data, ExternalDynamicPartitionsDefinitionData)
-            else None,
-            dimensionTypes=[
+    def resolve_dimensionTypes(self, _graphene_info):
+        partition_def_data = self._partition_def_data
+        return (
+            [
                 GrapheneDimensionDefinitionType(
                     name=dim.name,
                     description=str(dim.external_partitions_def_data.get_partitions_definition()),
@@ -460,9 +457,16 @@ class GraphenePartitionDefinition(graphene.ObjectType):
                     if isinstance(partition_def_data, ExternalDynamicPartitionsDefinitionData)
                     else None,
                 )
-            ],
-            timeWindowMetadata=_get_time_partitions_metadata(partition_def_data)
-            if isinstance(partition_def_data, ExternalTimeWindowPartitionsDefinitionData)
+            ]
+        )
+
+    def __init__(self, partition_def_data: ExternalPartitionsDefinitionData):
+        self._partition_def_data = partition_def_data
+        super().__init__(
+            description=str(partition_def_data.get_partitions_definition()),
+            type=GraphenePartitionDefinitionType.from_partition_def_data(partition_def_data),
+            name=partition_def_data.name
+            if isinstance(partition_def_data, ExternalDynamicPartitionsDefinitionData)
             else None,
         )
 

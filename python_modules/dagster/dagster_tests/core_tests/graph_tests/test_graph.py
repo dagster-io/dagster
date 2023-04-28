@@ -32,7 +32,6 @@ from dagster._check import CheckError
 from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.partition import (
-    Partition,
     PartitionedConfig,
     StaticPartitionsDefinition,
 )
@@ -254,25 +253,24 @@ def test_partitions():
     def my_graph():
         my_op()
 
-    def config_fn(partition: Partition):
-        return {"ops": {"my_op": {"config": {"date": partition.value}}}}
+    def config_fn(partition_key: str):
+        return {"ops": {"my_op": {"config": {"date": partition_key}}}}
 
     job_def = my_graph.to_job(
         config=PartitionedConfig(
-            run_config_for_partition_fn=config_fn,
+            run_config_for_partition_key_fn=config_fn,
             partitions_def=StaticPartitionsDefinition(["2020-02-25", "2020-02-26"]),
         ),
     )
     assert job_def.partitions_def
     assert job_def.partitioned_config
-    partitions = job_def.partitions_def.get_partitions()
-    assert len(partitions) == 2
-    assert partitions[0].value == "2020-02-25"
-    assert partitions[0].name == "2020-02-25"
-    assert job_def.partitioned_config.get_run_config_for_partition_key(partitions[0].name) == {
+    partition_keys = job_def.partitions_def.get_partition_keys()
+    assert len(partition_keys) == 2
+    assert partition_keys[0] == "2020-02-25"
+    assert job_def.partitioned_config.get_run_config_for_partition_key(partition_keys[0]) == {
         "ops": {"my_op": {"config": {"date": "2020-02-25"}}}
     }
-    assert job_def.partitioned_config.get_run_config_for_partition_key(partitions[1].name) == {
+    assert job_def.partitioned_config.get_run_config_for_partition_key(partition_keys[1]) == {
         "ops": {"my_op": {"config": {"date": "2020-02-26"}}}
     }
 
@@ -280,26 +278,25 @@ def test_partitions():
     # when returning run config, the result partitions have different config
     SHARED_CONFIG = {}
 
-    def shared_config_fn(partition: Partition):
+    def shared_config_fn(partition_key: str):
         my_config = SHARED_CONFIG
-        my_config["ops"] = {"my_op": {"config": {"date": partition.value}}}
+        my_config["ops"] = {"my_op": {"config": {"date": partition_key}}}
         return my_config
 
     job_def = my_graph.to_job(
         config=PartitionedConfig(
-            run_config_for_partition_fn=shared_config_fn,
+            run_config_for_partition_key_fn=shared_config_fn,
             partitions_def=StaticPartitionsDefinition(["2020-02-25", "2020-02-26"]),
         ),
     )
     assert job_def.partitions_def
     assert job_def.partitioned_config
-    partitions = job_def.partitions_def.get_partitions()
-    assert len(partitions) == 2
-    assert partitions[0].value == "2020-02-25"
-    assert partitions[0].name == "2020-02-25"
+    partition_keys = job_def.partitions_def.get_partition_keys()
+    assert len(partition_keys) == 2
+    assert partition_keys[0] == "2020-02-25"
 
-    first_config = job_def.partitioned_config.get_run_config_for_partition_key(partitions[0].name)
-    second_config = job_def.partitioned_config.get_run_config_for_partition_key(partitions[1].name)
+    first_config = job_def.partitioned_config.get_run_config_for_partition_key(partition_keys[0])
+    second_config = job_def.partitioned_config.get_run_config_for_partition_key(partition_keys[1])
     assert first_config != second_config
 
     assert first_config == {"ops": {"my_op": {"config": {"date": "2020-02-25"}}}}
@@ -355,7 +352,7 @@ def test_logger_defs():
         pass
 
     my_job = my_graph.to_job(logger_defs={"abc": my_logger})
-    assert my_job.mode_definitions[0].loggers == {"abc": my_logger}
+    assert my_job.loggers == {"abc": my_logger}
 
 
 def test_job_with_hooks():
@@ -410,7 +407,7 @@ def test_composition_bug():
 
     my_job = my_graph_final.to_job()
 
-    index = my_job.get_pipeline_index()
+    index = my_job.get_job_index()
     assert index.get_node_def_snap("my_graph1")
     assert index.get_node_def_snap("my_graph2")
 

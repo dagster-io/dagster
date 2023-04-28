@@ -33,6 +33,7 @@ from dagster._core.definitions import (
     build_assets_job,
     multi_asset,
 )
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_requirement import ensure_requirements_satisfied
 from dagster._core.errors import DagsterInvalidConfigError
@@ -842,6 +843,7 @@ def test_graph_asset_with_args():
         group_name="group1",
         metadata={"my_metadata": "some_metadata"},
         freshness_policy=FreshnessPolicy(maximum_lag_minutes=5),
+        auto_materialize_policy=AutoMaterializePolicy.lazy(),
         resource_defs={"foo": foo_resource},
     )
     def my_asset(x):
@@ -851,6 +853,10 @@ def test_graph_asset_with_args():
     assert my_asset.metadata_by_key[AssetKey("my_asset")] == {"my_metadata": "some_metadata"}
     assert my_asset.freshness_policies_by_key[AssetKey("my_asset")] == FreshnessPolicy(
         maximum_lag_minutes=5
+    )
+    assert (
+        my_asset.auto_materialize_policies_by_key[AssetKey("my_asset")]
+        == AutoMaterializePolicy.lazy()
     )
     assert my_asset.resource_defs["foo"] == foo_resource
 
@@ -936,7 +942,7 @@ def test_graph_multi_asset_decorator():
 
     @graph_multi_asset(
         outs={
-            "first_asset": AssetOut(),
+            "first_asset": AssetOut(auto_materialize_policy=AutoMaterializePolicy.eager()),
             "second_asset": AssetOut(freshness_policy=FreshnessPolicy(maximum_lag_minutes=5)),
         },
         group_name="grp",
@@ -958,6 +964,13 @@ def test_graph_multi_asset_decorator():
     assert two_assets.freshness_policies_by_key[AssetKey("second_asset")] == FreshnessPolicy(
         maximum_lag_minutes=5
     )
+
+    assert (
+        two_assets.auto_materialize_policies_by_key[AssetKey("first_asset")]
+        == AutoMaterializePolicy.eager()
+    )
+    assert two_assets.auto_materialize_policies_by_key.get(AssetKey("second_asset")) is None
+
     assert two_assets.resource_defs["foo"] == foo_resource
 
     @asset
@@ -1028,3 +1041,20 @@ def test_multi_asset_with_bare_resource():
     materialize_to_memory([my_asset])
 
     assert executed["yes"]
+
+
+def test_multi_asset_with_auto_materialize_policy():
+    @multi_asset(
+        outs={
+            "o1": AssetOut(),
+            "o2": AssetOut(auto_materialize_policy=AutoMaterializePolicy.eager()),
+            "o3": AssetOut(auto_materialize_policy=AutoMaterializePolicy.lazy()),
+        }
+    )
+    def my_asset():
+        ...
+
+    assert my_asset.auto_materialize_policies_by_key == {
+        AssetKey("o2"): AutoMaterializePolicy.eager(),
+        AssetKey("o3"): AutoMaterializePolicy.lazy(),
+    }

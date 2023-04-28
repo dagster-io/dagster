@@ -8,6 +8,8 @@ title: "Managing code locations in Dagster Cloud | Dagster Docs"
 
 In this guide, we'll cover the requirements for Dagster code, how to add code in Dagster Cloud, and how to add code using the `dagster-cloud` CLI.
 
+A [`dagster_cloud.yaml` file](/dagster-cloud/managing-deployments/dagster-cloud-yaml) is recommended to configure code locations for Dagster Cloud.
+
 ---
 
 ## Understanding code locations
@@ -242,7 +244,7 @@ dagster-cloud workspace delete-location <LOCATION_NAME>
 
 ### Syncing the workspace
 
-You can also keep the YAML configuration for your entire workspace in a file and use the `dagster-cloud sync` command to reconcile the workspace config in Dagster Cloud with that local file.
+You can also keep the YAML configuration for your entire workspace in a [`dagster_cloud.yaml`](/dagster-cloud/managing-deployments/dagster-cloud-yaml) file and use the `dagster-cloud sync` command to reconcile the workspace config in Dagster Cloud with that local file.
 
 For example, if you have the following `dagster_cloud.yaml` file:
 
