@@ -29,14 +29,14 @@ const mocks = [
           assetBackfillData: buildAssetBackfillData({
             rootAssetTargetedPartitions: ['1', '2', '3'],
             rootAssetTargetedRanges: [buildPartitionKeyRange({start: '1', end: '2'})],
-            assetPartitionsStatusCounts: [
+            assetBackfillStatuses: [
               buildAssetPartitionsStatusCounts({
                 assetKey: buildAssetKey({
                   path: ['assetA'],
                 }),
                 numPartitionsTargeted: 33,
-                numPartitionsRequested: 22,
-                numPartitionsCompleted: 11,
+                numPartitionsInProgress: 22,
+                numPartitionsMaterialized: 11,
                 numPartitionsFailed: 0,
               }),
             ],
@@ -133,8 +133,8 @@ describe('BackfillPage', () => {
     // Check if the correct data is displayed
     expect(getByText('assetA')).toBeVisible();
     expect(getByText('3')).toBeVisible(); // numPartitionsTargeted
-    expect(getByText('2')).toBeVisible(); // numPartitionsRequested
-    expect(getByText('1')).toBeVisible(); // numPartitionsCompleted
+    expect(getByText('2')).toBeVisible(); // numPartitionsInProgress
+    expect(getByText('1')).toBeVisible(); // numPartitionsMaterialized
     expect(getByText('0')).toBeVisible(); // numPartitionsFailed
   });
 });
