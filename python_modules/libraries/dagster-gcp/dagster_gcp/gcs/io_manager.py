@@ -15,8 +15,8 @@ from dagster._utils.backoff import backoff
 from dagster._utils.cached_method import cached_method
 from google.api_core.exceptions import Forbidden, ServiceUnavailable, TooManyRequests
 from google.cloud import storage
-from upath import UPath
 from pydantic import Field
+from upath import UPath
 
 from .resources import GCSResource
 
@@ -227,9 +227,9 @@ def gcs_pickle_io_manager(init_context):
             ...
     """
     client = init_context.resources.gcs
-    pickled_io_manager = PickledObjectGCSIOManager(
-        bucket=init_context.resource_config["gcs_bucket"],
-        client=client,
-        prefix=init_context.resource_config["gcs_prefix"],
+    pickled_io_manager = ConfigurablePickledObjectGCSIOManager(
+        gcs_bucket=init_context.resource_config["gcs_bucket"],
+        gcs=client,
+        gcs_prefix=init_context.resource_config["gcs_prefix"],
     )
     return pickled_io_manager

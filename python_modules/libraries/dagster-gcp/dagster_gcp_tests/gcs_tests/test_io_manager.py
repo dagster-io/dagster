@@ -36,8 +36,6 @@ from dagster._core.storage.pipeline_run import (
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.types.dagster_type import resolve_dagster_type
 from dagster._core.utils import make_new_run_id
-from dagster_gcp.gcs import FakeGCSClient
-from dagster._legacy import AssetGroup
 from dagster_gcp.gcs import FakeConfigurableGCSClient, FakeGCSClient
 from dagster_gcp.gcs.io_manager import (
     ConfigurablePickledObjectGCSIOManager,
