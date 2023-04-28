@@ -796,13 +796,19 @@ class ConfigurableResourceFactory(
     def _resolved_config_dict(self):
         return self._state__internal__.resolved_config_dict
 
-    def _get_initialize_and_run_fn(self) -> Callable:
-        is_cm_resource = (
-            self.__class__.yield_for_execution != ConfigurableResourceFactory.yield_for_execution
-            or self.__class__.teardown_after_execution
-            != ConfigurableResourceFactory.teardown_after_execution
+    @classmethod
+    def _is_cm_resource_cls(cls: Type["ConfigurableResourceFactory"]) -> bool:
+        return (
+            cls.yield_for_execution != ConfigurableResourceFactory.yield_for_execution
+            or cls.teardown_after_execution != ConfigurableResourceFactory.teardown_after_execution
         )
-        return self._initialize_and_run_cm if is_cm_resource else self._initialize_and_run
+
+    @property
+    def _is_cm_resource(self) -> bool:
+        return self.__class__._is_cm_resource_cls()  # noqa: SLF001
+
+    def _get_initialize_and_run_fn(self) -> Callable:
+        return self._initialize_and_run_cm if self._is_cm_resource else self._initialize_and_run
 
     @cached_method
     def get_resource_definition(self) -> ConfigurableResourceFactoryResourceDefinition:
@@ -982,6 +988,8 @@ class ConfigurableResourceFactory(
         Useful when creating a resource from a function-based resource, for backwards
         compatibility purposes.
 
+        For resources that have custom teardown behavior, use from_resource_context_cm instead.
+
         Example usage:
 
         .. code-block:: python
@@ -994,7 +1002,41 @@ class ConfigurableResourceFactory(
                 return MyResource.from_resource_context(context)
 
         """
-        return cls(**context.resource_config or {}).create_resource(context)
+        check.invariant(
+            not cls._is_cm_resource_cls(),
+            (
+                "Use from_resource_context_cm for resources which have custom teardown behavior,"
+                " e.g. overriding yield_for_execution or teardown_after_execution"
+            ),
+        )
+        return cls(**context.resource_config or {})._initialize_and_run(context)  # noqa: SLF001
+
+    @classmethod
+    @contextlib.contextmanager
+    def from_resource_context_cm(
+        cls, context: InitResourceContext
+    ) -> Generator[TResValue, None, None]:
+        """Context which generates a new instance of this resource from a populated InitResourceContext.
+        Useful when creating a resource from a function-based resource, for backwards
+        compatibility purposes. Handles custom teardown behavior.
+
+        Example usage:
+
+        .. code-block:: python
+
+            class MyResource(ConfigurableResource):
+                my_str: str
+
+            @resource(config_schema=MyResource.to_config_schema())
+            def my_resource(context: InitResourceContext) -> Generator[MyResource, None, None]:
+                with MyResource.from_resource_context_cm(context) as my_resource:
+                    yield my_resource
+
+        """
+        with cls(**context.resource_config or {})._initialize_and_run_cm(  # noqa: SLF001
+            context
+        ) as value:
+            yield value
 
 
 class ConfigurableResource(ConfigurableResourceFactory[TResValue]):

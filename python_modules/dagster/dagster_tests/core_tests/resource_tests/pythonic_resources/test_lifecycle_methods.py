@@ -6,9 +6,11 @@ from dagster import (
     ConfigurableResource,
     Definitions,
     RunConfig,
+    build_init_resource_context,
     job,
     op,
 )
+from dagster._check import CheckError
 from dagster._core.errors import DagsterResourceFunctionError
 from dagster._core.execution.context.init import InitResourceContext
 from pydantic import PrivateAttr
@@ -406,3 +408,71 @@ def test_nested_resources_init_with_privateattr_runtime_config() -> None:
         "load_from_s3_op",
         "get_object my-bucket my-key with jwt my_jwt",
     ]
+
+
+def test_direct_invocation_from_context() -> None:
+    log = []
+
+    class AWSCredentialsResource(ConfigurableResource):
+        access_key: str
+        secret_key: str
+
+        _jwt: str = PrivateAttr()
+
+        def setup_for_execution(self, context: InitResourceContext) -> None:
+            self._jwt = "my_jwt"
+            log.append("setup_for_execution")
+
+        @property
+        def jwt(self) -> str:
+            return self._jwt
+
+    res = AWSCredentialsResource.from_resource_context(
+        build_init_resource_context(config={"access_key": "my_key", "secret_key": "my_secret"})
+    )
+    assert res.jwt == "my_jwt"
+    assert log == ["setup_for_execution"]
+
+    # no need to use a context manager, but still works
+    log.clear()
+    with AWSCredentialsResource.from_resource_context_cm(
+        build_init_resource_context(config={"access_key": "my_key", "secret_key": "my_secret"})
+    ) as res:
+        assert res.jwt == "my_jwt"
+        assert log == ["setup_for_execution"]
+
+
+def test_direct_invocation_from_context_cm() -> None:
+    log = []
+
+    class AWSCredentialsResource(ConfigurableResource):
+        access_key: str
+        secret_key: str
+
+        _jwt: str = PrivateAttr()
+
+        def setup_for_execution(self, context: InitResourceContext) -> None:
+            self._jwt = "my_jwt"
+            log.append("setup_for_execution")
+
+        def teardown_after_execution(self, context: InitResourceContext) -> None:
+            del self._jwt
+            log.append("teardown_after_execution")
+
+        @property
+        def jwt(self) -> str:
+            return self._jwt
+
+    # need to use a context manager to ensure teardown is called
+    with pytest.raises(CheckError):
+        res = AWSCredentialsResource.from_resource_context(
+            build_init_resource_context(config={"access_key": "my_key", "secret_key": "my_secret"})
+        )
+
+    log.clear()
+    with AWSCredentialsResource.from_resource_context_cm(
+        build_init_resource_context(config={"access_key": "my_key", "secret_key": "my_secret"})
+    ) as res:
+        assert res.jwt == "my_jwt"
+        assert log == ["setup_for_execution"]
+    assert log == ["setup_for_execution", "teardown_after_execution"]
