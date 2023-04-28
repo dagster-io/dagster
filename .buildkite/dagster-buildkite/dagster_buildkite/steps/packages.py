@@ -593,6 +593,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "python_modules/libraries/dagstermill",
         pytest_tox_factors=["papermill1", "papermill2"],
+        retries=2,  # Workaround for flaky kernel issues
     ),
     PackageSpec(
         ".buildkite/dagster-buildkite",
