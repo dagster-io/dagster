@@ -27,7 +27,7 @@ import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
 import {MULTIPLE_DEFINITIONS_WARNING} from './AssetDefinedInMultipleReposNotice';
 import {LaunchAssetChoosePartitionsDialog} from './LaunchAssetChoosePartitionsDialog';
 import {partitionDefinitionsEqual} from './MultipartitioningSupport';
-import {isAssetMissing, isAssetStale} from './Stale';
+import {isAssetStale} from './Stale';
 import {AssetKey} from './types';
 import {
   LaunchAssetExecutionAssetNodeFragment,
@@ -134,10 +134,8 @@ function optionsForButton(scope: AssetsInScope, liveDataForStale?: LiveData): La
   });
 
   if (liveDataForStale) {
-    const missingOrStale = assets.filter(
-      (a) =>
-        isAssetMissing(liveDataForStale[toGraphId(a.assetKey)]) ||
-        isAssetStale(liveDataForStale[toGraphId(a.assetKey)]),
+    const missingOrStale = assets.filter((a) =>
+      isAssetStale(liveDataForStale[toGraphId(a.assetKey)]),
     );
 
     options.push({

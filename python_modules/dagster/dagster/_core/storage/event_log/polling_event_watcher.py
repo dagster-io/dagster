@@ -3,9 +3,7 @@ from typing import Callable, List, MutableMapping, NamedTuple, Optional
 
 import dagster._check as check
 from dagster._core.events.log import EventLogEntry
-from dagster._core.storage.event_log.base import EventLogCursor
-
-from .sql_event_log import SqlEventLogStorage
+from dagster._core.storage.event_log.base import EventLogCursor, EventLogStorage
 
 POLLING_CADENCE = 0.1  # 100 ms
 
@@ -32,9 +30,9 @@ class SqlPollingEventWatcher:
         INVARIANTS: _dict_lock protects _run_id_to_watcher_dict
     """
 
-    def __init__(self, event_log_storage: SqlEventLogStorage):
+    def __init__(self, event_log_storage: EventLogStorage):
         self._event_log_storage = check.inst_param(
-            event_log_storage, "event_log_storage", SqlEventLogStorage
+            event_log_storage, "event_log_storage", EventLogStorage
         )
 
         # INVARIANT: dict_lock protects _run_id_to_watcher_dict
@@ -100,16 +98,16 @@ class SqlPollingRunIdEventWatcherThread(threading.Thread):
 
     """
 
-    def __init__(self, event_log_storage: SqlEventLogStorage, run_id: str):
+    def __init__(self, event_log_storage: EventLogStorage, run_id: str):
         super(SqlPollingRunIdEventWatcherThread, self).__init__()
         self._event_log_storage = check.inst_param(
-            event_log_storage, "event_log_storage", SqlEventLogStorage
+            event_log_storage, "event_log_storage", EventLogStorage
         )
         self._run_id = check.str_param(run_id, "run_id")
         self._callback_fn_list_lock: threading.Lock = threading.Lock()
         self._callback_fn_list: List[CallbackAfterCursor] = []
         self._should_thread_exit = threading.Event()
-        self.name = f"mysql-event-watch-run-id-{self._run_id}"
+        self.name = f"sql-event-watch-run-id-{self._run_id}"
 
     @property
     def should_thread_exit(self) -> threading.Event:

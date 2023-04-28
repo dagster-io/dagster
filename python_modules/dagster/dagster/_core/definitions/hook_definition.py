@@ -54,7 +54,7 @@ class HookDefinition(
 
         We currently support hooks to decorate the following:
 
-        - PipelineDefinition: when the hook decorates a job definition, it will be added to
+        - JobDefinition: when the hook decorates a job definition, it will be added to
             all the op invocations within the job.
 
         Example:

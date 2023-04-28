@@ -32,6 +32,10 @@ class AssetsDefinitionCacheableData(
             ("can_subset", bool),
             ("extra_metadata", Optional[Mapping[Any, Any]]),
             ("freshness_policies_by_output_name", Optional[Mapping[str, FreshnessPolicy]]),
+            (
+                "auto_materialize_policies_by_output_name",
+                Optional[Mapping[str, AutoMaterializePolicy]],
+            ),
         ],
     )
 ):
@@ -50,6 +54,9 @@ class AssetsDefinitionCacheableData(
         can_subset: bool = False,
         extra_metadata: Optional[Mapping[Any, Any]] = None,
         freshness_policies_by_output_name: Optional[Mapping[str, FreshnessPolicy]] = None,
+        auto_materialize_policies_by_output_name: Optional[
+            Mapping[str, AutoMaterializePolicy]
+        ] = None,
     ):
         extra_metadata = check.opt_nullable_mapping_param(extra_metadata, "extra_metadata")
         try:
@@ -87,11 +94,17 @@ class AssetsDefinitionCacheableData(
                 key_type=str,
                 value_type=FreshnessPolicy,
             ),
+            auto_materialize_policies_by_output_name=check.opt_nullable_mapping_param(
+                auto_materialize_policies_by_output_name,
+                "auto_materialize_policies_by_output_name",
+                key_type=str,
+                value_type=AutoMaterializePolicy,
+            ),
         )
 
     # Allow this to be hashed for use in `lru_cache`. This is needed because:
-    # - `ReconstructablePipeline` uses `lru_cache`
-    # - `ReconstructablePipeline` has a `ReconstructableRepository` attribute
+    # - `ReconstructableJob` uses `lru_cache`
+    # - `ReconstructableJob` has a `ReconstructableRepository` attribute
     # - `ReconstructableRepository` has a `RepositoryLoadData` attribute
     # - `RepositoryLoadData` has a `Mapping` attribute containing `AssetsDefinitionCacheableData`
     # - `AssetsDefinitionCacheableData` has collection attributes that are unhashable by default

@@ -424,7 +424,7 @@ def test_validate_run_config():
     }
 
     result_with_runconfig = validate_run_config(
-        job_requires_config, RunConfig(ops={"requires_config": {"foo": "bar"}})
+        job_requires_config, RunConfig(ops={"requires_config": {"config": {"foo": "bar"}}})
     )
     assert result_with_runconfig == result
 

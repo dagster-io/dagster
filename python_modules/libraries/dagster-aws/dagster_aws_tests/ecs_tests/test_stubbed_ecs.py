@@ -187,6 +187,7 @@ def test_put_account_setting(ecs):
     assert task_arn_format_setting["value"] == "disabled"
 
 
+@pytest.mark.flaky(reruns=1)
 def test_register_task_definition(ecs):
     # Without memory
     with pytest.raises(ClientError):
@@ -274,6 +275,13 @@ def test_register_task_definition(ecs):
                 cpu="256",
             )
 
+        # Infrequently, our concurrent futures don't fire fast enough to hit
+        # our stubbed ECS's lock. We can force this flaky behavior by firing
+        # thousands of futures; by the time the later futures launch, the
+        # earlier futures have already completed and released their lock.
+        #
+        # We've marked this test as flaky and retry it once on failure to
+        # try to mitigate this.
         futures = [executor.submit(task) for i in range(2)]
 
     # We successfully registered only 1 task definition revision

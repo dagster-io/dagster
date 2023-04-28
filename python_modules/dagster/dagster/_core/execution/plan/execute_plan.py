@@ -29,29 +29,25 @@ from dagster._utils.error import SerializableErrorInfo, serializable_error_info_
 
 
 def inner_plan_execution_iterator(
-    pipeline_context: PlanExecutionContext, execution_plan: ExecutionPlan
+    job_context: PlanExecutionContext, execution_plan: ExecutionPlan
 ) -> Iterator[DagsterEvent]:
-    check.inst_param(pipeline_context, "pipeline_context", PlanExecutionContext)
+    check.inst_param(job_context, "pipeline_context", PlanExecutionContext)
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
-    compute_log_manager = pipeline_context.instance.compute_log_manager
+    compute_log_manager = job_context.instance.compute_log_manager
     step_keys = [step.key for step in execution_plan.get_steps_to_execute_in_topo_order()]
-    with execution_plan.start(retry_mode=pipeline_context.retry_mode) as active_execution:
+    with execution_plan.start(retry_mode=job_context.retry_mode) as active_execution:
         with ExitStack() as capture_stack:
             # begin capturing logs for the whole process if this is a captured log manager
             if isinstance(compute_log_manager, CapturedLogManager):
                 file_key = create_compute_log_file_key()
-                log_key = compute_log_manager.build_log_key_for_run(
-                    pipeline_context.run_id, file_key
-                )
+                log_key = compute_log_manager.build_log_key_for_run(job_context.run_id, file_key)
                 try:
                     log_context = capture_stack.enter_context(
                         compute_log_manager.capture_logs(log_key)
                     )
-                    yield DagsterEvent.capture_logs(
-                        pipeline_context, step_keys, log_key, log_context
-                    )
+                    yield DagsterEvent.capture_logs(job_context, step_keys, log_key, log_context)
                 except Exception:
-                    yield from _handle_compute_log_setup_error(pipeline_context, sys.exc_info())
+                    yield from _handle_compute_log_setup_error(job_context, sys.exc_info())
 
             # It would be good to implement a reference tracking algorithm here to
             # garbage collect results that are no longer needed by any steps
@@ -60,7 +56,7 @@ def inner_plan_execution_iterator(
                 step = active_execution.get_next_step()
                 step_context = cast(
                     StepExecutionContext,
-                    pipeline_context.for_step(step, active_execution.get_known_state()),
+                    job_context.for_step(step, active_execution.get_known_state()),
                 )
                 step_event_list = []
 
@@ -84,7 +80,7 @@ def inner_plan_execution_iterator(
                         # capture all of the logs for individual steps
                         try:
                             step_stack.enter_context(
-                                pipeline_context.instance.compute_log_manager.watch(
+                                job_context.instance.compute_log_manager.watch(
                                     step_context.dagster_run, step_context.step.key
                                 )
                             )
@@ -100,7 +96,7 @@ def inner_plan_execution_iterator(
                             yield step_event
                             active_execution.handle_event(step_event)
 
-                        active_execution.verify_complete(pipeline_context, step.key)
+                        active_execution.verify_complete(job_context, step.key)
 
                         try:
                             step_stack.close()
@@ -119,10 +115,10 @@ def inner_plan_execution_iterator(
                             yield step_event
                             active_execution.handle_event(step_event)
 
-                        active_execution.verify_complete(pipeline_context, step.key)
+                        active_execution.verify_complete(job_context, step.key)
 
                 # process skips from failures or uncovered inputs
-                for event in active_execution.plan_events_iterator(pipeline_context):
+                for event in active_execution.plan_events_iterator(job_context):
                     step_event_list.append(event)
                     yield event
 
@@ -133,7 +129,7 @@ def inner_plan_execution_iterator(
             try:
                 capture_stack.close()
             except Exception:
-                yield from _handle_compute_log_teardown_error(pipeline_context, sys.exc_info())
+                yield from _handle_compute_log_teardown_error(job_context, sys.exc_info())
 
 
 def _handle_compute_log_setup_error(
@@ -160,7 +156,7 @@ def _trigger_hook(
     step_context: StepExecutionContext, step_event_list: Sequence[DagsterEvent]
 ) -> Iterator[DagsterEvent]:
     """Trigger hooks and record hook's operatonal events."""
-    hook_defs = step_context.pipeline_def.get_all_hooks_for_handle(step_context.node_handle)
+    hook_defs = step_context.job_def.get_all_hooks_for_handle(step_context.node_handle)
     # when the solid doesn't have a hook configured
     if hook_defs is None:
         return

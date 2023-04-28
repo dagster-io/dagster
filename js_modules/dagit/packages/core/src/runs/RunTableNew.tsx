@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Box, Checkbox, Colors, Icon, NonIdealState, Table, Mono} from '@dagster-io/ui';
+import {Box, Checkbox, Colors, Icon, NonIdealState, Table, Mono, Tag} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -7,7 +7,6 @@ import styled from 'styled-components/macro';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {RunsFilter} from '../graphql/types';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
-import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {getPipelineSnapshotLink} from '../pipelines/PipelinePathUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {AnchorButton} from '../ui/AnchorButton';
@@ -16,6 +15,7 @@ import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspac
 
 import {AssetKeyTagCollection} from './AssetKeyTagCollection';
 import {RunActionsMenu, RunBulkActionsMenu} from './RunActionsMenu';
+import {RunCreatedByCell} from './RunCreatedByCell';
 import {RunStatusTagWithStats} from './RunStatusTag';
 import {DagsterTag, TagType} from './RunTag';
 import {RunTags} from './RunTags';
@@ -37,7 +37,8 @@ interface RunTableProps {
   highlightedIds?: string[];
   additionalColumnHeaders?: React.ReactNode[];
   additionalColumnsForRow?: (run: RunTableRunFragment) => React.ReactNode[];
-  belowActionBarComponents?: React.ReactNode[];
+  belowActionBarComponents?: React.ReactNode;
+  hideCreatedBy?: boolean;
 }
 
 export const RunTable = (props: RunTableProps) => {
@@ -48,6 +49,7 @@ export const RunTable = (props: RunTableProps) => {
     highlightedIds,
     actionBarComponents,
     belowActionBarComponents,
+    hideCreatedBy,
   } = props;
   const allIds = runs.map((r) => r.id);
 
@@ -113,7 +115,7 @@ export const RunTable = (props: RunTableProps) => {
               <th style={{width: 90}}>Run ID</th>
               <th style={{width: 180}}>Created date</th>
               <th>Target</th>
-              <th style={{width: 160}}>Created by</th>
+              {hideCreatedBy ? null : <th style={{width: 160}}>Created by</th>}
               <th style={{width: 120}}>Status</th>
               <th style={{width: 190}}>Duration</th>
               {props.additionalColumnHeaders}
@@ -147,7 +149,6 @@ export const RunTable = (props: RunTableProps) => {
         top={
           <>
             {actionBarComponents}
-            <div style={{flex: 1}} />
             <RunBulkActionsMenu
               selected={selectedFragments}
               clearSelection={() => onToggleAll(false)}
@@ -205,6 +206,7 @@ const RunRow: React.FC<{
   onToggleChecked?: (values: {checked: boolean; shiftKey: boolean}) => void;
   additionalColumns?: React.ReactNode[];
   isHighlighted?: boolean;
+  hideCreatedBy?: boolean;
 }> = ({
   run,
   canTerminateOrDelete,
@@ -213,6 +215,7 @@ const RunRow: React.FC<{
   onToggleChecked,
   additionalColumns,
   isHighlighted,
+  hideCreatedBy,
 }) => {
   const {pipelineName} = run;
   const repo = useRepositoryForRunWithoutSnapshot(run);
@@ -235,7 +238,7 @@ const RunRow: React.FC<{
     }
   };
 
-  const {RunCreatedByCell} = useLaunchPadHooks();
+  const isReexecution = run.tags.some((tag) => tag.key === DagsterTag.ParentRunId);
 
   return (
     <Row highlighted={!!isHighlighted}>
@@ -250,7 +253,14 @@ const RunRow: React.FC<{
         </Link>
       </td>
       <td>
-        <RunTime run={run} />
+        <Box flex={{direction: 'column', gap: 8}}>
+          <RunTime run={run} />
+          {isReexecution ? (
+            <div>
+              <Tag icon="cached">Re-execution</Tag>
+            </div>
+          ) : null}
+        </Box>
       </td>
       <td>
         <Box flex={{direction: 'column', gap: 5}}>
@@ -301,9 +311,11 @@ const RunRow: React.FC<{
           />
         </Box>
       </td>
-      <td>
-        <RunCreatedByCell run={run} />
-      </td>
+      {hideCreatedBy ? null : (
+        <td>
+          <RunCreatedByCell run={run} />
+        </td>
+      )}
       <td>
         <RunStatusTagWithStats status={run.status} runId={run.id} />
       </td>
@@ -323,13 +335,13 @@ const Row = styled.tr<{highlighted: boolean}>`
     highlighted ? `box-shadow: inset 3px 3px #bfccd6, inset -3px -3px #bfccd6;` : null}
 `;
 
-function ActionBar({top, bottom}: {top: React.ReactNode; bottom?: React.ReactNode[]}) {
+function ActionBar({top, bottom}: {top: React.ReactNode; bottom?: React.ReactNode}) {
   return (
     <Box flex={{direction: 'column'}} padding={{vertical: 12}}>
       <Box flex={{alignItems: 'center', gap: 12}} padding={{left: 24, right: 24}}>
         {top}
       </Box>
-      {bottom && bottom.length > 0 ? (
+      {bottom ? (
         <Box
           margin={{top: 12}}
           padding={{left: 24, right: 12, top: 8}}

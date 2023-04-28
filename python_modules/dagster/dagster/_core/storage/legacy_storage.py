@@ -33,7 +33,7 @@ if TYPE_CHECKING:
     from dagster._core.events.log import EventLogEntry
     from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
     from dagster._core.execution.stats import RunStepKeyStatsSnapshot
-    from dagster._core.host_representation.origin import ExternalPipelineOrigin
+    from dagster._core.host_representation.origin import ExternalJobOrigin
     from dagster._core.instance import DagsterInstance
     from dagster._core.scheduler.instigation import (
         InstigatorState,
@@ -43,12 +43,12 @@ if TYPE_CHECKING:
         TickStatus,
     )
     from dagster._core.snap.execution_plan_snapshot import ExecutionPlanSnapshot
-    from dagster._core.snap.pipeline_snapshot import PipelineSnapshot
+    from dagster._core.snap.pipeline_snapshot import JobSnapshot
     from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
     from dagster._core.storage.pipeline_run import (
         DagsterRun,
+        DagsterRunStatsSnapshot,
         JobBucket,
-        PipelineRunStatsSnapshot,
         RunPartitionData,
         RunRecord,
         RunsFilter,
@@ -181,8 +181,8 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
         ).rehydrate(as_type=DagsterStorage)
         return LegacyRunStorage(storage, inst_data=inst_data)
 
-    def add_run(self, pipeline_run: "DagsterRun") -> "DagsterRun":
-        return self._storage.run_storage.add_run(pipeline_run)
+    def add_run(self, dagster_run: "DagsterRun") -> "DagsterRun":
+        return self._storage.run_storage.add_run(dagster_run)
 
     def handle_run_event(self, run_id: str, event: "DagsterEvent") -> None:
         return self._storage.run_storage.handle_run_event(run_id, event)
@@ -242,7 +242,7 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
 
     def add_snapshot(
         self,
-        snapshot: Union["PipelineSnapshot", "ExecutionPlanSnapshot"],
+        snapshot: Union["JobSnapshot", "ExecutionPlanSnapshot"],
         snapshot_id: Optional[str] = None,
     ) -> None:
         return self._storage.run_storage.add_snapshot(snapshot, snapshot_id)
@@ -250,16 +250,16 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
     def has_snapshot(self, snapshot_id: str) -> bool:
         return self._storage.run_storage.has_snapshot(snapshot_id)
 
-    def has_pipeline_snapshot(self, pipeline_snapshot_id: str) -> bool:
-        return self._storage.run_storage.has_pipeline_snapshot(pipeline_snapshot_id)
+    def has_job_snapshot(self, job_snapshot_id: str) -> bool:
+        return self._storage.run_storage.has_job_snapshot(job_snapshot_id)
 
-    def add_pipeline_snapshot(
-        self, pipeline_snapshot: "PipelineSnapshot", snapshot_id: Optional[str] = None
+    def add_job_snapshot(
+        self, job_snapshot: "JobSnapshot", snapshot_id: Optional[str] = None
     ) -> str:
-        return self._storage.run_storage.add_pipeline_snapshot(pipeline_snapshot, snapshot_id)
+        return self._storage.run_storage.add_job_snapshot(job_snapshot, snapshot_id)
 
-    def get_pipeline_snapshot(self, pipeline_snapshot_id: str) -> "PipelineSnapshot":
-        return self._storage.run_storage.get_pipeline_snapshot(pipeline_snapshot_id)
+    def get_job_snapshot(self, job_snapshot_id: str) -> "JobSnapshot":
+        return self._storage.run_storage.get_job_snapshot(job_snapshot_id)
 
     def has_execution_plan_snapshot(self, execution_plan_snapshot_id: str) -> bool:
         return self._storage.run_storage.has_execution_plan_snapshot(execution_plan_snapshot_id)
@@ -333,7 +333,7 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
     def set_cursor_values(self, pairs: Mapping[str, str]) -> None:
         return self._storage.run_storage.set_cursor_values(pairs)
 
-    def replace_job_origin(self, run: "DagsterRun", job_origin: "ExternalPipelineOrigin") -> None:
+    def replace_job_origin(self, run: "DagsterRun", job_origin: "ExternalJobOrigin") -> None:
         return self._storage.run_storage.replace_job_origin(run, job_origin)
 
 
@@ -385,7 +385,7 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     ) -> Iterable["EventLogEntry"]:
         return self._storage.event_log_storage.get_logs_for_run(run_id, cursor, of_type, limit)
 
-    def get_stats_for_run(self, run_id: str) -> "PipelineRunStatsSnapshot":
+    def get_stats_for_run(self, run_id: str) -> "DagsterRunStatsSnapshot":
         return self._storage.event_log_storage.get_stats_for_run(run_id)
 
     def get_step_stats_for_run(

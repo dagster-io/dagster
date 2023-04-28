@@ -55,8 +55,8 @@ def test_execute_schedule_on_celery_k8s(dagster_instance_for_daemon, helm_namesp
 
         last_run = schedule_runs[0]
 
-        finished_pipeline_run = poll_for_finished_run(
+        finished_dagster_run = poll_for_finished_run(
             dagster_instance_for_daemon, last_run.run_id, timeout=180
         )
 
-        assert finished_pipeline_run.is_success
+        assert finished_dagster_run.is_success

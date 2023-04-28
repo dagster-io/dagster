@@ -10,25 +10,30 @@ from dagster._core.execution.retries import RetryMode
 from dagster._core.host_representation.external_data import DEFAULT_MODE_NAME
 from dagster._core.host_representation.origin import (
     CodeLocationOrigin,
-    ExternalPipelineOrigin,
+    ExternalJobOrigin,
     ExternalRepositoryOrigin,
 )
 from dagster._core.instance.ref import InstanceRef
-from dagster._core.origin import PipelinePythonOrigin, get_python_environment_entry_point
+from dagster._core.origin import JobPythonOrigin, get_python_environment_entry_point
 from dagster._serdes import serialize_value, whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(
+    storage_field_names={
+        "job_origin": "pipeline_origin",
+        "job_snapshot_id": "pipeline_snapshot_id",
+    }
+)
 class ExecutionPlanSnapshotArgs(
     NamedTuple(
         "_ExecutionPlanSnapshotArgs",
         [
-            ("pipeline_origin", ExternalPipelineOrigin),
+            ("job_origin", ExternalJobOrigin),
             ("solid_selection", Sequence[str]),
             ("run_config", Mapping[str, object]),
             ("step_keys_to_execute", Optional[Sequence[str]]),
-            ("pipeline_snapshot_id", str),
+            ("job_snapshot_id", str),
             ("known_state", Optional[KnownExecutionState]),
             ("instance_ref", Optional[InstanceRef]),
             ("asset_selection", Optional[AbstractSet[AssetKey]]),
@@ -38,11 +43,11 @@ class ExecutionPlanSnapshotArgs(
 ):
     def __new__(
         cls,
-        pipeline_origin: ExternalPipelineOrigin,
+        job_origin: ExternalJobOrigin,
         solid_selection: Sequence[str],
         run_config: Mapping[str, object],
         step_keys_to_execute: Optional[Sequence[str]],
-        pipeline_snapshot_id: str,
+        job_snapshot_id: str,
         known_state: Optional[KnownExecutionState] = None,
         instance_ref: Optional[InstanceRef] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
@@ -50,9 +55,7 @@ class ExecutionPlanSnapshotArgs(
     ):
         return super(ExecutionPlanSnapshotArgs, cls).__new__(
             cls,
-            pipeline_origin=check.inst_param(
-                pipeline_origin, "pipeline_origin", ExternalPipelineOrigin
-            ),
+            job_origin=check.inst_param(job_origin, "job_origin", ExternalJobOrigin),
             solid_selection=check.opt_sequence_param(
                 solid_selection, "solid_selection", of_type=str
             ),
@@ -61,7 +64,7 @@ class ExecutionPlanSnapshotArgs(
             step_keys_to_execute=check.opt_nullable_sequence_param(
                 step_keys_to_execute, "step_keys_to_execute", of_type=str
             ),
-            pipeline_snapshot_id=check.str_param(pipeline_snapshot_id, "pipeline_snapshot_id"),
+            job_snapshot_id=check.str_param(job_snapshot_id, "job_snapshot_id"),
             known_state=check.opt_inst_param(known_state, "known_state", KnownExecutionState),
             instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
             asset_selection=check.opt_nullable_set_param(
@@ -70,7 +73,7 @@ class ExecutionPlanSnapshotArgs(
         )
 
 
-def _get_entry_point(origin: PipelinePythonOrigin):
+def _get_entry_point(origin: JobPythonOrigin):
     return (
         origin.repository_origin.entry_point
         if origin.repository_origin.entry_point
@@ -78,14 +81,19 @@ def _get_entry_point(origin: PipelinePythonOrigin):
     )
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(
+    storage_field_names={
+        "job_origin": "pipeline_origin",
+        "run_id": "pipeline_run_id",
+    }
+)
 class ExecuteRunArgs(
     NamedTuple(
         "_ExecuteRunArgs",
         [
             # Deprecated, only needed for back-compat since it can be pulled from the PipelineRun
-            ("pipeline_origin", PipelinePythonOrigin),
-            ("pipeline_run_id", str),
+            ("job_origin", JobPythonOrigin),
+            ("run_id", str),
             ("instance_ref", Optional[InstanceRef]),
             ("set_exit_code_on_failure", Optional[bool]),
         ],
@@ -93,19 +101,19 @@ class ExecuteRunArgs(
 ):
     def __new__(
         cls,
-        pipeline_origin: PipelinePythonOrigin,
-        pipeline_run_id: str,
+        job_origin: JobPythonOrigin,
+        run_id: str,
         instance_ref: Optional[InstanceRef],
         set_exit_code_on_failure: Optional[bool] = None,
     ):
         return super(ExecuteRunArgs, cls).__new__(
             cls,
-            pipeline_origin=check.inst_param(
-                pipeline_origin,
-                "pipeline_origin",
-                PipelinePythonOrigin,
+            job_origin=check.inst_param(
+                job_origin,
+                "job_origin",
+                JobPythonOrigin,
             ),
-            pipeline_run_id=check.str_param(pipeline_run_id, "pipeline_run_id"),
+            run_id=check.str_param(run_id, "run_id"),
             instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
             set_exit_code_on_failure=(
                 True
@@ -116,21 +124,26 @@ class ExecuteRunArgs(
         )
 
     def get_command_args(self) -> Sequence[str]:
-        return _get_entry_point(self.pipeline_origin) + [
+        return _get_entry_point(self.job_origin) + [
             "api",
             "execute_run",
             serialize_value(self),
         ]
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(
+    storage_field_names={
+        "job_origin": "pipeline_origin",
+        "run_id": "pipeline_run_id",
+    }
+)
 class ResumeRunArgs(
     NamedTuple(
         "_ResumeRunArgs",
         [
-            # Deprecated, only needed for back-compat since it can be pulled from the PipelineRun
-            ("pipeline_origin", PipelinePythonOrigin),
-            ("pipeline_run_id", str),
+            # Deprecated, only needed for back-compat since it can be pulled from the DagsterRun
+            ("job_origin", JobPythonOrigin),
+            ("run_id", str),
             ("instance_ref", Optional[InstanceRef]),
             ("set_exit_code_on_failure", Optional[bool]),
         ],
@@ -138,19 +151,19 @@ class ResumeRunArgs(
 ):
     def __new__(
         cls,
-        pipeline_origin: PipelinePythonOrigin,
-        pipeline_run_id: str,
+        job_origin: JobPythonOrigin,
+        run_id: str,
         instance_ref: Optional[InstanceRef],
         set_exit_code_on_failure: Optional[bool] = None,
     ):
         return super(ResumeRunArgs, cls).__new__(
             cls,
-            pipeline_origin=check.inst_param(
-                pipeline_origin,
-                "pipeline_origin",
-                PipelinePythonOrigin,
+            job_origin=check.inst_param(
+                job_origin,
+                "job_origin",
+                JobPythonOrigin,
             ),
-            pipeline_run_id=check.str_param(pipeline_run_id, "pipeline_run_id"),
+            run_id=check.str_param(run_id, "run_id"),
             instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
             set_exit_code_on_failure=(
                 True
@@ -161,50 +174,61 @@ class ResumeRunArgs(
         )
 
     def get_command_args(self) -> Sequence[str]:
-        return _get_entry_point(self.pipeline_origin) + [
+        return _get_entry_point(self.job_origin) + [
             "api",
             "resume_run",
             serialize_value(self),
         ]
 
 
-@whitelist_for_serdes
-class ExecuteExternalPipelineArgs(
+@whitelist_for_serdes(
+    storage_name="ExecuteExternalPipelineArgs",
+    storage_field_names={
+        "job_origin": "pipeline_origin",
+        "run_id": "pipeline_run_id",
+    },
+)
+class ExecuteExternalJobArgs(
     NamedTuple(
-        "_ExecuteExternalPipelineArgs",
+        "_ExecuteExternalJobArgs",
         [
-            ("pipeline_origin", ExternalPipelineOrigin),
-            ("pipeline_run_id", str),
+            ("job_origin", ExternalJobOrigin),
+            ("run_id", str),
             ("instance_ref", Optional[InstanceRef]),
         ],
     )
 ):
     def __new__(
         cls,
-        pipeline_origin: ExternalPipelineOrigin,
-        pipeline_run_id: str,
+        job_origin: ExternalJobOrigin,
+        run_id: str,
         instance_ref: Optional[InstanceRef],
     ):
-        return super(ExecuteExternalPipelineArgs, cls).__new__(
+        return super(ExecuteExternalJobArgs, cls).__new__(
             cls,
-            pipeline_origin=check.inst_param(
-                pipeline_origin,
-                "pipeline_origin",
-                ExternalPipelineOrigin,
+            job_origin=check.inst_param(
+                job_origin,
+                "job_origin",
+                ExternalJobOrigin,
             ),
-            pipeline_run_id=check.str_param(pipeline_run_id, "pipeline_run_id"),
+            run_id=check.str_param(run_id, "run_id"),
             instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
         )
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(
+    storage_field_names={
+        "job_origin": "pipeline_origin",
+        "run_id": "pipeline_run_id",
+    }
+)
 class ExecuteStepArgs(
     NamedTuple(
         "_ExecuteStepArgs",
         [
-            # Deprecated, only needed for back-compat since it can be pulled from the PipelineRun
-            ("pipeline_origin", PipelinePythonOrigin),
-            ("pipeline_run_id", str),
+            # Deprecated, only needed for back-compat since it can be pulled from the DagsterRun
+            ("job_origin", JobPythonOrigin),
+            ("run_id", str),
             ("step_keys_to_execute", Optional[Sequence[str]]),
             ("instance_ref", Optional[InstanceRef]),
             ("retry_mode", Optional[RetryMode]),
@@ -215,8 +239,8 @@ class ExecuteStepArgs(
 ):
     def __new__(
         cls,
-        pipeline_origin: PipelinePythonOrigin,
-        pipeline_run_id: str,
+        job_origin: JobPythonOrigin,
+        run_id: str,
         step_keys_to_execute: Optional[Sequence[str]],
         instance_ref: Optional[InstanceRef] = None,
         retry_mode: Optional[RetryMode] = None,
@@ -225,10 +249,8 @@ class ExecuteStepArgs(
     ):
         return super(ExecuteStepArgs, cls).__new__(
             cls,
-            pipeline_origin=check.inst_param(
-                pipeline_origin, "pipeline_origin", PipelinePythonOrigin
-            ),
-            pipeline_run_id=check.str_param(pipeline_run_id, "pipeline_run_id"),
+            job_origin=check.inst_param(job_origin, "job_origin", JobPythonOrigin),
+            run_id=check.str_param(run_id, "run_id"),
             step_keys_to_execute=check.opt_nullable_sequence_param(
                 step_keys_to_execute, "step_keys_to_execute", of_type=str
             ),
@@ -249,7 +271,7 @@ class ExecuteStepArgs(
         be used to pass the args to Click using an env var.
         """
         return (
-            _get_entry_point(self.pipeline_origin)
+            _get_entry_point(self.job_origin)
             + ["api", "execute_step"]
             + (
                 ["--compressed-input-json", self._get_compressed_args()]
@@ -442,12 +464,17 @@ class PartitionSetExecutionParamArgs(
         )
 
 
-@whitelist_for_serdes
-class PipelineSubsetSnapshotArgs(
+@whitelist_for_serdes(
+    storage_name="PipelineSubsetSnapshotArgs",
+    storage_field_names={
+        "job_origin": "pipeline_origin",
+    },
+)
+class JobSubsetSnapshotArgs(
     NamedTuple(
-        "_PipelineSubsetSnapshotArgs",
+        "_JobSubsetSnapshotArgs",
         [
-            ("pipeline_origin", ExternalPipelineOrigin),
+            ("job_origin", ExternalJobOrigin),
             ("solid_selection", Optional[Sequence[str]]),
             ("asset_selection", Optional[Sequence[AssetKey]]),
         ],
@@ -455,15 +482,13 @@ class PipelineSubsetSnapshotArgs(
 ):
     def __new__(
         cls,
-        pipeline_origin: ExternalPipelineOrigin,
+        job_origin: ExternalJobOrigin,
         solid_selection: Sequence[str],
         asset_selection: Optional[Sequence[AssetKey]] = None,
     ):
-        return super(PipelineSubsetSnapshotArgs, cls).__new__(
+        return super(JobSubsetSnapshotArgs, cls).__new__(
             cls,
-            pipeline_origin=check.inst_param(
-                pipeline_origin, "pipeline_origin", ExternalPipelineOrigin
-            ),
+            job_origin=check.inst_param(job_origin, "job_origin", ExternalJobOrigin),
             solid_selection=check.sequence_param(solid_selection, "solid_selection", of_type=str)
             if solid_selection
             else None,

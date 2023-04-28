@@ -180,10 +180,8 @@ class K8sContainerContext(
                 )
             )
 
-        if pipeline_run.pipeline_code_origin:
-            run_container_context = (
-                pipeline_run.pipeline_code_origin.repository_origin.container_context
-            )
+        if pipeline_run.job_code_origin:
+            run_container_context = pipeline_run.job_code_origin.repository_origin.container_context
 
             if run_container_context:
                 context = context.merge(

@@ -6,14 +6,14 @@ import dagster._check as check
 from dagster._core.definitions import ExpectationResult
 from dagster._core.events import MARKER_EVENTS, DagsterEventType, StepExpectationResultData
 from dagster._core.events.log import EventLogEntry
-from dagster._core.storage.pipeline_run import PipelineRunStatsSnapshot
+from dagster._core.storage.pipeline_run import DagsterRunStatsSnapshot
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils import datetime_as_float
 
 
 def build_run_stats_from_events(
     run_id: str, records: Iterable[EventLogEntry]
-) -> PipelineRunStatsSnapshot:
+) -> DagsterRunStatsSnapshot:
     try:
         iter(records)
     except TypeError as exc:
@@ -67,7 +67,7 @@ def build_run_stats_from_events(
                 else datetime_as_float(event.timestamp)
             )
 
-    return PipelineRunStatsSnapshot(
+    return DagsterRunStatsSnapshot(
         run_id,
         steps_succeeded,
         steps_failed,

@@ -21,8 +21,10 @@ from .asset_defs import (
 )
 from .ops import airbyte_sync_op as airbyte_sync_op
 from .resources import (
+    AirbyteCloudResource as AirbyteCloudResource,
     AirbyteResource as AirbyteResource,
     AirbyteState as AirbyteState,
+    airbyte_cloud_resource as airbyte_cloud_resource,
     airbyte_resource as airbyte_resource,
 )
 from .types import AirbyteOutput as AirbyteOutput

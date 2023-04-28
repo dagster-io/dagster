@@ -57,8 +57,8 @@ from .graph_definition import GraphDefinition
 from .job_definition import JobDefinition
 from .run_request import (
     AddDynamicPartitionsRequest,
+    DagsterRunReaction,
     DeleteDynamicPartitionsRequest,
-    PipelineRunReaction,
     RunRequest,
     SensorResult,
     SkipReason,
@@ -115,6 +115,8 @@ class SensorEvaluationContext:
         definitions (Optional[Definitions]): `Definitions` object that the sensor is defined in.
             If needed by the sensor, top-level resource definitions will be pulled from these
             definitions. You can provide either this or `repository_def`.
+        resources (Optional[Dict[str, Any]]): A dict of resource keys to resource
+            definitions to be made available during sensor execution.
 
     Example:
         .. code-block:: python
@@ -216,6 +218,7 @@ class SensorEvaluationContext:
             },
         )
 
+    @public
     @property
     def resources(self) -> Resources:
         from dagster._core.definitions.scoped_resources_builder import (
@@ -353,11 +356,11 @@ class SensorEvaluationContext:
 
 
 RawSensorEvaluationFunctionReturn = Union[
-    Iterator[Union[SkipReason, RunRequest, PipelineRunReaction, SensorResult]],
+    Iterator[Union[SkipReason, RunRequest, DagsterRunReaction, SensorResult]],
     Sequence[RunRequest],
     SkipReason,
     RunRequest,
-    PipelineRunReaction,
+    DagsterRunReaction,
     SensorResult,
 ]
 RawSensorEvaluationFunction: TypeAlias = Callable[..., RawSensorEvaluationFunctionReturn]
@@ -477,6 +480,7 @@ class SensorDefinition:
             job=new_jobs[0] if len(new_jobs) == 1 else None,
             default_status=self.default_status,
             asset_selection=self.asset_selection,
+            required_resource_keys=self.required_resource_keys,
         )
 
     def with_updated_job(self, new_job: ExecutableDefinition) -> "SensorDefinition":
@@ -529,7 +533,7 @@ class SensorDefinition:
         if job_name:
             targets = [
                 RepoRelativeTarget(
-                    pipeline_name=check.str_param(job_name, "job_name"),
+                    job_name=check.str_param(job_name, "job_name"),
                     solid_selection=None,
                 )
             ]
@@ -552,14 +556,16 @@ class SensorDefinition:
             SensorEvaluationFunction,
             Callable[
                 [SensorEvaluationContext],
-                Iterator[Union[SkipReason, RunRequest, PipelineRunReaction]],
+                Iterator[Union[SkipReason, RunRequest, DagsterRunReaction]],
             ],
         ] = wrap_sensor_evaluation(self._name, evaluation_fn)
         self._min_interval = check.opt_int_param(
             minimum_interval_seconds, "minimum_interval_seconds", DEFAULT_SENSOR_DAEMON_INTERVAL
         )
         self._description = check.opt_str_param(description, "description")
-        self._targets = check.opt_list_param(targets, "targets", (DirectTarget, RepoRelativeTarget))
+        self._targets: Sequence[Union[RepoRelativeTarget, DirectTarget]] = check.opt_list_param(
+            targets, "targets", (DirectTarget, RepoRelativeTarget)
+        )
         self._default_status = check.inst_param(
             default_status, "default_status", DefaultSensorStatus
         )
@@ -634,7 +640,7 @@ class SensorDefinition:
     @property
     def jobs(self) -> List[Union[JobDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]:
         if self._targets and all(isinstance(target, DirectTarget) for target in self._targets):
-            return [target.target for target in self._targets]
+            return [target.target for target in self._targets]  # type: ignore  # (illegible conditional)
         raise DagsterInvalidDefinitionError("No job was provided to SensorDefinition.")
 
     @property
@@ -657,7 +663,7 @@ class SensorDefinition:
 
         skip_message: Optional[str] = None
         run_requests: List[RunRequest] = []
-        pipeline_run_reactions: List[PipelineRunReaction] = []
+        dagster_run_reactions: List[DagsterRunReaction] = []
         dynamic_partitions_requests: Optional[
             Sequence[Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]]
         ] = []
@@ -667,7 +673,7 @@ class SensorDefinition:
             skip_message = "Sensor function returned an empty result"
         elif len(result) == 1:
             item = result[0]
-            check.inst(item, (SkipReason, RunRequest, PipelineRunReaction, SensorResult))
+            check.inst(item, (SkipReason, RunRequest, DagsterRunReaction, SensorResult))
 
             if isinstance(item, SensorResult):
                 run_requests = list(item.run_requests) if item.run_requests else []
@@ -692,11 +698,9 @@ class SensorDefinition:
                 run_requests = [item]
             elif isinstance(item, SkipReason):
                 skip_message = item.skip_message if isinstance(item, SkipReason) else None
-            elif isinstance(item, PipelineRunReaction):
-                pipeline_run_reactions = (
-                    [cast(PipelineRunReaction, item)]
-                    if isinstance(item, PipelineRunReaction)
-                    else []
+            elif isinstance(item, DagsterRunReaction):
+                dagster_run_reactions = (
+                    [cast(DagsterRunReaction, item)] if isinstance(item, DagsterRunReaction) else []
                 )
             else:
                 check.failed(f"Unexpected type {type(item)} in sensor result")
@@ -707,11 +711,11 @@ class SensorDefinition:
                     " returned."
                 )
 
-            check.is_list(result, (SkipReason, RunRequest, PipelineRunReaction))
+            check.is_list(result, (SkipReason, RunRequest, DagsterRunReaction))
             has_skip = any(map(lambda x: isinstance(x, SkipReason), result))
             run_requests = [item for item in result if isinstance(item, RunRequest)]
-            pipeline_run_reactions = [
-                item for item in result if isinstance(item, PipelineRunReaction)
+            dagster_run_reactions = [
+                item for item in result if isinstance(item, DagsterRunReaction)
             ]
 
             if has_skip:
@@ -720,7 +724,7 @@ class SensorDefinition:
                         "Expected a single SkipReason or one or more RunRequests: received both "
                         "RunRequest and SkipReason"
                     )
-                elif len(pipeline_run_reactions) > 0:
+                elif len(dagster_run_reactions) > 0:
                     check.failed(
                         "Expected a single SkipReason or one or more PipelineRunReaction: "
                         "received both PipelineRunReaction and SkipReason"
@@ -737,7 +741,7 @@ class SensorDefinition:
             resolved_run_requests,
             skip_message,
             updated_cursor,
-            pipeline_run_reactions,
+            dagster_run_reactions,
             captured_log_key=context.log_key if context.has_captured_logs() else None,
             dynamic_partitions_requests=dynamic_partitions_requests,
         )
@@ -778,7 +782,7 @@ class SensorDefinition:
             return context.repository_def.get_job(job_name)
 
         has_multiple_targets = len(self._targets) > 1
-        target_names = [target.pipeline_name for target in self._targets]
+        target_names = [target.job_name for target in self._targets]
 
         if run_requests and len(self._targets) == 0 and not self._asset_selection:
             raise Exception(
@@ -846,7 +850,7 @@ class SensorDefinition:
                 f"Cannot use `job_name` property for sensor {self.name}, which targets multiple"
                 " jobs."
             )
-        return self._targets[0].pipeline_name
+        return self._targets[0].job_name
 
     @public
     @property
@@ -858,7 +862,9 @@ class SensorDefinition:
         return self._asset_selection
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(
+    storage_field_names={"dagster_run_reactions": "pipeline_run_reactions"},
+)
 class SensorExecutionData(
     NamedTuple(
         "_SensorExecutionData",
@@ -866,7 +872,7 @@ class SensorExecutionData(
             ("run_requests", Optional[Sequence[RunRequest]]),
             ("skip_message", Optional[str]),
             ("cursor", Optional[str]),
-            ("pipeline_run_reactions", Optional[Sequence[PipelineRunReaction]]),
+            ("dagster_run_reactions", Optional[Sequence[DagsterRunReaction]]),
             ("captured_log_key", Optional[Sequence[str]]),
             (
                 "dynamic_partitions_requests",
@@ -877,12 +883,14 @@ class SensorExecutionData(
         ],
     )
 ):
+    dagster_run_reactions: Optional[Sequence[DagsterRunReaction]]
+
     def __new__(
         cls,
         run_requests: Optional[Sequence[RunRequest]] = None,
         skip_message: Optional[str] = None,
         cursor: Optional[str] = None,
-        pipeline_run_reactions: Optional[Sequence[PipelineRunReaction]] = None,
+        dagster_run_reactions: Optional[Sequence[DagsterRunReaction]] = None,
         captured_log_key: Optional[Sequence[str]] = None,
         dynamic_partitions_requests: Optional[
             Sequence[Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]]
@@ -891,9 +899,7 @@ class SensorExecutionData(
         check.opt_sequence_param(run_requests, "run_requests", RunRequest)
         check.opt_str_param(skip_message, "skip_message")
         check.opt_str_param(cursor, "cursor")
-        check.opt_sequence_param(
-            pipeline_run_reactions, "pipeline_run_reactions", PipelineRunReaction
-        )
+        check.opt_sequence_param(dagster_run_reactions, "dagster_run_reactions", DagsterRunReaction)
         check.opt_list_param(captured_log_key, "captured_log_key", str)
         check.opt_sequence_param(
             dynamic_partitions_requests,
@@ -908,7 +914,7 @@ class SensorExecutionData(
             run_requests=run_requests,
             skip_message=skip_message,
             cursor=cursor,
-            pipeline_run_reactions=pipeline_run_reactions,
+            dagster_run_reactions=dagster_run_reactions,
             captured_log_key=captured_log_key,
             dynamic_partitions_requests=dynamic_partitions_requests,
         )

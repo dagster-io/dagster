@@ -36,7 +36,7 @@ def test_recover_with_step_in_flight():
             active_execution.handle_event(
                 DagsterEvent(
                     DagsterEventType.STEP_START.value,
-                    pipeline_name=foo_job.name,
+                    job_name=foo_job.name,
                     step_key=step_1.key,
                 )
             )
@@ -48,7 +48,7 @@ def test_recover_with_step_in_flight():
             [
                 DagsterEvent(
                     DagsterEventType.STEP_START.value,
-                    pipeline_name=foo_job.name,
+                    job_name=foo_job.name,
                     step_key=step_1.key,
                 )
             ]
@@ -60,7 +60,7 @@ def test_recover_with_step_in_flight():
         active_execution.handle_event(
             DagsterEvent(
                 DagsterEventType.STEP_SUCCESS.value,
-                pipeline_name=foo_job.name,
+                job_name=foo_job.name,
                 event_specific_data=StepSuccessData(duration_ms=10.0),
                 step_key=step_1.key,
             )
@@ -89,12 +89,12 @@ def test_recover_in_between_steps():
     events = [
         DagsterEvent(
             DagsterEventType.STEP_START.value,
-            pipeline_name=two_op_job.name,
+            job_name=two_op_job.name,
             step_key="foo_op",
         ),
         DagsterEvent(
             DagsterEventType.STEP_OUTPUT.value,
-            pipeline_name=two_op_job.name,
+            job_name=two_op_job.name,
             event_specific_data=StepOutputData(
                 StepOutputHandle(step_key="foo_op", output_name="result")
             ),
@@ -102,7 +102,7 @@ def test_recover_in_between_steps():
         ),
         DagsterEvent(
             DagsterEventType.STEP_SUCCESS.value,
-            pipeline_name=two_op_job.name,
+            job_name=two_op_job.name,
             event_specific_data=StepSuccessData(duration_ms=10.0),
             step_key="foo_op",
         ),
@@ -135,14 +135,14 @@ def test_recover_in_between_steps():
         active_execution.handle_event(
             DagsterEvent(
                 DagsterEventType.STEP_START.value,
-                pipeline_name=two_op_job.name,
+                job_name=two_op_job.name,
                 step_key="bar_op",
             )
         )
         active_execution.handle_event(
             DagsterEvent(
                 DagsterEventType.STEP_SUCCESS.value,
-                pipeline_name=two_op_job.name,
+                job_name=two_op_job.name,
                 event_specific_data=StepSuccessData(duration_ms=10.0),
                 step_key="bar_op",
             )

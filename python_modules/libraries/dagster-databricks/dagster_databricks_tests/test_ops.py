@@ -3,7 +3,7 @@ from typing import Optional, Sequence
 import pytest
 from dagster import job
 from dagster._check import CheckError
-from dagster_databricks import databricks_client
+from dagster_databricks import DatabricksClientResource, databricks_client
 from dagster_databricks.ops import (
     create_databricks_run_now_op,
     create_databricks_submit_run_op,
@@ -43,6 +43,14 @@ def _mock_get_run_response() -> Sequence[dict]:
     ]
 
 
+@pytest.fixture(params=["pythonic", "legacy"])
+def databricks_client_factory(request):
+    if request.param == "pythonic":
+        return DatabricksClientResource
+    else:
+        return lambda **kwargs: databricks_client.configured(kwargs)
+
+
 @pytest.mark.parametrize(
     "databricks_job_configuration",
     [
@@ -64,7 +72,7 @@ def _mock_get_run_response() -> Sequence[dict]:
     ],
 )
 def test_databricks_run_now_op(
-    mocker: MockerFixture, databricks_job_configuration: Optional[dict]
+    databricks_client_factory, mocker: MockerFixture, databricks_job_configuration: Optional[dict]
 ) -> None:
     mock_run_now = mocker.patch("databricks_cli.sdk.JobsService.run_now")
     mock_get_run = mocker.patch("databricks_cli.sdk.JobsService.get_run")
@@ -81,8 +89,8 @@ def test_databricks_run_now_op(
 
     @job(
         resource_defs={
-            "databricks": databricks_client.configured(
-                {"host": "https://abc123.cloud.databricks.com/", "token": "token"}
+            "databricks": databricks_client_factory(
+                host="https://abc123.cloud.databricks.com/", token="token"
             )
         }
     )
@@ -99,7 +107,7 @@ def test_databricks_run_now_op(
     assert mock_get_run.call_count == 4
 
 
-def test_databricks_submit_run_op(mocker: MockerFixture) -> None:
+def test_databricks_submit_run_op(databricks_client_factory, mocker: MockerFixture) -> None:
     mock_submit_run = mocker.patch("databricks_cli.sdk.JobsService.submit_run")
     mock_get_run = mocker.patch("databricks_cli.sdk.JobsService.get_run")
     databricks_job_configuration = {
@@ -122,8 +130,8 @@ def test_databricks_submit_run_op(mocker: MockerFixture) -> None:
 
     @job(
         resource_defs={
-            "databricks": databricks_client.configured(
-                {"host": "https://abc123.cloud.databricks.com/", "token": "token"}
+            "databricks": databricks_client_factory(
+                host="https://abc123.cloud.databricks.com/", token="token"
             )
         }
     )

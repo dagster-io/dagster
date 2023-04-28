@@ -3,6 +3,7 @@ import json
 import os
 import random
 import subprocess
+from typing import Any, Mapping, Optional, Sequence
 
 import requests
 from dagster._utils.merger import merge_dicts
@@ -140,14 +141,14 @@ def _execute_query_over_graphql(dagit_url, query, variables):
 
 
 def launch_run_over_graphql(
-    dagit_url,
-    run_config,
-    pipeline_name,
-    repository_name="demo_execution_repo",
-    code_location_name="user-code-deployment-1",
-    solid_selection=None,
-    tags=None,
-):
+    dagit_url: str,
+    run_config: Mapping[str, Any],
+    job_name: str,
+    repository_name: str = "demo_execution_repo",
+    code_location_name: str = "user-code-deployment-1",
+    solid_selection: Optional[Sequence[str]] = None,
+    tags: Optional[Mapping[str, str]] = None,
+) -> str:
     tags = tags or {}
     variables = json.dumps(
         {
@@ -155,7 +156,7 @@ def launch_run_over_graphql(
                 "selector": {
                     "repositoryLocationName": code_location_name,
                     "repositoryName": repository_name,
-                    "pipelineName": pipeline_name,
+                    "pipelineName": job_name,
                     "solidSelection": solid_selection,
                 },
                 "runConfigData": run_config,

@@ -24,7 +24,7 @@ def test_dead_pipeline_init_failure_event():
     assert old_event
     new_event = DagsterEvent(
         event_type_value=old_event.event_type_value,
-        pipeline_name=old_event.pipeline_name,
+        job_name=old_event.job_name,
         event_specific_data=old_event.event_specific_data,
     )
     assert new_event.event_type_value == DagsterEventType.PIPELINE_FAILURE.value

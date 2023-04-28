@@ -32,6 +32,9 @@ run_retries:
   max_retries: 0
 
 sso_default_role: EDITOR
+
+auto_materialize:
+  run_tags: {}
 ```
 
 ---
@@ -45,6 +48,7 @@ For each deployment, you can configure settings for:
 - [Run retries](#run-retries-run_retries)
 - [SSO default role](#sso-default-role)
 - [Non-isolated runs](#non-isolated-runs)
+- [Auto-materialize](#auto-materialize)
 
 ### Run queue (run_queue)
 
@@ -205,6 +209,27 @@ non_isolated_runs:
     <ul>
       <li>
         <strong>Default</strong> - <code>1</code>
+      </li>
+    </ul>
+  </ReferenceTableItem>
+</ReferenceTable>
+
+### Auto-materialize
+
+Configure [auto-materializing assets](/concepts/assets/asset-auto-execution) for your deployment.
+
+```yaml
+auto_materialize:
+  run_tags:
+    foo: bar
+```
+
+<ReferenceTable>
+  <ReferenceTableItem propertyName="run_tags">
+    Tags to apply to all runs created for an auto-materialize policy.
+    <ul>
+      <li>
+        <strong>Default</strong> - <code>None</code>
       </li>
     </ul>
   </ReferenceTableItem>

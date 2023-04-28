@@ -54,30 +54,30 @@ const CompletedResponse = buildBackfillDetailsQuery(
     status: BulkActionStatus.COMPLETED,
     timestamp: Date.now() / 1000 - 10000,
     assetBackfillData: buildAssetBackfillData({
-      assetPartitionsStatusCounts: [
+      assetBackfillStatuses: [
         buildAssetPartitionsStatusCounts({
-          numPartitionsCompleted: 50,
+          numPartitionsMaterialized: 50,
           numPartitionsFailed: 50,
           numPartitionsTargeted: 100,
-          numPartitionsRequested: 0,
+          numPartitionsInProgress: 0,
         }),
         buildAssetPartitionsStatusCounts({
-          numPartitionsCompleted: 10,
+          numPartitionsMaterialized: 10,
           numPartitionsFailed: 90,
           numPartitionsTargeted: 100,
-          numPartitionsRequested: 0,
+          numPartitionsInProgress: 0,
         }),
         buildAssetPartitionsStatusCounts({
-          numPartitionsCompleted: 10,
+          numPartitionsMaterialized: 10,
           numPartitionsFailed: 90,
           numPartitionsTargeted: 100,
-          numPartitionsRequested: 0,
+          numPartitionsInProgress: 0,
         }),
         buildAssetPartitionsStatusCounts({
-          numPartitionsCompleted: 10,
+          numPartitionsMaterialized: 10,
           numPartitionsFailed: 90,
           numPartitionsTargeted: 100,
-          numPartitionsRequested: 0,
+          numPartitionsInProgress: 0,
         }),
       ],
     }),
@@ -92,30 +92,30 @@ const InProgressResponse = buildBackfillDetailsQuery(
     timestamp: Date.now() / 1000 - 10000,
     endTimestamp: Date.now() / 1000 - 10,
     assetBackfillData: buildAssetBackfillData({
-      assetPartitionsStatusCounts: [
+      assetBackfillStatuses: [
         buildAssetPartitionsStatusCounts({
-          numPartitionsCompleted: 25,
+          numPartitionsMaterialized: 25,
           numPartitionsFailed: 25,
           numPartitionsTargeted: 100,
-          numPartitionsRequested: 25,
+          numPartitionsInProgress: 25,
         }),
         buildAssetPartitionsStatusCounts({
-          numPartitionsCompleted: 25,
+          numPartitionsMaterialized: 25,
           numPartitionsFailed: 25,
           numPartitionsTargeted: 100,
-          numPartitionsRequested: 25,
+          numPartitionsInProgress: 25,
         }),
         buildAssetPartitionsStatusCounts({
-          numPartitionsCompleted: 25,
+          numPartitionsMaterialized: 25,
           numPartitionsFailed: 25,
           numPartitionsTargeted: 100,
-          numPartitionsRequested: 25,
+          numPartitionsInProgress: 25,
         }),
         buildAssetPartitionsStatusCounts({
-          numPartitionsCompleted: 25,
+          numPartitionsMaterialized: 25,
           numPartitionsFailed: 25,
           numPartitionsTargeted: 100,
-          numPartitionsRequested: 25,
+          numPartitionsInProgress: 25,
         }),
       ],
     }),
@@ -130,12 +130,12 @@ const CanceledResponse = buildBackfillDetailsQuery(
     timestamp: Date.now() / 1000 - 10000,
     endTimestamp: Date.now() / 1000 - 10,
     assetBackfillData: buildAssetBackfillData({
-      assetPartitionsStatusCounts: [
+      assetBackfillStatuses: [
         buildAssetPartitionsStatusCounts({
-          numPartitionsCompleted: 25,
+          numPartitionsMaterialized: 25,
           numPartitionsFailed: 25,
           numPartitionsTargeted: 100,
-          numPartitionsRequested: 25,
+          numPartitionsInProgress: 25,
         }),
       ],
     }),
@@ -150,12 +150,12 @@ const FailedResponse = buildBackfillDetailsQuery(
     timestamp: Date.now() / 1000 - 10000,
     endTimestamp: Date.now() / 1000 - 10,
     assetBackfillData: buildAssetBackfillData({
-      assetPartitionsStatusCounts: [
+      assetBackfillStatuses: [
         buildAssetPartitionsStatusCounts({
-          numPartitionsCompleted: 25,
+          numPartitionsMaterialized: 25,
           numPartitionsFailed: 25,
           numPartitionsTargeted: 100,
-          numPartitionsRequested: 25,
+          numPartitionsInProgress: 25,
         }),
       ],
     }),

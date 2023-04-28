@@ -26,12 +26,12 @@ def create_run(instance, **kwargs):
         )
         return create_run_for_test(
             instance,
-            external_pipeline_origin=handle.get_external_origin(),
-            pipeline_code_origin=handle.get_python_origin(),
-            pipeline_name=handle.job_name,
-            pipeline_snapshot=foo.get_pipeline_snapshot(),
+            external_job_origin=handle.get_external_origin(),
+            job_code_origin=handle.get_python_origin(),
+            job_name=handle.job_name,
+            job_snapshot=foo.get_job_snapshot(),
             execution_plan_snapshot=snapshot_from_execution_plan(
-                execution_plan, foo.get_pipeline_snapshot_id()
+                execution_plan, foo.get_job_snapshot_id()
             ),
             **kwargs,
         )
@@ -46,13 +46,13 @@ def test_filter_runs_to_should_retry(instance):
 
     dagster_event = DagsterEvent(
         event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
-        pipeline_name="foo",
+        job_name="foo",
         message="",
     )
     event_record = EventLogEntry(
         user_message="",
         level=logging.ERROR,
-        pipeline_name="foo",
+        job_name="foo",
         run_id=run.run_id,
         error_info=None,
         timestamp=time.time(),
@@ -156,13 +156,13 @@ def test_consume_new_runs_for_automatic_reexecution(instance, workspace_context)
     run = create_run(instance, status=DagsterRunStatus.STARTED, tags={MAX_RETRIES_TAG: "2"})
     dagster_event = DagsterEvent(
         event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
-        pipeline_name="foo",
+        job_name="foo",
         message="",
     )
     event_record = EventLogEntry(
         user_message="",
         level=logging.ERROR,
-        pipeline_name="foo",
+        job_name="foo",
         run_id=run.run_id,
         error_info=None,
         timestamp=time.time(),
@@ -190,13 +190,13 @@ def test_consume_new_runs_for_automatic_reexecution(instance, workspace_context)
     # retries once the new run failed
     dagster_event = DagsterEvent(
         event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
-        pipeline_name="foo",
+        job_name="foo",
         message="",
     )
     event_record = EventLogEntry(
         user_message="",
         level=logging.ERROR,
-        pipeline_name="foo",
+        job_name="foo",
         run_id=instance.run_coordinator.queue()[0].run_id,
         error_info=None,
         timestamp=time.time(),
@@ -214,13 +214,13 @@ def test_consume_new_runs_for_automatic_reexecution(instance, workspace_context)
     # doesn't retry a third time
     dagster_event = DagsterEvent(
         event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
-        pipeline_name="foo",
+        job_name="foo",
         message="",
     )
     event_record = EventLogEntry(
         user_message="",
         level=logging.ERROR,
-        pipeline_name="foo",
+        job_name="foo",
         run_id=instance.run_coordinator.queue()[1].run_id,
         error_info=None,
         timestamp=time.time(),
@@ -291,13 +291,13 @@ def test_subset_run(instance: DagsterInstance, workspace_context):
 
     dagster_event = DagsterEvent(
         event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
-        pipeline_name="foo",
+        job_name="foo",
         message="",
     )
     event_record = EventLogEntry(
         user_message="",
         level=logging.ERROR,
-        pipeline_name="foo",
+        job_name="foo",
         run_id=run.run_id,
         error_info=None,
         timestamp=time.time(),
@@ -317,6 +317,4 @@ def test_subset_run(instance: DagsterInstance, workspace_context):
     assert instance.get_execution_plan_snapshot(
         auto_run.execution_plan_snapshot_id
     ).step_keys_to_execute == ["do_something"]
-    assert instance.get_pipeline_snapshot(auto_run.pipeline_snapshot_id).node_names == [
-        "do_something"
-    ]
+    assert instance.get_job_snapshot(auto_run.job_snapshot_id).node_names == ["do_something"]

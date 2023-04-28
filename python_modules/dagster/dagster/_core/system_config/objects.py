@@ -129,7 +129,7 @@ class ResolvedRunConfig(
 
     @staticmethod
     def build(
-        pipeline_def: JobDefinition,
+        job_def: JobDefinition,
         run_config: Optional[Mapping[str, object]] = None,
     ) -> "ResolvedRunConfig":
         """This method validates a given run config against the pipeline config schema. If
@@ -141,10 +141,10 @@ class ResolvedRunConfig(
 
         from .composite_descent import composite_descent
 
-        check.inst_param(pipeline_def, "pipeline_def", JobDefinition)
+        check.inst_param(job_def, "job_def", JobDefinition)
         run_config = check.opt_mapping_param(run_config, "run_config")
 
-        run_config_schema = pipeline_def.run_config_schema
+        run_config_schema = job_def.run_config_schema
         if run_config_schema.config_mapping:
             # add user code boundary
             run_config = run_config_schema.config_mapping.resolve_from_unvalidated_config(
@@ -156,7 +156,7 @@ class ResolvedRunConfig(
         )
         if not config_evr.success:
             raise DagsterInvalidConfigError(
-                f"Error in config for job {pipeline_def.name}",
+                f"Error in config for job {job_def.name}",
                 config_evr.errors,
                 run_config,
             )
@@ -165,21 +165,21 @@ class ResolvedRunConfig(
 
         # If using the `execute_in_process` executor, we ignore the execution config value, since it
         # may be pointing to the executor for the job rather than the `execute_in_process` executor.
-        if pipeline_def.executor_def == execute_in_process_executor:
+        if job_def.executor_def == execute_in_process_executor:
             config_mapped_execution_configs: Optional[Mapping[str, Any]] = {}
         else:
             executor_config = config_value.get("execution", {})
             config_mapped_execution_configs = config_map_executor(
-                executor_config, pipeline_def.executor_def
+                executor_config, job_def.executor_def
             )
 
-        resource_defs = pipeline_def.get_required_resource_defs()
+        resource_defs = job_def.get_required_resource_defs()
         resource_configs = config_value.get("resources", {})
         config_mapped_resource_configs = config_map_resources(resource_defs, resource_configs)
-        config_mapped_logger_configs = config_map_loggers(pipeline_def, config_value)
+        config_mapped_logger_configs = config_map_loggers(job_def, config_value)
 
         op_config_dict = composite_descent(
-            pipeline_def, config_value.get("ops", {}), pipeline_def.resource_defs
+            job_def, config_value.get("ops", {}), job_def.resource_defs
         )
         input_configs = config_value.get("inputs", {})
         return ResolvedRunConfig(
@@ -262,7 +262,7 @@ def config_map_resources(
 
 
 def config_map_loggers(
-    pipeline_def: JobDefinition,
+    job_def: JobDefinition,
     config_value: Mapping[str, Any],
 ) -> Mapping[str, Any]:
     """This function executes the config mappings for loggers with respect to ConfigurableDefinition.
@@ -289,7 +289,7 @@ def config_map_loggers(
     config_mapped_logger_configs = {}
 
     for logger_key, logger_config in logger_configs.items():
-        logger_def = pipeline_def.loggers.get(logger_key)
+        logger_def = job_def.loggers.get(logger_key)
         if logger_def is None:
             check.failed(f"No logger found for key {logger_key}")
 

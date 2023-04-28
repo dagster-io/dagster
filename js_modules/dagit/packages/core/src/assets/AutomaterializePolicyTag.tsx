@@ -2,6 +2,7 @@ import {Tag} from '@dagster-io/ui';
 import React from 'react';
 
 import {AutoMaterializePolicyType} from '../graphql/types';
+
 export const AutomaterializePolicyTag: React.FC<{
   policy: {
     policyType: AutoMaterializePolicyType;

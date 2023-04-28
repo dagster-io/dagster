@@ -44,6 +44,7 @@ from dagster import (
     Output,
     PythonObjectDagsterType,
     ScheduleDefinition,
+    SensorResult,
     SourceAsset,
     SourceHashVersionStrategy,
     StaticPartitionsDefinition,
@@ -53,6 +54,7 @@ from dagster import (
     TableConstraints,
     TableRecord,
     TableSchema,
+    WeeklyPartitionsDefinition,
     _check as check,
     asset,
     asset_sensor,
@@ -75,6 +77,7 @@ from dagster import (
     usable_as_dagster_type,
 )
 from dagster._core.definitions.decorators.sensor_decorator import sensor
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import Failure
 from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
@@ -91,7 +94,6 @@ from dagster._core.storage.tags import RESUME_RETRY_TAG
 from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
 from dagster._core.workspace.load_target import PythonFileTarget
 from dagster._legacy import (
-    AssetGroup,
     build_assets_job,
 )
 from dagster._seven import get_system_temp_directory
@@ -1122,6 +1124,16 @@ def define_sensors():
     def never_no_config_sensor(_):
         return SkipReason("never")
 
+    @sensor(job_name="dynamic_partitioned_assets_job")
+    def dynamic_partition_requesting_sensor(_):
+        yield SensorResult(
+            run_requests=[RunRequest(partition_key="new_key")],
+            dynamic_partitions_requests=[
+                DynamicPartitionsDefinition(name="foo").build_add_request(["new_key", "new_key2"]),
+                DynamicPartitionsDefinition(name="foo").build_delete_request(["old_key"]),
+            ],
+        )
+
     @sensor(job_name="no_config_job")
     def multi_no_config_sensor(_):
         yield RunRequest(run_key="A")
@@ -1171,6 +1183,7 @@ def define_sensors():
         always_error_sensor,
         once_no_config_sensor,
         never_no_config_sensor,
+        dynamic_partition_requesting_sensor,
         multi_no_config_sensor,
         custom_interval_sensor,
         running_in_code_sensor,
@@ -1318,13 +1331,14 @@ def downstream_asset(hanging_graph):
     return 1
 
 
-hanging_graph_asset_job = AssetGroup(
-    [hanging_graph_asset, downstream_asset],
+hanging_graph_asset_job = build_assets_job(
+    name="hanging_graph_asset_job",
+    assets=[hanging_graph_asset, downstream_asset],
     resource_defs={
         "hanging_asset_resource": hanging_asset_resource,
         "io_manager": IOManagerDefinition.hardcoded_io_manager(DummyIOManager()),
     },
-).build_job("hanging_graph_asset_job")
+)
 
 
 @asset
@@ -1340,7 +1354,7 @@ def asset_two(asset_one):
 two_assets_job = build_assets_job(name="two_assets_job", assets=[asset_one, asset_two])
 
 
-static_partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d"])
+static_partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d", "e", "f"])
 
 
 @asset(partitions_def=static_partitions_def)
@@ -1434,6 +1448,23 @@ time_partitioned_assets_job = build_assets_job(
     "time_partitioned_assets_job",
     [upstream_time_partitioned_asset, downstream_time_partitioned_asset],
 )
+
+
+@asset
+def unpartitioned_upstream_of_partitioned():
+    return 1
+
+
+@asset(partitions_def=DailyPartitionsDefinition("2023-01-01"))
+def upstream_daily_partitioned_asset(unpartitioned_upstream_of_partitioned):
+    return unpartitioned_upstream_of_partitioned
+
+
+@asset(partitions_def=WeeklyPartitionsDefinition("2023-01-01"))
+def downstream_weekly_partitioned_asset(
+    upstream_daily_partitioned_asset,
+):
+    return upstream_daily_partitioned_asset + 1
 
 
 @asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c", "d"]))
@@ -1565,35 +1596,35 @@ failure_assets_job = build_assets_job(
 
 
 @asset
-def foo(context):
-    assert context.pipeline_def.asset_selection_data is not None
+def foo(context: OpExecutionContext):
+    assert context.job_def.asset_selection_data is not None
     return 5
 
 
 @asset
-def bar(context):
-    assert context.pipeline_def.asset_selection_data is not None
+def bar(context: OpExecutionContext):
+    assert context.job_def.asset_selection_data is not None
     return 10
 
 
 @asset
-def foo_bar(context, foo, bar):
-    assert context.pipeline_def.asset_selection_data is not None
+def foo_bar(context: OpExecutionContext, foo, bar):
+    assert context.job_def.asset_selection_data is not None
     return foo + bar
 
 
 @asset
-def baz(context, foo_bar):
-    assert context.pipeline_def.asset_selection_data is not None
+def baz(context: OpExecutionContext, foo_bar):
+    assert context.job_def.asset_selection_data is not None
     return foo_bar
 
 
 @asset
-def unconnected(context):
-    assert context.pipeline_def.asset_selection_data is not None
+def unconnected(context: OpExecutionContext):
+    assert context.job_def.asset_selection_data is not None
 
 
-asset_group_job = AssetGroup([foo, bar, foo_bar, baz, unconnected]).build_job("foo_job")
+foo_job = build_assets_job("foo_job", [foo, bar, foo_bar, baz, unconnected])
 
 
 @asset(group_name="group_1")
@@ -1715,17 +1746,16 @@ def dynamic_in_multipartitions_fail(context, dynamic_in_multipartitions_success)
     raise Exception("oops")
 
 
-# For now the only way to add assets to repositories is via AssetGroup
-# When AssetGroup is removed, these assets should be added directly to repository_with_named_groups
-named_groups_job = AssetGroup(
+named_groups_job = build_assets_job(
+    "named_groups_job",
     [
         grouped_asset_1,
         grouped_asset_2,
         ungrouped_asset_3,
         grouped_asset_4,
         ungrouped_asset_5,
-    ]
-).build_job("named_groups_job")
+    ],
+)
 
 
 @repository
@@ -1792,7 +1822,7 @@ def define_jobs():
         hanging_partition_asset_job,
         observation_job,
         failure_assets_job,
-        asset_group_job,
+        foo_job,
         hanging_graph_asset_job,
         named_groups_job,
         memoization_job,
@@ -1845,12 +1875,18 @@ def define_asset_jobs():
         define_asset_job(
             "fresh_diamond_assets", AssetSelection.assets(fresh_diamond_bottom).upstream()
         ),
+        upstream_daily_partitioned_asset,
+        downstream_weekly_partitioned_asset,
+        unpartitioned_upstream_of_partitioned,
     ]
 
 
 @repository
 def test_repo():
     return [*define_jobs(), *define_schedules(), *define_sensors(), *define_asset_jobs()]
+
+
+defs = Definitions()
 
 
 @repository

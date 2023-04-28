@@ -340,8 +340,8 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         run = context.dagster_run
         container_context = EcsContainerContext.create_for_run(run, self)
 
-        pipeline_origin = check.not_none(context.pipeline_code_origin)
-        image = pipeline_origin.repository_origin.container_image
+        job_origin = check.not_none(context.job_code_origin)
+        image = job_origin.repository_origin.container_image
 
         # ECS limits overrides to 8192 characters including json formatting
         # https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_RunTask.html
@@ -349,16 +349,14 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         # going over this limit (for example, if many secrets have been set). This strips
         # the container context off of our pipeline origin because we don't actually need
         # it to launch the run; we only needed it to create the task definition.
-        repository_origin = pipeline_origin.repository_origin
+        repository_origin = job_origin.repository_origin
 
         stripped_repository_origin = repository_origin._replace(container_context={})
-        stripped_pipeline_origin = pipeline_origin._replace(
-            repository_origin=stripped_repository_origin
-        )
+        stripped_job_origin = job_origin._replace(repository_origin=stripped_repository_origin)
 
         args = ExecuteRunArgs(
-            pipeline_origin=stripped_pipeline_origin,
-            pipeline_run_id=run.run_id,
+            job_origin=stripped_job_origin,
+            run_id=run.run_id,
             instance_ref=self._instance.get_ref(),
         )
         command = args.get_command_args()
@@ -432,7 +430,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         metadata["Run ID"] = run.run_id
         self._instance.report_engine_event(
             message="Launching run in ECS task",
-            pipeline_run=run,
+            dagster_run=run,
             engine_event_data=EngineEventData(metadata),
             cls=self.__class__,
         )
@@ -509,7 +507,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
 
     def _get_run_task_definition_family(self, run: DagsterRun) -> str:
         return sanitize_family(
-            run.external_pipeline_origin.external_repository_origin.code_location_origin.location_name  # type: ignore  # (possible none)
+            run.external_job_origin.external_repository_origin.code_location_origin.location_name  # type: ignore  # (possible none)
         )
 
     def _get_container_name(self, container_context) -> str:

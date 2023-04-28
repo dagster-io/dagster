@@ -437,6 +437,22 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
+                    'name': 'downstream_weekly_partitioned_asset'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': '__ASSET_JOB_4'
+                        },
+                        'solidHandle': {
+                            'handleID': 'downstream_weekly_partitioned_asset'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
                     'name': 'dynamic_in_multipartitions_fail'
                 },
                 'invocations': [
@@ -706,6 +722,22 @@ snapshots['test_query_all_solids 1'] = {
                     },
                     {
                         'pipeline': {
+                            'name': '__ASSET_JOB_3'
+                        },
+                        'solidHandle': {
+                            'handleID': 'fresh_diamond_bottom'
+                        }
+                    },
+                    {
+                        'pipeline': {
+                            'name': '__ASSET_JOB_4'
+                        },
+                        'solidHandle': {
+                            'handleID': 'fresh_diamond_bottom'
+                        }
+                    },
+                    {
+                        'pipeline': {
                             'name': 'fresh_diamond_assets'
                         },
                         'solidHandle': {
@@ -739,6 +771,22 @@ snapshots['test_query_all_solids 1'] = {
                     {
                         'pipeline': {
                             'name': '__ASSET_JOB_2'
+                        },
+                        'solidHandle': {
+                            'handleID': 'fresh_diamond_left'
+                        }
+                    },
+                    {
+                        'pipeline': {
+                            'name': '__ASSET_JOB_3'
+                        },
+                        'solidHandle': {
+                            'handleID': 'fresh_diamond_left'
+                        }
+                    },
+                    {
+                        'pipeline': {
+                            'name': '__ASSET_JOB_4'
                         },
                         'solidHandle': {
                             'handleID': 'fresh_diamond_left'
@@ -786,6 +834,22 @@ snapshots['test_query_all_solids 1'] = {
                     },
                     {
                         'pipeline': {
+                            'name': '__ASSET_JOB_3'
+                        },
+                        'solidHandle': {
+                            'handleID': 'fresh_diamond_right'
+                        }
+                    },
+                    {
+                        'pipeline': {
+                            'name': '__ASSET_JOB_4'
+                        },
+                        'solidHandle': {
+                            'handleID': 'fresh_diamond_right'
+                        }
+                    },
+                    {
+                        'pipeline': {
                             'name': 'fresh_diamond_assets'
                         },
                         'solidHandle': {
@@ -819,6 +883,22 @@ snapshots['test_query_all_solids 1'] = {
                     {
                         'pipeline': {
                             'name': '__ASSET_JOB_2'
+                        },
+                        'solidHandle': {
+                            'handleID': 'fresh_diamond_top'
+                        }
+                    },
+                    {
+                        'pipeline': {
+                            'name': '__ASSET_JOB_3'
+                        },
+                        'solidHandle': {
+                            'handleID': 'fresh_diamond_top'
+                        }
+                    },
+                    {
+                        'pipeline': {
+                            'name': '__ASSET_JOB_4'
                         },
                         'solidHandle': {
                             'handleID': 'fresh_diamond_top'
@@ -2170,6 +2250,22 @@ snapshots['test_query_all_solids 1'] = {
                     },
                     {
                         'pipeline': {
+                            'name': '__ASSET_JOB_3'
+                        },
+                        'solidHandle': {
+                            'handleID': 'typed_asset'
+                        }
+                    },
+                    {
+                        'pipeline': {
+                            'name': '__ASSET_JOB_4'
+                        },
+                        'solidHandle': {
+                            'handleID': 'typed_asset'
+                        }
+                    },
+                    {
+                        'pipeline': {
                             'name': 'typed_assets'
                         },
                         'solidHandle': {
@@ -2203,6 +2299,22 @@ snapshots['test_query_all_solids 1'] = {
                     {
                         'pipeline': {
                             'name': '__ASSET_JOB_2'
+                        },
+                        'solidHandle': {
+                            'handleID': 'typed_multi_asset'
+                        }
+                    },
+                    {
+                        'pipeline': {
+                            'name': '__ASSET_JOB_3'
+                        },
+                        'solidHandle': {
+                            'handleID': 'typed_multi_asset'
+                        }
+                    },
+                    {
+                        'pipeline': {
+                            'name': '__ASSET_JOB_4'
                         },
                         'solidHandle': {
                             'handleID': 'typed_multi_asset'
@@ -2269,6 +2381,54 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
+                    'name': 'unpartitioned_upstream_of_partitioned'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': '__ASSET_JOB_0'
+                        },
+                        'solidHandle': {
+                            'handleID': 'unpartitioned_upstream_of_partitioned'
+                        }
+                    },
+                    {
+                        'pipeline': {
+                            'name': '__ASSET_JOB_1'
+                        },
+                        'solidHandle': {
+                            'handleID': 'unpartitioned_upstream_of_partitioned'
+                        }
+                    },
+                    {
+                        'pipeline': {
+                            'name': '__ASSET_JOB_2'
+                        },
+                        'solidHandle': {
+                            'handleID': 'unpartitioned_upstream_of_partitioned'
+                        }
+                    },
+                    {
+                        'pipeline': {
+                            'name': '__ASSET_JOB_3'
+                        },
+                        'solidHandle': {
+                            'handleID': 'unpartitioned_upstream_of_partitioned'
+                        }
+                    },
+                    {
+                        'pipeline': {
+                            'name': '__ASSET_JOB_4'
+                        },
+                        'solidHandle': {
+                            'handleID': 'unpartitioned_upstream_of_partitioned'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
                     'name': 'untyped_asset'
                 },
                 'invocations': [
@@ -2298,10 +2458,42 @@ snapshots['test_query_all_solids 1'] = {
                     },
                     {
                         'pipeline': {
+                            'name': '__ASSET_JOB_3'
+                        },
+                        'solidHandle': {
+                            'handleID': 'untyped_asset'
+                        }
+                    },
+                    {
+                        'pipeline': {
+                            'name': '__ASSET_JOB_4'
+                        },
+                        'solidHandle': {
+                            'handleID': 'untyped_asset'
+                        }
+                    },
+                    {
+                        'pipeline': {
                             'name': 'typed_assets'
                         },
                         'solidHandle': {
                             'handleID': 'untyped_asset'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'upstream_daily_partitioned_asset'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': '__ASSET_JOB_3'
+                        },
+                        'solidHandle': {
+                            'handleID': 'upstream_daily_partitioned_asset'
                         }
                     }
                 ]

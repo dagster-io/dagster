@@ -159,6 +159,8 @@ class ScheduleEvaluationContext:
             from both the actual execution time and the time at which the run config is computed.
             Not available in all schedulers - currently only set in deployments using
             DagsterDaemonScheduler.
+        resources (Optional[Dict[str, Any]]): Mapping of resource key to resource
+            definition to be made available during schedule execution.
 
     Example:
         .. code-block:: python
@@ -238,6 +240,7 @@ class ScheduleEvaluationContext:
     def resource_defs(self) -> Optional[Mapping[str, "ResourceDefinition"]]:
         return self._resource_defs
 
+    @public
     @property
     def resources(self) -> Resources:
         from dagster._core.definitions.scoped_resources_builder import (
@@ -509,6 +512,7 @@ class ScheduleDefinition:
             description=self.description,
             job=new_job,
             default_status=self.default_status,
+            required_resource_keys=self.required_resource_keys,
         )
 
     def __init__(
@@ -544,7 +548,7 @@ class ScheduleDefinition:
             self._target: Union[DirectTarget, RepoRelativeTarget] = DirectTarget(job)
         else:
             self._target = RepoRelativeTarget(
-                pipeline_name=check.str_param(job_name, "job_name"),
+                job_name=check.str_param(job_name, "job_name"),
                 solid_selection=None,
             )
 
@@ -724,7 +728,7 @@ class ScheduleDefinition:
     @public
     @property
     def job_name(self) -> str:
-        return self._target.pipeline_name
+        return self._target.job_name
 
     @public
     @property
@@ -825,7 +829,7 @@ class ScheduleDefinition:
                         " partitioned run requests"
                     )
 
-                scheduled_target = context.repository_def.get_job(self._target.pipeline_name)
+                scheduled_target = context.repository_def.get_job(self._target.job_name)
                 resolved_request = run_request.with_resolved_tags_and_config(
                     target_definition=scheduled_target,
                     dynamic_partitions_requests=[],

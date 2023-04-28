@@ -4,8 +4,10 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 export enum DagsterTag {
+  Automaterialize = 'dagster/auto_materialize',
   Namespace = 'dagster/',
   Backfill = 'dagster/backfill',
+  CreatedBy = 'dagster/created_by',
   SolidSelection = 'dagster/solid_selection',
   OpSelection = 'dagster/op_selection',
   StepSelection = 'dagster/step_selection',

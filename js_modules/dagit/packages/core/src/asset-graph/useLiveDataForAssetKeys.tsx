@@ -1,4 +1,4 @@
-import {gql, NetworkStatus, useQuery, useSubscription} from '@apollo/client';
+import {gql, NetworkStatus, useQuery} from '@apollo/client';
 import uniq from 'lodash/uniq';
 import React from 'react';
 
@@ -7,12 +7,11 @@ import {AssetKeyInput} from '../graphql/types';
 import {useDidLaunchEvent} from '../runs/RunUtils';
 
 import {ASSET_NODE_LIVE_FRAGMENT} from './AssetNode';
+import {observeAssetEventsInRuns} from './AssetRunLogObserver';
 import {buildLiveData, tokenForAssetKey} from './Utils';
 import {
   AssetGraphLiveQuery,
   AssetGraphLiveQueryVariables,
-  AssetLiveRunLogsSubscription,
-  AssetLiveRunLogsSubscriptionVariables,
 } from './types/useLiveDataForAssetKeys.types';
 
 const SUBSCRIPTION_IDLE_POLL_RATE = 30 * 1000;
@@ -76,92 +75,33 @@ export function useLiveDataForAssetKeys(assetKeys: AssetKeyInput[]) {
 
   useDidLaunchEvent(liveResult.refetch, SUBSCRIPTION_MAX_POLL_RATE);
 
-  const assetKeyTokens = React.useMemo(() => new Set(assetKeys.map(tokenForAssetKey)), [assetKeys]);
-  const assetStepKeys = React.useMemo(
-    () => new Set(liveResult.data?.assetNodes.flatMap((n) => n.opNames) || []),
-    [liveResult],
-  );
+  React.useEffect(() => {
+    const assetKeyTokens = new Set(assetKeys.map(tokenForAssetKey));
+    const assetStepKeys = new Set(liveResult.data?.assetNodes.flatMap((n) => n.opNames) || []);
+    const runInProgressId = uniq(
+      Object.values(liveDataByNode).flatMap((p) => [...p.unstartedRunIds, ...p.inProgressRunIds]),
+    ).sort();
 
-  const runInProgressId = uniq(
-    Object.values(liveDataByNode).flatMap((p) => [...p.unstartedRunIds, ...p.inProgressRunIds]),
-  )
-    .sort()
-    .slice(0, 3);
-
-  const runWatchers = (
-    <>
-      {runInProgressId.map((runId) => (
-        <RunLogObserver
-          runId={runId}
-          key={runId}
-          assetKeyTokens={assetKeyTokens}
-          assetStepKeys={assetStepKeys}
-          callback={onRefreshDebounced}
-        />
-      ))}
-    </>
-  );
+    const unobserve = observeAssetEventsInRuns(runInProgressId, (events) => {
+      if (
+        events.some(
+          (e) =>
+            (e.assetKey && assetKeyTokens.has(tokenForAssetKey(e.assetKey))) ||
+            (e.stepKey && assetStepKeys.has(e.stepKey)),
+        )
+      ) {
+        onRefreshDebounced();
+      }
+    });
+    return unobserve;
+  }, [onRefreshDebounced, assetKeys, liveDataByNode, liveResult]);
 
   return {
     liveDataByNode,
     liveDataRefreshState,
-    runWatchers,
     assetKeys,
   };
 }
-
-const RunLogObserver: React.FC<{
-  runId: string;
-  assetKeyTokens: Set<string>;
-  assetStepKeys: Set<string>;
-  callback: () => void;
-}> = React.memo(({runId, assetKeyTokens, assetStepKeys, callback}) => {
-  // Useful for testing this component:
-  const counter = React.useRef(0);
-  React.useEffect(() => {
-    console.log(`Subscribed to ${runId}`);
-    return () => console.log(`Unsubscribed from ${runId} after ${counter.current} messages`);
-  }, [runId]);
-
-  useSubscription<AssetLiveRunLogsSubscription, AssetLiveRunLogsSubscriptionVariables>(
-    ASSET_LIVE_RUN_LOGS_SUBSCRIPTION,
-    {
-      fetchPolicy: 'no-cache',
-      variables: {runId},
-      onSubscriptionData: (data) => {
-        const logs = data.subscriptionData.data?.pipelineRunLogs;
-        if (logs?.__typename !== 'PipelineRunLogsSubscriptionSuccess') {
-          return;
-        }
-
-        counter.current += logs.messages.length;
-
-        if (
-          logs.messages.some((m) => {
-            if (
-              m.__typename === 'AssetMaterializationPlannedEvent' ||
-              m.__typename === 'MaterializationEvent' ||
-              m.__typename === 'ObservationEvent'
-            ) {
-              return m.assetKey && assetKeyTokens.has(tokenForAssetKey(m.assetKey));
-            }
-            if (
-              m.__typename === 'ExecutionStepFailureEvent' ||
-              m.__typename === 'ExecutionStepStartEvent'
-            ) {
-              return m.stepKey && assetStepKeys.has(m.stepKey);
-            }
-            return false;
-          })
-        ) {
-          callback();
-        }
-      },
-    },
-  );
-
-  return <span />;
-});
 
 export const ASSET_LATEST_INFO_FRAGMENT = gql`
   fragment AssetLatestInfoFragment on AssetLatestInfo {
@@ -183,7 +123,7 @@ export const ASSET_LATEST_INFO_FRAGMENT = gql`
   }
 `;
 
-const ASSETS_GRAPH_LIVE_QUERY = gql`
+export const ASSETS_GRAPH_LIVE_QUERY = gql`
   query AssetGraphLiveQuery($assetKeys: [AssetKeyInput!]!) {
     assetNodes(assetKeys: $assetKeys, loadMaterializations: true) {
       id
@@ -196,38 +136,4 @@ const ASSETS_GRAPH_LIVE_QUERY = gql`
 
   ${ASSET_NODE_LIVE_FRAGMENT}
   ${ASSET_LATEST_INFO_FRAGMENT}
-`;
-
-const ASSET_LIVE_RUN_LOGS_SUBSCRIPTION = gql`
-  subscription AssetLiveRunLogsSubscription($runId: ID!) {
-    pipelineRunLogs(runId: $runId, cursor: "HEAD") {
-      __typename
-      ... on PipelineRunLogsSubscriptionSuccess {
-        messages {
-          __typename
-          ... on AssetMaterializationPlannedEvent {
-            assetKey {
-              path
-            }
-          }
-          ... on MaterializationEvent {
-            assetKey {
-              path
-            }
-          }
-          ... on ObservationEvent {
-            assetKey {
-              path
-            }
-          }
-          ... on ExecutionStepStartEvent {
-            stepKey
-          }
-          ... on ExecutionStepFailureEvent {
-            stepKey
-          }
-        }
-      }
-    }
-  }
 `;

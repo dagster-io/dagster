@@ -12,8 +12,8 @@ from dagster._core.definitions.configurable import (
     ConfiguredDefinitionConfigSchema,
     NamedConfigurableDefinition,
 )
-from dagster._core.definitions.pipeline_base import IPipeline
-from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.definitions.pipeline_base import IJob
+from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.errors import DagsterUnmetExecutorRequirementsError
 from dagster._core.execution.retries import RetryMode, get_retries_config
 from dagster._core.execution.tags import get_tag_concurrency_limits_config
@@ -36,7 +36,7 @@ class ExecutorRequirement(PyEnum):
     check whether the executor will be able to work for a particular job/pipeline execution.
     """
 
-    # The passed in IPipeline must be reconstructable across process boundaries
+    # The passed in IJob must be reconstructable across process boundaries
     RECONSTRUCTABLE_PIPELINE = (  # This needs to still exist for folks who may have written their own executor
         "RECONSTRUCTABLE_PIPELINE"
     )
@@ -433,16 +433,16 @@ def check_cross_process_constraints(init_context: "InitExecutorContext") -> None
     requirements_lst = init_context.executor_def.get_requirements(init_context.executor_config)
 
     if ExecutorRequirement.RECONSTRUCTABLE_JOB in requirements_lst:
-        _check_intra_process_pipeline(init_context.pipeline)
+        _check_intra_process_pipeline(init_context.job)
 
     if ExecutorRequirement.NON_EPHEMERAL_INSTANCE in requirements_lst:
         _check_non_ephemeral_instance(init_context.instance)
 
 
-def _check_intra_process_pipeline(pipeline: IPipeline) -> None:
+def _check_intra_process_pipeline(pipeline: IJob) -> None:
     from dagster._core.definitions import JobDefinition
 
-    if not isinstance(pipeline, ReconstructablePipeline):
+    if not isinstance(pipeline, ReconstructableJob):
         target = "job" if isinstance(pipeline.get_definition(), JobDefinition) else "pipeline"
         raise DagsterUnmetExecutorRequirementsError(
             "You have attempted to use an executor that uses multiple processes with the {target}"
@@ -511,7 +511,7 @@ def multi_or_in_process_executor(init_context: "InitExecutorContext") -> "Execut
             multiprocess:
               max_concurrent: 4
               retries:
-              enabled:
+                enabled:
 
     The ``max_concurrent`` arg is optional and tells the execution engine how many processes may run
     concurrently. By default, or if you set ``max_concurrent`` to be 0, this is the return value of

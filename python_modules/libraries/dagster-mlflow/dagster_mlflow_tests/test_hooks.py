@@ -14,7 +14,7 @@ def test_cleanup_on_success():
     # - a mock context containing a list of these two ops and a current op
     mock_context = Mock()
     step_execution_context = mock_context._step_execution_context  # noqa: SLF001
-    step_execution_context.pipeline_def.nodes_in_topological_order = [
+    step_execution_context.job_def.nodes_in_topological_order = [
         mock_op_1,
         mock_op_2,
     ]

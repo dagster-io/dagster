@@ -221,6 +221,15 @@ To do this, provide a `$DAGSTER_HOME/dagster.yaml` file, which Dagit and all Dag
       </td>
       <td>Controls how schedules are evaluated.</td>
     </tr>
+    <tr>
+      <td>
+        <a href="#auto-materialize">Auto-materialize</a>
+      </td>
+      <td>
+        <code>auto_materialize</code>
+      </td>
+      <td>Controls how assets are auto-materialized.</td>
+    </tr>
   </tbody>
 </table>
 
@@ -774,4 +783,14 @@ To asynchronously evaluate schedules, set the `use_threads` and `num_workers` ke
 schedules:
   use_threads: true
   num_workers: 8
+```
+
+### Auto-materialize
+
+The `auto_materialize` key allows you to adjust configuration related to [auto-materializing assets](/concepts/assets/asset-auto-execution).
+
+```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_auto_materialize endbefore=end_marker_auto_materialize
+auto_materialize:
+  run_tags:
+    key: value
 ```

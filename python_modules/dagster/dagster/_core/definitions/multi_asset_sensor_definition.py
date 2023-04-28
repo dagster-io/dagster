@@ -247,15 +247,19 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
             self._monitored_asset_keys = monitored_assets
 
         self._assets_by_key: Dict[AssetKey, Optional[AssetsDefinition]] = {}
+        self._partitions_def_by_asset_key: Dict[AssetKey, Optional[PartitionsDefinition]] = {}
         for asset_key in self._monitored_asset_keys:
             assets_def = self._repository_def.assets_defs_by_key.get(asset_key)
             self._assets_by_key[asset_key] = assets_def
 
-        self._partitions_def_by_asset_key = {
-            asset_key: asset_def.partitions_def
-            for asset_key, asset_def in self._assets_by_key.items()
-            if asset_def is not None
-        }
+            source_asset_def = self._repository_def.source_assets_by_key.get(asset_key)
+            self._partitions_def_by_asset_key[asset_key] = (
+                assets_def.partitions_def
+                if assets_def
+                else source_asset_def.partitions_def
+                if source_asset_def
+                else None
+            )
 
         # Cursor object with utility methods for updating and retrieving cursor information.
         # At the end of each tick, must call update_cursor_after_evaluation to update the serialized

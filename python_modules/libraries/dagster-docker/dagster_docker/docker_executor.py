@@ -17,7 +17,7 @@ from dagster._core.executor.step_delegating.step_handler.base import (
     StepHandler,
     StepHandlerContext,
 )
-from dagster._core.origin import PipelinePythonOrigin
+from dagster._core.origin import JobPythonOrigin
 from dagster._core.utils import parse_env_var
 from dagster._grpc.types import ExecuteStepArgs
 from dagster._serdes.utils import hash_str
@@ -120,7 +120,7 @@ class DockerStepHandler(StepHandler):
         from . import DockerRunLauncher
 
         image = cast(
-            PipelinePythonOrigin, step_handler_context.dagster_run.pipeline_code_origin
+            JobPythonOrigin, step_handler_context.dagster_run.job_code_origin
         ).repository_origin.container_image
         if not image:
             image = self._image
@@ -172,7 +172,7 @@ class DockerStepHandler(StepHandler):
         return client
 
     def _get_container_name(self, execute_step_args: ExecuteStepArgs):
-        run_id = execute_step_args.pipeline_run_id
+        run_id = execute_step_args.run_id
         step_keys_to_execute = check.not_none(execute_step_args.step_keys_to_execute)
         assert len(step_keys_to_execute) == 1, "Launching multiple steps is not currently supported"
         step_key = step_keys_to_execute[0]

@@ -107,10 +107,12 @@ export type AssetAssetObservationsArgs = {
 
 export type AssetBackfillData = {
   __typename: 'AssetBackfillData';
-  assetPartitionsStatusCounts: Array<AssetPartitionsStatusCounts>;
+  assetBackfillStatuses: Array<AssetBackfillStatus>;
   rootAssetTargetedPartitions: Maybe<Array<Scalars['String']>>;
   rootAssetTargetedRanges: Maybe<Array<PartitionKeyRange>>;
 };
+
+export type AssetBackfillStatus = AssetPartitionsStatusCounts | UnpartitionedAssetStatus;
 
 export type AssetConnection = {
   __typename: 'AssetConnection';
@@ -281,9 +283,9 @@ export type AssetPartitionStatuses = DefaultPartitions | MultiPartitions | TimeP
 export type AssetPartitionsStatusCounts = {
   __typename: 'AssetPartitionsStatusCounts';
   assetKey: AssetKey;
-  numPartitionsCompleted: Scalars['Int'];
   numPartitionsFailed: Scalars['Int'];
-  numPartitionsRequested: Scalars['Int'];
+  numPartitionsInProgress: Scalars['Int'];
+  numPartitionsMaterialized: Scalars['Int'];
   numPartitionsTargeted: Scalars['Int'];
 };
 
@@ -1052,6 +1054,18 @@ export type DuplicateDynamicPartitionError = Error & {
   partitionName: Scalars['String'];
   partitionsDefName: Scalars['String'];
 };
+
+export type DynamicPartitionRequest = {
+  __typename: 'DynamicPartitionRequest';
+  partitionKeys: Maybe<Array<Scalars['String']>>;
+  partitionsDefName: Scalars['String'];
+  type: DynamicPartitionsRequestType;
+};
+
+export enum DynamicPartitionsRequestType {
+  ADD_PARTITIONS = 'ADD_PARTITIONS',
+  DELETE_PARTITIONS = 'DELETE_PARTITIONS',
+}
 
 export type EngineEvent = DisplayableEvent &
   ErrorEvent &
@@ -3834,6 +3848,7 @@ export type TextMetadataEntry = MetadataEntry & {
 export type TickEvaluation = {
   __typename: 'TickEvaluation';
   cursor: Maybe<Scalars['String']>;
+  dynamicPartitionsRequests: Maybe<Array<DynamicPartitionRequest>>;
   error: Maybe<PythonError>;
   runRequests: Maybe<Array<RunRequest>>;
   skipReason: Maybe<Scalars['String']>;
@@ -3870,6 +3885,14 @@ export type UnknownPipeline = PipelineReference & {
   __typename: 'UnknownPipeline';
   name: Scalars['String'];
   solidSelection: Maybe<Array<Scalars['String']>>;
+};
+
+export type UnpartitionedAssetStatus = {
+  __typename: 'UnpartitionedAssetStatus';
+  assetKey: AssetKey;
+  failed: Scalars['Boolean'];
+  inProgress: Scalars['Boolean'];
+  materialized: Scalars['Boolean'];
 };
 
 export type UrlMetadataEntry = MetadataEntry & {
@@ -4097,9 +4120,9 @@ export const buildAssetBackfillData = (
   relationshipsToOmit.add('AssetBackfillData');
   return {
     __typename: 'AssetBackfillData',
-    assetPartitionsStatusCounts:
-      overrides && overrides.hasOwnProperty('assetPartitionsStatusCounts')
-        ? overrides.assetPartitionsStatusCounts!
+    assetBackfillStatuses:
+      overrides && overrides.hasOwnProperty('assetBackfillStatuses')
+        ? overrides.assetBackfillStatuses!
         : [
             relationshipsToOmit.has('AssetPartitionsStatusCounts')
               ? ({} as AssetPartitionsStatusCounts)
@@ -4619,18 +4642,18 @@ export const buildAssetPartitionsStatusCounts = (
         : relationshipsToOmit.has('AssetKey')
         ? ({} as AssetKey)
         : buildAssetKey({}, relationshipsToOmit),
-    numPartitionsCompleted:
-      overrides && overrides.hasOwnProperty('numPartitionsCompleted')
-        ? overrides.numPartitionsCompleted!
-        : 524,
     numPartitionsFailed:
       overrides && overrides.hasOwnProperty('numPartitionsFailed')
         ? overrides.numPartitionsFailed!
         : 6432,
-    numPartitionsRequested:
-      overrides && overrides.hasOwnProperty('numPartitionsRequested')
-        ? overrides.numPartitionsRequested!
-        : 1501,
+    numPartitionsInProgress:
+      overrides && overrides.hasOwnProperty('numPartitionsInProgress')
+        ? overrides.numPartitionsInProgress!
+        : 6636,
+    numPartitionsMaterialized:
+      overrides && overrides.hasOwnProperty('numPartitionsMaterialized')
+        ? overrides.numPartitionsMaterialized!
+        : 7555,
     numPartitionsTargeted:
       overrides && overrides.hasOwnProperty('numPartitionsTargeted')
         ? overrides.numPartitionsTargeted!
@@ -5801,6 +5824,27 @@ export const buildDuplicateDynamicPartitionError = (
       overrides && overrides.hasOwnProperty('partitionsDefName')
         ? overrides.partitionsDefName!
         : 'natus',
+  };
+};
+
+export const buildDynamicPartitionRequest = (
+  overrides?: Partial<DynamicPartitionRequest>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'DynamicPartitionRequest'} & DynamicPartitionRequest => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('DynamicPartitionRequest');
+  return {
+    __typename: 'DynamicPartitionRequest',
+    partitionKeys:
+      overrides && overrides.hasOwnProperty('partitionKeys') ? overrides.partitionKeys! : ['ut'],
+    partitionsDefName:
+      overrides && overrides.hasOwnProperty('partitionsDefName')
+        ? overrides.partitionsDefName!
+        : 'ut',
+    type:
+      overrides && overrides.hasOwnProperty('type')
+        ? overrides.type!
+        : DynamicPartitionsRequestType.ADD_PARTITIONS,
   };
 };
 
@@ -12604,6 +12648,14 @@ export const buildTickEvaluation = (
   return {
     __typename: 'TickEvaluation',
     cursor: overrides && overrides.hasOwnProperty('cursor') ? overrides.cursor! : 'est',
+    dynamicPartitionsRequests:
+      overrides && overrides.hasOwnProperty('dynamicPartitionsRequests')
+        ? overrides.dynamicPartitionsRequests!
+        : [
+            relationshipsToOmit.has('DynamicPartitionRequest')
+              ? ({} as DynamicPartitionRequest)
+              : buildDynamicPartitionRequest({}, relationshipsToOmit),
+          ],
     error:
       overrides && overrides.hasOwnProperty('error')
         ? overrides.error!
@@ -12707,6 +12759,27 @@ export const buildUnknownPipeline = (
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'dicta',
     solidSelection:
       overrides && overrides.hasOwnProperty('solidSelection') ? overrides.solidSelection! : ['et'],
+  };
+};
+
+export const buildUnpartitionedAssetStatus = (
+  overrides?: Partial<UnpartitionedAssetStatus>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'UnpartitionedAssetStatus'} & UnpartitionedAssetStatus => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('UnpartitionedAssetStatus');
+  return {
+    __typename: 'UnpartitionedAssetStatus',
+    assetKey:
+      overrides && overrides.hasOwnProperty('assetKey')
+        ? overrides.assetKey!
+        : relationshipsToOmit.has('AssetKey')
+        ? ({} as AssetKey)
+        : buildAssetKey({}, relationshipsToOmit),
+    failed: overrides && overrides.hasOwnProperty('failed') ? overrides.failed! : true,
+    inProgress: overrides && overrides.hasOwnProperty('inProgress') ? overrides.inProgress! : false,
+    materialized:
+      overrides && overrides.hasOwnProperty('materialized') ? overrides.materialized! : false,
   };
 };
 

@@ -329,7 +329,10 @@ def test_input_context_asset_partitions_time_window():
         pass
 
     @asset(partitions_def=partitions_def)
-    def downstream_asset(upstream_asset):
+    def downstream_asset(context, upstream_asset):
+        assert context.asset_partitions_time_window_for_input("upstream_asset") == TimeWindow(
+            pendulum.parse("2021-06-06"), pendulum.parse("2021-06-07")
+        )
         assert upstream_asset is None
 
     assert materialize(

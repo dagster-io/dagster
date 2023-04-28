@@ -68,9 +68,10 @@ def test_multi_dimensional_time_window_static_partitions():
     composite = MultiPartitionsDefinition(
         {"date": time_window_partitions, "abc": static_partitions}
     )
-    assert set(
-        composite.get_partition_keys(current_time=datetime.strptime("2021-05-07", DATE_FORMAT))
-    ) == {
+    partition_keys = composite.get_partition_keys(
+        current_time=datetime.strptime("2021-05-07", DATE_FORMAT)
+    )
+    assert set(partition_keys) == {
         "a|2021-05-05",
         "b|2021-05-05",
         "c|2021-05-05",
@@ -79,10 +80,8 @@ def test_multi_dimensional_time_window_static_partitions():
         "c|2021-05-06",
     }
 
-    partitions = composite.get_partitions(current_time=datetime.strptime("2021-05-07", DATE_FORMAT))
-    assert len(partitions) == 6
-    assert partitions[0].value.get("date").name == "2021-05-05"
-    assert partitions[0].value.get("abc").name == "a"
+    assert partition_keys[0].keys_by_dimension["date"] == "2021-05-05"
+    assert partition_keys[0].keys_by_dimension["abc"] == "a"
 
 
 def test_tags_multi_dimensional_partitions():

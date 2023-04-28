@@ -22,7 +22,7 @@ from .client_queries import (
 from .utils import (
     DagsterGraphQLClientError,
     InvalidOutputErrorInfo,
-    PipelineInfo,
+    JobInfo,
     ReloadRepositoryLocationInfo,
     ReloadRepositoryLocationStatus,
     ShutdownRepositoryLocationInfo,
@@ -102,15 +102,13 @@ class DagsterGraphQLClient:
                 f" \n{variables}\n"
             ) from exc
 
-    def _get_repo_locations_and_names_with_pipeline(self, pipeline_name: str) -> List[PipelineInfo]:
+    def _get_repo_locations_and_names_with_pipeline(self, job_name: str) -> List[JobInfo]:
         res_data = self._execute(CLIENT_GET_REPO_LOCATIONS_NAMES_AND_PIPELINES_QUERY)
         query_res = res_data["repositoriesOrError"]
         repo_connection_status = query_res["__typename"]
         if repo_connection_status == "RepositoryConnection":
-            valid_nodes: Iterable[PipelineInfo] = chain(
-                *map(PipelineInfo.from_node, query_res["nodes"])
-            )
-            return [info for info in valid_nodes if info.pipeline_name == pipeline_name]
+            valid_nodes: Iterable[JobInfo] = chain(*map(JobInfo.from_node, query_res["nodes"]))
+            return [info for info in valid_nodes if info.job_name == job_name]
         else:
             raise DagsterGraphQLClientError(repo_connection_status, query_res["message"])
 
@@ -146,8 +144,8 @@ class DagsterGraphQLClient:
         pipeline_or_job = "Job" if is_using_job_op_graph_apis else "Pipeline"
 
         if not repository_location_name or not repository_name:
-            pipeline_info_lst = self._get_repo_locations_and_names_with_pipeline(pipeline_name)
-            if len(pipeline_info_lst) == 0:
+            job_info_lst = self._get_repo_locations_and_names_with_pipeline(pipeline_name)
+            if len(job_info_lst) == 0:
                 raise DagsterGraphQLClientError(
                     f"{pipeline_or_job}NotFoundError",
                     (
@@ -155,15 +153,15 @@ class DagsterGraphQLClient:
                         f" `{pipeline_name}` exist"
                     ),
                 )
-            elif len(pipeline_info_lst) == 1:
-                pipeline_info = pipeline_info_lst[0]
-                repository_location_name = pipeline_info.repository_location_name
-                repository_name = pipeline_info.repository_name
+            elif len(job_info_lst) == 1:
+                job_info = job_info_lst[0]
+                repository_location_name = job_info.repository_location_name
+                repository_name = job_info.repository_name
             else:
                 raise DagsterGraphQLClientError(
                     "Must specify repository_location_name and repository_name since there are"
                     f" multiple {'jobs' if is_using_job_op_graph_apis else 'pipelines'} with the"
-                    f" name {pipeline_name}.\n\tchoose one of: {pipeline_info_lst}"
+                    f" name {pipeline_name}.\n\tchoose one of: {job_info_lst}"
                 )
 
         variables: Dict[str, Any] = {

@@ -2140,10 +2140,22 @@ type DryRunInstigationTick {
 }
 
 type TickEvaluation {
+  dynamicPartitionsRequests: [DynamicPartitionRequest!]
   runRequests: [RunRequest!]
   skipReason: String
   error: PythonError
   cursor: String
+}
+
+type DynamicPartitionRequest {
+  partitionKeys: [String!]
+  partitionsDefName: String!
+  type: DynamicPartitionsRequestType!
+}
+
+enum DynamicPartitionsRequestType {
+  ADD_PARTITIONS
+  DELETE_PARTITIONS
 }
 
 type RunRequest {
@@ -2425,17 +2437,26 @@ enum BulkActionStatus {
 }
 
 type AssetBackfillData {
-  assetPartitionsStatusCounts: [AssetPartitionsStatusCounts!]!
+  assetBackfillStatuses: [AssetBackfillStatus!]!
   rootAssetTargetedRanges: [PartitionKeyRange!]
   rootAssetTargetedPartitions: [String!]
 }
 
+union AssetBackfillStatus = AssetPartitionsStatusCounts | UnpartitionedAssetStatus
+
 type AssetPartitionsStatusCounts {
   assetKey: AssetKey!
   numPartitionsTargeted: Int!
-  numPartitionsRequested: Int!
-  numPartitionsCompleted: Int!
+  numPartitionsInProgress: Int!
+  numPartitionsMaterialized: Int!
   numPartitionsFailed: Int!
+}
+
+type UnpartitionedAssetStatus {
+  assetKey: AssetKey!
+  inProgress: Boolean!
+  materialized: Boolean!
+  failed: Boolean!
 }
 
 type PartitionKeyRange {
