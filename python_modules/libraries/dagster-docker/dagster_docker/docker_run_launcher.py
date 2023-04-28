@@ -84,8 +84,8 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
             )
         return client
 
-    def _get_docker_image(self, pipeline_code_origin):
-        docker_image = pipeline_code_origin.repository_origin.container_image
+    def _get_docker_image(self, job_code_origin):
+        docker_image = job_code_origin.repository_origin.container_image
 
         if not docker_image:
             docker_image = self.image

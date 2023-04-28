@@ -19,7 +19,7 @@ from dagster_k8s_test_infra.integration_utils import (
     terminate_run_over_graphql,
 )
 from dagster_test.test_project import cleanup_memoized_results, get_test_project_environments_path
-from dagster_test.test_project.test_pipelines.repo import define_memoization_job
+from dagster_test.test_project.test_jobs.repo import define_memoization_job
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 

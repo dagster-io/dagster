@@ -6,7 +6,7 @@ from dagster._core.definitions.output import Out
 from dagster._core.test_utils import nesting_graph
 from dagster_celery import celery_executor
 
-# test_execute pipelines
+# test_execute jobs
 
 
 @op
@@ -139,7 +139,7 @@ def test_resources_limit():
     resource_req_op()
 
 
-# test_priority pipelines
+# test_priority jobs
 
 
 @op(tags={"dagster-celery/priority": 0})
@@ -291,7 +291,7 @@ def interrupt_job():
         sleep_op.alias("sleep_" + str(i))()
 
 
-# test_queues pipelines
+# test_queues jobs
 
 
 @op(tags={"dagster-celery/queue": "fooqueue"})

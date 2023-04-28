@@ -51,7 +51,7 @@ class K8sContainerContext(
     )
 ):
     """Encapsulates configuration that can be applied to a K8s job running Dagster code.
-    Can be persisted on a PipelineRun at run submission time based on metadata from the
+    Can be persisted on a DagsterRun at run submission time based on metadata from the
     code location and then included in the job's configuration at run launch time or step
     launch time.
     """

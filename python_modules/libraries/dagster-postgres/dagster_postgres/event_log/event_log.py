@@ -165,7 +165,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         return PostgresEventLogStorage(conn_string, should_autocreate_tables)
 
     def store_event(self, event: EventLogEntry) -> None:
-        """Store an event corresponding to a pipeline run.
+        """Store an event corresponding to a run.
 
         Args:
             event (EventLogEntry): The event to store.

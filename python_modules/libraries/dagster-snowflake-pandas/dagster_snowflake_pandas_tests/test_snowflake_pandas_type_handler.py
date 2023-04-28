@@ -217,10 +217,10 @@ def test_io_manager_with_snowflake_pandas(io_manager):
         @job(
             resource_defs={"snowflake": io_manager},
         )
-        def io_manager_test_pipeline():
+        def io_manager_test_job():
             read_pandas_df(emit_pandas_df())
 
-        res = io_manager_test_pipeline.execute_in_process()
+        res = io_manager_test_job.execute_in_process()
         assert res.success
 
 
