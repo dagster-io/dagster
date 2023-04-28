@@ -295,11 +295,7 @@ def _config_value_to_dict_representation(field: Optional[ModelField], value: Any
     from dagster._config.field_utils import EnvVar, IntEnvVar
 
     if isinstance(value, dict):
-        return {
-            k: _config_value_to_dict_representation(None, v)
-            for k, v in value.items()
-            if v is not None
-        }
+        return {k: _config_value_to_dict_representation(None, v) for k, v in value.items()}
     elif isinstance(value, list):
         return [_config_value_to_dict_representation(None, v) for v in value]
     elif isinstance(value, EnvVar):
