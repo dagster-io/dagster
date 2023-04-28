@@ -442,15 +442,10 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
               }
               return !CREATED_BY_TAGS.includes(token.value.split('=')[0] as DagsterTag);
             }),
-            ...Array.from(values).map((value) => {
-              if (value.type === DagsterTag.Automaterialize) {
-                return {token: 'tag' as const, value: `${value.type}=true`};
-              }
-              return {
-                token: 'tag' as const,
-                value: `${value.type}=${value.value}`,
-              };
-            }),
+            ...Array.from(values).map((value) => ({
+              token: 'tag' as const,
+              value: `${value.type}=${value.value}`,
+            })),
           ]);
         },
       }),
