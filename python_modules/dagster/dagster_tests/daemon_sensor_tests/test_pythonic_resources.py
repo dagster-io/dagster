@@ -80,6 +80,21 @@ def sensor_from_fn_arg(context: SensorEvaluationContext, my_resource: MyResource
     return RunRequest(my_resource.a_str, run_config={}, tags={})
 
 
+@op(out={})
+def the_op_but_with_a_resource_dep(my_resource: MyResource):
+    assert my_resource.a_str == "foo"
+
+
+@job
+def the_job_but_with_a_resource_dep() -> None:
+    the_op_but_with_a_resource_dep()
+
+
+@sensor(job_name="the_job_but_with_a_resource_dep")
+def sensor_with_job_with_resource_dep(context: SensorEvaluationContext, my_resource: MyResource):
+    return RunRequest(my_resource.a_str, run_config={}, tags={})
+
+
 is_in_cm = False
 
 
@@ -244,10 +259,11 @@ def sensor_run_status_with_cm(
 
 
 the_repo = Definitions(
-    jobs=[the_job],
+    jobs=[the_job, the_job_but_with_a_resource_dep],
     sensors=[
         sensor_from_context,
         sensor_from_fn_arg,
+        sensor_with_job_with_resource_dep,
         sensor_with_cm,
         sensor_from_context_weird_name,
         sensor_from_fn_arg_no_context,
@@ -328,6 +344,7 @@ def test_cant_use_required_resource_keys_and_params_both() -> None:
     [
         "sensor_from_context",
         "sensor_from_fn_arg",
+        "sensor_with_job_with_resource_dep",
         "sensor_with_cm",
         "sensor_from_context_weird_name",
         "sensor_from_fn_arg_no_context",
