@@ -1,8 +1,10 @@
 from typing import TYPE_CHECKING, Any, Generic, Optional, Type, TypeVar, Union, cast
 
 import pydantic
-from pydantic import Field
+from pydantic import Field, SecretStr
 from typing_extensions import dataclass_transform, get_origin
+
+from dagster import EnvVar
 
 from .utils import safe_is_subclass
 
@@ -97,6 +99,8 @@ class BaseResourceMeta(pydantic.main.ModelMetaclass):
                     annotations[field] = Union[
                         LateBoundTypesForResourceTypeChecking.get_partial_resource_type(base), base
                     ]
+                elif annotations[field] == SecretStr:
+                    annotations[field] = Union[SecretStr, EnvVar]
 
         namespaces["__annotations__"] = annotations
         return super().__new__(cls, name, bases, namespaces, **kwargs)

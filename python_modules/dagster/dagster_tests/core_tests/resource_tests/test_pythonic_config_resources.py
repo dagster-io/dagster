@@ -2640,7 +2640,6 @@ def test_secret_str_runtime_config() -> None:
     assert result.output_for_node("my_asset") == "bar"
 
 
-@pytest.xfail("need to fix, hits casting error currently")
 def test_secret_str_from_env() -> None:
     class ResourceWithSecret(ConfigurableResource):
         a_secret: SecretStr

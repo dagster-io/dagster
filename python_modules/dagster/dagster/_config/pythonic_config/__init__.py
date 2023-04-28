@@ -19,7 +19,7 @@ from typing import (
 )
 
 from pydantic import ConstrainedFloat, ConstrainedInt, ConstrainedStr, SecretField, SecretStr
-from typing_extensions import TypeAlias, TypeGuard, get_args
+from typing_extensions import TypeAlias, TypeGuard, get_args, get_origin
 
 from dagster import (
     Enum as DagsterEnum,
@@ -1421,7 +1421,12 @@ def _config_type_for_type_on_pydantic_field(
         potential_dagster_type (Any): The Python type of the Pydantic field.
     """
     # special case pydantic constrained types to their source equivalents
-    if safe_is_subclass(potential_dagster_type, (ConstrainedStr, SecretStr)):
+
+    if (
+        safe_is_subclass(potential_dagster_type, (ConstrainedStr, SecretStr))
+        or get_origin(potential_dagster_type) == Union
+        and get_args(potential_dagster_type)[0] == SecretStr
+    ):
         return StringSource
     # no FloatSource, so we just return float
     elif safe_is_subclass(potential_dagster_type, ConstrainedFloat):
