@@ -26,7 +26,11 @@ from dagster._core.definitions.reconstruct import ReconstructableRepository
 from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.host_representation.external_data import (
+    ExternalJobSubsetResult,
+    ExternalPartitionExecutionErrorData,
     ExternalRepositoryErrorData,
+    ExternalScheduleExecutionErrorData,
+    ExternalSensorExecutionErrorData,
     external_job_data_from_def,
     external_repository_data_from_def,
 )
@@ -402,35 +406,51 @@ class DagsterApiServer(DagsterApiServicer):
                     self._serializable_load_error
                 )
             )
-        loaded_repositories = check.not_none(self._loaded_repositories)
-        response = ListRepositoriesResponse(
-            loaded_repositories.loadable_repository_symbols,
-            executable_path=self._loadable_target_origin.executable_path
-            if self._loadable_target_origin
-            else None,
-            repository_code_pointer_dict=loaded_repositories.code_pointers_by_repo_name,
-            entry_point=self._entry_point,
-            container_image=self._container_image,
-            container_context=self._container_context,
-            dagster_library_versions=DagsterLibraryRegistry.get(),
-        )
+        try:
+            loaded_repositories = check.not_none(self._loaded_repositories)
+            serialized_response = serialize_value(
+                ListRepositoriesResponse(
+                    loaded_repositories.loadable_repository_symbols,
+                    executable_path=self._loadable_target_origin.executable_path
+                    if self._loadable_target_origin
+                    else None,
+                    repository_code_pointer_dict=loaded_repositories.code_pointers_by_repo_name,
+                    entry_point=self._entry_point,
+                    container_image=self._container_image,
+                    container_context=self._container_context,
+                    dagster_library_versions=DagsterLibraryRegistry.get(),
+                )
+            )
+        except Exception:
+            serialized_response = serialize_value(
+                serializable_error_info_from_exc_info(sys.exc_info())
+            )
 
         return api_pb2.ListRepositoriesReply(  # type: ignore
-            serialized_list_repositories_response_or_error=serialize_value(response)
+            serialized_list_repositories_response_or_error=serialized_response
         )
 
     def ExternalPartitionNames(self, request, _context) -> api_pb2.ExternalPartitionNamesReply:  # type: ignore
-        partition_names_args = deserialize_value(
-            request.serialized_partition_names_args,
-            PartitionNamesArgs,
-        )
-        return api_pb2.ExternalPartitionNamesReply(  # type: ignore
-            serialized_external_partition_names_or_external_partition_execution_error=serialize_value(
+        try:
+            partition_names_args = deserialize_value(
+                request.serialized_partition_names_args,
+                PartitionNamesArgs,
+            )
+            serialized_response = serialize_value(
                 get_partition_names(
                     self._get_repo_for_origin(partition_names_args.repository_origin),
                     partition_names_args.partition_set_name,
                 )
             )
+        except Exception:
+            serialized_response = serialize_value(
+                ExternalPartitionExecutionErrorData(
+                    serializable_error_info_from_exc_info(sys.exc_info())
+                )
+            )
+
+        return api_pb2.ExternalPartitionNamesReply(  # type: ignore
+            serialized_external_partition_names_or_external_partition_execution_error=serialized_response
         )
 
     def ExternalNotebookData(self, request, _context) -> api_pb2.ExternalNotebookDataReply:  # type: ignore
@@ -439,57 +459,78 @@ class DagsterApiServer(DagsterApiServicer):
         return api_pb2.ExternalNotebookDataReply(content=get_notebook_data(notebook_path))  # type: ignore
 
     def ExternalPartitionSetExecutionParams(self, request, _context):
-        args = deserialize_value(
-            request.serialized_partition_set_execution_param_args,
-            PartitionSetExecutionParamArgs,
-        )
-
-        instance_ref = args.instance_ref if args.instance_ref else self._instance_ref
-
-        serialized_data = serialize_value(
-            get_partition_set_execution_param_data(
-                self._get_repo_for_origin(args.repository_origin),
-                partition_set_name=args.partition_set_name,
-                partition_names=args.partition_names,
-                instance_ref=instance_ref,
+        try:
+            args = deserialize_value(
+                request.serialized_partition_set_execution_param_args,
+                PartitionSetExecutionParamArgs,
             )
-        )
+
+            instance_ref = args.instance_ref if args.instance_ref else self._instance_ref
+
+            serialized_data = serialize_value(
+                get_partition_set_execution_param_data(
+                    self._get_repo_for_origin(args.repository_origin),
+                    partition_set_name=args.partition_set_name,
+                    partition_names=args.partition_names,
+                    instance_ref=instance_ref,
+                )
+            )
+        except Exception:
+            serialized_data = serialize_value(
+                ExternalPartitionExecutionErrorData(
+                    serializable_error_info_from_exc_info(sys.exc_info())
+                )
+            )
 
         yield from self._split_serialized_data_into_chunk_events(serialized_data)
 
     def ExternalPartitionConfig(self, request, _context):
-        args = deserialize_value(request.serialized_partition_args, PartitionArgs)
+        try:
+            args = deserialize_value(request.serialized_partition_args, PartitionArgs)
 
-        instance_ref = args.instance_ref if args.instance_ref else self._instance_ref
+            instance_ref = args.instance_ref if args.instance_ref else self._instance_ref
 
-        serialized_data = serialize_value(
-            get_partition_config(
-                self._get_repo_for_origin(args.repository_origin),
-                args.partition_set_name,
-                args.partition_name,
-                instance_ref=instance_ref,
+            serialized_data = serialize_value(
+                get_partition_config(
+                    self._get_repo_for_origin(args.repository_origin),
+                    args.partition_set_name,
+                    args.partition_name,
+                    instance_ref=instance_ref,
+                )
             )
-        )
+        except Exception:
+            serialized_data = serialize_value(
+                ExternalPartitionExecutionErrorData(
+                    serializable_error_info_from_exc_info(sys.exc_info())
+                )
+            )
 
         return api_pb2.ExternalPartitionConfigReply(
             serialized_external_partition_config_or_external_partition_execution_error=serialized_data
         )
 
     def ExternalPartitionTags(self, request, _context) -> api_pb2.ExternalPartitionTagsReply:  # type: ignore
-        partition_args = deserialize_value(request.serialized_partition_args, PartitionArgs)
+        try:
+            partition_args = deserialize_value(request.serialized_partition_args, PartitionArgs)
 
-        instance_ref = (
-            partition_args.instance_ref if partition_args.instance_ref else self._instance_ref
-        )
-
-        serialized_data = serialize_value(
-            get_partition_tags(
-                self._get_repo_for_origin(partition_args.repository_origin),
-                partition_args.partition_set_name,
-                partition_args.partition_name,
-                instance_ref=instance_ref,
+            instance_ref = (
+                partition_args.instance_ref if partition_args.instance_ref else self._instance_ref
             )
-        )
+
+            serialized_data = serialize_value(
+                get_partition_tags(
+                    self._get_repo_for_origin(partition_args.repository_origin),
+                    partition_args.partition_set_name,
+                    partition_args.partition_name,
+                    instance_ref=instance_ref,
+                )
+            )
+        except Exception:
+            serialized_data = serialize_value(
+                ExternalPartitionExecutionErrorData(
+                    serializable_error_info_from_exc_info(sys.exc_info())
+                )
+            )
 
         return api_pb2.ExternalPartitionTagsReply(  # type: ignore
             serialized_external_partition_tags_or_external_partition_execution_error=serialized_data
@@ -498,13 +539,12 @@ class DagsterApiServer(DagsterApiServicer):
     def ExternalPipelineSubsetSnapshot(
         self, request: Any, _context
     ) -> api_pb2.ExternalPipelineSubsetSnapshotReply:  # type: ignore
-        job_subset_snapshot_args = deserialize_value(
-            request.serialized_pipeline_subset_snapshot_args,
-            JobSubsetSnapshotArgs,
-        )
-
-        return api_pb2.ExternalPipelineSubsetSnapshotReply(  # type: ignore
-            serialized_external_pipeline_subset_result=serialize_value(
+        try:
+            job_subset_snapshot_args = deserialize_value(
+                request.serialized_pipeline_subset_snapshot_args,
+                JobSubsetSnapshotArgs,
+            )
+            serialized_external_pipeline_subset_result = serialize_value(
                 get_external_pipeline_subset_result(
                     self._get_repo_for_origin(
                         job_subset_snapshot_args.job_origin.external_repository_origin
@@ -514,6 +554,15 @@ class DagsterApiServer(DagsterApiServicer):
                     job_subset_snapshot_args.asset_selection,
                 )
             )
+        except Exception:
+            serialized_external_pipeline_subset_result = serialize_value(
+                ExternalJobSubsetResult(
+                    success=False, error=serializable_error_info_from_exc_info(sys.exc_info())
+                )
+            )
+
+        return api_pb2.ExternalPipelineSubsetSnapshotReply(  # type: ignore
+            serialized_external_pipeline_subset_result=serialized_external_pipeline_subset_result
         )
 
     def _get_serialized_external_repository_data(self, request):
@@ -593,38 +642,52 @@ class DagsterApiServer(DagsterApiServicer):
             )
 
     def ExternalScheduleExecution(self, request, _context):
-        args = deserialize_value(
-            request.serialized_external_schedule_execution_args,
-            ExternalScheduleExecutionArgs,
-        )
-        serialized_schedule_data = serialize_value(
-            get_external_schedule_execution(
-                self._get_repo_for_origin(args.repository_origin),
-                args.instance_ref,
-                args.schedule_name,
-                args.scheduled_execution_timestamp,
-                args.scheduled_execution_timezone,
+        try:
+            args = deserialize_value(
+                request.serialized_external_schedule_execution_args,
+                ExternalScheduleExecutionArgs,
             )
-        )
+            serialized_schedule_data = serialize_value(
+                get_external_schedule_execution(
+                    self._get_repo_for_origin(args.repository_origin),
+                    args.instance_ref,
+                    args.schedule_name,
+                    args.scheduled_execution_timestamp,
+                    args.scheduled_execution_timezone,
+                )
+            )
+        except Exception:
+            serialized_schedule_data = serialize_value(
+                ExternalScheduleExecutionErrorData(
+                    serializable_error_info_from_exc_info(sys.exc_info())
+                )
+            )
 
         yield from self._split_serialized_data_into_chunk_events(serialized_schedule_data)
 
     def ExternalSensorExecution(self, request, _context):
-        args = deserialize_value(
-            request.serialized_external_sensor_execution_args,
-            SensorExecutionArgs,
-        )
-
-        serialized_sensor_data = serialize_value(
-            get_external_sensor_execution(
-                self._get_repo_for_origin(args.repository_origin),
-                args.instance_ref,
-                args.sensor_name,
-                args.last_completion_time,
-                args.last_run_key,
-                args.cursor,
+        try:
+            args = deserialize_value(
+                request.serialized_external_sensor_execution_args,
+                SensorExecutionArgs,
             )
-        )
+
+            serialized_sensor_data = serialize_value(
+                get_external_sensor_execution(
+                    self._get_repo_for_origin(args.repository_origin),
+                    args.instance_ref,
+                    args.sensor_name,
+                    args.last_completion_time,
+                    args.last_run_key,
+                    args.cursor,
+                )
+            )
+        except Exception:
+            serialized_sensor_data = serialize_value(
+                ExternalSensorExecutionErrorData(
+                    serializable_error_info_from_exc_info(sys.exc_info())
+                )
+            )
 
         yield from self._split_serialized_data_into_chunk_events(serialized_sensor_data)
 
