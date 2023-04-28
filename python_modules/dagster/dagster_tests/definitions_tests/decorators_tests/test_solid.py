@@ -16,7 +16,7 @@ from dagster import (
     job,
     op,
 )
-from dagster._core.utility_solids import create_stub_op
+from dagster._core.utility_ops import create_stub_op
 
 # This file tests a lot of parameter name stuff, so these warnings are spurious
 
