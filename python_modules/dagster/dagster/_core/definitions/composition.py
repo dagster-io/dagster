@@ -725,7 +725,7 @@ class PendingNodeInvocation(Generic[T_NodeDefinition]):
     ) -> "JobDefinition":
         if not isinstance(self.node_def, GraphDefinition):
             raise DagsterInvalidInvocationError(
-                "Attemped to call `execute_in_process` on a composite solid.  Only graphs "
+                "Attemped to call `to_job` on a non-graph.  Only graphs "
                 "constructed using the `@graph` decorator support this method."
             )
 
@@ -763,7 +763,7 @@ class PendingNodeInvocation(Generic[T_NodeDefinition]):
     ) -> "ExecuteInProcessResult":
         if not isinstance(self.node_def, GraphDefinition):
             raise DagsterInvalidInvocationError(
-                "Attemped to call `execute_in_process` on a composite solid.  Only graphs "
+                "Attemped to call `execute_in_process` on a non-graph.  Only graphs "
                 "constructed using the `@graph` decorator support this method."
             )
 
@@ -1031,7 +1031,7 @@ def do_composition(
     """
     from .decorators.op_decorator import (
         NoContextDecoratedOpFunction,
-        resolve_checked_solid_fn_inputs,
+        resolve_checked_op_fn_inputs,
     )
 
     actual_output_defs: Sequence[OutputDefinition]
@@ -1047,7 +1047,7 @@ def do_composition(
 
     compute_fn = NoContextDecoratedOpFunction(fn)
 
-    actual_input_defs = resolve_checked_solid_fn_inputs(
+    actual_input_defs = resolve_checked_op_fn_inputs(
         decorator_name=decorator_name,
         fn_name=graph_name,
         compute_fn=compute_fn,

@@ -39,7 +39,7 @@ from .system import StepExecutionContext
 
 
 class AbstractComputeExecutionContext(ABC):
-    """Base class for solid context implemented by SolidExecutionContext and DagstermillExecutionContext.
+    """Base class for op context implemented by OpExecutionContext and DagstermillExecutionContext.
     """
 
     @abstractmethod
@@ -208,7 +208,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
     @property
     def node_handle(self) -> NodeHandle:
-        """NodeHandle: The current solid's handle.
+        """NodeHandle: The current op's handle.
 
         :meta private:
         """
@@ -223,22 +223,13 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         return self.node_handle
 
     @property
-    def solid(self) -> Node:
-        """Solid: The current solid object.
-
-        :meta private:
-
-        """
-        return self._step_execution_context.job_def.get_node(self.node_handle)
-
-    @property
     def op(self) -> Node:
         """Solid: The current op object.
 
         :meta private:
 
         """
-        return self.solid
+        return self._step_execution_context.job_def.get_node(self.node_handle)
 
     @public
     @property

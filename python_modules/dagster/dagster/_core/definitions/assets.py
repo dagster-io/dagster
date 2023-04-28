@@ -243,26 +243,26 @@ class AssetsDefinition(ResourceAddable):
 
         if isinstance(self.node_def, GraphDefinition):
             return self._node_def(*args, **kwargs)
-        solid_def = self.op
+        op_def = self.op
         provided_context: Optional[OpExecutionContext] = None
         if len(args) > 0 and isinstance(args[0], OpExecutionContext):
             provided_context = _build_invocation_context_with_included_resources(self, args[0])
             new_args = [provided_context, *args[1:]]
-            return solid_def(*new_args, **kwargs)
+            return op_def(*new_args, **kwargs)
         elif (
-            isinstance(solid_def.compute_fn, DecoratedOpFunction)
-            and solid_def.compute_fn.has_context_arg()
+            isinstance(op_def.compute_fn, DecoratedOpFunction)
+            and op_def.compute_fn.has_context_arg()
         ):
-            context_param_name = get_function_params(solid_def.compute_fn.decorated_fn)[0].name
+            context_param_name = get_function_params(op_def.compute_fn.decorated_fn)[0].name
             if context_param_name in kwargs:
                 provided_context = _build_invocation_context_with_included_resources(
                     self, cast(OpExecutionContext, kwargs[context_param_name])
                 )
                 new_kwargs = dict(kwargs)
                 new_kwargs[context_param_name] = provided_context
-                return solid_def(*args, **new_kwargs)
+                return op_def(*args, **new_kwargs)
 
-        return solid_def(*args, **kwargs)
+        return op_def(*args, **kwargs)
 
     @public
     @staticmethod

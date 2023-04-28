@@ -159,7 +159,7 @@ class ExecutionStep(
                 {
                     "step_key": handle.to_key(),
                     "job_name": job_name,
-                    "solid_name": handle.node_handle.name,
+                    "op_name": handle.node_handle.name,
                 },
                 check.opt_mapping_param(logging_tags, "logging_tags"),
             ),
@@ -172,7 +172,7 @@ class ExecutionStep(
         return self.handle.node_handle
 
     @property
-    def solid_name(self) -> str:
+    def op_name(self) -> str:
         return self.node_handle.name
 
     @property

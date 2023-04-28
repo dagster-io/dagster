@@ -310,7 +310,7 @@ class DagsterInstance(DynamicPartitionsStore):
             :py:class:`dagster._core.storage.event_log.SqliteEventLogStorage`. Configurable in
             ``dagster.yaml`` using the :py:class:`~dagster.serdes.ConfigurableClass` machinery.
         compute_log_manager (ComputeLogManager): The compute log manager handles stdout and stderr
-            logging for solid compute functions. By default, this will be a
+            logging for op compute functions. By default, this will be a
             :py:class:`dagster._core.storage.local_compute_log_manager.LocalComputeLogManager`.
             Configurable in ``dagster.yaml`` using the
             :py:class:`~dagster.serdes.ConfigurableClass` machinery.

@@ -111,7 +111,7 @@ class DagsterLoggingMetadata(
             ("job_name", Optional[str]),
             ("job_tags", Mapping[str, str]),
             ("step_key", Optional[str]),
-            ("solid_name", Optional[str]),
+            ("op_name", Optional[str]),
             ("resource_name", Optional[str]),
             ("resource_fn_name", Optional[str]),
         ],
@@ -127,7 +127,7 @@ class DagsterLoggingMetadata(
         job_name: Optional[str] = None,
         job_tags: Optional[Mapping[str, str]] = None,
         step_key: Optional[str] = None,
-        solid_name: Optional[str] = None,
+        op_name: Optional[str] = None,
         resource_name: Optional[str] = None,
         resource_fn_name: Optional[str] = None,
     ):
@@ -137,7 +137,7 @@ class DagsterLoggingMetadata(
             job_name=job_name,
             job_tags=job_tags or {},
             step_key=step_key,
-            solid_name=solid_name,
+            op_name=op_name,
             resource_name=resource_name,
             resource_fn_name=resource_fn_name,
         )

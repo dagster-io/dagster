@@ -76,7 +76,7 @@ class HookDefinition(
         from .job_definition import JobDefinition
 
         if len(args) > 0 and isinstance(args[0], (JobDefinition, GraphDefinition)):
-            # when it decorates a job, we apply this hook to all the solid invocations within
+            # when it decorates a job, we apply this hook to all the op invocations within
             # the job.
             return args[0].with_hooks({self})
         else:

@@ -274,7 +274,7 @@ def define_asset_job(
             Describes how the Job is parameterized at runtime.
 
             If no value is provided, then the schema for the job's run config is a standard
-            format based on its solids and resources.
+            format based on its ops and resources.
 
             If a dictionary is provided, then it must conform to the standard config schema, and
             it will be used as the job's run config for the job whenever the job is executed.
