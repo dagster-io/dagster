@@ -189,7 +189,9 @@ def new_resource_runtime() -> "Definitions":
     # start_new_resource_runtime_launch
     from dagster import sensor, define_asset_job, RunRequest, RunConfig
 
-    update_data_job = define_asset_job(name="update_data_job", selection=[data_from_database])
+    update_data_job = define_asset_job(
+        name="update_data_job", selection=[data_from_database]
+    )
 
     @sensor(job=update_data_job)
     def table_update_sensor():
@@ -247,7 +249,9 @@ def new_resources_nesting() -> "Definitions":
         assets=[my_asset],
         resources={
             "bucket": FileStoreBucket(
-                credentials=CredentialsResource(username="my_user", password="my_password"),
+                credentials=CredentialsResource(
+                    username="my_user", password="my_password"
+                ),
                 region="us-east-1",
             ),
         },
@@ -412,7 +416,9 @@ def resource_adapter() -> None:
     def my_asset(writer: Writer):
         writer.output("hello, world!")
 
-    defs = Definitions(assets=[my_asset], resources={"writer": WriterResource(prefix="greeting: ")})
+    defs = Definitions(
+        assets=[my_asset], resources={"writer": WriterResource(prefix="greeting: ")}
+    )
 
     # end_resource_adapter
 
@@ -437,7 +443,9 @@ def io_adapter() -> None:
             self.base_path = base_path
 
         def handle_output(self, context: OutputContext, obj):
-            with open(os.path.join(self.base_path, context.step_key, context.name), "w") as fd:
+            with open(
+                os.path.join(self.base_path, context.step_key, context.name), "w"
+            ) as fd:
                 fd.write(obj)
 
         def load_input(self, context: InputContext):
@@ -567,7 +575,9 @@ def raw_github_resource_factory() -> None:
 
     defs = Definitions(
         assets=[public_github_repos],
-        resources={"github": GitHubResource(access_token=EnvVar("GITHUB_ACCESS_TOKEN"))},
+        resources={
+            "github": GitHubResource(access_token=EnvVar("GITHUB_ACCESS_TOKEN"))
+        },
     )
 
     # end_raw_github_resource_factory
@@ -619,22 +629,21 @@ def with_state_example() -> None:
 
         _api_token: str = PrivateAttr()
 
-        def __post_init__(self):
+        def setup_for_execution(self, context) -> None:
             # Fetch and set up an API token based on the username and password
             self._api_token = requests.get(
                 "https://my-api.com/token", auth=(self.username, self.password)
             ).text
 
-        def query(self, body: str):
+        def get_all_users(self):
             return requests.get(
-                "https://my-api.com/query",
+                "https://my-api.com/users",
                 headers={"Authorization": self._api_token},
-                data=body,
             )
 
     @asset
     def my_asset(client: MyClientResource):
-        return client.query("foobar")
+        return client.get_all_users()
 
     # end_with_state_example
 
@@ -644,6 +653,13 @@ def with_complex_state_example() -> None:
 
     from dagster import ConfigurableResource, asset
     from contextlib import contextmanager
+    from pydantic import PrivateAttr
+
+    class DBConnection:
+        ...
+
+        def query(self, body: str):
+            ...
 
     @contextmanager
     def get_database_connection(username: str, password: str):
@@ -653,11 +669,20 @@ def with_complex_state_example() -> None:
         username: str
         password: str
 
-        # Setup and teardown occurs in the asset or op body
+        _db_connection: DBConnection = PrivateAttr()
+
         @contextmanager
-        def get_connection(self):
+        def yield_for_execution(self, context):
+            # keep connection open for the duration of the execution
             with get_database_connection(self.username, self.password) as conn:
-                yield conn
+                # set up the connection attribute so it can be used in the execution
+                self._db_connection = conn
+
+                # yield, allowing execution to occur
+                yield self
+
+        def query(self, body: str):
+            return self._db_connection.query(body)
 
     @asset
     def my_asset(client: MyClientResource):
@@ -852,10 +877,15 @@ def new_resource_on_schedule() -> None:
     from dagster import build_schedule_context, validate_run_config
 
     def test_process_data_schedule():
-        context = build_schedule_context(scheduled_execution_time=datetime.datetime(2020, 1, 1))
+        context = build_schedule_context(
+            scheduled_execution_time=datetime.datetime(2020, 1, 1)
+        )
         run_request = process_data_schedule(
             context, date_formatter=DateFormatter(format="%Y-%m-%d")
         )
-        assert run_request.run_config["ops"]["fetch_data"]["config"]["date"] == "2020-01-01"
+        assert (
+            run_request.run_config["ops"]["fetch_data"]["config"]["date"]
+            == "2020-01-01"
+        )
 
     # end_test_resource_on_schedule
