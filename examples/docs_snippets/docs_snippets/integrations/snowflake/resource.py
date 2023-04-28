@@ -1,4 +1,5 @@
 # pyright: reportGeneralTypeIssues=none
+# pyright: reportOptionalMemberAccess=none
 
 # start
 import pandas as pd
