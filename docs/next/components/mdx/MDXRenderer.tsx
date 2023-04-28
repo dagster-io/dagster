@@ -221,7 +221,10 @@ const RightSidebar = ({editMode, navigationItems, githubLink, toggleFeedback}) =
 export const VersionedContentLayout = ({children, asPath = null}) => {
   return (
     <div className="flex-1 w-full min-w-0 relative z-0 focus:outline-none" tabIndex={0}>
-      <div className="flex flex-col lg:mt-5 max-w-7xl">
+      <div
+        className="flex flex-col lg:mt-5 max-w-7xl"
+        style={{marginLeft: 'auto', marginRight: 'auto'}}
+      >
         <div className="flex justify-between px-4 mb-4">
           <div className="flex justify-start flex-col lg:flex-row lg:px-4 w-full">
             <div className="flex">
