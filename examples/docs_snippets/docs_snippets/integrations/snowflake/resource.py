@@ -1,3 +1,6 @@
+# pyright: reportGeneralTypeIssues=none
+
+# start
 import pandas as pd
 from dagster_snowflake import SnowflakeResource
 
@@ -10,13 +13,14 @@ from dagster import Definitions, EnvVar, asset
 @asset
 def small_petals(snowflake: SnowflakeResource) -> pd.DataFrame:
     with snowflake.get_connection() as conn:
-        res = conn.cursor().execute(
-            "SELECT * FROM IRIS_DATASET WHERE 'petal_length_cm' < 1 AND"
-            " 'petal_width_cm' < 1"
+        return (
+            conn.cursor()
+            .execute(
+                "SELECT * FROM IRIS_DATASET WHERE 'petal_length_cm' < 1 AND"
+                " 'petal_width_cm' < 1"
+            )
+            .fetch_pandas_all()
         )
-        if res is not None:
-            return res.fetch_pandas_all()
-        return pd.DataFrame()
 
 
 defs = Definitions(
@@ -31,3 +35,5 @@ defs = Definitions(
         )
     },
 )
+
+# end
