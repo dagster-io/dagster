@@ -14,6 +14,7 @@ import {__ASSET_JOB_PREFIX} from '../asset-graph/Utils';
 import {RunsFilter, RunStatus} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
+import {TruncatedTextWithFullTextOnHover} from '../nav/getLeftNavItemsForOption';
 import {useFilters} from '../ui/Filters';
 import {FilterObject} from '../ui/Filters/useFilter';
 import {capitalizeFirstLetter, useStaticSetFilter} from '../ui/Filters/useStaticSetFilter';
@@ -283,7 +284,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
     renderLabel: ({value}) => (
       <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
         <Icon name="job" />
-        {value}
+        <TruncatedTextWithFullTextOnHover text={value} />
       </Box>
     ),
     getStringValue: (x) => x,
@@ -331,7 +332,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
     renderLabel: ({value}) => (
       <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
         <Icon name="job" />
-        {value}
+        <TruncatedTextWithFullTextOnHover text={value} />
       </Box>
     ),
     getStringValue: (x) => x,
@@ -367,7 +368,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
     renderLabel: ({value}) => (
       <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
         <Icon name="job" />
-        {value.value}
+        <TruncatedTextWithFullTextOnHover text={value.value} />
       </Box>
     ),
     getStringValue: ({value}) => value,
@@ -406,7 +407,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
           return (
             <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
               {icon}
-              {value.value}
+              <TruncatedTextWithFullTextOnHover text={value.value} />
             </Box>
           );
         },
@@ -510,12 +511,13 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
         renderLabel: ({value}) => (
           <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
             <Icon name="tag" />
-            {value.value}
+            <TruncatedTextWithFullTextOnHover text={value.value} />
           </Box>
         ),
         renderActiveStateLabel: ({value}) => (
           <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
             <Icon name="tag" />
+            <TruncatedTextWithFullTextOnHover text={`${value.key}=${value.value}`} />
             {value.key}={value.value}
           </Box>
         ),
