@@ -2,6 +2,7 @@ import asyncio
 import os
 import re
 import time
+import warnings
 from collections import defaultdict
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import contextmanager
@@ -10,6 +11,7 @@ from typing import (
     TYPE_CHECKING,
     AbstractSet,
     Any,
+    Callable,
     Dict,
     Iterator,
     Mapping,
@@ -625,3 +627,16 @@ class SingleThreadPoolExecutor(ThreadPoolExecutor):
 
     def __init__(self):
         super().__init__(max_workers=1, thread_name_prefix="sensor_daemon_worker")
+
+
+def ignore_warning(message_substr: str):
+    """Ignores warnings within the decorated function that contain the given string."""
+
+    def decorator(func: Callable):
+        def wrapper(*args, **kwargs):
+            warnings.filterwarnings("ignore", message=message_substr)
+            return func(*args, **kwargs)
+
+        return wrapper
+
+    return decorator

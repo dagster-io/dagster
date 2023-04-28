@@ -48,31 +48,17 @@ from dagster._core.snap.dep_snapshot import (
     build_dep_structure_snapshot_from_graph_def,
 )
 from dagster._core.storage.event_log.base import EventRecordsFilter
-from dagster._core.test_utils import instance_for_test
+from dagster._core.test_utils import ignore_warning, instance_for_test
 from dagster._utils import safe_tempfile_path
 from dagster._utils.backcompat import ExperimentalWarning
 
 
 @pytest.fixture(autouse=True)
-def check_experimental_warnings():
-    with warnings.catch_warnings(record=True) as record:
-        # turn off any outer warnings filters
-        warnings.resetwarnings()
+def error_on_warning():
+    # turn off any outer warnings filters, e.g. ignores that are set in pyproject.toml
+    warnings.resetwarnings()
 
-        yield
-
-        for w in record:
-            # Expect experimental warnings to be thrown for direct
-            # resource_defs and io_manager_def arguments.
-            if (
-                "resource_defs" in w.message.args[0]
-                or "io_manager_def" in w.message.args[0]
-                or "build_assets_job" in w.message.args[0]
-                or "source_asset" in w.message.args[0]
-                or "SQLAlchemy" in w.message.args[0]  # deprecation API usage warnings
-            ):
-                continue
-            assert False, f"Unexpected warning: {w.message.args[0]}"
+    warnings.filterwarnings("error")
 
 
 def _all_asset_keys(result):
@@ -1692,6 +1678,7 @@ def test_graph_output_is_input_within_graph():
     assert result.output_for_node("complicated_graph", "asset_3") == 4
 
 
+@ignore_warning('"io_manager_def" is an experimental argument')
 def test_source_asset_io_manager_def():
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
@@ -1779,6 +1766,8 @@ def test_source_asset_io_manager_key_provided():
     assert result.output_for_node("my_derived_asset") == 9
 
 
+@ignore_warning('"resource_defs" is an experimental argument')
+@ignore_warning('"io_manager_def" is an experimental argument')
 def test_source_asset_requires_resource_defs():
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
@@ -1816,6 +1805,7 @@ def test_source_asset_requires_resource_defs():
     assert result.output_for_node("my_derived_asset") == 9
 
 
+@ignore_warning('"resource_defs" is an experimental argument')
 def test_other_asset_provides_req():
     # Demonstrate that assets cannot resolve each other's dependencies with
     # resources on each definition.
@@ -1834,6 +1824,7 @@ def test_other_asset_provides_req():
         build_assets_job(name="test", assets=[asset_reqs_foo, asset_provides_foo])
 
 
+@ignore_warning('"resource_defs" is an experimental argument')
 def test_transitive_deps_not_provided():
     @resource(required_resource_keys={"foo"})
     def unused_resource():
@@ -1850,6 +1841,7 @@ def test_transitive_deps_not_provided():
         build_assets_job(name="test", assets=[the_asset])
 
 
+@ignore_warning('"resource_defs" is an experimental argument')
 def test_transitive_resource_deps_provided():
     @resource(required_resource_keys={"foo"})
     def used_resource(context):
@@ -1865,6 +1857,7 @@ def test_transitive_resource_deps_provided():
     assert the_job.execute_in_process().success
 
 
+@ignore_warning('"io_manager_def" is an experimental argument')
 def test_transitive_io_manager_dep_not_provided():
     @io_manager(required_resource_keys={"foo"})
     def the_manager():
