@@ -701,5 +701,5 @@ def load_assets_from_dbt_manifest(
         dbt_assets = [dbt_assets_def]
 
     if key_prefix:
-        dbt_assets, _ = prefix_assets(dbt_assets, key_prefix, [])
+        dbt_assets, _ = prefix_assets(dbt_assets, key_prefix, [], source_key_prefix)
     return dbt_assets

@@ -233,7 +233,7 @@ def test_prefix(prefix):
     assert_assets_have_prefix(prefix, assets)
 
 
-def test_prefix_sources():
+def test_source_key_prefix():
     from .asset_package import module_with_assets
 
     prefix = ["foo", "my_cool_prefix"]
@@ -249,15 +249,15 @@ def test_prefix_sources():
     }
 
     assets_with_prefix_sources = load_assets_from_modules(
-        [module_with_assets], key_prefix=prefix, prefix_sources=True
+        [module_with_assets], key_prefix=prefix, source_key_prefix=["bar", "cooler_prefix"]
     )
     assert get_source_asset_with_key(
-        assets_with_prefix_sources, AssetKey(["foo", "my_cool_prefix", "elvis_presley"])
+        assets_with_prefix_sources, AssetKey(["bar", "cooler_prefix", "elvis_presley"])
     )
     assert get_assets_def_with_key(
         assets_with_prefix_sources, AssetKey(["foo", "my_cool_prefix", "chuck_berry"])
     ).dependency_keys == {
-        AssetKey(["foo", "my_cool_prefix", "elvis_presley"]),
+        AssetKey(["bar", "cooler_prefix", "elvis_presley"]),
         AssetKey(["foo", "my_cool_prefix", "miles_davis"]),
     }
 
