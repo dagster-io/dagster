@@ -362,7 +362,7 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
     @property
     def dynamic_partitions_request_results(
         self,
-    ) -> Sequence[Union[AddDynamicPartitionsRequestResult, DeleteDynamicPartitionsRequestResult]]:
+    ) -> Sequence[DynamicPartitionsRequestResult]:
         return self.tick_data.dynamic_partitions_request_results
 
 

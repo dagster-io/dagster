@@ -493,13 +493,17 @@ class TestSensors(NonLaunchableGraphQLContextTestMatrix):
         assert evaluation_result["dynamicPartitionsRequests"][0]["partitionKeys"] == [
             "new_key",
             "new_key2",
+            "existent_key",
         ]
         assert evaluation_result["dynamicPartitionsRequests"][0]["partitionsDefName"] == "foo"
         assert (
             evaluation_result["dynamicPartitionsRequests"][0]["type"]
             == GrapheneDynamicPartitionsRequestType.ADD_PARTITIONS
         )
-        assert evaluation_result["dynamicPartitionsRequests"][1]["partitionKeys"] == ["old_key"]
+        assert evaluation_result["dynamicPartitionsRequests"][1]["partitionKeys"] == [
+            "old_key",
+            "nonexistent_key",
+        ]
         assert evaluation_result["dynamicPartitionsRequests"][1]["partitionsDefName"] == "foo"
         assert (
             evaluation_result["dynamicPartitionsRequests"][1]["type"]

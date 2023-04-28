@@ -14,8 +14,7 @@ from dagster._core.definitions.schedule_definition import ScheduleExecutionData
 from dagster._core.definitions.selector import ScheduleSelector, SensorSelector
 from dagster._core.definitions.sensor_definition import SensorExecutionData
 from dagster._core.scheduler.instigation import (
-    AddDynamicPartitionsRequestResult,
-    DeleteDynamicPartitionsRequestResult,
+    DynamicPartitionsRequestResult,
     InstigatorState,
     InstigatorTick,
     InstigatorType,
@@ -141,13 +140,40 @@ class GrapheneDynamicPartitionsRequestType(graphene.Enum):
         name = "DynamicPartitionsRequestType"
 
 
-class GrapheneDynamicPartitionsRequest(graphene.ObjectType):
-    # TODO maybe unify this object?
-    # Or at least use some sort of mixin?
+class DynamicPartitionsRequestMixin:
+    # Mixin this class to implement DynamicPartitionsRequest
+    #
+    # Graphene has some strange properties that make it so that you cannot
+    # implement ABCs nor use properties in an overridable way. So the way
+    # the mixin works is that the target classes have to have a method
+    # get_dynamic_partitions_request()
     partitionKeys = graphene.List(graphene.NonNull(graphene.String))
     partitionsDefName = graphene.NonNull(graphene.String)
     type = graphene.NonNull(GrapheneDynamicPartitionsRequestType)
 
+    class Meta:
+        name = "DynamicPartitionRequestMixin"
+
+    def get_dynamic_partitions_request(
+        self,
+    ) -> Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest,]:
+        raise NotImplementedError()
+
+    def resolve_partitionKeys(self, _graphene_info: ResolveInfo):
+        return self.get_dynamic_partitions_request().partition_keys
+
+    def resolve_partitionsDefName(self, _graphene_info: ResolveInfo):
+        return self.get_dynamic_partitions_request().partitions_def_name
+
+    def resolve_type(self, _graphene_info: ResolveInfo):
+        return (
+            GrapheneDynamicPartitionsRequestType.ADD_PARTITIONS
+            if isinstance(self.get_dynamic_partitions_request(), AddDynamicPartitionsRequest)
+            else GrapheneDynamicPartitionsRequestType.DELETE_PARTITIONS
+        )
+
+
+class GrapheneDynamicPartitionsRequest(DynamicPartitionsRequestMixin, graphene.ObjectType):
     class Meta:
         name = "DynamicPartitionRequest"
 
@@ -157,51 +183,46 @@ class GrapheneDynamicPartitionsRequest(graphene.ObjectType):
             AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest
         ],
     ):
-        super().__init__(
-            type=GrapheneDynamicPartitionsRequestType.ADD_PARTITIONS
-            if isinstance(dynamic_partition_request, AddDynamicPartitionsRequest)
-            else GrapheneDynamicPartitionsRequestType.DELETE_PARTITIONS,
-            partitionKeys=dynamic_partition_request.partition_keys,
-            partitionsDefName=dynamic_partition_request.partitions_def_name,
-        )
+        super().__init__()
+        self._dynamic_partitions_request = dynamic_partition_request
+
+    def get_dynamic_partitions_request(
+        self,
+    ) -> Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest,]:
+        return self._dynamic_partitions_request
 
 
-class GrapheneDynamicPartitionsRequestResult(graphene.ObjectType):
+class GrapheneDynamicPartitionsRequestResult(DynamicPartitionsRequestMixin, graphene.ObjectType):
     class Meta:
         name = "DynamicPartitionsRequestResult"
 
-    partitionsDefName = graphene.NonNull(graphene.String)
-    type = graphene.NonNull(GrapheneDynamicPartitionsRequestType)
-    partitionKeys = non_null_list(graphene.String)
     skippedPartitionKeys = non_null_list(graphene.String)
 
-    def __init__(
+    def __init__(self, dynamic_partitions_request_result: DynamicPartitionsRequestResult):
+        super().__init__()
+        self._dynamic_partitions_request_result = dynamic_partitions_request_result
+
+    def get_dynamic_partitions_request(
         self,
-        dynamic_partitions_request_result: Union[
-            AddDynamicPartitionsRequestResult, DeleteDynamicPartitionsRequestResult
-        ],
-    ):
-        if isinstance(dynamic_partitions_request_result, AddDynamicPartitionsRequestResult):
-            request_type = GrapheneDynamicPartitionsRequestType.ADD_PARTITIONS
-            partition_keys = dynamic_partitions_request_result.added_partitions
+    ) -> Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]:
+        if self._dynamic_partitions_request_result.added_partitions is not None:
+            return AddDynamicPartitionsRequest(
+                partition_keys=self._dynamic_partitions_request_result.added_partitions,
+                partitions_def_name=self._dynamic_partitions_request_result.partitions_def_name,
+            )
+        elif self._dynamic_partitions_request_result.deleted_partitions is not None:
+            return DeleteDynamicPartitionsRequest(
+                partition_keys=self._dynamic_partitions_request_result.deleted_partitions,
+                partitions_def_name=self._dynamic_partitions_request_result.partitions_def_name,
+            )
         else:
-            if not isinstance(
-                dynamic_partitions_request_result, DeleteDynamicPartitionsRequestResult
-            ):
-                check.failed(
-                    "Unexpected dynamic_partitions_request_result type"
-                    f" {dynamic_partitions_request_result}"
-                )
+            check.failed(
+                "Unexpected dynamic_partitions_request_result"
+                f" {self._dynamic_partitions_request_result}"
+            )
 
-            request_type = GrapheneDynamicPartitionsRequestType.DELETE_PARTITIONS
-            partition_keys = dynamic_partitions_request_result.deleted_partitions
-
-        super().__init__(
-            type=request_type,
-            partitionKeys=partition_keys,
-            partitionsDefName=dynamic_partitions_request_result.partitions_def_name,
-            skippedPartitionKeys=dynamic_partitions_request_result.skipped_partitions,
-        )
+    def resolve_skippedPartitionKeys(self, _graphene_info: ResolveInfo):
+        return self._dynamic_partitions_request_result.skipped_partitions
 
 
 class GrapheneInstigationTick(graphene.ObjectType):

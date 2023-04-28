@@ -1070,7 +1070,7 @@ export type DynamicPartitionRequest = {
 
 export type DynamicPartitionsRequestResult = {
   __typename: 'DynamicPartitionsRequestResult';
-  partitionKeys: Array<Scalars['String']>;
+  partitionKeys: Maybe<Array<Scalars['String']>>;
   partitionsDefName: Scalars['String'];
   skippedPartitionKeys: Array<Scalars['String']>;
   type: DynamicPartitionsRequestType;
@@ -5645,7 +5645,7 @@ export const buildDynamicPartitionsRequestResult = (
   return {
     __typename: 'DynamicPartitionsRequestResult',
     partitionKeys:
-      overrides && overrides.hasOwnProperty('partitionKeys') ? overrides.partitionKeys! : ['non'],
+      overrides && overrides.hasOwnProperty('partitionKeys') ? overrides.partitionKeys! : [],
     partitionsDefName:
       overrides && overrides.hasOwnProperty('partitionsDefName')
         ? overrides.partitionsDefName!
@@ -5653,7 +5653,7 @@ export const buildDynamicPartitionsRequestResult = (
     skippedPartitionKeys:
       overrides && overrides.hasOwnProperty('skippedPartitionKeys')
         ? overrides.skippedPartitionKeys!
-        : ['aliquam'],
+        : [],
     type:
       overrides && overrides.hasOwnProperty('type')
         ? overrides.type!
@@ -6902,11 +6902,7 @@ export const buildInstigationTick = (
     dynamicPartitionsRequestResults:
       overrides && overrides.hasOwnProperty('dynamicPartitionsRequestResults')
         ? overrides.dynamicPartitionsRequestResults!
-        : [
-            relationshipsToOmit.has('DynamicPartitionsRequestResult')
-              ? ({} as DynamicPartitionsRequestResult)
-              : buildDynamicPartitionsRequestResult({}, relationshipsToOmit),
-          ],
+        : [],
     error:
       overrides && overrides.hasOwnProperty('error')
         ? overrides.error!
