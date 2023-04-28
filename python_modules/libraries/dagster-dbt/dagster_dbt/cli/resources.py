@@ -480,7 +480,9 @@ class DbtCliClientResource(ConfigurableResourceWithCliFlags, IAttachDifferentObj
     def get_dbt_client(self) -> DbtCliClient:
         context = self.get_resource_context()
         default_flags = {
-            k: v for k, v in self._as_config_dict().items() if k not in COMMON_OPTION_KEYS
+            k: v
+            for k, v in self._get_non_none_public_field_values().items()
+            if k not in COMMON_OPTION_KEYS
         }
 
         return DbtCliClient(
