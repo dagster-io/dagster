@@ -117,11 +117,11 @@ def test_docker_monitoring():
             instance, "demo_slow_job_docker", container_image=docker_image
         ) as (
             workspace,
-            orig_pipeline,
+            orig_job,
         ):
             with start_daemon():
                 external_job = ReOriginatedExternalJobForTest(
-                    orig_pipeline, container_image=docker_image
+                    orig_job, container_image=docker_image
                 )
 
                 run = instance.create_run_for_job(
@@ -204,11 +204,11 @@ def test_docker_monitoring_run_out_of_attempts():
             instance, "demo_slow_job_docker", container_image=docker_image
         ) as (
             workspace,
-            orig_pipeline,
+            orig_job,
         ):
             with start_daemon():
                 external_job = ReOriginatedExternalJobForTest(
-                    orig_pipeline, container_image=docker_image
+                    orig_job, container_image=docker_image
                 )
 
                 run = instance.create_run_for_job(

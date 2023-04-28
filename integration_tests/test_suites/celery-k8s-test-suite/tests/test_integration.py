@@ -25,7 +25,7 @@ IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
 
 def get_celery_engine_config(
-    dagster_docker_image: str, job_namespace: str, include_dagster_pipeline_env: bool = False
+    dagster_docker_image: str, job_namespace: str, include_dagster_job_env: bool = False
 ) -> Mapping[str, Any]:
     return {
         "execution": {
@@ -41,11 +41,7 @@ def get_celery_engine_config(
                     "job_namespace": job_namespace,
                     "image_pull_policy": image_pull_policy(),
                 },
-                (
-                    {"env_config_maps": ["dagster-pipeline-env"]}
-                    if include_dagster_pipeline_env
-                    else {}
-                ),
+                ({"env_config_maps": ["dagster-pipeline-env"]} if include_dagster_job_env else {}),
             )
         },
     }
@@ -129,7 +125,7 @@ def test_execute_on_celery_k8s_job_api_with_legacy_configmap_set(
         get_celery_engine_config(
             dagster_docker_image=dagster_docker_image,
             job_namespace=helm_namespace,
-            include_dagster_pipeline_env=True,
+            include_dagster_job_env=True,
         ),
     )
 
@@ -150,7 +146,7 @@ def test_execute_on_celery_k8s_job_api_with_legacy_configmap_set(
 def test_execute_on_celery_k8s_image_from_origin(
     dagster_docker_image, dagster_instance, helm_namespace, dagit_url
 ):
-    # Like the previous test, but the image is found from the pipeline origin
+    # Like the previous test, but the image is found from the job origin
     # rather than the executor config
     run_config = merge_dicts(
         merge_yamls(
@@ -281,7 +277,7 @@ def _test_termination(dagit_url, dagster_instance, run_config):
         dagit_url, run_config=run_config, job_name="resource_job_celery_k8s"
     )
 
-    # Wait for pipeline run to start
+    # Wait for run to start
     timeout = datetime.timedelta(0, 120)
     start_time = datetime.datetime.now()
 
@@ -315,7 +311,7 @@ def _test_termination(dagit_url, dagster_instance, run_config):
     assert can_terminate_run_over_graphql(dagit_url, run_id=run_id)
     terminate_run_over_graphql(dagit_url, run_id=run_id)
 
-    # Check that pipeline run is marked as canceled
+    # Check that run is marked as canceled
     dagster_run_status_canceled = False
     start_time = datetime.datetime.now()
     while datetime.datetime.now() < start_time + timeout:
@@ -391,7 +387,7 @@ def test_execute_on_celery_k8s_with_termination(
 
 
 @pytest.fixture(scope="function")
-def set_dagster_k8s_pipeline_run_namespace_env(helm_namespace):
+def set_dagster_k8s_dagster_run_namespace_env(helm_namespace):
     old_value = None
     try:
         old_value = os.getenv("DAGSTER_K8S_PIPELINE_RUN_NAMESPACE")
@@ -403,7 +399,7 @@ def set_dagster_k8s_pipeline_run_namespace_env(helm_namespace):
 
 
 def test_execute_on_celery_k8s_with_env_var_and_termination(
-    dagster_docker_image, dagster_instance, set_dagster_k8s_pipeline_run_namespace_env, dagit_url
+    dagster_docker_image, dagster_instance, set_dagster_k8s_dagster_run_namespace_env, dagit_url
 ):
     run_config = merge_dicts(
         merge_yamls(
@@ -421,7 +417,7 @@ def test_execute_on_celery_k8s_with_env_var_and_termination(
 
 
 def test_execute_on_celery_k8s_with_hard_failure(
-    dagster_docker_image, dagster_instance, set_dagster_k8s_pipeline_run_namespace_env, dagit_url
+    dagster_docker_image, dagster_instance, set_dagster_k8s_dagster_run_namespace_env, dagit_url
 ):
     run_config = merge_dicts(
         merge_dicts(
@@ -442,7 +438,7 @@ def test_execute_on_celery_k8s_with_hard_failure(
         dagit_url, run_config=run_config, job_name="hard_failer_job_celery_k8s"
     )
 
-    # Check that pipeline run is marked as failed
+    # Check that run is marked as failed
     dagster_run_status_failure = False
     start_time = datetime.datetime.now()
     timeout = datetime.timedelta(0, 120)
