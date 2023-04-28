@@ -15,6 +15,7 @@ from typing import (
     Union,
     cast,
 )
+from datetime import datetime
 
 from dagster import _check as check
 from dagster._core.definitions.asset_graph import AssetGraph
@@ -669,6 +670,7 @@ def should_backfill_atomic_asset_partitions_unit(
     materialized_subset: AssetGraphSubset,
     failed_and_downstream_subset: AssetGraphSubset,
     dynamic_partitions_store: DynamicPartitionsStore,
+    current_time: datetime,
 ) -> bool:
     """Args:
     candidates_unit: A set of asset partitions that must all be materialized if any is
@@ -682,7 +684,9 @@ def should_backfill_atomic_asset_partitions_unit(
         ):
             return False
 
-        for parent in asset_graph.get_parents_partitions(dynamic_partitions_store, *candidate):
+        for parent in asset_graph.get_parents_partitions(
+            dynamic_partitions_store, current_time, *candidate
+        ):
             can_run_with_parent = (
                 parent in asset_partitions_to_request
                 and asset_graph.have_same_partitioning(parent.asset_key, candidate.asset_key)

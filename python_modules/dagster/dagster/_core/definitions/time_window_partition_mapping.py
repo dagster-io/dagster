@@ -109,6 +109,7 @@ class TimeWindowPartitionMapping(
             downstream_partitions_subset,
             self.start_offset,
             self.end_offset,
+            current_time,
         )
 
     def get_downstream_partitions_for_partition_range(
@@ -138,6 +139,7 @@ class TimeWindowPartitionMapping(
             upstream_partitions_subset,
             -self.start_offset,
             -self.end_offset,
+            current_time,
         )
 
     def _map_partitions(
@@ -147,6 +149,7 @@ class TimeWindowPartitionMapping(
         from_partitions_subset: TimeWindowPartitionsSubset,
         start_offset: int,
         end_offset: int,
+        current_time: Optional[datetime] = None,
     ) -> PartitionsSubset:
         if not isinstance(from_partitions_def, TimeWindowPartitionsDefinition) or not isinstance(
             to_partitions_def, TimeWindowPartitionsDefinition
@@ -189,7 +192,10 @@ class TimeWindowPartitionMapping(
             )
             to_end_partition_key = (
                 to_partitions_def.get_partition_key_for_timestamp(
-                    offsetted_end_dt.timestamp(), end_closed=True
+                    offsetted_end_dt.timestamp()
+                    if not current_time
+                    else min(offsetted_end_dt.timestamp(), current_time.timestamp()),
+                    end_closed=True,
                 )
                 if offsetted_end_dt is not None
                 else None

@@ -361,7 +361,7 @@ def find_parent_materialized_asset_partitions(
                 observable_source_asset_key=asset_key, after_cursor=latest_storage_id
             ):
                 for child in asset_graph.get_children_partitions(
-                    instance_queryer, asset_key, partition_key=None
+                    instance_queryer, instance_queryer.current_time, asset_key, partition_key=None
                 ):
                     if child.asset_key in target_asset_keys:
                         result_asset_partitions.add(child)
@@ -376,7 +376,9 @@ def find_parent_materialized_asset_partitions(
             continue
 
         if partitions_def is None:
-            for child in asset_graph.get_children_partitions(instance_queryer, asset_key):
+            for child in asset_graph.get_children_partitions(
+                instance_queryer, instance_queryer.current_time, asset_key
+            ):
                 if (
                     child.asset_key in target_asset_keys
                     and not instance_queryer.is_asset_planned_for_run(latest_record.run_id, child)
@@ -451,7 +453,6 @@ def find_never_materialized_or_requested_root_asset_partitions(
     cursor: AssetReconciliationCursor,
     target_asset_keys: AbstractSet[AssetKey],
     asset_graph: AssetGraph,
-    current_time: datetime.datetime,
 ) -> Tuple[
     Iterable[AssetKeyPartitionKey], AbstractSet[AssetKey], Mapping[AssetKey, AbstractSet[str]]
 ]:
@@ -478,7 +479,7 @@ def find_never_materialized_or_requested_root_asset_partitions(
                 asset_key,
                 asset_graph,
                 instance_queryer,
-                current_time,
+                instance_queryer.current_time,
                 time_window_partition_scope=auto_materialize_policy.time_window_partition_scope,
             ):
                 asset_partition = AssetKeyPartitionKey(asset_key, partition_key)
@@ -507,13 +508,14 @@ def determine_asset_partitions_to_reconcile(
     target_asset_keys: AbstractSet[AssetKey],
     target_asset_keys_and_parents: AbstractSet[AssetKey],
     asset_graph: AssetGraph,
-    current_time: datetime.datetime,
 ) -> Tuple[
     AbstractSet[AssetKeyPartitionKey],
     AbstractSet[AssetKey],
     Mapping[AssetKey, AbstractSet[str]],
     Optional[int],
 ]:
+    current_time = instance_queryer.current_time
+
     (
         never_materialized_or_requested_roots,
         newly_materialized_root_asset_keys,
@@ -523,7 +525,6 @@ def determine_asset_partitions_to_reconcile(
         cursor=cursor,
         target_asset_keys=target_asset_keys,
         asset_graph=asset_graph,
-        current_time=current_time,
     )
 
     # a filter for eliminating candidates
@@ -580,9 +581,7 @@ def determine_asset_partitions_to_reconcile(
         from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 
         for parent in asset_graph.get_parents_partitions(
-            instance_queryer,
-            candidate.asset_key,
-            candidate.partition_key,
+            instance_queryer, current_time, candidate.asset_key, candidate.partition_key
         ):
             if instance_queryer.is_reconciled(asset_partition=parent, asset_graph=asset_graph):
                 continue
@@ -651,6 +650,7 @@ def determine_asset_partitions_to_reconcile(
             asset_graph, candidates_unit, to_reconcile
         ),
         set(itertools.chain(never_materialized_or_requested_roots, stale_candidates)),
+        current_time,
     )
 
     return (
@@ -845,7 +845,7 @@ def reconcile(
 
     current_time = pendulum.now("UTC")
 
-    instance_queryer = CachingInstanceQueryer(instance=instance)
+    instance_queryer = CachingInstanceQueryer(instance=instance, current_time=current_time)
 
     target_parent_asset_keys = {
         parent
@@ -884,7 +884,6 @@ def reconcile(
         cursor=cursor,
         target_asset_keys=target_asset_keys,
         target_asset_keys_and_parents=target_asset_keys_and_parents,
-        current_time=current_time,
     )
 
     run_requests = build_run_requests(

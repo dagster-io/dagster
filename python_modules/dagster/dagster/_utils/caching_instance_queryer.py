@@ -11,6 +11,7 @@ from typing import (
     cast,
 )
 
+from datetime import datetime
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.data_version import (
     DataVersion,
@@ -40,8 +41,9 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         instance (DagsterInstance): The instance to query.
     """
 
-    def __init__(self, instance: DagsterInstance):
+    def __init__(self, instance: DagsterInstance, current_time: datetime):
         self._instance = instance
+        self._current_time = current_time
 
         self._asset_record_cache: Dict[AssetKey, Optional[AssetRecord]] = {}
         self._latest_materialization_record_cache: Dict[
@@ -572,6 +574,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
 
         for parent in asset_graph.get_parents_partitions(
             self,
+            self._current_time,
             asset_partition.asset_key,
             asset_partition.partition_key,
         ):
@@ -591,3 +594,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                 return False
 
         return True
+
+    @property
+    def current_time(self) -> datetime:
+        return self._current_time
