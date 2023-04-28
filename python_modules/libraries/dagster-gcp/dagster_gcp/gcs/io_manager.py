@@ -227,9 +227,9 @@ def gcs_pickle_io_manager(init_context):
             ...
     """
     client = init_context.resources.gcs
-    pickled_io_manager = ConfigurablePickledObjectGCSIOManager(
-        gcs_bucket=init_context.resource_config["gcs_bucket"],
-        gcs=client,
-        gcs_prefix=init_context.resource_config["gcs_prefix"],
+    pickled_io_manager = PickledObjectGCSIOManager(
+        bucket=init_context.resource_config["gcs_bucket"],
+        client=client,
+        prefix=init_context.resource_config["gcs_prefix"],
     )
     return pickled_io_manager
