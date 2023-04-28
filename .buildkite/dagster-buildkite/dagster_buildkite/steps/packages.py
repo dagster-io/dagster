@@ -542,6 +542,13 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         ],
     ),
     PackageSpec(
+        "python_modules/libraries/dagster-ge",
+        unsupported_python_versions=[
+            # great-expectations not yet supported on 3.11
+            AvailablePythonVersion.V3_11,
+        ],
+    ),
+    PackageSpec(
         "python_modules/libraries/dagster-k8s",
         env_vars=[
             "AWS_ACCOUNT_ID",
