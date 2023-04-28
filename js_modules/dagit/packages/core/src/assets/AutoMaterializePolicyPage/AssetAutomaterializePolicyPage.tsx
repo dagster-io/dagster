@@ -262,7 +262,7 @@ const Condition = ({
     <CenterAlignedRow flex={{justifyContent: 'space-between'}}>
       <CenterAlignedRow flex={{gap: 8}}>
         <Icon name={met ? 'done' : 'close'} color={met ? Colors.Green700 : Colors.Gray400} />
-        <div>{text}</div>
+        <div style={{color: met ? Colors.Green700 : undefined}}>{text}</div>
       </CenterAlignedRow>
       <div>
         {met ? (
