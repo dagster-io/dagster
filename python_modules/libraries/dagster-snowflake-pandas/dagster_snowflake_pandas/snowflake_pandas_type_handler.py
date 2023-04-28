@@ -68,7 +68,7 @@ def _add_missing_timezone(
     s: pd.Series, column_types: Optional[Mapping[str, str]], table_name: str
 ) -> pd.Series:
     column_name = str(s.name)
-    if pd_core_dtypes_common.is_datetime64_any_dtype(s):  # type: ignore  # (bad stubs)
+    if pd_core_dtypes_common.is_datetime64_any_dtype(s):
         if column_types:
             if "VARCHAR" in column_types[column_name]:
                 raise DagsterInvariantViolationError(
@@ -77,7 +77,8 @@ def _add_missing_timezone(
                     f" TIMESTAMP to store the time data in dataframe column {column_name}. Please"
                     " migrate this column to be of time TIMESTAMP_NTZ(9) to store time data."
                 )
-        return s.dt.tz_localize("UTC")
+        if not pd_core_dtypes_common.is_datetime64tz_dtype(s):
+            return s.dt.tz_localize("UTC")
     return s
 
 
