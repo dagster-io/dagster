@@ -24,8 +24,8 @@ from dagster import (
 )
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.partition import StaticPartitionsDefinition
-from dagster._core.definitions.pipeline_base import InMemoryJob
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.events import DagsterEventType

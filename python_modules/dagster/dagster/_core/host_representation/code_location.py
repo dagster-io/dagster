@@ -10,13 +10,13 @@ from dagster._api.get_server_id import sync_get_server_id
 from dagster._api.list_repositories import sync_list_repositories_grpc
 from dagster._api.notebook_data import sync_get_streaming_external_notebook_data_grpc
 from dagster._api.snapshot_execution_plan import sync_get_external_execution_plan_grpc
+from dagster._api.snapshot_job import sync_get_external_job_subset_grpc
 from dagster._api.snapshot_partition import (
     sync_get_external_partition_config_grpc,
     sync_get_external_partition_names_grpc,
     sync_get_external_partition_set_execution_param_data_grpc,
     sync_get_external_partition_tags_grpc,
 )
-from dagster._api.snapshot_pipeline import sync_get_external_job_subset_grpc
 from dagster._api.snapshot_repository import sync_get_streaming_external_repositories_data_grpc
 from dagster._api.snapshot_schedule import sync_get_external_schedule_execution_data_grpc
 from dagster._core.code_pointer import CodePointer

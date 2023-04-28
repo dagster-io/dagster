@@ -11,7 +11,7 @@ from dagster._core.host_representation.external_data import (
     ExternalStaticPartitionsDefinitionData,
     ExternalTimeWindowPartitionsDefinitionData,
 )
-from dagster._core.storage.pipeline_run import RunsFilter
+from dagster._core.storage.dagster_run import RunsFilter
 from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
 from dagster._utils.merger import merge_dicts
 

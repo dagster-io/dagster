@@ -70,7 +70,7 @@ from .external_data import (
     ResourceJobUsageEntry,
 )
 from .handle import InstigatorHandle, JobHandle, PartitionSetHandle, RepositoryHandle
-from .pipeline_index import JobIndex
+from .job_index import JobIndex
 from .represented import RepresentedJob
 
 if TYPE_CHECKING:

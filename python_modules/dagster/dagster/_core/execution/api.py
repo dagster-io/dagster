@@ -19,7 +19,7 @@ import dagster._check as check
 from dagster._annotations import experimental
 from dagster._core.definitions import IJob, JobDefinition
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.pipeline_base import InMemoryJob
+from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.repository_definition import RepositoryLoadData
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvariantViolationError
@@ -32,14 +32,14 @@ from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.retries import RetryMode
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.selector import parse_step_selection
-from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.telemetry import log_dagster_event, log_repo_stats, telemetry_wrapper
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.interrupts import capture_interrupts
 from dagster._utils.merger import merge_dicts
 
-from .context_creation_pipeline import (
+from .context_creation_job import (
     ExecutionContextManager,
     PlanExecutionContextManager,
     PlanOrchestrationContextManager,

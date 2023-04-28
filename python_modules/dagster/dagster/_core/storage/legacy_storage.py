@@ -43,9 +43,8 @@ if TYPE_CHECKING:
         TickStatus,
     )
     from dagster._core.snap.execution_plan_snapshot import ExecutionPlanSnapshot
-    from dagster._core.snap.pipeline_snapshot import JobSnapshot
-    from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
-    from dagster._core.storage.pipeline_run import (
+    from dagster._core.snap.job_snapshot import JobSnapshot
+    from dagster._core.storage.dagster_run import (
         DagsterRun,
         DagsterRunStatsSnapshot,
         JobBucket,
@@ -54,6 +53,7 @@ if TYPE_CHECKING:
         RunsFilter,
         TagBucket,
     )
+    from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
     from dagster._daemon.types import DaemonHeartbeat
 
 

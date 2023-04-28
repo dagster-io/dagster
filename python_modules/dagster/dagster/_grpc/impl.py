@@ -49,7 +49,7 @@ from dagster._core.snap.execution_plan_snapshot import (
     ExecutionPlanSnapshotErrorData,
     snapshot_from_execution_plan,
 )
-from dagster._core.storage.pipeline_run import DagsterRun
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._grpc.types import ExecutionPlanSnapshotArgs
 from dagster._serdes import deserialize_value
 from dagster._serdes.ipc import IPCErrorMessage

@@ -88,8 +88,8 @@ from dagster._core.definitions.reconstruct import ReconstructableRepository
 from dagster._core.definitions.sensor_definition import RunRequest, SkipReason
 from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.log_manager import coerce_valid_log_level
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.fs_io_manager import fs_io_manager
-from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.storage.tags import RESUME_RETRY_TAG
 from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
 from dagster._core.workspace.load_target import PythonFileTarget

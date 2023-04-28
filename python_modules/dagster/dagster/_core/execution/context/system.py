@@ -24,13 +24,13 @@ from dagster._annotations import public
 from dagster._core.definitions.dependency import OpNode
 from dagster._core.definitions.events import AssetKey, AssetLineageInfo
 from dagster._core.definitions.hook_definition import HookDefinition
+from dagster._core.definitions.job_base import IJob
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partition_mapping import infer_partition_mapping
-from dagster._core.definitions.pipeline_base import IJob
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
@@ -47,8 +47,8 @@ from dagster._core.execution.plan.step import ExecutionStep
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.base import Executor
 from dagster._core.log_manager import DagsterLogManager
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.storage.io_manager import IOManager
-from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,

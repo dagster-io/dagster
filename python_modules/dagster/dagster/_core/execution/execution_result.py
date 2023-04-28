@@ -16,7 +16,7 @@ from dagster._core.events import (
 )
 from dagster._core.execution.plan.objects import StepFailureData
 from dagster._core.execution.plan.step import StepKind
-from dagster._core.storage.pipeline_run import DagsterRun
+from dagster._core.storage.dagster_run import DagsterRun
 
 
 class ExecutionResult(ABC):

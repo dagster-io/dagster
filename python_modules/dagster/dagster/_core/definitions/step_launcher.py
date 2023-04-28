@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Mapping, NamedTuple, Optional
 import dagster._check as check
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.execution.retries import RetryMode
-from dagster._core.storage.pipeline_run import DagsterRun
+from dagster._core.storage.dagster_run import DagsterRun
 
 if TYPE_CHECKING:
     from dagster._core.execution.plan.state import KnownExecutionState

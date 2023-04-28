@@ -23,14 +23,14 @@ from dagster import (
     with_resources,
 )
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.pipeline_base import InMemoryJob
+from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import execute_plan
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.execution.plan.plan import ExecutionPlan
-from dagster._core.storage.pipeline_run import (
+from dagster._core.storage.dagster_run import (
     DagsterRun as DagsterRun,
 )
 from dagster._core.system_config.objects import ResolvedRunConfig

@@ -20,7 +20,7 @@ from dagster._core.execution.backfill import (
     PartitionBackfill,
 )
 from dagster._core.host_representation.origin import ExternalPartitionSetOrigin
-from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._core.test_utils import create_run_for_test
 from dagster._core.utils import make_new_backfill_id

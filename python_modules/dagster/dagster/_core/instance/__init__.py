@@ -34,7 +34,7 @@ from typing_extensions import Protocol, Self, TypeAlias, TypeVar, runtime_checka
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.pipeline_base import InMemoryJob
+from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.errors import (
     DagsterHomeNotSetError,
     DagsterInvalidInvocationError,
@@ -44,7 +44,7 @@ from dagster._core.errors import (
 )
 from dagster._core.log_manager import DagsterLogRecord
 from dagster._core.origin import JobPythonOrigin
-from dagster._core.storage.pipeline_run import (
+from dagster._core.storage.dagster_run import (
     IN_PROGRESS_RUN_STATUSES,
     DagsterRun,
     DagsterRunStatsSnapshot,

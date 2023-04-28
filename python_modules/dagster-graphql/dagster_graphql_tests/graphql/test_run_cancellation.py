@@ -5,7 +5,7 @@ from typing import Any
 import pytest
 from dagster._core.definitions.reconstruct import ReconstructableRepository
 from dagster._core.execution.api import execute_job
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import create_run_for_test
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._grpc.types import CancelExecutionRequest

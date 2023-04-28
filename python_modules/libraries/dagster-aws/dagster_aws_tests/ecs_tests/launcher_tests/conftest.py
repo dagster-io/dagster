@@ -11,7 +11,7 @@ from dagster import ExperimentalWarning
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.host_representation.external import ExternalJob
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.pipeline_run import DagsterRun
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.test_utils import in_process_test_workspace, instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceRequestContext

@@ -48,7 +48,7 @@ from dagster._core.scheduler.instigation import (
     TickData,
     TickStatus,
 )
-from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, RunsFilter
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
 from dagster._core.telemetry import SENSOR_RUN_CREATED, hash_name, log_action
 from dagster._core.workspace.context import IWorkspaceProcessContext

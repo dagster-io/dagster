@@ -10,7 +10,7 @@ from dagster._core.definitions.resource_definition import (
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
-from dagster._core.storage.pipeline_run import DagsterRun
+from dagster._core.storage.dagster_run import DagsterRun
 
 
 class InitResourceContext:
@@ -130,7 +130,7 @@ class UnboundInitResourceContext(InitResourceContext):
             build_resources,
             wrap_resources_for_execution,
         )
-        from dagster._core.execution.context_creation_pipeline import initialize_console_manager
+        from dagster._core.execution.context_creation_job import initialize_console_manager
 
         self._instance_provided = (
             check.opt_inst_param(instance, "instance", DagsterInstance) is not None

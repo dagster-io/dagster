@@ -48,7 +48,7 @@ from dagster._core.errors import (
 from dagster._core.execution.build_resources import build_resources, wrap_resources_for_execution
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
-from dagster._core.storage.pipeline_run import DagsterRun
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.types.dagster_type import DagsterType
 from dagster._utils.forked_pdb import ForkedPdb
 from dagster._utils.merger import merge_dicts
@@ -79,7 +79,7 @@ class UnboundOpExecutionContext(OpExecutionContext):
         assets_def: Optional[AssetsDefinition],
     ):
         from dagster._core.execution.api import ephemeral_instance_if_missing
-        from dagster._core.execution.context_creation_pipeline import initialize_console_manager
+        from dagster._core.execution.context_creation_job import initialize_console_manager
 
         self._op_config = op_config
         self._mapping_key = mapping_key

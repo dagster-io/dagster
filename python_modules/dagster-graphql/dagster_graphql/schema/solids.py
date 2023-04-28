@@ -9,7 +9,7 @@ from dagster._core.host_representation.external import ExternalJob
 from dagster._core.host_representation.historical import HistoricalJob
 from dagster._core.snap import DependencyStructureIndex, GraphDefSnap, OpDefSnap
 from dagster._core.snap.node import InputMappingSnap, OutputMappingSnap
-from dagster._core.storage.pipeline_run import RunsFilter
+from dagster._core.storage.dagster_run import RunsFilter
 
 from dagster_graphql.implementation.events import iterate_metadata_entries
 from dagster_graphql.schema.logs.events import GrapheneRunStepStats

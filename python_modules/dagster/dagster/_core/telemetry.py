@@ -39,7 +39,7 @@ from typing_extensions import ParamSpec
 
 import dagster._check as check
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicyType
-from dagster._core.definitions.pipeline_base import IJob
+from dagster._core.definitions.job_base import IJob
 from dagster._core.definitions.reconstruct import (
     ReconstructableJob,
     ReconstructableRepository,

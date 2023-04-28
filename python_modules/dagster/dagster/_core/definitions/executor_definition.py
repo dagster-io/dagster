@@ -12,7 +12,7 @@ from dagster._core.definitions.configurable import (
     ConfiguredDefinitionConfigSchema,
     NamedConfigurableDefinition,
 )
-from dagster._core.definitions.pipeline_base import IJob
+from dagster._core.definitions.job_base import IJob
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.errors import DagsterUnmetExecutorRequirementsError
 from dagster._core.execution.retries import RetryMode, get_retries_config

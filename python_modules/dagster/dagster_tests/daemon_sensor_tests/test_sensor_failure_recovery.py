@@ -5,7 +5,7 @@ import pytest
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus, TickStatus
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
 from dagster._core.test_utils import (
     SingleThreadPoolExecutor,

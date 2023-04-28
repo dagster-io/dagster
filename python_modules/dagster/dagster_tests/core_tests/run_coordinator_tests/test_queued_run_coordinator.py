@@ -7,7 +7,7 @@ from dagster._core.host_representation.external import ExternalJob
 from dagster._core.instance import DagsterInstance
 from dagster._core.run_coordinator import SubmitRunContext
 from dagster._core.run_coordinator.queued_run_coordinator import QueuedRunCoordinator
-from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.test_utils import create_run_for_test, environ, instance_for_test
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._utils.merger import merge_dicts

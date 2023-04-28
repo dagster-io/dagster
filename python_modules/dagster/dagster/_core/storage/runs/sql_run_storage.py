@@ -59,7 +59,7 @@ from dagster._seven import JSONDecodeError
 from dagster._utils import PrintFn, utc_datetime_from_timestamp
 from dagster._utils.merger import merge_dicts
 
-from ..pipeline_run import (
+from ..dagster_run import (
     DagsterRun,
     DagsterRunStatus,
     JobBucket,

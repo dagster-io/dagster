@@ -14,7 +14,7 @@ from dagster import (
     op,
 )
 from dagster._check import ParameterCheckError
-from dagster._core.utility_solids import create_stub_op
+from dagster._core.utility_ops import create_stub_op
 
 
 def solid_a_b_list():

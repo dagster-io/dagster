@@ -21,12 +21,12 @@ from dagster._core.definitions import (
 )
 from dagster._core.definitions.dependency import Node
 from dagster._core.definitions.executor_definition import in_process_executor
+from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.logger_definition import LoggerDefinition
-from dagster._core.definitions.pipeline_base import InMemoryJob
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.context.system import PlanExecutionContext
-from dagster._core.execution.context_creation_pipeline import (
+from dagster._core.execution.context_creation_job import (
     create_context_creation_data,
     create_execution_data,
     create_executor,
@@ -36,8 +36,8 @@ from dagster._core.execution.context_creation_pipeline import (
 from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler import Scheduler
-from dagster._core.storage.pipeline_run import DagsterRun
-from dagster._core.utility_solids import create_stub_op
+from dagster._core.storage.dagster_run import DagsterRun
+from dagster._core.utility_ops import create_stub_op
 from dagster._serdes import ConfigurableClass
 
 # re-export

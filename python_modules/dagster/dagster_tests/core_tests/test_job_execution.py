@@ -38,7 +38,7 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import (
     instance_for_test,
 )
-from dagster._core.utility_solids import (
+from dagster._core.utility_ops import (
     create_op_with_deps,
     create_root_op,
     create_stub_op,

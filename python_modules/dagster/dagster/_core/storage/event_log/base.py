@@ -24,7 +24,7 @@ from dagster._core.execution.stats import (
     build_run_step_stats_from_events,
 )
 from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
-from dagster._core.storage.pipeline_run import DagsterRunStatsSnapshot
+from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
 from dagster._core.storage.sql import AlembicVersion
 from dagster._seven import json
 from dagster._utils import PrintFn

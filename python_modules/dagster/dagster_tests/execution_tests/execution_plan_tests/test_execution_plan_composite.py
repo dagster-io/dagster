@@ -1,7 +1,7 @@
 from dagster import Field, Int, String, job, op
 from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.decorators.graph_decorator import graph
-from dagster._core.definitions.pipeline_base import InMemoryJob
+from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.instance import DagsterInstance
 

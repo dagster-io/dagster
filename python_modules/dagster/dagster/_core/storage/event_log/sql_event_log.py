@@ -50,7 +50,7 @@ from dagster._utils import (
     utc_datetime_from_timestamp,
 )
 
-from ..pipeline_run import DagsterRunStatsSnapshot
+from ..dagster_run import DagsterRunStatsSnapshot
 from .base import (
     AssetEntry,
     AssetRecord,

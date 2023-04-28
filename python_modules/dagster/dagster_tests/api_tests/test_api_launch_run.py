@@ -1,5 +1,5 @@
 from dagster._core.host_representation.handle import JobHandle
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import (
     create_run_for_test,
     instance_for_test,

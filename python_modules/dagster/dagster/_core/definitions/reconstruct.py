@@ -43,7 +43,7 @@ from dagster._serdes import pack_value, unpack_value, whitelist_for_serdes
 from dagster._utils import hash_collection
 
 from .events import AssetKey
-from .pipeline_base import IJob
+from .job_base import IJob
 
 if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition

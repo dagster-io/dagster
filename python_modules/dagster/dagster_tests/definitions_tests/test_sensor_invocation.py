@@ -58,14 +58,14 @@ from dagster._core.test_utils import instance_for_test
 
 def test_sensor_invocation_args():
     # Test no arg invocation
-    @sensor(job_name="foo_pipeline")
+    @sensor(job_name="foo_job")
     def basic_sensor_no_arg():
         return RunRequest(run_key=None, run_config={}, tags={})
 
     assert basic_sensor_no_arg().run_config == {}
 
     # Test underscore name
-    @sensor(job_name="foo_pipeline")
+    @sensor(job_name="foo_job")
     def basic_sensor(_):
         return RunRequest(run_key=None, run_config={}, tags={})
 
@@ -73,7 +73,7 @@ def test_sensor_invocation_args():
     assert basic_sensor(None).run_config == {}
 
     # Test sensor arbitrary arg name
-    @sensor(job_name="foo_pipeline")
+    @sensor(job_name="foo_job")
     def basic_sensor_with_context(_arbitrary_context):
         return RunRequest(run_key=None, run_config={}, tags={})
 
@@ -118,7 +118,7 @@ def test_sensor_invocation_resources() -> None:
         a_str: str
 
     # Test no arg invocation
-    @sensor(job_name="foo_pipeline")
+    @sensor(job_name="foo_job")
     def basic_sensor_resource_req(my_resource: MyResource):
         return RunRequest(run_key=None, run_config={"foo": my_resource.a_str}, tags={})
 
@@ -145,7 +145,7 @@ def test_sensor_invocation_resources_direct() -> None:
         a_str: str
 
     # Test no arg invocation
-    @sensor(job_name="foo_pipeline")
+    @sensor(job_name="foo_job")
     def basic_sensor_resource_req(my_resource: MyResource):
         return RunRequest(run_key=None, run_config={"foo": my_resource.a_str}, tags={})
 
@@ -194,7 +194,7 @@ def test_sensor_invocation_resources_direct() -> None:
     ).run_config == {"foo": "foo"}
 
     # Test with context arg requirement
-    @sensor(job_name="foo_pipeline")
+    @sensor(job_name="foo_job")
     def basic_sensor_with_context_resource_req(my_resource: MyResource, context):
         return RunRequest(run_key=None, run_config={"foo": my_resource.a_str}, tags={})
 
@@ -211,7 +211,7 @@ def test_sensor_invocation_resources_direct_many() -> None:
         a_str: str
 
     # Test no arg invocation
-    @sensor(job_name="foo_pipeline")
+    @sensor(job_name="foo_job")
     def basic_sensor_resource_req(my_resource: MyResource, my_other_resource: MyResource):
         return RunRequest(
             run_key=None,
@@ -238,7 +238,7 @@ def test_sensor_invocation_resources_direct_many() -> None:
 
 
 def test_sensor_invocation_resources_context_manager() -> None:
-    @sensor(job_name="foo_pipeline")
+    @sensor(job_name="foo_job")
     def basic_sensor_str_resource_req(my_resource: ResourceParam[str]):
         return RunRequest(run_key=None, run_config={"foo": my_resource}, tags={})
 
@@ -264,7 +264,7 @@ def test_sensor_invocation_resources_deferred() -> None:
         def create_resource(self, context) -> None:
             raise Exception()
 
-    @sensor(job_name="foo_pipeline", required_resource_keys={"my_resource"})
+    @sensor(job_name="foo_job", required_resource_keys={"my_resource"})
     def basic_sensor_resource_req() -> RunRequest:
         return RunRequest(run_key=None, run_config={}, tags={})
 
@@ -1725,7 +1725,7 @@ def test_sensor_invocation_runconfig() -> None:
         an_int: int
 
     # Test no arg invocation
-    @sensor(job_name="foo_pipeline")
+    @sensor(job_name="foo_job")
     def basic_sensor():
         return RunRequest(
             run_key=None,

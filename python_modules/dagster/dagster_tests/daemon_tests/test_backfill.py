@@ -37,7 +37,7 @@ from dagster._core.host_representation import (
     ExternalRepositoryOrigin,
     InProcessCodeLocationOrigin,
 )
-from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
+from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG
 from dagster._core.test_utils import (
     step_did_not_run,

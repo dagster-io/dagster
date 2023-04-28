@@ -37,6 +37,7 @@ from .input import (
     InputDefinition as InputDefinition,
     InputMapping as InputMapping,
 )
+from .job_base import IJob as IJob
 from .logger_definition import (
     LoggerDefinition as LoggerDefinition,
     build_init_logger_context as build_init_logger_context,
@@ -74,7 +75,6 @@ from .output import (
     OutputDefinition as OutputDefinition,
     OutputMapping as OutputMapping,
 )
-from .pipeline_base import IJob as IJob
 from .reconstruct import (
     ReconstructableJob as ReconstructableJob,
     build_reconstructable_job as build_reconstructable_job,

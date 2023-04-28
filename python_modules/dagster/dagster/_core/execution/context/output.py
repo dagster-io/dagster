@@ -845,7 +845,7 @@ def build_output_context(
 
     """
     from dagster._core.definitions import OpDefinition
-    from dagster._core.execution.context_creation_pipeline import initialize_console_manager
+    from dagster._core.execution.context_creation_job import initialize_console_manager
     from dagster._core.types.dagster_type import DagsterType
 
     step_key = check.opt_str_param(step_key, "step_key")

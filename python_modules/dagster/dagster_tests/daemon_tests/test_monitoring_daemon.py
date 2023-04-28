@@ -10,7 +10,7 @@ from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.instance import DagsterInstance
 from dagster._core.launcher import CheckRunHealthResult, RunLauncher, WorkerStatus
-from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.tags import MAX_RUNTIME_SECONDS_TAG
 from dagster._core.test_utils import (
     create_run_for_test,

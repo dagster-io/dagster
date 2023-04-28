@@ -110,7 +110,7 @@ Run storage
 
 .. autoclass:: SqliteRunStorage
 
-.. currentmodule:: dagster._core.storage.pipeline_run
+.. currentmodule:: dagster._core.storage.dagster_run
 
 .. autoclass:: RunRecord
 

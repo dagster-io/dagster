@@ -28,7 +28,7 @@ from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.snap.execution_plan_snapshot import snapshot_from_execution_plan
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.root_input_manager import root_input_manager
 from dagster._utils import file_relative_path
 from dagster._utils.test import copy_directory

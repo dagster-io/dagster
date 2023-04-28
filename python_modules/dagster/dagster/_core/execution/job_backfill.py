@@ -19,7 +19,7 @@ from dagster._core.host_representation.external_data import (
 )
 from dagster._core.host_representation.origin import ExternalPartitionSetOrigin
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, RunsFilter
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import (
     PARENT_RUN_ID_TAG,
     PARTITION_NAME_TAG,
