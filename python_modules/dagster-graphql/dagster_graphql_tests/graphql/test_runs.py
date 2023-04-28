@@ -3,7 +3,7 @@ from unittest import mock
 
 import yaml
 from dagster import AssetMaterialization, Output, job, op, repository
-from dagster._core.definitions.pipeline_base import InMemoryJob
+from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.execution.api import execute_run
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
