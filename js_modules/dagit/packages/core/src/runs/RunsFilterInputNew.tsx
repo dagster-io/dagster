@@ -232,7 +232,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
 
   const createdByValues = React.useMemo(
     () => [
-      tagToFilterValue(DagsterTag.Automaterialize, 'Auto-materialize policy'),
+      tagToFilterValue(DagsterTag.Automaterialize, 'true'),
       ...sensorValues,
       ...scheduleValues,
       ...userValues,
@@ -400,6 +400,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
         allValues: createdByValues,
         renderLabel: ({value}) => {
           let icon;
+          let labelValue = value.value;
           if (value.type === DagsterTag.SensorName) {
             icon = <Icon name="sensors" />;
           } else if (value.type === DagsterTag.ScheduleName) {
@@ -408,11 +409,12 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
             return <UserDisplay email={value.value} isFilter />;
           } else if (value.type === DagsterTag.Automaterialize) {
             icon = <Icon name="auto_materialize_policy" />;
+            labelValue = 'Auto-materialize policy';
           }
           return (
             <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
               {icon}
-              {value.value}
+              {labelValue}
             </Box>
           );
         },
