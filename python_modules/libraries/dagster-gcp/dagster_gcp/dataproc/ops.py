@@ -1,14 +1,21 @@
 from typing import Any, Dict
 
-from dagster import Bool, Config, Int, op
+from dagster import (
+    Bool,
+    Config,
+    Field as DagsterField,
+    Int,
+    op,
+)
 from dagster._seven import json
 from pydantic import Field
 
 from .configs import define_dataproc_submit_job_config
 from .resources import TWENTY_MINUTES, DataprocResource
 
+# maintain the old config schema because of the nested job_config schema
 DATAPROC_CONFIG_SCHEMA = {
-    "job_timeout_in_seconds": Field(
+    "job_timeout_in_seconds": DagsterField(
         Int,
         description="""Optional. Maximum time in seconds to wait for the job being
                     completed. Default is set to 1200 seconds (20 minutes).
@@ -17,7 +24,7 @@ DATAPROC_CONFIG_SCHEMA = {
         default_value=TWENTY_MINUTES,
     ),
     "job_config": define_dataproc_submit_job_config(),
-    "job_scoped_cluster": Field(
+    "job_scoped_cluster": DagsterField(
         Bool,
         description="whether to create a cluster or use an existing cluster",
         is_required=False,
