@@ -1043,6 +1043,49 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             partitions_def.time_window_for_partition_key(partition_key_range.end).end,
         )
 
+    def asset_partitions_time_window_for_input(self, input_name: str) -> TimeWindow:
+        """The time window for the partitions of the asset correponding to the given input.
+
+        Raises an error if either of the following are true:
+        - The input asset has no partitioning.
+        - The input asset is not partitioned with a TimeWindowPartitionsDefinition or a
+          MultiPartitionsDefinition with one time-partitioned dimension.
+        """
+        asset_layer = self.job_def.asset_layer
+        upstream_asset_key = asset_layer.asset_key_for_input(self.node_handle, input_name)
+
+        if upstream_asset_key is None:
+            raise ValueError("The input has no corresponding asset")
+
+        upstream_asset_partitions_def = asset_layer.partitions_def_for_asset(upstream_asset_key)
+
+        if not upstream_asset_partitions_def:
+            raise ValueError(
+                "Tried to get asset partitions for an input that does not correspond to a "
+                "partitioned asset."
+            )
+
+        if not has_one_dimension_time_window_partitioning(upstream_asset_partitions_def):
+            raise ValueError(
+                "Tried to get asset partitions for an input that correponds to a partitioned "
+                "asset that is not time-partitioned."
+            )
+
+        upstream_asset_partitions_def = cast(
+            Union[TimeWindowPartitionsDefinition, MultiPartitionsDefinition],
+            upstream_asset_partitions_def,
+        )
+        partition_key_range = self.asset_partition_key_range_for_input(input_name)
+
+        return TimeWindow(
+            upstream_asset_partitions_def.time_window_for_partition_key(
+                partition_key_range.start
+            ).start,
+            upstream_asset_partitions_def.time_window_for_partition_key(
+                partition_key_range.end
+            ).end,
+        )
+
     def get_type_loader_context(self) -> "DagsterTypeLoaderContext":
         return DagsterTypeLoaderContext(
             plan_data=self.plan_data,
