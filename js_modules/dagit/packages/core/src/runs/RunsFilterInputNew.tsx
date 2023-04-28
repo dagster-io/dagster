@@ -43,7 +43,12 @@ export type RunFilterToken = {
   token?: RunFilterTokenType;
   value: string;
 };
-const CREATED_BY_TAGS = [DagsterTag.SensorName, DagsterTag.ScheduleName, DagsterTag.User];
+const CREATED_BY_TAGS = [
+  DagsterTag.Automaterialize,
+  DagsterTag.SensorName,
+  DagsterTag.ScheduleName,
+  DagsterTag.User,
+];
 
 const RUN_PROVIDERS_EMPTY = [
   {
@@ -157,12 +162,7 @@ interface RunsFilterInputProps {
 }
 
 // Exclude these tags from the "tag" filter because theyre already being fetched by other filters.
-const tagsToExclude = [
-  DagsterTag.User,
-  DagsterTag.ScheduleName,
-  DagsterTag.SensorName,
-  DagsterTag.Backfill,
-];
+const tagsToExclude = [...CREATED_BY_TAGS, DagsterTag.Backfill];
 
 export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilterInputProps) => {
   const {options} = useRepositoryOptions();
@@ -230,11 +230,15 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
     isBackfillsFilterEnabled,
   ]);
 
-  const createdByValues = React.useMemo(() => [...sensorValues, ...scheduleValues, ...userValues], [
-    sensorValues,
-    scheduleValues,
-    userValues,
-  ]);
+  const createdByValues = React.useMemo(
+    () => [
+      tagToFilterValue(DagsterTag.Automaterialize, 'Auto-materialize policy'),
+      ...sensorValues,
+      ...scheduleValues,
+      ...userValues,
+    ],
+    [sensorValues, scheduleValues, userValues],
+  );
 
   const isJobFilterEnabled = !enabledFilters || enabledFilters?.includes('job');
 
@@ -402,6 +406,8 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
             icon = <Icon name="schedule" />;
           } else if (value.type === DagsterTag.User) {
             return <UserDisplay email={value.value} isFilter />;
+          } else if (value.type === DagsterTag.Automaterialize) {
+            icon = <Icon name="auto_materialize_policy" />;
           }
           return (
             <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
@@ -410,7 +416,12 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
             </Box>
           );
         },
-        getStringValue: (x) => x.value,
+        getStringValue: (x) => {
+          if (x.type === DagsterTag.Automaterialize) {
+            return 'Auto-materialize policy';
+          }
+          return x.value;
+        },
         initialState: React.useMemo(() => {
           return new Set(
             tokens
@@ -429,10 +440,15 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
               }
               return !CREATED_BY_TAGS.includes(token.value.split('=')[0] as DagsterTag);
             }),
-            ...Array.from(values).map((value) => ({
-              token: 'tag' as const,
-              value: `${value.type}=${value.value}`,
-            })),
+            ...Array.from(values).map((value) => {
+              if (value.type === DagsterTag.Automaterialize) {
+                return {token: 'tag' as const, value: `${value.type}=true`};
+              }
+              return {
+                token: 'tag' as const,
+                value: `${value.type}=${value.value}`,
+              };
+            }),
           ]);
         },
       }),
@@ -567,14 +583,18 @@ export function useTagDataFilterValues(tagKey?: DagsterTag) {
     return data.runTagsOrError.tags
       .map((x) => x.values)
       .flat()
-      .map((x) => ({
-        label: x,
-        value: tagValueToFilterObject(`${tagKey}=${x}`),
-        match: [x],
-      }));
+      .map((x) => tagToFilterValue(tagKey, x));
   }, [data, tagKey]);
 
   return [fetch, values] as [typeof fetch, typeof values];
+}
+
+function tagToFilterValue(key: string, value: string) {
+  return {
+    label: value,
+    value: tagValueToFilterObject(`${key}=${value}`),
+    match: [value],
+  };
 }
 
 // Memoize this object because the static set filter component checks for object equality (set.has)
