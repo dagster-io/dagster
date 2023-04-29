@@ -1,4 +1,5 @@
 import operator
+import re
 from abc import ABC, abstractmethod
 from functools import reduce
 from typing import AbstractSet, Iterable, Optional, Sequence, Union, cast
@@ -98,6 +99,14 @@ class AssetSelection(ABC):
             for key in asset_keys
         ]
         return KeysAssetSelection(*_asset_keys)
+
+    @public
+    @staticmethod
+    def regex_keys(*regex_patterns: re.Pattern) -> "RegexKeysAssetSelection":
+        """Returns a selection that includes assets that match any of the provided regex patterns.
+        """
+        check.tuple_param(regex_patterns, "regex_patterns", of_type=re.Pattern)
+        return RegexKeysAssetSelection(*regex_patterns)
 
     @public
     @staticmethod
@@ -395,6 +404,21 @@ class KeysAssetSelection(AssetSelection):
                 "are correctly added to the `Definitions`."
             )
         return specified_keys
+
+
+class RegexKeysAssetSelection(AssetSelection):
+    def __init__(self, *regex_patterns: re.Pattern):
+        self._regex_patterns = regex_patterns
+
+    def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
+        return {
+            asset_key
+            for asset_key in asset_graph.all_asset_keys
+            if any(
+                regex_pattern.match(asset_key.to_user_string())
+                for regex_pattern in self._regex_patterns
+            )
+        }
 
 
 class OrAssetSelection(AssetSelection):

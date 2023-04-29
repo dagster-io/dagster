@@ -1,4 +1,5 @@
 import operator
+import re
 from functools import reduce
 from typing import AbstractSet, Iterable, Tuple, Union
 
@@ -126,6 +127,14 @@ def test_asset_selection_keys(all_assets: _AssetList):
 
     sel = AssetSelection.keys("alice", "bob")
     assert sel.resolve(all_assets) == _asset_keys_of({alice, bob})
+
+
+def test_asset_selection_regex_keys(all_assets: _AssetList):
+    sel = AssetSelection.regex_keys(re.compile(r"alice"), re.compile(r"bob"))
+    assert sel.resolve(all_assets) == _asset_keys_of({alice, bob})
+
+    sel = AssetSelection.regex_keys(re.compile(r"a.*$"))
+    assert sel.resolve(all_assets) == _asset_keys_of({alice})
 
 
 def test_select_source_asset_keys():
