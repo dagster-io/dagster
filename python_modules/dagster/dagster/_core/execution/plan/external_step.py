@@ -188,7 +188,7 @@ def step_run_ref_to_step_context(
 
     solids_to_execute = step_run_ref.dagster_run.solids_to_execute
     if solids_to_execute or step_run_ref.dagster_run.asset_selection:
-        job = step_run_ref.recon_job.subset_for_execution_from_existing_job(
+        job = step_run_ref.recon_job.get_subset(
             frozenset(solids_to_execute) if solids_to_execute else None,
             asset_selection=step_run_ref.dagster_run.asset_selection,
         )

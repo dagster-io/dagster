@@ -9,6 +9,7 @@ from typing import (
     AbstractSet,
     Any,
     Callable,
+    Iterable,
     List,
     Mapping,
     NamedTuple,
@@ -38,7 +39,6 @@ from dagster._core.origin import (
     JobPythonOrigin,
     RepositoryPythonOrigin,
 )
-from dagster._core.selector import parse_solid_selection
 from dagster._serdes import pack_value, unpack_value, whitelist_for_serdes
 from dagster._utils import hash_collection
 
@@ -250,31 +250,21 @@ class ReconstructableJob(
     def get_reconstructable_repository(self) -> ReconstructableRepository:
         return self.repository
 
-    def _subset_for_execution(
+    def get_subset(
         self,
-        solids_to_execute: Optional[AbstractSet[str]],
-        solid_selection: Optional[Sequence[str]],
-        asset_selection: Optional[AbstractSet[AssetKey]],
+        solid_selection: Optional[Iterable[str]] = None,
+        asset_selection: Optional[AbstractSet[AssetKey]] = None,
     ) -> "ReconstructableJob":
-        # no selection
-        if solid_selection is None and solids_to_execute is None and asset_selection is None:
+        if solid_selection and asset_selection:
+            check.failed(
+                "solid_selection and asset_selection cannot both be provided as arguments",
+            )
+        elif solid_selection is None and asset_selection is None:
             return ReconstructableJob(
                 repository=self.repository,
                 job_name=self.job_name,
             )
-
-        from dagster._core.definitions import JobDefinition
-
-        job_def = self.get_definition()
-        if isinstance(job_def, JobDefinition):
-            # jobs use pre-resolved selection
-            # when subselecting a job
-            # * job subselection depend on solid_selection rather than solids_to_execute
-            # * we'll resolve the op selection later in the stack
-            if solid_selection is None:
-                # when the pre-resolution info is unavailable (e.g. subset from existing run),
-                # we need to fill the solid_selection in order to pass the value down to deeper stack.
-                solid_selection = list(solids_to_execute) if solids_to_execute else None
+        else:
             return ReconstructableJob(
                 repository=self.repository,
                 job_name=self.job_name,
@@ -282,62 +272,6 @@ class ReconstructableJob(
                 solids_to_execute=None,
                 asset_selection=asset_selection,
             )
-        elif isinstance(job_def, JobDefinition):
-            # when subselecting a job
-            # * job subselection depend on solids_to_excute rather than solid_selection
-            # * we resolve a list of solid selection queries to a frozenset of qualified solid names
-            #   e.g. ['foo_solid+'] to {'foo_solid', 'bar_solid'}
-            if solid_selection and solids_to_execute is None:
-                # when post-resolution query is unavailable, resolve the query
-                solids_to_execute = parse_solid_selection(job_def, solid_selection)
-            return ReconstructableJob(
-                repository=self.repository,
-                job_name=self.job_name,
-                solid_selection_str=seven.json.dumps(solid_selection) if solid_selection else None,
-                solids_to_execute=frozenset(solids_to_execute) if solids_to_execute else None,
-            )
-        else:
-            raise Exception(f"Unexpected job type {job_def.__class__.__name__}")
-
-    def subset_for_execution(
-        self,
-        solid_selection: Optional[Sequence[str]] = None,
-        asset_selection: Optional[AbstractSet[AssetKey]] = None,
-    ) -> "ReconstructableJob":
-        # take a list of unresolved selection queries
-        check.opt_sequence_param(solid_selection, "solid_selection", of_type=str)
-        check.opt_set_param(asset_selection, "asset_selection", of_type=AssetKey)
-
-        check.invariant(
-            not (solid_selection and asset_selection),
-            "solid_selection and asset_selection cannot both be provided as arguments",
-        )
-
-        return self._subset_for_execution(
-            solids_to_execute=None, solid_selection=solid_selection, asset_selection=asset_selection
-        )
-
-    def subset_for_execution_from_existing_job(
-        self,
-        solids_to_execute: Optional[AbstractSet[str]] = None,
-        asset_selection: Optional[AbstractSet[AssetKey]] = None,
-    ) -> ReconstructableJob:
-        # take a frozenset of resolved solid names from an existing job
-        # so there's no need to parse the selection
-
-        check.invariant(
-            not (solids_to_execute and asset_selection),
-            "solids_to_execute and asset_selection cannot both be provided as arguments",
-        )
-
-        check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
-        check.opt_set_param(asset_selection, "asset_selection", of_type=AssetKey)
-
-        return self._subset_for_execution(
-            solids_to_execute=solids_to_execute,
-            solid_selection=None,
-            asset_selection=asset_selection,
-        )
 
     def describe(self) -> str:
         return '"{name}" in repository ({repo})'.format(

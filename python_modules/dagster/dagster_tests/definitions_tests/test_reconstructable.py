@@ -150,10 +150,10 @@ def test_inner_decorator():
 
 def test_op_selection():
     recon_pipe = reconstructable(get_the_pipeline)
-    sub_pipe_full = recon_pipe.subset_for_execution(["the_op"], asset_selection=None)
+    sub_pipe_full = recon_pipe.get_subset(["the_op"], asset_selection=None)
     assert sub_pipe_full.solid_selection == ["the_op"]
 
-    sub_pipe_unresolved = recon_pipe.subset_for_execution(["the_op+"], asset_selection=None)
+    sub_pipe_unresolved = recon_pipe.get_subset(["the_op+"], asset_selection=None)
     assert sub_pipe_unresolved.solid_selection == ["the_op+"]
 
 

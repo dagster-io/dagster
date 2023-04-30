@@ -390,7 +390,7 @@ class InProcessCodeLocation(CodeLocation):
         execution_plan = create_execution_plan(
             job=self.get_reconstructable_job(
                 external_job.repository_handle.repository_name, external_job.name
-            ).subset_for_execution_from_existing_job(
+            ).get_subset(
                 external_job.solids_to_execute,
                 external_job.asset_selection,
             ),
