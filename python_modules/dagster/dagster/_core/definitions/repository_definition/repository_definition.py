@@ -275,7 +275,7 @@ class RepositoryDefinition:
         solids_to_execute: Optional[AbstractSet[str]] = None,
     ):
         defn = self.get_job(job_name)
-        return defn.get_job_def_for_subset_selection(op_selection, asset_selection)
+        return defn.get_subset(op_selection, asset_selection)
 
     @public
     def load_asset_value(

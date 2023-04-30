@@ -657,7 +657,7 @@ class JobDefinition(IHasInternalInit):
             _was_explicitly_provided_resources=True,
         )
 
-        ephemeral_job = ephemeral_job.get_job_def_for_subset_selection(
+        ephemeral_job = ephemeral_job.get_subset(
             op_selection, frozenset(asset_selection) if asset_selection else None
         )
 
@@ -711,7 +711,7 @@ class JobDefinition(IHasInternalInit):
     def is_subset_job(self) -> bool:
         return bool(self._subset_selection_data)
 
-    def get_job_def_for_subset_selection(
+    def get_subset(
         self,
         op_selection: Optional[Sequence[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,

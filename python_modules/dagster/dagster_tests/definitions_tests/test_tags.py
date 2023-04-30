@@ -38,12 +38,10 @@ def test_op_subset_tags():
     def tags_job():
         noop_op()
 
-    assert tags_job.get_job_def_for_subset_selection(op_selection=["noop_op"]).tags == {
-        "foo": "bar"
-    }
+    assert tags_job.get_subset(op_selection=["noop_op"]).tags == {"foo": "bar"}
 
     @job
     def no_tags_job():
         noop_op()
 
-    assert no_tags_job.get_job_def_for_subset_selection(op_selection=["noop_op"]).tags == {}
+    assert no_tags_job.get_subset(op_selection=["noop_op"]).tags == {}

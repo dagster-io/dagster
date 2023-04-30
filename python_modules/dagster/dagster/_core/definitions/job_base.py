@@ -85,7 +85,7 @@ class InMemoryJob(IJob, object):
     ) -> Self:
         if asset_selection:
             return InMemoryJob(
-                self._job_def.get_job_def_for_subset_selection(asset_selection=asset_selection),
+                self._job_def.get_subset(asset_selection=asset_selection),
                 asset_selection=asset_selection,
             )
         if self._job_def.is_subset_job:
