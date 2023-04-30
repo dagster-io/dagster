@@ -79,7 +79,7 @@ class BigQueryPySparkTypeHandler(DbTypeHandler[DataFrame]):
 
     def load_input(self, context: InputContext, table_slice: TableSlice, _) -> DataFrame:
         options = _get_bigquery_read_options(table_slice)
-        spark = SparkSession.builder.getOrCreate()
+        spark = SparkSession.builder.getOrCreate()  # type: ignore
 
         if table_slice.partition_dimensions and len(context.asset_partition_keys) == 0:
             return spark.createDataFrame([], StructType([]))

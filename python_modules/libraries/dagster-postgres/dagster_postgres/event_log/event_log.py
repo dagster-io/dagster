@@ -186,7 +186,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 f"""NOTIFY {CHANNEL_NAME}, %s; """,
                 (res[0] + "_" + str(res[1]),),  # type: ignore
             )
-            event_id = res[1]  # type: ignore
+            event_id = int(res[1])  # type: ignore
 
         if (
             event.is_dagster_event

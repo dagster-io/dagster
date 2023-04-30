@@ -12,13 +12,13 @@ if airflow_version >= "2.0.0":
         SparkSubmitOperator,
     )
 else:
-    from airflow.contrib.operators.spark_submit_operator import (
-        SparkSubmitOperator,  # type: ignore  # (airflow 1 compat)
+    from airflow.contrib.operators.spark_submit_operator import (  # type: ignore (airflow 1 compat)
+        SparkSubmitOperator,
     )
 
 from airflow.models.dag import DAG
-from airflow.operators.bash_operator import BashOperator
-from airflow.operators.dummy_operator import DummyOperator
+from airflow.operators.bash_operator import BashOperator  # type: ignore (airflow 1 compat)
+from airflow.operators.dummy_operator import DummyOperator  # type: ignore (airflow 1 compat)
 from airflow.utils.dates import days_ago
 from dagster import DagsterEventType
 from dagster._core.instance import AIRFLOW_EXECUTION_DATE_STR
