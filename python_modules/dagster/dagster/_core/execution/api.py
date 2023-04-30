@@ -555,7 +555,7 @@ def _reexecute_job(
 
         if parent_dagster_run.asset_selection:
             job_arg = job_arg.get_subset(
-                solid_selection=None, asset_selection=parent_dagster_run.asset_selection
+                op_selection=None, asset_selection=parent_dagster_run.asset_selection
             )
 
         dagster_run = execute_instance.create_run_for_job(

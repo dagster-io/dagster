@@ -24,14 +24,14 @@ class IJob(ABC):
     @abstractmethod
     def get_subset(
         self,
-        solid_selection: Optional[Iterable[str]] = None,
+        op_selection: Optional[Iterable[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
     ) -> "IJob":
         pass
 
     @property
     @abstractmethod
-    def solid_selection(self) -> Optional[Sequence[str]]:
+    def op_selection(self) -> Optional[Sequence[str]]:
         pass
 
     @property
@@ -41,7 +41,7 @@ class IJob(ABC):
 
     @property
     def solids_to_execute(self) -> Optional[AbstractSet[str]]:
-        return set(self.solid_selection) if self.solid_selection else None
+        return set(self.op_selection) if self.op_selection else None
 
 
 class InMemoryJob(IJob):
@@ -60,16 +60,16 @@ class InMemoryJob(IJob):
 
     def get_subset(
         self,
-        solid_selection: Optional[Iterable[str]] = None,
+        op_selection: Optional[Iterable[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
     ) -> Self:
-        if solid_selection and asset_selection:
+        if op_selection and asset_selection:
             check.failed(
                 "solid_selection and asset_selection cannot both be provided as arguments",
             )
-        elif solid_selection:
-            solid_selection = list(solid_selection)
-            return InMemoryJob(self._job_def.get_subset(solid_selection))
+        elif op_selection:
+            op_selection = list(op_selection)
+            return InMemoryJob(self._job_def.get_subset(op_selection))
         elif asset_selection:
             return InMemoryJob(
                 self._job_def.get_subset(asset_selection=asset_selection),
@@ -79,7 +79,7 @@ class InMemoryJob(IJob):
             check.failed("Must provide solid_selection or asset_selection")
 
     @property
-    def solid_selection(self) -> Sequence[str]:
+    def op_selection(self) -> Sequence[str]:
         # a list of solid queries provided by the user
         return self._solid_selection  # type: ignore  # (possible none)
 

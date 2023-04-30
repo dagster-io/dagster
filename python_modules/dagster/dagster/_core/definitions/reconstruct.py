@@ -233,7 +233,7 @@ class ReconstructableJob(
         return self._replace(repository=self.repository.with_repository_load_data(metadata))
 
     @property
-    def solid_selection(self) -> Optional[Sequence[str]]:
+    def op_selection(self) -> Optional[Sequence[str]]:
         return seven.json.loads(self.solid_selection_str) if self.solid_selection_str else None
 
     # Keep the most recent 1 definition (globally since this is a NamedTuple method)
@@ -242,7 +242,7 @@ class ReconstructableJob(
     def get_definition(self) -> Union[JobDefinition, "JobDefinition"]:
         return self.repository.get_definition().get_maybe_subset_job_def(
             self.job_name,
-            self.solid_selection,
+            self.op_selection,
             self.asset_selection,
             self.solids_to_execute,
         )
@@ -252,14 +252,14 @@ class ReconstructableJob(
 
     def get_subset(
         self,
-        solid_selection: Optional[Iterable[str]] = None,
+        op_selection: Optional[Iterable[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
     ) -> "ReconstructableJob":
-        if solid_selection and asset_selection:
+        if op_selection and asset_selection:
             check.failed(
                 "solid_selection and asset_selection cannot both be provided as arguments",
             )
-        elif solid_selection is None and asset_selection is None:
+        elif op_selection is None and asset_selection is None:
             return ReconstructableJob(
                 repository=self.repository,
                 job_name=self.job_name,
@@ -268,7 +268,7 @@ class ReconstructableJob(
             return ReconstructableJob(
                 repository=self.repository,
                 job_name=self.job_name,
-                solid_selection_str=seven.json.dumps(solid_selection) if solid_selection else None,
+                solid_selection_str=seven.json.dumps(op_selection) if op_selection else None,
                 solids_to_execute=None,
                 asset_selection=asset_selection,
             )
