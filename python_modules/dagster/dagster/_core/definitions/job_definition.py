@@ -698,7 +698,7 @@ class JobDefinition(IHasInternalInit):
         )
 
     @property
-    def is_subset_job(self) -> bool:
+    def is_subset(self) -> bool:
         return bool(self._subset_selection_data)
 
     def get_subset(
@@ -1207,7 +1207,7 @@ def _create_run_config_schema(
     # from the original job as ignored to allow execution with
     # run config that is valid for the original
     ignored_nodes: Sequence[Node] = []
-    if job_def.is_subset_job:
+    if job_def.is_subset:
         if isinstance(job_def.graph, SubselectedGraphDefinition):  # op selection provided
             ignored_nodes = job_def.graph.get_top_level_omitted_nodes()
         elif job_def.asset_selection_data:
