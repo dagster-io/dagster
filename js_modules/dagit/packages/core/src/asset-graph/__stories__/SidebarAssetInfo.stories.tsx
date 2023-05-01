@@ -205,10 +205,10 @@ const EventsMock: MockedResponse<AssetEventsQuery> = {
   },
 };
 
-const TestContainer: React.FC<{mocks?: MockedResponse<Record<string, any>>[]}> = ({
-  children,
-  mocks,
-}) => (
+const TestContainer: React.FC<{
+  mocks?: MockedResponse<Record<string, any>>[];
+  children: React.ReactNode;
+}> = ({children, mocks}) => (
   <MockedProvider
     cache={createAppCache()}
     mocks={
