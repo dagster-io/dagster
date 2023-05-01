@@ -96,12 +96,12 @@ class GrapheneRunConfigSchema(graphene.ObjectType):
             parse_run_config_input(runConfigData or {}, raise_on_error=False),  # type: ignore
         )
 
-    def resolve_rootDefaultYaml(self, _graphene_info):
-        config_schema_snapshot: ConfigSchemaSnapshot = (
-            self._represented_pipeline.config_schema_snapshot
-        )
+    def resolve_rootDefaultYaml(self, _graphene_info) -> str:
+        config_schema_snapshot: ConfigSchemaSnapshot = self._represented_job.config_schema_snapshot
 
-        root_key = self._represented_pipeline.get_mode_def_snap(self._mode).root_config_key
+        root_key = check.not_none(
+            self._represented_job.get_mode_def_snap(self._mode).root_config_key
+        )
 
         root_type = config_schema_snapshot.get_config_snap(root_key)
 
