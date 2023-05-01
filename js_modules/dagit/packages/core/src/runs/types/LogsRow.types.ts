@@ -993,6 +993,8 @@ export type LogsRowStructuredFragment_LogsCapturedEvent_ = {
   fileKey: string;
   stepKeys: Array<string> | null;
   externalUrl: string | null;
+  externalStdoutUrl: string | null;
+  externalStderrUrl: string | null;
 };
 
 export type LogsRowStructuredFragment_MaterializationEvent_ = {

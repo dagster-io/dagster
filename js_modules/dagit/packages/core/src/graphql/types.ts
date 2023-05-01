@@ -1978,6 +1978,8 @@ export type Logger = {
 export type LogsCapturedEvent = MessageEvent & {
   __typename: 'LogsCapturedEvent';
   eventType: Maybe<DagsterEventType>;
+  externalStderrUrl: Maybe<Scalars['String']>;
+  externalStdoutUrl: Maybe<Scalars['String']>;
   externalUrl: Maybe<Scalars['String']>;
   fileKey: Scalars['String'];
   level: LogLevel;
@@ -7973,6 +7975,14 @@ export const buildLogsCapturedEvent = (
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
         : DagsterEventType.ALERT_FAILURE,
+    externalStderrUrl:
+      overrides && overrides.hasOwnProperty('externalStderrUrl')
+        ? overrides.externalStderrUrl!
+        : 'velit',
+    externalStdoutUrl:
+      overrides && overrides.hasOwnProperty('externalStdoutUrl')
+        ? overrides.externalStdoutUrl!
+        : 'consequatur',
     externalUrl:
       overrides && overrides.hasOwnProperty('externalUrl') ? overrides.externalUrl! : 'qui',
     fileKey: overrides && overrides.hasOwnProperty('fileKey') ? overrides.fileKey! : 'et',

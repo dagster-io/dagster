@@ -369,6 +369,8 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
             logKey=data.file_key,
             stepKeys=data.step_keys,
             externalUrl=data.external_url,
+            externalStdoutUrl=data.external_stdout_url or data.external_url,
+            externalStderrUrl=data.external_stderr_url or data.external_url,
             pid=dagster_event.pid,
             **basic_params,
         )
