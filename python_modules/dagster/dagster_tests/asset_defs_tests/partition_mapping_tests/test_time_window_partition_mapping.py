@@ -221,3 +221,27 @@ def test_daily_to_daily_lag_different_start_date():
     assert mapping.get_downstream_partitions_for_partitions(
         subset_with_key(upstream_partitions_def, "2021-05-05"), downstream_partitions_def
     ).get_partition_keys() == ["2021-05-06"]
+
+
+def test_hourly_to_daily_with_current_time():
+    upstream_partitions_def = HourlyPartitionsDefinition(start_date="2021-05-05-00:00")
+    downstream_partitions_def = DailyPartitionsDefinition(start_date="2021-05-05")
+
+    mapping = TimeWindowPartitionMapping()
+    assert (
+        mapping.get_downstream_partitions_for_partitions(
+            subset_with_key(upstream_partitions_def, "2021-05-05-00:00"),
+            downstream_partitions_def,
+            current_time=datetime(2021, 5, 5, 1),
+        ).get_partition_keys()
+        == []
+    )
+
+    assert mapping.get_downstream_partitions_for_partitions(
+        subset_with_key_range(upstream_partitions_def, "2021-05-05-23:00", "2021-05-06-01:00"),
+        downstream_partitions_def,
+        current_time=datetime(2021, 5, 6, 1),
+    ).get_partition_keys() == ["2021-05-05"]
+
+
+# TODO test current time with offsets

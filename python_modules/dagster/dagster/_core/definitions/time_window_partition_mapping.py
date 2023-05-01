@@ -192,9 +192,7 @@ class TimeWindowPartitionMapping(
             )
             to_end_partition_key = (
                 to_partitions_def.get_partition_key_for_timestamp(
-                    offsetted_end_dt.timestamp()
-                    if not current_time
-                    else min(offsetted_end_dt.timestamp(), current_time.timestamp()),
+                    offsetted_end_dt.timestamp(),
                     end_closed=True,
                 )
                 if offsetted_end_dt is not None
@@ -213,7 +211,15 @@ class TimeWindowPartitionMapping(
                     else cast(TimeWindow, to_partitions_def.get_last_partition_window()).end
                 )
 
-                time_windows.append(TimeWindow(window_start, window_end))
+                if current_time:
+                    last_window = to_partitions_def.get_last_partition_window(
+                        current_time=current_time
+                    )
+                    if last_window and window_start <= last_window.start:
+                        window_end = min(window_end, last_window.end)
+                        time_windows.append(TimeWindow(window_start, window_end))
+                else:
+                    time_windows.append(TimeWindow(window_start, window_end))
 
         return TimeWindowPartitionsSubset(
             to_partitions_def,
