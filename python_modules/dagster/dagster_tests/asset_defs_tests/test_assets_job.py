@@ -2449,7 +2449,7 @@ def test_asset_group_build_subset_job(job_selection, expected_assets, use_multi,
     all_assets = _get_assets_defs(use_multi=use_multi, allow_subset=use_multi)
     # apply prefixes
     for prefix in reversed(prefixes or []):
-        all_assets = prefix_assets(all_assets, prefix)
+        all_assets, _ = prefix_assets(all_assets, prefix, [], None)
 
     defs = Definitions(
         # for these, if we have multi assets, we'll always allow them to be subset

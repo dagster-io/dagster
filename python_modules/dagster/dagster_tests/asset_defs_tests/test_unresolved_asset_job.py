@@ -348,7 +348,7 @@ def test_define_selection_job(job_selection, expected_assets, use_multi, prefixe
     prefixed_assets = _get_assets_defs(use_multi=use_multi, allow_subset=use_multi)
     # apply prefixes
     for prefix in reversed(prefixes or []):
-        prefixed_assets = prefix_assets(prefixed_assets, prefix)
+        prefixed_assets, _ = prefix_assets(prefixed_assets, prefix, [], None)
 
     final_assets = with_resources(
         prefixed_assets,
