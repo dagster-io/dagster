@@ -1,5 +1,6 @@
 import os
-from typing import Any, Mapping, Optional, Sequence
+from contextlib import contextmanager
+from typing import Any, Iterator, Mapping, Optional, Sequence
 
 import boto3
 import dagster._seven as seven
@@ -11,6 +12,7 @@ from dagster import (
     _check as check,
 )
 from dagster._config.config_type import Noneable
+from dagster._core.storage.captured_log_manager import CapturedLogContext
 from dagster._core.storage.cloud_storage_compute_log_manager import (
     CloudStorageComputeLogManager,
     PollingComputeLogSubscriptionManager,
@@ -232,3 +234,64 @@ class S3ComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
     def dispose(self):
         self._subscription_manager.dispose()
         self._local_manager.dispose()
+
+
+class ExternalS3ComputeLogManager(S3ComputeLogManager):
+    @contextmanager
+    def capture_logs(self, log_key: Sequence[str]) -> Iterator[CapturedLogContext]:
+        with super().capture_logs(log_key) as local_context:
+            out_key = self._s3_key(log_key, ComputeIOType.STDOUT)
+            err_key = self._s3_key(log_key, ComputeIOType.STDERR)
+            s3_base = f"https://s3.{self._region}.amazonaws.com/{self._s3_bucket}"
+            yield CapturedLogContext(
+                local_context.log_key,
+                external_stdout_url=f"{s3_base}/{out_key}",
+                external_stderr_url=f"{s3_base}/{err_key}",
+            )
+
+    def __init__(
+        self,
+        bucket,
+        local_dir=None,
+        inst_data: Optional[ConfigurableClassData] = None,
+        prefix="dagster",
+        use_ssl=True,
+        verify=True,
+        verify_cert_path=None,
+        endpoint_url=None,
+        skip_empty_files=False,
+        upload_interval=None,
+        upload_extra_args=None,
+        region=None,
+    ):
+        super().__init__(
+            bucket,
+            local_dir=local_dir,
+            inst_data=inst_data,
+            prefix=prefix,
+            use_ssl=use_ssl,
+            verify=verify,
+            verify_cert_path=verify_cert_path,
+            endpoint_url=endpoint_url,
+            skip_empty_files=skip_empty_files,
+            upload_interval=upload_interval,
+            upload_extra_args=upload_extra_args,
+        )
+        if region is None:
+            # if unspecified, use the current session name
+            self._region = self._s3_session.meta.region_name
+        else:
+            self._region = region
+
+    @classmethod
+    def config_type(cls):
+        return {
+            **super().config_type(),
+            "region": Field(StringSource, is_required=False),
+        }
+
+    @classmethod
+    def from_config_value(
+        cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
+    ) -> Self:
+        return ExternalS3ComputeLogManager(inst_data=inst_data, **config_value)
