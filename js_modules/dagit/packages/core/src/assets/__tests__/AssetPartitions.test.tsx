@@ -15,6 +15,8 @@ import {
   MultiDimensionTimeFirstPartitionHealthQuery,
 } from '../__fixtures__/PartitionHealthSummary.fixtures';
 
+jest.setTimeout(20000);
+
 // This file must be mocked because useVirtualizer tries to create a ResizeObserver,
 // and the component tree fails to mount. We still want to test whether certain partitions
 // are shown, so we print the keys in a simple "list".
@@ -180,12 +182,17 @@ describe('AssetPartitions', () => {
       expect(screen.getByTestId('partitions-zstate')).toBeVisible();
     });
 
-    expect(
-      getByTestId(screen.getByTestId('partitions-date'), 'asset-partition-row-2023-02-05-index-0'),
-    ).toBeVisible();
-    expect(
-      getByTestId(screen.getByTestId('partitions-zstate'), 'asset-partition-row-TN-index-0'),
-    ).toBeVisible();
+    await waitFor(() => {
+      expect(
+        getByTestId(
+          screen.getByTestId('partitions-date'),
+          'asset-partition-row-2023-02-05-index-0',
+        ),
+      ).toBeVisible();
+      expect(
+        getByTestId(screen.getByTestId('partitions-zstate'), 'asset-partition-row-TN-index-0'),
+      ).toBeVisible();
+    });
 
     userEvent.click(screen.getByTestId('sort-0'));
 

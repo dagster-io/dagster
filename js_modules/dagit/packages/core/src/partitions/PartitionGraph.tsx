@@ -161,7 +161,7 @@ export const PartitionGraph = ({
   // We have a useMemo around the entire <PartitionGraphSet /> and there aren't many extra renders.
   return (
     <PartitionGraphContainer>
-      <Line type="line" data={() => graphData} height={300} options={defaultOptions} ref={chart} />
+      <Line data={() => graphData} height={300} options={defaultOptions as any} ref={chart} />
     </PartitionGraphContainer>
   );
 };

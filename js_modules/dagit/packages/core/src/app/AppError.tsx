@@ -15,13 +15,13 @@ interface DagsterSerializableErrorInfo {
   context: DagsterSerializableErrorInfo | null;
 }
 
-interface DagsterGraphQLError extends GraphQLError {
+type DagsterGraphQLError = GraphQLError & {
   extensions:
     | {
         errorInfo?: DagsterSerializableErrorInfo;
       }
     | undefined;
-}
+};
 
 const ErrorToaster = Toaster.create({position: 'top-right'});
 

@@ -10,14 +10,13 @@ import {
 import * as React from 'react';
 import {Link, LinkProps} from 'react-router-dom';
 
-interface AnchorButtonProps
-  extends Omit<
-      React.ComponentProps<typeof BlueprintAnchorButton>,
-      'loading' | 'onClick' | 'onFocus' | 'type'
-    >,
-    LinkProps {
-  label?: React.ReactNode;
-}
+type AnchorButtonProps = Omit<
+  React.ComponentProps<typeof BlueprintAnchorButton>,
+  'loading' | 'onClick' | 'onFocus' | 'type'
+> &
+  LinkProps & {
+    label?: React.ReactNode;
+  };
 
 export const AnchorButton = React.forwardRef(
   (props: AnchorButtonProps, ref: React.ForwardedRef<HTMLAnchorElement>) => {

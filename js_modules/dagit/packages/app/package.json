@@ -12,10 +12,11 @@
     "@dagster-io/dagit-core": "workspace:*",
     "@dagster-io/ui": "workspace:*",
     "@rive-app/react-canvas": "^3.0.34",
+    "@types/styled-components": "^5.1.26",
     "graphql": "^15.5.0",
-    "react": "^17.0.2",
-    "react-dom": "^17.0.2",
-    "react-is": "^17.0.2",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-is": "^18.2.0",
     "react-router": "^5.2.1",
     "react-router-dom": "^5.3.0",
     "react-router-dom-v5-compat": "^6.3.0",
@@ -28,8 +29,8 @@
     "@dagster-io/react-scripts": "^5.0.6",
     "@types/jest": "^27.4.0",
     "@types/node": "^16.11.20",
-    "@types/react": "17.0.4",
-    "@types/react-dom": "^17.0.11",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
     "@types/uuid": "^8.3.4",
     "@types/validator": "^13",
     "@types/webpack-bundle-analyzer": "^4",
@@ -60,5 +61,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "resolutions": {
+    "@types/react": "^18.2.0"
   }
 }

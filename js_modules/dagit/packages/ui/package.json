@@ -24,9 +24,9 @@
     "@blueprintjs/core": "^4.17.8",
     "@blueprintjs/popover2": "1.13.12",
     "@blueprintjs/select": "^4.9.12",
-    "react": "^17.0.2",
-    "react-dom": "^17.0.2",
-    "react-is": "^17.0.2",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-is": "^18.2.0",
     "styled-components": "^5.3.3"
   },
   "dependencies": {
@@ -93,6 +93,9 @@
     "rollup-plugin-styles": "^4.0.0",
     "typescript": "5.0.2",
     "webpack": "^5.0.0"
+  },
+  "resolutions": {
+    "@types/react": "^18.0.21"
   },
   "browserslist": {
     "production": [

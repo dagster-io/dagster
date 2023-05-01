@@ -14,7 +14,12 @@ import {
 import qs from 'qs';
 import * as React from 'react';
 import {useHistory, useLocation, useParams} from 'react-router-dom';
-import {AutoSizer, CellMeasurer, CellMeasurerCache, List} from 'react-virtualized';
+import {
+  AutoSizer as _AutoSizer,
+  CellMeasurer as _CellMeasurerer,
+  CellMeasurerCache,
+  List as _List,
+} from 'react-virtualized';
 import styled from 'styled-components/macro';
 
 import {useTrackPageView} from '../app/analytics';
@@ -27,6 +32,10 @@ import {workspacePathFromAddress} from '../workspace/workspacePath';
 import {OpDetailScrollContainer, UsedSolidDetails} from './OpDetailsRoot';
 import {OpTypeSignature, OP_TYPE_SIGNATURE_FRAGMENT} from './OpTypeSignature';
 import {OpsRootQuery, OpsRootQueryVariables, OpsRootUsedSolidFragment} from './types/OpsRoot.types';
+
+const AutoSizer: any = _AutoSizer;
+const CellMeasurer: any = _CellMeasurerer;
+const List: any = _List;
 
 function flatUniq(arrs: string[][]) {
   const results: {[key: string]: boolean} = {};
@@ -181,7 +190,9 @@ const OpsRootWithData: React.FC<Props & {name?: string; usedSolids: Solid[]}> = 
     }
   });
 
-  const onClickInvocation = React.useCallback(
+  const onClickInvocation: React.ComponentProps<
+    typeof UsedSolidDetails
+  >['onClickInvocation'] = React.useCallback(
     ({pipelineName, handleID}) => {
       history.push(
         workspacePathFromAddress(
@@ -214,7 +225,7 @@ const OpsRootWithData: React.FC<Props & {name?: string; usedSolids: Solid[]}> = 
             </Box>
             <div style={{flex: 1}}>
               <AutoSizer nonce={window.__webpack_nonce__}>
-                {({height, width}) => (
+                {({height, width}: {width: number; height: number}) => (
                   <OpList
                     height={height}
                     width={width}
@@ -284,7 +295,7 @@ const OpList: React.FC<OpListProps> = (props) => {
         rowHeight={cache.current.rowHeight}
         scrollToIndex={selectedIndex}
         className="solids-list"
-        rowRenderer={({parent, index, key, style}) => {
+        rowRenderer={({parent, index, key, style}: any) => {
           const solid = props.items[index];
           return (
             <CellMeasurer cache={cache.current} index={index} parent={parent} key={key}>
