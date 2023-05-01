@@ -1,3 +1,4 @@
+import base64
 from unittest import mock
 
 import pytest
@@ -256,7 +257,7 @@ def test_snowflake_resource_missing_private_key_password(snowflake_connect):
             "database": "TESTDB",
             "schema": "TESTSCHEMA",
             "warehouse": "TINY_WAREHOUSE",
-            "private_key": "TESTKEY",
+            "private_key": base64.b64encode(str.encode("TEST_KEY")).decode(),
         }
     )
 
@@ -280,7 +281,7 @@ def test_pydantic_snowflake_resource_missing_private_key_password():
         database="TESTDB",
         schema="TESTSCHEMA",
         warehouse="TINY_WAREHOUSE",
-        private_key="TESTKEY",
+        private_key=base64.b64encode(str.encode("TEST_KEY")).decode(),
     )
 
     @job(resource_defs={"snowflake": resource})
