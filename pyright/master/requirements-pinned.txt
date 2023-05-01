@@ -433,7 +433,7 @@ soupsieve==2.4.1
 SQLAlchemy==1.4.48
 SQLAlchemy-JSONField==1.0.1.post0
 SQLAlchemy-Utils==0.41.1
-sqlparse==0.4.3
+sqlparse==0.4.4
 sshtunnel==0.4.0
 stack-data==0.6.2
 starlette==0.26.1
