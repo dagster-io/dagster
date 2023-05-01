@@ -14,6 +14,13 @@ import {
 } from '../../../graphql/types';
 import {BACKFILL_DETAILS_QUERY, BackfillPage, PartitionSelection} from '../BackfillPage';
 
+jest.mock('../../../app/QueryRefresh', () => {
+  return {
+    useQueryRefreshAtInterval: jest.fn(),
+    QueryRefreshCountdown: jest.fn(() => <div />),
+  };
+});
+
 const mockBackfillId = 'mockBackfillId';
 
 const mocks = [
