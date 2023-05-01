@@ -964,6 +964,12 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                     partitions_def,
                     upstream_asset_partitions_def,
                 )
+                # Does not pass in current time in order to fetch all upstream partitions,
+                # not just existent ones. This enables populating error messages for the
+                # unmaterialized upstream partitions.
+                #
+                # E.g. for a downstream hourly asset with an upstream daily asset, we want to
+                # return the upstream daily partitions even if they do not exist yet.
                 return partition_mapping.get_upstream_partitions_for_partitions(
                     partitions_subset,
                     upstream_asset_partitions_def,

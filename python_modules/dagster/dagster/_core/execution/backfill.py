@@ -15,6 +15,7 @@ from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.storage.tags import USER_TAG
 from dagster._core.workspace.workspace import IWorkspace
 from dagster._serdes import whitelist_for_serdes
+from dagster._utils import utc_datetime_from_timestamp
 from dagster._utils.error import SerializableErrorInfo
 
 from .asset_backfill import (
@@ -152,6 +153,7 @@ class PartitionBackfill(
                 asset_backfill_data = AssetBackfillData.from_serialized(
                     self.serialized_asset_backfill_data,
                     ExternalAssetGraph.from_workspace(workspace),
+                    self.backfill_timestamp,
                 )
             except DagsterDefinitionChangedDeserializationError:
                 return []
@@ -171,6 +173,7 @@ class PartitionBackfill(
                 asset_backfill_data = AssetBackfillData.from_serialized(
                     self.serialized_asset_backfill_data,
                     ExternalAssetGraph.from_workspace(workspace),
+                    self.backfill_timestamp,
                 )
             except DagsterDefinitionChangedDeserializationError:
                 return None
@@ -188,6 +191,7 @@ class PartitionBackfill(
                 asset_backfill_data = AssetBackfillData.from_serialized(
                     self.serialized_asset_backfill_data,
                     ExternalAssetGraph.from_workspace(workspace),
+                    self.backfill_timestamp,
                 )
             except DagsterDefinitionChangedDeserializationError:
                 return 0
@@ -208,6 +212,7 @@ class PartitionBackfill(
                 asset_backfill_data = AssetBackfillData.from_serialized(
                     self.serialized_asset_backfill_data,
                     ExternalAssetGraph.from_workspace(workspace),
+                    self.backfill_timestamp,
                 )
             except DagsterDefinitionChangedDeserializationError:
                 return None
@@ -344,5 +349,6 @@ class PartitionBackfill(
                 asset_selection=asset_selection,
                 dynamic_partitions_store=dynamic_partitions_store,
                 all_partitions=all_partitions,
+                evaluation_time=utc_datetime_from_timestamp(backfill_timestamp),
             ).serialize(dynamic_partitions_store=dynamic_partitions_store),
         )

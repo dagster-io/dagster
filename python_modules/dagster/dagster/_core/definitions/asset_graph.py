@@ -1,5 +1,6 @@
 import functools
 from collections import deque
+from datetime import datetime
 from heapq import heapify, heappop, heappush
 from typing import (
     TYPE_CHECKING,
@@ -17,7 +18,6 @@ from typing import (
     Union,
     cast,
 )
-from datetime import datetime
 
 import toposort
 
@@ -428,6 +428,7 @@ class AssetGraph:
         dynamic_partitions_store: DynamicPartitionsStore,
         condition_fn: Callable[[AssetKey, Optional[PartitionsSubset]], bool],
         initial_subset: "AssetGraphSubset",
+        current_time: datetime,
     ) -> "AssetGraphSubset":
         """Returns asset partitions within the graph that satisfy supplied criteria.
 
@@ -482,6 +483,7 @@ class AssetGraph:
                                     partitions_subset,
                                     downstream_partitions_def=child_partitions_def,
                                     dynamic_partitions_store=dynamic_partitions_store,
+                                    current_time=current_time,
                                 )
                             )
                             prior_child_partitions_subset = queued_subsets_by_asset_key.get(child)
@@ -506,7 +508,7 @@ class AssetGraph:
             [Iterable[AssetKeyPartitionKey], AbstractSet[AssetKeyPartitionKey]], bool
         ],
         initial_asset_partitions: Iterable[AssetKeyPartitionKey],
-        current_time: datetime,
+        evaluation_time: datetime,
     ) -> AbstractSet[AssetKeyPartitionKey]:
         """Returns asset partitions within the graph that satisfy supplied criteria.
 
@@ -535,7 +537,7 @@ class AssetGraph:
                 for candidate in candidates_unit:
                     for child in self.get_children_partitions(
                         dynamic_partitions_store,
-                        current_time,
+                        evaluation_time,
                         candidate.asset_key,
                         candidate.partition_key,
                     ):

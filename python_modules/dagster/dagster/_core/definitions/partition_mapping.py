@@ -3,6 +3,7 @@ import itertools
 import warnings
 from abc import ABC, abstractmethod
 from collections import defaultdict
+from datetime import datetime
 from typing import (
     Collection,
     Dict,
@@ -17,7 +18,6 @@ from typing import (
     Union,
     cast,
 )
-from datetime import datetime
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental, public
@@ -755,6 +755,7 @@ class MultiPartitionMapping(
         b_partitions_def: MultiPartitionsDefinition,
         a_upstream_of_b: bool,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+        current_time: Optional[datetime] = None,
     ) -> PartitionsSubset:
         """Given two partitions definitions a_partitions_def and b_partitions_def that have a dependency
         relationship (a_upstream_of_b is True if a_partitions_def is upstream of b_partitions_def),
@@ -811,7 +812,8 @@ class MultiPartitionMapping(
                                     [key]
                                 ),
                                 b_dimension_partitions_def,
-                                dynamic_partitions_store,
+                                current_time=current_time,
+                                dynamic_partitions_store=dynamic_partitions_store,
                             ).get_partition_keys()
                         )
 
@@ -842,7 +844,8 @@ class MultiPartitionMapping(
                                     [key]
                                 ),
                                 b_dimension_partitions_def,
-                                dynamic_partitions_store,
+                                current_time=current_time,
+                                dynamic_partitions_store=dynamic_partitions_store,
                             ).get_partition_keys()
                         )
 

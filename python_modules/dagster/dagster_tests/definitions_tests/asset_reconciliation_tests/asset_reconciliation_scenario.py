@@ -95,7 +95,7 @@ class AssetReconciliationScenario(NamedTuple):
 
         test_time = self.current_time or pendulum.now()
 
-        with pendulum.test(test_time) if self.current_time else contextlib.nullcontext():
+        with pendulum.test(test_time):
 
             @repository
             def repo():
@@ -128,6 +128,7 @@ class AssetReconciliationScenario(NamedTuple):
                     materialized_subset=empty_subset,
                     requested_subset=empty_subset,
                     failed_and_downstream_subset=empty_subset,
+                    evaluation_time=test_time,
                 )
                 backfill = PartitionBackfill(
                     backfill_id=f"backfill{i}",

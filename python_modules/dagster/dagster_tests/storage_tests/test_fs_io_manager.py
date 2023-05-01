@@ -2,8 +2,9 @@ import os
 import pickle
 import shutil
 import tempfile
-from typing import Optional, Tuple
 from datetime import datetime
+from typing import Optional, Tuple
+
 import pytest
 from dagster import (
     AssetKey,

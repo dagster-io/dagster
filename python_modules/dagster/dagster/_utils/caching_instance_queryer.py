@@ -1,4 +1,5 @@
 from collections import defaultdict
+from datetime import datetime
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -12,6 +13,7 @@ from typing import (
 )
 
 from datetime import datetime
+import dagster._check as check
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.data_version import (
     DataVersion,
@@ -41,9 +43,8 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         instance (DagsterInstance): The instance to query.
     """
 
-    def __init__(self, instance: DagsterInstance, current_time: datetime):
+    def __init__(self, instance: DagsterInstance, evaluation_time: Optional[datetime] = None):
         self._instance = instance
-        self._current_time = current_time
 
         self._asset_record_cache: Dict[AssetKey, Optional[AssetRecord]] = {}
         self._latest_materialization_record_cache: Dict[
@@ -55,6 +56,8 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         ] = defaultdict(dict)
 
         self._dynamic_partitions_cache: Dict[str, Sequence[str]] = {}
+
+        self._evaluation_time = evaluation_time
 
     @property
     def instance(self) -> DagsterInstance:
@@ -572,9 +575,12 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         if not self.materialization_exists(asset_partition):
             return False
 
+        if not self._evaluation_time:
+            check.failed("Evaluation time must be set to check if an asset partition is reconciled")
+
         for parent in asset_graph.get_parents_partitions(
             self,
-            self._current_time,
+            self._evaluation_time,
             asset_partition.asset_key,
             asset_partition.partition_key,
         ):
@@ -596,5 +602,8 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         return True
 
     @property
-    def current_time(self) -> datetime:
-        return self._current_time
+    def evaluation_time(self) -> datetime:
+        if self._evaluation_time is None:
+            check.failed("Evaluation time is not set")
+
+        return self._evaluation_time

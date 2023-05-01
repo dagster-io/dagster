@@ -100,6 +100,12 @@ class TimeWindowPartitionMapping(
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> PartitionsSubset:
+        """
+        Returns the partitions in the upstream asset that map to the given downstream partitions.
+
+        If current_time is provided, returns only the partitions that exist at that time. If not
+        provided, returns all partitions that are upstream, including those that do not yet exist.
+        """
         if not isinstance(downstream_partitions_subset, TimeWindowPartitionsSubset):
             check.failed("downstream_partitions_subset must be a TimeWindowPartitionsSubset")
 
@@ -127,6 +133,12 @@ class TimeWindowPartitionMapping(
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> PartitionsSubset:
+        """
+        Returns the partitions in the downstream asset that map to the given upstream partitions.
+
+        If current_time is provided, returns only the partitions that exist at that time. If not
+        provided, returns all partitions that are downstream, including those that do not yet exist.
+        """
         if not isinstance(downstream_partitions_def, TimeWindowPartitionsDefinition):
             check.failed("downstream_partitions_def must be a TimeWindowPartitionsDefinitions")
 
@@ -192,8 +204,7 @@ class TimeWindowPartitionMapping(
             )
             to_end_partition_key = (
                 to_partitions_def.get_partition_key_for_timestamp(
-                    offsetted_end_dt.timestamp(),
-                    end_closed=True,
+                    offsetted_end_dt.timestamp(), end_closed=True
                 )
                 if offsetted_end_dt is not None
                 else None
