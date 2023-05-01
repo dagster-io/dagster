@@ -1,9 +1,22 @@
 # start_topstories_asset_with_metadata
-from dagster import asset, get_dagster_logger, MetadataValue, Output, DagsterInstance, AssetKey
-from io import BytesIO
-import matplotlib.pyplot as plt
 import base64
+from io import BytesIO
+
+import matplotlib.pyplot as plt
+import pandas as pd
+import requests
+
+from dagster import (
+    AssetKey,
+    DagsterInstance,
+    MetadataValue,
+    Output,
+    asset,
+    get_dagster_logger,
+)
+
 # Add the imports above to the top of `assets.py`
+
 
 @asset
 def topstories(topstory_ids):
@@ -22,15 +35,16 @@ def topstories(topstory_ids):
     df = pd.DataFrame(results)
 
     return Output(  # The return value is updated to wrap it in `Output` class
-        value=df,   # The original df is passed in with the `value` parameter
+        value=df,  # The original df is passed in with the `value` parameter
         metadata={
-            "num_records": len(df), # Metadata can be any key-value pair
+            "num_records": len(df),  # Metadata can be any key-value pair
             "preview": MetadataValue.md(df.head().to_markdown()),
             # The `MetadataValue` class has useful static methods to build Metadata
-        }
+        },
     )
-# end_topstories_asset_with_metadata
 
+
+# end_topstories_asset_with_metadata
 
 
 # start_most_frequent_words_asset_with_metadata
@@ -40,8 +54,8 @@ def most_frequent_words(topstories):
 
     # loop through the titles and count the frequency of each word
     word_counts = {}
-    for title in topstories["title"]:
-        title = title.lower()
+    for raw_title in topstories["title"]:
+        title = raw_title.lower()
         for word in title.split():
             cleaned_word = word.strip(".,-!?:;()[]'\"-")
             if cleaned_word not in stopwords and len(cleaned_word) > 0:
@@ -60,7 +74,7 @@ def most_frequent_words(topstories):
     plt.xticks(rotation=45, ha="right")
     plt.title("Top 25 Words in Hacker News Titles")
     plt.tight_layout()
-    
+
     # Convert the image to a saveable format
     buffer = BytesIO()
     plt.savefig(buffer, format="png")
@@ -72,8 +86,8 @@ def most_frequent_words(topstories):
     # Attach the Markdown content as metadata to the asset
     return Output(
         value=top_words,
-        metadata={
-            "plot": MetadataValue.md(md_content)
-        },
+        metadata={"plot": MetadataValue.md(md_content)},
     )
+
+
 # end_most_frequent_words_asset_with_metadata
