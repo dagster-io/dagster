@@ -6,6 +6,8 @@ from dagster import (
     RepositoryDefinition,
     TimeWindowPartitionMapping,
     asset,
+    job,
+    op,
     repository,
 )
 from dagster._core.definitions.data_version import DATA_VERSION_TAG, DataVersion
@@ -13,6 +15,7 @@ from dagster._core.definitions.decorators.source_asset_decorator import observab
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.partition import StaticPartitionsDefinition
+from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.test_utils import instance_for_test, wait_for_runs_to_finish
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
@@ -167,7 +170,21 @@ def get_observable_source_asset_repo():
     def baz():
         return 1
 
-    defs = Definitions(assets=[foo, bar, baz])
+    @op
+    def bop():
+        pass
+
+    @job
+    def bop_job():
+        bop()
+
+    foo_job = define_asset_job("foo_job", [foo])
+    bar_job = define_asset_job("bar_job", [bar])
+
+    defs = Definitions(
+        assets=[foo, bar, baz],
+        jobs=[foo_job, bar_job, bop_job],
+    )
     return defs.get_repository_def()
 
 
@@ -196,6 +213,17 @@ def test_source_asset_job_name():
             assert foo_jobs and foo_jobs != bar_jobs and foo_jobs != baz_jobs
             assert bar_jobs and bar_jobs != foo_jobs and bar_jobs != baz_jobs
             assert baz_jobs and baz_jobs != foo_jobs and baz_jobs != bar_jobs
+
+            # Make sure none of our assets included in non-asset job
+            assert "bop_job" not in foo_jobs
+            assert "bop_job" not in bar_jobs
+            assert "bop_job" not in baz_jobs
+
+            # Make sure observable source asset does not appear in non-explicit observation job
+            assert "foo_job" not in bar_jobs
+
+            # Make sure observable source asset appears in explicit observation job
+            assert "bar_job" in bar_jobs
 
 
 def _materialize_assets(
