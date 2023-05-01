@@ -104,7 +104,6 @@ def test_datahub_kafka_emitter_resource_failure():
                             "bootstrap": "foobar:9092",
                             "schema_registry_url": "http://foobar:8081",
                         },
-                        "topic": "NewTopic",
                         "topic_routes": {MCE_KEY: "NewTopic"},
                     }
                 )
