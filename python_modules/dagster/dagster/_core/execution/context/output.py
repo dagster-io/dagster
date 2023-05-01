@@ -19,6 +19,7 @@ from dagster._core.definitions.events import (
     AssetKey,
     AssetMaterialization,
     AssetObservation,
+    CoercibleToAssetKey,
 )
 from dagster._core.definitions.metadata import (
     ArbitraryMetadataMapping,
@@ -804,7 +805,7 @@ def build_output_context(
     resource_config: Optional[Mapping[str, object]] = None,
     resources: Optional[Mapping[str, object]] = None,
     op_def: Optional["OpDefinition"] = None,
-    asset_key: Optional[Union[AssetKey, str]] = None,
+    asset_key: Optional[CoercibleToAssetKey] = None,
     partition_key: Optional[str] = None,
 ) -> "OutputContext":
     """Builds output context from provided parameters.
