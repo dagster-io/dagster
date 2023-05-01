@@ -346,7 +346,7 @@ class ExternalJob(RepresentedJob):
         return self._job_index.job_snapshot.description
 
     @property
-    def solid_names_in_topological_order(self):
+    def node_names_in_topological_order(self):
         return self._job_index.job_snapshot.node_names_in_topological_order
 
     @property
@@ -392,12 +392,12 @@ class ExternalJob(RepresentedJob):
         return list(self._active_preset_dict.values())
 
     @property
-    def solid_names(self) -> Sequence[str]:
+    def node_names(self) -> Sequence[str]:
         return self._job_index.job_snapshot.node_names
 
-    def has_solid_invocation(self, solid_name: str):
-        check.str_param(solid_name, "solid_name")
-        return self._job_index.has_solid_invocation(solid_name)
+    def has_node_invocation(self, node_name: str):
+        check.str_param(node_name, "node_name")
+        return self._job_index.has_node_invocation(node_name)
 
     def has_preset(self, preset_name: str) -> bool:
         check.str_param(preset_name, "preset_name")

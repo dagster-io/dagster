@@ -102,14 +102,14 @@ class RepresentedJob(ABC):
     def dep_structure_index(self) -> DependencyStructureIndex:
         return self._job_index.dep_structure_index
 
-    # Solids
-    def get_node_def_snap(self, solid_def_name: str) -> Union[OpDefSnap, GraphDefSnap]:
-        check.str_param(solid_def_name, "solid_def_name")
-        return self._job_index.get_node_def_snap(solid_def_name)
+    # Nodes
+    def get_node_def_snap(self, node_def_name: str) -> Union[OpDefSnap, GraphDefSnap]:
+        check.str_param(node_def_name, "node_def_name")
+        return self._job_index.get_node_def_snap(node_def_name)
 
-    def get_dep_structure_index(self, solid_def_name: str) -> DependencyStructureIndex:
-        check.str_param(solid_def_name, "solid_def_name")
-        return self._job_index.get_dep_structure_index(solid_def_name)
+    def get_dep_structure_index(self, node_def_name: str) -> DependencyStructureIndex:
+        check.str_param(node_def_name, "node_def_name")
+        return self._job_index.get_dep_structure_index(node_def_name)
 
     # Graph
 

@@ -124,7 +124,7 @@ class OpDefinition(NodeDefinition):
         retry_policy: Optional[RetryPolicy] = None,
         code_version: Optional[str] = None,
     ):
-        from .decorators.op_decorator import DecoratedOpFunction, resolve_checked_solid_fn_inputs
+        from .decorators.op_decorator import DecoratedOpFunction, resolve_checked_op_fn_inputs
 
         ins = check.opt_mapping_param(ins, "ins")
         input_defs = [
@@ -132,7 +132,7 @@ class OpDefinition(NodeDefinition):
         ]  # sort so that input definition order is deterministic
 
         if isinstance(compute_fn, DecoratedOpFunction):
-            resolved_input_defs: Sequence[InputDefinition] = resolve_checked_solid_fn_inputs(
+            resolved_input_defs: Sequence[InputDefinition] = resolve_checked_op_fn_inputs(
                 decorator_name="@op",
                 fn_name=name,
                 compute_fn=cast(DecoratedOpFunction, compute_fn),
@@ -332,7 +332,8 @@ class OpDefinition(NodeDefinition):
         self,
         outer_context: Optional[object] = None,
     ) -> Iterator[ResourceRequirement]:
-        # Outer requiree in this context is the outer-calling node handle. If not provided, then just use the solid name.
+        # Outer requiree in this context is the outer-calling node handle. If not provided, then
+        # just use the op name.
         outer_context = cast(Optional[Tuple[NodeHandle, Optional["AssetLayer"]]], outer_context)
         if not outer_context:
             handle = None
@@ -390,24 +391,22 @@ class OpDefinition(NodeDefinition):
         if is_in_composition():
             return super(OpDefinition, self).__call__(*args, **kwargs)
         else:
-            node_label = self.node_type_str  # string "solid" for solids, "op" for ops
-
             if not isinstance(self.compute_fn, DecoratedOpFunction):
                 raise DagsterInvalidInvocationError(
-                    f"Attemped to invoke {node_label} that was not constructed using the"
-                    f" `@{node_label}` decorator. Only {node_label}s constructed using the"
-                    f" `@{node_label}` decorator can be directly invoked."
+                    "Attemped to invoke op that was not constructed using the"
+                    " `@op` decorator. Only ops constructed using the"
+                    " `@op` decorator can be directly invoked."
                 )
             if self.compute_fn.has_context_arg():
                 if len(args) + len(kwargs) == 0:
                     raise DagsterInvalidInvocationError(
-                        f"Compute function of {node_label} '{self.name}' has context argument, but"
+                        f"Compute function of op '{self.name}' has context argument, but"
                         " no context was provided when invoking."
                     )
                 if len(args) > 0:
                     if args[0] is not None and not isinstance(args[0], UnboundOpExecutionContext):
                         raise DagsterInvalidInvocationError(
-                            f"Compute function of {node_label} '{self.name}' has context argument, "
+                            f"Compute function of op '{self.name}' has context argument, "
                             "but no context was provided when invoking."
                         )
                     context = args[0]
@@ -417,7 +416,7 @@ class OpDefinition(NodeDefinition):
                     context_param_name = get_function_params(self.compute_fn.decorated_fn)[0].name
                     if context_param_name not in kwargs:
                         raise DagsterInvalidInvocationError(
-                            f"Compute function of {node_label} '{self.name}' has context argument "
+                            f"Compute function of op '{self.name}' has context argument "
                             f"'{context_param_name}', but no value for '{context_param_name}' was "
                             f"found when invoking. Provided kwargs: {kwargs}"
                         )

@@ -86,7 +86,7 @@ class HookContext:
     @property
     def op(self) -> Node:
         """The op instance associated with the hook."""
-        return self._step_execution_context.solid
+        return self._step_execution_context.op
 
     @property
     def step(self) -> ExecutionStep:

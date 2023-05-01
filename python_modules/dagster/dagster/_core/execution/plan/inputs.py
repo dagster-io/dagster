@@ -291,8 +291,8 @@ class FromRootInputManager(
 
         input_def = step_context.op_def.input_def_named(input_def.name)
 
-        solid_config = step_context.resolved_run_config.ops.get(str(self.node_handle))
-        config_data = solid_config.inputs.get(self.input_name) if solid_config else None
+        op_config = step_context.resolved_run_config.ops.get(str(self.node_handle))
+        config_data = op_config.inputs.get(self.input_name) if op_config else None
 
         input_manager_key = check.not_none(
             input_def.root_manager_key
@@ -330,16 +330,16 @@ class FromRootInputManager(
     ) -> Optional[str]:
         from ..resolve_versions import check_valid_version, resolve_config_version
 
-        solid = job_def.get_node(self.node_handle)
+        node = job_def.get_node(self.node_handle)
         input_manager_key: str = check.not_none(
-            solid.input_def_named(self.input_name).root_manager_key
-            if solid.input_def_named(self.input_name).root_manager_key
-            else solid.input_def_named(self.input_name).input_manager_key
+            node.input_def_named(self.input_name).root_manager_key
+            if node.input_def_named(self.input_name).root_manager_key
+            else node.input_def_named(self.input_name).input_manager_key
         )
         input_manager_def = job_def.resource_defs[input_manager_key]
 
-        solid_config = resolved_run_config.ops[solid.name]
-        input_config = solid_config.inputs.get(self.input_name)
+        op_config = resolved_run_config.ops[node.name]
+        input_config = op_config.inputs.get(self.input_name)
         resource_config = check.not_none(
             resolved_run_config.resources.get(input_manager_key)
         ).config

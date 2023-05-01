@@ -50,21 +50,21 @@ OpOutputUnion: TypeAlias = Union[
 
 
 def create_step_outputs(
-    solid: Node, handle: NodeHandle, resolved_run_config: ResolvedRunConfig, asset_layer: AssetLayer
+    node: Node, handle: NodeHandle, resolved_run_config: ResolvedRunConfig, asset_layer: AssetLayer
 ) -> Sequence[StepOutput]:
-    check.inst_param(solid, "solid", Node)
+    check.inst_param(node, "node", Node)
     check.inst_param(handle, "handle", NodeHandle)
 
-    # the run config has the solid output name configured
+    # the run config has the node output name configured
     config_output_names: Set[str] = set()
     current_handle = handle
     while current_handle:
-        solid_config = resolved_run_config.ops[current_handle.to_string()]
+        op_config = resolved_run_config.ops[current_handle.to_string()]
         current_handle = current_handle.parent
-        config_output_names = config_output_names.union(solid_config.outputs.output_names)
+        config_output_names = config_output_names.union(op_config.outputs.output_names)
 
     step_outputs: List[StepOutput] = []
-    for name, output_def in solid.definition.output_dict.items():
+    for name, output_def in node.definition.output_dict.items():
         asset_info = asset_layer.asset_info_for_output(handle, name)
         step_outputs.append(
             StepOutput(
@@ -165,7 +165,7 @@ def _yield_compute_results(
             step_context=step_context,
             step_key=step_context.step.key,
             op_def_name=step_context.op_def.name,
-            op_name=step_context.solid.name,
+            op_name=step_context.op.name,
         ),
         user_event_generator,
     ):
@@ -194,8 +194,8 @@ def execute_core_compute(
         if isinstance(step_output, (DynamicOutput, Output)):
             emitted_result_names.add(step_output.output_name)
 
-    solid_output_names = {output.name for output in step.step_outputs}
-    omitted_outputs = solid_output_names.difference(emitted_result_names)
+    op_output_names = {output.name for output in step.step_outputs}
+    omitted_outputs = op_output_names.difference(emitted_result_names)
     if omitted_outputs:
         step_context.log.info(
             f"{step_context.op_def.node_type_str} '{str(step.node_handle)}' did not fire "

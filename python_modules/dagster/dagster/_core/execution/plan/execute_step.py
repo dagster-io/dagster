@@ -346,9 +346,9 @@ def core_dagster_event_sequence_for_step(
             yield evt
 
     # The core execution loop expects a compute generator in a specific format: a generator that
-    # takes a context and dictionary of inputs as input, yields output events. If a solid definition
-    # was generated from the @solid or @lambda_solid decorator, then compute_fn needs to be coerced
-    # into this format. If the solid definition was created directly, then it is expected that the
+    # takes a context and dictionary of inputs as input, yields output events. If an op definition
+    # was generated from the @op decorator, then compute_fn needs to be coerced
+    # into this format. If the op definition was created directly, then it is expected that the
     # compute_fn is already in this format.
     if isinstance(step_context.op_def.compute_fn, DecoratedOpFunction):
         core_gen = create_op_compute_wrapper(step_context.op_def)
@@ -406,7 +406,7 @@ def _type_check_and_store_output(
         step_key=step_context.step.key, output_name=output.output_name, mapping_key=mapping_key
     )
 
-    # If we are executing using the execute_in_process API, then we allow for the outputs of solids
+    # If we are executing using the execute_in_process API, then we allow for the outputs of ops
     # to be directly captured to a dictionary after they are computed.
     if step_context.output_capture is not None:
         step_context.output_capture[step_output_handle] = output.value

@@ -21,14 +21,6 @@ class OpVersionContext(NamedTuple):
     op_def: "OpDefinition"
     op_config: Any
 
-    @property
-    def solid_def(self) -> "OpDefinition":
-        return self.op_def
-
-    @property
-    def solid_config(self) -> Any:
-        return self.op_config
-
 
 class ResourceVersionContext(NamedTuple):
     """Provides execution-time information for computing the version for a resource.

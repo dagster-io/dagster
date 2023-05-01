@@ -375,7 +375,7 @@ class DagsterEvent(
         ],
     )
 ):
-    """Events yielded by solid and pipeline execution.
+    """Events yielded by op and job execution.
 
     Users should not instantiate this class.
 
@@ -501,7 +501,7 @@ class DagsterEvent(
         )
 
     @property
-    def solid_name(self) -> str:
+    def node_name(self) -> str:
         check.invariant(self.node_handle is not None)
         node_handle = cast(NodeHandle, self.node_handle)
         return node_handle.name
@@ -760,7 +760,7 @@ class DagsterEvent(
     def step_output_event(
         step_context: StepExecutionContext, step_output_data: StepOutputData
     ) -> "DagsterEvent":
-        output_def = step_context.solid.output_def_named(
+        output_def = step_context.op.output_def_named(
             step_output_data.step_output_handle.output_name
         )
 
@@ -1273,8 +1273,9 @@ class DagsterEvent(
             step_kind_value=step_context.step.kind.value,
             logging_tags=step_context.event_tags,
             message=(
-                'Finished the execution of hook "{hook_name}" triggered for "{solid_name}".'
-            ).format(hook_name=hook_def.name, solid_name=step_context.solid.name),
+                f'Finished the execution of hook "{hook_def.name}" triggered for'
+                f' "{step_context.op.name}".'
+            ),
         )
 
         step_context.log.log_dagster_event(
@@ -1324,7 +1325,7 @@ class DagsterEvent(
             message=(
                 'Skipped the execution of hook "{hook_name}". It did not meet its triggering '
                 'condition during the execution of "{solid_name}".'
-            ).format(hook_name=hook_def.name, solid_name=step_context.solid.name),
+            ).format(hook_name=hook_def.name, solid_name=step_context.op.name),
         )
 
         step_context.log.log_dagster_event(

@@ -110,8 +110,8 @@ def execute_list_command(cli_args, print_fn):
                     print_fn("Description:")
                     print_fn(format_description(job.description, indent=" " * 4))
                 print_fn("Ops: (Execution Order)")
-                for solid_name in job.job_snapshot.node_names_in_topological_order:
-                    print_fn("    " + solid_name)
+                for node_name in job.job_snapshot.node_names_in_topological_order:
+                    print_fn("    " + node_name)
 
 
 def get_job_in_same_python_env_instructions(command_name):
@@ -178,9 +178,9 @@ def print_ops(
     printer.line(f"Job: {job_snapshot.name}")
 
     printer.line("Ops")
-    for solid in job_snapshot.dep_structure_snapshot.node_invocation_snaps:
+    for node in job_snapshot.dep_structure_snapshot.node_invocation_snaps:
         with printer.with_indent():
-            printer.line(f"Op: {solid.node_name}")
+            printer.line(f"Op: {node.node_name}")
 
 
 def print_job(
@@ -194,9 +194,9 @@ def print_job(
     print_description(printer, job_snapshot.description)
 
     printer.line("Ops")
-    for solid in job_snapshot.dep_structure_snapshot.node_invocation_snaps:
+    for node in job_snapshot.dep_structure_snapshot.node_invocation_snaps:
         with printer.with_indent():
-            print_op(printer, job_snapshot, solid)
+            print_op(printer, job_snapshot, node)
 
 
 def print_description(printer, desc):
@@ -220,20 +220,20 @@ def format_description(desc: str, indent: str):
 def print_op(
     printer: IndentingPrinter,
     job_snapshot: JobSnapshot,
-    solid_invocation_snap: NodeInvocationSnap,
+    node_invocation_snap: NodeInvocationSnap,
 ) -> None:
     check.inst_param(job_snapshot, "job_snapshot", JobSnapshot)
-    check.inst_param(solid_invocation_snap, "solid_invocation_snap", NodeInvocationSnap)
-    printer.line(f"Op: {solid_invocation_snap.node_name}")
+    check.inst_param(node_invocation_snap, "node_invocation_snap", NodeInvocationSnap)
+    printer.line(f"Op: {node_invocation_snap.node_name}")
     with printer.with_indent():
         printer.line("Inputs:")
-        for input_dep_snap in solid_invocation_snap.input_dep_snaps:
+        for input_dep_snap in node_invocation_snap.input_dep_snaps:
             with printer.with_indent():
                 printer.line(f"Input: {input_dep_snap.input_name}")
 
         printer.line("Outputs:")
         for output_def_snap in job_snapshot.get_node_def_snap(
-            solid_invocation_snap.node_def_name
+            node_invocation_snap.node_def_name
         ).output_def_snaps:
             printer.line(output_def_snap.name)
 
@@ -327,8 +327,8 @@ def execute_execute_command(instance: DagsterInstance, kwargs: ClickArgMapping) 
 
     job_origin = get_job_python_origin_from_kwargs(kwargs)
     recon_job = recon_job_from_origin(job_origin)
-    solid_selection = get_solid_selection_from_args(kwargs)
-    result = do_execute_command(recon_job, instance, config, tags, solid_selection)
+    op_selection = get_op_selection_from_args(kwargs)
+    result = do_execute_command(recon_job, instance, config, tags, op_selection)
 
     if not result.success:
         raise click.ClickException(f"Run {result.run_id} resulted in failure.")
@@ -381,12 +381,12 @@ def get_config_from_args(kwargs: Mapping[str, str]) -> Mapping[str, object]:
         check.failed("Unhandled case getting config from kwargs")
 
 
-def get_solid_selection_from_args(kwargs: ClickArgMapping) -> Optional[Sequence[str]]:
-    solid_selection_str = kwargs.get("solid_selection")
-    if not isinstance(solid_selection_str, str):
+def get_op_selection_from_args(kwargs: ClickArgMapping) -> Optional[Sequence[str]]:
+    op_selection_str = kwargs.get("solid_selection")
+    if not isinstance(op_selection_str, str):
         return None
 
-    return [ele.strip() for ele in solid_selection_str.split(",")] if solid_selection_str else None
+    return [ele.strip() for ele in op_selection_str.split(",")] if op_selection_str else None
 
 
 def do_execute_command(
@@ -463,7 +463,7 @@ def execute_launch_command(
 
         run_tags = get_tags_from_args(kwargs)
 
-        solid_selection = get_solid_selection_from_args(kwargs)
+        solid_selection = get_op_selection_from_args(kwargs)
 
         dagster_run = _create_external_run(
             instance=instance,
