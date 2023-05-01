@@ -586,6 +586,10 @@ class NodeOutput(NamedTuple("_NodeOutput", [("node", Node), ("output_def", Outpu
     def is_dynamic(self) -> bool:
         return self.output_def.is_dynamic
 
+    @property
+    def output_name(self) -> str:
+        return self.output_def.name
+
 
 class DependencyType(Enum):
     DIRECT = "DIRECT"

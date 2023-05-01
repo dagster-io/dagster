@@ -7,7 +7,7 @@ from dagster._core.selector.subset_selector import (
     clause_to_subset,
     generate_dep_graph,
     parse_clause,
-    parse_solid_selection,
+    parse_op_queries,
     parse_step_selection,
 )
 
@@ -100,15 +100,15 @@ def test_parse_clause_invalid():
 
 
 def test_parse_op_selection_single():
-    solid_selection_single = parse_solid_selection(foo_job, ["add_nums"])
+    solid_selection_single = parse_op_queries(foo_job, ["add_nums"])
     assert len(solid_selection_single) == 1
     assert solid_selection_single == {"add_nums"}
 
-    solid_selection_star = parse_solid_selection(foo_job, ["add_nums*"])
+    solid_selection_star = parse_op_queries(foo_job, ["add_nums*"])
     assert len(solid_selection_star) == 3
     assert set(solid_selection_star) == {"add_nums", "multiply_two", "add_one"}
 
-    solid_selection_both = parse_solid_selection(foo_job, ["*add_nums+"])
+    solid_selection_both = parse_op_queries(foo_job, ["*add_nums+"])
     assert len(solid_selection_both) == 4
     assert set(solid_selection_both) == {
         "return_one",
@@ -119,7 +119,7 @@ def test_parse_op_selection_single():
 
 
 def test_parse_op_selection_multi():
-    solid_selection_multi_disjoint = parse_solid_selection(foo_job, ["return_one", "add_nums+"])
+    solid_selection_multi_disjoint = parse_op_queries(foo_job, ["return_one", "add_nums+"])
     assert len(solid_selection_multi_disjoint) == 3
     assert set(solid_selection_multi_disjoint) == {
         "return_one",
@@ -127,7 +127,7 @@ def test_parse_op_selection_multi():
         "multiply_two",
     }
 
-    solid_selection_multi_overlap = parse_solid_selection(foo_job, ["*add_nums", "return_one+"])
+    solid_selection_multi_overlap = parse_op_queries(foo_job, ["*add_nums", "return_one+"])
     assert len(solid_selection_multi_overlap) == 3
     assert set(solid_selection_multi_overlap) == {
         "return_one",
@@ -139,7 +139,7 @@ def test_parse_op_selection_multi():
         DagsterInvalidSubsetError,
         match="No qualified ops to execute found for op_selection",
     ):
-        parse_solid_selection(foo_job, ["*add_nums", "a"])
+        parse_op_queries(foo_job, ["*add_nums", "a"])
 
 
 def test_parse_op_selection_invalid():
@@ -147,7 +147,7 @@ def test_parse_op_selection_invalid():
         DagsterInvalidSubsetError,
         match="No qualified ops to execute found for op_selection",
     ):
-        parse_solid_selection(foo_job, ["some,solid"])
+        parse_op_queries(foo_job, ["some,solid"])
 
 
 step_deps = {
