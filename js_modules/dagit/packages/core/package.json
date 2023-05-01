@@ -157,7 +157,7 @@
     "webpack": "^5.0.0"
   },
   "resolutions": {
-    "@types/react": "^18.0.21"
+    "@types/react": "^18.2.0"
   },
   "babelMacros": {},
   "browserslist": [
