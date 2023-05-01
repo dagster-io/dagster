@@ -210,9 +210,11 @@ class S3ComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
 
         s3_key = self._s3_key(log_key, io_type, partial=partial)
         with open(path, "rb") as data:
-            self._s3_session.upload_fileobj(
-                data, self._s3_bucket, s3_key, ExtraArgs=self._upload_extra_args
-            )
+            extra_args = {
+                "ContentType": "text/plain",
+                **(self._upload_extra_args if self._upload_extra_args else {}),
+            }
+            self._s3_session.upload_fileobj(data, self._s3_bucket, s3_key, ExtraArgs=extra_args)
 
     def download_from_cloud_storage(
         self, log_key: Sequence[str], io_type: ComputeIOType, partial=False
