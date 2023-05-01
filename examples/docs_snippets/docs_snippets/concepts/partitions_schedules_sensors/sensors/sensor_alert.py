@@ -174,7 +174,7 @@ my_email_sensor(run_status_sensor_context)
 
 # end_run_status_sensor_testing_marker
 
-from dagster._core.definitions.sensor_definition import SensorDefinition
+from dagster import SensorDefinition
 from typing import List
 
 my_jobs: List[SensorDefinition] = []
