@@ -128,7 +128,7 @@ There are three changes in this snippet:
 
 ### Choosing an I/O manager for each asset
 
-You now have two I/O managers configured within a code location. By default, all assets will use the I/O manager under the `io_manager` key. Because you updated the `io_manager` key, the `fs_io_manager` could plug and play without any additional changes. Overriding and priority are given to the I/O manager key that is most specific to the asset.
+You now have two I/O managers configured within a code location. By default, all assets will use the I/O manager under the `io_manager` key. Because you updated the `io_manager` key, the `FilesytemIOManager` could plug and play without any additional changes. Overriding and priority are given to the I/O manager key that is most specific to the asset.
 
 To have the `topstories` asset store its data in DuckDB, modify its asset function in `assets.py` by specifying the asset’s `io_manager_key` to be `"database_io_manager"`, as shown below:
 
