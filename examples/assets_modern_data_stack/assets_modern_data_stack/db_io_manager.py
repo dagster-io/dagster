@@ -1,16 +1,15 @@
 import pandas as pd
-from dagster import IOManager, io_manager
+from dagster import ConfigurableIOManager
 
 
-class DbIOManager(IOManager):
+class DbIOManager(ConfigurableIOManager):
     """Sample IOManager to handle loading the contents of tables as pandas DataFrames.
 
     Does not handle cases where data is written to different schemas for different outputs, and
     uses the name of the asset key as the table name.
     """
 
-    def __init__(self, con_string: str):
-        self._con = con_string
+    con_string: str
 
     def handle_output(self, context, obj):
         if isinstance(obj, pd.DataFrame):
@@ -25,9 +24,4 @@ class DbIOManager(IOManager):
     def load_input(self, context) -> pd.DataFrame:
         """Load the contents of a table as a pandas DataFrame."""
         model_name = context.asset_key.path[-1]
-        return pd.read_sql(f"SELECT * FROM {model_name}", con=self._con)
-
-
-@io_manager(config_schema={"con_string": str})
-def db_io_manager(context):
-    return DbIOManager(context.resource_config["con_string"])
+        return pd.read_sql(f"SELECT * FROM {model_name}", con=self.con_string)
