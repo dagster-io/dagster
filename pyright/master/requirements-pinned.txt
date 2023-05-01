@@ -498,7 +498,7 @@ wcwidth==0.2.6
 webencodings==0.5.1
 websocket-client==1.5.1
 websockets==10.4
-Werkzeug==1.0.1
+Werkzeug==2.2.3
 widgetsnbextension==4.0.6
 -e examples/with_airflow
 -e examples/with_great_expectations
