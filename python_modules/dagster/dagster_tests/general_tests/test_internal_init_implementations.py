@@ -5,8 +5,17 @@ import dagster as dagster
 import pytest
 from dagster._utils import IHasInternalInit
 
+INTERNAL_INIT_SUBCLASSES = [
+    symbol
+    for symbol in dagster.__dict__.values()
+    if isinstance(symbol, type)
+    and issubclass(symbol, IHasInternalInit)
+    and IHasInternalInit
+    in symbol.__bases__  # ensure that the class is a direct subclass of IHasInternalInit (not a subclass of a subclass)
+]
 
-@pytest.mark.parametrize("cls", IHasInternalInit.__subclasses__())
+
+@pytest.mark.parametrize("cls", INTERNAL_INIT_SUBCLASSES)
 def test_dagster_internal_init_class_follow_rules(cls: Type):
     assert hasattr(
         cls, "dagster_internal_init"
