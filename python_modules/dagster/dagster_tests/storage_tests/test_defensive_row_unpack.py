@@ -9,7 +9,7 @@ from dagster._core.storage.runs.sql_run_storage import (
 from dagster._serdes import serialize_value
 
 
-def test_defensive_pipeline_not_a_string():
+def test_defensive_job_not_a_string():
     mock_logger = mock.MagicMock()
 
     assert defensively_unpack_execution_plan_snapshot_query(mock_logger, [234]) is None
@@ -20,7 +20,7 @@ def test_defensive_pipeline_not_a_string():
     )
 
 
-def test_defensive_pipeline_not_bytes():
+def test_defensive_job_not_bytes():
     mock_logger = mock.MagicMock()
 
     assert defensively_unpack_execution_plan_snapshot_query(mock_logger, ["notbytes"]) is None
@@ -38,7 +38,7 @@ def test_defensive_pipeline_not_bytes():
         )
 
 
-def test_defensive_pipelines_cannot_decompress():
+def test_defensive_jobs_cannot_decompress():
     mock_logger = mock.MagicMock()
 
     assert defensively_unpack_execution_plan_snapshot_query(mock_logger, [b"notbytes"]) is None
@@ -48,7 +48,7 @@ def test_defensive_pipelines_cannot_decompress():
     )
 
 
-def test_defensive_pipelines_cannot_decode_post_decompress():
+def test_defensive_jobs_cannot_decode_post_decompress():
     mock_logger = mock.MagicMock()
 
     # guarantee that we cannot decode by double compressing bytes.
@@ -65,7 +65,7 @@ def test_defensive_pipelines_cannot_decode_post_decompress():
     )
 
 
-def test_defensive_pipelines_cannot_parse_json():
+def test_defensive_jobs_cannot_parse_json():
     mock_logger = mock.MagicMock()
 
     assert (

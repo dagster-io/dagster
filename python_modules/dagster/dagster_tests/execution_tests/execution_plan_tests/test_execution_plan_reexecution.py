@@ -190,7 +190,7 @@ def test_execution_plan_reexecution_with_in_memory():
             )
 
 
-def test_pipeline_step_key_subset_execution():
+def test_job_step_key_subset_execution():
     job_fn = define_addy_job_fs_io
     run_config = {"ops": {"add_one": {"inputs": {"num": {"value": 3}}}}}
 

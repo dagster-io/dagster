@@ -81,7 +81,7 @@ def get_dag():
 
 
 @requires_no_db
-def test_pipeline_tags():
+def test_job_tags():
     dag = get_dag()
 
     with instance_for_test() as instance:
@@ -102,7 +102,7 @@ def test_pipeline_tags():
 
 
 @requires_no_db
-def test_pipeline_auto_tag():
+def test_job_auto_tag():
     dag = get_dag()
 
     with instance_for_test() as instance:
