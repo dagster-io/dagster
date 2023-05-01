@@ -50,6 +50,10 @@ class S3ComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
             endpoint_url: "http://alternate-s3-host.io"
             skip_empty_files: true
             upload_interval: 30
+            upload_extra_args:
+              ServerSideEncryption: "AES256"
+            show_url_only: false
+            region: "us-west-1"
 
     Args:
         bucket (str): The name of the s3 bucket to which to log.
@@ -63,6 +67,9 @@ class S3ComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
         endpoint_url (Optional[str]): Override for the S3 endpoint url.
         skip_empty_files: (Optional[bool]): Skip upload of empty log files.
         upload_interval: (Optional[int]): Interval in seconds to upload partial log files to S3. By default, will only upload when the capture is complete.
+        upload_extra_args: (Optional[dict]): Extra args for S3 file upload
+        show_url_only: (Optional[bool]): Only show the URL of the log file in Dagit, instead of fetching and displaying the full content. Default False.
+        region: (Optional[str]): The region of the S3 bucket. If not specified, will use the default region of the AWS session.
         inst_data (Optional[ConfigurableClassData]): Serializable representation of the compute
             log manager when newed up from config.
     """
@@ -80,6 +87,8 @@ class S3ComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
         skip_empty_files=False,
         upload_interval=None,
         upload_extra_args=None,
+        show_url_only=False,
+        region=None,
     ):
         _verify = False if not verify else verify_cert_path
         self._s3_session = boto3.resource(
@@ -99,6 +108,12 @@ class S3ComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
         self._upload_interval = check.opt_int_param(upload_interval, "upload_interval")
         check.opt_dict_param(upload_extra_args, "upload_extra_args")
         self._upload_extra_args = upload_extra_args
+        self._show_url_only = show_url_only
+        if region is None:
+            # if unspecified, use the current session name
+            self._region = self._s3_session.meta.region_name
+        else:
+            self._region = region
 
     @property
     def inst_data(self):
@@ -119,6 +134,8 @@ class S3ComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
             "upload_extra_args": Field(
                 Permissive(), is_required=False, description="Extra args for S3 file upload"
             ),
+            "show_url_only": Field(bool, is_required=False, default_value=False),
+            "region": Field(StringSource, is_required=False),
         }
 
     @classmethod
@@ -148,6 +165,21 @@ class S3ComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
             filename = f"{filename}.partial"
         paths = [self._s3_prefix, "storage", *namespace, filename]
         return "/".join(paths)  # s3 path delimiter
+
+    @contextmanager
+    def capture_logs(self, log_key: Sequence[str]) -> Iterator[CapturedLogContext]:
+        with super().capture_logs(log_key) as local_context:
+            if not self._show_url_only:
+                yield local_context
+            else:
+                out_key = self._s3_key(log_key, ComputeIOType.STDOUT)
+                err_key = self._s3_key(log_key, ComputeIOType.STDERR)
+                s3_base = f"https://s3.{self._region}.amazonaws.com/{self._s3_bucket}"
+                yield CapturedLogContext(
+                    local_context.log_key,
+                    external_stdout_url=f"{s3_base}/{out_key}",
+                    external_stderr_url=f"{s3_base}/{err_key}",
+                )
 
     def delete_logs(
         self, log_key: Optional[Sequence[str]] = None, prefix: Optional[Sequence[str]] = None
@@ -236,64 +268,3 @@ class S3ComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
     def dispose(self):
         self._subscription_manager.dispose()
         self._local_manager.dispose()
-
-
-class ExternalS3ComputeLogManager(S3ComputeLogManager):
-    @contextmanager
-    def capture_logs(self, log_key: Sequence[str]) -> Iterator[CapturedLogContext]:
-        with super().capture_logs(log_key) as local_context:
-            out_key = self._s3_key(log_key, ComputeIOType.STDOUT)
-            err_key = self._s3_key(log_key, ComputeIOType.STDERR)
-            s3_base = f"https://s3.{self._region}.amazonaws.com/{self._s3_bucket}"
-            yield CapturedLogContext(
-                local_context.log_key,
-                external_stdout_url=f"{s3_base}/{out_key}",
-                external_stderr_url=f"{s3_base}/{err_key}",
-            )
-
-    def __init__(
-        self,
-        bucket,
-        local_dir=None,
-        inst_data: Optional[ConfigurableClassData] = None,
-        prefix="dagster",
-        use_ssl=True,
-        verify=True,
-        verify_cert_path=None,
-        endpoint_url=None,
-        skip_empty_files=False,
-        upload_interval=None,
-        upload_extra_args=None,
-        region=None,
-    ):
-        super().__init__(
-            bucket,
-            local_dir=local_dir,
-            inst_data=inst_data,
-            prefix=prefix,
-            use_ssl=use_ssl,
-            verify=verify,
-            verify_cert_path=verify_cert_path,
-            endpoint_url=endpoint_url,
-            skip_empty_files=skip_empty_files,
-            upload_interval=upload_interval,
-            upload_extra_args=upload_extra_args,
-        )
-        if region is None:
-            # if unspecified, use the current session name
-            self._region = self._s3_session.meta.region_name
-        else:
-            self._region = region
-
-    @classmethod
-    def config_type(cls):
-        return {
-            **super().config_type(),
-            "region": Field(StringSource, is_required=False),
-        }
-
-    @classmethod
-    def from_config_value(
-        cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
-    ) -> Self:
-        return ExternalS3ComputeLogManager(inst_data=inst_data, **config_value)

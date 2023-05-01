@@ -248,9 +248,10 @@ def test_external_compute_log_manager(mock_s3_bucket):
         overrides={
             "compute_logs": {
                 "module": "dagster_aws.s3.compute_log_manager",
-                "class": "ExternalS3ComputeLogManager",
+                "class": "S3ComputeLogManager",
                 "config": {
                     "bucket": mock_s3_bucket.name,
+                    "show_url_only": True,
                 },
             },
         },
