@@ -4,6 +4,7 @@ from dagster._utils import file_relative_path
 from dagster_aws.s3 import S3Resource
 from dagster_aws.s3.io_manager import ConfigurablePickledObjectS3IOManager
 from dagster_dbt import DbtCliClientResource
+from dagster_duckdb_pandas import duckdb_pandas_io_manager
 from dagster_pyspark import pyspark_resource
 
 from .duckdb_parquet_io_manager import DuckDBPartitionedParquetIOManager
@@ -94,4 +95,5 @@ RESOURCES_LOCAL = {
     ),
     "hn_client": HNAPIClient(),
     "dbt": dbt_local_resource,
+    "old_style": duckdb_pandas_io_manager.configured({"database": "my_db.duckdb"}),
 }

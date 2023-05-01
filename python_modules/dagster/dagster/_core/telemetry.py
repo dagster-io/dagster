@@ -465,6 +465,7 @@ def get_stats_from_external_repo(external_repo: "ExternalRepository") -> Mapping
     num_sensors_in_repo = len(external_repo.get_external_sensors())
     external_asset_nodes = external_repo.get_external_asset_nodes()
     num_assets_in_repo = len(external_asset_nodes)
+    external_resources = external_repo.get_external_resources()
 
     num_partitioned_assets_in_repo = 0
     num_multi_partitioned_assets_in_repo = 0
@@ -476,6 +477,11 @@ def get_stats_from_external_repo(external_repo: "ExternalRepository") -> Mapping
     num_observable_source_assets_in_repo = 0
     num_dbt_assets_in_repo = 0
     num_assets_with_code_versions_in_repo = 0
+    num_pydantic_resources = 0
+    num_pydantic_io_managers = 0
+    num_function_resources = 0
+    num_function_io_managers = 0
+
     for asset in external_asset_nodes:
         if asset.partitions_def_data:
             num_partitioned_assets_in_repo += 1
@@ -512,6 +518,25 @@ def get_stats_from_external_repo(external_repo: "ExternalRepository") -> Mapping
         for external_sensor in external_repo.get_external_sensors()
         if external_sensor.name == "asset_reconciliation_sensor"
     )
+
+    pydantic_resource_type_str = (
+        "dagster._config.pythonic_config.ConfigurableResourceFactoryResourceDefinition"
+    )
+    pydantic_io_manager_type_str = (
+        "dagster._config.pythonic_config.ConfigurableIOManagerFactoryResourceDefinition"
+    )
+    function_resource_type_str = ""
+    function_io_manager_type_str = "dagster._core.storage.io_manager.IOManagerDefinition"
+
+    for resource in external_resources:
+        if resource.resource_type == pydantic_resource_type_str:
+            num_pydantic_resources += 1
+        elif resource.resource_type == pydantic_io_manager_type_str:
+            num_pydantic_io_managers += 1
+        elif resource.resource_type == function_resource_type_str:
+            num_function_resources += 1
+        elif resource.resource_type == function_io_manager_type_str:
+            num_function_io_managers += 1
 
     return {
         "num_pipelines_in_repo": str(num_pipelines_in_repo),
