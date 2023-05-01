@@ -11,7 +11,6 @@ from typing import (
     cast,
 )
 
-import dagster._check as check
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.data_version import (
     DataVersion,
@@ -450,7 +449,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         """Returns True if the asset is planned to be materialized by the run."""
         run = self._get_run_by_id(run_id=run_id)
         if not run:
-            check.failed("")
+            return False
 
         if isinstance(asset, AssetKeyPartitionKey):
             asset_key = asset.asset_key
