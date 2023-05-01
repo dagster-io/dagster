@@ -115,7 +115,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
     def parse_dbt_command(dbt_command: str) -> Namespace:
         args = shlex.split(dbt_command)[1:]
         try:
-            from dbt.cli.flags import (  # pyright: ignore [reportMissingImports]
+            from dbt.cli.flags import (
                 Flags,
                 args_to_context,
             )
@@ -125,7 +125,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             return Namespace(**vars(Flags(args_to_context(args + ["--profiles-dir", "."]))))
         except ImportError:
             # dbt < 1.5.0 compat
-            from dbt.main import parse_args
+            from dbt.main import parse_args  # type: ignore
 
             return parse_args(args=args)
 

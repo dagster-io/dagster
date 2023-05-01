@@ -93,7 +93,7 @@ class AirflowDatabase:
             else:
                 dagrun = dag.create_dagrun(
                     run_id=f"dagster_airflow_run_{execution_date}",
-                    state=State.RUNNING,
+                    state=State.RUNNING,  # type: ignore
                     execution_date=execution_date,
                     conf=self.dag_run_config,
                 )

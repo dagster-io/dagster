@@ -781,7 +781,7 @@ class SqlRunStorage(RunStorage):
                 root_run_id_to_group[root_run_id].append(dagster_run)
             else:
                 root_run_id_to_group[dagster_run.run_id].append(dagster_run)
-                root_run_id_to_count[dagster_run.run_id] = row["child_counts"] + 1
+                root_run_id_to_count[dagster_run.run_id] = cast(int, row["child_counts"]) + 1
 
         return {
             root_run_id: {
