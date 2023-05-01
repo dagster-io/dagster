@@ -749,6 +749,8 @@ def test_s3_compute_log_manager(template: HelmTemplate):
     skip_empty_files = True
     upload_interval = 30
     upload_extra_args = {"ACL": "public-read"}
+    show_url_only = True
+    region = "us-west-1"
 
     helm_values = DagsterHelmValues.construct(
         computeLogManager=ComputeLogManager.construct(
@@ -765,6 +767,8 @@ def test_s3_compute_log_manager(template: HelmTemplate):
                     skipEmptyFiles=skip_empty_files,
                     uploadInterval=upload_interval,
                     uploadExtraArgs=upload_extra_args,
+                    showUrlOnly=show_url_only,
+                    region=region,
                 )
             ),
         )
@@ -787,6 +791,8 @@ def test_s3_compute_log_manager(template: HelmTemplate):
         "skip_empty_files": skip_empty_files,
         "upload_interval": upload_interval,
         "upload_extra_args": upload_extra_args,
+        "show_url_only": show_url_only,
+        "region": region,
     }
 
     # Test all config fields in configurable class
