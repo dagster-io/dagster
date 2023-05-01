@@ -57,6 +57,10 @@
         "path": "/tutorial/saving-your-data"
       },
       {
+        "title": "Managing your own I/O",
+        "path": "/tutorial/managing-your-own-io"
+      },
+      {
         "title": "Next steps",
         "path": "/tutorial/next-steps"
       }

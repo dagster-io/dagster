@@ -1,3 +1,8 @@
+---
+title: "Tutorial, part seven: Managing your own I/O | Dagster Docs"
+description: Learn how to use I/O managers to save your data.
+---
+
 # Tutorial, part 7: Managing your own I/O
 
 When building the dictionary or word counts, the `most_frequent_words` asset currently uses a static list of stopwords to decide what words to ignore. You’ll notice that despite the length of the list, many unhelpful words and prepositions are still not filtered out. You’d like to ignore those words. To scale this properly, you’ll use a CSV of stopwords found on the internet, use it for `most_frequent_words`, and update it before the refresh to ensure that your list of stopwords is up-to-date.
@@ -63,7 +68,7 @@ def stopwords_csv() -> None:
 
 Reload your code location, observe the new `stopwords_csv` asset, and notice how it is dependent on the `stopwords_zip` asset.
 
-## Step 3: \***\*Combining assets with and without I/O managers\*\***
+## Step 3: Combining assets with and without I/O managers
 
 Now that you’ve made two assets that don’t use I/O managers, you’ll connect the `stopwords_csv` asset to your `most_frequent_words` asset to use a more comprehensive list of stopwords.
 
