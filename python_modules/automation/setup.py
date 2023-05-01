@@ -26,7 +26,7 @@ setup(
         "requests",
         "twine==1.15.0",
         "virtualenv==20.13.2",
-        "wheel==0.33.6",
+        "wheel==0.38.1",
         "urllib3",
     ],
     extras_require={
