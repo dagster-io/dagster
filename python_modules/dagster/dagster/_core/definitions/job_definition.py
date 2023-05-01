@@ -260,7 +260,7 @@ class JobDefinition(IHasInternalInit):
                     f" key '{input_name}', but job has no top-level input with that name."
                 )
 
-    def internal_init(
+    def dagster_internal_init(
         *,
         graph_def: GraphDefinition,
         resource_defs: Optional[Mapping[str, ResourceDefinition]],
@@ -637,7 +637,7 @@ class JobDefinition(IHasInternalInit):
         input_values = merge_dicts(self.input_values, input_values)
 
         bound_resource_defs = dict(self.resource_defs)
-        ephemeral_job = JobDefinition.internal_init(
+        ephemeral_job = JobDefinition.dagster_internal_init(
             name=self._name,
             graph_def=self._graph_def,
             resource_defs={**_swap_default_io_man(bound_resource_defs, self), **resource_defs},

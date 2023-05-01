@@ -500,7 +500,7 @@ class ScheduleDefinition(IHasInternalInit):
             job (ExecutableDefinition): The job that should execute when this
                 schedule runs.
         """
-        return ScheduleDefinition.internal_init(
+        return ScheduleDefinition.dagster_internal_init(
             name=self.name,
             cron_schedule=self._cron_schedule,
             job_name=self.job_name,
@@ -699,7 +699,7 @@ class ScheduleDefinition(IHasInternalInit):
         )
 
     @staticmethod
-    def internal_init(
+    def dagster_internal_init(
         *,
         name: Optional[str],
         cron_schedule: Optional[Union[str, Sequence[str]]],

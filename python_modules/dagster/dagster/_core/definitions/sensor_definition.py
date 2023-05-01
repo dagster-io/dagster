@@ -471,7 +471,7 @@ class SensorDefinition(IHasInternalInit):
             job (ExecutableDefinition): The job that should execute when this
                 schedule runs.
         """
-        return SensorDefinition.internal_init(
+        return SensorDefinition.dagster_internal_init(
             name=self.name,
             evaluation_fn=self._evaluation_fn,
             minimum_interval_seconds=self.minimum_interval_seconds,
@@ -589,7 +589,7 @@ class SensorDefinition(IHasInternalInit):
         )
 
     @staticmethod
-    def internal_init(
+    def dagster_internal_init(
         *,
         name: Optional[str],
         evaluation_fn: Optional[RawSensorEvaluationFunction],

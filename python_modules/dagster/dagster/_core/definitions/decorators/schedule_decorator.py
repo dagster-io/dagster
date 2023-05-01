@@ -171,7 +171,7 @@ def schedule(
             has_context_arg=has_context_arg,
         )
 
-        schedule_def = ScheduleDefinition.internal_init(
+        schedule_def = ScheduleDefinition.dagster_internal_init(
             name=schedule_name,
             cron_schedule=cron_schedule,
             job_name=job_name,

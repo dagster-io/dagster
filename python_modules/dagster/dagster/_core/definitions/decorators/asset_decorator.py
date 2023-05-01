@@ -355,7 +355,7 @@ class _Asset:
             if asset_in.partition_mapping is not None
         }
 
-        return AssetsDefinition.internal_init(
+        return AssetsDefinition.dagster_internal_init(
             keys_by_input_name=keys_by_input_name,
             keys_by_output_name={"result": out_asset_key},
             node_def=op,
@@ -571,7 +571,7 @@ def multi_asset(
             if asset_in.partition_mapping is not None
         }
 
-        return AssetsDefinition.internal_init(
+        return AssetsDefinition.dagster_internal_init(
             keys_by_input_name=keys_by_input_name,
             keys_by_output_name=keys_by_output_name,
             node_def=op,

@@ -239,7 +239,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         )
 
     @staticmethod
-    def internal_init(
+    def dagster_internal_init(
         *,
         keys_by_input_name: Mapping[str, AssetKey],
         keys_by_output_name: Mapping[str, AssetKey],
@@ -562,7 +562,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         else:
             group_names_by_key = None
 
-        return AssetsDefinition.internal_init(
+        return AssetsDefinition.dagster_internal_init(
             keys_by_input_name=keys_by_input_name,
             keys_by_output_name=keys_by_output_name_with_prefix,
             node_def=node_def,
@@ -1080,7 +1080,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 for out_asset_key in subsetted_keys_by_output_name.values()
             }
 
-            return AssetsDefinition.internal_init(
+            return AssetsDefinition.dagster_internal_init(
                 keys_by_input_name=subsetted_keys_by_input_name,
                 keys_by_output_name=subsetted_keys_by_output_name,
                 node_def=subsetted_node,
@@ -1228,7 +1228,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             if key in relevant_keys
         }
 
-        return AssetsDefinition.internal_init(
+        return AssetsDefinition.dagster_internal_init(
             keys_by_input_name=self._keys_by_input_name,
             keys_by_output_name=self._keys_by_output_name,
             node_def=self.node_def,

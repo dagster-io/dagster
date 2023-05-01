@@ -70,7 +70,7 @@ def sensor(
     def inner(fn: RawSensorEvaluationFunction) -> SensorDefinition:
         check.callable_param(fn, "fn")
 
-        sensor_def = SensorDefinition.internal_init(
+        sensor_def = SensorDefinition.dagster_internal_init(
             name=name,
             job_name=job_name,
             evaluation_fn=fn,

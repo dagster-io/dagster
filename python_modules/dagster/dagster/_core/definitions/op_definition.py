@@ -176,7 +176,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
             positional_inputs=positional_inputs,
         )
 
-    def internal_init(
+    def dagster_internal_init(
         *,
         compute_fn: Union[Callable[..., Any], "DecoratedOpFunction"],
         name: str,
@@ -344,7 +344,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
         config_schema: Optional[IDefinitionConfigSchema] = None,
         description: Optional[str] = None,
     ) -> "OpDefinition":
-        return OpDefinition.internal_init(
+        return OpDefinition.dagster_internal_init(
             name=name,
             ins=ins
             or {input_def.name: In.from_definition(input_def) for input_def in self.input_defs},

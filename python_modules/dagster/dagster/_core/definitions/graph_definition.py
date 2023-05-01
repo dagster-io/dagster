@@ -628,7 +628,7 @@ class GraphDefinition(NodeDefinition):
 
         wrapped_resource_defs = wrap_resources_for_execution(resource_defs)
 
-        return JobDefinition.internal_init(
+        return JobDefinition.dagster_internal_init(
             name=name,
             description=description or self.description,
             graph_def=self,

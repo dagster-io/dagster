@@ -108,7 +108,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources, IHa
             experimental_arg_warning("version", "ResourceDefinition.__init__")
 
     @staticmethod
-    def internal_init(
+    def dagster_internal_init(
         *,
         resource_fn: ResourceFunction,
         config_schema: CoercableToConfigSchema,
@@ -206,7 +206,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources, IHa
         description: Optional[str],
         config_schema: CoercableToConfigSchema,
     ) -> "ResourceDefinition":
-        return ResourceDefinition.internal_init(
+        return ResourceDefinition.dagster_internal_init(
             config_schema=config_schema,
             description=description or self.description,
             resource_fn=self.resource_fn,
@@ -304,7 +304,7 @@ class _ResourceDecoratorCallable:
                 f" {', '.join(positional_arg_name_list(required_extras))}"
             )
 
-        resource_def = ResourceDefinition.internal_init(
+        resource_def = ResourceDefinition.dagster_internal_init(
             resource_fn=resource_fn,
             config_schema=self.config_schema,
             description=self.description or format_docstring_for_description(resource_fn),
