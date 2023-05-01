@@ -933,7 +933,7 @@ class AssetsDefinition(ResourceAddable):
         return AssetsDefinition(
             keys_by_input_name={**{v: k for k, v in input_names_by_key.items()}},
             # keep track of the original mapping
-            keys_by_output_name=self.keys_by_output_name,
+            keys_by_output_name=self.node_keys_by_output_name,
             node_def=op_def,
             partitions_def=self.partitions_def,
             partition_mappings=self._partition_mappings,
