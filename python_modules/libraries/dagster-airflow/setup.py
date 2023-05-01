@@ -48,7 +48,7 @@ setup(
             "boto3>=1.26.7",
             "kubernetes>=10.0.1",
             "apache-airflow-providers-docker>=3.2.0,<4",
-            "apache-airflow-providers-apache-spark>=3.0.0,<4",
+            "apache-airflow-providers-apache-spark",
             # Logging messages are set to debug starting 4.1.1
             "apache-airflow-providers-http<4.1.1",
         ],
