@@ -509,13 +509,13 @@ class ScheduleDefinition(IHasInternalInit):
             description=self.description,
             job=new_job,
             default_status=self.default_status,
-            run_config=None,
+            run_config=None,  # run_config encapsulated in the _run_config_fn
             run_config_fn=self._run_config_fn,
             tags=self._tags,
             tags_fn=self._tags_fn,
             environment_vars=self._environment_vars,
             required_resource_keys=self.required_resource_keys,
-            should_execute=None,
+            should_execute=self._should_execute,
         )
 
     def __init__(
@@ -622,7 +622,7 @@ class ScheduleDefinition(IHasInternalInit):
             self._tags_fn = tags_fn
             self._tags = tags
 
-            _should_execute: ScheduleShouldExecuteFunction = check.opt_callable_param(
+            self._should_execute: ScheduleShouldExecuteFunction = check.opt_callable_param(
                 should_execute, "should_execute", default=lambda _context: True
             )
 
@@ -633,7 +633,7 @@ class ScheduleDefinition(IHasInternalInit):
                     ScheduleExecutionError,
                     lambda: f"Error occurred during the execution of should_execute for schedule {name}",
                 ):
-                    if not _should_execute(context):
+                    if not self._should_execute(context):
                         yield SkipReason(
                             "should_execute function for {schedule_name} returned false.".format(
                                 schedule_name=name

@@ -369,11 +369,11 @@ class _Asset:
             auto_materialize_policies_by_key={out_asset_key: self.auto_materialize_policy}
             if self.auto_materialize_policy
             else None,
-            asset_deps=None,
-            selected_asset_keys=None,
+            asset_deps=None,  # no asset deps in single-asset decorator
+            selected_asset_keys=None,  # no subselection in decorator
             can_subset=False,
-            metadata_by_key=None,
-            descriptions_by_key=None,
+            metadata_by_key=None,  # not supported for now
+            descriptions_by_key=None,  # not supported for now
         )
 
 
@@ -583,9 +583,9 @@ def multi_asset(
             group_names_by_key=group_names_by_key,
             freshness_policies_by_key=freshness_policies_by_key,
             auto_materialize_policies_by_key=auto_materialize_policies_by_key,
-            selected_asset_keys=None,
-            descriptions_by_key=None,
-            metadata_by_key=None,
+            selected_asset_keys=None,  # no subselection in decorator
+            descriptions_by_key=None,  # not supported for now
+            metadata_by_key=None,  # not supported for now
         )
 
     return inner

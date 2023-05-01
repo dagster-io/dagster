@@ -182,11 +182,11 @@ def schedule(
             job=job,
             default_status=default_status,
             required_resource_keys=required_resource_keys,
-            run_config=None,
+            run_config=None,  # cannot supply run_config or run_config_fn to decorator
             run_config_fn=None,
-            tags=None,
+            tags=None,  # cannot supply tags or tags_fn to decorator
             tags_fn=None,
-            should_execute=None,
+            should_execute=None,  # already encompassed in evaluation_fn
         )
 
         update_wrapper(schedule_def, wrapped=fn)

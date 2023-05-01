@@ -651,10 +651,10 @@ class JobDefinition(IHasInternalInit):
             asset_layer=self.asset_layer,
             input_values=input_values,
             description=self.description,
-            partitions_def=None,
-            metadata=None,
-            _subset_selection_data=None,
-            _was_explicitly_provided_resources=None,
+            partitions_def=self.partitions_def,
+            metadata=self.metadata,
+            _subset_selection_data=self._subset_selection_data,
+            _was_explicitly_provided_resources=True,
         )
 
         ephemeral_job = ephemeral_job.get_job_def_for_subset_selection(
@@ -944,7 +944,7 @@ class JobDefinition(IHasInternalInit):
             _was_explicitly_provided_resources=None,
         )
         resolved_kwargs = {**base_kwargs, **kwargs}  # base kwargs overwritten for conflicts
-        job_def = JobDefinition(**resolved_kwargs)
+        job_def = JobDefinition.dagster_internal_init(**resolved_kwargs)
         update_wrapper(job_def, self, updated=())
         return job_def
 

@@ -609,7 +609,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             if descriptions_by_output_name
             else None,
             can_subset=can_subset,
-            selected_asset_keys=None,
+            selected_asset_keys=None,  # node has no subselection info
         )
 
     @public
