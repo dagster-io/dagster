@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from typing import Iterator
 from unittest.mock import MagicMock, patch
 
-import pandas
+import pandas as pd
 import pytest
 from dagster import (
     AssetIn,
@@ -43,7 +43,6 @@ from dagster_snowflake_pandas.snowflake_pandas_type_handler import (
     _convert_string_to_timestamp,
     _convert_timestamp_to_string,
 )
-from pandas import DataFrame, Timestamp
 
 resource_config = {
     "database": "database_abc",
@@ -62,7 +61,7 @@ SHARED_BUILDKITE_SNOWFLAKE_CONF = {
     "password": os.getenv("SNOWFLAKE_BUILDKITE_PASSWORD", ""),
 }
 
-DATABASE = "TEST_SNOWFLAKE_IO_MANAGER"
+DATABASE = "UNIT_TEST_SNOWFLAKE_IO_MANAGER"
 SCHEMA = "SNOWFLAKE_IO_MANAGER_SCHEMA"
 
 pythonic_snowflake_io_manager = SnowflakePandasIOManager(
@@ -88,7 +87,7 @@ def temporary_snowflake_table(schema_name: str, db_name: str) -> Iterator[str]:
 def test_handle_output():
     handler = SnowflakePandasTypeHandler()
     connection = MagicMock()
-    df = DataFrame([{"col1": "a", "col2": 1}])
+    df = pd.DataFrame([{"col1": "a", "col2": 1}])
     output_context = build_output_context(
         resource_config={**resource_config, "time_data_to_string": False}
     )
@@ -119,7 +118,7 @@ def test_load_input():
         "dagster_snowflake_pandas.snowflake_pandas_type_handler.pd.read_sql"
     ) as mock_read_sql:
         connection = MagicMock()
-        mock_read_sql.return_value = DataFrame([{"COL1": "a", "COL2": 1}])
+        mock_read_sql.return_value = pd.DataFrame([{"COL1": "a", "COL2": 1}])
 
         handler = SnowflakePandasTypeHandler()
         input_context = build_input_context(
@@ -137,21 +136,21 @@ def test_load_input():
             connection,
         )
         assert mock_read_sql.call_args_list[0][1]["sql"] == "SELECT * FROM my_db.my_schema.my_table"
-        assert df.equals(DataFrame([{"col1": "a", "col2": 1}]))
+        assert df.equals(pd.DataFrame([{"col1": "a", "col2": 1}]))
 
 
 def test_type_conversions():
     # no timestamp data
-    no_time = pandas.Series([1, 2, 3, 4, 5])
+    no_time = pd.Series([1, 2, 3, 4, 5])
     converted = _convert_string_to_timestamp(_convert_timestamp_to_string(no_time, None, "foo"))
     assert (converted == no_time).all()
 
     # timestamp data
-    with_time = pandas.Series(
+    with_time = pd.Series(
         [
-            pandas.Timestamp("2017-01-01T12:30:45.35"),
-            pandas.Timestamp("2017-02-01T12:30:45.35"),
-            pandas.Timestamp("2017-03-01T12:30:45.35"),
+            pd.Timestamp("2017-01-01T12:30:45.35"),
+            pd.Timestamp("2017-02-01T12:30:45.35"),
+            pd.Timestamp("2017-03-01T12:30:45.35"),
         ]
     )
     time_converted = _convert_string_to_timestamp(
@@ -161,23 +160,23 @@ def test_type_conversions():
     assert (with_time == time_converted).all()
 
     # string that isn't a time
-    string_data = pandas.Series(["not", "a", "timestamp"])
+    string_data = pd.Series(["not", "a", "timestamp"])
 
     assert (_convert_string_to_timestamp(string_data) == string_data).all()
 
 
 def test_timezone_conversions():
     # no timestamp data
-    no_time = pandas.Series([1, 2, 3, 4, 5])
+    no_time = pd.Series([1, 2, 3, 4, 5])
     converted = _add_missing_timezone(no_time, None, "foo")
     assert (converted == no_time).all()
 
     # timestamp data
-    with_time = pandas.Series(
+    with_time = pd.Series(
         [
-            pandas.Timestamp("2017-01-01T12:30:45.35"),
-            pandas.Timestamp("2017-02-01T12:30:45.35"),
-            pandas.Timestamp("2017-03-01T12:30:45.35"),
+            pd.Timestamp("2017-01-01T12:30:45.35"),
+            pd.Timestamp("2017-02-01T12:30:45.35"),
+            pd.Timestamp("2017-03-01T12:30:45.35"),
         ]
     )
     time_converted = _add_missing_timezone(with_time, None, "foo")
@@ -207,10 +206,10 @@ def test_io_manager_with_snowflake_pandas(io_manager):
 
         @op(out={table_name: Out(io_manager_key="snowflake", metadata={"schema": SCHEMA})})
         def emit_pandas_df(_):
-            return pandas.DataFrame({"foo": ["bar", "baz"], "quux": [1, 2]})
+            return pd.DataFrame({"foo": ["bar", "baz"], "quux": [1, 2]})
 
         @op
-        def read_pandas_df(df: pandas.DataFrame):
+        def read_pandas_df(df: pd.DataFrame):
             assert set(df.columns) == {"foo", "quux"}
             assert len(df.index) == 2
 
@@ -233,12 +232,12 @@ def test_io_manager_with_snowflake_pandas_timestamp_data(io_manager):
         schema_name=SCHEMA,
         db_name=DATABASE,
     ) as table_name:
-        time_df = pandas.DataFrame(
+        time_df = pd.DataFrame(
             {
                 "foo": ["bar", "baz"],
                 "date": [
-                    pandas.Timestamp("2017-01-01T12:30:45.350"),
-                    pandas.Timestamp("2017-02-01T12:30:45.350"),
+                    pd.Timestamp("2017-01-01T12:30:45.350"),
+                    pd.Timestamp("2017-02-01T12:30:45.350"),
                 ],
             }
         )
@@ -248,7 +247,7 @@ def test_io_manager_with_snowflake_pandas_timestamp_data(io_manager):
             return time_df
 
         @op
-        def read_time_df(df: pandas.DataFrame):
+        def read_time_df(df: pd.DataFrame):
             assert set(df.columns) == {"foo", "date"}
             assert (df["date"] == time_df["date"]).all()
 
@@ -310,11 +309,11 @@ def test_time_window_partitioned_asset(io_manager):
             key_prefix=SCHEMA,
             name=table_name,
         )
-        def daily_partitioned(context) -> DataFrame:
-            partition = Timestamp(context.asset_partition_key_for_output())
+        def daily_partitioned(context) -> pd.DataFrame:
+            partition = pd.Timestamp(context.asset_partition_key_for_output())
             value = context.op_config["value"]
 
-            return DataFrame(
+            return pd.DataFrame(
                 {
                     "TIME": [partition, partition, partition],
                     "A": [value, value, value],
@@ -396,10 +395,10 @@ def test_static_partitioned_asset(io_manager):
             config_schema={"value": str},
             name=table_name,
         )
-        def static_partitioned(context) -> DataFrame:
+        def static_partitioned(context) -> pd.DataFrame:
             partition = context.asset_partition_key_for_output()
             value = context.op_config["value"]
-            return DataFrame(
+            return pd.DataFrame(
                 {
                     "COLOR": [partition, partition, partition],
                     "A": [value, value, value],
@@ -486,10 +485,10 @@ def test_multi_partitioned_asset(io_manager):
             config_schema={"value": str},
             name=table_name,
         )
-        def multi_partitioned(context) -> DataFrame:
+        def multi_partitioned(context) -> pd.DataFrame:
             partition = context.partition_key.keys_by_dimension
             value = context.op_config["value"]
-            return DataFrame(
+            return pd.DataFrame(
                 {
                     "color": [partition["color"], partition["color"], partition["color"]],
                     "time": [partition["time"], partition["time"], partition["time"]],
@@ -585,10 +584,10 @@ def test_dynamic_partitions(io_manager):
             config_schema={"value": str},
             name=table_name,
         )
-        def dynamic_partitioned(context) -> DataFrame:
+        def dynamic_partitioned(context) -> pd.DataFrame:
             partition = context.asset_partition_key_for_output()
             value = context.op_config["value"]
-            return DataFrame(
+            return pd.DataFrame(
                 {
                     "fruit": [partition, partition, partition],
                     "a": [value, value, value],
@@ -698,7 +697,7 @@ def test_self_dependent_asset(io_manager):
             config_schema={"value": str, "last_partition_key": str},
             name=table_name,
         )
-        def self_dependent_asset(context, self_dependent_asset: DataFrame) -> DataFrame:
+        def self_dependent_asset(context, self_dependent_asset: pd.DataFrame) -> pd.DataFrame:
             key = context.asset_partition_key_for_output()
 
             if not self_dependent_asset.empty:
@@ -709,7 +708,7 @@ def test_self_dependent_asset(io_manager):
             else:
                 assert context.op_config["last_partition_key"] == "NA"
             value = context.op_config["value"]
-            pd_df = DataFrame(
+            pd_df = pd.DataFrame(
                 {
                     "key": [key, key, key],
                     "a": [value, value, value],
