@@ -4,6 +4,7 @@ import * as Types from '../../graphql/types';
 
 export type ConfigEditorRunConfigSchemaFragment = {
   __typename: 'RunConfigSchema';
+  rootDefaultYaml: string;
   rootConfigType:
     | {__typename: 'ArrayConfigType'; key: string}
     | {__typename: 'CompositeConfigType'; key: string}
