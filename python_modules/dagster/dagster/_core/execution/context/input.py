@@ -43,30 +43,6 @@ class InputContext:
     an `InputContext` for testing an IO Manager's `load_input` method, use
     :py:func:`dagster.build_input_context`.
 
-    Attributes:
-        name (Optional[str]): The name of the input that we're loading.
-        config (Optional[Any]): The config attached to the input that we're loading.
-        metadata (Optional[Dict[str, Any]]): A dict of metadata that is assigned to the
-            InputDefinition that we're loading for.
-            This property only contains metadata passed in explicitly with :py:class:`AssetIn`
-            or :py:class:`In`. To access metadata of an upstream asset or operation definition,
-            use the metadata in :py:attr:`.InputContext.upstream_output`.
-        upstream_output (Optional[OutputContext]): Info about the output that produced the object
-            we're loading.
-        dagster_type (Optional[DagsterType]): The type of this input.
-            Dagster types do not propagate from an upstream output to downstream inputs,
-            and this property only captures type information for the input that is either
-            passed in explicitly with :py:class:`AssetIn` or :py:class:`In`, or can be
-            infered from type hints. For an asset input, the Dagster type from the upstream
-            asset definition is ignored.
-        log (Optional[DagsterLogManager]): The log manager to use for this input.
-        resource_config (Optional[Dict[str, Any]]): The config associated with the resource that
-            initializes the RootInputManager.
-        resources (Optional[Resources]): The resources required by the resource that initializes the
-            input manager. If using the :py:func:`@root_input_manager` decorator, these resources
-            correspond to those requested with the `required_resource_keys` parameter.
-        op_def (Optional[OpDefinition]): The definition of the op that's loading the input.
-
     Example:
     .. code-block:: python
 
@@ -168,6 +144,7 @@ class InputContext:
     @public
     @property
     def name(self) -> str:
+        """The name of the input that we're loading."""
         if self._name is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access name, "
@@ -188,6 +165,7 @@ class InputContext:
     @public
     @property
     def op_def(self) -> "OpDefinition":
+        """The definition of the op that's loading the input."""
         if self._op_def is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access op_def, "
@@ -199,21 +177,35 @@ class InputContext:
     @public
     @property
     def config(self) -> Any:
+        """The config attached to the input that we're loading."""
         return self._config
 
     @public
     @property
     def metadata(self) -> Optional[ArbitraryMetadataMapping]:
+        """A dict of metadata that is assigned to the InputDefinition that we're loading for.
+        This property only contains metadata passed in explicitly with :py:class:`AssetIn`
+        or :py:class:`In`. To access metadata of an upstream asset or operation definition,
+        use the metadata in :py:attr:`.InputContext.upstream_output`.
+        """
         return self._metadata
 
     @public
     @property
     def upstream_output(self) -> Optional["OutputContext"]:
+        """Info about the output that produced the object we're loading."""
         return self._upstream_output
 
     @public
     @property
     def dagster_type(self) -> "DagsterType":
+        """The type of this input.
+        Dagster types do not propagate from an upstream output to downstream inputs,
+        and this property only captures type information for the input that is either
+        passed in explicitly with :py:class:`AssetIn` or :py:class:`In`, or can be
+        infered from type hints. For an asset input, the Dagster type from the upstream
+        asset definition is ignored.
+        """
         if self._dagster_type is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access dagster_type, "
@@ -225,6 +217,7 @@ class InputContext:
     @public
     @property
     def log(self) -> "DagsterLogManager":
+        """The log manager to use for this input."""
         if self._log is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access log, "
@@ -236,11 +229,16 @@ class InputContext:
     @public
     @property
     def resource_config(self) -> Optional[Mapping[str, Any]]:
+        """The config associated with the resource that initializes the RootInputManager."""
         return self._resource_config
 
     @public
     @property
     def resources(self) -> Any:
+        """The resources required by the resource that initializes the
+        input manager. If using the :py:func:`@root_input_manager` decorator, these resources
+        correspond to those requested with the `required_resource_keys` parameter.
+        """
         if self._resources is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access resources, "

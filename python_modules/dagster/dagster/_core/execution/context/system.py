@@ -1098,13 +1098,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
 
 class TypeCheckContext:
-    """The ``context`` object available to a type check function on a DagsterType.
-
-    Attributes:
-        log (DagsterLogManager): Centralized log dispatch from user code.
-        resources (Any): An object whose attributes contain the resources available to this op.
-        run_id (str): The id of this job run.
-    """
+    """The ``context`` object available to a type check function on a DagsterType."""
 
     def __init__(
         self,
@@ -1120,16 +1114,19 @@ class TypeCheckContext:
     @public
     @property
     def resources(self) -> "Resources":
+        """An object whose attributes contain the resources available to this op."""
         return self._resources
 
     @public
     @property
     def run_id(self) -> str:
+        """The id of this job run."""
         return self._run_id
 
     @public
     @property
     def log(self) -> DagsterLogManager:
+        """Centralized log dispatch from user code."""
         return self._log
 
 

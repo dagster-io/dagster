@@ -65,12 +65,6 @@ class AssetsDefinition(ResourceAddable):
 
     AssetsDefinitions are typically not instantiated directly, but rather produced using the
     :py:func:`@asset <asset>` or :py:func:`@multi_asset <multi_asset>` decorators.
-
-    Attributes:
-        asset_deps (Mapping[AssetKey, AbstractSet[AssetKey]]): Maps assets that are produced by this
-            definition to assets that they depend on. The dependencies can be either "internal",
-            meaning that they refer to other assets that are produced by this definition, or
-            "external", meaning that they refer to assets that aren't produced by this definition.
     """
 
     _node_def: NodeDefinition
@@ -611,6 +605,11 @@ class AssetsDefinition(ResourceAddable):
     @public
     @property
     def asset_deps(self) -> Mapping[AssetKey, AbstractSet[AssetKey]]:
+        """Maps assets that are produced by this definition to assets that they depend on. The
+        dependencies can be either "internal", meaning that they refer to other assets that are
+        produced by this definition, or "external", meaning that they refer to assets that aren't
+        produced by this definition.
+        """
         return self._asset_deps
 
     @property
