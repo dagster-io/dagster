@@ -73,6 +73,8 @@ old_snowflake_io_manager = snowflake_pyspark_io_manager.configured(
     {**SHARED_BUILDKITE_SNOWFLAKE_CONF, "database": DATABASE}
 )
 
+# THIS IS A TEST
+
 
 @contextmanager
 def temporary_snowflake_table(schema_name: str, db_name: str) -> Iterator[str]:
