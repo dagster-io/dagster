@@ -35,7 +35,6 @@ Resource
 
 .. autoclass:: SnowflakeConnection
   :members:
-  :undoc-members:
 
 Ops
 ===

@@ -37,19 +37,14 @@ Execution results
 .. currentmodule:: dagster
 
 .. autoclass:: ExecuteInProcessResult
-   :members:
    :inherited-members:
 
 .. autoclass:: ExecuteJobResult
-   :members:
    :inherited-members:
 
 .. autoclass:: DagsterEvent
-   :members:
 
 .. autoclass:: DagsterEventType
-   :members:
-   :undoc-members:
 
 
 Reconstructable jobs
@@ -57,7 +52,7 @@ Reconstructable jobs
 .. currentmodule:: dagster
 
 .. autoclass:: reconstructable
-   :members:
+
 
 Executors
 ---------
