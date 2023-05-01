@@ -1,5 +1,5 @@
 import {MockedProvider} from '@apollo/client/testing';
-import {render, fireEvent, waitFor, screen} from '@testing-library/react';
+import {render, fireEvent, waitFor, screen, act} from '@testing-library/react';
 import React from 'react';
 import {MemoryRouter, Route} from 'react-router-dom';
 
@@ -53,17 +53,20 @@ const mocks = [
 
 describe('BackfillPage', () => {
   it('renders the loading state', async () => {
-    const {getByText} = render(
-      <AnalyticsContext.Provider value={{page: () => {}} as any}>
-        <MemoryRouter initialEntries={[`/backfills/${mockBackfillId}`]}>
-          <Route path="/backfills/:backfillId">
-            <MockedProvider mocks={mocks} addTypename={false}>
-              <BackfillPage />
-            </MockedProvider>
-          </Route>
-        </MemoryRouter>
-      </AnalyticsContext.Provider>,
-    );
+    let getByText: ReturnType<typeof render>['getByText'];
+    await act(() => {
+      getByText = render(
+        <AnalyticsContext.Provider value={{page: () => {}} as any}>
+          <MemoryRouter initialEntries={[`/backfills/${mockBackfillId}`]}>
+            <Route path="/backfills/:backfillId">
+              <MockedProvider mocks={mocks} addTypename={false}>
+                <BackfillPage />
+              </MockedProvider>
+            </Route>
+          </MemoryRouter>
+        </AnalyticsContext.Provider>,
+      ).getByText;
+    });
 
     expect(screen.getByTestId('page-loading-indicator')).toBeInTheDocument();
 
@@ -89,17 +92,21 @@ describe('BackfillPage', () => {
       },
     ];
 
-    const {getByText} = render(
-      <AnalyticsContext.Provider value={{page: () => {}} as any}>
-        <MemoryRouter initialEntries={[`/backfills/${mockBackfillId}`]}>
-          <Route path="/backfills/:backfillId">
-            <MockedProvider mocks={errorMocks} addTypename={false}>
-              <BackfillPage />
-            </MockedProvider>
-          </Route>
-        </MemoryRouter>
-      </AnalyticsContext.Provider>,
-    );
+    let getByText: ReturnType<typeof render>['getByText'];
+
+    await act(() => {
+      getByText = render(
+        <AnalyticsContext.Provider value={{page: () => {}} as any}>
+          <MemoryRouter initialEntries={[`/backfills/${mockBackfillId}`]}>
+            <Route path="/backfills/:backfillId">
+              <MockedProvider mocks={errorMocks} addTypename={false}>
+                <BackfillPage />
+              </MockedProvider>
+            </Route>
+          </MemoryRouter>
+        </AnalyticsContext.Provider>,
+      ).getByText;
+    });
 
     await waitFor(() => expect(getByText('An error occurred')).toBeVisible());
   });
