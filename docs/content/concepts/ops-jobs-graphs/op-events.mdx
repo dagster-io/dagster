@@ -113,6 +113,8 @@ to keep track of can be considered an asset.
 
 Generally, you'd want to send this event directly after you persist the asset to your external system. All <PyObject object="AssetMaterialization" /> events must define an `asset_key`, which is a unique identifier to describe the asset you are persisting.
 
+If you're using [Software-defined Assets](/concepts/assets/software-defined-assets), you don't need to record these events explicitly – the framework handles it for you.
+
 ```python file=/concepts/ops_jobs_graphs/op_events.py startafter=start_asset_op endbefore=end_asset_op
 from dagster import AssetMaterialization, op
 
