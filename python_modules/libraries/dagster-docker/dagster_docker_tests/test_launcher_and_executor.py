@@ -8,13 +8,13 @@ from dagster._core.test_utils import poll_for_finished_run
 from dagster._utils.merger import merge_dicts
 from dagster._utils.yaml_utils import load_yaml_from_path, merge_yamls
 from dagster_test.test_project import (
-    ReOriginatedExternalPipelineForTest,
+    ReOriginatedExternalJobForTest,
     find_local_test_image,
     get_buildkite_registry_config,
     get_test_project_docker_image,
     get_test_project_environments_path,
     get_test_project_recon_job,
-    get_test_project_workspace_and_external_pipeline,
+    get_test_project_workspace_and_external_job,
 )
 
 from . import IS_BUILDKITE, docker_postgres_instance
@@ -76,17 +76,17 @@ def test_image_on_pipeline(monkeypatch, aws_env, from_pending_repository, asset_
         repository_load_data = recon_job.repository.get_definition().repository_load_data
         recon_job = recon_job.with_repository_load_data(repository_load_data)
 
-        with get_test_project_workspace_and_external_pipeline(
+        with get_test_project_workspace_and_external_job(
             instance,
             "demo_job_docker",
             container_image=docker_image,
             filename=filename,
         ) as (
             workspace,
-            orig_pipeline,
+            orig_job,
         ):
-            external_job = ReOriginatedExternalPipelineForTest(
-                orig_pipeline, container_image=docker_image, filename=filename
+            external_job = ReOriginatedExternalJobForTest(
+                orig_job, container_image=docker_image, filename=filename
             )
 
             run = instance.create_run_for_job(
@@ -155,15 +155,13 @@ def test_container_context_on_pipeline(aws_env):
                 }
             },
         )
-        with get_test_project_workspace_and_external_pipeline(
+        with get_test_project_workspace_and_external_job(
             instance, "demo_job_docker", container_image=docker_image
         ) as (
             workspace,
-            orig_pipeline,
+            orig_job,
         ):
-            external_job = ReOriginatedExternalPipelineForTest(
-                orig_pipeline, container_image=docker_image
-            )
+            external_job = ReOriginatedExternalJobForTest(orig_job, container_image=docker_image)
 
             run = instance.create_run_for_job(
                 job_def=recon_job.get_definition(),
@@ -223,15 +221,13 @@ def test_recovery(aws_env):
         }
     ) as instance:
         recon_job = get_test_project_recon_job("demo_slow_job_docker", docker_image)
-        with get_test_project_workspace_and_external_pipeline(
+        with get_test_project_workspace_and_external_job(
             instance, "demo_slow_job_docker", container_image=docker_image
         ) as (
             workspace,
-            orig_pipeline,
+            orig_job,
         ):
-            external_job = ReOriginatedExternalPipelineForTest(
-                orig_pipeline, container_image=docker_image
-            )
+            external_job = ReOriginatedExternalJobForTest(orig_job, container_image=docker_image)
 
             run = instance.create_run_for_job(
                 job_def=recon_job.get_definition(),

@@ -86,14 +86,12 @@ def test_prometheus_histogram():
     @op(required_resource_keys={"prometheus"})
     def prometheus_solid(context):
         h = Histogram(
-            "pipeline_runtime_seconds",
+            "job_runtime_seconds",
             "Description of histogram",
             registry=context.resources.prometheus.registry,
         )
         h.observe(4.7)
-        recorded = context.resources.prometheus.registry.get_sample_value(
-            "pipeline_runtime_seconds_sum"
-        )
+        recorded = context.resources.prometheus.registry.get_sample_value("job_runtime_seconds_sum")
         assert abs(4.7 - recorded) < EPS
 
     assert wrap_op_in_graph_and_execute(

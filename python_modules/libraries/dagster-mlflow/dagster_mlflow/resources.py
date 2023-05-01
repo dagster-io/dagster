@@ -228,7 +228,7 @@ def mlflow_tracking(context):
     Usage:
 
     1. Add the mlflow resource to any solids in which you want to invoke mlflow tracking APIs.
-    2. Add the `end_mlflow_on_run_finished` hook to your pipeline to end the MLflow run
+    2. Add the `end_mlflow_on_run_finished` hook to your job to end the MLflow run
        when the Dagster run is finished.
 
     Examples:

@@ -120,7 +120,7 @@ class RepositoryData(ABC):
         """Return all schedules in the repository as a list.
 
         Returns:
-            List[ScheduleDefinition]: All pipelines in the repository.
+            List[ScheduleDefinition]: All jobs in the repository.
         """
         return []
 

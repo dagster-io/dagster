@@ -34,7 +34,7 @@ from dagster_test.test_project import (
     get_test_project_docker_image,
     get_test_project_environments_path,
 )
-from dagster_test.test_project.test_pipelines.repo import (
+from dagster_test.test_project.test_jobs.repo import (
     define_memoization_job,
 )
 

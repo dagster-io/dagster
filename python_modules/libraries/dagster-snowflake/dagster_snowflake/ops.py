@@ -26,8 +26,8 @@ def snowflake_solid_for_query(sql, parameters=None):
     """This function is a solid factory that constructs solids to execute a snowflake query.
 
     Note that you can only use `snowflake_solid_for_query` if you know the query you'd like to
-    execute at pipeline construction time. If you'd like to execute queries dynamically during
-    pipeline execution, you should manually execute those queries in your custom solid using the
+    execute at job construction time. If you'd like to execute queries dynamically during
+    job execution, you should manually execute those queries in your custom solid using the
     snowflake resource.
 
     Args:

@@ -29,7 +29,7 @@ ADLS2_CONTAINER = "dagster-databricks-tests"
 BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG: Dict[str, object] = {
     "databricks_host": os.environ.get("DATABRICKS_HOST") or "https://",
     "databricks_token": os.environ.get("DATABRICKS_TOKEN"),
-    "local_pipeline_package_path": os.path.abspath(os.path.dirname(__file__)),
+    "local_job_package_path": os.path.abspath(os.path.dirname(__file__)),
     "staging_prefix": "/dagster-databricks-tests",
     "run_config": {
         "cluster": {
@@ -202,7 +202,7 @@ def test_pyspark_databricks(
 
     with instance_for_test() as instance:
         config = BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG.copy()
-        config.pop("local_pipeline_package_path")
+        config.pop("local_job_package_path")
         result = execute_job(
             job=reconstructable(define_do_nothing_test_job),
             instance=instance,
@@ -238,7 +238,7 @@ def test_pyspark_databricks(
 
     with instance_for_test() as instance:
         config = BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG.copy()
-        config.pop("local_pipeline_package_path")
+        config.pop("local_job_package_path")
         config["run_config"]["cluster"] = {"existing": "cluster_id"}
         with pytest.raises(ValueError) as excinfo:
             execute_job(

@@ -53,7 +53,7 @@ class ShellOpConfig(Config):
     description=(
         "This op executes a shell command it receives as input.\n\n"
         "This op is suitable for uses where the command to execute is generated dynamically by "
-        "upstream ops. If you know the command to execute at pipeline construction time, "
+        "upstream ops. If you know the command to execute at job construction time, "
         "consider `shell_command_op` instead."
     ),
     ins={"shell_command": In(str)},
@@ -80,8 +80,8 @@ def create_shell_command_op(
     """This function is a factory that constructs ops to execute a shell command.
 
     Note that you can only use ``shell_command_op`` if you know the command you'd like to execute
-    at pipeline construction time. If you'd like to construct shell commands dynamically during
-    pipeline execution and pass them between ops, you should use ``shell_op`` instead.
+    at job construction time. If you'd like to construct shell commands dynamically during
+    job execution and pass them between ops, you should use ``shell_op`` instead.
 
     Examples:
         .. literalinclude:: ../../../../../../python_modules/libraries/dagster-shell/dagster_shell_tests/example_shell_command_op.py

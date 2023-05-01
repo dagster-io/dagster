@@ -726,8 +726,8 @@ class SensorDefinition:
                     )
                 elif len(dagster_run_reactions) > 0:
                     check.failed(
-                        "Expected a single SkipReason or one or more PipelineRunReaction: "
-                        "received both PipelineRunReaction and SkipReason"
+                        "Expected a single SkipReason or one or more DagsterRunReaction: "
+                        "received both DagsterRunReaction and SkipReason"
                     )
                 else:
                     check.failed("Expected a single SkipReason: received multiple SkipReasons")

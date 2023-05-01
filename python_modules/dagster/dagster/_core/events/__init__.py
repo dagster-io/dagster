@@ -78,7 +78,7 @@ EventSpecificData = Union[
 
 
 class DagsterEventType(str, Enum):
-    """The types of events that may be yielded by solid and pipeline execution."""
+    """The types of events that may be yielded by op and job execution."""
 
     STEP_OUTPUT = "STEP_OUTPUT"
     STEP_INPUT = "STEP_INPUT"

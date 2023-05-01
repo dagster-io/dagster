@@ -118,7 +118,6 @@ class JobDefinition:
     _resource_requirements: Mapping[str, AbstractSet[str]]
     _all_node_defs: Mapping[str, NodeDefinition]
     _cached_run_config_schemas: Dict[str, "RunConfigSchema"]
-    _cached_external_pipeline: Any
     _version_strategy: VersionStrategy
     _subset_selection_data: Optional[Union[OpSelectionData, AssetSelectionData]]
     input_values: Mapping[str, object]
@@ -150,7 +149,7 @@ class JobDefinition:
 
         self._graph_def = graph_def
         self._current_level_node_defs = self._graph_def.node_defs
-        # Recursively explore all nodes in the this pipeline
+        # Recursively explore all nodes in the this job
         self._all_node_defs = _build_all_node_defs(self._current_level_node_defs)
         self._asset_layer = check.opt_inst_param(
             asset_layer, "asset_layer", AssetLayer
@@ -177,7 +176,7 @@ class JobDefinition:
             partitions_def, "partitions_def", PartitionsDefinition
         )
         # tags and description can exist on graph as well, but since
-        # same graph may be in multiple pipelines/jobs, keep separate layer
+        # same graph may be in multiple jobs, keep separate layer
         self._description = check.opt_str_param(description, "description")
         self._tags = validate_tags(tags)
         self._metadata = normalize_metadata(
@@ -493,7 +492,7 @@ class JobDefinition:
             node = definition.node_named(name)
             hook_defs = hook_defs.union(node.hook_defs)
 
-        # hooks applied to a pipeline definition will run on every node
+        # hooks applied to a job definition will run on every node
         hook_defs = hook_defs.union(self.hook_defs)
 
         return frozenset(hook_defs)
@@ -751,7 +750,7 @@ class JobDefinition:
                     resolved_op_selection=set(
                         resolved_op_selection_dict.keys()
                     ),  # equivalent to solids_to_execute. currently only gets top level nodes.
-                    parent_job_def=self,  # used by pipeline snapshot lineage
+                    parent_job_def=self,  # used by job snapshot lineage
                 ),
                 # TODO: subset this structure.
                 # https://github.com/dagster-io/dagster/issues/7541
@@ -1273,8 +1272,8 @@ def _create_run_config_schema(
     )
     from .run_config_schema import RunConfigSchema
 
-    # When executing with a subset pipeline, include the missing nodes
-    # from the original pipeline as ignored to allow execution with
+    # When executing with a subset job, include the missing nodes
+    # from the original job as ignored to allow execution with
     # run config that is valid for the original
     ignored_nodes: Sequence[Node] = []
     if job_def.is_subset_job:

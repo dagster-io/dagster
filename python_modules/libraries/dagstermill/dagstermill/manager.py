@@ -246,9 +246,9 @@ class Manager:
 
         run_id = make_new_run_id()
 
-        # construct stubbed PipelineRun for notebook exploration...
-        # The actual pipeline run during pipeline execution will be serialized and reconstituted
-        # in the `reconstitute_pipeline_context` call
+        # construct stubbed DagsterRun for notebook exploration...
+        # The actual dagster run during job execution will be serialized and reconstituted
+        # in the `reconstitute_job_context` call
         dagster_run = DagsterRun(
             job_name=job_def.name,
             run_id=run_id,

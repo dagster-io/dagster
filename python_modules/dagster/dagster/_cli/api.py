@@ -202,12 +202,12 @@ def _resume_run_command_body(
         cancellation_thread, cancellation_thread_shutdown_event = None, None
     dagster_run = check.not_none(
         instance.get_run_by_id(run_id),  # type: ignore
-        f"Pipeline run with id '{run_id}' not found for run execution.",
+        f"Run with id '{run_id}' not found for run execution.",
     )
     check.inst(
         dagster_run.job_code_origin,
         JobPythonOrigin,
-        f"Pipeline run with id '{run_id}' does not include an origin.",
+        f"Run with id '{run_id}' does not include an origin.",
     )
 
     recon_job = recon_job_from_origin(cast(JobPythonOrigin, dagster_run.job_code_origin))
