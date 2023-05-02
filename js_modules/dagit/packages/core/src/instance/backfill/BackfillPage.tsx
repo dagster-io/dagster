@@ -56,8 +56,6 @@ export const BackfillPage = () => {
   );
   const {data} = queryResult;
 
-  console.log(JSON.stringify({data, backfillId}, null, 2));
-
   const backfill = data?.partitionBackfillOrError;
 
   let isInProgress = true;
@@ -122,8 +120,6 @@ export const BackfillPage = () => {
       }
       return runsPathWithFilters(filters);
     }
-
-    console.log(JSON.stringify(backfill.assetBackfillData?.assetBackfillStatuses, null, 2));
 
     return (
       <>

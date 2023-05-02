@@ -61,8 +61,6 @@ const mocks = [
   },
 ];
 
-console.log(JSON.stringify(mocks[0].result, null, 2));
-
 describe('BackfillPage', () => {
   it('renders the loading state', async () => {
     const {getByText} = await act(() => {
