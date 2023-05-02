@@ -20,7 +20,7 @@ By the end of this section, you'll also have assets that depend on other assets 
 
 ## Step 1: Creating an asset without an I/O Manager
 
-Many valid situations exist where you would want to avoid using an I/O manager to write an asset back to memory. One is when the asset is already saved in the asset function definition without having to return the data.
+Many valid situations exist where you would want to avoid using an I/O manager to write an asset back to memory. One of these situations is downloading a file from the internet. Because the file is downloaded directly onto the machine rather than returning it in memory, there is no need to use an I/O manager to write the data back to storage.
 
 In your `assets.py`, create a new asset called `stopwords_zip` by copying and pasting the code below:
 
@@ -50,7 +50,7 @@ Refresh your code location, observe the new asset, and materialize it as you hav
 
 You’ll now unzip the zip file asset you made and extract the CSV from it. This CSV will be a new asset that depends on the zip file asset you downloaded.
 
-By default, an asset will load its dependencies into memory when it materializes. However, there are situations where you would want to avoid doing this. As previously mentioned, if your data is too large to fit into memory, or if you didn’t use an I/O manager for the dependency, you would not want to try loading the dependency.
+By default, an asset will load its dependencies into memory when it materializes. However, there are situations where you would want to avoid doing this. If you're making changes directly on data in storage, such as unzipping a zip file, you don't need to load the data into memory.
 
 To tell an asset not to load a dependency into memory when materializing, you can use the `@asset` decorator’s `non_argument_deps` parameter to establish the dependency instead of passing it in as an argument of the asset’s function definition.
 
@@ -66,7 +66,7 @@ def stopwords_csv() -> None:
         zip_ref.extractall("data")
 ```
 
-Reload your code location, observe the new `stopwords_csv` asset, and notice how it is dependent on the `stopwords_zip` asset.
+Reload your code location, observe the new `stopwords_csv` asset, and notice how it depends on the `stopwords_zip` asset.
 
 ## Step 3: Combining assets with and without I/O managers
 
