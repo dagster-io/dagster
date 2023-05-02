@@ -27,10 +27,18 @@ from dagster import (
     Enum as DagsterEnum,
     Field as DagsterField,
 )
-from dagster._config.config_type import Array, ConfigFloatInstance, ConfigType, EnumValue, Noneable
+from dagster._config.config_type import (
+    Array,
+    ConfigFloatInstance,
+    ConfigType,
+    EnumValue,
+    Noneable,
+)
 from dagster._config.field_utils import config_dictionary_from_values
 from dagster._config.post_process import resolve_defaults
-from dagster._config.pythonic_config.typing_utils import TypecheckAllowPartialResourceInitParams
+from dagster._config.pythonic_config.typing_utils import (
+    TypecheckAllowPartialResourceInitParams,
+)
 from dagster._config.source import BoolSource, IntSource, StringSource
 from dagster._config.validate import process_config, validate_config
 from dagster._core.decorator_utils import get_function_params
@@ -64,7 +72,13 @@ except ImportError:
 from abc import ABC, abstractmethod
 
 from pydantic import BaseModel, Extra
-from pydantic.fields import SHAPE_DICT, SHAPE_LIST, SHAPE_MAPPING, SHAPE_SINGLETON, ModelField
+from pydantic.fields import (
+    SHAPE_DICT,
+    SHAPE_LIST,
+    SHAPE_MAPPING,
+    SHAPE_SINGLETON,
+    ModelField,
+)
 
 import dagster._check as check
 from dagster import Field, Selector, Shape
@@ -214,7 +228,8 @@ class Config(MakeConfigCacheable):
 
                 nested_items = list(check.is_dict(nested_dict).items())
                 check.invariant(
-                    len(nested_items) == 1, "Discriminated union must have exactly one key"
+                    len(nested_items) == 1,
+                    "Discriminated union must have exactly one key",
                 )
                 discriminated_value, nested_values = nested_items[0]
 
@@ -385,7 +400,8 @@ def _apply_defaults_to_schema_field(field: Field, additional_default_values: Any
         # applies the new value as the default value of the field in question.
         defaults_processed_evr = resolve_defaults(field.config_type, additional_default_values)
         check.invariant(
-            defaults_processed_evr.success, "Since validation passed, this should always work."
+            defaults_processed_evr.success,
+            "Since validation passed, this should always work.",
         )
         default_to_pass = defaults_processed_evr.value
         return copy_with_default(field, default_to_pass)
@@ -528,7 +544,9 @@ class ResourceWithKeyMapping(ResourceDefinition):
     """
 
     def __init__(
-        self, resource: ResourceDefinition, resource_id_to_key_mapping: Dict[ResourceId, str]
+        self,
+        resource: ResourceDefinition,
+        resource_id_to_key_mapping: Dict[ResourceId, str],
     ):
         self._resource = resource
         self._resource_id_to_key_mapping = resource_id_to_key_mapping
@@ -573,7 +591,9 @@ class IOManagerWithKeyMapping(ResourceWithKeyMapping, IOManagerDefinition):
     """Version of ResourceWithKeyMapping wrapper that also implements IOManagerDefinition."""
 
     def __init__(
-        self, resource: ResourceDefinition, resource_id_to_key_mapping: Dict[ResourceId, str]
+        self,
+        resource: ResourceDefinition,
+        resource_id_to_key_mapping: Dict[ResourceId, str],
     ):
         ResourceWithKeyMapping.__init__(self, resource, resource_id_to_key_mapping)
         IOManagerDefinition.__init__(
@@ -621,7 +641,9 @@ class ConfigurableResourceFactoryResourceDefinition(ResourceDefinition, AllowDel
         nested_resources: Mapping[str, CoercibleToResource],
     ):
         super().__init__(
-            resource_fn=resource_fn, config_schema=config_schema, description=description
+            resource_fn=resource_fn,
+            config_schema=config_schema,
+            description=description,
         )
         self._resolve_resource_keys = resolve_resource_keys
         self._nested_resources = nested_resources
@@ -954,8 +976,7 @@ class ConfigurableResourceFactory(
         """Optionally override this method to perform any post-execution steps
         needed after the resource is used in execution.
 
-        teardown_after_execution will be called even if the resource fails to initialize in the
-        setup_for_execution step, and if any part of the run fails.
+        teardown_after_execution will be called even if any part of the run fails.
         """
         pass
 
@@ -968,8 +989,8 @@ class ConfigurableResourceFactory(
         Note that if you override this method and want setup_for_execution or
         teardown_after_execution to be called, you must invoke them yourself.
         """
+        self.setup_for_execution(context)
         try:
-            self.setup_for_execution(context)
             yield self.create_resource(context)
         finally:
             # what to do if teardown_after_execution throws
@@ -1108,7 +1129,9 @@ class PartialResource(Generic[TResValue], AllowDelayedDependencies, MakeConfigCa
     resource_cls: Type[ConfigurableResourceFactory[TResValue]]
 
     def __init__(
-        self, resource_cls: Type[ConfigurableResourceFactory[TResValue]], data: Dict[str, Any]
+        self,
+        resource_cls: Type[ConfigurableResourceFactory[TResValue]],
+        data: Dict[str, Any],
     ):
         resource_pointers, _data_without_resources = separate_resource_params(data)
 
@@ -1303,17 +1326,23 @@ class ConfigurableIOManagerFactory(ConfigurableResourceFactory[TIOManagerValue])
         )
 
     @classmethod
-    def input_config_schema(cls) -> Optional[Union[CoercableToConfigSchema, Type[Config]]]:
+    def input_config_schema(
+        cls,
+    ) -> Optional[Union[CoercableToConfigSchema, Type[Config]]]:
         return None
 
     @classmethod
-    def output_config_schema(cls) -> Optional[Union[CoercableToConfigSchema, Type[Config]]]:
+    def output_config_schema(
+        cls,
+    ) -> Optional[Union[CoercableToConfigSchema, Type[Config]]]:
         return None
 
 
 class PartialIOManager(Generic[TResValue], PartialResource[TResValue]):
     def __init__(
-        self, resource_cls: Type[ConfigurableResourceFactory[TResValue]], data: Dict[str, Any]
+        self,
+        resource_cls: Type[ConfigurableResourceFactory[TResValue]],
+        data: Dict[str, Any],
     ):
         PartialResource.__init__(self, resource_cls, data)
 
@@ -1387,7 +1416,9 @@ MAPPING_KEY_TYPE_TO_SCALAR = {
 
 
 def _wrap_config_type(
-    shape_type: PydanticShapeType, key_type: Optional[ConfigType], config_type: ConfigType
+    shape_type: PydanticShapeType,
+    key_type: Optional[ConfigType],
+    config_type: ConfigType,
 ) -> ConfigType:
     """Based on a Pydantic shape type, wraps a config type in the appropriate Dagster config wrapper.
     For example, if the shape type is a Pydantic list, the config type will be wrapped in an Array.

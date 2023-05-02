@@ -174,8 +174,8 @@ def test_pre_teardown_after_execution_with_op_execution_error() -> None:
 
 
 def test_setup_for_execution_with_error() -> None:
-    # If an error occurs in setup_for_execution, this error will manifest as a DagsterResourceFunctionError and
-    # the resource teardown will be called
+    # If an error occurs in setup_for_execution, this error will manifest as a DagsterResourceFunctionError
+    # The resource teardown will not be called
 
     log = []
 
@@ -200,7 +200,6 @@ def test_setup_for_execution_with_error() -> None:
 
     assert log == [
         "setup_for_execution",
-        "teardown_after_execution",
     ]
 
 
