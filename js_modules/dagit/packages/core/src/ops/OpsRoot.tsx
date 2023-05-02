@@ -224,7 +224,7 @@ const OpsRootWithData: React.FC<Props & {name?: string; usedSolids: Solid[]}> = 
               />
             </Box>
             <div style={{flex: 1}}>
-              <AutoSizer nonce={window.__webpack_nonce__}>
+              <AutoSizer nonce={(window as any).__webpack_nonce__}>
                 {({height, width}: {width: number; height: number}) => (
                   <OpList
                     height={height}

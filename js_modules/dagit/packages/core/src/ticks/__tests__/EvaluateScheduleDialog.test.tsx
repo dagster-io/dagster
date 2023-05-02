@@ -63,10 +63,9 @@ describe('EvaluateScheduleTest', () => {
       render(<Test mocks={[GetScheduleQueryMock, ScheduleDryRunMutationError]} />);
     });
     await waitFor(async () => {
-      const selectButton = screen.getByTestId('tick-selection');
-      expect(selectButton).toBeVisible();
-      await userEvent.click(selectButton);
+      expect(screen.getByTestId('tick-selection')).toBeVisible();
     });
+    await userEvent.click(screen.getByTestId('tick-selection'));
     await waitFor(() => {
       expect(screen.getByTestId('tick-5')).toBeVisible();
     });
