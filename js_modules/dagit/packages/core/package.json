@@ -68,7 +68,7 @@
     "remark-plain-text": "^0.2.0",
     "subscriptions-transport-ws": "^0.9.15",
     "worker-loader": "^3.0.8",
-    "yaml": "2.0.0-10"
+    "yaml": "2.2.2"
   },
   "devDependencies": {
     "@babel/cli": "^7.13.15",

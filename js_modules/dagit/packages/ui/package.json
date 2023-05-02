@@ -36,7 +36,7 @@
     "deepmerge": "^4.2.2",
     "react-codemirror2": "^7.2.1",
     "react-virtualized": "^9.22.3",
-    "yaml": "2.0.0-10"
+    "yaml": "2.2.2"
   },
   "devDependencies": {
     "@babel/core": "^7.16.7",

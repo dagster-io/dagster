@@ -2241,7 +2241,7 @@ __metadata:
     typescript: 5.0.2
     webpack: ^5.0.0
     worker-loader: ^3.0.8
-    yaml: 2.0.0-10
+    yaml: 2.2.2
   peerDependencies:
     "@apollo/client": 3.7.10
     "@blueprintjs/core": ^4.17.8
@@ -2423,7 +2423,7 @@ __metadata:
     rollup-plugin-styles: ^4.0.0
     typescript: 5.0.2
     webpack: ^5.0.0
-    yaml: 2.0.0-10
+    yaml: 2.2.2
   peerDependencies:
     "@blueprintjs/core": ^4.17.8
     "@blueprintjs/popover2": 1.13.12
@@ -27381,10 +27381,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"yaml@npm:2.0.0-10":
-  version: 2.0.0-10
-  resolution: "yaml@npm:2.0.0-10"
-  checksum: 7a0bac2f80225da6008fb8ab887f43166fb2485cc3e1350185c43499c76841ea0ca9d79b40c0970e08ab3943f25ffb184e709fef7fb8b26d73987ed0452a91cc
+"yaml@npm:2.2.2":
+  version: 2.2.2
+  resolution: "yaml@npm:2.2.2"
+  checksum: d90c235e099e30094dcff61ba3350437aef53325db4a6bcd04ca96e1bfe7e348b191f6a7a52b5211e2dbc4eeedb22a00b291527da030de7c189728ef3f2b4eb3
   languageName: node
   linkType: hard
 
