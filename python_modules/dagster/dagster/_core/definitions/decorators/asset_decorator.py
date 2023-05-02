@@ -70,7 +70,7 @@ def asset(
     config_schema: Optional[UserConfigSchema] = None,
     required_resource_keys: Optional[Set[str]] = ...,
     resource_defs: Optional[Mapping[str, object]] = ...,
-    io_manager_def: Optional[Union[IOManagerDefinition, "ConfigurableIOManagerFactory"]] = ...,
+    io_manager_def: Optional[object] = ...,
     io_manager_key: Optional[str] = ...,
     compute_kind: Optional[str] = ...,
     dagster_type: Optional[DagsterType] = ...,
@@ -98,7 +98,7 @@ def asset(
     config_schema: Optional[UserConfigSchema] = None,
     required_resource_keys: Optional[Set[str]] = None,
     resource_defs: Optional[Mapping[str, object]] = None,
-    io_manager_def: Optional[Union[IOManagerDefinition, "ConfigurableIOManagerFactory"]] = None,
+    io_manager_def: Optional[object] = None,
     io_manager_key: Optional[str] = None,
     compute_kind: Optional[str] = None,
     dagster_type: Optional[DagsterType] = None,
@@ -145,7 +145,7 @@ def asset(
         io_manager_key (Optional[str]): The resource key of the IOManager used
             for storing the output of the op as an asset, and for loading it in downstream ops
             (default: "io_manager"). Only one of io_manager_key and io_manager_def can be provided.
-        io_manager_def (Optional[Union[IOManagerDefinition, ConfigurableIOManagerFactory]]): (Experimental) The definition of the IOManager used for
+        io_manager_def (Optional[object]): (Experimental) The definition of the IOManager used for
             storing the output of the op as an asset,  and for loading it in
             downstream ops. Only one of io_manager_def and io_manager_key can be provided.
         compute_kind (Optional[str]): A string to represent the kind of computation that produces
@@ -289,8 +289,10 @@ class _Asset:
 
     def __call__(self, fn: Callable) -> AssetsDefinition:
         from dagster._config.pythonic_config import (
-            ConfigurableIOManagerFactory,
             validate_resource_annotated_function,
+        )
+        from dagster._core.execution.build_resources import (
+            wrap_resource_for_execution,
         )
 
         validate_resource_annotated_function(fn)
@@ -319,10 +321,8 @@ class _Asset:
             if isinstance(self.io_manager, str):
                 io_manager_key = cast(str, self.io_manager)
             elif self.io_manager is not None:
-                io_manager_def = check.inst_param(
-                    self.io_manager,
-                    "io_manager",
-                    (IOManagerDefinition, ConfigurableIOManagerFactory),
+                io_manager_def = cast(
+                    IOManagerDefinition, wrap_resource_for_execution(self.io_manager)
                 )
 
                 io_manager_key = out_asset_key.to_python_identifier("io_manager")

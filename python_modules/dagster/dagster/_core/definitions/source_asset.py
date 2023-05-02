@@ -10,7 +10,6 @@ from typing import (
     Iterator,
     Mapping,
     Optional,
-    Union,
     cast,
 )
 
@@ -48,7 +47,6 @@ from dagster._utils.backcompat import ExperimentalWarning, experimental_arg_warn
 from dagster._utils.merger import merge_dicts
 
 if TYPE_CHECKING:
-    from dagster._config.pythonic_config import ConfigurableIOManagerFactory
     from dagster._core.execution.context.compute import (
         OpExecutionContext,
     )
@@ -92,7 +90,7 @@ class SourceAsset(ResourceAddable):
         key: CoercibleToAssetKey,
         metadata: Optional[ArbitraryMetadataMapping] = None,
         io_manager_key: Optional[str] = None,
-        io_manager_def: Optional[Union[IOManagerDefinition, "ConfigurableIOManagerFactory"]] = None,
+        io_manager_def: Optional[object] = None,
         description: Optional[str] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
         group_name: Optional[str] = None,
@@ -106,10 +104,10 @@ class SourceAsset(ResourceAddable):
         _required_resource_keys: Optional[AbstractSet[str]] = None,
         # Add additional fields to with_resources and with_group below
     ):
-        from dagster._config.pythonic_config import (
-            ConfigurableIOManagerFactory,
+        from dagster._core.execution.build_resources import (
+            wrap_resource_for_execution,
+            wrap_resources_for_execution,
         )
-        from dagster._core.execution.build_resources import wrap_resources_for_execution
 
         if partitions_def is not None and observe_fn is not None:
             raise DagsterInvalidDefinitionError(
@@ -130,11 +128,7 @@ class SourceAsset(ResourceAddable):
             dict(check.opt_mapping_param(resource_defs, "resource_defs"))
         )
 
-        resolved_io_manager = (
-            io_manager_def.get_resource_definition()
-            if isinstance(io_manager_def, ConfigurableIOManagerFactory)
-            else io_manager_def
-        )
+        resolved_io_manager = cast(IOManagerDefinition, wrap_resource_for_execution(io_manager_def))
         self._io_manager_def = check.opt_inst_param(
             resolved_io_manager, "io_manager_def", (IOManagerDefinition)
         )
