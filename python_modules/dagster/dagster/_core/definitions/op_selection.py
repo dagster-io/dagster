@@ -31,7 +31,7 @@ from dagster._core.selector.subset_selector import parse_op_queries
 
 
 class OpSelection:
-    def __init__(self, query: Sequence[str]):
+    def __init__(self, query: Iterable[str]):
         self.query = query
 
     def resolve(self, graph_def: GraphDefinition) -> AbstractSet[str]:
@@ -40,7 +40,7 @@ class OpSelection:
             _validate_node_paths(resolved_node_paths, graph_def)
         else:
             # validation happens inside parse_op_queries
-            resolved_node_paths = set(parse_op_queries(graph_def, self.query))
+            resolved_node_paths = set(parse_op_queries(graph_def, list(self.query)))
         return resolved_node_paths
 
 
@@ -96,7 +96,7 @@ def _validate_selection_tree(selection_tree: OpSelectionNode, graph_def: GraphDe
 
 def get_graph_subset(
     graph: GraphDefinition,
-    op_selection: Sequence[str],
+    op_selection: Iterable[str],
 ) -> SubselectedGraphDefinition:
     node_paths = OpSelection(op_selection).resolve(graph)
     selection_tree = _node_paths_to_tree(node_paths)

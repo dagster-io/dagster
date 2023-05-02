@@ -11,10 +11,9 @@ from .test_subset_selector import foo_job, get_asset_selection_job
 
 def test_subset_for_execution():
     recon_job = reconstructable(foo_job)
-    sub_job = recon_job.get_subset(["*add_nums"])
+    sub_job = recon_job.get_subset(op_selection=["*add_nums"])
 
-    assert sub_job.op_selection == ["*add_nums"]
-    assert sub_job.solids_to_execute is None
+    assert sub_job.op_selection == {"*add_nums"}
 
     with instance_for_test() as instance:
         result = execute_job(sub_job, instance)

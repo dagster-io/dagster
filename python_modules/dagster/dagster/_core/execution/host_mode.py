@@ -190,7 +190,7 @@ def execute_run_host_mode(
     )
 
     recon_job = recon_job.get_subset(
-        frozenset(dagster_run.solids_to_execute) if dagster_run.solids_to_execute else None,
+        op_selection=dagster_run.solids_to_execute,
         asset_selection=dagster_run.asset_selection,
     )
 

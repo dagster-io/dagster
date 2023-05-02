@@ -141,7 +141,9 @@ def execute_run_iterator(
         # note that when we receive the solids to execute via DagsterRun, it won't support
         # solid selection query syntax
         job = job.get_subset(
-            frozenset(dagster_run.solids_to_execute) if dagster_run.solids_to_execute else None,
+            op_selection=list(dagster_run.solids_to_execute)
+            if dagster_run.solids_to_execute
+            else None,
             asset_selection=dagster_run.asset_selection,
         )
 
@@ -221,8 +223,10 @@ def execute_run(
         # note that when we receive the solids to execute via DagsterRun, it won't support
         # solid selection query syntax
         job = job.get_subset(
-            frozenset(dagster_run.solids_to_execute) if dagster_run.solids_to_execute else None,
-            dagster_run.asset_selection,
+            op_selection=list(dagster_run.solids_to_execute)
+            if dagster_run.solids_to_execute
+            else None,
+            asset_selection=dagster_run.asset_selection,
         )
 
     execution_plan = _get_execution_plan_from_run(job, dagster_run, instance)
@@ -913,7 +917,7 @@ def _check_execute_job_args(
 
     # generate job subset from the given solid_selection
     if op_selection:
-        job_arg = job_arg.get_subset(op_selection)
+        job_arg = job_arg.get_subset(op_selection=op_selection)
 
     return (
         job_arg,
@@ -932,7 +936,7 @@ def _resolve_reexecute_step_selection(
     step_selection: Sequence[str],
 ) -> ExecutionPlan:
     if parent_dagster_run.solid_selection:
-        job = job.get_subset(parent_dagster_run.solid_selection, None)
+        job = job.get_subset(op_selection=parent_dagster_run.solid_selection)
 
     state = KnownExecutionState.build_for_reexecution(instance, parent_dagster_run)
 

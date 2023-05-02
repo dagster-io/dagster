@@ -424,7 +424,7 @@ def test_job_subset_of_subset():
     assert result.output_for_node("return_one_b") == 1
     assert result.output_for_node("add_one_b") == 2
 
-    subset_job = job_def.get_subset(["add_one_a", "return_one_a"])
+    subset_job = job_def.get_subset(op_selection=["add_one_a", "return_one_a"])
     subset_result = subset_job.execute_in_process()
     assert subset_result.success
     with pytest.raises(DagsterInvariantViolationError):
@@ -465,14 +465,16 @@ def test_job_subset_with_multi_dependency():
     assert result.success
     assert result.output_for_node("noop") == 3
 
-    subset_result = job_def.get_subset(["noop"]).execute_in_process()
+    subset_result = job_def.get_subset(op_selection=["noop"]).execute_in_process()
 
     assert subset_result.success
     with pytest.raises(DagsterInvariantViolationError):
         subset_result.output_for_node("return_one")
     assert subset_result.output_for_node("noop") == 3
 
-    subset_result = job_def.get_subset(["return_one", "return_two", "noop"]).execute_in_process()
+    subset_result = job_def.get_subset(
+        op_selection=["return_one", "return_two", "noop"]
+    ).execute_in_process()
 
     assert subset_result.success
     assert subset_result.output_for_node("return_one") == 1
@@ -544,11 +546,11 @@ def define_three_part_job():
 
 
 def define_created_disjoint_three_part_job():
-    return define_three_part_job().get_subset(["add_one", "add_three"])
+    return define_three_part_job().get_subset(op_selection=["add_one", "add_three"])
 
 
 def test_job_disjoint_subset():
-    disjoint_job = define_three_part_job().get_subset(["add_one", "add_three"])
+    disjoint_job = define_three_part_job().get_subset(op_selection=["add_one", "add_three"])
     assert len(disjoint_job.nodes) == 2
 
 
@@ -937,7 +939,9 @@ def test_selector_with_subset_for_execution():
         def_one()
         def_two()
 
-    assert pipe.get_subset(["def_two"]).op_selection_data.resolved_op_selection == {"def_two"}
+    assert pipe.get_subset(op_selection=["def_two"]).op_selection_data.resolved_op_selection == {
+        "def_two"
+    }
 
 
 def test_default_run_id():

@@ -506,7 +506,7 @@ def test_runs_over_time():
         foo_run_id = repo_1.get_job("foo_job").execute_in_process(instance=instance).run_id
         evolve_a_run_id = (
             repo_1.get_job("evolving_job")
-            .get_subset(["op_A"])
+            .get_subset(op_selection={"op_A"})
             .execute_in_process(
                 instance=instance,
             )
@@ -514,7 +514,7 @@ def test_runs_over_time():
         )
         evolve_b_run_id = (
             repo_1.get_job("evolving_job")
-            .get_subset(["op_B"])
+            .get_subset(op_selection={"op_B"})
             .execute_in_process(
                 instance=instance,
             )
@@ -596,7 +596,7 @@ def test_run_groups_over_time():
         foo_run_id = repo_1.get_job("foo_job").execute_in_process(instance=instance).run_id
         evolve_a_run_id = (
             repo_1.get_job("evolving_job")
-            .get_subset(["op_A"])
+            .get_subset(op_selection={"op_A"})
             .execute_in_process(
                 instance=instance,
             )
@@ -604,7 +604,7 @@ def test_run_groups_over_time():
         )
         evolve_b_run_id = (
             repo_1.get_job("evolving_job")
-            .get_subset(["op_B"])
+            .get_subset(op_selection={"op_B"})
             .execute_in_process(
                 instance=instance,
             )

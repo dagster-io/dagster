@@ -1,9 +1,8 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, AbstractSet, Iterable, Optional, Sequence
+from typing import TYPE_CHECKING, AbstractSet, Iterable, Optional
 
 from typing_extensions import Self
 
-import dagster._check as check
 from dagster._core.definitions.events import AssetKey
 
 if TYPE_CHECKING:
@@ -24,6 +23,7 @@ class IJob(ABC):
     @abstractmethod
     def get_subset(
         self,
+        *,
         op_selection: Optional[Iterable[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
     ) -> "IJob":
@@ -31,7 +31,7 @@ class IJob(ABC):
 
     @property
     @abstractmethod
-    def op_selection(self) -> Optional[Sequence[str]]:
+    def op_selection(self) -> Optional[AbstractSet[str]]:
         pass
 
     @property
@@ -48,41 +48,27 @@ class InMemoryJob(IJob):
     def __init__(
         self,
         job_def: "JobDefinition",
-        solid_selection: Optional[Iterable[str]] = None,
-        asset_selection: Optional[AbstractSet[AssetKey]] = None,
     ):
         self._job_def = job_def
-        self._solid_selection = list(solid_selection) if solid_selection else None
-        self._asset_selection = asset_selection
 
     def get_definition(self) -> "JobDefinition":
         return self._job_def
 
     def get_subset(
         self,
+        *,
         op_selection: Optional[Iterable[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
     ) -> Self:
-        if op_selection and asset_selection:
-            check.failed(
-                "solid_selection and asset_selection cannot both be provided as arguments",
-            )
-        elif op_selection:
-            op_selection = list(op_selection)
-            return InMemoryJob(self._job_def.get_subset(op_selection))
-        elif asset_selection:
-            return InMemoryJob(
-                self._job_def.get_subset(asset_selection=asset_selection),
-                asset_selection=asset_selection,
-            )
-        else:
-            check.failed("Must provide solid_selection or asset_selection")
+        op_selection = set(op_selection) if op_selection else None
+        return InMemoryJob(
+            self._job_def.get_subset(op_selection=op_selection, asset_selection=asset_selection)
+        )
 
     @property
-    def op_selection(self) -> Sequence[str]:
-        # a list of solid queries provided by the user
-        return self._solid_selection  # type: ignore  # (possible none)
+    def op_selection(self) -> Optional[AbstractSet[str]]:
+        return self._job_def.op_selection
 
     @property
     def asset_selection(self) -> Optional[AbstractSet[AssetKey]]:
-        return self._asset_selection
+        return self._job_def.asset_selection

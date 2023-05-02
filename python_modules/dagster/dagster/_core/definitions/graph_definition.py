@@ -646,7 +646,7 @@ class GraphDefinition(NodeDefinition):
             input_values=input_values,
             _subset_selection_data=_asset_selection_data,
             _was_explicitly_provided_resources=None,  # None means this is determined by whether resource_defs contains any explicitly provided resources
-        ).get_subset(op_selection)
+        ).get_subset(op_selection=op_selection)
 
     def coerce_to_job(self) -> "JobDefinition":
         # attempt to coerce a Graph in to a Job, raising a useful error if it doesn't work
@@ -714,7 +714,7 @@ class GraphDefinition(NodeDefinition):
             executor_def=execute_in_process_executor,
             resource_defs=resource_defs,
             input_values=input_values,
-        ).get_subset(op_selection)
+        ).get_subset(op_selection=op_selection)
 
         run_config = run_config if run_config is not None else {}
         op_selection = check.opt_sequence_param(op_selection, "op_selection", str)

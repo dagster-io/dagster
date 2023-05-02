@@ -648,7 +648,8 @@ class JobDefinition(IHasInternalInit):
         )
 
         ephemeral_job = ephemeral_job.get_subset(
-            op_selection, frozenset(asset_selection) if asset_selection else None
+            op_selection=op_selection,
+            asset_selection=frozenset(asset_selection) if asset_selection else None,
         )
 
         merged_tags = merge_dicts(self.tags, tags or {})
@@ -703,7 +704,8 @@ class JobDefinition(IHasInternalInit):
 
     def get_subset(
         self,
-        op_selection: Optional[Sequence[str]] = None,
+        *,
+        op_selection: Optional[Iterable[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
     ) -> Self:
         check.invariant(
@@ -766,7 +768,7 @@ class JobDefinition(IHasInternalInit):
         )
         return new_job
 
-    def _get_job_def_for_op_selection(self, op_selection: Sequence[str]) -> Self:
+    def _get_job_def_for_op_selection(self, op_selection: Iterable[str]) -> Self:
         try:
             sub_graph = get_graph_subset(self.graph, op_selection)
 
@@ -782,7 +784,7 @@ class JobDefinition(IHasInternalInit):
                 config=config,
                 graph_def=sub_graph,
                 _subset_selection_data=OpSelectionData(
-                    op_selection=op_selection,
+                    op_selection=list(op_selection),
                     resolved_op_selection=OpSelection(op_selection).resolve(self.graph),
                     parent_job_def=self,  # used by job snapshot lineage
                 ),
@@ -954,6 +956,14 @@ class JobDefinition(IHasInternalInit):
 
     def with_logger_defs(self, logger_defs: Mapping[str, LoggerDefinition]) -> "JobDefinition":
         return self._copy(logger_defs=logger_defs)
+
+    @property
+    def op_selection(self) -> Optional[AbstractSet[str]]:
+        return set(self.op_selection_data.op_selection) if self.op_selection_data else None
+
+    @property
+    def asset_selection(self) -> Optional[AbstractSet[AssetKey]]:
+        return self.asset_selection_data.asset_selection if self.asset_selection_data else None
 
 
 def _swap_default_io_man(resources: Mapping[str, ResourceDefinition], job: JobDefinition):
