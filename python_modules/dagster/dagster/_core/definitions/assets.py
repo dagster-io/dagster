@@ -881,7 +881,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             for key, description in self._descriptions_by_key.items()
         }
 
-        return __class__.internal_init(
+        return __class__.dagster_internal_init(
             keys_by_input_name={
                 input_name: input_asset_key_replacements.get(key, key)
                 for input_name, key in self._keys_by_input_name.items()
@@ -966,7 +966,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 name=f"{self.op.name}_subset_{suffix}", ins=ins
             )
 
-        return AssetsDefinition.internal_init(
+        return AssetsDefinition.dagster_internal_init(
             keys_by_input_name={**{v: k for k, v in input_names_by_key.items()}},
             # keep track of the original mapping
             keys_by_output_name=self.node_keys_by_output_name,
