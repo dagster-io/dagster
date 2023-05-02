@@ -1,6 +1,7 @@
-from datetime import datetime
-from typing import Sequence, Optional
+from datetime import datetime, timezone
+from typing import Optional, Sequence
 
+import pytest
 from dagster import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
@@ -9,8 +10,8 @@ from dagster import (
     TimeWindowPartitionsDefinition,
     WeeklyPartitionsDefinition,
 )
-import pytest
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.errors import DagsterInvalidInvocationError
 
 
 def subset_with_keys(partitions_def: TimeWindowPartitionsDefinition, keys: Sequence[str]):
@@ -226,7 +227,7 @@ def test_daily_to_daily_lag_different_start_date():
 
 
 @pytest.mark.parametrize(
-    "upstream_partitions_def,downstream_partitions_def,upstream_keys,downstream_keys,current_time",
+    "upstream_partitions_def,downstream_partitions_def,upstream_keys,expected_downstream_keys,current_time",
     [
         (
             HourlyPartitionsDefinition(start_date="2021-05-05-00:00"),
@@ -243,12 +244,25 @@ def test_daily_to_daily_lag_different_start_date():
             datetime(2021, 5, 6, 1),
         ),
         (
-            # When current time is not provided, returns all downstream partitions
             HourlyPartitionsDefinition(start_date="2021-05-05-00:00"),
             DailyPartitionsDefinition(start_date="2021-05-05"),
             ["2021-05-05-23:00", "2021-05-06-00:00", "2021-05-06-01:00"],
             ["2021-05-05", "2021-05-06"],
             None,
+        ),
+        (
+            HourlyPartitionsDefinition(start_date="2021-05-05-00:00", timezone="US/Central"),
+            DailyPartitionsDefinition(start_date="2021-05-05", timezone="US/Central"),
+            ["2021-05-05-23:00", "2021-05-06-00:00", "2021-05-06-01:00"],
+            ["2021-05-05"],
+            datetime(2021, 5, 6, 6, tzinfo=timezone.utc),
+        ),
+        (
+            HourlyPartitionsDefinition(start_date="2021-05-05-00:00"),
+            DailyPartitionsDefinition(start_date="2021-05-05", end_offset=1),
+            ["2021-05-05-23:00", "2021-05-06-00:00", "2021-05-06-01:00"],
+            ["2021-05-05", "2021-05-06"],
+            datetime(2021, 5, 6, 1),
         ),
     ],
 )
@@ -256,7 +270,7 @@ def test_get_downstream_with_current_time(
     upstream_partitions_def: TimeWindowPartitionsDefinition,
     downstream_partitions_def: TimeWindowPartitionsDefinition,
     upstream_keys: Sequence[str],
-    downstream_keys: Sequence[str],
+    expected_downstream_keys: Sequence[str],
     current_time: Optional[datetime],
 ):
     mapping = TimeWindowPartitionMapping()
@@ -266,8 +280,89 @@ def test_get_downstream_with_current_time(
             downstream_partitions_def,
             current_time=current_time,
         ).get_partition_keys()
-        == downstream_keys
+        == expected_downstream_keys
     )
 
 
-# TODO test current time with offsets
+@pytest.mark.parametrize(
+    "upstream_partitions_def,downstream_partitions_def,expected_upstream_keys,downstream_keys,current_time,error_expected",
+    [
+        (
+            DailyPartitionsDefinition(start_date="2021-05-05"),
+            HourlyPartitionsDefinition(start_date="2021-05-05-00:00"),
+            [],
+            ["2021-06-01-00:00"],
+            datetime(2021, 6, 1, 1),
+            True,
+        ),
+        (
+            DailyPartitionsDefinition(start_date="2021-05-05"),
+            HourlyPartitionsDefinition(start_date="2021-05-05-00:00"),
+            [],
+            ["2021-05-05-23:00", "2021-05-06-00:00", "2021-05-06-01:00"],
+            datetime(2021, 5, 6, 1),
+            True,
+        ),
+        (
+            DailyPartitionsDefinition(start_date="2021-05-05"),
+            HourlyPartitionsDefinition(start_date="2021-05-05-00:00"),
+            ["2021-05-05"],
+            ["2021-05-05-23:00"],
+            datetime(2021, 5, 6, 1),
+            False,
+        ),
+        (
+            DailyPartitionsDefinition(start_date="2021-05-05", timezone="US/Central"),
+            HourlyPartitionsDefinition(start_date="2021-05-05-00:00", timezone="US/Central"),
+            ["2021-05-05"],
+            ["2021-05-05-23:00"],
+            datetime(2021, 5, 6, 5, tzinfo=timezone.utc),  # 2021-05-06-00:00 in US/Central
+            False,
+        ),
+        (
+            DailyPartitionsDefinition(start_date="2021-05-05", timezone="US/Central"),
+            HourlyPartitionsDefinition(start_date="2021-05-05-00:00", timezone="US/Central"),
+            [],
+            ["2021-05-05-23:00"],
+            datetime(2021, 5, 6, 4, tzinfo=timezone.utc),  # 2021-05-05-23:00 in US/Central
+            True,
+        ),
+        (
+            DailyPartitionsDefinition(start_date="2021-05-05", end_offset=1),
+            HourlyPartitionsDefinition(start_date="2021-05-05-00:00"),
+            ["2021-05-05", "2021-05-06"],
+            ["2021-05-05-23:00", "2021-05-06-00:00", "2021-05-06-01:00"],
+            datetime(2021, 5, 6, 1),
+            False,
+        ),
+    ],
+)
+def test_get_upstream_with_current_time(
+    upstream_partitions_def: TimeWindowPartitionsDefinition,
+    downstream_partitions_def: TimeWindowPartitionsDefinition,
+    expected_upstream_keys: Sequence[str],
+    downstream_keys: Sequence[str],
+    current_time: Optional[datetime],
+    error_expected: bool,
+):
+    mapping = TimeWindowPartitionMapping()
+
+    if error_expected:
+        with pytest.raises(
+            DagsterInvalidInvocationError, match="does not exist for partitions definition"
+        ):
+            mapping.get_upstream_partitions_for_partitions(
+                subset_with_keys(downstream_partitions_def, downstream_keys),
+                upstream_partitions_def,
+                current_time=current_time,
+            )
+
+    else:
+        assert (
+            mapping.get_upstream_partitions_for_partitions(
+                subset_with_keys(downstream_partitions_def, downstream_keys),
+                upstream_partitions_def,
+                current_time=current_time,
+            ).get_partition_keys()
+            == expected_upstream_keys
+        )

@@ -242,8 +242,15 @@ class AssetBackfillData(NamedTuple):
                 return UnpartitionedAssetBackfillStatus(asset_key, None)
 
         # Only return back statuses for the assets that still exist in the workspace
+        # If partitioned, return the status if the asset has partitions targeted by the backfill
         topological_order = self.get_targeted_asset_keys_topological_order()
-        return [_get_status_for_asset_key(asset_key) for asset_key in topological_order]
+        status_per_asset = [_get_status_for_asset_key(asset_key) for asset_key in topological_order]
+        return [
+            asset_status
+            for asset_status in status_per_asset
+            if isinstance(asset_status, PartitionedAssetBackfillStatus)
+            and asset_status.num_targeted_partitions > 0
+        ]
 
     def get_partition_names(self) -> Optional[Sequence[str]]:
         """Only valid when the same number of partitions are targeted in every asset.

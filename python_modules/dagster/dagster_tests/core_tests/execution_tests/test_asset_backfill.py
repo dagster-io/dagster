@@ -10,6 +10,7 @@ from dagster import (
     DagsterInstance,
     DailyPartitionsDefinition,
     Definitions,
+    HourlyPartitionsDefinition,
     PartitionsDefinition,
     StaticPartitionsDefinition,
     WeeklyPartitionsDefinition,
@@ -661,3 +662,38 @@ def test_asset_backfill_status_counts():
     assert counts[2].partitions_counts_by_status[AssetBackfillStatus.FAILED] == 1
     assert counts[2].partitions_counts_by_status[AssetBackfillStatus.IN_PROGRESS] == 0
     assert counts[2].num_targeted_partitions == 1
+
+
+def test_asset_backfill_selects_only_existent_partitions():
+    @asset(partitions_def=HourlyPartitionsDefinition("2023-01-01-00:00"))
+    def upstream_hourly_partitioned_asset():
+        return 1
+
+    @asset(partitions_def=DailyPartitionsDefinition("2023-01-01"))
+    def downstream_daily_partitioned_asset(
+        upstream_hourly_partitioned_asset,
+    ):
+        return upstream_hourly_partitioned_asset + 1
+
+    assets_by_repo_name = {
+        "repo": [
+            upstream_hourly_partitioned_asset,
+            downstream_daily_partitioned_asset,
+        ]
+    }
+    asset_graph = get_asset_graph(assets_by_repo_name)
+
+    backfill_data = AssetBackfillData.from_asset_partitions(
+        partition_names=["2023-01-09-00:00"],
+        asset_graph=asset_graph,
+        asset_selection=[
+            upstream_hourly_partitioned_asset.key,
+            downstream_daily_partitioned_asset.key,
+        ],
+        dynamic_partitions_store=MagicMock(),
+        all_partitions=False,
+        evaluation_time=pendulum.datetime(2023, 1, 9, 0, 0, 0),
+    )
+
+    target_subset = backfill_data.target_subset
+    assert len(target_subset.get_partitions_subset(downstream_daily_partitioned_asset.key)) == 0

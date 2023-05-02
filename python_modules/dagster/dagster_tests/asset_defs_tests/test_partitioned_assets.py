@@ -31,11 +31,13 @@ from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import TimeWindow
+from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
 )
 from dagster._core.test_utils import assert_namedtuple_lists_equal
+from dagster._seven.compat.pendulum import create_pendulum_time
 
 
 @pytest.fixture(autouse=True)
@@ -669,3 +671,22 @@ def test_multipartition_range_single_run():
         MultiPartitionKey({"date": "2020-01-02", "abc": "a"}),
         MultiPartitionKey({"date": "2020-01-03", "abc": "a"}),
     }
+
+
+def test_error_on_nonexistent_upstream_partition():
+    @asset(partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"))
+    def upstream_asset(context):
+        return 1
+
+    @asset(partitions_def=HourlyPartitionsDefinition(start_date="2020-01-01-00:00"))
+    def downstream_asset(context, upstream_asset):
+        return upstream_asset + 1
+
+    with pendulum.test(create_pendulum_time(2020, 1, 2, 10, 0)):
+        with pytest.raises(
+            DagsterInvalidInvocationError, match="does not exist for partitions definition"
+        ):
+            materialize(
+                [downstream_asset, upstream_asset.to_source_asset()],
+                partition_key="2020-01-02-05:00",
+            )

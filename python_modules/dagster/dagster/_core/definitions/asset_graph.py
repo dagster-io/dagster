@@ -301,8 +301,8 @@ class AssetGraph:
         partition_key: Optional[str],
         parent_asset_key: AssetKey,
         child_asset_key: AssetKey,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: DynamicPartitionsStore,
+        current_time: datetime,
     ) -> Sequence[str]:
         """Converts a partition key from one asset to the corresponding partition keys in one of its
         parent assets. Uses the existing partition mapping between the child asset and the parent
