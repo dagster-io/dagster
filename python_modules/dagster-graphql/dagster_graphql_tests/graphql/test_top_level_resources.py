@@ -84,7 +84,7 @@ def test_fetch_top_level_resources(definitions_graphql_context, snapshot):
     assert result.data["allTopLevelResourceDetailsOrError"]
     assert result.data["allTopLevelResourceDetailsOrError"]["results"]
 
-    assert len(result.data["allTopLevelResourceDetailsOrError"]["results"]) == 5
+    assert len(result.data["allTopLevelResourceDetailsOrError"]["results"]) == 6
 
     snapshot.assert_match(result.data)
 
@@ -141,6 +141,32 @@ def test_fetch_top_level_resource_env_var(definitions_graphql_context, snapshot)
             "value": "MY_STRING",
             "type": "ENV_VAR",
         },
+        {
+            "key": "an_unset_string",
+            "value": '"defaulted"',
+            "type": "VALUE",
+        },
+    ]
+
+    snapshot.assert_match(result.data)
+
+
+def test_fetch_top_level_resource_fixed_config(definitions_graphql_context, snapshot) -> None:
+    selector = infer_resource_selector(definitions_graphql_context, name="my_fixed_config_resource")
+    result = execute_dagster_graphql(
+        definitions_graphql_context,
+        TOP_LEVEL_RESOURCE_QUERY,
+        {"selector": selector},
+    )
+
+    assert not result.errors
+    assert result.data
+    assert result.data["topLevelResourceDetailsOrError"]
+    my_resource = result.data["topLevelResourceDetailsOrError"]
+
+    assert my_resource["description"] == "My description."
+    assert len(my_resource["configFields"]) == 1
+    assert sorted(my_resource["configuredValues"], key=lambda cv: cv["key"]) == [
         {
             "key": "an_unset_string",
             "value": '"defaulted"',

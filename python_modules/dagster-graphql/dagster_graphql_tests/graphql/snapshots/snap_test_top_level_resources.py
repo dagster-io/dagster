@@ -79,6 +79,30 @@ snapshots['test_fetch_top_level_resource_env_var 1'] = {
     }
 }
 
+snapshots['test_fetch_top_level_resource_fixed_config 1'] = {
+    'topLevelResourceDetailsOrError': {
+        '__typename': 'ResourceDetails',
+        'configFields': [
+            {
+                'configType': {
+                    'key': 'StringSourceType'
+                },
+                'description': None,
+                'name': 'an_unset_string'
+            }
+        ],
+        'configuredValues': [
+            {
+                'key': 'an_unset_string',
+                'type': 'VALUE',
+                'value': '"defaulted"'
+            }
+        ],
+        'description': 'My description.',
+        'name': 'my_fixed_config_resource'
+    }
+}
+
 snapshots['test_fetch_top_level_resources 1'] = {
     'allTopLevelResourceDetailsOrError': {
         '__typename': 'ResourceDetailsList',
@@ -90,6 +114,26 @@ snapshots['test_fetch_top_level_resources 1'] = {
                 ],
                 'description': None,
                 'name': 'foo'
+            },
+            {
+                'configFields': [
+                    {
+                        'configType': {
+                            'key': 'StringSourceType'
+                        },
+                        'description': None,
+                        'name': 'an_unset_string'
+                    }
+                ],
+                'configuredValues': [
+                    {
+                        'key': 'an_unset_string',
+                        'type': 'VALUE',
+                        'value': '"defaulted"'
+                    }
+                ],
+                'description': 'My description.',
+                'name': 'my_fixed_config_resource'
             },
             {
                 'configFields': [

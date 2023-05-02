@@ -3,6 +3,7 @@ from contextlib import contextmanager
 from dagster import (
     DagsterInstance,
     Definitions,
+    FixedConfig,
     _check as check,
     asset,
 )
@@ -46,6 +47,9 @@ with environ({"MY_STRING": "bar", "MY_OTHER_STRING": "foo"}):
             ),
             "my_outer_resource": MyOuterResource(
                 inner=MyInnerResource(a_str="wrapped"),
+            ),
+            "my_fixed_config_resource": MyResource(
+                a_string=FixedConfig("ssh it's a secret"),
             ),
         },
     )
