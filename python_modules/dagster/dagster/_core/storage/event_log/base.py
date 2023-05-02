@@ -429,7 +429,9 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         raise NotImplementedError()
 
     @abstractmethod
-    def claim_concurrency_slots(self, concurrency_keys: Set[str], run_id: str, step_key: str):
+    def claim_concurrency_slot(
+        self, concurrency_key: str, run_id: str, step_key: str, priority: Optional[int] = None
+    ):
         """Claim concurrency slots for step."""
         raise NotImplementedError()
 
