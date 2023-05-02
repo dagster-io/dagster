@@ -189,9 +189,7 @@ def new_resource_runtime() -> "Definitions":
     # start_new_resource_runtime_launch
     from dagster import sensor, define_asset_job, RunRequest, RunConfig
 
-    update_data_job = define_asset_job(
-        name="update_data_job", selection=[data_from_database]
-    )
+    update_data_job = define_asset_job(name="update_data_job", selection=[data_from_database])
 
     @sensor(job=update_data_job)
     def table_update_sensor():
@@ -249,9 +247,7 @@ def new_resources_nesting() -> "Definitions":
         assets=[my_asset],
         resources={
             "bucket": FileStoreBucket(
-                credentials=CredentialsResource(
-                    username="my_user", password="my_password"
-                ),
+                credentials=CredentialsResource(username="my_user", password="my_password"),
                 region="us-east-1",
             ),
         },
@@ -416,9 +412,7 @@ def resource_adapter() -> None:
     def my_asset(writer: Writer):
         writer.output("hello, world!")
 
-    defs = Definitions(
-        assets=[my_asset], resources={"writer": WriterResource(prefix="greeting: ")}
-    )
+    defs = Definitions(assets=[my_asset], resources={"writer": WriterResource(prefix="greeting: ")})
 
     # end_resource_adapter
 
@@ -443,9 +437,7 @@ def io_adapter() -> None:
             self.base_path = base_path
 
         def handle_output(self, context: OutputContext, obj):
-            with open(
-                os.path.join(self.base_path, context.step_key, context.name), "w"
-            ) as fd:
+            with open(os.path.join(self.base_path, context.step_key, context.name), "w") as fd:
                 fd.write(obj)
 
         def load_input(self, context: InputContext):
@@ -575,9 +567,7 @@ def raw_github_resource_factory() -> None:
 
     defs = Definitions(
         assets=[public_github_repos],
-        resources={
-            "github": GitHubResource(access_token=EnvVar("GITHUB_ACCESS_TOKEN"))
-        },
+        resources={"github": GitHubResource(access_token=EnvVar("GITHUB_ACCESS_TOKEN"))},
     )
 
     # end_raw_github_resource_factory
@@ -690,43 +680,6 @@ def with_complex_state_example() -> None:
             conn.query("SELECT * FROM my_table")
 
     # end_with_complex_state_example
-
-
-def new_resource_testing_with_state() -> None:
-    # start_new_resource_testing_with_state
-
-    from dagster import ConfigurableResource, asset
-    import mock
-
-    class MyClient:
-        ...
-
-        def query(self, body: str):
-            ...
-
-    class MyClientResource(ConfigurableResource):
-        username: str
-        password: str
-
-        def get_client(self):
-            return MyClient(self.username, self.password)
-
-    @asset
-    def my_asset(client: MyClientResource):
-        return client.get_client().query("SELECT * FROM my_table")
-
-    def test_my_asset():
-        class FakeClient:
-            def query(self, body: str):
-                assert body == "SELECT * FROM my_table"
-                return "my_result"
-
-        mocked_client_resource = mock.Mock()
-        mocked_client_resource.get_client.return_value = FakeClient()
-
-        assert my_asset(mocked_client_resource) == "my_result"
-
-    # end_new_resource_testing_with_state
 
 
 def new_resource_testing_with_state_ops() -> None:
@@ -877,15 +830,10 @@ def new_resource_on_schedule() -> None:
     from dagster import build_schedule_context, validate_run_config
 
     def test_process_data_schedule():
-        context = build_schedule_context(
-            scheduled_execution_time=datetime.datetime(2020, 1, 1)
-        )
+        context = build_schedule_context(scheduled_execution_time=datetime.datetime(2020, 1, 1))
         run_request = process_data_schedule(
             context, date_formatter=DateFormatter(format="%Y-%m-%d")
         )
-        assert (
-            run_request.run_config["ops"]["fetch_data"]["config"]["date"]
-            == "2020-01-01"
-        )
+        assert run_request.run_config["ops"]["fetch_data"]["config"]["date"] == "2020-01-01"
 
     # end_test_resource_on_schedule

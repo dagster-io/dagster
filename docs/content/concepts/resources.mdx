@@ -200,9 +200,7 @@ Then, configuration for the resource can be provided at launch time in the launc
 ```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_runtime_launch endbefore=end_new_resource_runtime_launch dedent=4
 from dagster import sensor, define_asset_job, RunRequest, RunConfig
 
-update_data_job = define_asset_job(
-    name="update_data_job", selection=[data_from_database]
-)
+update_data_job = define_asset_job(name="update_data_job", selection=[data_from_database])
 
 @sensor(job=update_data_job)
 def table_update_sensor():
@@ -245,9 +243,7 @@ defs = Definitions(
     assets=[my_asset],
     resources={
         "bucket": FileStoreBucket(
-            credentials=CredentialsResource(
-                username="my_user", password="my_password"
-            ),
+            credentials=CredentialsResource(username="my_user", password="my_password"),
             region="us-east-1",
         ),
     },
@@ -275,11 +271,13 @@ defs = Definitions(
 
 ---
 
-## Defining resources which require state
+## Managing state in resources
 
 Once a resource reaches a certain complexity, it may be desirable to manage the state of the resource over its lifetime. This is useful for resources which require special initilization or cleanup. `ConfigurableResource` is a dataclass meant to encapsulate config, but can also be used to set up basic state.
 
-The `setup_for_execution` and `teardown_after_execution` methods can be overridden to initialize or teardown a resource before each run execution.
+You can mark any private state attributes using Pydantic's [`PrivateAttr`](https://docs.pydantic.dev/latest/usage/models/#private-model-attributes). These attributes, which must start with an underscore, will not be included in the resource's config.
+
+The `setup_for_execution` and `teardown_after_execution` methods can be overridden to initialize or teardown a resource before each run execution, and are free to modify any private state attributes.
 
 In this instance, we can setup an API token for a client resource based on the username and password provided in the config. We then use that API token to query an API in our asset body.
 
@@ -355,8 +353,6 @@ def my_asset(client: MyClientResource):
     with client.get_connection() as conn:
         conn.query("SELECT * FROM my_table")
 ```
-
-For more information on the recommended way to test with resources which require state, see the [testing section](#testing-resources-with-state).
 
 ---
 
@@ -453,43 +449,6 @@ def test_my_resource_with_nesting():
     resource = MyResourceRequiresAnother(foo=string_holder, bar="bar")
     assert resource.foo.value == "foo"
     assert resource.bar == "bar"
-```
-
-### Testing resources with state
-
-If you have separated out a stateful client class from your resource class as detailed above in the [Defining resources which require state](#defining-resources-which-require-state) section, you can use tools such as the `mock` library to easily fake your resource and associated client.
-
-```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_testing_with_state endbefore=end_new_resource_testing_with_state dedent=4
-from dagster import ConfigurableResource, asset
-import mock
-
-class MyClient:
-    ...
-
-    def query(self, body: str):
-        ...
-
-class MyClientResource(ConfigurableResource):
-    username: str
-    password: str
-
-    def get_client(self):
-        return MyClient(self.username, self.password)
-
-@asset
-def my_asset(client: MyClientResource):
-    return client.get_client().query("SELECT * FROM my_table")
-
-def test_my_asset():
-    class FakeClient:
-        def query(self, body: str):
-            assert body == "SELECT * FROM my_table"
-            return "my_result"
-
-    mocked_client_resource = mock.Mock()
-    mocked_client_resource.get_client.return_value = FakeClient()
-
-    assert my_asset(mocked_client_resource) == "my_result"
 ```
 
 ### Testing with resource context
