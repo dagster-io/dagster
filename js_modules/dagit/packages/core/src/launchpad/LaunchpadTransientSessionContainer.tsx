@@ -21,12 +21,20 @@ interface Props {
   partitionSets: LaunchpadSessionPartitionSetsFragment;
   repoAddress: RepoAddress;
   sessionPresets: Partial<IExecutionSession>;
+  rootDefaultYaml: string | undefined;
 }
 
 export const LaunchpadTransientSessionContainer = (props: Props) => {
-  const {launchpadType, pipeline, partitionSets, repoAddress, sessionPresets} = props;
+  const {
+    launchpadType,
+    pipeline,
+    partitionSets,
+    repoAddress,
+    sessionPresets,
+    rootDefaultYaml,
+  } = props;
 
-  const initialData = useInitialDataForMode(pipeline, partitionSets);
+  const initialData = useInitialDataForMode(pipeline, partitionSets, rootDefaultYaml);
   const initialSessionComplete = createSingleSession({
     ...sessionPresets,
     runConfigYaml: initialData.runConfigYaml,
