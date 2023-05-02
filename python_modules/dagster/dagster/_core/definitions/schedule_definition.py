@@ -509,13 +509,13 @@ class ScheduleDefinition(IHasInternalInit):
             description=self.description,
             job=new_job,
             default_status=self.default_status,
-            run_config=None,  # run_config encapsulated in the _run_config_fn
-            run_config_fn=self._run_config_fn,
-            tags=self._tags,
-            tags_fn=self._tags_fn,
             environment_vars=self._environment_vars,
             required_resource_keys=self.required_resource_keys,
-            should_execute=self._should_execute,
+            run_config=None,  # run_config, tags, should_execute encapsulated in execution_fn
+            run_config_fn=None,
+            tags=None,
+            tags_fn=None,
+            should_execute=None,
         )
 
     def __init__(
