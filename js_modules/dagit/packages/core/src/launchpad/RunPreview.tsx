@@ -216,10 +216,8 @@ const ExpandDefaultButton = ({
       title: 'Scaffold all default config',
       description: (
         <div>
-          <p>
-            Clicking confirm will automatically scaffold any unspecified configuration fields into
-            your run config with default values. You will need to change the values appropriately.
-          </p>
+          Clicking confirm will automatically scaffold any unspecified configuration fields into
+          your run config with default values. You will need to change the values appropriately.
         </div>
       ),
     });
