@@ -1852,5 +1852,8 @@ class _FixedConfig:
         return self._value
 
 
-def FixedConfig(value: Any) -> Any:
-    return _FixedConfig(value)
+C = TypeVar("C")
+
+
+def FixedConfig(value: C) -> C:
+    return _FixedConfig(value)  # type: ignore
