@@ -7,7 +7,8 @@ from dagster import asset
 @asset
 def stopwords_zip() -> None:
     urllib.request.urlretrieve(
-        "https://docs.dagster.io/assets/stopwords.zip,data/stopwords.zip",
+        "https://docs.dagster.io/assets/stopwords.zip",
+        "data/stopwords.zip",
     )
 
 
@@ -21,7 +22,6 @@ import zipfile  # Note: remember to add imports to the top of the file
 def stopwords_csv() -> None:
     with zipfile.ZipFile("data/stopwords.zip", "r") as zip_ref:
         zip_ref.extractall("data")
-
 
 # end_stopwords_csv
 

@@ -5,16 +5,16 @@ description: Learn how to use I/O managers to save your data.
 
 # Tutorial, part 7: Managing your own I/O
 
-When building the dictionary or word counts, the `most_frequent_words` asset currently uses a static list of stopwords to decide what words to ignore. You’ll notice that despite the length of the list, many unhelpful words and prepositions are still not filtered out. You’d like to ignore those words. To scale this properly, you’ll use a CSV of stopwords found on the internet, use it for `most_frequent_words`, and update it before the refresh to ensure that your list of stopwords is up-to-date.
+In this section, you'll take a step back and learn how to use more of Dagster's versatility without using every feature provided to you. Throughout this tutorial, you've learned multiple Dagster concepts that explain how Dagster can manage functionality on your behalf, ex. I/O managers to read and write from storage.
 
-While doing so, you'll take a step back and learn how to use more of Dagster's versatility without using every feature provided to you. Throughout this tutorial, you've learned multiple Dagster concepts that explain how Dagster can manage functionality on your behalf, ex. I/O managers to read and write from storage.
+When building the dictionary or word counts, the `most_frequent_words` asset currently uses a static list of stopwords to decide what words to ignore. You’ll notice that despite the length of the list, many unhelpful words and prepositions are still not filtered out. You’d like to ignore those words. To scale this properly, you’ll use a CSV of stopwords found on the internet, use it for `most_frequent_words`, and update it before the refresh to ensure that your list of stopwords is up-to-date.
 
 You'll create assets to manage reading and writing from storage on your own. This is useful for multiple purposes, such as:
 
-- Your pipeline manages I/O on its own
+- Your pipeline manages I/O on its own by using other libraries/tools that write to storage.
 - You want to run a SQL query that creates or updates a table on the database.
-- Adjacent to the above point, your data is too large to fit into memory.
-- You don't want to use I/O managers.
+- Adjacent to the above point, your I/O manager is batch-oriented, and the data loaded would not fit into memory.
+- Writing your pipeline using I/O managers is possible, but you don't want use this Dagster-specific concept. For example, you have an existing pipeline and don't want to refactor it.
 
 By the end of this section, you'll also have assets that depend on other assets without loading the dependent asset's data into memory.
 
