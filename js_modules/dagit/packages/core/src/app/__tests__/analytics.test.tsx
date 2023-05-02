@@ -1,4 +1,4 @@
-import {act, render, screen} from '@testing-library/react';
+import {act, render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as React from 'react';
 import {Route, Switch} from 'react-router-dom';
@@ -67,7 +67,7 @@ describe('Analytics', () => {
       const mockAnalytics = createMockAnalytics();
 
       await act(async () => {
-        render(
+        await render(
           <TestProvider routerProps={{initialEntries: ['/foo/hello']}}>
             <Test mockAnalytics={mockAnalytics}>
               <Switch>
@@ -81,8 +81,8 @@ describe('Analytics', () => {
       });
 
       const button = screen.getByRole('button');
-      act(() => {
-        userEvent.click(button);
+      await act(() => {
+        button.click();
       });
 
       const {track} = mockAnalytics;
@@ -122,8 +122,10 @@ describe('Analytics', () => {
       });
 
       jest.advanceTimersByTime(400);
-      expect(mockAnalytics.page).toHaveBeenCalledTimes(0);
-      expect(overrideAnalytics.page).toHaveBeenCalledTimes(1);
+      await waitFor(() => {
+        expect(mockAnalytics.page).toHaveBeenCalledTimes(0);
+        expect(overrideAnalytics.page).toHaveBeenCalledTimes(1);
+      });
     });
   });
 });

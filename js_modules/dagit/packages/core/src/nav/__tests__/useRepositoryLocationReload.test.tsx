@@ -1,4 +1,4 @@
-import {fireEvent, render, screen, waitFor} from '@testing-library/react';
+import {act, fireEvent, render, screen, waitFor} from '@testing-library/react';
 import * as React from 'react';
 
 import {TestProvider} from '../../testing/TestProvider';
@@ -42,11 +42,13 @@ describe('useRepositoryReloadLocation', () => {
   };
 
   it('reloads successfully if there are no errors', async () => {
-    render(
-      <TestProvider apolloProps={{mocks: [defaultMocks]}}>
-        <Test />
-      </TestProvider>,
-    );
+    await act(() => {
+      render(
+        <TestProvider apolloProps={{mocks: [defaultMocks]}}>
+          <Test />
+        </TestProvider>,
+      );
+    });
 
     await waitFor(() => {
       expect(screen.queryByText(/Reloading: false/)).toBeVisible();
@@ -63,8 +65,8 @@ describe('useRepositoryReloadLocation', () => {
     jest.runAllTicks();
 
     await waitFor(() => {
-      expect(screen.queryByText(/Reloading: false/)).toBeVisible();
       expect(screen.queryByText(/Has error: false/)).toBeVisible();
+      expect(screen.queryByText(/Reloading: false/)).toBeVisible();
     });
   });
 

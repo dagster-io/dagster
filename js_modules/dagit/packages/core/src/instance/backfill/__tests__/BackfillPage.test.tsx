@@ -77,7 +77,9 @@ describe('BackfillPage', () => {
       );
     });
 
-    expect(screen.getByTestId('page-loading-indicator')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByTestId('page-loading-indicator')).toBeInTheDocument();
+    });
 
     await waitFor(() => getByText('assetA'));
   });
