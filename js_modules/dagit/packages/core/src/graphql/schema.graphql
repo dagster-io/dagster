@@ -1071,10 +1071,12 @@ type LogsCapturedEvent implements MessageEvent {
   solidHandleID: String
   eventType: DagsterEventType
   fileKey: String!
-  logKey: String!
   stepKeys: [String!]
   externalUrl: String
+  externalStdoutUrl: String
+  externalStderrUrl: String
   pid: Int
+  logKey: String!
 }
 
 type AlertStartEvent implements MessageEvent & RunEvent {
