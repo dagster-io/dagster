@@ -413,6 +413,25 @@ def test_asset_with_io_manager_def():
     assert events == ["entered for the_asset"]
 
 
+def test_asset_with_io_manager_def_plain_old_python_object_iomanager() -> None:
+    events = []
+
+    class MyIOManager(IOManager):
+        def handle_output(self, context, _obj):
+            events.append(f"entered for {context.step_key}")
+
+        def load_input(self, _context):
+            pass
+
+    @asset(io_manager_def=MyIOManager())
+    def the_asset():
+        pass
+
+    result = materialize([the_asset])
+    assert result.success
+    assert events == ["entered for the_asset"]
+
+
 def test_multiple_assets_io_manager_defs():
     io_manager_inst = InMemoryIOManager()
     num_times = [0]
