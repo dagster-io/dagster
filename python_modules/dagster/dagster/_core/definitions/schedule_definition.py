@@ -44,7 +44,7 @@ from ..errors import (
 )
 from ..instance import DagsterInstance
 from ..instance.ref import InstanceRef
-from ..storage.pipeline_run import DagsterRun
+from ..storage.dagster_run import DagsterRun
 from .graph_definition import GraphDefinition
 from .job_definition import JobDefinition
 from .run_request import RunRequest, SkipReason
@@ -152,16 +152,6 @@ class ScheduleEvaluationContext:
 
     Users should not instantiate this object directly. To construct a `ScheduleEvaluationContext` for testing purposes, use :py:func:`dagster.build_schedule_context`.
 
-    Attributes:
-        instance_ref (Optional[InstanceRef]): The serialized instance configured to run the schedule
-        scheduled_execution_time (datetime):
-            The time in which the execution was scheduled to happen. May differ slightly
-            from both the actual execution time and the time at which the run config is computed.
-            Not available in all schedulers - currently only set in deployments using
-            DagsterDaemonScheduler.
-        resources (Optional[Dict[str, Any]]): Mapping of resource key to resource
-            definition to be made available during schedule execution.
-
     Example:
         .. code-block:: python
 
@@ -243,6 +233,9 @@ class ScheduleEvaluationContext:
     @public
     @property
     def resources(self) -> Resources:
+        """Mapping of resource key to resource definition to be made available
+        during schedule execution.
+        """
         from dagster._core.definitions.scoped_resources_builder import (
             IContainsGenerator,
         )
@@ -305,11 +298,15 @@ class ScheduleEvaluationContext:
 
     @property
     def instance_ref(self) -> Optional[InstanceRef]:
+        """The serialized instance configured to run the schedule."""
         return self._instance_ref
 
     @public
     @property
     def scheduled_execution_time(self) -> datetime:
+        """The time in which the execution was scheduled to happen. May differ slightly
+        from both the actual execution time and the time at which the run config is computed.
+        """
         if self._scheduled_execution_time is None:
             check.failed(
                 "Attempting to access scheduled_execution_time, but no scheduled_execution_time was"
@@ -512,6 +509,7 @@ class ScheduleDefinition:
             description=self.description,
             job=new_job,
             default_status=self.default_status,
+            required_resource_keys=self.required_resource_keys,
         )
 
     def __init__(

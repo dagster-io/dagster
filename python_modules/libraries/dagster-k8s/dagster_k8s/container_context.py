@@ -6,7 +6,7 @@ import kubernetes.client
 from dagster._config import process_config
 from dagster._core.container_context import process_shared_container_context_config
 from dagster._core.errors import DagsterInvalidConfigError
-from dagster._core.storage.pipeline_run import DagsterRun
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.utils import parse_env_var
 from dagster._utils import hash_collection
 
@@ -51,7 +51,7 @@ class K8sContainerContext(
     )
 ):
     """Encapsulates configuration that can be applied to a K8s job running Dagster code.
-    Can be persisted on a PipelineRun at run submission time based on metadata from the
+    Can be persisted on a DagsterRun at run submission time based on metadata from the
     code location and then included in the job's configuration at run launch time or step
     launch time.
     """
@@ -154,7 +154,7 @@ class K8sContainerContext(
 
     @staticmethod
     def create_for_run(
-        pipeline_run: DagsterRun,
+        dagster_run: DagsterRun,
         run_launcher: Optional["K8sRunLauncher"],
         include_run_tags: bool,
     ) -> "K8sContainerContext":
@@ -180,8 +180,8 @@ class K8sContainerContext(
                 )
             )
 
-        if pipeline_run.job_code_origin:
-            run_container_context = pipeline_run.job_code_origin.repository_origin.container_context
+        if dagster_run.job_code_origin:
+            run_container_context = dagster_run.job_code_origin.repository_origin.container_context
 
             if run_container_context:
                 context = context.merge(
@@ -189,7 +189,7 @@ class K8sContainerContext(
                 )
 
         if include_run_tags:
-            user_defined_k8s_config = get_user_defined_k8s_config(pipeline_run.tags)
+            user_defined_k8s_config = get_user_defined_k8s_config(dagster_run.tags)
 
             context = context.merge(
                 K8sContainerContext(run_k8s_config=user_defined_k8s_config.to_dict())

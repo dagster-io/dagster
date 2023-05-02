@@ -35,8 +35,8 @@ from dagster._core.assets import AssetDetails
 from dagster._core.definitions import ExpectationResult
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.dependency import NodeHandle
+from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
-from dagster._core.definitions.pipeline_base import InMemoryJob
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.events import (
     AssetMaterializationPlannedData,
@@ -3245,6 +3245,9 @@ class TestEventLogStorage:
         assert partitions == ["foo", "bar", "baz", "qux"]
 
         assert set(storage.get_dynamic_partitions("baz")) == set()
+
+        # Adding no partitions is a no-op
+        storage.add_dynamic_partitions(partitions_def_name="foo", partition_keys=[])
 
     def test_delete_dynamic_partitions(self, storage):
         assert storage

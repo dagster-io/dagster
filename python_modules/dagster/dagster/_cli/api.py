@@ -19,7 +19,7 @@ from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData
 from dagster._core.execution.api import create_execution_plan, execute_plan_iterator
-from dagster._core.execution.context_creation_pipeline import create_context_free_log_manager
+from dagster._core.execution.context_creation_job import create_context_free_log_manager
 from dagster._core.execution.run_cancellation_thread import start_run_cancellation_thread
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.origin import (
@@ -27,7 +27,7 @@ from dagster._core.origin import (
     JobPythonOrigin,
     get_python_environment_entry_point,
 )
-from dagster._core.storage.pipeline_run import DagsterRun
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import coerce_valid_log_level
 from dagster._grpc import DagsterGrpcClient, DagsterGrpcServer
@@ -202,12 +202,12 @@ def _resume_run_command_body(
         cancellation_thread, cancellation_thread_shutdown_event = None, None
     dagster_run = check.not_none(
         instance.get_run_by_id(run_id),  # type: ignore
-        f"Pipeline run with id '{run_id}' not found for run execution.",
+        f"Run with id '{run_id}' not found for run execution.",
     )
     check.inst(
         dagster_run.job_code_origin,
         JobPythonOrigin,
-        f"Pipeline run with id '{run_id}' does not include an origin.",
+        f"Run with id '{run_id}' does not include an origin.",
     )
 
     recon_job = recon_job_from_origin(cast(JobPythonOrigin, dagster_run.job_code_origin))

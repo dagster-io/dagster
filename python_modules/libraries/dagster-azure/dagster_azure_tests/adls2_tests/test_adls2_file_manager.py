@@ -157,7 +157,7 @@ def test_adls_file_manager_resource(MockADLS2FileManager, MockADLS2Resource):
     }
 
     @op(required_resource_keys={"file_manager"})
-    def test_solid(context):
+    def test_op(context):
         # test that we got back a ADLS2FileManager
         assert context.resources.file_manager == MockADLS2FileManager.return_value
 
@@ -176,7 +176,7 @@ def test_adls_file_manager_resource(MockADLS2FileManager, MockADLS2Resource):
     context = build_op_context(
         resources={"file_manager": configured(adls2_file_manager)(resource_config)},
     )
-    test_solid(context)
+    test_op(context)
     assert did_it_run["it_ran"]
 
 
@@ -198,7 +198,7 @@ def test_adls_file_manager_resource_defaultazurecredential(
     }
 
     @op(required_resource_keys={"file_manager"})
-    def test_solid(context):
+    def test_op(context):
         # test that we got back a ADLS2FileManager
         assert context.resources.file_manager == MockADLS2FileManager.return_value
 
@@ -219,5 +219,5 @@ def test_adls_file_manager_resource_defaultazurecredential(
     context = build_op_context(
         resources={"file_manager": configured(adls2_file_manager)(resource_config)},
     )
-    test_solid(context)
+    test_op(context)
     assert did_it_run["it_ran"]

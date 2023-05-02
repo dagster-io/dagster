@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import cast
+from typing import Optional, Sequence, cast
 
 import pendulum.parser
 import pytest
@@ -22,6 +22,7 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
     TimeWindowPartitionsSubset,
 )
+from dagster._seven.compat.pendulum import create_pendulum_time
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 
 DATE_FORMAT = "%Y-%m-%d"
@@ -293,6 +294,384 @@ def test_weekly_partitions_with_time_offset():
 
     assert partitions_def.time_window_for_partition_key("2021-05-01") == time_window(
         "2021-05-05T04:15:00", "2021-05-12T04:15:00"
+    )
+
+
+def test_partitioned_config_invalid_offsets():
+    with pytest.raises(DagsterInvalidDefinitionError, match="Found invalid cron schedule"):
+
+        @weekly_partitioned_config(start_date=datetime(year=2021, month=1, day=1), day_offset=8)
+        def my_weekly_partitioned_config(_start, _end):
+            return {}
+
+    with pytest.raises(DagsterInvalidDefinitionError, match="Found invalid cron schedule"):
+
+        @monthly_partitioned_config(start_date=datetime(year=2021, month=1, day=1), day_offset=32)
+        def my_monthly_partitioned_config(_start, _end):
+            return {}
+
+
+def assert_expected_partition_keys(
+    generated_partition_keys: Sequence[str], expected_partition_keys: Sequence[str]
+):
+    assert all(isinstance(generated_key, str) for generated_key in generated_partition_keys)
+    assert len(generated_partition_keys) == len(expected_partition_keys)
+    for generated_key, expected_key in zip(generated_partition_keys, expected_partition_keys):
+        assert generated_key == expected_key
+
+
+@pytest.mark.parametrize(
+    argnames=[
+        "start",
+        "partition_days_offset",
+        "current_time",
+        "expected_partition_keys",
+        "timezone",
+    ],
+    ids=[
+        "partition days offset == 0",
+        "partition days offset == 1",
+        "partition days offset > 1",
+        "partition days offset < 1",
+        "different start/end year",
+        "leap year",
+        "not leap year",
+    ],
+    argvalues=[
+        (
+            datetime(year=2021, month=1, day=1),
+            0,
+            create_pendulum_time(2021, 1, 6, 1, 20),
+            ["2021-01-01", "2021-01-02", "2021-01-03", "2021-01-04", "2021-01-05"],
+            None,
+        ),
+        (
+            datetime(year=2021, month=1, day=1),
+            1,
+            create_pendulum_time(2021, 1, 6, 1, 20),
+            ["2021-01-01", "2021-01-02", "2021-01-03", "2021-01-04", "2021-01-05", "2021-01-06"],
+            None,
+        ),
+        (
+            datetime(year=2021, month=1, day=1),
+            2,
+            create_pendulum_time(2021, 1, 6, 1, 20),
+            [
+                "2021-01-01",
+                "2021-01-02",
+                "2021-01-03",
+                "2021-01-04",
+                "2021-01-05",
+                "2021-01-06",
+                "2021-01-07",
+            ],
+            None,
+        ),
+        (
+            datetime(year=2021, month=1, day=1),
+            -2,
+            create_pendulum_time(2021, 1, 8, 1, 20),
+            [
+                "2021-01-01",
+                "2021-01-02",
+                "2021-01-03",
+                "2021-01-04",
+                "2021-01-05",
+            ],
+            None,
+        ),
+        (
+            datetime(year=2020, month=12, day=29),
+            0,
+            create_pendulum_time(2021, 1, 3, 1, 20),
+            ["2020-12-29", "2020-12-30", "2020-12-31", "2021-01-01", "2021-01-02"],
+            None,
+        ),
+        (
+            datetime(year=2020, month=2, day=28),
+            0,
+            create_pendulum_time(2020, 3, 3, 1, 20),
+            ["2020-02-28", "2020-02-29", "2020-03-01", "2020-03-02"],
+            None,
+        ),
+        (
+            datetime(year=2021, month=2, day=28),
+            0,
+            create_pendulum_time(2021, 3, 3, 1, 20),
+            ["2021-02-28", "2021-03-01", "2021-03-02"],
+            None,
+        ),
+    ],
+)
+def test_time_partitions_daily_partitions(
+    start: datetime,
+    partition_days_offset: int,
+    current_time: Optional[datetime],
+    expected_partition_keys: Sequence[str],
+    timezone: Optional[str],
+):
+    partitions_def = DailyPartitionsDefinition(
+        start_date=start, end_offset=partition_days_offset, timezone=timezone
+    )
+
+    assert_expected_partition_keys(
+        partitions_def.get_partition_keys(current_time=current_time), expected_partition_keys
+    )
+
+
+@pytest.mark.parametrize(
+    argnames=[
+        "start",
+        "partition_months_offset",
+        "current_time",
+        "expected_partition_keys",
+    ],
+    ids=[
+        "partition months offset == 0",
+        "partition months offset == 1",
+        "partition months offset > 1",
+        "partition months offset < 1",
+        "execution day of month not within start/end range",
+    ],
+    argvalues=[
+        (
+            datetime(year=2021, month=1, day=1),
+            0,
+            create_pendulum_time(2021, 3, 1, 1, 20),
+            ["2021-01-01", "2021-02-01"],
+        ),
+        (
+            datetime(year=2021, month=1, day=1),
+            1,
+            create_pendulum_time(2021, 3, 1, 1, 20),
+            ["2021-01-01", "2021-02-01", "2021-03-01"],
+        ),
+        (
+            datetime(year=2021, month=1, day=1),
+            2,
+            create_pendulum_time(2021, 3, 1, 1, 20),
+            ["2021-01-01", "2021-02-01", "2021-03-01", "2021-04-01"],
+        ),
+        (
+            datetime(year=2021, month=1, day=1),
+            -1,
+            create_pendulum_time(2021, 3, 27),
+            ["2021-01-01"],
+        ),
+        (
+            datetime(year=2021, month=1, day=3),
+            0,
+            create_pendulum_time(2021, 1, 31),
+            [],
+        ),
+    ],
+)
+def test_time_partitions_monthly_partitions(
+    start: datetime,
+    partition_months_offset: int,
+    current_time,
+    expected_partition_keys: Sequence[str],
+):
+    partitions_def = MonthlyPartitionsDefinition(
+        start_date=start, end_offset=partition_months_offset
+    )
+
+    assert_expected_partition_keys(
+        partitions_def.get_partition_keys(current_time=current_time), expected_partition_keys
+    )
+
+
+@pytest.mark.parametrize(
+    argnames=[
+        "start",
+        "partition_weeks_offset",
+        "current_time",
+        "expected_partition_keys",
+    ],
+    ids=[
+        "partition weeks offset == 0",
+        "partition weeks offset == 1",
+        "partition weeks offset > 1",
+        "partition weeks offset < 1",
+        "execution day of week not within start/end range",
+    ],
+    argvalues=[
+        (
+            datetime(year=2021, month=1, day=1),
+            0,
+            create_pendulum_time(2021, 1, 31, 1, 20),
+            ["2021-01-03", "2021-01-10", "2021-01-17", "2021-01-24"],
+        ),
+        (
+            datetime(year=2021, month=1, day=1),
+            1,
+            create_pendulum_time(2021, 1, 31, 1, 20),
+            ["2021-01-03", "2021-01-10", "2021-01-17", "2021-01-24", "2021-01-31"],
+        ),
+        (
+            datetime(year=2021, month=1, day=1),
+            2,
+            create_pendulum_time(2021, 1, 31, 1, 20),
+            ["2021-01-03", "2021-01-10", "2021-01-17", "2021-01-24", "2021-01-31", "2021-02-07"],
+        ),
+        (
+            datetime(year=2021, month=1, day=1),
+            -2,
+            create_pendulum_time(2021, 1, 24, 1, 20),
+            ["2021-01-03"],
+        ),
+        (
+            datetime(year=2021, month=1, day=4),
+            0,
+            create_pendulum_time(2021, 1, 9),
+            [],
+        ),
+    ],
+)
+def test_time_partitions_weekly_partitions(
+    start: datetime,
+    partition_weeks_offset: int,
+    current_time,
+    expected_partition_keys: Sequence[str],
+):
+    partitions_def = WeeklyPartitionsDefinition(start_date=start, end_offset=partition_weeks_offset)
+
+    assert_expected_partition_keys(
+        partitions_def.get_partition_keys(current_time=current_time), expected_partition_keys
+    )
+
+
+@pytest.mark.parametrize(
+    argnames=[
+        "start",
+        "timezone",
+        "partition_hours_offset",
+        "current_time",
+        "expected_partition_keys",
+    ],
+    ids=[
+        "partition hours offset == 0",
+        "partition hours offset == 1",
+        "partition hours offset > 1",
+        "partition hours offset < 1",
+        "execution hour not within start/end range",
+        "Spring DST",
+        "Spring DST with timezone",
+        "Fall DST",
+        "Fall DST with timezone",
+    ],
+    argvalues=[
+        (
+            datetime(year=2021, month=1, day=1, hour=0),
+            None,
+            0,
+            create_pendulum_time(2021, 1, 1, 4, 1),
+            [
+                "2021-01-01-00:00",
+                "2021-01-01-01:00",
+                "2021-01-01-02:00",
+                "2021-01-01-03:00",
+            ],
+        ),
+        (
+            datetime(year=2021, month=1, day=1, hour=0),
+            None,
+            1,
+            create_pendulum_time(2021, 1, 1, 4, 1),
+            [
+                "2021-01-01-00:00",
+                "2021-01-01-01:00",
+                "2021-01-01-02:00",
+                "2021-01-01-03:00",
+                "2021-01-01-04:00",
+            ],
+        ),
+        (
+            datetime(year=2021, month=1, day=1, hour=0),
+            None,
+            2,
+            create_pendulum_time(2021, 1, 1, 4, 1),
+            [
+                "2021-01-01-00:00",
+                "2021-01-01-01:00",
+                "2021-01-01-02:00",
+                "2021-01-01-03:00",
+                "2021-01-01-04:00",
+                "2021-01-01-05:00",
+            ],
+        ),
+        (
+            datetime(year=2021, month=1, day=1, hour=0),
+            None,
+            -1,
+            create_pendulum_time(2021, 1, 1, 3, 30),
+            ["2021-01-01-00:00", "2021-01-01-01:00"],
+        ),
+        (
+            datetime(year=2021, month=1, day=1, hour=0, minute=2),
+            None,
+            0,
+            create_pendulum_time(2021, 1, 1, 0, 59),
+            [],
+        ),
+        (
+            datetime(year=2021, month=3, day=14, hour=1),
+            None,
+            0,
+            create_pendulum_time(2021, 3, 14, 4, 1),
+            [
+                "2021-03-14-01:00",
+                "2021-03-14-02:00",
+                "2021-03-14-03:00",
+            ],
+        ),
+        (
+            datetime(year=2021, month=3, day=14, hour=1),
+            "US/Central",
+            0,
+            create_pendulum_time(2021, 3, 14, 4, 1, tz="US/Central"),
+            ["2021-03-14-01:00", "2021-03-14-03:00"],
+        ),
+        (
+            datetime(year=2021, month=11, day=7, hour=0),
+            None,
+            0,
+            create_pendulum_time(2021, 11, 7, 4, 1),
+            [
+                "2021-11-07-00:00",
+                "2021-11-07-01:00",
+                "2021-11-07-02:00",
+                "2021-11-07-03:00",
+            ],
+        ),
+        (
+            datetime(year=2021, month=11, day=7, hour=0),
+            "US/Central",
+            0,
+            create_pendulum_time(2021, 11, 7, 4, 1, tz="US/Central"),
+            [
+                "2021-11-07-00:00",
+                "2021-11-07-01:00",
+                "2021-11-07-01:00",
+                "2021-11-07-02:00",
+                "2021-11-07-03:00",
+            ],
+        ),
+    ],
+)
+def test_time_partitions_hourly_partitions(
+    start: datetime,
+    timezone: Optional[str],
+    partition_hours_offset: int,
+    current_time,
+    expected_partition_keys: Sequence[str],
+):
+    partitions_def = HourlyPartitionsDefinition(
+        start_date=start, end_offset=partition_hours_offset, timezone=timezone
+    )
+
+    assert_expected_partition_keys(
+        partitions_def.get_partition_keys(current_time=current_time), expected_partition_keys
     )
 
 

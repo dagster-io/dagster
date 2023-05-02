@@ -11,8 +11,8 @@ from watchdog.observers import Observer
 
 import dagster._check as check
 from dagster._config import StringSource
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.event_log.base import EventLogCursor
-from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.storage.sql import (
     check_alembic_revision,
     create_engine,

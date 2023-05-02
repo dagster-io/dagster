@@ -2,6 +2,7 @@ import asyncio
 import os
 import re
 import time
+import warnings
 from collections import defaultdict
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import contextmanager
@@ -10,6 +11,7 @@ from typing import (
     TYPE_CHECKING,
     AbstractSet,
     Any,
+    Callable,
     Dict,
     Iterator,
     Mapping,
@@ -46,7 +48,7 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.launcher import RunLauncher
 from dagster._core.run_coordinator import RunCoordinator, SubmitRunContext
 from dagster._core.secrets import SecretsLoader
-from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, RunsFilter
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
@@ -625,3 +627,16 @@ class SingleThreadPoolExecutor(ThreadPoolExecutor):
 
     def __init__(self):
         super().__init__(max_workers=1, thread_name_prefix="sensor_daemon_worker")
+
+
+def ignore_warning(message_substr: str):
+    """Ignores warnings within the decorated function that contain the given string."""
+
+    def decorator(func: Callable):
+        def wrapper(*args, **kwargs):
+            warnings.filterwarnings("ignore", message=message_substr)
+            return func(*args, **kwargs)
+
+        return wrapper
+
+    return decorator

@@ -37,20 +37,16 @@ from dagster._core.definitions.auto_materialize_policy import AutoMaterializePol
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_requirement import ensure_requirements_satisfied
 from dagster._core.errors import DagsterInvalidConfigError
+from dagster._core.test_utils import ignore_warning
 from dagster._core.types.dagster_type import resolve_dagster_type
 
 
 @pytest.fixture(autouse=True)
-def check_experimental_warnings():
-    with warnings.catch_warnings(record=True) as record:
-        # turn off any outer warnings filters
-        warnings.resetwarnings()
+def error_on_warning():
+    # turn off any outer warnings filters, e.g. ignores that are set in pyproject.toml
+    warnings.resetwarnings()
 
-        yield
-
-        for w in record:
-            if "asset_key" in w.message.args[0]:
-                assert False, f"Unexpected warning: {w.message.args[0]}"
+    warnings.filterwarnings("error")
 
 
 def test_asset_no_decorator_args():
@@ -303,6 +299,7 @@ def test_asset_with_dagster_type():
     assert my_asset.op.output_defs[0].dagster_type.display_name == "String"
 
 
+@ignore_warning("`version` property on OpDefinition is deprecated")
 def test_asset_with_code_version():
     @asset(code_version="foo")
     def my_asset(arg1):
@@ -312,6 +309,7 @@ def test_asset_with_code_version():
     assert my_asset.op.output_def_named("result").code_version == "foo"
 
 
+@ignore_warning("`version` property on OpDefinition is deprecated")
 def test_asset_with_code_version_direct_call():
     def func(arg1):
         return arg1
@@ -655,6 +653,7 @@ def test_kwargs_multi_asset_with_context():
     assert materialize_to_memory([upstream, my_asset]).success
 
 
+@ignore_warning('"resource_defs" is an experimental argument')
 def test_multi_asset_resource_defs():
     @resource
     def baz_resource():
@@ -701,6 +700,8 @@ def test_multi_asset_code_versions():
     }
 
 
+@ignore_warning('"io_manager_def" is an experimental argument')
+@ignore_warning('"resource_defs" is an experimental argument')
 def test_asset_io_manager_def():
     @io_manager
     def the_manager():
@@ -826,6 +827,9 @@ def test_graph_asset_decorator_no_args():
     assert my_graph.keys_by_output_name["result"] == AssetKey("my_graph")
 
 
+@ignore_warning('"FreshnessPolicy" is an experimental class')
+@ignore_warning('"AutoMaterializePolicy" is an experimental class')
+@ignore_warning('"resource_defs" is an experimental argument')
 def test_graph_asset_with_args():
     @resource
     def foo_resource():
@@ -927,6 +931,9 @@ def test_graph_asset_w_key_prefix():
     assert str_prefix.keys_by_output_name["result"].path == ["prefix", "str_prefix"]
 
 
+@ignore_warning('"FreshnessPolicy" is an experimental class')
+@ignore_warning('"AutoMaterializePolicy" is an experimental class')
+@ignore_warning('"resource_defs" is an experimental argument')
 def test_graph_multi_asset_decorator():
     @resource
     def foo_resource():
@@ -1027,6 +1034,7 @@ def test_graph_multi_asset_w_key_prefix():
     }
 
 
+@ignore_warning('"resource_defs" is an experimental argument')
 def test_multi_asset_with_bare_resource():
     class BareResourceObject:
         pass
@@ -1043,6 +1051,7 @@ def test_multi_asset_with_bare_resource():
     assert executed["yes"]
 
 
+@ignore_warning('"AutoMaterializePolicy" is an experimental class')
 def test_multi_asset_with_auto_materialize_policy():
     @multi_asset(
         outs={

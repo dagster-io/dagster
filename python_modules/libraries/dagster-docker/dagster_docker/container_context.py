@@ -10,7 +10,7 @@ from dagster import (
 from dagster._config import process_config
 from dagster._core.container_context import process_shared_container_context_config
 from dagster._core.errors import DagsterInvalidConfigError
-from dagster._core.storage.pipeline_run import DagsterRun
+from dagster._core.storage.dagster_run import DagsterRun
 
 if TYPE_CHECKING:
     from . import DockerRunLauncher
@@ -102,7 +102,7 @@ class DockerContainerContext(
         )
 
     @staticmethod
-    def create_for_run(pipeline_run: DagsterRun, run_launcher: Optional["DockerRunLauncher"]):
+    def create_for_run(dagster_run: DagsterRun, run_launcher: Optional["DockerRunLauncher"]):
         context = DockerContainerContext()
 
         # First apply the instance / run_launcher-level context
@@ -117,8 +117,8 @@ class DockerContainerContext(
             )
 
         run_container_context = (
-            pipeline_run.job_code_origin.repository_origin.container_context
-            if pipeline_run.job_code_origin
+            dagster_run.job_code_origin.repository_origin.container_context
+            if dagster_run.job_code_origin
             else None
         )
 

@@ -67,7 +67,7 @@ class _Job:
             input_mappings,
             output_mappings,
             dependencies,
-            solid_defs,
+            node_defs,
             config_mapping,
             positional_inputs,
             node_input_source_assets,
@@ -84,7 +84,7 @@ class _Job:
         graph_def = GraphDefinition(
             name=self.name,
             dependencies=dependencies,
-            node_defs=solid_defs,
+            node_defs=node_defs,
             description=self.description or format_docstring_for_description(fn),
             input_mappings=input_mappings,
             output_mappings=output_mappings,
@@ -189,7 +189,7 @@ def job(
             configuration in the standard format to configure the job.
 
             If a :py:class:`PartitionedConfig` object is provided, then it defines a discrete set of config
-            values that can parameterize the pipeline, as well as a function for mapping those
+            values that can parameterize the job, as well as a function for mapping those
             values to the base config. The values provided will be viewable and editable in the
             Dagit playground, so be careful with secrets.
         tags (Optional[Dict[str, Any]]):

@@ -14,7 +14,7 @@ from dagster._core.origin import (
     JobPythonOrigin,
     RepositoryPythonOrigin,
 )
-from dagster._core.storage.pipeline_run import (
+from dagster._core.storage.dagster_run import (
     IN_PROGRESS_RUN_STATUSES,
     NON_IN_PROGRESS_RUN_STATUSES,
     DagsterRun,
@@ -25,7 +25,7 @@ from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._serdes import deserialize_value, serialize_value
 
 
-def test_queued_pipeline_origin_check():
+def test_queued_job_origin_check():
     code_pointer = ModuleCodePointer("fake", "fake", working_directory=None)
     fake_job_origin = ExternalJobOrigin(
         ExternalRepositoryOrigin(

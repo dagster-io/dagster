@@ -1,4 +1,4 @@
-from typing import Any, ContextManager, Mapping, Optional
+from typing import Any, ContextManager, Mapping, Optional, Sequence
 
 import dagster._check as check
 import sqlalchemy as db
@@ -12,6 +12,7 @@ from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.config import pg_config
 from dagster._core.storage.event_log import (
     AssetKeyTable,
+    DynamicPartitionsTable,
     SqlEventLogStorage,
     SqlEventLogStorageMetadata,
     SqlEventLogStorageTable,
@@ -164,7 +165,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         return PostgresEventLogStorage(conn_string, should_autocreate_tables)
 
     def store_event(self, event: EventLogEntry) -> None:
-        """Store an event corresponding to a pipeline run.
+        """Store an event corresponding to a run.
 
         Args:
             event (EventLogEntry): The event to store.
@@ -185,7 +186,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 f"""NOTIFY {CHANNEL_NAME}, %s; """,
                 (res[0] + "_" + str(res[1]),),  # type: ignore
             )
-            event_id = res[1]  # type: ignore
+            event_id = int(res[1])  # type: ignore
 
         if (
             event.is_dagster_event
@@ -208,7 +209,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         # We switched to storing the entire event record of the last materialization instead of just
         # the AssetMaterialization object, so that we have access to metadata like timestamp,
-        # pipeline, run_id, etc.
+        # job, run_id, etc.
         #
         # This should make certain asset queries way more performant, without having to do extra
         # queries against the event log.
@@ -252,6 +253,26 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             else:
                 query = query.on_conflict_do_nothing()
             conn.execute(query)
+
+    def add_dynamic_partitions(
+        self, partitions_def_name: str, partition_keys: Sequence[str]
+    ) -> None:
+        if not partition_keys:
+            return
+
+        # Overload base implementation to push upsert logic down into the db layer
+        self._check_partitions_table()
+        with self.index_connection() as conn:
+            conn.execute(
+                db_dialects.postgresql.insert(DynamicPartitionsTable)
+                .values(
+                    [
+                        dict(partitions_def_name=partitions_def_name, partition=partition_key)
+                        for partition_key in partition_keys
+                    ]
+                )
+                .on_conflict_do_nothing(),
+            )
 
     def _connect(self) -> ContextManager[Connection]:
         return create_pg_connection(self._engine)

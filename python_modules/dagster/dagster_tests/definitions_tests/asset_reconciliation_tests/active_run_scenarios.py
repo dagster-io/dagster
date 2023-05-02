@@ -9,7 +9,7 @@ from dagster._core.definitions.events import AssetKey, AssetMaterialization
 from dagster._core.definitions.time_window_partitions import HourlyPartitionsDefinition
 from dagster._core.events import DagsterEvent, StepMaterializationData
 from dagster._core.events.log import EventLogEntry
-from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._seven.compat.pendulum import create_pendulum_time
 
 from .asset_reconciliation_scenario import (

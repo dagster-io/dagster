@@ -9,7 +9,7 @@ from dagster._core.launcher.base import (
     RunLauncher,
     WorkerStatus,
 )
-from dagster._core.storage.pipeline_run import DagsterRun
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.storage.tags import DOCKER_IMAGE_TAG
 from dagster._core.utils import parse_env_var
 from dagster._grpc.types import ExecuteRunArgs, ResumeRunArgs
@@ -71,8 +71,8 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
     ) -> Self:
         return DockerRunLauncher(inst_data=inst_data, **config_value)
 
-    def get_container_context(self, pipeline_run: DagsterRun) -> DockerContainerContext:
-        return DockerContainerContext.create_for_run(pipeline_run, self)
+    def get_container_context(self, dagster_run: DagsterRun) -> DockerContainerContext:
+        return DockerContainerContext.create_for_run(dagster_run, self)
 
     def _get_client(self, container_context: DockerContainerContext):
         client = docker.client.from_env()
@@ -84,8 +84,8 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
             )
         return client
 
-    def _get_docker_image(self, pipeline_code_origin):
-        docker_image = pipeline_code_origin.repository_origin.container_image
+    def _get_docker_image(self, job_code_origin):
+        docker_image = job_code_origin.repository_origin.container_image
 
         if not docker_image:
             docker_image = self.image

@@ -22,7 +22,7 @@ from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.execution.plan.step import ResolvedFromDynamicStepHandle
 from dagster._core.execution.retries import RetryState
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.pipeline_run import DagsterRun
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._serdes import whitelist_for_serdes
 
 if TYPE_CHECKING:

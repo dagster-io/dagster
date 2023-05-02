@@ -274,7 +274,6 @@ class RepositoryDefinition:
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
         solids_to_execute: Optional[AbstractSet[str]] = None,
     ):
-        # named job forward expecting pipeline distinction to be removed soon
         defn = self.get_job(job_name)
         return defn.get_job_def_for_subset_selection(op_selection, asset_selection)
 

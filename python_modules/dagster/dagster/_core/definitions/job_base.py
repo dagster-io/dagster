@@ -14,8 +14,8 @@ if TYPE_CHECKING:
 
 class IJob(ABC):
     """IJob is a wrapper interface for JobDefinitions to be used as parameters to Dagster's
-    core execution APIs.  This enables these execution APIs to operate on both in memory pipeline
-    definitions to be executed in the current process (InMemoryPipeline) as well as definitions that
+    core execution APIs.  This enables these execution APIs to operate on both in memory job
+    definitions to be executed in the current process (InMemoryJob) as well as definitions that
     can be reconstructed and executed in a different process (ReconstructableJob).
     """
 
@@ -123,7 +123,7 @@ class InMemoryJob(IJob, object):
         solids_to_execute: Optional[AbstractSet[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
     ) -> Self:
-        # take a frozenset of resolved solid names from an existing pipeline run
+        # take a frozenset of resolved solid names from an existing run
         # so there's no need to parse the selection
         check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
         check.opt_set_param(asset_selection, "asset_selection", of_type=AssetKey)

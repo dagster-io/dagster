@@ -1,7 +1,7 @@
 import time
 
 from dagster import job, op, repository
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import instance_for_test
 from dagster_graphql.test.utils import (
     define_out_of_process_context,

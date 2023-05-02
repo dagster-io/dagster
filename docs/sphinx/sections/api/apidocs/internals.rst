@@ -22,10 +22,8 @@ APIs for constructing custom executors. This is considered advanced experimental
     :members: configured
 
 .. autoclass:: InitExecutorContext
-    :members:
 
 .. autoclass:: Executor
-    :members:
 
 ----
 
@@ -96,7 +94,6 @@ Run storage
 
 .. autoclass:: DagsterRunStatus
    :members:
-   :undoc-members:
    :inherited-members:
 
 .. autoclass:: RunsFilter
@@ -110,7 +107,7 @@ Run storage
 
 .. autoclass:: SqliteRunStorage
 
-.. currentmodule:: dagster._core.storage.pipeline_run
+.. currentmodule:: dagster._core.storage.dagster_run
 
 .. autoclass:: RunRecord
 

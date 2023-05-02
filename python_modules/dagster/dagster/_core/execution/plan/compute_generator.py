@@ -69,13 +69,13 @@ def create_op_compute_wrapper(op_def: OpDefinition):
                 fn, context, kwargs, context_arg_provided, config_arg_cls, resource_arg_mapping
             )
             if inspect.iscoroutine(result):
-                return _coerce_async_solid_to_async_gen(result, context, output_defs)
+                return _coerce_async_op_to_async_gen(result, context, output_defs)
             # already a generator
             return result
         else:
             # we have a regular function, do not execute it before we are in an iterator
             # (as we want all potential failures to happen inside iterators)
-            return _coerce_solid_compute_fn_to_iterator(
+            return _coerce_op_compute_fn_to_iterator(
                 fn,
                 output_defs,
                 context,
@@ -88,7 +88,7 @@ def create_op_compute_wrapper(op_def: OpDefinition):
     return compute
 
 
-async def _coerce_async_solid_to_async_gen(awaitable, context, output_defs):
+async def _coerce_async_op_to_async_gen(awaitable, context, output_defs):
     result = await awaitable
     for event in validate_and_coerce_op_result_to_iterator(result, context, output_defs):
         yield event
@@ -118,7 +118,7 @@ def invoke_compute_fn(
     return fn(context, **args_to_pass) if context_arg_provided else fn(**args_to_pass)
 
 
-def _coerce_solid_compute_fn_to_iterator(
+def _coerce_op_compute_fn_to_iterator(
     fn, output_defs, context, context_arg_provided, kwargs, config_arg_class, resource_arg_mapping
 ):
     result = invoke_compute_fn(
@@ -128,7 +128,7 @@ def _coerce_solid_compute_fn_to_iterator(
         yield event
 
 
-def _zip_and_iterate_solid_result(
+def _zip_and_iterate_op_result(
     result: Any, context: OpExecutionContext, output_defs: Sequence[OutputDefinition]
 ) -> Iterator[Tuple[int, Any, OutputDefinition]]:
     if len(output_defs) > 1:
@@ -192,7 +192,7 @@ def validate_and_coerce_op_result_to_iterator(
     result: Any, context: OpExecutionContext, output_defs: Sequence[OutputDefinition]
 ) -> Generator[Any, None, None]:
     if inspect.isgenerator(result):
-        # this happens when a user explicitly returns a generator in the solid
+        # this happens when a user explicitly returns a generator in the op
         for event in result:
             yield event
     elif isinstance(result, (AssetMaterialization, ExpectationResult)):
@@ -213,7 +213,7 @@ def validate_and_coerce_op_result_to_iterator(
             " return no results."
         )
     elif output_defs:
-        for position, output_def, element in _zip_and_iterate_solid_result(
+        for position, output_def, element in _zip_and_iterate_op_result(
             result, context, output_defs
         ):
             annotation = _get_annotation_for_output_position(position, context.op_def, output_defs)

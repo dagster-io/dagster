@@ -8,7 +8,7 @@ import dagster._check as check
 import pytest
 from dagster._core.events import DagsterEventType
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import DOCKER_IMAGE_TAG
 from dagster._utils.merger import deep_merge_dicts, merge_dicts
 from dagster._utils.yaml_utils import load_yaml_from_path
@@ -34,7 +34,7 @@ from dagster_test.test_project import (
     get_test_project_docker_image,
     get_test_project_environments_path,
 )
-from dagster_test.test_project.test_pipelines.repo import (
+from dagster_test.test_project.test_jobs.repo import (
     define_memoization_job,
 )
 

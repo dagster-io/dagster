@@ -1071,10 +1071,12 @@ type LogsCapturedEvent implements MessageEvent {
   solidHandleID: String
   eventType: DagsterEventType
   fileKey: String!
-  logKey: String!
   stepKeys: [String!]
   externalUrl: String
+  externalStdoutUrl: String
+  externalStderrUrl: String
   pid: Int
+  logKey: String!
 }
 
 type AlertStartEvent implements MessageEvent & RunEvent {
@@ -2437,17 +2439,26 @@ enum BulkActionStatus {
 }
 
 type AssetBackfillData {
-  assetPartitionsStatusCounts: [AssetPartitionsStatusCounts!]!
+  assetBackfillStatuses: [AssetBackfillStatus!]!
   rootAssetTargetedRanges: [PartitionKeyRange!]
   rootAssetTargetedPartitions: [String!]
 }
 
+union AssetBackfillStatus = AssetPartitionsStatusCounts | UnpartitionedAssetStatus
+
 type AssetPartitionsStatusCounts {
   assetKey: AssetKey!
   numPartitionsTargeted: Int!
-  numPartitionsRequested: Int!
-  numPartitionsCompleted: Int!
+  numPartitionsInProgress: Int!
+  numPartitionsMaterialized: Int!
   numPartitionsFailed: Int!
+}
+
+type UnpartitionedAssetStatus {
+  assetKey: AssetKey!
+  inProgress: Boolean!
+  materialized: Boolean!
+  failed: Boolean!
 }
 
 type PartitionKeyRange {

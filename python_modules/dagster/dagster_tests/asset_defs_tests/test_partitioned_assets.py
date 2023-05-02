@@ -39,24 +39,11 @@ from dagster._core.test_utils import assert_namedtuple_lists_equal
 
 
 @pytest.fixture(autouse=True)
-def check_experimental_warnings():
-    with warnings.catch_warnings(record=True) as record:
-        # turn off any outer warnings filters
-        warnings.resetwarnings()
+def error_on_warning():
+    # turn off any outer warnings filters, e.g. ignores that are set in pyproject.toml
+    warnings.resetwarnings()
 
-        yield
-
-        for w in record:
-            if (
-                "resource_defs" in w.message.args[0]
-                or "io_manager_def" in w.message.args[0]
-                or "build_assets_job" in w.message.args[0]
-                or "MultiPartitionsDefinition" in w.message.args[0]
-                or "SQLALCHEMY" in w.message.args[0]  # from sqlalchemy <2
-                or "Implicitly cleaning up <TemporaryDirectory" in w.message.args[0]
-            ):
-                continue
-            assert False, f"Unexpected warning: {w.message.args[0]}"
+    warnings.filterwarnings("error")
 
 
 def get_upstream_partitions_for_partition_range(
@@ -329,7 +316,10 @@ def test_input_context_asset_partitions_time_window():
         pass
 
     @asset(partitions_def=partitions_def)
-    def downstream_asset(upstream_asset):
+    def downstream_asset(context, upstream_asset):
+        assert context.asset_partitions_time_window_for_input("upstream_asset") == TimeWindow(
+            pendulum.parse("2021-06-06"), pendulum.parse("2021-06-07")
+        )
         assert upstream_asset is None
 
     assert materialize(

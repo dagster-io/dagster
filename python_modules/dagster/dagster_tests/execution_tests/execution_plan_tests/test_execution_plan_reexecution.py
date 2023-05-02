@@ -6,8 +6,8 @@ import pytest
 from dagster import DependencyDefinition, In, Int, Out, op
 from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.definitions.graph_definition import GraphDefinition
+from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.pipeline_base import InMemoryJob
 from dagster._core.definitions.reconstruct import reconstructable
 from dagster._core.errors import (
     DagsterExecutionStepNotFoundError,
@@ -190,7 +190,7 @@ def test_execution_plan_reexecution_with_in_memory():
             )
 
 
-def test_pipeline_step_key_subset_execution():
+def test_job_step_key_subset_execution():
     job_fn = define_addy_job_fs_io
     run_config = {"ops": {"add_one": {"inputs": {"num": {"value": 3}}}}}
 

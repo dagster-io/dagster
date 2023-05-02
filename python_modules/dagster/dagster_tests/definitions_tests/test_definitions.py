@@ -28,7 +28,7 @@ def test_deps_equal():
     assert DependencyDefinition("foo", "bar") != DependencyDefinition("foo", "quuz")
 
 
-def test_solid_def():
+def test_op_def():
     @op
     def produce_string():
         return "foo"
@@ -94,7 +94,7 @@ def test_solid_def():
     assert len(job_def.dependency_structure.inputs()) == 1
 
 
-def test_solid_def_bad_input_name():
+def test_op_def_bad_input_name():
     with pytest.raises(DagsterInvalidDefinitionError, match='"context" is not a valid name'):
 
         @op(ins={"context": In(String)})
@@ -102,7 +102,7 @@ def test_solid_def_bad_input_name():
             pass
 
 
-def test_solid_def_receives_version():
+def test_op_def_receives_version():
     @op
     def op_no_version(_):
         pass
@@ -116,7 +116,7 @@ def test_solid_def_receives_version():
     assert op_with_version.version == "42"
 
 
-def test_pipeline_types():
+def test_job_types():
     @op
     def produce_string():
         return "foo"
@@ -184,7 +184,7 @@ def test_materialization_assign_label_from_asset_key():
     assert mat.label == "foo bar"
 
 
-def test_rehydrate_solid_handle():
+def test_rehydrate_op_handle():
     h = NodeHandle.from_dict({"name": "foo", "parent": None})
     assert h.name == "foo"
     assert h.parent is None

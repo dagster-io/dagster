@@ -6,7 +6,7 @@ import dagster._check as check
 from dagster._annotations import PublicAttr, experimental
 from dagster._core.definitions.events import AssetKey
 from dagster._core.instance import DynamicPartitionsStore
-from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
@@ -282,11 +282,11 @@ class DagsterRunReaction(
         ],
     )
 ):
-    """Represents a request that reacts to an existing pipeline run. If success, it will report logs
+    """Represents a request that reacts to an existing dagster run. If success, it will report logs
     back to the run.
 
     Attributes:
-        dagster_run (Optional[DagsterRun]): The pipeline run that originates this reaction.
+        dagster_run (Optional[DagsterRun]): The dagster run that originates this reaction.
         error (Optional[SerializableErrorInfo]): user code execution error.
         run_status: (Optional[DagsterRunStatus]): The run status that triggered the reaction.
     """

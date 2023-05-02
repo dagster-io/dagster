@@ -354,7 +354,7 @@ def asset_key_to_dep_node_handles(
 
 
 class AssetLayer:
-    """Stores all of the asset-related information for a Dagster job / pipeline. Maps each
+    """Stores all of the asset-related information for a Dagster job. Maps each
     input / output in the underlying graph to the asset it represents (if any), and records the
     dependencies between each asset.
 

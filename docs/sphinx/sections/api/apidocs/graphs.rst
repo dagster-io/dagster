@@ -9,7 +9,6 @@ The core of a job is a _graph_ of ops - connected via data dependencies.
 .. autodecorator:: graph
 
 .. autoclass:: GraphDefinition
-    :members:
 
 .. autoclass:: GraphIn
 

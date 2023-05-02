@@ -11,7 +11,7 @@ from dagster._core.host_representation.external_data import (
     ExternalStaticPartitionsDefinitionData,
     ExternalTimeWindowPartitionsDefinitionData,
 )
-from dagster._core.storage.pipeline_run import RunsFilter
+from dagster._core.storage.dagster_run import RunsFilter
 from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
 from dagster._utils.merger import merge_dicts
 
@@ -128,9 +128,25 @@ class GrapheneAssetPartitionsStatusCounts(graphene.ObjectType):
 
     assetKey = graphene.NonNull(GrapheneAssetKey)
     numPartitionsTargeted = graphene.NonNull(graphene.Int)
-    numPartitionsRequested = graphene.NonNull(graphene.Int)
-    numPartitionsCompleted = graphene.NonNull(graphene.Int)
+    numPartitionsInProgress = graphene.NonNull(graphene.Int)
+    numPartitionsMaterialized = graphene.NonNull(graphene.Int)
     numPartitionsFailed = graphene.NonNull(graphene.Int)
+
+
+class GrapheneUnpartitionedAssetStatus(graphene.ObjectType):
+    class Meta:
+        name = "UnpartitionedAssetStatus"
+
+    assetKey = graphene.NonNull(GrapheneAssetKey)
+    inProgress = graphene.NonNull(graphene.Boolean)
+    materialized = graphene.NonNull(graphene.Boolean)
+    failed = graphene.NonNull(graphene.Boolean)
+
+
+class GrapheneAssetBackfillStatus(graphene.Union):
+    class Meta:
+        types = (GrapheneAssetPartitionsStatusCounts, GrapheneUnpartitionedAssetStatus)
+        name = "AssetBackfillStatus"
 
 
 class GraphenePartitionKeyRange(graphene.ObjectType):

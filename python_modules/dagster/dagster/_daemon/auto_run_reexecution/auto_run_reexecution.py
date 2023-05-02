@@ -6,7 +6,7 @@ from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.events import EngineEventData
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, RunRecord
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunRecord
 from dagster._core.storage.tags import MAX_RETRIES_TAG, RETRY_NUMBER_TAG, RETRY_STRATEGY_TAG
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._utils.error import serializable_error_info_from_exc_info
@@ -89,7 +89,7 @@ def retry_run(
     workspace = workspace_context.create_request_context()
     if not failed_run.external_job_origin:
         instance.report_engine_event(
-            "Run does not have an external pipeline origin, unable to retry the run.",
+            "Run does not have an external job origin, unable to retry the run.",
             failed_run,
         )
         return

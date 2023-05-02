@@ -22,9 +22,9 @@ from dagster._core.execution.stats import StepEventStatus
 from dagster._core.instance import DagsterInstance, InstanceRef, InstanceType
 from dagster._core.launcher import DefaultRunLauncher
 from dagster._core.run_coordinator import DefaultRunCoordinator
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.event_log import SqliteEventLogStorage
 from dagster._core.storage.local_compute_log_manager import LocalComputeLogManager
-from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.root import LocalArtifactStorage
 from dagster._core.storage.runs import SqliteRunStorage
 from dagster._core.test_utils import environ
@@ -115,7 +115,7 @@ def test_get_run_by_id():
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
 
         assert instance.get_runs() == []
-        dagster_run = DagsterRun("foo_pipeline", "new_run")
+        dagster_run = DagsterRun("foo_job", "new_run")
         assert instance.get_run_by_id(dagster_run.run_id) is None
 
         instance.add_run(dagster_run)
@@ -127,14 +127,14 @@ def test_get_run_by_id():
     # Run is created after we check whether it exists
     with tempfile.TemporaryDirectory() as tmpdir_path:
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
-        run = DagsterRun(job_name="foo_pipeline", run_id="bar_run")
+        run = DagsterRun(job_name="foo_job", run_id="bar_run")
 
         def _has_run(self, run_id):
             # This is uglier than we would like because there is no nonlocal keyword in py2
             global MOCK_HAS_RUN_CALLED  # noqa: PLW0602
 
             if not self._run_storage.has_run(run_id) and not MOCK_HAS_RUN_CALLED:
-                self._run_storage.add_run(DagsterRun(job_name="foo_pipeline", run_id=run_id))
+                self._run_storage.add_run(DagsterRun(job_name="foo_job", run_id=run_id))
                 return False
             else:
                 return self._run_storage.has_run(run_id)
@@ -148,12 +148,12 @@ def test_get_run_by_id():
     MOCK_HAS_RUN_CALLED = False
     with tempfile.TemporaryDirectory() as tmpdir_path:
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
-        run = DagsterRun(job_name="foo_pipeline", run_id="bar_run")
+        run = DagsterRun(job_name="foo_job", run_id="bar_run")
 
         def _has_run(self, run_id):
             global MOCK_HAS_RUN_CALLED  # noqa: PLW0603
             if not self._run_storage.has_run(run_id) and not MOCK_HAS_RUN_CALLED:
-                self._run_storage.add_run(DagsterRun(job_name="foo_pipeline", run_id=run_id))
+                self._run_storage.add_run(DagsterRun(job_name="foo_job", run_id=run_id))
                 MOCK_HAS_RUN_CALLED = True  # noqa: PLW0603
                 return False
             elif self._run_storage.has_run(run_id) and MOCK_HAS_RUN_CALLED:

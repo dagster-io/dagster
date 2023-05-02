@@ -480,6 +480,7 @@ class SensorDefinition:
             job=new_jobs[0] if len(new_jobs) == 1 else None,
             default_status=self.default_status,
             asset_selection=self.asset_selection,
+            required_resource_keys=self.required_resource_keys,
         )
 
     def with_updated_job(self, new_job: ExecutableDefinition) -> "SensorDefinition":
@@ -725,8 +726,8 @@ class SensorDefinition:
                     )
                 elif len(dagster_run_reactions) > 0:
                     check.failed(
-                        "Expected a single SkipReason or one or more PipelineRunReaction: "
-                        "received both PipelineRunReaction and SkipReason"
+                        "Expected a single SkipReason or one or more DagsterRunReaction: "
+                        "received both DagsterRunReaction and SkipReason"
                     )
                 else:
                     check.failed("Expected a single SkipReason: received multiple SkipReasons")

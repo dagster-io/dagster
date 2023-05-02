@@ -75,7 +75,7 @@ Let's take a look at the arguments we've supplied:
 
 Next, you'll define the code location for your Dagster project. A [code location](/concepts/code-locations), created using the <PyObject object="Definitions" /> object, is a collection of definitions in a Dagster project, such as assets, resources, and so on.
 
-Assets loaded from dbt require a dbt resource, which is responsible for firing off dbt CLI commands. Using the <PyObject module="dagster_dbt" object="dbt_cli_resource" /> resource, we can supply a dbt resource to the dbt project.
+Assets loaded from dbt require a dbt resource, which is responsible for firing off dbt CLI commands. Using the <PyObject module="dagster_dbt" object="DbtCliClientResource" /> resource, we can supply a dbt resource to the dbt project.
 
 Open the `__init__.py` file, located in `/tutorial_template/tutorial_dbt_dagster`, and add the following code:
 
@@ -84,18 +84,16 @@ Open the `__init__.py` file, located in `/tutorial_template/tutorial_dbt_dagster
 
 import os
 
-from dagster_dbt import dbt_cli_resource
+from dagster_dbt import DbtCliClientResource
 from tutorial_dbt_dagster import assets
 from tutorial_dbt_dagster.assets import DBT_PROFILES, DBT_PROJECT_PATH
 
 from dagster import Definitions, load_assets_from_modules
 
 resources = {
-    "dbt": dbt_cli_resource.configured(
-        {
-            "project_dir": DBT_PROJECT_PATH,
-            "profiles_dir": DBT_PROFILES,
-        },
+    "dbt": DbtCliClientResource(
+        project_dir=DBT_PROJECT_PATH,
+        profiles_dir=DBT_PROFILES,
     ),
 }
 
@@ -104,7 +102,7 @@ defs = Definitions(assets=load_assets_from_modules([assets]), resources=resource
 
 Let's take a look at what's happening here:
 
-- In the `resources` key, we've provided configuration info for the <PyObject module="dagster_dbt" object="dbt_cli_resource" /> resource.
+- In the `resources` key, we've provided configuration info for the <PyObject module="dagster_dbt" object="DbtCliClientResource" /> resource.
 - Added all assets in the assets module and the resources mapped to the `resources` key to the <PyObject object="Definitions" /> object. This supplies the resource we created to our assets.
 - Using <PyObject object="load_assets_from_modules" />, we've added all assets in the `assets` module as definitions. This approach allows any new assets we created to be automatically included in the code location instead of needing to manually add them one by one.
 

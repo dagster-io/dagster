@@ -182,31 +182,33 @@ export const BackfillPage = () => {
             </tr>
           </thead>
           <tbody>
-            {backfill.assetBackfillData?.assetPartitionsStatusCounts.map((asset) => (
-              <tr key={asset.assetKey.path.join('/')}>
-                <td>
-                  <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
-                    <div>
-                      <a href={assetDetailsPathForKey(asset.assetKey)}>
-                        {asset.assetKey.path.join('/')}
-                      </a>
-                    </div>
-                    <div>
-                      <StatusBar
-                        targeted={asset.numPartitionsTargeted}
-                        requested={asset.numPartitionsRequested}
-                        completed={asset.numPartitionsCompleted}
-                        failed={asset.numPartitionsFailed}
-                      />
-                    </div>
-                  </Box>
-                </td>
-                <td>{asset.numPartitionsTargeted}</td>
-                <td>{asset.numPartitionsRequested}</td>
-                <td>{asset.numPartitionsCompleted}</td>
-                <td>{asset.numPartitionsFailed}</td>
-              </tr>
-            ))}
+            {backfill.assetBackfillData?.assetBackfillStatuses.map((asset) => {
+              return asset.__typename === 'AssetPartitionsStatusCounts' ? (
+                <tr key={asset.assetKey.path.join('/')}>
+                  <td>
+                    <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
+                      <div>
+                        <a href={assetDetailsPathForKey(asset.assetKey)}>
+                          {asset.assetKey.path.join('/')}
+                        </a>
+                      </div>
+                      <div>
+                        <StatusBar
+                          targeted={asset.numPartitionsTargeted}
+                          requested={asset.numPartitionsInProgress}
+                          completed={asset.numPartitionsMaterialized}
+                          failed={asset.numPartitionsFailed}
+                        />
+                      </div>
+                    </Box>
+                  </td>
+                  <td>{asset.numPartitionsTargeted}</td>
+                  <td>{asset.numPartitionsInProgress}</td>
+                  <td>{asset.numPartitionsMaterialized}</td>
+                  <td>{asset.numPartitionsFailed}</td>
+                </tr>
+              ) : null;
+            })}
           </tbody>
         </Table>
       </>
@@ -343,14 +345,16 @@ export const BACKFILL_DETAILS_QUERY = gql`
         end
       }
       rootAssetTargetedPartitions
-      assetPartitionsStatusCounts {
-        assetKey {
-          path
+      assetBackfillStatuses {
+        ... on AssetPartitionsStatusCounts {
+          assetKey {
+            path
+          }
+          numPartitionsTargeted
+          numPartitionsInProgress
+          numPartitionsMaterialized
+          numPartitionsFailed
         }
-        numPartitionsTargeted
-        numPartitionsRequested
-        numPartitionsCompleted
-        numPartitionsFailed
       }
     }
   }

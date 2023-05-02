@@ -18,7 +18,7 @@ from dagster._core.errors import (
 from dagster._core.events import DagsterEvent, EngineEventData
 from dagster._core.execution.api import create_execution_plan, execute_plan_iterator
 from dagster._core.execution.context.system import IStepContext, PlanOrchestrationContext
-from dagster._core.execution.context_creation_pipeline import create_context_free_log_manager
+from dagster._core.execution.context_creation_job import create_context_free_log_manager
 from dagster._core.execution.plan.active import ActiveExecution
 from dagster._core.execution.plan.objects import StepFailureData
 from dagster._core.execution.plan.plan import ExecutionPlan
@@ -41,7 +41,7 @@ from .child_process_executor import (
 
 if TYPE_CHECKING:
     from dagster._core.instance.ref import InstanceRef
-    from dagster._core.storage.pipeline_run import DagsterRun
+    from dagster._core.storage.dagster_run import DagsterRun
 
 DELEGATE_MARKER = "multiprocess_subprocess_init"
 

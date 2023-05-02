@@ -22,7 +22,7 @@ from pydantic import Field
 
 try:
     # ge < v0.13.0
-    from great_expectations.core import convert_to_json_serializable  # type: ignore
+    from great_expectations.core import convert_to_json_serializable
 except ImportError:
     # ge >= v0.13.0
     from great_expectations.core.util import convert_to_json_serializable

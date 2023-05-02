@@ -38,7 +38,7 @@ from dagster._core.execution.plan.plan import ExecutionPlan, StepHandleUnion
 from dagster._core.execution.plan.step import ExecutionStep, IExecutionStep
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
-from dagster._core.storage.pipeline_run import DagsterRun
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.system_config.objects import ResolvedRunConfig, ResourceConfig
 from dagster._core.utils import toposort
 from dagster._utils import EventGenerationManager, ensure_gen
@@ -398,21 +398,21 @@ def get_transitive_required_resource_keys(
 
 
 def get_required_resource_keys_for_step(
-    pipeline_def: JobDefinition, execution_step: IExecutionStep, execution_plan: ExecutionPlan
+    job_def: JobDefinition, execution_step: IExecutionStep, execution_plan: ExecutionPlan
 ) -> AbstractSet[str]:
     resource_keys: Set[str] = set()
 
-    # add all the solid compute resource keys
-    solid_def = pipeline_def.get_node(execution_step.node_handle).definition
-    resource_keys = resource_keys.union(solid_def.required_resource_keys)  # type: ignore  # (should be OpDefinition)
+    # add all the op compute resource keys
+    node_def = job_def.get_node(execution_step.node_handle).definition
+    resource_keys = resource_keys.union(node_def.required_resource_keys)  # type: ignore  # (should be OpDefinition)
 
     # add input type, input loader, and input io manager resource keys
     for step_input in execution_step.step_inputs:
-        input_def = solid_def.input_def_named(step_input.name)
+        input_def = node_def.input_def_named(step_input.name)
 
         resource_keys = resource_keys.union(input_def.dagster_type.required_resource_keys)
 
-        resource_keys = resource_keys.union(step_input.source.required_resource_keys(pipeline_def))
+        resource_keys = resource_keys.union(step_input.source.required_resource_keys(job_def))
 
         if input_def.input_manager_key:
             resource_keys = resource_keys.union([input_def.input_manager_key])
@@ -427,14 +427,14 @@ def get_required_resource_keys_for_step(
             check.failed(f"Unexpected step input type {step_input}")
 
         for source_handle in source_handles:
-            source_manager_key = execution_plan.get_manager_key(source_handle, pipeline_def)
+            source_manager_key = execution_plan.get_manager_key(source_handle, job_def)
             if source_manager_key:
                 resource_keys = resource_keys.union([source_manager_key])
 
     # add output type and output io manager resource keys
     for step_output in execution_step.step_outputs:
         # Load the output type
-        output_def = solid_def.output_def_named(step_output.name)
+        output_def = node_def.output_def_named(step_output.name)
 
         resource_keys = resource_keys.union(output_def.dagster_type.required_resource_keys)
         if output_def.io_manager_key:

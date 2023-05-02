@@ -19,7 +19,7 @@ from dagster._core.types.dagster_type import DagsterTypeKind
 from dagster._utils.test import wrap_op_in_graph_and_execute
 
 
-def test_infer_solid_description_from_docstring():
+def test_infer_op_description_from_docstring():
     @op
     def my_op(_):
         """Here is some docstring."""
@@ -27,7 +27,7 @@ def test_infer_solid_description_from_docstring():
     assert my_op.description == "Here is some docstring."
 
 
-def test_infer_solid_description_no_docstring():
+def test_infer_op_description_no_docstring():
     @op
     def my_op(_):
         pass
@@ -498,7 +498,7 @@ def test_use_auto_type_twice():
     my_job.execute_in_process()
 
 
-def test_register_after_solid_definition():
+def test_register_after_op_definition():
     class MyClass:
         pass
 

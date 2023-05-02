@@ -324,7 +324,7 @@ class EmrPySparkStepLauncher(StepLauncher):
         step_key = step_run_ref.step_key
         self._post_artifacts(log, step_run_ref, run_id, step_key)
 
-        emr_step_def = self._get_emr_step_def(run_id, step_key, step_context.solid.name)
+        emr_step_def = self._get_emr_step_def(run_id, step_key, step_context.op.name)
         emr_step_id = self.emr_job_runner.add_job_flow_steps(log, self.cluster_id, [emr_step_def])[
             0
         ]

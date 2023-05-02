@@ -33,6 +33,7 @@ from dagster._config.source import BoolSource, IntSource, StringSource
 from dagster._config.validate import process_config, validate_config
 from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.definition_config_schema import (
+    CoercableToConfigSchema,
     ConfiguredDefinitionConfigSchema,
     DefinitionConfigSchema,
 )
@@ -200,7 +201,16 @@ class Config(MakeConfigCacheable):
         for key, value in config_dict.items():
             field = self.__fields__.get(key)
             if field and field.field_info.discriminator:
-                nested_items = list(check.is_dict(value).items())
+                nested_dict = value
+
+                discriminator_key = check.not_none(field.discriminator_key)
+                if isinstance(value, Config):
+                    nested_dict = _discriminated_union_config_dict_to_selector_config_dict(
+                        discriminator_key,
+                        value._get_non_none_public_field_values(),  # noqa: SLF001
+                    )
+
+                nested_items = list(check.is_dict(nested_dict).items())
                 check.invariant(
                     len(nested_items) == 1, "Discriminated union must have exactly one key"
                 )
@@ -208,15 +218,31 @@ class Config(MakeConfigCacheable):
 
                 modified_data[key] = {
                     **nested_values,
-                    field.discriminator_key: discriminated_value,
+                    discriminator_key: discriminated_value,
                 }
             else:
                 modified_data[key] = value
         super().__init__(**modified_data)
 
-    def _as_config_dict(self) -> Mapping[str, Any]:
+    def _convert_to_config_dictionary(self) -> Mapping[str, Any]:
+        """Converts this Config object to a Dagster config dictionary, in the same format as the dictionary
+        accepted as run config or as YAML in the launchpad.
+
+        Inner fields are recursively converted to dictionaries, meaning nested config objects
+        or EnvVars will be converted to the appropriate dictionary representation.
+        """
+        public_fields = self._get_non_none_public_field_values()
+        return {
+            k: _config_value_to_dict_representation(self.__fields__.get(k), v)
+            for k, v in public_fields.items()
+        }
+
+    def _get_non_none_public_field_values(self) -> Mapping[str, Any]:
         """Returns a dictionary representation of this config object,
-        ignoring any private fields.
+        ignoring any private fields, and any optional fields that are None.
+
+        Inner fields are returned as-is in the dictionary,
+        meaning any nested config objects will be returned as config objects, not dictionaries.
         """
         output = {}
         for key, value in self.__dict__.items():
@@ -225,6 +251,7 @@ class Config(MakeConfigCacheable):
             field = self.__fields__.get(key)
             if field and value is None and not _is_pydantic_field_required(field):
                 continue
+
             if field:
                 output[field.alias] = value
             else:
@@ -243,6 +270,53 @@ class Config(MakeConfigCacheable):
         want the source of truth to be a config class.
         """
         return cast(Shape, cls.to_config_schema().as_field().config_type).fields
+
+
+def _discriminated_union_config_dict_to_selector_config_dict(
+    discriminator_key: str, config_dict: Mapping[str, Any]
+):
+    """Remaps a config dictionary which is a member of a discriminated union to
+    the appropriate structure for a Dagster config selector.
+
+    A discriminated union with key "my_key" and value "my_value" will be represented
+    as {"my_key": "my_value", "my_field": "my_field_value"}. When converted to a selector,
+    this should be represented as {"my_value": {"my_field": "my_field_value"}}.
+    """
+    updated_dict = dict(config_dict)
+    discriminator_value = updated_dict.pop(discriminator_key)
+    wrapped_dict = {discriminator_value: updated_dict}
+    return wrapped_dict
+
+
+def _config_value_to_dict_representation(field: Optional[ModelField], value: Any):
+    """Converts a config value to a dictionary representation. If a field is provided, it will be used
+    to determine the appropriate dictionary representation in the case of discriminated unions.
+    """
+    from dagster._config.field_utils import EnvVar, IntEnvVar
+
+    if isinstance(value, dict):
+        return {k: _config_value_to_dict_representation(None, v) for k, v in value.items()}
+    elif isinstance(value, list):
+        return [_config_value_to_dict_representation(None, v) for v in value]
+    elif isinstance(value, EnvVar):
+        return {"env": str(value)}
+    elif isinstance(value, IntEnvVar):
+        return {"env": value.name}
+    if isinstance(value, Config):
+        if field and field.discriminator_key:
+            return {
+                k: v
+                for k, v in _discriminated_union_config_dict_to_selector_config_dict(
+                    field.discriminator_key,
+                    value._convert_to_config_dictionary(),  # noqa: SLF001
+                ).items()
+            }
+        else:
+            return {k: v for k, v in value._convert_to_config_dictionary().items()}  # noqa: SLF001
+    elif isinstance(value, Enum):
+        return value.name
+
+    return value
 
 
 class PermissiveConfig(Config):
@@ -570,9 +644,25 @@ class ConfigurableIOManagerFactoryResourceDefinition(IOManagerDefinition, AllowD
         description: Optional[str],
         resolve_resource_keys: Callable[[Mapping[int, str]], AbstractSet[str]],
         nested_resources: Mapping[str, CoercibleToResource],
+        input_config_schema: Optional[Union[CoercableToConfigSchema, Type[Config]]] = None,
+        output_config_schema: Optional[Union[CoercableToConfigSchema, Type[Config]]] = None,
     ):
+        input_config_schema_resolved: CoercableToConfigSchema = (
+            cast(Type[Config], input_config_schema).to_config_schema()
+            if safe_is_subclass(input_config_schema, Config)
+            else cast(CoercableToConfigSchema, input_config_schema)
+        )
+        output_config_schema_resolved: CoercableToConfigSchema = (
+            cast(Type[Config], output_config_schema).to_config_schema()
+            if safe_is_subclass(output_config_schema, Config)
+            else cast(CoercableToConfigSchema, output_config_schema)
+        )
         super().__init__(
-            resource_fn=resource_fn, config_schema=config_schema, description=description
+            resource_fn=resource_fn,
+            config_schema=config_schema,
+            description=description,
+            input_config_schema=input_config_schema_resolved,
+            output_config_schema=output_config_schema_resolved,
         )
         self._resolve_resource_keys = resolve_resource_keys
         self._nested_resources = nested_resources
@@ -633,7 +723,7 @@ class ConfigurableResourceFactory(
                 # Or you could just prefer to separate the concerns of configuration and runtime representation
                 return Database(self.connection_uri)
 
-    To use a resource created by a factory in a pipeline, you must use the Resource type annotation.
+    To use a resource created by a factory in a job, you must use the Resource type annotation.
 
     Example usage:
 
@@ -664,7 +754,9 @@ class ConfigurableResourceFactory(
         # We pull the values from the Pydantic config object, which may cast values
         # to the correct type under the hood - useful in particular for enums
         casted_data_without_resources = {
-            k: v for k, v in self._as_config_dict().items() if k in data_without_resources
+            k: v
+            for k, v in self._convert_to_config_dictionary().items()
+            if k in data_without_resources
         }
         resolved_config_dict = config_dictionary_from_values(casted_data_without_resources, schema)
 
@@ -742,7 +834,7 @@ class ConfigurableResourceFactory(
         # Since Resource extends BaseModel and is a dataclass, we know that the
         # signature of any __init__ method will always consist of the fields
         # of this class. We can therefore safely pass in the values as kwargs.
-        out = self.__class__(**{**self._as_config_dict(), **values})
+        out = self.__class__(**{**self._get_non_none_public_field_values(), **values})
         out._state__internal__ = out._state__internal__._replace(  # noqa: SLF001
             resource_context=self._state__internal__.resource_context
         )
@@ -1115,7 +1207,17 @@ class ConfigurableIOManagerFactory(ConfigurableResourceFactory[TIOManagerValue])
             description=self.__doc__,
             resolve_resource_keys=self._resolve_required_resource_keys,
             nested_resources=self.nested_resources,
+            input_config_schema=self.__class__.input_config_schema(),
+            output_config_schema=self.__class__.output_config_schema(),
         )
+
+    @classmethod
+    def input_config_schema(cls) -> Optional[Union[CoercableToConfigSchema, Type[Config]]]:
+        return None
+
+    @classmethod
+    def output_config_schema(cls) -> Optional[Union[CoercableToConfigSchema, Type[Config]]]:
+        return None
 
 
 class PartialIOManager(Generic[TResValue], PartialResource[TResValue]):
@@ -1126,12 +1228,23 @@ class PartialIOManager(Generic[TResValue], PartialResource[TResValue]):
 
     @cached_method
     def get_resource_definition(self) -> ConfigurableIOManagerFactoryResourceDefinition:
+        input_config_schema = None
+        output_config_schema = None
+        if safe_is_subclass(self.resource_cls, ConfigurableIOManagerFactory):
+            factory_cls: Type[ConfigurableIOManagerFactory] = cast(
+                Type[ConfigurableIOManagerFactory], self.resource_cls
+            )
+            input_config_schema = factory_cls.input_config_schema()
+            output_config_schema = factory_cls.output_config_schema()
+
         return ConfigurableIOManagerFactoryResourceDefinition(
             resource_fn=self._state__internal__.resource_fn,
             config_schema=self._state__internal__.config_schema,
             description=self._state__internal__.description,
             resolve_resource_keys=self._resolve_required_resource_keys,
             nested_resources=self._state__internal__.nested_resources,
+            input_config_schema=input_config_schema,
+            output_config_schema=output_config_schema,
         )
 
 
@@ -1333,6 +1446,7 @@ def _config_type_for_type_on_pydantic_field(
 
 def _is_pydantic_field_required(pydantic_field: ModelField) -> bool:
     # required is of type BoolUndefined = Union[bool, UndefinedType] in Pydantic
+
     if isinstance(pydantic_field.required, bool):
         return pydantic_field.required
 

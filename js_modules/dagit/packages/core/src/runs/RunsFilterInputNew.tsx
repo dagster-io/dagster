@@ -14,6 +14,7 @@ import {__ASSET_JOB_PREFIX} from '../asset-graph/Utils';
 import {RunsFilter, RunStatus} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
+import {TruncatedTextWithFullTextOnHover} from '../nav/getLeftNavItemsForOption';
 import {useFilters} from '../ui/Filters';
 import {FilterObject} from '../ui/Filters/useFilter';
 import {capitalizeFirstLetter, useStaticSetFilter} from '../ui/Filters/useStaticSetFilter';
@@ -43,7 +44,12 @@ export type RunFilterToken = {
   token?: RunFilterTokenType;
   value: string;
 };
-const CREATED_BY_TAGS = [DagsterTag.SensorName, DagsterTag.ScheduleName, DagsterTag.User];
+const CREATED_BY_TAGS = [
+  DagsterTag.Automaterialize,
+  DagsterTag.SensorName,
+  DagsterTag.ScheduleName,
+  DagsterTag.User,
+];
 
 const RUN_PROVIDERS_EMPTY = [
   {
@@ -157,12 +163,7 @@ interface RunsFilterInputProps {
 }
 
 // Exclude these tags from the "tag" filter because theyre already being fetched by other filters.
-const tagsToExclude = [
-  DagsterTag.User,
-  DagsterTag.ScheduleName,
-  DagsterTag.SensorName,
-  DagsterTag.Backfill,
-];
+const tagsToExclude = [...CREATED_BY_TAGS, DagsterTag.Backfill];
 
 export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilterInputProps) => {
   const {options} = useRepositoryOptions();
@@ -178,10 +179,13 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
         variables: {tagKeys: tagKey ? [tagKey] : []},
       });
       if (data?.runTagsOrError?.__typename === 'RunTags') {
-        return data?.runTagsOrError.tags[0].values.map((tagValue) =>
-          tagSuggestionValueObject(tagKey, tagValue),
+        return (
+          data?.runTagsOrError.tags?.[0]?.values.map((tagValue) =>
+            tagSuggestionValueObject(tagKey, tagValue),
+          ) || []
         );
       }
+
       return [];
     },
     [client],
@@ -230,11 +234,15 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
     isBackfillsFilterEnabled,
   ]);
 
-  const createdByValues = React.useMemo(() => [...sensorValues, ...scheduleValues, ...userValues], [
-    sensorValues,
-    scheduleValues,
-    userValues,
-  ]);
+  const createdByValues = React.useMemo(
+    () => [
+      tagToFilterValue(DagsterTag.Automaterialize, 'true'),
+      ...sensorValues,
+      ...scheduleValues,
+      ...userValues,
+    ],
+    [sensorValues, scheduleValues, userValues],
+  );
 
   const isJobFilterEnabled = !enabledFilters || enabledFilters?.includes('job');
 
@@ -283,7 +291,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
     renderLabel: ({value}) => (
       <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
         <Icon name="job" />
-        {value}
+        <TruncatedTextWithFullTextOnHover text={value} />
       </Box>
     ),
     getStringValue: (x) => x,
@@ -331,7 +339,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
     renderLabel: ({value}) => (
       <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
         <Icon name="job" />
-        {value}
+        <TruncatedTextWithFullTextOnHover text={value} />
       </Box>
     ),
     getStringValue: (x) => x,
@@ -367,7 +375,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
     renderLabel: ({value}) => (
       <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
         <Icon name="job" />
-        {value.value}
+        <TruncatedTextWithFullTextOnHover text={value.value} />
       </Box>
     ),
     getStringValue: ({value}) => value,
@@ -396,21 +404,30 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
         allValues: createdByValues,
         renderLabel: ({value}) => {
           let icon;
+          let labelValue = value.value;
           if (value.type === DagsterTag.SensorName) {
             icon = <Icon name="sensors" />;
           } else if (value.type === DagsterTag.ScheduleName) {
             icon = <Icon name="schedule" />;
           } else if (value.type === DagsterTag.User) {
             return <UserDisplay email={value.value} isFilter />;
+          } else if (value.type === DagsterTag.Automaterialize) {
+            icon = <Icon name="auto_materialize_policy" />;
+            labelValue = 'Auto-materialize policy';
           }
           return (
             <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
               {icon}
-              {value.value}
+              <TruncatedTextWithFullTextOnHover text={labelValue} />
             </Box>
           );
         },
-        getStringValue: (x) => x.value,
+        getStringValue: (x) => {
+          if (x.type === DagsterTag.Automaterialize) {
+            return 'Auto-materialize policy';
+          }
+          return x.value;
+        },
         initialState: React.useMemo(() => {
           return new Set(
             tokens
@@ -472,6 +489,13 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
         icon: 'tag',
         initialSuggestions: tagSuggestions,
 
+        freeformSearchResult: React.useCallback((query, path) => {
+          return {
+            ...tagSuggestionValueObject(path.length ? path[0].value : null, query),
+            final: !!path.length,
+          };
+        }, []),
+
         state: React.useMemo(() => {
           return tokens
             .filter(({token, value}) => {
@@ -510,12 +534,13 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
         renderLabel: ({value}) => (
           <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
             <Icon name="tag" />
-            {value.value}
+            <TruncatedTextWithFullTextOnHover text={value.value} />
           </Box>
         ),
         renderActiveStateLabel: ({value}) => (
           <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
             <Icon name="tag" />
+            <TruncatedTextWithFullTextOnHover text={`${value.key}=${value.value}`} />
             {value.key}={value.value}
           </Box>
         ),
@@ -567,14 +592,18 @@ export function useTagDataFilterValues(tagKey?: DagsterTag) {
     return data.runTagsOrError.tags
       .map((x) => x.values)
       .flat()
-      .map((x) => ({
-        label: x,
-        value: tagValueToFilterObject(`${tagKey}=${x}`),
-        match: [x],
-      }));
+      .map((x) => tagToFilterValue(tagKey, x));
   }, [data, tagKey]);
 
   return [fetch, values] as [typeof fetch, typeof values];
+}
+
+function tagToFilterValue(key: string, value: string) {
+  return {
+    label: value,
+    value: tagValueToFilterObject(`${key}=${value}`),
+    match: [value],
+  };
 }
 
 // Memoize this object because the static set filter component checks for object equality (set.has)

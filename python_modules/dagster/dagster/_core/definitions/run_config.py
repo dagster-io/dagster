@@ -24,7 +24,7 @@ from dagster._config import (
     Selector,
     Shape,
 )
-from dagster._config.pythonic_config import Config, config_dictionary_from_values
+from dagster._config.pythonic_config import Config
 from dagster._core.definitions.asset_layer import AssetLayer
 from dagster._core.definitions.executor_definition import (
     ExecutorDefinition,
@@ -618,11 +618,7 @@ def _convert_config_classes_inner(configs: Any) -> Any:
         return configs
 
     return {
-        k: {
-            "config": config_dictionary_from_values(
-                v._as_config_dict(), v.to_config_schema().as_field()  # noqa: SLF001
-            )
-        }
+        k: {"config": v._convert_to_config_dictionary()}  # noqa: SLF001
         if isinstance(v, Config)
         else _convert_config_classes_inner(v)
         for k, v in configs.items()
@@ -634,7 +630,7 @@ def _convert_config_classes(configs: Dict[str, Any]) -> Dict[str, Any]:
 
 
 class RunConfig:
-    """Container for all the configuration that can be passed to a pipeline run. Accepts Pythonic definitions
+    """Container for all the configuration that can be passed to a run. Accepts Pythonic definitions
     for op and asset config and resources and converts them under the hood to the appropriate config dictionaries.
 
     Example usage:

@@ -107,10 +107,12 @@ export type AssetAssetObservationsArgs = {
 
 export type AssetBackfillData = {
   __typename: 'AssetBackfillData';
-  assetPartitionsStatusCounts: Array<AssetPartitionsStatusCounts>;
+  assetBackfillStatuses: Array<AssetBackfillStatus>;
   rootAssetTargetedPartitions: Maybe<Array<Scalars['String']>>;
   rootAssetTargetedRanges: Maybe<Array<PartitionKeyRange>>;
 };
+
+export type AssetBackfillStatus = AssetPartitionsStatusCounts | UnpartitionedAssetStatus;
 
 export type AssetConnection = {
   __typename: 'AssetConnection';
@@ -281,9 +283,9 @@ export type AssetPartitionStatuses = DefaultPartitions | MultiPartitions | TimeP
 export type AssetPartitionsStatusCounts = {
   __typename: 'AssetPartitionsStatusCounts';
   assetKey: AssetKey;
-  numPartitionsCompleted: Scalars['Int'];
   numPartitionsFailed: Scalars['Int'];
-  numPartitionsRequested: Scalars['Int'];
+  numPartitionsInProgress: Scalars['Int'];
+  numPartitionsMaterialized: Scalars['Int'];
   numPartitionsTargeted: Scalars['Int'];
 };
 
@@ -1976,6 +1978,8 @@ export type Logger = {
 export type LogsCapturedEvent = MessageEvent & {
   __typename: 'LogsCapturedEvent';
   eventType: Maybe<DagsterEventType>;
+  externalStderrUrl: Maybe<Scalars['String']>;
+  externalStdoutUrl: Maybe<Scalars['String']>;
   externalUrl: Maybe<Scalars['String']>;
   fileKey: Scalars['String'];
   level: LogLevel;
@@ -3885,6 +3889,14 @@ export type UnknownPipeline = PipelineReference & {
   solidSelection: Maybe<Array<Scalars['String']>>;
 };
 
+export type UnpartitionedAssetStatus = {
+  __typename: 'UnpartitionedAssetStatus';
+  assetKey: AssetKey;
+  failed: Scalars['Boolean'];
+  inProgress: Scalars['Boolean'];
+  materialized: Scalars['Boolean'];
+};
+
 export type UrlMetadataEntry = MetadataEntry & {
   __typename: 'UrlMetadataEntry';
   description: Maybe<Scalars['String']>;
@@ -4110,9 +4122,9 @@ export const buildAssetBackfillData = (
   relationshipsToOmit.add('AssetBackfillData');
   return {
     __typename: 'AssetBackfillData',
-    assetPartitionsStatusCounts:
-      overrides && overrides.hasOwnProperty('assetPartitionsStatusCounts')
-        ? overrides.assetPartitionsStatusCounts!
+    assetBackfillStatuses:
+      overrides && overrides.hasOwnProperty('assetBackfillStatuses')
+        ? overrides.assetBackfillStatuses!
         : [
             relationshipsToOmit.has('AssetPartitionsStatusCounts')
               ? ({} as AssetPartitionsStatusCounts)
@@ -4632,18 +4644,18 @@ export const buildAssetPartitionsStatusCounts = (
         : relationshipsToOmit.has('AssetKey')
         ? ({} as AssetKey)
         : buildAssetKey({}, relationshipsToOmit),
-    numPartitionsCompleted:
-      overrides && overrides.hasOwnProperty('numPartitionsCompleted')
-        ? overrides.numPartitionsCompleted!
-        : 524,
     numPartitionsFailed:
       overrides && overrides.hasOwnProperty('numPartitionsFailed')
         ? overrides.numPartitionsFailed!
         : 6432,
-    numPartitionsRequested:
-      overrides && overrides.hasOwnProperty('numPartitionsRequested')
-        ? overrides.numPartitionsRequested!
-        : 1501,
+    numPartitionsInProgress:
+      overrides && overrides.hasOwnProperty('numPartitionsInProgress')
+        ? overrides.numPartitionsInProgress!
+        : 6636,
+    numPartitionsMaterialized:
+      overrides && overrides.hasOwnProperty('numPartitionsMaterialized')
+        ? overrides.numPartitionsMaterialized!
+        : 7555,
     numPartitionsTargeted:
       overrides && overrides.hasOwnProperty('numPartitionsTargeted')
         ? overrides.numPartitionsTargeted!
@@ -7963,6 +7975,14 @@ export const buildLogsCapturedEvent = (
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
         : DagsterEventType.ALERT_FAILURE,
+    externalStderrUrl:
+      overrides && overrides.hasOwnProperty('externalStderrUrl')
+        ? overrides.externalStderrUrl!
+        : 'velit',
+    externalStdoutUrl:
+      overrides && overrides.hasOwnProperty('externalStdoutUrl')
+        ? overrides.externalStdoutUrl!
+        : 'consequatur',
     externalUrl:
       overrides && overrides.hasOwnProperty('externalUrl') ? overrides.externalUrl! : 'qui',
     fileKey: overrides && overrides.hasOwnProperty('fileKey') ? overrides.fileKey! : 'et',
@@ -12749,6 +12769,27 @@ export const buildUnknownPipeline = (
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'dicta',
     solidSelection:
       overrides && overrides.hasOwnProperty('solidSelection') ? overrides.solidSelection! : ['et'],
+  };
+};
+
+export const buildUnpartitionedAssetStatus = (
+  overrides?: Partial<UnpartitionedAssetStatus>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'UnpartitionedAssetStatus'} & UnpartitionedAssetStatus => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('UnpartitionedAssetStatus');
+  return {
+    __typename: 'UnpartitionedAssetStatus',
+    assetKey:
+      overrides && overrides.hasOwnProperty('assetKey')
+        ? overrides.assetKey!
+        : relationshipsToOmit.has('AssetKey')
+        ? ({} as AssetKey)
+        : buildAssetKey({}, relationshipsToOmit),
+    failed: overrides && overrides.hasOwnProperty('failed') ? overrides.failed! : true,
+    inProgress: overrides && overrides.hasOwnProperty('inProgress') ? overrides.inProgress! : false,
+    materialized:
+      overrides && overrides.hasOwnProperty('materialized') ? overrides.materialized! : false,
   };
 };
 

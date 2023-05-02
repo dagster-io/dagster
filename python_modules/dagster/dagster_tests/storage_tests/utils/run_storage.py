@@ -22,15 +22,15 @@ from dagster._core.instance import DagsterInstance, InstanceType
 from dagster._core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
 from dagster._core.run_coordinator import DefaultRunCoordinator
 from dagster._core.snap import create_job_snapshot_id
-from dagster._core.storage.event_log import InMemoryEventLogStorage
-from dagster._core.storage.noop_compute_log_manager import NoOpComputeLogManager
-from dagster._core.storage.pipeline_run import (
+from dagster._core.storage.dagster_run import (
     DagsterRun,
     DagsterRunStatus,
     JobBucket,
     RunsFilter,
     TagBucket,
 )
+from dagster._core.storage.event_log import InMemoryEventLogStorage
+from dagster._core.storage.noop_compute_log_manager import NoOpComputeLogManager
 from dagster._core.storage.root import LocalArtifactStorage
 from dagster._core.storage.runs.base import RunStorage
 from dagster._core.storage.runs.migration import REQUIRED_DATA_MIGRATIONS
@@ -167,7 +167,7 @@ class TestRunStorage:
         storage_id_again = storage.get_run_storage_id()
         assert storage_id == storage_id_again
 
-    def test_fetch_by_pipeline(self, storage):
+    def test_fetch_by_job(self, storage):
         assert storage
         one = make_new_run_id()
         two = make_new_run_id()
@@ -986,7 +986,7 @@ class TestRunStorage:
 
     def test_fetch_run_group(self, storage: RunStorage):
         assert storage
-        root_run = TestRunStorage.build_run(run_id=make_new_run_id(), job_name="foo_pipeline")
+        root_run = TestRunStorage.build_run(run_id=make_new_run_id(), job_name="foo_job")
         runs = [root_run]
 
         # Create 3 children and 3 descendants of the rightmost child:
@@ -1004,7 +1004,7 @@ class TestRunStorage:
             runs.append(
                 TestRunStorage.build_run(
                     run_id=make_new_run_id(),
-                    job_name="foo_pipeline",
+                    job_name="foo_job",
                     root_run_id=root_run.run_id,
                     parent_run_id=root_run.run_id,
                     tags={PARENT_RUN_ID_TAG: root_run.run_id, ROOT_RUN_ID_TAG: root_run.run_id},
@@ -1017,7 +1017,7 @@ class TestRunStorage:
             runs.append(
                 TestRunStorage.build_run(
                     run_id=make_new_run_id(),
-                    job_name="foo_pipeline",
+                    job_name="foo_job",
                     root_run_id=root_run_id,
                     parent_run_id=parent_run_id,
                     tags={PARENT_RUN_ID_TAG: parent_run_id, ROOT_RUN_ID_TAG: root_run_id},
@@ -1041,7 +1041,7 @@ class TestRunStorage:
 
     def test_fetch_run_group_not_found(self, storage: RunStorage):
         assert storage
-        run = TestRunStorage.build_run(run_id=make_new_run_id(), job_name="foo_pipeline")
+        run = TestRunStorage.build_run(run_id=make_new_run_id(), job_name="foo_job")
         storage.add_run(run)
 
         with pytest.raises(DagsterRunNotFoundError):
@@ -1050,8 +1050,7 @@ class TestRunStorage:
     def test_fetch_run_groups(self, storage: RunStorage):
         assert storage
         root_runs = [
-            TestRunStorage.build_run(run_id=make_new_run_id(), job_name="foo_pipeline")
-            for i in range(3)
+            TestRunStorage.build_run(run_id=make_new_run_id(), job_name="foo_job") for i in range(3)
         ]
         runs = [run for run in root_runs]
         for _ in range(5):
@@ -1059,7 +1058,7 @@ class TestRunStorage:
                 runs.append(
                     TestRunStorage.build_run(
                         run_id=make_new_run_id(),
-                        job_name="foo_pipeline",
+                        job_name="foo_job",
                         tags={PARENT_RUN_ID_TAG: root_run.run_id, ROOT_RUN_ID_TAG: root_run.run_id},
                     )
                 )
@@ -1082,8 +1081,7 @@ class TestRunStorage:
         assert storage
 
         root_runs = [
-            TestRunStorage.build_run(run_id=make_new_run_id(), job_name="foo_pipeline")
-            for i in range(3)
+            TestRunStorage.build_run(run_id=make_new_run_id(), job_name="foo_job") for i in range(3)
         ]
 
         runs = [run for run in root_runs]
@@ -1092,7 +1090,7 @@ class TestRunStorage:
             runs.append(
                 TestRunStorage.build_run(
                     run_id=failed_run_id,
-                    job_name="foo_pipeline",
+                    job_name="foo_job",
                     tags={PARENT_RUN_ID_TAG: root_run.run_id, ROOT_RUN_ID_TAG: root_run.run_id},
                     status=DagsterRunStatus.FAILURE,
                 )
@@ -1101,7 +1099,7 @@ class TestRunStorage:
                 runs.append(
                     TestRunStorage.build_run(
                         run_id=make_new_run_id(),
-                        job_name="foo_pipeline",
+                        job_name="foo_job",
                         tags={PARENT_RUN_ID_TAG: failed_run_id, ROOT_RUN_ID_TAG: root_run.run_id},
                     )
                 )
@@ -1122,19 +1120,17 @@ class TestRunStorage:
     def test_fetch_run_groups_ordering(self, storage: RunStorage):
         assert storage
 
-        first_root_run = TestRunStorage.build_run(run_id=make_new_run_id(), job_name="foo_pipeline")
+        first_root_run = TestRunStorage.build_run(run_id=make_new_run_id(), job_name="foo_job")
 
         storage.add_run(first_root_run)
 
-        second_root_run = TestRunStorage.build_run(
-            run_id=make_new_run_id(), job_name="foo_pipeline"
-        )
+        second_root_run = TestRunStorage.build_run(run_id=make_new_run_id(), job_name="foo_job")
 
         storage.add_run(second_root_run)
 
         second_root_run_child = TestRunStorage.build_run(
             run_id=make_new_run_id(),
-            job_name="foo_pipeline",
+            job_name="foo_job",
             tags={
                 PARENT_RUN_ID_TAG: second_root_run.run_id,
                 ROOT_RUN_ID_TAG: second_root_run.run_id,
@@ -1145,7 +1141,7 @@ class TestRunStorage:
 
         first_root_run_child = TestRunStorage.build_run(
             run_id=make_new_run_id(),
-            job_name="foo_pipeline",
+            job_name="foo_job",
             tags={
                 PARENT_RUN_ID_TAG: first_root_run.run_id,
                 ROOT_RUN_ID_TAG: first_root_run.run_id,
@@ -1162,7 +1158,7 @@ class TestRunStorage:
     def test_partition_status(self, storage: RunStorage):
         one = TestRunStorage.build_run(
             run_id=make_new_run_id(),
-            job_name="foo_pipeline",
+            job_name="foo_job",
             status=DagsterRunStatus.FAILURE,
             tags={
                 PARTITION_NAME_TAG: "one",
@@ -1172,7 +1168,7 @@ class TestRunStorage:
         storage.add_run(one)
         two = TestRunStorage.build_run(
             run_id=make_new_run_id(),
-            job_name="foo_pipeline",
+            job_name="foo_job",
             status=DagsterRunStatus.FAILURE,
             tags={
                 PARTITION_NAME_TAG: "two",
@@ -1182,7 +1178,7 @@ class TestRunStorage:
         storage.add_run(two)
         two_retried = TestRunStorage.build_run(
             run_id=make_new_run_id(),
-            job_name="foo_pipeline",
+            job_name="foo_job",
             status=DagsterRunStatus.SUCCESS,
             tags={
                 PARTITION_NAME_TAG: "two",
@@ -1192,7 +1188,7 @@ class TestRunStorage:
         storage.add_run(two_retried)
         three = TestRunStorage.build_run(
             run_id=make_new_run_id(),
-            job_name="foo_pipeline",
+            job_name="foo_job",
             status=DagsterRunStatus.SUCCESS,
             tags={
                 PARTITION_NAME_TAG: "three",
@@ -1202,7 +1198,7 @@ class TestRunStorage:
         storage.add_run(three)
         partition_data = storage.get_run_partition_data(
             runs_filter=RunsFilter(
-                job_name="foo_pipeline",
+                job_name="foo_job",
                 tags={PARTITION_SET_TAG: "foo_set"},
             )
         )
@@ -1294,7 +1290,7 @@ class TestRunStorage:
         for name in REQUIRED_DATA_MIGRATIONS.keys():
             assert storage.has_built_index(name)
 
-    def test_handle_run_event_pipeline_success_test(self, storage):
+    def test_handle_run_event_job_success_test(self, storage):
         run_id = make_new_run_id()
         run_to_add = TestRunStorage.build_run(job_name="pipeline_name", run_id=run_id)
         storage.add_run(run_to_add)

@@ -12,7 +12,7 @@ from dagster._core.host_representation.external_data import (
     ExternalPartitionExecutionErrorData,
     ExternalPartitionNamesData,
 )
-from dagster._core.storage.pipeline_run import RunPartitionData, RunsFilter
+from dagster._core.storage.dagster_run import RunPartitionData, RunsFilter
 from dagster._core.storage.tags import (
     PARTITION_NAME_TAG,
     PARTITION_SET_TAG,

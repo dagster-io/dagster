@@ -38,7 +38,7 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import (
     instance_for_test,
 )
-from dagster._core.utility_solids import (
+from dagster._core.utility_ops import (
     create_op_with_deps,
     create_root_op,
     create_stub_op,
@@ -193,7 +193,7 @@ def test_external_diamond_toposort():
         ).create_single_location(instance) as repo_location:
             external_repo = next(iter(repo_location.get_repositories().values()))
             external_job = next(iter(external_repo.get_all_external_jobs()))
-            assert external_job.solid_names_in_topological_order == [
+            assert external_job.node_names_in_topological_order == [
                 "A_source",
                 "A",
                 "B",

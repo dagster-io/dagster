@@ -3,7 +3,7 @@ from contextlib import contextmanager
 
 import psutil
 from dagster import job, op, repository
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import instance_for_test, poll_for_finished_run, poll_for_step_start
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import PythonFileTarget
@@ -63,15 +63,15 @@ def poll_for_pid(instance, run_id, timeout=20):
 def test_terminate_kills_subproc():
     with instance_for_test() as instance:
         with get_managed_grpc_server_workspace(instance) as workspace:
-            external_pipeline = (
+            external_job = (
                 workspace.get_code_location("test")
                 .get_repository("sleepy_repo")
                 .get_full_external_job("sleepy_job")
             )
             dagster_run = instance.create_run_for_job(
                 job_def=sleepy_job,
-                external_job_origin=external_pipeline.get_external_origin(),
-                job_code_origin=external_pipeline.get_python_origin(),
+                external_job_origin=external_job.get_external_origin(),
+                job_code_origin=external_job.get_python_origin(),
             )
 
             run_id = dagster_run.run_id

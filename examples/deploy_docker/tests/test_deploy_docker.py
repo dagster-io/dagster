@@ -6,7 +6,7 @@ from contextlib import contextmanager
 
 import requests
 from dagster import file_relative_path
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 

@@ -4,7 +4,7 @@ import pytest
 from dagster import DagsterInstance, job, op, reconstructable, repository
 from dagster._core.execution.api import execute_job
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import RESUME_RETRY_TAG
 from dagster._core.test_utils import (
     environ,

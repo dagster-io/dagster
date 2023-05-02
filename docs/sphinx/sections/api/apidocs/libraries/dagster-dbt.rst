@@ -57,10 +57,8 @@ CLI Resources
 -------------
 
 .. autoclass:: DbtCliResource
-    :members:
 
 .. autoclass:: DbtCliOutput
-    :members:
 
 .. autoconfigurable:: dbt_cli_resource
     :annotation: ResourceDefinition
@@ -69,13 +67,10 @@ RPC Resources
 -------------
 
 .. autoclass:: DbtRpcResource
-    :members:
 
 .. autoclass:: DbtRpcSyncResource
-    :members:
 
 .. autoclass:: DbtRpcOutput
-    :members:
 
 .. autodata:: local_dbt_rpc_resource
     :annotation: ResourceDefinition
@@ -106,7 +101,6 @@ Resources (dbt Cloud)
 =====================
 
 .. autoclass:: DbtCloudResourceV2
-    :members:
 
 .. autoconfigurable:: dbt_cloud_resource
     :annotation: ResourceDefinition
@@ -116,10 +110,8 @@ Types
 *****
 
 .. autoclass:: DbtOutput
-    :members:
 
 .. autoclass:: DbtResource
-    :members:
 
 ******
 Errors

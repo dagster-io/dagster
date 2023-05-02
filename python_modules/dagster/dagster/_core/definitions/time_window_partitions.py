@@ -127,11 +127,6 @@ class TimeWindowPartitionsDefinition(
                     "hour_offset, and day_offset can't also be provided"
                 ),
             )
-            if not is_valid_cron_schedule(cron_schedule):
-                raise DagsterInvalidDefinitionError(
-                    f"Found invalid cron schedule '{cron_schedule}' for a"
-                    " TimeWindowPartitionsDefinition."
-                )
         else:
             if schedule_type is None:
                 check.failed("One of schedule_type and cron_schedule must be provided")
@@ -141,6 +136,12 @@ class TimeWindowPartitionsDefinition(
                 minute_offset=minute_offset or 0,
                 hour_offset=hour_offset or 0,
                 day_offset=day_offset or 0,
+            )
+
+        if not is_valid_cron_schedule(cron_schedule):
+            raise DagsterInvalidDefinitionError(
+                f"Found invalid cron schedule '{cron_schedule}' for a"
+                " TimeWindowPartitionsDefinition."
             )
 
         return super(TimeWindowPartitionsDefinition, cls).__new__(

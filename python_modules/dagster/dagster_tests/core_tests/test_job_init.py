@@ -1,8 +1,8 @@
 import pytest
 from dagster import DagsterInstance, GraphDefinition, op, resource
-from dagster._core.definitions.pipeline_base import InMemoryJob
+from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.execution.api import create_execution_plan
-from dagster._core.execution.context_creation_pipeline import PlanExecutionContextManager
+from dagster._core.execution.context_creation_job import PlanExecutionContextManager
 from dagster._core.execution.resources_init import (
     resource_initialization_event_generator,
     resource_initialization_manager,

@@ -43,7 +43,7 @@ from dagster._serdes import pack_value, unpack_value, whitelist_for_serdes
 from dagster._utils import hash_collection
 
 from .events import AssetKey
-from .pipeline_base import IJob
+from .job_base import IJob
 
 if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition
@@ -200,9 +200,9 @@ class ReconstructableJob(
             the job belongs to.
         job_name (str): The name of the job.
         solid_selection_str (Optional[str]): The string value of a comma separated list of user-input
-            solid/op selection. None if no selection is specified, i.e. the entire job will
+            op selection. None if no selection is specified, i.e. the entire job will
             be run.
-        solids_to_execute (Optional[FrozenSet[str]]): A set of solid/op names to execute. None if no selection
+        solids_to_execute (Optional[FrozenSet[str]]): A set of op names to execute. None if no selection
             is specified, i.e. the entire job will be run.
         asset_selection (Optional[FrozenSet[AssetKey]]) A set of assets to execute. None if no selection
             is specified, i.e. the entire job will be run.

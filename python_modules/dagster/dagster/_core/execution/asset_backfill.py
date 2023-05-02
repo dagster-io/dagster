@@ -12,6 +12,7 @@ from typing import (
     Sequence,
     Set,
     Tuple,
+    Union,
     cast,
 )
 
@@ -36,7 +37,7 @@ from dagster._core.host_representation import (
     ExternalJob,
 )
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
-from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
+from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG
 from dagster._core.workspace.context import (
     BaseWorkspaceRequestContext,
@@ -49,10 +50,55 @@ if TYPE_CHECKING:
     from .backfill import PartitionBackfill
 
 
-class BackfillPartitionsStatus(Enum):
+class AssetBackfillStatus(Enum):
     IN_PROGRESS = "IN_PROGRESS"
     MATERIALIZED = "MATERIALIZED"
     FAILED = "FAILED"
+
+
+class PartitionedAssetBackfillStatus(
+    NamedTuple(
+        "_PartitionedAssetBackfillStatus",
+        [
+            ("asset_key", AssetKey),
+            ("num_targeted_partitions", int),
+            ("partitions_counts_by_status", Mapping[AssetBackfillStatus, int]),
+        ],
+    )
+):
+    def __new__(
+        cls,
+        asset_key: AssetKey,
+        num_targeted_partitions: int,
+        partitions_counts_by_status: Mapping[AssetBackfillStatus, int],
+    ):
+        return super(PartitionedAssetBackfillStatus, cls).__new__(
+            cls,
+            check.inst_param(asset_key, "asset_key", AssetKey),
+            check.int_param(num_targeted_partitions, "num_targeted_partitions"),
+            check.mapping_param(
+                partitions_counts_by_status,
+                "partitions_counts_by_status",
+                key_type=AssetBackfillStatus,
+                value_type=int,
+            ),
+        )
+
+
+class UnpartitionedAssetBackfillStatus(
+    NamedTuple(
+        "_UnpartitionedAssetBackfillStatus",
+        [("asset_key", AssetKey), ("backfill_status", Optional[AssetBackfillStatus])],
+    )
+):
+    def __new__(cls, asset_key: AssetKey, asset_backfill_status: Optional[AssetBackfillStatus]):
+        return super(UnpartitionedAssetBackfillStatus, cls).__new__(
+            cls,
+            check.inst_param(asset_key, "asset_key", AssetKey),
+            check.opt_inst_param(
+                asset_backfill_status, "asset_backfill_status", AssetBackfillStatus
+            ),
+        )
 
 
 class AssetBackfillData(NamedTuple):
@@ -122,14 +168,9 @@ class AssetBackfillData(NamedTuple):
         else:
             return None
 
-    def get_num_targeted_partitions_by_asset_key(self) -> Mapping[AssetKey, int]:
-        return {
-            asset_key: len(subset)
-            for asset_key, subset in self.target_subset.partitions_subsets_by_asset_key.items()
-        }
-
-    def get_targeted_partitioned_asset_keys_topological_order(self) -> Sequence[AssetKey]:
-        """Returns a topological ordering of partitioned asset keys targeted by the backfill.
+    def get_targeted_asset_keys_topological_order(self) -> Sequence[AssetKey]:
+        """Returns a topological ordering of asset keys targeted by the backfill
+        that exist in the asset graph.
 
         Orders keys in the same topological level alphabetically.
         """
@@ -138,46 +179,69 @@ class AssetBackfillData(NamedTuple):
         targeted_toposorted_keys = []
         for level_keys in toposorted_keys:
             for key in sorted(level_keys):
-                if (
-                    key in self.target_subset.asset_keys
-                    and self.target_subset.asset_graph.get_partitions_def(key) is not None
-                ):
+                if key in self.target_subset.asset_keys:
                     targeted_toposorted_keys.append(key)
 
         return targeted_toposorted_keys
 
-    def get_partitions_status_counts_by_asset_key(
+    def get_backfill_status_per_asset_key(
         self,
-    ) -> Mapping[AssetKey, Mapping[BackfillPartitionsStatus, int]]:
-        """Returns a mapping from asset key to a mapping from status to count of partitions in that
-        status.
-
-        Only includes assets that are partitioned.
+    ) -> Sequence[Union[PartitionedAssetBackfillStatus, UnpartitionedAssetBackfillStatus]]:
+        """Returns a list containing each targeted asset key's backfill status.
+        This list orders assets topologically and only contains statuses for assets that are
+        currently existent in the asset graph.
         """
 
-        def _get_status_counts_for_asset_key(asset_key: AssetKey):
-            materialized_subset = self.materialized_subset.get_partitions_subset(asset_key)
-            failed_partitions = set(
-                self.failed_and_downstream_subset.get_partitions_subset(
-                    asset_key
-                ).get_partition_keys()
-            )
-            requested_partitions = set(
-                self.requested_subset.get_partitions_subset(asset_key).get_partition_keys()
-            )
+        def _get_status_for_asset_key(
+            asset_key: AssetKey,
+        ) -> Union[PartitionedAssetBackfillStatus, UnpartitionedAssetBackfillStatus]:
+            if self.target_subset.asset_graph.get_partitions_def(asset_key) is not None:
+                materialized_subset = self.materialized_subset.get_partitions_subset(asset_key)
+                failed_partitions = set(
+                    self.failed_and_downstream_subset.get_partitions_subset(
+                        asset_key
+                    ).get_partition_keys()
+                )
+                requested_partitions = set(
+                    self.requested_subset.get_partitions_subset(asset_key).get_partition_keys()
+                )
 
-            return {
-                BackfillPartitionsStatus.MATERIALIZED: len(materialized_subset),
-                BackfillPartitionsStatus.FAILED: len(failed_partitions),
-                BackfillPartitionsStatus.IN_PROGRESS: len(requested_partitions)
-                - (len(failed_partitions & requested_partitions) + len(materialized_subset)),
-            }
+                return PartitionedAssetBackfillStatus(
+                    asset_key,
+                    len(self.target_subset.get_partitions_subset(asset_key)),
+                    {
+                        AssetBackfillStatus.MATERIALIZED: len(materialized_subset),
+                        AssetBackfillStatus.FAILED: len(failed_partitions),
+                        AssetBackfillStatus.IN_PROGRESS: len(requested_partitions)
+                        - (
+                            len(failed_partitions & requested_partitions) + len(materialized_subset)
+                        ),
+                    },
+                )
+            else:
+                failed = bool(
+                    asset_key in self.failed_and_downstream_subset.non_partitioned_asset_keys
+                )
+                materialized = bool(
+                    asset_key in self.materialized_subset.non_partitioned_asset_keys
+                )
+                in_progress = bool(asset_key in self.requested_subset.non_partitioned_asset_keys)
 
-        return {
-            asset_key: _get_status_counts_for_asset_key(asset_key)
-            for asset_key in self.target_subset.asset_keys
-            if self.target_subset.asset_graph.get_partitions_def(asset_key) is not None
-        }
+                if failed:
+                    return UnpartitionedAssetBackfillStatus(asset_key, AssetBackfillStatus.FAILED)
+                if materialized:
+                    return UnpartitionedAssetBackfillStatus(
+                        asset_key, AssetBackfillStatus.MATERIALIZED
+                    )
+                if in_progress:
+                    return UnpartitionedAssetBackfillStatus(
+                        asset_key, AssetBackfillStatus.IN_PROGRESS
+                    )
+                return UnpartitionedAssetBackfillStatus(asset_key, None)
+
+        # Only return back statuses for the assets that still exist in the workspace
+        topological_order = self.get_targeted_asset_keys_topological_order()
+        return [_get_status_for_asset_key(asset_key) for asset_key in topological_order]
 
     def get_partition_names(self) -> Optional[Sequence[str]]:
         """Only valid when the same number of partitions are targeted in every asset.

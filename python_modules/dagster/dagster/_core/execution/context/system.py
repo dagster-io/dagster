@@ -24,13 +24,13 @@ from dagster._annotations import public
 from dagster._core.definitions.dependency import OpNode
 from dagster._core.definitions.events import AssetKey, AssetLineageInfo
 from dagster._core.definitions.hook_definition import HookDefinition
+from dagster._core.definitions.job_base import IJob
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partition_mapping import infer_partition_mapping
-from dagster._core.definitions.pipeline_base import IJob
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
@@ -47,8 +47,8 @@ from dagster._core.execution.plan.step import ExecutionStep
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.base import Executor
 from dagster._core.log_manager import DagsterLogManager
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.storage.io_manager import IOManager
-from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
@@ -548,18 +548,18 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     @property
     def op_def(self) -> OpDefinition:
-        return self.solid.definition
+        return self.op.definition
 
     @property
     def job_def(self) -> "JobDefinition":
         return self._execution_data.job_def
 
     @property
-    def solid(self) -> OpNode:
+    def op(self) -> OpNode:
         return self.job_def.get_op(self._step.node_handle)
 
     @property
-    def solid_retry_policy(self) -> Optional[RetryPolicy]:
+    def op_retry_policy(self) -> Optional[RetryPolicy]:
         return self.job_def.get_retry_policy_for_handle(self.node_handle)
 
     def describe_op(self) -> str:
@@ -725,13 +725,13 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                 else f"output '{output_def.name}' with mapping_key '{mapping_key}'"
             )
             raise DagsterInvariantViolationError(
-                f"In {self.op_def.node_type_str} '{self.solid.name}', attempted to log output"
+                f"In {self.op_def.node_type_str} '{self.op.name}', attempted to log output"
                 f" metadata for {output_desc} which has already been yielded. Metadata must be"
                 " logged before the output is yielded."
             )
         if output_def.is_dynamic and not mapping_key:
             raise DagsterInvariantViolationError(
-                f"In {self.op_def.node_type_str} '{self.solid.name}', attempted to log metadata"
+                f"In {self.op_def.node_type_str} '{self.op.name}', attempted to log metadata"
                 f" for dynamic output '{output_def.name}' without providing a mapping key. When"
                 " logging metadata for a dynamic output, it is necessary to provide a mapping key."
             )
@@ -739,7 +739,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         if output_name in self._output_metadata:
             if not mapping_key or mapping_key in self._output_metadata[output_name]:
                 raise DagsterInvariantViolationError(
-                    f"In {self.op_def.node_type_str} '{self.solid.name}', attempted to log"
+                    f"In {self.op_def.node_type_str} '{self.op.name}', attempted to log"
                     f" metadata for output '{output_name}' more than once."
                 )
         if mapping_key:
@@ -1043,6 +1043,49 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             partitions_def.time_window_for_partition_key(partition_key_range.end).end,
         )
 
+    def asset_partitions_time_window_for_input(self, input_name: str) -> TimeWindow:
+        """The time window for the partitions of the asset correponding to the given input.
+
+        Raises an error if either of the following are true:
+        - The input asset has no partitioning.
+        - The input asset is not partitioned with a TimeWindowPartitionsDefinition or a
+          MultiPartitionsDefinition with one time-partitioned dimension.
+        """
+        asset_layer = self.job_def.asset_layer
+        upstream_asset_key = asset_layer.asset_key_for_input(self.node_handle, input_name)
+
+        if upstream_asset_key is None:
+            raise ValueError("The input has no corresponding asset")
+
+        upstream_asset_partitions_def = asset_layer.partitions_def_for_asset(upstream_asset_key)
+
+        if not upstream_asset_partitions_def:
+            raise ValueError(
+                "Tried to get asset partitions for an input that does not correspond to a "
+                "partitioned asset."
+            )
+
+        if not has_one_dimension_time_window_partitioning(upstream_asset_partitions_def):
+            raise ValueError(
+                "Tried to get asset partitions for an input that correponds to a partitioned "
+                "asset that is not time-partitioned."
+            )
+
+        upstream_asset_partitions_def = cast(
+            Union[TimeWindowPartitionsDefinition, MultiPartitionsDefinition],
+            upstream_asset_partitions_def,
+        )
+        partition_key_range = self.asset_partition_key_range_for_input(input_name)
+
+        return TimeWindow(
+            upstream_asset_partitions_def.time_window_for_partition_key(
+                partition_key_range.start
+            ).start,
+            upstream_asset_partitions_def.time_window_for_partition_key(
+                partition_key_range.end
+            ).end,
+        )
+
     def get_type_loader_context(self) -> "DagsterTypeLoaderContext":
         return DagsterTypeLoaderContext(
             plan_data=self.plan_data,
@@ -1055,13 +1098,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
 
 class TypeCheckContext:
-    """The ``context`` object available to a type check function on a DagsterType.
-
-    Attributes:
-        log (DagsterLogManager): Centralized log dispatch from user code.
-        resources (Any): An object whose attributes contain the resources available to this op.
-        run_id (str): The id of this job run.
-    """
+    """The ``context`` object available to a type check function on a DagsterType."""
 
     def __init__(
         self,
@@ -1077,16 +1114,19 @@ class TypeCheckContext:
     @public
     @property
     def resources(self) -> "Resources":
+        """An object whose attributes contain the resources available to this op."""
         return self._resources
 
     @public
     @property
     def run_id(self) -> str:
+        """The id of this job run."""
         return self._run_id
 
     @public
     @property
     def log(self) -> DagsterLogManager:
+        """Centralized log dispatch from user code."""
         return self._log
 
 

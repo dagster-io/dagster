@@ -2,13 +2,13 @@ from unittest import mock
 
 from dagster._utils.test import wrap_op_in_graph_and_execute
 from dagster_snowflake import snowflake_resource
-from dagster_snowflake.solids import snowflake_solid_for_query
+from dagster_snowflake.ops import snowflake_solid_for_query
 
 from .utils import create_mock_connector
 
 
 @mock.patch("snowflake.connector.connect", new_callable=create_mock_connector)
-def test_snowflake_solid(snowflake_connect):
+def test_snowflake_op(snowflake_connect):
     snowflake_solid = snowflake_solid_for_query("SELECT 1")
 
     result = wrap_op_in_graph_and_execute(

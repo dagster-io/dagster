@@ -31,7 +31,7 @@ from dagster._core.errors import (
 from dagster._core.events import DagsterEvent
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
-from dagster._core.storage.pipeline_run import DagsterRun
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._utils.backcompat import deprecation_warning
 from dagster._utils.forked_pdb import ForkedPdb
 
@@ -39,7 +39,7 @@ from .system import StepExecutionContext
 
 
 class AbstractComputeExecutionContext(ABC):
-    """Base class for solid context implemented by SolidExecutionContext and DagstermillExecutionContext.
+    """Base class for op context implemented by OpExecutionContext and DagstermillExecutionContext.
     """
 
     @abstractmethod
@@ -208,7 +208,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
     @property
     def node_handle(self) -> NodeHandle:
-        """NodeHandle: The current solid's handle.
+        """NodeHandle: The current op's handle.
 
         :meta private:
         """
@@ -223,22 +223,13 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         return self.node_handle
 
     @property
-    def solid(self) -> Node:
-        """Solid: The current solid object.
-
-        :meta private:
-
-        """
-        return self._step_execution_context.job_def.get_node(self.node_handle)
-
-    @property
     def op(self) -> Node:
         """Solid: The current op object.
 
         :meta private:
 
         """
-        return self.solid
+        return self._step_execution_context.job_def.get_node(self.node_handle)
 
     @public
     @property
@@ -441,6 +432,17 @@ class OpExecutionContext(AbstractComputeExecutionContext):
                 input_name
             ).get_partition_keys()
         )
+
+    @public
+    def asset_partitions_time_window_for_input(self, input_name: str = "result") -> TimeWindow:
+        """The time window for the partitions of the input asset.
+
+        Raises an error if either of the following are true:
+        - The input asset has no partitioning.
+        - The input asset is not partitioned with a TimeWindowPartitionsDefinition or a
+        MultiPartitionsDefinition with one time-partitioned dimension.
+        """
+        return self._step_execution_context.asset_partitions_time_window_for_input(input_name)
 
     @public
     def has_tag(self, key: str) -> bool:

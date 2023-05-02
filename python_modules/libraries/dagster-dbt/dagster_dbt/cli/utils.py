@@ -89,7 +89,7 @@ def _create_command_list(
     if warn_error:
         prefix += ["--warn-error"]
     if json_log_format:
-        prefix += ["--no-use-color", "--log-format", "json"]
+        prefix += ["--no-use-colors", "--log-format", "json"]
     if debug:
         prefix += ["--debug"]
 
@@ -117,6 +117,7 @@ def _core_execute_cli(
     command_list: Sequence[str],
     ignore_handled_error: bool,
     json_log_format: bool,
+    project_dir: str,
 ) -> Iterator[Union[DbtCliEvent, int]]:
     """Runs a dbt command in a subprocess and yields parsed output line by line."""
     # Execute the dbt CLI command in a subprocess.
@@ -130,6 +131,7 @@ def _core_execute_cli(
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         env=passenv,
+        cwd=project_dir if os.path.exists(project_dir) else None,
     )
     for raw_line in process.stdout or []:
         line = raw_line.decode().strip()
@@ -180,6 +182,7 @@ def execute_cli_stream(
         command_list=command_list,
         json_log_format=json_log_format,
         ignore_handled_error=ignore_handled_error,
+        project_dir=flags_dict["project-dir"],
     ):
         if isinstance(event, int):
             return_code = event
@@ -227,6 +230,7 @@ def execute_cli(
         command_list=command_list,
         json_log_format=json_log_format,
         ignore_handled_error=ignore_handled_error,
+        project_dir=flags_dict["project-dir"],
     ):
         if isinstance(event, int):
             return_code = event

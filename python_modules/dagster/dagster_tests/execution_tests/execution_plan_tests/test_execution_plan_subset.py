@@ -1,5 +1,5 @@
 from dagster import DependencyDefinition, GraphDefinition, In, Int, Out, Output, op
-from dagster._core.definitions.pipeline_base import InMemoryJob
+from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.instance import DagsterInstance
 

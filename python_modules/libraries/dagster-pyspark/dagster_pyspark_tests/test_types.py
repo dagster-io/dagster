@@ -11,7 +11,7 @@ from dagster_pyspark import (
 )
 from pyspark.sql import Row, SparkSession
 
-spark = SparkSession.builder.getOrCreate()
+spark = SparkSession.builder.getOrCreate()  # type: ignore
 
 dataframe_parametrize_argnames = "file_type,read,other,resource"
 dataframe_parametrize_argvalues = [

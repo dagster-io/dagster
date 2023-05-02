@@ -41,7 +41,7 @@ from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus, TickStatus
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import (
     create_test_daemon_workspace_context,
 )
@@ -77,6 +77,21 @@ def sensor_from_context(context: SensorEvaluationContext):
 
 @sensor(job_name="the_job")
 def sensor_from_fn_arg(context: SensorEvaluationContext, my_resource: MyResource):
+    return RunRequest(my_resource.a_str, run_config={}, tags={})
+
+
+@op(out={})
+def the_op_but_with_a_resource_dep(my_resource: MyResource):
+    assert my_resource.a_str == "foo"
+
+
+@job
+def the_job_but_with_a_resource_dep() -> None:
+    the_op_but_with_a_resource_dep()
+
+
+@sensor(job_name="the_job_but_with_a_resource_dep")
+def sensor_with_job_with_resource_dep(context: SensorEvaluationContext, my_resource: MyResource):
     return RunRequest(my_resource.a_str, run_config={}, tags={})
 
 
@@ -244,10 +259,11 @@ def sensor_run_status_with_cm(
 
 
 the_repo = Definitions(
-    jobs=[the_job],
+    jobs=[the_job, the_job_but_with_a_resource_dep],
     sensors=[
         sensor_from_context,
         sensor_from_fn_arg,
+        sensor_with_job_with_resource_dep,
         sensor_with_cm,
         sensor_from_context_weird_name,
         sensor_from_fn_arg_no_context,
@@ -328,6 +344,7 @@ def test_cant_use_required_resource_keys_and_params_both() -> None:
     [
         "sensor_from_context",
         "sensor_from_fn_arg",
+        "sensor_with_job_with_resource_dep",
         "sensor_with_cm",
         "sensor_from_context_weird_name",
         "sensor_from_fn_arg_no_context",

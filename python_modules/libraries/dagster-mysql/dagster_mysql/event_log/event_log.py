@@ -144,7 +144,7 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         if not row:
             return None
 
-        return row[0]
+        return row[0]  # type: ignore
 
     def store_asset_event(self, event: EventLogEntry, event_id: int) -> None:
         # last_materialization_timestamp is updated upon observation, materialization, materialization_planned

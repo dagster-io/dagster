@@ -33,10 +33,10 @@ from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorTick
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.event_log.migration import migrate_event_log_data
 from dagster._core.storage.event_log.sql_event_log import SqlEventLogStorage
 from dagster._core.storage.migration.utils import upgrading_instance
-from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import REPOSITORY_LABEL_TAG
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._serdes import create_snapshot_id
@@ -151,7 +151,7 @@ def get_sqlite3_indexes(db_path, table_name):
     return [r[1] for r in cursor.fetchall()]
 
 
-def test_snapshot_0_7_6_pre_add_pipeline_snapshot():
+def test_snapshot_0_7_6_pre_add_job_snapshot():
     run_id = "fb0b3905-068b-4444-8f00-76fcbaef7e8b"
     src_dir = file_relative_path(__file__, "snapshot_0_7_6_pre_add_pipeline_snapshot/sqlite")
     with copy_directory(src_dir) as test_dir:
@@ -543,7 +543,7 @@ def test_op_handle_node_handle():
     assert result.name == test_handle.name
 
 
-def test_pipeline_run_dagster_run():
+def test_job_run_dagster_run():
     # serialize in current code
     test_run = DagsterRun(job_name="test")
     test_str = serialize_value(test_run)
@@ -575,7 +575,7 @@ def test_pipeline_run_dagster_run():
     assert result.pipeline_name == test_run.job_name
 
 
-def test_pipeline_run_status_dagster_run_status():
+def test_job_run_status_dagster_run_status():
     # serialize in current code
     test_status = DagsterRunStatus("QUEUED")
     test_str = serialize_value(test_status)

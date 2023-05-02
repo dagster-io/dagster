@@ -20,7 +20,7 @@ from dagster._core.events.log import EventLogEntry
 from dagster._core.events.utils import filter_dagster_events_from_cli_logs
 from dagster._core.execution.plan.objects import StepFailureData, UserFailureData
 from dagster._core.execution.retries import RetryMode
-from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._serdes import pack_value, serialize_value, unpack_value
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster_celery.config import DEFAULT_CONFIG, dict_wrapper
@@ -235,10 +235,10 @@ def _submit_task_k8s_job(app, plan_context, step, queue, priority, known_state):
     )
 
 
-def construct_step_failure_event_and_handle(pipeline_run, step_key, err, instance):
+def construct_step_failure_event_and_handle(dagster_run, step_key, err, instance):
     step_failure_event = DagsterEvent(
         event_type_value=DagsterEventType.STEP_FAILURE.value,
-        job_name=pipeline_run.job_name,
+        job_name=dagster_run.job_name,
         step_key=step_key,
         event_specific_data=StepFailureData(
             error=serializable_error_info_from_exc_info(sys.exc_info()),
@@ -248,8 +248,8 @@ def construct_step_failure_event_and_handle(pipeline_run, step_key, err, instanc
     event_record = EventLogEntry(
         user_message=str(err),
         level=logging.ERROR,
-        job_name=pipeline_run.job_name,
-        run_id=pipeline_run.run_id,
+        job_name=dagster_run.job_name,
+        run_id=dagster_run.run_id,
         error_info=None,
         step_key=step_key,
         timestamp=time.time(),

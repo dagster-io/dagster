@@ -119,7 +119,7 @@ export const AssetNodeDefinition: React.FC<{
                 padding={{vertical: 16, horizontal: 24}}
                 border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
               >
-                <Subheading>Auto-materialization policy</Subheading>
+                <Subheading>Auto-materialize policy</Subheading>
               </Box>
               <Box
                 padding={{vertical: 16, horizontal: 24}}

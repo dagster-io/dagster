@@ -4,14 +4,14 @@ import styled from 'styled-components/macro';
 
 import {TruncatedTextWithFullTextOnHover} from '../../nav/getLeftNavItemsForOption';
 
-export type FilterObject = {
+export type FilterObject<T = any> = {
   isActive: boolean;
   activeJSX: JSX.Element;
   icon: IconName;
   name: string;
   getResults: (query: string) => {label: JSX.Element; key: string; value: any}[];
   onSelect: (selectArg: {
-    value: any;
+    value: T;
     close: () => void;
     createPortal: (element: JSX.Element) => () => void;
     clearSearch: () => void;

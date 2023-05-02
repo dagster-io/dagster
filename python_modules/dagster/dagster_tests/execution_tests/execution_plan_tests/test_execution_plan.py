@@ -9,8 +9,8 @@ from dagster import (
     op,
 )
 from dagster._core.definitions.decorators.graph_decorator import graph
+from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.output import GraphOut
-from dagster._core.definitions.pipeline_base import InMemoryJob
 from dagster._core.errors import (
     DagsterInvalidConfigError,
     DagsterInvariantViolationError,
@@ -20,7 +20,7 @@ from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.execution.plan.plan import should_skip_step
 from dagster._core.execution.retries import RetryMode
-from dagster._core.storage.pipeline_run import DagsterRun
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.utils import make_new_run_id
 
 

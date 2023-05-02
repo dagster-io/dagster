@@ -31,7 +31,7 @@ from dagster._core.errors import (
 )
 from dagster._core.events import PIPELINE_RUN_STATUS_TO_EVENT_TYPE, DagsterEvent, DagsterEventType
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, RunsFilter
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._serdes import (
     serialize_value,
     whitelist_for_serdes,
@@ -111,15 +111,7 @@ class RunStatusSensorCursor(
 
 
 class RunStatusSensorContext:
-    """The ``context`` object available to a decorated function of ``run_status_sensor``.
-
-    Attributes:
-        sensor_name (str): the name of the sensor.
-        dagster_run (DagsterRun): the run of the job.
-        dagster_event (DagsterEvent): the event associated with the job run status.
-        instance (DagsterInstance): the current instance.
-        log (logging.Logger): the logger for the given sensor evaluation
-    """
+    """The ``context`` object available to a decorated function of ``run_status_sensor``."""
 
     def __init__(
         self,
@@ -204,26 +196,31 @@ class RunStatusSensorContext:
     @public
     @property
     def sensor_name(self) -> str:
+        """The name of the sensor."""
         return self._sensor_name
 
     @public
     @property
     def dagster_run(self) -> DagsterRun:
+        """The run of the job."""
         return self._dagster_run
 
     @public
     @property
     def dagster_event(self) -> DagsterEvent:
+        """The event associated with the job run status."""
         return self._dagster_event
 
     @public
     @property
     def instance(self) -> DagsterInstance:
+        """The current instance."""
         return self._instance
 
     @public
     @property
     def log(self) -> logging.Logger:
+        """The logger for the current sensor evaluation."""
         if not self._logger:
             self._logger = InstigationLogger()
 

@@ -4,7 +4,6 @@ import json
 from abc import ABC, abstractmethod
 from datetime import (
     datetime,
-    time,
     timedelta,
 )
 from enum import Enum
@@ -13,7 +12,6 @@ from typing import (
     Callable,
     Generic,
     Iterable,
-    List,
     Mapping,
     NamedTuple,
     Optional,
@@ -24,7 +22,6 @@ from typing import (
     cast,
 )
 
-import pendulum
 from dateutil.relativedelta import relativedelta
 from typing_extensions import TypeVar
 
@@ -38,7 +35,6 @@ from dagster._core.definitions.run_request import (
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
 from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
 from dagster._serdes import whitelist_for_serdes
-from dagster._seven.compat.pendulum import PendulumDateTime, to_timezone
 from dagster._utils import xor
 from dagster._utils.backcompat import (
     canonicalize_backcompat_args,
@@ -46,13 +42,11 @@ from dagster._utils.backcompat import (
     experimental_arg_warning,
 )
 from dagster._utils.cached_method import cached_method
-from dagster._utils.schedules import schedule_execution_time_iterator
 
 from ..errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidDeserializationVersionError,
     DagsterInvalidInvocationError,
-    DagsterInvariantViolationError,
     DagsterUnknownPartitionError,
 )
 from .config import ConfigMapping
@@ -103,72 +97,6 @@ class Partition(Generic[T_cov]):
             return False
         else:
             return self.value == other.value and self.name == other.name
-
-
-def schedule_partition_range(
-    start: datetime,
-    end: Optional[datetime],
-    cron_schedule: str,
-    fmt: str,
-    timezone: Optional[str],
-    execution_time_to_partition_fn: Callable[[datetime], datetime],
-    current_time: Optional[datetime],
-) -> Sequence[str]:
-    if end and start > end:
-        raise DagsterInvariantViolationError(
-            'Selected date range start "{start}" is after date range end "{end}'.format(
-                start=start.strftime(fmt),
-                end=end.strftime(fmt),
-            )
-        )
-
-    tz = timezone if timezone else "UTC"
-
-    _current_time = current_time if current_time else pendulum.now(tz)
-
-    # Coerce to the definition timezone
-    _start = (
-        to_timezone(start, tz)
-        if isinstance(start, PendulumDateTime)
-        else pendulum.instance(start, tz=tz)
-    )
-    _current_time = (
-        to_timezone(_current_time, tz)
-        if isinstance(_current_time, PendulumDateTime)
-        else pendulum.instance(_current_time, tz=tz)
-    )
-
-    # The end partition time should be before the last partition that
-    # executes before the current time
-    end_partition_time = execution_time_to_partition_fn(_current_time)
-
-    # The partition set has an explicit end time that represents the end of the partition range
-    if end:
-        _end = (
-            to_timezone(end, tz)
-            if isinstance(end, PendulumDateTime)
-            else pendulum.instance(end, tz=tz)
-        )
-
-        # If the explicit end time is before the last partition time,
-        # update the end partition time
-        end_partition_time = min(_end, end_partition_time)
-
-    end_timestamp = end_partition_time.timestamp()
-
-    partitions: List[str] = []
-    for next_time in schedule_execution_time_iterator(_start.timestamp(), cron_schedule, tz):
-        partition_time = execution_time_to_partition_fn(next_time)
-
-        if partition_time.timestamp() > end_timestamp:
-            break
-
-        if partition_time.timestamp() < _start.timestamp():
-            continue
-
-        partitions.append(partition_time.strftime(fmt))
-
-    return partitions
 
 
 @whitelist_for_serdes
@@ -409,145 +337,6 @@ class StaticPartitionsDefinition(PartitionsDefinition[str]):
         # in a static partitions definition, though we will at 1.3.0.
         # This ensures that partition counts are correct in Dagit.
         return len(set(self.get_partition_keys(current_time, dynamic_partitions_store)))
-
-
-class ScheduleTimeBasedPartitionsDefinition(
-    PartitionsDefinition[str],
-    NamedTuple(
-        "_ScheduleTimeBasedPartitionsDefinition",
-        [
-            ("schedule_type", ScheduleType),
-            ("start", datetime),
-            ("execution_time", time),
-            ("execution_day", Optional[int]),
-            ("end", Optional[datetime]),
-            ("fmt", str),
-            ("timezone", str),
-            ("offset", int),
-        ],
-    ),
-):
-    """Computes the partitions backwards from the scheduled execution times."""
-
-    def __new__(
-        cls,
-        schedule_type: ScheduleType,
-        start: datetime,
-        execution_time: Optional[time] = None,
-        execution_day: Optional[int] = None,
-        end: Optional[datetime] = None,
-        fmt: Optional[str] = None,
-        timezone: Optional[str] = None,
-        offset: Optional[int] = None,
-    ):
-        if end is not None:
-            check.invariant(
-                start <= end,
-                f'Selected date range start "{start}" is after date range end "{end}"'.format(
-                    start=start.strftime(fmt) if fmt is not None else start,
-                    end=cast(datetime, end).strftime(fmt) if fmt is not None else end,
-                ),
-            )
-        if schedule_type in [ScheduleType.HOURLY, ScheduleType.DAILY]:
-            check.invariant(
-                not execution_day,
-                f'Execution day should not be provided for schedule type "{schedule_type}"',
-            )
-        elif schedule_type is ScheduleType.WEEKLY:
-            execution_day = execution_day if execution_day is not None else 0
-            check.invariant(
-                execution_day is not None and 0 <= execution_day <= 6,
-                (
-                    f'Execution day "{execution_day}" must be between 0 and 6 for '
-                    f'schedule type "{schedule_type}"'
-                ),
-            )
-        elif schedule_type is ScheduleType.MONTHLY:
-            execution_day = execution_day if execution_day is not None else 1
-            check.invariant(
-                execution_day is not None and 1 <= execution_day <= 31,
-                (
-                    f'Execution day "{execution_day}" must be between 1 and 31 for '
-                    f'schedule type "{schedule_type}"'
-                ),
-            )
-
-        return super(ScheduleTimeBasedPartitionsDefinition, cls).__new__(
-            cls,
-            check.inst_param(schedule_type, "schedule_type", ScheduleType),
-            check.inst_param(start, "start", datetime),
-            check.opt_inst_param(execution_time, "execution_time", time, time(0, 0)),
-            check.opt_int_param(
-                execution_day,
-                "execution_day",
-            ),
-            check.opt_inst_param(end, "end", datetime),
-            check.opt_str_param(fmt, "fmt", default=DEFAULT_DATE_FORMAT),
-            check.opt_str_param(timezone, "timezone", default="UTC"),
-            check.opt_int_param(offset, "offset", default=1),
-        )
-
-    @public
-    def get_partition_keys(
-        self,
-        current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> Sequence[str]:
-        check.opt_inst_param(current_time, "current_time", datetime)
-
-        return schedule_partition_range(
-            start=self.start,
-            end=self.end,
-            cron_schedule=self.get_cron_schedule(),
-            fmt=self.fmt,
-            timezone=self.timezone,
-            execution_time_to_partition_fn=self.get_execution_time_to_partition_fn(),
-            current_time=current_time,
-        )
-
-    def get_cron_schedule(self) -> str:
-        return cron_schedule_from_schedule_type_and_offsets(
-            schedule_type=self.schedule_type,
-            minute_offset=self.execution_time.minute,
-            hour_offset=self.execution_time.hour,
-            day_offset=self.execution_day,
-        )
-
-    def get_execution_time_to_partition_fn(self) -> Callable[[datetime], datetime]:
-        if self.schedule_type is ScheduleType.HOURLY:
-            # Using subtract(minutes=d.minute) here instead of .replace(minute=0) because on
-            # pendulum 1, replace(minute=0) sometimes changes the timezone:
-            # >>> a = create_pendulum_time(2021, 11, 7, 0, 0, tz="US/Central")
-            #
-            # >>> a.add(hours=1)
-            # <Pendulum [2021-11-07T01:00:00-05:00]>
-            # >>> a.add(hours=1).replace(minute=0)
-            # <Pendulum [2021-11-07T01:00:00-06:00]>
-            return lambda d: pendulum.instance(d).subtract(hours=self.offset, minutes=d.minute)
-        elif self.schedule_type is ScheduleType.DAILY:
-            return (
-                lambda d: pendulum.instance(d).replace(hour=0, minute=0).subtract(days=self.offset)
-            )
-        elif self.schedule_type is ScheduleType.WEEKLY:
-            execution_day = cast(int, self.execution_day)
-            day_difference = (execution_day - (self.start.weekday() + 1)) % 7
-            return (
-                lambda d: pendulum.instance(d)
-                .replace(hour=0, minute=0)
-                .subtract(
-                    weeks=self.offset,
-                    days=day_difference,
-                )
-            )
-        elif self.schedule_type is ScheduleType.MONTHLY:
-            execution_day = cast(int, self.execution_day)
-            return (
-                lambda d: pendulum.instance(d)
-                .replace(hour=0, minute=0)
-                .subtract(months=self.offset, days=execution_day - 1)
-            )
-        else:
-            check.assert_never(self.schedule_type)
 
 
 class CachingDynamicPartitionsLoader(DynamicPartitionsStore):

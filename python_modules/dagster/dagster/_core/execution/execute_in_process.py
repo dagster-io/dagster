@@ -2,11 +2,11 @@ from typing import Any, Dict, FrozenSet, Mapping, Optional, cast
 
 from dagster._core.definitions import GraphDefinition, JobDefinition, Node, NodeHandle, OpDefinition
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.pipeline_base import InMemoryJob
+from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.pipeline_run import DagsterRun
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.types.dagster_type import DagsterTypeKind
 
 from .api import (
@@ -15,7 +15,7 @@ from .api import (
     ephemeral_instance_if_missing,
     job_execution_iterator,
 )
-from .context_creation_pipeline import (
+from .context_creation_job import (
     PlanOrchestrationContextManager,
     orchestration_context_event_generator,
 )

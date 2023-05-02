@@ -18,7 +18,7 @@ from dagster._core.run_coordinator.queued_run_coordinator import (
     QueuedRunCoordinator,
     RunQueueConfig,
 )
-from dagster._core.storage.pipeline_run import (
+from dagster._core.storage.dagster_run import (
     IN_PROGRESS_RUN_STATUSES,
     DagsterRun,
     DagsterRunStatus,

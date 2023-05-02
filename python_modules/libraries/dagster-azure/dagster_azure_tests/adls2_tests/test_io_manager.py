@@ -24,8 +24,8 @@ from dagster import (
 )
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.partition import StaticPartitionsDefinition
-from dagster._core.definitions.pipeline_base import InMemoryJob
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.events import DagsterEventType
@@ -112,14 +112,14 @@ def test_adls2_pickle_io_manager_deletes_recursively(storage_account, file_syste
 
     step_keys = ["return_one"]
     instance = DagsterInstance.ephemeral()
-    pipeline_run = DagsterRun(job_name=job.name, run_id=run_id, run_config=run_config)
+    dagster_run = DagsterRun(job_name=job.name, run_id=run_id, run_config=run_config)
 
     return_one_step_events = list(
         execute_plan(
             execution_plan.build_subset_plan(step_keys, job, resolved_run_config),
             job=InMemoryJob(job),
             run_config=run_config,
-            dagster_run=pipeline_run,
+            dagster_run=dagster_run,
             instance=instance,
         )
     )
@@ -182,14 +182,14 @@ def test_adls2_pickle_io_manager_execution(storage_account, file_system, credent
 
     step_keys = ["return_one"]
     instance = DagsterInstance.ephemeral()
-    pipeline_run = DagsterRun(job_name=job.name, run_id=run_id, run_config=run_config)
+    dagster_run = DagsterRun(job_name=job.name, run_id=run_id, run_config=run_config)
 
     return_one_step_events = list(
         execute_plan(
             execution_plan.build_subset_plan(step_keys, job, resolved_run_config),
             job=InMemoryJob(job),
             run_config=run_config,
-            dagster_run=pipeline_run,
+            dagster_run=dagster_run,
             instance=instance,
         )
     )
@@ -217,7 +217,7 @@ def test_adls2_pickle_io_manager_execution(storage_account, file_system, credent
         execute_plan(
             execution_plan.build_subset_plan(["add_one"], job, resolved_run_config),
             job=InMemoryJob(job),
-            dagster_run=pipeline_run,
+            dagster_run=dagster_run,
             run_config=run_config,
             instance=instance,
         )

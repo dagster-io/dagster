@@ -1,5 +1,5 @@
 from dagster._core.host_representation.handle import JobHandle
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import (
     create_run_for_test,
     instance_for_test,
@@ -24,7 +24,7 @@ def _check_event_log_contains(event_log, expected_type_and_message):
         )
 
 
-def test_launch_run_with_unloadable_pipeline_grpc():
+def test_launch_run_with_unloadable_job_grpc():
     with instance_for_test() as instance:
         with get_bar_repo_code_location(instance) as code_location:
             job_handle = JobHandle("foo", code_location.get_repository("bar_repo").handle)

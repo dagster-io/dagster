@@ -1,6 +1,6 @@
 import pytest
 from dagster import DagsterInstance
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._daemon.asset_daemon import set_auto_materialize_paused
 

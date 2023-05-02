@@ -6,11 +6,13 @@ from .asset_defs import (
 )
 from .asset_selection import DbtManifestAssetSelection as DbtManifestAssetSelection
 from .cli import (
+    DbtCliClientResource as DbtCliClientResource,
     DbtCliOutput as DbtCliOutput,
     DbtCliResource as DbtCliResource,
     dbt_cli_resource as dbt_cli_resource,
 )
 from .cloud import (
+    DbtCloudClientResource as DbtCloudClientResource,
     DbtCloudOutput as DbtCloudOutput,
     DbtCloudResource as DbtCloudResource,
     DbtCloudResourceV2 as DbtCloudResourceV2,

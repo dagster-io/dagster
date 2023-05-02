@@ -34,14 +34,17 @@ export type BackfillStatusesByAssetQuery = {
             start: string;
             end: string;
           }> | null;
-          assetPartitionsStatusCounts: Array<{
-            __typename: 'AssetPartitionsStatusCounts';
-            numPartitionsTargeted: number;
-            numPartitionsRequested: number;
-            numPartitionsCompleted: number;
-            numPartitionsFailed: number;
-            assetKey: {__typename: 'AssetKey'; path: Array<string>};
-          }>;
+          assetBackfillStatuses: Array<
+            | {
+                __typename: 'AssetPartitionsStatusCounts';
+                numPartitionsTargeted: number;
+                numPartitionsInProgress: number;
+                numPartitionsMaterialized: number;
+                numPartitionsFailed: number;
+                assetKey: {__typename: 'AssetKey'; path: Array<string>};
+              }
+            | {__typename: 'UnpartitionedAssetStatus'}
+          >;
         } | null;
       }
     | {
@@ -81,13 +84,16 @@ export type PartitionBackfillFragment = {
       start: string;
       end: string;
     }> | null;
-    assetPartitionsStatusCounts: Array<{
-      __typename: 'AssetPartitionsStatusCounts';
-      numPartitionsTargeted: number;
-      numPartitionsRequested: number;
-      numPartitionsCompleted: number;
-      numPartitionsFailed: number;
-      assetKey: {__typename: 'AssetKey'; path: Array<string>};
-    }>;
+    assetBackfillStatuses: Array<
+      | {
+          __typename: 'AssetPartitionsStatusCounts';
+          numPartitionsTargeted: number;
+          numPartitionsInProgress: number;
+          numPartitionsMaterialized: number;
+          numPartitionsFailed: number;
+          assetKey: {__typename: 'AssetKey'; path: Array<string>};
+        }
+      | {__typename: 'UnpartitionedAssetStatus'}
+    >;
   } | null;
 };

@@ -10,7 +10,7 @@ from dagster._cli.api import ExecuteRunArgs
 from dagster._core.events import EngineEventData
 from dagster._core.launcher import LaunchRunContext, ResumeRunContext, RunLauncher
 from dagster._core.launcher.base import CheckRunHealthResult, WorkerStatus
-from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.tags import DOCKER_IMAGE_TAG
 from dagster._grpc.types import ResumeRunArgs
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
@@ -195,8 +195,8 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
     def inst_data(self) -> Optional[ConfigurableClassData]:
         return self._inst_data
 
-    def get_container_context_for_run(self, pipeline_run: DagsterRun) -> K8sContainerContext:
-        return K8sContainerContext.create_for_run(pipeline_run, self, include_run_tags=True)
+    def get_container_context_for_run(self, dagster_run: DagsterRun) -> K8sContainerContext:
+        return K8sContainerContext.create_for_run(dagster_run, self, include_run_tags=True)
 
     def _launch_k8s_job_with_args(
         self, job_name: str, args: Optional[Sequence[str]], run: DagsterRun
