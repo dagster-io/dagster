@@ -427,3 +427,19 @@ def test_config_param_load_input_handle_output_config() -> None:
     assert did_run["second_op"]
     assert storage["first_op"] == "prefoopost"
     assert storage["second_op"] == "prebarprefoopostpost"
+
+
+def test_io_manager_def() -> None:
+    with tempfile.TemporaryDirectory() as tmpdir_path:
+
+        @asset(io_manager_def=FilesystemIOManager(base_dir=tmpdir_path))
+        def hello_world_asset():
+            return "hello, world!"
+
+        defs = Definitions(
+            assets=[hello_world_asset],
+        )
+
+        assert not os.path.exists(os.path.join(tmpdir_path, "hello_world_asset"))
+        assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+        assert os.path.exists(os.path.join(tmpdir_path, "hello_world_asset"))
