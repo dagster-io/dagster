@@ -1,6 +1,6 @@
 [
   {
-    "title": "Getting Started",
+    "title": "Getting started",
     "icon": "Flag",
     "path": "/getting-started",
     "isDefaultOpen": true,
@@ -72,11 +72,11 @@
         "path": "/concepts/assets/software-defined-assets",
         "children": [
           {
-            "title": "Software-Defined Assets",
+            "title": "Software-defined Assets",
             "path": "/concepts/assets/software-defined-assets"
           },
           {
-            "title": "Asset Materializations",
+            "title": "Asset materializations",
             "path": "/concepts/assets/asset-materializations"
           },
           {
@@ -84,11 +84,11 @@
             "path": "/concepts/assets/asset-observations"
           },
           {
-            "title": "Graph-Backed Assets",
+            "title": "Graph-backed Assets",
             "path": "/concepts/assets/graph-backed-assets"
           },
           {
-            "title": "Multi-Assets",
+            "title": "Multi-assets",
             "path": "/concepts/assets/multi-assets"
           },
           {
@@ -154,7 +154,7 @@
             "path": "/concepts/ops-jobs-graphs/job-execution"
           },
           {
-            "title": "Metadata & Tags",
+            "title": "Metadata & tags",
             "path": "/concepts/ops-jobs-graphs/metadata-tags"
           }
         ]
