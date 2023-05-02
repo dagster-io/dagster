@@ -132,4 +132,62 @@ describe('useSuggestionFilter', () => {
       expectedResult,
     );
   });
+
+  it('should handle empty initialSuggestions', () => {
+    const {result} = renderHook(() =>
+      useSuggestionFilter({...hookArgs, initialSuggestions: [], state: [], setState: () => {}}),
+    );
+
+    expect(result.current.getResults('')).toEqual([]);
+  });
+
+  it('should handle empty query', () => {
+    let state: string[] = [];
+    const setState = (newState: string[]) => {
+      state = newState;
+    };
+
+    const {result} = renderHook(() => useSuggestionFilter({...hookArgs, state, setState}));
+
+    expect(result.current.getResults('').map((suggestion) => suggestion.value)).toEqual(
+      initialSuggestions,
+    );
+  });
+
+  it('should handle freeformSearchResult', async () => {
+    let state: string[] = [];
+    const setState = (newState: string[]) => {
+      state = newState;
+    };
+
+    const freeformSearchResult = (query: string) => ({final: true, value: `Custom: ${query}`});
+    const {result} = renderHook(() =>
+      useSuggestionFilter({...hookArgs, freeformSearchResult, state, setState}),
+    );
+
+    const expectedResult = [
+      {final: true, value: 'Custom: test'},
+      ...initialSuggestions.filter(({value}) => isMatch(value, 'test')),
+    ];
+
+    expect(result.current.getResults('test').map((suggestion) => suggestion.value)).toEqual(
+      expectedResult,
+    );
+  });
+
+  it('should handle renderActiveStateLabel', () => {
+    let state: string[] = ['apple'];
+    const setState = (newState: string[]) => {
+      state = newState;
+    };
+
+    const renderActiveStateLabel = ({value, isActive}: {value: string; isActive: boolean}) => (
+      <div>{isActive ? `(${value})` : value}</div>
+    );
+    const {result} = renderHook(() =>
+      useSuggestionFilter({...hookArgs, renderActiveStateLabel, state, setState}),
+    );
+
+    expect(result.current.activeJSX).toBeTruthy();
+  });
 });
