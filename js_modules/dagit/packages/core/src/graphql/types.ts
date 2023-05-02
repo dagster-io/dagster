@@ -4062,13 +4062,9 @@ export const buildArrayConfigType = (
     recursiveConfigTypes:
       overrides && overrides.hasOwnProperty('recursiveConfigTypes')
         ? overrides.recursiveConfigTypes!
-        : [
-            relationshipsToOmit.has('ConfigType')
-              ? ({} as ConfigType)
-              : buildConfigType({}, relationshipsToOmit),
-          ],
+        : [],
     typeParamKeys:
-      overrides && overrides.hasOwnProperty('typeParamKeys') ? overrides.typeParamKeys! : ['vel'],
+      overrides && overrides.hasOwnProperty('typeParamKeys') ? overrides.typeParamKeys! : [],
   };
 };
 
@@ -4083,19 +4079,11 @@ export const buildAsset = (
     assetMaterializations:
       overrides && overrides.hasOwnProperty('assetMaterializations')
         ? overrides.assetMaterializations!
-        : [
-            relationshipsToOmit.has('MaterializationEvent')
-              ? ({} as MaterializationEvent)
-              : buildMaterializationEvent({}, relationshipsToOmit),
-          ],
+        : [],
     assetObservations:
       overrides && overrides.hasOwnProperty('assetObservations')
         ? overrides.assetObservations!
-        : [
-            relationshipsToOmit.has('ObservationEvent')
-              ? ({} as ObservationEvent)
-              : buildObservationEvent({}, relationshipsToOmit),
-          ],
+        : [],
     definition:
       overrides && overrides.hasOwnProperty('definition')
         ? overrides.definition!
@@ -4123,23 +4111,15 @@ export const buildAssetBackfillData = (
     assetBackfillStatuses:
       overrides && overrides.hasOwnProperty('assetBackfillStatuses')
         ? overrides.assetBackfillStatuses!
-        : [
-            relationshipsToOmit.has('AssetPartitionsStatusCounts')
-              ? ({} as AssetPartitionsStatusCounts)
-              : buildAssetPartitionsStatusCounts({}, relationshipsToOmit),
-          ],
+        : [],
     rootAssetTargetedPartitions:
       overrides && overrides.hasOwnProperty('rootAssetTargetedPartitions')
         ? overrides.rootAssetTargetedPartitions!
-        : ['accusantium'],
+        : [],
     rootAssetTargetedRanges:
       overrides && overrides.hasOwnProperty('rootAssetTargetedRanges')
         ? overrides.rootAssetTargetedRanges!
-        : [
-            relationshipsToOmit.has('PartitionKeyRange')
-              ? ({} as PartitionKeyRange)
-              : buildPartitionKeyRange({}, relationshipsToOmit),
-          ],
+        : [],
   };
 };
 
@@ -4151,10 +4131,7 @@ export const buildAssetConnection = (
   relationshipsToOmit.add('AssetConnection');
   return {
     __typename: 'AssetConnection',
-    nodes:
-      overrides && overrides.hasOwnProperty('nodes')
-        ? overrides.nodes!
-        : [relationshipsToOmit.has('Asset') ? ({} as Asset) : buildAsset({}, relationshipsToOmit)],
+    nodes: overrides && overrides.hasOwnProperty('nodes') ? overrides.nodes! : [],
   };
 };
 
@@ -4204,14 +4181,7 @@ export const buildAssetGroup = (
   relationshipsToOmit.add('AssetGroup');
   return {
     __typename: 'AssetGroup',
-    assetKeys:
-      overrides && overrides.hasOwnProperty('assetKeys')
-        ? overrides.assetKeys!
-        : [
-            relationshipsToOmit.has('AssetKey')
-              ? ({} as AssetKey)
-              : buildAssetKey({}, relationshipsToOmit),
-          ],
+    assetKeys: overrides && overrides.hasOwnProperty('assetKeys') ? overrides.assetKeys! : [],
     groupName: overrides && overrides.hasOwnProperty('groupName') ? overrides.groupName! : 'aut',
   };
 };
@@ -4242,7 +4212,7 @@ export const buildAssetKey = (
   relationshipsToOmit.add('AssetKey');
   return {
     __typename: 'AssetKey',
-    path: overrides && overrides.hasOwnProperty('path') ? overrides.path! : ['pariatur'],
+    path: overrides && overrides.hasOwnProperty('path') ? overrides.path! : [],
   };
 };
 
@@ -4253,7 +4223,7 @@ export const buildAssetKeyInput = (
   const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
   relationshipsToOmit.add('AssetKeyInput');
   return {
-    path: overrides && overrides.hasOwnProperty('path') ? overrides.path! : ['ea'],
+    path: overrides && overrides.hasOwnProperty('path') ? overrides.path! : [],
   };
 };
 
@@ -4272,9 +4242,7 @@ export const buildAssetLatestInfo = (
         ? ({} as AssetKey)
         : buildAssetKey({}, relationshipsToOmit),
     inProgressRunIds:
-      overrides && overrides.hasOwnProperty('inProgressRunIds')
-        ? overrides.inProgressRunIds!
-        : ['quo'],
+      overrides && overrides.hasOwnProperty('inProgressRunIds') ? overrides.inProgressRunIds! : [],
     latestMaterialization:
       overrides && overrides.hasOwnProperty('latestMaterialization')
         ? overrides.latestMaterialization!
@@ -4288,9 +4256,7 @@ export const buildAssetLatestInfo = (
         ? ({} as Run)
         : buildRun({}, relationshipsToOmit),
     unstartedRunIds:
-      overrides && overrides.hasOwnProperty('unstartedRunIds')
-        ? overrides.unstartedRunIds!
-        : ['accusamus'],
+      overrides && overrides.hasOwnProperty('unstartedRunIds') ? overrides.unstartedRunIds! : [],
   };
 };
 
@@ -4308,8 +4274,7 @@ export const buildAssetLineageInfo = (
         : relationshipsToOmit.has('AssetKey')
         ? ({} as AssetKey)
         : buildAssetKey({}, relationshipsToOmit),
-    partitions:
-      overrides && overrides.hasOwnProperty('partitions') ? overrides.partitions! : ['autem'],
+    partitions: overrides && overrides.hasOwnProperty('partitions') ? overrides.partitions! : [],
   };
 };
 
@@ -4386,27 +4351,15 @@ export const buildAssetNode = (
     assetMaterializationUsedData:
       overrides && overrides.hasOwnProperty('assetMaterializationUsedData')
         ? overrides.assetMaterializationUsedData!
-        : [
-            relationshipsToOmit.has('MaterializationUpstreamDataVersion')
-              ? ({} as MaterializationUpstreamDataVersion)
-              : buildMaterializationUpstreamDataVersion({}, relationshipsToOmit),
-          ],
+        : [],
     assetMaterializations:
       overrides && overrides.hasOwnProperty('assetMaterializations')
         ? overrides.assetMaterializations!
-        : [
-            relationshipsToOmit.has('MaterializationEvent')
-              ? ({} as MaterializationEvent)
-              : buildMaterializationEvent({}, relationshipsToOmit),
-          ],
+        : [],
     assetObservations:
       overrides && overrides.hasOwnProperty('assetObservations')
         ? overrides.assetObservations!
-        : [
-            relationshipsToOmit.has('ObservationEvent')
-              ? ({} as ObservationEvent)
-              : buildObservationEvent({}, relationshipsToOmit),
-          ],
+        : [],
     assetPartitionStatuses:
       overrides && overrides.hasOwnProperty('assetPartitionStatuses')
         ? overrides.assetPartitionStatuses!
@@ -4431,38 +4384,13 @@ export const buildAssetNode = (
       overrides && overrides.hasOwnProperty('currentDataVersion')
         ? overrides.currentDataVersion!
         : 'aperiam',
-    dependedBy:
-      overrides && overrides.hasOwnProperty('dependedBy')
-        ? overrides.dependedBy!
-        : [
-            relationshipsToOmit.has('AssetDependency')
-              ? ({} as AssetDependency)
-              : buildAssetDependency({}, relationshipsToOmit),
-          ],
+    dependedBy: overrides && overrides.hasOwnProperty('dependedBy') ? overrides.dependedBy! : [],
     dependedByKeys:
-      overrides && overrides.hasOwnProperty('dependedByKeys')
-        ? overrides.dependedByKeys!
-        : [
-            relationshipsToOmit.has('AssetKey')
-              ? ({} as AssetKey)
-              : buildAssetKey({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('dependedByKeys') ? overrides.dependedByKeys! : [],
     dependencies:
-      overrides && overrides.hasOwnProperty('dependencies')
-        ? overrides.dependencies!
-        : [
-            relationshipsToOmit.has('AssetDependency')
-              ? ({} as AssetDependency)
-              : buildAssetDependency({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('dependencies') ? overrides.dependencies! : [],
     dependencyKeys:
-      overrides && overrides.hasOwnProperty('dependencyKeys')
-        ? overrides.dependencyKeys!
-        : [
-            relationshipsToOmit.has('AssetKey')
-              ? ({} as AssetKey)
-              : buildAssetKey({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('dependencyKeys') ? overrides.dependencyKeys! : [],
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'vitae',
     freshnessInfo:
@@ -4493,23 +4421,12 @@ export const buildAssetNode = (
     isPartitioned:
       overrides && overrides.hasOwnProperty('isPartitioned') ? overrides.isPartitioned! : true,
     isSource: overrides && overrides.hasOwnProperty('isSource') ? overrides.isSource! : false,
-    jobNames: overrides && overrides.hasOwnProperty('jobNames') ? overrides.jobNames! : ['velit'],
-    jobs:
-      overrides && overrides.hasOwnProperty('jobs')
-        ? overrides.jobs!
-        : [
-            relationshipsToOmit.has('Pipeline')
-              ? ({} as Pipeline)
-              : buildPipeline({}, relationshipsToOmit),
-          ],
+    jobNames: overrides && overrides.hasOwnProperty('jobNames') ? overrides.jobNames! : [],
+    jobs: overrides && overrides.hasOwnProperty('jobs') ? overrides.jobs! : [],
     latestMaterializationByPartition:
       overrides && overrides.hasOwnProperty('latestMaterializationByPartition')
         ? overrides.latestMaterializationByPartition!
-        : [
-            relationshipsToOmit.has('MaterializationEvent')
-              ? ({} as MaterializationEvent)
-              : buildMaterializationEvent({}, relationshipsToOmit),
-          ],
+        : [],
     latestRunForPartition:
       overrides && overrides.hasOwnProperty('latestRunForPartition')
         ? overrides.latestRunForPartition!
@@ -4517,13 +4434,7 @@ export const buildAssetNode = (
         ? ({} as Run)
         : buildRun({}, relationshipsToOmit),
     metadataEntries:
-      overrides && overrides.hasOwnProperty('metadataEntries')
-        ? overrides.metadataEntries!
-        : [
-            relationshipsToOmit.has('MetadataEntry')
-              ? ({} as MetadataEntry)
-              : buildMetadataEntry({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     op:
       overrides && overrides.hasOwnProperty('op')
         ? overrides.op!
@@ -4531,7 +4442,7 @@ export const buildAssetNode = (
         ? ({} as SolidDefinition)
         : buildSolidDefinition({}, relationshipsToOmit),
     opName: overrides && overrides.hasOwnProperty('opName') ? overrides.opName! : 'veritatis',
-    opNames: overrides && overrides.hasOwnProperty('opNames') ? overrides.opNames! : ['omnis'],
+    opNames: overrides && overrides.hasOwnProperty('opNames') ? overrides.opNames! : [],
     opVersion:
       overrides && overrides.hasOwnProperty('opVersion') ? overrides.opVersion! : 'cupiditate',
     partitionDefinition:
@@ -4541,15 +4452,11 @@ export const buildAssetNode = (
         ? ({} as PartitionDefinition)
         : buildPartitionDefinition({}, relationshipsToOmit),
     partitionKeys:
-      overrides && overrides.hasOwnProperty('partitionKeys') ? overrides.partitionKeys! : ['et'],
+      overrides && overrides.hasOwnProperty('partitionKeys') ? overrides.partitionKeys! : [],
     partitionKeysByDimension:
       overrides && overrides.hasOwnProperty('partitionKeysByDimension')
         ? overrides.partitionKeysByDimension!
-        : [
-            relationshipsToOmit.has('DimensionPartitionKeys')
-              ? ({} as DimensionPartitionKeys)
-              : buildDimensionPartitionKeys({}, relationshipsToOmit),
-          ],
+        : [],
     partitionStats:
       overrides && overrides.hasOwnProperty('partitionStats')
         ? overrides.partitionStats!
@@ -4565,19 +4472,8 @@ export const buildAssetNode = (
     requiredResources:
       overrides && overrides.hasOwnProperty('requiredResources')
         ? overrides.requiredResources!
-        : [
-            relationshipsToOmit.has('ResourceRequirement')
-              ? ({} as ResourceRequirement)
-              : buildResourceRequirement({}, relationshipsToOmit),
-          ],
-    staleCauses:
-      overrides && overrides.hasOwnProperty('staleCauses')
-        ? overrides.staleCauses!
-        : [
-            relationshipsToOmit.has('StaleCause')
-              ? ({} as StaleCause)
-              : buildStaleCause({}, relationshipsToOmit),
-          ],
+        : [],
+    staleCauses: overrides && overrides.hasOwnProperty('staleCauses') ? overrides.staleCauses! : [],
     staleStatus:
       overrides && overrides.hasOwnProperty('staleStatus')
         ? overrides.staleStatus!
@@ -4606,13 +4502,7 @@ export const buildAssetNodeDefinitionCollision = (
         ? ({} as AssetKey)
         : buildAssetKey({}, relationshipsToOmit),
     repositories:
-      overrides && overrides.hasOwnProperty('repositories')
-        ? overrides.repositories!
-        : [
-            relationshipsToOmit.has('Repository')
-              ? ({} as Repository)
-              : buildRepository({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('repositories') ? overrides.repositories! : [],
   };
 };
 
@@ -4669,14 +4559,7 @@ export const buildAssetWipeSuccess = (
   relationshipsToOmit.add('AssetWipeSuccess');
   return {
     __typename: 'AssetWipeSuccess',
-    assetKeys:
-      overrides && overrides.hasOwnProperty('assetKeys')
-        ? overrides.assetKeys!
-        : [
-            relationshipsToOmit.has('AssetKey')
-              ? ({} as AssetKey)
-              : buildAssetKey({}, relationshipsToOmit),
-          ],
+    assetKeys: overrides && overrides.hasOwnProperty('assetKeys') ? overrides.assetKeys! : [],
   };
 };
 
@@ -4732,7 +4615,7 @@ export const buildCapturedLogs = (
   return {
     __typename: 'CapturedLogs',
     cursor: overrides && overrides.hasOwnProperty('cursor') ? overrides.cursor! : 'itaque',
-    logKey: overrides && overrides.hasOwnProperty('logKey') ? overrides.logKey! : ['cupiditate'],
+    logKey: overrides && overrides.hasOwnProperty('logKey') ? overrides.logKey! : [],
     stderr: overrides && overrides.hasOwnProperty('stderr') ? overrides.stderr! : 'voluptatem',
     stdout: overrides && overrides.hasOwnProperty('stdout') ? overrides.stdout! : 'nesciunt',
   };
@@ -4775,26 +4658,15 @@ export const buildCompositeConfigType = (
     __typename: 'CompositeConfigType',
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'deleniti',
-    fields:
-      overrides && overrides.hasOwnProperty('fields')
-        ? overrides.fields!
-        : [
-            relationshipsToOmit.has('ConfigTypeField')
-              ? ({} as ConfigTypeField)
-              : buildConfigTypeField({}, relationshipsToOmit),
-          ],
+    fields: overrides && overrides.hasOwnProperty('fields') ? overrides.fields! : [],
     isSelector: overrides && overrides.hasOwnProperty('isSelector') ? overrides.isSelector! : false,
     key: overrides && overrides.hasOwnProperty('key') ? overrides.key! : 'nulla',
     recursiveConfigTypes:
       overrides && overrides.hasOwnProperty('recursiveConfigTypes')
         ? overrides.recursiveConfigTypes!
-        : [
-            relationshipsToOmit.has('ConfigType')
-              ? ({} as ConfigType)
-              : buildConfigType({}, relationshipsToOmit),
-          ],
+        : [],
     typeParamKeys:
-      overrides && overrides.hasOwnProperty('typeParamKeys') ? overrides.typeParamKeys! : ['eum'],
+      overrides && overrides.hasOwnProperty('typeParamKeys') ? overrides.typeParamKeys! : [],
   };
 };
 
@@ -4806,14 +4678,7 @@ export const buildCompositeSolidDefinition = (
   relationshipsToOmit.add('CompositeSolidDefinition');
   return {
     __typename: 'CompositeSolidDefinition',
-    assetNodes:
-      overrides && overrides.hasOwnProperty('assetNodes')
-        ? overrides.assetNodes!
-        : [
-            relationshipsToOmit.has('AssetNode')
-              ? ({} as AssetNode)
-              : buildAssetNode({}, relationshipsToOmit),
-          ],
+    assetNodes: overrides && overrides.hasOwnProperty('assetNodes') ? overrides.assetNodes! : [],
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'at',
     id:
@@ -4821,50 +4686,18 @@ export const buildCompositeSolidDefinition = (
         ? overrides.id!
         : '21c69675-bf11-4093-8cc2-4e3c64e910c9',
     inputDefinitions:
-      overrides && overrides.hasOwnProperty('inputDefinitions')
-        ? overrides.inputDefinitions!
-        : [
-            relationshipsToOmit.has('InputDefinition')
-              ? ({} as InputDefinition)
-              : buildInputDefinition({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('inputDefinitions') ? overrides.inputDefinitions! : [],
     inputMappings:
-      overrides && overrides.hasOwnProperty('inputMappings')
-        ? overrides.inputMappings!
-        : [
-            relationshipsToOmit.has('InputMapping')
-              ? ({} as InputMapping)
-              : buildInputMapping({}, relationshipsToOmit),
-          ],
-    metadata:
-      overrides && overrides.hasOwnProperty('metadata')
-        ? overrides.metadata!
-        : [
-            relationshipsToOmit.has('MetadataItemDefinition')
-              ? ({} as MetadataItemDefinition)
-              : buildMetadataItemDefinition({}, relationshipsToOmit),
-          ],
-    modes:
-      overrides && overrides.hasOwnProperty('modes')
-        ? overrides.modes!
-        : [relationshipsToOmit.has('Mode') ? ({} as Mode) : buildMode({}, relationshipsToOmit)],
+      overrides && overrides.hasOwnProperty('inputMappings') ? overrides.inputMappings! : [],
+    metadata: overrides && overrides.hasOwnProperty('metadata') ? overrides.metadata! : [],
+    modes: overrides && overrides.hasOwnProperty('modes') ? overrides.modes! : [],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'consequatur',
     outputDefinitions:
       overrides && overrides.hasOwnProperty('outputDefinitions')
         ? overrides.outputDefinitions!
-        : [
-            relationshipsToOmit.has('OutputDefinition')
-              ? ({} as OutputDefinition)
-              : buildOutputDefinition({}, relationshipsToOmit),
-          ],
+        : [],
     outputMappings:
-      overrides && overrides.hasOwnProperty('outputMappings')
-        ? overrides.outputMappings!
-        : [
-            relationshipsToOmit.has('OutputMapping')
-              ? ({} as OutputMapping)
-              : buildOutputMapping({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('outputMappings') ? overrides.outputMappings! : [],
     solidHandle:
       overrides && overrides.hasOwnProperty('solidHandle')
         ? overrides.solidHandle!
@@ -4872,17 +4705,8 @@ export const buildCompositeSolidDefinition = (
         ? ({} as SolidHandle)
         : buildSolidHandle({}, relationshipsToOmit),
     solidHandles:
-      overrides && overrides.hasOwnProperty('solidHandles')
-        ? overrides.solidHandles!
-        : [
-            relationshipsToOmit.has('SolidHandle')
-              ? ({} as SolidHandle)
-              : buildSolidHandle({}, relationshipsToOmit),
-          ],
-    solids:
-      overrides && overrides.hasOwnProperty('solids')
-        ? overrides.solids!
-        : [relationshipsToOmit.has('Solid') ? ({} as Solid) : buildSolid({}, relationshipsToOmit)],
+      overrides && overrides.hasOwnProperty('solidHandles') ? overrides.solidHandles! : [],
+    solids: overrides && overrides.hasOwnProperty('solids') ? overrides.solids! : [],
   };
 };
 
@@ -4943,15 +4767,9 @@ export const buildConfigType = (
     recursiveConfigTypes:
       overrides && overrides.hasOwnProperty('recursiveConfigTypes')
         ? overrides.recursiveConfigTypes!
-        : [
-            relationshipsToOmit.has('ConfigType')
-              ? ({} as ConfigType)
-              : buildConfigType({}, relationshipsToOmit),
-          ],
+        : [],
     typeParamKeys:
-      overrides && overrides.hasOwnProperty('typeParamKeys')
-        ? overrides.typeParamKeys!
-        : ['magnam'],
+      overrides && overrides.hasOwnProperty('typeParamKeys') ? overrides.typeParamKeys! : [],
   };
 };
 
@@ -5042,11 +4860,7 @@ export const buildDaemonHealth = (
     allDaemonStatuses:
       overrides && overrides.hasOwnProperty('allDaemonStatuses')
         ? overrides.allDaemonStatuses!
-        : [
-            relationshipsToOmit.has('DaemonStatus')
-              ? ({} as DaemonStatus)
-              : buildDaemonStatus({}, relationshipsToOmit),
-          ],
+        : [],
     daemonStatus:
       overrides && overrides.hasOwnProperty('daemonStatus')
         ? overrides.daemonStatus!
@@ -5075,11 +4889,7 @@ export const buildDaemonStatus = (
     lastHeartbeatErrors:
       overrides && overrides.hasOwnProperty('lastHeartbeatErrors')
         ? overrides.lastHeartbeatErrors!
-        : [
-            relationshipsToOmit.has('PythonError')
-              ? ({} as PythonError)
-              : buildPythonError({}, relationshipsToOmit),
-          ],
+        : [],
     lastHeartbeatTime:
       overrides && overrides.hasOwnProperty('lastHeartbeatTime')
         ? overrides.lastHeartbeatTime!
@@ -5265,25 +5075,14 @@ export const buildDagitQuery = (
     assetNodeDefinitionCollisions:
       overrides && overrides.hasOwnProperty('assetNodeDefinitionCollisions')
         ? overrides.assetNodeDefinitionCollisions!
-        : [
-            relationshipsToOmit.has('AssetNodeDefinitionCollision')
-              ? ({} as AssetNodeDefinitionCollision)
-              : buildAssetNodeDefinitionCollision({}, relationshipsToOmit),
-          ],
+        : [],
     assetNodeOrError:
       overrides && overrides.hasOwnProperty('assetNodeOrError')
         ? overrides.assetNodeOrError!
         : relationshipsToOmit.has('AssetNode')
         ? ({} as AssetNode)
         : buildAssetNode({}, relationshipsToOmit),
-    assetNodes:
-      overrides && overrides.hasOwnProperty('assetNodes')
-        ? overrides.assetNodes!
-        : [
-            relationshipsToOmit.has('AssetNode')
-              ? ({} as AssetNode)
-              : buildAssetNode({}, relationshipsToOmit),
-          ],
+    assetNodes: overrides && overrides.hasOwnProperty('assetNodes') ? overrides.assetNodes! : [],
     assetOrError:
       overrides && overrides.hasOwnProperty('assetOrError')
         ? overrides.assetOrError!
@@ -5291,13 +5090,7 @@ export const buildDagitQuery = (
         ? ({} as Asset)
         : buildAsset({}, relationshipsToOmit),
     assetsLatestInfo:
-      overrides && overrides.hasOwnProperty('assetsLatestInfo')
-        ? overrides.assetsLatestInfo!
-        : [
-            relationshipsToOmit.has('AssetLatestInfo')
-              ? ({} as AssetLatestInfo)
-              : buildAssetLatestInfo({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('assetsLatestInfo') ? overrides.assetsLatestInfo! : [],
     assetsOrError:
       overrides && overrides.hasOwnProperty('assetsOrError')
         ? overrides.assetsOrError!
@@ -5382,14 +5175,7 @@ export const buildDagitQuery = (
         : relationshipsToOmit.has('PartitionSets')
         ? ({} as PartitionSets)
         : buildPartitionSets({}, relationshipsToOmit),
-    permissions:
-      overrides && overrides.hasOwnProperty('permissions')
-        ? overrides.permissions!
-        : [
-            relationshipsToOmit.has('Permission')
-              ? ({} as Permission)
-              : buildPermission({}, relationshipsToOmit),
-          ],
+    permissions: overrides && overrides.hasOwnProperty('permissions') ? overrides.permissions! : [],
     pipelineOrError:
       overrides && overrides.hasOwnProperty('pipelineOrError')
         ? overrides.pipelineOrError!
@@ -5594,14 +5380,7 @@ export const buildDagsterType = (
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'sed',
     displayName:
       overrides && overrides.hasOwnProperty('displayName') ? overrides.displayName! : 'consequatur',
-    innerTypes:
-      overrides && overrides.hasOwnProperty('innerTypes')
-        ? overrides.innerTypes!
-        : [
-            relationshipsToOmit.has('DagsterType')
-              ? ({} as DagsterType)
-              : buildDagsterType({}, relationshipsToOmit),
-          ],
+    innerTypes: overrides && overrides.hasOwnProperty('innerTypes') ? overrides.innerTypes! : [],
     inputSchemaType:
       overrides && overrides.hasOwnProperty('inputSchemaType')
         ? overrides.inputSchemaType!
@@ -5614,13 +5393,7 @@ export const buildDagsterType = (
     isNullable: overrides && overrides.hasOwnProperty('isNullable') ? overrides.isNullable! : true,
     key: overrides && overrides.hasOwnProperty('key') ? overrides.key! : 'sed',
     metadataEntries:
-      overrides && overrides.hasOwnProperty('metadataEntries')
-        ? overrides.metadataEntries!
-        : [
-            relationshipsToOmit.has('MetadataEntry')
-              ? ({} as MetadataEntry)
-              : buildMetadataEntry({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'eum',
     outputSchemaType:
       overrides && overrides.hasOwnProperty('outputSchemaType')
@@ -5656,21 +5429,19 @@ export const buildDefaultPartitions = (
   return {
     __typename: 'DefaultPartitions',
     failedPartitions:
-      overrides && overrides.hasOwnProperty('failedPartitions')
-        ? overrides.failedPartitions!
-        : ['modi'],
+      overrides && overrides.hasOwnProperty('failedPartitions') ? overrides.failedPartitions! : [],
     materializedPartitions:
       overrides && overrides.hasOwnProperty('materializedPartitions')
         ? overrides.materializedPartitions!
-        : ['commodi'],
+        : [],
     materializingPartitions:
       overrides && overrides.hasOwnProperty('materializingPartitions')
         ? overrides.materializingPartitions!
-        : ['laborum'],
+        : [],
     unmaterializedPartitions:
       overrides && overrides.hasOwnProperty('unmaterializedPartitions')
         ? overrides.unmaterializedPartitions!
-        : ['dolorem'],
+        : [],
   };
 };
 
@@ -5739,9 +5510,7 @@ export const buildDimensionPartitionKeys = (
     __typename: 'DimensionPartitionKeys',
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'id',
     partitionKeys:
-      overrides && overrides.hasOwnProperty('partitionKeys')
-        ? overrides.partitionKeys!
-        : ['dolorem'],
+      overrides && overrides.hasOwnProperty('partitionKeys') ? overrides.partitionKeys! : [],
     type:
       overrides && overrides.hasOwnProperty('type')
         ? overrides.type!
@@ -5761,13 +5530,7 @@ export const buildDisplayableEvent = (
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'pariatur',
     label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'ipsa',
     metadataEntries:
-      overrides && overrides.hasOwnProperty('metadataEntries')
-        ? overrides.metadataEntries!
-        : [
-            relationshipsToOmit.has('MetadataEntry')
-              ? ({} as MetadataEntry)
-              : buildMetadataEntry({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
   };
 };
 
@@ -5798,14 +5561,7 @@ export const buildDryRunInstigationTicks = (
   return {
     __typename: 'DryRunInstigationTicks',
     cursor: overrides && overrides.hasOwnProperty('cursor') ? overrides.cursor! : 0.85,
-    results:
-      overrides && overrides.hasOwnProperty('results')
-        ? overrides.results!
-        : [
-            relationshipsToOmit.has('DryRunInstigationTick')
-              ? ({} as DryRunInstigationTick)
-              : buildDryRunInstigationTick({}, relationshipsToOmit),
-          ],
+    results: overrides && overrides.hasOwnProperty('results') ? overrides.results! : [],
   };
 };
 
@@ -5836,7 +5592,7 @@ export const buildDynamicPartitionRequest = (
   return {
     __typename: 'DynamicPartitionRequest',
     partitionKeys:
-      overrides && overrides.hasOwnProperty('partitionKeys') ? overrides.partitionKeys! : ['ut'],
+      overrides && overrides.hasOwnProperty('partitionKeys') ? overrides.partitionKeys! : [],
     partitionsDefName:
       overrides && overrides.hasOwnProperty('partitionsDefName')
         ? overrides.partitionsDefName!
@@ -5875,13 +5631,7 @@ export const buildEngineEvent = (
       overrides && overrides.hasOwnProperty('markerStart') ? overrides.markerStart! : 'unde',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'doloribus',
     metadataEntries:
-      overrides && overrides.hasOwnProperty('metadataEntries')
-        ? overrides.metadataEntries!
-        : [
-            relationshipsToOmit.has('MetadataEntry')
-              ? ({} as MetadataEntry)
-              : buildMetadataEntry({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'aut',
     solidHandleID:
       overrides && overrides.hasOwnProperty('solidHandleID') ? overrides.solidHandleID! : 'quo',
@@ -5907,23 +5657,10 @@ export const buildEnumConfigType = (
     recursiveConfigTypes:
       overrides && overrides.hasOwnProperty('recursiveConfigTypes')
         ? overrides.recursiveConfigTypes!
-        : [
-            relationshipsToOmit.has('ConfigType')
-              ? ({} as ConfigType)
-              : buildConfigType({}, relationshipsToOmit),
-          ],
+        : [],
     typeParamKeys:
-      overrides && overrides.hasOwnProperty('typeParamKeys')
-        ? overrides.typeParamKeys!
-        : ['necessitatibus'],
-    values:
-      overrides && overrides.hasOwnProperty('values')
-        ? overrides.values!
-        : [
-            relationshipsToOmit.has('EnumConfigValue')
-              ? ({} as EnumConfigValue)
-              : buildEnumConfigValue({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('typeParamKeys') ? overrides.typeParamKeys! : [],
+    values: overrides && overrides.hasOwnProperty('values') ? overrides.values! : [],
   };
 };
 
@@ -5964,13 +5701,7 @@ export const buildEnvVarWithConsumers = (
   return {
     __typename: 'EnvVarWithConsumers',
     envVarConsumers:
-      overrides && overrides.hasOwnProperty('envVarConsumers')
-        ? overrides.envVarConsumers!
-        : [
-            relationshipsToOmit.has('EnvVarConsumer')
-              ? ({} as EnvVarConsumer)
-              : buildEnvVarConsumer({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('envVarConsumers') ? overrides.envVarConsumers! : [],
     envVarName:
       overrides && overrides.hasOwnProperty('envVarName') ? overrides.envVarName! : 'quis',
   };
@@ -5984,14 +5715,7 @@ export const buildEnvVarWithConsumersList = (
   relationshipsToOmit.add('EnvVarWithConsumersList');
   return {
     __typename: 'EnvVarWithConsumersList',
-    results:
-      overrides && overrides.hasOwnProperty('results')
-        ? overrides.results!
-        : [
-            relationshipsToOmit.has('EnvVarWithConsumers')
-              ? ({} as EnvVarWithConsumers)
-              : buildEnvVarWithConsumers({}, relationshipsToOmit),
-          ],
+    results: overrides && overrides.hasOwnProperty('results') ? overrides.results! : [],
   };
 };
 
@@ -6052,14 +5776,7 @@ export const buildEvaluationStack = (
   relationshipsToOmit.add('EvaluationStack');
   return {
     __typename: 'EvaluationStack',
-    entries:
-      overrides && overrides.hasOwnProperty('entries')
-        ? overrides.entries!
-        : [
-            relationshipsToOmit.has('EvaluationStackListItemEntry')
-              ? ({} as EvaluationStackListItemEntry)
-              : buildEvaluationStackListItemEntry({}, relationshipsToOmit),
-          ],
+    entries: overrides && overrides.hasOwnProperty('entries') ? overrides.entries! : [],
   };
 };
 
@@ -6120,14 +5837,7 @@ export const buildEventConnection = (
   return {
     __typename: 'EventConnection',
     cursor: overrides && overrides.hasOwnProperty('cursor') ? overrides.cursor! : 'dolor',
-    events:
-      overrides && overrides.hasOwnProperty('events')
-        ? overrides.events!
-        : [
-            relationshipsToOmit.has('AlertFailureEvent')
-              ? ({} as AlertFailureEvent)
-              : buildAlertFailureEvent({}, relationshipsToOmit),
-          ],
+    events: overrides && overrides.hasOwnProperty('events') ? overrides.events! : [],
     hasMore: overrides && overrides.hasOwnProperty('hasMore') ? overrides.hasMore! : true,
   };
 };
@@ -6156,14 +5866,7 @@ export const buildExecutionMetadata = (
       overrides && overrides.hasOwnProperty('parentRunId') ? overrides.parentRunId! : 'autem',
     rootRunId: overrides && overrides.hasOwnProperty('rootRunId') ? overrides.rootRunId! : 'ut',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'dolor',
-    tags:
-      overrides && overrides.hasOwnProperty('tags')
-        ? overrides.tags!
-        : [
-            relationshipsToOmit.has('ExecutionTag')
-              ? ({} as ExecutionTag)
-              : buildExecutionTag({}, relationshipsToOmit),
-          ],
+    tags: overrides && overrides.hasOwnProperty('tags') ? overrides.tags! : [],
   };
 };
 
@@ -6192,8 +5895,7 @@ export const buildExecutionParams = (
         : relationshipsToOmit.has('JobOrPipelineSelector')
         ? ({} as JobOrPipelineSelector)
         : buildJobOrPipelineSelector({}, relationshipsToOmit),
-    stepKeys:
-      overrides && overrides.hasOwnProperty('stepKeys') ? overrides.stepKeys! : ['distinctio'],
+    stepKeys: overrides && overrides.hasOwnProperty('stepKeys') ? overrides.stepKeys! : [],
   };
 };
 
@@ -6209,14 +5911,7 @@ export const buildExecutionPlan = (
       overrides && overrides.hasOwnProperty('artifactsPersisted')
         ? overrides.artifactsPersisted!
         : true,
-    steps:
-      overrides && overrides.hasOwnProperty('steps')
-        ? overrides.steps!
-        : [
-            relationshipsToOmit.has('ExecutionStep')
-              ? ({} as ExecutionStep)
-              : buildExecutionStep({}, relationshipsToOmit),
-          ],
+    steps: overrides && overrides.hasOwnProperty('steps') ? overrides.steps! : [],
   };
 };
 
@@ -6228,32 +5923,11 @@ export const buildExecutionStep = (
   relationshipsToOmit.add('ExecutionStep');
   return {
     __typename: 'ExecutionStep',
-    inputs:
-      overrides && overrides.hasOwnProperty('inputs')
-        ? overrides.inputs!
-        : [
-            relationshipsToOmit.has('ExecutionStepInput')
-              ? ({} as ExecutionStepInput)
-              : buildExecutionStepInput({}, relationshipsToOmit),
-          ],
+    inputs: overrides && overrides.hasOwnProperty('inputs') ? overrides.inputs! : [],
     key: overrides && overrides.hasOwnProperty('key') ? overrides.key! : 'ut',
     kind: overrides && overrides.hasOwnProperty('kind') ? overrides.kind! : StepKind.COMPUTE,
-    metadata:
-      overrides && overrides.hasOwnProperty('metadata')
-        ? overrides.metadata!
-        : [
-            relationshipsToOmit.has('MetadataItemDefinition')
-              ? ({} as MetadataItemDefinition)
-              : buildMetadataItemDefinition({}, relationshipsToOmit),
-          ],
-    outputs:
-      overrides && overrides.hasOwnProperty('outputs')
-        ? overrides.outputs!
-        : [
-            relationshipsToOmit.has('ExecutionStepOutput')
-              ? ({} as ExecutionStepOutput)
-              : buildExecutionStepOutput({}, relationshipsToOmit),
-          ],
+    metadata: overrides && overrides.hasOwnProperty('metadata') ? overrides.metadata! : [],
+    outputs: overrides && overrides.hasOwnProperty('outputs') ? overrides.outputs! : [],
     solidHandleID:
       overrides && overrides.hasOwnProperty('solidHandleID')
         ? overrides.solidHandleID!
@@ -6310,14 +5984,7 @@ export const buildExecutionStepInput = (
   relationshipsToOmit.add('ExecutionStepInput');
   return {
     __typename: 'ExecutionStepInput',
-    dependsOn:
-      overrides && overrides.hasOwnProperty('dependsOn')
-        ? overrides.dependsOn!
-        : [
-            relationshipsToOmit.has('ExecutionStep')
-              ? ({} as ExecutionStep)
-              : buildExecutionStep({}, relationshipsToOmit),
-          ],
+    dependsOn: overrides && overrides.hasOwnProperty('dependsOn') ? overrides.dependsOn! : [],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'tempore',
   };
 };
@@ -6382,13 +6049,7 @@ export const buildExecutionStepOutputEvent = (
     level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'quo',
     metadataEntries:
-      overrides && overrides.hasOwnProperty('metadataEntries')
-        ? overrides.metadataEntries!
-        : [
-            relationshipsToOmit.has('MetadataEntry')
-              ? ({} as MetadataEntry)
-              : buildMetadataEntry({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     outputName:
       overrides && overrides.hasOwnProperty('outputName') ? overrides.outputName! : 'animi',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'repellat',
@@ -6555,13 +6216,7 @@ export const buildExpectationResult = (
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'dignissimos',
     label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'molestiae',
     metadataEntries:
-      overrides && overrides.hasOwnProperty('metadataEntries')
-        ? overrides.metadataEntries!
-        : [
-            relationshipsToOmit.has('MetadataEntry')
-              ? ({} as MetadataEntry)
-              : buildMetadataEntry({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     success: overrides && overrides.hasOwnProperty('success') ? overrides.success! : false,
   };
 };
@@ -6578,13 +6233,7 @@ export const buildFailureMetadata = (
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'ex',
     label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'unde',
     metadataEntries:
-      overrides && overrides.hasOwnProperty('metadataEntries')
-        ? overrides.metadataEntries!
-        : [
-            relationshipsToOmit.has('MetadataEntry')
-              ? ({} as MetadataEntry)
-              : buildMetadataEntry({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
   };
 };
 
@@ -6599,7 +6248,7 @@ export const buildFieldNotDefinedConfigError = (
     fieldName:
       overrides && overrides.hasOwnProperty('fieldName') ? overrides.fieldName! : 'voluptatem',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'ut',
-    path: overrides && overrides.hasOwnProperty('path') ? overrides.path! : ['ut'],
+    path: overrides && overrides.hasOwnProperty('path') ? overrides.path! : [],
     reason:
       overrides && overrides.hasOwnProperty('reason')
         ? overrides.reason!
@@ -6621,10 +6270,9 @@ export const buildFieldsNotDefinedConfigError = (
   relationshipsToOmit.add('FieldsNotDefinedConfigError');
   return {
     __typename: 'FieldsNotDefinedConfigError',
-    fieldNames:
-      overrides && overrides.hasOwnProperty('fieldNames') ? overrides.fieldNames! : ['et'],
+    fieldNames: overrides && overrides.hasOwnProperty('fieldNames') ? overrides.fieldNames! : [],
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'dolore',
-    path: overrides && overrides.hasOwnProperty('path') ? overrides.path! : ['dolor'],
+    path: overrides && overrides.hasOwnProperty('path') ? overrides.path! : [],
     reason:
       overrides && overrides.hasOwnProperty('reason')
         ? overrides.reason!
@@ -6688,10 +6336,7 @@ export const buildGraph = (
       overrides && overrides.hasOwnProperty('id')
         ? overrides.id!
         : '000b66d3-d51f-4db4-9757-da36cd59fc26',
-    modes:
-      overrides && overrides.hasOwnProperty('modes')
-        ? overrides.modes!
-        : [relationshipsToOmit.has('Mode') ? ({} as Mode) : buildMode({}, relationshipsToOmit)],
+    modes: overrides && overrides.hasOwnProperty('modes') ? overrides.modes! : [],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'quidem',
     solidHandle:
       overrides && overrides.hasOwnProperty('solidHandle')
@@ -6700,17 +6345,8 @@ export const buildGraph = (
         ? ({} as SolidHandle)
         : buildSolidHandle({}, relationshipsToOmit),
     solidHandles:
-      overrides && overrides.hasOwnProperty('solidHandles')
-        ? overrides.solidHandles!
-        : [
-            relationshipsToOmit.has('SolidHandle')
-              ? ({} as SolidHandle)
-              : buildSolidHandle({}, relationshipsToOmit),
-          ],
-    solids:
-      overrides && overrides.hasOwnProperty('solids')
-        ? overrides.solids!
-        : [relationshipsToOmit.has('Solid') ? ({} as Solid) : buildSolid({}, relationshipsToOmit)],
+      overrides && overrides.hasOwnProperty('solidHandles') ? overrides.solidHandles! : [],
+    solids: overrides && overrides.hasOwnProperty('solids') ? overrides.solids! : [],
   };
 };
 
@@ -6772,13 +6408,7 @@ export const buildHandledOutputEvent = (
       overrides && overrides.hasOwnProperty('managerKey') ? overrides.managerKey! : 'ipsa',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'id',
     metadataEntries:
-      overrides && overrides.hasOwnProperty('metadataEntries')
-        ? overrides.metadataEntries!
-        : [
-            relationshipsToOmit.has('MetadataEntry')
-              ? ({} as MetadataEntry)
-              : buildMetadataEntry({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     outputName:
       overrides && overrides.hasOwnProperty('outputName') ? overrides.outputName! : 'consequatur',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'perferendis',
@@ -6876,29 +6506,14 @@ export const buildIPipelineSnapshot = (
         ? ({} as DagsterTypeNotFoundError)
         : buildDagsterTypeNotFoundError({}, relationshipsToOmit),
     dagsterTypes:
-      overrides && overrides.hasOwnProperty('dagsterTypes')
-        ? overrides.dagsterTypes!
-        : [
-            relationshipsToOmit.has('DagsterType')
-              ? ({} as DagsterType)
-              : buildDagsterType({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('dagsterTypes') ? overrides.dagsterTypes! : [],
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'velit',
     graphName:
       overrides && overrides.hasOwnProperty('graphName') ? overrides.graphName! : 'aperiam',
     metadataEntries:
-      overrides && overrides.hasOwnProperty('metadataEntries')
-        ? overrides.metadataEntries!
-        : [
-            relationshipsToOmit.has('MetadataEntry')
-              ? ({} as MetadataEntry)
-              : buildMetadataEntry({}, relationshipsToOmit),
-          ],
-    modes:
-      overrides && overrides.hasOwnProperty('modes')
-        ? overrides.modes!
-        : [relationshipsToOmit.has('Mode') ? ({} as Mode) : buildMode({}, relationshipsToOmit)],
+      overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
+    modes: overrides && overrides.hasOwnProperty('modes') ? overrides.modes! : [],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'autem',
     parentSnapshotId:
       overrides && overrides.hasOwnProperty('parentSnapshotId')
@@ -6908,26 +6523,9 @@ export const buildIPipelineSnapshot = (
       overrides && overrides.hasOwnProperty('pipelineSnapshotId')
         ? overrides.pipelineSnapshotId!
         : 'quo',
-    runs:
-      overrides && overrides.hasOwnProperty('runs')
-        ? overrides.runs!
-        : [relationshipsToOmit.has('Run') ? ({} as Run) : buildRun({}, relationshipsToOmit)],
-    schedules:
-      overrides && overrides.hasOwnProperty('schedules')
-        ? overrides.schedules!
-        : [
-            relationshipsToOmit.has('Schedule')
-              ? ({} as Schedule)
-              : buildSchedule({}, relationshipsToOmit),
-          ],
-    sensors:
-      overrides && overrides.hasOwnProperty('sensors')
-        ? overrides.sensors!
-        : [
-            relationshipsToOmit.has('Sensor')
-              ? ({} as Sensor)
-              : buildSensor({}, relationshipsToOmit),
-          ],
+    runs: overrides && overrides.hasOwnProperty('runs') ? overrides.runs! : [],
+    schedules: overrides && overrides.hasOwnProperty('schedules') ? overrides.schedules! : [],
+    sensors: overrides && overrides.hasOwnProperty('sensors') ? overrides.sensors! : [],
     solidHandle:
       overrides && overrides.hasOwnProperty('solidHandle')
         ? overrides.solidHandle!
@@ -6935,25 +6533,9 @@ export const buildIPipelineSnapshot = (
         ? ({} as SolidHandle)
         : buildSolidHandle({}, relationshipsToOmit),
     solidHandles:
-      overrides && overrides.hasOwnProperty('solidHandles')
-        ? overrides.solidHandles!
-        : [
-            relationshipsToOmit.has('SolidHandle')
-              ? ({} as SolidHandle)
-              : buildSolidHandle({}, relationshipsToOmit),
-          ],
-    solids:
-      overrides && overrides.hasOwnProperty('solids')
-        ? overrides.solids!
-        : [relationshipsToOmit.has('Solid') ? ({} as Solid) : buildSolid({}, relationshipsToOmit)],
-    tags:
-      overrides && overrides.hasOwnProperty('tags')
-        ? overrides.tags!
-        : [
-            relationshipsToOmit.has('PipelineTag')
-              ? ({} as PipelineTag)
-              : buildPipelineTag({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('solidHandles') ? overrides.solidHandles! : [],
+    solids: overrides && overrides.hasOwnProperty('solids') ? overrides.solids! : [],
+    tags: overrides && overrides.hasOwnProperty('tags') ? overrides.tags! : [],
   };
 };
 
@@ -6965,41 +6547,17 @@ export const buildISolidDefinition = (
   relationshipsToOmit.add('ISolidDefinition');
   return {
     __typename: 'ISolidDefinition',
-    assetNodes:
-      overrides && overrides.hasOwnProperty('assetNodes')
-        ? overrides.assetNodes!
-        : [
-            relationshipsToOmit.has('AssetNode')
-              ? ({} as AssetNode)
-              : buildAssetNode({}, relationshipsToOmit),
-          ],
+    assetNodes: overrides && overrides.hasOwnProperty('assetNodes') ? overrides.assetNodes! : [],
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'et',
     inputDefinitions:
-      overrides && overrides.hasOwnProperty('inputDefinitions')
-        ? overrides.inputDefinitions!
-        : [
-            relationshipsToOmit.has('InputDefinition')
-              ? ({} as InputDefinition)
-              : buildInputDefinition({}, relationshipsToOmit),
-          ],
-    metadata:
-      overrides && overrides.hasOwnProperty('metadata')
-        ? overrides.metadata!
-        : [
-            relationshipsToOmit.has('MetadataItemDefinition')
-              ? ({} as MetadataItemDefinition)
-              : buildMetadataItemDefinition({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('inputDefinitions') ? overrides.inputDefinitions! : [],
+    metadata: overrides && overrides.hasOwnProperty('metadata') ? overrides.metadata! : [],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'iure',
     outputDefinitions:
       overrides && overrides.hasOwnProperty('outputDefinitions')
         ? overrides.outputDefinitions!
-        : [
-            relationshipsToOmit.has('OutputDefinition')
-              ? ({} as OutputDefinition)
-              : buildOutputDefinition({}, relationshipsToOmit),
-          ],
+        : [],
   };
 };
 
@@ -7017,14 +6575,7 @@ export const buildInput = (
         : relationshipsToOmit.has('InputDefinition')
         ? ({} as InputDefinition)
         : buildInputDefinition({}, relationshipsToOmit),
-    dependsOn:
-      overrides && overrides.hasOwnProperty('dependsOn')
-        ? overrides.dependsOn!
-        : [
-            relationshipsToOmit.has('Output')
-              ? ({} as Output)
-              : buildOutput({}, relationshipsToOmit),
-          ],
+    dependsOn: overrides && overrides.hasOwnProperty('dependsOn') ? overrides.dependsOn! : [],
     isDynamicCollect:
       overrides && overrides.hasOwnProperty('isDynamicCollect')
         ? overrides.isDynamicCollect!
@@ -7049,13 +6600,7 @@ export const buildInputDefinition = (
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'iusto',
     metadataEntries:
-      overrides && overrides.hasOwnProperty('metadataEntries')
-        ? overrides.metadataEntries!
-        : [
-            relationshipsToOmit.has('MetadataEntry')
-              ? ({} as MetadataEntry)
-              : buildMetadataEntry({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'non',
     solidDefinition:
       overrides && overrides.hasOwnProperty('solidDefinition')
@@ -7171,14 +6716,7 @@ export const buildInstigationEventConnection = (
   return {
     __typename: 'InstigationEventConnection',
     cursor: overrides && overrides.hasOwnProperty('cursor') ? overrides.cursor! : 'harum',
-    events:
-      overrides && overrides.hasOwnProperty('events')
-        ? overrides.events!
-        : [
-            relationshipsToOmit.has('InstigationEvent')
-              ? ({} as InstigationEvent)
-              : buildInstigationEvent({}, relationshipsToOmit),
-          ],
+    events: overrides && overrides.hasOwnProperty('events') ? overrides.events! : [],
     hasMore: overrides && overrides.hasOwnProperty('hasMore') ? overrides.hasMore! : true,
   };
 };
@@ -7247,10 +6785,7 @@ export const buildInstigationState = (
         : buildRepositoryOrigin({}, relationshipsToOmit),
     runningCount:
       overrides && overrides.hasOwnProperty('runningCount') ? overrides.runningCount! : 6523,
-    runs:
-      overrides && overrides.hasOwnProperty('runs')
-        ? overrides.runs!
-        : [relationshipsToOmit.has('Run') ? ({} as Run) : buildRun({}, relationshipsToOmit)],
+    runs: overrides && overrides.hasOwnProperty('runs') ? overrides.runs! : [],
     runsCount: overrides && overrides.hasOwnProperty('runsCount') ? overrides.runsCount! : 6663,
     selectorId: overrides && overrides.hasOwnProperty('selectorId') ? overrides.selectorId! : 'aut',
     status:
@@ -7263,14 +6798,7 @@ export const buildInstigationState = (
         : relationshipsToOmit.has('InstigationTick')
         ? ({} as InstigationTick)
         : buildInstigationTick({}, relationshipsToOmit),
-    ticks:
-      overrides && overrides.hasOwnProperty('ticks')
-        ? overrides.ticks!
-        : [
-            relationshipsToOmit.has('InstigationTick')
-              ? ({} as InstigationTick)
-              : buildInstigationTick({}, relationshipsToOmit),
-          ],
+    ticks: overrides && overrides.hasOwnProperty('ticks') ? overrides.ticks! : [],
     typeSpecificData:
       overrides && overrides.hasOwnProperty('typeSpecificData')
         ? overrides.typeSpecificData!
@@ -7301,14 +6829,7 @@ export const buildInstigationStates = (
   relationshipsToOmit.add('InstigationStates');
   return {
     __typename: 'InstigationStates',
-    results:
-      overrides && overrides.hasOwnProperty('results')
-        ? overrides.results!
-        : [
-            relationshipsToOmit.has('InstigationState')
-              ? ({} as InstigationState)
-              : buildInstigationState({}, relationshipsToOmit),
-          ],
+    results: overrides && overrides.hasOwnProperty('results') ? overrides.results! : [],
   };
 };
 
@@ -7337,15 +6858,12 @@ export const buildInstigationTick = (
         : relationshipsToOmit.has('InstigationEventConnection')
         ? ({} as InstigationEventConnection)
         : buildInstigationEventConnection({}, relationshipsToOmit),
-    logKey: overrides && overrides.hasOwnProperty('logKey') ? overrides.logKey! : ['dolores'],
+    logKey: overrides && overrides.hasOwnProperty('logKey') ? overrides.logKey! : [],
     originRunIds:
-      overrides && overrides.hasOwnProperty('originRunIds') ? overrides.originRunIds! : ['esse'],
-    runIds: overrides && overrides.hasOwnProperty('runIds') ? overrides.runIds! : ['animi'],
-    runKeys: overrides && overrides.hasOwnProperty('runKeys') ? overrides.runKeys! : ['velit'],
-    runs:
-      overrides && overrides.hasOwnProperty('runs')
-        ? overrides.runs!
-        : [relationshipsToOmit.has('Run') ? ({} as Run) : buildRun({}, relationshipsToOmit)],
+      overrides && overrides.hasOwnProperty('originRunIds') ? overrides.originRunIds! : [],
+    runIds: overrides && overrides.hasOwnProperty('runIds') ? overrides.runIds! : [],
+    runKeys: overrides && overrides.hasOwnProperty('runKeys') ? overrides.runKeys! : [],
+    runs: overrides && overrides.hasOwnProperty('runs') ? overrides.runs! : [],
     skipReason:
       overrides && overrides.hasOwnProperty('skipReason') ? overrides.skipReason! : 'maxime',
     status:
@@ -7448,13 +6966,7 @@ export const buildJob = (
         ? ({} as DagsterTypeNotFoundError)
         : buildDagsterTypeNotFoundError({}, relationshipsToOmit),
     dagsterTypes:
-      overrides && overrides.hasOwnProperty('dagsterTypes')
-        ? overrides.dagsterTypes!
-        : [
-            relationshipsToOmit.has('DagsterType')
-              ? ({} as DagsterType)
-              : buildDagsterType({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('dagsterTypes') ? overrides.dagsterTypes! : [],
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'occaecati',
     graphName:
@@ -7466,17 +6978,8 @@ export const buildJob = (
     isAssetJob: overrides && overrides.hasOwnProperty('isAssetJob') ? overrides.isAssetJob! : false,
     isJob: overrides && overrides.hasOwnProperty('isJob') ? overrides.isJob! : true,
     metadataEntries:
-      overrides && overrides.hasOwnProperty('metadataEntries')
-        ? overrides.metadataEntries!
-        : [
-            relationshipsToOmit.has('MetadataEntry')
-              ? ({} as MetadataEntry)
-              : buildMetadataEntry({}, relationshipsToOmit),
-          ],
-    modes:
-      overrides && overrides.hasOwnProperty('modes')
-        ? overrides.modes!
-        : [relationshipsToOmit.has('Mode') ? ({} as Mode) : buildMode({}, relationshipsToOmit)],
+      overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
+    modes: overrides && overrides.hasOwnProperty('modes') ? overrides.modes! : [],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'rerum',
     parentSnapshotId:
       overrides && overrides.hasOwnProperty('parentSnapshotId')
@@ -7486,40 +6989,16 @@ export const buildJob = (
       overrides && overrides.hasOwnProperty('pipelineSnapshotId')
         ? overrides.pipelineSnapshotId!
         : 'maxime',
-    presets:
-      overrides && overrides.hasOwnProperty('presets')
-        ? overrides.presets!
-        : [
-            relationshipsToOmit.has('PipelinePreset')
-              ? ({} as PipelinePreset)
-              : buildPipelinePreset({}, relationshipsToOmit),
-          ],
+    presets: overrides && overrides.hasOwnProperty('presets') ? overrides.presets! : [],
     repository:
       overrides && overrides.hasOwnProperty('repository')
         ? overrides.repository!
         : relationshipsToOmit.has('Repository')
         ? ({} as Repository)
         : buildRepository({}, relationshipsToOmit),
-    runs:
-      overrides && overrides.hasOwnProperty('runs')
-        ? overrides.runs!
-        : [relationshipsToOmit.has('Run') ? ({} as Run) : buildRun({}, relationshipsToOmit)],
-    schedules:
-      overrides && overrides.hasOwnProperty('schedules')
-        ? overrides.schedules!
-        : [
-            relationshipsToOmit.has('Schedule')
-              ? ({} as Schedule)
-              : buildSchedule({}, relationshipsToOmit),
-          ],
-    sensors:
-      overrides && overrides.hasOwnProperty('sensors')
-        ? overrides.sensors!
-        : [
-            relationshipsToOmit.has('Sensor')
-              ? ({} as Sensor)
-              : buildSensor({}, relationshipsToOmit),
-          ],
+    runs: overrides && overrides.hasOwnProperty('runs') ? overrides.runs! : [],
+    schedules: overrides && overrides.hasOwnProperty('schedules') ? overrides.schedules! : [],
+    sensors: overrides && overrides.hasOwnProperty('sensors') ? overrides.sensors! : [],
     solidHandle:
       overrides && overrides.hasOwnProperty('solidHandle')
         ? overrides.solidHandle!
@@ -7527,25 +7006,9 @@ export const buildJob = (
         ? ({} as SolidHandle)
         : buildSolidHandle({}, relationshipsToOmit),
     solidHandles:
-      overrides && overrides.hasOwnProperty('solidHandles')
-        ? overrides.solidHandles!
-        : [
-            relationshipsToOmit.has('SolidHandle')
-              ? ({} as SolidHandle)
-              : buildSolidHandle({}, relationshipsToOmit),
-          ],
-    solids:
-      overrides && overrides.hasOwnProperty('solids')
-        ? overrides.solids!
-        : [relationshipsToOmit.has('Solid') ? ({} as Solid) : buildSolid({}, relationshipsToOmit)],
-    tags:
-      overrides && overrides.hasOwnProperty('tags')
-        ? overrides.tags!
-        : [
-            relationshipsToOmit.has('PipelineTag')
-              ? ({} as PipelineTag)
-              : buildPipelineTag({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('solidHandles') ? overrides.solidHandles! : [],
+    solids: overrides && overrides.hasOwnProperty('solids') ? overrides.solids! : [],
+    tags: overrides && overrides.hasOwnProperty('tags') ? overrides.tags! : [],
   };
 };
 
@@ -7557,13 +7020,7 @@ export const buildJobOrPipelineSelector = (
   relationshipsToOmit.add('JobOrPipelineSelector');
   return {
     assetSelection:
-      overrides && overrides.hasOwnProperty('assetSelection')
-        ? overrides.assetSelection!
-        : [
-            relationshipsToOmit.has('AssetKeyInput')
-              ? ({} as AssetKeyInput)
-              : buildAssetKeyInput({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('assetSelection') ? overrides.assetSelection! : [],
     jobName: overrides && overrides.hasOwnProperty('jobName') ? overrides.jobName! : 'quia',
     pipelineName:
       overrides && overrides.hasOwnProperty('pipelineName')
@@ -7576,9 +7033,7 @@ export const buildJobOrPipelineSelector = (
     repositoryName:
       overrides && overrides.hasOwnProperty('repositoryName') ? overrides.repositoryName! : 'velit',
     solidSelection:
-      overrides && overrides.hasOwnProperty('solidSelection')
-        ? overrides.solidSelection!
-        : ['amet'],
+      overrides && overrides.hasOwnProperty('solidSelection') ? overrides.solidSelection! : [],
   };
 };
 
@@ -7596,14 +7051,7 @@ export const buildJobWithOps = (
         : relationshipsToOmit.has('Job')
         ? ({} as Job)
         : buildJob({}, relationshipsToOmit),
-    opsUsing:
-      overrides && overrides.hasOwnProperty('opsUsing')
-        ? overrides.opsUsing!
-        : [
-            relationshipsToOmit.has('SolidHandle')
-              ? ({} as SolidHandle)
-              : buildSolidHandle({}, relationshipsToOmit),
-          ],
+    opsUsing: overrides && overrides.hasOwnProperty('opsUsing') ? overrides.opsUsing! : [],
   };
 };
 
@@ -7649,13 +7097,7 @@ export const buildLaunchBackfillParams = (
     allPartitions:
       overrides && overrides.hasOwnProperty('allPartitions') ? overrides.allPartitions! : false,
     assetSelection:
-      overrides && overrides.hasOwnProperty('assetSelection')
-        ? overrides.assetSelection!
-        : [
-            relationshipsToOmit.has('AssetKeyInput')
-              ? ({} as AssetKeyInput)
-              : buildAssetKeyInput({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('assetSelection') ? overrides.assetSelection! : [],
     forceSynchronousSubmission:
       overrides && overrides.hasOwnProperty('forceSynchronousSubmission')
         ? overrides.forceSynchronousSubmission!
@@ -7663,27 +7105,16 @@ export const buildLaunchBackfillParams = (
     fromFailure:
       overrides && overrides.hasOwnProperty('fromFailure') ? overrides.fromFailure! : true,
     partitionNames:
-      overrides && overrides.hasOwnProperty('partitionNames')
-        ? overrides.partitionNames!
-        : ['nihil'],
+      overrides && overrides.hasOwnProperty('partitionNames') ? overrides.partitionNames! : [],
     reexecutionSteps:
-      overrides && overrides.hasOwnProperty('reexecutionSteps')
-        ? overrides.reexecutionSteps!
-        : ['omnis'],
+      overrides && overrides.hasOwnProperty('reexecutionSteps') ? overrides.reexecutionSteps! : [],
     selector:
       overrides && overrides.hasOwnProperty('selector')
         ? overrides.selector!
         : relationshipsToOmit.has('PartitionSetSelector')
         ? ({} as PartitionSetSelector)
         : buildPartitionSetSelector({}, relationshipsToOmit),
-    tags:
-      overrides && overrides.hasOwnProperty('tags')
-        ? overrides.tags!
-        : [
-            relationshipsToOmit.has('ExecutionTag')
-              ? ({} as ExecutionTag)
-              : buildExecutionTag({}, relationshipsToOmit),
-          ],
+    tags: overrides && overrides.hasOwnProperty('tags') ? overrides.tags! : [],
   };
 };
 
@@ -7697,7 +7128,7 @@ export const buildLaunchBackfillSuccess = (
     __typename: 'LaunchBackfillSuccess',
     backfillId: overrides && overrides.hasOwnProperty('backfillId') ? overrides.backfillId! : 'sit',
     launchedRunIds:
-      overrides && overrides.hasOwnProperty('launchedRunIds') ? overrides.launchedRunIds! : ['ut'],
+      overrides && overrides.hasOwnProperty('launchedRunIds') ? overrides.launchedRunIds! : [],
   };
 };
 
@@ -7781,14 +7212,7 @@ export const buildListDagsterType = (
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'enim',
     displayName:
       overrides && overrides.hasOwnProperty('displayName') ? overrides.displayName! : 'soluta',
-    innerTypes:
-      overrides && overrides.hasOwnProperty('innerTypes')
-        ? overrides.innerTypes!
-        : [
-            relationshipsToOmit.has('DagsterType')
-              ? ({} as DagsterType)
-              : buildDagsterType({}, relationshipsToOmit),
-          ],
+    innerTypes: overrides && overrides.hasOwnProperty('innerTypes') ? overrides.innerTypes! : [],
     inputSchemaType:
       overrides && overrides.hasOwnProperty('inputSchemaType')
         ? overrides.inputSchemaType!
@@ -7801,13 +7225,7 @@ export const buildListDagsterType = (
     isNullable: overrides && overrides.hasOwnProperty('isNullable') ? overrides.isNullable! : false,
     key: overrides && overrides.hasOwnProperty('key') ? overrides.key! : 'aut',
     metadataEntries:
-      overrides && overrides.hasOwnProperty('metadataEntries')
-        ? overrides.metadataEntries!
-        : [
-            relationshipsToOmit.has('MetadataEntry')
-              ? ({} as MetadataEntry)
-              : buildMetadataEntry({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'culpa',
     ofType:
       overrides && overrides.hasOwnProperty('ofType')
@@ -7845,13 +7263,7 @@ export const buildLoadedInputEvent = (
       overrides && overrides.hasOwnProperty('managerKey') ? overrides.managerKey! : 'quae',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'eveniet',
     metadataEntries:
-      overrides && overrides.hasOwnProperty('metadataEntries')
-        ? overrides.metadataEntries!
-        : [
-            relationshipsToOmit.has('MetadataEntry')
-              ? ({} as MetadataEntry)
-              : buildMetadataEntry({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'porro',
     solidHandleID:
       overrides && overrides.hasOwnProperty('solidHandleID') ? overrides.solidHandleID! : 'qui',
@@ -7986,7 +7398,7 @@ export const buildLogsCapturedEvent = (
         ? overrides.solidHandleID!
         : 'assumenda',
     stepKey: overrides && overrides.hasOwnProperty('stepKey') ? overrides.stepKey! : 'quia',
-    stepKeys: overrides && overrides.hasOwnProperty('stepKeys') ? overrides.stepKeys! : ['impedit'],
+    stepKeys: overrides && overrides.hasOwnProperty('stepKeys') ? overrides.stepKeys! : [],
     timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 'et',
   };
 };
@@ -8014,15 +7426,9 @@ export const buildMapConfigType = (
     recursiveConfigTypes:
       overrides && overrides.hasOwnProperty('recursiveConfigTypes')
         ? overrides.recursiveConfigTypes!
-        : [
-            relationshipsToOmit.has('ConfigType')
-              ? ({} as ConfigType)
-              : buildConfigType({}, relationshipsToOmit),
-          ],
+        : [],
     typeParamKeys:
-      overrides && overrides.hasOwnProperty('typeParamKeys')
-        ? overrides.typeParamKeys!
-        : ['explicabo'],
+      overrides && overrides.hasOwnProperty('typeParamKeys') ? overrides.typeParamKeys! : [],
     valueType:
       overrides && overrides.hasOwnProperty('valueType')
         ? overrides.valueType!
@@ -8102,13 +7508,7 @@ export const buildMaterializationEvent = (
         ? ({} as AssetKey)
         : buildAssetKey({}, relationshipsToOmit),
     assetLineage:
-      overrides && overrides.hasOwnProperty('assetLineage')
-        ? overrides.assetLineage!
-        : [
-            relationshipsToOmit.has('AssetLineageInfo')
-              ? ({} as AssetLineageInfo)
-              : buildAssetLineageInfo({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('assetLineage') ? overrides.assetLineage! : [],
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'eaque',
     eventType:
@@ -8119,13 +7519,7 @@ export const buildMaterializationEvent = (
     level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'voluptatem',
     metadataEntries:
-      overrides && overrides.hasOwnProperty('metadataEntries')
-        ? overrides.metadataEntries!
-        : [
-            relationshipsToOmit.has('MetadataEntry')
-              ? ({} as MetadataEntry)
-              : buildMetadataEntry({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     partition: overrides && overrides.hasOwnProperty('partition') ? overrides.partition! : 'velit',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'velit',
     runOrError:
@@ -8143,14 +7537,7 @@ export const buildMaterializationEvent = (
         : relationshipsToOmit.has('RunStepStats')
         ? ({} as RunStepStats)
         : buildRunStepStats({}, relationshipsToOmit),
-    tags:
-      overrides && overrides.hasOwnProperty('tags')
-        ? overrides.tags!
-        : [
-            relationshipsToOmit.has('EventTag')
-              ? ({} as EventTag)
-              : buildEventTag({}, relationshipsToOmit),
-          ],
+    tags: overrides && overrides.hasOwnProperty('tags') ? overrides.tags! : [],
     timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 'id',
   };
 };
@@ -8278,7 +7665,7 @@ export const buildMissingFieldConfigError = (
         ? ({} as ConfigTypeField)
         : buildConfigTypeField({}, relationshipsToOmit),
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'autem',
-    path: overrides && overrides.hasOwnProperty('path') ? overrides.path! : ['amet'],
+    path: overrides && overrides.hasOwnProperty('path') ? overrides.path! : [],
     reason:
       overrides && overrides.hasOwnProperty('reason')
         ? overrides.reason!
@@ -8300,16 +7687,9 @@ export const buildMissingFieldsConfigError = (
   relationshipsToOmit.add('MissingFieldsConfigError');
   return {
     __typename: 'MissingFieldsConfigError',
-    fields:
-      overrides && overrides.hasOwnProperty('fields')
-        ? overrides.fields!
-        : [
-            relationshipsToOmit.has('ConfigTypeField')
-              ? ({} as ConfigTypeField)
-              : buildConfigTypeField({}, relationshipsToOmit),
-          ],
+    fields: overrides && overrides.hasOwnProperty('fields') ? overrides.fields! : [],
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'voluptatibus',
-    path: overrides && overrides.hasOwnProperty('path') ? overrides.path! : ['blanditiis'],
+    path: overrides && overrides.hasOwnProperty('path') ? overrides.path! : [],
     reason:
       overrides && overrides.hasOwnProperty('reason')
         ? overrides.reason!
@@ -8347,23 +7727,9 @@ export const buildMode = (
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'dolor',
     id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : 'quia',
-    loggers:
-      overrides && overrides.hasOwnProperty('loggers')
-        ? overrides.loggers!
-        : [
-            relationshipsToOmit.has('Logger')
-              ? ({} as Logger)
-              : buildLogger({}, relationshipsToOmit),
-          ],
+    loggers: overrides && overrides.hasOwnProperty('loggers') ? overrides.loggers! : [],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'aliquam',
-    resources:
-      overrides && overrides.hasOwnProperty('resources')
-        ? overrides.resources!
-        : [
-            relationshipsToOmit.has('Resource')
-              ? ({} as Resource)
-              : buildResource({}, relationshipsToOmit),
-          ],
+    resources: overrides && overrides.hasOwnProperty('resources') ? overrides.resources! : [],
   };
 };
 
@@ -8392,14 +7758,7 @@ export const buildMultiPartitions = (
       overrides && overrides.hasOwnProperty('primaryDimensionName')
         ? overrides.primaryDimensionName!
         : 'consequatur',
-    ranges:
-      overrides && overrides.hasOwnProperty('ranges')
-        ? overrides.ranges!
-        : [
-            relationshipsToOmit.has('MaterializedPartitionRange2D')
-              ? ({} as MaterializedPartitionRange2D)
-              : buildMaterializedPartitionRange2D({}, relationshipsToOmit),
-          ],
+    ranges: overrides && overrides.hasOwnProperty('ranges') ? overrides.ranges! : [],
   };
 };
 
@@ -8512,15 +7871,9 @@ export const buildNullableConfigType = (
     recursiveConfigTypes:
       overrides && overrides.hasOwnProperty('recursiveConfigTypes')
         ? overrides.recursiveConfigTypes!
-        : [
-            relationshipsToOmit.has('ConfigType')
-              ? ({} as ConfigType)
-              : buildConfigType({}, relationshipsToOmit),
-          ],
+        : [],
     typeParamKeys:
-      overrides && overrides.hasOwnProperty('typeParamKeys')
-        ? overrides.typeParamKeys!
-        : ['consequatur'],
+      overrides && overrides.hasOwnProperty('typeParamKeys') ? overrides.typeParamKeys! : [],
   };
 };
 
@@ -8538,14 +7891,7 @@ export const buildNullableDagsterType = (
       overrides && overrides.hasOwnProperty('displayName')
         ? overrides.displayName!
         : 'necessitatibus',
-    innerTypes:
-      overrides && overrides.hasOwnProperty('innerTypes')
-        ? overrides.innerTypes!
-        : [
-            relationshipsToOmit.has('DagsterType')
-              ? ({} as DagsterType)
-              : buildDagsterType({}, relationshipsToOmit),
-          ],
+    innerTypes: overrides && overrides.hasOwnProperty('innerTypes') ? overrides.innerTypes! : [],
     inputSchemaType:
       overrides && overrides.hasOwnProperty('inputSchemaType')
         ? overrides.inputSchemaType!
@@ -8558,13 +7904,7 @@ export const buildNullableDagsterType = (
     isNullable: overrides && overrides.hasOwnProperty('isNullable') ? overrides.isNullable! : false,
     key: overrides && overrides.hasOwnProperty('key') ? overrides.key! : 'perferendis',
     metadataEntries:
-      overrides && overrides.hasOwnProperty('metadataEntries')
-        ? overrides.metadataEntries!
-        : [
-            relationshipsToOmit.has('MetadataEntry')
-              ? ({} as MetadataEntry)
-              : buildMetadataEntry({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'nulla',
     ofType:
       overrides && overrides.hasOwnProperty('ofType')
@@ -8623,13 +7963,7 @@ export const buildObjectStoreOperationResult = (
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'porro',
     label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'nobis',
     metadataEntries:
-      overrides && overrides.hasOwnProperty('metadataEntries')
-        ? overrides.metadataEntries!
-        : [
-            relationshipsToOmit.has('MetadataEntry')
-              ? ({} as MetadataEntry)
-              : buildMetadataEntry({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     op:
       overrides && overrides.hasOwnProperty('op')
         ? overrides.op!
@@ -8661,13 +7995,7 @@ export const buildObservationEvent = (
     level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'ratione',
     metadataEntries:
-      overrides && overrides.hasOwnProperty('metadataEntries')
-        ? overrides.metadataEntries!
-        : [
-            relationshipsToOmit.has('MetadataEntry')
-              ? ({} as MetadataEntry)
-              : buildMetadataEntry({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     partition: overrides && overrides.hasOwnProperty('partition') ? overrides.partition! : 'esse',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'aliquid',
     runOrError:
@@ -8687,14 +8015,7 @@ export const buildObservationEvent = (
         : relationshipsToOmit.has('RunStepStats')
         ? ({} as RunStepStats)
         : buildRunStepStats({}, relationshipsToOmit),
-    tags:
-      overrides && overrides.hasOwnProperty('tags')
-        ? overrides.tags!
-        : [
-            relationshipsToOmit.has('EventTag')
-              ? ({} as EventTag)
-              : buildEventTag({}, relationshipsToOmit),
-          ],
+    tags: overrides && overrides.hasOwnProperty('tags') ? overrides.tags! : [],
     timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 'ut',
   };
 };
@@ -8713,10 +8034,7 @@ export const buildOutput = (
         : relationshipsToOmit.has('OutputDefinition')
         ? ({} as OutputDefinition)
         : buildOutputDefinition({}, relationshipsToOmit),
-    dependedBy:
-      overrides && overrides.hasOwnProperty('dependedBy')
-        ? overrides.dependedBy!
-        : [relationshipsToOmit.has('Input') ? ({} as Input) : buildInput({}, relationshipsToOmit)],
+    dependedBy: overrides && overrides.hasOwnProperty('dependedBy') ? overrides.dependedBy! : [],
     solid:
       overrides && overrides.hasOwnProperty('solid')
         ? overrides.solid!
@@ -8738,13 +8056,7 @@ export const buildOutputDefinition = (
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'quis',
     isDynamic: overrides && overrides.hasOwnProperty('isDynamic') ? overrides.isDynamic! : false,
     metadataEntries:
-      overrides && overrides.hasOwnProperty('metadataEntries')
-        ? overrides.metadataEntries!
-        : [
-            relationshipsToOmit.has('MetadataEntry')
-              ? ({} as MetadataEntry)
-              : buildMetadataEntry({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'repellendus',
     solidDefinition:
       overrides && overrides.hasOwnProperty('solidDefinition')
@@ -8804,14 +8116,9 @@ export const buildPartition = (
         : relationshipsToOmit.has('PartitionRunConfig')
         ? ({} as PartitionRunConfig)
         : buildPartitionRunConfig({}, relationshipsToOmit),
-    runs:
-      overrides && overrides.hasOwnProperty('runs')
-        ? overrides.runs!
-        : [relationshipsToOmit.has('Run') ? ({} as Run) : buildRun({}, relationshipsToOmit)],
+    runs: overrides && overrides.hasOwnProperty('runs') ? overrides.runs! : [],
     solidSelection:
-      overrides && overrides.hasOwnProperty('solidSelection')
-        ? overrides.solidSelection!
-        : ['perferendis'],
+      overrides && overrides.hasOwnProperty('solidSelection') ? overrides.solidSelection! : [],
     status:
       overrides && overrides.hasOwnProperty('status') ? overrides.status! : RunStatus.CANCELED,
     tagsOrError:
@@ -8838,13 +8145,7 @@ export const buildPartitionBackfill = (
         ? ({} as AssetBackfillData)
         : buildAssetBackfillData({}, relationshipsToOmit),
     assetSelection:
-      overrides && overrides.hasOwnProperty('assetSelection')
-        ? overrides.assetSelection!
-        : [
-            relationshipsToOmit.has('AssetKey')
-              ? ({} as AssetKey)
-              : buildAssetKey({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('assetSelection') ? overrides.assetSelection! : [],
     endTimestamp:
       overrides && overrides.hasOwnProperty('endTimestamp') ? overrides.endTimestamp! : 0.33,
     error:
@@ -8875,7 +8176,7 @@ export const buildPartitionBackfill = (
     numPartitions:
       overrides && overrides.hasOwnProperty('numPartitions') ? overrides.numPartitions! : 4165,
     partitionNames:
-      overrides && overrides.hasOwnProperty('partitionNames') ? overrides.partitionNames! : ['ad'],
+      overrides && overrides.hasOwnProperty('partitionNames') ? overrides.partitionNames! : [],
     partitionSet:
       overrides && overrides.hasOwnProperty('partitionSet')
         ? overrides.partitionSet!
@@ -8889,11 +8190,7 @@ export const buildPartitionBackfill = (
     partitionStatusCounts:
       overrides && overrides.hasOwnProperty('partitionStatusCounts')
         ? overrides.partitionStatusCounts!
-        : [
-            relationshipsToOmit.has('PartitionStatusCounts')
-              ? ({} as PartitionStatusCounts)
-              : buildPartitionStatusCounts({}, relationshipsToOmit),
-          ],
+        : [],
     partitionStatuses:
       overrides && overrides.hasOwnProperty('partitionStatuses')
         ? overrides.partitionStatuses!
@@ -8901,22 +8198,15 @@ export const buildPartitionBackfill = (
         ? ({} as PartitionStatuses)
         : buildPartitionStatuses({}, relationshipsToOmit),
     reexecutionSteps:
-      overrides && overrides.hasOwnProperty('reexecutionSteps')
-        ? overrides.reexecutionSteps!
-        : ['officiis'],
-    runs:
-      overrides && overrides.hasOwnProperty('runs')
-        ? overrides.runs!
-        : [relationshipsToOmit.has('Run') ? ({} as Run) : buildRun({}, relationshipsToOmit)],
+      overrides && overrides.hasOwnProperty('reexecutionSteps') ? overrides.reexecutionSteps! : [],
+    runs: overrides && overrides.hasOwnProperty('runs') ? overrides.runs! : [],
     status:
       overrides && overrides.hasOwnProperty('status')
         ? overrides.status!
         : BulkActionStatus.CANCELED,
     timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 8.28,
     unfinishedRuns:
-      overrides && overrides.hasOwnProperty('unfinishedRuns')
-        ? overrides.unfinishedRuns!
-        : [relationshipsToOmit.has('Run') ? ({} as Run) : buildRun({}, relationshipsToOmit)],
+      overrides && overrides.hasOwnProperty('unfinishedRuns') ? overrides.unfinishedRuns! : [],
     user: overrides && overrides.hasOwnProperty('user') ? overrides.user! : 'eius',
   };
 };
@@ -8929,14 +8219,7 @@ export const buildPartitionBackfills = (
   relationshipsToOmit.add('PartitionBackfills');
   return {
     __typename: 'PartitionBackfills',
-    results:
-      overrides && overrides.hasOwnProperty('results')
-        ? overrides.results!
-        : [
-            relationshipsToOmit.has('PartitionBackfill')
-              ? ({} as PartitionBackfill)
-              : buildPartitionBackfill({}, relationshipsToOmit),
-          ],
+    results: overrides && overrides.hasOwnProperty('results') ? overrides.results! : [],
   };
 };
 
@@ -8951,13 +8234,7 @@ export const buildPartitionDefinition = (
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'ab',
     dimensionTypes:
-      overrides && overrides.hasOwnProperty('dimensionTypes')
-        ? overrides.dimensionTypes!
-        : [
-            relationshipsToOmit.has('DimensionDefinitionType')
-              ? ({} as DimensionDefinitionType)
-              : buildDimensionDefinitionType({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('dimensionTypes') ? overrides.dimensionTypes! : [],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'facilis',
     type:
       overrides && overrides.hasOwnProperty('type')
@@ -9019,14 +8296,7 @@ export const buildPartitionSet = (
   relationshipsToOmit.add('PartitionSet');
   return {
     __typename: 'PartitionSet',
-    backfills:
-      overrides && overrides.hasOwnProperty('backfills')
-        ? overrides.backfills!
-        : [
-            relationshipsToOmit.has('PartitionBackfill')
-              ? ({} as PartitionBackfill)
-              : buildPartitionBackfill({}, relationshipsToOmit),
-          ],
+    backfills: overrides && overrides.hasOwnProperty('backfills') ? overrides.backfills! : [],
     id:
       overrides && overrides.hasOwnProperty('id')
         ? overrides.id!
@@ -9040,13 +8310,7 @@ export const buildPartitionSet = (
         ? ({} as Partition)
         : buildPartition({}, relationshipsToOmit),
     partitionRuns:
-      overrides && overrides.hasOwnProperty('partitionRuns')
-        ? overrides.partitionRuns!
-        : [
-            relationshipsToOmit.has('PartitionRun')
-              ? ({} as PartitionRun)
-              : buildPartitionRun({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('partitionRuns') ? overrides.partitionRuns! : [],
     partitionStatusesOrError:
       overrides && overrides.hasOwnProperty('partitionStatusesOrError')
         ? overrides.partitionStatusesOrError!
@@ -9068,9 +8332,7 @@ export const buildPartitionSet = (
         ? ({} as RepositoryOrigin)
         : buildRepositoryOrigin({}, relationshipsToOmit),
     solidSelection:
-      overrides && overrides.hasOwnProperty('solidSelection')
-        ? overrides.solidSelection!
-        : ['totam'],
+      overrides && overrides.hasOwnProperty('solidSelection') ? overrides.solidSelection! : [],
   };
 };
 
@@ -9118,14 +8380,7 @@ export const buildPartitionSets = (
   relationshipsToOmit.add('PartitionSets');
   return {
     __typename: 'PartitionSets',
-    results:
-      overrides && overrides.hasOwnProperty('results')
-        ? overrides.results!
-        : [
-            relationshipsToOmit.has('PartitionSet')
-              ? ({} as PartitionSet)
-              : buildPartitionSet({}, relationshipsToOmit),
-          ],
+    results: overrides && overrides.hasOwnProperty('results') ? overrides.results! : [],
   };
 };
 
@@ -9196,14 +8451,7 @@ export const buildPartitionStatuses = (
   relationshipsToOmit.add('PartitionStatuses');
   return {
     __typename: 'PartitionStatuses',
-    results:
-      overrides && overrides.hasOwnProperty('results')
-        ? overrides.results!
-        : [
-            relationshipsToOmit.has('PartitionStatus')
-              ? ({} as PartitionStatus)
-              : buildPartitionStatus({}, relationshipsToOmit),
-          ],
+    results: overrides && overrides.hasOwnProperty('results') ? overrides.results! : [],
   };
 };
 
@@ -9215,14 +8463,7 @@ export const buildPartitionTags = (
   relationshipsToOmit.add('PartitionTags');
   return {
     __typename: 'PartitionTags',
-    results:
-      overrides && overrides.hasOwnProperty('results')
-        ? overrides.results!
-        : [
-            relationshipsToOmit.has('PipelineTag')
-              ? ({} as PipelineTag)
-              : buildPipelineTag({}, relationshipsToOmit),
-          ],
+    results: overrides && overrides.hasOwnProperty('results') ? overrides.results! : [],
   };
 };
 
@@ -9234,14 +8475,7 @@ export const buildPartitions = (
   relationshipsToOmit.add('Partitions');
   return {
     __typename: 'Partitions',
-    results:
-      overrides && overrides.hasOwnProperty('results')
-        ? overrides.results!
-        : [
-            relationshipsToOmit.has('Partition')
-              ? ({} as Partition)
-              : buildPartition({}, relationshipsToOmit),
-          ],
+    results: overrides && overrides.hasOwnProperty('results') ? overrides.results! : [],
   };
 };
 
@@ -9291,13 +8525,7 @@ export const buildPipeline = (
         ? ({} as DagsterTypeNotFoundError)
         : buildDagsterTypeNotFoundError({}, relationshipsToOmit),
     dagsterTypes:
-      overrides && overrides.hasOwnProperty('dagsterTypes')
-        ? overrides.dagsterTypes!
-        : [
-            relationshipsToOmit.has('DagsterType')
-              ? ({} as DagsterType)
-              : buildDagsterType({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('dagsterTypes') ? overrides.dagsterTypes! : [],
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'quisquam',
     graphName: overrides && overrides.hasOwnProperty('graphName') ? overrides.graphName! : 'eius',
@@ -9308,17 +8536,8 @@ export const buildPipeline = (
     isAssetJob: overrides && overrides.hasOwnProperty('isAssetJob') ? overrides.isAssetJob! : true,
     isJob: overrides && overrides.hasOwnProperty('isJob') ? overrides.isJob! : true,
     metadataEntries:
-      overrides && overrides.hasOwnProperty('metadataEntries')
-        ? overrides.metadataEntries!
-        : [
-            relationshipsToOmit.has('MetadataEntry')
-              ? ({} as MetadataEntry)
-              : buildMetadataEntry({}, relationshipsToOmit),
-          ],
-    modes:
-      overrides && overrides.hasOwnProperty('modes')
-        ? overrides.modes!
-        : [relationshipsToOmit.has('Mode') ? ({} as Mode) : buildMode({}, relationshipsToOmit)],
+      overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
+    modes: overrides && overrides.hasOwnProperty('modes') ? overrides.modes! : [],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'veritatis',
     parentSnapshotId:
       overrides && overrides.hasOwnProperty('parentSnapshotId')
@@ -9328,40 +8547,16 @@ export const buildPipeline = (
       overrides && overrides.hasOwnProperty('pipelineSnapshotId')
         ? overrides.pipelineSnapshotId!
         : 'aperiam',
-    presets:
-      overrides && overrides.hasOwnProperty('presets')
-        ? overrides.presets!
-        : [
-            relationshipsToOmit.has('PipelinePreset')
-              ? ({} as PipelinePreset)
-              : buildPipelinePreset({}, relationshipsToOmit),
-          ],
+    presets: overrides && overrides.hasOwnProperty('presets') ? overrides.presets! : [],
     repository:
       overrides && overrides.hasOwnProperty('repository')
         ? overrides.repository!
         : relationshipsToOmit.has('Repository')
         ? ({} as Repository)
         : buildRepository({}, relationshipsToOmit),
-    runs:
-      overrides && overrides.hasOwnProperty('runs')
-        ? overrides.runs!
-        : [relationshipsToOmit.has('Run') ? ({} as Run) : buildRun({}, relationshipsToOmit)],
-    schedules:
-      overrides && overrides.hasOwnProperty('schedules')
-        ? overrides.schedules!
-        : [
-            relationshipsToOmit.has('Schedule')
-              ? ({} as Schedule)
-              : buildSchedule({}, relationshipsToOmit),
-          ],
-    sensors:
-      overrides && overrides.hasOwnProperty('sensors')
-        ? overrides.sensors!
-        : [
-            relationshipsToOmit.has('Sensor')
-              ? ({} as Sensor)
-              : buildSensor({}, relationshipsToOmit),
-          ],
+    runs: overrides && overrides.hasOwnProperty('runs') ? overrides.runs! : [],
+    schedules: overrides && overrides.hasOwnProperty('schedules') ? overrides.schedules! : [],
+    sensors: overrides && overrides.hasOwnProperty('sensors') ? overrides.sensors! : [],
     solidHandle:
       overrides && overrides.hasOwnProperty('solidHandle')
         ? overrides.solidHandle!
@@ -9369,25 +8564,9 @@ export const buildPipeline = (
         ? ({} as SolidHandle)
         : buildSolidHandle({}, relationshipsToOmit),
     solidHandles:
-      overrides && overrides.hasOwnProperty('solidHandles')
-        ? overrides.solidHandles!
-        : [
-            relationshipsToOmit.has('SolidHandle')
-              ? ({} as SolidHandle)
-              : buildSolidHandle({}, relationshipsToOmit),
-          ],
-    solids:
-      overrides && overrides.hasOwnProperty('solids')
-        ? overrides.solids!
-        : [relationshipsToOmit.has('Solid') ? ({} as Solid) : buildSolid({}, relationshipsToOmit)],
-    tags:
-      overrides && overrides.hasOwnProperty('tags')
-        ? overrides.tags!
-        : [
-            relationshipsToOmit.has('PipelineTag')
-              ? ({} as PipelineTag)
-              : buildPipelineTag({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('solidHandles') ? overrides.solidHandles! : [],
+    solids: overrides && overrides.hasOwnProperty('solids') ? overrides.solids! : [],
+    tags: overrides && overrides.hasOwnProperty('tags') ? overrides.tags! : [],
   };
 };
 
@@ -9400,7 +8579,7 @@ export const buildPipelineConfigValidationError = (
   return {
     __typename: 'PipelineConfigValidationError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'consequatur',
-    path: overrides && overrides.hasOwnProperty('path') ? overrides.path! : ['quo'],
+    path: overrides && overrides.hasOwnProperty('path') ? overrides.path! : [],
     reason:
       overrides && overrides.hasOwnProperty('reason')
         ? overrides.reason!
@@ -9422,14 +8601,7 @@ export const buildPipelineConfigValidationInvalid = (
   relationshipsToOmit.add('PipelineConfigValidationInvalid');
   return {
     __typename: 'PipelineConfigValidationInvalid',
-    errors:
-      overrides && overrides.hasOwnProperty('errors')
-        ? overrides.errors!
-        : [
-            relationshipsToOmit.has('PipelineConfigValidationError')
-              ? ({} as PipelineConfigValidationError)
-              : buildPipelineConfigValidationError({}, relationshipsToOmit),
-          ],
+    errors: overrides && overrides.hasOwnProperty('errors') ? overrides.errors! : [],
     pipelineName:
       overrides && overrides.hasOwnProperty('pipelineName') ? overrides.pipelineName! : 'totam',
   };
@@ -9483,17 +8655,8 @@ export const buildPipelinePreset = (
     runConfigYaml:
       overrides && overrides.hasOwnProperty('runConfigYaml') ? overrides.runConfigYaml! : 'et',
     solidSelection:
-      overrides && overrides.hasOwnProperty('solidSelection')
-        ? overrides.solidSelection!
-        : ['sapiente'],
-    tags:
-      overrides && overrides.hasOwnProperty('tags')
-        ? overrides.tags!
-        : [
-            relationshipsToOmit.has('PipelineTag')
-              ? ({} as PipelineTag)
-              : buildPipelineTag({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('solidSelection') ? overrides.solidSelection! : [],
+    tags: overrides && overrides.hasOwnProperty('tags') ? overrides.tags! : [],
   };
 };
 
@@ -9507,7 +8670,7 @@ export const buildPipelineReference = (
     __typename: 'PipelineReference',
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'iure',
     solidSelection:
-      overrides && overrides.hasOwnProperty('solidSelection') ? overrides.solidSelection! : ['est'],
+      overrides && overrides.hasOwnProperty('solidSelection') ? overrides.solidSelection! : [],
   };
 };
 
@@ -9519,10 +8682,7 @@ export const buildPipelineRun = (
   relationshipsToOmit.add('PipelineRun');
   return {
     __typename: 'PipelineRun',
-    assets:
-      overrides && overrides.hasOwnProperty('assets')
-        ? overrides.assets!
-        : [relationshipsToOmit.has('Asset') ? ({} as Asset) : buildAsset({}, relationshipsToOmit)],
+    assets: overrides && overrides.hasOwnProperty('assets') ? overrides.assets! : [],
     canTerminate:
       overrides && overrides.hasOwnProperty('canTerminate') ? overrides.canTerminate! : false,
     capturedLogs:
@@ -9582,7 +8742,7 @@ export const buildPipelineRun = (
       overrides && overrides.hasOwnProperty('runConfigYaml') ? overrides.runConfigYaml! : 'facere',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'tenetur',
     solidSelection:
-      overrides && overrides.hasOwnProperty('solidSelection') ? overrides.solidSelection! : ['quo'],
+      overrides && overrides.hasOwnProperty('solidSelection') ? overrides.solidSelection! : [],
     stats:
       overrides && overrides.hasOwnProperty('stats')
         ? overrides.stats!
@@ -9594,23 +8754,9 @@ export const buildPipelineRun = (
     stepKeysToExecute:
       overrides && overrides.hasOwnProperty('stepKeysToExecute')
         ? overrides.stepKeysToExecute!
-        : ['dolor'],
-    stepStats:
-      overrides && overrides.hasOwnProperty('stepStats')
-        ? overrides.stepStats!
-        : [
-            relationshipsToOmit.has('RunStepStats')
-              ? ({} as RunStepStats)
-              : buildRunStepStats({}, relationshipsToOmit),
-          ],
-    tags:
-      overrides && overrides.hasOwnProperty('tags')
-        ? overrides.tags!
-        : [
-            relationshipsToOmit.has('PipelineTag')
-              ? ({} as PipelineTag)
-              : buildPipelineTag({}, relationshipsToOmit),
-          ],
+        : [],
+    stepStats: overrides && overrides.hasOwnProperty('stepStats') ? overrides.stepStats! : [],
+    tags: overrides && overrides.hasOwnProperty('tags') ? overrides.tags! : [],
   };
 };
 
@@ -9653,14 +8799,7 @@ export const buildPipelineRunLogsSubscriptionSuccess = (
       overrides && overrides.hasOwnProperty('hasMorePastEvents')
         ? overrides.hasMorePastEvents!
         : true,
-    messages:
-      overrides && overrides.hasOwnProperty('messages')
-        ? overrides.messages!
-        : [
-            relationshipsToOmit.has('AlertFailureEvent')
-              ? ({} as AlertFailureEvent)
-              : buildAlertFailureEvent({}, relationshipsToOmit),
-          ],
+    messages: overrides && overrides.hasOwnProperty('messages') ? overrides.messages! : [],
     run:
       overrides && overrides.hasOwnProperty('run')
         ? overrides.run!
@@ -9738,19 +8877,9 @@ export const buildPipelineRunStepStats = (
     expectationResults:
       overrides && overrides.hasOwnProperty('expectationResults')
         ? overrides.expectationResults!
-        : [
-            relationshipsToOmit.has('ExpectationResult')
-              ? ({} as ExpectationResult)
-              : buildExpectationResult({}, relationshipsToOmit),
-          ],
+        : [],
     materializations:
-      overrides && overrides.hasOwnProperty('materializations')
-        ? overrides.materializations!
-        : [
-            relationshipsToOmit.has('MaterializationEvent')
-              ? ({} as MaterializationEvent)
-              : buildMaterializationEvent({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('materializations') ? overrides.materializations! : [],
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'et',
     startTime: overrides && overrides.hasOwnProperty('startTime') ? overrides.startTime! : 8.43,
     status:
@@ -9768,10 +8897,7 @@ export const buildPipelineRuns = (
   return {
     __typename: 'PipelineRuns',
     count: overrides && overrides.hasOwnProperty('count') ? overrides.count! : 1847,
-    results:
-      overrides && overrides.hasOwnProperty('results')
-        ? overrides.results!
-        : [relationshipsToOmit.has('Run') ? ({} as Run) : buildRun({}, relationshipsToOmit)],
+    results: overrides && overrides.hasOwnProperty('results') ? overrides.results! : [],
   };
 };
 
@@ -9783,13 +8909,7 @@ export const buildPipelineSelector = (
   relationshipsToOmit.add('PipelineSelector');
   return {
     assetSelection:
-      overrides && overrides.hasOwnProperty('assetSelection')
-        ? overrides.assetSelection!
-        : [
-            relationshipsToOmit.has('AssetKeyInput')
-              ? ({} as AssetKeyInput)
-              : buildAssetKeyInput({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('assetSelection') ? overrides.assetSelection! : [],
     pipelineName:
       overrides && overrides.hasOwnProperty('pipelineName') ? overrides.pipelineName! : 'commodi',
     repositoryLocationName:
@@ -9801,7 +8921,7 @@ export const buildPipelineSelector = (
         ? overrides.repositoryName!
         : 'magnam',
     solidSelection:
-      overrides && overrides.hasOwnProperty('solidSelection') ? overrides.solidSelection! : ['nam'],
+      overrides && overrides.hasOwnProperty('solidSelection') ? overrides.solidSelection! : [],
   };
 };
 
@@ -9820,13 +8940,7 @@ export const buildPipelineSnapshot = (
         ? ({} as DagsterTypeNotFoundError)
         : buildDagsterTypeNotFoundError({}, relationshipsToOmit),
     dagsterTypes:
-      overrides && overrides.hasOwnProperty('dagsterTypes')
-        ? overrides.dagsterTypes!
-        : [
-            relationshipsToOmit.has('DagsterType')
-              ? ({} as DagsterType)
-              : buildDagsterType({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('dagsterTypes') ? overrides.dagsterTypes! : [],
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'corporis',
     graphName:
@@ -9836,17 +8950,8 @@ export const buildPipelineSnapshot = (
         ? overrides.id!
         : 'a052bf7d-6918-434c-b95b-82d9dc5b3fb1',
     metadataEntries:
-      overrides && overrides.hasOwnProperty('metadataEntries')
-        ? overrides.metadataEntries!
-        : [
-            relationshipsToOmit.has('MetadataEntry')
-              ? ({} as MetadataEntry)
-              : buildMetadataEntry({}, relationshipsToOmit),
-          ],
-    modes:
-      overrides && overrides.hasOwnProperty('modes')
-        ? overrides.modes!
-        : [relationshipsToOmit.has('Mode') ? ({} as Mode) : buildMode({}, relationshipsToOmit)],
+      overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
+    modes: overrides && overrides.hasOwnProperty('modes') ? overrides.modes! : [],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'beatae',
     parentSnapshotId:
       overrides && overrides.hasOwnProperty('parentSnapshotId')
@@ -9856,26 +8961,9 @@ export const buildPipelineSnapshot = (
       overrides && overrides.hasOwnProperty('pipelineSnapshotId')
         ? overrides.pipelineSnapshotId!
         : 'labore',
-    runs:
-      overrides && overrides.hasOwnProperty('runs')
-        ? overrides.runs!
-        : [relationshipsToOmit.has('Run') ? ({} as Run) : buildRun({}, relationshipsToOmit)],
-    schedules:
-      overrides && overrides.hasOwnProperty('schedules')
-        ? overrides.schedules!
-        : [
-            relationshipsToOmit.has('Schedule')
-              ? ({} as Schedule)
-              : buildSchedule({}, relationshipsToOmit),
-          ],
-    sensors:
-      overrides && overrides.hasOwnProperty('sensors')
-        ? overrides.sensors!
-        : [
-            relationshipsToOmit.has('Sensor')
-              ? ({} as Sensor)
-              : buildSensor({}, relationshipsToOmit),
-          ],
+    runs: overrides && overrides.hasOwnProperty('runs') ? overrides.runs! : [],
+    schedules: overrides && overrides.hasOwnProperty('schedules') ? overrides.schedules! : [],
+    sensors: overrides && overrides.hasOwnProperty('sensors') ? overrides.sensors! : [],
     solidHandle:
       overrides && overrides.hasOwnProperty('solidHandle')
         ? overrides.solidHandle!
@@ -9883,29 +8971,11 @@ export const buildPipelineSnapshot = (
         ? ({} as SolidHandle)
         : buildSolidHandle({}, relationshipsToOmit),
     solidHandles:
-      overrides && overrides.hasOwnProperty('solidHandles')
-        ? overrides.solidHandles!
-        : [
-            relationshipsToOmit.has('SolidHandle')
-              ? ({} as SolidHandle)
-              : buildSolidHandle({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('solidHandles') ? overrides.solidHandles! : [],
     solidSelection:
-      overrides && overrides.hasOwnProperty('solidSelection')
-        ? overrides.solidSelection!
-        : ['nulla'],
-    solids:
-      overrides && overrides.hasOwnProperty('solids')
-        ? overrides.solids!
-        : [relationshipsToOmit.has('Solid') ? ({} as Solid) : buildSolid({}, relationshipsToOmit)],
-    tags:
-      overrides && overrides.hasOwnProperty('tags')
-        ? overrides.tags!
-        : [
-            relationshipsToOmit.has('PipelineTag')
-              ? ({} as PipelineTag)
-              : buildPipelineTag({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('solidSelection') ? overrides.solidSelection! : [],
+    solids: overrides && overrides.hasOwnProperty('solids') ? overrides.solids! : [],
+    tags: overrides && overrides.hasOwnProperty('tags') ? overrides.tags! : [],
   };
 };
 
@@ -9945,7 +9015,7 @@ export const buildPipelineTagAndValues = (
   return {
     __typename: 'PipelineTagAndValues',
     key: overrides && overrides.hasOwnProperty('key') ? overrides.key! : 'repudiandae',
-    values: overrides && overrides.hasOwnProperty('values') ? overrides.values! : ['aut'],
+    values: overrides && overrides.hasOwnProperty('values') ? overrides.values! : [],
   };
 };
 
@@ -9992,25 +9062,11 @@ export const buildPythonError = (
         : relationshipsToOmit.has('PythonError')
         ? ({} as PythonError)
         : buildPythonError({}, relationshipsToOmit),
-    causes:
-      overrides && overrides.hasOwnProperty('causes')
-        ? overrides.causes!
-        : [
-            relationshipsToOmit.has('PythonError')
-              ? ({} as PythonError)
-              : buildPythonError({}, relationshipsToOmit),
-          ],
+    causes: overrides && overrides.hasOwnProperty('causes') ? overrides.causes! : [],
     className: overrides && overrides.hasOwnProperty('className') ? overrides.className! : 'magni',
-    errorChain:
-      overrides && overrides.hasOwnProperty('errorChain')
-        ? overrides.errorChain!
-        : [
-            relationshipsToOmit.has('ErrorChainLink')
-              ? ({} as ErrorChainLink)
-              : buildErrorChainLink({}, relationshipsToOmit),
-          ],
+    errorChain: overrides && overrides.hasOwnProperty('errorChain') ? overrides.errorChain! : [],
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'veritatis',
-    stack: overrides && overrides.hasOwnProperty('stack') ? overrides.stack! : ['eum'],
+    stack: overrides && overrides.hasOwnProperty('stack') ? overrides.stack! : [],
   };
 };
 
@@ -10048,13 +9104,9 @@ export const buildRegularConfigType = (
     recursiveConfigTypes:
       overrides && overrides.hasOwnProperty('recursiveConfigTypes')
         ? overrides.recursiveConfigTypes!
-        : [
-            relationshipsToOmit.has('ConfigType')
-              ? ({} as ConfigType)
-              : buildConfigType({}, relationshipsToOmit),
-          ],
+        : [],
     typeParamKeys:
-      overrides && overrides.hasOwnProperty('typeParamKeys') ? overrides.typeParamKeys! : ['nulla'],
+      overrides && overrides.hasOwnProperty('typeParamKeys') ? overrides.typeParamKeys! : [],
   };
 };
 
@@ -10072,14 +9124,7 @@ export const buildRegularDagsterType = (
         : 'necessitatibus',
     displayName:
       overrides && overrides.hasOwnProperty('displayName') ? overrides.displayName! : 'expedita',
-    innerTypes:
-      overrides && overrides.hasOwnProperty('innerTypes')
-        ? overrides.innerTypes!
-        : [
-            relationshipsToOmit.has('DagsterType')
-              ? ({} as DagsterType)
-              : buildDagsterType({}, relationshipsToOmit),
-          ],
+    innerTypes: overrides && overrides.hasOwnProperty('innerTypes') ? overrides.innerTypes! : [],
     inputSchemaType:
       overrides && overrides.hasOwnProperty('inputSchemaType')
         ? overrides.inputSchemaType!
@@ -10092,13 +9137,7 @@ export const buildRegularDagsterType = (
     isNullable: overrides && overrides.hasOwnProperty('isNullable') ? overrides.isNullable! : true,
     key: overrides && overrides.hasOwnProperty('key') ? overrides.key! : 'maiores',
     metadataEntries:
-      overrides && overrides.hasOwnProperty('metadataEntries')
-        ? overrides.metadataEntries!
-        : [
-            relationshipsToOmit.has('MetadataEntry')
-              ? ({} as MetadataEntry)
-              : buildMetadataEntry({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'velit',
     outputSchemaType:
       overrides && overrides.hasOwnProperty('outputSchemaType')
@@ -10166,43 +9205,16 @@ export const buildRepository = (
     allTopLevelResourceDetails:
       overrides && overrides.hasOwnProperty('allTopLevelResourceDetails')
         ? overrides.allTopLevelResourceDetails!
-        : [
-            relationshipsToOmit.has('ResourceDetails')
-              ? ({} as ResourceDetails)
-              : buildResourceDetails({}, relationshipsToOmit),
-          ],
-    assetGroups:
-      overrides && overrides.hasOwnProperty('assetGroups')
-        ? overrides.assetGroups!
-        : [
-            relationshipsToOmit.has('AssetGroup')
-              ? ({} as AssetGroup)
-              : buildAssetGroup({}, relationshipsToOmit),
-          ],
-    assetNodes:
-      overrides && overrides.hasOwnProperty('assetNodes')
-        ? overrides.assetNodes!
-        : [
-            relationshipsToOmit.has('AssetNode')
-              ? ({} as AssetNode)
-              : buildAssetNode({}, relationshipsToOmit),
-          ],
+        : [],
+    assetGroups: overrides && overrides.hasOwnProperty('assetGroups') ? overrides.assetGroups! : [],
+    assetNodes: overrides && overrides.hasOwnProperty('assetNodes') ? overrides.assetNodes! : [],
     displayMetadata:
-      overrides && overrides.hasOwnProperty('displayMetadata')
-        ? overrides.displayMetadata!
-        : [
-            relationshipsToOmit.has('RepositoryMetadata')
-              ? ({} as RepositoryMetadata)
-              : buildRepositoryMetadata({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('displayMetadata') ? overrides.displayMetadata! : [],
     id:
       overrides && overrides.hasOwnProperty('id')
         ? overrides.id!
         : 'e97f8841-e61d-451b-93f6-99aacfac2fad',
-    jobs:
-      overrides && overrides.hasOwnProperty('jobs')
-        ? overrides.jobs!
-        : [relationshipsToOmit.has('Job') ? ({} as Job) : buildJob({}, relationshipsToOmit)],
+    jobs: overrides && overrides.hasOwnProperty('jobs') ? overrides.jobs! : [],
     location:
       overrides && overrides.hasOwnProperty('location')
         ? overrides.location!
@@ -10217,51 +9229,17 @@ export const buildRepository = (
         ? ({} as RepositoryOrigin)
         : buildRepositoryOrigin({}, relationshipsToOmit),
     partitionSets:
-      overrides && overrides.hasOwnProperty('partitionSets')
-        ? overrides.partitionSets!
-        : [
-            relationshipsToOmit.has('PartitionSet')
-              ? ({} as PartitionSet)
-              : buildPartitionSet({}, relationshipsToOmit),
-          ],
-    pipelines:
-      overrides && overrides.hasOwnProperty('pipelines')
-        ? overrides.pipelines!
-        : [
-            relationshipsToOmit.has('Pipeline')
-              ? ({} as Pipeline)
-              : buildPipeline({}, relationshipsToOmit),
-          ],
-    schedules:
-      overrides && overrides.hasOwnProperty('schedules')
-        ? overrides.schedules!
-        : [
-            relationshipsToOmit.has('Schedule')
-              ? ({} as Schedule)
-              : buildSchedule({}, relationshipsToOmit),
-          ],
-    sensors:
-      overrides && overrides.hasOwnProperty('sensors')
-        ? overrides.sensors!
-        : [
-            relationshipsToOmit.has('Sensor')
-              ? ({} as Sensor)
-              : buildSensor({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('partitionSets') ? overrides.partitionSets! : [],
+    pipelines: overrides && overrides.hasOwnProperty('pipelines') ? overrides.pipelines! : [],
+    schedules: overrides && overrides.hasOwnProperty('schedules') ? overrides.schedules! : [],
+    sensors: overrides && overrides.hasOwnProperty('sensors') ? overrides.sensors! : [],
     usedSolid:
       overrides && overrides.hasOwnProperty('usedSolid')
         ? overrides.usedSolid!
         : relationshipsToOmit.has('UsedSolid')
         ? ({} as UsedSolid)
         : buildUsedSolid({}, relationshipsToOmit),
-    usedSolids:
-      overrides && overrides.hasOwnProperty('usedSolids')
-        ? overrides.usedSolids!
-        : [
-            relationshipsToOmit.has('UsedSolid')
-              ? ({} as UsedSolid)
-              : buildUsedSolid({}, relationshipsToOmit),
-          ],
+    usedSolids: overrides && overrides.hasOwnProperty('usedSolids') ? overrides.usedSolids! : [],
   };
 };
 
@@ -10273,14 +9251,7 @@ export const buildRepositoryConnection = (
   relationshipsToOmit.add('RepositoryConnection');
   return {
     __typename: 'RepositoryConnection',
-    nodes:
-      overrides && overrides.hasOwnProperty('nodes')
-        ? overrides.nodes!
-        : [
-            relationshipsToOmit.has('Repository')
-              ? ({} as Repository)
-              : buildRepository({}, relationshipsToOmit),
-          ],
+    nodes: overrides && overrides.hasOwnProperty('nodes') ? overrides.nodes! : [],
   };
 };
 
@@ -10295,11 +9266,7 @@ export const buildRepositoryLocation = (
     dagsterLibraryVersions:
       overrides && overrides.hasOwnProperty('dagsterLibraryVersions')
         ? overrides.dagsterLibraryVersions!
-        : [
-            relationshipsToOmit.has('DagsterLibraryVersion')
-              ? ({} as DagsterLibraryVersion)
-              : buildDagsterLibraryVersion({}, relationshipsToOmit),
-          ],
+        : [],
     environmentPath:
       overrides && overrides.hasOwnProperty('environmentPath')
         ? overrides.environmentPath!
@@ -10314,13 +9281,7 @@ export const buildRepositoryLocation = (
         : false,
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'ut',
     repositories:
-      overrides && overrides.hasOwnProperty('repositories')
-        ? overrides.repositories!
-        : [
-            relationshipsToOmit.has('Repository')
-              ? ({} as Repository)
-              : buildRepository({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('repositories') ? overrides.repositories! : [],
     serverId: overrides && overrides.hasOwnProperty('serverId') ? overrides.serverId! : 'eum',
   };
 };
@@ -10380,11 +9341,7 @@ export const buildRepositoryOrigin = (
     repositoryLocationMetadata:
       overrides && overrides.hasOwnProperty('repositoryLocationMetadata')
         ? overrides.repositoryLocationMetadata!
-        : [
-            relationshipsToOmit.has('RepositoryMetadata')
-              ? ({} as RepositoryMetadata)
-              : buildRepositoryMetadata({}, relationshipsToOmit),
-          ],
+        : [],
     repositoryLocationName:
       overrides && overrides.hasOwnProperty('repositoryLocationName')
         ? overrides.repositoryLocationName!
@@ -10439,57 +9396,21 @@ export const buildResourceDetails = (
   return {
     __typename: 'ResourceDetails',
     assetKeysUsing:
-      overrides && overrides.hasOwnProperty('assetKeysUsing')
-        ? overrides.assetKeysUsing!
-        : [
-            relationshipsToOmit.has('AssetKey')
-              ? ({} as AssetKey)
-              : buildAssetKey({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('assetKeysUsing') ? overrides.assetKeysUsing! : [],
     configFields:
-      overrides && overrides.hasOwnProperty('configFields')
-        ? overrides.configFields!
-        : [
-            relationshipsToOmit.has('ConfigTypeField')
-              ? ({} as ConfigTypeField)
-              : buildConfigTypeField({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('configFields') ? overrides.configFields! : [],
     configuredValues:
-      overrides && overrides.hasOwnProperty('configuredValues')
-        ? overrides.configuredValues!
-        : [
-            relationshipsToOmit.has('ConfiguredValue')
-              ? ({} as ConfiguredValue)
-              : buildConfiguredValue({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('configuredValues') ? overrides.configuredValues! : [],
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'laudantium',
     isTopLevel: overrides && overrides.hasOwnProperty('isTopLevel') ? overrides.isTopLevel! : false,
     jobsOpsUsing:
-      overrides && overrides.hasOwnProperty('jobsOpsUsing')
-        ? overrides.jobsOpsUsing!
-        : [
-            relationshipsToOmit.has('JobWithOps')
-              ? ({} as JobWithOps)
-              : buildJobWithOps({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('jobsOpsUsing') ? overrides.jobsOpsUsing! : [],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'praesentium',
     nestedResources:
-      overrides && overrides.hasOwnProperty('nestedResources')
-        ? overrides.nestedResources!
-        : [
-            relationshipsToOmit.has('NestedResourceEntry')
-              ? ({} as NestedResourceEntry)
-              : buildNestedResourceEntry({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('nestedResources') ? overrides.nestedResources! : [],
     parentResources:
-      overrides && overrides.hasOwnProperty('parentResources')
-        ? overrides.parentResources!
-        : [
-            relationshipsToOmit.has('NestedResourceEntry')
-              ? ({} as NestedResourceEntry)
-              : buildNestedResourceEntry({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('parentResources') ? overrides.parentResources! : [],
     resourceType:
       overrides && overrides.hasOwnProperty('resourceType') ? overrides.resourceType! : 'sed',
   };
@@ -10503,14 +9424,7 @@ export const buildResourceDetailsList = (
   relationshipsToOmit.add('ResourceDetailsList');
   return {
     __typename: 'ResourceDetailsList',
-    results:
-      overrides && overrides.hasOwnProperty('results')
-        ? overrides.results!
-        : [
-            relationshipsToOmit.has('ResourceDetails')
-              ? ({} as ResourceDetails)
-              : buildResourceDetails({}, relationshipsToOmit),
-          ],
+    results: overrides && overrides.hasOwnProperty('results') ? overrides.results! : [],
   };
 };
 
@@ -10541,13 +9455,7 @@ export const buildResourceInitFailureEvent = (
       overrides && overrides.hasOwnProperty('markerStart') ? overrides.markerStart! : 'dolor',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'perferendis',
     metadataEntries:
-      overrides && overrides.hasOwnProperty('metadataEntries')
-        ? overrides.metadataEntries!
-        : [
-            relationshipsToOmit.has('MetadataEntry')
-              ? ({} as MetadataEntry)
-              : buildMetadataEntry({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'minima',
     solidHandleID:
       overrides && overrides.hasOwnProperty('solidHandleID') ? overrides.solidHandleID! : 'quidem',
@@ -10578,13 +9486,7 @@ export const buildResourceInitStartedEvent = (
       overrides && overrides.hasOwnProperty('markerStart') ? overrides.markerStart! : 'odio',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'et',
     metadataEntries:
-      overrides && overrides.hasOwnProperty('metadataEntries')
-        ? overrides.metadataEntries!
-        : [
-            relationshipsToOmit.has('MetadataEntry')
-              ? ({} as MetadataEntry)
-              : buildMetadataEntry({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'sapiente',
     solidHandleID:
       overrides && overrides.hasOwnProperty('solidHandleID') ? overrides.solidHandleID! : 'magni',
@@ -10615,13 +9517,7 @@ export const buildResourceInitSuccessEvent = (
       overrides && overrides.hasOwnProperty('markerStart') ? overrides.markerStart! : 'et',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'ut',
     metadataEntries:
-      overrides && overrides.hasOwnProperty('metadataEntries')
-        ? overrides.metadataEntries!
-        : [
-            relationshipsToOmit.has('MetadataEntry')
-              ? ({} as MetadataEntry)
-              : buildMetadataEntry({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'fuga',
     solidHandleID:
       overrides && overrides.hasOwnProperty('solidHandleID')
@@ -10702,23 +9598,10 @@ export const buildRun = (
     assetMaterializations:
       overrides && overrides.hasOwnProperty('assetMaterializations')
         ? overrides.assetMaterializations!
-        : [
-            relationshipsToOmit.has('MaterializationEvent')
-              ? ({} as MaterializationEvent)
-              : buildMaterializationEvent({}, relationshipsToOmit),
-          ],
+        : [],
     assetSelection:
-      overrides && overrides.hasOwnProperty('assetSelection')
-        ? overrides.assetSelection!
-        : [
-            relationshipsToOmit.has('AssetKey')
-              ? ({} as AssetKey)
-              : buildAssetKey({}, relationshipsToOmit),
-          ],
-    assets:
-      overrides && overrides.hasOwnProperty('assets')
-        ? overrides.assets!
-        : [relationshipsToOmit.has('Asset') ? ({} as Asset) : buildAsset({}, relationshipsToOmit)],
+      overrides && overrides.hasOwnProperty('assetSelection') ? overrides.assetSelection! : [],
+    assets: overrides && overrides.hasOwnProperty('assets') ? overrides.assets! : [],
     canTerminate:
       overrides && overrides.hasOwnProperty('canTerminate') ? overrides.canTerminate! : false,
     capturedLogs:
@@ -10791,16 +9674,14 @@ export const buildRun = (
     resolvedOpSelection:
       overrides && overrides.hasOwnProperty('resolvedOpSelection')
         ? overrides.resolvedOpSelection!
-        : ['voluptates'],
+        : [],
     rootRunId: overrides && overrides.hasOwnProperty('rootRunId') ? overrides.rootRunId! : 'fugit',
     runConfig: overrides && overrides.hasOwnProperty('runConfig') ? overrides.runConfig! : 'quas',
     runConfigYaml:
       overrides && overrides.hasOwnProperty('runConfigYaml') ? overrides.runConfigYaml! : 'eveniet',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'fuga',
     solidSelection:
-      overrides && overrides.hasOwnProperty('solidSelection')
-        ? overrides.solidSelection!
-        : ['voluptas'],
+      overrides && overrides.hasOwnProperty('solidSelection') ? overrides.solidSelection! : [],
     startTime: overrides && overrides.hasOwnProperty('startTime') ? overrides.startTime! : 2.52,
     stats:
       overrides && overrides.hasOwnProperty('stats')
@@ -10813,23 +9694,9 @@ export const buildRun = (
     stepKeysToExecute:
       overrides && overrides.hasOwnProperty('stepKeysToExecute')
         ? overrides.stepKeysToExecute!
-        : ['similique'],
-    stepStats:
-      overrides && overrides.hasOwnProperty('stepStats')
-        ? overrides.stepStats!
-        : [
-            relationshipsToOmit.has('RunStepStats')
-              ? ({} as RunStepStats)
-              : buildRunStepStats({}, relationshipsToOmit),
-          ],
-    tags:
-      overrides && overrides.hasOwnProperty('tags')
-        ? overrides.tags!
-        : [
-            relationshipsToOmit.has('PipelineTag')
-              ? ({} as PipelineTag)
-              : buildPipelineTag({}, relationshipsToOmit),
-          ],
+        : [],
+    stepStats: overrides && overrides.hasOwnProperty('stepStats') ? overrides.stepStats! : [],
+    tags: overrides && overrides.hasOwnProperty('tags') ? overrides.tags! : [],
     updateTime: overrides && overrides.hasOwnProperty('updateTime') ? overrides.updateTime! : 0,
   };
 };
@@ -10892,13 +9759,7 @@ export const buildRunConfigSchema = (
   return {
     __typename: 'RunConfigSchema',
     allConfigTypes:
-      overrides && overrides.hasOwnProperty('allConfigTypes')
-        ? overrides.allConfigTypes!
-        : [
-            relationshipsToOmit.has('ConfigType')
-              ? ({} as ConfigType)
-              : buildConfigType({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('allConfigTypes') ? overrides.allConfigTypes! : [],
     isRunConfigValid:
       overrides && overrides.hasOwnProperty('isRunConfigValid')
         ? overrides.isRunConfigValid!
@@ -10922,14 +9783,7 @@ export const buildRunConfigValidationInvalid = (
   relationshipsToOmit.add('RunConfigValidationInvalid');
   return {
     __typename: 'RunConfigValidationInvalid',
-    errors:
-      overrides && overrides.hasOwnProperty('errors')
-        ? overrides.errors!
-        : [
-            relationshipsToOmit.has('PipelineConfigValidationError')
-              ? ({} as PipelineConfigValidationError)
-              : buildPipelineConfigValidationError({}, relationshipsToOmit),
-          ],
+    errors: overrides && overrides.hasOwnProperty('errors') ? overrides.errors! : [],
     pipelineName:
       overrides && overrides.hasOwnProperty('pipelineName')
         ? overrides.pipelineName!
@@ -11055,10 +9909,7 @@ export const buildRunGroup = (
   return {
     __typename: 'RunGroup',
     rootRunId: overrides && overrides.hasOwnProperty('rootRunId') ? overrides.rootRunId! : 'rem',
-    runs:
-      overrides && overrides.hasOwnProperty('runs')
-        ? overrides.runs!
-        : [relationshipsToOmit.has('Run') ? ({} as Run) : buildRun({}, relationshipsToOmit)],
+    runs: overrides && overrides.hasOwnProperty('runs') ? overrides.runs! : [],
   };
 };
 
@@ -11083,14 +9934,7 @@ export const buildRunGroups = (
   relationshipsToOmit.add('RunGroups');
   return {
     __typename: 'RunGroups',
-    results:
-      overrides && overrides.hasOwnProperty('results')
-        ? overrides.results!
-        : [
-            relationshipsToOmit.has('RunGroup')
-              ? ({} as RunGroup)
-              : buildRunGroup({}, relationshipsToOmit),
-          ],
+    results: overrides && overrides.hasOwnProperty('results') ? overrides.results! : [],
   };
 };
 
@@ -11102,14 +9946,7 @@ export const buildRunGroupsOrError = (
   relationshipsToOmit.add('RunGroupsOrError');
   return {
     __typename: 'RunGroupsOrError',
-    results:
-      overrides && overrides.hasOwnProperty('results')
-        ? overrides.results!
-        : [
-            relationshipsToOmit.has('RunGroup')
-              ? ({} as RunGroup)
-              : buildRunGroup({}, relationshipsToOmit),
-          ],
+    results: overrides && overrides.hasOwnProperty('results') ? overrides.results! : [],
   };
 };
 
@@ -11160,24 +9997,11 @@ export const buildRunRequest = (
   return {
     __typename: 'RunRequest',
     assetSelection:
-      overrides && overrides.hasOwnProperty('assetSelection')
-        ? overrides.assetSelection!
-        : [
-            relationshipsToOmit.has('AssetKey')
-              ? ({} as AssetKey)
-              : buildAssetKey({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('assetSelection') ? overrides.assetSelection! : [],
     runConfigYaml:
       overrides && overrides.hasOwnProperty('runConfigYaml') ? overrides.runConfigYaml! : 'ut',
     runKey: overrides && overrides.hasOwnProperty('runKey') ? overrides.runKey! : 'eius',
-    tags:
-      overrides && overrides.hasOwnProperty('tags')
-        ? overrides.tags!
-        : [
-            relationshipsToOmit.has('PipelineTag')
-              ? ({} as PipelineTag)
-              : buildPipelineTag({}, relationshipsToOmit),
-          ],
+    tags: overrides && overrides.hasOwnProperty('tags') ? overrides.tags! : [],
   };
 };
 
@@ -11269,39 +10093,15 @@ export const buildRunStepStats = (
   relationshipsToOmit.add('RunStepStats');
   return {
     __typename: 'RunStepStats',
-    attempts:
-      overrides && overrides.hasOwnProperty('attempts')
-        ? overrides.attempts!
-        : [
-            relationshipsToOmit.has('RunMarker')
-              ? ({} as RunMarker)
-              : buildRunMarker({}, relationshipsToOmit),
-          ],
+    attempts: overrides && overrides.hasOwnProperty('attempts') ? overrides.attempts! : [],
     endTime: overrides && overrides.hasOwnProperty('endTime') ? overrides.endTime! : 0.92,
     expectationResults:
       overrides && overrides.hasOwnProperty('expectationResults')
         ? overrides.expectationResults!
-        : [
-            relationshipsToOmit.has('ExpectationResult')
-              ? ({} as ExpectationResult)
-              : buildExpectationResult({}, relationshipsToOmit),
-          ],
-    markers:
-      overrides && overrides.hasOwnProperty('markers')
-        ? overrides.markers!
-        : [
-            relationshipsToOmit.has('RunMarker')
-              ? ({} as RunMarker)
-              : buildRunMarker({}, relationshipsToOmit),
-          ],
+        : [],
+    markers: overrides && overrides.hasOwnProperty('markers') ? overrides.markers! : [],
     materializations:
-      overrides && overrides.hasOwnProperty('materializations')
-        ? overrides.materializations!
-        : [
-            relationshipsToOmit.has('MaterializationEvent')
-              ? ({} as MaterializationEvent)
-              : buildMaterializationEvent({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('materializations') ? overrides.materializations! : [],
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'repudiandae',
     startTime: overrides && overrides.hasOwnProperty('startTime') ? overrides.startTime! : 7.96,
     status:
@@ -11344,7 +10144,7 @@ export const buildRunTagKeys = (
   relationshipsToOmit.add('RunTagKeys');
   return {
     __typename: 'RunTagKeys',
-    keys: overrides && overrides.hasOwnProperty('keys') ? overrides.keys! : ['culpa'],
+    keys: overrides && overrides.hasOwnProperty('keys') ? overrides.keys! : [],
   };
 };
 
@@ -11356,14 +10156,7 @@ export const buildRunTags = (
   relationshipsToOmit.add('RunTags');
   return {
     __typename: 'RunTags',
-    tags:
-      overrides && overrides.hasOwnProperty('tags')
-        ? overrides.tags!
-        : [
-            relationshipsToOmit.has('PipelineTagAndValues')
-              ? ({} as PipelineTagAndValues)
-              : buildPipelineTagAndValues({}, relationshipsToOmit),
-          ],
+    tags: overrides && overrides.hasOwnProperty('tags') ? overrides.tags! : [],
   };
 };
 
@@ -11376,10 +10169,7 @@ export const buildRuns = (
   return {
     __typename: 'Runs',
     count: overrides && overrides.hasOwnProperty('count') ? overrides.count! : 319,
-    results:
-      overrides && overrides.hasOwnProperty('results')
-        ? overrides.results!
-        : [relationshipsToOmit.has('Run') ? ({} as Run) : buildRun({}, relationshipsToOmit)],
+    results: overrides && overrides.hasOwnProperty('results') ? overrides.results! : [],
   };
 };
 
@@ -11395,21 +10185,11 @@ export const buildRunsFilter = (
     mode: overrides && overrides.hasOwnProperty('mode') ? overrides.mode! : 'voluptatem',
     pipelineName:
       overrides && overrides.hasOwnProperty('pipelineName') ? overrides.pipelineName! : 'voluptas',
-    runIds: overrides && overrides.hasOwnProperty('runIds') ? overrides.runIds! : ['quis'],
+    runIds: overrides && overrides.hasOwnProperty('runIds') ? overrides.runIds! : [],
     snapshotId:
       overrides && overrides.hasOwnProperty('snapshotId') ? overrides.snapshotId! : 'quam',
-    statuses:
-      overrides && overrides.hasOwnProperty('statuses')
-        ? overrides.statuses!
-        : [RunStatus.CANCELED],
-    tags:
-      overrides && overrides.hasOwnProperty('tags')
-        ? overrides.tags!
-        : [
-            relationshipsToOmit.has('ExecutionTag')
-              ? ({} as ExecutionTag)
-              : buildExecutionTag({}, relationshipsToOmit),
-          ],
+    statuses: overrides && overrides.hasOwnProperty('statuses') ? overrides.statuses! : [],
+    tags: overrides && overrides.hasOwnProperty('tags') ? overrides.tags! : [],
     updatedAfter:
       overrides && overrides.hasOwnProperty('updatedAfter') ? overrides.updatedAfter! : 6.85,
   };
@@ -11424,7 +10204,7 @@ export const buildRuntimeMismatchConfigError = (
   return {
     __typename: 'RuntimeMismatchConfigError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'molestiae',
-    path: overrides && overrides.hasOwnProperty('path') ? overrides.path! : ['in'],
+    path: overrides && overrides.hasOwnProperty('path') ? overrides.path! : [],
     reason:
       overrides && overrides.hasOwnProperty('reason')
         ? overrides.reason!
@@ -11464,11 +10244,7 @@ export const buildScalarUnionConfigType = (
     recursiveConfigTypes:
       overrides && overrides.hasOwnProperty('recursiveConfigTypes')
         ? overrides.recursiveConfigTypes!
-        : [
-            relationshipsToOmit.has('ConfigType')
-              ? ({} as ConfigType)
-              : buildConfigType({}, relationshipsToOmit),
-          ],
+        : [],
     scalarType:
       overrides && overrides.hasOwnProperty('scalarType')
         ? overrides.scalarType!
@@ -11478,7 +10254,7 @@ export const buildScalarUnionConfigType = (
     scalarTypeKey:
       overrides && overrides.hasOwnProperty('scalarTypeKey') ? overrides.scalarTypeKey! : 'esse',
     typeParamKeys:
-      overrides && overrides.hasOwnProperty('typeParamKeys') ? overrides.typeParamKeys! : ['et'],
+      overrides && overrides.hasOwnProperty('typeParamKeys') ? overrides.typeParamKeys! : [],
   };
 };
 
@@ -11529,7 +10305,7 @@ export const buildSchedule = (
     potentialTickTimestamps:
       overrides && overrides.hasOwnProperty('potentialTickTimestamps')
         ? overrides.potentialTickTimestamps!
-        : [0.98],
+        : [],
     scheduleState:
       overrides && overrides.hasOwnProperty('scheduleState')
         ? overrides.scheduleState!
@@ -11537,7 +10313,7 @@ export const buildSchedule = (
         ? ({} as InstigationState)
         : buildInstigationState({}, relationshipsToOmit),
     solidSelection:
-      overrides && overrides.hasOwnProperty('solidSelection') ? overrides.solidSelection! : ['est'],
+      overrides && overrides.hasOwnProperty('solidSelection') ? overrides.solidSelection! : [],
   };
 };
 
@@ -11695,14 +10471,7 @@ export const buildSchedules = (
   relationshipsToOmit.add('Schedules');
   return {
     __typename: 'Schedules',
-    results:
-      overrides && overrides.hasOwnProperty('results')
-        ? overrides.results!
-        : [
-            relationshipsToOmit.has('Schedule')
-              ? ({} as Schedule)
-              : buildSchedule({}, relationshipsToOmit),
-          ],
+    results: overrides && overrides.hasOwnProperty('results') ? overrides.results! : [],
   };
 };
 
@@ -11715,11 +10484,9 @@ export const buildSelectorTypeConfigError = (
   return {
     __typename: 'SelectorTypeConfigError',
     incomingFields:
-      overrides && overrides.hasOwnProperty('incomingFields')
-        ? overrides.incomingFields!
-        : ['quis'],
+      overrides && overrides.hasOwnProperty('incomingFields') ? overrides.incomingFields! : [],
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'minima',
-    path: overrides && overrides.hasOwnProperty('path') ? overrides.path! : ['in'],
+    path: overrides && overrides.hasOwnProperty('path') ? overrides.path! : [],
     reason:
       overrides && overrides.hasOwnProperty('reason')
         ? overrides.reason!
@@ -11776,14 +10543,7 @@ export const buildSensor = (
       overrides && overrides.hasOwnProperty('sensorType')
         ? overrides.sensorType!
         : SensorType.ASSET,
-    targets:
-      overrides && overrides.hasOwnProperty('targets')
-        ? overrides.targets!
-        : [
-            relationshipsToOmit.has('Target')
-              ? ({} as Target)
-              : buildTarget({}, relationshipsToOmit),
-          ],
+    targets: overrides && overrides.hasOwnProperty('targets') ? overrides.targets! : [],
   };
 };
 
@@ -11814,14 +10574,7 @@ export const buildSensorMetadata = (
   relationshipsToOmit.add('SensorMetadata');
   return {
     __typename: 'SensorMetadata',
-    assetKeys:
-      overrides && overrides.hasOwnProperty('assetKeys')
-        ? overrides.assetKeys!
-        : [
-            relationshipsToOmit.has('AssetKey')
-              ? ({} as AssetKey)
-              : buildAssetKey({}, relationshipsToOmit),
-          ],
+    assetKeys: overrides && overrides.hasOwnProperty('assetKeys') ? overrides.assetKeys! : [],
   };
 };
 
@@ -11867,14 +10620,7 @@ export const buildSensors = (
   relationshipsToOmit.add('Sensors');
   return {
     __typename: 'Sensors',
-    results:
-      overrides && overrides.hasOwnProperty('results')
-        ? overrides.results!
-        : [
-            relationshipsToOmit.has('Sensor')
-              ? ({} as Sensor)
-              : buildSensor({}, relationshipsToOmit),
-          ],
+    results: overrides && overrides.hasOwnProperty('results') ? overrides.results! : [],
   };
 };
 
@@ -11941,21 +10687,11 @@ export const buildSolid = (
         : relationshipsToOmit.has('ISolidDefinition')
         ? ({} as ISolidDefinition)
         : buildISolidDefinition({}, relationshipsToOmit),
-    inputs:
-      overrides && overrides.hasOwnProperty('inputs')
-        ? overrides.inputs!
-        : [relationshipsToOmit.has('Input') ? ({} as Input) : buildInput({}, relationshipsToOmit)],
+    inputs: overrides && overrides.hasOwnProperty('inputs') ? overrides.inputs! : [],
     isDynamicMapped:
       overrides && overrides.hasOwnProperty('isDynamicMapped') ? overrides.isDynamicMapped! : true,
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'rerum',
-    outputs:
-      overrides && overrides.hasOwnProperty('outputs')
-        ? overrides.outputs!
-        : [
-            relationshipsToOmit.has('Output')
-              ? ({} as Output)
-              : buildOutput({}, relationshipsToOmit),
-          ],
+    outputs: overrides && overrides.hasOwnProperty('outputs') ? overrides.outputs! : [],
   };
 };
 
@@ -11973,10 +10709,7 @@ export const buildSolidContainer = (
       overrides && overrides.hasOwnProperty('id')
         ? overrides.id!
         : 'f00f8432-b561-43c1-8978-9fb5fd116ad3',
-    modes:
-      overrides && overrides.hasOwnProperty('modes')
-        ? overrides.modes!
-        : [relationshipsToOmit.has('Mode') ? ({} as Mode) : buildMode({}, relationshipsToOmit)],
+    modes: overrides && overrides.hasOwnProperty('modes') ? overrides.modes! : [],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'nobis',
     solidHandle:
       overrides && overrides.hasOwnProperty('solidHandle')
@@ -11985,17 +10718,8 @@ export const buildSolidContainer = (
         ? ({} as SolidHandle)
         : buildSolidHandle({}, relationshipsToOmit),
     solidHandles:
-      overrides && overrides.hasOwnProperty('solidHandles')
-        ? overrides.solidHandles!
-        : [
-            relationshipsToOmit.has('SolidHandle')
-              ? ({} as SolidHandle)
-              : buildSolidHandle({}, relationshipsToOmit),
-          ],
-    solids:
-      overrides && overrides.hasOwnProperty('solids')
-        ? overrides.solids!
-        : [relationshipsToOmit.has('Solid') ? ({} as Solid) : buildSolid({}, relationshipsToOmit)],
+      overrides && overrides.hasOwnProperty('solidHandles') ? overrides.solidHandles! : [],
+    solids: overrides && overrides.hasOwnProperty('solids') ? overrides.solids! : [],
   };
 };
 
@@ -12007,14 +10731,7 @@ export const buildSolidDefinition = (
   relationshipsToOmit.add('SolidDefinition');
   return {
     __typename: 'SolidDefinition',
-    assetNodes:
-      overrides && overrides.hasOwnProperty('assetNodes')
-        ? overrides.assetNodes!
-        : [
-            relationshipsToOmit.has('AssetNode')
-              ? ({} as AssetNode)
-              : buildAssetNode({}, relationshipsToOmit),
-          ],
+    assetNodes: overrides && overrides.hasOwnProperty('assetNodes') ? overrides.assetNodes! : [],
     configField:
       overrides && overrides.hasOwnProperty('configField')
         ? overrides.configField!
@@ -12024,38 +10741,17 @@ export const buildSolidDefinition = (
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'qui',
     inputDefinitions:
-      overrides && overrides.hasOwnProperty('inputDefinitions')
-        ? overrides.inputDefinitions!
-        : [
-            relationshipsToOmit.has('InputDefinition')
-              ? ({} as InputDefinition)
-              : buildInputDefinition({}, relationshipsToOmit),
-          ],
-    metadata:
-      overrides && overrides.hasOwnProperty('metadata')
-        ? overrides.metadata!
-        : [
-            relationshipsToOmit.has('MetadataItemDefinition')
-              ? ({} as MetadataItemDefinition)
-              : buildMetadataItemDefinition({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('inputDefinitions') ? overrides.inputDefinitions! : [],
+    metadata: overrides && overrides.hasOwnProperty('metadata') ? overrides.metadata! : [],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'in',
     outputDefinitions:
       overrides && overrides.hasOwnProperty('outputDefinitions')
         ? overrides.outputDefinitions!
-        : [
-            relationshipsToOmit.has('OutputDefinition')
-              ? ({} as OutputDefinition)
-              : buildOutputDefinition({}, relationshipsToOmit),
-          ],
+        : [],
     requiredResources:
       overrides && overrides.hasOwnProperty('requiredResources')
         ? overrides.requiredResources!
-        : [
-            relationshipsToOmit.has('ResourceRequirement')
-              ? ({} as ResourceRequirement)
-              : buildResourceRequirement({}, relationshipsToOmit),
-          ],
+        : [],
   };
 };
 
@@ -12097,14 +10793,7 @@ export const buildSolidStepStatsConnection = (
   relationshipsToOmit.add('SolidStepStatsConnection');
   return {
     __typename: 'SolidStepStatsConnection',
-    nodes:
-      overrides && overrides.hasOwnProperty('nodes')
-        ? overrides.nodes!
-        : [
-            relationshipsToOmit.has('RunStepStats')
-              ? ({} as RunStepStats)
-              : buildRunStepStats({}, relationshipsToOmit),
-          ],
+    nodes: overrides && overrides.hasOwnProperty('nodes') ? overrides.nodes! : [],
   };
 };
 
@@ -12187,21 +10876,11 @@ export const buildStepExecution = (
   relationshipsToOmit.add('StepExecution');
   return {
     marshalledInputs:
-      overrides && overrides.hasOwnProperty('marshalledInputs')
-        ? overrides.marshalledInputs!
-        : [
-            relationshipsToOmit.has('MarshalledInput')
-              ? ({} as MarshalledInput)
-              : buildMarshalledInput({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('marshalledInputs') ? overrides.marshalledInputs! : [],
     marshalledOutputs:
       overrides && overrides.hasOwnProperty('marshalledOutputs')
         ? overrides.marshalledOutputs!
-        : [
-            relationshipsToOmit.has('MarshalledOutput')
-              ? ({} as MarshalledOutput)
-              : buildMarshalledOutput({}, relationshipsToOmit),
-          ],
+        : [],
     stepKey: overrides && overrides.hasOwnProperty('stepKey') ? overrides.stepKey! : 'nihil',
   };
 };
@@ -12269,13 +10948,7 @@ export const buildStepWorkerStartedEvent = (
       overrides && overrides.hasOwnProperty('markerStart') ? overrides.markerStart! : 'quis',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'veritatis',
     metadataEntries:
-      overrides && overrides.hasOwnProperty('metadataEntries')
-        ? overrides.metadataEntries!
-        : [
-            relationshipsToOmit.has('MetadataEntry')
-              ? ({} as MetadataEntry)
-              : buildMetadataEntry({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'nobis',
     solidHandleID:
       overrides && overrides.hasOwnProperty('solidHandleID') ? overrides.solidHandleID! : 'placeat',
@@ -12305,13 +10978,7 @@ export const buildStepWorkerStartingEvent = (
       overrides && overrides.hasOwnProperty('markerStart') ? overrides.markerStart! : 'et',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'deserunt',
     metadataEntries:
-      overrides && overrides.hasOwnProperty('metadataEntries')
-        ? overrides.metadataEntries!
-        : [
-            relationshipsToOmit.has('MetadataEntry')
-              ? ({} as MetadataEntry)
-              : buildMetadataEntry({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'adipisci',
     solidHandleID:
       overrides && overrides.hasOwnProperty('solidHandleID')
@@ -12382,7 +11049,7 @@ export const buildTable = (
   relationshipsToOmit.add('Table');
   return {
     __typename: 'Table',
-    records: overrides && overrides.hasOwnProperty('records') ? overrides.records! : ['molestias'],
+    records: overrides && overrides.hasOwnProperty('records') ? overrides.records! : [],
     schema:
       overrides && overrides.hasOwnProperty('schema')
         ? overrides.schema!
@@ -12422,7 +11089,7 @@ export const buildTableColumnConstraints = (
   return {
     __typename: 'TableColumnConstraints',
     nullable: overrides && overrides.hasOwnProperty('nullable') ? overrides.nullable! : true,
-    other: overrides && overrides.hasOwnProperty('other') ? overrides.other! : ['veritatis'],
+    other: overrides && overrides.hasOwnProperty('other') ? overrides.other! : [],
     unique: overrides && overrides.hasOwnProperty('unique') ? overrides.unique! : false,
   };
 };
@@ -12435,7 +11102,7 @@ export const buildTableConstraints = (
   relationshipsToOmit.add('TableConstraints');
   return {
     __typename: 'TableConstraints',
-    other: overrides && overrides.hasOwnProperty('other') ? overrides.other! : ['velit'],
+    other: overrides && overrides.hasOwnProperty('other') ? overrides.other! : [],
   };
 };
 
@@ -12467,14 +11134,7 @@ export const buildTableSchema = (
   relationshipsToOmit.add('TableSchema');
   return {
     __typename: 'TableSchema',
-    columns:
-      overrides && overrides.hasOwnProperty('columns')
-        ? overrides.columns!
-        : [
-            relationshipsToOmit.has('TableColumn')
-              ? ({} as TableColumn)
-              : buildTableColumn({}, relationshipsToOmit),
-          ],
+    columns: overrides && overrides.hasOwnProperty('columns') ? overrides.columns! : [],
     constraints:
       overrides && overrides.hasOwnProperty('constraints')
         ? overrides.constraints!
@@ -12516,9 +11176,7 @@ export const buildTarget = (
     pipelineName:
       overrides && overrides.hasOwnProperty('pipelineName') ? overrides.pipelineName! : 'aut',
     solidSelection:
-      overrides && overrides.hasOwnProperty('solidSelection')
-        ? overrides.solidSelection!
-        : ['omnis'],
+      overrides && overrides.hasOwnProperty('solidSelection') ? overrides.solidSelection! : [],
   };
 };
 
@@ -12651,25 +11309,14 @@ export const buildTickEvaluation = (
     dynamicPartitionsRequests:
       overrides && overrides.hasOwnProperty('dynamicPartitionsRequests')
         ? overrides.dynamicPartitionsRequests!
-        : [
-            relationshipsToOmit.has('DynamicPartitionRequest')
-              ? ({} as DynamicPartitionRequest)
-              : buildDynamicPartitionRequest({}, relationshipsToOmit),
-          ],
+        : [],
     error:
       overrides && overrides.hasOwnProperty('error')
         ? overrides.error!
         : relationshipsToOmit.has('PythonError')
         ? ({} as PythonError)
         : buildPythonError({}, relationshipsToOmit),
-    runRequests:
-      overrides && overrides.hasOwnProperty('runRequests')
-        ? overrides.runRequests!
-        : [
-            relationshipsToOmit.has('RunRequest')
-              ? ({} as RunRequest)
-              : buildRunRequest({}, relationshipsToOmit),
-          ],
+    runRequests: overrides && overrides.hasOwnProperty('runRequests') ? overrides.runRequests! : [],
     skipReason:
       overrides && overrides.hasOwnProperty('skipReason') ? overrides.skipReason! : 'dicta',
   };
@@ -12702,14 +11349,7 @@ export const buildTimePartitions = (
   relationshipsToOmit.add('TimePartitions');
   return {
     __typename: 'TimePartitions',
-    ranges:
-      overrides && overrides.hasOwnProperty('ranges')
-        ? overrides.ranges!
-        : [
-            relationshipsToOmit.has('TimePartitionRange')
-              ? ({} as TimePartitionRange)
-              : buildTimePartitionRange({}, relationshipsToOmit),
-          ],
+    ranges: overrides && overrides.hasOwnProperty('ranges') ? overrides.ranges! : [],
   };
 };
 
@@ -12725,13 +11365,7 @@ export const buildTypeCheck = (
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'odio',
     label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'accusamus',
     metadataEntries:
-      overrides && overrides.hasOwnProperty('metadataEntries')
-        ? overrides.metadataEntries!
-        : [
-            relationshipsToOmit.has('MetadataEntry')
-              ? ({} as MetadataEntry)
-              : buildMetadataEntry({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     success: overrides && overrides.hasOwnProperty('success') ? overrides.success! : true,
   };
 };
@@ -12758,7 +11392,7 @@ export const buildUnknownPipeline = (
     __typename: 'UnknownPipeline',
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'dicta',
     solidSelection:
-      overrides && overrides.hasOwnProperty('solidSelection') ? overrides.solidSelection! : ['et'],
+      overrides && overrides.hasOwnProperty('solidSelection') ? overrides.solidSelection! : [],
   };
 };
 
@@ -12812,14 +11446,7 @@ export const buildUsedSolid = (
         : relationshipsToOmit.has('ISolidDefinition')
         ? ({} as ISolidDefinition)
         : buildISolidDefinition({}, relationshipsToOmit),
-    invocations:
-      overrides && overrides.hasOwnProperty('invocations')
-        ? overrides.invocations!
-        : [
-            relationshipsToOmit.has('NodeInvocationSite')
-              ? ({} as NodeInvocationSite)
-              : buildNodeInvocationSite({}, relationshipsToOmit),
-          ],
+    invocations: overrides && overrides.hasOwnProperty('invocations') ? overrides.invocations! : [],
   };
 };
 
@@ -12833,13 +11460,7 @@ export const buildWorkspace = (
     __typename: 'Workspace',
     id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : 'id',
     locationEntries:
-      overrides && overrides.hasOwnProperty('locationEntries')
-        ? overrides.locationEntries!
-        : [
-            relationshipsToOmit.has('WorkspaceLocationEntry')
-              ? ({} as WorkspaceLocationEntry)
-              : buildWorkspaceLocationEntry({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('locationEntries') ? overrides.locationEntries! : [],
   };
 };
 
@@ -12852,13 +11473,7 @@ export const buildWorkspaceLocationEntry = (
   return {
     __typename: 'WorkspaceLocationEntry',
     displayMetadata:
-      overrides && overrides.hasOwnProperty('displayMetadata')
-        ? overrides.displayMetadata!
-        : [
-            relationshipsToOmit.has('RepositoryMetadata')
-              ? ({} as RepositoryMetadata)
-              : buildRepositoryMetadata({}, relationshipsToOmit),
-          ],
+      overrides && overrides.hasOwnProperty('displayMetadata') ? overrides.displayMetadata! : [],
     id:
       overrides && overrides.hasOwnProperty('id')
         ? overrides.id!
@@ -12874,14 +11489,7 @@ export const buildWorkspaceLocationEntry = (
         ? ({} as PythonError)
         : buildPythonError({}, relationshipsToOmit),
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'sint',
-    permissions:
-      overrides && overrides.hasOwnProperty('permissions')
-        ? overrides.permissions!
-        : [
-            relationshipsToOmit.has('Permission')
-              ? ({} as Permission)
-              : buildPermission({}, relationshipsToOmit),
-          ],
+    permissions: overrides && overrides.hasOwnProperty('permissions') ? overrides.permissions! : [],
     updatedTimestamp:
       overrides && overrides.hasOwnProperty('updatedTimestamp')
         ? overrides.updatedTimestamp!
@@ -12897,14 +11505,7 @@ export const buildWorkspaceLocationStatusEntries = (
   relationshipsToOmit.add('WorkspaceLocationStatusEntries');
   return {
     __typename: 'WorkspaceLocationStatusEntries',
-    entries:
-      overrides && overrides.hasOwnProperty('entries')
-        ? overrides.entries!
-        : [
-            relationshipsToOmit.has('WorkspaceLocationStatusEntry')
-              ? ({} as WorkspaceLocationStatusEntry)
-              : buildWorkspaceLocationStatusEntry({}, relationshipsToOmit),
-          ],
+    entries: overrides && overrides.hasOwnProperty('entries') ? overrides.entries! : [],
   };
 };
 

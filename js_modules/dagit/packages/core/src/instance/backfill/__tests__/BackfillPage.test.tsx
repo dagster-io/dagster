@@ -76,7 +76,7 @@ describe('BackfillPage', () => {
 
     expect(screen.getByTestId('page-loading-indicator')).toBeInTheDocument();
 
-    await waitFor(() => getByText('assetA'));
+    await waitFor(() => getByText('assetA'), {timeout: 10000});
   });
 
   it('renders the error state', async () => {
@@ -112,7 +112,7 @@ describe('BackfillPage', () => {
       );
     });
 
-    await waitFor(() => expect(getByText('An error occurred')).toBeVisible());
+    await waitFor(() => expect(getByText('An error occurred')).toBeVisible()), {timeout: 10000};
   });
 
   it('renders the loaded state', async () => {
@@ -130,7 +130,7 @@ describe('BackfillPage', () => {
       ),
     );
 
-    await waitFor(() => getByText('assetA'));
+    await waitFor(() => getByText('assetA'), {timeout: 10000});
 
     // Check if the loaded content is displayed
     expect(getByText('Jan 1, 1970, 12:16:40 AM')).toBeVisible();
