@@ -22,12 +22,13 @@ interface Props {
   pipeline: LaunchpadSessionPipelineFragment;
   partitionSets: LaunchpadSessionPartitionSetsFragment;
   repoAddress: RepoAddress;
+  rootDefaultYaml: string | undefined;
 }
 
 export const LaunchpadStoredSessionsContainer = (props: Props) => {
-  const {launchpadType, pipeline, partitionSets, repoAddress} = props;
+  const {launchpadType, pipeline, partitionSets, repoAddress, rootDefaultYaml} = props;
 
-  const initialDataForMode = useInitialDataForMode(pipeline, partitionSets);
+  const initialDataForMode = useInitialDataForMode(pipeline, partitionSets, rootDefaultYaml);
   const [data, onSave] = useExecutionSessionStorage(repoAddress, pipeline.name, initialDataForMode);
 
   const onCreateSession = () => {
