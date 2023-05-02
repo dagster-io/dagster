@@ -6,6 +6,7 @@ from dagster._config.field import resolve_to_config_type
 from dagster._config.snap import snap_from_config_type
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.host_representation import InProcessCodeLocationOrigin
+from dagster._core.host_representation.external import ExternalJob
 from dagster._core.snap.snap_to_yaml import default_values_yaml_from_type_snap
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 
@@ -53,10 +54,10 @@ def trivial_job_defs():
     return Definitions(jobs=[a_job])
 
 
-def test_print_root():
+def test_print_root() -> None:
     external_repository = external_repository_for_function(trivial_job_defs)
-    external_a_job = external_repository.get_full_external_job("a_job")
-    root_config_key = external_a_job.root_config_key_for_mode(None)
+    external_a_job: ExternalJob = external_repository.get_full_external_job("a_job")
+    root_config_key = external_a_job.root_config_key
     assert root_config_key
     root_type = external_a_job.config_schema_snapshot.get_config_snap(root_config_key)
     assert (
