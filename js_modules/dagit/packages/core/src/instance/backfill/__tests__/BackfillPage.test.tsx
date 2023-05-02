@@ -37,15 +37,18 @@ const mocks = [
             rootAssetTargetedPartitions: ['1', '2', '3'],
             rootAssetTargetedRanges: [buildPartitionKeyRange({start: '1', end: '2'})],
             assetBackfillStatuses: [
-              buildAssetPartitionsStatusCounts({
-                assetKey: buildAssetKey({
-                  path: ['assetA'],
+              {
+                ...buildAssetPartitionsStatusCounts({
+                  assetKey: buildAssetKey({
+                    path: ['assetA'],
+                  }),
+                  numPartitionsTargeted: 33,
+                  numPartitionsInProgress: 22,
+                  numPartitionsMaterialized: 11,
+                  numPartitionsFailed: 0,
                 }),
-                numPartitionsTargeted: 33,
-                numPartitionsInProgress: 22,
-                numPartitionsMaterialized: 11,
-                numPartitionsFailed: 0,
-              }),
+                __typename: 'AssetPartitionsStatusCounts',
+              },
             ],
           }),
           endTimestamp: 2000,
@@ -58,6 +61,8 @@ const mocks = [
   },
 ];
 
+console.log(JSON.stringify(mocks[0].result, null, 2));
+
 describe('BackfillPage', () => {
   it('renders the loading state', async () => {
     const {getByText} = await act(() => {
@@ -65,7 +70,7 @@ describe('BackfillPage', () => {
         <AnalyticsContext.Provider value={{page: () => {}} as any}>
           <MemoryRouter initialEntries={[`/backfills/${mockBackfillId}`]}>
             <Route path="/backfills/:backfillId">
-              <MockedProvider mocks={mocks} addTypename={false}>
+              <MockedProvider mocks={mocks}>
                 <BackfillPage />
               </MockedProvider>
             </Route>
@@ -103,7 +108,7 @@ describe('BackfillPage', () => {
         <AnalyticsContext.Provider value={{page: () => {}} as any}>
           <MemoryRouter initialEntries={[`/backfills/${mockBackfillId}`]}>
             <Route path="/backfills/:backfillId">
-              <MockedProvider mocks={errorMocks} addTypename={false}>
+              <MockedProvider mocks={errorMocks}>
                 <BackfillPage />
               </MockedProvider>
             </Route>
@@ -121,7 +126,7 @@ describe('BackfillPage', () => {
         <AnalyticsContext.Provider value={{page: () => {}} as any}>
           <MemoryRouter initialEntries={[`/backfills/${mockBackfillId}`]}>
             <Route path="/backfills/:backfillId">
-              <MockedProvider mocks={mocks} addTypename={false}>
+              <MockedProvider mocks={mocks}>
                 <BackfillPage />
               </MockedProvider>
             </Route>
