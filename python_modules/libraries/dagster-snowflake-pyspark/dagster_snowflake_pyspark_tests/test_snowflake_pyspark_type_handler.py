@@ -41,6 +41,9 @@ from pyspark.sql import DataFrame
 from pyspark.sql.functions import col, to_date
 from pyspark.sql.types import LongType, StringType, StructField, StructType
 
+from dagster_azure.adls2 import *
+from dagster_azure.blob import *
+
 resource_config = {
     "database": "database_abc",
     "account": "account_abc",

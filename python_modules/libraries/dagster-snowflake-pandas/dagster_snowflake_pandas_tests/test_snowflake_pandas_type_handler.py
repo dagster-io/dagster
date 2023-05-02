@@ -45,6 +45,9 @@ from dagster_snowflake_pandas.snowflake_pandas_type_handler import (
 )
 from pandas import DataFrame, Timestamp
 
+from dagster_azure.adls2 import *
+from dagster_azure.blob import *
+
 resource_config = {
     "database": "database_abc",
     "account": "account_abc",
