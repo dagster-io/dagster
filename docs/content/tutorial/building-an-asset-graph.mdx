@@ -69,9 +69,6 @@ To access the logger, use the <PyObject module="dagster" object="get_dagster_log
 ```python file=/tutorial/building_an_asset_graph/asset_with_logger.py startafter=start_topstories_asset_with_logger endbefore=end_topstories_asset_with_logger
 from dagster import asset, get_dagster_logger
 
-# Addition, added an import to `get_dagster_logger`
-
-
 @asset
 def topstories(topstory_ids):
     logger = get_dagster_logger()
@@ -116,7 +113,7 @@ def most_frequent_words(topstories):
                 word_counts[cleaned_word] = word_counts.get(cleaned_word, 0) + 1
 
     # Get the top 25 most frequent words
-    top_words = sorted(word_counts.items(), key=lambda x: x[1], reverse=True)[:25]
+    top_words = {pair[0]: pair[1] for pair in sorted(word_counts.items(), key=lambda x: x[1], reverse=True)[:25]}
 
     return top_words
 ```
@@ -249,7 +246,7 @@ def most_frequent_words(topstories):
     )
 ```
 
-Reload your definitions and rematerialize your assets. The bar chart will be visible with the rest of your materialization metadata for the `most_frequent_words` asset. The `path` key in the metadata will contain a link that says **[Show Markdown]**. Clicking on the link will open the preview in the Dagster UI. The bar chart will change throughout the day as the top stories change. Here's an example of what `most_frequent_words` looked like at the time we wrote this tutorial:
+Reload your definitions and rematerialize your assets. The bar chart will be visible with the rest of your materialization metadata for the `most_frequent_words` asset. The `path` key in the metadata will contain a link that says **\[Show Markdown]**. Clicking on the link will open the preview in the Dagster UI. The bar chart will change throughout the day as the top stories change. Here's an example of what `most_frequent_words` looked like at the time we wrote this tutorial:
 
 <Image
 alt="the asset's materialization metadata"
