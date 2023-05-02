@@ -653,7 +653,7 @@ class JobDefinition(IHasInternalInit):
             description=self.description,
             partitions_def=self.partitions_def,
             metadata=self.metadata,
-            _subset_selection_data=self._subset_selection_data,
+            _subset_selection_data=None,  # this is added below
             _was_explicitly_provided_resources=True,
         )
 
