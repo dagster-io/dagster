@@ -825,6 +825,7 @@ def test_source_tag_selection(test_python_project_dir, dbt_python_config_dir):
     assert len(dbt_assets[0].keys) == 2
 
 
+@pytest.mark.skip(reason="https://github.com/dagster-io/dagster/issues/14057")
 def test_python_interleaving(
     dbt_seed_python, dbt_cli_resource_factory, test_python_project_dir, dbt_python_config_dir
 ):
