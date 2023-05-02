@@ -171,7 +171,7 @@ def schedule(
             has_context_arg=has_context_arg,
         )
 
-        schedule_def = ScheduleDefinition(
+        schedule_def = ScheduleDefinition.dagster_internal_init(
             name=schedule_name,
             cron_schedule=cron_schedule,
             job_name=job_name,
@@ -182,6 +182,11 @@ def schedule(
             job=job,
             default_status=default_status,
             required_resource_keys=required_resource_keys,
+            run_config=None,  # cannot supply run_config or run_config_fn to decorator
+            run_config_fn=None,
+            tags=None,  # cannot supply tags or tags_fn to decorator
+            tags_fn=None,
+            should_execute=None,  # already encompassed in evaluation_fn
         )
 
         update_wrapper(schedule_def, wrapped=fn)
