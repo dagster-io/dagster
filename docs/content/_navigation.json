@@ -1125,37 +1125,36 @@
     ]
   },
   {
-    "title": "Community",
-    "icon": "Community",
-    "path": "/community",
-    "children": [
-      {
-        "title": "Code of conduct",
-        "path": "/community/code-of-conduct"
-      },
-      {
-        "title": "Contributing",
-        "path": "/community/contributing"
-      },
-      {
-        "title": "Slack",
-        "path": "https://dagster.io/slack",
-        "isExternalLink": true
-      },
-      {
-        "title": "GitHub",
-        "path": "https://github.com/dagster-io/dagster",
-        "isExternalLink": true
-      }
-    ]
-  },
-  {
     "title": "About",
     "icon": "About",
     "isUnversioned": true,
     "children": [
       {
-        "title": "Releases and changes",
+        "title": "Community",
+        "path": "/community",
+        "children": [
+          {
+            "title": "Code of conduct",
+            "path": "/community/code-of-conduct"
+          },
+          {
+            "title": "Contributing",
+            "path": "/community/contributing"
+          },
+          {
+            "title": "Slack",
+            "path": "https://dagster.io/slack",
+            "isExternalLink": true
+          },
+          {
+            "title": "GitHub",
+            "path": "https://github.com/dagster-io/dagster",
+            "isExternalLink": true
+          }
+        ]
+      },
+      {
+        "title": "Releases",
         "path": "/getting-started/releases"
       },
       {
