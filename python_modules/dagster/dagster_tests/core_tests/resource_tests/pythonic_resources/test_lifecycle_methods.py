@@ -1,4 +1,5 @@
 import contextlib
+import re
 from typing import Any, Dict, Generator
 
 import pytest
@@ -182,7 +183,7 @@ def test_setup_for_execution_with_error() -> None:
     class MyResource(ConfigurableResource):
         def setup_for_execution(self, context: InitResourceContext) -> None:
             log.append("setup_for_execution")
-            raise Exception("foo")
+            raise Exception("my setup function errored!")
 
         def teardown_after_execution(self, context: InitResourceContext) -> None:
             log.append("teardown_after_execution")
@@ -195,9 +196,12 @@ def test_setup_for_execution_with_error() -> None:
     def hello_world_job() -> None:
         my_never_run_op()
 
-    with pytest.raises(DagsterResourceFunctionError):
+    with pytest.raises(
+        DagsterResourceFunctionError, match="Error executing resource_fn on ResourceDefinition res"
+    ):
         hello_world_job.execute_in_process()
 
+    # The op should not run and the teardown should not be called
     assert log == [
         "setup_for_execution",
     ]
@@ -214,7 +218,7 @@ def test_teardown_after_execution_with_error() -> None:
 
         def teardown_after_execution(self, context: InitResourceContext) -> None:
             log.append("teardown_after_execution")
-            raise Exception("foo")
+            raise Exception("my teardown function errored!")
 
     @op
     def my_hello_world_op(res: MyResource):
@@ -224,12 +228,200 @@ def test_teardown_after_execution_with_error() -> None:
     def hello_world_job() -> None:
         my_hello_world_op()
 
-    hello_world_job.execute_in_process()
+    result = hello_world_job.execute_in_process()
+
+    # Ensure we record that the teardown errored in the event log
+    # this doesnt cause the run to fail
+    assert any(
+        re.search(r"Teardown of resources \[.*\] failed", event.message or "")
+        for event in result.all_events
+    )
 
     assert log == [
         "setup_for_execution",
         "my_hello_world_op",
         "teardown_after_execution",
+    ]
+
+
+def test_yield_for_execution_with_error_before_yield() -> None:
+    # If an error occurs in yield_for_execution, the error will manifest as a DagsterResourceFunctionError
+    # if it occurs before the resource is yielded, or as a cleanup error in the log if it occurs after the resource
+    # is yielded
+
+    log = []
+
+    class MyResource(ConfigurableResource):
+        @contextlib.contextmanager
+        def yield_for_execution(
+            self, context: InitResourceContext
+        ) -> Generator["MyResource", None, None]:
+            log.append("yield_for_execution_start")
+            raise Exception("my yield function errored!")
+
+    @op
+    def my_never_run_op(res: MyResource):
+        log.append("my_never_run_op")
+
+    @job(resource_defs={"res": MyResource()})
+    def hello_world_job() -> None:
+        my_never_run_op()
+
+    with pytest.raises(
+        DagsterResourceFunctionError, match="Error executing resource_fn on ResourceDefinition res"
+    ):
+        hello_world_job.execute_in_process()
+
+    # The op should not run and the teardown should not be called
+    assert log == [
+        "yield_for_execution_start",
+    ]
+
+
+def test_yield_for_execution_with_error_after_yield() -> None:
+    # If an error occurs after the yield, this will not fail the run but will be recorded in the event log
+
+    log = []
+
+    class MyResource(ConfigurableResource):
+        @contextlib.contextmanager
+        def yield_for_execution(
+            self, context: InitResourceContext
+        ) -> Generator["MyResource", None, None]:
+            log.append("yield_for_execution_start")
+            yield self
+            log.append("yield_for_execution_post_yield")
+            raise Exception("my yield function errored!")
+
+    @op
+    def my_hello_world_op(res: MyResource):
+        log.append("my_hello_world_op")
+
+    @job(resource_defs={"res": MyResource()})
+    def hello_world_job() -> None:
+        my_hello_world_op()
+
+    result = hello_world_job.execute_in_process()
+
+    # Ensure we record that the teardown errored in the event log
+    # this doesnt cause the run to fail
+    assert any(
+        re.search(r"Teardown of resources \[.*\] failed", event.message or "")
+        for event in result.all_events
+    )
+
+    assert log == [
+        "yield_for_execution_start",
+        "my_hello_world_op",
+        "yield_for_execution_post_yield",
+    ]
+
+
+def test_setup_for_execution_with_error_multi_resource() -> None:
+    log = []
+
+    resources_initialized = [0]
+
+    class MyResource(ConfigurableResource):
+        def setup_for_execution(self, context: InitResourceContext) -> None:
+            log.append("setup_for_execution")
+            resources_initialized[0] += 1
+            if resources_initialized[0] == 2:
+                log.append("raising error")
+                raise Exception("my setup function errored!")
+
+        def teardown_after_execution(self, context: InitResourceContext) -> None:
+            log.append("teardown_after_execution")
+
+    class MySecondResource(ConfigurableResource):
+        def setup_for_execution(self, context: InitResourceContext) -> None:
+            log.append("setup_for_execution_second")
+            resources_initialized[0] += 1
+            if resources_initialized[0] == 2:
+                log.append("raising error")
+                raise Exception("my setup function errored!")
+
+        def teardown_after_execution(self, context: InitResourceContext) -> None:
+            log.append("teardown_after_execution_second")
+
+    @op
+    def my_never_run_op(first: MyResource, second: MySecondResource):
+        log.append("my_never_run_op")
+
+    @job(resource_defs={"first": MyResource(), "second": MySecondResource()})
+    def hello_world_job() -> None:
+        my_never_run_op()
+
+    with pytest.raises(
+        DagsterResourceFunctionError,
+        match="Error executing resource_fn on ResourceDefinition second",
+    ):
+        hello_world_job.execute_in_process()
+
+    # order is not deterministic
+    assert log == [
+        "setup_for_execution",
+        "setup_for_execution_second",
+        "raising error",
+        "teardown_after_execution",
+    ] or log == [
+        "setup_for_execution_second",
+        "setup_for_execution",
+        "raising error",
+        "teardown_after_execution_second",
+    ]
+
+
+def test_multiple_yield_ordering() -> None:
+    # ensure proper ordering of yield_for_execution
+
+    log = []
+
+    class MyResource(ConfigurableResource):
+        @contextlib.contextmanager
+        def yield_for_execution(
+            self, context: InitResourceContext
+        ) -> Generator["MyResource", None, None]:
+            log.append("yield_start_my_resource")
+            yield self
+            log.append("yield_end_my_resource")
+
+    class MySecondResource(ConfigurableResource):
+        @contextlib.contextmanager
+        def yield_for_execution(
+            self, context: InitResourceContext
+        ) -> Generator["MySecondResource", None, None]:
+            log.append("yield_start_second_resource")
+            yield self
+            log.append("yield_end_second_resource")
+
+    @op
+    def my_hello_world_op(first: MyResource, second: MySecondResource):
+        log.append("my_hello_world_op")
+
+    @job
+    def hello_world_job() -> None:
+        my_hello_world_op()
+
+    defs = Definitions(
+        jobs=[hello_world_job], resources={"first": MyResource(), "second": MySecondResource()}
+    )
+
+    assert defs.get_job_def("hello_world_job").execute_in_process().success
+
+    # order is not deterministic
+    assert log == [
+        "yield_start_my_resource",
+        "yield_start_second_resource",
+        "my_hello_world_op",
+        "yield_end_second_resource",
+        "yield_end_my_resource",
+    ] or log == [
+        "yield_start_second_resource",
+        "yield_start_my_resource",
+        "my_hello_world_op",
+        "yield_end_my_resource",
+        "yield_end_second_resource",
     ]
 
 

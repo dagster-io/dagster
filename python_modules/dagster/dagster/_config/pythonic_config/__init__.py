@@ -977,6 +977,7 @@ class ConfigurableResourceFactory(
         needed after the resource is used in execution.
 
         teardown_after_execution will be called even if any part of the run fails.
+        It will not be called if setup_for_execution fails.
         """
         pass
 
@@ -993,7 +994,6 @@ class ConfigurableResourceFactory(
         try:
             yield self.create_resource(context)
         finally:
-            # what to do if teardown_after_execution throws
             self.teardown_after_execution(context)
 
     def get_resource_context(self) -> InitResourceContext:
