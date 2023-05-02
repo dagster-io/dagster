@@ -175,7 +175,7 @@ fastdiff==0.3.0
 fastjsonschema==2.16.3
 -e examples/feature_graph_backed_assets
 filelock==3.12.0
-Flask==2.2.4
+Flask==2.3.2
 Flask-AppBuilder==4.3.0
 Flask-Babel==2.0.0
 Flask-Caching==2.0.2
