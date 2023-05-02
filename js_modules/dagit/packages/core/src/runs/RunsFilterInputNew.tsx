@@ -489,12 +489,21 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
         icon: 'tag',
         initialSuggestions: tagSuggestions,
 
-        freeformSearchResult: React.useCallback((query, path) => {
-          return {
-            ...tagSuggestionValueObject(path.length ? path[0].value : null, query),
-            final: !!path.length,
-          };
-        }, []),
+        freeformSearchResult: React.useCallback(
+          (
+            query: string,
+            path: {
+              value: string;
+              key?: string | undefined;
+            }[],
+          ) => {
+            return {
+              ...tagSuggestionValueObject(path.length ? path[0].value : null, query),
+              final: !!path.length,
+            };
+          },
+          [],
+        ),
 
         state: React.useMemo(() => {
           return tokens
