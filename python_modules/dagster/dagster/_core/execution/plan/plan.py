@@ -372,8 +372,9 @@ class _PlanBuilder:
             else:
                 check.invariant(
                     False,
-                    "Unexpected solid type {type} encountered during execution planning".format(
-                        type=type(node.definition)
+                    (
+                        f"Unexpected node type {type(node.definition)} encountered during execution"
+                        " planning"
                     ),
                 )
 
@@ -554,7 +555,7 @@ def get_step_input_source(
         return FromDefaultValue(node_handle=handle, input_name=input_name)
 
     # At this point we have an input that is not hooked up to
-    # the output of another solid or provided via run config.
+    # the output of another op or provided via run config.
 
     # We will allow this for "Nothing" type inputs and continue.
     if input_def.dagster_type.is_nothing:

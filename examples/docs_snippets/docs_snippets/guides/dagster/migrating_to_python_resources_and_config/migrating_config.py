@@ -1,9 +1,4 @@
-from attr import define
-
 from dagster import asset
-from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
-from dagster._core.execution.context.compute import OpExecutionContext
 
 
 @asset

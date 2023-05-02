@@ -289,7 +289,7 @@ def test_0_12_0_add_mode_column(hostname, conn_string):
         def noop_job():
             basic()
 
-        # Ensure that you don't get a migration required exception when running a pipeline
+        # Ensure that you don't get a migration required exception when running a job
         # pre-migration.
         result = noop_job.execute_in_process(instance=instance)
         assert result.success
@@ -329,7 +329,7 @@ def test_0_12_0_extract_asset_index_cols(hostname, conn_string):
         with DagsterInstance.from_config(tempdir) as instance:
             storage = instance._event_storage
 
-            # make sure that executing the pipeline works
+            # make sure that executing the job works
             asset_job.execute_in_process(instance=instance)
             assert storage.has_asset_key(AssetKey(["a"]))
 
@@ -383,7 +383,7 @@ def test_0_12_0_asset_observation_backcompat(hostname, conn_string):
 
             assert not storage.has_secondary_index(ASSET_KEY_INDEX_COLS)
 
-            # make sure that executing the pipeline works
+            # make sure that executing the job works
             asset_job.execute_in_process(instance=instance)
             assert storage.has_asset_key(AssetKey(["a"]))
 
@@ -447,7 +447,7 @@ def test_0_13_12_add_start_time_end_time(hostname, conn_string):
         # migration-required column.
         assert len(instance.get_runs()) == 1
 
-        # Ensure that you don't get a migration required exception when running a pipeline
+        # Ensure that you don't get a migration required exception when running a job
         # pre-migration.
         with execute_job(reconstructable(get_the_job), instance=instance) as result:
             assert result.success

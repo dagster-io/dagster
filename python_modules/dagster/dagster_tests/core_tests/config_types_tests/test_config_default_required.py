@@ -34,7 +34,7 @@ def test_noneable_shaped_field_defaults():
     assert Field(Noneable(schema)).default_value is None
 
 
-def test_noneable_string_in_solid():
+def test_noneable_string_in_op():
     executed = {}
 
     @op(config_schema=Noneable(int))

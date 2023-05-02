@@ -45,7 +45,7 @@ class ConfigurableDefinition(ABC):
 
         Expects incoming config to be validated and have fully-resolved values (StringSource values
         resolved, Enum types hydrated, etc.) via process_config() during ResolvedRunConfig
-        construction and CompositeSolid config mapping.
+        construction and Graph config mapping.
 
         Args:
             config (Any): A validated and resolved configuration dictionary matching this object's
@@ -167,8 +167,8 @@ def _check_configurable_param(configurable: ConfigurableDefinition) -> None:
         "configurable",
         (
             "You have invoked `configured` on a PendingNodeInvocation (an intermediate type), which"
-            " is produced by aliasing or tagging a solid definition. To configure a solid, you must"
-            " call `configured` on either a SolidDefinition and CompositeSolidDefinition. To fix"
+            " is produced by aliasing or tagging a node definition. To configure a node, you must"
+            " call `configured` on either an OpDefinition and GraphDefinition. To fix"
             " this error, make sure to call `configured` on the definition object *before* using"
             " the `tag` or `alias` methods. For usage examples, see"
             " https://docs.dagster.io/concepts/configuration/configured"
@@ -180,7 +180,7 @@ def _check_configurable_param(configurable: ConfigurableDefinition) -> None:
         ConfigurableDefinition,
         (
             "Only the following types can be used with the `configured` method: ResourceDefinition,"
-            " ExecutorDefinition, CompositeSolidDefinition, SolidDefinition, and LoggerDefinition."
+            " ExecutorDefinition, GraphDefinition, NodeDefinition, and LoggerDefinition."
             " For usage examples of `configured`, see"
             " https://docs.dagster.io/concepts/configuration/configured"
         ),

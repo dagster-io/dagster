@@ -224,9 +224,9 @@ def get_task_definition_dict_from_current_task(
     )
 
     # The current process might not be running in a container that has the
-    # pipeline's code installed. Inherit most of the process's container
+    # job's code installed. Inherit most of the process's container
     # definition (things like environment, dependencies, etc.) but replace
-    # the image with the pipeline origin's image and give it a new name.
+    # the image with the job origin's image and give it a new name.
     # Also remove entryPoint. We plan to set containerOverrides. If both
     # entryPoint and containerOverrides are specified, they're concatenated
     # and the command will fail

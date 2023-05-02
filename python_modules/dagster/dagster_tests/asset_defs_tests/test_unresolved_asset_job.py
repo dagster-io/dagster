@@ -1,3 +1,5 @@
+import hashlib
+
 import pytest
 from dagster import (
     AssetKey,
@@ -348,7 +350,7 @@ def test_define_selection_job(job_selection, expected_assets, use_multi, prefixe
     prefixed_assets = _get_assets_defs(use_multi=use_multi, allow_subset=use_multi)
     # apply prefixes
     for prefix in reversed(prefixes or []):
-        prefixed_assets = prefix_assets(prefixed_assets, prefix)
+        prefixed_assets, _ = prefix_assets(prefixed_assets, prefix, [], None)
 
     final_assets = with_resources(
         prefixed_assets,
@@ -410,7 +412,22 @@ def test_define_selection_job(job_selection, expected_assets, use_multi, prefixe
         if asset_name in expected_assets.split(","):
             # dealing with multi asset
             if output != asset_name:
-                assert result.output_for_node(output.split(".")[0], asset_name)
+                node_def_name = output.split(".")[0]
+                keys_for_node = {AssetKey([*(prefixes or []), c]) for c in node_def_name[:-1]}
+                selected_keys_for_node = keys_for_node.intersection(expected_asset_keys)
+                if (
+                    selected_keys_for_node != keys_for_node
+                    # too much of a pain to explicitly encode the cases where we need to create a
+                    # new node definition
+                    and not result.job_def.has_node_named(node_def_name)
+                ):
+                    node_def_name += (
+                        "_subset_"
+                        + hashlib.md5(
+                            (str(list(sorted(selected_keys_for_node)))).encode()
+                        ).hexdigest()[-5:]
+                    )
+                assert result.output_for_node(node_def_name, asset_name)
             # dealing with regular asset
             else:
                 assert result.output_for_node(output, "result") == value

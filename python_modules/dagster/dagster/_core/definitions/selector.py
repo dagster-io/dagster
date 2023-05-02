@@ -8,7 +8,7 @@ from dagster._serdes import create_snapshot_id, whitelist_for_serdes
 
 class JobSubsetSelector(
     NamedTuple(
-        "_PipelineSelector",
+        "_JobSubsetSelector",
         [
             ("location_name", str),
             ("repository_name", str),

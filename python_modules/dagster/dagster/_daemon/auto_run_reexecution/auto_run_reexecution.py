@@ -89,7 +89,7 @@ def retry_run(
     workspace = workspace_context.create_request_context()
     if not failed_run.external_job_origin:
         instance.report_engine_event(
-            "Run does not have an external pipeline origin, unable to retry the run.",
+            "Run does not have an external job origin, unable to retry the run.",
             failed_run,
         )
         return

@@ -1392,8 +1392,16 @@ def external_asset_graph_from_defs(
                     job_def.name
                     for job_def in job_defs
                     if source_asset.key in job_def.asset_layer.source_assets_by_key
-                    and source_asset.partitions_def is None
-                    or source_asset.partitions_def == job_def.partitions_def
+                    and (
+                        # explicit source-asset observation job
+                        not job_def.asset_layer.has_assets_defs
+                        # "base asset job" will have both source and materializable assets
+                        or is_base_asset_job_name(job_def.name)
+                        and (
+                            source_asset.partitions_def is None
+                            or source_asset.partitions_def == job_def.partitions_def
+                        )
+                    )
                 ]
                 if source_asset.node_def is not None
                 else []

@@ -185,6 +185,8 @@ export const LOGS_ROW_STRUCTURED_FRAGMENT = gql`
       fileKey
       stepKeys
       externalUrl
+      externalStdoutUrl
+      externalStderrUrl
     }
   }
 

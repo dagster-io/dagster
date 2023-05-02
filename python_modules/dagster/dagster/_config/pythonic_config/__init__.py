@@ -723,7 +723,7 @@ class ConfigurableResourceFactory(
                 # Or you could just prefer to separate the concerns of configuration and runtime representation
                 return Database(self.connection_uri)
 
-    To use a resource created by a factory in a pipeline, you must use the Resource type annotation.
+    To use a resource created by a factory in a job, you must use the Resource type annotation.
 
     Example usage:
 

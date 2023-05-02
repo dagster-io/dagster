@@ -18,7 +18,7 @@ BIGQUERY_JARS = "com.google.cloud.spark:spark-bigquery-with-dependencies_2.12:0.
 
 @asset
 def iris_data() -> DataFrame:
-    spark = SparkSession.builder.config(
+    spark = SparkSession.builder.config(  # type: ignore
         key="spark.jars.packages",
         value=BIGQUERY_JARS,
     ).getOrCreate()

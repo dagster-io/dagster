@@ -347,7 +347,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         # https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_RunTask.html
         # When container_context is serialized as part of the ExecuteRunArgs, we risk
         # going over this limit (for example, if many secrets have been set). This strips
-        # the container context off of our pipeline origin because we don't actually need
+        # the container context off of our job origin because we don't actually need
         # it to launch the run; we only needed it to create the task definition.
         repository_origin = job_origin.repository_origin
 

@@ -1048,8 +1048,10 @@ export type RunDagsterRunEventFragment_LogsCapturedEvent_ = {
   fileKey: string;
   stepKeys: Array<string> | null;
   pid: number | null;
-  externalUrl: string | null;
+  externalStdoutUrl: string | null;
+  externalStderrUrl: string | null;
   eventType: Types.DagsterEventType | null;
+  externalUrl: string | null;
 };
 
 export type RunDagsterRunEventFragment_MaterializationEvent_ = {

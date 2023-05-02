@@ -7,7 +7,7 @@ from typing import Any, Mapping, Optional, cast
 # airflow 1.x and 2.x.
 import requests
 from airflow.exceptions import AirflowException
-from airflow.hooks.base_hook import BaseHook
+from airflow.hooks.base_hook import BaseHook  # type: ignore
 from airflow.models import Connection
 from dagster._core.storage.dagster_run import DagsterRunStatus
 
@@ -62,7 +62,7 @@ class DagsterHook(BaseHook):
         if is_airflow_2_loaded_in_environment():
             super().__init__()
         else:
-            super().__init__(source=None)  # type: ignore  # (airflow 1 compat)
+            super().__init__(source=None)
         self.url = url
         self.user_token = user_token
         self.organization_id = organization_id

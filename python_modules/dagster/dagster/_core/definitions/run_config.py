@@ -630,7 +630,7 @@ def _convert_config_classes(configs: Dict[str, Any]) -> Dict[str, Any]:
 
 
 class RunConfig:
-    """Container for all the configuration that can be passed to a pipeline run. Accepts Pythonic definitions
+    """Container for all the configuration that can be passed to a run. Accepts Pythonic definitions
     for op and asset config and resources and converts them under the hood to the appropriate config dictionaries.
 
     Example usage:

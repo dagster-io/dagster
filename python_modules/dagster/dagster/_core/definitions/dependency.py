@@ -689,7 +689,7 @@ class MultiDependencyDefinition(
     upstream outputs of type ``T``.
 
     This object is used at the leaves of a dictionary structure that represents the complete
-    dependency structure of a job or pipeline whose keys represent the dependent ops or graphs and dependent
+    dependency structure of a job whose keys represent the dependent ops or graphs and dependent
     input, so this object only contains information about the dependee.
 
     Concretely, if the input named 'input' of op_c depends on the outputs named 'result' of

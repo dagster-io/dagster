@@ -168,7 +168,7 @@ def test_deep_graph():
     assert result.output_for_node("load_num") == 126
 
 
-def test_unconfigurable_inputs_pipeline():
+def test_unconfigurable_inputs_job():
     @usable_as_dagster_type
     class NewType:
         pass

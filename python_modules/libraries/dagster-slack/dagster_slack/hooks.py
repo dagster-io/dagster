@@ -83,7 +83,7 @@ def slack_on_success(
         message_fn (Optional(Callable[[HookContext], str])): Function which takes in the HookContext
             outputs the message you want to send.
         dagit_base_url: (Optional[str]): The base url of your Dagit instance. Specify this to allow
-            messages to include deeplinks to the specific pipeline run that triggered the hook.
+            messages to include deeplinks to the specific run that triggered the hook.
 
     Examples:
         .. code-block:: python

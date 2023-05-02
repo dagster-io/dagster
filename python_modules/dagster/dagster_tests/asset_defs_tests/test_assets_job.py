@@ -1,3 +1,4 @@
+import hashlib
 import os
 import warnings
 
@@ -79,7 +80,7 @@ def _asset_keys_for_node(result, node_name):
     return ret
 
 
-def test_single_asset_pipeline():
+def test_single_asset_job():
     @asset
     def asset1(context):
         assert context.asset_key_for_output() == AssetKey(["asset1"])
@@ -90,7 +91,7 @@ def test_single_asset_pipeline():
     assert job.execute_in_process().success
 
 
-def test_two_asset_pipeline():
+def test_two_asset_job():
     @asset
     def asset1():
         return 1
@@ -108,7 +109,7 @@ def test_two_asset_pipeline():
     assert job.execute_in_process().success
 
 
-def test_single_asset_pipeline_with_config():
+def test_single_asset_job_with_config():
     @asset(config_schema={"foo": Field(StringSource)})
     def asset1(context):
         return context.op_config["foo"]
@@ -2449,7 +2450,7 @@ def test_asset_group_build_subset_job(job_selection, expected_assets, use_multi,
     all_assets = _get_assets_defs(use_multi=use_multi, allow_subset=use_multi)
     # apply prefixes
     for prefix in reversed(prefixes or []):
-        all_assets = prefix_assets(all_assets, prefix)
+        all_assets, _ = prefix_assets(all_assets, prefix, [], None)
 
     defs = Definitions(
         # for these, if we have multi assets, we'll always allow them to be subset
@@ -2502,7 +2503,22 @@ def test_asset_group_build_subset_job(job_selection, expected_assets, use_multi,
         if asset_name in expected_assets.split(","):
             # dealing with multi asset
             if output != asset_name:
-                assert result.output_for_node(output.split(".")[0], asset_name)
+                node_def_name = output.split(".")[0]
+                keys_for_node = {AssetKey([*(prefixes or []), c]) for c in node_def_name[:-1]}
+                selected_keys_for_node = keys_for_node.intersection(expected_asset_keys)
+                if (
+                    selected_keys_for_node != keys_for_node
+                    # too much of a pain to explicitly encode the cases where we need to create a
+                    # new node definition
+                    and not result.job_def.has_node_named(node_def_name)
+                ):
+                    node_def_name += (
+                        "_subset_"
+                        + hashlib.md5(
+                            (str(list(sorted(selected_keys_for_node)))).encode()
+                        ).hexdigest()[-5:]
+                    )
+                assert result.output_for_node(node_def_name, asset_name)
             # dealing with regular asset
             else:
                 assert result.output_for_node(output, "result") == value
@@ -2591,7 +2607,7 @@ def test_subset_cycle_resolution_embed_assets_in_complex_graph():
     result = job.execute_in_process()
 
     assert _all_asset_keys(result) == {AssetKey(x) for x in "a,b,c,d,e,f,g,h,x,y".split(",")}
-    assert result.output_for_node("foo_3", "h") == 12
+    assert result.output_for_node("foo_subset_53118", "h") == 12
 
 
 def test_subset_cycle_resolution_complex():

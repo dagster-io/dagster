@@ -32,14 +32,14 @@ def sync_get_external_execution_plan_grpc(
     from dagster._grpc.client import DagsterGrpcClient
 
     check.inst_param(api_client, "api_client", DagsterGrpcClient)
-    check.inst_param(job_origin, "pipeline_origin", ExternalJobOrigin)
+    check.inst_param(job_origin, "job_origin", ExternalJobOrigin)
     solid_selection = check.opt_sequence_param(solid_selection, "solid_selection", of_type=str)
     asset_selection = check.opt_nullable_set_param(
         asset_selection, "asset_selection", of_type=AssetKey
     )
     run_config = check.mapping_param(run_config, "run_config", key_type=str)
     check.opt_nullable_sequence_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
-    check.str_param(job_snapshot_id, "pipeline_snapshot_id")
+    check.str_param(job_snapshot_id, "job_snapshot_id")
     check.opt_inst_param(known_state, "known_state", KnownExecutionState)
     check.opt_inst_param(instance, "instance", DagsterInstance)
 

@@ -802,7 +802,7 @@ def test_graph_invocation_out_of_composition():
         the_graph()
 
 
-def test_pipeline_invocation():
+def test_job_invocation():
     @job
     def basic_job():
         pass

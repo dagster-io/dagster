@@ -340,7 +340,7 @@ def test_cross_job_asset_dependency():
     ]
 
 
-def test_same_asset_in_multiple_pipelines():
+def test_same_asset_in_multiple_jobs():
     @asset
     def asset1():
         return 1

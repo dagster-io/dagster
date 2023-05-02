@@ -70,9 +70,7 @@ def inner_plan_execution_iterator(
                     (
                         "Expected step context for solid {solid_name} to have all required"
                         " resources, but missing {missing_resources}."
-                    ).format(
-                        solid_name=step_context.solid.name, missing_resources=missing_resources
-                    ),
+                    ).format(solid_name=step_context.op.name, missing_resources=missing_resources),
                 )
 
                 with ExitStack() as step_stack:

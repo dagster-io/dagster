@@ -42,7 +42,7 @@ def run_job_launch_cli(execution_args, instance, expected_count=None):
 
 
 @pytest.mark.parametrize("gen_job_args", launch_command_contexts())
-def test_launch_pipeline(gen_job_args):
+def test_launch_job(gen_job_args):
     with gen_job_args as (cli_args, instance):
         run_launch(cli_args, instance, expected_count=1)
 

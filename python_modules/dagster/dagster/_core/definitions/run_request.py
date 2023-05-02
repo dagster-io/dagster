@@ -282,11 +282,11 @@ class DagsterRunReaction(
         ],
     )
 ):
-    """Represents a request that reacts to an existing pipeline run. If success, it will report logs
+    """Represents a request that reacts to an existing dagster run. If success, it will report logs
     back to the run.
 
     Attributes:
-        dagster_run (Optional[DagsterRun]): The pipeline run that originates this reaction.
+        dagster_run (Optional[DagsterRun]): The dagster run that originates this reaction.
         error (Optional[SerializableErrorInfo]): user code execution error.
         run_status: (Optional[DagsterRunStatus]): The run status that triggered the reaction.
     """

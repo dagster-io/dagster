@@ -10,7 +10,7 @@ def scaffold_job_config(
     skip_non_required: bool = True,
     mode: Optional[str] = None,
 ):
-    check.inst_param(job_def, "pipeline_def", JobDefinition)
+    check.inst_param(job_def, "job_def", JobDefinition)
     check.bool_param(skip_non_required, "skip_non_required")
 
     env_config_type = job_def.run_config_schema.config_type

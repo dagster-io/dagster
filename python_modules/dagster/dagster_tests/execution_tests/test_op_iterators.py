@@ -3,7 +3,7 @@ from dagster._annotations import experimental
 from dagster._utils.test import wrap_op_in_graph_and_execute
 
 
-def test_generator_return_solid():
+def test_generator_return_op():
     def _gen():
         yield Output("done")
 
@@ -15,7 +15,7 @@ def test_generator_return_solid():
     assert result.output_value() == "done"
 
 
-def test_generator_yield_solid():
+def test_generator_yield_op():
     def _gen():
         yield Output("done")
 
@@ -28,7 +28,7 @@ def test_generator_yield_solid():
     assert result.output_value() == "done"
 
 
-def test_generator_yield_from_solid():
+def test_generator_yield_from_op():
     def _gen():
         yield Output("done")
 
@@ -40,7 +40,7 @@ def test_generator_yield_from_solid():
     assert result.output_value() == "done"
 
 
-def test_nested_generator_solid():
+def test_nested_generator_op():
     def _gen1():
         yield AssetMaterialization("test")
 
@@ -59,7 +59,7 @@ def test_nested_generator_solid():
     assert result.output_value() == "done"
 
 
-def test_experimental_generator_solid():
+def test_experimental_generator_op():
     @op
     @experimental
     def gen_op():

@@ -235,10 +235,10 @@ def _submit_task_k8s_job(app, plan_context, step, queue, priority, known_state):
     )
 
 
-def construct_step_failure_event_and_handle(pipeline_run, step_key, err, instance):
+def construct_step_failure_event_and_handle(dagster_run, step_key, err, instance):
     step_failure_event = DagsterEvent(
         event_type_value=DagsterEventType.STEP_FAILURE.value,
-        job_name=pipeline_run.job_name,
+        job_name=dagster_run.job_name,
         step_key=step_key,
         event_specific_data=StepFailureData(
             error=serializable_error_info_from_exc_info(sys.exc_info()),
@@ -248,8 +248,8 @@ def construct_step_failure_event_and_handle(pipeline_run, step_key, err, instanc
     event_record = EventLogEntry(
         user_message=str(err),
         level=logging.ERROR,
-        job_name=pipeline_run.job_name,
-        run_id=pipeline_run.run_id,
+        job_name=dagster_run.job_name,
+        run_id=dagster_run.run_id,
         error_info=None,
         step_key=step_key,
         timestamp=time.time(),

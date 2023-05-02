@@ -115,7 +115,7 @@ def test_branch_job_failed(executor_def):
         )
 
 
-def test_spew_pipeline(executor_def):
+def test_spew_job(executor_def):
     assert log_spew.to_job(executor_def=executor_def).execute_in_process().success
 
 

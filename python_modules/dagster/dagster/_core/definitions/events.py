@@ -632,7 +632,7 @@ class TypeCheck(
     :py:func:`as_dagster_type`, :py:func:`@usable_as_dagster_type <dagster_type>`, or the underlying
     :py:func:`PythonObjectDagsterType` API.)
 
-    Solid compute functions should generally avoid yielding events of this type to avoid confusion.
+    Op compute functions should generally avoid yielding events of this type to avoid confusion.
 
     Args:
         success (bool): ``True`` if the type check succeeded, ``False`` otherwise.

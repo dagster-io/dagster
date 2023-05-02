@@ -179,10 +179,13 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
         variables: {tagKeys: tagKey ? [tagKey] : []},
       });
       if (data?.runTagsOrError?.__typename === 'RunTags') {
-        return data?.runTagsOrError.tags[0].values.map((tagValue) =>
-          tagSuggestionValueObject(tagKey, tagValue),
+        return (
+          data?.runTagsOrError.tags?.[0]?.values.map((tagValue) =>
+            tagSuggestionValueObject(tagKey, tagValue),
+          ) || []
         );
       }
+
       return [];
     },
     [client],
@@ -485,6 +488,13 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
         name: 'Tag',
         icon: 'tag',
         initialSuggestions: tagSuggestions,
+
+        freeformSearchResult: React.useCallback((query, path) => {
+          return {
+            ...tagSuggestionValueObject(path.length ? path[0].value : null, query),
+            final: !!path.length,
+          };
+        }, []),
 
         state: React.useMemo(() => {
           return tokens

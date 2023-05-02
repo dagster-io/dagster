@@ -30,7 +30,7 @@ def pagerduty_on_failure(
         summary_fn (Optional(Callable[[HookContext], str])): Function which takes in the HookContext
             outputs a summary of the issue.
         dagit_base_url: (Optional[str]): The base url of your Dagit instance. Specify this to allow
-            alerts to include deeplinks to the specific job/pipeline run that triggered the hook.
+            alerts to include deeplinks to the specific run that triggered the hook.
 
     Examples:
         .. code-block:: python

@@ -354,7 +354,7 @@ const RunWithData: React.FC<RunWithDataProps> = ({
                 supportsCapturedLogs ? (
                   <CapturedOrExternalLogPanel
                     logKey={computeLogFileKey ? [runId, 'compute_logs', computeLogFileKey] : []}
-                    externalUrl={logCaptureInfo?.externalUrl}
+                    logCaptureInfo={logCaptureInfo}
                     visibleIOType={LogType[logType]}
                     onSetDownloadUrl={setComputeLogUrl}
                   />
