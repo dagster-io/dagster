@@ -314,9 +314,7 @@ def _config_value_to_dict_representation(field: Optional[ModelField], value: Any
     from dagster._config.field_utils import EnvVar, IntEnvVar
 
     if isinstance(value, dict):
-        return {
-            k: _config_value_to_dict_representation(None, v) for k, v in value.items()
-        }
+        return {k: _config_value_to_dict_representation(None, v) for k, v in value.items()}
     elif isinstance(value, list):
         return [_config_value_to_dict_representation(None, v) for v in value]
     elif isinstance(value, EnvVar):
@@ -333,9 +331,7 @@ def _config_value_to_dict_representation(field: Optional[ModelField], value: Any
                 ).items()
             }
         else:
-            return {
-                k: v for k, v in value._convert_to_config_dictionary().items()
-            }
+            return {k: v for k, v in value._convert_to_config_dictionary().items()}  # noqa: SLF001
     elif isinstance(value, Enum):
         return value.name
 
@@ -382,9 +378,7 @@ class PermissiveConfig(Config):
 
 
 # This is from https://github.com/dagster-io/dagster/pull/11470
-def _apply_defaults_to_schema_field(
-    field: Field, additional_default_values: Any
-) -> Field:
+def _apply_defaults_to_schema_field(field: Field, additional_default_values: Any) -> Field:
     # This work by validating the top-level config and then
     # just setting it at that top-level field. Config fields
     # can actually take nested values so we only need to set it
@@ -406,9 +400,7 @@ def _apply_defaults_to_schema_field(
         # and then resolve the existing defaults over them. This preserves the default
         # values that are not specified in new_additional_default_values and then
         # applies the new value as the default value of the field in question.
-        defaults_processed_evr = resolve_defaults(
-            field.config_type, additional_default_values
-        )
+        defaults_processed_evr = resolve_defaults(field.config_type, additional_default_values)
         check.invariant(
             defaults_processed_evr.success,
             "Since validation passed, this should always work.",
@@ -447,9 +439,7 @@ def _resolve_required_resource_keys_for_resource(
     this mapping is used to obtain the top-level resource keys to depend on.
     """
     if isinstance(resource, AllowDelayedDependencies):
-        return resource._resolve_required_resource_keys(
-            resource_id_to_key_mapping
-        )
+        return resource._resolve_required_resource_keys(resource_id_to_key_mapping)  # noqa: SLF001
     return resource.required_resource_keys
 
 
@@ -467,10 +457,7 @@ class AllowDelayedDependencies:
             for attr_name, resource_def in self._nested_partial_resources.items()
         }
         check.invariant(
-            all(
-                pointer_key is not None
-                for pointer_key in nested_partial_resource_keys.values()
-            ),
+            all(pointer_key is not None for pointer_key in nested_partial_resource_keys.values()),
             (
                 "Any partially configured, nested resources must be provided to Definitions"
                 f" object: {nested_partial_resource_keys}"
@@ -617,24 +604,18 @@ CoercibleToResource: TypeAlias = Union[
 
 
 def is_coercible_to_resource(val: Any) -> TypeGuard[CoercibleToResource]:
-    return isinstance(
-        val, (ResourceDefinition, ConfigurableResourceFactory, PartialResource)
-    )
+    return isinstance(val, (ResourceDefinition, ConfigurableResourceFactory, PartialResource))
 
 
 def coerce_to_resource(
     coercible_to_resource: CoercibleToResource,
 ) -> ResourceDefinition:
-    if isinstance(
-        coercible_to_resource, (ConfigurableResourceFactory, PartialResource)
-    ):
+    if isinstance(coercible_to_resource, (ConfigurableResourceFactory, PartialResource)):
         return coercible_to_resource.get_resource_definition()
     return coercible_to_resource
 
 
-class ConfigurableResourceFactoryResourceDefinition(
-    ResourceDefinition, AllowDelayedDependencies
-):
+class ConfigurableResourceFactoryResourceDefinition(ResourceDefinition, AllowDelayedDependencies):
     def __init__(
         self,
         configurable_resource_cls: Type,
@@ -669,9 +650,7 @@ class ConfigurableResourceFactoryResourceDefinition(
         return self._resolve_resource_keys(resource_mapping)
 
 
-class ConfigurableIOManagerFactoryResourceDefinition(
-    IOManagerDefinition, AllowDelayedDependencies
-):
+class ConfigurableIOManagerFactoryResourceDefinition(IOManagerDefinition, AllowDelayedDependencies):
     def __init__(
         self,
         configurable_resource_cls: Type,
@@ -680,12 +659,8 @@ class ConfigurableIOManagerFactoryResourceDefinition(
         description: Optional[str],
         resolve_resource_keys: Callable[[Mapping[int, str]], AbstractSet[str]],
         nested_resources: Mapping[str, CoercibleToResource],
-        input_config_schema: Optional[
-            Union[CoercableToConfigSchema, Type[Config]]
-        ] = None,
-        output_config_schema: Optional[
-            Union[CoercableToConfigSchema, Type[Config]]
-        ] = None,
+        input_config_schema: Optional[Union[CoercableToConfigSchema, Type[Config]]] = None,
+        output_config_schema: Optional[Union[CoercableToConfigSchema, Type[Config]]] = None,
     ):
         input_config_schema_resolved: CoercableToConfigSchema = (
             cast(Type[Config], input_config_schema).to_config_schema()
@@ -792,7 +767,8 @@ class ConfigurableResourceFactory(
             k for k, v in data_without_resources.items() if isinstance(v, _FixedConfig)
         }
         schema = infer_schema_from_config_class(
-            self.__class__, fields_to_omit=set(resource_pointers.keys()).union(secret_fields)
+            self.__class__,
+            fields_to_omit=set(resource_pointers.keys()).union(secret_fields),
         )
 
         # Populate config values
@@ -805,28 +781,20 @@ class ConfigurableResourceFactory(
             for k, v in self._convert_to_config_dictionary().items()
             if k in data_without_resources
         }
-        resolved_config_dict = config_dictionary_from_values(
-            casted_data_without_resources, schema
-        )
+        resolved_config_dict = config_dictionary_from_values(casted_data_without_resources, schema)
         resolved_config_dict_with_secrets_removed = {
-            k: v
-            for k, v in resolved_config_dict.items()
-            if k not in secret_fields
+            k: v for k, v in resolved_config_dict.items() if k not in secret_fields
         }
 
         self._state__internal__ = ConfigurableResourceFactoryState(
             # We keep track of any resources we depend on which are not fully configured
             # so that we can retrieve them at runtime
             nested_partial_resources={
-                k: v
-                for k, v in resource_pointers.items()
-                if (not _is_fully_configured(v))
+                k: v for k, v in resource_pointers.items() if (not _is_fully_configured(v))
             },
             resolved_config_dict=resolved_config_dict,
             # These are unfortunately named very similarily
-            config_schema=_curry_config_schema(
-                schema, resolved_config_dict_with_secrets_removed
-            ),
+            config_schema=_curry_config_schema(schema, resolved_config_dict_with_secrets_removed),
             schema=schema,
             nested_resources={k: v for k, v in resource_pointers.items()},
             resource_context=None,
@@ -1148,9 +1116,7 @@ class PartialResourceState(NamedTuple):
     nested_resources: Dict[str, CoercibleToResource]
 
 
-class PartialResource(
-    Generic[TResValue], AllowDelayedDependencies, MakeConfigCacheable
-):
+class PartialResource(Generic[TResValue], AllowDelayedDependencies, MakeConfigCacheable):
     data: Dict[str, Any]
     resource_cls: Type[ConfigurableResourceFactory[TResValue]]
 
@@ -1173,9 +1139,7 @@ class PartialResource(
             # We keep track of any resources we depend on which are not fully configured
             # so that we can retrieve them at runtime
             nested_partial_resources={
-                k: v
-                for k, v in resource_pointers.items()
-                if (not _is_fully_configured(v))
+                k: v for k, v in resource_pointers.items() if (not _is_fully_configured(v))
             },
             config_schema=infer_schema_from_config_class(
                 resource_cls, fields_to_omit=set(resource_pointers.keys())
@@ -1231,9 +1195,7 @@ class ResourceDependency(Generic[V]):
     def __get__(self, obj: "ConfigurableResourceFactory", __owner: Any) -> V:
         return getattr(obj, self._name)
 
-    def __set__(
-        self, obj: Optional[object], value: ResourceOrPartialOrValue[V]
-    ) -> None:
+    def __set__(self, obj: Optional[object], value: ResourceOrPartialOrValue[V]) -> None:
         setattr(obj, self._name, value)
 
 
@@ -1496,9 +1458,7 @@ def _get_inner_field_if_exists(
         raise NotImplementedError(f"Pydantic shape type {shape_type} not supported.")
 
 
-def _convert_pydantic_field(
-    pydantic_field: ModelField, model_cls: Optional[Type] = None
-) -> Field:
+def _convert_pydantic_field(pydantic_field: ModelField, model_cls: Optional[Type] = None) -> Field:
     """Transforms a Pydantic field into a corresponding Dagster config field.
 
 
@@ -1536,9 +1496,7 @@ def _convert_pydantic_field(
         # For certain data structure types, we need to grab the inner Pydantic field (e.g. List type)
         inner_field = _get_inner_field_if_exists(pydantic_field.shape, pydantic_field)
         if inner_field:
-            config_type = _convert_pydantic_field(
-                inner_field, model_cls=model_cls
-            ).config_type
+            config_type = _convert_pydantic_field(inner_field, model_cls=model_cls).config_type
         else:
             config_type = _config_type_for_pydantic_field(pydantic_field)
 
@@ -1690,12 +1648,9 @@ def _convert_pydantic_descriminated_union_field(pydantic_field: ModelField) -> F
     """
     sub_fields_mapping = pydantic_field.sub_fields_mapping
     if not sub_fields_mapping or not all(
-        issubclass(pydantic_field.type_, Config)
-        for pydantic_field in sub_fields_mapping.values()
+        issubclass(pydantic_field.type_, Config) for pydantic_field in sub_fields_mapping.values()
     ):
-        raise NotImplementedError(
-            "Descriminated unions with non-Config types are not supported."
-        )
+        raise NotImplementedError("Descriminated unions with non-Config types are not supported.")
 
     # First, we generate a mapping between the various discriminator values and the
     # Dagster config fields that correspond to them. We strip the discriminator key
@@ -1717,10 +1672,9 @@ def _convert_pydantic_descriminated_union_field(pydantic_field: ModelField) -> F
     return Field(config=Selector(fields=dagster_config_field_mapping))
 
 
-def infer_schema_from_config_annotation(
-    model_cls: Any, config_arg_default: Any
-) -> Field:
-    """Parses a structured config class or primitive type and returns a corresponding Dagster config Field."""
+def infer_schema_from_config_annotation(model_cls: Any, config_arg_default: Any) -> Field:
+    """Parses a structured config class or primitive type and returns a corresponding Dagster config Field.
+    """
     if safe_is_subclass(model_cls, Config):
         check.invariant(
             config_arg_default is inspect.Parameter.empty,
@@ -1798,9 +1752,7 @@ def separate_resource_params(data: Dict[str, Any]) -> SeparatedResourceParams:
     """
     return SeparatedResourceParams(
         resources={k: v for k, v in data.items() if is_coercible_to_resource(v)},
-        non_resources={
-            k: v for k, v in data.items() if not is_coercible_to_resource(v)
-        },
+        non_resources={k: v for k, v in data.items() if not is_coercible_to_resource(v)},
     )
 
 
@@ -1867,9 +1819,7 @@ def validate_resource_annotated_function(fn) -> None:
     malformed_params = [
         param
         for param in get_function_params(fn)
-        if safe_is_subclass(
-            param.annotation, (ResourceDefinition, ConfigurableResourceFactory)
-        )
+        if safe_is_subclass(param.annotation, (ResourceDefinition, ConfigurableResourceFactory))
         and not safe_is_subclass(param.annotation, ConfigurableResource)
     ]
     if len(malformed_params) > 0:
@@ -1877,11 +1827,7 @@ def validate_resource_annotated_function(fn) -> None:
         output_type = None
         if safe_is_subclass(malformed_param.annotation, ConfigurableResourceFactory):
             orig_bases = getattr(malformed_param.annotation, "__orig_bases__", None)
-            output_type = (
-                get_args(orig_bases[0])[0]
-                if orig_bases and len(orig_bases) > 0
-                else None
-            )
+            output_type = get_args(orig_bases[0])[0] if orig_bases and len(orig_bases) > 0 else None
             if output_type == TResValue:
                 output_type = None
 
@@ -1904,6 +1850,7 @@ class _FixedConfig:
 
     def get_value(self) -> Any:
         return self._value
+
 
 def FixedConfig(value: Any) -> Any:
     return _FixedConfig(value)
