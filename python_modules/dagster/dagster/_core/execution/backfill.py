@@ -349,6 +349,6 @@ class PartitionBackfill(
                 asset_selection=asset_selection,
                 dynamic_partitions_store=dynamic_partitions_store,
                 all_partitions=all_partitions,
-                evaluation_time=utc_datetime_from_timestamp(backfill_timestamp),
+                backfill_start_time=utc_datetime_from_timestamp(backfill_timestamp),
             ).serialize(dynamic_partitions_store=dynamic_partitions_store),
         )

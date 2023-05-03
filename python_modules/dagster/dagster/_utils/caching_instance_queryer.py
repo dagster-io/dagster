@@ -12,7 +12,8 @@ from typing import (
     cast,
 )
 
-import dagster._check as check
+import pendulum
+
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.data_version import (
     DataVersion,
@@ -56,7 +57,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
 
         self._dynamic_partitions_cache: Dict[str, Sequence[str]] = {}
 
-        self._evaluation_time = evaluation_time
+        self._evaluation_time = evaluation_time if evaluation_time else pendulum.now("UTC")
 
     @property
     def instance(self) -> DagsterInstance:
@@ -574,9 +575,6 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         if not self.materialization_exists(asset_partition):
             return False
 
-        if not self._evaluation_time:
-            check.failed("Evaluation time must be set to check if an asset partition is reconciled")
-
         for parent in asset_graph.get_parents_partitions(
             self,
             self._evaluation_time,
@@ -602,7 +600,4 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
 
     @property
     def evaluation_time(self) -> datetime:
-        if self._evaluation_time is None:
-            check.failed("Evaluation time is not set")
-
         return self._evaluation_time

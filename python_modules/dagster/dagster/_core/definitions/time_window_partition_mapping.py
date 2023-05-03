@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import NamedTuple, Optional, Sequence, cast
+from typing import NamedTuple, Optional, cast
 
 import pendulum
 
@@ -113,58 +113,14 @@ class TimeWindowPartitionMapping(
         if not isinstance(upstream_partitions_def, TimeWindowPartitionsDefinition):
             check.failed("upstream_partitions_def must be a TimeWindowPartitionsDefinition")
 
-        start_offset = self.start_offset
-        end_offset = self.end_offset
-
-        self._check_valid_definitions(
-            cast(TimeWindowPartitionsDefinition, downstream_partitions_subset.partitions_def),
-            upstream_partitions_def,
-            start_offset,
-            end_offset,
-        )
-
-        # skip fancy mapping logic in the simple case
-        if (
-            upstream_partitions_def == downstream_partitions_subset.partitions_def
-            and start_offset == 0
-            and end_offset == 0
-        ):
-            return downstream_partitions_subset
-
-        time_windows = self._map_partitions(
+        return self._map_partitions(
             cast(TimeWindowPartitionsDefinition, downstream_partitions_subset.partitions_def),
             upstream_partitions_def,
             downstream_partitions_subset,
-            start_offset,
-            end_offset,
-        )
-
-        current_time = cast(
-            datetime,
-            pendulum.instance(current_time, tz=upstream_partitions_def.timezone)
-            if current_time
-            else pendulum.now(upstream_partitions_def.timezone),
-        )
-        last_window = upstream_partitions_def.get_last_partition_window(current_time=current_time)
-
-        for time_window in time_windows:
-            if (
-                not last_window
-                or time_window.start > last_window.start
-                or time_window.end > last_window.end
-            ):
-                raise DagsterInvalidInvocationError(
-                    f"Partition window {time_window} does not exist for partitions definition "
-                    f"{upstream_partitions_def}"
-                )
-
-        return TimeWindowPartitionsSubset(
-            upstream_partitions_def,
-            num_partitions=sum(
-                len(upstream_partitions_def.get_partition_keys_in_time_window(time_window))
-                for time_window in time_windows
-            ),
-            included_time_windows=time_windows,
+            self.start_offset,
+            self.end_offset,
+            raise_on_non_existent_partition=True,
+            current_time=current_time,
         )
 
     def get_downstream_partitions_for_partition_range(
@@ -193,64 +149,26 @@ class TimeWindowPartitionMapping(
         if not isinstance(upstream_partitions_subset, TimeWindowPartitionsSubset):
             check.failed("upstream_partitions_subset must be a TimeWindowPartitionsSubset")
 
-        start_offset = -self.start_offset
-        end_offset = -self.end_offset
-
-        self._check_valid_definitions(
-            cast(TimeWindowPartitionsDefinition, upstream_partitions_subset.partitions_def),
-            downstream_partitions_def,
-            start_offset,
-            end_offset,
-        )
-
-        # skip fancy mapping logic in the simple case
-        if (
-            downstream_partitions_def == upstream_partitions_subset.partitions_def
-            and start_offset == 0
-            and end_offset == 0
-        ):
-            return upstream_partitions_subset
-
-        current_time = cast(
-            datetime,
-            pendulum.instance(current_time, tz=downstream_partitions_def.timezone)
-            if current_time
-            else pendulum.now(downstream_partitions_def.timezone),
-        )
-
-        time_windows = self._map_partitions(
+        return self._map_partitions(
             cast(TimeWindowPartitionsDefinition, upstream_partitions_subset.partitions_def),
             downstream_partitions_def,
             upstream_partitions_subset,
-            start_offset,
-            end_offset,
+            -self.start_offset,
+            -self.end_offset,
+            raise_on_non_existent_partition=False,
+            current_time=current_time,
         )
 
-        last_window = downstream_partitions_def.get_last_partition_window(current_time=current_time)
-
-        filtered_time_windows = []
-
-        for time_window in time_windows:
-            if last_window and time_window.start <= last_window.start:
-                window_end = min(time_window.end, last_window.end)
-                filtered_time_windows.append(TimeWindow(time_window.start, window_end))
-
-        return TimeWindowPartitionsSubset(
-            downstream_partitions_def,
-            num_partitions=sum(
-                len(downstream_partitions_def.get_partition_keys_in_time_window(time_window))
-                for time_window in filtered_time_windows
-            ),
-            included_time_windows=filtered_time_windows,
-        )
-
-    def _check_valid_definitions(
+    def _map_partitions(
         self,
         from_partitions_def: TimeWindowPartitionsDefinition,
         to_partitions_def: TimeWindowPartitionsDefinition,
+        from_partitions_subset: TimeWindowPartitionsSubset,
         start_offset: int,
         end_offset: int,
-    ) -> None:
+        raise_on_non_existent_partition: bool,
+        current_time: Optional[datetime] = None,
+    ) -> TimeWindowPartitionsSubset:
         if (start_offset != 0 or end_offset != 0) and (
             from_partitions_def.cron_schedule != to_partitions_def.cron_schedule
         ):
@@ -264,14 +182,10 @@ class TimeWindowPartitionMapping(
         if to_partitions_def.timezone != from_partitions_def.timezone:
             raise DagsterInvalidDefinitionError("Timezones don't match")
 
-    def _map_partitions(
-        self,
-        from_partitions_def: TimeWindowPartitionsDefinition,
-        to_partitions_def: TimeWindowPartitionsDefinition,
-        from_partitions_subset: TimeWindowPartitionsSubset,
-        start_offset: int,
-        end_offset: int,
-    ) -> Sequence[TimeWindow]:
+        # skip fancy mapping logic in the simple case
+        if from_partitions_def == to_partitions_def and start_offset == 0 and end_offset == 0:
+            return from_partitions_subset
+
         time_windows = []
         for from_partition_time_window in from_partitions_subset.included_time_windows:
             from_start_dt, from_end_dt = from_partition_time_window
@@ -309,7 +223,43 @@ class TimeWindowPartitionMapping(
 
                 time_windows.append(TimeWindow(window_start, window_end))
 
-        return time_windows
+        current_time = cast(
+            datetime,
+            pendulum.instance(current_time, tz=to_partitions_def.timezone)
+            if current_time
+            else pendulum.now(to_partitions_def.timezone),
+        )
+
+        last_window = to_partitions_def.get_last_partition_window(current_time=current_time)
+        if raise_on_non_existent_partition:
+            for time_window in time_windows:
+                if (
+                    not last_window
+                    or time_window.start > last_window.start
+                    or time_window.end > last_window.end
+                ):
+                    raise DagsterInvalidInvocationError(
+                        f"Partition window {time_window} does not exist for partitions definition "
+                        f"{to_partitions_def}"
+                    )
+        else:
+            filtered_time_windows = []
+
+            for time_window in time_windows:
+                if last_window and time_window.start <= last_window.start:
+                    window_end = min(time_window.end, last_window.end)
+                    filtered_time_windows.append(TimeWindow(time_window.start, window_end))
+
+            time_windows = filtered_time_windows
+
+        return TimeWindowPartitionsSubset(
+            to_partitions_def,
+            num_partitions=sum(
+                len(to_partitions_def.get_partition_keys_in_time_window(time_window))
+                for time_window in time_windows
+            ),
+            included_time_windows=time_windows,
+        )
 
 
 def _offsetted_datetime(

@@ -114,6 +114,13 @@ scenarios = {
         ],
     ),
     "root_assets_different_partitions": scenario(root_assets_different_partitions_same_downstream),
+    "hourly_with_nonexistent_downstream_daily_partition": scenario(
+        hourly_to_daily_partitions,
+        create_pendulum_time(year=2013, month=1, day=7, hour=10),
+        target_root_partition_keys=[
+            "2013-01-07-05:00",
+        ],
+    ),
 }
 
 
@@ -153,7 +160,7 @@ def test_from_asset_partitions_target_subset(
         asset_selection=list(asset_graph.all_asset_keys),
         dynamic_partitions_store=MagicMock(),
         all_partitions=False,
-        evaluation_time=scenarios[scenario_name].evaluation_time,
+        backfill_start_time=scenarios[scenario_name].evaluation_time,
     )
     assert backfill_data.target_subset == AssetGraphSubset.from_asset_partition_set(
         {
@@ -350,7 +357,7 @@ def execute_asset_backfill_iteration_consume_generator(
         instance=instance,
         asset_graph=asset_graph,
         run_tags={},
-        evaluation_time=asset_backfill_data.evaluation_time,
+        backfill_start_time=asset_backfill_data.backfill_start_time,
     ):
         if isinstance(result, AssetBackfillIterationResult):
             counts = traced_counter.get().counts()
@@ -378,7 +385,7 @@ def run_backfill_to_completion(
         instance,
         lambda _a, _b: True,
         fail_asset_partitions,
-        evaluation_time=backfill_data.evaluation_time,
+        evaluation_time=backfill_data.backfill_start_time,
     )
 
     while not backfill_data.is_complete():
@@ -409,7 +416,7 @@ def run_backfill_to_completion(
 
             for parent_asset_partition in asset_graph.get_parents_partitions(
                 instance,
-                backfill_data.evaluation_time,
+                backfill_data.backfill_start_time,
                 *asset_partition,
             ):
                 if (
@@ -631,7 +638,7 @@ def test_asset_backfill_status_counts():
         ],
         dynamic_partitions_store=MagicMock(),
         all_partitions=False,
-        evaluation_time=pendulum.now("UTC"),
+        backfill_start_time=pendulum.now("UTC"),
     )
 
     completed_backfill_data = run_backfill_to_completion(
@@ -692,8 +699,11 @@ def test_asset_backfill_selects_only_existent_partitions():
         ],
         dynamic_partitions_store=MagicMock(),
         all_partitions=False,
-        evaluation_time=pendulum.datetime(2023, 1, 9, 0, 0, 0),
+        backfill_start_time=pendulum.datetime(2023, 1, 9, 0, 0, 0),
     )
 
     target_subset = backfill_data.target_subset
+    assert target_subset.get_partitions_subset(
+        upstream_hourly_partitioned_asset.key
+    ).get_partition_keys() == ["2023-01-09-00:00"]
     assert len(target_subset.get_partitions_subset(downstream_daily_partitioned_asset.key)) == 0

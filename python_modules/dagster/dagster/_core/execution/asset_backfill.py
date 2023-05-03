@@ -113,7 +113,7 @@ class AssetBackfillData(NamedTuple):
     materialized_subset: AssetGraphSubset
     requested_subset: AssetGraphSubset
     failed_and_downstream_subset: AssetGraphSubset
-    evaluation_time: datetime
+    backfill_start_time: datetime
 
     def is_complete(self) -> bool:
         """The asset backfill is complete when all runs to be requested have finished (success,
@@ -262,7 +262,7 @@ class AssetBackfillData(NamedTuple):
 
     @classmethod
     def empty(
-        cls, target_subset: AssetGraphSubset, evaluation_time: datetime
+        cls, target_subset: AssetGraphSubset, backfill_start_time: datetime
     ) -> "AssetBackfillData":
         asset_graph = target_subset.asset_graph
         return cls(
@@ -272,7 +272,7 @@ class AssetBackfillData(NamedTuple):
             materialized_subset=AssetGraphSubset(asset_graph),
             failed_and_downstream_subset=AssetGraphSubset(asset_graph),
             latest_storage_id=None,
-            evaluation_time=evaluation_time,
+            backfill_start_time=backfill_start_time,
         )
 
     @classmethod
@@ -284,7 +284,7 @@ class AssetBackfillData(NamedTuple):
 
     @classmethod
     def from_serialized(
-        cls, serialized: str, asset_graph: AssetGraph, backfill_timestamp: float
+        cls, serialized: str, asset_graph: AssetGraph, backfill_start_timestamp: float
     ) -> "AssetBackfillData":
         storage_dict = json.loads(serialized)
 
@@ -303,7 +303,7 @@ class AssetBackfillData(NamedTuple):
                 storage_dict["serialized_failed_subset"], asset_graph
             ),
             latest_storage_id=storage_dict["latest_storage_id"],
-            evaluation_time=utc_datetime_from_timestamp(backfill_timestamp),
+            backfill_start_time=utc_datetime_from_timestamp(backfill_start_timestamp),
         )
 
     @classmethod
@@ -313,7 +313,7 @@ class AssetBackfillData(NamedTuple):
         partition_names: Optional[Sequence[str]],
         asset_selection: Sequence[AssetKey],
         dynamic_partitions_store: DynamicPartitionsStore,
-        evaluation_time: datetime,
+        backfill_start_time: datetime,
         all_partitions: bool,
     ) -> "AssetBackfillData":
         check.invariant(
@@ -365,12 +365,12 @@ class AssetBackfillData(NamedTuple):
                         asset_graph,
                         partitions_subsets_by_asset_key={root_asset_key: root_partitions_subset},
                     ),
-                    current_time=evaluation_time,
+                    current_time=backfill_start_time,
                 )
         else:
             check.failed("Either partition_names must not be None or all_partitions must be True")
 
-        return cls.empty(target_subset, evaluation_time)
+        return cls.empty(target_subset, backfill_start_time)
 
     def serialize(self, dynamic_partitions_store: DynamicPartitionsStore) -> str:
         storage_dict = {
@@ -422,7 +422,7 @@ def execute_asset_backfill_iteration(
         instance=instance,
         asset_graph=asset_graph,
         run_tags=backfill.tags,
-        evaluation_time=utc_datetime_from_timestamp(backfill.backfill_timestamp),
+        backfill_start_time=utc_datetime_from_timestamp(backfill.backfill_timestamp),
     ):
         yield None
 
@@ -555,7 +555,7 @@ def execute_asset_backfill_iteration_inner(
     asset_graph: ExternalAssetGraph,
     instance: DagsterInstance,
     run_tags: Mapping[str, str],
-    evaluation_time: datetime,
+    backfill_start_time: datetime,
 ) -> Iterable[Optional[AssetBackfillIterationResult]]:
     """Core logic of a backfill iteration. Has no side effects.
 
@@ -565,7 +565,9 @@ def execute_asset_backfill_iteration_inner(
     This is a generator so that we can return control to the daemon and let it heartbeat during
     expensive operations.
     """
-    instance_queryer = CachingInstanceQueryer(instance=instance, evaluation_time=evaluation_time)
+    instance_queryer = CachingInstanceQueryer(
+        instance=instance, evaluation_time=backfill_start_time
+    )
 
     initial_candidates: Set[AssetKeyPartitionKey] = set()
     request_roots = not asset_backfill_data.requested_runs_for_target_roots
@@ -631,7 +633,7 @@ def execute_asset_backfill_iteration_inner(
                     for asset_partition in asset_partitions
                 ),
                 _get_failed_asset_partitions(instance_queryer, backfill_id),
-                evaluation_time=evaluation_time,
+                evaluation_time=backfill_start_time,
             ),
             asset_graph,
         )
@@ -648,10 +650,10 @@ def execute_asset_backfill_iteration_inner(
             target_subset=asset_backfill_data.target_subset,
             failed_and_downstream_subset=failed_and_downstream_subset,
             dynamic_partitions_store=instance_queryer,
-            current_time=evaluation_time,
+            current_time=backfill_start_time,
         ),
         initial_asset_partitions=initial_candidates,
-        evaluation_time=evaluation_time,
+        evaluation_time=backfill_start_time,
     )
 
     run_requests = build_run_requests(
@@ -672,7 +674,7 @@ def execute_asset_backfill_iteration_inner(
         materialized_subset=updated_materialized_subset,
         failed_and_downstream_subset=failed_and_downstream_subset,
         requested_subset=asset_backfill_data.requested_subset | asset_partitions_to_request,
-        evaluation_time=evaluation_time,
+        backfill_start_time=backfill_start_time,
     )
     yield AssetBackfillIterationResult(run_requests, updated_asset_backfill_data)
 
