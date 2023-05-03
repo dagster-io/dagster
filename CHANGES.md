@@ -32,8 +32,9 @@
 - [dagster-gcp] New `BigQueryResource` follows the Pythonic resource system. The existing `bigquery_resource`  remains supported.
 - [dagster-gcp] `PickledObjectGCSIOManager` now fully supports loading partitioned inputs.
 - [dagster-postgres] The event watching implementation has been moved from listen/notify based to the polling watcher used by MySQL and SQLite.
-- [dagster-slack] Add `monitor_all_repositories` to `make_slack_on_run_failure_sensor`.
+- [dagster-slack] Add `monitor_all_repositories` to `make_slack_on_run_failure_sensor`, thanks @danielgafni!
 - [dagster-snowflake] New `SnowflakeResource` follows the Pythonic resource system. The existing `snowflake_resource` remains supported.
+
 ### Bugfixes
 
 - Multi-asset sensor context methods for partitions now work when partitioned source assets are targeted.
