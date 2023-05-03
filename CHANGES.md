@@ -33,8 +33,7 @@
 - [dagster-gcp] `PickledObjectGCSIOManager` now fully supports loading partitioned inputs.
 - [dagster-postgres] The event watching implementation has been moved from listen/notify based to the polling watcher used by MySQL and SQLite.
 - [dagster-slack] Add `monitor_all_repositories` to `make_slack_on_run_failure_sensor`.
-- [dagster-snowflake] New `SnowflakeResource` follows the Pythonic resource system. The existing `snowflake_resource`  remains supported.
-
+- [dagster-snowflake] New `SnowflakeResource` follows the Pythonic resource system. The existing `snowflake_resource` remains supported.
 ### Bugfixes
 
 - Multi-asset sensor context methods for partitions now work when partitioned source assets are targeted.
@@ -52,6 +51,7 @@
 ### Experimental
 
 - [dagster-airbyte] `load_assets_from_airbyte_instance` and `load_assets_from_airbyte_project` now take a `connection_to_auto_materialize_policy_fn` for setting `AutoMaterializePolicy`s on Airbyte assets
+- [dagster-airbyte] Introduced experimental support for Airbyte Cloud. See the [using Dagster with Airbyte Cloud docs for more information](https://docs.dagster.io/integrations/airbyte-cloud).
 
 ### Documentation
 
