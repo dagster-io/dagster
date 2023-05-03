@@ -97,6 +97,9 @@ class ADLS2Resource(ADLS2BaseResource):
         return DataLakeLeaseClient
 
 
+# Due to a limitation of the discriminated union type, we can't directly mirror these old
+# config fields in the new resource config. Instead, we'll just use the old config fields
+# to construct the new config and then use that to construct the resource.
 @resource(ADLS2_CLIENT_CONFIG)
 def adls2_resource(context):
     """Resource that gives ops access to Azure Data Lake Storage Gen2.
