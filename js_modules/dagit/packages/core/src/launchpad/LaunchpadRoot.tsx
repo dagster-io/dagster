@@ -178,7 +178,7 @@ const LaunchpadAllowedRoot: React.FC<Props> = (props) => {
         repoAddress={repoAddress}
         sessionPresets={sessionPresets || {}}
         rootDefaultYaml={
-          result.data?.runConfigSchemaOrError.__typename == 'RunConfigSchema'
+          result.data?.runConfigSchemaOrError.__typename === 'RunConfigSchema'
             ? result.data.runConfigSchemaOrError.rootDefaultYaml
             : undefined
         }
@@ -194,7 +194,7 @@ const LaunchpadAllowedRoot: React.FC<Props> = (props) => {
           partitionSets={partitionSetsOrError}
           repoAddress={repoAddress}
           rootDefaultYaml={
-            result.data?.runConfigSchemaOrError.__typename == 'RunConfigSchema'
+            result.data?.runConfigSchemaOrError.__typename === 'RunConfigSchema'
               ? result.data.runConfigSchemaOrError.rootDefaultYaml
               : undefined
           }
