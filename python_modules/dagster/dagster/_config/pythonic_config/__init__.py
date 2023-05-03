@@ -634,6 +634,7 @@ def coerce_to_resource(
 class ConfigurableResourceFactoryResourceDefinition(ResourceDefinition, AllowDelayedDependencies):
     def __init__(
         self,
+        configurable_resource_cls: Type,
         resource_fn: ResourceFunction,
         config_schema: Any,
         description: Optional[str],
@@ -645,8 +646,13 @@ class ConfigurableResourceFactoryResourceDefinition(ResourceDefinition, AllowDel
             config_schema=config_schema,
             description=description,
         )
+        self._configurable_resource_cls = configurable_resource_cls
         self._resolve_resource_keys = resolve_resource_keys
         self._nested_resources = nested_resources
+
+    @property
+    def configurable_resource_cls(self) -> Type:
+        return self._configurable_resource_cls
 
     @property
     def nested_resources(
@@ -663,6 +669,7 @@ class ConfigurableResourceFactoryResourceDefinition(ResourceDefinition, AllowDel
 class ConfigurableIOManagerFactoryResourceDefinition(IOManagerDefinition, AllowDelayedDependencies):
     def __init__(
         self,
+        configurable_resource_cls: Type,
         resource_fn: ResourceFunction,
         config_schema: Any,
         description: Optional[str],
@@ -690,6 +697,11 @@ class ConfigurableIOManagerFactoryResourceDefinition(IOManagerDefinition, AllowD
         )
         self._resolve_resource_keys = resolve_resource_keys
         self._nested_resources = nested_resources
+        self._configurable_resource_cls = configurable_resource_cls
+
+    @property
+    def configurable_resource_cls(self) -> Type:
+        return self._configurable_resource_cls
 
     @property
     def nested_resources(
@@ -835,6 +847,7 @@ class ConfigurableResourceFactory(
     @cached_method
     def get_resource_definition(self) -> ConfigurableResourceFactoryResourceDefinition:
         return ConfigurableResourceFactoryResourceDefinition(
+            self.__class__,
             resource_fn=self._get_initialize_and_run_fn(),
             config_schema=self._config_schema,
             description=self.__doc__,
@@ -1171,6 +1184,7 @@ class PartialResource(Generic[TResValue], AllowDelayedDependencies, MakeConfigCa
     @cached_method
     def get_resource_definition(self) -> ConfigurableResourceFactoryResourceDefinition:
         return ConfigurableResourceFactoryResourceDefinition(
+            self.__class__,
             resource_fn=self._state__internal__.resource_fn,
             config_schema=self._state__internal__.config_schema,
             description=self._state__internal__.description,
@@ -1239,6 +1253,7 @@ class ConfigurableLegacyResourceAdapter(ConfigurableResource, ABC):
     @cached_method
     def get_resource_definition(self) -> ConfigurableResourceFactoryResourceDefinition:
         return ConfigurableResourceFactoryResourceDefinition(
+            self.__class__,
             resource_fn=self.wrapped_resource.resource_fn,
             config_schema=self._config_schema,
             description=self.__doc__,
@@ -1316,6 +1331,7 @@ class ConfigurableIOManagerFactory(ConfigurableResourceFactory[TIOManagerValue])
     @cached_method
     def get_resource_definition(self) -> ConfigurableIOManagerFactoryResourceDefinition:
         return ConfigurableIOManagerFactoryResourceDefinition(
+            self.__class__,
             resource_fn=self._get_initialize_and_run_fn(),
             config_schema=self._config_schema,
             description=self.__doc__,
@@ -1358,6 +1374,7 @@ class PartialIOManager(Generic[TResValue], PartialResource[TResValue]):
             output_config_schema = factory_cls.output_config_schema()
 
         return ConfigurableIOManagerFactoryResourceDefinition(
+            self.__class__,
             resource_fn=self._state__internal__.resource_fn,
             config_schema=self._state__internal__.config_schema,
             description=self._state__internal__.description,
@@ -1620,6 +1637,7 @@ class ConfigurableLegacyIOManagerAdapter(ConfigurableIOManagerFactory):
     @cached_method
     def get_resource_definition(self) -> ConfigurableIOManagerFactoryResourceDefinition:
         return ConfigurableIOManagerFactoryResourceDefinition(
+            self.__class__,
             resource_fn=self.wrapped_io_manager.resource_fn,
             config_schema=self._config_schema,
             description=self.__doc__,

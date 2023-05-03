@@ -99,6 +99,11 @@ def test_repository_snap_definitions_resources_nested() -> None:
     foo = [data for data in external_repo_data.external_resource_data if data.name == "foo"]
 
     assert len(foo) == 1
+    assert (
+        foo[0].resource_type
+        == "dagster_tests.core_tests.snap_tests.test_repository_snap."
+        "test_repository_snap_definitions_resources_nested.<locals>.MyOuterResource"
+    )
 
     assert len(foo[0].nested_resources) == 1
     assert "inner" in foo[0].nested_resources
@@ -134,10 +139,20 @@ def test_repository_snap_definitions_resources_nested_top_level() -> None:
     assert len(foo[0].nested_resources) == 1
     assert "inner" in foo[0].nested_resources
     assert foo[0].nested_resources["inner"] == NestedResource(NestedResourceType.TOP_LEVEL, "inner")
+    assert (
+        foo[0].resource_type
+        == "dagster_tests.core_tests.snap_tests.test_repository_snap."
+        "test_repository_snap_definitions_resources_nested_top_level.<locals>.MyOuterResource"
+    )
 
     assert len(inner[0].parent_resources) == 1
     assert "foo" in inner[0].parent_resources
     assert inner[0].parent_resources["foo"] == "inner"
+    assert (
+        inner[0].resource_type
+        == "dagster_tests.core_tests.snap_tests.test_repository_snap."
+        "test_repository_snap_definitions_resources_nested_top_level.<locals>.MyInnerResource"
+    )
 
 
 def test_repository_snap_definitions_function_style_resources_nested() -> None:
