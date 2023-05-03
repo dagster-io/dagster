@@ -43,7 +43,13 @@ export type BackfillStatusesByAssetQuery = {
                 numPartitionsFailed: number;
                 assetKey: {__typename: 'AssetKey'; path: Array<string>};
               }
-            | {__typename: 'UnpartitionedAssetStatus'}
+            | {
+                __typename: 'UnpartitionedAssetStatus';
+                inProgress: boolean;
+                materialized: boolean;
+                failed: boolean;
+                assetKey: {__typename: 'AssetKey'; path: Array<string>};
+              }
           >;
         } | null;
       }
@@ -93,7 +99,13 @@ export type PartitionBackfillFragment = {
           numPartitionsFailed: number;
           assetKey: {__typename: 'AssetKey'; path: Array<string>};
         }
-      | {__typename: 'UnpartitionedAssetStatus'}
+      | {
+          __typename: 'UnpartitionedAssetStatus';
+          inProgress: boolean;
+          materialized: boolean;
+          failed: boolean;
+          assetKey: {__typename: 'AssetKey'; path: Array<string>};
+        }
     >;
   } | null;
 };

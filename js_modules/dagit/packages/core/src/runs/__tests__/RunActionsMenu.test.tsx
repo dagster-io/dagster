@@ -56,9 +56,7 @@ describe('RunActionsMenu', () => {
       const button = screen.queryByRole('button') as HTMLButtonElement;
       expect(button).toBeVisible();
 
-      await act(async () => {
-        userEvent.click(button);
-      });
+      await userEvent.click(button);
 
       expect(screen.queryByRole('menuitem', {name: /view configuration/i})).toBeVisible();
       expect(screen.queryByRole('link', {name: /open in launchpad/i})).toBeVisible();
@@ -82,9 +80,7 @@ describe('RunActionsMenu', () => {
       const button = screen.queryByRole('button') as HTMLButtonElement;
       expect(button).toBeVisible();
 
-      await act(async () => {
-        userEvent.click(button);
-      });
+      await userEvent.click(button);
 
       const reExecutionButton = screen.queryByRole('menuitem', {
         name: /re\-execute/i,

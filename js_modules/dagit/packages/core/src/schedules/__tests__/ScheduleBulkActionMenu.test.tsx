@@ -23,7 +23,7 @@ describe('ScheduleBulkActionMenu', () => {
     expect(node).toHaveAttribute('aria-disabled', 'true');
   };
 
-  it('renders button and menu items for stopped schedules', () => {
+  it('renders button and menu items for stopped schedules', async () => {
     render(
       <ScheduleBulkActionMenu
         schedules={[scheduleAlaskaCurrentlyStopped, scheduleColoradoCurrentlyStopped]}
@@ -35,7 +35,7 @@ describe('ScheduleBulkActionMenu', () => {
     expect(button).toBeVisible();
     expect(button).toBeEnabled();
 
-    userEvent.click(button);
+    await userEvent.click(button);
 
     const startItem = screen.getByRole('menuitem', {name: /start 2 schedules/i});
     expectAriaEnabled(startItem);
@@ -43,7 +43,7 @@ describe('ScheduleBulkActionMenu', () => {
     expectAriaDisabled(stopItem);
   });
 
-  it('renders button and menu items for running schedules', () => {
+  it('renders button and menu items for running schedules', async () => {
     render(
       <ScheduleBulkActionMenu
         schedules={[scheduleDelawareCurrentlyRunning, scheduleHawaiiCurrentlyRunning]}
@@ -55,7 +55,7 @@ describe('ScheduleBulkActionMenu', () => {
     expect(button).toBeVisible();
     expect(button).toBeEnabled();
 
-    userEvent.click(button);
+    await userEvent.click(button);
 
     const startItem = screen.getByRole('menuitem', {name: /start 2 schedules/i});
     expectAriaDisabled(startItem);
@@ -63,7 +63,7 @@ describe('ScheduleBulkActionMenu', () => {
     expectAriaEnabled(stopItem);
   });
 
-  it('renders button and menu items for mixture of statuses', () => {
+  it('renders button and menu items for mixture of statuses', async () => {
     render(
       <ScheduleBulkActionMenu
         schedules={[
@@ -80,7 +80,7 @@ describe('ScheduleBulkActionMenu', () => {
     expect(button).toBeVisible();
     expect(button).toBeEnabled();
 
-    userEvent.click(button);
+    await userEvent.click(button);
 
     // Both options enabled
     const startItem = screen.getByRole('menuitem', {name: /start 4 schedules/i});

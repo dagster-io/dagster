@@ -75,7 +75,7 @@ function autoMaterializePausedMock(paused: boolean): MockedResponse<GetAutoMater
 describe('DaemonList', () => {
   it('renders daemons correctly', async () => {
     const {findByText, queryByText} = render(
-      <MockedProvider mocks={[autoMaterializePausedMock(false)]} addTypename={false}>
+      <MockedProvider mocks={[autoMaterializePausedMock(false)]}>
         <DaemonList daemonStatuses={mockDaemons} />
       </MockedProvider>,
     );
@@ -100,10 +100,7 @@ describe('DaemonList', () => {
     };
 
     const {findByRole} = render(
-      <MockedProvider
-        mocks={[autoMaterializePausedMock(false), setAutoMaterializePausedMock]}
-        addTypename={false}
-      >
+      <MockedProvider mocks={[autoMaterializePausedMock(false), setAutoMaterializePausedMock]}>
         <DaemonList daemonStatuses={mockDaemons} />
       </MockedProvider>,
     );
@@ -137,10 +134,7 @@ describe('DaemonList', () => {
     };
 
     const {findByRole} = render(
-      <MockedProvider
-        mocks={[autoMaterializePausedMock(true), setAutoMaterializePausedMock]}
-        addTypename={false}
-      >
+      <MockedProvider mocks={[autoMaterializePausedMock(true), setAutoMaterializePausedMock]}>
         <DaemonList daemonStatuses={mockDaemons} />
       </MockedProvider>,
     );

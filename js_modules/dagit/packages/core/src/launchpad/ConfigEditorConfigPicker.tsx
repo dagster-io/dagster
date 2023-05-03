@@ -198,7 +198,7 @@ const ConfigEditorPartitionPicker: React.FC<ConfigEditorPartitionPickerProps> = 
     const selected = partitions.find((p) => p.name === value);
 
     const onClickSort = React.useCallback(
-      (event) => {
+      (event: React.MouseEvent<HTMLButtonElement>) => {
         event.preventDefault();
         setSortOrder((order) => (order === 'asc' ? 'desc' : 'asc'));
       },

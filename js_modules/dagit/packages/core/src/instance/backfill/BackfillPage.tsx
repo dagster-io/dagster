@@ -57,6 +57,7 @@ export const BackfillPage = () => {
   const {data} = queryResult;
 
   const backfill = data?.partitionBackfillOrError;
+
   let isInProgress = true;
   if (backfill && backfill.__typename === 'PartitionBackfill') {
     // for asset backfills, all of the requested runs have concluded in order for the status to be BulkActionStatus.COMPLETED
@@ -354,6 +355,14 @@ export const BACKFILL_DETAILS_QUERY = gql`
           numPartitionsInProgress
           numPartitionsMaterialized
           numPartitionsFailed
+        }
+        ... on UnpartitionedAssetStatus {
+          assetKey {
+            path
+          }
+          inProgress
+          materialized
+          failed
         }
       }
     }

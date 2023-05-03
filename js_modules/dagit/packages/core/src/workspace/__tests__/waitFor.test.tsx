@@ -49,16 +49,22 @@ describe('waitFor', () => {
       };
 
       it('does require `act` if you need to drive rendering forward', async () => {
-        const {rerender} = render(<Test />);
-        expect(screen.getByText(/hello 0/i)).toBeVisible();
+        const {rerender} = await act(() => render(<Test />));
+        await waitFor(() => {
+          expect(screen.getByText(/hello 0/i)).toBeVisible();
+        });
 
         await act(async () => rerender(<Test />));
-        expect(screen.getByText(/hello 1/i)).toBeVisible();
+        await waitFor(() => {
+          expect(screen.getByText(/hello 1/i)).toBeVisible();
+        });
       });
 
       it('or it requires a `wait` utility call if you need to drive rendering forward', async () => {
-        render(<Test />);
-        expect(screen.getByText(/hello 0/i)).toBeVisible();
+        await act(() => render(<Test />));
+        await waitFor(() => {
+          expect(screen.getByText(/hello 0/i)).toBeVisible();
+        });
 
         await waitFor(() => {
           expect(screen.getByText(/hello 1/i)).toBeVisible();

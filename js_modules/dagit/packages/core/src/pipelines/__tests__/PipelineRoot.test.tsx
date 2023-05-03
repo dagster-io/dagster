@@ -1,4 +1,4 @@
-import {render, screen, waitFor} from '@testing-library/react';
+import {act, render, screen, waitFor} from '@testing-library/react';
 import * as React from 'react';
 
 import {TestProvider} from '../../testing/TestProvider';
@@ -83,11 +83,13 @@ describe('PipelineRoot', () => {
         initialEntries: [`${path}/playground`],
       };
 
-      render(
-        <TestProvider apolloProps={apolloProps} routerProps={routerProps}>
-          <PipelineRoot repoAddress={repoAddress} />
-        </TestProvider>,
-      );
+      await act(() => {
+        render(
+          <TestProvider apolloProps={apolloProps} routerProps={routerProps}>
+            <PipelineRoot repoAddress={repoAddress} />
+          </TestProvider>,
+        );
+      });
 
       await waitFor(() => {
         const selected = screen.getByRole('tab', {selected: true});

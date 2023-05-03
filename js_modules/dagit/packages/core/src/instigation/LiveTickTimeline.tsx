@@ -191,5 +191,5 @@ export const LiveTickTimeline: React.FC<{
     maintainAspectRatio: false,
   };
 
-  return <Line type="line" data={graphData} height={150} options={options} key="100%" />;
+  return <Line data={graphData} height={150} options={options as any} key="100%" />;
 };

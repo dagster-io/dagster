@@ -52,7 +52,7 @@ describe('useTagDataFilterValues', () => {
   it('should return the correct filter values based on the tag data', async () => {
     // Render the hook and pass the mockTagData as an argument
     const {result} = renderHook(() => useTagDataFilterValues(DagsterTag.Backfill), {
-      wrapper: ({children}) => (
+      wrapper: ({children}: {children?: React.ReactNode}) => (
         <MockedProvider mocks={[backfillRunTagsValuesMock]}>{children}</MockedProvider>
       ),
     });
