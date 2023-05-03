@@ -61,7 +61,7 @@ export const BackfillPage = () => {
 
   let isInProgress = true;
   if (backfill && backfill.__typename === 'PartitionBackfill') {
-    // for asset backfills, all of the inProgress runs have concluded in order for the status to be BulkActionStatus.COMPLETED
+    // for asset backfills, all of the requested runs have concluded in order for the status to be BulkActionStatus.COMPLETED
     isInProgress = backfill.status === BulkActionStatus.REQUESTED;
   }
   const refreshState = useQueryRefreshAtInterval(queryResult, 10000, isInProgress);
