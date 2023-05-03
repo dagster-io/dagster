@@ -431,7 +431,7 @@ def test_execute_on_celery_k8s_with_hard_failure(
                 job_namespace={"env": "DAGSTER_K8S_PIPELINE_RUN_NAMESPACE"},
             ),
         ),
-        {"solids": {"hard_fail_or_0": {"config": {"fail": True}}}},
+        {"ops": {"hard_fail_or_0": {"config": {"fail": True}}}},
     )
 
     run_id = launch_run_over_graphql(

@@ -945,7 +945,7 @@ def get_retry_multi_execution_params(
         "mode": "default",
         "selector": selector,
         "runConfigData": {
-            "solids": {"can_fail": {"config": {"fail": should_fail}}},
+            "ops": {"can_fail": {"config": {"fail": should_fail}}},
         },
         "executionMetadata": {
             "rootRunId": retry_id,
@@ -1048,7 +1048,7 @@ def define_schedules():
         name="invalid_config_schedule",
         cron_schedule="0 0 * * *",
         job_name="job_with_enum_config",
-        run_config={"solids": {"takes_an_enum": {"config": "invalid"}}},
+        run_config={"ops": {"takes_an_enum": {"config": "invalid"}}},
     )
 
     @schedule(
