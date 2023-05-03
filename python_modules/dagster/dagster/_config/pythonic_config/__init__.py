@@ -27,6 +27,7 @@ from dagster import (
     Enum as DagsterEnum,
     Field as DagsterField,
 )
+from dagster._annotations import experimental
 from dagster._config.config_type import (
     Array,
     ConfigFloatInstance,
@@ -966,12 +967,14 @@ class ConfigurableResourceFactory(
             with updated_resource.yield_for_execution(context) as value:
                 yield value
 
+    @experimental
     def setup_for_execution(self, context: InitResourceContext) -> None:
         """Optionally override this method to perform any pre-execution steps
         needed before the resource is used in execution.
         """
         pass
 
+    @experimental
     def teardown_after_execution(self, context: InitResourceContext) -> None:
         """Optionally override this method to perform any post-execution steps
         needed after the resource is used in execution.
@@ -981,6 +984,7 @@ class ConfigurableResourceFactory(
         """
         pass
 
+    @experimental
     @contextlib.contextmanager
     def yield_for_execution(self, context: InitResourceContext) -> Generator[TResValue, None, None]:
         """Optionally override this method to perform any lifecycle steps
