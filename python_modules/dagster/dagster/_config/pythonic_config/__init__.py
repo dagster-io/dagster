@@ -653,7 +653,7 @@ class ConfigurableResourceFactoryResourceDefinition(ResourceDefinition, AllowDel
     @property
     def configurable_resource_cls(self) -> Type:
         return self._configurable_resource_cls
-    
+
     @property
     def nested_resources(
         self,
