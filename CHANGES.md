@@ -1,5 +1,67 @@
 # Changelog
 
+# 1.3.3 (core) / 0.19.3 (libraries)
+
+### New
+
+- `load_assets_from_package_module` and the other core `load_assets_from_` methods now accept a `source_key_prefix` argument, which allows applying a key prefix to all the source assets that are loaded.
+- `OpExecutionContext` now has an `asset_partitions_time_window_for_input` method.
+- `RunFailureSensorContext` now has a `get_step_failure_events` method.
+- The Pythonic resource system now supports a set of lifecycle hooks which can be used to manage setup and teardown:
+
+    ```python
+    class MyAPIClientResource(ConfigurableResource):
+        api_key: str
+        _internal_client: MyAPIClient = PrivateAttr()
+
+        def setup_for_execution(self, context):
+            self._internal_client = MyAPIClient(self.api_key)
+
+        def get_all_items(self):
+            return self._internal_client.items.get()
+    ```
+
+- Added support for specifying input and output config on `ConfigurableIOManager`.
+- `QueuedRunCoordinator` and `SubmitRunContext` are now exposed as public dagster exports.
+- [ui] Downstream cross-location dependencies of all source assets are now visible on the asset graph. Previously these dependencies were only displayed if the source asset was defined as a regular asset.
+- [ui] A new filtering experience is available on the Runs page after enabling feature flag “Experimental Runs table view with filtering”.
+- [dagster-aws] Allow the S3 compute log manager to specify a `show_url_only: true` config option, which will display a URL to the S3 file in dagit, instead of the contents of the log file.
+- [dagster-aws] `PickledObjectS3IOManager` now fully supports loading partitioned inputs.
+- [dagster-azure] `PickedObjectADLS2IOManager` now fully supports loading partitioned inputs.
+- [dagster-gcp] New `GCSResource` and `ConfigurablePickledObjectGCSIOManager` follow the Pythonic resource system. The existing `gcs_resource` and `gcs_pickle_io_manager`  remain supported.
+- [dagster-gcp] New `BigQueryResource` follows the Pythonic resource system. The existing `bigquery_resource`  remains supported.
+- [dagster-gcp] `PickledObjectGCSIOManager` now fully supports loading partitioned inputs.
+- [dagster-postgres] The event watching implementation has been moved from listen/notify based to the polling watcher used by MySQL and SQLite.
+- [dagster-slack] Add `monitor_all_repositories` to `make_slack_on_run_failure_sensor`, thanks @danielgafni!
+- [dagster-snowflake] New `SnowflakeResource` follows the Pythonic resource system. The existing `snowflake_resource` remains supported.
+
+### Bugfixes
+
+- Multi-asset sensor context methods for partitions now work when partitioned source assets are targeted.
+- Previously, the asset backfill page would incorrectly display negative counts for assets with upstream failures. This has been fixed.
+- In cases where there is an asset which is upstream of one asset produced by a subsettable multi-asset, but downstream of another, Dagster will automatically subset the multi-asset to resolve the underlying cycle in the op dependency graph. In some cases, this process could omit some of the op dependencies, resulting in incorrect execution order. This has been fixed.
+- Fixed an issue with `AssetMetadataValue.value` that would cause an infinite recursion error.
+- Fixed an issue where observable source assets would show up in the asset graph of jobs that did not include them.
+- Fixed an issue with directly invoking an op or asset with a Pythonic config object with a discriminated union did not work properly.
+- Fixes a bug where sensors attached to jobs that rely on resources from Definitions were not provided with the required resource definition.
+
+### Dagster Cloud
+
+- `volumes` and `volumeMounts` values have been added to the agent helm chart.
+
+### Experimental
+
+- [dagster-airbyte] `load_assets_from_airbyte_instance` and `load_assets_from_airbyte_project` now take a `connection_to_auto_materialize_policy_fn` for setting `AutoMaterializePolicy`s on Airbyte assets
+- [dagster-airbyte] Introduced experimental support for Airbyte Cloud. See the [using Dagster with Airbyte Cloud docs for more information](https://docs.dagster.io/integrations/airbyte-cloud).
+
+### Documentation
+
+- Ever wanted to know more about the files in Dagster projects, including where to put them in your project? Check out the new [Dagster project files reference](https://docs.dagster.io/getting-started/project-file-reference) for more info!
+- We’ve made some improvements to the sidenav / information architecture of our docs!
+    - The **Guides** section now contains several new categories, including **Working with data assets** and **Working with tasks**
+    - The **Community** section is now under **About**
+- The Backfills concepts page now includes instructions on how to launch backfills that target ranges of partitions in a single run.
+
 # 1.3.2 (core) / 0.19.2 (libraries)
 
 ### New
