@@ -1,7 +1,6 @@
 import threading
 
 import pendulum
-import pytest
 from dagster import AssetKey, materialize
 from dagster._core.scheduler.instigation import TickStatus
 from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
