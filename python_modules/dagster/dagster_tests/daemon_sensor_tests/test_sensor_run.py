@@ -51,8 +51,7 @@ from dagster._core.host_representation.origin import (
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DAGSTER_META_KEY
 from dagster._core.scheduler.instigation import (
-    AddDynamicPartitionsRequestResult,
-    DeleteDynamicPartitionsRequestResult,
+    DynamicPartitionsRequestResult,
     InstigatorState,
     InstigatorStatus,
     TickStatus,
@@ -2969,7 +2968,9 @@ def test_add_dynamic_partitions_sensor(
         in caplog.text
     )
     assert ticks[0].tick_data.dynamic_partitions_request_results == [
-        AddDynamicPartitionsRequestResult("quux", ["baz"], ["foo"]),
+        DynamicPartitionsRequestResult(
+            "quux", added_partitions=["baz"], deleted_partitions=None, skipped_partitions=["foo"]
+        ),
     ]
 
 
@@ -3012,8 +3013,12 @@ def test_add_dynamic_partitions_and_launch_runs(
         in caplog.text
     )
     assert ticks[0].tick_data.dynamic_partitions_request_results == [
-        AddDynamicPartitionsRequestResult("quux", ["1"], []),
-        DeleteDynamicPartitionsRequestResult("quux", ["2"], ["3"]),
+        DynamicPartitionsRequestResult(
+            "quux", added_partitions=["1"], deleted_partitions=None, skipped_partitions=[]
+        ),
+        DynamicPartitionsRequestResult(
+            "quux", added_partitions=None, deleted_partitions=["2"], skipped_partitions=["3"]
+        ),
     ]
 
     run = instance.get_runs()[0]

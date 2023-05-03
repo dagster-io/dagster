@@ -16,6 +16,7 @@ from dagster._serdes import create_snapshot_id
 from dagster._serdes.serdes import (
     whitelist_for_serdes,
 )
+from dagster._utils import xor
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.merger import merge_dicts
 
@@ -34,12 +35,13 @@ class InstigatorStatus(Enum):
 
 
 @whitelist_for_serdes
-class DeleteDynamicPartitionsRequestResult(
+class DynamicPartitionsRequestResult(
     NamedTuple(
-        "_DeleteDynamicPartitionsRequestResult",
+        "_DynamicPartitionsRequestResult",
         [
             ("partitions_def_name", str),
-            ("deleted_partitions", Sequence[str]),
+            ("added_partitions", Optional[Sequence[str]]),
+            ("deleted_partitions", Optional[Sequence[str]]),
             ("skipped_partitions", Sequence[str]),
         ],
     )
@@ -47,38 +49,18 @@ class DeleteDynamicPartitionsRequestResult(
     def __new__(
         cls,
         partitions_def_name: str,
-        deleted_partitions: Sequence[str],
+        added_partitions: Optional[Sequence[str]],
+        deleted_partitions: Optional[Sequence[str]],
         skipped_partitions: Sequence[str],
     ):
-        return super(DeleteDynamicPartitionsRequestResult, cls).__new__(
+        if not xor(added_partitions, deleted_partitions):
+            check.failed("Exactly one of added_partitions and deleted_partitions must be provided")
+
+        return super(DynamicPartitionsRequestResult, cls).__new__(
             cls,
             check.str_param(partitions_def_name, "partitions_def_name"),
-            check.sequence_param(deleted_partitions, "deleted_partitions"),
-            check.sequence_param(skipped_partitions, "skipped_partitions"),
-        )
-
-
-@whitelist_for_serdes
-class AddDynamicPartitionsRequestResult(
-    NamedTuple(
-        "_AddDynamicPartitionsRequestResult",
-        [
-            ("partitions_def_name", str),
-            ("added_partitions", Sequence[str]),
-            ("skipped_partitions", Sequence[str]),
-        ],
-    )
-):
-    def __new__(
-        cls,
-        partitions_def_name: str,
-        added_partitions: Sequence[str],
-        skipped_partitions: Sequence[str],
-    ):
-        return super(AddDynamicPartitionsRequestResult, cls).__new__(
-            cls,
-            check.str_param(partitions_def_name, "partitions_def_name"),
-            check.sequence_param(added_partitions, "added_partitions"),
+            check.opt_sequence_param(added_partitions, "added_partitions"),
+            check.opt_sequence_param(deleted_partitions, "deleted_partitions"),
             check.sequence_param(skipped_partitions, "skipped_partitions"),
         )
 
@@ -293,9 +275,7 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
 
     def with_dynamic_partitions_request_result(
         self,
-        dynamic_partitions_request_result: Union[
-            AddDynamicPartitionsRequestResult, DeleteDynamicPartitionsRequestResult
-        ],
+        dynamic_partitions_request_result: DynamicPartitionsRequestResult,
     ) -> "InstigatorTick":
         return self._replace(
             tick_data=self.tick_data.with_dynamic_partitions_request_result(
@@ -404,9 +384,7 @@ class TickData(
             ("log_key", Optional[List[str]]),
             (
                 "dynamic_partitions_request_results",
-                Sequence[
-                    Union[AddDynamicPartitionsRequestResult, DeleteDynamicPartitionsRequestResult]
-                ],
+                Sequence[DynamicPartitionsRequestResult],
             ),
         ],
     )
@@ -428,10 +406,8 @@ class TickData(
         origin_run_ids (List[str]): The runs originated from the schedule/sensor.
         failure_count (int): The number of times this tick has failed. If the status is not
             FAILED, this is the number of previous failures before it reached the current state.
-        dynamic_partitions_request_results (Sequence[Union[AddDynamicPartitionsRequestResult,
-            DeleteDynamicPartitionsRequestResult]]): The results of the dynamic partitions requests
-            evaluated within the tick.
-
+        dynamic_partitions_request_results (Sequence[DynamicPartitionsRequestResult]): The results
+            of the dynamic partitions requests evaluated within the tick.
 
     """
 
@@ -452,7 +428,7 @@ class TickData(
         selector_id: Optional[str] = None,
         log_key: Optional[List[str]] = None,
         dynamic_partitions_request_results: Optional[
-            Sequence[Union[AddDynamicPartitionsRequestResult, DeleteDynamicPartitionsRequestResult]]
+            Sequence[DynamicPartitionsRequestResult]
         ] = None,
     ):
         _validate_tick_args(instigator_type, status, run_ids, error, skip_reason)
@@ -476,7 +452,7 @@ class TickData(
             dynamic_partitions_request_results=check.opt_sequence_param(
                 dynamic_partitions_request_results,
                 "dynamic_partitions_request_results",
-                of_type=(AddDynamicPartitionsRequestResult, DeleteDynamicPartitionsRequestResult),
+                of_type=DynamicPartitionsRequestResult,
             ),
         )
 
@@ -564,10 +540,7 @@ class TickData(
         )
 
     def with_dynamic_partitions_request_result(
-        self,
-        dynamic_partitions_request_result: Union[
-            AddDynamicPartitionsRequestResult, DeleteDynamicPartitionsRequestResult
-        ],
+        self, dynamic_partitions_request_result: DynamicPartitionsRequestResult
     ):
         return TickData(
             **merge_dicts(

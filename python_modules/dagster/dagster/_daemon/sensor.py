@@ -41,8 +41,7 @@ from dagster._core.host_representation.external import ExternalJob, ExternalSens
 from dagster._core.host_representation.external_data import ExternalTargetData
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler.instigation import (
-    AddDynamicPartitionsRequestResult,
-    DeleteDynamicPartitionsRequestResult,
+    DynamicPartitionsRequestResult,
     InstigatorState,
     InstigatorStatus,
     InstigatorTick,
@@ -146,10 +145,7 @@ class SensorLaunchContext:
         self._tick = self._tick.with_log_key(log_key)
 
     def add_dynamic_partitions_request_result(
-        self,
-        dynamic_partitions_request_result: Union[
-            AddDynamicPartitionsRequestResult, DeleteDynamicPartitionsRequestResult
-        ],
+        self, dynamic_partitions_request_result: DynamicPartitionsRequestResult
     ) -> None:
         self._tick = self._tick.with_dynamic_partitions_request_result(
             dynamic_partitions_request_result
@@ -629,9 +625,10 @@ def _evaluate_sensor(
                     )
 
                 context.add_dynamic_partitions_request_result(
-                    AddDynamicPartitionsRequestResult(
+                    DynamicPartitionsRequestResult(
                         request.partitions_def_name,
                         added_partitions=nonexistent_partitions,
+                        deleted_partitions=None,
                         skipped_partitions=existent_partitions,
                     )
                 )
@@ -654,8 +651,9 @@ def _evaluate_sensor(
                     )
 
                 context.add_dynamic_partitions_request_result(
-                    DeleteDynamicPartitionsRequestResult(
+                    DynamicPartitionsRequestResult(
                         request.partitions_def_name,
+                        added_partitions=None,
                         deleted_partitions=existent_partitions,
                         skipped_partitions=nonexistent_partitions,
                     )
