@@ -3,17 +3,20 @@ from contextlib import contextmanager
 from typing import Any, Iterator, Union
 
 from dagster import (
-    Field,
     InputContext,
     OutputContext,
-    StringSource,
+    ResourceDependency,
     _check as check,
     io_manager,
 )
+from dagster._config.pythonic_config import ConfigurableIOManager
 from dagster._core.storage.upath_io_manager import UPathIOManager
 from dagster._utils import PICKLE_PROTOCOL
+from dagster._utils.cached_method import cached_method
+from pydantic import Field
 from upath import UPath
 
+from dagster_azure.adls2.resources import ADLS2Resource
 from dagster_azure.adls2.utils import ResourceNotFoundError
 
 _LEASE_DURATION = 60  # One minute
@@ -101,11 +104,99 @@ class PickledObjectADLS2IOManager(UPathIOManager):
             file.upload_data(pickled_obj, lease=lease, overwrite=True)
 
 
+class ConfigurablePickledObjectADLS2IOManager(ConfigurableIOManager):
+    """Persistent IO manager using Azure Data Lake Storage Gen2 for storage.
+
+    Serializes objects via pickling. Suitable for objects storage for distributed executors, so long
+    as each execution node has network connectivity and credentials for ADLS and the backing
+    container.
+
+    Assigns each op output to a unique filepath containing run ID, step key, and output name.
+    Assigns each asset to a single filesystem path, at "<base_dir>/<asset_key>". If the asset key
+    has multiple components, the final component is used as the name of the file, and the preceding
+    components as parent directories under the base_dir.
+
+    Subsequent materializations of an asset will overwrite previous materializations of that asset.
+    With a base directory of "/my/base/path", an asset with key
+    `AssetKey(["one", "two", "three"])` would be stored in a file called "three" in a directory
+    with path "/my/base/path/one/two/".
+
+    Example usage:
+
+    1. Attach this IO manager to a set of assets.
+
+    .. code-block:: python
+
+        from dagster import Definitions, asset
+        from dagster_azure.adls2 import ConfigurablePickledObjectADLS2IOManager, adls2_resource
+
+        @asset
+        def asset1():
+            # create df ...
+            return df
+
+        @asset
+        def asset2(asset1):
+            return df[:5]
+
+        defs = Definitions(
+            assets=[asset1, asset2],
+            resources={
+                "io_manager": ConfigurablePickledObjectADLS2IOManager(
+                    adls2_file_system="my-cool-fs",
+                    adls2_prefix="my-cool-prefix"
+                ),
+                "adls2": adls2_resource,
+            },
+        )
+
+
+    2. Attach this IO manager to your job to make it available to your ops.
+
+    .. code-block:: python
+
+        from dagster import job
+        from dagster_azure.adls2 import ConfigurablePickledObjectADLS2IOManager, adls2_resource
+
+        @job(
+            resource_defs={
+                "io_manager": ConfigurablePickledObjectADLS2IOManager(
+                    adls2_file_system="my-cool-fs",
+                    adls2_prefix="my-cool-prefix"
+                ),
+                "adls2": adls2_resource,
+            },
+        )
+        def my_job():
+            ...
+    """
+
+    adls2: ResourceDependency[ADLS2Resource]
+    adls2_file_system: str = Field(description="ADLS Gen2 file system name.")
+    adls2_prefix: str = Field(
+        default="dagster", description="ADLS Gen2 file system prefix to write to."
+    )
+
+    @property
+    @cached_method
+    def _internal_io_manager(self) -> PickledObjectADLS2IOManager:
+        return PickledObjectADLS2IOManager(
+            self.adls2_file_system,
+            self.adls2.adls2_client,
+            self.adls2.blob_client,
+            self.adls2.lease_client_constructor,
+            self.adls2_prefix,
+        )
+
+    def load_input(self, context: "InputContext") -> Any:
+        return self._internal_io_manager.load_input(context)
+
+    def handle_output(self, context: "OutputContext", obj: Any) -> None:
+        self._internal_io_manager.handle_output(context, obj)
+
+
 @io_manager(
-    config_schema={
-        "adls2_file_system": Field(StringSource, description="ADLS Gen2 file system name"),
-        "adls2_prefix": Field(StringSource, is_required=False, default_value="dagster"),
-    },
+    config_schema=ConfigurablePickledObjectADLS2IOManager.to_config_schema(),
     required_resource_keys={"adls2"},
 )
 def adls2_pickle_io_manager(init_context):
