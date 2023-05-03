@@ -2981,7 +2981,12 @@ type AssetNodeDefinitionCollision {
   repositories: [Repository!]!
 }
 
-union PartitionBackfillOrError = PartitionBackfill | PythonError
+union PartitionBackfillOrError = PartitionBackfill | BackfillNotFoundError | PythonError
+
+type BackfillNotFoundError implements Error {
+  message: String!
+  backfillId: String!
+}
 
 union PartitionBackfillsOrError = PartitionBackfills | PythonError
 

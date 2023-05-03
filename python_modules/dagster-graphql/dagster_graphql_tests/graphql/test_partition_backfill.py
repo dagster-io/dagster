@@ -70,6 +70,7 @@ PARTITION_PROGRESS_QUERY = """
 BACKFILL_STATUS_BY_ASSET = """
   query BackfillStatusesByAsset($backfillId: String!) {
     partitionBackfillOrError(backfillId: $backfillId) {
+      __typename
       ... on PartitionBackfill {
         assetBackfillData {
             assetBackfillStatuses {
@@ -97,6 +98,13 @@ BACKFILL_STATUS_BY_ASSET = """
             }
             rootAssetTargetedPartitions
         }
+      }
+      ... on PythonError {
+        message
+        stack
+      }
+      ... on BackfillNotFoundError {
+        message
       }
     }
   }
@@ -303,6 +311,19 @@ class TestPartitionBackillReadonlyFailure(ReadonlyGraphQLContextTestMatrix):
         assert result.data
         assert result.data["partitionBackfillOrError"]["hasCancelPermission"] is False
         assert result.data["partitionBackfillOrError"]["hasResumePermission"] is False
+
+    def test_bad_id(self, graphql_context):
+        result = execute_dagster_graphql(
+            graphql_context,
+            BACKFILL_STATUS_BY_ASSET,
+            variables={"backfillId": "Junk"},
+        )
+        assert not result.errors
+        assert result.data
+        assert (
+            result.data["partitionBackfillOrError"]["__typename"] == "BackfillNotFoundError"
+        ), result.data
+        assert "Junk" in result.data["partitionBackfillOrError"]["message"]
 
     def test_resume_backfill_failure(self, graphql_context):
         backfill_id = self._create_backfill(graphql_context)

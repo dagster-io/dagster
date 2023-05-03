@@ -312,6 +312,12 @@ export enum AutoMaterializePolicyType {
   LAZY = 'LAZY',
 }
 
+export type BackfillNotFoundError = Error & {
+  __typename: 'BackfillNotFoundError';
+  backfillId: Scalars['String'];
+  message: Scalars['String'];
+};
+
 export type BoolMetadataEntry = MetadataEntry & {
   __typename: 'BoolMetadataEntry';
   boolValue: Maybe<Scalars['Boolean']>;
@@ -2321,7 +2327,7 @@ export type PartitionBackfillUnfinishedRunsArgs = {
   limit?: InputMaybe<Scalars['Int']>;
 };
 
-export type PartitionBackfillOrError = PartitionBackfill | PythonError;
+export type PartitionBackfillOrError = BackfillNotFoundError | PartitionBackfill | PythonError;
 
 export type PartitionBackfills = {
   __typename: 'PartitionBackfills';
@@ -4580,6 +4586,20 @@ export const buildAutoMaterializePolicy = (
   };
 };
 
+export const buildBackfillNotFoundError = (
+  overrides?: Partial<BackfillNotFoundError>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'BackfillNotFoundError'} & BackfillNotFoundError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('BackfillNotFoundError');
+  return {
+    __typename: 'BackfillNotFoundError',
+    backfillId:
+      overrides && overrides.hasOwnProperty('backfillId') ? overrides.backfillId! : 'nobis',
+    message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'est',
+  };
+};
+
 export const buildBoolMetadataEntry = (
   overrides?: Partial<BoolMetadataEntry>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -5156,9 +5176,9 @@ export const buildDagitQuery = (
     partitionBackfillOrError:
       overrides && overrides.hasOwnProperty('partitionBackfillOrError')
         ? overrides.partitionBackfillOrError!
-        : relationshipsToOmit.has('PartitionBackfill')
-        ? ({} as PartitionBackfill)
-        : buildPartitionBackfill({}, relationshipsToOmit),
+        : relationshipsToOmit.has('BackfillNotFoundError')
+        ? ({} as BackfillNotFoundError)
+        : buildBackfillNotFoundError({}, relationshipsToOmit),
     partitionBackfillsOrError:
       overrides && overrides.hasOwnProperty('partitionBackfillsOrError')
         ? overrides.partitionBackfillsOrError!

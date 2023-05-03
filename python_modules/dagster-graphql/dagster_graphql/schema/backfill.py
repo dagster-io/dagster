@@ -25,6 +25,7 @@ from ..implementation.fetch_partition_sets import (
 )
 from .asset_key import GrapheneAssetKey
 from .errors import (
+    GrapheneError,
     GrapheneInvalidOutputError,
     GrapheneInvalidStepError,
     GrapheneInvalidSubsetError,
@@ -396,9 +397,22 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         return self._backfill_job.user
 
 
+class GrapheneBackfillNotFoundError(graphene.ObjectType):
+    class Meta:
+        interfaces = (GrapheneError,)
+        name = "BackfillNotFoundError"
+
+    backfill_id = graphene.NonNull(graphene.String)
+
+    def __init__(self, backfill_id: str):
+        super().__init__()
+        self.backfill_id = backfill_id
+        self.message = f"Backfill {backfill_id} could not be found."
+
+
 class GraphenePartitionBackfillOrError(graphene.Union):
     class Meta:
-        types = (GraphenePartitionBackfill, GraphenePythonError)
+        types = (GraphenePartitionBackfill, GrapheneBackfillNotFoundError, GraphenePythonError)
         name = "PartitionBackfillOrError"
 
 
