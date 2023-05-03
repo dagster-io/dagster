@@ -47,7 +47,6 @@ from .context_creation_job import (
     scoped_job_context,
 )
 from .execute_job_result import ExecuteJobResult
-from .results import PipelineExecutionResult
 
 ## Brief guide to the execution APIs
 # | function name               | operates over      | sync  | supports    | creates new DagsterRun  |
@@ -176,7 +175,7 @@ def execute_run(
     dagster_run: DagsterRun,
     instance: DagsterInstance,
     raise_on_error: bool = False,
-) -> PipelineExecutionResult:
+) -> ExecuteJobResult:
     """Executes an existing job run synchronously.
 
     Synchronous version of execute_run_iterator.
@@ -189,7 +188,7 @@ def execute_run(
             Defaults to ``False``.
 
     Returns:
-        PipelineExecutionResult: The result of the execution.
+        ExecuteJobResult: The result of the execution.
     """
     if isinstance(job, JobDefinition):
         raise DagsterInvariantViolationError(
@@ -250,18 +249,20 @@ def execute_run(
     )
     event_list = list(_execute_run_iterable)
 
-    return PipelineExecutionResult(
+    # We need to reload the run object after execution for it to be accurate
+    reloaded_dagster_run = check.not_none(instance.get_run_by_id(dagster_run.run_id))
+
+    return ExecuteJobResult(
         job.get_definition(),
-        dagster_run.run_id,
-        event_list,
-        lambda: scoped_job_context(  # type: ignore
+        scoped_job_context(
             execution_plan,
             job,
-            dagster_run.run_config,
-            dagster_run,
+            reloaded_dagster_run.run_config,
+            reloaded_dagster_run,
             instance,
         ),
-        output_capture=output_capture,
+        event_list,
+        reloaded_dagster_run,
     )
 
 
@@ -441,7 +442,7 @@ def execute_job(
         if run_config is None:
             run = check.not_none(instance.get_run_by_id(reexecution_options.parent_run_id))
             run_config = run.run_config
-        result = _reexecute_job(
+        return _reexecute_job(
             job_arg=job_def,
             parent_run_id=reexecution_options.parent_run_id,
             run_config=run_config,
@@ -451,7 +452,7 @@ def execute_job(
             raise_on_error=raise_on_error,
         )
     else:
-        result = _logged_execute_job(
+        return _logged_execute_job(
             job_arg=job_def,
             instance=instance,
             run_config=run_config,
@@ -460,14 +461,6 @@ def execute_job(
             raise_on_error=raise_on_error,
             asset_selection=asset_selection,
         )
-
-    # We use PipelineExecutionResult to construct the JobExecutionResult.
-    return ExecuteJobResult(
-        job_def=cast(ReconstructableJob, job_def).get_definition(),
-        reconstruct_context=result.reconstruct_context(),
-        event_list=result.event_list,
-        dagster_run=instance.get_run_by_id(result.run_id),
-    )
 
 
 @telemetry_wrapper
@@ -479,7 +472,7 @@ def _logged_execute_job(
     op_selection: Optional[Sequence[str]] = None,
     raise_on_error: bool = True,
     asset_selection: Optional[Sequence[AssetKey]] = None,
-) -> PipelineExecutionResult:
+) -> ExecuteJobResult:
     check.inst_param(instance, "instance", DagsterInstance)
 
     job_arg, repository_load_data = _job_with_repository_load_data(job_arg)
@@ -528,7 +521,7 @@ def _reexecute_job(
     tags: Optional[Mapping[str, str]] = None,
     instance: Optional[DagsterInstance] = None,
     raise_on_error: bool = True,
-) -> PipelineExecutionResult:
+) -> ExecuteJobResult:
     """Reexecute an existing job run."""
     check.opt_sequence_param(step_selection, "step_selection", of_type=str)
 
@@ -851,7 +844,7 @@ class ExecuteRunWithPlanIterable:
     """Utility class to consolidate execution logic.
 
     This is a class and not a function because, e.g., in constructing a `scoped_pipeline_context`
-    for `PipelineExecutionResult`, we need to pull out the `pipeline_context` after we're done
+    for `ExecuteJobResult`, we need to pull out the `pipeline_context` after we're done
     yielding events. This broadly follows a pattern we make use of in other places,
     cf. `dagster._utils.EventGenerationManager`.
     """

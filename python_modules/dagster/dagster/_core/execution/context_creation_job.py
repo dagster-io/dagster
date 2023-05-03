@@ -411,7 +411,7 @@ def scoped_job_context(
     discarding them.  It yields the resulting `pipeline_context`.
 
     Should only be used where we need to reconstruct the pipeline context, ignoring any yielded
-    events (e.g. PipelineExecutionResult, dagstermill, unit tests, etc)
+    events (e.g. ExecuteJobResult, dagstermill, unit tests, etc)
     """
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
     check.inst_param(job, "job", IJob)
