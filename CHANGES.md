@@ -22,7 +22,7 @@
     ```
 
 - Added support for specifying input and output config on `ConfigurableIOManager`.
-- `QueuedRunCoordinator` and `SubmitRunContext` are now exposed as pubilc dagster exports.
+- `QueuedRunCoordinator` and `SubmitRunContext` are now exposed as public dagster exports.
 - [ui] Downstream cross-location dependencies of all source assets are now visible on the asset graph. Previously these dependencies were only displayed if the source asset was defined as a regular asset.
 - [ui] A new filtering experience is available on the Runs page after enabling feature flag “Experimental Runs table view with filtering”.
 - [dagster-aws] Allow the S3 compute log manager to specify a `show_url_only: true` config option, which will display a URL to the S3 file in dagit, instead of the contents of the log file.
