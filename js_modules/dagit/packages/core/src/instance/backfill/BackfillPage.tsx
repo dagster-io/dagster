@@ -61,7 +61,7 @@ export const BackfillPage = () => {
 
   let isInProgress = true;
   if (backfill && backfill.__typename === 'PartitionBackfill') {
-    // for asset backfills, all of the requested runs have concluded in order for the status to be BulkActionStatus.COMPLETED
+    // for asset backfills, all of the inProgress runs have concluded in order for the status to be BulkActionStatus.COMPLETED
     isInProgress = backfill.status === BulkActionStatus.REQUESTED;
   }
   const refreshState = useQueryRefreshAtInterval(queryResult, 10000, isInProgress);
@@ -81,7 +81,7 @@ export const BackfillPage = () => {
       return <NonIdealState icon="no-results" title={backfill.message} />;
     }
 
-    function getRunsUrl(status: 'requested' | 'complete' | 'failed' | 'targeted') {
+    function getRunsUrl(status: 'inProgress' | 'complete' | 'failed' | 'targeted') {
       const filters: RunFilterToken[] = [
         {
           token: 'tag',
@@ -89,7 +89,7 @@ export const BackfillPage = () => {
         },
       ];
       switch (status) {
-        case 'requested':
+        case 'inProgress':
           filters.push(
             {
               token: 'status',
@@ -176,7 +176,7 @@ export const BackfillPage = () => {
                 <a href={getRunsUrl('targeted')}>Partitions targeted</a>
               </th>
               <th>
-                <a href={getRunsUrl('requested')}>Requested</a>
+                <a href={getRunsUrl('inProgress')}>inProgress</a>
               </th>
               <th>
                 <a href={getRunsUrl('complete')}>Completed</a>
@@ -188,31 +188,53 @@ export const BackfillPage = () => {
           </thead>
           <tbody>
             {backfill.assetBackfillData?.assetBackfillStatuses.map((asset) => {
-              return asset.__typename === 'AssetPartitionsStatusCounts' ? (
-                <tr key={asset.assetKey.path.join('/')}>
-                  <td>
-                    <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
-                      <div>
-                        <a href={assetDetailsPathForKey(asset.assetKey)}>
-                          {asset.assetKey.path.join('/')}
-                        </a>
-                      </div>
-                      <div>
-                        <StatusBar
-                          targeted={asset.numPartitionsTargeted}
-                          requested={asset.numPartitionsInProgress}
-                          completed={asset.numPartitionsMaterialized}
-                          failed={asset.numPartitionsFailed}
-                        />
-                      </div>
-                    </Box>
-                  </td>
-                  <td>{asset.numPartitionsTargeted}</td>
-                  <td>{asset.numPartitionsInProgress}</td>
-                  <td>{asset.numPartitionsMaterialized}</td>
-                  <td>{asset.numPartitionsFailed}</td>
-                </tr>
-              ) : null;
+              if (
+                ['AssetPartitionsStatusCounts', 'UnpartitionedAssetStatus'].includes(
+                  asset.__typename,
+                )
+              ) {
+                let targeted;
+                let inProgress;
+                let completed;
+                let failed;
+                if (asset.__typename === 'AssetPartitionsStatusCounts') {
+                  targeted = asset.numPartitionsTargeted;
+                  inProgress = asset.numPartitionsInProgress;
+                  completed = asset.numPartitionsMaterialized;
+                  failed = asset.numPartitionsFailed;
+                } else {
+                  targeted = asset.failed || asset.inProgress || asset.materialized ? 0 : 1;
+                  failed = asset.failed ? 1 : 0;
+                  inProgress = asset.inProgress ? 1 : 0;
+                  completed = asset.materialized ? 1 : 0;
+                }
+                return (
+                  <tr key={asset.assetKey.path.join('/')}>
+                    <td>
+                      <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
+                        <div>
+                          <a href={assetDetailsPathForKey(asset.assetKey)}>
+                            {asset.assetKey.path.join('/')}
+                          </a>
+                        </div>
+                        <div>
+                          <StatusBar
+                            targeted={targeted}
+                            inProgress={inProgress}
+                            completed={completed}
+                            failed={failed}
+                          />
+                        </div>
+                      </Box>
+                    </td>
+                    <td>{targeted || ' - '}</td>
+                    <td>{inProgress || ' - '}</td>
+                    <td>{completed || ' - '}</td>
+                    <td>{failed || ' - '}</td>
+                  </tr>
+                );
+              }
+              return null;
             })}
           </tbody>
         </Table>
@@ -275,12 +297,12 @@ const StatusLabel = ({backfill}: {backfill: PartitionBackfillFragment}) => {
 
 function StatusBar({
   targeted,
-  requested,
+  inProgress,
   completed,
   failed,
 }: {
   targeted: number;
-  requested: number;
+  inProgress: number;
   completed: number;
   failed: number;
 }) {
@@ -291,7 +313,7 @@ function StatusBar({
         backgroundColor: Colors.Gray100,
         display: 'grid',
         gridTemplateColumns: `${(100 * completed) / targeted}% ${(100 * failed) / targeted}% ${
-          (100 * requested) / targeted
+          (100 * inProgress) / targeted
         }%`,
         gridTemplateRows: '100%',
         height: '12px',
