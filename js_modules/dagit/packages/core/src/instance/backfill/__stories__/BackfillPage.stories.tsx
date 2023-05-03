@@ -9,6 +9,7 @@ import {
   buildAssetBackfillData,
   buildAssetPartitionsStatusCounts,
   buildPartitionBackfill,
+  buildUnpartitionedAssetStatus,
 } from '../../../graphql/types';
 import {BackfillPage} from '../BackfillPage';
 import {buildBackfillDetailsQuery} from '../__fixtures__/buildBackfillDetails';
@@ -55,6 +56,26 @@ const CompletedResponse = buildBackfillDetailsQuery(
     timestamp: Date.now() / 1000 - 10000,
     assetBackfillData: buildAssetBackfillData({
       assetBackfillStatuses: [
+        buildUnpartitionedAssetStatus({
+          failed: false,
+          materialized: false,
+          inProgress: false,
+        }),
+        buildUnpartitionedAssetStatus({
+          failed: true,
+          materialized: false,
+          inProgress: false,
+        }),
+        buildUnpartitionedAssetStatus({
+          failed: false,
+          materialized: true,
+          inProgress: false,
+        }),
+        buildUnpartitionedAssetStatus({
+          failed: false,
+          materialized: false,
+          inProgress: true,
+        }),
         buildAssetPartitionsStatusCounts({
           numPartitionsMaterialized: 50,
           numPartitionsFailed: 50,
