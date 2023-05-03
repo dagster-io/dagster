@@ -161,6 +161,9 @@ class DatabricksClient:
             if run_state.is_successful():
                 logger.info(f"Run `{databricks_run_id}` completed successfully.")
                 return True
+            if run_state.is_skipped():
+                logger.info(f"Run `{databricks_run_id}` was skipped.")
+                return True
             else:
                 error_message = (
                     f"Run `{databricks_run_id}` failed with result state:"
