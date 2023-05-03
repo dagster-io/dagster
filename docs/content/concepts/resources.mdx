@@ -200,7 +200,9 @@ Then, configuration for the resource can be provided at launch time in the launc
 ```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_runtime_launch endbefore=end_new_resource_runtime_launch dedent=4
 from dagster import sensor, define_asset_job, RunRequest, RunConfig
 
-update_data_job = define_asset_job(name="update_data_job", selection=[data_from_database])
+update_data_job = define_asset_job(
+    name="update_data_job", selection=[data_from_database]
+)
 
 @sensor(job=update_data_job)
 def table_update_sensor():
@@ -243,7 +245,9 @@ defs = Definitions(
     assets=[my_asset],
     resources={
         "bucket": FileStoreBucket(
-            credentials=CredentialsResource(username="my_user", password="my_password"),
+            credentials=CredentialsResource(
+                username="my_user", password="my_password"
+            ),
             region="us-east-1",
         ),
     },
@@ -350,8 +354,7 @@ class MyClientResource(ConfigurableResource):
 
 @asset
 def my_asset(client: MyClientResource):
-    with client.get_connection() as conn:
-        conn.query("SELECT * FROM my_table")
+    client.query("SELECT * FROM my_table")
 ```
 
 ---
