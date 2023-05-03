@@ -249,24 +249,8 @@ export const BackfillPage = () => {
                             '-'
                           )}
                         </td>
-                        <td>
-                          {completed ? (
-                            <Tag icon="check_circle" intent="success">
-                              Complete
-                            </Tag>
-                          ) : (
-                            '-'
-                          )}
-                        </td>
-                        <td>
-                          {failed ? (
-                            <Tag icon="close" intent="danger">
-                              Failed
-                            </Tag>
-                          ) : (
-                            '-'
-                          )}
-                        </td>
+                        <td>{completed ? <Tag intent="success">Completed</Tag> : '-'}</td>
+                        <td>{failed ? <Tag intent="danger">Failed</Tag> : '-'}</td>
                       </>
                     )}
                   </tr>
