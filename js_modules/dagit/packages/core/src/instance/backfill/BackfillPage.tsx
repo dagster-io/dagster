@@ -203,7 +203,7 @@ export const BackfillPage = () => {
                   completed = asset.numPartitionsMaterialized;
                   failed = asset.numPartitionsFailed;
                 } else {
-                  targeted = asset.failed || asset.inProgress || asset.materialized ? 0 : 1;
+                  targeted = 1;
                   failed = asset.failed ? 1 : 0;
                   inProgress = asset.inProgress ? 1 : 0;
                   completed = asset.materialized ? 1 : 0;
@@ -230,10 +230,45 @@ export const BackfillPage = () => {
                         </div>
                       </Box>
                     </td>
-                    <td>{targeted || ' - '}</td>
-                    <td>{inProgress || ' - '}</td>
-                    <td>{completed || ' - '}</td>
-                    <td>{failed || ' - '}</td>
+                    {asset.__typename === 'AssetPartitionsStatusCounts' ? (
+                      <>
+                        <td>{targeted}</td>
+                        <td>{inProgress}</td>
+                        <td>{completed}</td>
+                        <td>{failed}</td>
+                      </>
+                    ) : (
+                      <>
+                        <td>-</td>
+                        <td>
+                          {inProgress ? (
+                            <Tag icon="spinner" intent="primary">
+                              In progress
+                            </Tag>
+                          ) : (
+                            '-'
+                          )}
+                        </td>
+                        <td>
+                          {completed ? (
+                            <Tag icon="check_circle" intent="success">
+                              Complete
+                            </Tag>
+                          ) : (
+                            '-'
+                          )}
+                        </td>
+                        <td>
+                          {failed ? (
+                            <Tag icon="close" intent="danger">
+                              Failed
+                            </Tag>
+                          ) : (
+                            '-'
+                          )}
+                        </td>
+                      </>
+                    )}
                   </tr>
                 );
               }
