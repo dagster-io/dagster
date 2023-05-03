@@ -203,7 +203,7 @@ def _execute_asset_backfill_iteration(
         instance=graphql_context.instance,
         asset_graph=asset_graph,
         run_tags=backfill.tags,
-        backfill_start_time=asset_backfill_data.evaluation_time,
+        backfill_start_time=asset_backfill_data.backfill_start_time,
     ):
         pass
 

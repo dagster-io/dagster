@@ -230,13 +230,17 @@ class TimeWindowPartitionMapping(
             else pendulum.now(to_partitions_def.timezone),
         )
 
+        first_window = to_partitions_def.get_first_partition_window(current_time=current_time)
         last_window = to_partitions_def.get_last_partition_window(current_time=current_time)
         if raise_on_non_existent_partition:
             for time_window in time_windows:
                 if (
-                    not last_window
-                    or time_window.start > last_window.start
+                    not first_window
+                    or not last_window
+                    or time_window.start > last_window.end
                     or time_window.end > last_window.end
+                    or time_window.start < first_window.start
+                    or time_window.end < first_window.start
                 ):
                     raise DagsterInvalidInvocationError(
                         f"Partition window {time_window} does not exist for partitions definition "
@@ -246,9 +250,15 @@ class TimeWindowPartitionMapping(
             filtered_time_windows = []
 
             for time_window in time_windows:
-                if last_window and time_window.start <= last_window.start:
+                if (
+                    first_window
+                    and last_window
+                    and time_window.start <= last_window.start
+                    and time_window.end >= first_window.end
+                ):
                     window_end = min(time_window.end, last_window.end)
-                    filtered_time_windows.append(TimeWindow(time_window.start, window_end))
+                    window_start = max(time_window.start, first_window.start)
+                    filtered_time_windows.append(TimeWindow(window_start, window_end))
 
             time_windows = filtered_time_windows
 
