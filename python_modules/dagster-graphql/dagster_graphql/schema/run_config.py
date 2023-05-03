@@ -105,7 +105,7 @@ class GrapheneRunConfigSchema(graphene.ObjectType):
 
         root_type = config_schema_snapshot.get_config_snap(root_key)
 
-        return default_values_yaml_from_type_snap(root_type)
+        return default_values_yaml_from_type_snap(config_schema_snapshot, root_type)
 
 
 class GrapheneRunConfigSchemaOrError(graphene.Union):
