@@ -505,7 +505,7 @@
               {
                 "title": "Code locations",
                 "path": "/dagster-cloud/managing-deployments/code-locations",
-                "children": [ 
+                "children": [
                   {
                     "title": "dagster_cloud.yaml",
                     "path": "/dagster-cloud/managing-deployments/dagster-cloud-yaml"
@@ -620,6 +620,20 @@
       {
         "title": "dbt Cloud",
         "path": "/integrations/dbt-cloud"
+      },
+      {
+        "title": "DuckDB",
+        "path": "/integrations/duckdb",
+        "children": [
+          {
+            "title": "DuckDB + Dagster tutorial",
+            "path": "/integrations/duckdb/using-duckdb-with-dagster"
+          },
+          {
+            "title": "Reference",
+            "path": "/integrations/duckdb/reference"
+          }
+        ]
       },
       {
         "title": "Fivetran",
