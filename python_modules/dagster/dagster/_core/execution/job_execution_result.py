@@ -12,7 +12,7 @@ from dagster._core.storage.dagster_run import DagsterRun
 from .execution_result import ExecutionResult
 
 
-class ExecuteJobResult(ExecutionResult):
+class JobExecutionResult(ExecutionResult):
     """Result object returned by :py:func:`dagster.execute_job`.
 
     Used for retrieving run success, events, and outputs from `execute_job`.
@@ -31,7 +31,7 @@ class ExecuteJobResult(ExecutionResult):
         self._event_list = event_list
         self._dagster_run = dagster_run
 
-    def __enter__(self) -> "ExecuteJobResult":
+    def __enter__(self) -> "JobExecutionResult":
         context = self._reconstruct_context.__enter__()
         self._context = context
         return self
@@ -74,7 +74,7 @@ class ExecuteJobResult(ExecutionResult):
         Returns:
             Any: The value of the retrieved output.
         """
-        return super(ExecuteJobResult, self).output_value(output_name=output_name)
+        return super(JobExecutionResult, self).output_value(output_name=output_name)
 
     @public
     def output_for_node(self, node_str: str, output_name: str = DEFAULT_OUTPUT) -> Any:
@@ -91,7 +91,7 @@ class ExecuteJobResult(ExecutionResult):
         Returns:
             Any: The value of the retrieved output.
         """
-        return super(ExecuteJobResult, self).output_for_node(node_str, output_name=output_name)
+        return super(JobExecutionResult, self).output_for_node(node_str, output_name=output_name)
 
     def _get_output_for_handle(self, handle: NodeHandle, output_name: str) -> Any:
         if not self._context:

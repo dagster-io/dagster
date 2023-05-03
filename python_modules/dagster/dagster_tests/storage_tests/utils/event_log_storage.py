@@ -48,7 +48,7 @@ from dagster._core.events import (
 )
 from dagster._core.events.log import EventLogEntry, construct_event_logger
 from dagster._core.execution.api import execute_run
-from dagster._core.execution.execute_job_result import ExecuteJobResult
+from dagster._core.execution.job_execution_result import JobExecutionResult
 from dagster._core.execution.plan.handle import StepHandle
 from dagster._core.execution.plan.objects import StepFailureData, StepSuccessData
 from dagster._core.execution.stats import StepEventStatus
@@ -229,7 +229,7 @@ def _default_loggers(event_callback):
 # This exists to create synthetic events to test the store
 def _synthesize_events(
     ops_fn, run_id=None, check_success=True, instance=None, run_config=None
-) -> Tuple[List[EventLogEntry], ExecuteJobResult]:
+) -> Tuple[List[EventLogEntry], JobExecutionResult]:
     events = []
 
     def _append_event(event):

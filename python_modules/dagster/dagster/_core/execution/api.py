@@ -16,7 +16,6 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._annotations import experimental
 from dagster._core.definitions import IJob, JobDefinition
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.job_base import InMemoryJob
@@ -46,7 +45,7 @@ from .context_creation_job import (
     orchestration_context_event_generator,
     scoped_job_context,
 )
-from .execute_job_result import ExecuteJobResult
+from .job_execution_result import JobExecutionResult
 
 ## Brief guide to the execution APIs
 # | function name               | operates over      | sync  | supports    | creates new DagsterRun  |
@@ -175,7 +174,7 @@ def execute_run(
     dagster_run: DagsterRun,
     instance: DagsterInstance,
     raise_on_error: bool = False,
-) -> ExecuteJobResult:
+) -> JobExecutionResult:
     """Executes an existing job run synchronously.
 
     Synchronous version of execute_run_iterator.
@@ -188,7 +187,7 @@ def execute_run(
             Defaults to ``False``.
 
     Returns:
-        ExecuteJobResult: The result of the execution.
+        JobExecutionResult: The result of the execution.
     """
     if isinstance(job, JobDefinition):
         raise DagsterInvariantViolationError(
@@ -252,7 +251,7 @@ def execute_run(
     # We need to reload the run object after execution for it to be accurate
     reloaded_dagster_run = check.not_none(instance.get_run_by_id(dagster_run.run_id))
 
-    return ExecuteJobResult(
+    return JobExecutionResult(
         job.get_definition(),
         scoped_job_context(
             execution_plan,
@@ -323,7 +322,6 @@ class ReexecutionOptions(NamedTuple):
         return ReexecutionOptions(parent_run_id=run_id, step_selection=step_keys_to_execute)
 
 
-@experimental
 def execute_job(
     job: ReconstructableJob,
     instance: "DagsterInstance",
@@ -333,7 +331,7 @@ def execute_job(
     op_selection: Optional[Sequence[str]] = None,
     reexecution_options: Optional[ReexecutionOptions] = None,
     asset_selection: Optional[Sequence[AssetKey]] = None,
-) -> ExecuteJobResult:
+) -> JobExecutionResult:
     """Execute a job synchronously.
 
     This API represents dagster's python entrypoint for out-of-process
@@ -472,7 +470,7 @@ def _logged_execute_job(
     op_selection: Optional[Sequence[str]] = None,
     raise_on_error: bool = True,
     asset_selection: Optional[Sequence[AssetKey]] = None,
-) -> ExecuteJobResult:
+) -> JobExecutionResult:
     check.inst_param(instance, "instance", DagsterInstance)
 
     job_arg, repository_load_data = _job_with_repository_load_data(job_arg)
@@ -521,7 +519,7 @@ def _reexecute_job(
     tags: Optional[Mapping[str, str]] = None,
     instance: Optional[DagsterInstance] = None,
     raise_on_error: bool = True,
-) -> ExecuteJobResult:
+) -> JobExecutionResult:
     """Reexecute an existing job run."""
     check.opt_sequence_param(step_selection, "step_selection", of_type=str)
 
@@ -844,7 +842,7 @@ class ExecuteRunWithPlanIterable:
     """Utility class to consolidate execution logic.
 
     This is a class and not a function because, e.g., in constructing a `scoped_pipeline_context`
-    for `ExecuteJobResult`, we need to pull out the `pipeline_context` after we're done
+    for `JobExecutionResult`, we need to pull out the `pipeline_context` after we're done
     yielding events. This broadly follows a pattern we make use of in other places,
     cf. `dagster._utils.EventGenerationManager`.
     """

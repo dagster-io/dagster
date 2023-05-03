@@ -439,7 +439,7 @@ from dagster._core.execution.context.system import (
 from dagster._core.execution.execute_in_process_result import (
     ExecuteInProcessResult as ExecuteInProcessResult,
 )
-from dagster._core.execution.execute_job_result import ExecuteJobResult as ExecuteJobResult
+from dagster._core.execution.job_execution_result import JobExecutionResult as JobExecutionResult
 from dagster._core.execution.plan.external_step import (
     external_instance_from_step_run_ref as external_instance_from_step_run_ref,
     run_step_from_ref as run_step_from_ref,
@@ -564,7 +564,12 @@ if TYPE_CHECKING:
     # from dagster.some.module import (
     #     Foo as Foo,
     # )
-    pass
+
+    # JobExecutionResult used to be called ExecuteJobResult because it was only returned from
+    # `execute_job`.
+    from dagster._core.execution.job_execution_result import (
+        JobExecutionResult as ExecuteJobResult,  # noqa: F401
+    )
 
 
 _DEPRECATED: Final[Mapping[str, TypingTuple[str, str, str]]] = {
@@ -579,6 +584,7 @@ _DEPRECATED: Final[Mapping[str, TypingTuple[str, str, str]]] = {
 _DEPRECATED_RENAMED: Final[Mapping[str, TypingTuple[Callable, str]]] = {
     ##### EXAMPLE
     # "Foo": (Bar, "1.1.0"),
+    "ExecuteJobResult": (JobExecutionResult, "1.4.0"),
 }
 
 
