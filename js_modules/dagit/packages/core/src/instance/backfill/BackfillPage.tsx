@@ -176,7 +176,7 @@ export const BackfillPage = () => {
                 <a href={getRunsUrl('targeted')}>Partitions targeted</a>
               </th>
               <th>
-                <a href={getRunsUrl('inProgress')}>inProgress</a>
+                <a href={getRunsUrl('inProgress')}>In progress</a>
               </th>
               <th>
                 <a href={getRunsUrl('complete')}>Completed</a>
@@ -209,7 +209,10 @@ export const BackfillPage = () => {
                   completed = asset.materialized ? 1 : 0;
                 }
                 return (
-                  <tr key={asset.assetKey.path.join('/')}>
+                  <tr
+                    key={asset.assetKey.path.join('/')}
+                    data-testid={testId(`backfill-asset-row-${asset.assetKey.path.join('/')}`)}
+                  >
                     <td>
                       <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
                         <div>

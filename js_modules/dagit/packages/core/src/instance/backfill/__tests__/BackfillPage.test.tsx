@@ -1,5 +1,13 @@
 import {MockedProvider} from '@apollo/client/testing';
-import {render, fireEvent, waitFor, screen, act} from '@testing-library/react';
+import {
+  render,
+  fireEvent,
+  waitFor,
+  screen,
+  act,
+  getByText,
+  getAllByText,
+} from '@testing-library/react';
 import React from 'react';
 import {MemoryRouter, Route} from 'react-router-dom';
 
@@ -11,6 +19,7 @@ import {
   buildAssetPartitionsStatusCounts,
   buildPartitionBackfill,
   buildPartitionKeyRange,
+  buildUnpartitionedAssetStatus,
 } from '../../../graphql/types';
 import {BACKFILL_DETAILS_QUERY, BackfillPage, PartitionSelection} from '../BackfillPage';
 
@@ -48,6 +57,17 @@ const mocks = [
                   numPartitionsFailed: 0,
                 }),
                 __typename: 'AssetPartitionsStatusCounts',
+              },
+              {
+                ...buildUnpartitionedAssetStatus({
+                  assetKey: buildAssetKey({
+                    path: ['assetB'],
+                  }),
+                  materialized: true,
+                  inProgress: false,
+                  failed: false,
+                }),
+                __typename: 'UnpartitionedAssetStatus',
               },
             ],
           }),
@@ -121,7 +141,7 @@ describe('BackfillPage', () => {
   });
 
   it('renders the loaded state', async () => {
-    const {getByText, getAllByText} = await act(() =>
+    await act(() =>
       render(
         <AnalyticsContext.Provider value={{page: () => {}} as any}>
           <MemoryRouter initialEntries={[`/backfills/${mockBackfillId}`]}>
@@ -135,25 +155,32 @@ describe('BackfillPage', () => {
       ),
     );
 
-    await waitFor(() => getByText('assetA'));
+    await waitFor(() => {
+      // Check if the loaded content is displayed
+      expect(screen.getByText('Jan 1, 1970, 12:16:40 AM')).toBeVisible();
+      expect(screen.getByText('Duration')).toBeVisible();
+      expect(screen.getByText('Partition Selection')).toBeVisible();
+      expect(screen.getByText('Status')).toBeVisible();
+      expect(screen.getByText('Asset name')).toBeVisible();
+      expect(screen.getByText('Partitions targeted')).toBeVisible();
+      expect(screen.getByText('In progress')).toBeVisible();
+      expect(screen.getByText('Completed')).toBeVisible();
+      expect(screen.getByText('Failed')).toBeVisible();
+    });
 
-    // Check if the loaded content is displayed
-    expect(getByText('Jan 1, 1970, 12:16:40 AM')).toBeVisible();
-    expect(getByText('Duration')).toBeVisible();
-    expect(getByText('Partition Selection')).toBeVisible();
-    expect(getByText('Status')).toBeVisible();
-    expect(getByText('Asset name')).toBeVisible();
-    expect(getByText('Partitions targeted')).toBeVisible();
-    expect(getAllByText('Requested').length).toBe(1);
-    expect(getByText('Completed')).toBeVisible();
-    expect(getByText('Failed')).toBeVisible();
+    const assetARow = await waitFor(() => screen.getByTestId('backfill-asset-row-assetA'));
 
     // Check if the correct data is displayed
-    expect(getByText('assetA')).toBeVisible();
-    expect(getByText('3')).toBeVisible(); // numPartitionsTargeted
-    expect(getByText('2')).toBeVisible(); // numPartitionsInProgress
-    expect(getByText('1')).toBeVisible(); // numPartitionsMaterialized
-    expect(getByText('0')).toBeVisible(); // numPartitionsFailed
+    expect(getByText(assetARow, 'assetA')).toBeVisible();
+    expect(getByText(assetARow, '33')).toBeVisible(); // numPartitionsTargeted
+    expect(getByText(assetARow, '22')).toBeVisible(); // numPartitionsInProgress
+    expect(getByText(assetARow, '11')).toBeVisible(); // numPartitionsMaterialized
+    expect(getByText(assetARow, '-')).toBeVisible(); // numPartitionsFailed
+
+    const assetBRow = await waitFor(() => screen.getByTestId('backfill-asset-row-assetB'));
+    expect(getByText(assetBRow, 'assetB')).toBeVisible();
+    expect(getByText(assetBRow, '1')).toBeVisible();
+    expect(getAllByText(assetBRow, '-').length).toBe(3);
   });
 });
 
