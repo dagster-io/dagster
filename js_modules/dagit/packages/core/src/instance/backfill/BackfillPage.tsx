@@ -12,6 +12,7 @@ import {
   DialogFooter,
   ButtonLink,
   DialogBody,
+  NonIdealState,
 } from '@dagster-io/ui';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
@@ -75,6 +76,9 @@ export const BackfillPage = () => {
     }
     if (backfill.__typename === 'PythonError') {
       return <PythonErrorInfo error={backfill} />;
+    }
+    if (backfill.__typename === 'BackfillNotFoundError') {
+      return <NonIdealState icon="no-results" title={backfill.message} />;
     }
 
     function getRunsUrl(status: 'requested' | 'complete' | 'failed' | 'targeted') {
@@ -328,6 +332,9 @@ export const BACKFILL_DETAILS_QUERY = gql`
     partitionBackfillOrError(backfillId: $backfillId) {
       ...PartitionBackfillFragment
       ...PythonErrorFragment
+      ... on BackfillNotFoundError {
+        message
+      }
     }
   }
 
