@@ -1604,7 +1604,17 @@ def external_resource_data_from_def(
     resource_type_def = resource_def
     if isinstance(resource_type_def, ResourceWithKeyMapping):
         resource_type_def = resource_type_def.wrapped_resource
+
     resource_type = str(type(resource_type_def))[8:-2]
+
+    if isinstance(
+        resource_type_def,
+        (
+            ConfigurableResourceFactoryResourceDefinition,
+            ConfigurableIOManagerFactoryResourceDefinition,
+        ),
+    ):
+        resource_type = str(resource_type_def.configurable_resource_cls)[8:-2]
 
     return ExternalResourceData(
         name=name,
