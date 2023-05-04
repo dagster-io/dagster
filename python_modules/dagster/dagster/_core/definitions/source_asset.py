@@ -130,8 +130,8 @@ class SourceAsset(ResourceAddable):
                 io_manager_key = self.key.to_python_identifier("io_manager")
 
             if (
-                io_manager_key in self.resource_defs
-                and self.resource_defs[io_manager_key] != io_manager_def
+                io_manager_key in resource_defs_dict
+                and resource_defs_dict[io_manager_key] != io_manager_def
             ):
                 raise DagsterInvalidDefinitionError(
                     f"Provided conflicting definitions for io manager key '{io_manager_key}'."
