@@ -147,6 +147,10 @@ class LoadedRepositories:
                 )
             )
 
+    def reload_all_definitions(self):
+        for name, repo_def in self._repo_defs_by_name.items():
+            repo_def.reload_all_definitions()
+
     @property
     def loadable_repository_symbols(self) -> Sequence[LoadableRepositorySymbol]:
         return self._loadable_repository_symbols
@@ -408,6 +412,11 @@ class DagsterApiServer(DagsterApiServicer):
             )
         try:
             loaded_repositories = check.not_none(self._loaded_repositories)
+
+            # this should go on a separate ReloadDefinitions gRPC call rather than here,
+            # since this grpc method is also called every time a Dagit process starts up
+            loaded_repositories.reload_all_definitions()
+
             serialized_response = serialize_value(
                 ListRepositoriesResponse(
                     loaded_repositories.loadable_repository_symbols,

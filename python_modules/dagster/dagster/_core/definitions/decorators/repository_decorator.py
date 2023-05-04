@@ -28,6 +28,7 @@ from ..partitioned_schedule import UnresolvedPartitionedAssetScheduleDefinition
 from ..repository_definition import (
     VALID_REPOSITORY_DATA_DICT_KEYS,
     CachingRepositoryData,
+    LambdaRepositoryData,
     PendingRepositoryDefinition,
     PendingRepositoryListDefinition,
     RepositoryData,
@@ -52,6 +53,99 @@ def _flatten(items: Iterable[Union[T, List[T]]]) -> Iterator[T]:
             yield x
 
 
+def create_repository_data_from_fn(
+    fn: Union[
+        Callable[[], Sequence[PendingRepositoryListDefinition]],
+        Callable[[], RepositoryDictSpec],
+    ],
+    default_executor_def,
+    default_logger_defs,
+    top_level_resources,
+    resource_key_mapping,
+    can_defer_repository_data: bool,
+):
+    from dagster._core.definitions import AssetsDefinition, SourceAsset
+    from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
+
+    repository_definitions = fn()
+
+    repository_data: Optional[Union[CachingRepositoryData, RepositoryData]]
+    if isinstance(repository_definitions, list):
+        bad_defns = []
+        repository_defns = []
+        defer_repository_data = False
+        for i, definition in enumerate(_flatten(repository_definitions)):
+            if can_defer_repository_data and isinstance(definition, CacheableAssetsDefinition):
+                defer_repository_data = True
+            elif not isinstance(
+                definition,
+                (
+                    JobDefinition,
+                    ScheduleDefinition,
+                    UnresolvedPartitionedAssetScheduleDefinition,
+                    SensorDefinition,
+                    GraphDefinition,
+                    AssetsDefinition,
+                    SourceAsset,
+                    UnresolvedAssetJobDefinition,
+                ),
+            ):
+                bad_defns.append((i, type(definition)))
+            else:
+                repository_defns.append(definition)
+
+        if bad_defns:
+            bad_definitions_str = ", ".join(
+                [f"value of type {type_} at index {i}" for i, type_ in bad_defns]
+            )
+            raise DagsterInvalidDefinitionError(
+                "Bad return value from repository construction function: all elements of list "
+                "must be of type JobDefinition, GraphDefinition, "
+                "ScheduleDefinition, SensorDefinition, "
+                "AssetsDefinition, or SourceAsset."
+                f"Got {bad_definitions_str}."
+            )
+
+        repository_data = (
+            None
+            if defer_repository_data
+            else CachingRepositoryData.from_list(
+                repository_defns,
+                default_executor_def=default_executor_def,
+                default_logger_defs=default_logger_defs,
+                top_level_resources=top_level_resources,
+                resource_key_mapping=resource_key_mapping,
+            )
+        )
+
+    elif isinstance(repository_definitions, dict):
+        if not set(repository_definitions.keys()).issubset(VALID_REPOSITORY_DATA_DICT_KEYS):
+            raise DagsterInvalidDefinitionError(
+                "Bad return value from repository construction function: dict must not contain "
+                "keys other than {{'schedules', 'sensors', 'jobs'}}: found "
+                "{bad_keys}".format(
+                    bad_keys=", ".join(
+                        [
+                            f"'{key}'"
+                            for key in repository_definitions.keys()
+                            if key not in VALID_REPOSITORY_DATA_DICT_KEYS
+                        ]
+                    )
+                )
+            )
+        repository_data = CachingRepositoryData.from_dict(repository_definitions)
+    elif isinstance(repository_definitions, RepositoryData):
+        repository_data = repository_definitions
+    else:
+        raise DagsterInvalidDefinitionError(
+            "Bad return value of type {type_} from repository construction function: must "
+            "return list, dict, or RepositoryData. See the @repository decorator docstring for "
+            "details and examples".format(type_=type(repository_definitions)),
+        )
+
+    return repository_definitions, repository_data
+
+
 class _Repository:
     def __init__(
         self,
@@ -61,6 +155,7 @@ class _Repository:
         default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
         resource_key_mapping: Optional[Mapping[int, str]] = None,
+        cache_definitions: bool = True,
     ):
         self.name = check.opt_str_param(name, "name")
         self.description = check.opt_str_param(description, "description")
@@ -76,6 +171,7 @@ class _Repository:
         self.resource_key_mapping = check.opt_mapping_param(
             resource_key_mapping, "resource_key_mapping", key_type=int, value_type=str
         )
+        self.cache_definitions = check.bool_param(cache_definitions, "cache_definitions")
 
     @overload
     def __call__(
@@ -100,89 +196,32 @@ class _Repository:
             Callable[[], RepositoryDictSpec],
         ],
     ) -> Union[RepositoryDefinition, PendingRepositoryDefinition]:
-        from dagster._core.definitions import AssetsDefinition, SourceAsset
-        from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
-
         check.callable_param(fn, "fn")
 
         if not self.name:
             self.name = fn.__name__
 
-        repository_definitions = fn()
-
-        repository_data: Optional[Union[CachingRepositoryData, RepositoryData]]
-        if isinstance(repository_definitions, list):
-            bad_defns = []
-            repository_defns = []
-            defer_repository_data = False
-            for i, definition in enumerate(_flatten(repository_definitions)):
-                if isinstance(definition, CacheableAssetsDefinition):
-                    defer_repository_data = True
-                elif not isinstance(
-                    definition,
-                    (
-                        JobDefinition,
-                        ScheduleDefinition,
-                        UnresolvedPartitionedAssetScheduleDefinition,
-                        SensorDefinition,
-                        GraphDefinition,
-                        AssetsDefinition,
-                        SourceAsset,
-                        UnresolvedAssetJobDefinition,
-                    ),
-                ):
-                    bad_defns.append((i, type(definition)))
-                else:
-                    repository_defns.append(definition)
-
-            if bad_defns:
-                bad_definitions_str = ", ".join(
-                    [f"value of type {type_} at index {i}" for i, type_ in bad_defns]
-                )
-                raise DagsterInvalidDefinitionError(
-                    "Bad return value from repository construction function: all elements of list "
-                    "must be of type JobDefinition, GraphDefinition, "
-                    "ScheduleDefinition, SensorDefinition, "
-                    "AssetsDefinition, or SourceAsset."
-                    f"Got {bad_definitions_str}."
-                )
-
-            repository_data = (
-                None
-                if defer_repository_data
-                else CachingRepositoryData.from_list(
-                    repository_defns,
+        if not self.cache_definitions:
+            return RepositoryDefinition(
+                name=self.name,
+                description=self.description,
+                repository_data=LambdaRepositoryData(
+                    fn,
                     default_executor_def=self.default_executor_def,
                     default_logger_defs=self.default_logger_defs,
                     top_level_resources=self.top_level_resources,
                     resource_key_mapping=self.resource_key_mapping,
-                )
+                ),
             )
 
-        elif isinstance(repository_definitions, dict):
-            if not set(repository_definitions.keys()).issubset(VALID_REPOSITORY_DATA_DICT_KEYS):
-                raise DagsterInvalidDefinitionError(
-                    "Bad return value from repository construction function: dict must not contain "
-                    "keys other than {{'schedules', 'sensors', 'jobs'}}: found "
-                    "{bad_keys}".format(
-                        bad_keys=", ".join(
-                            [
-                                f"'{key}'"
-                                for key in repository_definitions.keys()
-                                if key not in VALID_REPOSITORY_DATA_DICT_KEYS
-                            ]
-                        )
-                    )
-                )
-            repository_data = CachingRepositoryData.from_dict(repository_definitions)
-        elif isinstance(repository_definitions, RepositoryData):
-            repository_data = repository_definitions
-        else:
-            raise DagsterInvalidDefinitionError(
-                "Bad return value of type {type_} from repository construction function: must "
-                "return list, dict, or RepositoryData. See the @repository decorator docstring for "
-                "details and examples".format(type_=type(repository_definitions)),
-            )
+        repository_definitions, repository_data = create_repository_data_from_fn(
+            fn,
+            default_executor_def=self.default_executor_def,
+            default_logger_defs=self.default_logger_defs,
+            top_level_resources=self.top_level_resources,
+            resource_key_mapping=self.resource_key_mapping,
+            can_defer_repository_data=True,
+        )
 
         if isinstance(repository_definitions, list) and repository_data is None:
             return PendingRepositoryDefinition(
@@ -245,6 +284,7 @@ def repository(
     description: Optional[str] = None,
     default_executor_def: Optional[ExecutorDefinition] = None,
     default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
+    cache_definitions: bool = True,
     _top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
     _resource_key_mapping: Optional[Mapping[int, str]] = None,
 ) -> Union[RepositoryDefinition, PendingRepositoryDefinition, _Repository]:
@@ -385,4 +425,5 @@ def repository(
         default_logger_defs=default_logger_defs,
         top_level_resources=_top_level_resources,
         resource_key_mapping=_resource_key_mapping,
+        cache_definitions=cache_definitions,
     )

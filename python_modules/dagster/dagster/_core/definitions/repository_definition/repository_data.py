@@ -184,6 +184,107 @@ class RepositoryData(ABC):
         self.get_all_sensors()
         self.get_source_assets_by_key()
 
+    def reload_all_definitions(self):
+        pass
+
+
+class LambdaRepositoryData(RepositoryData):
+    def __init__(
+        self,
+        fn: Union[
+            Callable[[], Sequence[RepositoryListDefinition]],
+            Callable[[], Dict[str, Dict[str, RepositoryListDefinition]]],
+        ],
+        default_executor_def,
+        default_logger_defs,
+        top_level_resources,
+        resource_key_mapping,
+    ):
+        self._fn = fn
+        self._wrapped_repository_data = None
+        self.default_executor_def = check.opt_inst_param(
+            default_executor_def, "default_executor_def", ExecutorDefinition
+        )
+        self.default_logger_defs = check.opt_mapping_param(
+            default_logger_defs, "default_logger_defs", key_type=str, value_type=LoggerDefinition
+        )
+        self.top_level_resources = check.opt_mapping_param(
+            top_level_resources, "top_level_resources", key_type=str, value_type=ResourceDefinition
+        )
+        self.resource_key_mapping = check.opt_mapping_param(
+            resource_key_mapping, "resource_key_mapping", key_type=int, value_type=str
+        )
+
+    def load_all_definitions(self):
+        # Relies on gc for all cleanup, is that bad
+        # thread safety issues?
+        from dagster._core.definitions.decorators.repository_decorator import (
+            create_repository_data_from_fn,
+        )
+
+        _, self._wrapped_repository_data = create_repository_data_from_fn(
+            self._fn,
+            self.default_executor_def,
+            default_logger_defs=self.default_logger_defs,
+            top_level_resources=self.top_level_resources,
+            resource_key_mapping=self.resource_key_mapping,
+            can_defer_repository_data=False,
+        )
+
+    def reload_all_definitions(self):
+        self.load_all_definitions()
+
+    def get_resource_key_mapping(self) -> Mapping[int, str]:
+        return check.not_none(self._wrapped_repository_data).get_resource_key_mapping()
+
+    def get_top_level_resources(self) -> Mapping[str, ResourceDefinition]:
+        return check.not_none(self._wrapped_repository_data).get_top_level_resources()
+
+    def get_env_vars_by_top_level_resource(self) -> Mapping[str, AbstractSet[str]]:
+        return check.not_none(self._wrapped_repository_data).get_env_vars_by_top_level_resource()
+
+    def get_all_jobs(self) -> Sequence[JobDefinition]:
+        return check.not_none(self._wrapped_repository_data).get_all_jobs()
+
+    def get_job_names(self) -> Sequence[str]:
+        return check.not_none(self._wrapped_repository_data).get_job_names()
+
+    def has_job(self, job_name: str) -> bool:
+        return check.not_none(self._wrapped_repository_data).has_job(job_name)
+
+    def get_job(self, job_name: str) -> JobDefinition:
+        return check.not_none(self._wrapped_repository_data).get_job(job_name)
+
+    def get_schedule_names(self) -> Sequence[str]:
+        return check.not_none(self._wrapped_repository_data).get_schedule_names()
+
+    def get_all_schedules(self) -> Sequence[ScheduleDefinition]:
+        return check.not_none(self._wrapped_repository_data).get_all_schedules()
+
+    def get_schedule(self, schedule_name: str) -> ScheduleDefinition:
+        return check.not_none(self._wrapped_repository_data).get_schedule(schedule_name)
+
+    def has_schedule(self, schedule_name: str) -> bool:
+        return check.not_none(self._wrapped_repository_data).has_schedule(schedule_name)
+
+    def get_all_sensors(self) -> Sequence[SensorDefinition]:
+        return check.not_none(self._wrapped_repository_data).get_all_sensors()
+
+    def get_sensor_names(self) -> Sequence[str]:
+        return check.not_none(self._wrapped_repository_data).get_sensor_names()
+
+    def get_sensor(self, sensor_name: str) -> SensorDefinition:
+        return check.not_none(self._wrapped_repository_data).get_sensor(sensor_name)
+
+    def has_sensor(self, sensor_name: str) -> bool:
+        return check.not_none(self._wrapped_repository_data).has_sensor(sensor_name)
+
+    def get_source_assets_by_key(self) -> Mapping[AssetKey, SourceAsset]:
+        return check.not_none(self._wrapped_repository_data).get_source_assets_by_key()
+
+    def get_assets_defs_by_key(self) -> Mapping[AssetKey, "AssetsDefinition"]:
+        return check.not_none(self._wrapped_repository_data).get_assets_defs_by_key()
+
 
 class CachingRepositoryData(RepositoryData):
     """Default implementation of RepositoryData used by the :py:func:`@repository <repository>` decorator.

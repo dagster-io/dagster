@@ -1,6 +1,9 @@
+from .repository_data import (
+    CachingRepositoryData as CachingRepositoryData,
+    LambdaRepositoryData as LambdaRepositoryData,
+)
 from .repository_definition import (
     AssetsDefinitionCacheableData as AssetsDefinitionCacheableData,
-    CachingRepositoryData as CachingRepositoryData,
     PendingRepositoryDefinition as PendingRepositoryDefinition,
     RepositoryData as RepositoryData,
     RepositoryDefinition as RepositoryDefinition,

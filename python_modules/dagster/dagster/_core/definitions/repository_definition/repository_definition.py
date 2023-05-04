@@ -127,6 +127,9 @@ class RepositoryDefinition:
         # force load of all lazy constructed code artifacts
         self._repository_data.load_all_definitions()
 
+    def reload_all_definitions(self):
+        self._repository_data.reload_all_definitions()
+
     @public
     @property
     def job_names(self) -> Sequence[str]:
@@ -412,7 +415,7 @@ class PendingRepositoryDefinition:
                         f" {defn.unique_id}."
                     ),
                 )
-                # use the emtadata to generate definitions
+                # use the metadata to generate definitions
                 resolved_definitions.extend(
                     defn.build_definitions(
                         data=repository_load_data.cached_data_by_key[defn.unique_id]
