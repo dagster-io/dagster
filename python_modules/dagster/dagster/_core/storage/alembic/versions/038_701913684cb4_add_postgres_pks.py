@@ -26,7 +26,7 @@ def upgrade():
 
     if (
         has_table("instance_info")
-        and not has_column("instance_info", "id")
+        and has_column("instance_info", "id")
         and not has_primary_key("instance_info")
     ):
         op.create_primary_key("instance_info_pkey", "instance_info", ["id"])
