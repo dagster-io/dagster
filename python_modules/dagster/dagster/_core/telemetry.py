@@ -519,6 +519,8 @@ def get_stats_from_external_repo(external_repo: "ExternalRepository") -> Mapping
         if external_sensor.name == "asset_reconciliation_sensor"
     )
 
+    resource_types = [resource.resource_type for resource in external_resources]
+
     pydantic_resource_type_str = (
         "dagster._config.pythonic_config.ConfigurableResourceFactoryResourceDefinition"
     )
