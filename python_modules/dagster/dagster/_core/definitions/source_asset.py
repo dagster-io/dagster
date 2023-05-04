@@ -105,7 +105,6 @@ class SourceAsset(ResourceAddable):
         # Add additional fields to with_resources and with_group below
     ):
         from dagster._core.execution.build_resources import (
-            wrap_resource_for_execution,
             wrap_resources_for_execution,
         )
 
@@ -124,15 +123,9 @@ class SourceAsset(ResourceAddable):
         metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
         self.raw_metadata = metadata
         self.metadata = normalize_metadata(metadata, allow_invalid=True)
-        self.resource_defs = wrap_resources_for_execution(
-            dict(check.opt_mapping_param(resource_defs, "resource_defs"))
-        )
 
-        resolved_io_manager = cast(IOManagerDefinition, wrap_resource_for_execution(io_manager_def))
-        self._io_manager_def = check.opt_inst_param(
-            resolved_io_manager, "io_manager_def", (IOManagerDefinition)
-        )
-        if self._io_manager_def:
+        resource_defs_dict = dict(check.opt_mapping_param(resource_defs, "resource_defs"))
+        if io_manager_def:
             if not io_manager_key:
                 io_manager_key = self.key.to_python_identifier("io_manager")
 
@@ -145,7 +138,9 @@ class SourceAsset(ResourceAddable):
                     " Please provide only one definition per key."
                 )
 
-            self.resource_defs[io_manager_key] = self._io_manager_def
+            resource_defs_dict[io_manager_key] = io_manager_def
+
+        self.resource_defs = wrap_resources_for_execution(resource_defs_dict)
 
         self.io_manager_key = check.opt_str_param(io_manager_key, "io_manager_key")
         self.partitions_def = check.opt_inst_param(
