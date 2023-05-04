@@ -54,7 +54,7 @@ from dagster._utils.merger import merge_dicts
 from dagster.version import __version__ as dagster_module_version
 
 if TYPE_CHECKING:
-    from dagster._core.host_representation.external import ExternalJob, ExternalRepository
+    from dagster._core.host_representation.external import ExternalJob, ExternalRepository, ExternalResource
     from dagster._core.workspace.context import IWorkspaceProcessContext
 
 TELEMETRY_STR = ".telemetry"
@@ -477,10 +477,6 @@ def get_stats_from_external_repo(external_repo: "ExternalRepository") -> Mapping
     num_observable_source_assets_in_repo = 0
     num_dbt_assets_in_repo = 0
     num_assets_with_code_versions_in_repo = 0
-    num_pydantic_resources = 0
-    num_pydantic_io_managers = 0
-    num_function_resources = 0
-    num_function_io_managers = 0
 
     for asset in external_asset_nodes:
         if asset.partitions_def_data:
@@ -519,28 +515,8 @@ def get_stats_from_external_repo(external_repo: "ExternalRepository") -> Mapping
         if external_sensor.name == "asset_reconciliation_sensor"
     )
 
-    resource_types = [resource.resource_type for resource in external_resources]
-
-    pydantic_resource_type_str = (
-        "dagster._config.pythonic_config.ConfigurableResourceFactoryResourceDefinition"
-    )
-    pydantic_io_manager_type_str = (
-        "dagster._config.pythonic_config.ConfigurableIOManagerFactoryResourceDefinition"
-    )
-    function_resource_type_str = ""
-    function_io_manager_type_str = "dagster._core.storage.io_manager.IOManagerDefinition"
-
-    for resource in external_resources:
-        if resource.resource_type == pydantic_resource_type_str:
-            num_pydantic_resources += 1
-        elif resource.resource_type == pydantic_io_manager_type_str:
-            num_pydantic_io_managers += 1
-        elif resource.resource_type == function_resource_type_str:
-            num_function_resources += 1
-        elif resource.resource_type == function_io_manager_type_str:
-            num_function_io_managers += 1
-
     return {
+        **get_resource_stats(external_resources=list(external_resources)),
         "num_pipelines_in_repo": str(num_pipelines_in_repo),
         "num_schedules_in_repo": str(num_schedules_in_repo),
         "num_sensors_in_repo": str(num_sensors_in_repo),
@@ -562,6 +538,41 @@ def get_stats_from_external_repo(external_repo: "ExternalRepository") -> Mapping
         "num_dbt_assets_in_repo": str(num_dbt_assets_in_repo),
         "num_assets_with_code_versions_in_repo": str(num_assets_with_code_versions_in_repo),
         "num_asset_reconciliation_sensors_in_repo": str(num_asset_reconciliation_sensors_in_repo),
+    }
+
+def get_resource_stats(external_resources: Sequence["ExternalResource"]) -> Mapping[str, str]:
+
+    dagster_resources = [
+        "dagster_snowflake.resources.SnowflakeResource",
+        "dagster_dbt.cli.resources.DbtCliClientResource"
+        # fill out with rest of resources
+    ]
+
+    dagster_io_managers = [
+        "dagster_snowflake_pandas.snowflake_pandas_type_handler.SnowflakePandasIOManager",
+        "dagster_snowflake_pyspark.snowflake_pyspark_type_handler.SnowflakePySparkIOManager"
+        # fill out with rest of io managers
+    ]
+
+    used_dagster_resources = []
+    used_dagster_io_managers = []
+    used_custom_resources = []
+    used_custom_io_managers = [] # still figuring out how to distinguish custom resources and io managers, so just doing resources for now
+
+    for resource in external_resources:
+        resource_type = resource.resource_type
+        if resource_type in dagster_resources:
+            used_dagster_resources.append(resource_type)
+        elif resource_type in dagster_io_managers:
+            used_dagster_io_managers.append(resource_type)
+        else:
+            used_custom_resources.append(resource_type)
+
+    return {
+        "dagster_resources": str(used_dagster_resources),
+        "dagster_io_managers": str(used_dagster_io_managers),
+        "custom_resources": str(used_custom_resources),
+        "custom_io_managers": str(used_custom_io_managers)
     }
 
 

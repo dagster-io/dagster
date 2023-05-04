@@ -15,6 +15,8 @@ from .parquet_io_manager import (
 )
 from .snowflake_io_manager import SnowflakeIOManager
 
+from dagster_snowflake_pandas import SnowflakePandasIOManager
+
 DBT_PROJECT_DIR = file_relative_path(__file__, "../../dbt_project")
 DBT_PROFILES_DIR = DBT_PROJECT_DIR + "/config"
 dbt_local_resource = DbtCliClientResource(
@@ -96,4 +98,5 @@ RESOURCES_LOCAL = {
     "hn_client": HNAPIClient(),
     "dbt": dbt_local_resource,
     "old_style": duckdb_pandas_io_manager.configured({"database": "my_db.duckdb"}),
+    "snowflake_pandas": SnowflakePandasIOManager(database="foo", account="foo", password="foo", user="foo")
 }
