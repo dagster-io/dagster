@@ -48,7 +48,7 @@ def execute_job_on_celery(
     subset: Optional[Sequence[str]] = None,
 ) -> Iterator[ExecutionResult]:
     with tempdir_wrapper(tempdir) as tempdir:
-        job_def = ReconstructableJob.for_file(REPO_FILE, job_name).subset_for_execution(subset)
+        job_def = ReconstructableJob.for_file(REPO_FILE, job_name).get_subset(op_selection=subset)
         with _instance_wrapper(instance) as wrapped_instance:
             run_config = run_config or {
                 "resources": {"io_manager": {"config": {"base_dir": tempdir}}},

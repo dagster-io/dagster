@@ -986,7 +986,7 @@ class DagsterInstance(DynamicPartitionsStore):
         # solids_to_execute never provided
         if asset_selection or solid_selection:
             # for cases when `create_run_for_pipeline` is directly called
-            job_def = job_def.get_job_def_for_subset_selection(
+            job_def = job_def.get_subset(
                 asset_selection=asset_selection,
                 op_selection=solid_selection,
             )

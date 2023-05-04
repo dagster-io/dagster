@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+import json
 import os
 import sys
 from functools import lru_cache
@@ -9,6 +10,8 @@ from typing import (
     AbstractSet,
     Any,
     Callable,
+    Dict,
+    Iterable,
     List,
     Mapping,
     NamedTuple,
@@ -20,7 +23,7 @@ from typing import (
     overload,
 )
 
-from typing_extensions import TypeAlias
+from typing_extensions import Self, TypeAlias
 
 import dagster._check as check
 import dagster._seven as seven
@@ -38,8 +41,8 @@ from dagster._core.origin import (
     JobPythonOrigin,
     RepositoryPythonOrigin,
 )
-from dagster._core.selector import parse_solid_selection
 from dagster._serdes import pack_value, unpack_value, whitelist_for_serdes
+from dagster._serdes.serdes import NamedTupleSerializer
 from dagster._utils import hash_collection
 
 from .events import AssetKey
@@ -173,7 +176,27 @@ class ReconstructableRepository(
         return self._hash
 
 
+class ReconstructableJobSerializer(NamedTupleSerializer):
+    def before_unpack(self, _, unpacked_dict: Dict[str, Any]) -> Dict[str, Any]:
+        solid_selection_str = unpacked_dict.get("solid_selection_str")
+        solids_to_execute = unpacked_dict.get("solids_to_execute")
+        if solid_selection_str:
+            unpacked_dict["op_selection"] = json.loads(solid_selection_str)
+        elif solids_to_execute:
+            unpacked_dict["op_selection"] = solids_to_execute
+        return unpacked_dict
+
+    def after_pack(self, **packed_dict: Any) -> Dict[str, Any]:
+        if packed_dict["op_selection"]:
+            packed_dict["solid_selection_str"] = json.dumps(packed_dict["op_selection"]["__set__"])
+        else:
+            packed_dict["solid_selection_str"] = None
+        del packed_dict["op_selection"]
+        return packed_dict
+
+
 @whitelist_for_serdes(
+    serializer=ReconstructableJobSerializer,
     storage_name="ReconstructablePipeline",
     storage_field_names={
         "job_name": "pipeline_name",
@@ -185,8 +208,7 @@ class ReconstructableJob(
         [
             ("repository", ReconstructableRepository),
             ("job_name", str),
-            ("solid_selection_str", Optional[str]),
-            ("solids_to_execute", Optional[AbstractSet[str]]),
+            ("op_selection", Optional[AbstractSet[str]]),
             ("asset_selection", Optional[AbstractSet[AssetKey]]),
         ],
     ),
@@ -199,12 +221,9 @@ class ReconstructableJob(
         repository (ReconstructableRepository): The reconstructable representation of the repository
             the job belongs to.
         job_name (str): The name of the job.
-        solid_selection_str (Optional[str]): The string value of a comma separated list of user-input
-            op selection. None if no selection is specified, i.e. the entire job will
-            be run.
-        solids_to_execute (Optional[FrozenSet[str]]): A set of op names to execute. None if no selection
-            is specified, i.e. the entire job will be run.
-        asset_selection (Optional[FrozenSet[AssetKey]]) A set of assets to execute. None if no selection
+        op_selection (Optional[AbstractSet[str]]): A set of op query strings. Ops matching any of
+            these queries will be selected. None if no selection is specified.
+        asset_selection (Optional[AbstractSet[AssetKey]]) A set of assets to execute. None if no selection
             is specified, i.e. the entire job will be run.
     """
 
@@ -212,19 +231,18 @@ class ReconstructableJob(
         cls,
         repository: ReconstructableRepository,
         job_name: str,
-        solid_selection_str: Optional[str] = None,
-        solids_to_execute: Optional[AbstractSet[str]] = None,
+        op_selection: Optional[Iterable[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
     ):
-        check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
-        check.opt_set_param(asset_selection, "asset_selection", AssetKey)
+        op_selection = set(op_selection) if op_selection else None
         return super(ReconstructableJob, cls).__new__(
             cls,
             repository=check.inst_param(repository, "repository", ReconstructableRepository),
             job_name=check.str_param(job_name, "job_name"),
-            solid_selection_str=check.opt_str_param(solid_selection_str, "solid_selection_str"),
-            solids_to_execute=solids_to_execute,
-            asset_selection=asset_selection,
+            op_selection=check.opt_nullable_set_param(op_selection, "op_selection", of_type=str),
+            asset_selection=check.opt_nullable_set_param(
+                asset_selection, "asset_selection", AssetKey
+            ),
         )
 
     def with_repository_load_data(
@@ -232,17 +250,13 @@ class ReconstructableJob(
     ) -> ReconstructableJob:
         return self._replace(repository=self.repository.with_repository_load_data(metadata))
 
-    @property
-    def solid_selection(self) -> Optional[Sequence[str]]:
-        return seven.json.loads(self.solid_selection_str) if self.solid_selection_str else None
-
     # Keep the most recent 1 definition (globally since this is a NamedTuple method)
     # This allows repeated calls to get_definition in execution paths to not reload the job
     @lru_cache(maxsize=1)
-    def get_definition(self) -> Union[JobDefinition, "JobDefinition"]:
+    def get_definition(self) -> JobDefinition:
         return self.repository.get_definition().get_maybe_subset_job_def(
             self.job_name,
-            self.solid_selection,
+            self.op_selection,
             self.asset_selection,
             self.solids_to_execute,
         )
@@ -250,92 +264,21 @@ class ReconstructableJob(
     def get_reconstructable_repository(self) -> ReconstructableRepository:
         return self.repository
 
-    def _subset_for_execution(
+    def get_subset(
         self,
-        solids_to_execute: Optional[AbstractSet[str]],
-        solid_selection: Optional[Sequence[str]],
-        asset_selection: Optional[AbstractSet[AssetKey]],
-    ) -> "ReconstructableJob":
-        # no selection
-        if solid_selection is None and solids_to_execute is None and asset_selection is None:
-            return ReconstructableJob(
-                repository=self.repository,
-                job_name=self.job_name,
-            )
-
-        from dagster._core.definitions import JobDefinition
-
-        job_def = self.get_definition()
-        if isinstance(job_def, JobDefinition):
-            # jobs use pre-resolved selection
-            # when subselecting a job
-            # * job subselection depend on solid_selection rather than solids_to_execute
-            # * we'll resolve the op selection later in the stack
-            if solid_selection is None:
-                # when the pre-resolution info is unavailable (e.g. subset from existing run),
-                # we need to fill the solid_selection in order to pass the value down to deeper stack.
-                solid_selection = list(solids_to_execute) if solids_to_execute else None
-            return ReconstructableJob(
-                repository=self.repository,
-                job_name=self.job_name,
-                solid_selection_str=seven.json.dumps(solid_selection) if solid_selection else None,
-                solids_to_execute=None,
-                asset_selection=asset_selection,
-            )
-        elif isinstance(job_def, JobDefinition):
-            # when subselecting a job
-            # * job subselection depend on solids_to_excute rather than solid_selection
-            # * we resolve a list of solid selection queries to a frozenset of qualified solid names
-            #   e.g. ['foo_solid+'] to {'foo_solid', 'bar_solid'}
-            if solid_selection and solids_to_execute is None:
-                # when post-resolution query is unavailable, resolve the query
-                solids_to_execute = parse_solid_selection(job_def, solid_selection)
-            return ReconstructableJob(
-                repository=self.repository,
-                job_name=self.job_name,
-                solid_selection_str=seven.json.dumps(solid_selection) if solid_selection else None,
-                solids_to_execute=frozenset(solids_to_execute) if solids_to_execute else None,
-            )
-        else:
-            raise Exception(f"Unexpected job type {job_def.__class__.__name__}")
-
-    def subset_for_execution(
-        self,
-        solid_selection: Optional[Sequence[str]] = None,
+        *,
+        op_selection: Optional[Iterable[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
-    ) -> "ReconstructableJob":
-        # take a list of unresolved selection queries
-        check.opt_sequence_param(solid_selection, "solid_selection", of_type=str)
-        check.opt_set_param(asset_selection, "asset_selection", of_type=AssetKey)
-
-        check.invariant(
-            not (solid_selection and asset_selection),
-            "solid_selection and asset_selection cannot both be provided as arguments",
-        )
-
-        return self._subset_for_execution(
-            solids_to_execute=None, solid_selection=solid_selection, asset_selection=asset_selection
-        )
-
-    def subset_for_execution_from_existing_job(
-        self,
-        solids_to_execute: Optional[AbstractSet[str]] = None,
-        asset_selection: Optional[AbstractSet[AssetKey]] = None,
-    ) -> ReconstructableJob:
-        # take a frozenset of resolved solid names from an existing job
-        # so there's no need to parse the selection
-
-        check.invariant(
-            not (solids_to_execute and asset_selection),
-            "solids_to_execute and asset_selection cannot both be provided as arguments",
-        )
-
-        check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
-        check.opt_set_param(asset_selection, "asset_selection", of_type=AssetKey)
-
-        return self._subset_for_execution(
-            solids_to_execute=solids_to_execute,
-            solid_selection=None,
+    ) -> Self:
+        if op_selection and asset_selection:
+            check.failed(
+                "solid_selection and asset_selection cannot both be provided as arguments",
+            )
+        op_selection = set(op_selection) if op_selection else None
+        return ReconstructableJob(
+            repository=self.repository,
+            job_name=self.job_name,
+            op_selection=op_selection,
             asset_selection=asset_selection,
         )
 
@@ -381,6 +324,12 @@ class ReconstructableJob(
             return pointer.module
 
         return None
+
+    # Allow this to be hashed for `lru_cache` in `get_definition`
+    def __hash__(self) -> int:
+        if not hasattr(self, "_hash"):
+            self._hash = hash_collection(self)
+        return self._hash
 
 
 def reconstructable(target: Callable[..., "JobDefinition"]) -> ReconstructableJob:

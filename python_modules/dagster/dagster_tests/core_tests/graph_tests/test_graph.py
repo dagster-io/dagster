@@ -663,7 +663,7 @@ def test_job_subset():
 
     the_job = basic.to_job()
 
-    assert isinstance(the_job.get_job_def_for_subset_selection(["my_op"]), JobDefinition)
+    assert isinstance(the_job.get_subset(op_selection=["my_op"]), JobDefinition)
 
 
 def test_tags():

@@ -419,8 +419,9 @@ def _execute_step_command_body(
         recon_job = (
             recon_job_from_origin(cast(JobPythonOrigin, dagster_run.job_code_origin))
             .with_repository_load_data(repository_load_data)
-            .subset_for_execution_from_existing_job(
-                dagster_run.solids_to_execute, dagster_run.asset_selection
+            .get_subset(
+                op_selection=dagster_run.solids_to_execute,
+                asset_selection=dagster_run.asset_selection,
             )
         )
 

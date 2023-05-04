@@ -24,10 +24,10 @@ from dagster._core.definitions.auto_materialize_policy import AutoMaterializePol
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.input import In
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
+from dagster._core.definitions.op_selection import get_graph_subset
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
-from dagster._core.selector.subset_selector import SelectionTree
 from dagster._core.types.dagster_type import Nothing
 from dagster._utils import IHasInternalInit
 from dagster._utils.backcompat import (
@@ -989,11 +989,6 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         selected_asset_keys: AbstractSet[AssetKey],
     ):
         from dagster._core.definitions.graph_definition import GraphDefinition
-        from dagster._core.selector.subset_selector import (
-            convert_dot_separated_string_to_selection_tree,
-        )
-
-        from .job_definition import get_subselected_graph_definition
 
         if not isinstance(self.node_def, GraphDefinition):
             raise DagsterInvalidInvocationError(
@@ -1008,20 +1003,9 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         for asset_key in selected_asset_keys:
             dep_node_handles = dep_node_handles_by_asset_key[asset_key]
             for dep_node_handle in dep_node_handles:
-                str_op_path = ".".join(dep_node_handle.path[1:])
-                op_selection.append(str_op_path)
+                op_selection.append(".".join(dep_node_handle.path[1:]))
 
-        # Pass an op selection into the original job containing only the ops necessary to
-        # generate the selected assets. The ops should all be nested within a top-level graph
-        # node in the original job.
-
-        op_selection_tree: SelectionTree = {}
-        for item in op_selection:
-            convert_dot_separated_string_to_selection_tree(
-                op_selection_tree, splits=item.split(".")
-            )
-
-        return get_subselected_graph_definition(self.node_def, op_selection_tree)
+        return get_graph_subset(self.node_def, op_selection)
 
     def subset_for(
         self,

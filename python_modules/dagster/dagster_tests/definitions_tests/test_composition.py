@@ -842,7 +842,7 @@ def test_tag_subset():
         empty()
         emit.tag({"invoke": "2"})()
 
-    plan = create_execution_plan(tag.get_job_def_for_subset_selection(["emit"]))
+    plan = create_execution_plan(tag.get_subset(op_selection=["emit"]))
     step = list(plan.step_dict.values())[0]
     assert step.tags == {"def": "1", "invoke": "2"}
 

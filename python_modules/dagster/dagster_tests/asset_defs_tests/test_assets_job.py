@@ -1390,7 +1390,7 @@ def test_asset_selection_reconstructable():
                 "reconstruct_asset_job",
                 reconstructable_args=tuple(),
                 reconstructable_kwargs={},
-            ).subset_for_execution(asset_selection=frozenset([AssetKey("f")]))
+            ).get_subset(asset_selection=frozenset([AssetKey("f")]))
 
             events = list(execute_run_iterator(reconstructable_foo_job, run, instance=instance))
             assert len([event for event in events if event.is_job_success]) == 1

@@ -50,16 +50,14 @@ class ExplodingTestPipeline(ReconstructableJob):
         cls,
         repository,
         pipeline_name,
-        solid_selection_str=None,
-        solids_to_execute=None,
+        op_selection=None,
         asset_selection=None,
     ):
         return super(ExplodingTestPipeline, cls).__new__(
             cls,
             repository,
             pipeline_name,
-            solid_selection_str,
-            solids_to_execute,
+            op_selection,
             asset_selection,
         )
 
