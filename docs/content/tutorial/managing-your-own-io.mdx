@@ -35,7 +35,8 @@ from dagster import asset
 @asset
 def stopwords_zip() -> None:
     urllib.request.urlretrieve(
-        "https://docs.dagster.io/assets/stopwords.zip,data/stopwords.zip",
+        "https://docs.dagster.io/assets/stopwords.zip",
+        "data/stopwords.zip",
     )
 ```
 
@@ -68,7 +69,6 @@ import zipfile  # Note: remember to add imports to the top of the file
 def stopwords_csv() -> None:
     with zipfile.ZipFile("data/stopwords.zip", "r") as zip_ref:
         zip_ref.extractall("data")
-
 ```
 
 In the UI, reload your code location, observe the new `stopwords_csv` asset, and notice how it depends on the `stopwords_zip` asset.
@@ -77,7 +77,7 @@ In the UI, reload your code location, observe the new `stopwords_csv` asset, and
 
 ## Step 3: Combining assets with and without I/O managers
 
-When defining an asset, you can combine assets that use I/O managers with assets that don’t. Using the following code, update your `most_frequent_words` asset to use `stopwords_csv` instead of a static list of stop words: 
+When defining an asset, you can combine assets that use I/O managers with assets that don’t. Using the following code, update your `most_frequent_words` asset to use `stopwords_csv` instead of a static list of stop words:
 
 Now that you’ve made two assets that don’t use I/O managers, you’ll connect the `stopwords_csv` asset to your `most_frequent_words` asset to use a more comprehensive list of stop words.
 
@@ -97,21 +97,8 @@ def most_frequent_words(topstories):
     # Replace the with the two lines below
     with open("data/stopwords.csv", "r") as f:
         stopwords = {row[0] for row in csv.reader(f)}
+
     # ...
+
     # Keep the rest of the function the same
-    ```
-To validate that this worked, materialize your entire asset graph to see the dependency between `most_frequent_words` and `stopwords_csv`.
-
----
-
-## Next steps
-
-To validate that this worked, materialize your entire asset graph to see `most_frequent_words` depend on the `stopwords_csv` asset
-
-## Next Steps
-
-Congratulations! 🎉 You've written your first pipeline in Dagster!
-
-In this section, you learned how to create assets without an I/O manager and have them as dependencies on other assets. You also learned how to combine assets that use I/O managers with assets that don't.
-
-Now that you've completed the tutorial, find out what else you can do with our [Next steps](/tutorial/next-steps).
+```

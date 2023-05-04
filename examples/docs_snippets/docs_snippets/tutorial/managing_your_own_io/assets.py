@@ -23,12 +23,14 @@ def stopwords_csv() -> None:
     with zipfile.ZipFile("data/stopwords.zip", "r") as zip_ref:
         zip_ref.extractall("data")
 
+
 # end_stopwords_csv
 
 
 @asset
 def topstories():
     pass
+
 
 # start_updated_most_frequent_words
 import csv  # Note: Remember to add all new imports to the top
