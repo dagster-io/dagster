@@ -238,22 +238,22 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             ],
         )
 
+        namespace = check.not_none(container_context.namespace)
+
         self._instance.report_engine_event(
             "Creating Kubernetes run worker job",
             run,
             EngineEventData(
                 {
                     "Kubernetes Job name": job_name,
-                    "Kubernetes Namespace": container_context.namespace,
+                    "Kubernetes Namespace": namespace,
                     "Run ID": run.run_id,
                 }
             ),
             cls=self.__class__,
         )
 
-        self._api_client.batch_api.create_namespaced_job(
-            body=job, namespace=container_context.namespace
-        )
+        self._api_client.create_namespaced_job_with_retries(body=job, namespace=namespace)
         self._instance.report_engine_event(
             "Kubernetes run worker job created",
             run,
