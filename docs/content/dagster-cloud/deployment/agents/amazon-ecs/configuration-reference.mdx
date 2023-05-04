@@ -206,6 +206,20 @@ user_code_launcher:
   </ul>
   </ReferenceTableItem>
   <ReferenceTableItem
+  propertyName="config.ecs_timeout">
+  How long (in seconds) to poll against ECS API endpoints. If your runs take an unusually long time to start and result in timeouts, you can increase this setting above the default.
+  <ul>
+  <li><strong>Default</strong> - 300 (seconds)</li>
+  </ul>
+  </ReferenceTableItem>
+  <ReferenceTableItem
+  propertyName="config.ecs_grace_period">
+  How long (in seconds) to continue polling if an ECS API endpoint fails (because the ECS API is eventually consistent).
+  <ul>
+  <li><strong>Default</strong> - 30 (seconds)</li>
+  </ul>
+  </ReferenceTableItem>
+  <ReferenceTableItem
   propertyName="config.server_resources">
   The resources that the agent should allocate to the ECS service for each code location that it creates. If set, must be a dictionary with a <code>cpu</code> and/or <code>memory</code> key. <strong>Note</strong>: <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html">Fargate tasks only support certain combinations of CPU and memory</a>.
   </ReferenceTableItem>
