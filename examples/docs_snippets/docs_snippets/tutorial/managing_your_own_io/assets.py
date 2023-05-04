@@ -25,6 +25,11 @@ def stopwords_csv() -> None:
 
 # end_stopwords_csv
 
+
+@asset
+def topstories():
+    pass
+
 # start_updated_most_frequent_words
 import csv  # Note: Remember to add all new imports to the top
 
