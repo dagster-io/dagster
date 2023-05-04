@@ -122,8 +122,8 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
             "Raw private key password to use. See"
             " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details. Required for"
             " both private_key and private_key_path. To avoid issues with newlines in the keys, you"
-            " must base64 encode the key. You can retrieve the base64 encoded key with this shell"
-            " command: cat rsa_key.pub | base64"
+            " can base64 encode the key. You can retrieve the base64 encoded key with this shell"
+            " command: cat rsa_key.p8 | base64"
         ),
     )
 
@@ -361,14 +361,28 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
             with open(config.get("private_key_path"), "rb") as key:
                 private_key = key.read()
         else:
-            private_key_encoded = config.get("private_key", None)
-            private_key = base64.b64decode(private_key_encoded)
+            private_key = config.get("private_key", None)
 
         kwargs = {}
         if config.get("private_key_password", None) is not None:
             kwargs["password"] = config["private_key_password"].encode()
 
-        p_key = serialization.load_pem_private_key(private_key, backend=default_backend(), **kwargs)
+        try:
+            p_key = serialization.load_pem_private_key(
+                private_key, backend=default_backend(), **kwargs
+            )
+        except TypeError:
+            try:
+                private_key = base64.b64decode(private_key)
+                p_key = serialization.load_pem_private_key(
+                    private_key, backend=default_backend(), **kwargs
+                )
+            except ValueError:
+                raise ValueError(
+                    "Unable to load private key. You may need to base64 encode your private key."
+                    " You can retrieve the base64 encoded key with this shell command: cat"
+                    " rsa_key.p8 | base64"
+                )
 
         pkb = p_key.private_bytes(
             encoding=serialization.Encoding.DER,
