@@ -351,7 +351,7 @@ def do_run(
 
 
 def single_asset_run(asset_key: str, partition_key: Optional[str] = None) -> RunSpec:
-    return RunSpec(asset_keys=[AssetKey.from_coerceable(asset_key)], partition_key=partition_key)
+    return RunSpec(asset_keys=[AssetKey.from_coercible(asset_key)], partition_key=partition_key)
 
 
 def run(
@@ -362,9 +362,9 @@ def run(
 ):
     return RunSpec(
         asset_keys=list(
-            map(AssetKey.from_coerceable, itertools.chain(asset_keys, failed_asset_keys or []))
+            map(AssetKey.from_coercible, itertools.chain(asset_keys, failed_asset_keys or []))
         ),
-        failed_asset_keys=list(map(AssetKey.from_coerceable, failed_asset_keys or [])),
+        failed_asset_keys=list(map(AssetKey.from_coercible, failed_asset_keys or [])),
         partition_key=partition_key,
         is_observation=is_observation,
     )
