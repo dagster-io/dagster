@@ -152,11 +152,11 @@ def _batch_event_iterator(
 def _events_for_structured_json_line(
     json_line: Mapping[str, Any],
     context: OpExecutionContext,
-    node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey],
+    manifest_json: Mapping[str, Any],
+    node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = default_asset_key_fn,
     runtime_metadata_fn: Optional[
         Callable[[OpExecutionContext, Mapping[str, Any]], Mapping[str, RawMetadataValue]]
-    ],
-    manifest_json: Mapping[str, Any],
+    ] = None,
 ) -> Iterator[Union[AssetObservation, Output]]:
     """Parses a json line into a Dagster event. Attempts to replicate the behavior of result_to_events
     as closely as possible.

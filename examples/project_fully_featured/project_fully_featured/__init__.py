@@ -7,7 +7,7 @@ from .jobs import activity_analytics_assets_sensor, core_assets_schedule, recomm
 from .resources import RESOURCES_LOCAL, RESOURCES_PROD, RESOURCES_STAGING
 from .sensors import make_slack_on_failure_sensor
 
-all_assets = [*core_assets, *recommender_assets, *dbt_assets, *activity_analytics_assets]
+all_assets = [*core_assets, *recommender_assets, dbt_assets, *activity_analytics_assets]
 
 resources_by_deployment_name = {
     "prod": RESOURCES_PROD,

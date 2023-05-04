@@ -13,6 +13,7 @@ from dagster import (
     TableColumn,
     TableSchema,
 )
+from dagster._core.definitions.asset_out import AssetOut
 from dagster._utils.merger import merge_dicts
 
 from .utils import input_name_fn, output_name_fn
@@ -101,6 +102,12 @@ def default_description_fn(node_info: Mapping[str, Any], display_raw_sql: bool =
     return "\n\n".join(filter(None, description_sections))
 
 
+def default_code_version_fn(node_info: Mapping[str, Any]) -> str:
+    return hashlib.sha1(
+        (node_info.get("raw_sql") or node_info.get("raw_code", "")).encode("utf-8")
+    ).hexdigest()
+
+
 ###################
 # DEPENDENCIES
 ###################
@@ -166,6 +173,49 @@ def get_deps(
     return frozen_asset_deps
 
 
+def get_dbt_multi_asset_args(
+    dbt_nodes: Mapping[str, Any],
+    deps: Mapping[str, FrozenSet[str]],
+) -> Tuple[Set[AssetKey], Dict[str, AssetOut], Dict[str, Set[AssetKey]],]:
+    """Use the standard defaults for dbt to construct the arguments for a dbt multi asset."""
+    non_argument_deps: Set[AssetKey] = set()
+    outs: Dict[str, AssetOut] = {}
+    internal_asset_deps: Dict[str, Set[AssetKey]] = {}
+
+    for unique_id, parent_unique_ids in deps.items():
+        node_info = dbt_nodes[unique_id]
+
+        output_name = output_name_fn(node_info)
+        asset_key = default_asset_key_fn(node_info)
+
+        outs[output_name] = AssetOut(
+            key=asset_key,
+            dagster_type=Nothing,
+            description=default_description_fn(node_info, display_raw_sql=False),
+            is_required=False,
+            metadata=default_metadata_fn(node_info),
+            group_name=default_group_fn(node_info),
+            code_version=default_code_version_fn(node_info),
+            freshness_policy=default_freshness_policy_fn(node_info),
+            auto_materialize_policy=default_auto_materialize_policy_fn(node_info),
+        )
+
+        # Translate parent unique ids to internal asset deps and non argument dep
+        output_internal_deps = internal_asset_deps.setdefault(output_name, set())
+        for parent_unique_id in parent_unique_ids:
+            parent_node_info = dbt_nodes[parent_unique_id]
+            parent_asset_key = default_asset_key_fn(parent_node_info)
+
+            # Add this parent as an internal dependency
+            output_internal_deps.add(parent_asset_key)
+
+            # Mark this parent as an input if it has no dependencies
+            if parent_unique_id not in deps:
+                non_argument_deps.add(parent_asset_key)
+
+    return non_argument_deps, outs, internal_asset_deps
+
+
 def get_asset_deps(
     dbt_nodes,
     deps,
@@ -223,9 +273,7 @@ def get_asset_deps(
                 metadata=metadata,
                 is_required=False,
                 dagster_type=Nothing,
-                code_version=hashlib.sha1(
-                    (node_info.get("raw_sql") or node_info.get("raw_code", "")).encode("utf-8")
-                ).hexdigest(),
+                code_version=default_code_version_fn(node_info),
             ),
         )
 

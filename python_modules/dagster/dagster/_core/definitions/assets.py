@@ -789,6 +789,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         auto_materialize_policy: Optional[
             Union[AutoMaterializePolicy, Mapping[AssetKey, AutoMaterializePolicy]]
         ] = None,
+        can_subset=None,
     ) -> "AssetsDefinition":
         output_asset_key_replacements = check.opt_mapping_param(
             output_asset_key_replacements,
@@ -907,7 +908,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 }
                 for key, value in self.asset_deps.items()
             },
-            can_subset=self.can_subset,
+            can_subset=self.can_subset if can_subset is None else can_subset,
             selected_asset_keys={
                 output_asset_key_replacements.get(key, key) for key in self._selected_asset_keys
             },
