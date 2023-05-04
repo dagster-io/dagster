@@ -55,15 +55,12 @@ export const CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT = gql`
 
 export const CONFIG_EDITOR_VALIDATION_FRAGMENT = gql`
   fragment ConfigEditorValidationFragment on PipelineConfigValidationResult {
-    __typename
     ... on RunConfigValidationInvalid {
       errors {
-        __typename
         reason
         message
         stack {
           entries {
-            __typename
             ... on EvaluationStackPathEntry {
               fieldName
             }

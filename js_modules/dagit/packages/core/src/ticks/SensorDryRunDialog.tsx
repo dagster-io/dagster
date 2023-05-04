@@ -362,7 +362,6 @@ const SensorDryRun: React.FC<Props> = ({repoAddress, name, currentCursor, onClos
 export const EVALUATE_SENSOR_MUTATION = gql`
   mutation SensorDryRunMutation($selectorData: SensorSelector!, $cursor: String) {
     sensorDryRun(selectorData: $selectorData, cursor: $cursor) {
-      __typename
       ... on DryRunInstigationTick {
         timestamp
         evaluationResult {

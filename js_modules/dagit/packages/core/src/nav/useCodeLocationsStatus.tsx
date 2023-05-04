@@ -279,7 +279,6 @@ const ViewButton = styled(ButtonLink)`
 const CODE_LOCATION_STATUS_QUERY = gql`
   query CodeLocationStatusQuery {
     locationStatusesOrError {
-      __typename
       ... on WorkspaceLocationStatusEntries {
         entries {
           id

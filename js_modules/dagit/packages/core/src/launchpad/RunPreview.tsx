@@ -461,7 +461,6 @@ export const RunPreview: React.FC<RunPreviewProps> = (props) => {
 
 export const RUN_PREVIEW_VALIDATION_FRAGMENT = gql`
   fragment RunPreviewValidationFragment on PipelineConfigValidationResult {
-    __typename
     ... on RunConfigValidationInvalid {
       errors {
         ...RunPreviewValidationErrors
@@ -481,7 +480,6 @@ export const RUN_PREVIEW_VALIDATION_FRAGMENT = gql`
     message
     stack {
       entries {
-        __typename
         ... on EvaluationStackPathEntry {
           fieldName
         }

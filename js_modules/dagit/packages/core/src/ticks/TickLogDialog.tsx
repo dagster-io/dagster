@@ -117,7 +117,6 @@ const TickLogRow: React.FC<{event: TickLogEventFragment}> = ({event}) => {
 const TICK_LOG_EVENTS_QUERY = gql`
   query TickLogEventsQuery($instigationSelector: InstigationSelector!, $timestamp: Float!) {
     instigationStateOrError(instigationSelector: $instigationSelector) {
-      __typename
       ... on InstigationState {
         id
         tick(timestamp: $timestamp) {

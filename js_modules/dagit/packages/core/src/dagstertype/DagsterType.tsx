@@ -78,10 +78,8 @@ export const DagsterTypeSummary: React.FC<{
 // NOTE: Because you can't have a recursive fragment, inner types are limited.
 export const DAGSTER_TYPE_FRAGMENT = gql`
   fragment DagsterTypeFragment on DagsterType {
-    __typename
     ...InnerDagsterTypeFragment
     innerTypes {
-      __typename
       ...InnerDagsterTypeFragment
     }
   }
