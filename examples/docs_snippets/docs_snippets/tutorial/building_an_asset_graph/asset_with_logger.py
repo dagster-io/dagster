@@ -4,6 +4,7 @@ import requests
 # start_topstories_asset_with_logger
 from dagster import asset, get_dagster_logger
 
+
 @asset
 def topstories(topstory_ids):
     logger = get_dagster_logger()

@@ -62,7 +62,10 @@ def most_frequent_words(topstories):
                 word_counts[cleaned_word] = word_counts.get(cleaned_word, 0) + 1
 
     # Get the top 25 most frequent words
-    top_words = {pair[0]: pair[1] for pair in sorted(word_counts.items(), key=lambda x: x[1], reverse=True)[:25]}
+    top_words = {
+        pair[0]: pair[1]
+        for pair in sorted(word_counts.items(), key=lambda x: x[1], reverse=True)[:25]
+    }
 
     # Make a bar chart of the top 25 words
     plt.figure(figsize=(10, 6))
