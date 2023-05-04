@@ -218,15 +218,11 @@ def most_frequent_words(topstories):
                 word_counts[cleaned_word] = word_counts.get(cleaned_word, 0) + 1
 
     # Get the top 25 most frequent words
-    top_words = sorted(word_counts.items(), key=lambda x: x[1], reverse=True)[:25]
+    top_words = {pair[0]: pair[1] for pair in sorted(word_counts.items(), key=lambda x: x[1], reverse=True)[:25]}
 
     # Make a bar chart of the top 25 words
     plt.figure(figsize=(10, 6))
-    plt.bar(
-        [word for word, _count in top_words],
-        [count for _word, count in top_words],
-        color="orange",
-    )
+    plt.bar(top_words.keys(), top_words.values())
     plt.xticks(rotation=45, ha="right")
     plt.title("Top 25 Words in Hacker News Titles")
     plt.tight_layout()

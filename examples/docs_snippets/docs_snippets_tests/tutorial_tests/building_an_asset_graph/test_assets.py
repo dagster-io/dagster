@@ -44,4 +44,5 @@ def test_most_frequent_words_with_metadata():
 
     results = assets_with_metadata.most_frequent_words(input)
 
-    assert results == expected
+    assert results.value == expected
+    assert results.metadata is not None
