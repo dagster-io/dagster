@@ -79,13 +79,13 @@ export const DagsterTypeSummary: React.FC<{
 export const DAGSTER_TYPE_FRAGMENT = gql`
   fragment DagsterTypeFragment on DagsterType {
     __typename
-    ..._DagsterTypeFragment
+    ...InnerDagsterTypeFragment
     innerTypes {
       __typename
-      ..._DagsterTypeFragment
+      ...InnerDagsterTypeFragment
     }
   }
-  fragment _DagsterTypeFragment on DagsterType {
+  fragment InnerDagsterTypeFragment on DagsterType {
     __typename
     key
     name
