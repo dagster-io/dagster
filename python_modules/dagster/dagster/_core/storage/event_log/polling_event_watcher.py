@@ -82,7 +82,7 @@ class SqlPollingEventWatcher:
                         watcher_thread.should_thread_exit.set()
                 for run_id in self._run_id_to_watcher_dict:
                     self._run_id_to_watcher_dict[run_id].join()
-                del self._run_id_to_watcher_dict
+                self._run_id_to_watcher_dict = {}
 
 
 class SqlPollingRunIdEventWatcherThread(threading.Thread):
