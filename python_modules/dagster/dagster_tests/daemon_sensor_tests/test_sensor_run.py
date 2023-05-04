@@ -2974,7 +2974,7 @@ def test_add_dynamic_partitions_sensor(
     ]
 
 
-def test_add_dynamic_partitions_and_launch_runs(
+def test_add_delete_skip_dynamic_partitions(
     caplog, executor, instance, workspace_context, external_repo
 ):
     foo_job.execute_in_process(instance=instance)  # creates event log storage tables
@@ -2995,36 +2995,81 @@ def test_add_dynamic_partitions_and_launch_runs(
     )
     assert len(ticks) == 0
 
-    evaluate_sensors(workspace_context, executor)
-
-    ticks = instance.get_ticks(
-        external_sensor.get_external_origin_id(), external_sensor.selector_id
-    )
-    assert len(ticks) == 1
-    assert set(instance.get_dynamic_partitions("quux")) == set(["1"])
-
-    assert instance.get_runs_count() == 2
-
-    assert "Added partition keys to dynamic partitions definition 'quux': ['1']" in caplog.text
-    assert "Deleted partition keys from dynamic partitions definition 'quux': ['2']" in caplog.text
-    assert (
-        "Skipping deletion of partition keys for dynamic partitions definition 'quux' that do not"
-        " exist: ['3']"
-        in caplog.text
-    )
-    assert ticks[0].tick_data.dynamic_partitions_request_results == [
-        DynamicPartitionsRequestResult(
-            "quux", added_partitions=["1"], deleted_partitions=None, skipped_partitions=[]
+    freeze_datetime = to_timezone(
+        create_pendulum_time(
+            year=2023,
+            month=2,
+            day=27,
+            hour=23,
+            minute=59,
+            second=59,
+            tz="UTC",
         ),
-        DynamicPartitionsRequestResult(
-            "quux", added_partitions=None, deleted_partitions=["2"], skipped_partitions=["3"]
-        ),
-    ]
+        "US/Central",
+    )
 
-    run = instance.get_runs()[0]
-    assert run.run_config == {}
-    assert run.tags
-    assert run.tags.get("dagster/partition") == "1"
+    with pendulum.test(freeze_datetime):
+        evaluate_sensors(workspace_context, executor)
+
+        ticks = instance.get_ticks(
+            external_sensor.get_external_origin_id(), external_sensor.selector_id
+        )
+        assert len(ticks) == 1
+        assert set(instance.get_dynamic_partitions("quux")) == set(["1"])
+
+        assert instance.get_runs_count() == 2
+
+        assert "Added partition keys to dynamic partitions definition 'quux': ['1']" in caplog.text
+        assert (
+            "Deleted partition keys from dynamic partitions definition 'quux': ['2']" in caplog.text
+        )
+        assert (
+            "Skipping deletion of partition keys for dynamic partitions definition 'quux' that do"
+            " not exist: ['3']"
+            in caplog.text
+        )
+        assert ticks[0].tick_data.dynamic_partitions_request_results == [
+            DynamicPartitionsRequestResult(
+                "quux", added_partitions=["1"], deleted_partitions=None, skipped_partitions=[]
+            ),
+            DynamicPartitionsRequestResult(
+                "quux", added_partitions=None, deleted_partitions=["2"], skipped_partitions=["3"]
+            ),
+        ]
+
+        run = instance.get_runs()[0]
+        assert run.run_config == {}
+        assert run.tags
+        assert run.tags.get("dagster/partition") == "1"
+
+    freeze_datetime = freeze_datetime.add(seconds=60)
+    with pendulum.test(freeze_datetime):
+        evaluate_sensors(workspace_context, executor)
+
+        ticks = instance.get_ticks(
+            external_sensor.get_external_origin_id(), external_sensor.selector_id
+        )
+        assert len(ticks) == 2
+
+        assert ticks[0].tick_data.dynamic_partitions_request_results == [
+            DynamicPartitionsRequestResult(
+                "quux", added_partitions=[], deleted_partitions=None, skipped_partitions=["1"]
+            ),
+            DynamicPartitionsRequestResult(
+                "quux", added_partitions=None, deleted_partitions=[], skipped_partitions=["2", "3"]
+            ),
+        ]
+
+        assert (
+            "Skipping addition of partition keys for dynamic partitions definition 'quux' that"
+            " already exist: ['1']"
+            in caplog.text
+        )
+        assert (
+            "Skipping deletion of partition keys for dynamic partitions definition 'quux' that do"
+            " not exist: ['2', '3']"
+            in caplog.text
+        )
 
 
 def test_error_on_deleted_dynamic_partitions_run_request(
