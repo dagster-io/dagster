@@ -223,11 +223,9 @@ export const useRepositoryLocationReload = ({
 const REPOSITORY_LOCATION_STATUS_QUERY = gql`
   query RepositoryLocationStatusQuery {
     workspaceOrError {
-      __typename
       ... on Workspace {
         id
         locationEntries {
-          __typename
           id
           loadStatus
           locationOrLoadError {

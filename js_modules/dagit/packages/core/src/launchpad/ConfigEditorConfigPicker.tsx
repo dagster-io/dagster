@@ -451,7 +451,6 @@ const CONFIG_PARTITIONS_QUERY = gql`
       repositorySelector: $repositorySelector
       partitionSetName: $partitionSetName
     ) {
-      __typename
       ... on PartitionSet {
         id
         partitionsOrError {
@@ -490,7 +489,6 @@ export const CONFIG_PARTITION_SELECTION_QUERY = gql`
       repositorySelector: $repositorySelector
       partitionSetName: $partitionSetName
     ) {
-      __typename
       ... on PartitionSet {
         id
         partition(partitionName: $partitionName) {

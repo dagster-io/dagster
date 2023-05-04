@@ -792,7 +792,6 @@ const PIPELINE_EXECUTION_CONFIG_SCHEMA_QUERY = gql`
   }
 
   fragment LaunchpadSessionRunConfigSchemaFragment on RunConfigSchemaOrError {
-    __typename
     ... on RunConfigSchema {
       ...ConfigEditorRunConfigSchemaFragment
     }

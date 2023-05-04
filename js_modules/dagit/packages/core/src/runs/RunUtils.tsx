@@ -200,7 +200,6 @@ export function getReexecutionVariables(input: {
 export const LAUNCH_PIPELINE_EXECUTION_MUTATION = gql`
   mutation LaunchPipelineExecution($executionParams: ExecutionParams!) {
     launchPipelineExecution(executionParams: $executionParams) {
-      __typename
       ... on LaunchRunSuccess {
         run {
           id
@@ -228,7 +227,6 @@ export const LAUNCH_PIPELINE_EXECUTION_MUTATION = gql`
 export const DELETE_MUTATION = gql`
   mutation Delete($runId: String!) {
     deletePipelineRun(runId: $runId) {
-      __typename
       ... on UnauthorizedError {
         message
       }
@@ -245,7 +243,6 @@ export const DELETE_MUTATION = gql`
 export const TERMINATE_MUTATION = gql`
   mutation Terminate($runId: String!, $terminatePolicy: TerminateRunPolicy) {
     terminatePipelineExecution(runId: $runId, terminatePolicy: $terminatePolicy) {
-      __typename
       ... on TerminateRunFailure {
         message
       }
@@ -277,7 +274,6 @@ export const LAUNCH_PIPELINE_REEXECUTION_MUTATION = gql`
       executionParams: $executionParams
       reexecutionParams: $reexecutionParams
     ) {
-      __typename
       ... on LaunchRunSuccess {
         run {
           id

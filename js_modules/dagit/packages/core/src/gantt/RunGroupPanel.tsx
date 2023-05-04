@@ -140,7 +140,6 @@ export const RunGroupPanel: React.FC<{runId: string; runStatusLastChangedAt: num
 const RUN_GROUP_PANEL_QUERY = gql`
   query RunGroupPanelQuery($runId: ID!) {
     runGroupOrError(runId: $runId) {
-      __typename
       ... on RunGroup {
         rootRunId
         runs {

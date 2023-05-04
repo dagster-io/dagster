@@ -5,7 +5,6 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 export const RESUME_BACKFILL_MUTATION = gql`
   mutation resumeBackfill($backfillId: String!) {
     resumePartitionBackfill(backfillId: $backfillId) {
-      __typename
       ... on ResumeBackfillSuccess {
         backfillId
       }
@@ -22,7 +21,6 @@ export const RESUME_BACKFILL_MUTATION = gql`
 export const LAUNCH_PARTITION_BACKFILL_MUTATION = gql`
   mutation LaunchPartitionBackfill($backfillParams: LaunchBackfillParams!) {
     launchPartitionBackfill(backfillParams: $backfillParams) {
-      __typename
       ... on LaunchBackfillSuccess {
         backfillId
       }
@@ -54,7 +52,6 @@ export const LAUNCH_PARTITION_BACKFILL_MUTATION = gql`
       ... on RunConfigValidationInvalid {
         pipelineName
         errors {
-          __typename
           message
           path
           reason

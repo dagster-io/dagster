@@ -10,10 +10,8 @@ import {StartThisScheduleMutation, StopScheduleMutation} from './types/ScheduleM
 export const START_SCHEDULE_MUTATION = gql`
   mutation StartThisSchedule($scheduleSelector: ScheduleSelector!) {
     startSchedule(scheduleSelector: $scheduleSelector) {
-      __typename
       ... on ScheduleStateResult {
         scheduleState {
-          __typename
           id
           status
           runningCount
@@ -35,10 +33,8 @@ export const STOP_SCHEDULE_MUTATION = gql`
       scheduleOriginId: $scheduleOriginId
       scheduleSelectorId: $scheduleSelectorId
     ) {
-      __typename
       ... on ScheduleStateResult {
         scheduleState {
-          __typename
           id
           status
           runningCount

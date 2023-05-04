@@ -130,7 +130,6 @@ export const LogsScrollingTable: React.FC<ILogsScrollingTableProps> = (props) =>
 
 export const LOGS_SCROLLING_TABLE_MESSAGE_FRAGMENT = gql`
   fragment LogsScrollingTableMessageFragment on DagsterRunEvent {
-    __typename
     ...LogsRowStructuredFragment
     ...LogsRowUnstructuredFragment
   }

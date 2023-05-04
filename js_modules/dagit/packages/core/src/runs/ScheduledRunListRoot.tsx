@@ -101,7 +101,6 @@ const SCHEDULED_RUNS_LIST_QUERY = gql`
     repositoriesOrError {
       ... on RepositoryConnection {
         nodes {
-          __typename
           id
           ... on Repository {
             id

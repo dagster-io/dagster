@@ -243,7 +243,6 @@ export const OP_NODE_INVOCATION_FRAGMENT = gql`
 
 export const OP_NODE_DEFINITION_FRAGMENT = gql`
   fragment OpNodeDefinitionFragment on ISolidDefinition {
-    __typename
     name
     description
     metadata {

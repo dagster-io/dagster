@@ -242,7 +242,6 @@ export const CREATE_PARTITION_MUTATION = gql`
       partitionKey: $partitionKey
       repositorySelector: $repositorySelector
     ) {
-      __typename
       ... on AddDynamicPartitionSuccess {
         partitionsDefName
         partitionKey
