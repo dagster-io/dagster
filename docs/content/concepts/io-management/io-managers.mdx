@@ -76,7 +76,7 @@ Consider the following diagram. In this example, a job has two I/O managers, eac
 
 The default I/O manager, <PyObject module="dagster" object="fs_io_manager" />, stores and retrieves values from pickle files in the local filesystem. If a job is invoked via <PyObject object="JobDefinition" method="execute_in_process" />, the default I/O manager is switched to <PyObject module="dagster" object="mem_io_manager"/>, which stores outputs in memory.
 
-Dagster provides out-of-the-box I/O managers for popular storage systems: AWS S3 (<PyObject module="dagster_aws.s3" object="s3_pickle_io_manager" />), Azure Blob Storage (<PyObject module="dagster_azure.adls2" object="adls2_pickle_io_manager" />), GCS (<PyObject module="dagster_gcp.gcs" object="gcs_pickle_io_manager" />), and Snowflake (<PyObject module="dagster_snowflake" object="build_snowflake_io_manager" />) - or you can write your own: either from scratch or by extending the `UPathIOManager` if you want to store data in an `fsspec`-supported filesystem.
+Dagster provides out-of-the-box I/O managers for popular storage systems: AWS S3 (<PyObject module="dagster_aws.s3" object="s3_pickle_io_manager" />), Azure Blob Storage (<PyObject module="dagster_azure.adls2" object="adls2_pickle_io_manager" />), GCS (<PyObject module="dagster_gcp.gcs" object="gcs_pickle_io_manager" />), and Snowflake (<PyObject module="dagster_snowflake" object="build_snowflake_io_manager" />) - or you can write your own: either from scratch or by extending the `UPathIOManager` if you want to store data in an `fsspec`-supported filesystem. For a full list of Dagster-provided I/O managers, see [Full list of built-in I/O managers](#full-list-of-built-in-io-managers).
 
 ### I/O managers are resources
 
@@ -785,10 +785,27 @@ Any entries yielded this way will be attached to the `Handled Output` event for 
 
 Additionally, if the handled output is part of a software-defined asset, these metadata entries will also be attached to the materialization event created for that asset and show up on the Asset Details page for the asset.
 
+## Full list of built-in I/O managers
+
+| Name                                                                                  | Description                                                                   | Additional Documentation                                                                                               |
+| ------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| <PyObject module="dagster" object="FilesystemIOManager" />                        | Default I/O manager. Stores outputs as pickle files on the local file system. |                                                                                                                        |
+| <PyObject module="dagster" object="InMemoryIOManager" />                       | Stores outputs in memory. Primarily useful for unit testing. system.          |                                                                                                                        |
+| <PyObject module="dagster_aws.s3" object="ConfigurablePickledObjectS3IOManager" />                    | Stores outputs as pickle files in Amazon Web Services S3 .                    |                                                                                                                        |
+| <PyObject module="dagster_azure.adls2" object="adls2_pickle_io_manager" />            | Stores outputs as pickle files in Azure ADLS2.                                |                                                                                                                        |
+| <PyObject module="dagster_gcp.gcs" object="ConfigurablePickledObjectGCSIOManager" />                  | Stores outputs as pickle files in Google Cloud Platform GCS.                  |                                                                                                                        |
+| <PyObject module="dagster_gcp_pandas" object="BigQueryPandasIOManager" />          | Stores Pandas DataFrame outputs in Google Cloud Platform BigQuery.            | [Tutorial](/integrations/bigquery/using-bigquery-with-dagster), [Reference Guide](/integrations/bigquery/reference)    |
+| <PyObject module="dagster_gcp_pyspark" object="BigQueryPySparkIOManager" />        | Stores PySpark DataFrame outputs in Google Cloud Platform BigQuery.           | [Tutorial](/integrations/bigquery/using-bigquery-with-dagster), [Reference Guide](/integrations/bigquery/reference)    |
+| <PyObject module="dagster_snowflake_pandas" object="SnowflakePandasIOManager" />   | Stores Pandas DataFrame outputs in Snowflake.                                 | [Tutorial](/integrations/snowflake/using-snowflake-with-dagster), [Reference Guide](/integrations/snowflake/reference) |
+| <PyObject module="dagster_snowflake_pyspark" object="SnowflakePySparkIOManager" /> | Stores PySpark DataFrame outputs in Snowflake.                                | [Tutorial](/integrations/snowflake/using-snowflake-with-dagster), [Reference Guide](/integrations/snowflake/reference) |
+| <PyObject module="dagster_duckdb_pandas" object="DuckDBPandasIOManager" />         | Stores Pandas DataFrame outputs in DuckDB.                                    |                                                                                                                        |
+| <PyObject module="dagster_duckdb_pyspark" object="DuckDBPySparkIOManager" />       | Stores PySpark DataFrame outputs in DuckDB.                                   |                                                                                                                        |
+| <PyObject module="dagster_duckdb_polars" object="DuckDBPolarsIOManager" />         | Stores Polars DataFrame outputs in DuckDB.                                    |                                                                                                                        |
+
 ## See it in action
 
 For more examples of I/O managers, check out the following in our [Hacker News example](https://github.com/dagster-io/dagster/tree/master/examples/project_fully_featured):
 
-- [Parquet IO Manager](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/resources/parquet_io_manager.py)
+- [Parquet I/O Manager](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/resources/parquet_io_manager.py)
 
 Our [Type and Metadata example](https://github.com/dagster-io/dagster/tree/master/examples/assets_pandas_type_metadata) also covers writing custom I/O managers.
