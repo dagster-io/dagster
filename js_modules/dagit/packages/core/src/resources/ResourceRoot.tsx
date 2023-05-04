@@ -47,12 +47,24 @@ interface Props {
 }
 
 const remapName = (inName: string): string => {
-  if (inName === 'StringSourceType') {
-    return 'String';
-  } else if (inName === 'IntSourceType') {
-    return 'Int';
-  } else if (inName === 'BoolSourceType') {
-    return 'Bool';
+  console.log(inName);
+  if (inName.startsWith('Noneable.')) {
+    return `Optional[${remapName(inName.slice('Noneable.'.length))}]`;
+  } else if (inName.startsWith('Map.')) {
+    const remainder = inName.slice('Map.'.length);
+    const [key, ...valueParts] = remainder.split('.');
+    const value = valueParts.join('.');
+    return `Dict[${remapName(key)}, ${remapName(value)}]`;
+  } else if (inName.startsWith('Array.')) {
+    return `List[${remapName(inName.slice('Array.'.length))}]`;
+  } else if (inName === 'StringSourceType' || inName === 'String') {
+    return 'str';
+  } else if (inName === 'IntSourceType' || inName === 'Int') {
+    return 'int';
+  } else if (inName === 'BoolSourceType' || inName === 'Bool') {
+    return 'bool';
+  } else if (inName === 'Float') {
+    return 'float';
   }
   return inName;
 };
