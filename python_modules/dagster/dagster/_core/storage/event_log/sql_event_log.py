@@ -2008,7 +2008,9 @@ class SqlEventLogStorage(EventLogStorage):
                 slots for all the steps of the run will be freed.
         """
         with self.index_connection() as conn:
-            # first delete any rows that apply and are marked as deleted
+            # first delete any rows that apply and are marked as deleted.  This happens when the
+            # configured number of slots has been reduced, and some of the pruned slots included
+            # ones that were already allocated to the run/step
             delete_query = ConcurrencySlotsTable.delete().where(
                 db.and_(
                     ConcurrencySlotsTable.c.run_id == run_id,
@@ -2018,7 +2020,6 @@ class SqlEventLogStorage(EventLogStorage):
             if step_key:
                 delete_query = delete_query.where(ConcurrencySlotsTable.c.step_key == step_key)
             result = conn.execute(delete_query)
-            freed_slot_count = result.rowcount
 
             update_query = (
                 ConcurrencySlotsTable.update()
@@ -2031,8 +2032,7 @@ class SqlEventLogStorage(EventLogStorage):
                 update_query = update_query.where(ConcurrencySlotsTable.c.step_key == step_key)
 
             result = conn.execute(update_query)
-            freed_slot_count = freed_slot_count + result.rowcount
-            return freed_slot_count
+            return result.rowcount
 
 
 def _get_from_row(row: SqlAlchemyRow, column: str) -> object:
