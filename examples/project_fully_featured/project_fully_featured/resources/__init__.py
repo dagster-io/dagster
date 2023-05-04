@@ -98,5 +98,7 @@ RESOURCES_LOCAL = {
     "hn_client": HNAPIClient(),
     "dbt": dbt_local_resource,
     "old_style": duckdb_pandas_io_manager.configured({"database": "my_db.duckdb"}),
-    "snowflake_pandas": SnowflakePandasIOManager(database="foo", account="foo", password="foo", user="foo")
+    "snowflake_pandas": SnowflakePandasIOManager(
+        database="foo", account="foo", password="foo", user="foo"
+    ),
 }

@@ -54,7 +54,11 @@ from dagster._utils.merger import merge_dicts
 from dagster.version import __version__ as dagster_module_version
 
 if TYPE_CHECKING:
-    from dagster._core.host_representation.external import ExternalJob, ExternalRepository, ExternalResource
+    from dagster._core.host_representation.external import (
+        ExternalJob,
+        ExternalRepository,
+        ExternalResource,
+    )
     from dagster._core.workspace.context import IWorkspaceProcessContext
 
 TELEMETRY_STR = ".telemetry"
@@ -540,8 +544,8 @@ def get_stats_from_external_repo(external_repo: "ExternalRepository") -> Mapping
         "num_asset_reconciliation_sensors_in_repo": str(num_asset_reconciliation_sensors_in_repo),
     }
 
-def get_resource_stats(external_resources: Sequence["ExternalResource"]) -> Mapping[str, str]:
 
+def get_resource_stats(external_resources: Sequence["ExternalResource"]) -> Mapping[str, str]:
     dagster_resources = [
         "dagster_snowflake.resources.SnowflakeResource",
         "dagster_dbt.cli.resources.DbtCliClientResource"
@@ -557,7 +561,9 @@ def get_resource_stats(external_resources: Sequence["ExternalResource"]) -> Mapp
     used_dagster_resources = []
     used_dagster_io_managers = []
     used_custom_resources = []
-    used_custom_io_managers = [] # still figuring out how to distinguish custom resources and io managers, so just doing resources for now
+    used_custom_io_managers = (
+        []
+    )  # still figuring out how to distinguish custom resources and io managers, so just doing resources for now
 
     for resource in external_resources:
         resource_type = resource.resource_type
@@ -572,7 +578,7 @@ def get_resource_stats(external_resources: Sequence["ExternalResource"]) -> Mapp
         "dagster_resources": str(used_dagster_resources),
         "dagster_io_managers": str(used_dagster_io_managers),
         "custom_resources": str(used_custom_resources),
-        "custom_io_managers": str(used_custom_io_managers)
+        "custom_io_managers": str(used_custom_io_managers),
     }
 
 
