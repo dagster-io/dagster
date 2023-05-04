@@ -21,7 +21,7 @@ def iris_dataset() -> pd.DataFrame:
 
 
 @asset
-def iris_cleaned(iris_dataset: pd.DataFrame):
+def iris_cleaned(iris_dataset: pd.DataFrame) -> pd.DataFrame:
     return iris_dataset.dropna().drop_duplicates()
 
 
