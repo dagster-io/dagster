@@ -314,7 +314,7 @@ class DagsterInstance(DynamicPartitionsStore):
             :py:class:`dagster._core.storage.local_compute_log_manager.LocalComputeLogManager`.
             Configurable in ``dagster.yaml`` using the
             :py:class:`~dagster.serdes.ConfigurableClass` machinery.
-        run_coordinator (RunCoordinator): A runs coordinator may be used to manage the execution
+        run_coordinator (Optional[RunCoordinator]): A runs coordinator may be used to manage the execution
             of pipeline runs.
         run_launcher (Optional[RunLauncher]): Optionally, a run launcher may be used to enable
             a Dagster instance to launch pipeline runs, e.g. on a remote Kubernetes cluster, in
@@ -338,7 +338,7 @@ class DagsterInstance(DynamicPartitionsStore):
         local_artifact_storage: "LocalArtifactStorage",
         run_storage: "RunStorage",
         event_storage: "EventLogStorage",
-        run_coordinator: "RunCoordinator",
+        run_coordinator: Optional["RunCoordinator"],
         compute_log_manager: Optional["ComputeLogManager"],
         run_launcher: Optional["RunLauncher"],
         scheduler: Optional["Scheduler"] = None,
@@ -393,8 +393,14 @@ class DagsterInstance(DynamicPartitionsStore):
         if self._schedule_storage:
             self._schedule_storage.register_instance(self)
 
-        self._run_coordinator = check.inst_param(run_coordinator, "run_coordinator", RunCoordinator)
-        self._run_coordinator.register_instance(self)
+        if run_coordinator:
+            self._run_coordinator = check.inst_param(
+                run_coordinator, "run_coordinator", RunCoordinator
+            )
+            self._run_coordinator.register_instance(self)
+        else:
+            check.invariant(ref, "Run coordinator must be provided if instance is not from a ref")
+            self._run_coordinator = None
 
         if run_launcher:
             self._run_launcher: Optional[RunLauncher] = check.inst_param(
@@ -559,7 +565,7 @@ class DagsterInstance(DynamicPartitionsStore):
             schedule_storage=schedule_storage,
             compute_log_manager=None,  # lazy load
             scheduler=instance_ref.scheduler,
-            run_coordinator=instance_ref.run_coordinator,  # type: ignore  # (possible none)
+            run_coordinator=None,  # lazy load
             run_launcher=None,  # lazy load
             settings=instance_ref.settings,
             secrets_loader=instance_ref.secrets_loader,
@@ -690,6 +696,18 @@ class DagsterInstance(DynamicPartitionsStore):
 
     @property
     def run_coordinator(self) -> "RunCoordinator":
+        from dagster._core.run_coordinator import RunCoordinator
+
+        # Lazily load in case the run coordinator requires dependencies that are not available
+        # everywhere that loads the instance
+        if not self._run_coordinator:
+            check.invariant(
+                self._ref, "Run coordinator not provided, and no instance ref available"
+            )
+            run_coordinator = cast(InstanceRef, self._ref).run_coordinator
+            check.invariant(run_coordinator, "Run coordinator not configured in instance ref")
+            self._run_coordinator = cast(RunCoordinator, run_coordinator)
+            self._run_coordinator.register_instance(self)
         return self._run_coordinator
 
     # run launcher
@@ -881,7 +899,8 @@ class DagsterInstance(DynamicPartitionsStore):
     def dispose(self) -> None:
         self._local_artifact_storage.dispose()
         self._run_storage.dispose()
-        self.run_coordinator.dispose()
+        if self._run_coordinator:
+            self._run_coordinator.dispose()
         if self._run_launcher:
             self._run_launcher.dispose()
         self._event_storage.dispose()
@@ -2073,7 +2092,7 @@ class DagsterInstance(DynamicPartitionsStore):
         )
 
         try:
-            submitted_run = self._run_coordinator.submit_run(
+            submitted_run = self.run_coordinator.submit_run(
                 SubmitRunContext(run, workspace=workspace)
             )
         except:
