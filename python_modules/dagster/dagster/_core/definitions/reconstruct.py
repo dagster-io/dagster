@@ -258,6 +258,7 @@ class ReconstructableJob(
             self.job_name,
             self.op_selection,
             self.asset_selection,
+            self.resolved_op_selection,
         )
 
     def get_reconstructable_repository(self) -> ReconstructableRepository:

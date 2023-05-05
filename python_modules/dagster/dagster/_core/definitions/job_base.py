@@ -40,7 +40,7 @@ class IJob(ABC):
         pass
 
     @property
-    def solids_to_execute(self) -> Optional[AbstractSet[str]]:
+    def resolved_op_selection(self) -> Optional[AbstractSet[str]]:
         return set(self.op_selection) if self.op_selection else None
 
 

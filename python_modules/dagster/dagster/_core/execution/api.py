@@ -675,7 +675,7 @@ def _get_execution_plan_from_run(
     if (
         execution_plan_snapshot is not None
         and execution_plan_snapshot.can_reconstruct_plan
-        and job.solids_to_execute == dagster_run.solids_to_execute
+        and job.resolved_op_selection == dagster_run.solids_to_execute
         and job.asset_selection == dagster_run.asset_selection
     ):
         return ExecutionPlan.rebuild_from_snapshot(
@@ -923,7 +923,7 @@ def _check_execute_job_args(
         job_arg,
         run_config,
         tags,
-        job_arg.solids_to_execute,
+        job_arg.resolved_op_selection,
         op_selection,
     )
 

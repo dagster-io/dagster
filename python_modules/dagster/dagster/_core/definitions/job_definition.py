@@ -965,6 +965,10 @@ class JobDefinition(IHasInternalInit):
     def asset_selection(self) -> Optional[AbstractSet[AssetKey]]:
         return self.asset_selection_data.asset_selection if self.asset_selection_data else None
 
+    @property
+    def resolved_op_selection(self) -> Optional[AbstractSet[str]]:
+        return self.op_selection_data.resolved_op_selection if self.op_selection_data else None
+
 
 def _swap_default_io_man(resources: Mapping[str, ResourceDefinition], job: JobDefinition):
     """Used to create the user facing experience of the default io_manager
