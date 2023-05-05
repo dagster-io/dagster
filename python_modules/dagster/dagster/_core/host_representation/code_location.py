@@ -129,7 +129,7 @@ class CodeLocation(AbstractContextManager):
         an op selection is specified, which requires access to the underlying JobDefinition
         to generate the subsetted pipeline snapshot.
         """
-        if not selector.solid_selection and not selector.asset_selection:
+        if not selector.op_selection and not selector.asset_selection:
             return self.get_repository(selector.repository_name).get_full_external_job(
                 selector.job_name
             )
@@ -367,7 +367,7 @@ class InProcessCodeLocation(CodeLocation):
         return get_external_pipeline_subset_result(
             self._get_repo_def(selector.repository_name),
             selector.job_name,
-            selector.solid_selection,
+            selector.op_selection,
             selector.asset_selection,
         )
 
@@ -761,7 +761,7 @@ class GrpcServerCodeLocation(CodeLocation):
         return sync_get_external_job_subset_grpc(
             self.client,
             job_handle.get_external_origin(),
-            selector.solid_selection,
+            selector.op_selection,
             selector.asset_selection,
         )
 

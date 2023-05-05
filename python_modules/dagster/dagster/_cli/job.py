@@ -511,7 +511,7 @@ def _create_external_run(
         location_name=code_location.name,
         repository_name=external_repo.name,
         job_name=job_name,
-        solid_selection=solid_selection,
+        op_selection=solid_selection,
     )
 
     external_job = code_location.get_external_job(job_subset_selector)

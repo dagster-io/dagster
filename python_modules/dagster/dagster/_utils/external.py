@@ -28,7 +28,7 @@ def external_job_from_location(
         location_name=code_location.name,
         repository_name=external_repo.name,
         job_name=job_name,
-        solid_selection=solid_selection,
+        op_selection=solid_selection,
     )
 
     return code_location.get_external_job(pipeline_selector)

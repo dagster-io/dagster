@@ -206,7 +206,7 @@ def submit_backfill_runs(
             location_name=code_location.name,
             repository_name=repo_name,
             job_name=external_partition_set.job_name,
-            solid_selection=None,
+            op_selection=None,
             asset_selection=backfill_job.asset_selection,
         )
         external_job = code_location.get_external_job(pipeline_selector)

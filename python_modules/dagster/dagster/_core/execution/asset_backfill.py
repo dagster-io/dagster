@@ -488,7 +488,7 @@ def submit_run_request(
         repository_name=repo_handle.repository_name,
         job_name=job_name,
         asset_selection=run_request.asset_selection,
-        solid_selection=None,
+        op_selection=None,
     )
 
     selector_id = hash_collection(pipeline_selector)

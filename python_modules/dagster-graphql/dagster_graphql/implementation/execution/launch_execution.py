@@ -91,7 +91,7 @@ def launch_reexecution_from_parent_run(
         location_name=origin.external_repository_origin.code_location_origin.location_name,
         repository_name=origin.external_repository_origin.repository_name,
         job_name=parent_run.job_name,
-        solid_selection=None,
+        op_selection=None,
     )
 
     assert_permission_for_location(

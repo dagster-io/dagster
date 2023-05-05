@@ -100,7 +100,7 @@ class AssetDaemon(IntervalDaemon):
                     location_name=location_name,
                     repository_name=repository_name,
                     job_name=job_name,
-                    solid_selection=None,
+                    op_selection=None,
                     asset_selection=asset_keys,
                 )
             )

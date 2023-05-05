@@ -87,9 +87,9 @@ def create_valid_pipeline_run(
         asset_selection=frozenset(execution_params.selector.asset_selection)
         if execution_params.selector.asset_selection
         else None,
-        solid_selection=execution_params.selector.solid_selection,
-        solids_to_execute=frozenset(execution_params.selector.solid_selection)
-        if execution_params.selector.solid_selection
+        solid_selection=execution_params.selector.op_selection,
+        solids_to_execute=frozenset(execution_params.selector.op_selection)
+        if execution_params.selector.op_selection
         else None,
         run_config=execution_params.run_config,
         step_keys_to_execute=step_keys_to_execute,

@@ -94,7 +94,7 @@ def create_execution_params(graphene_info, graphql_execution_params):
                 GrapheneConflictingExecutionParamsError(conflicting_param="mode")
             )
 
-        if selector.solid_selection:
+        if selector.op_selection:
             raise UserFacingGraphQLError(
                 GrapheneConflictingExecutionParamsError(
                     conflicting_param="selector.solid_selection"

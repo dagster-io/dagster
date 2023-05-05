@@ -1,4 +1,6 @@
-from typing import NamedTuple, Optional, Sequence
+from typing import AbstractSet, Iterable, NamedTuple, Optional
+
+from typing_extensions import Self
 
 import dagster._check as check
 from dagster._core.definitions.events import AssetKey
@@ -13,8 +15,8 @@ class JobSubsetSelector(
             ("location_name", str),
             ("repository_name", str),
             ("job_name", str),
-            ("solid_selection", Optional[Sequence[str]]),
-            ("asset_selection", Optional[Sequence[AssetKey]]),
+            ("op_selection", Optional[AbstractSet[str]]),
+            ("asset_selection", Optional[AbstractSet[AssetKey]]),
         ],
     )
 ):
@@ -25,18 +27,18 @@ class JobSubsetSelector(
         location_name: str,
         repository_name: str,
         job_name: str,
-        solid_selection: Optional[Sequence[str]],
-        asset_selection: Optional[Sequence[AssetKey]] = None,
+        op_selection: Optional[Iterable[str]],
+        asset_selection: Optional[Iterable[AssetKey]] = None,
     ):
+        op_selection = set(op_selection) if op_selection else None
+        asset_selection = set(asset_selection) if asset_selection else None
         return super(JobSubsetSelector, cls).__new__(
             cls,
             location_name=check.str_param(location_name, "location_name"),
             repository_name=check.str_param(repository_name, "repository_name"),
             job_name=check.str_param(job_name, "job_name"),
-            solid_selection=check.opt_nullable_sequence_param(
-                solid_selection, "solid_selection", str
-            ),
-            asset_selection=check.opt_nullable_sequence_param(
+            op_selection=check.opt_nullable_set_param(op_selection, "op_selection", str),
+            asset_selection=check.opt_nullable_set_param(
                 asset_selection, "asset_selection", AssetKey
             ),
         )
@@ -46,18 +48,19 @@ class JobSubsetSelector(
             "repositoryLocationName": self.location_name,
             "repositoryName": self.repository_name,
             "pipelineName": self.job_name,
-            "solidSelection": self.solid_selection,
+            "solidSelection": self.op_selection,
         }
 
-    def with_solid_selection(self, solid_selection):
+    def with_op_selection(self, op_selection: Iterable[str]) -> Self:
         check.invariant(
-            self.solid_selection is None,
-            "Can not invoke with_solid_selection when solid_selection={} is already set".format(
-                solid_selection
+            self.op_selection is None,
+            (
+                f"Can not invoke with_op_selection when op_selection={self.op_selection} is"
+                " already set"
             ),
         )
         return JobSubsetSelector(
-            self.location_name, self.repository_name, self.job_name, solid_selection
+            self.location_name, self.repository_name, self.job_name, op_selection
         )
 
 
