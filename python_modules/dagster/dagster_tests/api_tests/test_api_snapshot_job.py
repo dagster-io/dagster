@@ -12,9 +12,9 @@ from dagster._utils.error import serializable_error_info_from_exc_info
 from .utils import get_bar_repo_code_location
 
 
-def _test_job_subset_grpc(job_handle, api_client, solid_selection=None):
+def _test_job_subset_grpc(job_handle, api_client, op_selection=None):
     return sync_get_external_job_subset_grpc(
-        api_client, job_handle.get_external_origin(), solid_selection=solid_selection
+        api_client, job_handle.get_external_origin(), op_selection=op_selection
     )
 
 

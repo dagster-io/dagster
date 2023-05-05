@@ -189,7 +189,7 @@ def test_execute_subset_on_celery_k8s(dagster_docker_image, helm_namespace, dagi
         dagit_url,
         run_config=run_config,
         job_name="demo_job_celery_k8s",
-        solid_selection=["count_letters"],
+        op_selection=["count_letters"],
     )
 
     result = wait_for_job_and_get_raw_logs(

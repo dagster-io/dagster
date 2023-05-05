@@ -121,7 +121,7 @@ def test_launcher_with_container_context(kubeconfig_file):
             )
             fake_external_job = external_job_from_recon_job(
                 recon_job,
-                solid_selection=None,
+                op_selection=None,
                 repository_handle=repo_handle,
             )
 
@@ -235,7 +235,7 @@ def test_launcher_with_k8s_config(kubeconfig_file):
             )
             fake_external_job = external_job_from_recon_job(
                 recon_job,
-                solid_selection=None,
+                op_selection=None,
                 repository_handle=repo_handle,
             )
 
@@ -322,7 +322,7 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
             )
             fake_external_job = external_job_from_recon_job(
                 recon_job,
-                solid_selection=None,
+                op_selection=None,
                 repository_handle=repo_handle,
             )
 
@@ -403,7 +403,7 @@ def test_raise_on_error(kubeconfig_file):
             )
             fake_external_job = external_job_from_recon_job(
                 recon_job,
-                solid_selection=None,
+                op_selection=None,
                 repository_handle=repo_handle,
             )
 
@@ -464,7 +464,7 @@ def test_no_postgres(kubeconfig_file):
             )
             fake_external_job = external_job_from_recon_job(
                 recon_job,
-                solid_selection=None,
+                op_selection=None,
                 repository_handle=repo_handle,
             )
 
@@ -530,7 +530,7 @@ def test_check_run_health(kubeconfig_file):
             )
             fake_external_job = external_job_from_recon_job(
                 recon_job,
-                solid_selection=None,
+                op_selection=None,
                 repository_handle=repo_handle,
             )
 

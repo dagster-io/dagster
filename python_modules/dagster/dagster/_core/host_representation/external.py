@@ -864,8 +864,8 @@ class ExternalPartitionSet:
         return self._external_partition_set_data.name
 
     @property
-    def solid_selection(self) -> Optional[Sequence[str]]:
-        return self._external_partition_set_data.solid_selection
+    def op_selection(self) -> Optional[Sequence[str]]:
+        return self._external_partition_set_data.op_selection
 
     @property
     def mode(self) -> Optional[str]:

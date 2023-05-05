@@ -59,7 +59,7 @@ from .job_execution_result import JobExecutionResult
 #
 # Notes on reexecution support:
 # (1) The appropriate bits must be set on the DagsterRun passed to this function. Specifically,
-#     parent_run_id and root_run_id must be set and consistent, and if a solids_to_execute or
+#     parent_run_id and root_run_id must be set and consistent, and if a resolved_op_selection or
 #     step_keys_to_execute are set they must be consistent with the parent and root runs.
 # (2) As for (1), but the ExecutionPlan passed must also agree in all relevant bits.
 
@@ -483,7 +483,7 @@ def _logged_execute_job(
         job_arg,
         run_config,
         tags,
-        solids_to_execute,
+        resolved_op_selection,
         op_selection,
     ) = _check_execute_job_args(
         job_arg=job_arg,
@@ -498,7 +498,7 @@ def _logged_execute_job(
         job_def=job_arg.get_definition(),
         run_config=run_config,
         op_selection=op_selection,
-        resolved_op_selection=solids_to_execute,
+        resolved_op_selection=resolved_op_selection,
         tags=tags,
         job_code_origin=(
             job_arg.get_python_origin() if isinstance(job_arg, ReconstructableJob) else None
@@ -675,7 +675,7 @@ def _get_execution_plan_from_run(
     if (
         execution_plan_snapshot is not None
         and execution_plan_snapshot.can_reconstruct_plan
-        and job.resolved_op_selection == dagster_run.solids_to_executeresolved_op_selection
+        and job.resolved_op_selection == dagster_run.resolved_op_selection
         and job.asset_selection == dagster_run.asset_selection
     ):
         return ExecutionPlan.rebuild_from_snapshot(

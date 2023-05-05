@@ -100,7 +100,7 @@ def nesting_graph(depth: int, num_children: int, name: Optional[str] = None) -> 
     """Creates a job of nested graphs up to "depth" layers, with a fan-out of
     num_children at each layer.
 
-    Total number of solids will be num_children ^ depth
+    Total number of ops will be num_children ^ depth
     """
 
     @op
@@ -111,8 +111,8 @@ def nesting_graph(depth: int, num_children: int, name: Optional[str] = None) -> 
         @graph(name=name)
         def wrap():
             for i in range(num_children):
-                solid_alias = "%s_node_%d" % (name, i)
-                inner.alias(solid_alias)()
+                op_alias = "%s_node_%d" % (name, i)
+                inner.alias(op_alias)()
 
         return wrap
 
@@ -136,7 +136,7 @@ def create_run_for_test(
     job_name: str = TEST_JOB_NAME,
     run_id=None,
     run_config=None,
-    solids_to_execute=None,
+    resolved_op_selection=None,
     step_keys_to_execute=None,
     status=None,
     tags=None,
@@ -148,13 +148,13 @@ def create_run_for_test(
     external_job_origin=None,
     job_code_origin=None,
     asset_selection=None,
-    solid_selection=None,
+    op_selection=None,
 ):
     return instance.create_run(
         job_name=job_name,
         run_id=run_id,
         run_config=run_config,
-        resolved_op_selection=solids_to_execute,
+        resolved_op_selection=resolved_op_selection,
         step_keys_to_execute=step_keys_to_execute,
         status=status,
         tags=tags,
@@ -166,7 +166,7 @@ def create_run_for_test(
         external_job_origin=external_job_origin,
         job_code_origin=job_code_origin,
         asset_selection=asset_selection,
-        op_selection=solid_selection,
+        op_selection=op_selection,
     )
 
 
@@ -175,7 +175,7 @@ def register_managed_run_for_test(
     job_name=TEST_JOB_NAME,
     run_id=None,
     run_config=None,
-    solids_to_execute=None,
+    resolved_op_selection=None,
     step_keys_to_execute=None,
     tags=None,
     root_run_id=None,
@@ -188,7 +188,7 @@ def register_managed_run_for_test(
         job_name,
         run_id,
         run_config,
-        solids_to_execute,
+        resolved_op_selection,
         step_keys_to_execute,
         tags,
         root_run_id,

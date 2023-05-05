@@ -285,7 +285,7 @@ def test_subset_run(instance: DagsterInstance, workspace_context):
         instance,
         status=DagsterRunStatus.STARTED,
         tags={MAX_RETRIES_TAG: "2"},
-        solid_selection=["do_something"],
+        op_selection=["do_something"],
         step_keys_to_execute=["do_something"],
     )
 

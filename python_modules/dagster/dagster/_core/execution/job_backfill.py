@@ -261,16 +261,16 @@ def create_backfill_run(
         backfill_job.tags,
     )
 
-    solids_to_execute = None
-    solid_selection = None
+    resolved_op_selection = None
+    op_selection = None
     if not backfill_job.from_failure and not backfill_job.reexecution_steps:
         step_keys_to_execute = None
         parent_run_id = None
         root_run_id = None
         known_state = None
-        if external_partition_set.solid_selection:
-            solids_to_execute = frozenset(external_partition_set.solid_selection)
-            solid_selection = external_partition_set.solid_selection
+        if external_partition_set.op_selection:
+            resolved_op_selection = frozenset(external_partition_set.op_selection)
+            op_selection = external_partition_set.op_selection
 
     elif backfill_job.from_failure:
         last_run = _fetch_last_run(instance, external_partition_set, partition_data.name)
@@ -303,9 +303,9 @@ def create_backfill_run(
         else:
             known_state = None
 
-        if external_partition_set.solid_selection:
-            solids_to_execute = frozenset(external_partition_set.solid_selection)
-            solid_selection = external_partition_set.solid_selection
+        if external_partition_set.op_selection:
+            resolved_op_selection = frozenset(external_partition_set.op_selection)
+            op_selection = external_partition_set.op_selection
 
     external_execution_plan = code_location.get_external_execution_plan(
         external_pipeline,
@@ -321,7 +321,7 @@ def create_backfill_run(
         parent_job_snapshot=external_pipeline.parent_job_snapshot,
         job_name=external_pipeline.name,
         run_id=make_new_run_id(),
-        resolved_op_selection=solids_to_execute,
+        resolved_op_selection=resolved_op_selection,
         run_config=partition_data.run_config,
         step_keys_to_execute=step_keys_to_execute,
         tags=tags,
@@ -330,7 +330,7 @@ def create_backfill_run(
         status=DagsterRunStatus.NOT_STARTED,
         external_job_origin=external_pipeline.get_external_origin(),
         job_code_origin=external_pipeline.get_python_origin(),
-        op_selection=solid_selection,
+        op_selection=op_selection,
         asset_selection=frozenset(backfill_job.asset_selection)
         if backfill_job.asset_selection
         else None,

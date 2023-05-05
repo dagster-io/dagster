@@ -749,14 +749,16 @@ class ExternalDynamicPartitionsDefinitionData(
         return DynamicPartitionsDefinition(name=self.name)
 
 
-@whitelist_for_serdes(storage_field_names={"job_name": "pipeline_name"})
+@whitelist_for_serdes(
+    storage_field_names={"job_name": "pipeline_name", "op_selection": "solid_selection"}
+)
 class ExternalPartitionSetData(
     NamedTuple(
         "_ExternalPartitionSetData",
         [
             ("name", str),
             ("job_name", str),
-            ("solid_selection", Optional[Sequence[str]]),
+            ("op_selection", Optional[Sequence[str]]),
             ("mode", Optional[str]),
             ("external_partitions_data", Optional[ExternalPartitionsDefinitionData]),
         ],
@@ -766,7 +768,7 @@ class ExternalPartitionSetData(
         cls,
         name: str,
         job_name: str,
-        solid_selection: Optional[Sequence[str]],
+        op_selection: Optional[Sequence[str]],
         mode: Optional[str],
         external_partitions_data: Optional[ExternalPartitionsDefinitionData] = None,
     ):
@@ -774,9 +776,7 @@ class ExternalPartitionSetData(
             cls,
             name=check.str_param(name, "name"),
             job_name=check.str_param(job_name, "job_name"),
-            solid_selection=check.opt_nullable_sequence_param(
-                solid_selection, "solid_selection", str
-            ),
+            op_selection=check.opt_nullable_sequence_param(op_selection, "op_selection", str),
             mode=check.opt_str_param(mode, "mode"),
             external_partitions_data=check.opt_inst_param(
                 external_partitions_data,
@@ -1746,7 +1746,7 @@ def external_partition_set_data_from_def(
     return ExternalPartitionSetData(
         name=external_partition_set_name_for_job_name(job_def.name),
         job_name=job_def.name,
-        solid_selection=None,
+        op_selection=None,
         mode=DEFAULT_MODE_NAME,
         external_partitions_data=partitions_def_data,
     )
