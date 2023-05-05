@@ -476,25 +476,24 @@ class JobSubsetSnapshotArgs(
         [
             ("job_origin", ExternalJobOrigin),
             ("op_selection", Optional[Sequence[str]]),
-            ("asset_selection", Optional[Sequence[AssetKey]]),
+            ("asset_selection", Optional[AbstractSet[AssetKey]]),
         ],
     )
 ):
     def __new__(
         cls,
         job_origin: ExternalJobOrigin,
-        op_selection: Sequence[str],
-        asset_selection: Optional[Sequence[AssetKey]] = None,
+        op_selection: Optional[Sequence[str]],
+        asset_selection: Optional[AbstractSet[AssetKey]] = None,
     ):
+        asset_selection = set(asset_selection) if asset_selection else None
         return super(JobSubsetSnapshotArgs, cls).__new__(
             cls,
             job_origin=check.inst_param(job_origin, "job_origin", ExternalJobOrigin),
-            op_selection=check.sequence_param(op_selection, "op_selection", of_type=str)
-            if op_selection
-            else None,
-            asset_selection=check.opt_sequence_param(
-                asset_selection, "asset_selection", of_type=AssetKey
+            op_selection=check.opt_nullable_sequence_param(
+                op_selection, "op_selection", of_type=str
             ),
+            asset_selection=asset_selection,
         )
 
 

@@ -817,7 +817,7 @@ class GraphenePipelinePreset(graphene.ObjectType):
         return self._active_preset_data.name
 
     def resolve_solidSelection(self, _graphene_info: ResolveInfo):
-        return self._active_preset_data.solid_selection
+        return self._active_preset_data.op_selection
 
     def resolve_runConfigYaml(self, _graphene_info: ResolveInfo):
         return dump_run_config_yaml(self._active_preset_data.run_config) or ""

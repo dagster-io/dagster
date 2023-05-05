@@ -744,7 +744,7 @@ def _evaluate_sensor(
             location_name=code_location.name,
             repository_name=sensor_origin.external_repository_origin.repository_name,
             job_name=target_data.job_name,
-            op_selection=target_data.solid_selection,
+            op_selection=target_data.op_selection,
             asset_selection=run_request.asset_selection,
         )
         external_job = code_location.get_external_job(job_subset_selector)
@@ -943,7 +943,7 @@ def _create_sensor_run(
         resolved_op_selection=external_job.resolved_op_selection,
         step_keys_to_execute=None,
         status=DagsterRunStatus.NOT_STARTED,
-        op_selection=target_data.solid_selection,
+        op_selection=target_data.op_selection,
         root_run_id=None,
         parent_run_id=None,
         tags=tags,

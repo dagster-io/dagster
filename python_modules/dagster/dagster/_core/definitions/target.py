@@ -20,7 +20,7 @@ class RepoRelativeTarget(NamedTuple):
     """
 
     job_name: str
-    solid_selection: Optional[Sequence[str]]
+    op_selection: Optional[Sequence[str]]
 
 
 class DirectTarget(
@@ -53,7 +53,7 @@ class DirectTarget(
         return self.target.name
 
     @property
-    def solid_selection(self):
+    def op_selection(self):
         # open question on how to direct target subset job
         return None
 

@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional, Sequence
+from typing import TYPE_CHECKING, AbstractSet, Optional, Sequence
 
 import dagster._check as check
 from dagster._core.definitions.events import AssetKey
@@ -16,14 +16,16 @@ def sync_get_external_job_subset_grpc(
     api_client: "DagsterGrpcClient",
     job_origin: ExternalJobOrigin,
     op_selection: Optional[Sequence[str]] = None,
-    asset_selection: Optional[Sequence[AssetKey]] = None,
+    asset_selection: Optional[AbstractSet[AssetKey]] = None,
 ) -> ExternalJobSubsetResult:
     from dagster._grpc.client import DagsterGrpcClient
 
     check.inst_param(api_client, "api_client", DagsterGrpcClient)
     job_origin = check.inst_param(job_origin, "job_origin", ExternalJobOrigin)
-    op_selection = check.opt_sequence_param(op_selection, "op_selection", of_type=str)
-    asset_selection = check.opt_sequence_param(asset_selection, "asset_selection", of_type=AssetKey)
+    op_selection = check.opt_nullable_sequence_param(op_selection, "op_selection", of_type=str)
+    asset_selection = check.opt_nullable_set_param(
+        asset_selection, "asset_selection", of_type=AssetKey
+    )
 
     result = deserialize_value(
         api_client.external_pipeline_subset(

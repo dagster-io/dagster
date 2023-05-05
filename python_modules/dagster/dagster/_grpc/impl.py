@@ -3,7 +3,7 @@
 import os
 import sys
 from contextlib import contextmanager
-from typing import Any, Generator, Iterator, Optional, Sequence, Tuple, Union
+from typing import AbstractSet, Any, Generator, Iterator, Optional, Sequence, Tuple, Union
 
 import pendulum
 
@@ -263,7 +263,7 @@ def get_external_pipeline_subset_result(
     repo_def: RepositoryDefinition,
     job_name: str,
     solid_selection: Optional[Sequence[str]],
-    asset_selection: Optional[Sequence[AssetKey]],
+    asset_selection: Optional[AbstractSet[AssetKey]],
 ):
     try:
         definition = repo_def.get_maybe_subset_job_def(

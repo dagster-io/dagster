@@ -463,7 +463,7 @@ def execute_launch_command(
 
         run_tags = get_tags_from_args(kwargs)
 
-        solid_selection = get_op_selection_from_args(kwargs)
+        op_selection = get_op_selection_from_args(kwargs)
 
         dagster_run = _create_external_run(
             instance=instance,
@@ -472,7 +472,7 @@ def execute_launch_command(
             external_job=external_job,
             run_config=config,
             tags=run_tags,
-            solid_selection=solid_selection,
+            op_selection=op_selection,
             run_id=cast(Optional[str], kwargs.get("run_id")),
         )
 
@@ -486,7 +486,7 @@ def _create_external_run(
     external_job: ExternalJob,
     run_config: Mapping[str, object],
     tags: Optional[Mapping[str, str]],
-    solid_selection: Optional[Sequence[str]],
+    op_selection: Optional[Sequence[str]],
     run_id: Optional[str],
 ) -> DagsterRun:
     check.inst_param(instance, "instance", DagsterInstance)
@@ -496,14 +496,14 @@ def _create_external_run(
     check.opt_mapping_param(run_config, "run_config", key_type=str)
 
     check.opt_mapping_param(tags, "tags", key_type=str)
-    check.opt_sequence_param(solid_selection, "solid_selection", of_type=str)
+    check.opt_sequence_param(op_selection, "op_selection", of_type=str)
     check.opt_str_param(run_id, "run_id")
 
-    run_config, tags, solid_selection = _check_execute_external_job_args(
+    run_config, tags, op_selection = _check_execute_external_job_args(
         external_job,
         run_config,
         tags,
-        solid_selection,
+        op_selection,
     )
 
     job_name = external_job.name
@@ -511,7 +511,7 @@ def _create_external_run(
         location_name=code_location.name,
         repository_name=external_repo.name,
         job_name=job_name,
-        op_selection=solid_selection,
+        op_selection=op_selection,
     )
 
     external_job = code_location.get_external_job(job_subset_selector)
@@ -531,7 +531,7 @@ def _create_external_run(
         run_config=run_config,
         resolved_op_selection=external_job.resolved_op_selection,
         step_keys_to_execute=execution_plan_snapshot.step_keys_to_execute,
-        op_selection=solid_selection,
+        op_selection=op_selection,
         status=None,
         root_run_id=None,
         parent_run_id=None,
@@ -549,19 +549,19 @@ def _check_execute_external_job_args(
     external_job: ExternalJob,
     run_config: Mapping[str, object],
     tags: Optional[Mapping[str, str]],
-    solid_selection: Optional[Sequence[str]],
+    op_selection: Optional[Sequence[str]],
 ) -> Tuple[Mapping[str, object], Mapping[str, str], Optional[Sequence[str]]]:
     check.inst_param(external_job, "external_job", ExternalJob)
     run_config = check.opt_mapping_param(run_config, "run_config")
 
     tags = check.opt_mapping_param(tags, "tags", key_type=str)
-    check.opt_sequence_param(solid_selection, "solid_selection", of_type=str)
+    check.opt_sequence_param(op_selection, "op_selection", of_type=str)
     tags = merge_dicts(external_job.tags, tags)
 
     return (
         run_config,
         validate_tags(tags),
-        solid_selection,
+        op_selection,
     )
 
 

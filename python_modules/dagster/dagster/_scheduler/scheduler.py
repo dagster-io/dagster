@@ -631,7 +631,7 @@ def _schedule_runs_at_time(
             location_name=schedule_origin.external_repository_origin.code_location_origin.location_name,
             repository_name=schedule_origin.external_repository_origin.repository_name,
             job_name=external_schedule.job_name,
-            op_selection=external_schedule.solid_selection,
+            op_selection=external_schedule.op_selection,
             asset_selection=run_request.asset_selection,
         )
         external_job = code_location.get_external_job(job_subset_selector)

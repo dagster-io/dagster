@@ -1,4 +1,4 @@
-from typing import AbstractSet, Iterable, NamedTuple, Optional
+from typing import AbstractSet, Iterable, NamedTuple, Optional, Sequence
 
 from typing_extensions import Self
 
@@ -15,7 +15,7 @@ class JobSubsetSelector(
             ("location_name", str),
             ("repository_name", str),
             ("job_name", str),
-            ("op_selection", Optional[AbstractSet[str]]),
+            ("op_selection", Optional[Sequence[str]]),
             ("asset_selection", Optional[AbstractSet[AssetKey]]),
         ],
     )
@@ -27,17 +27,16 @@ class JobSubsetSelector(
         location_name: str,
         repository_name: str,
         job_name: str,
-        op_selection: Optional[Iterable[str]],
+        op_selection: Optional[Sequence[str]],
         asset_selection: Optional[Iterable[AssetKey]] = None,
     ):
-        op_selection = set(op_selection) if op_selection else None
         asset_selection = set(asset_selection) if asset_selection else None
         return super(JobSubsetSelector, cls).__new__(
             cls,
             location_name=check.str_param(location_name, "location_name"),
             repository_name=check.str_param(repository_name, "repository_name"),
             job_name=check.str_param(job_name, "job_name"),
-            op_selection=check.opt_nullable_set_param(op_selection, "op_selection", str),
+            op_selection=check.opt_nullable_sequence_param(op_selection, "op_selection", str),
             asset_selection=check.opt_nullable_set_param(
                 asset_selection, "asset_selection", AssetKey
             ),
@@ -51,7 +50,7 @@ class JobSubsetSelector(
             "solidSelection": self.op_selection,
         }
 
-    def with_op_selection(self, op_selection: Iterable[str]) -> Self:
+    def with_op_selection(self, op_selection: Optional[Sequence[str]]) -> Self:
         check.invariant(
             self.op_selection is None,
             (

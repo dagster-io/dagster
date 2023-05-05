@@ -608,8 +608,8 @@ class ExternalSchedule:
         return self._external_schedule_data.execution_timezone
 
     @property
-    def solid_selection(self) -> Optional[Sequence[str]]:
-        return self._external_schedule_data.solid_selection
+    def op_selection(self) -> Optional[Sequence[str]]:
+        return self._external_schedule_data.op_selection
 
     @property
     def job_name(self) -> str:
@@ -739,9 +739,9 @@ class ExternalSensor:
         return target.mode if target else None
 
     @property
-    def solid_selection(self) -> Optional[Sequence[str]]:
+    def op_selection(self) -> Optional[Sequence[str]]:
         target = self._get_single_target()
-        return target.solid_selection if target else None
+        return target.op_selection if target else None
 
     def _get_single_target(self) -> Optional[ExternalTargetData]:
         if self._external_sensor_data.target_dict:

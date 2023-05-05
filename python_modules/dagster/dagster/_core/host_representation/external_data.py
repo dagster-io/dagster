@@ -350,14 +350,14 @@ class ExternalJobRef(
         )
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_field_names={"op_selection": "solid_selection"})
 class ExternalPresetData(
     NamedTuple(
         "_ExternalPresetData",
         [
             ("name", str),
             ("run_config", Mapping[str, object]),
-            ("solid_selection", Optional[Sequence[str]]),
+            ("op_selection", Optional[Sequence[str]]),
             ("mode", str),
             ("tags", Mapping[str, str]),
         ],
@@ -367,7 +367,7 @@ class ExternalPresetData(
         cls,
         name: str,
         run_config: Optional[Mapping[str, object]],
-        solid_selection: Optional[Sequence[str]],
+        op_selection: Optional[Sequence[str]],
         mode: str,
         tags: Mapping[str, str],
     ):
@@ -375,8 +375,8 @@ class ExternalPresetData(
             cls,
             name=check.str_param(name, "name"),
             run_config=check.opt_mapping_param(run_config, "run_config", key_type=str),
-            solid_selection=check.opt_nullable_sequence_param(
-                solid_selection, "solid_selection", of_type=str
+            op_selection=check.opt_nullable_sequence_param(
+                op_selection, "op_selection", of_type=str
             ),
             mode=check.str_param(mode, "mode"),
             tags=check.opt_mapping_param(tags, "tags", key_type=str, value_type=str),
@@ -384,7 +384,8 @@ class ExternalPresetData(
 
 
 @whitelist_for_serdes(
-    storage_field_names={"job_name": "pipeline_name"}, skip_when_empty_fields={"default_status"}
+    storage_field_names={"job_name": "pipeline_name", "op_selection": "solid_selection"},
+    skip_when_empty_fields={"default_status"},
 )
 class ExternalScheduleData(
     NamedTuple(
@@ -393,7 +394,7 @@ class ExternalScheduleData(
             ("name", str),
             ("cron_schedule", Union[str, Sequence[str]]),
             ("job_name", str),
-            ("solid_selection", Optional[Sequence[str]]),
+            ("op_selection", Optional[Sequence[str]]),
             ("mode", Optional[str]),
             ("environment_vars", Optional[Mapping[str, str]]),
             ("partition_set_name", Optional[str]),
@@ -408,7 +409,7 @@ class ExternalScheduleData(
         name,
         cron_schedule,
         job_name,
-        solid_selection,
+        op_selection,
         mode,
         environment_vars,
         partition_set_name,
@@ -425,7 +426,7 @@ class ExternalScheduleData(
             name=check.str_param(name, "name"),
             cron_schedule=cron_schedule,
             job_name=check.str_param(job_name, "job_name"),
-            solid_selection=check.opt_nullable_list_param(solid_selection, "solid_selection", str),
+            op_selection=check.opt_nullable_list_param(op_selection, "op_selection", str),
             mode=check.opt_str_param(mode, "mode"),
             environment_vars=check.opt_dict_param(environment_vars, "environment_vars"),
             partition_set_name=check.opt_str_param(partition_set_name, "partition_set_name"),
@@ -449,21 +450,21 @@ class ExternalScheduleExecutionErrorData(
         )
 
 
-@whitelist_for_serdes(storage_field_names={"job_name": "pipeline_name"})
+@whitelist_for_serdes(
+    storage_field_names={"job_name": "pipeline_name", "op_selection": "solid_selection"}
+)
 class ExternalTargetData(
     NamedTuple(
         "_ExternalTargetData",
-        [("job_name", str), ("mode", str), ("solid_selection", Optional[Sequence[str]])],
+        [("job_name", str), ("mode", str), ("op_selection", Optional[Sequence[str]])],
     )
 ):
-    def __new__(cls, job_name: str, mode: str, solid_selection: Optional[Sequence[str]]):
+    def __new__(cls, job_name: str, mode: str, op_selection: Optional[Sequence[str]]):
         return super(ExternalTargetData, cls).__new__(
             cls,
             job_name=check.str_param(job_name, "job_name"),
             mode=mode,
-            solid_selection=check.opt_nullable_sequence_param(
-                solid_selection, "solid_selection", str
-            ),
+            op_selection=check.opt_nullable_sequence_param(op_selection, "op_selection", str),
         )
 
 
@@ -483,7 +484,7 @@ class ExternalSensorMetadata(
 
 
 @whitelist_for_serdes(
-    storage_field_names={"job_name": "pipeline_name"},
+    storage_field_names={"job_name": "pipeline_name", "op_selection": "solid_selection"},
     skip_when_empty_fields={"default_status", "sensor_type"},
 )
 class ExternalSensorData(
@@ -492,7 +493,7 @@ class ExternalSensorData(
         [
             ("name", str),
             ("job_name", Optional[str]),
-            ("solid_selection", Optional[Sequence[str]]),
+            ("op_selection", Optional[Sequence[str]]),
             ("mode", Optional[str]),
             ("min_interval", Optional[int]),
             ("description", Optional[str]),
@@ -507,7 +508,7 @@ class ExternalSensorData(
         cls,
         name: str,
         job_name: Optional[str] = None,
-        solid_selection: Optional[Sequence[str]] = None,
+        op_selection: Optional[Sequence[str]] = None,
         mode: Optional[str] = None,
         min_interval: Optional[int] = None,
         description: Optional[str] = None,
@@ -523,8 +524,8 @@ class ExternalSensorData(
                 job_name: ExternalTargetData(
                     job_name=check.str_param(job_name, "job_name"),
                     mode=check.opt_str_param(mode, "mode", DEFAULT_MODE_NAME),
-                    solid_selection=check.opt_nullable_sequence_param(
-                        solid_selection, "solid_selection", str
+                    op_selection=check.opt_nullable_sequence_param(
+                        op_selection, "op_selection", str
                     ),
                 )
             }
@@ -533,8 +534,8 @@ class ExternalSensorData(
             cls,
             name=check.str_param(name, "name"),
             job_name=check.opt_str_param(job_name, "job_name"),  # keep legacy field populated
-            solid_selection=check.opt_nullable_sequence_param(
-                solid_selection, "solid_selection", str
+            op_selection=check.opt_nullable_sequence_param(
+                op_selection, "op_selection", str
             ),  # keep legacy field populated
             mode=check.opt_str_param(mode, "mode"),  # keep legacy field populated
             min_interval=check.opt_int_param(min_interval, "min_interval"),
@@ -1643,7 +1644,7 @@ def external_schedule_data_from_def(schedule_def: ScheduleDefinition) -> Externa
         name=schedule_def.name,
         cron_schedule=schedule_def.cron_schedule,
         job_name=schedule_def.job_name,
-        solid_selection=schedule_def._target.solid_selection,  # noqa: SLF001
+        op_selection=schedule_def._target.op_selection,  # noqa: SLF001
         mode=DEFAULT_MODE_NAME,
         environment_vars=schedule_def.environment_vars,
         partition_set_name=None,
@@ -1776,7 +1777,7 @@ def external_sensor_data_from_def(
     if sensor_def.asset_selection is not None:
         target_dict = {
             base_asset_job_name: ExternalTargetData(
-                job_name=base_asset_job_name, mode=DEFAULT_MODE_NAME, solid_selection=None
+                job_name=base_asset_job_name, mode=DEFAULT_MODE_NAME, op_selection=None
             )
             for base_asset_job_name in repository_def.get_implicit_asset_job_names()
         }
@@ -1785,7 +1786,7 @@ def external_sensor_data_from_def(
             target.job_name: ExternalTargetData(
                 job_name=target.job_name,
                 mode=DEFAULT_MODE_NAME,
-                solid_selection=target.solid_selection,
+                op_selection=target.op_selection,
             )
             for target in sensor_def.targets
         }
@@ -1794,7 +1795,7 @@ def external_sensor_data_from_def(
         name=sensor_def.name,
         job_name=first_target.job_name if first_target else None,
         mode=None,
-        solid_selection=first_target.solid_selection if first_target else None,
+        op_selection=first_target.op_selection if first_target else None,
         target_dict=target_dict,
         min_interval=sensor_def.minimum_interval_seconds,
         description=sensor_def.description,
@@ -1813,7 +1814,7 @@ def active_presets_from_job_def(job_def: JobDefinition) -> Sequence[ExternalPres
             ExternalPresetData(
                 name=DEFAULT_PRESET_NAME,
                 run_config=job_def.run_config,
-                solid_selection=None,
+                op_selection=None,
                 mode=DEFAULT_MODE_NAME,
                 tags={},
             )

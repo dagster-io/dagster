@@ -535,7 +535,7 @@ class SensorDefinition(IHasInternalInit):
             targets = [
                 RepoRelativeTarget(
                     job_name=check.str_param(job_name, "job_name"),
-                    solid_selection=None,
+                    op_selection=None,
                 )
             ]
         elif job:
