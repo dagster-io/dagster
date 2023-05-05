@@ -22,5 +22,7 @@ next-dev-install:
 next-watch-build:
 	yarn --cwd=next dev
 
-mdx-format: docs_black docs_ruff;
+mdx-format: 
 	yarn --cwd=next mdx-format
+
+mdx-full-format: docs_black docs_ruff mdx-format
