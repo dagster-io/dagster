@@ -230,10 +230,6 @@ export type StatusCaseObject =
       | 'numMaterialized'
     >);
 
-/**
- *
- * This logic is based off `buildAssetNodeStatusContent`
- */
 export function getAssetNodeStatusCase({
   definition,
   liveData,
