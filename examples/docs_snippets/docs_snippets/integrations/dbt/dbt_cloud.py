@@ -8,7 +8,7 @@ def scope_define_instance():
 
     dbt_cloud_instance = DbtCloudClientResource(
         auth_token=EnvVar("DBT_CLOUD_API_TOKEN"),
-        account_id=EnvVar("DBT_CLOUD_ACCOUNT_ID"),
+        account_id=EnvVar.int("DBT_CLOUD_ACCOUNT_ID"),
     )
     # end_define_dbt_cloud_instance
 
@@ -19,7 +19,7 @@ def scope_load_assets_from_dbt_cloud_job():
 
     dbt_cloud_instance = DbtCloudClientResource(
         auth_token=EnvVar("DBT_CLOUD_API_TOKEN"),
-        account_id=EnvVar("DBT_CLOUD_ACCOUNT_ID"),
+        account_id=EnvVar.int("DBT_CLOUD_ACCOUNT_ID"),
     )
     # start_load_assets_from_dbt_cloud_job
     from dagster_dbt import load_assets_from_dbt_cloud_job
