@@ -321,7 +321,7 @@ def create_backfill_run(
         parent_job_snapshot=external_pipeline.parent_job_snapshot,
         job_name=external_pipeline.name,
         run_id=make_new_run_id(),
-        solids_to_execute=solids_to_execute,
+        resolved_op_selection=solids_to_execute,
         run_config=partition_data.run_config,
         step_keys_to_execute=step_keys_to_execute,
         tags=tags,
@@ -330,7 +330,7 @@ def create_backfill_run(
         status=DagsterRunStatus.NOT_STARTED,
         external_job_origin=external_pipeline.get_external_origin(),
         job_code_origin=external_pipeline.get_python_origin(),
-        solid_selection=solid_selection,
+        op_selection=solid_selection,
         asset_selection=frozenset(backfill_job.asset_selection)
         if backfill_job.asset_selection
         else None,

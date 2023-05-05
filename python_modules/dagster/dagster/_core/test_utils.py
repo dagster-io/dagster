@@ -154,7 +154,7 @@ def create_run_for_test(
         job_name=job_name,
         run_id=run_id,
         run_config=run_config,
-        solids_to_execute=solids_to_execute,
+        resolved_op_selection=solids_to_execute,
         step_keys_to_execute=step_keys_to_execute,
         status=status,
         tags=tags,
@@ -166,7 +166,7 @@ def create_run_for_test(
         external_job_origin=external_job_origin,
         job_code_origin=job_code_origin,
         asset_selection=asset_selection,
-        solid_selection=solid_selection,
+        op_selection=solid_selection,
     )
 
 

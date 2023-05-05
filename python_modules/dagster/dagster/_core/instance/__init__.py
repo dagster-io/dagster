@@ -1048,9 +1048,9 @@ class DagsterInstance(DynamicPartitionsStore):
             job_name=job_def.name,
             run_id=run_id,
             run_config=run_config,
-            solid_selection=solid_selection,
+            op_selection=solid_selection,
             asset_selection=asset_selection,
-            solids_to_execute=solids_to_execute,
+            resolved_op_selection=solids_to_execute,
             step_keys_to_execute=step_keys_to_execute,
             status=DagsterRunStatus(status) if status else None,
             tags=tags,
@@ -1279,8 +1279,8 @@ class DagsterInstance(DynamicPartitionsStore):
         job_snapshot: Optional[JobSnapshot],
         parent_job_snapshot: Optional[JobSnapshot],
         asset_selection: Optional[AbstractSet[AssetKey]],
-        solids_to_execute: Optional[AbstractSet[str]],
-        solid_selection: Optional[Sequence[str]],
+        resolved_op_selection: Optional[AbstractSet[str]],
+        op_selection: Optional[Sequence[str]],
         external_job_origin: Optional["ExternalJobOrigin"],
         job_code_origin: Optional[JobPythonOrigin],
     ) -> DagsterRun:
@@ -1353,18 +1353,18 @@ class DagsterInstance(DynamicPartitionsStore):
         # the user process, and the exact resolution is never persisted in the run.
         # We are asserting that invariant here to maintain that behavior.
 
-        check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
-        check.opt_sequence_param(solid_selection, "solid_selection", of_type=str)
+        check.opt_set_param(resolved_op_selection, "solids_to_execute", of_type=str)
+        check.opt_sequence_param(op_selection, "solid_selection", of_type=str)
         check.opt_set_param(asset_selection, "asset_selection", of_type=AssetKey)
 
         if asset_selection is not None:
             check.invariant(
-                solid_selection is None,
+                op_selection is None,
                 "Cannot pass both asset_selection and solid_selection",
             )
 
             check.invariant(
-                solids_to_execute is None,
+                resolved_op_selection is None,
                 "Cannot pass both asset_selection and solids_to_execute",
             )
 
@@ -1385,8 +1385,8 @@ class DagsterInstance(DynamicPartitionsStore):
             run_id=run_id,  # type: ignore  # (possible none)
             run_config=run_config,
             asset_selection=asset_selection,
-            solid_selection=solid_selection,
-            solids_to_execute=solids_to_execute,
+            solid_selection=op_selection,
+            solids_to_execute=resolved_op_selection,
             step_keys_to_execute=step_keys_to_execute,
             status=status,
             tags=validated_tags,
@@ -1480,7 +1480,7 @@ class DagsterInstance(DynamicPartitionsStore):
             job_name=parent_run.job_name,
             run_id=None,
             run_config=run_config,
-            solids_to_execute=parent_run.resolved_op_selection,
+            resolved_op_selection=parent_run.resolved_op_selection,
             step_keys_to_execute=step_keys_to_execute,
             status=DagsterRunStatus.NOT_STARTED,
             tags=tags,
@@ -1489,7 +1489,7 @@ class DagsterInstance(DynamicPartitionsStore):
             job_snapshot=external_job.job_snapshot,
             execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
             parent_job_snapshot=external_job.parent_job_snapshot,
-            solid_selection=parent_run.op_selection,
+            op_selection=parent_run.op_selection,
             asset_selection=parent_run.asset_selection,
             external_job_origin=external_job.get_external_origin(),
             job_code_origin=external_job.get_python_origin(),
