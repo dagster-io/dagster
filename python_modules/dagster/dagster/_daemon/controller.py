@@ -67,11 +67,12 @@ def create_daemon_grpc_server_registry(
     instance: DagsterInstance, code_server_log_level: str = "INFO"
 ) -> GrpcServerRegistry:
     return GrpcServerRegistry(
-        instance=instance,
+        instance_ref=instance.get_ref(),
         reload_interval=DAEMON_GRPC_SERVER_RELOAD_INTERVAL,
         heartbeat_ttl=DAEMON_GRPC_SERVER_HEARTBEAT_TTL,
         startup_timeout=instance.code_server_process_startup_timeout,
         log_level=code_server_log_level,
+        wait_for_processes_on_shutdown=instance.wait_for_local_code_server_processes_on_shutdown,
     )
 
 

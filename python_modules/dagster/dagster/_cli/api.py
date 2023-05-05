@@ -30,7 +30,6 @@ from dagster._core.origin import (
 )
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._core.utils import coerce_valid_log_level
 from dagster._grpc import DagsterGrpcClient, DagsterGrpcServer
 from dagster._grpc.impl import core_execute_run
 from dagster._grpc.server import DagsterApiServer
@@ -571,10 +570,11 @@ def _execute_step_command_body(
 )
 @click.option(
     "--log-level",
-    type=click.STRING,
+    type=click.Choice(["critical", "error", "warning", "info", "debug"], case_sensitive=False),
+    show_default=True,
     required=False,
-    default="INFO",
-    help="Level at which to log output from the gRPC server process",
+    default="info",
+    help="Level at which to log output from the code server process",
 )
 @click.option(
     "--container-image",
@@ -653,8 +653,8 @@ def grpc_command(
     if not (port or socket and not (port and socket)):
         raise click.UsageError("You must pass one and only one of --port/-p or --socket/-s.")
 
-    configure_loggers(log_level=coerce_valid_log_level(log_level))
-    logger = logging.getLogger("dagster")
+    configure_loggers(log_level=log_level.upper())
+    logger = logging.getLogger("dagster.code_server")
 
     container_image = container_image or os.getenv("DAGSTER_CURRENT_IMAGE")
 

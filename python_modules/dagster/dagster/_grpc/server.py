@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import math
 import multiprocessing
 import os
@@ -1038,7 +1039,7 @@ def wait_for_grpc_server(server_process, client, subprocess_args, timeout=60):
 
 
 def open_server_process(
-    instance_ref: InstanceRef,
+    instance_ref: Optional[InstanceRef],
     port: Optional[int],
     socket: Optional[str],
     location_name: Optional[str] = None,
@@ -1051,6 +1052,10 @@ def open_server_process(
     cwd: Optional[str] = None,
     log_level: str = "INFO",
     env: Optional[Dict[str, str]] = None,
+    lazy_load_user_code: bool = True,
+    inject_env_vars_from_instance: bool = True,
+    container_image: Optional[str] = None,
+    container_context: Optional[dict[str, Any]] = None,
 ):
     check.invariant((port or socket) and not (port and socket), "Set only port or socket")
     check.opt_inst_param(loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin)
@@ -1065,7 +1070,7 @@ def open_server_process(
     subprocess_args = [
         *get_python_environment_entry_point(executable_path or sys.executable),
         *["api", "grpc"],
-        *["--lazy-load-user-code"],
+        *(["--lazy-load-user-code"] if lazy_load_user_code else []),
         *(["--port", str(port)] if port else []),
         *(["--socket", socket] if socket else []),
         *(["-n", str(max_workers)] if max_workers else []),
@@ -1076,9 +1081,11 @@ def open_server_process(
         *(["--log-level", log_level]),
         # only use the Python environment if it has been explicitly set in the workspace,
         *(["--use-python-environment-entry-point"] if executable_path else []),
-        *(["--inject-env-vars-from-instance"]),
-        *(["--instance-ref", serialize_value(instance_ref)]),
+        *(["--inject-env-vars-from-instance"] if inject_env_vars_from_instance else []),
+        *(["--instance-ref", serialize_value(instance_ref)] if instance_ref else []),
         *(["--location-name", location_name] if location_name else []),
+        *(["--container_image", container_image] if container_image else []),
+        *(["--container_context", json.dumps(container_context)] if container_context else []),
     ]
 
     if loadable_target_origin:
@@ -1105,18 +1112,8 @@ def open_server_process(
 
 
 def _open_server_process_on_dynamic_port(
-    instance_ref: InstanceRef,
-    location_name: Optional[str] = None,
     max_retries: int = 10,
-    loadable_target_origin: Optional[LoadableTargetOrigin] = None,
-    max_workers: Optional[int] = None,
-    heartbeat: bool = False,
-    heartbeat_timeout: int = 30,
-    fixed_server_id: Optional[str] = None,
-    startup_timeout: int = 20,
-    cwd: Optional[str] = None,
-    log_level: str = "INFO",
-    env: Optional[Dict[str, str]] = None,
+    **kwargs,
 ) -> Tuple[Optional[Popen[str]], Optional[int]]:
     server_process = None
     retries = 0
@@ -1124,21 +1121,7 @@ def _open_server_process_on_dynamic_port(
     while server_process is None and retries < max_retries:
         port = find_free_port()
         try:
-            server_process = open_server_process(
-                instance_ref=instance_ref,
-                location_name=location_name,
-                port=port,
-                socket=None,
-                loadable_target_origin=loadable_target_origin,
-                max_workers=max_workers,
-                heartbeat=heartbeat,
-                heartbeat_timeout=heartbeat_timeout,
-                fixed_server_id=fixed_server_id,
-                startup_timeout=startup_timeout,
-                cwd=cwd,
-                log_level=log_level,
-                env=env,
-            )
+            server_process = open_server_process(port=port, socket=None, **kwargs)
         except CouldNotBindGrpcServerToAddress:
             pass
 
@@ -1150,7 +1133,7 @@ def _open_server_process_on_dynamic_port(
 class GrpcServerProcess:
     def __init__(
         self,
-        instance_ref: InstanceRef,
+        instance_ref: Optional[InstanceRef],
         location_name: Optional[str] = None,
         loadable_target_origin: Optional[LoadableTargetOrigin] = None,
         force_port: bool = False,
@@ -1164,6 +1147,10 @@ class GrpcServerProcess:
         log_level: str = "INFO",
         env: Optional[Dict[str, str]] = None,
         wait_on_exit=False,
+        lazy_load_user_code: bool = True,
+        inject_env_vars_from_instance: bool = True,
+        container_image: Optional[str] = None,
+        container_context: Optional[Dict[str, Any]] = None,
     ):
         self.port = None
         self.socket = None
@@ -1204,6 +1191,10 @@ class GrpcServerProcess:
                 cwd=cwd,
                 log_level=log_level,
                 env=env,
+                lazy_load_user_code=lazy_load_user_code,
+                inject_env_vars_from_instance=inject_env_vars_from_instance,
+                container_image=container_image,
+                container_context=container_context,
             )
         else:
             self.socket = safe_tempfile_path_unmanaged()
@@ -1222,6 +1213,10 @@ class GrpcServerProcess:
                 cwd=cwd,
                 log_level=log_level,
                 env=env,
+                lazy_load_user_code=lazy_load_user_code,
+                inject_env_vars_from_instance=inject_env_vars_from_instance,
+                container_image=container_image,
+                container_context=container_context,
             )
 
         if server_process is None:
