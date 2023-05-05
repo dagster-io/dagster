@@ -12,6 +12,8 @@ def scope_define_instance():
     )
     # end_define_dbt_cloud_instance
 
+    return dbt_cloud_instance
+
 
 def scope_load_assets_from_dbt_cloud_job():
     from dagster_dbt import DbtCloudClientResource
