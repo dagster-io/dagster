@@ -564,6 +564,18 @@ export function buildAssetNodeStatusContent({
         ),
       };
   }
+  return {
+    background: Colors.Green50,
+    border: Colors.Green500,
+    content: (
+      <>
+        {expanded && <AssetPartitionStatusDot status={[AssetPartitionStatus.MATERIALIZED]} />}
+        <span style={{color: Colors.Green700}}>Materialized</span>
+        {expanded && <SpacerDot />}
+        {lastMaterializationLink}
+      </>
+    ),
+  };
 }
 
 export const AssetNodeMinimal: React.FC<{
