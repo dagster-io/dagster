@@ -6,14 +6,14 @@ import * as React from 'react';
 
 import {ReexecutionStrategy} from '../graphql/types';
 
-import {NavigationBlock} from './NavitationBlock';
+import {NavigationBlock} from './NavigationBlock';
 import {LAUNCH_PIPELINE_REEXECUTION_MUTATION} from './RunUtils';
 import {
   LaunchPipelineReexecutionMutation,
   LaunchPipelineReexecutionMutationVariables,
 } from './types/RunUtils.types';
 
-export interface Props {
+interface Props {
   isOpen: boolean;
   onClose: () => void;
   onComplete: (reexecutionState: ReexecutionState) => void;
@@ -62,7 +62,7 @@ const errorText = (error: Error) => {
   }
 };
 
-export type ReexecutionState = {completed: number; errors: {[id: string]: Error}};
+type ReexecutionState = {completed: number; errors: {[id: string]: Error}};
 
 type ReexecutionDialogState = {
   frozenRuns: SelectedRuns;

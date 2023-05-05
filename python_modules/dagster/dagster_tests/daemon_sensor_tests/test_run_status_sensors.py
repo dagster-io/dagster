@@ -1,7 +1,8 @@
 import tempfile
 import time
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
-from typing import Dict, Generator, NamedTuple
+from typing import Any, Dict, Iterator, Mapping, NamedTuple, Optional, Tuple
 
 import pendulum
 import pytest
@@ -13,31 +14,31 @@ from dagster import (
 from dagster._core.definitions.instigation_logger import get_instigation_log_records
 from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.events.log import EventLogEntry
-from dagster._core.host_representation import ExternalRepository, RepositoryLocation
+from dagster._core.host_representation import CodeLocation, ExternalRepository
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DAGSTER_META_KEY
 from dagster._core.scheduler.instigation import TickStatus
 from dagster._core.storage.event_log.base import EventRecordsFilter
 from dagster._core.test_utils import create_test_daemon_workspace_context, instance_for_test
 from dagster._core.workspace.context import WorkspaceProcessContext
-from dagster._core.workspace.load_target import WorkspaceFileTarget
+from dagster._core.workspace.load_target import WorkspaceFileTarget, WorkspaceLoadTarget
 
 from .conftest import create_workspace_load_target
 from .test_sensor_run import (
+    daily_partitioned_job,
     evaluate_sensors,
     failure_job,
-    failure_pipeline,
-    foo_pipeline,
-    get_sensor_executors,
-    hanging_pipeline,
-    the_pipeline,
+    failure_job_2,
+    foo_job,
+    hanging_job,
+    the_job,
     validate_tick,
     wait_for_all_runs_to_finish,
 )
 
 
 @pytest.fixture(name="instance_module_scoped", scope="module")
-def instance_module_scoped_fixture():
+def instance_module_scoped_fixture() -> Iterator[DagsterInstance]:
     # Overridden from conftest.py, uses DefaultRunLauncher since we care about
     # runs actually completing for run status sensors
     with instance_for_test(
@@ -55,11 +56,15 @@ def instance_with_sensors(overrides=None, attribute="the_repo"):
             yield (
                 instance,
                 workspace_context,
-                next(
-                    iter(
-                        workspace_context.create_request_context().get_workspace_snapshot().values()
-                    )
-                ).repository_location.get_repository(attribute),
+                check.not_none(
+                    next(
+                        iter(
+                            workspace_context.create_request_context()
+                            .get_workspace_snapshot()
+                            .values()
+                        )
+                    ).code_location
+                ).get_repository(attribute),
             )
 
 
@@ -67,7 +72,7 @@ class CodeLocationInfoForSensorTest(NamedTuple):
     instance: DagsterInstance
     context: WorkspaceProcessContext
     repositories: Dict[str, ExternalRepository]
-    repository_location: RepositoryLocation
+    code_location: CodeLocation
 
     def get_single_repository(self) -> ExternalRepository:
         assert len(self.repositories) == 1
@@ -76,8 +81,9 @@ class CodeLocationInfoForSensorTest(NamedTuple):
 
 @contextmanager
 def instance_with_single_code_location_multiple_repos_with_sensors(
-    overrides=None, workspace_load_target=None
-) -> Generator[tuple, None, None]:
+    overrides: Optional[Mapping[str, Any]] = None,
+    workspace_load_target: Optional[WorkspaceLoadTarget] = None,
+) -> Iterator[Tuple[DagsterInstance, WorkspaceProcessContext, Dict[str, ExternalRepository]]]:
     with instance_with_multiple_code_locations(overrides, workspace_load_target) as many_tuples:
         assert len(many_tuples) == 1
         location_info = next(iter(many_tuples.values()))
@@ -90,38 +96,41 @@ def instance_with_single_code_location_multiple_repos_with_sensors(
 
 @contextmanager
 def instance_with_multiple_code_locations(
-    overrides=None, workspace_load_target=None
-) -> Generator[Dict[str, CodeLocationInfoForSensorTest], None, None]:
+    overrides: Optional[Mapping[str, Any]] = None, workspace_load_target=None
+) -> Iterator[Dict[str, CodeLocationInfoForSensorTest]]:
     with instance_for_test(overrides) as instance:
         with create_test_daemon_workspace_context(
             workspace_load_target or create_workspace_load_target(None), instance=instance
         ) as workspace_context:
             location_infos: Dict[str, CodeLocationInfoForSensorTest] = {}
 
-            for repository_location_entry in (
+            for code_location_entry in (
                 workspace_context.create_request_context().get_workspace_snapshot().values()
             ):
-                repository_location: RepositoryLocation = check.not_none(
-                    repository_location_entry.repository_location
-                )
-                location_infos[repository_location.name] = CodeLocationInfoForSensorTest(
+                code_location: CodeLocation = check.not_none(code_location_entry.code_location)
+                location_infos[code_location.name] = CodeLocationInfoForSensorTest(
                     instance=instance,
                     context=workspace_context,
-                    repositories={**repository_location.get_repositories()},
-                    repository_location=repository_location,
+                    repositories={**code_location.get_repositories()},
+                    code_location=code_location,
                 )
 
             yield location_infos
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
-def test_run_status_sensor(caplog, executor, instance, workspace_context, external_repo):
+def test_run_status_sensor(
+    caplog,
+    executor: Optional[ThreadPoolExecutor],
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    external_repo: ExternalRepository,
+):
     freeze_datetime = pendulum.now()
     with pendulum.test(freeze_datetime):
-        success_sensor = external_repo.get_external_sensor("my_pipeline_success_sensor")
+        success_sensor = external_repo.get_external_sensor("my_job_success_sensor")
         instance.start_sensor(success_sensor)
 
-        started_sensor = external_repo.get_external_sensor("my_pipeline_started_sensor")
+        started_sensor = external_repo.get_external_sensor("my_job_started_sensor")
         instance.start_sensor(started_sensor)
 
         evaluate_sensors(workspace_context, executor)
@@ -141,11 +150,11 @@ def test_run_status_sensor(caplog, executor, instance, workspace_context, extern
         time.sleep(1)
 
     with pendulum.test(freeze_datetime):
-        external_pipeline = external_repo.get_full_external_job("failure_pipeline")
-        run = instance.create_run_for_pipeline(
-            failure_pipeline,
-            external_pipeline_origin=external_pipeline.get_external_origin(),
-            pipeline_code_origin=external_pipeline.get_python_origin(),
+        external_job = external_repo.get_full_external_job("failure_job")
+        run = instance.create_run_for_job(
+            failure_job,
+            external_job_origin=external_job.get_external_origin(),
+            job_code_origin=external_job.get_python_origin(),
         )
         instance.submit_run(run.run_id, workspace_context.create_request_context())
         wait_for_all_runs_to_finish(instance)
@@ -180,11 +189,11 @@ def test_run_status_sensor(caplog, executor, instance, workspace_context, extern
         )
 
     with pendulum.test(freeze_datetime):
-        external_pipeline = external_repo.get_full_external_job("foo_pipeline")
-        run = instance.create_run_for_pipeline(
-            foo_pipeline,
-            external_pipeline_origin=external_pipeline.get_external_origin(),
-            pipeline_code_origin=external_pipeline.get_python_origin(),
+        external_job = external_repo.get_full_external_job("foo_job")
+        run = instance.create_run_for_job(
+            foo_job,
+            external_job_origin=external_job.get_external_origin(),
+            job_code_origin=external_job.get_python_origin(),
         )
         instance.submit_run(run.run_id, workspace_context.create_request_context())
         wait_for_all_runs_to_finish(instance)
@@ -220,16 +229,16 @@ def test_run_status_sensor(caplog, executor, instance, workspace_context, extern
             TickStatus.SUCCESS,
         )
 
-        assert (
-            'Sensor "my_pipeline_started_sensor" acted on run status STARTED of run' in caplog.text
-        )
-        assert (
-            'Sensor "my_pipeline_success_sensor" acted on run status SUCCESS of run' in caplog.text
-        )
+        assert 'Sensor "my_job_started_sensor" acted on run status STARTED of run' in caplog.text
+        assert 'Sensor "my_job_success_sensor" acted on run status SUCCESS of run' in caplog.text
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
-def test_run_failure_sensor(executor, instance, workspace_context, external_repo):
+def test_run_failure_sensor(
+    executor: Optional[ThreadPoolExecutor],
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    external_repo: ExternalRepository,
+):
     freeze_datetime = pendulum.now()
     with pendulum.test(freeze_datetime):
         failure_sensor = external_repo.get_external_sensor("my_run_failure_sensor")
@@ -252,11 +261,11 @@ def test_run_failure_sensor(executor, instance, workspace_context, external_repo
         time.sleep(1)
 
     with pendulum.test(freeze_datetime):
-        external_pipeline = external_repo.get_full_external_job("failure_pipeline")
-        run = instance.create_run_for_pipeline(
-            failure_pipeline,
-            external_pipeline_origin=external_pipeline.get_external_origin(),
-            pipeline_code_origin=external_pipeline.get_python_origin(),
+        external_job = external_repo.get_full_external_job("failure_job")
+        run = instance.create_run_for_job(
+            failure_job,
+            external_job_origin=external_job.get_external_origin(),
+            job_code_origin=external_job.get_python_origin(),
         )
         instance.submit_run(run.run_id, workspace_context.create_request_context())
         wait_for_all_runs_to_finish(instance)
@@ -280,8 +289,12 @@ def test_run_failure_sensor(executor, instance, workspace_context, external_repo
         )
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
-def test_run_failure_sensor_that_fails(executor, instance, workspace_context, external_repo):
+def test_run_failure_sensor_that_fails(
+    executor: Optional[ThreadPoolExecutor],
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    external_repo: ExternalRepository,
+):
     freeze_datetime = pendulum.now()
     with pendulum.test(freeze_datetime):
         failure_sensor = external_repo.get_external_sensor(
@@ -306,11 +319,11 @@ def test_run_failure_sensor_that_fails(executor, instance, workspace_context, ex
         time.sleep(1)
 
     with pendulum.test(freeze_datetime):
-        external_pipeline = external_repo.get_full_external_job("failure_pipeline")
-        run = instance.create_run_for_pipeline(
-            failure_pipeline,
-            external_pipeline_origin=external_pipeline.get_external_origin(),
-            pipeline_code_origin=external_pipeline.get_python_origin(),
+        external_job = external_repo.get_full_external_job("failure_job")
+        run = instance.create_run_for_job(
+            failure_job,
+            external_job_origin=external_job.get_external_origin(),
+            job_code_origin=external_job.get_python_origin(),
         )
         instance.submit_run(run.run_id, workspace_context.create_request_context())
         wait_for_all_runs_to_finish(instance)
@@ -352,8 +365,12 @@ def test_run_failure_sensor_that_fails(executor, instance, workspace_context, ex
         )
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
-def test_run_failure_sensor_filtered(executor, instance, workspace_context, external_repo):
+def test_run_failure_sensor_filtered(
+    executor: Optional[ThreadPoolExecutor],
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    external_repo: ExternalRepository,
+):
     freeze_datetime = pendulum.now()
     with pendulum.test(freeze_datetime):
         failure_sensor = external_repo.get_external_sensor("my_run_failure_sensor_filtered")
@@ -376,11 +393,11 @@ def test_run_failure_sensor_filtered(executor, instance, workspace_context, exte
         time.sleep(1)
 
     with pendulum.test(freeze_datetime):
-        external_pipeline = external_repo.get_full_external_job("failure_pipeline")
-        run = instance.create_run_for_pipeline(
-            failure_pipeline,
-            external_pipeline_origin=external_pipeline.get_external_origin(),
-            pipeline_code_origin=external_pipeline.get_python_origin(),
+        external_job = external_repo.get_full_external_job("failure_job_2")
+        run = instance.create_run_for_job(
+            failure_job_2,
+            external_job_origin=external_job.get_external_origin(),
+            job_code_origin=external_job.get_python_origin(),
         )
         instance.submit_run(run.run_id, workspace_context.create_request_context())
         wait_for_all_runs_to_finish(instance)
@@ -407,11 +424,11 @@ def test_run_failure_sensor_filtered(executor, instance, workspace_context, exte
         time.sleep(1)
 
     with pendulum.test(freeze_datetime):
-        external_pipeline = external_repo.get_full_external_job("failure_graph")
-        run = instance.create_run_for_pipeline(
+        external_job = external_repo.get_full_external_job("failure_job")
+        run = instance.create_run_for_job(
             failure_job,
-            external_pipeline_origin=external_pipeline.get_external_origin(),
-            pipeline_code_origin=external_pipeline.get_python_origin(),
+            external_job_origin=external_job.get_external_origin(),
+            job_code_origin=external_job.get_python_origin(),
         )
         instance.submit_run(run.run_id, workspace_context.create_request_context())
         wait_for_all_runs_to_finish(instance)
@@ -436,7 +453,7 @@ def test_run_failure_sensor_filtered(executor, instance, workspace_context, exte
         )
 
 
-def sqlite_storage_config_fn(temp_dir):
+def sqlite_storage_config_fn(temp_dir: str) -> Dict[str, Any]:
     # non-run sharded storage
     return {
         "run_storage": {
@@ -457,7 +474,7 @@ def default_storage_config_fn(_):
     return {}
 
 
-def sql_event_log_storage_config_fn(temp_dir):
+def sql_event_log_storage_config_fn(temp_dir: str):
     return {
         "event_log_storage": {
             "module": "dagster._core.storage.event_log",
@@ -471,8 +488,7 @@ def sql_event_log_storage_config_fn(temp_dir):
     "storage_config_fn",
     [default_storage_config_fn, sqlite_storage_config_fn],
 )
-@pytest.mark.parametrize("executor", get_sensor_executors())
-def test_run_status_sensor_interleave(storage_config_fn, executor):
+def test_run_status_sensor_interleave(storage_config_fn, executor: Optional[ThreadPoolExecutor]):
     freeze_datetime = pendulum.now()
     with tempfile.TemporaryDirectory() as temp_dir:
         with instance_with_sensors(overrides=storage_config_fn(temp_dir)) as (
@@ -502,20 +518,20 @@ def test_run_status_sensor_interleave(storage_config_fn, executor):
                 time.sleep(1)
 
             with pendulum.test(freeze_datetime):
-                external_pipeline = external_repo.get_full_external_job("hanging_pipeline")
+                external_job = external_repo.get_full_external_job("hanging_job")
                 # start run 1
-                run1 = instance.create_run_for_pipeline(
-                    hanging_pipeline,
-                    external_pipeline_origin=external_pipeline.get_external_origin(),
-                    pipeline_code_origin=external_pipeline.get_python_origin(),
+                run1 = instance.create_run_for_job(
+                    hanging_job,
+                    external_job_origin=external_job.get_external_origin(),
+                    job_code_origin=external_job.get_python_origin(),
                 )
                 instance.submit_run(run1.run_id, workspace_context.create_request_context())
                 freeze_datetime = freeze_datetime.add(seconds=60)
                 # start run 2
-                run2 = instance.create_run_for_pipeline(
-                    hanging_pipeline,
-                    external_pipeline_origin=external_pipeline.get_external_origin(),
-                    pipeline_code_origin=external_pipeline.get_python_origin(),
+                run2 = instance.create_run_for_job(
+                    hanging_job,
+                    external_job_origin=external_job.get_external_origin(),
+                    job_code_origin=external_job.get_python_origin(),
                 )
                 instance.submit_run(run2.run_id, workspace_context.create_request_context())
                 freeze_datetime = freeze_datetime.add(seconds=60)
@@ -571,8 +587,9 @@ def test_run_status_sensor_interleave(storage_config_fn, executor):
 
 
 @pytest.mark.parametrize("storage_config_fn", [sql_event_log_storage_config_fn])
-@pytest.mark.parametrize("executor", get_sensor_executors())
-def test_run_failure_sensor_empty_run_records(storage_config_fn, executor):
+def test_run_failure_sensor_empty_run_records(
+    storage_config_fn, executor: Optional[ThreadPoolExecutor]
+):
     freeze_datetime = pendulum.now()
     with tempfile.TemporaryDirectory() as temp_dir:
         with instance_with_sensors(overrides=storage_config_fn(temp_dir)) as (
@@ -639,8 +656,7 @@ def test_run_failure_sensor_empty_run_records(storage_config_fn, executor):
                 )
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
-def test_cross_code_location_run_status_sensor(executor):
+def test_cross_code_location_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
     freeze_datetime = pendulum.now()
 
     # we have no good api for compositing load targets so forced to use a workspace file
@@ -701,21 +717,21 @@ def test_cross_code_location_run_status_sensor(executor):
         with pendulum.test(freeze_datetime):
             external_success_job = job_repo.get_full_external_job("success_job")
 
-            # this unfortunate API (create_run_for_pipeline) requires the importation
+            # this unfortunate API (create_run_for_job) requires the importation
             # of the in-memory job object even though it is dealing mostly with
             # "external" objects
             from .locations_for_xlocation_sensor_test.success_job_def import success_job
 
-            run = instance.create_run_for_pipeline(
+            dagster_run = instance.create_run_for_job(
                 success_job,
-                external_pipeline_origin=external_success_job.get_external_origin(),
-                pipeline_code_origin=external_success_job.get_python_origin(),
+                external_job_origin=external_success_job.get_external_origin(),
+                job_code_origin=external_success_job.get_python_origin(),
             )
 
-            instance.submit_run(run.run_id, workspace_context.create_request_context())
+            instance.submit_run(dagster_run.run_id, workspace_context.create_request_context())
             wait_for_all_runs_to_finish(instance)
-            run = list(instance.get_runs())[0]
-            assert run.status == DagsterRunStatus.SUCCESS
+            dagster_run = list(instance.get_runs())[0]
+            assert dagster_run.status == DagsterRunStatus.SUCCESS
             freeze_datetime = freeze_datetime.add(seconds=60)
 
         with pendulum.test(freeze_datetime):
@@ -735,8 +751,9 @@ def test_cross_code_location_run_status_sensor(executor):
             )
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
-def test_cross_code_location_job_selector_on_defs_run_status_sensor(executor):
+def test_cross_code_location_job_selector_on_defs_run_status_sensor(
+    executor: Optional[ThreadPoolExecutor],
+):
     freeze_datetime = pendulum.now()
 
     # we have no good api for compositing load targets so forced to use a workspace file
@@ -797,21 +814,21 @@ def test_cross_code_location_job_selector_on_defs_run_status_sensor(executor):
         with pendulum.test(freeze_datetime):
             external_success_job = job_repo.get_full_external_job("success_job")
 
-            # this unfortunate API (create_run_for_pipeline) requires the importation
+            # this unfortunate API (create_run_for_job) requires the importation
             # of the in-memory job object even though it is dealing mostly with
             # "external" objects
             from .locations_for_xlocation_sensor_test.success_job_def import success_job
 
-            run = instance.create_run_for_pipeline(
+            dagster_run = instance.create_run_for_job(
                 success_job,
-                external_pipeline_origin=external_success_job.get_external_origin(),
-                pipeline_code_origin=external_success_job.get_python_origin(),
+                external_job_origin=external_success_job.get_external_origin(),
+                job_code_origin=external_success_job.get_python_origin(),
             )
 
-            instance.submit_run(run.run_id, workspace_context.create_request_context())
+            instance.submit_run(dagster_run.run_id, workspace_context.create_request_context())
             wait_for_all_runs_to_finish(instance)
-            run = list(instance.get_runs())[0]
-            assert run.status == DagsterRunStatus.SUCCESS
+            dagster_run = list(instance.get_runs())[0]
+            assert dagster_run.status == DagsterRunStatus.SUCCESS
             freeze_datetime = freeze_datetime.add(seconds=60)
 
         with pendulum.test(freeze_datetime):
@@ -844,21 +861,21 @@ def test_cross_code_location_job_selector_on_defs_run_status_sensor(executor):
         with pendulum.test(freeze_datetime):
             external_another_success_job = job_repo.get_full_external_job("another_success_job")
 
-            # this unfortunate API (create_run_for_pipeline) requires the importation
+            # this unfortunate API (create_run_for_job) requires the importation
             # of the in-memory job object even though it is dealing mostly with
             # "external" objects
             from .locations_for_xlocation_sensor_test.success_job_def import another_success_job
 
-            run = instance.create_run_for_pipeline(
+            dagster_run = instance.create_run_for_job(
                 another_success_job,
-                external_pipeline_origin=external_another_success_job.get_external_origin(),
-                pipeline_code_origin=external_another_success_job.get_python_origin(),
+                external_job_origin=external_another_success_job.get_external_origin(),
+                job_code_origin=external_another_success_job.get_python_origin(),
             )
 
-            instance.submit_run(run.run_id, workspace_context.create_request_context())
+            instance.submit_run(dagster_run.run_id, workspace_context.create_request_context())
             wait_for_all_runs_to_finish(instance)
-            run = list(instance.get_runs())[0]
-            assert run.status == DagsterRunStatus.SUCCESS
+            dagster_run = list(instance.get_runs())[0]
+            assert dagster_run.status == DagsterRunStatus.SUCCESS
             freeze_datetime = freeze_datetime.add(seconds=60)
 
         with pendulum.test(freeze_datetime):
@@ -883,8 +900,7 @@ def test_cross_code_location_job_selector_on_defs_run_status_sensor(executor):
             )
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
-def test_cross_repo_run_status_sensor(executor):
+def test_cross_repo_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
     freeze_datetime = pendulum.now()
     with instance_with_single_code_location_multiple_repos_with_sensors() as (
         instance,
@@ -915,11 +931,11 @@ def test_cross_repo_run_status_sensor(executor):
             time.sleep(1)
 
         with pendulum.test(freeze_datetime):
-            external_pipeline = the_other_repo.get_full_external_job("the_pipeline")
-            run = instance.create_run_for_pipeline(
-                the_pipeline,
-                external_pipeline_origin=external_pipeline.get_external_origin(),
-                pipeline_code_origin=external_pipeline.get_python_origin(),
+            external_job = the_other_repo.get_full_external_job("the_job")
+            run = instance.create_run_for_job(
+                the_job,
+                external_job_origin=external_job.get_external_origin(),
+                job_code_origin=external_job.get_python_origin(),
             )
             instance.submit_run(run.run_id, workspace_context.create_request_context())
             wait_for_all_runs_to_finish(instance)
@@ -942,8 +958,7 @@ def test_cross_repo_run_status_sensor(executor):
             )
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
-def test_cross_repo_job_run_status_sensor(executor):
+def test_cross_repo_job_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
     freeze_datetime = pendulum.now()
     with instance_with_single_code_location_multiple_repos_with_sensors() as (
         instance,
@@ -978,11 +993,11 @@ def test_cross_repo_job_run_status_sensor(executor):
             time.sleep(1)
 
         with pendulum.test(freeze_datetime):
-            external_pipeline = the_other_repo.get_full_external_job("the_pipeline")
-            run = instance.create_run_for_pipeline(
-                the_pipeline,
-                external_pipeline_origin=external_pipeline.get_external_origin(),
-                pipeline_code_origin=external_pipeline.get_python_origin(),
+            external_job = the_other_repo.get_full_external_job("the_job")
+            run = instance.create_run_for_job(
+                the_job,
+                external_job_origin=external_job.get_external_origin(),
+                job_code_origin=external_job.get_python_origin(),
             )
             instance.submit_run(run.run_id, workspace_context.create_request_context())
             wait_for_all_runs_to_finish(instance)
@@ -1006,7 +1021,7 @@ def test_cross_repo_job_run_status_sensor(executor):
                 TickStatus.SUCCESS,
             )
 
-            run_request_runs = [r for r in instance.get_runs() if r.pipeline_name == "the_graph"]
+            run_request_runs = [r for r in instance.get_runs() if r.job_name == "the_other_job"]
             assert len(run_request_runs) == 1
             assert run_request_runs[0].status == DagsterRunStatus.SUCCESS
             freeze_datetime = freeze_datetime.add(seconds=60)
@@ -1015,7 +1030,7 @@ def test_cross_repo_job_run_status_sensor(executor):
             # ensure that the success of the run launched by the sensor doesn't trigger the sensor
             evaluate_sensors(workspace_context, executor)
             wait_for_all_runs_to_finish(instance)
-            run_request_runs = [r for r in instance.get_runs() if r.pipeline_name == "the_graph"]
+            run_request_runs = [r for r in instance.get_runs() if r.job_name == "the_other_job"]
             assert len(run_request_runs) == 1
 
             ticks = instance.get_ticks(
@@ -1030,8 +1045,74 @@ def test_cross_repo_job_run_status_sensor(executor):
             )
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
-def test_different_instance_run_status_sensor(executor):
+def test_partitioned_job_run_status_sensor(
+    caplog,
+    executor: Optional[ThreadPoolExecutor],
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    external_repo: ExternalRepository,
+):
+    freeze_datetime = pendulum.now()
+    with pendulum.test(freeze_datetime):
+        success_sensor = external_repo.get_external_sensor("partitioned_pipeline_success_sensor")
+        instance.start_sensor(success_sensor)
+
+        assert instance.get_runs_count() == 0
+        evaluate_sensors(workspace_context, executor)
+        assert instance.get_runs_count() == 0
+
+        ticks = instance.get_ticks(
+            success_sensor.get_external_origin_id(), success_sensor.selector_id
+        )
+        assert len(ticks) == 1
+        validate_tick(
+            ticks[0],
+            success_sensor,
+            freeze_datetime,
+            TickStatus.SKIPPED,
+        )
+
+        freeze_datetime = freeze_datetime.add(seconds=60)
+        time.sleep(1)
+
+    with pendulum.test(freeze_datetime):
+        external_job = external_repo.get_full_external_job("daily_partitioned_job")
+        run = instance.create_run_for_job(
+            daily_partitioned_job,
+            external_job_origin=external_job.get_external_origin(),
+            job_code_origin=external_job.get_python_origin(),
+            tags={"dagster/partition": "2022-08-01"},
+        )
+        instance.submit_run(run.run_id, workspace_context.create_request_context())
+        wait_for_all_runs_to_finish(instance)
+        assert instance.get_runs_count() == 1
+        run = instance.get_runs()[0]
+        assert run.status == DagsterRunStatus.SUCCESS
+        freeze_datetime = freeze_datetime.add(seconds=60)
+
+    caplog.clear()
+
+    with pendulum.test(freeze_datetime):
+        # should fire the success sensor
+        evaluate_sensors(workspace_context, executor)
+
+        ticks = instance.get_ticks(
+            success_sensor.get_external_origin_id(), success_sensor.selector_id
+        )
+        assert len(ticks) == 2
+        validate_tick(
+            ticks[0],
+            success_sensor,
+            freeze_datetime,
+            TickStatus.SUCCESS,
+        )
+        assert (
+            'Sensor "partitioned_pipeline_success_sensor" acted on run status SUCCESS of run'
+            in caplog.text
+        )
+
+
+def test_different_instance_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
     freeze_datetime = pendulum.now()
     with instance_with_sensors() as (
         instance,
@@ -1064,11 +1145,11 @@ def test_different_instance_run_status_sensor(executor):
                 time.sleep(1)
 
             with pendulum.test(freeze_datetime):
-                external_pipeline = the_other_repo.get_full_external_job("the_pipeline")
-                run = the_other_instance.create_run_for_pipeline(
-                    the_pipeline,
-                    external_pipeline_origin=external_pipeline.get_external_origin(),
-                    pipeline_code_origin=external_pipeline.get_python_origin(),
+                external_job = the_other_repo.get_full_external_job("the_job")
+                run = the_other_instance.create_run_for_job(
+                    the_job,
+                    external_job_origin=external_job.get_external_origin(),
+                    job_code_origin=external_job.get_python_origin(),
                 )
                 the_other_instance.submit_run(
                     run.run_id, the_other_workspace_context.create_request_context()
@@ -1094,8 +1175,7 @@ def test_different_instance_run_status_sensor(executor):
                 )
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
-def test_instance_run_status_sensor(executor):
+def test_instance_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
     freeze_datetime = pendulum.now()
     with instance_with_single_code_location_multiple_repos_with_sensors() as (
         instance,
@@ -1126,11 +1206,11 @@ def test_instance_run_status_sensor(executor):
             time.sleep(1)
 
         with pendulum.test(freeze_datetime):
-            external_pipeline = the_other_repo.get_full_external_job("the_pipeline")
-            run = instance.create_run_for_pipeline(
-                the_pipeline,
-                external_pipeline_origin=external_pipeline.get_external_origin(),
-                pipeline_code_origin=external_pipeline.get_python_origin(),
+            external_job = the_other_repo.get_full_external_job("the_job")
+            run = instance.create_run_for_job(
+                the_job,
+                external_job_origin=external_job.get_external_origin(),
+                job_code_origin=external_job.get_python_origin(),
             )
             instance.submit_run(run.run_id, workspace_context.create_request_context())
             wait_for_all_runs_to_finish(instance)
@@ -1153,8 +1233,12 @@ def test_instance_run_status_sensor(executor):
             )
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
-def test_logging_run_status_sensor(executor, instance, workspace_context, external_repo):
+def test_logging_run_status_sensor(
+    executor: Optional[ThreadPoolExecutor],
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    external_repo: ExternalRepository,
+):
     freeze_datetime = pendulum.now()
     with pendulum.test(freeze_datetime):
         success_sensor = external_repo.get_external_sensor("logging_status_sensor")
@@ -1177,11 +1261,11 @@ def test_logging_run_status_sensor(executor, instance, workspace_context, extern
         time.sleep(1)
 
     with pendulum.test(freeze_datetime):
-        external_pipeline = external_repo.get_full_external_job("foo_pipeline")
-        run = instance.create_run_for_pipeline(
-            foo_pipeline,
-            external_pipeline_origin=external_pipeline.get_external_origin(),
-            pipeline_code_origin=external_pipeline.get_python_origin(),
+        external_job = external_repo.get_full_external_job("foo_job")
+        run = instance.create_run_for_job(
+            foo_job,
+            external_job_origin=external_job.get_external_origin(),
+            job_code_origin=external_job.get_python_origin(),
         )
         instance.submit_run(run.run_id, workspace_context.create_request_context())
         wait_for_all_runs_to_finish(instance)
@@ -1209,4 +1293,4 @@ def test_logging_run_status_sensor(executor, instance, workspace_context, extern
         assert len(records) == 1
         record = records[0]
         assert record[DAGSTER_META_KEY]["orig_message"] == f"run succeeded: {run.run_id}"
-        instance.compute_log_manager.delete_logs(log_key=tick.log_key)
+        instance.compute_log_manager.delete_logs(log_key=tick.log_key)  # type: ignore

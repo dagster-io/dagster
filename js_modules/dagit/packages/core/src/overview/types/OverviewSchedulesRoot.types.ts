@@ -19,6 +19,7 @@ export type OverviewSchedulesQuery = {
       }
     | {
         __typename: 'Workspace';
+        id: string;
         locationEntries: Array<{
           __typename: 'WorkspaceLocationEntry';
           id: string;
@@ -46,6 +47,14 @@ export type OverviewSchedulesQuery = {
                     id: string;
                     name: string;
                     description: string | null;
+                    scheduleState: {
+                      __typename: 'InstigationState';
+                      id: string;
+                      selectorId: string;
+                      status: Types.InstigationStatus;
+                      hasStartPermission: boolean;
+                      hasStopPermission: boolean;
+                    };
                   }>;
                 }>;
               }
@@ -60,6 +69,7 @@ export type OverviewSchedulesQuery = {
     | {__typename: 'PythonError'};
   instance: {
     __typename: 'Instance';
+    id: string;
     hasInfo: boolean;
     daemonHealth: {
       __typename: 'DaemonHealth';
@@ -100,6 +110,8 @@ export type UnloadableSchedulesQuery = {
           name: string;
           instigationType: Types.InstigationType;
           status: Types.InstigationStatus;
+          hasStartPermission: boolean;
+          hasStopPermission: boolean;
           repositoryName: string;
           repositoryLocationName: string;
           runningCount: number;
@@ -110,7 +122,6 @@ export type UnloadableSchedulesQuery = {
           runs: Array<{
             __typename: 'Run';
             id: string;
-            runId: string;
             status: Types.RunStatus;
             startTime: number | null;
             endTime: number | null;

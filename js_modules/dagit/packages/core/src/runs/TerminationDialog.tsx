@@ -17,9 +17,9 @@ import * as React from 'react';
 
 import {TerminateRunPolicy} from '../graphql/types';
 
-import {NavigationBlock} from './NavitationBlock';
+import {NavigationBlock} from './NavigationBlock';
 import {TERMINATE_MUTATION} from './RunUtils';
-import {TerminateMutation} from './types/RunUtils.types';
+import {TerminateMutation, TerminateMutationVariables} from './types/RunUtils.types';
 
 export interface Props {
   isOpen: boolean;
@@ -133,7 +133,9 @@ export const TerminationDialog = (props: Props) => {
     }
   }, [isOpen, selectedRuns]);
 
-  const [terminate] = useMutation<TerminateMutation>(TERMINATE_MUTATION);
+  const [terminate] = useMutation<TerminateMutation, TerminateMutationVariables>(
+    TERMINATE_MUTATION,
+  );
   const policy = state.mustForce
     ? TerminateRunPolicy.MARK_AS_CANCELED_IMMEDIATELY
     : TerminateRunPolicy.SAFE_TERMINATE;

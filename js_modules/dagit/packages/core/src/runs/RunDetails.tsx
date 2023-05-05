@@ -21,9 +21,9 @@ import styled from 'styled-components/macro';
 
 import {AppContext} from '../app/AppContext';
 import {SharedToaster} from '../app/DomUtils';
-import {usePermissionsDEPRECATED} from '../app/Permissions';
 import {useCopyToClipboard} from '../app/browser';
 import {RunStatus} from '../graphql/types';
+import {NO_LAUNCH_PERMISSION_MESSAGE} from '../launchpad/LaunchRootExecutionButton';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {AnchorButton} from '../ui/AnchorButton';
 import {workspacePathFromRunDetails, workspacePipelinePath} from '../workspace/workspacePath';
@@ -133,7 +133,6 @@ export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({r
 
   const {rootServerURI} = React.useContext(AppContext);
   const {refetch} = React.useContext(RunsQueryRefetchContext);
-  const {canTerminatePipelineExecution, canDeletePipelineRun} = usePermissionsDEPRECATED();
 
   const copy = useCopyToClipboard();
   const history = useHistory();
@@ -158,9 +157,17 @@ export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({r
   return (
     <div>
       <Group direction="row" spacing={8}>
-        <AnchorButton icon={<Icon name="edit" />} to={jobPath}>
-          Open in Launchpad
-        </AnchorButton>
+        {run.hasReExecutePermission ? (
+          <AnchorButton icon={<Icon name="edit" />} to={jobPath}>
+            Open in Launchpad
+          </AnchorButton>
+        ) : (
+          <Tooltip content={NO_LAUNCH_PERMISSION_MESSAGE} useDisabledButtonTooltipFix>
+            <Button icon={<Icon name="edit" />} disabled>
+              Open in Launchpad
+            </Button>
+          </Tooltip>
+        )}
         <Button icon={<Icon name="tag" />} onClick={() => setVisibleDialog('config')}>
           View tags and config
         </Button>
@@ -172,10 +179,10 @@ export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({r
                 <MenuItem
                   text="Download debug file"
                   icon={<Icon name="download_for_offline" />}
-                  onClick={() => window.open(`${rootServerURI}/download_debug/${run.runId}`)}
+                  onClick={() => window.open(`${rootServerURI}/download_debug/${run.id}`)}
                 />
               </Tooltip>
-              {canDeletePipelineRun.enabled ? (
+              {run.hasDeletePermission ? (
                 <MenuItem
                   icon="delete"
                   text="Delete"
@@ -236,7 +243,7 @@ export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({r
           </DialogFooter>
         </Box>
       </Dialog>
-      {canDeletePipelineRun.enabled ? (
+      {run.hasDeletePermission ? (
         <DeletionDialog
           isOpen={visibleDialog === 'delete'}
           onClose={() => setVisibleDialog(null)}
@@ -259,7 +266,7 @@ export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({r
           selectedRuns={{[run.id]: run.canTerminate}}
         />
       ) : null}
-      {canTerminatePipelineExecution.enabled ? (
+      {run.hasTerminatePermission ? (
         <TerminationDialog
           isOpen={visibleDialog === 'terminate'}
           onClose={() => setVisibleDialog(null)}

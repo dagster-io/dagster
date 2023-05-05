@@ -9,8 +9,7 @@ class AirbyteTableMetadata:
         schema: TableSchema,
         normalization_tables: Optional[Mapping[str, "AirbyteTableMetadata"]] = None,
     ):
-        """
-        Contains metadata about an Airbyte table, including its schema and any created normalization tables.
+        """Contains metadata about an Airbyte table, including its schema and any created normalization tables.
         """
         self.schema = schema
         self.normalization_tables = normalization_tables or dict()
@@ -25,8 +24,7 @@ class AirbyteOutput(
         ],
     )
 ):
-    """
-    Contains recorded information about the state of a Airbyte connection job after a sync completes.
+    """Contains recorded information about the state of a Airbyte connection job after a sync completes.
 
     Attributes:
         job_details (Dict[str, Any]):

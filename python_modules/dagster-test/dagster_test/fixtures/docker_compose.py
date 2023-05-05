@@ -1,4 +1,3 @@
-# pylint: disable=redefined-outer-name
 import json
 import logging
 import os
@@ -128,9 +127,7 @@ def connect_container_to_network(container, network):
     # subprocess.run instead of subprocess.check_call so we don't fail when
     # trying to connect a container to a network that it's already connected to
     try:
-        subprocess.check_call(  # pylint: disable=subprocess-run-check
-            ["docker", "network", "connect", network, container]
-        )
+        subprocess.check_call(["docker", "network", "connect", network, container])
         logging.info(
             "Connected {container} to network {network}.".format(
                 container=container,

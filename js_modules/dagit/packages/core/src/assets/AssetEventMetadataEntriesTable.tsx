@@ -1,5 +1,6 @@
-import {Box, Caption, Colors, Icon, Mono} from '@dagster-io/ui';
+import {Box, Caption, Colors, Mono} from '@dagster-io/ui';
 import dayjs from 'dayjs';
+import uniqBy from 'lodash/uniqBy';
 import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -21,10 +22,18 @@ export const AssetEventMetadataEntriesTable: React.FC<{
   observations?: (AssetObservationFragment | AssetMaterializationFragment)[];
 }> = ({event, observations}) => {
   if (!event || (!event.metadataEntries.length && !observations?.length)) {
-    return <Caption color={Colors.Gray500}>No materializations</Caption>;
+    return <Caption color={Colors.Gray500}>No metadata entries</Caption>;
   }
-
   const {metadataEntries, timestamp} = event;
+
+  // If there are multiple observation events that contain entries with the same label,
+  // only include the latest (newest) line for that metadata label in the table.
+  const observationEntries = uniqBy(
+    (observations || []).flatMap((o) =>
+      o.metadataEntries.map((entry) => ({timestamp: o.timestamp, runId: o.runId, entry})),
+    ),
+    (e) => e.entry.label,
+  );
 
   return (
     <AssetEventMetadataScrollContainer>
@@ -43,37 +52,32 @@ export const AssetEventMetadataEntriesTable: React.FC<{
               <td style={{opacity: 0.7}}>{entry.description}</td>
             </tr>
           ))}
-
-          {(observations || []).map((obs) => (
-            <React.Fragment key={obs.timestamp}>
-              {obs.metadataEntries.map((entry) => (
-                <tr key={`metadata-${obs.timestamp}-${entry.label}`}>
-                  <td>
-                    <Mono>{entry.label}</Mono>
-                  </td>
-                  <td>
-                    <Mono>
-                      <MetadataEntry entry={entry} expandSmallValues={true} />
-                    </Mono>
-                  </td>
-                  <td style={{opacity: 0.7}}>
-                    <Box flex={{gap: 8}}>
-                      <Icon name="observation" size={16} style={{marginTop: 2}} />
-                      <span>
-                        {`${obs.stepKey} in `}
-                        <Link to={`/runs/${obs.runId}?timestamp=${obs.timestamp}`}>
-                          <Mono>{titleForRun({runId: obs.runId})}</Mono>
-                        </Link>
-                      </span>
-                    </Box>
-                    <Caption style={{marginLeft: 24}}>
-                      {`(${dayjs(obs.timestamp).from(timestamp, true /* withoutSuffix */)} later)`}
-                    </Caption>
-                    {entry.description}
-                  </td>
-                </tr>
-              ))}
-            </React.Fragment>
+          {observationEntries.map((obv) => (
+            <tr key={`metadata-${obv.timestamp}-${obv.entry.label}`}>
+              <td>
+                <Mono>{obv.entry.label}</Mono>
+              </td>
+              <td>
+                <Mono>
+                  <MetadataEntry entry={obv.entry} expandSmallValues={true} />
+                </Mono>
+              </td>
+              <td style={{opacity: 0.7}}>
+                <Box>
+                  {`Observed in run `}
+                  <Link to={`/runs/${obv.runId}?timestamp=${timestamp}`}>
+                    <Mono>{titleForRun({id: obv.runId})}</Mono>
+                  </Link>
+                </Box>
+                <Caption>
+                  {`(${dayjs(Number(obv.timestamp)).from(
+                    Number(timestamp),
+                    true /* withoutSuffix */,
+                  )} later)`}
+                </Caption>
+                {obv.entry.description}
+              </td>
+            </tr>
           ))}
         </tbody>
       </AssetEventMetadataTable>
@@ -102,6 +106,3 @@ const AssetEventMetadataTable = styled.table`
     vertical-align: top;
   }
 `;
-
-export const AssetEventDetailEmpty = () => <Box />;
-export const AssetPartitionDetailEmpty = () => <Box />;

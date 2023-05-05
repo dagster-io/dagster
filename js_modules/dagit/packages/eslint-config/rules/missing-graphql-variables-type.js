@@ -17,6 +17,13 @@ const createRule = ESLintUtils.RuleCreator((name) => name);
  *
  */
 
+const APIS = new Set(['useQuery', 'useMutation', 'useSubscription']);
+const APIToEnding = {
+  useQuery: 'Query',
+  useMutation: 'Mutation',
+  useSubscription: 'Subscription',
+};
+
 module.exports = {
   rule: createRule({
     create(context) {
@@ -27,9 +34,10 @@ module.exports = {
             return;
           }
           // if it's not a useQuery call then ignore
-          if (callee.name !== 'useQuery') {
+          if (!APIS.has(callee.name)) {
             return;
           }
+          const API = callee.name;
           const queryType =
             node.typeParameters && node.typeParameters.params && node.typeParameters.params[0];
           if (!queryType || queryType.type !== 'TSTypeReference') {
@@ -40,7 +48,7 @@ module.exports = {
           }
           const queryName = queryType.typeName.name;
           // if the type doesn't end with Query then ignore
-          if (!queryName.endsWith('Query')) {
+          if (!queryName.endsWith(APIToEnding[API])) {
             return;
           }
           const variablesName = queryName + 'Variables';
@@ -63,7 +71,10 @@ module.exports = {
 
           // This part is kind of hacky. I should use the parser service to find the identifier
           // but this is faster then tokenizing the whole file
-          if (!graphqlTypeFile.includes('export interface ' + variablesName)) {
+          if (
+            !graphqlTypeFile.includes('export type ' + variablesName) &&
+            !graphqlTypeFile.includes('export interface ' + variablesName)
+          ) {
             return;
           }
           // This is a Query type with a generated QueryVariables type. Make sure we're using it
@@ -80,6 +91,7 @@ module.exports = {
               data: {
                 queryType: queryName,
                 variablesType: variablesName,
+                api: API,
               },
               *fix(fixer) {
                 if (
@@ -105,7 +117,7 @@ module.exports = {
       },
       messages: {
         'missing-graphql-variables-type':
-          '`useQuery<{{queryType}}>(...)` should be `useQuery<{{queryType}},{{variablesType}}>(...)`.',
+          '`{{api}}<{{queryType}}>(...)` should be `{{api}}<{{queryType}},{{variablesType}}>(...)`.',
       },
       type: 'problem',
       schema: [],

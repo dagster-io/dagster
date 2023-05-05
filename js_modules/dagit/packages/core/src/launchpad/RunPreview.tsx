@@ -98,7 +98,7 @@ const RemoveExtraConfigButton = ({
           </p>
           {Object.entries(knownKeyExtraPaths).length > 0 &&
             Object.entries(knownKeyExtraPaths).map(([key, value]) => (
-              <>
+              <React.Fragment key={key}>
                 <p>Extra {key}:</p>
                 <ul>
                   {value.map((v) => (
@@ -107,7 +107,7 @@ const RemoveExtraConfigButton = ({
                     </li>
                   ))}
                 </ul>
-              </>
+              </React.Fragment>
             ))}
           {otherPaths.length > 0 && (
             <>
@@ -461,7 +461,6 @@ export const RunPreview: React.FC<RunPreviewProps> = (props) => {
 
 export const RUN_PREVIEW_VALIDATION_FRAGMENT = gql`
   fragment RunPreviewValidationFragment on PipelineConfigValidationResult {
-    __typename
     ... on RunConfigValidationInvalid {
       errors {
         ...RunPreviewValidationErrors
@@ -481,7 +480,6 @@ export const RUN_PREVIEW_VALIDATION_FRAGMENT = gql`
     message
     stack {
       entries {
-        __typename
         ... on EvaluationStackPathEntry {
           fieldName
         }
@@ -585,11 +583,13 @@ const ErrorRow: React.FC<{
   error: ValidationError | React.ReactNode;
   onHighlight: (path: string[]) => void;
 }> = ({error, onHighlight}) => {
-  let message = error;
+  let message: React.ReactNode = null;
   let target: ValidationError | null = null;
   if (isValidationError(error)) {
     message = error.message;
     target = error;
+  } else {
+    message = error;
   }
 
   let displayed = message;

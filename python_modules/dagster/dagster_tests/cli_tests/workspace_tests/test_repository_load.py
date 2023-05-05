@@ -76,8 +76,8 @@ def test_multiple_module_load():
 
     def wrapped_workspace_assert(workspace_context):
         assert isinstance(workspace_context, WorkspaceRequestContext)
-        assert workspace_context.get_repository_location(MODULE_ONE)
-        assert workspace_context.get_repository_location(MODULE_TWO)
+        assert workspace_context.get_code_location(MODULE_ONE)
+        assert workspace_context.get_code_location(MODULE_TWO)
         executed["yes"] = True
 
     result = load_workspace_via_cli_runner(
@@ -109,8 +109,8 @@ def test_multiple_file_load():
 
     def wrapped_workspace_assert(workspace_context):
         assert isinstance(workspace_context, WorkspaceRequestContext)
-        assert workspace_context.get_repository_location("hello_world_repository.py")
-        assert workspace_context.get_repository_location("defs_file.py")
+        assert workspace_context.get_code_location("hello_world_repository.py")
+        assert workspace_context.get_code_location("defs_file.py")
         executed["yes"] = True
 
     result = load_workspace_via_cli_runner(
@@ -236,7 +236,7 @@ def test_valid_multi_repo():
     )
 
 
-def test_missing_repo_name_in_multi_repo_location():
+def test_missing_repo_name_in_multi_repo_code_location():
     result = load_repository_via_cli_runner(["-w", SINGLE_LOCATION_MULTI_REPO_WORKSPACE])
 
     assert result.exit_code == 2

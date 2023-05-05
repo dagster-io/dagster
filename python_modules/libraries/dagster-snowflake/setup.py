@@ -7,7 +7,7 @@ from setuptools import find_packages, setup
 def get_version() -> str:
     version: Dict[str, str] = {}
     with open(Path(__file__).parent / "dagster_snowflake/version.py", encoding="utf8") as fp:
-        exec(fp.read(), version)  # pylint: disable=W0122
+        exec(fp.read(), version)
 
     return version["__version__"]
 
@@ -27,6 +27,8 @@ setup(
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
@@ -37,7 +39,7 @@ setup(
             "sqlalchemy!=1.4.42",  # workaround for https://github.com/snowflakedb/snowflake-sqlalchemy/issues/350
             "snowflake-sqlalchemy",
         ],
-        "pandas": ["pandas"],
+        "pandas": ["pandas", "snowflake-connector-python[pandas]>=2.1.0"],
     },
     zip_safe=False,
 )

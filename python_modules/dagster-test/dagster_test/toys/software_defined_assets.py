@@ -1,8 +1,6 @@
-# pylint: disable=redefined-outer-name
 import time
 
-from dagster import AssetKey, IOManager, IOManagerDefinition, SourceAsset, asset
-from dagster._legacy import AssetGroup
+from dagster import AssetKey, IOManager, IOManagerDefinition, SourceAsset, asset, with_resources
 
 sfo_q2_weather_sample = SourceAsset(key=AssetKey("sfo_q2_weather_sample"))
 
@@ -31,8 +29,10 @@ def daily_temperature_highs(sfo_q2_weather_sample: DataFrame) -> DataFrame:
 
 @asset
 def hottest_dates(daily_temperature_highs: DataFrame) -> DataFrame:
-    """Computes the 10 hottest dates. In a more advanced demo, this might perform a complex
-    SQL query to aggregate the data. For now, just imagine that this implements something like:
+    """Computes the 10 hottest dates.
+
+    In a more advanced demo, this might perform a complex SQL query to aggregate the data. For now,
+    just imagine that this implements something like:
 
     ```sql
     SELECT temp, date_part('day', date) FROM daily_temperature_highs ORDER BY date DESC;
@@ -48,8 +48,11 @@ def hottest_dates(daily_temperature_highs: DataFrame) -> DataFrame:
     return DataFrame()
 
 
-software_defined_assets = AssetGroup(
-    assets=[daily_temperature_highs, hottest_dates],
-    source_assets=[sfo_q2_weather_sample],
+software_defined_assets = with_resources(
+    [
+        daily_temperature_highs,
+        hottest_dates,
+        sfo_q2_weather_sample,
+    ],
     resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(DummyIOManager())},
 )

@@ -1,5 +1,4 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, Colors, Group, NonIdealState, Subheading} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
@@ -38,40 +37,19 @@ export const SensorPreviousRuns: React.FC<{
   }
 
   const runs = data?.pipelineRunsOrError.results;
-  return <RunTable actionBarComponents={tabs} runs={runs} highlightedIds={highlightedIds} />;
-};
-
-export const NoTargetSensorPreviousRuns: React.FC<{
-  sensor: SensorFragment;
-  repoAddress: RepoAddress;
-  highlightedIds: string[];
-}> = () => {
   return (
-    <Group direction="column" spacing={4}>
-      <Box
-        padding={{vertical: 16, horizontal: 24}}
-        border={{side: 'bottom', width: 1, color: Colors.Gray100}}
-        flex={{direction: 'row'}}
-      >
-        <Subheading>Latest runs</Subheading>
-      </Box>
-      <div style={{color: Colors.Gray400}}>
-        <Box margin={{vertical: 64}}>
-          <NonIdealState
-            icon="sensors"
-            title="No runs to display"
-            description="This sensor does not target a pipeline or job."
-          />
-        </Box>
-      </div>
-    </Group>
+    <RunTable
+      actionBarComponents={tabs}
+      runs={runs}
+      highlightedIds={highlightedIds}
+      hideCreatedBy={true}
+    />
   );
 };
 
 const PREVIOUS_RUNS_FOR_SENSOR_QUERY = gql`
   query PreviousRunsForSensorQuery($filter: RunsFilter, $limit: Int) {
     pipelineRunsOrError(filter: $filter, limit: $limit) {
-      __typename
       ... on Runs {
         results {
           id

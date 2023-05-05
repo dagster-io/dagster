@@ -100,7 +100,7 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
   );
 };
 
-export const SchedulePreviousRuns: React.FC<{
+const SchedulePreviousRuns: React.FC<{
   repoAddress: RepoAddress;
   schedule: ScheduleFragment;
   tabs?: React.ReactElement;
@@ -137,7 +137,14 @@ export const SchedulePreviousRuns: React.FC<{
   }
 
   const runs = data?.pipelineRunsOrError.results;
-  return <RunTable actionBarComponents={tabs} runs={runs} highlightedIds={highlightedIds} />;
+  return (
+    <RunTable
+      actionBarComponents={tabs}
+      runs={runs}
+      highlightedIds={highlightedIds}
+      hideCreatedBy={true}
+    />
+  );
 };
 
 const SCHEDULE_ROOT_QUERY = gql`
@@ -153,6 +160,7 @@ const SCHEDULE_ROOT_QUERY = gql`
       ...PythonErrorFragment
     }
     instance {
+      id
       daemonHealth {
         id
         daemonStatus(daemonType: "SCHEDULER") {
@@ -172,7 +180,6 @@ const SCHEDULE_ROOT_QUERY = gql`
 const PREVIOUS_RUNS_FOR_SCHEDULE_QUERY = gql`
   query PreviousRunsForScheduleQuery($filter: RunsFilter, $limit: Int) {
     pipelineRunsOrError(filter: $filter, limit: $limit) {
-      __typename
       ... on Runs {
         results {
           id

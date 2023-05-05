@@ -27,16 +27,17 @@ from airflow.utils.dates import days_ago
 from airflow.operators.bash_operator import BashOperator
 from airflow.operators.python_operator import PythonOperator
 from airflow.utils.helpers import chain
+from datetime import timedelta
 
-default_args = {"start_date": days_ago(1)}
+default_args = {"start_date": days_ago(1), "retries": 3, "retry_delay": timedelta(minutes=1)}
 
 with models.DAG(
-    dag_id="example_complex", default_args=default_args, schedule_interval=None, tags=['example'],
+    dag_id="example_complex", default_args=default_args, schedule_interval='* * * * *', tags=['example'],
 ) as complex_dag:
 
     # Create
     create_entry_group = BashOperator(
-        task_id="create_entry_group", bash_command="echo create_entry_group"
+        task_id="create_entry_group", bash_command="echo create_entry_group", retries=0, retry_delay=timedelta(seconds=5)
     )
 
     create_entry_group_result = BashOperator(
@@ -322,30 +323,30 @@ if __name__ == "__main__":
 COMBINED_FILE_CONTENTS = COMPLEX_DAG_FILE_CONTENTS + BASH_DAG_FILE_CONTENTS
 
 test_make_from_dagbag_inputs = [
-    ([("complex.py", COMPLEX_DAG_FILE_CONTENTS)], None, ["airflow_example_complex"]),
-    ([("bash.py", BASH_DAG_FILE_CONTENTS)], None, ["airflow_example_bash_operator"]),
+    ([("complex.py", COMPLEX_DAG_FILE_CONTENTS)], None, ["example_complex"]),
+    ([("bash.py", BASH_DAG_FILE_CONTENTS)], None, ["example_bash_operator"]),
     (
         [
             ("complex.py", COMPLEX_DAG_FILE_CONTENTS),
             ("bash.py", BASH_DAG_FILE_CONTENTS),
         ],
         None,
-        ["airflow_example_complex", "airflow_example_bash_operator"],
+        ["example_complex", "example_bash_operator"],
     ),
     (
         [("complex.py", COMPLEX_DAG_FILE_CONTENTS)],
         "complex.py",
-        ["airflow_example_complex"],
+        ["example_complex"],
     ),
     (
         [("bash.py", BASH_DAG_FILE_CONTENTS)],
         "bash.py",
-        ["airflow_example_bash_operator"],
+        ["example_bash_operator"],
     ),
     (
         [("combined.py", COMBINED_FILE_CONTENTS)],
         None,
-        ["airflow_example_complex", "airflow_example_bash_operator"],
+        ["example_complex", "example_bash_operator"],
     ),
 ]
 
@@ -379,16 +380,17 @@ from airflow import models
 from airflow.operators.bash import BashOperator
 from airflow.operators.python import PythonOperator
 from airflow.models.baseoperator import chain
+from datetime import timedelta
 
-default_args = {"start_date": pendulum.today('UTC').add(days=-1)}
+default_args = {"start_date": pendulum.today('UTC').add(days=-1), "retries": 3, "retry_delay": timedelta(minutes=1)}
 
 with models.DAG(
-    dag_id="example_complex", default_args=default_args, schedule=None, tags=['example'],
+    dag_id="example_complex", default_args=default_args, schedule='* * * * *', tags=['example'],
 ) as complex_dag:
 
     # Create
     create_entry_group = BashOperator(
-        task_id="create_entry_group", bash_command="echo create_entry_group"
+        task_id="create_entry_group", bash_command="echo create_entry_group", retries=0, retry_delay=timedelta(seconds=5)
     )
 
     create_entry_group_result = BashOperator(
@@ -672,29 +674,29 @@ COMBINED_FILE_CONTENTS = COMPLEX_DAG_FILE_CONTENTS_AIRFLOW_2 + BASH_DAG_FILE_CON
 
 
 test_make_from_dagbag_inputs_airflow_2 = [
-    ([("complex.py", COMPLEX_DAG_FILE_CONTENTS_AIRFLOW_2)], None, ["airflow_example_complex"]),
-    ([("bash.py", BASH_DAG_FILE_CONTENTS_AIRFLOW_2)], None, ["airflow_example_bash_operator"]),
+    ([("complex.py", COMPLEX_DAG_FILE_CONTENTS_AIRFLOW_2)], None, ["example_complex"]),
+    ([("bash.py", BASH_DAG_FILE_CONTENTS_AIRFLOW_2)], None, ["example_bash_operator"]),
     (
         [
             ("complex.py", COMPLEX_DAG_FILE_CONTENTS_AIRFLOW_2),
             ("bash.py", BASH_DAG_FILE_CONTENTS_AIRFLOW_2),
         ],
         None,
-        ["airflow_example_complex", "airflow_example_bash_operator"],
+        ["example_complex", "example_bash_operator"],
     ),
     (
         [("complex.py", COMPLEX_DAG_FILE_CONTENTS_AIRFLOW_2)],
         "complex.py",
-        ["airflow_example_complex"],
+        ["example_complex"],
     ),
     (
         [("bash.py", BASH_DAG_FILE_CONTENTS_AIRFLOW_2)],
         "bash.py",
-        ["airflow_example_bash_operator"],
+        ["example_bash_operator"],
     ),
     (
         [("combined.py", COMBINED_FILE_CONTENTS)],
         None,
-        ["airflow_example_complex", "airflow_example_bash_operator"],
+        ["example_complex", "example_bash_operator"],
     ),
 ]

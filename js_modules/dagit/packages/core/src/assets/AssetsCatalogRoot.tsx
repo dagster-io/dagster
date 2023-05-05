@@ -23,7 +23,7 @@ export const AssetsCatalogRoot = () => {
 
   const params = useParams();
   const history = useHistory();
-  const currentPath: string[] = (params['0'] || '')
+  const currentPath: string[] = ((params as any)['0'] || '')
     .split('/')
     .filter((x: string) => x)
     .map(decodeURIComponent);
@@ -89,7 +89,6 @@ export default AssetsCatalogRoot;
 const ASSETS_CATALOG_ROOT_QUERY = gql`
   query AssetsCatalogRootQuery($assetKey: AssetKeyInput!) {
     assetOrError(assetKey: $assetKey) {
-      __typename
       ... on Asset {
         id
         key {

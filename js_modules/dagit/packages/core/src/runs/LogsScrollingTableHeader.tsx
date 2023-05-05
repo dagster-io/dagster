@@ -22,7 +22,7 @@ export const ColumnWidthsContext = React.createContext({
 });
 
 export class ColumnWidthsProvider extends React.Component<
-  {onWidthsChanged: (widths: typeof ColumnWidths) => void},
+  {children: React.ReactNode; onWidthsChanged: (widths: typeof ColumnWidths) => void},
   typeof ColumnWidths
 > {
   state = ColumnWidths;
@@ -47,7 +47,7 @@ export class ColumnWidthsProvider extends React.Component<
   }
 }
 
-interface HeaderProps extends React.HTMLProps<HTMLDivElement> {
+interface HeaderProps extends Omit<React.HTMLProps<HTMLDivElement>, 'onResize'> {
   width: number;
   handleSide?: 'left' | 'right';
   onResize?: (width: number) => void;
@@ -122,6 +122,12 @@ export const Headers = () => {
   const widths = React.useContext(ColumnWidthsContext);
   return (
     <HeadersContainer>
+      <Header
+        width={widths.timestamp}
+        onResize={(width) => widths.onChange({...widths, timestamp: width})}
+      >
+        Timestamp
+      </Header>
       <Header width={widths.solid} onResize={(width) => widths.onChange({...widths, solid: width})}>
         Op
       </Header>
@@ -132,13 +138,6 @@ export const Headers = () => {
         Event Type
       </Header>
       <HeaderContainer style={{flex: 1}}>Info</HeaderContainer>
-      <Header
-        handleSide="left"
-        width={widths.timestamp}
-        onResize={(width) => widths.onChange({...widths, timestamp: width})}
-      >
-        Timestamp
-      </Header>
     </HeadersContainer>
   );
 };

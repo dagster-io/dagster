@@ -2,19 +2,18 @@ from typing import Optional
 
 from dagster import _check as check
 from dagster._config import ConfigType, ConfigTypeKind
-from dagster._core.definitions import create_run_config_schema
-from dagster._legacy import PipelineDefinition
+from dagster._core.definitions import JobDefinition
 
 
-def scaffold_pipeline_config(
-    pipeline_def: PipelineDefinition,
+def scaffold_job_config(
+    job_def: JobDefinition,
     skip_non_required: bool = True,
     mode: Optional[str] = None,
 ):
-    check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
+    check.inst_param(job_def, "job_def", JobDefinition)
     check.bool_param(skip_non_required, "skip_non_required")
 
-    env_config_type = create_run_config_schema(pipeline_def, mode=mode).config_type
+    env_config_type = job_def.run_config_schema.config_type
 
     env_dict = {}
 
@@ -59,6 +58,4 @@ def scaffold_type(config_type: ConfigType, skip_non_required: bool = True):
     elif config_type.kind == ConfigTypeKind.ENUM:
         return "|".join(sorted(map(lambda v: v.config_value, config_type.enum_values)))  # type: ignore
     else:
-        check.failed(
-            "Do not know how to scaffold {type_name}".format(type_name=config_type.given_name)
-        )
+        check.failed(f"Do not know how to scaffold {config_type.given_name}")

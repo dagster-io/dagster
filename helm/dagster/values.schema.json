@@ -229,6 +229,12 @@
                 "servers"
             ]
         },
+        "EnvVar": {
+            "title": "EnvVar",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.EnvVar"
+        },
         "ConfigMapEnvSource": {
             "title": "ConfigMapEnvSource",
             "type": "object",
@@ -328,6 +334,17 @@
                     "title": "Nameoverride",
                     "type": "string"
                 },
+                "pathPrefix": {
+                    "title": "Pathprefix",
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
                 "service": {
                     "$ref": "#/definitions/schema__charts__utils__kubernetes__Service"
                 },
@@ -336,10 +353,20 @@
                 },
                 "env": {
                     "title": "Env",
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
+                    "anyOf": [
+                        {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        },
+                        {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/EnvVar"
+                            }
+                        }
+                    ]
                 },
                 "envConfigMaps": {
                     "title": "Envconfigmaps",
@@ -547,10 +574,20 @@
                 },
                 "env": {
                     "title": "Env",
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
+                    "anyOf": [
+                        {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        },
+                        {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/EnvVar"
+                            }
+                        }
+                    ]
                 },
                 "envConfigMaps": {
                     "title": "Envconfigmaps",
@@ -1189,6 +1226,20 @@
                         },
                         {
                             "$ref": "#/definitions/Source"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "defaultAzureCredential": {
+                    "title": "Defaultazurecredential",
+                    "anyOf": [
+                        {
+                            "type": "object"
+                        },
+                        {
+                            "type": "null"
                         }
                     ]
                 },
@@ -1234,8 +1285,7 @@
             },
             "required": [
                 "storageAccount",
-                "container",
-                "secretKey"
+                "container"
             ]
         },
         "GCSComputeLogManager": {
@@ -1431,6 +1481,31 @@
                     "anyOf": [
                         {
                             "type": "object"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "showUrlOnly": {
+                    "title": "Showurlonly",
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "region": {
+                    "title": "Region",
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "$ref": "#/definitions/Source"
                         },
                         {
                             "type": "null"
@@ -1868,6 +1943,17 @@
                 },
                 "schedulerName": {
                     "title": "Schedulername",
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "jobNamespace": {
+                    "title": "Jobnamespace",
                     "anyOf": [
                         {
                             "type": "string"
@@ -2561,10 +2647,20 @@
                 },
                 "env": {
                     "title": "Env",
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
+                    "anyOf": [
+                        {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        },
+                        {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/EnvVar"
+                            }
+                        }
+                    ]
                 },
                 "envConfigMaps": {
                     "title": "Envconfigmaps",

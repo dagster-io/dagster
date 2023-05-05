@@ -20,7 +20,7 @@ const _opLayoutCacheKey = (ops: ILayoutOp[], parentOp?: ILayoutOp) => {
 
 export const getFullOpLayout = memoize(layoutOpGraph, _opLayoutCacheKey);
 
-export const asyncGetFullOpLayout = asyncMemoize(
+const asyncGetFullOpLayout = asyncMemoize(
   (ops: ILayoutOp[], parentOp?: ILayoutOp, staticPathRoot?: string) => {
     return new Promise<OpGraphLayout>((resolve) => {
       const worker = new Worker(new URL('../workers/dagre_layout.worker', import.meta.url));
@@ -42,21 +42,18 @@ const _assetLayoutCacheKey = (graphData: GraphData) => {
   return JSON.stringify(graphData);
 };
 
-export const getFullAssetLayout = memoize(layoutAssetGraph, _assetLayoutCacheKey);
+const getFullAssetLayout = memoize(layoutAssetGraph, _assetLayoutCacheKey);
 
-export const asyncGetFullAssetLayout = asyncMemoize(
-  (graphData: GraphData, staticPathRoot?: string) => {
-    return new Promise<AssetGraphLayout>((resolve) => {
-      const worker = new Worker(new URL('../workers/dagre_layout.worker', import.meta.url));
-      worker.addEventListener('message', (event) => {
-        resolve(event.data);
-        worker.terminate();
-      });
-      worker.postMessage({type: 'layoutAssetGraph', graphData, staticPathRoot});
+const asyncGetFullAssetLayout = asyncMemoize((graphData: GraphData, staticPathRoot?: string) => {
+  return new Promise<AssetGraphLayout>((resolve) => {
+    const worker = new Worker(new URL('../workers/dagre_layout.worker', import.meta.url));
+    worker.addEventListener('message', (event) => {
+      resolve(event.data);
+      worker.terminate();
     });
-  },
-  _assetLayoutCacheKey,
-);
+    worker.postMessage({type: 'layoutAssetGraph', graphData, staticPathRoot});
+  });
+}, _assetLayoutCacheKey);
 
 // Helper Hooks:
 // - Automatically switch between sync and async loading strategies

@@ -9,6 +9,7 @@ import {
   Spinner,
   SpinnerWrapper,
   SplitPanelContainer,
+  useViewport,
 } from '@dagster-io/ui';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
@@ -67,7 +68,6 @@ import {GanttStatusPanel} from './GanttStatusPanel';
 import {OptionsContainer, OptionsSpacer} from './VizComponents';
 import {ZoomSlider} from './ZoomSlider';
 import {useGanttChartMode} from './useGanttChartMode';
-import {useViewport} from './useViewport';
 
 export {GanttChartMode} from './Constants';
 
@@ -812,6 +812,7 @@ export const GanttChartLoadingState = ({runId}: {runId: string}) => (
       firstInitialPercent={70}
       second={
         <GanttStatusPanel
+          graph={[]}
           metadata={EMPTY_RUN_METADATA}
           selection={{keys: [], query: '*'}}
           runId={runId}
@@ -845,6 +846,7 @@ export const QueuedState = ({run}: {run: RunFragment}) => (
       firstInitialPercent={70}
       second={
         <GanttStatusPanel
+          graph={[]}
           metadata={EMPTY_RUN_METADATA}
           selection={{keys: [], query: '*'}}
           runId={run.id}

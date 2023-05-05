@@ -7,6 +7,7 @@ import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 
 import {VirtualizedJobTable} from './VirtualizedJobTable';
 import {WorkspaceHeader} from './WorkspaceHeader';
@@ -21,9 +22,11 @@ export const WorkspaceJobsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => 
   const repoName = repoAddressAsHumanString(repoAddress);
   useDocumentTitle(`Jobs: ${repoName}`);
 
-  const [searchValue, setSearchValue] = React.useState('');
-
   const selector = repoAddressToSelector(repoAddress);
+  const [searchValue, setSearchValue] = useQueryPersistedState<string>({
+    queryKey: 'search',
+    defaults: {search: ''},
+  });
 
   const queryResultOverview = useQuery<WorkspaceJobsQuery, WorkspaceJobsQueryVariables>(
     WORKSPACE_JOBS_QUERY,
@@ -124,7 +127,7 @@ export const WorkspaceJobsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => 
   );
 };
 
-export const WORKSPACE_JOBS_QUERY = gql`
+const WORKSPACE_JOBS_QUERY = gql`
   query WorkspaceJobsQuery($selector: RepositorySelector!) {
     repositoryOrError(repositorySelector: $selector) {
       ... on Repository {

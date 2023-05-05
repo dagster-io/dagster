@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, 
 
 from dagster import (
     Array,
+    BoolSource,
     Field,
     Noneable,
     Permissive,
@@ -12,7 +13,7 @@ from dagster import (
 from dagster._config import process_config
 from dagster._core.container_context import process_shared_container_context_config
 from dagster._core.errors import DagsterInvalidConfigError
-from dagster._core.storage.pipeline_run import DagsterRun
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.utils import parse_env_var
 
 from ..secretsmanager import get_tagged_secrets
@@ -44,8 +45,79 @@ SHARED_ECS_SCHEMA = {
                     is_required=False,
                     description="The memory override to use for the launched task.",
                 ),
+                "ephemeral_storage": Field(
+                    int,
+                    is_required=False,
+                    description="The ephemeral storage, in GiB, to use for the launched task.",
+                ),
             }
         )
+    ),
+}
+
+SHARED_TASK_DEFINITION_FIELDS = {
+    "execution_role_arn": Field(
+        StringSource,
+        is_required=False,
+        description=(
+            "ARN of the task execution role for the ECS container and Fargate agent to make AWS API"
+            " calls on your behalf. See"
+            " https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_execution_IAM_role.html. "
+        ),
+    ),
+    "task_role_arn": Field(
+        StringSource,
+        is_required=False,
+        description=(
+            "ARN of the IAM role for launched tasks. See"
+            " https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-iam-roles.html. "
+        ),
+    ),
+    "runtime_platform": Field(
+        Shape(
+            {
+                "cpuArchitecture": Field(StringSource, is_required=False),
+                "operatingSystemFamily": Field(StringSource, is_required=False),
+            }
+        ),
+        is_required=False,
+        description=(
+            "The operating system that the task definition is running on. See"
+            " https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ecs.html#ECS.Client.register_task_definition"
+            " for the available options."
+        ),
+    ),
+    "volumes": Field(
+        Array(
+            Permissive(
+                {
+                    "name": Field(StringSource, is_required=False),
+                }
+            )
+        ),
+        is_required=False,
+        description=(
+            "List of data volume definitions for the task. See"
+            " https://docs.aws.amazon.com/AmazonECS/latest/developerguide/efs-volumes.html"
+            " for the full list of available options."
+        ),
+    ),
+    "mount_points": Field(
+        Array(
+            Shape(
+                {
+                    "sourceVolume": Field(StringSource, is_required=False),
+                    "containerPath": Field(StringSource, is_required=False),
+                    "readOnly": Field(BoolSource, is_required=False),
+                }
+            )
+        ),
+        is_required=False,
+        description=(
+            "Mount points for data volumes in the main container of the task."
+            " See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/efs-volumes.html"
+            " for more information."
+        ),
     ),
 }
 
@@ -90,9 +162,15 @@ ECS_CONTAINER_CONTEXT_SCHEMA = {
                     is_required=False,
                     description="The memory override to use for the launched task.",
                 ),
+                "ephemeral_storage": Field(
+                    int,
+                    is_required=False,
+                    description="The ephemeral storage, in GiB, to use for the launched task.",
+                ),
             }
         )
     ),
+    **SHARED_TASK_DEFINITION_FIELDS,
     **SHARED_ECS_SCHEMA,
 }
 
@@ -106,8 +184,13 @@ class EcsContainerContext(
             ("env_vars", Sequence[str]),
             ("task_definition_arn", Optional[str]),
             ("container_name", Optional[str]),
-            ("server_resources", Mapping[str, str]),
-            ("run_resources", Mapping[str, str]),
+            ("server_resources", Mapping[str, Any]),
+            ("run_resources", Mapping[str, Any]),
+            ("task_role_arn", Optional[str]),
+            ("execution_role_arn", Optional[str]),
+            ("runtime_platform", Mapping[str, Any]),
+            ("mount_points", Sequence[Mapping[str, Any]]),
+            ("volumes", Sequence[Mapping[str, Any]]),
         ],
     )
 ):
@@ -122,6 +205,11 @@ class EcsContainerContext(
         container_name: Optional[str] = None,
         server_resources: Optional[Mapping[str, str]] = None,
         run_resources: Optional[Mapping[str, str]] = None,
+        task_role_arn: Optional[str] = None,
+        execution_role_arn: Optional[str] = None,
+        runtime_platform: Optional[Mapping[str, Any]] = None,
+        mount_points: Optional[Sequence[Mapping[str, Any]]] = None,
+        volumes: Optional[Sequence[Mapping[str, Any]]] = None,
     ):
         return super(EcsContainerContext, cls).__new__(
             cls,
@@ -132,6 +220,13 @@ class EcsContainerContext(
             container_name=check.opt_str_param(container_name, "container_name"),
             server_resources=check.opt_mapping_param(server_resources, "server_resources"),
             run_resources=check.opt_mapping_param(run_resources, "run_resources"),
+            task_role_arn=check.opt_str_param(task_role_arn, "task_role_arn"),
+            execution_role_arn=check.opt_str_param(execution_role_arn, "execution_role_arn"),
+            runtime_platform=check.opt_mapping_param(
+                runtime_platform, "runtime_platform", key_type=str
+            ),
+            mount_points=check.opt_sequence_param(mount_points, "mount_points"),
+            volumes=check.opt_sequence_param(volumes, "volumes"),
         )
 
     def merge(self, other: "EcsContainerContext") -> "EcsContainerContext":
@@ -143,6 +238,11 @@ class EcsContainerContext(
             container_name=other.container_name or self.container_name,
             server_resources={**self.server_resources, **other.server_resources},
             run_resources={**self.run_resources, **other.run_resources},
+            task_role_arn=other.task_role_arn or self.task_role_arn,
+            execution_role_arn=other.execution_role_arn or self.execution_role_arn,
+            runtime_platform=other.runtime_platform or self.runtime_platform,
+            mount_points=[*other.mount_points, *self.mount_points],
+            volumes=[*other.volumes, *self.volumes],
         )
 
     def get_secrets_dict(self, secrets_manager) -> Mapping[str, str]:
@@ -156,7 +256,7 @@ class EcsContainerContext(
         return {env_var_tuple[0]: env_var_tuple[1] for env_var_tuple in parsed_env_var_tuples}
 
     @staticmethod
-    def create_for_run(pipeline_run: DagsterRun, run_launcher: Optional["EcsRunLauncher"]):
+    def create_for_run(dagster_run: DagsterRun, run_launcher: Optional["EcsRunLauncher[Any]"]):
         context = EcsContainerContext()
         if run_launcher:
             context = context.merge(
@@ -166,12 +266,17 @@ class EcsContainerContext(
                     env_vars=run_launcher.env_vars,
                     task_definition_arn=run_launcher.task_definition,  # run launcher converts this from short name to ARN in constructor
                     run_resources=run_launcher.run_resources,
+                    task_role_arn=run_launcher.task_role_arn,
+                    execution_role_arn=run_launcher.execution_role_arn,
+                    runtime_platform=run_launcher.runtime_platform,
+                    mount_points=run_launcher.mount_points,
+                    volumes=run_launcher.volumes,
                 )
             )
 
         run_container_context = (
-            pipeline_run.pipeline_code_origin.repository_origin.container_context
-            if pipeline_run.pipeline_code_origin
+            dagster_run.job_code_origin.repository_origin.container_context
+            if dagster_run.job_code_origin
             else None
         )
 
@@ -218,5 +323,10 @@ class EcsContainerContext(
                 container_name=processed_context_value.get("container_name"),
                 server_resources=processed_context_value.get("server_resources"),
                 run_resources=processed_context_value.get("run_resources"),
+                task_role_arn=processed_context_value.get("task_role_arn"),
+                execution_role_arn=processed_context_value.get("execution_role_arn"),
+                runtime_platform=processed_context_value.get("runtime_platform"),
+                mount_points=processed_context_value.get("mount_points"),
+                volumes=processed_context_value.get("volumes"),
             )
         )

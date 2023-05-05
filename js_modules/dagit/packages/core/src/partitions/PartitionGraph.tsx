@@ -112,8 +112,8 @@ export const PartitionGraph = ({
           if (hiddenStepKeys?.includes(stepKey) || !stepDataByKey[stepKey]) {
             return;
           }
-          stepData[stepKey] = [
-            ...(stepData[stepKey] || []),
+          (stepData as any)[stepKey] = [
+            ...((stepData as any)[stepKey] || []),
             {
               x: partitionName,
               y: !hidden ? stepDataByKey[stepKey] : undefined,
@@ -126,7 +126,7 @@ export const PartitionGraph = ({
     // stepData may have holes due to missing runs or missing steps.  For these to
     // render properly, fill in the holes with `undefined` values.
     Object.keys(stepData).forEach((stepKey) => {
-      stepData[stepKey] = _fillPartitions(partitionNames, stepData[stepKey]);
+      (stepData as any)[stepKey] = _fillPartitions(partitionNames, (stepData as any)[stepKey]);
     });
 
     return {jobData, stepData};
@@ -149,7 +149,7 @@ export const PartitionGraph = ({
           ]),
       ...Object.keys(stepData).map((stepKey) => ({
         label: stepKey,
-        data: stepData[stepKey],
+        data: stepData[stepKey as keyof typeof stepData],
         borderColor: colorHash(stepKey),
         backgroundColor: 'rgba(0,0,0,0)',
       })),
@@ -161,7 +161,7 @@ export const PartitionGraph = ({
   // We have a useMemo around the entire <PartitionGraphSet /> and there aren't many extra renders.
   return (
     <PartitionGraphContainer>
-      <Line type="line" data={() => graphData} height={300} options={defaultOptions} ref={chart} />
+      <Line data={() => graphData} height={300} options={defaultOptions as any} ref={chart} />
     </PartitionGraphContainer>
   );
 };
@@ -169,12 +169,12 @@ export const PartitionGraph = ({
 const _fillPartitions = (partitionNames: string[], points: Point[]) => {
   const pointData = {};
   points.forEach((point) => {
-    pointData[point.x] = point.y;
+    (pointData as any)[point.x] = point.y;
   });
 
   return partitionNames.map((partitionName) => ({
     x: partitionName,
-    y: pointData[partitionName],
+    y: (pointData as any)[partitionName],
   }));
 };
 

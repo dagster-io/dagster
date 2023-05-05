@@ -51,8 +51,7 @@ def test_get_all_static_members():
 
 
 def test_all_variants_in_variants_function():
-    """
-    This grabs all pre-defined variants on GraphQLContextVariant (defined as static methods that
+    """This grabs all pre-defined variants on GraphQLContextVariant (defined as static methods that
     return a single ContextVariant) and tests two things:
     1) They all contain a unique test_id
     2) That the all_variants() static method returns *all* of them.

@@ -1,5 +1,5 @@
 # isort: skip_file
-# pylint: disable=unused-argument,reimported,unnecessary-ellipsis
+
 from dagster import ResourceDefinition, graph, job
 
 
@@ -202,7 +202,6 @@ def db_connection():
 # end_cm_resource
 
 
-# pylint: disable=unused-variable
 # start_cm_resource_op
 @op(required_resource_keys={"db_connection"})
 def use_db_connection(context):
@@ -222,7 +221,6 @@ def get_the_db_connection(_):
     ...
 
 
-# pylint: disable=unused-variable,reimported
 # start_build_resources_example
 from dagster import resource, build_resources
 

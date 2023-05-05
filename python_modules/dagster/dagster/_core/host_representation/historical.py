@@ -1,15 +1,14 @@
 from typing import Optional
 
 import dagster._check as check
-from dagster._core.snap import PipelineSnapshot
+from dagster._core.snap import JobSnapshot
 
-from .pipeline_index import PipelineIndex
-from .represented import RepresentedPipeline
+from .job_index import JobIndex
+from .represented import RepresentedJob
 
 
-class HistoricalPipeline(RepresentedPipeline):
-    """
-    HistoricalPipeline represents a pipeline that executed in the past
+class HistoricalJob(RepresentedJob):
+    """HistoricalPipeline represents a pipeline that executed in the past
     and has been reloaded into process by querying the instance. Notably
     the user must pass in the pipeline snapshot id that was originally
     assigned to the snapshot, rather than recomputing it which could
@@ -19,32 +18,32 @@ class HistoricalPipeline(RepresentedPipeline):
 
     def __init__(
         self,
-        pipeline_snapshot: PipelineSnapshot,
-        identifying_pipeline_snapshot_id: str,
-        parent_pipeline_snapshot: Optional[PipelineSnapshot],
+        job_snapshot: JobSnapshot,
+        identifying_job_snapshot_id: str,
+        parent_job_snapshot: Optional[JobSnapshot],
     ):
-        self._snapshot = check.inst_param(pipeline_snapshot, "pipeline_snapshot", PipelineSnapshot)
+        self._snapshot = check.inst_param(job_snapshot, "job_snapshot", JobSnapshot)
         self._parent_snapshot = check.opt_inst_param(
-            parent_pipeline_snapshot, "parent_pipeline_snapshot", PipelineSnapshot
+            parent_job_snapshot, "parent_job_snapshot", JobSnapshot
         )
-        self._identifying_pipeline_snapshot_id = check.str_param(
-            identifying_pipeline_snapshot_id, "identifying_pipeline_snapshot_id"
+        self._identifying_job_snapshot_id = check.str_param(
+            identifying_job_snapshot_id, "identifying_job_snapshot_id"
         )
         self._index = None
 
     @property
-    def _pipeline_index(self):
+    def _job_index(self):
         if self._index is None:
-            self._index = PipelineIndex(
+            self._index = JobIndex(
                 self._snapshot,
                 self._parent_snapshot,
             )
         return self._index
 
     @property
-    def identifying_pipeline_snapshot_id(self):
-        return self._identifying_pipeline_snapshot_id
+    def identifying_job_snapshot_id(self):
+        return self._identifying_job_snapshot_id
 
     @property
-    def computed_pipeline_snapshot_id(self):
-        return self._pipeline_index.pipeline_snapshot_id
+    def computed_job_snapshot_id(self):
+        return self._job_index.job_snapshot_id

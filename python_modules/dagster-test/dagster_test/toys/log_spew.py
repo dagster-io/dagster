@@ -11,22 +11,22 @@ def nonce_op(name, n_inputs, n_outputs):
 
     @op(
         name=name,
-        ins={"input_{}".format(i): In() for i in range(n_inputs)},
-        out={"output_{}".format(i): Out() for i in range(n_outputs)},
+        ins={f"input_{i}": In() for i in range(n_inputs)},
+        out={f"output_{i}": Out() for i in range(n_outputs)},
     )
     def op_fn(context, **_kwargs):
         for i in range(200):
             time.sleep(0.02)
             if i % 1000 == 420:
-                context.log.error("Error message seq={i} from op {name}".format(i=i, name=name))
+                context.log.error(f"Error message seq={i} from op {name}")
             elif i % 100 == 0:
-                context.log.warning("Warning message seq={i} from op {name}".format(i=i, name=name))
+                context.log.warning(f"Warning message seq={i} from op {name}")
             elif i % 10 == 0:
-                context.log.info("Info message seq={i} from op {name}".format(i=i, name=name))
+                context.log.info(f"Info message seq={i} from op {name}")
             else:
-                context.log.debug("Debug message seq={i} from op {name}".format(i=i, name=name))
+                context.log.debug(f"Debug message seq={i} from op {name}")
         for i in range(n_outputs):
-            yield Output(value="foo", output_name="output_{}".format(i))
+            yield Output(value="foo", output_name=f"output_{i}")
 
     return op_fn
 

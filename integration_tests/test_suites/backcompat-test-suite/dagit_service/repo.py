@@ -18,7 +18,7 @@ def ping_dagit():
         "dagit",
         port_number=3000,
     )
-    return client._execute("{__typename}")  # pylint: disable=protected-access
+    return client._execute("{__typename}")  # noqa: SLF001
 
 
 @graph

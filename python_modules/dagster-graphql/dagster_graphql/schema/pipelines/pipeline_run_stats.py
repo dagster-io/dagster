@@ -1,6 +1,6 @@
 import dagster._check as check
 import graphene
-from dagster._core.storage.pipeline_run import PipelineRunStatsSnapshot
+from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
 
 from ..errors import GraphenePythonError
 
@@ -38,7 +38,7 @@ class GrapheneRunStatsSnapshot(graphene.ObjectType):
         name = "RunStatsSnapshot"
 
     def __init__(self, stats):
-        self._stats = check.inst_param(stats, "stats", PipelineRunStatsSnapshot)
+        self._stats = check.inst_param(stats, "stats", DagsterRunStatsSnapshot)
         super().__init__(
             id="stats-" + self._stats.run_id,
             runId=self._stats.run_id,

@@ -5,6 +5,7 @@ import {Colors} from './Colors';
 import {Group} from './Group';
 import {Icon, IconWrapper} from './Icon';
 import {Tooltip} from './Tooltip';
+import {secondsToCountdownTime} from './secondsToCountdownTime';
 
 interface Props {
   refreshing: boolean;
@@ -20,9 +21,7 @@ export const RefreshableCountdown = (props: Props) => {
       <span
         style={{color: Colors.Gray400, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap'}}
       >
-        {refreshing
-          ? `Refreshing ${dataDescription}…`
-          : `0:${seconds < 10 ? `0${seconds}` : seconds}`}
+        {refreshing ? `Refreshing ${dataDescription}…` : secondsToCountdownTime(seconds)}
       </span>
       <Tooltip content={<span style={{whiteSpace: 'nowrap'}}>Refresh now</span>} position="top">
         <RefreshButton onClick={onRefresh}>

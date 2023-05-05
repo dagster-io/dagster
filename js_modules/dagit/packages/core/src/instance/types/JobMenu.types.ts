@@ -13,9 +13,12 @@ export type RunReExecutionQuery = {
     | {
         __typename: 'Run';
         id: string;
+        parentPipelineSnapshotId: string | null;
         runConfigYaml: string;
-        runId: string;
         canTerminate: boolean;
+        hasReExecutePermission: boolean;
+        hasTerminatePermission: boolean;
+        hasDeletePermission: boolean;
         status: Types.RunStatus;
         mode: string;
         rootRunId: string | null;
@@ -23,11 +26,16 @@ export type RunReExecutionQuery = {
         pipelineName: string;
         solidSelection: Array<string> | null;
         pipelineSnapshotId: string | null;
-        parentPipelineSnapshotId: string | null;
         stepKeysToExecute: Array<string> | null;
         updateTime: number | null;
         startTime: number | null;
         endTime: number | null;
+        repositoryOrigin: {
+          __typename: 'RepositoryOrigin';
+          id: string;
+          repositoryName: string;
+          repositoryLocationName: string;
+        } | null;
         tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
         assets: Array<{
           __typename: 'Asset';
@@ -65,12 +73,6 @@ export type RunReExecutionQuery = {
             endTime: number | null;
           }>;
         }>;
-        repositoryOrigin: {
-          __typename: 'RepositoryOrigin';
-          id: string;
-          repositoryName: string;
-          repositoryLocationName: string;
-        } | null;
       }
     | {__typename: 'RunNotFoundError'};
 };

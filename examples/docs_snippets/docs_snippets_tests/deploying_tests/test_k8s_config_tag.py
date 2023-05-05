@@ -17,8 +17,11 @@ def test_k8s_tag_job():
     job = construct_dagster_k8s_job(
         cfg, [], "job123", user_defined_k8s_config=user_defined_cfg
     )
-
-    assert job.to_dict()["spec"]["template"]["spec"]["containers"][0]["resources"] == {
+    resolved_resources = job.to_dict()["spec"]["template"]["spec"]["containers"][0][
+        "resources"
+    ]
+    resolved_resources.pop("claims", None)
+    assert resolved_resources == {
         "requests": {"cpu": "250m", "memory": "64Mi"},
         "limits": {"cpu": "500m", "memory": "2560Mi"},
     }
@@ -36,8 +39,11 @@ def test_k8s_tag_op():
     job = construct_dagster_k8s_job(
         cfg, [], "job123", user_defined_k8s_config=user_defined_cfg
     )
-
-    assert job.to_dict()["spec"]["template"]["spec"]["containers"][0]["resources"] == {
+    resolved_resources = job.to_dict()["spec"]["template"]["spec"]["containers"][0][
+        "resources"
+    ]
+    resolved_resources.pop("claims", None)
+    assert resolved_resources == {
         "requests": {"cpu": "200m", "memory": "32Mi"},
         "limits": None,
     }

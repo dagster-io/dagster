@@ -1,4 +1,3 @@
-# pylint: disable=redefined-outer-name
 # start_marker
 from dagster import AssetIn, asset
 

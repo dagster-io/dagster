@@ -79,3 +79,20 @@ def test_does_not_leak():
     assert objgraph.count("MyClass") == 0
     assert objgraph.count("KeyClass") == 0
     assert objgraph.count("ValueClass") == 0
+
+
+def test_collisions():
+    class MyClass:
+        @cached_method
+        def stuff(self, a=None, b=None):
+            return {"a": a, "b": b}
+
+    obj = MyClass()
+    a1 = obj.stuff(a=1)
+    b1 = obj.stuff(b=1)
+    a2 = obj.stuff(a=2)
+    b2 = obj.stuff(b=2)
+
+    assert a1 != b1
+    assert a1 != a2
+    assert b1 != b2

@@ -9,9 +9,9 @@ from dagster import (
     __version__ as dagster_version,
 )
 from dagster._cli.workspace.cli_target import (
+    get_code_location_from_kwargs,
+    get_external_repository_from_code_location,
     get_external_repository_from_kwargs,
-    get_external_repository_from_repo_location,
-    get_repository_location_from_kwargs,
     repository_target_argument,
 )
 from dagster._core.definitions.run_request import InstigatorType
@@ -28,9 +28,7 @@ from dagster._utils.yaml_utils import dump_run_config_yaml
 
 @click.group(name="sensor")
 def sensor_cli():
-    """
-    Commands for working with Dagster sensors.
-    """
+    """Commands for working with Dagster sensors."""
 
 
 def print_changes(external_repository, instance, print_fn=print, preview=False):
@@ -50,10 +48,10 @@ def print_changes(external_repository, instance, print_fn=print, preview=False):
     if not added_sensors and not removed_sensors:
         if preview:
             print_fn(click.style("No planned changes to sensors.", fg="magenta", bold=True))
-            print_fn("{num} sensors will remain unchanged".format(num=len(external_sensors)))
+            print_fn(f"{len(external_sensors)} sensors will remain unchanged")
         else:
             print_fn(click.style("No changes to sensors.", fg="magenta", bold=True))
-            print_fn("{num} sensors unchanged".format(num=len(external_sensors)))
+            print_fn(f"{len(external_sensors)} sensors unchanged")
         return
 
     print_fn(
@@ -88,9 +86,7 @@ def check_repo_and_scheduler(repository: ExternalRepository, instance: DagsterIn
     repository_name = repository.name
 
     if not repository.get_external_sensors():
-        raise click.UsageError(
-            "There are no sensors defined for repository {name}.".format(name=repository_name)
-        )
+        raise click.UsageError(f"There are no sensors defined for repository {repository_name}.")
 
     if not os.getenv("DAGSTER_HOME"):
         raise click.UsageError(
@@ -139,7 +135,7 @@ def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, 
             repository_name = external_repo.name
 
             if not name_filter:
-                title = "Repository {name}".format(name=repository_name)
+                title = f"Repository {repository_name}"
                 print_fn(title)
                 print_fn("*" * len(title))
 
@@ -215,7 +211,7 @@ def execute_start_command(sensor_name, all_flag, cli_args, print_fn):
                 except DagsterInvariantViolationError as ex:
                     raise click.UsageError(ex)
 
-                print_fn("Started sensor {sensor_name}".format(sensor_name=sensor_name))
+                print_fn(f"Started sensor {sensor_name}")
 
 
 @sensor_cli.command(name="stop", help="Stop an existing sensor.")
@@ -242,7 +238,7 @@ def execute_stop_command(sensor_name, cli_args, print_fn):
             except DagsterInvariantViolationError as ex:
                 raise click.UsageError(ex)
 
-            print_fn("Stopped sensor {sensor_name}".format(sensor_name=sensor_name))
+            print_fn(f"Stopped sensor {sensor_name}")
 
 
 @sensor_cli.command(name="preview", help="Preview an existing sensor execution.")
@@ -274,19 +270,19 @@ def execute_preview_command(
     sensor_name, since, last_run_key, cursor, cli_args, print_fn, instance=None
 ):
     with DagsterInstance.get() as instance:
-        with get_repository_location_from_kwargs(
+        with get_code_location_from_kwargs(
             instance,
             version=dagster_version,
             kwargs=cli_args,
-        ) as repo_location:
+        ) as code_location:
             try:
-                external_repo = get_external_repository_from_repo_location(
-                    repo_location, cli_args.get("repository")
+                external_repo = get_external_repository_from_code_location(
+                    code_location, cli_args.get("repository")
                 )
                 check_repo_and_scheduler(external_repo, instance)
                 external_sensor = external_repo.get_external_sensor(sensor_name)
                 try:
-                    sensor_runtime_data = repo_location.get_external_sensor_execution_data(
+                    sensor_runtime_data = code_location.get_external_sensor_execution_data(
                         instance,
                         external_repo.handle,
                         external_sensor.name,
@@ -352,17 +348,17 @@ def sensor_cursor_command(sensor_name, **kwargs):
 
 def execute_cursor_command(sensor_name, cli_args, print_fn):
     with DagsterInstance.get() as instance:
-        with get_repository_location_from_kwargs(
+        with get_code_location_from_kwargs(
             instance, version=dagster_version, kwargs=cli_args
-        ) as repo_location:
+        ) as code_location:
             if bool(cli_args.get("delete")) == bool(cli_args.get("set")):
                 # must use one of delete/set
                 raise click.UsageError("Must set cursor using `--set <value>` or use `--delete`")
 
             cursor_value = cli_args.get("set")
 
-            external_repo = get_external_repository_from_repo_location(
-                repo_location, cli_args.get("repository")
+            external_repo = get_external_repository_from_code_location(
+                code_location, cli_args.get("repository")
             )
             check_repo_and_scheduler(external_repo, instance)
             external_sensor = external_repo.get_external_sensor(sensor_name)

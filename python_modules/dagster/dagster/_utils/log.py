@@ -14,7 +14,7 @@ from dagster._config import Enum, EnumValue
 from dagster._core.definitions.logger_definition import logger
 from dagster._core.utils import PYTHON_LOGGING_LEVELS_MAPPING, coerce_valid_log_level
 
-LogLevelEnum = Enum("log_level", list(map(EnumValue, PYTHON_LOGGING_LEVELS_MAPPING.keys())))  # type: ignore
+LogLevelEnum = Enum("log_level", list(map(EnumValue, PYTHON_LOGGING_LEVELS_MAPPING.keys())))
 
 
 class JsonFileHandler(logging.Handler):
@@ -45,7 +45,7 @@ class JsonFileHandler(logging.Handler):
                 text_line = seven.json.dumps(log_dict)
                 ff.write(text_line + "\n")
         # Need to catch Exception here, so disabling lint
-        except Exception as e:  # pylint: disable=W0703
+        except Exception as e:
             logging.critical("[%s] Error during logging!", self.__class__.__name__)
             logging.exception(str(e))
 
@@ -94,7 +94,7 @@ class JsonEventLoggerHandler(logging.Handler):
                 ff.write(text_line + "\n")
 
         # Need to catch Exception here, so disabling lint
-        except Exception as e:  # pylint: disable=W0703
+        except Exception as e:
             logging.critical("[%s] Error during logging!", self.__class__.__name__)
             logging.exception(str(e))
 
@@ -116,7 +116,7 @@ class StructuredLoggerHandler(logging.Handler):
                 )
             )
         # Need to catch Exception here, so disabling lint
-        except Exception as e:  # pylint: disable=W0703
+        except Exception as e:
             logging.critical("[%s] Error during logging!", self.__class__.__name__)
             logging.exception(str(e))
 
@@ -143,8 +143,7 @@ BASE_DAGSTER_LOGGER = logging.getLogger(name="dagster")
 
 
 def get_dagster_logger(name: Optional[str] = None) -> logging.Logger:
-    """
-    Creates a python logger whose output messages will be captured and converted into Dagster log
+    """Creates a python logger whose output messages will be captured and converted into Dagster log
     messages. This means they will have structured information such as the step_key, run_id, etc.
     embedded into them, and will show up in the Dagster event log.
 
@@ -160,7 +159,6 @@ def get_dagster_logger(name: Optional[str] = None) -> logging.Logger:
         :class:`logging.Logger`: A logger whose output will be captured by Dagster.
 
     Example:
-
         .. code-block:: python
 
             from dagster import get_dagster_logger, op
@@ -208,7 +206,7 @@ def get_stack_trace_array(exception):
     return traceback.format_tb(tb)
 
 
-def _mockable_formatTime(record, datefmt=None):  # pylint: disable=unused-argument
+def _mockable_formatTime(record, datefmt=None):
     """Uses pendulum.now to determine the logging time, causing pendulum
     mocking to affect the logger timestamp in tests.
     """

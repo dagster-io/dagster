@@ -3,14 +3,15 @@ import responses
 from dagster import (
     AssetKey,
     FreshnessPolicy,
-    MetadataEntry,
     TableColumn,
     TableSchema,
     build_init_resource_context,
 )
+from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.source_asset import SourceAsset
+from dagster._core.events import StepMaterializationData
 from dagster._legacy import build_assets_job
-from dagster_airbyte import airbyte_resource, build_airbyte_assets
+from dagster_airbyte import AirbyteCloudResource, airbyte_resource, build_airbyte_assets
 
 from .utils import get_sample_connection_json, get_sample_job_json
 
@@ -83,19 +84,15 @@ def test_assets(schema_prefix):
         AssetKey(["some", "prefix", schema_prefix + "bar"]),
         AssetKey(["some", "prefix", schema_prefix + "baz"]),
     }
-    assert MetadataEntry("bytesEmitted", value=1234) in materializations[0].metadata_entries
-    assert MetadataEntry("recordsCommitted", value=4321) in materializations[0].metadata_entries
-    assert (
-        MetadataEntry(
-            "schema",
-            value=TableSchema(
-                columns=[
-                    TableColumn(name="a", type="str"),
-                    TableColumn(name="b", type="int"),
-                ]
-            ),
+    assert materializations[0].metadata["bytesEmitted"] == MetadataValue.int(1234)
+    assert materializations[0].metadata["recordsCommitted"] == MetadataValue.int(4321)
+    assert materializations[0].metadata["schema"] == MetadataValue.table_schema(
+        TableSchema(
+            columns=[
+                TableColumn(name="a", type="str"),
+                TableColumn(name="b", type="int"),
+            ]
         )
-        in materializations[0].metadata_entries
     )
 
 
@@ -183,20 +180,66 @@ def test_assets_with_normalization(schema_prefix, source_asset, freshness_policy
         AssetKey(["some", "prefix", schema_prefix + "bar_baz"]),
         AssetKey(["some", "prefix", schema_prefix + "bar_qux"]),
     }
-    assert MetadataEntry("bytesEmitted", value=1234) in materializations[0].metadata_entries
-    assert MetadataEntry("recordsCommitted", value=4321) in materializations[0].metadata_entries
-    assert (
-        MetadataEntry(
-            "schema",
-            value=TableSchema(
-                columns=[
-                    TableColumn(name="a", type="str"),
-                    TableColumn(name="b", type="int"),
-                ]
-            ),
-        )
-        in materializations[0].metadata_entries
+    assert materializations[0].metadata["bytesEmitted"] == MetadataValue.int(1234)
+    assert materializations[0].metadata["recordsCommitted"] == MetadataValue.int(4321)
+    assert materializations[0].metadata["schema"].value == TableSchema(
+        columns=[
+            TableColumn(name="a", type="str"),
+            TableColumn(name="b", type="int"),
+        ]
     )
 
     # No metadata for normalized materializations, for now
-    assert not materializations[3].metadata_entries
+    assert not materializations[3].metadata
+
+
+def test_assets_cloud() -> None:
+    ab_resource = AirbyteCloudResource(api_key="some_key")
+    ab_url = ab_resource.api_base_url
+
+    ab_assets = build_airbyte_assets(
+        "12345",
+        destination_tables=["foo", "bar"],
+        normalization_tables={"bar": {"bar_baz", "bar_qux"}},
+        asset_key_prefix=["some", "prefix"],
+    )
+
+    ab_job = build_assets_job(
+        "ab_job",
+        ab_assets,
+        resource_defs={"airbyte": ab_resource},
+    )
+
+    with responses.RequestsMock() as rsps:
+        rsps.add(
+            rsps.POST,
+            f"{ab_url}/jobs",
+            json={"jobId": 1, "status": "pending", "jobType": "sync"},
+        )
+
+        rsps.add(
+            rsps.GET,
+            f"{ab_url}/jobs/1",
+            json={"jobId": 1, "status": "running", "jobType": "sync"},
+        )
+        rsps.add(
+            rsps.GET,
+            f"{ab_url}/jobs/1",
+            json={"jobId": 1, "status": "succeeded", "jobType": "sync"},
+        )
+
+        res = ab_job.execute_in_process()
+
+        materializations = [
+            event.event_specific_data.materialization
+            for event in res.events_for_node("airbyte_sync_12345")
+            if event.event_type_value == "ASSET_MATERIALIZATION"
+            and isinstance(event.event_specific_data, StepMaterializationData)
+        ]
+        assert len(materializations) == 4
+        assert {m.asset_key for m in materializations} == {
+            AssetKey(["some", "prefix", "foo"]),
+            AssetKey(["some", "prefix", "bar"]),
+            AssetKey(["some", "prefix", "bar_baz"]),
+            AssetKey(["some", "prefix", "bar_qux"]),
+        }

@@ -1,5 +1,903 @@
 # Changelog
 
+# 1.3.3 (core) / 0.19.3 (libraries)
+
+### New
+
+- `load_assets_from_package_module` and the other core `load_assets_from_` methods now accept a `source_key_prefix` argument, which allows applying a key prefix to all the source assets that are loaded.
+- `OpExecutionContext` now has an `asset_partitions_time_window_for_input` method.
+- `RunFailureSensorContext` now has a `get_step_failure_events` method.
+- The Pythonic resource system now supports a set of lifecycle hooks which can be used to manage setup and teardown:
+
+    ```python
+    class MyAPIClientResource(ConfigurableResource):
+        api_key: str
+        _internal_client: MyAPIClient = PrivateAttr()
+
+        def setup_for_execution(self, context):
+            self._internal_client = MyAPIClient(self.api_key)
+
+        def get_all_items(self):
+            return self._internal_client.items.get()
+    ```
+
+- Added support for specifying input and output config on `ConfigurableIOManager`.
+- `QueuedRunCoordinator` and `SubmitRunContext` are now exposed as public dagster exports.
+- [ui] Downstream cross-location dependencies of all source assets are now visible on the asset graph. Previously these dependencies were only displayed if the source asset was defined as a regular asset.
+- [ui] A new filtering experience is available on the Runs page after enabling feature flag “Experimental Runs table view with filtering”.
+- [dagster-aws] Allow the S3 compute log manager to specify a `show_url_only: true` config option, which will display a URL to the S3 file in dagit, instead of the contents of the log file.
+- [dagster-aws] `PickledObjectS3IOManager` now fully supports loading partitioned inputs.
+- [dagster-azure] `PickedObjectADLS2IOManager` now fully supports loading partitioned inputs.
+- [dagster-gcp] New `GCSResource` and `ConfigurablePickledObjectGCSIOManager` follow the Pythonic resource system. The existing `gcs_resource` and `gcs_pickle_io_manager`  remain supported.
+- [dagster-gcp] New `BigQueryResource` follows the Pythonic resource system. The existing `bigquery_resource`  remains supported.
+- [dagster-gcp] `PickledObjectGCSIOManager` now fully supports loading partitioned inputs.
+- [dagster-postgres] The event watching implementation has been moved from listen/notify based to the polling watcher used by MySQL and SQLite.
+- [dagster-slack] Add `monitor_all_repositories` to `make_slack_on_run_failure_sensor`, thanks @danielgafni!
+- [dagster-snowflake] New `SnowflakeResource` follows the Pythonic resource system. The existing `snowflake_resource` remains supported.
+
+### Bugfixes
+
+- Multi-asset sensor context methods for partitions now work when partitioned source assets are targeted.
+- Previously, the asset backfill page would incorrectly display negative counts for assets with upstream failures. This has been fixed.
+- In cases where there is an asset which is upstream of one asset produced by a subsettable multi-asset, but downstream of another, Dagster will automatically subset the multi-asset to resolve the underlying cycle in the op dependency graph. In some cases, this process could omit some of the op dependencies, resulting in incorrect execution order. This has been fixed.
+- Fixed an issue with `AssetMetadataValue.value` that would cause an infinite recursion error.
+- Fixed an issue where observable source assets would show up in the asset graph of jobs that did not include them.
+- Fixed an issue with directly invoking an op or asset with a Pythonic config object with a discriminated union did not work properly.
+- Fixes a bug where sensors attached to jobs that rely on resources from Definitions were not provided with the required resource definition.
+
+### Dagster Cloud
+
+- `volumes` and `volumeMounts` values have been added to the agent helm chart.
+
+### Experimental
+
+- [dagster-airbyte] `load_assets_from_airbyte_instance` and `load_assets_from_airbyte_project` now take a `connection_to_auto_materialize_policy_fn` for setting `AutoMaterializePolicy`s on Airbyte assets
+- [dagster-airbyte] Introduced experimental support for Airbyte Cloud. See the [using Dagster with Airbyte Cloud docs for more information](https://docs.dagster.io/integrations/airbyte-cloud).
+
+### Documentation
+
+- Ever wanted to know more about the files in Dagster projects, including where to put them in your project? Check out the new [Dagster project files reference](https://docs.dagster.io/getting-started/project-file-reference) for more info!
+- We’ve made some improvements to the sidenav / information architecture of our docs!
+    - The **Guides** section now contains several new categories, including **Working with data assets** and **Working with tasks**
+    - The **Community** section is now under **About**
+- The Backfills concepts page now includes instructions on how to launch backfills that target ranges of partitions in a single run.
+
+# 1.3.2 (core) / 0.19.2 (libraries)
+
+### New
+
+- Added performance improvements for yielding time-partitioned run requests.
+- The asset backfill page now displays targeted assets in topological order.
+- Replicas can now be specified on Hybrid ECS and K8s agents. In ECS, use the `NumReplicas` parameter on the agent template in CloudFormation, or the `dagsterCloudAgent.replicas` field in Helm.
+- Zero-downtime agent updates can now be configured for the ECS agent. Just set the `enableZeroDowntimeDeploys` parameter to true in the CloudFormation stack for your agent.
+- The `AssetsDefinition.from_graph`, as well as the`@graph_asset` and `@graph_multi_asset` decorators now support specifying `AutoMaterializePolicy`s.
+- [dagstermill] Pythonic resource variant of the dagstermill I/O manager is now available.
+- [dagster-duckdb] New DuckDBResource for connecting to and querying DuckDB databases.
+- [ui] Sensor / Schedule overview pages now allow you to select and start/stop multiple sensors/schedules at once.
+- [ui] Performance improvements to global search for big workspaces.
+
+### Bugfixes
+
+- `async def` ops/assets no longer prematurely finalize async generators during execution.
+- In some cases, the AutoMaterialize Daemon (and the `build_asset_reconciliation_sensor`) could incorrectly launch new runs for partitions that already had an in-progress run. This has been fixed.
+
+### Breaking Changes
+
+
+- Yielding run requests for experimental dynamic partitions via `run_request_for_partition` now throws an error. Instead, users should yield directly instantiated run requests via `RunRequest(partition_key=...)`.
+- `graph_asset` and `graph_multi_asset` now support specifying `resource_defs` directly (thanks [@kmontag42](https://github.com/KMontag42))!
+
+### Community Contributions
+
+- A new `node_info_to_auto_materialize_policy_fn` param added to `load_assets_from_dbt_*` functions. (thanks [@askvinni](https://github.com/askvinni))!
+- Added `partition_key` field to `RunStatusSensorContext` (thanks [@pdstrnadJC](https://github.com/pdstrnadJC))!
+
+### Experimental
+
+- For multi-partitioned assets with a time dimension, the auto-materialize policy now only kicks off materializations for the latest time partition window. Previously, all partitions would be targeted.
+- Added performance improvements to the multi-asset sensor context’s `latest_materialization_records_by_key` method.
+- The GraphQL API for launching a backfill no longer errors when the backfill targets assets instead of a job and the `allPartitions` argument is provided.
+
+### Documentation
+
+- Fixed a few typos in various guides.
+- Fixed a formatting issue in the Automating pipelines guide that was causing a 404.
+
+# 1.3.1 (core) / 0.19.1 (libraries)
+
+### New
+
+- Performance improvements when evaluating time-partitioned run requests within sensors and schedules.
+- [ui] Performance improvements when loading the asset catalog and launchpad for deployments with many time-partitioned assets.
+
+### Bugfixes
+
+- Fixed an issue where loading a Definitions object that included sensors attached to multiple jobs would raise an error.
+- Fixed a bug in which Pythonic resources would produce underlying resource values that would fail reference equality checks. This would lead to a conflicting resource version error when using the same Pythonic resource in multiple places.
+
+# 1.3.0 (core) / 0.19.0 (libraries) "Smooth Operator"
+
+## **Major Changes since 1.2.0 (core) / 0.18.0 (libraries)**
+
+### Core
+
+- **Auto-materialize policies replace the asset reconciliation sensor** - We significantly renovated the APIs used for specifying which assets are scheduled declaratively. Compared to `build_asset_reconciliation_sensor`s , `AutoMaterializePolicy` works across code locations, as well as allow you to customize the conditions under which each asset is auto-materialized. [[docs](https://docs.dagster.io/concepts/assets/asset-auto-execution)]
+- **Asset backfill page** - A new page in the UI for monitoring asset backfills shows the progress of each asset in the backfill.
+- **Clearer labels for tracking changes to data and code** - Instead of the opaque “stale” indicator, Dagster’s UI now indicates whether code, upstream data, or dependencies have changed. When assets are in violation of their `FreshnessPolicy`s, Dagster’s UI now marks them as “overdue” instead of “late”.
+- **Auto-materialization and observable source assets** - Assets downstream of an observable source asset now use the source asset observations to determine whether upstream data has changed and assets need to be materialized.
+- **Pythonic Config and Resources** - The set of APIs [introduced in 1.2](#120-core--0180-libraries) is no longer experimental [[community memo](https://dagster.io/blog/pythonic-config-and-resources)]. Examples, integrations, and documentation have largely ported to the new APIs. Existing resources and config APIs will continue to be supported for the foreseeable future. Check out [migration guide](https://docs.dagster.io/guides/dagster/migrating-to-pythonic-resources-and-config) to learn how to incrementally adopt the new APIs.
+
+### Docs
+
+- **Improved run concurrency docs** - You asked (in support), and we answered! This [new guide](https://docs.dagster.io/guides/limiting-concurrency-in-data-pipelines) is a one-stop-shop for understanding and implementing run concurrency, whether you’re on Dagster Cloud or deploying to your own infrastructure.
+- **Additions to the Intro to Assets tutorial** - We’ve added two new sections to the assets tutorial, focused on [scheduling](https://docs.dagster.io/tutorial/scheduling-your-pipeline) and [I/O](https://docs.dagster.io/tutorial/saving-your-data). While we’re close to wrapping things up for the tutorial revamp, we still have a few topics to cover - stay tuned!
+- **New guide about building machine learning pipelines** - Many of our users learn best by example - [this guide](https://docs.dagster.io/guides/dagster/ml-pipeline) is one way we’re expanding our library of examples. In this guide, we walk you through building a simple machine learning pipeline using Dagster.
+- **Re-organized Dagster Cloud docs** - We overhauled how the Dagster Cloud docs are organized, bringing them more in line with the UI.
+
+## **Since 1.2.7 (core) / 0.18.7 (libraries)**
+
+### New
+
+- Long-running runs can now be terminated after going over a set runtime. See the [run termination docs](https://docs.dagster.io/deployment/run-monitoring#general-run-timeouts) to learn more.
+- Adds a performance improvement to partition status caching for multi-partitioned assets containing a time dimension.
+- [ui] Asset groups are now included in global search.
+- [ui] Assets in the asset catalog have richer status information that matches what is displayed on the asset graph.
+- [dagster-aws] New `AthenaClientResource`, `ECRPublicResource`, `RedshiftClientResource`, `S3Resource`, `S3FileManagerResource`, `ConfigurablePickledObjectS3IOManager`, `SecretsManagerResource` follow Pythonic resource system. The existing APIs remain supported.
+- [dagster-datadog] New `DatadogResource` follows Pythonic resource system. The existing `datadog_resource` remains supported.
+- [dagster-ge] New `GEContextResource` follows Pythonic resource system. The existing `ge_context_resource` remains supported.
+- [dagster-github] New `GithubResource` follows Pythonic resource system. The existing `github_resource` remains supported.
+- [dagster-msteams] New `MSTeamsResource` follows Pythonic resource system. The existing `msteams_resource` remains supported.
+- [dagster-slack] New `SlackResource` follows Pythonic resource system. The existing `slack_resource` remains supported.
+
+### Bugfixes
+
+- Fixed an issue where using `pdb.set_trace` no longer worked when running Dagster locally using `dagster dev` or `dagit`.
+- Fixed a regression where passing custom metadata on `@asset` or `Out` caused an error to be thrown.
+- Fixed a regression where certain states of the asset graph would cause GQL errors.
+- [ui] Fixed a bug where assets downstream of source assets would sometimes incorrectly display a “New data” (previously “stale”) tag for assets with materializations generated from ops (as opposed to SDA materializations).
+- [ui] Fixed a bug where URLs for code locations named `pipelines` or `jobs` could lead to blank pages.
+- [ui] When configuring a partition-mapped asset backfill, helpful context no longer appears nested within the “warnings” section
+- [ui] For observable source assets,the asset sidebar now shows a “latest observation” instead of a “latest materialization”
+
+### Breaking Changes
+
+- By default, resources defined on `Definitions` are now automatically bound to jobs. This will only result in a change in behavior if you a) have a job with no "io_manager" defined in its `resource_defs` and b) have supplied an `IOManager` with key "io_manager" to the `resource_defs` argument of your `Definitions`. Prior to 1.3.0, this would result in the job using the default filesystem-based `IOManager` for the key "io_manager". In 1.3.0, this will result in the "io_manager" supplied to your `Definitions` being used instead. The `BindResourcesToJobs` wrapper, introduced in 1.2 to simulate this behavior, no longer has any effect.
+- [dagster-celery-k8s] The default kubernetes namespace for run pods when using the Dagster Helm chart with the `CeleryK8sRunLauncher` is now the same namespace as the Helm chart, instead of the `default` namespace. To restore the previous behavior, you can set the `celeryK8sRunLauncher.jobNamespace` field to the string `default`.
+- [dagster-snowflake-pandas] Due to a longstanding issue storing Pandas Timestamps in Snowflake tables, the `SnowflakePandasIOManager` has historically converted all timestamp data to strings before storing it in Snowflake. Now, it will instead ensure that timestamp data has a timezone, and if not, attach the UTC timezone. This allows the timestamp data to be stored as timestamps in Snowflake. If you have been storing timestamp data using the `SnowflakePandasIOManager` you can set the `store_timestamps_as_strings=True` configuration to continue storing timestamps as strings. For more information, and instructions for migrating Snowflake tables to use timestamp types, see the Migration Guide.
+
+**Changes to experimental APIs**
+
+- Pythonic Resources and Config
+  - Enabled passing `RunConfig` to many APIs which previously would only accept a config dictionary.
+  - Enabled passing raw Python objects as resources to many APIs which previously would only accept `ResourceDefinition`.
+  - Added the ability to pass `execution` config when constructing a `RunConfig` object.
+  - Introduced more clear error messages when trying to mutate state on a Pythonic config or resource object.
+  - Improved direct invocation experience for assets, ops, schedules and sensors using Pythonic config and resources. Config and resources can now be passed directly as args or kwargs.
+- The `minutes_late` and `previous_minutes_late` properties on the experimental `FreshnesPolicySensorContext` have been renamed to `minutes_overdue` and `previous_minutes_overdue`, respectively.
+
+**Removal of deprecated APIs**
+
+- [previously deprecated, 0.15.0] `metadata_entries` arguments to event constructors have been removed. While `MetadataEntry` still exists and will only be removed in 2.0, it is no longer passable to any Dagster public API — users should always pass a dictionary of metadata values instead.
+
+### Experimental
+
+- Adds a performance improvement to the multi-asset sensor context’s `latest_materialization_records_by_key` function.
+
+### Documentation
+
+- The Google BigQuery [tutorial](https://docs.dagster.io/integrations/bigquery/using-bigquery-with-dagster) and [reference](https://docs.dagster.io/integrations/bigquery/reference) pages have been updated to use the new `BigQueryPandasIOManager` and `BigQueryPySparkIOManager`.
+- The Snowflake [tutorial](https://docs.dagster.io/integrations/snowflake/using-snowflake-with-dagster) and [reference](https://docs.dagster.io/integrations/snowflake/reference) pages have been updated to use the new `SnowflakePandasIOManager` and `SnowflakePySparkIOManager`.
+
+### Dagster Cloud
+
+- Previously, when deprovisioning an agent, code location servers were cleaned up in serial. Now, they’re cleaned up in parallel.
+
+# 1.2.7 (core) / 0.18.7 (libraries)
+
+### New
+
+- Resource access (via both `required_resource_keys` and Pythonic resources) are now supported in observable source assets.
+- [ui] The asset graph now shows how many partitions of each asset are currently materializing, and blue bands appear on the partition health bar.
+- [ui] Added a new page to monitor an asset backfill.
+- [ui] Performance improvement for Runs page for runs that materialize large numbers of assets.
+- [ui] Performance improvements for Run timeline and left navigation for users with large numbers of jobs or assets.
+- [ui] In the run timeline, consolidate “Ad hoc materializations” rows into a single row.
+- [dagster-aws] The `EcsRunLauncher` now allows you to customize volumes and mount points for the launched ECS task. See [the API docs](https://docs.dagster.io/_apidocs/libraries/dagster-aws#dagster_aws.ecs.EcsRunLauncher) for more information.
+- [dagster-duckdb, dagster-duckdb-pandas, dagster-duckdb-pyspark] New `DuckDBPandasIOManager` and `DuckDBPySparkIOManager` follow Pythonic resource system. The existing `duckdb_pandas_io_manager` and `duckdb_pyspark_io_manager` remain supported.
+- [dagster-gcp, dagster-gcp-pandas, dagster-gcp-pyspark] New `BigQueryPandasIOManager` and `BigQueryPySparkIOManager` follow Pythonic resource system. The existing `bigquery_pandas_io_manager` and `bigquery_pyspark_io_manager` remain supported.
+- [dagster-gcp] The BigQuery resource now accepts authentication credentials as configuration. If you pass GCP authentication credentials to `gcp_crentials` , a temporary file to store the credentials will be created and the `GOOGLE_APPLICATION_CREDENTIALS` environment variable will be set to the temporary file. When the BigQuery resource is garbage collected, the environment variable will be unset and the temporary file deleted.
+- [dagster-snowflake, dagster-snowflake-pandas, dagster-snowflake-pyspark] New `SnowflakePandasIOManager` and `SnowflakePySparkIOManager` follow Pythonic resource system. The existing `snowflake_pandas_io_manager` and `snowflake_pyspark_io_manager` remain supported.
+
+### Bugfixes
+
+- Fixed an issue where `dagster dev` would periodically emit a harmless but annoying warning every few minutes about a gRPC server being shut down.
+- Fixed a schedule evaluation error that occurred when schedules returned a `RunRequest(partition_key=...)` object.
+- Fixed a bug that caused errors in the asset reconciliation sensor when the event log includes asset materializations with partitions that aren’t part of the asset’s `PartitionsDefinition`.
+- Fixed a bug that caused errors in the asset reconciliation sensor when a partitioned asset is removed.
+- Fixed an issue where `run_request_for_partition` would incorrectly raise an error for a job with a `DynamicPartitionsDefinition` that was defined with a function.
+- Fixed an issue where defining a partitioned job with unpartitioned assets via `define_asset_job` would raise an error.
+- Fixed a bug where source asset observations could not be launched from dagit when the asset graph contained partitioned assets.
+- Fixed a bug that caused **`__ASSET_JOB has no op named ...`** errors when using automatic run retries.
+- [ui] The asset partition health bar now correctly renders partial failed partitions of multi-dimensional assets in a striped red color.
+- [ui] Fixed an issue where steps that were skipped due to an upstream dependency failure were incorrectly listed as “Preparing” in the right-hand column of the runs timeline.
+- [ui] Fixed markdown base64 image embeds.
+- [ui] Guard against localStorage quota errors when storing launchpad config tabs.
+- [dagster-aws] Fixed an issue where the `EcsRunLauncher` would fail to launch runs if the `use_current_ecs_task_config` field was set to `False` but no `task_definition` field was set.
+- [dagster-k8s] Fixed an issue introduced in 1.2.6 where older versions of the kubernetes Python package were unable to import the package.
+
+### Community Contributions
+
+- The `EcsRunLauncher` now allows you to set a capacity provider strategy and customize the ephemeral storage used for launched ECS tasks. See [the docs](https://docs.dagster.io/deployment/guides/aws#customizing-the-launched-runs-task) for details. Thanks [AranVinkItility](https://github.com/AranVinkItility)!
+- Fixed an issue where freshness policies were not being correctly applied to assets with key prefixes defined via `AssetsDefinition.from_op`. Thanks @tghanken for the fix!
+- Added the `minimum_interval_seconds` parameter to enable customizing the evaluation interval on the slack run failure sensor, thanks @ldnicolasmay!
+- Fixed a docs example and updated references, thanks @NicolasPA!
+
+### Experimental
+
+- The `Resource` annotation for Pythonic resource inputs has been renamed to `ResourceParam` in preparation for the release of the feature in 1.3.
+- When invoking ops and assets that request resources via parameters directly, resources can now be specified as arguments.
+- Improved various error messages related to Pythonic config and resources.
+- If the Resources Dagit feature flag is enabled, they will now show up in the overview page and search.
+
+### Documentation
+
+- Learn how to [limit concurrency in your data pipelines](https://docs.dagster.io/guides/limiting-concurrency-in-data-pipelines) with our new guide!
+- Need some help managing a run queue? Check out the new [customizing run queue priority guide](https://docs.dagster.io/guides/customizing-run-queue-priority).
+- New tutorial section that adds I/O managers to the tutorial project.
+
+# 1.2.6 (core) / 0.18.6 (libraries)
+
+### Bugfixes
+
+- Fixed a GraphQL resolution error which occurred when retrieving metadata for step failures in the event log.
+
+# 1.2.5 (core) / 0.18.5 (libraries)
+
+### New
+
+- `materialize` and `materialize_to_memory` now both accept a `selection` argument that allows specifying a subset of assets to materialize.
+- `MultiPartitionsDefinition` is no longer marked experimental.
+- Context methods to access time window partition information now work for `MultiPartitionsDefinition`s with a time dimension.
+- Improved the performance of the asset reconciliation sensor when a non-partitioned asset depends on a partitioned asset.
+- `load_assets_from_package_module` and similar methods now accept a `freshness_policy`, which will be applied to all loaded assets.
+- When the asset reconciliation sensor is scheduling based on freshness policies, and there are observable source assets, the observed versions now inform the data time of the assets.
+- `build_sensor_context` and `build_multi_asset_sensor_context` can now take a `Definitions` object in place of a `RepositoryDefinition`
+- [UI] Performance improvement for loading asset partition statuses.
+- [dagster-aws] `s3_resource` now accepts `use_ssl` and `verify` configurations.
+
+### Bugfixes
+
+- Fixed a bug that caused an error to be raised when passing a multi-asset into the `selection` argument on `define_asset_job`.
+- Fixes a graphQL error that displays on Dagit load when an asset’s partitions definition is change from a single-dimensional partitions definition to a `MultiPartitionsDefinition`.
+- Fixed a bug that caused backfills to fail when spanning assets that live in different code locations.
+- Fixed an error that displays when a code location with a `MultiPartitionsMapping` (experimental) is loaded.
+- Fixed a bug that caused errors with invalid `TimeWindowPartitionMapping`s to not be bubbled up to the UI.
+- Fixed an issue where the scheduler would sometimes incorrectly handle spring Daylight Savings Time transitions for schedules running at 2AM in a timezone other than UTC.
+- Fixed an issue introduced in the 1.2.4 release where running `pdb` stopped working when using dagster dev.
+- Fixed an issue where it is was possible to create `AssetMaterialization` objects with a null `AssetKey`.
+- Previously, if you had a `TimeWindowPartitionsDefinition` with a non-standard cron schedule, and also provided a `minute_of_hour` or similar argument in `build_schedule_from_partitioned_job`. Dagster would silently create the wrong cron expression. It now raises an error.
+- The asset reconciliation sensor now no longer fails when the event log contains materializations that contain partitions that aren’t contained in the asset’s `PartitionsDefinition`. These partitions are now ignored.
+- Fixed a regression that prevented materializing dynamically partitioned assets from the UI (thanks [@planvin](https://github.com/planvin)!)
+- [UI] On the asset graph, the asset health displayed in the sidebar for the selected asset updates as materializations and failures occur.
+- [UI] The asset partitions page has been adjusted to make materialization and observation event metadata more clear.
+- [UI] Large table schema metadata entries now display within a modal rather than taking up considerable space on the page.
+- [UI] Launching a backfill of a partitioned asset with unpartitioned assets immediately upstream no longer shows the “missing partitions” warning.
+- [dagster-airflow] fixed a bug in the `PersistentAirflowDatabase` where versions of airflow from 2.0.0 till 2.3.0 would not use the correct connection environment variable name.
+- [dagster-census] fixed a bug with the `poll_sync_run` function of`dagster-census` that prevented polling from working correctly (thanks [@ldincolasmay](https://github.com/ldnicolasmay)!)
+
+### Deprecations
+
+- The `run_request_for_partition` method on `JobDefinition` and `UnresolvedAssetJobDefinition` is now deprecated and will be removed in 2.0.0. Instead, directly instantiate a run request with a partition key via `RunRequest(partition_key=...)`.
+
+### Documentation
+
+- Added a missing link to next tutorial section (Thanks Mike Kutzma!)
+
+# 1.2.4 (core) / 0.18.4 (libraries)
+
+### New
+
+- Further performance improvements to the asset reconciliation sensor.
+- Performance improvements to asset backfills with large numbers of partitions.
+- New `AssetsDefinition.to_source_assets` to method convert a set of assets to `SourceAsset` objects.
+- (experimental) Added partition mapping that defines dependency relationships between different `MultiPartitionsDefinitions`.
+- [dagster-mlflow] Removed the `mlflow` pin from the `dagster-mlflow` package.
+- [ui] Syntax highlighting now supported in rendered markdown code blocks (from metadata).
+
+### Bugfixes
+
+- When using `build_asset_reconciliation_sensor`, in some cases duplicate runs could be produced for the same partition of an asset. This has been fixed.
+- When using Pythonic configuration for resources, aliased field names would cause an error. This has been fixed.
+- Fixed an issue where `context.asset_partitions_time_window_for_output` threw an error when an asset was directly invoked with `build_op_context`.
+- [dagster-dbt] In some cases, use of ephemeral dbt models could cause the dagster representation of the dbt dependency graph to become incorrect. This has been fixed.
+- [celery-k8s] Fixed a bug that caused JSON deserialization errors when an Op or Asset emitted JSON that doesn't represent a `DagsterEvent`.
+- Fixed an issue where launching a large backfill while running `dagster dev` would sometimes fail with a connection error after running for a few minutes.
+- Fixed an issue where `dagster dev` would sometimes hang when running Dagster code that attempted to read in input via stdin.
+- Fixed an issue where runs that take a long time to import code would sometimes continue running even after they were stopped by [run monitoring](https://docs.dagster.io/deployment/run-monitoring#run-monitoring) for taking too long to start.
+- Fixed an issue where `AssetSelection.groups()` would simultaneously select both source and regular assets and consequently raise an error.
+- Fixed an issue where `BindResourcesToJobs` would raise errors encapsulating jobs which had config specified at definition-time.
+- Fixed Pythonic config objects erroring when omitting optional values rather than specifying `None`.
+- Fixed Pythonic config and resources not supporting Enum values.
+- `DagsterInstance.local_temp` and `DagsterInstance.ephemeral` now use object instance scoped local artifact storage temporary directories instead of a shared process scoped one, removing a class of thread safety errors that could manifest on initialization.
+- Improved direct invocation behavior for ops and assets which specify resource dependencies as parameters, for instance:
+
+  ```python
+  class MyResource(ConfigurableResource):
+      pass
+
+  @op
+  def my_op(x: int, y: int, my_resource: MyResource) -> int:
+      return x + y
+
+  my_op(4, 5, my_resource=MyResource())
+  ```
+
+- [dagster-azure] Fixed an issue with an AttributeError being thrown when using the async `DefaultAzureCredential` (thanks [@mpicard](https://github.com/mpicard))
+- [ui] Fixed an issue introduced in 1.2.3 in which no log levels were selected by default when viewing Run logs, which made it appear as if there were no logs at all.
+
+### Deprecations
+
+- The `environment_vars` argument to `ScheduleDefinition` is deprecated (the argument is currently non-functional; environment variables no longer need to be whitelisted for schedules)
+
+### Community Contributions
+
+- Typos fixed in [CHANGES.md](http://CHANGES.md) (thanks [@fridiculous](https://github.com/fridiculous))
+- Links to telemetry docs fixed (thanks [@Abbe98](https://github.com/Abbe98))
+- `--path-prefix` can now be supplied via Helm chart (thanks [@mpicard](https://github.com/mpicard))
+
+### Documentation
+
+- New machine learning pipeline with Dagster guide
+- New example of multi-asset conditional materialization
+- New tutorial section about scheduling
+- New images on the Dagster README
+
+# 1.2.3 (core) / 0.18.3 (libraries)
+
+### New
+
+- Jobs defined via `define_asset_job` now auto-infer their partitions definitions if not explicitly defined.
+- Observable source assets can now be run as part of a job via `define_asset_job`. This allows putting them on a schedule/sensor.
+- Added an `instance` property to the `HookContext` object that is passed into [Op Hook](https://docs.dagster.io/concepts/ops-jobs-graphs/op-hooks#op-hooks) functions, which can be used to access the current `DagsterInstance` object for the hook.
+- (experimental) Dynamic partitions definitions can now exist as dimensions of multi-partitions definitions.
+- [dagster-pandas] New `create_table_schema_metadata_from_dataframe` function to generate a `TableSchemaMetadataValue` from a Pandas DataFrame. Thanks [@AndyBys](https://github.com/AndyBys)!
+- [dagster-airflow] New option for setting `dag_run` configuration on the integration’s database resources.
+- [ui] The asset partitions page now links to the most recent failed or in-progress run for the selected partition.
+- [ui] Asset descriptions have been moved to the top in the asset sidebar.
+- [ui] Log filter switches have been consolidated into a single control, and selected log levels will be persisted locally so that the same selections are used by default when viewing a run.
+- [ui] You can now customize the hour formatting in timestamp display: 12-hour, 24-hour, or automatic (based on your browser locale). This option can be found in User Settings.
+
+### Bugfixes
+
+- In certain situations a few of the first partitions displayed as “unpartitioned” in the health bar despite being materialized. This has now been fixed, but users may need to run `dagster asset wipe-partitions-status-cache` to see the partitions displayed.
+- Starting `1.1.18`, users with a gRPC server that could not access the Dagster instance on user code deployments would see an error when launching backfills as the instance could not instantiate. This has been fixed.
+- Previously, incorrect partition status counts would display for static partitions definitions with duplicate keys. This has been fixed.
+- In some situations, having SourceAssets could prevent the `build_asset_reconciliation_sensor` from kicking off runs of downstream assets. This has been fixed.
+- The `build_asset_reconciliation_sensor` is now much more performant in cases where unpartitioned assets are upstream or downstream of static-partitioned assets with a large number of partitions.
+- [dagster-airflow] Fixed an issue were the persistent Airflow DB resource required the user to set the correct Airflow database URI environment variable.
+- [dagster-celery-k8s] Fixed an issue where run monitoring failed when setting the `jobNamespace` field in the Dagster Helm chart when using the `CeleryK8sRunLauncher`.
+- [ui] Filtering on the asset partitions page no longer results in keys being presented out of order in the left sidebar in some scenarios.
+- [ui] Launching an asset backfill outside an asset job page now supports partition mapping, even if your selection shares a partition space.
+- [ui] In the run timeline, date/time display at the top of the timeline was sometimes broken for users not using the `en-US` browser locale. This has been fixed.
+
+# 1.2.2 (core) / 0.18.2 (libraries)
+
+### New
+
+- Dagster is now tested on Python 3.11.
+- Users can now opt in to have resources provided to `Definitions` bind to their jobs. Opt in by wrapping your job definitions in `BindResourcesToJobs`. This will become the default behavior in the future.
+
+  ```python
+  @op(required_resource_keys={"foo"})
+  def my_op(context)
+      print(context.foo)
+
+  @job
+  def my_job():
+    my_op()
+
+  defs = Definitions(
+      jobs=BindResourcesToJobs([my_job])
+      resources={"foo": foo_resource}
+  ```
+
+- Added `dagster asset list` and `dagster asset materialize` commands to Dagster’s command line interface, for listing and materializing software-defined assets.
+- `build_schedule_from_partitioned_job` now accepts jobs partitioned with a `MultiPartitionsDefinition` that have a time-partitioned dimension.
+- Added `SpecificPartitionsPartitionMapping`, which allows an asset, or all partitions of an asset, to depend on a specific subset of the partitions in an upstream asset.
+- `load_asset_value` now supports `SourceAsset`s.
+- [ui] Ctrl+K has been added as a keyboard shortcut to open global search.
+- [ui] Most pages with search bars now sync the search filter to the URL, so it’s easier to bookmark views of interest.
+- [ui] In the run logs table, the timestamp column has been moved to the far left, which will hopefully allow for better visual alignment with op names and tags.
+- [dagster-dbt] A new `node_info_to_definition_metadata_fn` to `load_assets_from_dbt_project` and `load_assets_from_dbt_manifest` allows custom metadata to be attached to the asset definitions generated from these methods.
+- [dagster-celery-k8s] The Kubernetes namespace that runs using the `CeleryK8sRunLauncher` are launched in can now be configured by setting the `jobNamespace` field in the Dagster Helm chart under `celeryK8sRunLauncherConfig`.
+- [dagster-gcp] The BigQuery I/O manager now accepts `timeout` configuration. Currently, this configuration will only be applied when working with Pandas DataFrames, and will set the number of seconds to wait for a request before using a retry.
+- [dagster-gcp] [dagster-snowflake] [dagster-duckdb] The BigQuery, Snowflake, and DuckDB I/O managers now support self-dependent assets. When a partitioned asset depends on a prior partition of itself, the I/O managers will now load that partition as a DataFrame. For the first partition in the dependency sequence, an empty DataFrame will be returned.
+- [dagster-k8s] `k8s_job_op` now supports running Kubernetes jobs with more than one pod (Thanks @Taadas).
+
+### Bugfixes
+
+- Fixed a bug that causes backfill tags that users set in the UI to not be included on the backfill runs, when launching an asset backfill.
+- Fixed a bug that prevented resume from failure re-execution for jobs that contained assets and dynamic graphs.
+- Fixed an issue where the asset reconciliation sensor would issue run requests for assets that were targeted by an active asset backfill, resulting in duplicate runs.
+- Fixed an issue where the asset reconciliation sensor could issue runs more frequently than necessary for assets with FreshnessPolicies having intervals longer than 12 hours.
+- Fixed an issue where `AssetValueLoader.load_asset_value()` didn’t load transitive resource dependencies correctly.
+- Fixed an issue where constructing a `RunConfig` object with optional config arguments would lead to an error.
+- Fixed the type annotation on `ScheduleEvaluationContext.scheduled_execution_time` to not be `Optional`.
+- Fixed the type annotation on `OpExecutionContext.partition_time_window` \*\*\*\*(thanks @elben10).
+- `InputContext.upstream_output.log` is no longer `None` when loading a source asset.
+- [Pydantic type constraints](https://docs.pydantic.dev/usage/types/#constrained-types) are now supported by the [Pythonic config](https://docs.dagster.io/guides/dagster/pythonic-config) API.
+- An input resolution bug that occurred in certain conditions when composing graphs with same named ops has been fixed.
+- Invoking an op with collisions between positional args and keyword args now throws an exception.
+- `async def` ops are now invoked with `asyncio.run`.
+- `TimeWindowPartitionDefinition` now throws an error at definition time when passed an invalid cron schedule instead of at runtime.
+- [ui] Previously, using dynamic partitions with assets that required config would raise an error in the launchpad. This has been fixed.
+- [ui] The lineage tab loads faster and flickers less as you navigate between connected assets in the lineage graph
+- [ui] The config YAML editor no longer offers incorrect autcompletion context when you’re beginning a new indented line.
+- [ui] When viewing the asset details page for a source asset, the button in the top right correctly reads “Observe” instead of “Materialize”
+- [dagster-dbt] Previously, setting a `cron_schedule_timezone` inside of the config for a dbt model would not result in that property being set on the generated `FreshnessPolicy`. This has been fixed.
+- [dagster-gcp] Added a fallback download url for the `GCSComputeLogManager` when the session does not have permissions to generate signed urls.
+- [dagster-snowflake] In a previous release, functionality was added for the Snowflake I/O manager to attempt to create a schema if it did not already exist. This caused an issue when the schema already existed but the account did not have permission to create the schema. We now check if a schema exists before attempting to create it so that accounts with restricted permissions do not error, but schemas can still be created if they do not exist.
+
+### Breaking Changes
+
+- `validate_run_config` no longer accepts `pipeline_def` or `mode` arguments. These arguments refer to legacy concepts that were removed in Dagster 1.0, and since then there have been no valid values for them.
+
+### Experimental
+
+- Added experimental support for resource requirements in sensors and schedules. Resources can be specified using `required_resource_keys` and accessed through the context or specified as parameters:
+
+  ```python
+  @sensor(job=my_job, required_resource_keys={"my_resource"})
+  def my_sensor(context):
+      files_to_process = context.my_resource.get_files()
+  		...
+
+  @sensor(job=my_job)
+  def my_sensor(context, my_resource: MyResource):
+      files_to_process = my_resource.get_files()
+  		...
+  ```
+
+### Documentation
+
+- Added a page on asset selection syntax to the Concepts documentation.
+
+# 1.2.1 (core) / 0.18.1 (libraries)
+
+### Bugfixes
+
+- Fixed a bug with postgres storage where daemon heartbeats were failing on instances that had not been migrated with `dagster instance migrate` after upgrading to `1.2.0`.
+
+# 1.2.0 (core) / 0.18.0 (libraries)
+
+## **Major Changes since 1.1.0 (core) / 0.17.0 (libraries)**
+
+### Core
+
+- Added a new `dagster dev` command that can be used to run both Dagit and the Dagster daemon in the same process during local development. [[docs](https://docs.dagster.io/deployment/guides/running-locally)]
+- Config and Resources
+  - Introduced new Pydantic-based APIs to make defining and using [config](https://docs.dagster.io/guides/dagster/pythonic-config) and [resources](https://docs.dagster.io/guides/dagster/pythonic-resources) easier (experimental). [[Github discussion](https://github.com/dagster-io/dagster/discussions/12510)]
+- Repository > Definitions [[docs](https://docs.dagster.io/concepts/code-locations#definitions-versus-repositories)]
+- Declarative scheduling
+  - The asset reconciliation sensor is now 100x more performant in many situations, meaning that it can handle more assets and more partitions.
+  - You can now set **freshness policies on time-partitioned assets**.
+  - You can now hover over a stale asset to learn why that asset is considered stale.
+- Partitions
+  - `DynamicPartitionsDefinition` allows **partitioning assets dynamically** - you can add and remove partitions without reloading your definitions (experimental). [[docs](https://docs.dagster.io/concepts/partitions-schedules-sensors/partitions#dynamically-partitioned-assets)]
+  - The asset graph in the UI now displays the number of materialized, missing, and failed partitions for each partitioned asset.
+  - Asset partitions can now **depend on earlier time partitions of the same asset**. Backfills and the asset reconciliation sensor respect these dependencies when requesting runs [[example](https://github.com/dagster-io/dagster/discussions/11829)].
+  - `TimeWindowPartitionMapping` now accepts `start_offset` and `end_offset` arguments that allow specifying that time partitions depend on earlier or later time partitions of upstream assets [[docs](https://docs.dagster.io/_apidocs/partitions#dagster.TimeWindowPartitionMapping)].
+- Backfills
+  - Dagster now allows **backfills that target assets with different partitions**, such as a daily asset which rolls up into a weekly asset, as long as the root assets in the selection are partitioned in the same way.
+  - You can now choose to pass a **range of asset partitions to a single run** rather than launching a backfill with a run per partition [[instructions](https://github.com/dagster-io/dagster/discussions/11653)].
+
+### Integrations
+
+- **Weights and Biases** - A new integration `dagster-wandb` with [Weights & Biases](https://wandb.ai/site) allows you to orchestrate your MLOps pipelines and maintain ML assets with Dagster. [[docs](https://docs.dagster.io/_apidocs/libraries/dagster-wandb)]
+- **Snowflake + PySpark** - A new integration `dagster-snowflake-pyspark` allows you to store and load PySpark DataFrames as Snowflake tables using the `snowflake_pyspark_io_manager`. [[docs](https://docs.dagster.io/integrations/snowflake/reference#storing-and-loading-pyspark-dataframes-in-snowflake)]
+- **Google BigQuery** - A new BigQuery I/O manager and new integrations `dagster-gcp-pandas` and `dagster-gcp-pyspark` allow you to store and load Pandas and PySpark DataFrames as BigQuery tables using the `bigquery_pandas_io_manager` and `bigquery_pyspark_io_manager`. [[docs](https://docs.dagster.io/integrations/bigquery)]
+- **Airflow** The `dagster-airflow` integration library was bumped to 1.x.x, with that major bump the library has been refocused on enabling migration from Airflow to Dagster. Refer to the docs for an [in-depth migration guide](https://docs.dagster.io/integrations/airflow/migrating-to-dagster).
+- **Databricks -** Changes:
+  - Added op factories to create ops for running existing Databricks jobs (`create_databricks_run_now_op`), as well as submitting one-off Databricks jobs (`create_databricks_submit_run_op`).
+  - Added a [new Databricks guide](https://docs.dagster.io/master/integrations/databricks).
+  - The previous `create_databricks_job_op` op factory is now deprecated.
+
+### Docs
+
+- [Automating pipelines guide](https://docs.dagster.io/guides/dagster/automating-pipelines) - Check out the best practices for automating your Dagster data pipelines with this new guide. Learn when to use different Dagster tools, such as schedules and sensors, using this guide and its included cheatsheet.
+- [Structuring your Dagster project guide](https://docs.dagster.io/guides/dagster/recommended-project-structure) - Need some help structuring your Dagster project? Learn about our recommendations for getting started and scaling sustainably.
+- [Tutorial revamp](https://docs.dagster.io/tutorial) - Goodbye cereals and hello HackerNews! We’ve overhauled our intro to assets tutorial to not only focus on a more realistic example, but to touch on more Dagster concepts as you build your first end-to-end pipeline in Dagster. [Check it out here.](https://docs.dagster.io/tutorial)
+
+Stay tuned, as this is only the first part of the overhaul. We’ll be adding more chapters - including automating materializations, using resources, using I/O managers, and more - in the next few weeks.
+
+## Since 1.1.21 (core) / 0.17.21 (libraries)
+
+### New
+
+- Freshness policies can now be assigned to assets constructed with `@graph_asset` and `@graph_multi_asset`.
+- The `project_fully_featured` example now uses the built in DuckDB and Snowflake I/O managers.
+- A new “failed” state on asset partitions makes it more clear which partitions did not materialize successfully. The number of failed partitions is shown on the asset graph and a new red state appears on asset health bars and status dots.
+- Hovering over “Stale” asset tags in the Dagster UI now explains why the annotated assets are stale. Reasons can include more recent upstream data, changes to code versions, and more.
+- [dagster-airflow] support for persisting airflow db state has been added with `make_persistent_airflow_db_resource` this enables support for Airflow features like pools and cross-dagrun state sharing. In particular retry-from-failure now works for jobs generated from Airflow DAGs.
+- [dagster-gcp-pandas] The `BigQueryPandasTypeHandler` now uses `google.bigquery.Client` methods `load_table_from_dataframe` and `query` rather than the `pandas_gbq` library to store and fetch DataFrames.
+- [dagster-k8s] The Dagster Helm chart now only overrides `args` instead of both `command` and `args` for user code deployments, allowing to include a custom ENTRYPOINT in your the Dockerfile that loads your code.
+- The `protobuf<4` pin in Dagster has been removed. Installing either protobuf 3 or protobuf 4 will both work with Dagster.
+- [dagster-fivetran] Added the ability to specify op_tags to build_fivetran_assets (thanks @Sedosa!)
+- `@graph_asset` and `@graph_multi_asset` now support passing metadata (thanks [@askvinni](https://github.com/askvinni))!
+
+### Bugfixes
+
+- Fixed a bug that caused descriptions supplied to `@graph_asset` and `@graph_multi_asset` to be ignored.
+- Fixed a bug that serialization errors occurred when using `TableRecord`.
+- Fixed an issue where partitions definitions passed to `@multi_asset` and other functions would register as type errors for mypy and other static analyzers.
+- [dagster-aws] Fixed an issue where the EcsRunLauncher failed to launch runs for Windows tasks.
+- [dagster-airflow] Fixed an issue where pendulum timezone strings for Airflow DAG `start_date` would not be converted correctly causing runs to fail.
+- [dagster-airbyte] Fixed an issue when attaching I/O managers to Airbyte assets would result in errors.
+- [dagster-fivetran] Fixed an issue when attaching I/O managers to Fivetran assets would result in errors.
+
+### Database migration
+
+- Optional database schema migrations, which can be run via `dagster instance migrate`:
+  - Improves Dagit performance by adding a database index which should speed up job run views.
+  - Enables dynamic partitions definitions by creating a database table to store partition keys. This feature is experimental and may require future migrations.
+  - Adds a primary key `id` column to the `kvs`, `daemon_heartbeats` and `instance_info` tables, enforcing that all tables have a primary key.
+
+### Breaking Changes
+
+- The minimum `grpcio` version supported by Dagster has been increased to 1.44.0 so that Dagster can support both `protobuf` 3 and `protobuf` 4. Similarly, the minimum `protobuf` version supported by Dagster has been increased to 3.20.0. We are working closely with the gRPC team on resolving the upstream issues keeping the upper-bound `grpcio` pin in place in Dagster, and hope to be able to remove it very soon.
+- Prior to 0.9.19, asset keys were serialized in a legacy format. This release removes support for querying asset events serialized with this legacy format. Contact #dagster-support for tooling to migrate legacy events to the supported version. Users who began using assets after 0.9.19 will not be affected by this change.
+- [dagster-snowflake] The `execute_query`and `execute_queries` methods of the `SnowflakeResource` now have consistent behavior based on the values of the `fetch_results` and `use_pandas_result` parameters. If `fetch_results` is True, the standard Snowflake result will be returned. If `fetch_results` and `use_pandas_result` are True, a pandas DataFrame will be returned. If `fetch_results` is False and `use_pandas_result` is True, an error will be raised. If both are False, no result will be returned.
+- [dagster-snowflake] The `execute_queries` command now returns a list of DataFrames when `use_pandas_result` is True, rather than appending the results of each query to a single DataFrame.
+- [dagster-shell] The default behavior of the `execute` and `execute_shell_command` functions is now to include any environment variables in the calling op. To restore the previous behavior, you can pass in `env={}` to these functions.
+- [dagster-k8s] Several Dagster features that were previously disabled by default in the Dagster Helm chart are now enabled by default. These features are:
+
+  - The [run queue](https://docs.dagster.io/deployment/run-coordinator#limiting-run-concurrency) (by default, without a limit). Runs will now always be launched from the Daemon.
+  - Run queue parallelism - by default, up to 4 runs can now be pulled off of the queue at a time (as long as the global run limit or tag-based concurrency limits are not exceeded).
+  - [Run retries](https://docs.dagster.io/deployment/run-retries#run-retries) - runs will now retry if they have the `dagster/max_retries` tag set. You can configure a global number of retries in the Helm chart by setting `run_retries.max_retries` to a value greater than the default of 0.
+  - Schedule and sensor parallelism - by default, the daemon will now run up to 4 sensors and up to 4 schedules in parallel.
+  - [Run monitoring](https://docs.dagster.io/deployment/run-monitoring) - Dagster will detect hanging runs and move them into a FAILURE state for you (or start a retry for you if the run is configured to allow retries). By default, runs that have been in STARTING for more than 5 minutes will be assumed to be hanging and will be terminated.
+
+  Each of these features can be disabled in the Helm chart to restore the previous behavior.
+
+- [dagster-k8s] The experimental [`k8s_job_op`](https://docs.dagster.io/_apidocs/libraries/dagster-k8s#dagster_k8s.k8s_job_op) op and [`execute_k8s_job`](https://docs.dagster.io/_apidocs/libraries/dagster-k8s#dagster_k8s.execute_k8s_job) functions no longer automatically include configuration from a `dagster-k8s/config` tag on the Dagster job in the launched Kubernetes job. To include raw Kubernetes configuration in a `k8s_job_op`, you can set the `container_config`, `pod_template_spec_metadata`, `pod_spec_config`, or `job_metadata` config fields on the `k8s_job_op` (or arguments to the `execute_k8s_job` function).
+- [dagster-databricks] The integration has now been refactored to support the official Databricks API.
+  - `create_databricks_job_op` is now deprecated. To submit one-off runs of Databricks tasks, you must now use the `create_databricks_submit_run_op`.
+  - The Databricks token that is passed to the `databricks_client` resource must now begin with `https://`.
+
+#### Changes to experimental APIs
+
+- [experimental] `LogicalVersion` has been renamed to `DataVersion` and `LogicalVersionProvenance` has been renamed to `DataProvenance`.
+- [experimental] Methods on the experimental `DynamicPartitionsDefinition` to add, remove, and check for existence of partitions have been removed. Refer to documentation for updated API methods.
+
+#### Removal of deprecated APIs
+
+- [previously deprecated, 0.15.0] Static constructors on `MetadataEntry` have been removed.
+- [previously deprecated, 1.0.0] `DagsterTypeMaterializer`, `DagsterTypeMaterializerContext`, and `@dagster_type_materializer` have been removed.
+- [previously deprecated, 1.0.0] `PartitionScheduleDefinition` has been removed.
+- [previously deprecated, 1.0.0] `RunRecord.pipeline_run` has been removed (use `RunRecord.dagster_run`).
+- [previously deprecated, 1.0.0] `DependencyDefinition.solid` has been removed (use `DependencyDefinition.node`).
+- [previously deprecated, 1.0.0] The `pipeline_run` argument to `build_resources` has been removed (use `dagster_run`)
+
+### Community Contributions
+
+- Deprecated `iteritems` usage was removed and changed to the recommended `items` within `dagster-snowflake-pandas` (thanks [@sethkimmel3](https://github.com/sethkimmel3))!
+- Refactor to simply the new `@asset_graph` decorator (thanks [@simonvanderveldt](https://github.com/simonvanderveldt))!
+
+### Experimental
+
+- User-computed `DataVersions` can now be returned on `Output`
+- Asset provenance info can be accessed via `OpExecutionContext.get_asset_provenance`
+
+### Documentation
+
+- The [Asset Versioning and Caching Guide](https://docs.dagster.io/guides/dagster/asset-versioning-and-caching) now includes a section on user-provided data versions
+- The community contributions doc block `Picking a github issue` was not correctly rendering, this has been fixed (thanks [@Sedosa](https://github.com/Sedosa))!
+
+# 1.1.21 (core) / 0.17.21 (libraries)
+
+### New
+
+- Further performance improvements for `build_asset_reconciliation_sensor`.
+- Dagster now allows you to backfill asset selections that include mapped partition definitions, such as a daily asset which rolls up into a weekly asset, as long as the root assets in your selection share a partition definition.
+- Dagit now includes information about the cause of an asset’s staleness.
+- Improved the error message for non-matching cron schedules in `TimeWindowPartitionMapping`s with offsets. (Thanks Sean Han!)
+- [dagster-aws] The EcsRunLauncher now allows you to configure the `runtimePlatform` field for the task definitions of the runs that it launches, allowing it to launch runs using Windows Docker images.
+- [dagster-azure] Add support for DefaultAzureCredential for adls2_resource (Thanks Martin Picard!)
+- [dagster-databricks] Added op factories to create ops for running existing Databricks jobs (`create_databricks_run_now_op`), as well as submitting one-off Databricks jobs (`create_databricks_submit_run_op`). See the [new Databricks guide](https://docs.dagster.io/master/integrations/databricks) for more details.
+- [dagster-duckdb-polars] Added a dagster-duckdb-polars library that includes a `DuckDBPolarsTypeHandler` for use with `build_duckdb_io_manager`, which allows loading / storing Polars DataFrames from/to DuckDB. (Thanks Pezhman Zarabadi-Poor!)
+- [dagster-gcp-pyspark] New PySpark TypeHandler for the BigQuery I/O manager. Store and load your PySpark DataFrames in BigQuery using `bigquery_pyspark_io_manager`.
+- [dagster-snowflake] [dagster-duckdb] The Snowflake and DuckDB IO managers can now load multiple partitions in a single step - e.g. when a non-partitioned asset depends on a partitioned asset or a single partition of an asset depends on multiple partitions of an upstream asset. Loading occurs using a single SQL query and returns a single `DataFrame`.
+- [dagster-k8s] The Helm chart now supports the full kubernetes env var spec for user code deployments. Example:
+
+  ```yaml
+  dagster-user-deployments:
+    deployments:
+      - name: my-code
+        env:
+          - name: FOO
+            valueFrom:
+              fieldFre:
+                fieldPath: metadata.uid
+  ```
+
+  If `includeConfigInLaunchedRuns` is enabled, these env vars will also be applied to the containers for launched runs.
+
+### Bugfixes
+
+- Previously, if an `AssetSelection` which matched no assets was passed into `define_asset_job`, the resulting job would target all assets in the repository. This has been fixed.
+- Fixed a bug that caused the UI to show an error if you tried to preview a future schedule tick for a schedule built using `build_schedule_from_partitioned_job`.
+- When a non-partitioned non-asset job has an input that comes from a partitioned SourceAsset, we now load all partitions of that asset.
+- Updated the `fs_io_manager` to store multipartitioned materializations in directory levels by dimension. This resolves a bug on windows where multipartitioned materializations could not be stored with the `fs_io_manager`.
+- Schedules and sensors previously timed out when attempting to yield many multipartitioned run requests. This has been fixed.
+- Fixed a bug where `context.partition_key` would raise an error when executing on a partition range within a single run via Dagit.
+- Fixed a bug that caused the default IO manager to incorrectly raise type errors in some situations with partitioned inputs.
+- [ui] Fixed a bug where partition health would fail to display for certain time window partitions definitions with positive offsets.
+- [ui] Always show the “Reload all” button on the code locations list page, to avoid an issue where the button was not available when adding a second location.
+- [ui] Fixed a bug where users running multiple replicas of dagit would see repeated `Definitions reloaded` messages on fresh page loads.
+- [ui] The asset graph now shows only the last path component of linked assets for better readability.
+- [ui] The op metadata panel now longer capitalizes metadata keys
+- [ui] The asset partitions page, asset sidebar and materialization dialog are significantly smoother when viewing assets with a large number of partitions (100k+)
+- [dagster-gcp-pandas] The Pandas TypeHandler for BigQuery now respects user provided `location` information.
+- [dagster-snowflake] `ProgrammingError` was imported from the wrong library, this has been fixed. Thanks @herbert-allium!
+
+### Experimental
+
+- You can now set an explicit logical version on `Output` objects rather than using Dagster’s auto-generated versions.
+- New `get_asset_provenance` method on `OpExecutionContext` allows fetching logical version provenance for an arbitrary asset key.
+- [ui] - you can now create dynamic partitions from the partition selection UI when materializing a dynamically partitioned asset
+
+### Documentation
+
+- Added an example of how to use dynamic asset partitions - in the `examples/assets_dynamic_partitions` folder
+- New [tutorial](https://docs.dagster.io/master/integrations/bigquery/using-bigquery-with-dagster) for using the BigQuery I/O manager.
+- New [reference page](https://docs.dagster.io/master/integrations/bigquery/reference) for BigQuery I/O manager features.
+- New [automating data pipelines guide](https://docs.dagster.io/1.1.21/guides/dagster/automated_pipelines)
+
+# 1.1.20 (core) / 0.17.20 (libraries)
+
+### New
+
+- The new `@graph_asset` and `@graph_multi_asset` decorators make it more ergonomic to define graph-backed assets.
+- Dagster will auto-infer dependency relationships between single-dimensionally partitioned assets and multipartitioned assets, when the single-dimensional partitions definition is a dimension of the `MultiPartitionsDefinition`.
+- A new `Test sensor` / `Test schedule` button that allows you to perform a dry-run of your sensor / schedule. Check out the docs on this functionality [here](https://docs.dagster.io/master/concepts/partitions-schedules-sensors/sensors#via-dagit) for sensors and [here](https://docs.dagster.io/master/concepts/partitions-schedules-sensors/sensors#via-dagit) for schedules.
+- [dagit] Added (back) tag autocompletion in the runs filter, now with improved query performance.
+- [dagit] The Dagster libraries and their versions that were used when loading definitions can now be viewed in the actions menu for each code location.
+- New `bigquery_pandas_io_manager` can store and load Pandas dataframes in BigQuery.
+- [dagster-snowflake, dagster-duckdb] SnowflakeIOManagers and DuckDBIOManagers can now default to loading inputs as a specified type if a type annotation does not exist for the input.
+- [dagster-dbt] Added the ability to use the “state:” selector
+- [dagster-k8s] The Helm chart now supports the full kubernetes env var spec for Dagit and the Daemon. E.g.
+
+  ```yaml
+  dagit:
+    env:
+      - name: “FOO”
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.uid
+  ```
+
+### Bugfixes
+
+- Previously, graphs would fail to resolve an input with a custom type and an input manager key. This has been fixed.
+- Fixes a bug where negative partition counts were displayed in the asset graph.
+- Previously, when an asset sensor did not yield run requests, it returned an empty result. This has been updated to yield a meaningful message.
+- Fix an issue with a non-partitioned asset downstream of a partitioned asset with self-dependencies causing a GQL error in dagit.
+- [dagster-snowflake-pyspark] Fixed a bug where the PySparkTypeHandler was incorrectly loading partitioned data.
+- [dagster-k8s] Fixed an issue where [run monitoring](https://docs.dagster.io/deployment/run-monitoring#run-monitoring) sometimes failed to detect that the kubernetes job for a run had stopped, leaving the run hanging.
+
+### Documentation
+
+- Updated contributor docs to reference our new toolchain (`ruff`, `pyright`).
+- (experimental) Documentation for the dynamic partitions definition is now added.
+- [dagster-snowflake] The Snowflake I/O Manager reference page now includes information on working with partitioned assets.
+
+# 1.1.19 (core) / 0.17.19 (libraries)
+
+### New
+
+- The `FreshnessPolicy` object now supports a `cron_schedule_timezone` argument.
+- `AssetsDefinition.from_graph` now supports a `freshness_policies_by_output_name` parameter.
+- The `@asset_sensor` will now display an informative `SkipReason` when no new materializations have been created since the last sensor tick.
+- `AssetsDefinition` now has a `to_source_asset` method, which returns a representation of this asset as a `SourceAsset`.
+- You can now designate assets as inputs to ops within a graph or graph-based job. E.g.
+
+```python
+from dagster import asset, job, op
+
+@asset
+def emails_to_send():
+    ...
+
+@op
+def send_emails(emails) -> None:
+    ...
+
+@job
+def send_emails_job():
+    send_emails(emails_to_send.to_source_asset())
+```
+
+- Added a `--dagit-host/-h` argument to the `dagster dev` command to allow customization of the host where Dagit runs.
+- [dagster-snowflake, dagster-duckdb] Database I/O managers (Snowflake, DuckDB) now support static partitions, multi-partitions, and dynamic partitions.
+
+### Bugfixes
+
+- Previously, if a description was provided for an op that backed a multi-asset, the op’s description would override the descriptions in Dagit for the individual assets. This has been fixed.
+- Sometimes, when applying an `input_manager_key` to an asset’s input, incorrect resource config could be used when loading that input. This has been fixed.
+- Previously, the backfill page errored when partitions definitions changed for assets that had been backfilled. This has been fixed.
+- When displaying materialized partitions for multipartitioned assets, Dagit would error if a dimension had zero partitions. This has been fixed.
+- [dagster-k8s] Fixed an issue where setting `runK8sConfig` in the Dagster Helm chart would not pass configuration through to pods launched using the `k8s_job_executor`.
+- [dagster-k8s] Previously, using the `execute_k8s_job` op downstream of a dynamic output would result in k8s jobs with duplicate names being created. This has been fixed.
+- [dagster-snowflake] Previously, if the schema for storing outputs didn’t exist, the Snowflake I/O manager would fail. Now it creates the schema.
+
+### Breaking Changes
+
+- Removed the experimental, undocumented `asset_key`, `asset_partitions`, and `asset_partitions_defs` arguments on `Out`.
+- `@multi_asset` no longer accepts `Out` values in the dictionary passed to its `outs` argument. This was experimental and deprecated. Instead, use `AssetOut`.
+- The experimental, undocumented `top_level_resources` argument to the `repository` decorator has been renamed to `_top_level_resources` to emphasize that it should not be set manually.
+
+### Community Contributions
+
+- `load_asset_values` now accepts resource configuration (thanks @Nintorac!)
+- Previously, when using the `UPathIOManager`, paths with the `"."` character in them would be incorrectly truncated, which could result in multiple distinct objects being written to the same path. This has been fixed. (Thanks @spenczar!)
+
+### Experimental
+
+- [dagster-dbt] Added documentation to our dbt Cloud integration to cache the loading of software-defined assets from a dbt Cloud job.
+
+### Documentation
+
+- Revamped the introduction to the Partitions concepts page to make it clear that non-time-window partitions are equally encouraged.
+- In Navigation, moved the Partitions and Backfill concept pages to their own section underneath Concepts.
+- Moved the Running Dagster locally guide from **Deployment** to **Guides** to reflect that OSS and Cloud users can follow it.
+- Added [a new guide](https://docs.dagster.io/guides/dagster/asset-versioning-and-caching) covering asset versioning and caching.
+
+# 1.1.18 (core) / 0.17.18 (libraries)
+
+### New
+
+- Assets with time-window `PartitionsDefinition`s (e.g. `HourlyPartitionsDefinition`, `DailyPartitionsDefinition`) may now have a `FreshnessPolicy`.
+- [dagster-dbt] When using `load_assets_from_dbt_project` or `load_assets_from_dbt_manifest` with `dbt-core>=1.4`, `AssetMaterialization` events will be emitted as the dbt command executes, rather than waiting for dbt to complete before emitting events.
+- [dagster-aws] When [run monitoring](https://docs.dagster.io/deployment/run-monitoring#run-monitoring) detects that a run unexpectedly crashed or failed to start, an error message in the run’s event log will include log messages from the ECS task for that run to help diagnose the cause of the failure.
+- [dagster-airflow] added `make_ephemeral_airflow_db_resource` which returns a `ResourceDefinition` for a local only airflow database for use in migrated airflow DAGs
+- Made some performance improvements for job run queries which can be applied by running `dagster instance migrate`.
+- [dagit] System tags (code + logical versions) are now shown in the asset sidebar and on the asset details page.
+- [dagit] Source assets that have never been observed are presented more clearly on the asset graph.
+- [dagit] The number of materialized and missing partitions are shown on the asset graph and in the asset catalog for partitioned assets.
+- [dagit] Databricks-backed assets are now shown on the asset graph with a small “Databricks” logo.
+
+### Bugfixes
+
+- Fixed a bug where materializations of part of the asset graph did not construct required resource keys correctly.
+- Fixed an issue where `observable_source_asset` incorrectly required its function to have a `context` argument.
+- Fixed an issue with serialization of freshness policies, which affected cacheable assets that included these policies such as those from `dagster-airbyte`
+- [dagster-dbt] Previously, the `dagster-dbt` integration was incompatible with `dbt-core>=1.4`. This has been fixed.
+- [dagster-dbt] `load_assets_from_dbt_cloud_job` will now avoid unnecessarily generating docs when compiling a manifest for the job. Compile runs will no longer be kicked off for jobs not managed by this integration.
+- Previously for multipartitioned assets, `context.asset_partition_key` returned a string instead of a `MultiPartitionKey`. This has been fixed.
+- [dagster-k8s] Fixed an issue where pods launched by the `k8s_job_executor` would sometimes unexpectedly fail due to transient 401 errors in certain kubernetes clusters.
+- Fix a bug with nth-weekday-of-the-month handling in cron schedules.
+
+### Breaking Changes
+
+- [dagster-airflow] `load_assets_from_airflow_dag` no longer creates airflow db resource definitions, as a user you will need to provide them on `Definitions` directly
+
+### Deprecations
+
+- The `partitions_fn` argument of the `DynamicPartitionsDefinition` class is now deprecated and will be removed in 2.0.0.
+
+### Community Contributions
+
+- [dagster-wandb] A new integration with [Weights & Biases](https://wandb.ai/site) allows you to orchestrate your MLOps pipelines and maintain ML assets with Dagster.
+- Postgres has been updated to 14.6 for Dagster’s helm chart. Thanks [@DustyShap](https://github.com/DustyShap)!
+- Typo fixed in docs. Thanks [@C0DK](https://github.com/C0DK)!
+- You can now pass a callable directly to `asset` (rather than using `@asset` in decorator form) to create an asset. Thanks [@ns-finkelstein](https://github.com/nsfinkelstein)!
+
+### Documentation
+
+- New “Asset versioning and caching” guide
+- [dagster-snowflake] The Snowflake guide has been updated to include PySpark dataframes
+- [dagster-snowflake] The Snowflake guide has been updated to include private key authentication
+- [dagster-airflow] The Airflow migration guide has been update to include more detailed instructions and considerations for making a migration
+
+# 1.1.17 (core) / 0.17.17 (libraries)
+
+### New
+
+- The `dagster-airflow` library as been moved to 1.x.x to denote the stability of its api's going forward.
+- [dagster-airflow] `make_schedules_and_jobs_from_airflow_dag_bag` has been added to allow for more fine grained composition of your transformed airflow DAGs into Dagster.
+- [dagster-airflow] Airflow dag task `retries` and `retry_delay` configuration are now converted to op [RetryPolicies](https://docs.dagster.io/concepts/ops-jobs-graphs/op-retries#retrypolicy) with all `make_dagster_*` apis.
+
+### Bugfixes
+
+- Fixed an issue where cron schedules using a form like `0 5 * * mon#1` to execute on a certain day of the week each month executed every week instead.
+- [dagit] Fixed an issue where the asset lineage page sometimes timed out while loading large asset graphs.
+- Fixed an issue where the partitions page sometimes failed to load for partitioned asset jobs.
+
+### Breaking Changes
+
+- [dagster-airflow] The `use_airflow_template_context`, `mock_xcom` and `use_ephemeral_airflow_db` params have been dropped, by default all `make_dagster_*` apis now use a run-scoped airflow db, similiar to how `use_ephemeral_airflow_db` worked.
+- [dagster-airflow] `make_airflow_dag` has been removed.
+- [dagster-airflow] `make_airflow_dag_for_operator` has been removed.
+- [dagster-airflow] `make_airflow_dag_containerized` has been removed.
+- [dagster-airflow] `airflow_operator_to_op` has been removed.
+- [dagster-airflow] `make_dagster_repo_from_airflow_dags_path` has been removed.
+- [dagster-airflow] `make_dagster_repo_from_airflow_dag_bag` has been removed.
+- [dagster-airflow] `make_dagster_repo_from_airflow_example_dags` has been removed.
+- [dagster-airflow] The naming convention for ops generated from airflow tasks has been changed to `${dag_id}__${task_id}` from `airflow_${task_id}_${unique_int}`.
+- [dagster-airflow] The naming convention for jobs generated from airflow dags has been changed to `${dag_id}` from `airflow_${dag_id}`.
+
+# 1.1.15 (core) / 0.17.15 (libraries)
+
+### New
+
+- Definitions now accepts Executor instances in its executor argument, not just ExecutorDefinitions.
+- `@multi_asset_sensor` now accepts a `request_assets` parameter, which allows it to directly request that assets be materialized, instead of requesting a run of a job.
+- Improved the performance of instantiating a `Definitions` when using large numbers of assets or many asset jobs.
+- The job passed to `build_schedule_from_partitioned_job` no longer needs to have a `partitions_def` directly assigned to it. Instead, Dagster will infer from the partitions from the assets it targets.
+- `OpExecutionContext.asset_partition_keys_for_output` no longer requires an argument to specify the default output.
+- The “Reload all” button on the Code Locations page in Dagit will now detect changes to a `pyproject.toml` file that were made while Dagit was running. Previously, Dagit needed to be restarted in order for such changes to be shown.
+- `get_run_record_by_id` has been added to `DagsterInstance` to provide easier access to `RunRecord` objects which expose the `start_time` and `end_time` of the run.
+- [dagit] In the “Materialize” modal, you can now choose to pass a range of asset partitions to a single run rather than launching a backfill.
+- [dagster-docker] Added a `docker_container_op` op and `execute_docker_container_op` helper function for running ops that launch arbitrary Docker containers. See [the docs](https://docs.dagster.io/_apidocs/libraries/dagster-docker#ops) for more information.
+- [dagster-snowflake-pyspark] The Snowflake I/O manager now supports PySpark DataFrames.
+- [dagster-k8s] The Docker images include in the Dagster Helm chart are now built on the most recently released `python:3.x-slim` base image.
+
+### Bugfixes
+
+- Previously, the `build_asset_reconciliation_sensor` could time out when evaluating ticks over large selections of assets, or assets with many partitions. A series of performance improvements should make this much less likely.
+- Fixed a bug that caused a failure when using `run_request_for_partition` in a sensor that targeted multiple jobs created via `define_asset_job`.
+- The cost of importing `dagster` has been reduced.
+- Issues preventing “re-execute from failure” from working correctly with dynamic graphs have been fixed.
+- [dagit] In Firefox, Dagit no longer truncates text unnecessarily in some cases.
+- [dagit] Dagit’s asset graph now allows you to click “Materialize” without rendering the graph if you have too many assets to display.
+- [dagit] Fixed a bug that stopped the backfill page from loading when assets that had previously been backfilled no longer had a `PartitionsDefinition`.
+- [dagster-k8s] Fixed an issue where `k8s_job_op` raised an Exception when running pods with multiple containers.
+- [dagster-airbyte] Loosened credentials masking for Airbyte managed ingestion, fixing the Hubspot source, thanks @[joel-olazagasti](https://github.com/joel-olazagasti)!
+- [dagster-airbyte] When using managed ingestion, Airbyte now pulls all source types available to the instance rather than the workspace, thanks @[emilija-omnisend](https://github.com/emilija-omnisend)!
+- [dagster-airbyte] Fixed an issue which arose when attaching freshness policies to Airbyte assets and using the multiprocessing executor.
+- [dagster-fivetran] Added the ability to force assets to be output for all specified Fivetran tables during a sync in the case that a sync’s API outputs are missing one or more tables.
+
+### Breaking Changes
+
+- The `asset_keys` and `asset_selection` parameters of the experimental `@multi_asset_sensor` decorator have been replaced with a `monitored_assets` parameter. This helps disambiguate them from the new `request_assets` parameter.
+
+### Community Contributions
+
+- A broken docs link in snowflake_quickstart has been fixed, thanks @[clayheaton](https://github.com/clayheaton)!
+- Troubleshooting help added to helm deployment guide, thanks @adam-bloom!
+- `StaticPartitionMapping` is now serializable, thanks @[AlexanderVR](https://github.com/AlexanderVR)!
+- [dagster-fivetran] `build_fivetran_assets` now supports `group_name` , thanks @[toddy86](https://github.com/toddy86)!
+- [dagster-azure] `AzureBlobComputeManager` now supports authentication via `DefaultAzureCredential`, thanks @[mpicard](https://github.com/mpicard)!
+
+### Experimental
+
+- [dagster-airflow] added a new api `load_assets_from_airflow_dag` that creates graph-backed, partitioned, assets based on the provided Airflow DAG.
+
+# 1.1.14 (core) / 0.17.14 (libraries)
+
+### New
+
+- Large asset graphs can now be materialized in Dagit without needing to first enter an asset subset. Previously, if you wanted to materialize every asset in such a graph, you needed to first enter `*` as the asset selection before materializing the assets.
+- Added a pin of the `sqlalchemy` package to `<2.0.0` due to a breaking change in that version.
+- Added a pin of the `dbt-core` package to `<1.4.0` due to breaking changes in that release that affected the Dagster dbt integration. We plan to remove this pin in the next release.
+- Added a pin of the `jupyter-client` package to `<8.0` due to an issue with the most recent release causing hangs while running dagstermill ops.
+
+### Bugfixes
+
+- Fixed an issue where the Backfills page in Dagit didn't show partition status for some backfills.
+- [dagster-aws] Fixed an issue where the `EcsRunLauncher` sometimes waited much longer than intended before retrying after a failure launching a run.
+- [dagster-mysql] Fixed an issue where some implementations of MySQL storage were raising invalid version errors.
+
+# 1.1.13 (core) / 0.17.13 (libraries)
+
+### Bugfixes
+
+- The `nux` section of `dagster.yaml` config has been fixed.
+- Changes when heartbeats occur in the daemon to avoid crashes in certain conditions.
+- Fixed an issue where passing a workspace file as an argument into the `dagster dev` command raised an error
+- [dagit] Fixes an issue with asset names being truncated by long asset descriptions in the asset catalog, making them impossible to click.
+- [dagit] The backfill page no longer fails to load if any of the asset backfills had assets that were partitioned at the time of the backfill but are no longer partitioned.
+
 # 1.1.12 (core) / 0.17.12 (libraries)
 
 ### Bugfixes
@@ -13,13 +911,14 @@
 - Added a new `dagster dev` command that can be used to run both Dagit and the Dagster daemon in the same process during local development. See the new [Running Dagster Locally guide](https://docs.dagster.io/deployment/guides/running-locally) in the docs for more information.
 - Added instructions for installing the `dagster` package on M1 and M2 Macs that avoids installation errors when building the `grpcio` package. See [the Installing Dagster guide in the docs](https://docs.dagster.io/getting-started/install) for more information.
 - `create_repository_using_definitions_args` has been added for users to backport their repository definitions to the new `Definitions` API
-- When running Dagit on your local machine, a prompt will now appear that allows you to optionally enter an email address to receive Dagster security updates or subscribe to the Dagster newsletter. This prompt can be dismissed in the UI, or permanently disabled by adding the following to your dagster.yaml file:
+- When running Dagit on your local machine, a prompt will now appear that allows you to optionally enter an email address to receive Dagster security updates or subscribe to the Dagster newsletter. This prompt can be dismissed in the UI, or permanently disabled by adding the following to your `dagster.yaml` file:
 
 ```
 nux:
   enabled: false
 ```
 
+- The `grpcio` pin in Dagster to <1.48.1 has been restored for Python versions 3.10 and 3.11, due to [upstream issues](https://github.com/grpc/grpc/issues/31885) in the grpcio package causing hangs in Dagster.
 - [dagit] Improved query performance on Scheduled Runs page.
 - [dagit] The "Materialize" button now allows you to add tags to asset materialization runs. If your assets do not require config or partitions, you may need to shift-click "Materialize".
 - [dagit] The kind tags and logos shown on assets in the Asset Graph now appear in other parts of Dagit so it's easier to understand your assets.
@@ -3502,7 +4401,7 @@ def my_root_manager(_):
 - Added an overview section on testing schedules. Note that the `build_schedule_context` and `validate_run_config` functions are still in an experimental state. https://docs.dagster.io/master/concepts/partitions-schedules-sensors/schedules#testing-schedules
 - Added an overview section on testing partition sets. Note that the `validate_run_config` function is still in an experimental state. https://docs.dagster.io/master/concepts/partitions-schedules-sensors/partitions#experimental-testing-a-partition-set
 
-## 0.11.11
+# 0.11.11
 
 ### New
 
@@ -3540,7 +4439,7 @@ def my_root_manager(_):
 
 - Added documentation on how to deploy Dagster infrastructure separately from user code. See [Separately Deploying Dagster infrastructure and User Code](https://docs.dagster.io/deployment/guides/kubernetes/customizing-your-deployment#separately-deploying-dagster-infrastructure-and-user-code).
 
-## 0.11.10
+# 0.11.10
 
 ### New
 
@@ -3696,7 +4595,7 @@ def my_pipeline(): # will use the pipelines policy by default
 - In 0.11.9, context was made an optional argument on the function decorated by @solid. The solids throughout tutorials and snippets that do not need a context argument have been altered to omit that argument, and better reflect this change.
 - In a previous docs revision, a tutorial section on accessing resources within solids was removed. This has been re-added to the site.
 
-## 0.11.9
+# 0.11.9
 
 ### New
 
@@ -3719,7 +4618,7 @@ def my_pipeline(): # will use the pipelines policy by default
 - Solids documentation has been updated to remove a typo (thanks @dwallace0723!)
 - Schedules documentation has been updated to remove a typo (thanks @gdoron!)
 
-## 0.11.8
+# 0.11.8
 
 ### New
 
@@ -3781,7 +4680,7 @@ def new_metadata_solid(df):
 - Typo fixes and improvements (thanks @elsenorbw (https://github.com/dagster-io/dagster/commits?author=elsenorbw) !)
 - Improved documentation for scheduling partitions
 
-## 0.11.7
+# 0.11.7
 
 ### New
 
@@ -3815,7 +4714,7 @@ def new_metadata_solid(df):
 
 - Fixed a confusingly-worded header on the Solids/Pipelines Testing page
 
-## 0.11.6
+# 0.11.6
 
 ### Breaking Changes
 
@@ -3849,7 +4748,7 @@ def new_metadata_solid(df):
 - Fixed an issue where the `dagster-airflow scaffold` command would raise an exception if a preset was specified.
 - Fixed an issue where Dagit was not including the error stack trace in the Status page when a repository failed to load.
 
-## 0.11.5
+# 0.11.5
 
 ### New
 
@@ -3874,7 +4773,7 @@ def new_metadata_solid(df):
 
 - Updated the “Deploying to Airflow” documentation to reflect the current state of the system.
 
-## 0.11.4
+# 0.11.4
 
 ### Community Contributions
 
@@ -3897,7 +4796,7 @@ def new_metadata_solid(df):
 - Fixed a bug where re-execution was not working if the initial execution failed, and execution was delegated to other machines/process (e.g. using the multiprocess executor)
 - The same solid can now collect over multiple dynamic outputs
 
-## 0.11.3
+# 0.11.3
 
 ### Breaking Changes
 
@@ -3923,7 +4822,7 @@ def new_metadata_solid(df):
 
 - Corrections from the community - thanks @mrdavidlaing & @a-cid !
 
-## 0.11.2
+# 0.11.2
 
 **Community Contributions**
 
@@ -3947,7 +4846,7 @@ def new_metadata_solid(df):
 - [Helm] A global service account name can now be specified, which will result in the same service account name to be referenced across all parts of the Dagster Kubernetes deployment.
 - [Helm] Fixed an issue where user deployments did not update, even if their dependent config maps had changed.
 
-## 0.11.1
+# 0.11.1
 
 **Community Contributions**
 
@@ -3969,7 +4868,7 @@ def new_metadata_solid(df):
 - Backfills can now successfully be created with step selections even for partitions that did not have an existing run.
 - Backfill progress were sometimes showing negative counts for the “Skipped” category, when backfill runs were manually re-executed. This has now been amended to adjust the total run counts to include manually re-executed runs.
 
-## 0.11.0
+# 0.11.0
 
 ### Major Changes
 
@@ -4079,13 +4978,13 @@ The corresponding value flag `dagsterDaemon.backfill.enabled` has also been remo
 - The `python_environment` key has been removed from `workspace.yaml`. Instead, to specify that a repository location should use a custom python environment, set the `executable_path` key within a `python_file`, `python_module`, or `python_package` key. See [the docs](https://docs.dagster.io/concepts/code-locations/workspaces) for more information on configuring your `workspace.yaml` file.
 - [dagster-dask] The deprecated schema for reading or materializing dataframes has been removed. Use the `read` or `to` keys accordingly.
 
-## 0.10.9
+# 0.10.9
 
 **Bugfixes**
 
 - Fixed an issue where postgres databases were unable to initialize the Dagster schema or migrate to a newer version of the Dagster schema. (Thanks [@wingyplus](https://github.com/wingyplus) for submitting the fix!)
 
-## 0.10.8
+# 0.10.8
 
 **Community Contributions**
 
@@ -4190,7 +5089,7 @@ The corresponding value flag `dagsterDaemon.backfill.enabled` has also been remo
         port: { port }
   ```
 
-## 0.10.7
+# 0.10.7
 
 **New**
 
@@ -4232,7 +5131,7 @@ There is a corresponding flag in the Dagster helm chart to enable this instance 
 
 - Added an example of how to write a user-in-the-loop pipeline
 
-## 0.10.6
+# 0.10.6
 
 **New**
 
@@ -4276,7 +5175,7 @@ load_from:
 - Added an example of how to trigger a Dagster pipeline in GraphQL at https://github.com/dagster-io/dagster/tree/0.10.6/examples/trigger_pipeline.
 - Added better documentation for customizing sensor intervals at https://docs.dagster.io/overview/schedules-sensors/sensors.
 
-## 0.10.5
+# 0.10.5
 
 **Community Contributions**
 
@@ -4322,13 +5221,13 @@ This changes the interval at which the daemon checks for sensors which haven't r
 - On Instance status page in Dagit, correctly handle states where daemons have multiple errors.
 - Various Dagit bugfixes and improvements.
 
-## 0.10.4
+# 0.10.4
 
 **Bugfixes**
 
 - Fixed an issue with daemon heartbeat backwards compatibility. Resolves an error on Dagit's Daemon Status page
 
-## 0.10.3
+# 0.10.3
 
 **New**
 
@@ -4343,7 +5242,7 @@ This changes the interval at which the daemon checks for sensors which haven't r
 - Dagit bugfixes and improvements, including changes to loading state spinners.
 - When a user specifies both an intermediate storage and an IO manager for a particular output, we no longer silently ignore the IO manager
 
-## 0.10.2
+# 0.10.2
 
 **Community Contributions**
 
@@ -4376,7 +5275,7 @@ This changes the interval at which the daemon checks for sensors which haven't r
 - Added examples to demonstrate experimental features, including Memoized Development and Dynamic Graph.
 - Added a PR template and how to pick an issue for the first time contributors
 
-## 0.10.1
+# 0.10.1
 
 **Community Contributions**
 
@@ -4397,7 +5296,7 @@ This changes the interval at which the daemon checks for sensors which haven't r
 - Added new [troubleshooting guide](https://legacy-docs.dagster.io/troubleshooting) for problems encountered while using the `QueuedRunCoordinator` to limit run concurrency.
 - Added documentation for the sensor command-line interface.
 
-## 0.10.0 "The Edge of Glory"
+# 0.10.0 "The Edge of Glory"
 
 ### Major Changes
 
@@ -4598,13 +5497,13 @@ the 0.10.0 release._
 - Various bug fixes and new features for the Azure, Databricks, and Dask integrations.
 - Added a `create_databricks_job_solid` for creating solids that launch Databricks jobs.
 
-## 0.9.22.post0
+# 0.9.22.post0
 
 **Bugfixes**
 
 - [Dask] Pin dask[dataframe] to <=2.30.0 and distributed to <=2.30.1
 
-## 0.9.22
+# 0.9.22
 
 **New**
 
@@ -4616,7 +5515,7 @@ the 0.10.0 release._
 
 - [Helm/K8s] Fixed whitespacing bug in ingress.yaml Helm template.
 
-## 0.9.21
+# 0.9.21
 
 **Community Contributions**
 
@@ -4627,7 +5526,7 @@ the 0.10.0 release._
 
 - [Helm/K8s] Due to Flower being incompatible with Celery 5.0, the Helm chart for Dagster now uses a specific image `mher/flower:0.9.5` for the Flower pod.
 
-## 0.9.20
+# 0.9.20
 
 **New**
 
@@ -4649,7 +5548,7 @@ the 0.10.0 release._
 
 - [K8s] The dagster daemon is now optionally deployed by the helm chart. This enables run-level queuing with the QueuedRunCoordinator.
 
-## 0.9.19
+# 0.9.19
 
 **New**
 
@@ -4667,7 +5566,7 @@ the 0.10.0 release._
 - `@pipeline` decorated functions with -> None typing no longer cause unexpected problems.
 - Fixed an issue where compute logs might not always be complete on Windows.
 
-## 0.9.18
+# 0.9.18
 
 **Breaking Changes**
 
@@ -4695,7 +5594,7 @@ the 0.10.0 release._
 - Run queuing: the new `QueuedRunCoordinator` enables limiting the number of concurrent runs.
   The `DefaultRunCoordinator` launches jobs directly from Dagit, preserving existing behavior.
 
-## 0.9.17
+# 0.9.17
 
 **New**
 
@@ -4717,7 +5616,7 @@ the 0.10.0 release._
 
 - We now warn if you return anything from a function decorated with `@pipeline`. This return value actually had no impact at all and was ignored, but we are making changes that will use that value in the future. By changing your code to not return anything now you will avoid any breaking changes with zero user-visible impact.
 
-## 0.9.16
+# 0.9.16
 
 **Breaking Changes**
 
@@ -4742,7 +5641,7 @@ the 0.10.0 release._
 - Addressed performance issues loading the /assets table in dagit. Requires a data migration to create a secondary index by running dagster instance reindex.
 - Dagit bugfixes and improvements
 
-## 0.9.15
+# 0.9.15
 
 **Breaking Changes**
 
@@ -4781,7 +5680,7 @@ the 0.10.0 release._
 - Fix a code snippet rendering issue in Overview: Assets & Materializations
 - Fixed all python code snippets alignment across docs examples
 
-## 0.9.14
+# 0.9.14
 
 **New**
 
@@ -4808,7 +5707,7 @@ the 0.10.0 release._
 
 - AssetMaterializations now have an optional “partition” attribute
 
-## 0.9.13
+# 0.9.13
 
 **Bugfixes**
 
@@ -4819,7 +5718,7 @@ the 0.10.0 release._
 
 - Improved error messages when invoking dagit from the CLI with bad arguments.
 
-## 0.9.12
+# 0.9.12
 
 **Breaking Changes**
 
@@ -4851,7 +5750,7 @@ the 0.10.0 release._
 - Added code snippets from Solids examples to test path, and fixed some inconsistencies regarding parameter ordering
 - Changed to using markers instead of exact line numbers to mark out code snippets
 
-## 0.9.10
+# 0.9.10
 
 **Breaking Changes**
 
@@ -4892,7 +5791,7 @@ the 0.10.0 release._
 - Added extensive documentation to illuminate how versions are computed
 - Added versions for step inputs from config, default values, and from other step outputs
 
-## 0.9.9
+# 0.9.9
 
 **New**
 
@@ -4913,7 +5812,7 @@ the 0.10.0 release._
 
 - Fix rendering of example solid config in “Basics of Solids” tutorial.
 
-## 0.9.8
+# 0.9.8
 
 **New**
 
@@ -4944,7 +5843,7 @@ the 0.10.0 release._
 
 - Fixes and improvements.
 
-## 0.9.7
+# 0.9.7
 
 **Bugfixes**
 
@@ -4952,7 +5851,7 @@ the 0.10.0 release._
 - Fixed an issue in the K8sScheduler where multiple pipeline runs were kicked off for each scheduled
   execution.
 
-## 0.9.6
+# 0.9.6
 
 **New**
 
@@ -4976,7 +5875,7 @@ the 0.10.0 release._
 - Added version computation function for DagsterTypeLoader. (Actual versioning will be supported in 0.10.0)
 - Added version attribute to solid and SolidDefinition. (Actual versioning will be supported in 0.10.0)
 
-## 0.9.5
+# 0.9.5
 
 **New**
 
@@ -4994,7 +5893,7 @@ the 0.10.0 release._
 
 - Various docs site improvements
 
-## 0.9.4
+# 0.9.4
 
 **Breaking Changes**
 
@@ -5016,7 +5915,7 @@ opt_in:
 - Hooks can be directly set on `PipelineDefinition` or `@pipeline`, e.g. `@pipeline(hook_defs={hook_a})`. It will apply the hooks on every single solid instance within the pipeline.
 - Added Partitions tab for partitioned pipelines, with new backfill selector.
 
-## 0.9.3
+# 0.9.3
 
 **Breaking Changes**
 
@@ -5079,7 +5978,7 @@ opt_in:
       context.log.info('running')
   ```
 
-## 0.9.2
+# 0.9.2
 
 **Breaking Changes**
 
@@ -5100,7 +5999,7 @@ opt_in:
 - Improved error messages for repository-loading errors in CLI commands.
 - Fixed a bug where pipeline execution error messages were not being surfaced in Dagit.
 
-## 0.9.1
+# 0.9.1
 
 **Bugfixes**
 
@@ -5110,7 +6009,7 @@ opt_in:
 
 - Deprecated the `IntermediateStore` API. `IntermediateStorage` now wraps an ObjectStore, and `TypeStoragePlugin` now accepts an `IntermediateStorage` instance instead of an `IntermediateStore` instance. (Noe that `IntermediateStore` and `IntermediateStorage` are both internal APIs that are used in some non-core libraries).
 
-## 0.9.0 “Laundry Service”
+# 0.9.0 “Laundry Service”
 
 **Breaking Changes**
 
@@ -5132,7 +6031,7 @@ opt_in:
 - New instance level view of Scheduler and running schedules
 - dagster-graphql is now only required in dagit images.
 
-## 0.8.11
+# 0.8.11
 
 **Breaking Changes**
 
@@ -5140,7 +6039,7 @@ opt_in:
   billed as "`AssetMaterializations` can now have type information attached as metadata." in the
   previous release.
 
-## 0.8.10
+# 0.8.10
 
 **New**
 
@@ -5161,7 +6060,7 @@ opt_in:
 - Fixed code example in the advanced scheduling doc (Thanks @wingyplus!)
 - Various other improvements
 
-## 0.8.9
+# 0.8.9
 
 **New**
 
@@ -5183,7 +6082,7 @@ opt_in:
 - Fixed an issue with getting results from composites with skippable outputs in python API.
 - Fixed an issue where using `Enum` in resource config schemas resulted in an error.
 
-## 0.8.8
+# 0.8.8
 
 **New**
 
@@ -5217,7 +6116,7 @@ opt_in:
 - Fixed rendering bug in the dagit run reviewer where yet-to-be executed execution steps were
   rendered on left-hand side instead of the right.
 
-## 0.8.7
+# 0.8.7
 
 **Breaking Changes**
 
@@ -5242,7 +6141,7 @@ opt_in:
 - Restored missing run pagination controls
 - Fixed error resolving partition-based schedules created via dagster schedule decorators (e.g. `daily_schedule`) for certain workspace.yaml formats
 
-## 0.8.6
+# 0.8.6
 
 **Breaking Changes**
 
@@ -5281,7 +6180,7 @@ opt_in:
 - **Experimental:** Great Expectations integration is currently under development in the new library
   dagster-ge. Example usage can be found [here](https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-ge/dagster_ge/examples/ge_demo.py)
 
-## 0.8.5
+# 0.8.5
 
 **Breaking Changes**
 
@@ -5306,7 +6205,7 @@ opt_in:
 - Improve error message shown when Databricks logs can't be retrieved (Thanks @sd2k!)
 - Fix errors in documentation fo `input_hydration_config` (Thanks @joeyfreund!)
 
-## 0.8.4
+# 0.8.4
 
 **Bugfix**
 
@@ -5321,7 +6220,7 @@ opt_in:
 - Simplified schedule page, removing ticks table, adding tags for last tick attempt
 - Better debugging tools for launch errors
 
-## 0.8.3
+# 0.8.3
 
 **Breaking Changes**
 
@@ -5353,7 +6252,7 @@ opt_in:
 - Fixes pipeline execution issue with custom run launchers that call `executeRunInProcess`.
 - Updates `dagster schedule up` output to be repository location scoped
 
-## 0.8.2
+# 0.8.2
 
 **Bugfix**
 
@@ -5373,7 +6272,7 @@ opt_in:
 
 - Various docs corrections
 
-## 0.8.1
+# 0.8.1
 
 **Bugfix**
 
@@ -5387,7 +6286,7 @@ opt_in:
 
 - Improved performance of the Assets page.
 
-## 0.8.0 "In The Zone"
+# 0.8.0 "In The Zone"
 
 **Major Changes**
 
@@ -5664,7 +6563,7 @@ compatible with 0.8.0
 
 - `dagster pipeline execute` now sets a non-zero exit code when pipeline execution fails.
 
-## 0.7.16
+# 0.7.16
 
 **Bugfix**
 
@@ -5672,13 +6571,13 @@ compatible with 0.8.0
   `dagster.yaml`
 - Suppressed noisy error messages in logs from skipped steps
 
-## 0.7.15
+# 0.7.15
 
 **New**
 
 - Improve dagster scheduler state reconciliation.
 
-## 0.7.14
+# 0.7.14
 
 **New**
 
@@ -5701,7 +6600,7 @@ compatible with 0.8.0
   create PipelineRun entries simultaneously.
 - Fixed an issue with schedules that had invalid config not logging the appropriate error.
 
-## 0.7.13
+# 0.7.13
 
 **Breaking Changes**
 
@@ -5726,7 +6625,7 @@ compatible with 0.8.0
 - Added user warning for dagster library packages that are out of sync with the core `dagster`
   package.
 
-## 0.7.12
+# 0.7.12
 
 **Bugfix**
 
@@ -5735,7 +6634,7 @@ compatible with 0.8.0
 - @pipeline and @composite_solid now correctly capture `__doc__` from the function they decorate.
 - Fixed a bug with using solid subsets in the Dagit playground
 
-## 0.7.11
+# 0.7.11
 
 **Bugfix**
 
@@ -5747,7 +6646,7 @@ compatible with 0.8.0
   prevented use of filesystem storage. Filesystem storage is now also permitted, to enable use of
   these integrations with distributed filesystems like NFS (#2436).
 
-## 0.7.10
+# 0.7.10
 
 **New**
 
@@ -5797,7 +6696,7 @@ compatible with 0.8.0
 - Improved error messages produced when dagstermill spins up an in-notebook context.
 - Fixed an issue with retrieving step events from `CompositeSolidResult` objects.
 
-## 0.7.9
+# 0.7.9
 
 **Breaking Changes**
 
@@ -5841,7 +6740,7 @@ compatible with 0.8.0
 - The tutorial has been restructured to multiple sections, and the examples in intro_tutorial have
   been rearranged to separate folders to reflect this.
 
-## 0.7.8
+# 0.7.8
 
 **Breaking Changes**
 
@@ -5875,7 +6774,7 @@ compatible with 0.8.0
 
 - Fixed a grammatical error (Thanks @flowersw!)
 
-## 0.7.7
+# 0.7.7
 
 **Breaking Changes**
 
@@ -5931,7 +6830,7 @@ compatible with 0.8.0
   Includes views of run status, execution time, and materializations across partitions. The UI is
   in flux and is currently optimized for daily schedules, but feedback is welcome.
 
-## 0.7.6
+# 0.7.6
 
 **Breaking Changes**
 
@@ -5985,7 +6884,7 @@ compatible with 0.8.0
 - Improvements to the airline and bay bikes demos
 - Improvements to our dask deployment docs (Thanks jswaney!!)
 
-## 0.7.5
+# 0.7.5
 
 **New**
 
@@ -6063,7 +6962,7 @@ compatible with 0.8.0
 
 - Thanks to @basilvetas and @hspak for their contributions!
 
-## 0.7.4
+# 0.7.4
 
 **New**
 
@@ -6096,7 +6995,7 @@ compatible with 0.8.0
 
 - Improvements and fixes.
 
-## 0.7.3
+# 0.7.3
 
 **New**
 
@@ -6152,7 +7051,7 @@ compatible with 0.8.0
   - `PipelineDefinition.all_runtime_types` is deprecated. Use
     `PipelineDefinition.all_dagster_types` instead.
 
-## 0.7.2
+# 0.7.2
 
 **Docs**
 
@@ -6180,7 +7079,7 @@ compatible with 0.8.0
 - Fixed issue starting Dagit without DAGSTER_HOME set on windows.
 - Fixed pipeline subset execution in partition-based schedules.
 
-## 0.7.1
+# 0.7.1
 
 **Dagit**
 
@@ -6211,7 +7110,7 @@ compatible with 0.8.0
 
 - Expanded and improved docs and error messages.
 
-## 0.7.0 "Waiting to Exhale"
+# 0.7.0 "Waiting to Exhale"
 
 **Breaking Changes**
 
@@ -6436,7 +7335,7 @@ Please see `070_MIGRATION.md` for instructions regarding migrating old code.
 Thank you to all of the community contributors to this release!! In alphabetical order: @habibutsu,
 @kdungs, @vatervonacht, @zzztimbo.
 
-## 0.6.9
+# 0.6.9
 
 **Bugfix**
 
@@ -6452,7 +7351,7 @@ Thank you to all of the community contributors to this release!! In alphabetical
 
 - Improved descriptions for setting up the cron scheduler (thanks @zzztimbo!)
 
-## 0.6.8
+# 0.6.8
 
 **New**
 
@@ -6478,7 +7377,7 @@ Thank you to all of the community contributors to this release!! In alphabetical
 
 - Improved error messages when using system storages that don't fulfill executor requirements.
 
-## 0.6.7
+# 0.6.7
 
 **New**
 
@@ -6564,7 +7463,7 @@ Thank you to all of the community contributors to this release!! In alphabetical
 Thank you to all of the community contributors to this release!! In alphabetical order: @cclauss,
 @deem0n, @irabinovitch, @pseudoPixels, @Ramshackle-Jamathon, @rparrapy, @yamrzou.
 
-## 0.6.6
+# 0.6.6
 
 **Breaking**
 
@@ -6607,7 +7506,7 @@ Thank you to all of the community contributors to this release!! In alphabetical
 - Third-party dependencies have been relaxed to reduce the risk of version conflicts.
 - Improvements to docs and example code.
 
-## 0.6.5
+# 0.6.5
 
 **Breaking**
 
@@ -6645,7 +7544,7 @@ Thank you to all of the community contributors to this release!! In alphabetical
 - The top level config field `features` in the `dagster.yaml` will no longer have any effect.
 - Third-party dependencies have been relaxed to reduce the risk of version conflicts.
 
-## 0.6.4
+# 0.6.4
 
 - Scheduler errors are now visible in Dagit
 - Run termination button no longer persists past execution completion
@@ -6660,7 +7559,7 @@ Thank you to all of the community contributors to this release!! In alphabetical
   execution parameters instead of a `reexecutionConfig` input object
 - Fixes missing step-level stdout/stderr from dagster CLI
 
-## 0.6.3
+# 0.6.3
 
 - Adds a `type_check` parameter to `PythonObjectType`, `as_dagster_type`, and `@as_dagster_type` to
   enable custom type checks in place of default `isinstance` checks.
@@ -6688,7 +7587,7 @@ Thank you to all of the community contributors to this release!! In alphabetical
   @shahvineet98).
 - Fixed a wrong title in the `dagster-snowflake` library README (Thanks @Step2Web).
 
-## 0.6.2
+# 0.6.2
 
 - Changed composition functions `@pipeline` and `@composite_solid` to automatically give solids
   aliases with an incrementing integer suffix when there are conflicts. This removes to the need
@@ -6700,7 +7599,7 @@ Thank you to all of the community contributors to this release!! In alphabetical
 - Fixed issue with duplicate run tag autocomplete suggestions in Dagit (#1839)
 - Fixed Windows 10 / py3.6+ bug causing pipeline execution failures
 
-## 0.6.1
+# 0.6.1
 
 - Fixed an issue where Dagster public images tagged `latest` on Docker Hub were erroneously
   published with an older version of Dagster (#1814)
@@ -6709,7 +7608,7 @@ Thank you to all of the community contributors to this release!! In alphabetical
 - Added a new scheduler command to restart a schedule: `dagster schedule restart`. Also added a
   flag to restart all running schedules: `dagster schedule restart --restart-all-running`.
 
-## 0.6.0 "Impossible Princess"
+# 0.6.0 "Impossible Princess"
 
 **New**
 
@@ -6741,24 +7640,24 @@ that elevate Dagit and dagster from a local development tool to a deployable ser
 - `raise_on_error` moved from in process executor config to argument to arguments in
   python API methods such as `execute_pipeline`
 
-## 0.5.9
+# 0.5.9
 
 - Fixes an issue using custom types for fan-in dependencies with intermediate storage.
 
-## 0.5.8
+# 0.5.8
 
 - Fixes an issue running some Dagstermill notebooks on Windows.
 - Fixes a transitive dependency issue with Airflow.
 - Bugfixes, performance improvements, and better documentation.
 
-## 0.5.7
+# 0.5.7
 
 - Fixed an issue with specifying composite output mappings (#1674)
 - Added support for specifying
   [Dask worker resources](https://distributed.dask.org/en/latest/resources.html) (#1679)
 - Fixed an issue with launching Dagit on Windows
 
-## 0.5.6
+# 0.5.6
 
 - Execution details are now configurable. The new top-level `ExecutorDefinition` and `@executor`
   APIs are used to define in-process, multiprocess, and Dask executors, and may be used by users to
@@ -6784,13 +7683,13 @@ that elevate Dagit and dagster from a local development tool to a deployable ser
   markdown in their metadata.
 - Bug fixes, documentation improvements, and improvements to error display.
 
-## 0.5.5
+# 0.5.5
 
 - Dagit now accepts parameters via environment variables prefixed with `DAGIT_`, e.g. `DAGIT_PORT`.
 - Fixes an issue with reexecuting Dagstermill notebooks from Dagit.
 - Bug fixes and display improvments in Dagit.
 
-## 0.5.4
+# 0.5.4
 
 - Reworked the display of structured log information and system events in Dagit, including support
   for structured rendering of client-provided event metadata.
@@ -6800,7 +7699,7 @@ that elevate Dagit and dagster from a local development tool to a deployable ser
 - Bug fixes, display nits and improvements, and improvements to JS build process, including better
   display for some classes of errors in Dagit and improvements to the config editor in Dagit.
 
-## 0.5.3
+# 0.5.3
 
 - Pinned RxPY to 1.6.1 to avoid breaking changes in 3.0.0 (py3-only).
 - Most definition objects are now read-only, with getters corresponding to the previous properties.
@@ -6808,7 +7707,7 @@ that elevate Dagit and dagster from a local development tool to a deployable ser
   `ExecutionStepOutputEvent`.
 - Bug fixes and Dagit UX improvements, including SQL highlighting and error handling.
 
-## 0.5.2
+# 0.5.2
 
 - Added top-level `define_python_dagster_type` function.
 - Renamed `metadata_fn` to `typecheck_metadata_fn` in all runtime type creation APIs.

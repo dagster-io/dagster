@@ -8,7 +8,7 @@ import {Colors} from './Colors';
 import {FontFamily} from './styles';
 
 export const GlobalTooltipStyle = createGlobalStyle`
-  .dagit-tooltip .bp3-popover2-content {
+  .dagit-tooltip .bp4-popover2-content {
       font-family: ${FontFamily.default};
       font-size: 12px;
       line-height: 16px;
@@ -17,11 +17,11 @@ export const GlobalTooltipStyle = createGlobalStyle`
       padding: 8px 16px;
   }
 
-  .block-tooltip.bp3-popover2-target {
+  .block-tooltip.bp4-popover2-target {
     display: block;
   }
 
-  .dagit-tooltip-bare .bp3-popover2-content {
+  .dagit-tooltip-bare .bp4-popover2-content {
     padding: 0;
   }
 `;
@@ -30,12 +30,13 @@ export const GlobalTooltipStyle = createGlobalStyle`
 const overwriteMerge = (destination: any[], source: any[]) => source;
 
 interface Props extends Tooltip2Props {
+  children: React.ReactNode;
   display?: React.CSSProperties['display'];
   canShow?: boolean;
   useDisabledButtonTooltipFix?: boolean;
 }
 
-export const Tooltip: React.FC<Props> = (props) => {
+export const Tooltip = (props: Props) => {
   const {useDisabledButtonTooltipFix = false, children, display, canShow = true, ...rest} = props;
 
   const [isOpen, setIsOpen] = React.useState<undefined | boolean>(undefined);
@@ -93,8 +94,9 @@ export const Tooltip: React.FC<Props> = (props) => {
   return styledTooltip;
 };
 
-interface StyledTooltipProps {
+interface StyledTooltipProps extends React.ComponentProps<typeof Tooltip2> {
   $display: React.CSSProperties['display'];
+  children: React.ReactNode;
 }
 
 const StyledTooltip = styled(Tooltip2)<StyledTooltipProps>`

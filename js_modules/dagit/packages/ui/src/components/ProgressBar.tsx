@@ -20,7 +20,7 @@ export const ProgressBar: React.FC<ProgressBarProps & {fillColor?: string}> = ({
 };
 
 const StyledProgressBar = styled(BlueprintProgressBar)<{$fillColor: string}>`
-  &.bp3-progress-bar {
+  &.bp4-progress-bar {
     background: transparent;
 
     ::before {
@@ -31,7 +31,7 @@ const StyledProgressBar = styled(BlueprintProgressBar)<{$fillColor: string}>`
       opacity: 0.25;
     }
 
-    .bp3-progress-meter {
+    .bp4-progress-meter {
       background-color: ${(p) => p.$fillColor};
     }
   }

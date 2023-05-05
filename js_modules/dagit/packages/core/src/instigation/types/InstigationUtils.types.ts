@@ -2,12 +2,7 @@
 
 import * as Types from '../../graphql/types';
 
-export type RunStatusFragment = {
-  __typename: 'Run';
-  id: string;
-  runId: string;
-  status: Types.RunStatus;
-};
+export type RunStatusFragment = {__typename: 'Run'; id: string; status: Types.RunStatus};
 
 export type InstigationStateFragment = {
   __typename: 'InstigationState';
@@ -16,6 +11,8 @@ export type InstigationStateFragment = {
   name: string;
   instigationType: Types.InstigationType;
   status: Types.InstigationStatus;
+  hasStartPermission: boolean;
+  hasStopPermission: boolean;
   repositoryName: string;
   repositoryLocationName: string;
   runningCount: number;
@@ -26,7 +23,6 @@ export type InstigationStateFragment = {
   runs: Array<{
     __typename: 'Run';
     id: string;
-    runId: string;
     status: Types.RunStatus;
     startTime: number | null;
     endTime: number | null;

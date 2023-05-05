@@ -17,7 +17,11 @@ export type AssetCatalogTableQuery = {
             __typename: 'AssetNode';
             id: string;
             groupName: string | null;
+            opNames: Array<string>;
             isSource: boolean;
+            isObservable: boolean;
+            computeKind: string | null;
+            hasMaterializePermission: boolean;
             description: string | null;
             partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
             repository: {
@@ -51,7 +55,11 @@ export type AssetCatalogGroupTableQuery = {
     __typename: 'AssetNode';
     id: string;
     groupName: string | null;
+    opNames: Array<string>;
     isSource: boolean;
+    isObservable: boolean;
+    computeKind: string | null;
+    hasMaterializePermission: boolean;
     description: string | null;
     assetKey: {__typename: 'AssetKey'; path: Array<string>};
     partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
@@ -68,7 +76,11 @@ export type AssetCatalogGroupTableNodeFragment = {
   __typename: 'AssetNode';
   id: string;
   groupName: string | null;
+  opNames: Array<string>;
   isSource: boolean;
+  isObservable: boolean;
+  computeKind: string | null;
+  hasMaterializePermission: boolean;
   description: string | null;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
   partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;

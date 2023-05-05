@@ -5,7 +5,7 @@ from dagster_celery_k8s_tests.example_celery_mode_def import celery_enabled_job
 
 
 def test_include_launcher_works():
-    assert CeleryK8sRunLauncher  # type: ignore
+    assert CeleryK8sRunLauncher
 
 
 def test_include_executor_works():

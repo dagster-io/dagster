@@ -1,4 +1,5 @@
 import sys
+from typing import Mapping, Union
 
 import dagster._check as check
 import graphene
@@ -14,7 +15,8 @@ from .errors import (
     GraphenePythonError,
     GrapheneRunGroupNotFoundError,
 )
-from .util import non_null_list
+from .tags import GraphenePipelineTagAndValues
+from .util import ResolveInfo, non_null_list
 
 
 class GrapheneStepEventStatus(graphene.Enum):
@@ -109,10 +111,10 @@ class GrapheneRuns(graphene.ObjectType):
         self._cursor = cursor
         self._limit = limit
 
-    def resolve_results(self, graphene_info):
+    def resolve_results(self, graphene_info: ResolveInfo):
         return get_runs(graphene_info, self._filters, self._cursor, self._limit)
 
-    def resolve_count(self, graphene_info):
+    def resolve_count(self, graphene_info: ResolveInfo):
         return get_runs_count(graphene_info, self._filters)
 
 
@@ -136,6 +138,32 @@ class GrapheneRunGroupsOrError(graphene.ObjectType):
         name = "RunGroupsOrError"
 
 
+class GrapheneRunTagKeys(graphene.ObjectType):
+    keys = non_null_list(graphene.String)
+
+    class Meta:
+        name = "RunTagKeys"
+
+
+class GrapheneRunTagKeysOrError(graphene.Union):
+    class Meta:
+        types = (GraphenePythonError, GrapheneRunTagKeys)
+        name = "RunTagKeysOrError"
+
+
+class GrapheneRunTags(graphene.ObjectType):
+    tags = non_null_list(GraphenePipelineTagAndValues)
+
+    class Meta:
+        name = "RunTags"
+
+
+class GrapheneRunTagsOrError(graphene.Union):
+    class Meta:
+        types = (GraphenePythonError, GrapheneRunTags)
+        name = "RunTagsOrError"
+
+
 class GrapheneRunConfigData(GenericScalar, graphene.Scalar):
     class Meta:
         description = """This type is used when passing in a configuration object
@@ -146,7 +174,9 @@ class GrapheneRunConfigData(GenericScalar, graphene.Scalar):
         name = "RunConfigData"
 
 
-def parse_run_config_input(run_config, raise_on_error: bool):
+def parse_run_config_input(
+    run_config: Union[str, Mapping[str, object]], raise_on_error: bool
+) -> Union[str, Mapping[str, object]]:
     if run_config and isinstance(run_config, str):
         try:
             return load_run_config_yaml(run_config)

@@ -7,18 +7,19 @@ import time
 from collections import defaultdict
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import ExitStack
-from typing import Dict, List, Optional, cast
+from typing import TYPE_CHECKING, Dict, List, Mapping, Optional, cast
 
 import pendulum
 
 import dagster._check as check
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
+from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.definitions.utils import validate_tags
 from dagster._core.errors import DagsterUserCodeUnreachableError
-from dagster._core.host_representation import ExternalSchedule, PipelineSelector
-from dagster._core.host_representation.external import ExternalPipeline
-from dagster._core.host_representation.repository_location import RepositoryLocation
+from dagster._core.host_representation import ExternalSchedule
+from dagster._core.host_representation.code_location import CodeLocation
+from dagster._core.host_representation.external import ExternalJob
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler.instigation import (
     InstigatorState,
@@ -30,15 +31,21 @@ from dagster._core.scheduler.instigation import (
     TickStatus,
 )
 from dagster._core.scheduler.scheduler import DEFAULT_MAX_CATCHUP_RUNS, DagsterSchedulerError
-from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, RunsFilter
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import RUN_KEY_TAG, SCHEDULED_EXECUTION_TIME_TAG
 from dagster._core.telemetry import SCHEDULED_RUN_CREATED, hash_name, log_action
 from dagster._core.workspace.context import IWorkspaceProcessContext
-from dagster._scheduler.stale import resolve_stale_assets
+from dagster._scheduler.stale import resolve_stale_or_missing_assets
 from dagster._seven.compat.pendulum import to_timezone
+from dagster._utils import DebugCrashFlags, SingleInstigatorDebugCrashFlags
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.log import default_date_format_string
 from dagster._utils.merger import merge_dicts
+
+if TYPE_CHECKING:
+    from pendulum.datetime import DateTime
+
+    from dagster._daemon.daemon import DaemonIterator
 
 
 class _ScheduleLaunchContext:
@@ -101,7 +108,7 @@ SECONDS_IN_MINUTE = 60
 VERBOSE_LOGS_INTERVAL = 60
 
 
-def _get_next_scheduler_iteration_time(start_time):
+def _get_next_scheduler_iteration_time(start_time: float) -> float:
     # Wait until at least the next minute to run again, since the minimum granularity
     # for a cron schedule is every minute
     last_minute_time = start_time - (start_time % SECONDS_IN_MINUTE)
@@ -114,7 +121,7 @@ def execute_scheduler_iteration_loop(
     max_catchup_runs: int,
     max_tick_retries: int,
     shutdown_event: threading.Event,
-):
+) -> "DaemonIterator":
     schedule_state_lock = threading.Lock()
     scheduler_run_futures: Dict[str, Future] = {}
 
@@ -168,15 +175,15 @@ def execute_scheduler_iteration_loop(
 def launch_scheduled_runs(
     workspace_process_context: IWorkspaceProcessContext,
     logger: logging.Logger,
-    end_datetime_utc: datetime.datetime,
+    end_datetime_utc: "DateTime",
     threadpool_executor: Optional[ThreadPoolExecutor] = None,
     scheduler_run_futures: Optional[Dict[str, Future]] = None,
     schedule_state_lock: Optional[threading.Lock] = None,
     max_catchup_runs: int = DEFAULT_MAX_CATCHUP_RUNS,
     max_tick_retries: int = 0,
-    debug_crash_flags=None,
+    debug_crash_flags: Optional[DebugCrashFlags] = None,
     log_verbose_checks: bool = True,
-):
+) -> "DaemonIterator":
     instance = workspace_process_context.instance
 
     if not schedule_state_lock:
@@ -200,9 +207,9 @@ def launch_scheduled_runs(
     error_locations = set()
 
     for location_entry in workspace_snapshot.values():
-        repo_location = location_entry.repository_location
-        if repo_location:
-            for repo in repo_location.get_repositories().values():
+        code_location = location_entry.code_location
+        if code_location:
+            for repo in code_location.get_repositories().values():
                 for schedule in repo.get_external_schedules():
                     selector_id = schedule.selector_id
                     if schedule.get_current_instigator_state(
@@ -227,9 +234,7 @@ def launch_scheduled_runs(
         and schedule_state.status == InstigatorStatus.AUTOMATICALLY_RUNNING
     }
     for state in states_to_delete:
-        location_name = (
-            state.origin.external_repository_origin.repository_location_origin.location_name
-        )
+        location_name = state.origin.external_repository_origin.code_location_origin.location_name
         # don't clean up auto running state if its location is an error state
         if location_name not in error_locations:
             logger.info(
@@ -247,26 +252,26 @@ def launch_scheduled_runs(
 
         for schedule_state in unloadable_schedule_states.values():
             schedule_name = schedule_state.origin.instigator_name
-            repo_location_origin = (
-                schedule_state.origin.external_repository_origin.repository_location_origin
+            code_location_origin = (
+                schedule_state.origin.external_repository_origin.code_location_origin
             )
 
-            repo_location_name = repo_location_origin.location_name
+            code_location_name = code_location_origin.location_name
             repo_name = schedule_state.origin.external_repository_origin.repository_name
             if (
-                repo_location_origin.location_name not in workspace_snapshot
-                or not workspace_snapshot[repo_location_origin.location_name].repository_location
+                code_location_origin.location_name not in workspace_snapshot
+                or not workspace_snapshot[code_location_origin.location_name].code_location
             ):
                 logger.warning(
                     f"Schedule {schedule_name} was started from a location "
-                    f"{repo_location_name} that can no longer be found in the workspace. You can "
+                    f"{code_location_name} that can no longer be found in the workspace. You can "
                     "turn off this schedule in the Dagit UI from the Status tab."
                 )
             elif not check.not_none(  # checked in case above
-                workspace_snapshot[repo_location_origin.location_name].repository_location
+                workspace_snapshot[code_location_origin.location_name].code_location
             ).has_repository(repo_name):
                 logger.warning(
-                    f"Could not find repository {repo_name} in location {repo_location_name} to "
+                    f"Could not find repository {repo_name} in location {code_location_name} to "
                     + f"run schedule {schedule_name}. If this repository no longer exists, you can "
                     + "turn off the schedule in the Dagit UI from the Status tab.",
                 )
@@ -340,7 +345,7 @@ def launch_scheduled_runs(
                 yield
 
             else:
-                # evaluate the sensors in a loop, synchronously, yielding to allow the sensor daemon to
+                # evaluate the schedules in a loop, synchronously, yielding to allow the schedule daemon to
                 # heartbeat
                 yield from launch_scheduled_runs_for_schedule_iterator(
                     workspace_process_context,
@@ -370,10 +375,10 @@ def launch_scheduled_runs_for_schedule(
     end_datetime_utc: datetime.datetime,
     max_catchup_runs: int,
     max_tick_retries: int,
-    tick_retention_settings,
-    schedule_debug_crash_flags,
-    log_verbose_checks,
-):
+    tick_retention_settings: Mapping[TickStatus, int],
+    schedule_debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags],
+    log_verbose_checks: bool,
+) -> None:
     # evaluate the tick immediately, but from within a thread.  The main thread should be able to
     # heartbeat to keep the daemon alive
     list(
@@ -402,10 +407,10 @@ def launch_scheduled_runs_for_schedule_iterator(
     end_datetime_utc: datetime.datetime,
     max_catchup_runs: int,
     max_tick_retries: int,
-    tick_retention_settings,
-    schedule_debug_crash_flags,
-    log_verbose_checks,
-):
+    tick_retention_settings: Mapping[TickStatus, int],
+    schedule_debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags],
+    log_verbose_checks: bool,
+) -> "DaemonIterator":
     schedule_state = check.inst_param(schedule_state, "schedule_state", InstigatorState)
     end_datetime_utc = check.inst_param(end_datetime_utc, "end_datetime_utc", datetime.datetime)
     instance = workspace_process_context.instance
@@ -552,7 +557,9 @@ def launch_scheduled_runs_for_schedule_iterator(
                     return
 
 
-def _check_for_debug_crash(debug_crash_flags, key):
+def _check_for_debug_crash(
+    debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags], key: str
+) -> None:
     if not debug_crash_flags:
         return
 
@@ -571,18 +578,18 @@ def _schedule_runs_at_time(
     external_schedule: ExternalSchedule,
     schedule_time: datetime.datetime,
     tick_context: _ScheduleLaunchContext,
-    debug_crash_flags,
-):
+    debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags] = None,
+) -> "DaemonIterator":
     schedule_name = external_schedule.name
     instance = workspace_process_context.instance
     schedule_origin = external_schedule.get_external_origin()
     repository_handle = external_schedule.handle.repository_handle
 
-    repo_location = workspace_process_context.create_request_context().get_repository_location(
-        schedule_origin.external_repository_origin.repository_location_origin.location_name
+    code_location = workspace_process_context.create_request_context().get_code_location(
+        schedule_origin.external_repository_origin.code_location_origin.location_name
     )
 
-    schedule_execution_data = repo_location.get_external_schedule_execution_data(
+    schedule_execution_data = code_location.get_external_schedule_execution_data(
         instance=instance,
         repository_handle=repository_handle,
         schedule_name=external_schedule.name,
@@ -607,25 +614,27 @@ def _schedule_runs_at_time(
         )
         return
 
-    for run_request in schedule_execution_data.run_requests:
-        if run_request.stale_assets_only:
-            stale_assets = resolve_stale_assets(workspace_process_context, run_request, external_schedule)  # type: ignore
+    for raw_run_request in schedule_execution_data.run_requests:
+        if raw_run_request.stale_assets_only:
+            stale_assets = resolve_stale_or_missing_assets(workspace_process_context, raw_run_request, external_schedule)  # type: ignore
             # asset selection is empty set after filtering for stale
             if len(stale_assets) == 0:
                 continue
             else:
-                run_request = run_request.with_replaced_attrs(
+                run_request = raw_run_request.with_replaced_attrs(
                     asset_selection=stale_assets, stale_assets_only=False
                 )
+        else:
+            run_request = raw_run_request
 
-        pipeline_selector = PipelineSelector(
-            location_name=schedule_origin.external_repository_origin.repository_location_origin.location_name,
+        job_subset_selector = JobSubsetSelector(
+            location_name=schedule_origin.external_repository_origin.code_location_origin.location_name,
             repository_name=schedule_origin.external_repository_origin.repository_name,
-            pipeline_name=external_schedule.pipeline_name,
+            job_name=external_schedule.job_name,
             solid_selection=external_schedule.solid_selection,
             asset_selection=run_request.asset_selection,
         )
-        external_pipeline = repo_location.get_external_pipeline(pipeline_selector)
+        external_job = code_location.get_external_job(job_subset_selector)
 
         run = _get_existing_run_for_request(instance, external_schedule, schedule_time, run_request)
         if run:
@@ -650,9 +659,9 @@ def _schedule_runs_at_time(
             run = _create_scheduler_run(
                 instance,
                 schedule_time,
-                repo_location,
+                code_location,
                 external_schedule,
-                external_pipeline,
+                external_job,
                 run_request,
             )
 
@@ -679,7 +688,7 @@ def _schedule_runs_at_time(
 def _get_existing_run_for_request(
     instance: DagsterInstance,
     external_schedule: ExternalSchedule,
-    schedule_time,
+    schedule_time: datetime.datetime,
     run_request: RunRequest,
 ) -> Optional[DagsterRun]:
     tags = merge_dicts(
@@ -697,12 +706,12 @@ def _get_existing_run_for_request(
     matching_runs = []
     for run in existing_runs:
         # if the run doesn't have an origin consider it a match
-        if run.external_pipeline_origin is None:
+        if run.external_job_origin is None:
             matching_runs.append(run)
         # otherwise prevent the same named schedule (with the same execution time) across repos from effecting each other
         elif (
             external_schedule.get_external_origin().external_repository_origin.get_selector_id()
-            == run.external_pipeline_origin.external_repository_origin.get_selector_id()
+            == run.external_job_origin.external_repository_origin.get_selector_id()
         ):
             matching_runs.append(run)
 
@@ -715,9 +724,9 @@ def _get_existing_run_for_request(
 def _create_scheduler_run(
     instance: DagsterInstance,
     schedule_time: datetime.datetime,
-    repo_location: RepositoryLocation,
+    code_location: CodeLocation,
     external_schedule: ExternalSchedule,
-    external_pipeline: ExternalPipeline,
+    external_job: ExternalJob,
     run_request: RunRequest,
 ) -> DagsterRun:
     from dagster._daemon.daemon import get_telemetry_daemon_session_id
@@ -725,17 +734,16 @@ def _create_scheduler_run(
     run_config = run_request.run_config
     schedule_tags = run_request.tags
 
-    external_execution_plan = repo_location.get_external_execution_plan(
-        external_pipeline,
+    external_execution_plan = code_location.get_external_execution_plan(
+        external_job,
         run_config,
-        check.not_none(external_schedule.mode),
         step_keys_to_execute=None,
         known_state=None,
     )
     execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
 
     tags = merge_dicts(
-        validate_tags(external_pipeline.tags, allow_reserved_tags=False) or {},
+        validate_tags(external_job.tags, allow_reserved_tags=False) or {},
         schedule_tags,
     )
 
@@ -749,28 +757,27 @@ def _create_scheduler_run(
         metadata={
             "DAEMON_SESSION_ID": get_telemetry_daemon_session_id(),
             "SCHEDULE_NAME_HASH": hash_name(external_schedule.name),
-            "repo_hash": hash_name(repo_location.name),
-            "pipeline_name_hash": hash_name(external_pipeline.name),
+            "repo_hash": hash_name(code_location.name),
+            "pipeline_name_hash": hash_name(external_job.name),
         },
     )
 
     return instance.create_run(
-        pipeline_name=external_schedule.pipeline_name,
+        job_name=external_schedule.job_name,
         run_id=None,
         run_config=run_config,
-        mode=external_schedule.mode,
-        solids_to_execute=external_pipeline.solids_to_execute,
+        solids_to_execute=external_job.solids_to_execute,
         step_keys_to_execute=None,
-        solid_selection=external_pipeline.solid_selection,
+        solid_selection=external_job.solid_selection,
         status=DagsterRunStatus.NOT_STARTED,
         root_run_id=None,
         parent_run_id=None,
         tags=tags,
-        pipeline_snapshot=external_pipeline.pipeline_snapshot,
+        job_snapshot=external_job.job_snapshot,
         execution_plan_snapshot=execution_plan_snapshot,
-        parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
-        external_pipeline_origin=external_pipeline.get_external_origin(),
-        pipeline_code_origin=external_pipeline.get_python_origin(),
+        parent_job_snapshot=external_job.parent_job_snapshot,
+        external_job_origin=external_job.get_external_origin(),
+        job_code_origin=external_job.get_python_origin(),
         asset_selection=frozenset(run_request.asset_selection)
         if run_request.asset_selection
         else None,

@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 from typing import Optional
@@ -10,12 +11,12 @@ from dagster._cli.workspace import (
     get_workspace_process_context_from_kwargs,
     workspace_target_argument,
 )
-from dagster._cli.workspace.cli_target import WORKSPACE_TARGET_WARNING
+from dagster._cli.workspace.cli_target import WORKSPACE_TARGET_WARNING, ClickArgValue
 from dagster._core.instance import InstanceRef
 from dagster._core.telemetry import START_DAGIT_WEBSERVER, log_action
 from dagster._core.telemetry_upload import uploading_logging_thread
 from dagster._core.workspace.context import WorkspaceProcessContext
-from dagster._serdes import deserialize_as
+from dagster._serdes import deserialize_value
 from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME, find_free_port, is_port_in_use
 from dagster._utils.log import configure_loggers
 
@@ -24,7 +25,7 @@ from .version import __version__
 
 
 def create_dagit_cli():
-    return dagit  # pylint: disable=no-value-for-parameter
+    return dagit
 
 
 DEFAULT_DAGIT_HOST = "127.0.0.1"
@@ -139,17 +140,17 @@ DEFAULT_POOL_RECYCLE = 3600  # 1 hr
 )
 @click.version_option(version=__version__, prog_name="dagit")
 def dagit(
-    host,
-    port,
-    path_prefix,
-    db_statement_timeout,
-    db_pool_recycle,
-    read_only,
-    suppress_warnings,
-    log_level,
-    code_server_log_level,
-    instance_ref,
-    **kwargs,
+    host: str,
+    port: int,
+    path_prefix: str,
+    db_statement_timeout: int,
+    db_pool_recycle: int,
+    read_only: bool,
+    suppress_warnings: bool,
+    log_level: str,
+    code_server_log_level: str,
+    instance_ref: Optional[str],
+    **kwargs: ClickArgValue,
 ):
     if suppress_warnings:
         os.environ["PYTHONWARNINGS"] = "ignore"
@@ -159,7 +160,7 @@ def dagit(
 
     with get_instance_for_service(
         "dagit",
-        instance_ref=deserialize_as(instance_ref, InstanceRef) if instance_ref else None,
+        instance_ref=deserialize_value(instance_ref, InstanceRef) if instance_ref else None,
         logger_fn=logger.info,
     ) as instance:
         # Allow the instance components to change behavior in the context of a long running server process
@@ -175,6 +176,16 @@ def dagit(
             host_dagit_ui_with_workspace_process_context(
                 workspace_process_context, host, port, path_prefix, log_level
             )
+
+
+async def _lifespan(app):
+    # workaround from https://github.com/encode/uvicorn/issues/1160 for termination
+    try:
+        yield
+    except asyncio.exceptions.CancelledError:
+        logging.getLogger("dagit").info("Server for dagit was shut down.")
+        # Expected error when dagit is terminated by CTRL-C, suppress
+        pass
 
 
 def host_dagit_ui_with_workspace_process_context(
@@ -193,7 +204,9 @@ def host_dagit_ui_with_workspace_process_context(
 
     logger = logging.getLogger("dagit")
 
-    app = create_app_from_workspace_process_context(workspace_process_context, path_prefix)
+    app = create_app_from_workspace_process_context(
+        workspace_process_context, path_prefix, lifespan=_lifespan
+    )
 
     if not port:
         if is_port_in_use(host, DEFAULT_DAGIT_PORT):

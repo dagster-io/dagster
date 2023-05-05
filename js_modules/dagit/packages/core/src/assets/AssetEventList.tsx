@@ -152,11 +152,11 @@ const AssetEventListEventRow: React.FC<{group: AssetEventGroup}> = ({group}) => 
         {latest && run && (
           <Tag>
             <AssetRunLink
-              runId={run.runId}
+              runId={run.id}
               event={{stepKey: latest.stepKey, timestamp: latest.timestamp}}
             >
               <Box flex={{gap: 4, direction: 'row', alignItems: 'center'}}>
-                <RunStatusWithStats runId={run.runId} status={run.status} size={8} />
+                <RunStatusWithStats runId={run.id} status={run.status} size={8} />
                 {titleForRun(run)}
               </Box>
             </AssetRunLink>

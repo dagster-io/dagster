@@ -3,8 +3,7 @@ from base64 import b64decode
 from json import JSONDecodeError, loads
 from typing import Optional
 
-from dagster._core.run_coordinator import QueuedRunCoordinator, SubmitRunContext
-from dagster._core.storage.pipeline_run import DagsterRun
+from dagster import DagsterRun, QueuedRunCoordinator, SubmitRunContext
 
 
 class CustomRunCoordinator(QueuedRunCoordinator):
@@ -28,11 +27,11 @@ class CustomRunCoordinator(QueuedRunCoordinator):
 
     # start_submit_marker
     def submit_run(self, context: SubmitRunContext) -> DagsterRun:
-        pipeline_run = context.pipeline_run
+        dagster_run = context.dagster_run
         jwt_claims_header = context.get_request_header("X-Amzn-Oidc-Data")
         email = self.get_email(jwt_claims_header)
         if email:
-            self._instance.add_run_tags(pipeline_run.run_id, {"user": email})
+            self._instance.add_run_tags(dagster_run.run_id, {"user": email})
         else:
             warnings.warn(f"Couldn't decode JWT header {jwt_claims_header}")
         return super().submit_run(context)

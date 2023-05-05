@@ -5,6 +5,7 @@ import * as Types from '../../graphql/types';
 export type ConfigPartitionsQueryVariables = Types.Exact<{
   repositorySelector: Types.RepositorySelector;
   partitionSetName: Types.Scalars['String'];
+  assetKeys?: Types.InputMaybe<Array<Types.AssetKeyInput> | Types.AssetKeyInput>;
 }>;
 
 export type ConfigPartitionsQuery = {
@@ -28,6 +29,15 @@ export type ConfigPartitionsQuery = {
       }
     | {__typename: 'PartitionSetNotFoundError'}
     | {__typename: 'PythonError'};
+  assetNodes: Array<{
+    __typename: 'AssetNode';
+    id: string;
+    partitionDefinition: {
+      __typename: 'PartitionDefinition';
+      name: string | null;
+      type: Types.PartitionDefinitionType;
+    } | null;
+  }>;
 };
 
 export type ConfigPartitionResultFragment = {__typename: 'Partition'; name: string};

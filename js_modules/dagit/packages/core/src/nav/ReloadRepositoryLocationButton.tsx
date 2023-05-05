@@ -1,25 +1,34 @@
 import * as React from 'react';
 
 import {AppContext} from '../app/AppContext';
+import {usePermissionsForLocation} from '../app/Permissions';
 import {RepositoryLocationErrorDialog} from '../workspace/RepositoryLocationErrorDialog';
 
 import {buildReloadFnForLocation, useRepositoryLocationReload} from './useRepositoryLocationReload';
 
-type ChildProps = {
+export type ChildProps = {
+  codeLocation: string;
   tryReload: () => void;
   reloading: boolean;
+  hasReloadPermission: boolean;
 };
 
 interface Props {
-  children: (childProps: ChildProps) => React.ReactNode;
+  ChildComponent: React.FC<ChildProps>;
   location: string;
 }
 
+export const NO_RELOAD_PERMISSION_TEXT = 'You do not have permission to reload this code location';
+
 export const ReloadRepositoryLocationButton: React.FC<Props> = (props) => {
-  const {children, location} = props;
+  const {ChildComponent, location} = props;
   const [shown, setShown] = React.useState(false);
 
   const {basePath} = React.useContext(AppContext);
+
+  const {
+    permissions: {canReloadRepositoryLocation: hasReloadPermission},
+  } = usePermissionsForLocation(location);
 
   const reloadFn = React.useMemo(() => buildReloadFnForLocation(location), [location]);
   const {reloading, error, tryReload} = useRepositoryLocationReload({
@@ -31,7 +40,7 @@ export const ReloadRepositoryLocationButton: React.FC<Props> = (props) => {
 
   return (
     <>
-      {children({tryReload, reloading})}
+      <ChildComponent {...{tryReload, reloading, hasReloadPermission, codeLocation: location}} />
       <RepositoryLocationErrorDialog
         location={location}
         isOpen={shown}

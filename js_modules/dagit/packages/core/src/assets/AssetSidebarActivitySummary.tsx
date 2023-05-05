@@ -2,34 +2,36 @@ import {Body, Box, Colors, Spinner} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {LiveDataForNode} from '../asset-graph/Utils';
+import {SidebarAssetFragment} from '../asset-graph/types/SidebarAssetInfo.types';
 import {SidebarSection} from '../pipelines/SidebarComponents';
 
+import {AssetEventSystemTags} from './AssetEventSystemTags';
 import {AssetMaterializationGraphs} from './AssetMaterializationGraphs';
+import {
+  AutomaterializePolicyTag,
+  automaterializePolicyDescription,
+} from './AutomaterializePolicyTag';
 import {CurrentMinutesLateTag, freshnessPolicyDescription} from './CurrentMinutesLateTag';
 import {CurrentRunsBanner} from './CurrentRunsBanner';
-import {FailedRunsSinceMaterializationBanner} from './FailedRunsSinceMaterializationBanner';
+import {FailedRunSinceMaterializationBanner} from './FailedRunSinceMaterializationBanner';
 import {LatestMaterializationMetadata} from './LastMaterializationMetadata';
 import {useGroupedEvents} from './groupByPartition';
-import {AssetKey} from './types';
 import {useRecentAssetEvents} from './useRecentAssetEvents';
 
 interface Props {
-  assetKey: AssetKey;
+  asset: SidebarAssetFragment;
   liveData?: LiveDataForNode;
+  isSourceAsset: boolean;
 
   // This timestamp is a "hint", when it changes this component will refetch
   // to retrieve new data. Just don't want to poll the entire table query.
   assetLastMaterializedAt: string | undefined;
-
-  // This is passed in because we need to know whether to default to partition
-  // grouping /before/ loading all the data.
-  assetHasDefinedPartitions: boolean;
 }
 
 export const AssetSidebarActivitySummary: React.FC<Props> = ({
-  assetKey,
+  asset,
   assetLastMaterializedAt,
-  assetHasDefinedPartitions,
+  isSourceAsset,
   liveData,
 }) => {
   const {
@@ -39,9 +41,14 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
     loading,
     refetch,
     xAxis,
-  } = useRecentAssetEvents(assetKey, {}, {assetHasDefinedPartitions});
+  } = useRecentAssetEvents(
+    asset.assetKey,
+    {},
+    {assetHasDefinedPartitions: !!asset.partitionDefinition},
+  );
 
   const grouped = useGroupedEvents(xAxis, materializations, observations, loadedPartitionKeys);
+  const displayedEvent = isSourceAsset ? observations[0] : materializations[0];
 
   React.useEffect(() => {
     refetch();
@@ -56,39 +63,81 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
   }
   return (
     <>
-      <FailedRunsSinceMaterializationBanner
-        liveData={liveData}
-        border={{side: 'top', width: 1, color: Colors.KeylineGray}}
-      />
-      <CurrentRunsBanner
-        liveData={liveData}
-        border={{side: 'top', width: 1, color: Colors.KeylineGray}}
-      />
+      {!asset.partitionDefinition && (
+        <>
+          <FailedRunSinceMaterializationBanner
+            run={liveData?.runWhichFailedToMaterialize || null}
+            border={{side: 'top', width: 1, color: Colors.KeylineGray}}
+          />
+          <CurrentRunsBanner
+            liveData={liveData}
+            border={{side: 'top', width: 1, color: Colors.KeylineGray}}
+          />
+        </>
+      )}
 
-      {liveData?.freshnessPolicy && (
-        <SidebarSection title="Freshness Policy">
-          <Box margin={{horizontal: 24, vertical: 12}} flex={{gap: 12, alignItems: 'center'}}>
-            <CurrentMinutesLateTag liveData={liveData} />
-            <Body>{freshnessPolicyDescription(liveData.freshnessPolicy)}</Body>
+      {asset.freshnessPolicy && (
+        <SidebarSection title="Freshness policy">
+          <Box margin={{horizontal: 24, vertical: 12}} flex={{gap: 12, alignItems: 'flex-start'}}>
+            <Body style={{flex: 1}}>{freshnessPolicyDescription(asset.freshnessPolicy)}</Body>
+            <CurrentMinutesLateTag liveData={liveData} policy={asset.freshnessPolicy} />
           </Box>
         </SidebarSection>
       )}
 
-      <SidebarSection title="Materialization in Last Run">
-        {materializations[0] ? (
-          <div style={{margin: -1, maxWidth: '100%', overflowX: 'auto'}}>
-            <LatestMaterializationMetadata latest={materializations[0]} liveData={liveData} />
-          </div>
-        ) : (
-          <Box
-            margin={{horizontal: 24, vertical: 12}}
-            style={{color: Colors.Gray500, fontSize: '0.8rem'}}
-          >
-            No materializations found
+      {asset.autoMaterializePolicy && (
+        <SidebarSection title="Auto-materialize policy">
+          <Box margin={{horizontal: 24, vertical: 12}} flex={{gap: 12, alignItems: 'flex-start'}}>
+            <Body style={{flex: 1}}>
+              {automaterializePolicyDescription(asset.autoMaterializePolicy)}
+            </Body>
+            <AutomaterializePolicyTag policy={asset.autoMaterializePolicy} />
           </Box>
-        )}
-      </SidebarSection>
-      <SidebarSection title="Metadata Plots">
+        </SidebarSection>
+      )}
+
+      {loadedPartitionKeys.length > 1 ? null : (
+        <>
+          <SidebarSection
+            title={!isSourceAsset ? 'Materialization in last run' : 'Observation in last run'}
+          >
+            {displayedEvent ? (
+              <div style={{margin: -1, maxWidth: '100%', overflowX: 'auto'}}>
+                <LatestMaterializationMetadata
+                  assetKey={asset.assetKey}
+                  latest={displayedEvent}
+                  liveData={liveData}
+                />
+              </div>
+            ) : (
+              <Box
+                margin={{horizontal: 24, vertical: 12}}
+                style={{color: Colors.Gray500, fontSize: '0.8rem'}}
+              >
+                {!isSourceAsset ? `No materializations found` : `No observations found`}
+              </Box>
+            )}
+          </SidebarSection>
+          <SidebarSection
+            title={!isSourceAsset ? 'Materialization system tags' : 'Observation system tags'}
+            collapsedByDefault
+          >
+            {displayedEvent ? (
+              <div style={{margin: -1, maxWidth: '100%', overflowX: 'auto'}}>
+                <AssetEventSystemTags event={displayedEvent} paddingLeft={24} />
+              </div>
+            ) : (
+              <Box
+                margin={{horizontal: 24, vertical: 12}}
+                style={{color: Colors.Gray500, fontSize: '0.8rem'}}
+              >
+                {!isSourceAsset ? `No materializations found` : `No observations found`}
+              </Box>
+            )}
+          </SidebarSection>
+        </>
+      )}
+      <SidebarSection title="Metadata plots">
         <AssetMaterializationGraphs
           xAxis={xAxis}
           asSidebarSection

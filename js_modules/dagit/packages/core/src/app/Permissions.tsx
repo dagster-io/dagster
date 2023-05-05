@@ -1,7 +1,11 @@
 import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 
-import {PermissionFragment, PermissionsQuery} from './types/Permissions.types';
+import {
+  PermissionFragment,
+  PermissionsQuery,
+  PermissionsQueryVariables,
+} from './types/Permissions.types';
 
 // used in tests, to ensure against permission renames.  Should make sure that the mapping in
 // extractPermissions is handled correctly
@@ -11,6 +15,7 @@ export const EXPECTED_PERMISSIONS = {
   start_schedule: true,
   stop_running_schedule: true,
   edit_sensor: true,
+  update_sensor_cursor: true,
   terminate_pipeline_execution: true,
   delete_pipeline_run: true,
   reload_repository_location: true,
@@ -18,6 +23,8 @@ export const EXPECTED_PERMISSIONS = {
   wipe_assets: true,
   launch_partition_backfill: true,
   cancel_partition_backfill: true,
+  edit_dynamic_partitions: true,
+  toggle_auto_materialize: true,
 };
 
 export type PermissionResult = {
@@ -31,6 +38,7 @@ export type PermissionsFromJSON = {
   start_schedule?: PermissionResult;
   stop_running_schedule?: PermissionResult;
   edit_sensor?: PermissionResult;
+  update_sensor_cursor?: PermissionResult;
   terminate_pipeline_execution?: PermissionResult;
   delete_pipeline_run?: PermissionResult;
   reload_repository_location?: PermissionResult;
@@ -38,11 +46,14 @@ export type PermissionsFromJSON = {
   wipe_assets?: PermissionResult;
   launch_partition_backfill?: PermissionResult;
   cancel_partition_backfill?: PermissionResult;
+  toggle_auto_materialize?: PermissionResult;
 };
+
+export const DEFAULT_DISABLED_REASON = 'Disabled by your administrator';
 
 const DEFAULT_PERMISSIONS = {
   enabled: false,
-  disabledReason: 'Disabled by your administrator',
+  disabledReason: DEFAULT_DISABLED_REASON,
 };
 
 export const extractPermissions = (
@@ -51,7 +62,7 @@ export const extractPermissions = (
 ) => {
   const permsMap: PermissionsFromJSON = {};
   for (const item of permissions) {
-    permsMap[item.permission] = {
+    (permsMap as any)[item.permission] = {
       enabled: item.value,
       disabledReason: item.disabledReason || '',
     };
@@ -59,7 +70,7 @@ export const extractPermissions = (
 
   const fallbackMap: PermissionsFromJSON = {};
   for (const item of fallback) {
-    fallbackMap[item.permission] = {
+    (fallbackMap as any)[item.permission] = {
       enabled: item.value,
       disabledReason: item.disabledReason || '',
     };
@@ -83,10 +94,19 @@ export const extractPermissions = (
     canWipeAssets: permissionOrFallback('wipe_assets'),
     canLaunchPartitionBackfill: permissionOrFallback('launch_partition_backfill'),
     canCancelPartitionBackfill: permissionOrFallback('cancel_partition_backfill'),
+    canToggleAutoMaterialize: permissionOrFallback('toggle_auto_materialize'),
   };
 };
 
-export type PermissionsMap = ReturnType<typeof extractPermissions>;
+type PermissionsMap = ReturnType<typeof extractPermissions>;
+
+type PermissionBooleans = Record<keyof PermissionsMap, boolean>;
+type PermissionDisabledReasons = Record<keyof PermissionsMap, string>;
+export type PermissionsState = {
+  permissions: PermissionBooleans;
+  disabledReasons: PermissionDisabledReasons;
+  loading: boolean;
+};
 
 type PermissionsContextType = {
   unscopedPermissions: PermissionsMap;
@@ -94,9 +114,6 @@ type PermissionsContextType = {
   loading: boolean;
   // Raw unscoped permission data, for Cloud extraction
   rawUnscopedData: PermissionFragment[];
-
-  // todo dish: For Cloud compatibility, delete in favor of `rawUnscopedData`
-  data?: PermissionFragment[];
 };
 
 export const PermissionsContext = React.createContext<PermissionsContextType>({
@@ -106,8 +123,8 @@ export const PermissionsContext = React.createContext<PermissionsContextType>({
   rawUnscopedData: [],
 });
 
-export const PermissionsProvider: React.FC = (props) => {
-  const {data, loading} = useQuery<PermissionsQuery>(PERMISSIONS_QUERY, {
+export const PermissionsProvider = (props: {children: React.ReactNode}) => {
+  const {data, loading} = useQuery<PermissionsQuery, PermissionsQueryVariables>(PERMISSIONS_QUERY, {
     fetchPolicy: 'cache-first', // Not expected to change after initial load.
   });
 
@@ -137,12 +154,49 @@ export const PermissionsProvider: React.FC = (props) => {
   return <PermissionsContext.Provider value={value}>{props.children}</PermissionsContext.Provider>;
 };
 
+export const permissionResultForKey = (
+  permissionsState: PermissionsState,
+  key: keyof PermissionsMap,
+): PermissionResult => {
+  const {permissions, disabledReasons} = permissionsState;
+  return {
+    enabled: permissions[key],
+    disabledReason: disabledReasons[key],
+  };
+};
+
+const unpackPermissions = (
+  permissions: PermissionsMap,
+): {booleans: PermissionBooleans; disabledReasons: PermissionDisabledReasons} => {
+  const booleans = {};
+  const disabledReasons = {};
+  Object.keys(permissions).forEach((key) => {
+    const {enabled, disabledReason} = (permissions as any)[key] as PermissionResult;
+    (booleans as any)[key] = enabled;
+    (disabledReasons as any)[key] = disabledReason;
+  });
+  return {
+    booleans: booleans as PermissionBooleans,
+    disabledReasons: disabledReasons as PermissionDisabledReasons,
+  };
+};
+
 /**
  * Retrieve a permission that is intentionally unscoped.
  */
-export const useUnscopedPermissions = () => {
+export const useUnscopedPermissions = (): PermissionsState => {
   const {unscopedPermissions, loading} = React.useContext(PermissionsContext);
-  return {...unscopedPermissions, loading};
+  const unpacked = React.useMemo(() => unpackPermissions(unscopedPermissions), [
+    unscopedPermissions,
+  ]);
+
+  return React.useMemo(() => {
+    return {
+      permissions: unpacked.booleans,
+      disabledReasons: unpacked.disabledReasons,
+      loading,
+    };
+  }, [unpacked, loading]);
 };
 
 /**
@@ -150,25 +204,33 @@ export const useUnscopedPermissions = () => {
  * will be used as a fallback, so that if the permission is not defined for that location, we still
  * have a valid value.
  */
-export const usePermissionsForLocation = (locationName: string | null | undefined) => {
+export const usePermissionsForLocation = (
+  locationName: string | null | undefined,
+): PermissionsState => {
   const {unscopedPermissions, locationPermissions, loading} = React.useContext(PermissionsContext);
   let permissionsForLocation = unscopedPermissions;
   if (locationName && locationPermissions.hasOwnProperty(locationName)) {
     permissionsForLocation = locationPermissions[locationName];
   }
-  return {...permissionsForLocation, loading};
+
+  const unpacked = unpackPermissions(permissionsForLocation);
+  return React.useMemo(() => {
+    return {
+      permissions: unpacked.booleans,
+      disabledReasons: unpacked.disabledReasons,
+      loading,
+    };
+  }, [unpacked, loading]);
 };
 
-// todo dish: Update callsites to either location-based perms or intentionally unscoped perms.
-export const usePermissionsDEPRECATED = useUnscopedPermissions;
-
-const PERMISSIONS_QUERY = gql`
+export const PERMISSIONS_QUERY = gql`
   query PermissionsQuery {
     unscopedPermissions: permissions {
       ...PermissionFragment
     }
     workspaceOrError {
       ... on Workspace {
+        id
         locationEntries {
           id
           name

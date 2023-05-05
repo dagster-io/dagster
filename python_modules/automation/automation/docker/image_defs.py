@@ -1,4 +1,4 @@
-# pylint: disable=print-call
+# ruff: noqa: T201
 import contextlib
 import os
 import shutil
@@ -38,7 +38,7 @@ def copy_directories(
             paths_to_copy.append((src_path, dest_path))
 
         for src_path, dest_path in paths_to_copy:
-            print("Syncing {} to build dir {}...".format(src_path, dest_path))
+            print(f"Syncing {src_path} to build dir {dest_path}...")
             if os.path.isdir(src_path):
                 shutil.copytree(src_path, dest_path)
             else:
@@ -221,4 +221,4 @@ def list_images(images_path: Optional[str] = None) -> List[DagsterDockerImage]:
 def get_image(name: str, images_path: Optional[str] = None) -> DagsterDockerImage:
     """Retrieve the image information from the list defined above."""
     image = next((img for img in list_images(images_path=images_path) if img.image == name), None)
-    return check.not_none(image, "could not find image {}".format(name))
+    return check.not_none(image, f"could not find image {name}")

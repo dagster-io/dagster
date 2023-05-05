@@ -20,7 +20,6 @@ export type RunTimelineQuery = {
           __typename: 'Run';
           id: string;
           pipelineName: string;
-          runId: string;
           status: Types.RunStatus;
           startTime: number | null;
           endTime: number | null;
@@ -42,7 +41,6 @@ export type RunTimelineQuery = {
           __typename: 'Run';
           id: string;
           pipelineName: string;
-          runId: string;
           status: Types.RunStatus;
           startTime: number | null;
           endTime: number | null;
@@ -59,6 +57,7 @@ export type RunTimelineQuery = {
     | {__typename: 'PythonError'}
     | {
         __typename: 'Workspace';
+        id: string;
         locationEntries: Array<{
           __typename: 'WorkspaceLocationEntry';
           id: string;
@@ -93,8 +92,11 @@ export type RunTimelineQuery = {
                       status: Types.InstigationStatus;
                     };
                     futureTicks: {
-                      __typename: 'FutureInstigationTicks';
-                      results: Array<{__typename: 'FutureInstigationTick'; timestamp: number}>;
+                      __typename: 'DryRunInstigationTicks';
+                      results: Array<{
+                        __typename: 'DryRunInstigationTick';
+                        timestamp: number | null;
+                      }>;
                     };
                   }>;
                 }>;

@@ -5,7 +5,7 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import React from 'react';
 
 import {LiveDataForNode} from '../asset-graph/Utils';
-import {AssetNodeLiveFreshnessPolicyFragment} from '../asset-graph/types/AssetNode.types';
+import {FreshnessPolicy} from '../graphql/types';
 import {humanCronString} from '../schedules/humanCronString';
 
 const STALE_OVERDUE_MSG = `A materialization incorporating more recent upstream data is overdue.`;
@@ -25,18 +25,19 @@ export function isAssetLate(liveData?: LiveDataForNode): liveData is LiveDataWit
 }
 
 export const humanizedLateString = (minLate: number) =>
-  `${dayjs.duration(minLate, 'minutes').humanize(false)} late`;
+  `${dayjs.duration(minLate, 'minutes').humanize(false)} overdue`;
 
 export const CurrentMinutesLateTag: React.FC<{
-  liveData: LiveDataForNode;
+  liveData: LiveDataForNode | undefined;
+  policy: FreshnessPolicy;
   policyOnHover?: boolean;
-}> = ({liveData, policyOnHover}) => {
-  const {freshnessInfo, freshnessPolicy} = liveData;
-  const description = policyOnHover ? freshnessPolicyDescription(freshnessPolicy) : '';
-
-  if (!freshnessInfo) {
+}> = ({liveData, policyOnHover, policy}) => {
+  if (!liveData?.freshnessInfo) {
     return null;
   }
+
+  const {freshnessInfo} = liveData;
+  const description = policyOnHover ? freshnessPolicyDescription(policy) : '';
 
   if (freshnessInfo.currentMinutesLate === null) {
     return (
@@ -44,7 +45,7 @@ export const CurrentMinutesLateTag: React.FC<{
         content={<div style={{maxWidth: 400}}>{`${STALE_UNMATERIALIZED_MSG} ${description}`}</div>}
       >
         <Tag intent="danger" icon="warning">
-          Late
+          Overdue
         </Tag>
       </Tooltip>
     );
@@ -52,7 +53,7 @@ export const CurrentMinutesLateTag: React.FC<{
 
   if (freshnessInfo.currentMinutesLate === 0) {
     return description ? (
-      <Tooltip content={freshnessPolicyDescription(freshnessPolicy)}>
+      <Tooltip content={freshnessPolicyDescription(policy)}>
         <Tag intent="success" icon="check_circle" />
       </Tooltip>
     ) : (
@@ -69,16 +70,19 @@ export const CurrentMinutesLateTag: React.FC<{
   );
 };
 
-export const freshnessPolicyDescription = (
-  freshnessPolicy: AssetNodeLiveFreshnessPolicyFragment | null,
-) => {
+export const freshnessPolicyDescription = (freshnessPolicy: FreshnessPolicy | null) => {
   if (!freshnessPolicy) {
     return '';
   }
 
-  const {cronSchedule, maximumLagMinutes} = freshnessPolicy;
+  const {cronSchedule, maximumLagMinutes, cronScheduleTimezone} = freshnessPolicy;
   const nbsp = '\xa0';
-  const cronDesc = cronSchedule ? humanCronString(cronSchedule, 'UTC').replace(/^At /, '') : '';
+  const cronDesc = cronSchedule
+    ? humanCronString(cronSchedule, cronScheduleTimezone ? cronScheduleTimezone : 'UTC').replace(
+        /^At /,
+        '',
+      )
+    : '';
   const lagDesc =
     maximumLagMinutes % 30 === 0
       ? `${maximumLagMinutes / 60} hour${maximumLagMinutes / 60 !== 1 ? 's' : ''}`

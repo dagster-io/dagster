@@ -2,8 +2,9 @@ import {Spinner, Box, Colors, Caption} from '@dagster-io/ui';
 import React from 'react';
 
 import {displayNameForAssetKey} from '../asset-graph/Utils';
-import {PartitionState, PartitionStatus} from '../partitions/PartitionStatus';
+import {PartitionStatus} from '../partitions/PartitionStatus';
 
+import {AssetPartitionStatus} from './AssetPartitionStatus';
 import {isTimeseriesDimension} from './MultipartitioningSupport';
 import {AssetKey} from './types';
 import {PartitionHealthData, PartitionDimensionSelection} from './usePartitionHealthData';
@@ -13,7 +14,7 @@ export const PartitionHealthSummary: React.FC<{
   showAssetKey?: boolean;
   data: PartitionHealthData[];
   selections?: PartitionDimensionSelection[];
-}> = ({showAssetKey, assetKey, data, selections}) => {
+}> = React.memo(({showAssetKey, assetKey, data, selections}) => {
   const assetData = data.find((d) => JSON.stringify(d.assetKey) === JSON.stringify(assetKey));
 
   if (!assetData) {
@@ -38,7 +39,7 @@ export const PartitionHealthSummary: React.FC<{
           : d.map((key) => [key]),
       [] as string[][],
     )
-    .filter((dkeys) => assetData.stateForKey(dkeys) === PartitionState.SUCCESS).length;
+    .filter((dkeys) => assetData.stateForKey(dkeys) === AssetPartitionStatus.MATERIALIZED).length;
 
   return (
     <Box color={Colors.Gray500}>
@@ -54,16 +55,15 @@ export const PartitionHealthSummary: React.FC<{
             partitionNames={dimension.partitionKeys}
             splitPartitions={!isTimeseriesDimension(dimension)}
             selected={selections ? selections[dimensionIdx].selectedKeys : undefined}
-            partitionStateForKey={(key) =>
-              assetData.stateForSingleDimension(
+            health={{
+              ranges: assetData.rangesForSingleDimension(
                 dimensionIdx,
-                key,
-                selections?.length === 2 ? selections[1 - dimensionIdx].selectedKeys : undefined,
-              )
-            }
+                selections?.length === 2 ? selections[1 - dimensionIdx].selectedRanges : undefined,
+              ),
+            }}
           />
         </Box>
       ))}
     </Box>
   );
-};
+});

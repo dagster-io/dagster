@@ -23,8 +23,7 @@ class IndexedCooMatrix:
 
 @asset(key_prefix=["s3", "recommender"])
 def user_story_matrix(comment_stories: DataFrame) -> Output[IndexedCooMatrix]:
-    """
-    A sparse matrix where the rows are users, the columns are stories, and the values
+    """A sparse matrix where the rows are users, the columns are stories, and the values
     are whether the user commented on the story.
     """
     deduplicated = comment_stories[["story_id", "commenter_id"]].drop_duplicates().dropna()

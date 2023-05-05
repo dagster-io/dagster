@@ -23,10 +23,6 @@ from .temp_dir import get_system_temp_directory as get_system_temp_directory
 
 IS_WINDOWS = os.name == "nt"
 
-funcsigs = inspect
-
-IS_WINDOWS = os.name == "nt"
-
 # TODO implement a generic import by name -- see https://stackoverflow.com/questions/301134/how-to-import-a-module-given-its-name
 
 

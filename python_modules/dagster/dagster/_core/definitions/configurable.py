@@ -40,13 +40,12 @@ class ConfigurableDefinition(ABC):
         return field
 
     def apply_config_mapping(self, config: Any) -> EvaluateValueResult:
-        """
-        Applies user-provided config mapping functions to the given configuration and validates the
+        """Applies user-provided config mapping functions to the given configuration and validates the
         results against the respective config schema.
 
         Expects incoming config to be validated and have fully-resolved values (StringSource values
         resolved, Enum types hydrated, etc.) via process_config() during ResolvedRunConfig
-        construction and CompositeSolid config mapping.
+        construction and Graph config mapping.
 
         Args:
             config (Any): A validated and resolved configuration dictionary matching this object's
@@ -74,9 +73,8 @@ class AnonymousConfigurableDefinition(ConfigurableDefinition):
         config_or_config_fn: Any,
         config_schema: CoercableToConfigSchema = None,
         description: Optional[str] = None,
-    ) -> Self:  # type: ignore [valid-type] # (until mypy supports Self)
-        """
-        Wraps this object in an object of the same type that provides configuration to the inner
+    ) -> Self:
+        """Wraps this object in an object of the same type that provides configuration to the inner
         object.
 
         Using ``configured`` may result in config values being displayed in
@@ -107,7 +105,7 @@ class AnonymousConfigurableDefinition(ConfigurableDefinition):
         self,
         description: Optional[str],
         config_schema: IDefinitionConfigSchema,
-    ) -> Self:  # type: ignore [valid-type] # (until mypy supports Self)
+    ) -> Self:
         raise NotImplementedError()
 
 
@@ -120,9 +118,8 @@ class NamedConfigurableDefinition(ConfigurableDefinition):
         name: str,
         config_schema: Optional[UserConfigSchema] = None,
         description: Optional[str] = None,
-    ) -> Self:  # type: ignore [valid-type] # (until mypy supports Self)
-        """
-        Wraps this object in an object of the same type that provides configuration to the inner
+    ) -> Self:
+        """Wraps this object in an object of the same type that provides configuration to the inner
         object.
 
         Using ``configured`` may result in config values being displayed in
@@ -158,7 +155,7 @@ class NamedConfigurableDefinition(ConfigurableDefinition):
         name: str,
         description: Optional[str],
         config_schema: IDefinitionConfigSchema,
-    ) -> Self:  # type: ignore [valid-type] # (until mypy supports Self)
+    ) -> Self:
         ...
 
 
@@ -170,8 +167,8 @@ def _check_configurable_param(configurable: ConfigurableDefinition) -> None:
         "configurable",
         (
             "You have invoked `configured` on a PendingNodeInvocation (an intermediate type), which"
-            " is produced by aliasing or tagging a solid definition. To configure a solid, you must"
-            " call `configured` on either a SolidDefinition and CompositeSolidDefinition. To fix"
+            " is produced by aliasing or tagging a node definition. To configure a node, you must"
+            " call `configured` on either an OpDefinition and GraphDefinition. To fix"
             " this error, make sure to call `configured` on the definition object *before* using"
             " the `tag` or `alias` methods. For usage examples, see"
             " https://docs.dagster.io/concepts/configuration/configured"
@@ -183,7 +180,7 @@ def _check_configurable_param(configurable: ConfigurableDefinition) -> None:
         ConfigurableDefinition,
         (
             "Only the following types can be used with the `configured` method: ResourceDefinition,"
-            " ExecutorDefinition, CompositeSolidDefinition, SolidDefinition, and LoggerDefinition."
+            " ExecutorDefinition, GraphDefinition, NodeDefinition, and LoggerDefinition."
             " For usage examples of `configured`, see"
             " https://docs.dagster.io/concepts/configuration/configured"
         ),
@@ -200,8 +197,8 @@ def configured(
     config_schema: Optional[UserConfigSchema] = None,
     **kwargs: Any,
 ) -> Callable[[object], T_Configurable]:
-    """
-    A decorator that makes it easy to create a function-configured version of an object.
+    """A decorator that makes it easy to create a function-configured version of an object.
+
     The following definition types can be configured using this function:
 
     * :py:class:`GraphDefinition`
@@ -255,7 +252,7 @@ def configured(
             name: str = check.not_none(kwargs.get("name") or fn_name)
             return configurable.configured(
                 config_or_config_fn=config_or_config_fn,
-                name=name,  # type: ignore [call-arg] # (mypy bug)
+                name=name,
                 config_schema=config_schema,
                 **{k: v for k, v in kwargs.items() if k != "name"},
             )

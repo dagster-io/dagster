@@ -11,12 +11,12 @@ from marks import mark_user_code_deployment_subchart
 
 @mark_user_code_deployment_subchart
 @pytest.mark.integration
-def test_execute_on_celery_k8s_subchart_disabled(  # pylint: disable=redefined-outer-name,unused-argument
+def test_execute_on_celery_k8s_subchart_disabled(
     dagster_instance_for_user_deployments_subchart_disabled,
     helm_namespace_for_user_deployments_subchart_disabled,
 ):
     namespace = helm_namespace_for_user_deployments_subchart_disabled
-    job_name = "demo_job_celery"
+    job_name = "demo_job_celery_k8s"
 
     core_api = kubernetes.client.CoreV1Api()
     batch_api = kubernetes.client.BatchV1Api()
@@ -72,8 +72,8 @@ def test_execute_on_celery_k8s_subchart_disabled(  # pylint: disable=redefined-o
         stdout=True,
         tty=False,
     )
-    print("Response: ")  #  pylint:disable=print-call
-    print(resp)  # pylint:disable=print-call
+    print("Response: ")  # noqa: T201
+    print(resp)  # noqa: T201
 
     runmaster_job_name = None
     timeout = datetime.timedelta(0, 90)
@@ -91,4 +91,4 @@ def test_execute_on_celery_k8s_subchart_disabled(  # pylint: disable=redefined-o
     result = wait_for_job_and_get_raw_logs(
         job_name=runmaster_job_name, namespace=namespace, wait_timeout=450
     )
-    assert "PIPELINE_SUCCESS" in result, "no match, result: {}".format(result)
+    assert "PIPELINE_SUCCESS" in result, f"no match, result: {result}"

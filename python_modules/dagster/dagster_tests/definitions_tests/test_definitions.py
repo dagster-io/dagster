@@ -28,7 +28,7 @@ def test_deps_equal():
     assert DependencyDefinition("foo", "bar") != DependencyDefinition("foo", "quuz")
 
 
-def test_solid_def():
+def test_op_def():
     @op
     def produce_string():
         return "foo"
@@ -41,17 +41,17 @@ def test_solid_def():
     def op_one(_context, input_one):
         raise Exception("should not execute")
 
-    pipeline_def = GraphDefinition(
+    job_def = GraphDefinition(
         node_defs=[produce_string, op_one],
         name="test",
         dependencies={"op_one": {"input_one": DependencyDefinition("produce_string")}},
     )
 
-    assert len(list(pipeline_def.solids[0].outputs())) == 1
+    assert len(list(job_def.nodes[0].outputs())) == 1
 
-    assert isinstance(pipeline_def.solid_named("op_one"), Node)
+    assert isinstance(job_def.node_named("op_one"), Node)
 
-    solid_one_solid = pipeline_def.solid_named("op_one")
+    solid_one_solid = job_def.node_named("op_one")
 
     assert solid_one_solid.has_input("input_one")
 
@@ -84,27 +84,25 @@ def test_solid_def():
         solid_one_solid, solid_one_solid.output_dict["result"]
     )
 
-    assert len(pipeline_def.dependency_structure.input_to_upstream_outputs_for_node("op_one")) == 1
+    assert len(job_def.dependency_structure.input_to_upstream_outputs_for_node("op_one")) == 1
 
     assert (
-        len(
-            pipeline_def.dependency_structure.output_to_downstream_inputs_for_node("produce_string")
-        )
+        len(job_def.dependency_structure.output_to_downstream_inputs_for_node("produce_string"))
         == 1
     )
 
-    assert len(pipeline_def.dependency_structure.inputs()) == 1
+    assert len(job_def.dependency_structure.inputs()) == 1
 
 
-def test_solid_def_bad_input_name():
+def test_op_def_bad_input_name():
     with pytest.raises(DagsterInvalidDefinitionError, match='"context" is not a valid name'):
-        # pylint: disable=unused-variable
+
         @op(ins={"context": In(String)})
         def op_one(_, _context):
             pass
 
 
-def test_solid_def_receives_version():
+def test_op_def_receives_version():
     @op
     def op_no_version(_):
         pass
@@ -118,7 +116,7 @@ def test_solid_def_receives_version():
     assert op_with_version.version == "42"
 
 
-def test_pipeline_types():
+def test_job_types():
     @op
     def produce_string():
         return "foo"
@@ -131,7 +129,7 @@ def test_pipeline_types():
     def op_one(_context, input_one):
         raise Exception("should not execute")
 
-    pipeline_def = JobDefinition(
+    job_def = JobDefinition(
         graph_def=GraphDefinition(
             node_defs=[produce_string, op_one],
             name="test",
@@ -139,7 +137,7 @@ def test_pipeline_types():
         )
     )
 
-    run_config_schema = create_run_config_schema(pipeline_def)
+    run_config_schema = create_run_config_schema(job_def)
 
     assert run_config_schema.has_config_type("String")
     assert run_config_schema.has_config_type("Int")
@@ -186,7 +184,7 @@ def test_materialization_assign_label_from_asset_key():
     assert mat.label == "foo bar"
 
 
-def test_rehydrate_solid_handle():
+def test_rehydrate_op_handle():
     h = NodeHandle.from_dict({"name": "foo", "parent": None})
     assert h.name == "foo"
     assert h.parent is None

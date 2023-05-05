@@ -19,8 +19,8 @@ import {RunFragment} from './types/RunFragments.types';
 import {RunTableRunFragment} from './types/RunTable.types';
 import {LaunchPipelineExecutionMutation, RunTimeFragment} from './types/RunUtils.types';
 
-export function titleForRun(run: {runId: string}) {
-  return run.runId.split('-').shift();
+export function titleForRun(run: {id: string}) {
+  return run.id.split('-').shift();
 }
 
 export function assetKeysForRun(run: {
@@ -34,10 +34,10 @@ export function assetKeysForRun(run: {
 }
 
 export function linkToRunEvent(
-  run: {runId: string},
+  run: {id: string},
   event: {timestamp?: string; stepKey: string | null},
 ) {
-  return `/runs/${run.runId}?${qs.stringify({
+  return `/runs/${run.id}?${qs.stringify({
     focusedTime: event.timestamp ? Number(event.timestamp) : undefined,
     selection: event.stepKey,
     logs: `step:${event.stepKey}`,
@@ -74,7 +74,7 @@ export function handleLaunchResult(
   }
 
   if (result.__typename === 'LaunchRunSuccess') {
-    const pathname = `/runs/${result.run.runId}`;
+    const pathname = `/runs/${result.run.id}`;
     const search = options.preserveQuerystring ? history.location.search : '';
     const openInNewTab = () => window.open(history.createHref({pathname, search}), '_blank');
     const openInSameTab = () => history.push({pathname, search});
@@ -88,7 +88,7 @@ export function handleLaunchResult(
         intent: 'success',
         message: (
           <div>
-            Launched run <Mono>{result.run.runId.slice(0, 8)}</Mono>
+            Launched run <Mono>{result.run.id.slice(0, 8)}</Mono>
           </div>
         ),
         action: {
@@ -122,8 +122,8 @@ function getBaseExecutionMetadata(run: RunFragment | RunTableRunFragment) {
   const hiddenTagKeys: string[] = [DagsterTag.IsResumeRetry, DagsterTag.StepSelection];
 
   return {
-    parentRunId: run.runId,
-    rootRunId: run.rootRunId ? run.rootRunId : run.runId,
+    parentRunId: run.id,
+    rootRunId: run.rootRunId ? run.rootRunId : run.id,
     tags: [
       // Clean up tags related to run grouping once we decide its persistence
       // https://github.com/dagster-io/dagster/issues/2495
@@ -137,11 +137,11 @@ function getBaseExecutionMetadata(run: RunFragment | RunTableRunFragment) {
       // pass run group info via tags
       {
         key: DagsterTag.ParentRunId,
-        value: run.runId,
+        value: run.id,
       },
       {
         key: DagsterTag.RootRunId,
-        value: run.rootRunId ? run.rootRunId : run.runId,
+        value: run.rootRunId ? run.rootRunId : run.id,
       },
     ],
   };
@@ -200,11 +200,9 @@ export function getReexecutionVariables(input: {
 export const LAUNCH_PIPELINE_EXECUTION_MUTATION = gql`
   mutation LaunchPipelineExecution($executionParams: ExecutionParams!) {
     launchPipelineExecution(executionParams: $executionParams) {
-      __typename
       ... on LaunchRunSuccess {
         run {
           id
-          runId
           pipelineName
         }
       }
@@ -229,7 +227,6 @@ export const LAUNCH_PIPELINE_EXECUTION_MUTATION = gql`
 export const DELETE_MUTATION = gql`
   mutation Delete($runId: String!) {
     deletePipelineRun(runId: $runId) {
-      __typename
       ... on UnauthorizedError {
         message
       }
@@ -246,7 +243,6 @@ export const DELETE_MUTATION = gql`
 export const TERMINATE_MUTATION = gql`
   mutation Terminate($runId: String!, $terminatePolicy: TerminateRunPolicy) {
     terminatePipelineExecution(runId: $runId, terminatePolicy: $terminatePolicy) {
-      __typename
       ... on TerminateRunFailure {
         message
       }
@@ -256,7 +252,6 @@ export const TERMINATE_MUTATION = gql`
       ... on TerminateRunSuccess {
         run {
           id
-          runId
           canTerminate
         }
       }
@@ -279,11 +274,9 @@ export const LAUNCH_PIPELINE_REEXECUTION_MUTATION = gql`
       executionParams: $executionParams
       reexecutionParams: $reexecutionParams
     ) {
-      __typename
       ... on LaunchRunSuccess {
         run {
           id
-          runId
           pipelineName
           rootRunId
           parentRunId
@@ -349,7 +342,6 @@ export const RunStateSummary: React.FC<RunTimeProps> = React.memo(({run}) => {
 export const RUN_TIME_FRAGMENT = gql`
   fragment RunTimeFragment on Run {
     id
-    runId
     status
     startTime
     endTime

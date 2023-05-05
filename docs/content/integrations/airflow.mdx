@@ -1,6 +1,6 @@
 ---
 title: Dagster with Airflow | Dagster
-description: The dagster-airflow package allows you to export Dagster jobs as Airflow DAGs, as well as to import Airflow DAGs into Dagster jobs.
+description: The dagster-airflow package allows you to import Airflow DAGs into Dagster jobs and assets, as well as trigger job runs from Airflow.
 ---
 
 # Using Dagster with Airflow
@@ -9,9 +9,8 @@ description: The dagster-airflow package allows you to export Dagster jobs as Ai
 
 The [`dagster-airflow`](/\_apidocs/libraries/dagster-airflow) package provides interoperability between Dagster and Airflow. The main scenarios for using the Dagster Airflow integration are:
 
-- You want to do a lift-and-shift migration of all your existing Airflow DAGs into Dagster
-- You want to run Dagster jobs on your existing Airflow infrastructure
-- You want to orchestrate Dagster JobRuns from Airflow
+- You want to do a lift-and-shift migration of all your existing Airflow DAGs into Dagster Jobs/SDAs
+- You want to trigger Dagster job runs from Airflow
 
 This integration is designed to help support users who have existing Airflow usage and are looking to explore using Dagster.
 
@@ -30,7 +29,7 @@ While Airflow and Dagster have some significant differences, there are many conc
 | Executor              | [Executor](/deployment/executors)                                                                                                                                                                                                                                                                      |                                                                                                                                                                                                       |
 | DagBag                | [Code Locations](/concepts/code-locations)                                                                                                                                                                                                                                                             | Multiple isolated code locations with different system and Python dependencies can exist within the same Dagster instance.                                                                            |
 | Instance              | [Instance](/deployment/dagster-instance)                                                                                                                                                                                                                                                               |                                                                                                                                                                                                       |
-| SubDAGs / TaskGroups  | [Graphs](/concepts/ops-jobs-graphs/graphs), [Tags](/concepts/ops-jobs-graphs/metadata-tags#tags) and [AssetGroups](/concepts/assets/software-defined-assets#grouping-assets)                                                                                                                           | Dagster provides rich, searchable [metadata and tagging](/concepts/ops-jobs-graphs/metadata-tags) support well beyond what’s offered by Airflow.                                                      |
+| SubDAGs / TaskGroups  | [Graphs](/concepts/ops-jobs-graphs/graphs), [Tags](/concepts/ops-jobs-graphs/metadata-tags#tags) and [grouped assets](/concepts/assets/software-defined-assets#grouping-assets)                                                                                                                        | Dagster provides rich, searchable [metadata and tagging](/concepts/ops-jobs-graphs/metadata-tags) support well beyond what’s offered by Airflow.                                                      |
 | Hooks                 | [Resources](/concepts/resources)                                                                                                                                                                                                                                                                       | Dagster [resources](/concepts/resources) contain a superset of the functionality of hooks and have much stronger composition guarantees.                                                              |
 | Pools                 | [Run Coordinator](/deployment/run-coordinator)                                                                                                                                                                                                                                                         |                                                                                                                                                                                                       |
 | XComs                 | [IO Manager](/concepts/io-management/io-managers)                                                                                                                                                                                                                                                      | I/O managers are more powerful than XComs and allow the passing large datasets between jobs.                                                                                                          |

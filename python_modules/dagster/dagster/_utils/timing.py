@@ -12,31 +12,31 @@ def format_duration(milliseconds):
     # ex: 0.83ms
     # ex: 8.3ms
     if milliseconds < 10:
-        return "{duration}ms".format(duration=round(milliseconds, 2))
+        return f"{round(milliseconds, 2)}ms"
 
     # between 10 ms and 1000 ms
     # ex: 533ms
     if milliseconds < 1000:
-        return "{duration}ms".format(duration=int(milliseconds))
+        return f"{int(milliseconds)}ms"
 
     # between one second and one minute
     # ex: 5.6s
     if milliseconds < 1000 * 60:
         seconds = milliseconds / 1000
-        return "{duration}s".format(duration=round(seconds, 2))
+        return f"{round(seconds, 2)}s"
 
     # between one minute and 60 minutes
     # 5m42s
     if milliseconds < 1000 * 60 * 60:
         minutes = int(milliseconds // (1000 * 60))
         seconds = int(milliseconds % (1000 * 60) // (1000))
-        return "{minutes}m{seconds}s".format(minutes=minutes, seconds=seconds)
+        return f"{minutes}m{seconds}s"
 
     # Above one hour
     else:
         hours = int(milliseconds // (1000 * 60 * 60))
         minutes = int(milliseconds % (1000 * 60 * 60) // (1000 * 60))
-        return "{hours}h{minutes}m".format(hours=hours, minutes=minutes)
+        return f"{hours}h{minutes}m"
 
 
 class TimerResult:
@@ -56,17 +56,19 @@ class TimerResult:
 
 @contextmanager
 def time_execution_scope():
-    """Usage:
+    """Context manager that times the execution of a block of code.
 
-    from solid_util.timing import time_execution_scope
-    with time_execution_scope() as timer_result:
-        do_some_operation()
+    Example:
+    ..code-block::
+        from solid_util.timing import time_execution_scope
+        with time_execution_scope() as timer_result:
+            do_some_operation()
 
-    print(
-        'do_some_operation took {timer_result.millis} milliseconds'.format(
-            timer_result=timer_result
+        print(
+            'do_some_operation took {timer_result.millis} milliseconds'.format(
+                timer_result=timer_result
+            )
         )
-    )
     """
     timer_result = TimerResult()
     yield timer_result

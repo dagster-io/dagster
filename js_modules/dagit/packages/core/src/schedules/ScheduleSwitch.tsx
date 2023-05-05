@@ -31,9 +31,10 @@ export const ScheduleSwitch: React.FC<Props> = (props) => {
   const {name, scheduleState} = schedule;
   const {status, id, selectorId} = scheduleState;
 
-  const {canStartSchedule, canStopRunningSchedule} = usePermissionsForLocation(
-    repoAddress.location,
-  );
+  const {
+    permissions: {canStartSchedule, canStopRunningSchedule},
+    disabledReasons,
+  } = usePermissionsForLocation(repoAddress.location);
 
   const [startSchedule, {loading: toggleOnInFlight}] = useMutation<
     StartThisScheduleMutation,
@@ -67,7 +68,7 @@ export const ScheduleSwitch: React.FC<Props> = (props) => {
 
   const running = status === InstigationStatus.RUNNING;
 
-  if (canStartSchedule.enabled && canStopRunningSchedule.enabled) {
+  if (canStartSchedule && canStopRunningSchedule) {
     return (
       <Checkbox
         format="switch"
@@ -79,8 +80,7 @@ export const ScheduleSwitch: React.FC<Props> = (props) => {
     );
   }
 
-  const lacksPermission =
-    (running && !canStopRunningSchedule.enabled) || (!running && !canStartSchedule.enabled);
+  const lacksPermission = (running && !canStopRunningSchedule) || (!running && !canStartSchedule);
   const disabled = toggleOffInFlight || toggleOnInFlight || lacksPermission;
 
   const switchElement = (
@@ -98,8 +98,8 @@ export const ScheduleSwitch: React.FC<Props> = (props) => {
   }
 
   const disabledReason = running
-    ? canStopRunningSchedule.disabledReason
-    : canStartSchedule.disabledReason;
+    ? disabledReasons.canStopRunningSchedule
+    : disabledReasons.canStartSchedule;
 
   return (
     <Tooltip content={disabledReason} display="flex">

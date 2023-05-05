@@ -1,0 +1,109 @@
+### Requirements: master
+#
+# This file defines the dependencies for the master pyright environment for the internal repo. This
+# is the environment that # pyright/pylance will use by default when running as a language server.
+#
+# Ideally, this would be the only pyright environment we need to define. This is not possible
+# because of dependency conflicts in between Dagster packages/examples. For ease of maintenance,
+# this file should maintain a complete list of Dagster packages, with packages excluded from the
+# enviroment commented out.
+#
+# NOTE: It is important that dagster-* dependencies of any package listed here are also listed.
+# e.g. if examples/foo depends on python_modules/libraries/dagster-foo, then dagster-foo must be
+# listed if examples/foo is listed.
+#
+# NOTE: Paths are relative to repo root.
+
+### HELM
+-e helm/dagster/schema
+
+### INTEGRATION TESTS
+-e integration_tests/python_modules/dagster-k8s-test-infra
+# -r integration_tests/test_suites/backcompat-test-suite/requirements.txt  # (no reqs)
+# -r integration_tests/test_suites/celery-k8s-test-suite/requirements.txt  # (no reqs)
+# -r integration_tests/test_suites/daemon-test-suite/requirements.txt  # (no reqs)
+# -r integration_tests/test_suites/k8s-test-suite/requirements.txt  # (no reqs)
+
+### LIBRARIES
+
+-e python_modules/automation
+-e python_modules/dagster[pyright,test]
+-e python_modules/dagit
+-e python_modules/dagster-graphql
+-e python_modules/dagster-test
+-e python_modules/libraries/dagster-airbyte/
+-e python_modules/libraries/dagster-airflow[test_airflow_2]
+-e python_modules/libraries/dagster-aws[test]
+-e python_modules/libraries/dagster-azure/
+-e python_modules/libraries/dagster-celery/
+-e python_modules/libraries/dagster-celery-docker/
+-e python_modules/libraries/dagster-celery-k8s/
+-e python_modules/libraries/dagster-census/
+-e python_modules/libraries/dagster-dask[yarn,pbs,kube,test]
+-e python_modules/libraries/dagster-databricks/
+-e python_modules/libraries/dagster-datadog/
+-e python_modules/libraries/dagster-datahub/
+-e python_modules/libraries/dagster-dbt/
+-e python_modules/libraries/dagster-docker/
+-e python_modules/libraries/dagster-duckdb/
+-e python_modules/libraries/dagster-duckdb-pandas/
+-e python_modules/libraries/dagster-duckdb-pyspark/
+-e python_modules/libraries/dagster-duckdb-polars/
+-e python_modules/libraries/dagster-fivetran/
+-e python_modules/libraries/dagster-gcp/
+-e python_modules/libraries/dagster-gcp-pandas[test]
+-e python_modules/libraries/dagster-gcp-pyspark/
+-e python_modules/libraries/dagster-ge/
+-e python_modules/libraries/dagster-github/
+-e python_modules/libraries/dagster-k8s/
+-e python_modules/libraries/dagster-managed-elements/
+-e python_modules/libraries/dagster-mlflow/
+-e python_modules/libraries/dagster-msteams/
+-e python_modules/libraries/dagster-mysql/
+-e python_modules/libraries/dagster-pagerduty/
+-e python_modules/libraries/dagster-pandas/
+-e python_modules/libraries/dagster-pandera/
+-e python_modules/libraries/dagster-papertrail/
+-e python_modules/libraries/dagster-postgres/
+-e python_modules/libraries/dagster-prometheus/
+-e python_modules/libraries/dagster-pyspark/
+-e python_modules/libraries/dagster-shell/
+-e python_modules/libraries/dagster-slack/
+-e python_modules/libraries/dagster-snowflake/
+-e python_modules/libraries/dagster-snowflake-pandas/
+-e python_modules/libraries/dagster-snowflake-pyspark/
+-e python_modules/libraries/dagster-spark/
+-e python_modules/libraries/dagster-ssh/
+-e python_modules/libraries/dagster-twilio/
+-e python_modules/libraries/dagster-wandb[dev]
+-e python_modules/libraries/dagstermill/
+
+### OTHER
+pandas_gbq  # (quickstart_gcp)
+wordcloud  # (quickstart-*)
+
+### EXAMPLES
+
+# -e examples/assets_dbt_python # it includes dagster-cloud
+-e examples/assets_dynamic_partitions
+# -e examples/assets_modern_data_stack # it includes dagster-cloud
+-e examples/assets_pandas_pyspark
+# -e examples/assets_pandas_type_metadata
+# -e examples/assets_smoke_test
+# -r examples/deploy_docker/requirements.txt
+# -r examples/deploy_ecs/requirements.txt  # (no reqs)
+# -r examples/deploy_k8s/requirements.txt  # (no reqs)
+-e examples/development_to_production
+-e examples/docs_snippets[full]
+-e examples/feature_graph_backed_assets
+# -e examples/project_fully_featured
+# -e examples/quickstart_aws  # (analyzed but not installed)
+# -e examples/quickstart_etl  # (analyzed but not installed)
+# -e examples/quickstart_gcp  # (analyzed but not installed)
+# -e examples/quickstart_snowflake  # (analyzed but not installed)
+-e examples/tutorial_dbt_dagster
+-e examples/tutorial_notebook_assets
+-e examples/with_airflow
+-e examples/with_great_expectations
+-e examples/with_pyspark
+-e examples/with_wandb

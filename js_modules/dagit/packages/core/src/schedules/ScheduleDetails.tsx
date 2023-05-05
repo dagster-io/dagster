@@ -10,6 +10,7 @@ import {
   Heading,
   Mono,
   Tooltip,
+  Button,
 } from '@dagster-io/ui';
 import * as React from 'react';
 
@@ -19,6 +20,7 @@ import {InstigationStatus, InstigationType} from '../graphql/types';
 import {TickTag} from '../instigation/InstigationTick';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {PipelineReference} from '../pipelines/PipelineReference';
+import {EvaluateScheduleDialog} from '../ticks/EvaluateScheduleDialog';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 
@@ -68,6 +70,8 @@ export const ScheduleDetails: React.FC<{
 
   const running = status === InstigationStatus.RUNNING;
 
+  const [showTestTickDialog, setShowTestTickDialog] = React.useState(false);
+
   return (
     <>
       <PageHeader
@@ -86,7 +90,7 @@ export const ScheduleDetails: React.FC<{
               <Tag icon="timer">
                 Next tick:{' '}
                 <TimestampDisplay
-                  timestamp={futureTicks.results[0].timestamp}
+                  timestamp={futureTicks.results[0].timestamp!}
                   timezone={executionTimezone}
                   timeFormat={TIME_FORMAT}
                 />
@@ -101,7 +105,28 @@ export const ScheduleDetails: React.FC<{
             </Box>
           </>
         }
-        right={<QueryRefreshCountdown refreshState={refreshState} />}
+        right={
+          <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+            <QueryRefreshCountdown refreshState={refreshState} />
+            <Button
+              onClick={() => {
+                setShowTestTickDialog(true);
+              }}
+            >
+              Test Schedule
+            </Button>
+          </Box>
+        }
+      />
+      <EvaluateScheduleDialog
+        key={showTestTickDialog ? '1' : '0'} // change key to reset dialog state
+        isOpen={showTestTickDialog}
+        onClose={() => {
+          setShowTestTickDialog(false);
+        }}
+        name={schedule.name}
+        repoAddress={repoAddress}
+        jobName={pipelineName}
       />
       <MetadataTableWIP>
         <tbody>

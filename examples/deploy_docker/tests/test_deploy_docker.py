@@ -6,7 +6,7 @@ from contextlib import contextmanager
 
 import requests
 from dagster import file_relative_path
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
@@ -133,9 +133,7 @@ def test_deploy_docker():
                 raise Exception("Timed out waiting for dagit server to be available")
 
             try:
-                sanity_check = requests.get(
-                    "http://{dagit_host}:3000/dagit_info".format(dagit_host=dagit_host)
-                )
+                sanity_check = requests.get(f"http://{dagit_host}:3000/dagit_info")
                 assert "dagit" in sanity_check.text
                 break
             except requests.exceptions.ConnectionError:

@@ -12,6 +12,7 @@ import {RepositoryLocationLoadStatus} from '../graphql/types';
 
 import {
   RepositoryLocationStatusQuery,
+  RepositoryLocationStatusQueryVariables,
   ReloadRepositoryLocationMutationVariables,
   ReloadWorkspaceMutationVariables,
   ReloadWorkspaceMutation,
@@ -95,16 +96,19 @@ export const useRepositoryLocationReload = ({
 
   const invalidateConfigs = useInvalidateConfigsForRepo();
 
-  const {startPolling, stopPolling} = useQuery<RepositoryLocationStatusQuery>(
-    REPOSITORY_LOCATION_STATUS_QUERY,
-    {
-      skip: state.pollStartTime === null,
-      pollInterval: 5000,
-      fetchPolicy: 'no-cache',
-      // This is irritating, but apparently necessary for now.
-      // https://github.com/apollographql/apollo-client/issues/5531
-      notifyOnNetworkStatusChange: true,
-      onCompleted: (data: RepositoryLocationStatusQuery) => {
+  const {startPolling, stopPolling} = useQuery<
+    RepositoryLocationStatusQuery,
+    RepositoryLocationStatusQueryVariables
+  >(REPOSITORY_LOCATION_STATUS_QUERY, {
+    skip: state.pollStartTime === null,
+    pollInterval: 5000,
+    fetchPolicy: 'no-cache',
+    // This is irritating, but apparently necessary for now.
+    // https://github.com/apollographql/apollo-client/issues/5531
+    notifyOnNetworkStatusChange: true,
+    onCompleted: (data: RepositoryLocationStatusQuery) => {
+      // SetTimeout to avoid infinite loop in test
+      setTimeout(() => {
         const workspace = data.workspaceOrError;
 
         if (workspace.__typename === 'PythonError') {
@@ -191,9 +195,9 @@ export const useRepositoryLocationReload = ({
 
         // Refetch all the queries bound to the UI.
         apollo.refetchQueries({include: 'active'});
-      },
+      }, 0);
     },
-  );
+  });
 
   const tryReload = React.useCallback(async () => {
     dispatch({type: 'start-mutation'});
@@ -207,21 +211,21 @@ export const useRepositoryLocationReload = ({
   const {mutating, pollStartTime, error, errorLocationId} = state;
   const reloading = mutating || pollStartTime !== null;
 
-  return React.useMemo(() => ({reloading, error, errorLocationId, tryReload}), [
+  return React.useMemo(() => ({reloading, error, errorLocationId, tryReload, mutating}), [
     reloading,
     error,
     errorLocationId,
     tryReload,
+    mutating,
   ]);
 };
 
 const REPOSITORY_LOCATION_STATUS_QUERY = gql`
   query RepositoryLocationStatusQuery {
     workspaceOrError {
-      __typename
       ... on Workspace {
+        id
         locationEntries {
-          __typename
           id
           loadStatus
           locationOrLoadError {
@@ -272,13 +276,12 @@ const RELOAD_WORKSPACE_MUTATION = gql`
   mutation ReloadWorkspaceMutation {
     reloadWorkspace {
       ... on Workspace {
+        id
         locationEntries {
-          __typename
           name
           id
           loadStatus
           locationOrLoadError {
-            __typename
             ... on RepositoryLocation {
               id
               repositories {
@@ -313,7 +316,6 @@ export const buildReloadFnForLocation = (location: string) => {
     >({
       mutation: RELOAD_REPOSITORY_LOCATION_MUTATION,
       variables: {location},
-      fetchPolicy: 'no-cache',
     });
 
     if (data?.reloadRepositoryLocation.__typename === 'WorkspaceLocationEntry') {
@@ -336,9 +338,15 @@ export const buildReloadFnForLocation = (location: string) => {
 const RELOAD_REPOSITORY_LOCATION_MUTATION = gql`
   mutation ReloadRepositoryLocationMutation($location: String!) {
     reloadRepositoryLocation(repositoryLocationName: $location) {
-      __typename
       ... on WorkspaceLocationEntry {
         id
+        loadStatus
+        locationOrLoadError {
+          ... on RepositoryLocation {
+            id
+          }
+          ...PythonErrorFragment
+        }
       }
       ... on UnauthorizedError {
         message

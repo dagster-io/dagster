@@ -15,6 +15,7 @@ from dagster_graphql.implementation.utils import (
     check_permission,
     require_permission_check,
 )
+from dagster_graphql.schema.util import ResolveInfo
 from dagster_graphql.test.utils import execute_dagster_graphql
 
 from .graphql_context_test_suite import NonLaunchableGraphQLContextTestMatrix
@@ -48,37 +49,37 @@ WORKSPACE_PERMISSIONS_QUERY = """
 
 class FakeMutation:
     @check_permission("fake_permission")
-    def mutate(self, graphene_info, **_kwargs):
+    def mutate(self, graphene_info: ResolveInfo, **_kwargs):
         pass
 
 
 class FakeOtherPermissionMutation:
     @check_permission("fake_other_permission")
-    def mutate(self, graphene_info, **_kwargs):
+    def mutate(self, graphene_info: ResolveInfo, **_kwargs):
         pass
 
 
 class FakeMissingPermissionMutation:
     @check_permission("fake_missing_permission")
-    def mutate(self, graphene_info, **_kwargs):
+    def mutate(self, graphene_info: ResolveInfo, **_kwargs):
         pass
 
 
 class FakeEnumPermissionMutation:
     @check_permission(Permissions.LAUNCH_PIPELINE_EXECUTION)
-    def mutate(self, graphene_info, **_kwargs):
+    def mutate(self, graphene_info: ResolveInfo, **_kwargs):
         pass
 
 
 class FakeOtherEnumPermissionMutation:
     @check_permission(Permissions.LAUNCH_PIPELINE_REEXECUTION)
-    def mutate(self, graphene_info, **_kwargs):
+    def mutate(self, graphene_info: ResolveInfo, **_kwargs):
         pass
 
 
 class FakeMissingEnumPermissionMutation:
     @check_permission(Permissions.LAUNCH_PARTITION_BACKFILL)
-    def mutate(self, graphene_info, **_kwargs):
+    def mutate(self, graphene_info: ResolveInfo, **_kwargs):
         pass
 
 
@@ -241,7 +242,7 @@ class TestPermissionsQuery(NonLaunchableGraphQLContextTestMatrix):
             if permission_result:
                 pass
 
-        permission_result.enabled  # pylint: disable=pointless-statement
+        permission_result.enabled
 
 
 class TestWorkspacePermissionsQuery(NonLaunchableGraphQLContextTestMatrix):

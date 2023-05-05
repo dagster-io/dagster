@@ -4,20 +4,23 @@ import string
 import uuid
 import warnings
 from collections import OrderedDict
-from typing import Tuple, Union, cast
+from typing import AbstractSet, Any, Iterable, Mapping, Sequence, Tuple, TypeVar, Union, cast
 
 import toposort as toposort_
+from typing_extensions import Final
 
 import dagster._check as check
-from dagster._utils import frozendict, library_version_from_core_version, parse_package_version
+from dagster._utils import library_version_from_core_version, parse_package_version
 
 BACKFILL_TAG_LENGTH = 8
 
-PYTHON_LOGGING_LEVELS_MAPPING = frozendict(
-    OrderedDict({"CRITICAL": 50, "ERROR": 40, "WARNING": 30, "INFO": 20, "DEBUG": 10})
+PYTHON_LOGGING_LEVELS_MAPPING: Final[Mapping[str, int]] = OrderedDict(
+    {"CRITICAL": 50, "ERROR": 40, "WARNING": 30, "INFO": 20, "DEBUG": 10}
 )
 
-PYTHON_LOGGING_LEVELS_ALIASES = frozendict(OrderedDict({"FATAL": "CRITICAL", "WARN": "WARNING"}))
+PYTHON_LOGGING_LEVELS_ALIASES: Final[Mapping[str, str]] = OrderedDict(
+    {"FATAL": "CRITICAL", "WARN": "WARNING"}
+)
 
 PYTHON_LOGGING_LEVELS_NAMES = frozenset(
     [
@@ -28,32 +31,34 @@ PYTHON_LOGGING_LEVELS_NAMES = frozenset(
     ]
 )
 
+T = TypeVar("T", bound=Any)
+
 
 def coerce_valid_log_level(log_level: Union[str, int]) -> int:
     """Convert a log level into an integer for consumption by the low-level Python logging API."""
     if isinstance(log_level, int):
         return log_level
-    check.str_param(log_level, "log_level")
+    str_log_level = check.str_param(log_level, "log_level")
     check.invariant(
-        log_level.lower() in PYTHON_LOGGING_LEVELS_NAMES,
+        str_log_level.lower() in PYTHON_LOGGING_LEVELS_NAMES,
         "Bad value for log level {level}: permissible values are {levels}.".format(
-            level=log_level,
+            level=str_log_level,
             levels=", ".join(
-                ["'{}'".format(level_name.upper()) for level_name in PYTHON_LOGGING_LEVELS_NAMES]
+                [f"'{level_name.upper()}'" for level_name in PYTHON_LOGGING_LEVELS_NAMES]
             ),
         ),
     )
-    log_level = PYTHON_LOGGING_LEVELS_ALIASES.get(log_level.upper(), log_level.upper())
-    return PYTHON_LOGGING_LEVELS_MAPPING[log_level]
+    str_log_level = PYTHON_LOGGING_LEVELS_ALIASES.get(log_level.upper(), log_level.upper())
+    return PYTHON_LOGGING_LEVELS_MAPPING[str_log_level]
 
 
-def toposort(data):
+def toposort(data: Mapping[T, AbstractSet[T]]) -> Sequence[Sequence[T]]:
     # Workaround a bug in older versions of toposort that choke on frozenset
     data = {k: set(v) if isinstance(v, frozenset) else v for k, v in data.items()}
     return [sorted(list(level)) for level in toposort_.toposort(data)]
 
 
-def toposort_flatten(data):
+def toposort_flatten(data: Mapping[T, AbstractSet[T]]) -> Sequence[T]:
     return [item for level in toposort(data) for item in level]
 
 
@@ -61,16 +66,16 @@ def make_new_run_id() -> str:
     return str(uuid.uuid4())
 
 
-def make_new_backfill_id():
+def make_new_backfill_id() -> str:
     return "".join(random.choice(string.ascii_lowercase) for x in range(BACKFILL_TAG_LENGTH))
 
 
-def str_format_list(items):
-    return "[{items}]".format(items=", ".join(["'{item}'".format(item=item) for item in items]))
+def str_format_list(items: Iterable[object]) -> str:
+    return "[{items}]".format(items=", ".join([f"'{item}'" for item in items]))
 
 
-def str_format_set(items):
-    return "[{items}]".format(items=", ".join(["'{item}'".format(item=item) for item in items]))
+def str_format_set(items: Iterable[object]) -> str:
+    return "[{items}]".format(items=", ".join([f"'{item}'" for item in items]))
 
 
 def check_dagster_package_version(library_name: str, library_version: str) -> None:
@@ -90,7 +95,7 @@ def check_dagster_package_version(library_name: str, library_version: str) -> No
         if library_version != target_version:
             message = (
                 f"Found version mismatch between `dagster` ({__version__}) "
-                f"expected library version ({target_version} "
+                f"expected library version ({target_version}) "
                 f"and `{library_name}` ({library_version})."
             )
             warnings.warn(message)

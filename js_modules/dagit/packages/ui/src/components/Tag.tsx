@@ -56,6 +56,7 @@ const intentToIconColor = (intent: React.ComponentProps<typeof BlueprintTag>['in
 };
 
 interface Props extends Omit<React.ComponentProps<typeof BlueprintTag>, 'icon' | 'rightIcon'> {
+  children?: React.ReactNode;
   icon?: IconName | 'spinner';
   rightIcon?: IconName | 'spinner';
 }

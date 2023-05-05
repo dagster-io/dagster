@@ -1,4 +1,3 @@
-# pylint: disable=redefined-outer-name
 import boto3
 import moto
 import pytest

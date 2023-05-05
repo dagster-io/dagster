@@ -1,39 +1,39 @@
-# pylint:disable=no-member
-
+import typing
 from time import sleep
 
-from dagster import Field, Int, List, Output
-from dagster._core.test_utils import default_mode_def_for_test
-from dagster._legacy import InputDefinition, OutputDefinition, PresetDefinition, pipeline, solid
+from dagster import Config, In, Int, List, Out, Output, job, op
+from pydantic import Field
 
 
-@solid(
-    input_defs=[InputDefinition("units", List[Int])],
-    output_defs=[OutputDefinition(Int, "total")],
+@op(
+    ins={"units": In(List[Int])},
+    out={"total": Out(Int)},
 )
 def sleeper(context, units):
     tot = 0
     for sec in units:
-        context.log.info("Sleeping for {} seconds".format(sec))
+        context.log.info(f"Sleeping for {sec} seconds")
         sleep(sec)
         tot += sec
 
     return tot
 
 
-@solid(
-    config_schema=Field([int], is_required=False, default_value=[1, 1, 1, 1]),
-    output_defs=[
-        OutputDefinition(List[Int], "out_1"),
-        OutputDefinition(List[Int], "out_2"),
-        OutputDefinition(List[Int], "out_3"),
-        OutputDefinition(List[Int], "out_4"),
-    ],
+class GiverConfig(Config):
+    units: typing.List[int] = Field(default_value=[1, 1, 1, 1])
+
+
+@op(
+    out={
+        "out 1": Out(List[Int]),
+        "out 2": Out(List[Int]),
+        "out 3": Out(List[Int]),
+        "out 4": Out(List[Int]),
+    },
 )
-def giver(context):
-    units = context.solid_config
+def giver(config: GiverConfig):
     queues = [[], [], [], []]
-    for i, sec in enumerate(units):
+    for i, sec in enumerate(config.units):
         queues[i % 4].append(sec)
 
     yield Output(queues[0], "out_1")
@@ -42,36 +42,23 @@ def giver(context):
     yield Output(queues[3], "out_4")
 
 
-@solid(
-    input_defs=[
-        InputDefinition("in_1", Int),
-        InputDefinition("in_2", Int),
-        InputDefinition("in_3", Int),
-        InputDefinition("in_4", Int),
-    ],
-    output_defs=[OutputDefinition(Int)],
+@op(
+    ins={
+        "in_1": In(Int),
+        "in_2": In(Int),
+        "in_3": In(Int),
+        "in_4": In(Int),
+    },
+    out=Out(int),
 )
 def total(_, in_1, in_2, in_3, in_4):
     return in_1 + in_2 + in_3 + in_4
 
 
-@pipeline(
-    description=(
-        "Demo diamond-shaped pipeline that has four-path parallel structure of solids.  Execute "
-        "with the `multi` preset to take advantage of multi-process parallelism."
-    ),
-    preset_defs=[
-        PresetDefinition(
-            "multi",
-            {
-                "execution": {"multiprocess": {}},
-                "solids": {"giver": {"config": [2, 2, 2, 2]}},
-            },
-        )
-    ],
-    mode_defs=[default_mode_def_for_test],
+@job(
+    description="Demo diamond-shaped job that has four-path parallel structure of ops.",
 )
-def sleepy_pipeline():
+def sleepy_job():
     giver_res = giver()
 
     total(

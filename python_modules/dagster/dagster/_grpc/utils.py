@@ -1,5 +1,5 @@
 import os
-from typing import TYPE_CHECKING, Sequence
+from typing import TYPE_CHECKING, Optional, Sequence
 
 import dagster._check as check
 from dagster._core.definitions.reconstruct import (
@@ -13,7 +13,11 @@ if TYPE_CHECKING:
 
 
 def get_loadable_targets(
-    python_file, module_name, package_name, working_directory, attribute
+    python_file: Optional[str],
+    module_name: Optional[str],
+    package_name: Optional[str],
+    working_directory: Optional[str],
+    attribute: Optional[str],
 ) -> Sequence["LoadableTarget"]:
     from dagster._core.workspace.autodiscovery import (
         LoadableTarget,

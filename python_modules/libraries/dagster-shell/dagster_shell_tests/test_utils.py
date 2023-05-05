@@ -2,6 +2,7 @@ import logging
 import os
 
 import pytest
+from dagster._core.test_utils import environ
 from dagster_shell.utils import execute, execute_script_file
 
 
@@ -63,6 +64,13 @@ def test_env(tmp_file):
     )
     assert res.strip() == "some_env_value"
     assert retcode == 0
+
+    # By default, pulls in env from the calling process
+    with environ({"TEST_VAR": "some_other_env_value"}):
+        res, retcode = execute(cmd, output_logging="BUFFER", log=logging)
+
+        assert res.strip() == "some_other_env_value"
+        assert retcode == 0
 
     with tmp_file(cmd) as (_, tmp_file):
         res, retcode = execute_script_file(

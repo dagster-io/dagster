@@ -1,4 +1,4 @@
-from dagster._core.utils import check_dagster_package_version
+from dagster._core.libraries import DagsterLibraryRegistry
 
 from .event_log import PostgresEventLogStorage
 from .run_storage import PostgresRunStorage
@@ -6,7 +6,7 @@ from .schedule_storage import PostgresScheduleStorage
 from .storage import DagsterPostgresStorage
 from .version import __version__
 
-check_dagster_package_version("dagster-postgres", __version__)
+DagsterLibraryRegistry.register("dagster-postgres", __version__)
 __all__ = [
     "DagsterPostgresStorage",
     "PostgresEventLogStorage",

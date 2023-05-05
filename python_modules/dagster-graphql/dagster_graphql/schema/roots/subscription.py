@@ -5,7 +5,7 @@ from ...implementation.execution import gen_captured_log_data, gen_compute_logs,
 from ..external import GrapheneLocationStateChangeSubscription, gen_location_state_changes
 from ..logs.compute_logs import GrapheneCapturedLogs, GrapheneComputeIOType, GrapheneComputeLogFile
 from ..pipelines.subscription import GraphenePipelineRunLogsSubscriptionPayload
-from ..util import non_null_list
+from ..util import ResolveInfo, non_null_list
 
 
 class GrapheneDagitSubscription(graphene.ObjectType):
@@ -53,14 +53,16 @@ class GrapheneDagitSubscription(graphene.ObjectType):
         ),
     )
 
-    def subscribe_pipelineRunLogs(self, graphene_info, runId, cursor=None):
+    def subscribe_pipelineRunLogs(self, graphene_info: ResolveInfo, runId, cursor=None):
         return gen_events_for_run(graphene_info, runId, cursor)
 
-    def subscribe_computeLogs(self, graphene_info, runId, stepKey, ioType, cursor=None):
+    def subscribe_computeLogs(
+        self, graphene_info: ResolveInfo, runId, stepKey, ioType, cursor=None
+    ):
         return gen_compute_logs(graphene_info, runId, stepKey, ComputeIOType(ioType.value), cursor)
 
-    def subscribe_capturedLogs(self, graphene_info, logKey, cursor=None):
+    def subscribe_capturedLogs(self, graphene_info: ResolveInfo, logKey, cursor=None):
         return gen_captured_log_data(graphene_info, logKey, cursor)
 
-    def subscribe_locationStateChangeEvents(self, graphene_info):
+    def subscribe_locationStateChangeEvents(self, graphene_info: ResolveInfo):
         return gen_location_state_changes(graphene_info)

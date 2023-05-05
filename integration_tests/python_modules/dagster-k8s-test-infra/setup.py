@@ -1,4 +1,4 @@
-from setuptools import find_packages, setup  # type: ignore
+from setuptools import find_packages, setup
 
 setup(
     name="dagster-k8s-test-infra",

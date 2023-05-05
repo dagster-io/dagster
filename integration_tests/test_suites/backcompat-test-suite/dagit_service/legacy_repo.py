@@ -1,4 +1,7 @@
-# pylint: skip-file
+# type: ignore
+
+# This file is only loaded by old versions of dagster during backcompat testing.
+
 from dagster import graph, op, pipeline, repository, solid
 from dagster_graphql import DagsterGraphQLClient
 
@@ -39,7 +42,7 @@ def ping_dagit():
         "dagit",
         port_number=3000,
     )
-    return client._execute("{__typename}")  # pylint: disable=protected-access
+    return client._execute("{__typename}")  # noqa: SLF001
 
 
 @pipeline

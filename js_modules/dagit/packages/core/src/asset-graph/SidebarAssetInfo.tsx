@@ -14,27 +14,39 @@ import {
 import {AssetSidebarActivitySummary} from '../assets/AssetSidebarActivitySummary';
 import {DependsOnSelfBanner} from '../assets/DependsOnSelfBanner';
 import {PartitionHealthSummary} from '../assets/PartitionHealthSummary';
+import {UnderlyingOpsOrGraph} from '../assets/UnderlyingOpsOrGraph';
+import {Version} from '../assets/Version';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
-import {AssetKey} from '../assets/types';
-import {usePartitionHealthData} from '../assets/usePartitionHealthData';
+import {
+  healthRefreshHintFromLiveData,
+  usePartitionHealthData,
+} from '../assets/usePartitionHealthData';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {DagsterTypeFragment} from '../dagstertype/types/DagsterType.types';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 import {Description} from '../pipelines/Description';
 import {SidebarSection, SidebarTitle} from '../pipelines/SidebarComponents';
+import {ResourceContainer, ResourceHeader} from '../pipelines/SidebarOpHelpers';
 import {pluginForMetadata} from '../plugins';
-import {Version} from '../versions/Version';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
+import {RepoAddress} from '../workspace/types';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {LiveDataForNode, displayNameForAssetKey, GraphNode, nodeDependsOnSelf} from './Utils';
 import {SidebarAssetQuery, SidebarAssetQueryVariables} from './types/SidebarAssetInfo.types';
+import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
 
 export const SidebarAssetInfo: React.FC<{
-  assetNode: GraphNode;
-  liveData: LiveDataForNode;
-}> = ({assetNode, liveData}) => {
-  const assetKey = assetNode.assetKey;
-  const partitionHealthData = usePartitionHealthData([assetKey]);
+  graphNode: GraphNode;
+  liveData?: LiveDataForNode;
+}> = ({graphNode, liveData}) => {
+  const {assetKey, definition} = graphNode;
+  const partitionHealthRefreshHint = healthRefreshHintFromLiveData(liveData);
+  const partitionHealthData = usePartitionHealthData(
+    [assetKey],
+    partitionHealthRefreshHint,
+    'background',
+  );
   const {data} = useQuery<SidebarAssetQuery, SidebarAssetQueryVariables>(SIDEBAR_ASSET_QUERY, {
     variables: {assetKey: {path: assetKey.path}},
   });
@@ -44,7 +56,7 @@ export const SidebarAssetInfo: React.FC<{
   if (!asset) {
     return (
       <>
-        <Header assetKey={assetKey} />
+        <Header assetNode={definition} repoAddress={null} />
         <Box padding={{vertical: 64}}>
           <Spinner purpose="section" />
         </Box>
@@ -61,24 +73,13 @@ export const SidebarAssetInfo: React.FC<{
 
   return (
     <>
-      <Header assetKey={assetKey} opName={asset.op?.name} />
+      <Header assetNode={definition} repoAddress={repoAddress} />
 
       <AssetDefinedInMultipleReposNotice
         assetKey={assetKey}
         loadedFromRepo={repoAddress}
         padded={false}
       />
-
-      <AssetSidebarActivitySummary
-        assetKey={assetKey}
-        assetLastMaterializedAt={lastMaterialization?.timestamp}
-        assetHasDefinedPartitions={!!asset.partitionDefinition}
-        liveData={liveData}
-      />
-
-      <div style={{borderBottom: `2px solid ${Colors.Gray300}`}} />
-
-      {nodeDependsOnSelf(assetNode) && <DependsOnSelfBanner />}
 
       {(asset.description || OpMetadataPlugin?.SidebarComponent || !hasAssetMetadata) && (
         <SidebarSection title="Description">
@@ -92,6 +93,17 @@ export const SidebarAssetInfo: React.FC<{
           )}
         </SidebarSection>
       )}
+
+      <AssetSidebarActivitySummary
+        asset={asset}
+        assetLastMaterializedAt={lastMaterialization?.timestamp}
+        isSourceAsset={definition.isSource}
+        liveData={liveData}
+      />
+
+      <div style={{borderBottom: `2px solid ${Colors.Gray300}`}} />
+
+      {nodeDependsOnSelf(graphNode) && <DependsOnSelfBanner />}
 
       {asset.opVersion && (
         <SidebarSection title="Code Version">
@@ -108,6 +120,27 @@ export const SidebarAssetInfo: React.FC<{
               type={assetConfigSchema}
               typesInScope={assetConfigSchema.recursiveConfigTypes}
             />
+          </Box>
+        </SidebarSection>
+      )}
+
+      {asset.requiredResources.length > 0 && (
+        <SidebarSection title="Required Resources">
+          <Box padding={{vertical: 16, horizontal: 24}}>
+            {asset.requiredResources.map((resource) => (
+              <ResourceContainer key={resource.resourceKey}>
+                <Icon name="resource" color={Colors.Gray700} />
+                {repoAddress ? (
+                  <Link
+                    to={workspacePathFromAddress(repoAddress, `/resources/${resource.resourceKey}`)}
+                  >
+                    <ResourceHeader>{resource.resourceKey}</ResourceHeader>
+                  </Link>
+                ) : (
+                  <ResourceHeader>{resource.resourceKey}</ResourceHeader>
+                )}
+              </ResourceContainer>
+            ))}
           </Box>
         </SidebarSection>
       )}
@@ -142,8 +175,12 @@ const TypeSidebarSection: React.FC<{
   );
 };
 
-const Header: React.FC<{assetKey: AssetKey; opName?: string}> = ({assetKey, opName}) => {
-  const displayName = displayNameForAssetKey(assetKey);
+const Header: React.FC<{
+  assetNode: AssetNodeForGraphQueryFragment;
+  opName?: string;
+  repoAddress?: RepoAddress | null;
+}> = ({assetNode, repoAddress}) => {
+  const displayName = displayNameForAssetKey(assetNode.assetKey);
 
   return (
     <Box flex={{gap: 4, direction: 'column'}} margin={{left: 24, right: 12, vertical: 16}}>
@@ -156,17 +193,17 @@ const Header: React.FC<{assetKey: AssetKey; opName?: string}> = ({assetKey, opNa
         }}
       >
         <Box>{displayName}</Box>
-        {displayName !== opName ? (
-          <Box style={{opacity: 0.5}} flex={{gap: 6, alignItems: 'center'}}>
-            <Icon name="op" size={16} />
-            {opName}
-          </Box>
-        ) : undefined}
       </SidebarTitle>
-      <AssetCatalogLink to={assetDetailsPathForKey(assetKey)}>
-        {'View in Asset Catalog '}
-        <Icon name="open_in_new" color={Colors.Link} />
-      </AssetCatalogLink>
+      <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
+        <AssetCatalogLink to={assetDetailsPathForKey(assetNode.assetKey)}>
+          {'View in Asset Catalog '}
+          <Icon name="open_in_new" color={Colors.Link} />
+        </AssetCatalogLink>
+
+        {repoAddress && (
+          <UnderlyingOpsOrGraph assetNode={assetNode} repoAddress={repoAddress} minimal />
+        )}
+      </Box>
     </Box>
   );
 };
@@ -179,13 +216,21 @@ const AssetCatalogLink = styled(Link)`
   white-space: nowrap;
 `;
 
-export const SIDEBAR_ASSET_FRAGMENT = gql`
+const SIDEBAR_ASSET_FRAGMENT = gql`
   fragment SidebarAssetFragment on AssetNode {
     id
     description
     ...AssetNodeConfigFragment
     metadataEntries {
       ...MetadataEntryFragment
+    }
+    freshnessPolicy {
+      maximumLagMinutes
+      cronSchedule
+      cronScheduleTimezone
+    }
+    autoMaterializePolicy {
+      policyType
     }
     partitionDefinition {
       description
@@ -210,6 +255,9 @@ export const SIDEBAR_ASSET_FRAGMENT = gql`
         name
       }
     }
+    requiredResources {
+      resourceKey
+    }
 
     ...AssetNodeOpMetadataFragment
   }
@@ -219,10 +267,9 @@ export const SIDEBAR_ASSET_FRAGMENT = gql`
   ${ASSET_NODE_OP_METADATA_FRAGMENT}
 `;
 
-const SIDEBAR_ASSET_QUERY = gql`
+export const SIDEBAR_ASSET_QUERY = gql`
   query SidebarAssetQuery($assetKey: AssetKeyInput!) {
     assetNodeOrError(assetKey: $assetKey) {
-      __typename
       ... on AssetNode {
         id
         ...SidebarAssetFragment

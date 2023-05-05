@@ -123,13 +123,20 @@ do_stuff_partitioned_schedule = build_schedule_from_partitioned_job(
 The Partitioned Jobs concepts page also includes an [example of a date-partitioned asset](/concepts/partitions-schedules-sensors/partitions#partitioned-assets). You can define a schedule similarly using <PyObject object="build_schedule_from_partitioned_job"/>:
 
 ```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_partitioned_asset_schedule endbefore=end_partitioned_asset_schedule
-from dagster import define_asset_job
-
-partitioned_asset_job = define_asset_job(
-    "partitioned_job",
-    selection="*",
-    partitions_def=HourlyPartitionsDefinition(start_date="2022-05-31", fmt="%Y-%m-%d"),
+from dagster import (
+    asset,
+    build_schedule_from_partitioned_job,
+    define_asset_job,
+    HourlyPartitionsDefinition,
 )
+
+
+@asset(partitions_def=HourlyPartitionsDefinition(start_date="2020-01-01-00:00"))
+def hourly_asset():
+    ...
+
+
+partitioned_asset_job = define_asset_job("partitioned_job", selection=[hourly_asset])
 
 
 asset_partitioned_schedule = build_schedule_from_partitioned_job(
@@ -150,7 +157,7 @@ You can also create a schedule for a static partition. The Partitioned Jobs conc
 For example, if we have the continents static partitioned job from the Partitioned Jobs concept page
 
 ```python file=/concepts/partitions_schedules_sensors/static_partitioned_job.py
-from dagster import job, op, static_partitioned_config
+from dagster import Config, job, op, static_partitioned_config
 
 CONTINENTS = [
     "Africa",
@@ -168,9 +175,13 @@ def continent_config(partition_key: str):
     return {"ops": {"continent_op": {"config": {"continent_name": partition_key}}}}
 
 
-@op(config_schema={"continent_name": str})
-def continent_op(context):
-    context.log.info(context.op_config["continent_name"])
+class ContinentOpConfig(Config):
+    continent_name: str
+
+
+@op
+def continent_op(context, config: ContinentOpConfig):
+    context.log.info(config.continent_name)
 
 
 @job(config=continent_config)
@@ -181,14 +192,13 @@ def continent_job():
 We can write a schedule that will run this partition:
 
 ```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_static_partition endbefore=end_static_partition
-from dagster import schedule
+from dagster import schedule, RunRequest
 
 
 @schedule(cron_schedule="0 0 * * *", job=continent_job)
 def continent_schedule():
     for c in CONTINENTS:
-        request = continent_job.run_request_for_partition(partition_key=c, run_key=c)
-        yield request
+        yield RunRequest(run_key=c, partition_key=c)
 ```
 
 Or a schedule that will run a subselection of the partition:
@@ -196,10 +206,7 @@ Or a schedule that will run a subselection of the partition:
 ```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_single_partition endbefore=end_single_partition
 @schedule(cron_schedule="0 0 * * *", job=continent_job)
 def antarctica_schedule():
-    request = continent_job.run_request_for_partition(
-        partition_key="Antarctica", run_key=None
-    )
-    yield request
+    return RunRequest(partition_key="Antarctica")
 ```
 
 ### Customizing execution times
@@ -230,6 +237,58 @@ If you specify such an execution time, Dagster runs your schedule at the next ti
 It's also possible to specify an execution time that exists twice on one day every year. For example, on 2019/11/03 in US/Eastern time, the hour from 1:00 AM to 2:00 AM repeats, so a daily schedule running at 1:30 AM has two possible times in which it could execute. In this case, Dagster will execute your schedule at the latter of the two possible times.
 
 Hourly schedules will be unaffected by daylight savings time transitions - the schedule will continue to run exactly once every hour, even as the timezone changes. In the example above where the hour from 1:00 AM to 2:00 AM repeats, an hourly schedule running at 30 minutes past the hour would run at 12:30 AM, both instances of 1:30 AM, and then proceed normally from 2:30 AM on.
+
+### Using resources in schedules
+
+Dagster's [resources](/concepts/resources) system can be used with schedules to make it easier to interact with external systems or to make components of a schedule easier to plug in for testing purposes.
+
+To specify resource dependencies, annotate the resource as a parameter to the schedule's function. Resources are provided by attaching them to your <PyObject object="Definitions" /> call.
+
+Here, a resource is provided which helps a schedule generate a date string:
+
+```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_on_schedule endbefore=end_new_resource_on_schedule dedent=4
+from dagster import (
+    schedule,
+    ScheduleEvaluationContext,
+    ConfigurableResource,
+    job,
+    RunRequest,
+    RunConfig,
+    Definitions,
+)
+from datetime import datetime
+from typing import List
+
+class DateFormatter(ConfigurableResource):
+    format: str
+
+    def strftime(self, dt: datetime) -> str:
+        return dt.strftime(self.format)
+
+@job
+def process_data():
+    ...
+
+@schedule(job=process_data, cron_schedule="* * * * *")
+def process_data_schedule(
+    context: ScheduleEvaluationContext,
+    date_formatter: DateFormatter,
+):
+    formatted_date = date_formatter.strftime(context.scheduled_execution_time)
+
+    return RunRequest(
+        run_key=None,
+        tags={"date": formatted_date},
+    )
+
+defs = Definitions(
+    jobs=[process_data],
+    schedules=[process_data_schedule],
+    resources={"date_formatter": DateFormatter(format="%Y-%m-%d")},
+)
+```
+
+For more information on resources, refer to the [Resources documentation](/concepts/resources). To see how to test schedules with resources, refer to the section on [Testing schedules with resources](#testing-schedules-with-resources).
 
 ---
 
@@ -269,6 +328,52 @@ Once the schedule is started, the schedule will begin executing immediately if y
 
 ## Testing schedules
 
+<TabGroup>
+<TabItem name="Via Dagit">
+
+### Via Dagit
+
+In Dagit, you can manually trigger a test evaluation of a schedule using a mock evaluation time and view the results.
+
+On the overview page for a particular schedule, there is a `Test schedule` button. Clicking this button will perform a test evaluation of your schedule for a provided mock evaluation time, and show you the results of that evaluation.
+
+1. Click **Overview > Schedules**.
+
+2. Click the schedule you want to test.
+
+3. Click the **Test Schedule** button, located near the top right corner of the page:
+
+   <Image
+   src="/images/concepts/partitions-schedules-sensors/schedules/test-schedule-button.png"
+   width={320}
+   height={128}
+   />
+
+4. You'll be prompted to select a mock schedule evaluation time. As schedules are defined on a cadence, the evaluation times provided in the dropdown are past and future times along that cadence.
+
+   For example, let's say you're testing a schedule with a cadence of `"Every day at X time"`. In the dropdown, you'd see five evaluation times in the future and five evaluation times in the past along that cadence.
+
+   <Image
+   src="/images/concepts/partitions-schedules-sensors/schedules/select-timestamp-page.png"
+   width={896}
+   height={449}
+   />
+
+5. After selecting an evaluation time, click the **Evaluate** button. A window containing the result of the evaluation will display:
+
+   <Image
+   src="/images/concepts/partitions-schedules-sensors/schedules/eval-schedule-result-page.png"
+   width={896}
+   height={449}
+   />
+
+   If the evaluation was successful and a run request was produced, you can open the launchpad pre-scaffolded with the config corresponding to that run request.
+
+</TabItem>
+<TabItem name="Via Python">
+
+### Via Python
+
 To test a function decorated by the <PyObject object="schedule" decorator /> decorator, you can invoke the schedule definition like it's a regular Python function. The invocation will return run config, which can then be validated using the <PyObject object="validate_run_config" /> function. Below is a test for the `configurable_job_schedule` that we defined in [an earlier section](#schedules-that-provide-custom-run-config-and-tags).
 
 It uses <PyObject object="build_schedule_context" /> to construct a <PyObject object="ScheduleEvaluationContext" /> to provide for the `context` parameter.
@@ -286,6 +391,31 @@ def test_configurable_job_schedule():
 ```
 
 If your `@schedule`-decorated function doesn't have a context parameter, you don't need to provide one when invoking it.
+
+#### Testing schedules with resources
+
+For schedules which utilize [resources](/concepts/resources), you can provide the necessary resources when invoking the schedule function.
+
+Below is a test for the `process_data_schedule` that we defined in the [Using resources in schedules](#using-resources-in-schedules) section, which uses the `date_formatter` resource.
+
+```python file=/concepts/resources/pythonic_resources.py startafter=start_test_resource_on_schedule endbefore=end_test_resource_on_schedule dedent=4
+from dagster import build_schedule_context, validate_run_config
+
+def test_process_data_schedule():
+    context = build_schedule_context(
+        scheduled_execution_time=datetime.datetime(2020, 1, 1)
+    )
+    run_request = process_data_schedule(
+        context, date_formatter=DateFormatter(format="%Y-%m-%d")
+    )
+    assert (
+        run_request.run_config["ops"]["fetch_data"]["config"]["date"]
+        == "2020-01-01"
+    )
+```
+
+</TabItem>
+</TabGroup>
 
 ---
 

@@ -1,8 +1,8 @@
-from dagster._core.utils import check_dagster_package_version
+from dagster._core.libraries import DagsterLibraryRegistry
 
-from .resources import github_resource
+from .resources import GithubResource, github_resource
 from .version import __version__
 
-check_dagster_package_version("dagster-github", __version__)
+DagsterLibraryRegistry.register("dagster-github", __version__)
 
-__all__ = ["github_resource"]
+__all__ = ["github_resource", "GithubResource"]

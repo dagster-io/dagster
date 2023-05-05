@@ -9,7 +9,8 @@ from dagster import (
     op,
 )
 from dagster._core.definitions.decorators.graph_decorator import graph
-from dagster._core.definitions.pipeline_base import InMemoryPipeline
+from dagster._core.definitions.job_base import InMemoryJob
+from dagster._core.definitions.output import GraphOut
 from dagster._core.errors import (
     DagsterInvalidConfigError,
     DagsterInvariantViolationError,
@@ -19,9 +20,8 @@ from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.execution.plan.plan import should_skip_step
 from dagster._core.execution.retries import RetryMode
-from dagster._core.storage.pipeline_run import DagsterRun
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.utils import make_new_run_id
-from dagster._legacy import OutputDefinition
 
 
 def define_diamond_job():
@@ -398,7 +398,7 @@ def test_tag_concurrency_limits():
 
         assert next_steps[0].key == "tiny_op_pri_3"
 
-        for step_key in active_execution._in_flight.copy():  # pylint: disable=protected-access
+        for step_key in active_execution._in_flight.copy():  # noqa: SLF001
             active_execution.mark_skipped(step_key)
 
 
@@ -406,11 +406,11 @@ def test_executor_not_created_for_execute_plan():
     instance = DagsterInstance.ephemeral()
     pipe = define_diamond_job()
     plan = create_execution_plan(pipe)
-    job_def = instance.create_run_for_pipeline(pipe, plan)
+    job_def = instance.create_run_for_job(pipe, plan)
 
     results = execute_plan(
         plan,
-        InMemoryPipeline(pipe),
+        InMemoryJob(pipe),
         instance,
         job_def,
     )
@@ -474,16 +474,16 @@ def test_fan_out_should_skip_step():
     @job
     def optional_outputs():
         foo_res = foo()
-        # pylint: disable=no-member
+
         bar.alias("bar_1")(input_arg=foo_res.out_1)
         bar.alias("bar_2")(input_arg=foo_res.out_2)
         bar.alias("bar_3")(input_arg=foo_res.out_3)
 
     instance = DagsterInstance.ephemeral()
-    run = DagsterRun(pipeline_name="optional_outputs", run_id=make_new_run_id())
+    run = DagsterRun(job_name="optional_outputs", run_id=make_new_run_id())
     execute_plan(
         create_execution_plan(optional_outputs, step_keys_to_execute=["foo"]),
-        InMemoryPipeline(optional_outputs),
+        InMemoryJob(optional_outputs),
         instance,
         run,
     )
@@ -513,17 +513,17 @@ def test_fan_in_should_skip_step():
     @op(out=Out(is_required=False))
     def skip(_):
         return
-        yield  # pylint: disable=unreachable
+        yield
 
     @op
     def fan_in(_context, items):
         return items
 
-    @graph(output_defs=[OutputDefinition(is_required=False)])
+    @graph(out=GraphOut())
     def graph_all_upstream_skip():
         return fan_in([skip(), skip()])
 
-    @graph(output_defs=[OutputDefinition(is_required=False)])
+    @graph(out=GraphOut())
     def graph_one_upstream_skip():
         return fan_in([one(), skip()])
 
@@ -533,7 +533,7 @@ def test_fan_in_should_skip_step():
         graph_one_upstream_skip()
 
     instance = DagsterInstance.ephemeral()
-    run = DagsterRun(pipeline_name="optional_outputs_composite", run_id=make_new_run_id())
+    run = DagsterRun(job_name="optional_outputs_composite", run_id=make_new_run_id())
     execute_plan(
         create_execution_plan(
             optional_outputs_composite,
@@ -542,7 +542,7 @@ def test_fan_in_should_skip_step():
                 "graph_all_upstream_skip.skip_2",
             ],
         ),
-        InMemoryPipeline(optional_outputs_composite),
+        InMemoryJob(optional_outputs_composite),
         instance,
         run,
     )
@@ -564,7 +564,7 @@ def test_fan_in_should_skip_step():
                 "graph_one_upstream_skip.skip",
             ],
         ),
-        InMemoryPipeline(optional_outputs_composite),
+        InMemoryJob(optional_outputs_composite),
         instance,
         run,
     )
@@ -587,7 +587,7 @@ def test_configured_input_should_skip_step():
         yield Output(1)
 
     @op
-    def op_should_not_skip(_, input_one, input_two):  # pylint: disable=unused-argument
+    def op_should_not_skip(_, input_one, input_two):
         called["yup"] = True
 
     @job
@@ -598,16 +598,16 @@ def test_configured_input_should_skip_step():
     my_job.execute_in_process(run_config=run_config)
     assert called.get("yup")
 
-    # ensure should_skip_step behave the same as execute_pipeline
+    # ensure should_skip_step behave the same as execute_job
     instance = DagsterInstance.ephemeral()
-    run = DagsterRun(pipeline_name="my_job", run_id=make_new_run_id())
+    run = DagsterRun(job_name="my_job", run_id=make_new_run_id())
     execute_plan(
         create_execution_plan(
             my_job,
             step_keys_to_execute=["one"],
             run_config=run_config,
         ),
-        InMemoryPipeline(my_job),
+        InMemoryJob(my_job),
         instance,
         run,
         run_config=run_config,

@@ -13,6 +13,8 @@ from dagster import (
     HourlyPartitionsDefinition,
     IOManager,
     IOManagerDefinition,
+    MultiPartitionKey,
+    MultiPartitionsDefinition,
     Output,
     PartitionsDefinition,
     SourceAsset,
@@ -25,6 +27,7 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._core.definitions import asset, build_assets_job, multi_asset
+from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import TimeWindow
@@ -36,21 +39,11 @@ from dagster._core.test_utils import assert_namedtuple_lists_equal
 
 
 @pytest.fixture(autouse=True)
-def check_experimental_warnings():
-    with warnings.catch_warnings(record=True) as record:
-        # turn off any outer warnings filters
-        warnings.resetwarnings()
+def error_on_warning():
+    # turn off any outer warnings filters, e.g. ignores that are set in pyproject.toml
+    warnings.resetwarnings()
 
-        yield
-
-        for w in record:
-            if (
-                "resource_defs" in w.message.args[0]
-                or "io_manager_def" in w.message.args[0]
-                or "build_assets_job" in w.message.args[0]
-            ):
-                continue
-            assert False, f"Unexpected warning: {w.message.args[0]}"
+    warnings.filterwarnings("error")
 
 
 def get_upstream_partitions_for_partition_range(
@@ -62,7 +55,9 @@ def get_upstream_partitions_for_partition_range(
     if upstream_partitions_def is None:
         check.failed("upstream asset is not partitioned")
 
-    downstream_partition_mapping = downstream_assets_def.infer_partition_mapping(upstream_asset_key)
+    downstream_partition_mapping = downstream_assets_def.infer_partition_mapping(
+        upstream_asset_key, upstream_partitions_def
+    )
     downstream_partitions_def = downstream_assets_def.partitions_def
     downstream_partitions_subset = (
         downstream_partitions_def.empty_subset().with_partition_keys(
@@ -94,7 +89,9 @@ def get_downstream_partitions_for_partition_range(
     if upstream_assets_def.partitions_def is None:
         check.failed("upstream asset is not partitioned")
 
-    downstream_partition_mapping = downstream_assets_def.infer_partition_mapping(upstream_asset_key)
+    downstream_partition_mapping = downstream_assets_def.infer_partition_mapping(
+        upstream_asset_key, upstream_assets_def.partitions_def
+    )
     upstream_partitions_def = upstream_assets_def.partitions_def
     upstream_partitions_subset = upstream_partitions_def.empty_subset().with_partition_keys(
         upstream_partitions_def.get_partition_keys_in_range(upstream_partition_key_range)
@@ -319,7 +316,10 @@ def test_input_context_asset_partitions_time_window():
         pass
 
     @asset(partitions_def=partitions_def)
-    def downstream_asset(upstream_asset):
+    def downstream_asset(context, upstream_asset):
+        assert context.asset_partitions_time_window_for_input("upstream_asset") == TimeWindow(
+            pendulum.parse("2021-06-06"), pendulum.parse("2021-06-07")
+        )
         assert upstream_asset is None
 
     assert materialize(
@@ -537,11 +537,11 @@ def test_job_config_with_asset_partitions():
         "job",
         partitions_def=daily_partitions_def,
         config={"ops": {"asset1": {"config": {"a": 5}}}},
-    ).resolve([asset1], [])
+    ).resolve(asset_graph=AssetGraph.from_assets([asset1]))
 
     assert the_job.execute_in_process(partition_key="2020-01-01").success
     assert (
-        the_job.get_job_def_for_subset_selection(asset_selection={AssetKey("asset1")})
+        the_job.get_subset(asset_selection={AssetKey("asset1")})
         .execute_in_process(partition_key="2020-01-01")
         .success
     )
@@ -559,7 +559,9 @@ def test_job_partitioned_config_with_asset_partitions():
     def myconfig(start, _end):
         return {"ops": {"asset1": {"config": {"day_of_month": start.day}}}}
 
-    the_job = define_asset_job("job", config=myconfig).resolve([asset1], [])
+    the_job = define_asset_job("job", config=myconfig).resolve(
+        asset_graph=AssetGraph.from_assets([asset1])
+    )
 
     assert the_job.execute_in_process(partition_key="2020-01-01").success
 
@@ -583,7 +585,9 @@ def test_mismatched_job_partitioned_config_with_asset_partitions():
             " than supplied for 'partitions_def'."
         ),
     ):
-        define_asset_job("job", config=myconfig).resolve([asset1], [])
+        define_asset_job("job", config=myconfig).resolve(
+            asset_graph=AssetGraph.from_assets([asset1])
+        )
 
 
 def test_partition_range_single_run():
@@ -604,7 +608,9 @@ def test_partition_range_single_run():
             start="2020-01-01", end="2020-01-03"
         )
 
-    the_job = define_asset_job("job").resolve([upstream_asset, downstream_asset], [])
+    the_job = define_asset_job("job").resolve(
+        asset_graph=AssetGraph.from_assets([upstream_asset, downstream_asset])
+    )
 
     result = the_job.execute_in_process(
         tags={
@@ -621,3 +627,45 @@ def test_partition_range_single_run():
         materialization.partition
         for materialization in result.asset_materializations_for_node("downstream_asset")
     } == {"2020-01-01", "2020-01-02", "2020-01-03"}
+
+
+def test_multipartition_range_single_run():
+    partitions_def = MultiPartitionsDefinition(
+        {
+            "date": DailyPartitionsDefinition(start_date="2020-01-01"),
+            "abc": StaticPartitionsDefinition(["a", "b", "c"]),
+        }
+    )
+
+    @asset(partitions_def=partitions_def)
+    def multipartitioned_asset(context) -> None:
+        key_range = context.asset_partition_key_range_for_output()
+
+        assert isinstance(key_range.start, MultiPartitionKey)
+        assert isinstance(key_range.end, MultiPartitionKey)
+        assert key_range.start == MultiPartitionKey({"date": "2020-01-01", "abc": "a"})
+        assert key_range.end == MultiPartitionKey({"date": "2020-01-03", "abc": "a"})
+
+        assert all(
+            isinstance(key, MultiPartitionKey) for key in context.asset_partition_keys_for_output()
+        )
+
+    the_job = define_asset_job("job").resolve(
+        asset_graph=AssetGraph.from_assets([multipartitioned_asset])
+    )
+
+    result = the_job.execute_in_process(
+        tags={
+            ASSET_PARTITION_RANGE_START_TAG: "a|2020-01-01",
+            ASSET_PARTITION_RANGE_END_TAG: "a|2020-01-03",
+        }
+    )
+    assert result.success
+    assert {
+        materialization.partition
+        for materialization in result.asset_materializations_for_node("multipartitioned_asset")
+    } == {
+        MultiPartitionKey({"date": "2020-01-01", "abc": "a"}),
+        MultiPartitionKey({"date": "2020-01-02", "abc": "a"}),
+        MultiPartitionKey({"date": "2020-01-03", "abc": "a"}),
+    }

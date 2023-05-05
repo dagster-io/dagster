@@ -24,13 +24,13 @@ from dagster._core.execution.plan.external_step import (
 from dagster._serdes import deserialize_value
 from dagster._utils.backoff import backoff
 from dagster_pyspark.utils import build_pyspark_zip
+from databricks_cli.sdk import JobsService
 from requests import HTTPError
 
 from dagster_databricks import databricks_step_main
 from dagster_databricks.databricks import (
     DEFAULT_RUN_MAX_WAIT_TIME_SEC,
     DatabricksJobRunner,
-    poll_run_state,
 )
 
 from .configs import (
@@ -238,7 +238,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         step_run_ref = step_context_to_step_run_ref(
             step_context, self.local_dagster_job_package_path
         )
-        run_id = step_context.pipeline_run.run_id
+        run_id = step_context.dagster_run.run_id
         log = step_context.log
 
         step_key = step_run_ref.step_key
@@ -301,7 +301,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         """
         check.int_param(databricks_run_id, "databricks_run_id")
         processed_events = 0
-        start = time.time()
+        start_poll_time = time.time()
         done = False
         step_context.log.info("Waiting for Databricks run %s to complete..." % databricks_run_id)
         while not done:
@@ -312,12 +312,11 @@ class DatabricksPySparkStepLauncher(StepLauncher):
                     )
                 time.sleep(self.databricks_runner.poll_interval_sec)
                 try:
-                    done = poll_run_state(
-                        self.databricks_runner.client,
-                        step_context.log,
-                        start,
-                        databricks_run_id,
-                        self.databricks_runner.max_wait_time_sec,
+                    done = self.databricks_runner.client.poll_run_state(
+                        logger=step_context.log,
+                        start_poll_time=start_poll_time,
+                        databricks_run_id=databricks_run_id,
+                        max_wait_time_sec=self.databricks_runner.max_wait_time_sec,
                         verbose_logs=self.verbose_logs,
                     )
                 finally:
@@ -349,7 +348,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
             # allow for retry if we get malformed data
             return backoff(
                 fn=_get_step_records,
-                retry_on=(pickle.UnpicklingError, gzip.BadGzipFile, zlib.error, EOFError),
+                retry_on=(pickle.UnpicklingError, OSError, zlib.error, EOFError),
                 max_retries=4,
             )
         # if you poll before the Databricks process has had a chance to create the file,
@@ -366,7 +365,9 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         # Retrieve run info
         cluster_id = None
         for i in range(1, request_retries + 1):
-            run_info = self.databricks_runner.client.get_run(databricks_run_id)
+            run_info = JobsService(self.databricks_runner.client.api_client).get_run(
+                databricks_run_id
+            )
             # if a new job cluster is created, the cluster_instance key may not be immediately present in the run response
             try:
                 cluster_id = run_info["cluster_instance"]["cluster_id"]
@@ -524,7 +525,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
                 os.path.basename(filename),
             ]
         )
-        return "dbfs://{}".format(path)
+        return f"dbfs://{path}"
 
     def _internal_dbfs_path(self, run_id, step_key, filename):
         """Scripts running on Databricks should access DBFS at /dbfs/."""
@@ -536,7 +537,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
                 os.path.basename(filename),
             ]
         )
-        return "/dbfs/{}".format(path)
+        return f"/dbfs/{path}"
 
 
 class DatabricksConfig:
@@ -591,12 +592,8 @@ class DatabricksConfig:
 
         # Spark APIs will use this.
         # See https://docs.databricks.com/data/data-sources/aws/amazon-s3.html#alternative-1-set-aws-keys-in-the-spark-context.
-        sc._jsc.hadoopConfiguration().set(  # pylint: disable=protected-access
-            "fs.s3n.awsAccessKeyId", access_key
-        )
-        sc._jsc.hadoopConfiguration().set(  # pylint: disable=protected-access
-            "fs.s3n.awsSecretAccessKey", secret_key
-        )
+        sc._jsc.hadoopConfiguration().set("fs.s3n.awsAccessKeyId", access_key)  # noqa: SLF001
+        sc._jsc.hadoopConfiguration().set("fs.s3n.awsSecretAccessKey", secret_key)  # noqa: SLF001
 
         # Boto will use these.
         os.environ["AWS_ACCESS_KEY_ID"] = access_key
@@ -611,7 +608,7 @@ class DatabricksConfig:
         # Spark APIs will use this.
         # See https://docs.microsoft.com/en-gb/azure/databricks/data/data-sources/azure/azure-datalake-gen2#--access-directly-using-the-storage-account-access-key
         # sc is globally defined in the Databricks runtime and points to the Spark context
-        sc._jsc.hadoopConfiguration().set(  # pylint: disable=protected-access
+        sc._jsc.hadoopConfiguration().set(  # noqa: SLF001
             "fs.azure.account.key.{}.dfs.core.windows.net".format(
                 adls2_storage["storage_account_name"]
             ),
@@ -633,8 +630,6 @@ class DatabricksConfig:
             name = secret["name"]
             key = secret["key"]
             scope = secret["scope"]
-            print(  # pylint: disable=print-call
-                "Exporting {} from Databricks secret {}, scope {}".format(name, key, scope)
-            )
+            print(f"Exporting {name} from Databricks secret {key}, scope {scope}")  # noqa: T201
             val = dbutils.secrets.get(scope=scope, key=key)
             os.environ[name] = val

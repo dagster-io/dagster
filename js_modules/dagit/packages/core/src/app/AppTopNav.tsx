@@ -16,6 +16,7 @@ type AppNavLinkType = {
   element: React.ReactNode;
 };
 interface Props {
+  children?: React.ReactNode;
   searchPlaceholder: string;
   rightOfSearchBar?: React.ReactNode;
   showStatusWarningIcon?: boolean;
@@ -144,7 +145,7 @@ export const AppTopNavLogo: React.FC = () => {
   }, [nav]);
 
   const onKeyDown = React.useCallback(
-    (e) => {
+    (e: React.KeyboardEvent<HTMLButtonElement>) => {
       if (e.key === 'Escape' && nav.isOpen) {
         nav.close();
       }
@@ -166,22 +167,28 @@ export const AppTopNavLogo: React.FC = () => {
         </ShortcutHandler>
       ) : null}
       <Box flex={{display: 'inline-flex'}} margin={{left: 8}}>
-        <DaggyTooltip
-          content={
-            <Box flex={{direction: 'row', gap: 4}}>
-              <WebSocketStatus />
-              <VersionNumber />
-            </Box>
-          }
-          placement="bottom"
-          modifiers={{offset: {enabled: true, options: {offset: [0, 18]}}}}
-        >
-          <Link to="/home" style={{outline: 0, display: 'flex'}}>
-            <GhostDaggy />
-          </Link>
-        </DaggyTooltip>
+        <GhostDaggyWithTooltip />
       </Box>
     </LogoContainer>
+  );
+};
+
+export const GhostDaggyWithTooltip = () => {
+  return (
+    <DaggyTooltip
+      content={
+        <Box flex={{direction: 'row', gap: 4}}>
+          <WebSocketStatus />
+          <VersionNumber />
+        </Box>
+      }
+      placement="bottom"
+      modifiers={{offset: {enabled: true, options: {offset: [0, 18]}}}}
+    >
+      <Link to="/home" style={{outline: 0, display: 'flex'}}>
+        <GhostDaggy />
+      </Link>
+    </DaggyTooltip>
   );
 };
 
@@ -227,7 +234,7 @@ const GhostDaggy = () => (
 );
 
 const DaggyTooltip = styled(Tooltip)`
-  &.bp3-popover2-target {
+  &.bp4-popover2-target {
     display: inline-flex;
   }
 `;

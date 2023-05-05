@@ -2,6 +2,8 @@ import {Button, Dialog, DialogBody, DialogFooter, FontFamily} from '@dagster-io/
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {testId} from '../testing/testId';
+
 import {copyValue} from './DomUtils';
 
 const CURRENT_ALERT_CHANGED = 'alert-changed';
@@ -74,7 +76,7 @@ export const CustomAlertProvider = () => {
       isOpen={!!alert}
     >
       {alert ? (
-        <DialogBody>
+        <DialogBody data-testid={testId('alert-body')}>
           <Body ref={body}>{alert.body}</Body>
         </DialogBody>
       ) : null}

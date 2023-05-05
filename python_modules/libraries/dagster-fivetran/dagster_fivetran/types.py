@@ -10,8 +10,7 @@ class FivetranOutput(
         ],
     )
 ):
-    """
-    Contains recorded information about the state of a Fivetran connector after a sync completes.
+    """Contains recorded information about the state of a Fivetran connector after a sync completes.
 
     Attributes:
         connector_details (Dict[str, Any]):

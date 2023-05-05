@@ -17,6 +17,7 @@ from typing import (
     Sequence,
     Set,
     Tuple,
+    Union,
     cast,
 )
 
@@ -24,7 +25,9 @@ import yaml
 from dagster import (
     AssetKey,
     AssetOut,
+    AutoMaterializePolicy,
     FreshnessPolicy,
+    Nothing,
     Output,
     ResourceDefinition,
     _check as check,
@@ -36,12 +39,16 @@ from dagster._core.definitions.cacheable_assets import (
     CacheableAssetsDefinition,
 )
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
-from dagster._core.definitions.metadata import MetadataValue, TableSchemaMetadataValue
+from dagster._core.definitions.metadata import (
+    MetadataValue,
+    TableSchemaMetadataValue,
+)
 from dagster._core.definitions.metadata.table import TableSchema
+from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.execution.context.init import build_init_resource_context
 from dagster._utils.merger import merge_dicts
 
-from dagster_airbyte.resources import AirbyteResource
+from dagster_airbyte.resources import AirbyteCloudResource, AirbyteResource, BaseAirbyteResource
 from dagster_airbyte.types import AirbyteTableMetadata
 from dagster_airbyte.utils import (
     generate_materializations,
@@ -61,6 +68,7 @@ def _build_airbyte_asset_defn_metadata(
     io_manager_key: Optional[str] = None,
     schema_by_table_name: Optional[Mapping[str, TableSchema]] = None,
     freshness_policy: Optional[FreshnessPolicy] = None,
+    auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
 ) -> AssetsDefinitionCacheableData:
     asset_key_prefix = (
         check.opt_sequence_param(asset_key_prefix, "asset_key_prefix", of_type=str) or []
@@ -82,14 +90,14 @@ def _build_airbyte_asset_defn_metadata(
 
     internal_deps: Dict[str, Set[AssetKey]] = {}
 
-    normalization_tables = (
+    metadata_encodable_normalization_tables = (
         {k: list(v) for k, v in normalization_tables.items()} if normalization_tables else {}
     )
 
     # If normalization tables are specified, we need to add a dependency from the destination table
     # to the affilitated normalization table
-    if normalization_tables:
-        for base_table, derived_tables in normalization_tables.items():
+    if len(metadata_encodable_normalization_tables) > 0:
+        for base_table, derived_tables in metadata_encodable_normalization_tables.items():
             for derived_table in derived_tables:
                 internal_deps[derived_table] = {
                     AssetKey([*asset_key_prefix, *table_to_asset_key_fn(base_table).path])
@@ -114,13 +122,20 @@ def _build_airbyte_asset_defn_metadata(
         }
         if schema_by_table_name
         else None,
+        freshness_policies_by_output_name={output: freshness_policy for output in outputs}
+        if freshness_policy
+        else None,
+        auto_materialize_policies_by_output_name={
+            output: auto_materialize_policy for output in outputs
+        }
+        if auto_materialize_policy
+        else None,
         extra_metadata={
             "connection_id": connection_id,
             "group_name": group_name,
             "destination_tables": destination_tables,
-            "normalization_tables": normalization_tables,
+            "normalization_tables": metadata_encodable_normalization_tables,
             "io_manager_key": io_manager_key,
-            "freshness_policy": freshness_policy,
         },
     )
 
@@ -135,7 +150,6 @@ def _build_airbyte_assets_from_metadata(
     destination_tables = cast(List[str], metadata["destination_tables"])
     normalization_tables = cast(Mapping[str, List[str]], metadata["normalization_tables"])
     io_manager_key = cast(Optional[str], metadata["io_manager_key"])
-    freshness_policy = cast(Optional[FreshnessPolicy], metadata["freshness_policy"])
 
     @multi_asset(
         name=f"airbyte_sync_{connection_id[:5]}",
@@ -150,20 +164,22 @@ def _build_airbyte_assets_from_metadata(
                 if assets_defn_meta.metadata_by_output_name
                 else None,
                 io_manager_key=io_manager_key,
-                freshness_policy=freshness_policy,
+                freshness_policy=assets_defn_meta.freshness_policies_by_output_name.get(k)
+                if assets_defn_meta.freshness_policies_by_output_name
+                else None,
+                dagster_type=Nothing,
             )
             for k, v in (assets_defn_meta.keys_by_output_name or {}).items()
         },
         internal_asset_deps={
             k: set(v) for k, v in (assets_defn_meta.internal_asset_deps or {}).items()
         },
-        required_resource_keys={"airbyte"},
         compute_kind="airbyte",
         group_name=group_name,
         resource_defs=resource_defs,
     )
-    def _assets(context):
-        ab_output = context.resources.airbyte.sync_and_poll(connection_id=connection_id)
+    def _assets(context, airbyte: AirbyteResource):
+        ab_output = airbyte.sync_and_poll(connection_id=connection_id)
         for materialization in generate_materializations(
             ab_output, assets_defn_meta.key_prefix or []
         ):
@@ -172,9 +188,7 @@ def _build_airbyte_assets_from_metadata(
                 yield Output(
                     value=None,
                     output_name=table_name,
-                    metadata={
-                        entry.label: entry.entry_data for entry in materialization.metadata_entries
-                    },
+                    metadata=materialization.metadata,
                 )
                 # Also materialize any normalization tables affiliated with this destination
                 # e.g. nested objects, lists etc
@@ -200,8 +214,7 @@ def build_airbyte_assets(
     schema_by_table_name: Optional[Mapping[str, TableSchema]] = None,
     freshness_policy: Optional[FreshnessPolicy] = None,
 ) -> Sequence[AssetsDefinition]:
-    """
-    Builds a set of assets representing the tables created by an Airbyte sync operation.
+    """Builds a set of assets representing the tables created by an Airbyte sync operation.
 
     Args:
         connection_id (str): The Airbyte Connection ID that this op will sync. You can retrieve this
@@ -253,39 +266,50 @@ def build_airbyte_assets(
         non_argument_deps=upstream_assets or set(),
         outs=outputs,
         internal_asset_deps=internal_deps,
-        required_resource_keys={"airbyte"},
         compute_kind="airbyte",
     )
-    def _assets(context):
-        ab_output = context.resources.airbyte.sync_and_poll(connection_id=connection_id)
-        for materialization in generate_materializations(ab_output, asset_key_prefix):
-            table_name = materialization.asset_key.path[-1]
-            if table_name in destination_tables:
+    def _assets(context, airbyte: BaseAirbyteResource):
+        ab_output = airbyte.sync_and_poll(connection_id=connection_id)
+
+        # No connection details (e.g. using Airbyte Cloud) means we just assume
+        # that the outputs were produced
+        if len(ab_output.connection_details) == 0:
+            for table_name in destination_tables:
                 yield Output(
                     value=None,
                     output_name=table_name,
-                    metadata={
-                        entry.label: entry.entry_data for entry in materialization.metadata_entries
-                    },
                 )
-                # Also materialize any normalization tables affiliated with this destination
-                # e.g. nested objects, lists etc
                 if normalization_tables:
                     for dependent_table in normalization_tables.get(table_name, set()):
                         yield Output(
                             value=None,
                             output_name=dependent_table,
                         )
-            else:
-                yield materialization
+        else:
+            for materialization in generate_materializations(ab_output, asset_key_prefix):
+                table_name = materialization.asset_key.path[-1]
+                if table_name in destination_tables:
+                    yield Output(
+                        value=None,
+                        output_name=table_name,
+                        metadata=materialization.metadata,
+                    )
+                    # Also materialize any normalization tables affiliated with this destination
+                    # e.g. nested objects, lists etc
+                    if normalization_tables:
+                        for dependent_table in normalization_tables.get(table_name, set()):
+                            yield Output(
+                                value=None,
+                                output_name=dependent_table,
+                            )
+                else:
+                    yield materialization
 
     return [_assets]
 
 
 def _get_schema_types(schema: Mapping[str, Any]) -> Sequence[str]:
-    """
-    Given a schema definition, return a list of data types that are valid for this schema.
-    """
+    """Given a schema definition, return a list of data types that are valid for this schema."""
     types = schema.get("types") or schema.get("type")
     if not types:
         return []
@@ -295,8 +319,7 @@ def _get_schema_types(schema: Mapping[str, Any]) -> Sequence[str]:
 
 
 def _get_sub_schemas(schema: Mapping[str, Any]) -> Sequence[Mapping[str, Any]]:
-    """
-    Returns a list of sub-schema definitions for a given schema. This is used to handle union types.
+    """Returns a list of sub-schema definitions for a given schema. This is used to handle union types.
     """
     return schema.get("anyOf") or schema.get("oneOf") or [schema]
 
@@ -304,8 +327,7 @@ def _get_sub_schemas(schema: Mapping[str, Any]) -> Sequence[Mapping[str, Any]]:
 def _get_normalization_tables_for_schema(
     key: str, schema: Mapping[str, Any], prefix: str = ""
 ) -> Mapping[str, AirbyteTableMetadata]:
-    """
-    Recursively traverses a schema, returning metadata for the tables that will be created by the Airbyte
+    """Recursively traverses a schema, returning metadata for the tables that will be created by the Airbyte
     normalization process.
 
     For example, a table `cars` with a nested object field `limited_editions` will produce the tables
@@ -347,9 +369,7 @@ def _get_normalization_tables_for_schema(
 
 
 def _clean_name(name: str) -> str:
-    """
-    Cleans an input to be a valid Dagster asset name.
-    """
+    """Cleans an input to be a valid Dagster asset name."""
     return re.sub(r"[^a-z0-9]+", "_", name.lower())
 
 
@@ -364,8 +384,7 @@ class AirbyteConnectionMetadata(
         ],
     )
 ):
-    """
-    Contains information about an Airbyte connection.
+    """Contains information about an Airbyte connection.
 
     Attributes:
         name (str): The name of the connection.
@@ -408,8 +427,7 @@ class AirbyteConnectionMetadata(
     def parse_stream_tables(
         self, return_normalization_tables: bool = False
     ) -> Mapping[str, AirbyteTableMetadata]:
-        """
-        Parses the stream data and returns a mapping, with keys representing destination
+        """Parses the stream data and returns a mapping, with keys representing destination
         tables associated with each enabled stream and values representing any affiliated
         tables created by Airbyte's normalization process, if enabled.
         """
@@ -478,6 +496,9 @@ class AirbyteCoreCacheableAssetsDefinition(CacheableAssetsDefinition):
         connection_to_freshness_policy_fn: Optional[
             Callable[[AirbyteConnectionMetadata], Optional[FreshnessPolicy]]
         ],
+        connection_to_auto_materialize_policy_fn: Optional[
+            Callable[[AirbyteConnectionMetadata], Optional[AutoMaterializePolicy]]
+        ] = None,
     ):
         self._key_prefix = key_prefix
         self._create_assets_for_normalization_tables = create_assets_for_normalization_tables
@@ -489,6 +510,9 @@ class AirbyteCoreCacheableAssetsDefinition(CacheableAssetsDefinition):
         ] = connection_to_asset_key_fn or (lambda _, table: AssetKey(path=[table]))
         self._connection_to_freshness_policy_fn = connection_to_freshness_policy_fn or (
             lambda _: None
+        )
+        self._connection_to_auto_materialize_policy_fn = (
+            connection_to_auto_materialize_policy_fn or (lambda _: None)
         )
 
         contents = hashlib.sha1()  # so that hexdigest is 40, not 64 bytes
@@ -529,6 +553,7 @@ class AirbyteCoreCacheableAssetsDefinition(CacheableAssetsDefinition):
                 schema_by_table_name=schema_by_table_name,
                 table_to_asset_key_fn=table_to_asset_key,
                 freshness_policy=self._connection_to_freshness_policy_fn(connection),
+                auto_materialize_policy=self._connection_to_auto_materialize_policy_fn(connection),
             )
 
             asset_defn_data.append(asset_data_for_conn)
@@ -551,7 +576,7 @@ class AirbyteCoreCacheableAssetsDefinition(CacheableAssetsDefinition):
 class AirbyteInstanceCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinition):
     def __init__(
         self,
-        airbyte_resource_def: ResourceDefinition,
+        airbyte_resource_def: Union[ResourceDefinition, AirbyteResource],
         workspace_id: Optional[str],
         key_prefix: Sequence[str],
         create_assets_for_normalization_tables: bool,
@@ -562,6 +587,9 @@ class AirbyteInstanceCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinit
         connection_to_freshness_policy_fn: Optional[
             Callable[[AirbyteConnectionMetadata], Optional[FreshnessPolicy]]
         ],
+        connection_to_auto_materialize_policy_fn: Optional[
+            Callable[[AirbyteConnectionMetadata], Optional[AutoMaterializePolicy]]
+        ] = None,
     ):
         super().__init__(
             key_prefix=key_prefix,
@@ -571,11 +599,13 @@ class AirbyteInstanceCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinit
             connection_filter=connection_filter,
             connection_to_asset_key_fn=connection_to_asset_key_fn,
             connection_to_freshness_policy_fn=connection_to_freshness_policy_fn,
+            connection_to_auto_materialize_policy_fn=connection_to_auto_materialize_policy_fn,
         )
         self._workspace_id = workspace_id
-        self._airbyte_resource_def = airbyte_resource_def
-        self._airbyte_instance: AirbyteResource = airbyte_resource_def(
-            build_init_resource_context()
+        self._airbyte_instance: AirbyteResource = (
+            airbyte_resource_def
+            if isinstance(airbyte_resource_def, AirbyteResource)
+            else airbyte_resource_def(build_init_resource_context())
         )
 
     def _get_connections(self) -> Sequence[Tuple[str, AirbyteConnectionMetadata]]:
@@ -628,7 +658,7 @@ class AirbyteInstanceCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinit
         self, data: Sequence[AssetsDefinitionCacheableData]
     ) -> Sequence[AssetsDefinition]:
         return super()._build_definitions_with_resources(
-            data, {"airbyte": self._airbyte_resource_def}
+            data, {"airbyte": self._airbyte_instance.get_resource_definition()}
         )
 
 
@@ -647,6 +677,9 @@ class AirbyteYAMLCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinition)
         connection_to_freshness_policy_fn: Optional[
             Callable[[AirbyteConnectionMetadata], Optional[FreshnessPolicy]]
         ],
+        connection_to_auto_materialize_policy_fn: Optional[
+            Callable[[AirbyteConnectionMetadata], Optional[AutoMaterializePolicy]]
+        ] = None,
     ):
         super().__init__(
             key_prefix=key_prefix,
@@ -656,6 +689,7 @@ class AirbyteYAMLCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinition)
             connection_filter=connection_filter,
             connection_to_asset_key_fn=connection_to_asset_key_fn,
             connection_to_freshness_policy_fn=connection_to_freshness_policy_fn,
+            connection_to_auto_materialize_policy_fn=connection_to_auto_materialize_policy_fn,
         )
         self._workspace_id = workspace_id
         self._project_dir = project_dir
@@ -711,7 +745,7 @@ class AirbyteYAMLCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinition)
 
 @experimental
 def load_assets_from_airbyte_instance(
-    airbyte: ResourceDefinition,
+    airbyte: Union[AirbyteResource, ResourceDefinition],
     workspace_id: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     create_assets_for_normalization_tables: bool = True,
@@ -725,9 +759,11 @@ def load_assets_from_airbyte_instance(
     connection_to_freshness_policy_fn: Optional[
         Callable[[AirbyteConnectionMetadata], Optional[FreshnessPolicy]]
     ] = None,
+    connection_to_auto_materialize_policy_fn: Optional[
+        Callable[[AirbyteConnectionMetadata], Optional[AutoMaterializePolicy]]
+    ] = None,
 ) -> CacheableAssetsDefinition:
-    """
-    Loads Airbyte connection assets from a configured AirbyteResource instance. This fetches information
+    """Loads Airbyte connection assets from a configured AirbyteResource instance. This fetches information
     about defined connections at initialization time, and will error on workspace load if the Airbyte
     instance is not reachable.
 
@@ -756,6 +792,9 @@ def load_assets_from_airbyte_instance(
         connection_to_freshness_policy_fn (Optional[Callable[[AirbyteConnectionMetadata], Optional[FreshnessPolicy]]]): Optional function
             which takes in connection metadata and returns a freshness policy for the connection's assets. If None, no freshness policies
             will be applied to the assets.
+        connection_to_auto_materialize_policy_fn (Optional[Callable[[AirbyteConnectionMetadata], Optional[AutoMaterializePolicy]]]): Optional
+            function which takes in connection metadata and returns an auto materialization policy for the connection's assets. If None, no
+            auto materialization policies will be applied to the assets.
 
     **Examples:**
 
@@ -790,6 +829,11 @@ def load_assets_from_airbyte_instance(
             connection_filter=lambda meta: "snowflake" in meta.name,
         )
     """
+    if isinstance(airbyte, AirbyteCloudResource):
+        raise DagsterInvalidInvocationError(
+            "load_assets_from_airbyte_instance is not yet supported for AirbyteCloudResource"
+        )
+
     if isinstance(key_prefix, str):
         key_prefix = [key_prefix]
     key_prefix = check.list_param(key_prefix or [], "key_prefix", of_type=str)
@@ -811,6 +855,7 @@ def load_assets_from_airbyte_instance(
         connection_filter=connection_filter,
         connection_to_asset_key_fn=connection_to_asset_key_fn,
         connection_to_freshness_policy_fn=connection_to_freshness_policy_fn,
+        connection_to_auto_materialize_policy_fn=connection_to_auto_materialize_policy_fn,
     )
 
 
@@ -831,9 +876,11 @@ def load_assets_from_airbyte_project(
     connection_to_freshness_policy_fn: Optional[
         Callable[[AirbyteConnectionMetadata], Optional[FreshnessPolicy]]
     ] = None,
+    connection_to_auto_materialize_policy_fn: Optional[
+        Callable[[AirbyteConnectionMetadata], Optional[AutoMaterializePolicy]]
+    ] = None,
 ) -> CacheableAssetsDefinition:
-    """
-    Loads an Airbyte project into a set of Dagster assets.
+    """Loads an Airbyte project into a set of Dagster assets.
 
     Point to the root folder of an Airbyte project synced using the Octavia CLI. For
     more information, see https://github.com/airbytehq/airbyte/tree/master/octavia-cli#octavia-import-all.
@@ -866,6 +913,9 @@ def load_assets_from_airbyte_project(
         connection_to_freshness_policy_fn (Optional[Callable[[AirbyteConnectionMetadata], Optional[FreshnessPolicy]]]):
             Optional function which takes in connection metadata and returns a freshness policy for the connection's assets.
             If None, no freshness policies will be applied to the assets.
+        connection_to_auto_materialize_policy_fn (Optional[Callable[[AirbyteConnectionMetadata], Optional[AutoMaterializePolicy]]]):
+            Optional function which takes in connection metadata and returns an auto materialization policy for the connection's assets.
+            If None, no auto materialization policies will be applied to the assets.
 
     **Examples:**
 
@@ -912,4 +962,5 @@ def load_assets_from_airbyte_project(
         connection_directories=connection_directories,
         connection_to_asset_key_fn=connection_to_asset_key_fn,
         connection_to_freshness_policy_fn=connection_to_freshness_policy_fn,
+        connection_to_auto_materialize_policy_fn=connection_to_auto_materialize_policy_fn,
     )

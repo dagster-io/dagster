@@ -8,14 +8,14 @@ interface TabLinkProps extends TabStyleProps, Omit<LinkProps, 'title'> {
 }
 
 export const TabLink = styled((props: TabLinkProps) => {
-  const {to, title, ...rest} = props;
+  const {to, title, disabled, ...rest} = props;
   const containerProps = getTabA11yProps(props);
   const content = getTabContent(props);
 
   const titleText = typeof title === 'string' ? title : undefined;
 
   return (
-    <Link to={to} title={titleText} {...containerProps} {...rest}>
+    <Link to={disabled ? '#' : to} title={titleText} {...containerProps} {...rest}>
       {content}
     </Link>
   );

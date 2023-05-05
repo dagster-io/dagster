@@ -1,6 +1,6 @@
 import graphene
 import pendulum
-from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
+from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
 
 from .pipelines.status import GrapheneRunStatus
 from .runs import GrapheneRunConfigData
@@ -44,10 +44,7 @@ class GrapheneRunsFilter(graphene.InputObjectType):
             tags = None
 
         if self.statuses:
-            statuses = [
-                DagsterRunStatus[status.value]  # type: ignore
-                for status in self.statuses  # pylint: disable=not-an-iterable
-            ]
+            statuses = [DagsterRunStatus[status.value] for status in self.statuses]
         else:
             statuses = None
 
@@ -56,12 +53,11 @@ class GrapheneRunsFilter(graphene.InputObjectType):
 
         return RunsFilter(
             run_ids=self.runIds if self.runIds else None,
-            pipeline_name=self.pipelineName,
+            job_name=self.pipelineName,
             tags=tags,
             statuses=statuses,
             snapshot_id=self.snapshotId,
             updated_after=updated_after,
-            mode=self.mode,
             created_before=created_before,
         )
 
@@ -173,6 +169,18 @@ class GrapheneScheduleSelector(graphene.InputObjectType):
     class Meta:
         description = """This type represents the fields necessary to identify a schedule."""
         name = "ScheduleSelector"
+
+
+class GrapheneResourceSelector(graphene.InputObjectType):
+    repositoryName = graphene.NonNull(graphene.String)
+    repositoryLocationName = graphene.NonNull(graphene.String)
+    resourceName = graphene.NonNull(graphene.String)
+
+    class Meta:
+        description = (
+            """This type represents the fields necessary to identify a top-level resource."""
+        )
+        name = "ResourceSelector"
 
 
 class GrapheneExecutionMetadata(graphene.InputObjectType):
@@ -296,6 +304,7 @@ types = [
     GrapheneRunsFilter,
     GraphenePipelineSelector,
     GrapheneRepositorySelector,
+    GrapheneResourceSelector,
     GrapheneScheduleSelector,
     GrapheneSensorSelector,
     GrapheneStepExecution,

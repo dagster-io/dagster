@@ -5,7 +5,10 @@ import * as React from 'react';
 import {LocationStateChangeEventType} from '../graphql/types';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 
-import {LocationStateChangeSubscription} from './types/RepositoryLocationStateObserver.types';
+import {
+  LocationStateChangeSubscription,
+  LocationStateChangeSubscriptionVariables,
+} from './types/RepositoryLocationStateObserver.types';
 
 const LOCATION_STATE_CHANGE_SUBSCRIPTION = gql`
   subscription LocationStateChangeSubscription {
@@ -26,34 +29,37 @@ export const RepositoryLocationStateObserver = () => {
   const [updatedLocations, setUpdatedLocations] = React.useState<string[]>([]);
   const totalMessages = updatedLocations.length;
 
-  useSubscription<LocationStateChangeSubscription>(LOCATION_STATE_CHANGE_SUBSCRIPTION, {
-    fetchPolicy: 'no-cache',
-    onSubscriptionData: ({subscriptionData}) => {
-      const changeEvents = subscriptionData.data?.locationStateChangeEvents;
-      if (!changeEvents) {
-        return;
-      }
-
-      const {locationName, eventType, serverId} = changeEvents.event;
-
-      switch (eventType) {
-        case LocationStateChangeEventType.LOCATION_ERROR:
-          refetch();
-          setUpdatedLocations((s) => s.filter((name) => name !== locationName));
+  useSubscription<LocationStateChangeSubscription, LocationStateChangeSubscriptionVariables>(
+    LOCATION_STATE_CHANGE_SUBSCRIPTION,
+    {
+      fetchPolicy: 'no-cache',
+      onSubscriptionData: ({subscriptionData}) => {
+        const changeEvents = subscriptionData.data?.locationStateChangeEvents;
+        if (!changeEvents) {
           return;
-        case LocationStateChangeEventType.LOCATION_UPDATED:
-          const matchingRepositoryLocation = locationEntries.find((n) => n.name === locationName);
-          if (
-            matchingRepositoryLocation &&
-            matchingRepositoryLocation.locationOrLoadError?.__typename === 'RepositoryLocation' &&
-            matchingRepositoryLocation.locationOrLoadError?.serverId !== serverId
-          ) {
-            setUpdatedLocations((s) => [...s, locationName]);
-          }
-          return;
-      }
+        }
+
+        const {locationName, eventType, serverId} = changeEvents.event;
+
+        switch (eventType) {
+          case LocationStateChangeEventType.LOCATION_ERROR:
+            refetch();
+            setUpdatedLocations((s) => s.filter((name) => name !== locationName));
+            return;
+          case LocationStateChangeEventType.LOCATION_UPDATED:
+            const matchingRepositoryLocation = locationEntries.find((n) => n.name === locationName);
+            if (
+              matchingRepositoryLocation &&
+              matchingRepositoryLocation.locationOrLoadError?.__typename === 'RepositoryLocation' &&
+              matchingRepositoryLocation.locationOrLoadError?.serverId !== serverId
+            ) {
+              setUpdatedLocations((s) => [...s, locationName]);
+            }
+            return;
+        }
+      },
     },
-  });
+  );
 
   if (!totalMessages) {
     return null;

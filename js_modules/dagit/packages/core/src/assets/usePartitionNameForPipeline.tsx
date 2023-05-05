@@ -14,6 +14,7 @@ export function usePartitionNameForPipeline(repoAddress: RepoAddress, pipelineNa
     AssetJobPartitionSetsQuery,
     AssetJobPartitionSetsQueryVariables
   >(ASSET_JOB_PARTITION_SETS_QUERY, {
+    skip: !pipelineName,
     variables: {
       repositoryLocationName: repoAddress.location,
       repositoryName: repoAddress.name,
@@ -37,7 +38,7 @@ export function usePartitionNameForPipeline(repoAddress: RepoAddress, pipelineNa
   );
 }
 
-const ASSET_JOB_PARTITION_SETS_QUERY = gql`
+export const ASSET_JOB_PARTITION_SETS_QUERY = gql`
   query AssetJobPartitionSetsQuery(
     $pipelineName: String!
     $repositoryName: String!
@@ -50,13 +51,10 @@ const ASSET_JOB_PARTITION_SETS_QUERY = gql`
         repositoryLocationName: $repositoryLocationName
       }
     ) {
-      __typename
       ... on PipelineNotFoundError {
-        __typename
         message
       }
       ... on PartitionSets {
-        __typename
         results {
           id
           name

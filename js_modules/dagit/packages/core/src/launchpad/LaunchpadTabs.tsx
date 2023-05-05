@@ -33,7 +33,7 @@ const LaunchpadTab = (props: ExecutationTabProps) => {
   }, [onChange]);
 
   const onClickRemove = React.useCallback(
-    (e) => {
+    (e: React.MouseEvent<HTMLButtonElement>) => {
       e.stopPropagation();
       onRemove && onRemove();
     },
@@ -45,7 +45,10 @@ const LaunchpadTab = (props: ExecutationTabProps) => {
     onChange && onChange(value);
   }, [onChange, value]);
 
-  const handleChange = React.useCallback((e) => setValue(e.target.value), []);
+  const handleChange = React.useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => setValue(e.target.value),
+    [],
+  );
 
   React.useEffect(() => {
     const el = input.current;

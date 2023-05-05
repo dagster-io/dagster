@@ -51,13 +51,12 @@ height={673}
 The first step in using dbt Cloud with Dagster is to tell Dagster how to connect to your dbt Cloud instance using a dbt Cloud [resource](/concepts/resources). This resource contains information on where the dbt Cloud instance is located and any credentials sourced from environment variables that are needed to access it.
 
 ```python startafter=start_define_dbt_cloud_instance endbefore=end_define_dbt_cloud_instance file=/integrations/dbt/dbt_cloud.py dedent=4
-from dagster_dbt import dbt_cloud_resource
+from dagster_dbt import DbtCloudClientResource
+from dagster import EnvVar
 
-dbt_cloud_instance = dbt_cloud_resource.configured(
-    {
-        "auth_token": {"env": "DBT_CLOUD_API_TOKEN"},
-        "account_id": {"env": "DBT_CLOUD_ACCOUNT_ID"},
-    }
+dbt_cloud_instance = DbtCloudClientResource(
+    auth_token=EnvVar("DBT_CLOUD_API_TOKEN"),
+    account_id=EnvVar.int("DBT_CLOUD_ACCOUNT_ID"),
 )
 ```
 
@@ -128,6 +127,65 @@ defs = Definitions(
         ),
     ],
 )
+```
+
+## Step 4: Cache the dbt Cloud job compilation
+
+<Note>This step is optional.</Note>
+
+- [Step 4.1: Add `DBT_DAGSTER_COMPILE_RUN_ID` environment variable to dbt Cloud](#step-41-add-dbt_dagster_compile_run_id-environment-variable-to-dbt-cloud)
+- [Step 4.2: Override `DBT_DAGSTER_COMPILE_RUN_ID` on dbt Cloud jobs managed by Dagster](#step-42-override-dbt_dagster_compile_run_id-on-dbt-cloud-jobs-managed-by-dagster)
+- [Step 4.3: Test out the cache locally](#step-43-test-out-the-cache-locally)
+- [Step 4.4: Set up a GitHub action to automate the cache](#step-44-set-up-a-github-action-to-automate-the-cache)
+
+You'll need the following secrets in your GitHub repository and local environment:
+
+- `DBT_CLOUD_API_TOKEN` - The API token for your dbt Cloud account, as described in the [Prerequisites](#prerequisites).
+- `DBT_CLOUD_ACCOUNT_ID` - The id of your dbt Cloud account, as described in the [Prerequisites](#prerequisites).
+- `DBT_CLOUD_PROJECT_ID` - The id of your dbt Cloud project, that corresponds to the dbt project managed in git.
+
+### Step 4.1 Add `DBT_DAGSTER_COMPILE_RUN_ID` environment variable to dbt Cloud
+
+In order to cache the compilation of your dbt project, you'll need to add an environment variable to your dbt Cloud project. Navigate to dbt Cloud's Environment Variables, and set the `DBT_DAGSTER_COMPILE_RUN_ID` variable with default values of `-1` at the project and environment level.
+
+### Step 4.2 Override `DBT_DAGSTER_COMPILE_RUN_ID` on dbt Cloud jobs managed by Dagster
+
+Next, in the dbt Cloud jobs that you are managing with Dagster, you'll need to override the `DBT_DAGSTER_COMPILE_RUN_ID` environment variable. The presence of this override at the _job level_ will cause the dbt Cloud job to use the cached compilation of your dbt project. Set the job level override to also be `-1`.
+
+### Step 4.3 Test out the cache locally
+
+Run `dagster-dbt-cloud cache-compile-references` to populate the cache for your dbt Cloud jobs. This command will compile your dbt project and cache the compilation. The compilation will be cached for each dbt Cloud job that you are managing with Dagster. After running this command, the `DBT_DAGSTER_COMPILE_RUN_ID` environment variable for your job will now be updated to the run id of the cached compilation.
+
+When running `dagster dev` locally, your dbt Cloud assets will now be loaded from the cached compilation, rather than compiling when the Dagster definitions are loaded.
+
+### Step 4.4: Set up a GitHub action to automate the cache
+
+A reference to this cached compilation can be automated by using a GitHub action on your dbt Cloud project. For example, add a GitHub action that will cache the compilation of your dbt project. This action can be triggered on a push to your main branch.
+
+```yaml
+name: Compile dbt Cloud project
+on:
+  push:
+    branches:
+      - main
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: "3.9"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install dagster_dbt
+      - name: Run commit script
+        run: python -m dagster_dbt.cloud.cli cache-compile-references
+        env:
+          DBT_CLOUD_API_TOKEN: ${{ secrets.DBT_CLOUD_API_TOKEN }}
+          DBT_CLOUD_ACCOUNT_ID: ${{ secrets.DBT_CLOUD_ACCOUNT_ID }}
+          DBT_CLOUD_PROJECT_ID: ${{ secrets.DBT_CLOUD_PROJECT_ID }}
 ```
 
 ## What's next?

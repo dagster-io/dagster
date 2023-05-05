@@ -74,7 +74,6 @@ export const TickDetailsDialog: React.FC<{
 const JOB_SELECTED_TICK_QUERY = gql`
   query SelectedTickQuery($instigationSelector: InstigationSelector!, $timestamp: Float!) {
     instigationStateOrError(instigationSelector: $instigationSelector) {
-      __typename
       ... on InstigationState {
         id
         tick(timestamp: $timestamp) {

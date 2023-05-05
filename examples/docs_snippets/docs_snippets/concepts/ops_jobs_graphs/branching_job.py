@@ -1,5 +1,3 @@
-# pylint: disable=unused-argument, no-value-for-parameter
-
 # start_marker
 import random
 

@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import NamedTuple, Optional, Sequence, cast
+from typing import NamedTuple, Optional, cast
 
 import dagster._check as check
 from dagster._annotations import PublicAttr
@@ -12,6 +12,7 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsSubset,
 )
 from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._core.instance import DynamicPartitionsStore
 from dagster._serdes import whitelist_for_serdes
 
 
@@ -23,8 +24,7 @@ class TimeWindowPartitionMapping(
         [("start_offset", PublicAttr[int]), ("end_offset", PublicAttr[int])],
     ),
 ):
-    """
-    The default mapping between two TimeWindowPartitionsDefinitions.
+    """The default mapping between two TimeWindowPartitionsDefinitions.
 
     A partition in the downstream partitions definition is mapped to all partitions in the upstream
     asset whose time windows overlap it.
@@ -97,6 +97,7 @@ class TimeWindowPartitionMapping(
         self,
         downstream_partitions_subset: Optional[PartitionsSubset],
         upstream_partitions_def: PartitionsDefinition,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> PartitionsSubset:
         if not isinstance(downstream_partitions_subset, TimeWindowPartitionsSubset):
             check.failed("downstream_partitions_subset must be a TimeWindowPartitionsSubset")
@@ -104,7 +105,7 @@ class TimeWindowPartitionMapping(
         return self._map_partitions(
             downstream_partitions_subset.partitions_def,
             upstream_partitions_def,
-            downstream_partitions_subset.included_time_windows,
+            downstream_partitions_subset,
             self.start_offset,
             self.end_offset,
         )
@@ -121,6 +122,7 @@ class TimeWindowPartitionMapping(
         self,
         upstream_partitions_subset: PartitionsSubset,
         downstream_partitions_def: Optional[PartitionsDefinition],
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> PartitionsSubset:
         if not isinstance(downstream_partitions_def, TimeWindowPartitionsDefinition):
             check.failed("downstream_partitions_def must be a TimeWindowPartitionsDefinitions")
@@ -131,7 +133,7 @@ class TimeWindowPartitionMapping(
         return self._map_partitions(
             upstream_partitions_subset.partitions_def,
             downstream_partitions_def,
-            upstream_partitions_subset.included_time_windows,
+            upstream_partitions_subset,
             -self.start_offset,
             -self.end_offset,
         )
@@ -140,7 +142,7 @@ class TimeWindowPartitionMapping(
         self,
         from_partitions_def: PartitionsDefinition,
         to_partitions_def: PartitionsDefinition,
-        from_partition_time_windows: Sequence[TimeWindow],
+        from_partitions_subset: TimeWindowPartitionsSubset,
         start_offset: int,
         end_offset: int,
     ) -> PartitionsSubset:
@@ -151,18 +153,25 @@ class TimeWindowPartitionMapping(
                 "TimeWindowPartitionMappings can only operate on TimeWindowPartitionsDefinitions"
             )
 
-        # mypy requires this for some reason
-        from_partitions_def = cast(TimeWindowPartitionsDefinition, from_partitions_def)
-        to_partitions_def = cast(TimeWindowPartitionsDefinition, to_partitions_def)
-
-        if start_offset != 0 or end_offset != 0:
-            check.invariant(from_partitions_def.cron_schedule == to_partitions_def.cron_schedule)
+        if (start_offset != 0 or end_offset != 0) and (
+            from_partitions_def.cron_schedule != to_partitions_def.cron_schedule
+        ):
+            raise DagsterInvalidDefinitionError(
+                "Can't use the start_offset or end_offset parameters of"
+                " TimeWindowPartitionMapping when the cron schedule of the upstream"
+                " PartitionsDefinition is different than the cron schedule of the downstream"
+                " one."
+            )
 
         if to_partitions_def.timezone != from_partitions_def.timezone:
             raise DagsterInvalidDefinitionError("Timezones don't match")
 
+        # skip fancy mapping logic in the simple case
+        if to_partitions_def == from_partitions_def and start_offset == 0 and end_offset == 0:
+            return from_partitions_subset
+
         time_windows = []
-        for from_partition_time_window in from_partition_time_windows:
+        for from_partition_time_window in from_partitions_subset.included_time_windows:
             from_start_dt, from_end_dt = from_partition_time_window
             offsetted_start_dt = _offsetted_datetime(
                 from_partitions_def, from_start_dt, start_offset
@@ -200,11 +209,11 @@ class TimeWindowPartitionMapping(
 
         return TimeWindowPartitionsSubset(
             to_partitions_def,
-            time_windows,
             num_partitions=sum(
                 len(to_partitions_def.get_partition_keys_in_time_window(time_window))
                 for time_window in time_windows
             ),
+            included_time_windows=time_windows,
         )
 
 

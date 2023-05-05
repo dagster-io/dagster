@@ -33,6 +33,10 @@ config:
   {{- if $azureBlobComputeLogManagerConfig.uploadInterval }}
   upload_interval: {{ $azureBlobComputeLogManagerConfig.uploadInterval }}
   {{- end }}
+
+  {{- if $azureBlobComputeLogManagerConfig.defaultAzureCredential }}
+  default_azure_credential: {{ $azureBlobComputeLogManagerConfig.defaultAzureCredential | toYaml | nindent 4 }}
+  {{- end }}
 {{- end }}
 
 {{- define "dagsterYaml.computeLogManager.gcs" }}
@@ -100,6 +104,14 @@ config:
 
   {{- if $s3ComputeLogManagerConfig.uploadExtraArgs }}
   upload_extra_args: {{ $s3ComputeLogManagerConfig.uploadExtraArgs | toYaml | nindent 4 }}
+  {{- end }}
+
+  {{- if $s3ComputeLogManagerConfig.showUrlOnly }}
+  show_url_only: {{ $s3ComputeLogManagerConfig.showUrlOnly }}
+  {{- end }}
+
+  {{- if $s3ComputeLogManagerConfig.region }}
+  region: {{ $s3ComputeLogManagerConfig.region }}
   {{- end }}
 {{- end }}
 

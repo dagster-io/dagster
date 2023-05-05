@@ -6,6 +6,9 @@ This library provides an integration with the `DuckDB <hhttps://duckdb.org/>`_ d
 
 .. currentmodule:: dagster_duckdb_pandas
 
+.. autoconfigurable:: DuckDBPandasIOManager
+  :annotation: IOManagerDefinition
+
 .. autoconfigurable:: duckdb_pandas_io_manager
   :annotation: IOManagerDefinition
 

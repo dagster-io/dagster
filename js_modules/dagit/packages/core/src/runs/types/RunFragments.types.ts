@@ -2,26 +2,14 @@
 
 import * as Types from '../../graphql/types';
 
-export type RunFragmentForRepositoryMatchFragment = {
-  __typename: 'Run';
-  id: string;
-  pipelineName: string;
-  pipelineSnapshotId: string | null;
-  parentPipelineSnapshotId: string | null;
-  repositoryOrigin: {
-    __typename: 'RepositoryOrigin';
-    id: string;
-    repositoryName: string;
-    repositoryLocationName: string;
-  } | null;
-};
-
 export type RunFragment = {
   __typename: 'Run';
   id: string;
   runConfigYaml: string;
-  runId: string;
   canTerminate: boolean;
+  hasReExecutePermission: boolean;
+  hasTerminatePermission: boolean;
+  hasDeletePermission: boolean;
   status: Types.RunStatus;
   mode: string;
   rootRunId: string | null;
@@ -29,11 +17,16 @@ export type RunFragment = {
   pipelineName: string;
   solidSelection: Array<string> | null;
   pipelineSnapshotId: string | null;
-  parentPipelineSnapshotId: string | null;
   stepKeysToExecute: Array<string> | null;
   updateTime: number | null;
   startTime: number | null;
   endTime: number | null;
+  repositoryOrigin: {
+    __typename: 'RepositoryOrigin';
+    id: string;
+    repositoryName: string;
+    repositoryLocationName: string;
+  } | null;
   tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
   assets: Array<{
     __typename: 'Asset';
@@ -63,12 +56,6 @@ export type RunFragment = {
     attempts: Array<{__typename: 'RunMarker'; startTime: number | null; endTime: number | null}>;
     markers: Array<{__typename: 'RunMarker'; startTime: number | null; endTime: number | null}>;
   }>;
-  repositoryOrigin: {
-    __typename: 'RepositoryOrigin';
-    id: string;
-    repositoryName: string;
-    repositoryLocationName: string;
-  } | null;
 };
 
 export type RunDagsterRunEventFragment_AlertFailureEvent_ = {
@@ -1061,8 +1048,10 @@ export type RunDagsterRunEventFragment_LogsCapturedEvent_ = {
   fileKey: string;
   stepKeys: Array<string> | null;
   pid: number | null;
-  externalUrl: string | null;
+  externalStdoutUrl: string | null;
+  externalStderrUrl: string | null;
   eventType: Types.DagsterEventType | null;
+  externalUrl: string | null;
 };
 
 export type RunDagsterRunEventFragment_MaterializationEvent_ = {
@@ -2249,3 +2238,60 @@ export type RunDagsterRunEventFragment =
   | RunDagsterRunEventFragment_StepExpectationResultEvent_
   | RunDagsterRunEventFragment_StepWorkerStartedEvent_
   | RunDagsterRunEventFragment_StepWorkerStartingEvent_;
+
+export type RunPageFragment = {
+  __typename: 'Run';
+  id: string;
+  parentPipelineSnapshotId: string | null;
+  runConfigYaml: string;
+  canTerminate: boolean;
+  hasReExecutePermission: boolean;
+  hasTerminatePermission: boolean;
+  hasDeletePermission: boolean;
+  status: Types.RunStatus;
+  mode: string;
+  rootRunId: string | null;
+  parentRunId: string | null;
+  pipelineName: string;
+  solidSelection: Array<string> | null;
+  pipelineSnapshotId: string | null;
+  stepKeysToExecute: Array<string> | null;
+  updateTime: number | null;
+  startTime: number | null;
+  endTime: number | null;
+  repositoryOrigin: {
+    __typename: 'RepositoryOrigin';
+    id: string;
+    repositoryName: string;
+    repositoryLocationName: string;
+  } | null;
+  tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
+  assets: Array<{
+    __typename: 'Asset';
+    id: string;
+    key: {__typename: 'AssetKey'; path: Array<string>};
+  }>;
+  assetSelection: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
+  executionPlan: {
+    __typename: 'ExecutionPlan';
+    artifactsPersisted: boolean;
+    steps: Array<{
+      __typename: 'ExecutionStep';
+      key: string;
+      kind: Types.StepKind;
+      inputs: Array<{
+        __typename: 'ExecutionStepInput';
+        dependsOn: Array<{__typename: 'ExecutionStep'; key: string; kind: Types.StepKind}>;
+      }>;
+    }>;
+  } | null;
+  stepStats: Array<{
+    __typename: 'RunStepStats';
+    stepKey: string;
+    status: Types.StepEventStatus | null;
+    startTime: number | null;
+    endTime: number | null;
+    attempts: Array<{__typename: 'RunMarker'; startTime: number | null; endTime: number | null}>;
+    markers: Array<{__typename: 'RunMarker'; startTime: number | null; endTime: number | null}>;
+  }>;
+};

@@ -15,10 +15,10 @@ SUPPORTED_RUNTIME_BUILTINS = {
     float: Float,
     bool: Bool,
     str: String,
-    list: List(RuntimeAny),  # type: ignore
-    tuple: PythonTuple,  # type: ignore
-    set: PythonSet,  # type: ignore
-    dict: PythonDict,  # type: ignore
+    list: List(RuntimeAny),
+    tuple: PythonTuple,
+    set: PythonSet,
+    dict: PythonDict,
 }
 
 

@@ -325,8 +325,8 @@ const FailureContent: React.FC<{
     }
 
     if (error.errorChain.length) {
-      errorCause = error.errorChain.map((chainLink) => (
-        <>
+      errorCause = error.errorChain.map((chainLink, index) => (
+        <React.Fragment key={index}>
           {chainLink.isExplicitLink
             ? `The above exception was caused by the following exception:\n`
             : `The above exception occurred during handling of the following exception:\n`}
@@ -334,7 +334,7 @@ const FailureContent: React.FC<{
           {chainLink.error.stack.length ? (
             <span style={{color: Colors.Red500}}>{`\nStack Trace:\n${chainLink.error.stack}`}</span>
           ) : null}
-        </>
+        </React.Fragment>
       ));
     }
   }
@@ -385,7 +385,7 @@ const StepUpForRetryContent: React.FC<{
       errorCause = (
         <>
           {error.errorChain.map((chainLink, index) => (
-            <>
+            <React.Fragment key={index}>
               {index === 0
                 ? `The retry request was caused by the following exception:\n`
                 : `The above exception was caused by the following exception:\n`}
@@ -393,7 +393,7 @@ const StepUpForRetryContent: React.FC<{
               <span
                 style={{color: Colors.Red500}}
               >{`\nStack Trace:\n${chainLink.error.stack}`}</span>
-            </>
+            </React.Fragment>
           ))}
         </>
       );

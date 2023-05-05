@@ -89,7 +89,6 @@ export class Structured extends React.Component<StructuredProps, StructuredState
 
 export const LOGS_ROW_STRUCTURED_FRAGMENT = gql`
   fragment LogsRowStructuredFragment on DagsterRunEvent {
-    __typename
     ... on MessageEvent {
       message
       eventType
@@ -185,6 +184,8 @@ export const LOGS_ROW_STRUCTURED_FRAGMENT = gql`
       fileKey
       stepKeys
       externalUrl
+      externalStdoutUrl
+      externalStderrUrl
     }
   }
 
@@ -208,15 +209,15 @@ const StructuredMemoizedContent: React.FC<{
       onMouseLeave={() => setHighlightedGanttChartTime(null)}
       highlighted={highlighted}
     >
-      <OpColumn stepKey={'stepKey' in node && node.stepKey} />
-      <StructuredContent>
-        <LogsRowStructuredContent node={node} metadata={metadata} />
-      </StructuredContent>
       <TimestampColumn
         time={'timestamp' in node ? node.timestamp : null}
         runStartTime={metadata.startedPipelineAt}
         stepStartTime={stepStartTime}
       />
+      <OpColumn stepKey={'stepKey' in node && node.stepKey} />
+      <StructuredContent>
+        <LogsRowStructuredContent node={node} metadata={metadata} />
+      </StructuredContent>
     </Row>
   );
 });
@@ -253,7 +254,6 @@ export class Unstructured extends React.Component<UnstructuredProps> {
 
 export const LOGS_ROW_UNSTRUCTURED_FRAGMENT = gql`
   fragment LogsRowUnstructuredFragment on DagsterRunEvent {
-    __typename
     ... on MessageEvent {
       message
       timestamp
@@ -279,6 +279,11 @@ const UnstructuredMemoizedContent: React.FC<{
       onMouseLeave={() => setHighlightedGanttChartTime(null)}
       highlighted={highlighted}
     >
+      <TimestampColumn
+        time={node.timestamp}
+        runStartTime={metadata.startedPipelineAt}
+        stepStartTime={stepStartTime}
+      />
       <OpColumn stepKey={node.stepKey} />
       <EventTypeColumn>
         <span style={{marginLeft: 8}}>{node.level}</span>
@@ -286,11 +291,6 @@ const UnstructuredMemoizedContent: React.FC<{
       <Box padding={{horizontal: 12}} style={{flex: 1}}>
         {node.message}
       </Box>
-      <TimestampColumn
-        time={node.timestamp}
-        runStartTime={metadata.startedPipelineAt}
-        stepStartTime={stepStartTime}
-      />
     </Row>
   );
 });

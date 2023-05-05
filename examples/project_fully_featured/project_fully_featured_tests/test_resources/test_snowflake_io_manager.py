@@ -37,7 +37,7 @@ def mock_input_context(upstream_output_context: OutputContext) -> InputContext:
 def temporary_snowflake_table(contents: PandasDataFrame) -> Iterator[AssetKey]:
     schema = "hackernews"
     snowflake_config = dict(
-        database="TESTDB",
+        database="BEN",
         **SHARED_SNOWFLAKE_CONF,
     )
     table_name = "a" + str(uuid.uuid4()).replace("-", "_")
@@ -51,10 +51,11 @@ def temporary_snowflake_table(contents: PandasDataFrame) -> Iterator[AssetKey]:
 
 
 @pytest.mark.skipif(
-    os.environ.get("TEST_SNOWFLAKE") != "true", reason="avoid dependency on snowflake for tests"
+    os.environ.get("TEST_SNOWFLAKE") != "true",
+    reason="avoid dependency on snowflake for tests",
 )
 def test_handle_output_then_load_input_pandas():
-    snowflake_manager = SnowflakeIOManager(dict(database="TESTDB", **SHARED_SNOWFLAKE_CONF))
+    snowflake_manager = SnowflakeIOManager(database="BEN", **SHARED_SNOWFLAKE_CONF)
     contents1 = PandasDataFrame([{"col1": "a", "col2": 1}])  # just to get the types right
     contents2 = PandasDataFrame([{"col1": "b", "col2": 2}])  # contents we will insert
     with temporary_snowflake_table(contents1) as temp_table_key:
@@ -67,10 +68,11 @@ def test_handle_output_then_load_input_pandas():
 
 
 @pytest.mark.skipif(
-    os.environ.get("TEST_SNOWFLAKE") != "true", reason="avoid dependency on snowflake for tests"
+    os.environ.get("TEST_SNOWFLAKE") != "true",
+    reason="avoid dependency on snowflake for tests",
 )
 def test_handle_output_spark_then_load_input_pandas():
-    snowflake_manager = SnowflakeIOManager(dict(database="TESTDB", **SHARED_SNOWFLAKE_CONF))
+    snowflake_manager = SnowflakeIOManager(database="BEN", **SHARED_SNOWFLAKE_CONF)
     spark = SparkSession.builder.config(
         "spark.jars.packages",
         "net.snowflake:snowflake-jdbc:3.8.0,net.snowflake:spark-snowflake_2.12:2.8.2-spark_3.0",

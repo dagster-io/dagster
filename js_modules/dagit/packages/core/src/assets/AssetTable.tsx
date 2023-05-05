@@ -15,7 +15,7 @@ import * as React from 'react';
 
 import {useUnscopedPermissions} from '../app/Permissions';
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
-import {AssetGroupSelector} from '../graphql/types';
+import {AssetGroupSelector, AssetKeyInput} from '../graphql/types';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {VirtualizedAssetTable} from '../workspace/VirtualizedAssetTable';
 
@@ -25,7 +25,6 @@ import {AssetTableFragment} from './types/AssetTableFragment.types';
 import {AssetViewType} from './useAssetView';
 
 type Asset = AssetTableFragment;
-type AssetKey = {path: string[]};
 
 interface Props {
   view: AssetViewType;
@@ -50,7 +49,7 @@ export const AssetTable: React.FC<Props> = ({
   searchGroup,
   view,
 }) => {
-  const [toWipe, setToWipe] = React.useState<AssetKey[] | undefined>();
+  const [toWipe, setToWipe] = React.useState<AssetKeyInput[] | undefined>();
 
   const groupedByFirstComponent: {[pathComponent: string]: Asset[]} = {};
 
@@ -146,7 +145,7 @@ export const AssetTable: React.FC<Props> = ({
         onToggleFactory={onToggleFactory}
         showRepoColumn
         view={view}
-        onWipe={(assets: Asset[]) => setToWipe(assets.map((asset) => asset.key))}
+        onWipe={(assetKeys: AssetKeyInput[]) => setToWipe(assetKeys)}
       />
     );
   };
@@ -202,9 +201,11 @@ const MoreActionsDropdown: React.FC<{
   requery?: RefetchQueriesFunction;
 }> = React.memo(({selected, clearSelection, requery}) => {
   const [showBulkWipeDialog, setShowBulkWipeDialog] = React.useState<boolean>(false);
-  const {canWipeAssets} = useUnscopedPermissions();
+  const {
+    permissions: {canWipeAssets},
+  } = useUnscopedPermissions();
 
-  if (!canWipeAssets.enabled) {
+  if (!canWipeAssets) {
     return null;
   }
 

@@ -10,13 +10,18 @@ import {StartSensorMutation, StopRunningSensorMutation} from './types/SensorMuta
 export const START_SENSOR_MUTATION = gql`
   mutation StartSensor($sensorSelector: SensorSelector!) {
     startSensor(sensorSelector: $sensorSelector) {
-      __typename
       ... on Sensor {
         id
         sensorState {
           id
           status
         }
+      }
+      ... on SensorNotFoundError {
+        message
+      }
+      ... on UnauthorizedError {
+        message
       }
       ...PythonErrorFragment
     }
@@ -28,12 +33,14 @@ export const START_SENSOR_MUTATION = gql`
 export const STOP_SENSOR_MUTATION = gql`
   mutation StopRunningSensor($jobOriginId: String!, $jobSelectorId: String!) {
     stopSensor(jobOriginId: $jobOriginId, jobSelectorId: $jobSelectorId) {
-      __typename
       ... on StopSensorMutationResult {
         instigationState {
           id
           status
         }
+      }
+      ... on UnauthorizedError {
+        message
       }
       ...PythonErrorFragment
     }

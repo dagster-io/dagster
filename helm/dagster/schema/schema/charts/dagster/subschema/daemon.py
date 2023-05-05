@@ -77,7 +77,7 @@ class Daemon(BaseModel):
     image: kubernetes.Image
     runCoordinator: RunCoordinator
     heartbeatTolerance: int
-    env: Dict[str, str]
+    env: Union[Dict[str, str], List[kubernetes.EnvVar]]
     envConfigMaps: List[kubernetes.ConfigMapEnvSource]
     envSecrets: List[kubernetes.SecretEnvSource]
     deploymentLabels: Dict[str, str]

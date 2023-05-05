@@ -4,19 +4,23 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+from typing import Optional
 
 import click
 
-from dagster._serdes import serialize_dagster_namedtuple
+import dagster._check as check
+from dagster._serdes import serialize_value
 from dagster._serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
 from dagster._utils.log import configure_loggers
 
 from .job import apply_click_params
 from .utils import get_instance_for_service
 from .workspace.cli_target import (
+    ClickArgValue,
     get_workspace_load_target,
     python_file_option,
     python_module_option,
+    working_directory_option,
     workspace_option,
 )
 
@@ -30,6 +34,7 @@ def dev_command_options(f):
         workspace_option(),
         python_file_option(allow_multiple=True),
         python_module_option(allow_multiple=True),
+        working_directory_option(),
     )
 
 
@@ -50,8 +55,14 @@ def dev_command_options(f):
         ["critical", "error", "warning", "info", "debug", "trace"], case_sensitive=False
     ),
 )
-@click.option("--dagit-port", help="Port to use for the Dagit UI.", required=False)
-def dev_command(code_server_log_level, dagit_port, **kwargs):
+@click.option("--dagit-port", "-p", help="Port to use for the Dagit UI.", required=False)
+@click.option("--dagit-host", "-h", help="Host to use for the Dagit UI.", required=False)
+def dev_command(
+    code_server_log_level: str,
+    dagit_port: Optional[str],
+    dagit_host: Optional[str],
+    **kwargs: ClickArgValue,
+) -> None:
     # check if dagit installed, crash if not
     try:
         import dagit  #  # noqa: F401
@@ -87,21 +98,31 @@ def dev_command(code_server_log_level, dagit_port, **kwargs):
 
         args = [
             "--instance-ref",
-            serialize_dagster_namedtuple(instance.get_ref()),
+            serialize_value(instance.get_ref()),
             "--code-server-log-level",
             code_server_log_level,
-        ] + (["--workspace", kwargs["workspace"]] if kwargs.get("workspace") else [])
+        ]
+
+        if kwargs.get("workspace"):
+            for workspace in check.tuple_elem(kwargs, "workspace"):
+                args.extend(["--workspace", workspace])
 
         if kwargs.get("python_file"):
-            for python_file in kwargs["python_file"]:
+            for python_file in check.tuple_elem(kwargs, "python_file"):
                 args.extend(["--python-file", python_file])
 
         if kwargs.get("module_name"):
-            for module_name in kwargs["module_name"]:
+            for module_name in check.tuple_elem(kwargs, "module_name"):
                 args.extend(["--module-name", module_name])
 
+        if kwargs.get("working_directory"):
+            args.extend(["--working-directory", check.str_elem(kwargs, "working_directory")])
+
         dagit_process = open_ipc_subprocess(
-            [sys.executable, "-m", "dagit"] + (["--port", dagit_port] if dagit_port else []) + args
+            [sys.executable, "-m", "dagit"]
+            + (["--port", dagit_port] if dagit_port else [])
+            + (["--host", dagit_host] if dagit_host else [])
+            + args
         )
         daemon_process = open_ipc_subprocess(
             [sys.executable, "-m", "dagster._daemon", "run"] + args

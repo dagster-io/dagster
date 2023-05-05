@@ -6,10 +6,21 @@ GCP (dagster-gcp)
 BigQuery
 --------
 
+Related Guides:
+
+* `Using Dagster with BigQuery </integrations/bigquery>`_
+* `BigQuery I/O manager reference </integrations/bigquery/reference>`_
+
 .. autoclass:: BigQueryError
 
 .. autoconfigurable:: bigquery_resource
   :annotation: ResourceDefinition
+
+.. autoconfigurable:: BigQueryIOManager
+  :annotation: IOManagerDefinition
+
+.. autoconfigurable:: build_bigquery_io_manager
+  :annotation: IOManagerDefinition
 
 .. autofunction:: bq_create_dataset
 
@@ -35,6 +46,8 @@ Dataproc
 
 GCS
 ---
+
+.. autoclass:: dagster_gcp.gcs.GCSComputeLogManager
 
 .. autoconfigurable:: gcs_resource
   :annotation: ResourceDefinition

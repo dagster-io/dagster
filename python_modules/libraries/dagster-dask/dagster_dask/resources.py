@@ -65,7 +65,7 @@ class DaskResource:
         self._client, self._cluster = None, None
 
 
-@resource(  # type: ignore
+@resource(
     description="Dask Client resource.",
     config_schema=Shape(
         {

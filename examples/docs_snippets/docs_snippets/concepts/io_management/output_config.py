@@ -15,12 +15,12 @@ def read_dataframe_from_table(**_kwargs):
 
 @op
 def op_1():
-    """Return a Pandas DataFrame"""
+    """Return a Pandas DataFrame."""
 
 
 @op
 def op_2(_input_dataframe):
-    """Return a Pandas DataFrame"""
+    """Return a Pandas DataFrame."""
 
 
 # io_manager_start_marker

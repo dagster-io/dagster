@@ -1,8 +1,8 @@
-from dagster._core.utils import check_dagster_package_version
+from dagster._core.libraries import DagsterLibraryRegistry
 
 from .loggers import papertrail_logger
 from .version import __version__
 
-check_dagster_package_version("dagster-papertrail", __version__)
+DagsterLibraryRegistry.register("dagster-papertrail", __version__)
 
 __all__ = ["papertrail_logger"]

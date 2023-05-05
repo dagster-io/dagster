@@ -1,7 +1,7 @@
 import collections.abc
 import inspect
 from functools import update_wrapper
-from typing import Callable, Optional, Sequence, Union
+from typing import Any, Callable, Optional, Sequence, Set, Union
 
 import dagster._check as check
 from dagster._annotations import experimental
@@ -15,6 +15,7 @@ from ..multi_asset_sensor_definition import (
     MultiAssetMaterializationFunction,
     MultiAssetSensorDefinition,
 )
+from ..run_request import SensorResult
 from ..sensor_definition import (
     DefaultSensorStatus,
     RawSensorEvaluationFunction,
@@ -35,10 +36,11 @@ def sensor(
     jobs: Optional[Sequence[ExecutableDefinition]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     asset_selection: Optional[AssetSelection] = None,
+    required_resource_keys: Optional[Set[str]] = None,
 ) -> Callable[[RawSensorEvaluationFunction], SensorDefinition]:
-    """
-    Creates a sensor where the decorated function is used as the sensor's evaluation function.  The
-    decorated function may:
+    """Creates a sensor where the decorated function is used as the sensor's evaluation function.
+
+    The decorated function may:
 
     1. Return a `RunRequest` object.
     2. Return a list of `RunRequest` objects.
@@ -68,7 +70,7 @@ def sensor(
     def inner(fn: RawSensorEvaluationFunction) -> SensorDefinition:
         check.callable_param(fn, "fn")
 
-        sensor_def = SensorDefinition(
+        sensor_def = SensorDefinition.dagster_internal_init(
             name=name,
             job_name=job_name,
             evaluation_fn=fn,
@@ -78,6 +80,7 @@ def sensor(
             jobs=jobs,
             default_status=default_status,
             asset_selection=asset_selection,
+            required_resource_keys=required_resource_keys,
         )
 
         update_wrapper(sensor_def, wrapped=fn)
@@ -98,9 +101,10 @@ def asset_sensor(
     jobs: Optional[Sequence[ExecutableDefinition]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
 ) -> Callable[[AssetMaterializationFunction,], AssetSensorDefinition,]:
-    """
-    Creates an asset sensor where the decorated function is used as the asset sensor's evaluation
-    function.  The decorated function may:
+    """Creates an asset sensor where the decorated function is used as the asset sensor's evaluation
+    function.
+
+    The decorated function may:
 
     1. Return a `RunRequest` object.
     2. Return a list of `RunRequest` objects.
@@ -153,13 +157,22 @@ def asset_sensor(
         check.callable_param(fn, "fn")
         sensor_name = name or fn.__name__
 
-        def _wrapped_fn(context, event):
-            result = fn(context, event)
+        def _wrapped_fn(*args, **kwargs) -> Any:
+            result = fn(*args, **kwargs)
 
             if inspect.isgenerator(result) or isinstance(result, list):
                 for item in result:
                     yield item
             elif isinstance(result, (RunRequest, SkipReason)):
+                yield result
+
+            elif isinstance(result, SensorResult):
+                if result.cursor:
+                    raise DagsterInvariantViolationError(
+                        f"Error in asset sensor {sensor_name}: Sensor returned a SensorResult"
+                        " with a cursor value. The cursor is managed by the asset sensor and"
+                        " should not be modified by a user."
+                    )
                 yield result
 
             elif result is not None:
@@ -170,6 +183,10 @@ def asset_sensor(
                         "RunRequest objects."
                     ).format(sensor_name=sensor_name, result=result, type_=type(result))
                 )
+
+        # Preserve any resource arguments from the underlying function, for when we inspect the
+        # wrapped function later on
+        _wrapped_fn.__signature__ = inspect.signature(fn)
 
         return AssetSensorDefinition(
             name=sensor_name,
@@ -199,8 +216,7 @@ def multi_asset_sensor(
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     request_assets: Optional[AssetSelection] = None,
 ) -> Callable[[MultiAssetMaterializationFunction,], MultiAssetSensorDefinition,]:
-    """
-    Creates an asset sensor that can monitor multiple assets.
+    """Creates an asset sensor that can monitor multiple assets.
 
     The decorated function is used as the asset sensor's evaluation
     function.  The decorated function may:

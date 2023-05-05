@@ -14,10 +14,11 @@ import {
   SidebarOpGraphsQueryVariables,
 } from './types/SidebarOpExecutionGraphs.types';
 
-export const StateColors = {
+const StateColors = {
   SUCCESS: Colors.Green500,
   FAILURE: Colors.Red500,
   SKIPPED: Colors.Gray500,
+  IN_PROGRESS: Colors.Gray200,
 };
 
 export const SidebarOpExecutionGraphs: React.FC<{
@@ -109,7 +110,7 @@ export const SidebarOpExecutionGraphs: React.FC<{
                   placement="bottom-end"
                   content={`View Run ${runId.slice(0, 8)} →`}
                 >
-                  <Link to={linkToRunEvent({runId}, {stepKey: solidName})}>
+                  <Link to={linkToRunEvent({id: runId}, {stepKey: solidName})}>
                     <StepStatusDot
                       onMouseEnter={() => startTime && setHighlightedStartTime(startTime * 1000)}
                       onMouseLeave={() => setHighlightedStartTime(null)}
@@ -136,14 +137,11 @@ export const SidebarOpExecutionGraphs: React.FC<{
 const SIDEBAR_OP_GRAPHS_QUERY = gql`
   query SidebarOpGraphsQuery($selector: PipelineSelector!, $handleID: String!) {
     pipelineOrError(params: $selector) {
-      __typename
       ... on Pipeline {
         id
         name
         solidHandle(handleID: $handleID) {
           stepStats(limit: 20) {
-            __typename
-
             ... on SolidStepStatsConnection {
               nodes {
                 runId
@@ -151,9 +149,6 @@ const SIDEBAR_OP_GRAPHS_QUERY = gql`
                 endTime
                 status
               }
-            }
-            ... on SolidStepStatusUnavailableError {
-              __typename
             }
           }
         }

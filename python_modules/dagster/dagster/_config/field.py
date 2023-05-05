@@ -207,8 +207,8 @@ class Field:
 
     Config fields are parsed according to their schemas in order to yield values available at
     job execution time through the config system. Config fields can be set on ops, on
-    loaders and materializers for custom, and on other pluggable components of the system, such as
-    resources, loggers, and executors.
+    loaders for custom, and on other pluggable components of the system, such as resources, loggers,
+    and executors.
 
 
     Args:
@@ -323,7 +323,7 @@ class Field:
                         "into of a config enum type {name}. You must pass in the underlying "
                         "string represention as the default value. One of {value_set}."
                     ).format(
-                        value_set=[ev.config_value for ev in self.config_type.enum_values],  # type: ignore
+                        value_set=[ev.config_value for ev in self.config_type.enum_values],
                         name=self.config_type.given_name,
                     )
                 )
@@ -353,12 +353,12 @@ class Field:
                 self._default_value = evr.value
         self._is_required = is_required
 
-    @public  # type: ignore
+    @public
     @property
     def is_required(self) -> bool:
         return self._is_required
 
-    @public  # type: ignore
+    @public
     @property
     def default_provided(self) -> bool:
         """Was a default value provided.
@@ -368,13 +368,13 @@ class Field:
         """
         return self._default_value != FIELD_NO_DEFAULT_PROVIDED
 
-    @public  # type: ignore
+    @public
     @property
     def default_value(self) -> Any:
         check.invariant(self.default_provided, "Asking for default value when none was provided")
         return self._default_value
 
-    @public  # type: ignore
+    @public
     @property
     def description(self) -> Optional[str]:
         return self._description

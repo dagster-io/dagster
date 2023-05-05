@@ -54,8 +54,7 @@ class RetryWrapper:
         max_backoff=_DEFAULT_MAX_BACKOFF,
         unwrap_methods=(),
     ):
-        """
-        Wrap the given object.
+        """Wrap the given object.
 
         :param wrapped: the object to wrap
         :param retry_if: a method that takes an exception, and returns whether

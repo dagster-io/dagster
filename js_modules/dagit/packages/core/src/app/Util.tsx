@@ -1,3 +1,4 @@
+import memoize from 'lodash/memoize';
 import LRU from 'lru-cache';
 
 import {featureEnabled, FeatureFlag} from './Flags';
@@ -23,7 +24,7 @@ export const withMiddleTruncation = (text: string, options: {maxLength: number})
     // No truncation is necessary
     return text;
   }
-  if (options.maxLength <= 6) {
+  if (options.maxLength <= 10) {
     // Middle truncation to this few characters (eg: abc…ef) is kind of silly
     // and just using abcde… looks better.
     return text.substring(0, options.maxLength - 1) + '…';
@@ -61,15 +62,19 @@ export const withMiddleTruncation = (text: string, options: {maxLength: number})
   return result;
 };
 
+const msecFormatter = memoize((locale: string) => {
+  return new Intl.NumberFormat(locale, {
+    minimumFractionDigits: 3,
+    maximumFractionDigits: 3,
+  });
+});
+
 /**
  * Return an i18n-formatted millisecond in seconds as a decimal, with no leading zero.
  */
 const formatMsecMantissa = (msec: number) =>
-  (msec / 1000)
-    .toLocaleString(navigator.language, {
-      minimumFractionDigits: 3,
-      maximumFractionDigits: 3,
-    })
+  msecFormatter(navigator.language)
+    .format(msec / 1000)
     .slice(-4);
 
 /**
@@ -162,8 +167,8 @@ export function weakmapMemoize<T extends object, R>(
   };
 }
 
-export function assertUnreachable(_: never): never {
-  throw new Error("Didn't expect to get here");
+export function assertUnreachable(value: never): never {
+  throw new Error(`Didn't expect to get here with value: ${JSON.stringify(value)}`);
 }
 
 export function debugLog(...args: any[]) {

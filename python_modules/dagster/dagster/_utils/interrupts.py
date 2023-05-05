@@ -20,7 +20,7 @@ def setup_interrupt_handlers() -> None:
 
     # Set SIGBREAK handler to SIGINT on Windows
     if sys.platform == "win32":
-        signal.signal(signal.SIGBREAK, signal.getsignal(signal.SIGINT))  # pylint: disable=no-member
+        signal.signal(signal.SIGBREAK, signal.getsignal(signal.SIGINT))
 
 
 def _replace_interrupt_signal(new_signal_handler: SignalHandler) -> None:

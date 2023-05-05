@@ -1,16 +1,41 @@
-from functools import update_wrapper
-from typing import TYPE_CHECKING, Any, Callable, Mapping, Optional, Set, Union, overload
+from functools import lru_cache, update_wrapper
+from inspect import Parameter
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Set,
+    Union,
+    cast,
+    overload,
+)
 
 import dagster._check as check
 from dagster._config import UserConfigSchema
-from dagster._core.decorator_utils import format_docstring_for_description
+from dagster._core.decorator_utils import (
+    format_docstring_for_description,
+    get_function_params,
+    get_valid_name_permutations,
+    param_is_var_keyword,
+    positional_arg_name_list,
+)
+from dagster._core.definitions.inference import infer_input_props
+from dagster._core.definitions.resource_annotation import (
+    get_resource_args,
+)
+from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._core.types.dagster_type import DagsterTypeKind
 from dagster._utils.backcompat import canonicalize_backcompat_args
 
-from ..input import In
+from ..input import In, InputDefinition
 from ..output import Out
 from ..policy import RetryPolicy
 from ..utils import DEFAULT_OUTPUT
-from .solid_decorator import DecoratedOpFunction, NoContextDecoratedOpFunction
 
 if TYPE_CHECKING:
     from ..op_definition import OpDefinition
@@ -37,20 +62,24 @@ class _Op:
 
         self.description = check.opt_str_param(description, "description")
 
-        # these will be checked within SolidDefinition
+        # these will be checked within OpDefinition
         self.required_resource_keys = required_resource_keys
         self.tags = tags
         self.code_version = code_version
         self.retry_policy = retry_policy
 
-        # config will be checked within SolidDefinition
+        # config will be checked within OpDefinition
         self.config_schema = config_schema
 
         self.ins = check.opt_nullable_mapping_param(ins, "ins", key_type=str, value_type=In)
         self.out = out
 
     def __call__(self, fn: Callable[..., Any]) -> "OpDefinition":
+        from dagster._config.pythonic_config import validate_resource_annotated_function
+
         from ..op_definition import OpDefinition
+
+        validate_resource_annotated_function(fn)
 
         if not self.name:
             self.name = fn.__name__
@@ -67,7 +96,7 @@ class _Op:
                 "If the @op has a config arg, you cannot specify a config schema",
             )
 
-            from dagster._config.structured_config import infer_schema_from_config_annotation
+            from dagster._config.pythonic_config import infer_schema_from_config_annotation
 
             # Parse schema from the type annotation of the config arg
             config_arg = compute_fn.get_config_arg()
@@ -94,7 +123,7 @@ class _Op:
         )
         resolved_resource_keys = decorator_resource_keys.union(arg_resource_keys)
 
-        op_def = OpDefinition(
+        op_def = OpDefinition.dagster_internal_init(
             name=self.name,
             ins=self.ins,
             outs=outs,
@@ -105,6 +134,7 @@ class _Op:
             tags=self.tags,
             code_version=self.code_version,
             retry_policy=self.retry_policy,
+            version=None,  # code_version has replaced version
         )
         update_wrapper(op_def, compute_fn.decorated_fn)
         return op_def
@@ -146,8 +176,7 @@ def op(
     retry_policy: Optional[RetryPolicy] = None,
     code_version: Optional[str] = None,
 ) -> Union["OpDefinition", _Op]:
-    """
-    Create an op with the specified parameters from the decorated function.
+    """Create an op with the specified parameters from the decorated function.
 
     Ins and outs will be inferred from the type signature of the decorated function
     if not explicitly provided.
@@ -237,3 +266,197 @@ def op(
         ins=ins,
         out=out,
     )
+
+
+class DecoratedOpFunction(NamedTuple):
+    """Wrapper around the decorated op function to provide commonly used util methods."""
+
+    decorated_fn: Callable[..., Any]
+
+    @lru_cache(maxsize=1)
+    def has_context_arg(self) -> bool:
+        return is_context_provided(get_function_params(self.decorated_fn))
+
+    @lru_cache(maxsize=1)
+    def _get_function_params(self) -> Sequence[Parameter]:
+        return get_function_params(self.decorated_fn)
+
+    def has_config_arg(self) -> bool:
+        for param in get_function_params(self.decorated_fn):
+            if param.name == "config":
+                return True
+
+        return False
+
+    def get_config_arg(self) -> Parameter:
+        for param in get_function_params(self.decorated_fn):
+            if param.name == "config":
+                return param
+
+        check.failed("Requested config arg on function that does not have one")
+
+    def get_resource_args(self) -> Sequence[Parameter]:
+        return get_resource_args(self.decorated_fn)
+
+    def positional_inputs(self) -> Sequence[str]:
+        params = self._get_function_params()
+        input_args = params[1:] if self.has_context_arg() else params
+        resource_arg_names = [arg.name for arg in self.get_resource_args()]
+        input_args_filtered = [
+            input_arg
+            for input_arg in input_args
+            if input_arg.name != "config" and input_arg.name not in resource_arg_names
+        ]
+        return positional_arg_name_list(input_args_filtered)
+
+    def has_var_kwargs(self) -> bool:
+        params = self._get_function_params()
+        # var keyword arg has to be the last argument
+        return len(params) > 0 and param_is_var_keyword(params[-1])
+
+    def get_output_annotation(self) -> Any:
+        from ..inference import infer_output_props
+
+        return infer_output_props(self.decorated_fn).annotation
+
+
+class NoContextDecoratedOpFunction(DecoratedOpFunction):
+    """Wrapper around a decorated op function, when the decorator does not permit a context
+    parameter.
+    """
+
+    @lru_cache(maxsize=1)
+    def has_context_arg(self) -> bool:
+        return False
+
+
+def is_context_provided(params: Sequence[Parameter]) -> bool:
+    if len(params) == 0:
+        return False
+    return params[0].name in get_valid_name_permutations("context")
+
+
+def resolve_checked_op_fn_inputs(
+    decorator_name: str,
+    fn_name: str,
+    compute_fn: DecoratedOpFunction,
+    explicit_input_defs: Sequence[InputDefinition],
+    exclude_nothing: bool,
+) -> Sequence[InputDefinition]:
+    """Validate provided input definitions and infer the remaining from the type signature of the compute_fn.
+    Returns the resolved set of InputDefinitions.
+
+    Args:
+        decorator_name (str): Name of the decorator that is wrapping the op function.
+        fn_name (str): Name of the decorated function.
+        compute_fn (DecoratedOpFunction): The decorated function, wrapped in the
+            DecoratedOpFunction wrapper.
+        explicit_input_defs (List[InputDefinition]): The input definitions that were explicitly
+            provided in the decorator.
+        exclude_nothing (bool): True if Nothing type inputs should be excluded from compute_fn
+            arguments.
+    """
+    explicit_names = set()
+    if exclude_nothing:
+        explicit_names = set(
+            inp.name
+            for inp in explicit_input_defs
+            if not inp.dagster_type.kind == DagsterTypeKind.NOTHING
+        )
+        nothing_names = set(
+            inp.name
+            for inp in explicit_input_defs
+            if inp.dagster_type.kind == DagsterTypeKind.NOTHING
+        )
+    else:
+        explicit_names = set(inp.name for inp in explicit_input_defs)
+        nothing_names = set()
+
+    params = get_function_params(compute_fn.decorated_fn)
+
+    input_args = params[1:] if compute_fn.has_context_arg() else params
+
+    # filter out config arg
+    resource_arg_names = {arg.name for arg in compute_fn.get_resource_args()}
+    explicit_names = explicit_names - resource_arg_names
+
+    if compute_fn.has_config_arg() or resource_arg_names:
+        new_input_args = []
+        for input_arg in input_args:
+            if input_arg.name != "config" and input_arg.name not in resource_arg_names:
+                new_input_args.append(input_arg)
+        input_args = new_input_args
+
+    # Validate input arguments
+    used_inputs = set()
+    inputs_to_infer = set()
+    has_kwargs = False
+
+    for param in cast(List[Parameter], input_args):
+        if param.kind == Parameter.VAR_KEYWORD:
+            has_kwargs = True
+        elif param.kind == Parameter.VAR_POSITIONAL:
+            raise DagsterInvalidDefinitionError(
+                f"{decorator_name} '{fn_name}' decorated function has positional vararg parameter "
+                f"'{param}'. {decorator_name} decorated functions should only have keyword "
+                "arguments that match input names and, if system information is required, a first "
+                "positional parameter named 'context'."
+            )
+
+        else:
+            if param.name not in explicit_names:
+                if param.name in nothing_names:
+                    raise DagsterInvalidDefinitionError(
+                        f"{decorator_name} '{fn_name}' decorated function has parameter"
+                        f" '{param.name}' that is one of the input_defs of type 'Nothing' which"
+                        " should not be included since no data will be passed for it. "
+                    )
+                else:
+                    inputs_to_infer.add(param.name)
+
+            else:
+                used_inputs.add(param.name)
+
+    undeclared_inputs = explicit_names - used_inputs
+    if not has_kwargs and undeclared_inputs:
+        undeclared_inputs_printed = ", '".join(undeclared_inputs)
+        raise DagsterInvalidDefinitionError(
+            f"{decorator_name} '{fn_name}' decorated function does not have argument(s)"
+            f" '{undeclared_inputs_printed}'. {decorator_name}-decorated functions should have a"
+            " keyword argument for each of their Ins, except for Ins that have the Nothing"
+            " dagster_type. Alternatively, they can accept **kwargs."
+        )
+
+    inferred_props = {
+        inferred.name: inferred
+        for inferred in infer_input_props(compute_fn.decorated_fn, compute_fn.has_context_arg())
+    }
+    input_defs = []
+    for input_def in explicit_input_defs:
+        if input_def.name in inferred_props:
+            # combine any information missing on the explicit def that can be inferred
+            input_defs.append(input_def.combine_with_inferred(inferred_props[input_def.name]))
+        else:
+            # pass through those that don't have any inference info, such as Nothing type inputs
+            input_defs.append(input_def)
+
+    # build defs from the inferred props for those without explicit entries
+    inferred_input_defs = [
+        InputDefinition.create_from_inferred(inferred)
+        for inferred in inferred_props.values()
+        if inferred.name in inputs_to_infer
+    ]
+
+    if exclude_nothing:
+        for in_def in inferred_input_defs:
+            if in_def.dagster_type.is_nothing:
+                raise DagsterInvalidDefinitionError(
+                    f"Input parameter {in_def.name} is annotated with"
+                    f" {in_def.dagster_type.display_name} which is a type that represents passing"
+                    " no data. This type must be used via In() and no parameter should be included"
+                    f" in the {decorator_name} decorated function."
+                )
+
+    input_defs.extend(inferred_input_defs)
+
+    return input_defs

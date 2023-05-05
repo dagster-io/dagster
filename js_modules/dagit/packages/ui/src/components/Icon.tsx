@@ -19,6 +19,8 @@ import asset_plot from '../icon-svgs/asset_plot.svg';
 import assignment from '../icon-svgs/assignment.svg';
 import assignment_turned_in from '../icon-svgs/assignment_turned_in.svg';
 import attach_file from '../icon-svgs/attach_file.svg';
+import auto_materialize_policy from '../icon-svgs/auto-materialize-policy.svg';
+import backfill from '../icon-svgs/backfill.svg';
 import bolt from '../icon-svgs/bolt.svg';
 import expectation from '../icon-svgs/bp-automatic-updates.svg';
 import op from '../icon-svgs/bp-git-commit.svg';
@@ -26,6 +28,7 @@ import op_selector from '../icon-svgs/bp-send-to-graph.svg';
 import cached from '../icon-svgs/cached.svg';
 import calendar from '../icon-svgs/calendar.svg';
 import cancel from '../icon-svgs/cancel.svg';
+import changes_present from '../icon-svgs/changes-present.svg';
 import chat_support from '../icon-svgs/chat-support.svg';
 import check_circle from '../icon-svgs/check_circle.svg';
 import checklist from '../icon-svgs/checklist.svg';
@@ -34,12 +37,14 @@ import chevron_right from '../icon-svgs/chevron_right.svg';
 import close from '../icon-svgs/close.svg';
 import concept_book from '../icon-svgs/concept-book.svg';
 import content_copy from '../icon-svgs/content_copy.svg';
+import date from '../icon-svgs/date.svg';
 import deleteSVG from '../icon-svgs/delete.svg';
 import done from '../icon-svgs/done.svg';
 import download_for_offline from '../icon-svgs/download_for_offline.svg';
 import drag_handle from '../icon-svgs/drag_handle.svg';
 import dynamic_feed from '../icon-svgs/dynamic_feed.svg';
 import edit from '../icon-svgs/edit.svg';
+import editor_role from '../icon-svgs/editor-role.svg';
 import email from '../icon-svgs/email.svg';
 import error from '../icon-svgs/error.svg';
 import error_outline from '../icon-svgs/error_outline.svg';
@@ -77,6 +82,7 @@ import menu from '../icon-svgs/menu.svg';
 import menu_book from '../icon-svgs/menu_book.svg';
 import more_horiz from '../icon-svgs/more_horiz.svg';
 import nightlight from '../icon-svgs/nightlight.svg';
+import no_access from '../icon-svgs/no_access.svg';
 import observation from '../icon-svgs/observation.svg';
 import open_in_new from '../icon-svgs/open_in_new.svg';
 import panel_hide_right from '../icon-svgs/panel_hide_right.svg';
@@ -86,6 +92,10 @@ import panel_show_left from '../icon-svgs/panel_show_left.svg';
 import panel_show_right from '../icon-svgs/panel_show_right.svg';
 import panel_show_top from '../icon-svgs/panel_show_top.svg';
 import partition from '../icon-svgs/partition.svg';
+import partition_failure from '../icon-svgs/partition_failure.svg';
+import partition_missing from '../icon-svgs/partition_missing.svg';
+import partition_stale from '../icon-svgs/partition_stale.svg';
+import partition_success from '../icon-svgs/partition_success.svg';
 import people from '../icon-svgs/people.svg';
 import refresh from '../icon-svgs/refresh.svg';
 import replay from '../icon-svgs/replay.svg';
@@ -102,6 +112,8 @@ import source_asset from '../icon-svgs/source_asset.svg';
 import speed from '../icon-svgs/speed.svg';
 import splitscreen from '../icon-svgs/splitscreen.svg';
 import star from '../icon-svgs/star.svg';
+import star_outline from '../icon-svgs/star_outline.svg';
+import status from '../icon-svgs/status.svg';
 import subtract from '../icon-svgs/subtract.svg';
 import sync_problem from '../icon-svgs/sync_problem.svg';
 import table_view from '../icon-svgs/table_view.svg';
@@ -134,10 +146,13 @@ import {Colors} from './Colors';
 
 export const Icons = {
   // Core icons
+  auto_materialize_policy,
   asset,
   asset_plot,
   asset_non_sda,
   asset_group,
+  backfill,
+  date,
   expectation,
   materialization,
   observation,
@@ -147,6 +162,10 @@ export const Icons = {
   op_dynamic: bolt,
   partition_set: schedule,
   partition,
+  partition_missing,
+  partition_success,
+  partition_stale,
+  partition_failure,
   repo: source,
   resource: layers,
   run: history,
@@ -169,6 +188,7 @@ export const Icons = {
   copy_to_clipboard: assignment,
   copy_to_clipboard_done: assignment_turned_in,
   chat_support,
+  changes_present,
   concept_book,
   open_in_new,
   folder,
@@ -181,6 +201,7 @@ export const Icons = {
   gitlab,
   youtube,
   arrow_indent,
+  editor_role,
 
   graph_downstream,
   graph_upstream,
@@ -239,6 +260,7 @@ export const Icons = {
   menu_book,
   more_horiz,
   nightlight,
+  no_access,
   people,
   refresh,
   replay,
@@ -252,6 +274,8 @@ export const Icons = {
   speed,
   splitscreen,
   star,
+  star_outline,
+  status,
   sync_problem,
   table_view,
   timer,

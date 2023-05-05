@@ -1,4 +1,4 @@
-from dagster._core.utils import check_dagster_package_version
+from dagster._core.libraries import DagsterLibraryRegistry
 
 from .asset_defs import (
     build_fivetran_assets as build_fivetran_assets,
@@ -16,8 +16,6 @@ from .types import FivetranOutput as FivetranOutput
 from .version import __version__ as __version__
 
 try:
-    import dagster_managed_elements  # noqa: F401
-
     from .managed import (
         FivetranConnector as FivetranConnector,
         FivetranDestination as FivetranDestination,
@@ -28,4 +26,4 @@ except ImportError:
     pass
 
 
-check_dagster_package_version("dagster-fivetran", __version__)
+DagsterLibraryRegistry.register("dagster-fivetran", __version__)

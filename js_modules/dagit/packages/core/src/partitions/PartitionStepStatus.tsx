@@ -9,17 +9,22 @@ import {
   MenuItem,
   Menu,
   Popover,
+  useViewport,
 } from '@dagster-io/ui';
-import keyBy from 'lodash/keyBy';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {tokenForAssetKey} from '../asset-graph/Utils';
-import {PartitionHealthData, PartitionHealthDimension} from '../assets/usePartitionHealthData';
+import {AssetPartitionStatus} from '../assets/AssetPartitionStatus';
+import {
+  PartitionHealthData,
+  PartitionHealthDimension,
+  partitionStatusAtIndex,
+  Range,
+} from '../assets/usePartitionHealthData';
 import {GanttChartMode} from '../gantt/Constants';
 import {buildLayout} from '../gantt/GanttChartLayout';
-import {useViewport} from '../gantt/useViewport';
 import {RunStatus} from '../graphql/types';
 import {linkToRunEvent} from '../runs/RunUtils';
 import {RunFilterToken} from '../runs/RunsFilterInput';
@@ -28,7 +33,6 @@ import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
 import {PartitionRunList} from './PartitionRunList';
-import {PartitionState} from './PartitionStatus';
 import {
   BOX_SIZE,
   GridColumn,
@@ -49,6 +53,7 @@ import {
   useMatrixData,
   MatrixData,
   PARTITION_MATRIX_SOLID_HANDLE_FRAGMENT,
+  StatusSquareColor,
 } from './useMatrixData';
 
 const BUFFER = 3;
@@ -93,13 +98,18 @@ export const PartitionPerAssetStatus: React.FC<
     rangeDimension: PartitionHealthDimension;
   }
 > = ({assetHealth, rangeDimension, rangeDimensionIdx, assetQueryItems, ...rest}) => {
-  const healthByAssetKey = keyBy(assetHealth, (a) => tokenForAssetKey(a.assetKey));
+  const rangesByAssetKey: {[assetKey: string]: Range[]} = {};
+  for (const a of assetHealth) {
+    if (a.dimensions[rangeDimensionIdx]?.name !== rangeDimension.name) {
+      // Ignore assets in the job / graph that do not have the range partition dimension.
+      continue;
+    }
+    const ranges = a.rangesForSingleDimension(rangeDimensionIdx);
+    rangesByAssetKey[tokenForAssetKey(a.assetKey)] = ranges;
+  }
 
   const layout = buildLayout({nodes: assetQueryItems, mode: GanttChartMode.FLAT});
-  const layoutBoxesWithRangeDimension = layout.boxes.filter(
-    (b) =>
-      healthByAssetKey[b.node.name]?.dimensions[rangeDimensionIdx]?.name === rangeDimension.name,
-  );
+  const layoutBoxesWithRangeDimension = layout.boxes.filter((b) => !!rangesByAssetKey[b.node.name]);
 
   const data: MatrixData = {
     stepRows: layoutBoxesWithRangeDimension.map((box) => ({
@@ -109,16 +119,16 @@ export const PartitionPerAssetStatus: React.FC<
       finalFailurePercent: 0,
     })),
     partitions: [],
-    partitionColumns: rangeDimension.partitionKeys.map((partitionKey, idx) => ({
-      idx,
+    partitionColumns: rangeDimension.partitionKeys.map((partitionKey, partitionKeyIdx) => ({
+      idx: partitionKeyIdx,
       name: partitionKey,
       runsLoaded: true,
       runs: [],
       steps: layoutBoxesWithRangeDimension.map((box) => ({
         name: box.node.name,
         unix: 0,
-        color: partitionStateToStatusSquareColor(
-          healthByAssetKey[box.node.name].stateForSingleDimension(rangeDimensionIdx, partitionKey),
+        color: assetPartitionStatusToSquareColor(
+          partitionStatusAtIndex(rangesByAssetKey[box.node.name], partitionKeyIdx),
         ),
       })),
     })),
@@ -134,11 +144,16 @@ export const PartitionPerAssetStatus: React.FC<
   );
 };
 
-export const partitionStateToStatusSquareColor = (state: PartitionState) => {
-  return state === PartitionState.SUCCESS
-    ? 'SUCCESS'
-    : state === PartitionState.SUCCESS_MISSING
+const assetPartitionStatusToSquareColor = (state: AssetPartitionStatus[]): StatusSquareColor => {
+  return state.includes(AssetPartitionStatus.MATERIALIZED) &&
+    state.includes(AssetPartitionStatus.MISSING)
     ? 'SUCCESS-MISSING'
+    : state.includes(AssetPartitionStatus.MATERIALIZED)
+    ? 'SUCCESS'
+    : state.includes(AssetPartitionStatus.FAILED) && state.includes(AssetPartitionStatus.MISSING)
+    ? 'FAILURE-MISSING'
+    : state.includes(AssetPartitionStatus.FAILED)
+    ? 'FAILURE'
     : 'MISSING';
 };
 
@@ -204,8 +219,8 @@ const PartitionStepStatus: React.FC<
 
   const sortPartitionSteps = (steps: MatrixStep[]) => {
     const stepsByName = {};
-    steps.forEach((step) => (stepsByName[step.name] = step));
-    return stepRows.map((stepRow) => stepsByName[stepRow.name]);
+    steps.forEach((step) => ((stepsByName as any)[step.name] = step));
+    return stepRows.map((stepRow) => (stepsByName as any)[stepRow.name]);
   };
 
   const visibleCount = getVisibleItemCount(viewport.width);
@@ -379,22 +394,6 @@ const Divider = styled.div`
   width: 100%;
   margin-top: 5px;
   border-top: 1px solid ${Colors.KeylineGray};
-`;
-
-export const PARTITION_STEP_STATUS_RUN_FRAGMENT = gql`
-  fragment PartitionStepStatusRun on Run {
-    id
-    runId
-    tags {
-      key
-      value
-    }
-    stepStats {
-      __typename
-      stepKey
-      status
-    }
-  }
 `;
 
 // add in the explorer fragment, so we can reconstruct the faux-plan steps from the exploded plan

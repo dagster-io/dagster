@@ -7,7 +7,7 @@ from setuptools import find_packages, setup
 def get_version() -> str:
     version: Dict[str, str] = {}
     with open(Path(__file__).parent / "dagster_duckdb_pyspark/version.py", encoding="utf8") as fp:
-        exec(fp.read(), version)  # pylint: disable=W0122
+        exec(fp.read(), version)
 
     return version["__version__"]
 
@@ -39,7 +39,7 @@ setup(
         # Pyspark 2.x is incompatible with Python 3.8+
         'pyspark>=3.0.0; python_version >= "3.8"',
         'pyspark>=2.0.2; python_version < "3.8"',
-        "pandas",
+        "pandas<2",  # See: https://github.com/dagster-io/dagster/issues/13339
     ],
     zip_safe=False,
 )

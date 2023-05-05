@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import sys
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Callable, Iterator, Optional, Type
+from typing import TYPE_CHECKING, Any, Callable, Iterator, Optional, Type
 
 import dagster._check as check
 from dagster._utils.interrupts import raise_interrupts_as
@@ -29,8 +29,7 @@ if TYPE_CHECKING:
 
 
 class DagsterExecutionInterruptedError(BaseException):
-    """
-    Pipeline execution was interrupted during the execution process.
+    """Pipeline execution was interrupted during the execution process.
 
     Just like KeyboardInterrupt this inherits from BaseException
     as to not be accidentally caught by code that catches Exception
@@ -67,6 +66,74 @@ class DagsterInvalidSubsetError(DagsterError):
 
 class DagsterInvalidDeserializationVersionError(DagsterError):
     """Indicates that a serialized value has an unsupported version and cannot be deserialized."""
+
+
+PYTHONIC_CONFIG_ERROR_VERBIAGE = """
+This config type can be a:
+    - Python primitive type
+        - int, float, bool, str, list
+    - A Python Dict or List type containing other valid types
+    - Custom data classes extending dagster.Config
+    - A Pydantic discriminated union type (https://docs.pydantic.dev/usage/types/#discriminated-unions-aka-tagged-unions)
+"""
+
+PYTHONIC_RESOURCE_ADDITIONAL_TYPES = """
+
+If this config type represents a resource dependency, its annotation must either:
+    - Extend dagster.ConfigurableResource, dagster.ConfigurableIOManager, or
+    - Be wrapped in a ResourceDependency annotation, e.g. ResourceDependency[{invalid_type_str}]
+"""
+
+
+def _generate_pythonic_config_error_message(
+    config_class: Optional[Type],
+    field_name: Optional[str],
+    invalid_type: Any,
+    is_resource: bool = False,
+) -> str:
+    invalid_type_name = getattr(invalid_type, "__name__", "<my type>")
+    pythonic_config_error_verbiage = (
+        PYTHONIC_CONFIG_ERROR_VERBIAGE + (PYTHONIC_RESOURCE_ADDITIONAL_TYPES if is_resource else "")
+    ).format(invalid_type_str=invalid_type_name)
+
+    return (
+        """
+Error defining Dagster config class{config_class}{field_name}.
+Unable to resolve config type {invalid_type} to a supported Dagster config type.
+
+{PYTHONIC_CONFIG_ERROR_VERBIAGE}"""
+    ).format(
+        config_class=f" {repr(config_class)}" if config_class else "",
+        field_name=f" on field '{field_name}'" if field_name else "",
+        invalid_type=repr(invalid_type),
+        PYTHONIC_CONFIG_ERROR_VERBIAGE=pythonic_config_error_verbiage,
+    )
+
+
+class DagsterInvalidPythonicConfigDefinitionError(DagsterError):
+    """Indicates that you have attempted to construct a Pythonic config or resource class with an invalid value.
+    """
+
+    def __init__(
+        self,
+        config_class: Optional[Type],
+        field_name: Optional[str],
+        invalid_type: Any,
+        is_resource: bool = False,
+        **kwargs,
+    ):
+        self.invalid_type = invalid_type
+        self.field_name = field_name
+        self.config_class = config_class
+        super(DagsterInvalidPythonicConfigDefinitionError, self).__init__(
+            _generate_pythonic_config_error_message(
+                config_class=config_class,
+                field_name=field_name,
+                invalid_type=invalid_type,
+                is_resource=is_resource,
+            ),
+            **kwargs,
+        )
 
 
 CONFIG_ERROR_VERBIAGE = """
@@ -120,7 +187,7 @@ class DagsterInvalidConfigDefinitionError(DagsterError):
                 original_root=repr(original_root),
                 stack_str="Error at stack path :" + ":".join(stack) + ". " if stack else "",
                 current_value=repr(current_value),
-                reason_str=" Reason: {reason}.".format(reason=reason) if reason else "",
+                reason_str=f" Reason: {reason}." if reason else "",
             ),
             **kwargs,
         )
@@ -176,8 +243,7 @@ def user_code_error_boundary(
     log_manager: Optional[DagsterLogManager] = None,
     **kwargs: object,
 ) -> Iterator[None]:
-    """
-    Wraps the execution of user-space code in an error boundary. This places a uniform
+    """Wraps the execution of user-space code in an error boundary. This places a uniform
     policy around any user code invoked by the framework. This ensures that all user
     errors are wrapped in an exception derived from DagsterUserCodeExecutionError,
     and that the original stack trace of the user error is preserved, so that it
@@ -207,7 +273,7 @@ def user_code_error_boundary(
         except DagsterError as de:
             # The system has thrown an error that is part of the user-framework contract
             raise de
-        except Exception as e:  # pylint: disable=W0703
+        except Exception as e:
             # An exception has been thrown by user code and computation should cease
             # with the error reported further up the stack
             raise error_cls(
@@ -219,8 +285,7 @@ def user_code_error_boundary(
 
 
 class DagsterUserCodeExecutionError(DagsterError):
-    """
-    This is the base class for any exception that is meant to wrap an
+    """This is the base class for any exception that is meant to wrap an
     :py:class:`~python:Exception` thrown by user code. It wraps that existing user code.
     The ``original_exc_info`` argument to the constructor is meant to be a tuple of the type
     returned by :py:func:`sys.exc_info <python:sys.exc_info>` at the call site of the constructor.
@@ -284,32 +349,21 @@ class DagsterExecutionStepExecutionError(DagsterUserCodeExecutionError):
 
 
 class DagsterResourceFunctionError(DagsterUserCodeExecutionError):
-    """
-    Indicates an error occurred while executing the body of the ``resource_fn`` in a
+    """Indicates an error occurred while executing the body of the ``resource_fn`` in a
     :py:class:`~dagster.ResourceDefinition` during resource initialization.
     """
 
 
 class DagsterConfigMappingFunctionError(DagsterUserCodeExecutionError):
-    """
-    Indicates that an unexpected error occurred while executing the body of a config mapping
+    """Indicates that an unexpected error occurred while executing the body of a config mapping
     function defined in a :py:class:`~dagster.JobDefinition` or `~dagster.GraphDefinition` during
     config parsing.
     """
 
 
 class DagsterTypeLoadingError(DagsterUserCodeExecutionError):
-    """
-    Indicates that an unexpected error occurred while executing the body of an type load
+    """Indicates that an unexpected error occurred while executing the body of an type load
     function defined in a :py:class:`~dagster.DagsterTypeLoader` during loading of a custom type.
-    """
-
-
-class DagsterTypeMaterializationError(DagsterUserCodeExecutionError):
-    """
-    Indicates that an unexpected error occurred while executing the body of an output
-    materialization function defined in a :py:class:`~dagster.DagsterTypeMaterializer` during
-    materialization of a custom type.
     """
 
 
@@ -331,8 +385,7 @@ class DagsterUnknownResourceError(DagsterError, AttributeError):
 
 
 class DagsterInvalidInvocationError(DagsterError):
-    """
-    Indicates that an error has occurred when an op has been invoked, but before the actual
+    """Indicates that an error has occurred when an op has been invoked, but before the actual
     core compute has been reached.
     """
 
@@ -437,11 +490,11 @@ class DagsterMaxRetriesExceededError(DagsterError):
         )
 
 
-class DagsterRepositoryLocationNotFoundError(DagsterError):
+class DagsterCodeLocationNotFoundError(DagsterError):
     pass
 
 
-class DagsterRepositoryLocationLoadError(DagsterError):
+class DagsterCodeLocationLoadError(DagsterError):
     def __init__(self, *args, **kwargs):
         from dagster._utils.error import SerializableErrorInfo
 
@@ -450,7 +503,7 @@ class DagsterRepositoryLocationLoadError(DagsterError):
             "load_error_infos",
             SerializableErrorInfo,
         )
-        super(DagsterRepositoryLocationLoadError, self).__init__(*args, **kwargs)
+        super(DagsterCodeLocationLoadError, self).__init__(*args, **kwargs)
 
 
 class DagsterLaunchFailedError(DagsterError):
@@ -502,13 +555,14 @@ class DagsterTypeCheckDidNotPass(DagsterError):
     ``False`` or an instance of :py:class:`~dagster.TypeCheck` whose ``success`` member is ``False``.
     """
 
-    def __init__(self, description=None, metadata_entries=None, dagster_type=None):
-        from dagster import DagsterType, MetadataEntry
+    def __init__(self, description=None, metadata=None, dagster_type=None):
+        from dagster import DagsterType
+        from dagster._core.definitions.metadata import normalize_metadata
 
         super(DagsterTypeCheckDidNotPass, self).__init__(description)
         self.description = check.opt_str_param(description, "description")
-        self.metadata_entries = check.opt_list_param(
-            metadata_entries, "metadata_entries", of_type=MetadataEntry
+        self.metadata = normalize_metadata(
+            check.opt_mapping_param(metadata, "metadata", key_type=str)
         )
         self.dagster_type = check.opt_inst_param(dagster_type, "dagster_type", DagsterType)
 
@@ -519,7 +573,7 @@ class DagsterEventLogInvalidForRun(DagsterError):
     def __init__(self, run_id):
         self.run_id = check.str_param(run_id, "run_id")
         super(DagsterEventLogInvalidForRun, self).__init__(
-            "Event logs invalid for run id {}".format(run_id)
+            f"Event logs invalid for run id {run_id}"
         )
 
 
@@ -578,19 +632,21 @@ class DagsterInvalidPropertyError(DagsterError):
 
 
 class DagsterHomeNotSetError(DagsterError):
-    """
-    The user has tried to use a command that requires an instance or invoke DagsterInstance.get()
+    """The user has tried to use a command that requires an instance or invoke DagsterInstance.get()
     without setting DAGSTER_HOME env var.
     """
 
 
 class DagsterUnknownPartitionError(DagsterError):
-    """
-    The user has tried to access run config for a partition name that does not exist.
+    """The user has tried to access run config for a partition name that does not exist."""
+
+
+class DagsterUndefinedDataVersionError(DagsterError):
+    """The user attempted to retrieve the most recent logical version for an asset, but no logical version is defined.
     """
 
 
-class DagsterUndefinedLogicalVersionError(DagsterError):
-    """
-    The user attempted to retrieve the most recent logical version for an asset, but no logical version is defined.
+class DagsterDefinitionChangedDeserializationError(DagsterError):
+    """Indicates that a stored value can't be deserialized because the definition needed to interpret
+    it has changed.
     """

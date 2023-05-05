@@ -69,7 +69,9 @@ export const AssetMaterializationUpstreamData: React.FC<{
                 timeFormat={{showSeconds: true, showTimezone: false}}
               />
             </Link>
-            <span>({dayjs(Number(entry.timestamp)).from(Number(timestamp), true)} earlier)</span>
+            <span style={{opacity: 0.7}}>
+              ({dayjs(Number(entry.timestamp)).from(Number(timestamp), true)} earlier)
+            </span>
           </Box>
         </td>
       </tr>,
@@ -95,7 +97,7 @@ export const AssetMaterializationUpstreamData: React.FC<{
       <AssetUpstreamDataTable>
         <tbody>
           <tr>
-            <td>No materializations to display.</td>
+            <td>No upstream materializations to display.</td>
           </tr>
         </tbody>
       </AssetUpstreamDataTable>
@@ -112,10 +114,9 @@ export const AssetMaterializationUpstreamData: React.FC<{
   );
 };
 
-const ASSET_MATERIALIZATION_UPSTREAM_QUERY = gql`
+export const ASSET_MATERIALIZATION_UPSTREAM_QUERY = gql`
   query AssetMaterializationUpstreamQuery($assetKey: AssetKeyInput!, $timestamp: String!) {
     assetNodeOrError(assetKey: $assetKey) {
-      __typename
       ... on AssetNode {
         id
         assetMaterializationUsedData(timestampMillis: $timestamp) {
@@ -126,7 +127,6 @@ const ASSET_MATERIALIZATION_UPSTREAM_QUERY = gql`
   }
 
   fragment MaterializationUpstreamDataVersionFragment on MaterializationUpstreamDataVersion {
-    __typename
     timestamp
     assetKey {
       path

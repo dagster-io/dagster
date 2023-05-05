@@ -11,7 +11,6 @@ def instance():
 
 
 @pytest.fixture(scope="session")
-# pylint: disable=redefined-outer-name
 def test_client(instance):
     process_context = get_workspace_process_context_from_kwargs(
         instance=instance,

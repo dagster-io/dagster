@@ -1,6 +1,6 @@
 from dagster import job
 
-from .baz import baz_op  # pylint: disable=import-error
+from .baz import baz_op
 
 
 @job

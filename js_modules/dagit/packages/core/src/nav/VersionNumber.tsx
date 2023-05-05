@@ -2,10 +2,10 @@ import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {VersionNumberQuery} from './types/VersionNumber.types';
+import {VersionNumberQuery, VersionNumberQueryVariables} from './types/VersionNumber.types';
 
 export const VersionNumber = () => {
-  const {data} = useQuery<VersionNumberQuery>(VERSION_NUMBER_QUERY);
+  const {data} = useQuery<VersionNumberQuery, VersionNumberQueryVariables>(VERSION_NUMBER_QUERY);
   return <Version>{data?.version || <span>&nbsp;</span>}</Version>;
 };
 

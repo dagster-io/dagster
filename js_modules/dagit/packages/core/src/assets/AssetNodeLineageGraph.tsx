@@ -11,24 +11,24 @@ import {AssetNodeLink} from '../asset-graph/ForeignNode';
 import {GraphData, LiveData, toGraphId} from '../asset-graph/Utils';
 import {SVGViewport} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
+import {AssetKeyInput} from '../graphql/types';
 import {getJSONForKey} from '../hooks/useStateWithStorage';
 
 import {AssetViewParams} from './AssetView';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {AssetKey} from './types';
-import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinition.types';
 
 const LINEAGE_GRAPH_ZOOM_LEVEL = 'lineageGraphZoomLevel';
 
 export type AssetLineageScope = 'neighbors' | 'upstream' | 'downstream';
 
 export const AssetNodeLineageGraph: React.FC<{
-  assetNode: AssetNodeDefinitionFragment;
+  assetKey: AssetKeyInput;
   assetGraphData: GraphData;
   liveDataByNode: LiveData;
   params: AssetViewParams;
-}> = ({assetNode, assetGraphData, liveDataByNode, params}) => {
-  const assetGraphId = toGraphId(assetNode.assetKey);
+}> = ({assetKey, assetGraphData, liveDataByNode, params}) => {
+  const assetGraphId = toGraphId(assetKey);
 
   const [highlighted, setHighlighted] = React.useState<string | null>(null);
 

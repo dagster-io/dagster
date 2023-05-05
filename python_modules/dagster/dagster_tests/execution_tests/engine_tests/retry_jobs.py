@@ -1,4 +1,3 @@
-# pylint: disable=unused-argument
 import os
 import pickle
 import re

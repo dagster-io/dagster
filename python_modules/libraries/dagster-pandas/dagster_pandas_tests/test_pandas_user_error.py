@@ -1,5 +1,3 @@
-# pylint: disable=W0613
-
 import dagster_pandas as dagster_pd
 import pandas as pd
 import pytest
@@ -30,7 +28,7 @@ def test_wrong_input_value():
 
     @op
     def pass_str():
-        """not a dataframe."""
+        """Not a dataframe."""
 
     @graph
     def input_fails():

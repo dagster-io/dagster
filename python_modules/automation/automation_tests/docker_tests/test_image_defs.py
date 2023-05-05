@@ -6,7 +6,8 @@ from automation.docker.image_defs import copy_directories, get_image
 
 @pytest.fixture(name="repo")
 def repo_fixture(tmpdir):
-    """
+    """Test repo.
+
     repo/
     ├── .git/
     ├── bar/

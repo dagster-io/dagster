@@ -2,8 +2,8 @@ import {Colors, Icon, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {TimeContext} from '../app/time/TimeContext';
 import {DEFAULT_TIME_FORMAT, TimeFormat} from '../app/time/TimestampFormat';
-import {TimezoneContext} from '../app/time/TimezoneContext';
 import {timestampToString} from '../app/time/timestampToString';
 
 interface Props {
@@ -15,13 +15,18 @@ interface Props {
 
 export const TimestampDisplay = (props: Props) => {
   const {timestamp, timezone, timeFormat, tooltipTimeFormat} = props;
-  const [userTimezone] = React.useContext(TimezoneContext);
+  const {
+    timezone: [userTimezone],
+    hourCycle: [hourCycle],
+  } = React.useContext(TimeContext);
+
   const locale = navigator.language;
   const mainString = timestampToString({
     timestamp: {unix: timestamp},
     locale,
     timezone: timezone || userTimezone,
     timeFormat,
+    hourCycle,
   });
 
   return (

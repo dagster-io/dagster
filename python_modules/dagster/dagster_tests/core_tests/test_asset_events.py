@@ -1,14 +1,16 @@
 from dagster import (
     AssetKey,
+    AssetOut,
     DagsterEventType,
     EventRecordsFilter,
-    Out,
     Output,
     asset,
     job,
+    materialize_to_memory,
     multi_asset,
     op,
 )
+from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.test_utils import instance_for_test
 from dagster._legacy import build_assets_job
 
@@ -64,8 +66,8 @@ def test_non_assets_job_no_register_event():
 def test_multi_asset_asset_materialization_planned_events():
     @multi_asset(
         outs={
-            "my_out_name": Out(asset_key=AssetKey("my_asset_name")),
-            "my_other_out_name": Out(asset_key=AssetKey("my_other_asset")),
+            "my_out_name": AssetOut(key=AssetKey("my_asset_name")),
+            "my_other_out_name": AssetOut(key=AssetKey("my_other_asset")),
         }
     )
     def my_asset():
@@ -87,3 +89,31 @@ def test_multi_asset_asset_materialization_planned_events():
 
         assert instance.run_ids_for_asset_key(AssetKey("my_asset_name")) == [run_id]
         assert instance.run_ids_for_asset_key(AssetKey("my_other_asset")) == [run_id]
+
+
+def test_asset_partition_materialization_planned_events():
+    @asset(partitions_def=StaticPartitionsDefinition(["a", "b"]))
+    def my_asset():
+        return 0
+
+    @asset()
+    def my_other_asset(my_asset):
+        pass
+
+    with instance_for_test() as instance:
+        materialize_to_memory([my_asset, my_other_asset], instance=instance, partition_key="b")
+        [record] = instance.get_event_records(
+            EventRecordsFilter(
+                DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                AssetKey("my_asset"),
+            )
+        )
+        assert record.event_log_entry.dagster_event.event_specific_data.partition == "b"
+
+        [record] = instance.get_event_records(
+            EventRecordsFilter(
+                DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                AssetKey("my_other_asset"),
+            )
+        )
+        assert record.event_log_entry.dagster_event.event_specific_data.partition is None

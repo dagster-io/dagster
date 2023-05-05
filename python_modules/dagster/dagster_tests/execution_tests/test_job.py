@@ -6,6 +6,7 @@ from dagster import (
     DagsterInvariantViolationError,
     Field,
     StringSource,
+    execute_job,
     graph,
     job,
     op,
@@ -14,7 +15,6 @@ from dagster import (
 )
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._core.test_utils import environ, instance_for_test
-from dagster._legacy import execute_pipeline
 
 
 def define_the_job():
@@ -40,14 +40,13 @@ def test_simple_job_no_warnings():
 
 def test_job_execution_multiprocess_config():
     with instance_for_test() as instance:
-        result = execute_pipeline(
+        with execute_job(
             reconstructable(define_the_job),
             instance=instance,
             run_config={"execution": {"config": {"multiprocess": {"max_concurrent": 4}}}},
-        )
-
-        assert result.success
-        assert result.output_for_node("my_op") == 5
+        ) as result:
+            assert result.success
+            assert result.output_for_node("my_op") == 5
 
 
 results_lst = []
@@ -67,8 +66,7 @@ def define_in_process_job():
 
 
 def test_switch_to_in_process_execution():
-    result = execute_pipeline(
-        define_in_process_job(),
+    result = define_in_process_job().execute_in_process(
         run_config={"execution": {"config": {"in_process": {}}}},
     )
     assert result.success
@@ -80,7 +78,7 @@ def basic_graph():
     pass
 
 
-basic_job = basic_graph.to_job()  # type: ignore[union-attr]
+basic_job = basic_graph.to_job()
 
 
 def test_non_reconstructable_job_error():
@@ -102,8 +100,7 @@ def my_namespace_job():
 
 def test_reconstructable_job_namespace():
     with instance_for_test() as instance:
-        result = execute_pipeline(reconstructable(my_namespace_job), instance=instance)
-
+        result = execute_job(reconstructable(my_namespace_job), instance=instance)
         assert result.success
 
 
@@ -192,7 +189,7 @@ def test_job_input_values_out_of_process():
     assert pass_from_job.execute_in_process().success
 
     with instance_for_test() as instance:
-        result = execute_pipeline(reconstructable(pass_from_job), instance=instance)
+        result = execute_job(reconstructable(pass_from_job), instance=instance)
         assert result.success
 
 
@@ -208,7 +205,7 @@ def test_subset_job_with_config():
     result = no_config.execute_in_process(run_config={"ops": {"emit": {"inputs": {"x": 1}}}})
     assert result.success
 
-    subset_no_config = no_config.get_job_def_for_subset_selection(op_selection=["echo"])
+    subset_no_config = no_config.get_subset(op_selection=["echo"])
 
     result = subset_no_config.execute_in_process(run_config={"ops": {"echo": {"inputs": {"x": 1}}}})
     assert result.success
@@ -220,9 +217,49 @@ def test_subset_job_with_config():
     result = with_config.execute_in_process()
     assert result.success
 
-    subset_with_config = with_config.get_job_def_for_subset_selection(op_selection=["echo"])
+    subset_with_config = with_config.get_subset(op_selection=["echo"])
 
     result = subset_with_config.execute_in_process(
         run_config={"ops": {"echo": {"inputs": {"x": 1}}}}
     )
     assert result.success
+
+
+def test_coerce_resource_job_decorator() -> None:
+    executed = {}
+
+    class BareResourceObject:
+        pass
+
+    @op(required_resource_keys={"bare_resource"})
+    def an_op(context) -> None:
+        assert context.resources.bare_resource
+        executed["yes"] = True
+
+    @job(resource_defs={"bare_resource": BareResourceObject()})
+    def a_job() -> None:
+        an_op()
+
+    assert a_job.execute_in_process().success
+    assert executed["yes"]
+
+
+def test_coerce_resource_graph_to_job() -> None:
+    executed = {}
+
+    class BareResourceObject:
+        pass
+
+    @op(required_resource_keys={"bare_resource"})
+    def an_op(context) -> None:
+        assert context.resources.bare_resource
+        executed["yes"] = True
+
+    @graph
+    def a_graph() -> None:
+        an_op()
+
+    a_job = a_graph.to_job(resource_defs={"bare_resource": BareResourceObject()})
+
+    assert a_job.execute_in_process().success
+    assert executed["yes"]

@@ -156,3 +156,8 @@ class Volume(BaseModel):
 class ResourceRequirements(BaseModel):
     class Config:
         schema_extra = {"$ref": create_definition_ref("io.k8s.api.core.v1.ResourceRequirements")}
+
+
+class EnvVar(BaseModel):
+    class Config:
+        schema_extra = {"$ref": create_definition_ref("io.k8s.api.core.v1.EnvVar")}

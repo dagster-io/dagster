@@ -1,12 +1,11 @@
 import {pathVerticalDiagonal} from '@vx/shape';
 
-import {RunStatus} from '../graphql/types';
+import {Maybe, RunStatus, StaleCauseCategory, StaleStatus} from '../graphql/types';
 
 import {
   AssetNodeKeyFragment,
   AssetNodeLiveFragment,
   AssetNodeLiveMaterializationFragment,
-  AssetNodeLiveFreshnessPolicyFragment,
   AssetNodeLiveFreshnessInfoFragment,
   AssetNodeLiveObservationFragment,
 } from './types/AssetNode.types';
@@ -131,11 +130,21 @@ export interface LiveDataForNode {
   runWhichFailedToMaterialize: AssetLatestInfoRunFragment | null;
   lastMaterialization: AssetNodeLiveMaterializationFragment | null;
   lastMaterializationRunStatus: RunStatus | null; // only available if runWhichFailedToMaterialize is null
-  freshnessPolicy: AssetNodeLiveFreshnessPolicyFragment | null;
   freshnessInfo: AssetNodeLiveFreshnessInfoFragment | null;
   lastObservation: AssetNodeLiveObservationFragment | null;
-  currentLogicalVersion: string | null;
-  projectedLogicalVersion: string | null;
+  staleStatus: StaleStatus | null;
+  staleCauses: {
+    dependency: Maybe<AssetKey>;
+    category: StaleCauseCategory;
+    key: AssetKey;
+    reason: string;
+  }[];
+  partitionStats: {
+    numMaterialized: number;
+    numMaterializing: number;
+    numPartitions: number;
+    numFailed: number;
+  } | null;
 }
 
 export const MISSING_LIVE_DATA: LiveDataForNode = {
@@ -143,27 +152,17 @@ export const MISSING_LIVE_DATA: LiveDataForNode = {
   inProgressRunIds: [],
   runWhichFailedToMaterialize: null,
   freshnessInfo: null,
-  freshnessPolicy: null,
   lastMaterialization: null,
   lastMaterializationRunStatus: null,
   lastObservation: null,
-  currentLogicalVersion: null,
-  projectedLogicalVersion: null,
+  partitionStats: null,
+  staleStatus: null,
+  staleCauses: [],
   stepKey: '',
 };
 
 export interface LiveData {
   [assetId: GraphId]: LiveDataForNode;
-}
-
-export interface AssetDefinitionsForLiveData {
-  [id: string]: {
-    definition: {
-      partitionDefinition: string | null;
-      jobNames: string[];
-      opNames: string[];
-    };
-  };
 }
 
 export const buildLiveData = ({assetNodes, assetsLatestInfo}: AssetGraphLiveQuery) => {
@@ -187,8 +186,6 @@ export const buildLiveDataForNode = (
 ): LiveDataForNode => {
   const lastMaterialization = assetNode.assetMaterializations[0] || null;
   const lastObservation = assetNode.assetObservations[0] || null;
-  const currentLogicalVersion = assetNode.currentLogicalVersion;
-  const projectedLogicalVersion = assetNode.projectedLogicalVersion;
   const latestRunForAsset = assetLatestInfo?.latestRun ? assetLatestInfo.latestRun : null;
 
   const runWhichFailedToMaterialize =
@@ -204,13 +201,13 @@ export const buildLiveDataForNode = (
         ? latestRunForAsset.status
         : null,
     lastObservation,
-    currentLogicalVersion,
-    projectedLogicalVersion,
+    staleStatus: assetNode.staleStatus,
+    staleCauses: assetNode.staleCauses,
     stepKey: assetNode.opNames[0],
     freshnessInfo: assetNode.freshnessInfo,
-    freshnessPolicy: assetNode.freshnessPolicy,
     inProgressRunIds: assetLatestInfo?.inProgressRunIds || [],
     unstartedRunIds: assetLatestInfo?.unstartedRunIds || [],
+    partitionStats: assetNode.partitionStats || null,
     runWhichFailedToMaterialize,
   };
 };
@@ -222,3 +219,8 @@ export function tokenForAssetKey(key: {path: string[]}) {
 export function displayNameForAssetKey(key: {path: string[]}) {
   return key.path.join(' / ');
 }
+
+export const itemWithAssetKey = (key: {path: string[]}) => {
+  const token = tokenForAssetKey(key);
+  return (asset: {assetKey: {path: string[]}}) => tokenForAssetKey(asset.assetKey) === token;
+};

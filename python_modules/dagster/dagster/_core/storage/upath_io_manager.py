@@ -1,14 +1,12 @@
-from __future__ import annotations
-
-import inspect
 from abc import abstractmethod
-from typing import Any, Dict, Union
+from typing import Any, Dict, Mapping, Optional, Union
 
 from upath import UPath
 
 from dagster import (
     InputContext,
     MetadataValue,
+    MultiPartitionKey,
     OutputContext,
     _check as check,
 )
@@ -16,8 +14,7 @@ from dagster._core.storage.memoizable_io_manager import MemoizableIOManager
 
 
 class UPathIOManager(MemoizableIOManager):
-    """
-    Abstract IOManager base class compatible with local and cloud storage via `universal-pathlib` and `fsspec`.
+    """Abstract IOManager base class compatible with local and cloud storage via `universal-pathlib` and `fsspec`.
 
     Features:
      - handles partitioned assets
@@ -29,15 +26,14 @@ class UPathIOManager(MemoizableIOManager):
 
     """
 
-    extension: str = ""  # override in child class
+    extension: Optional[str] = None  # override in child class
 
     def __init__(
         self,
-        base_path: UPath,
+        base_path: Optional[UPath] = None,
     ):
-        assert self.extension == "" or "." in self.extension
-
-        self._base_path = base_path
+        assert not self.extension or "." in self.extension
+        self._base_path = base_path or UPath(".")
 
     @abstractmethod
     def dump_to_path(self, context: OutputContext, obj: Any, path: UPath):
@@ -49,40 +45,98 @@ class UPathIOManager(MemoizableIOManager):
 
     def get_metadata(
         self,
-        context: OutputContext,  # pylint: disable=unused-argument
-        obj: Any,  # pylint: disable=unused-argument
+        context: OutputContext,
+        obj: Any,
     ) -> Dict[str, MetadataValue]:
         """Child classes should override this method to add custom metadata to the outputs."""
         return {}
 
+    # Read/write operations on paths can generally be handled by methods on the
+    # UPath class, but when the backend requires credentials, this isn't
+    # always possible. Override these path_* methods to provide custom
+    # implementations for targeting backends that require authentication.
+
+    def unlink(self, path: UPath) -> None:
+        """Remove the file or object at the provided path."""
+        path.unlink()
+
+    def path_exists(self, path: UPath) -> bool:
+        """Check if a file or object exists at the provided path."""
+        return path.exists()
+
+    def make_directory(self, path: UPath):
+        """Create a directory at the provided path.
+
+        Override as a no-op if the target backend doesn't use directories.
+        """
+        path.mkdir(parents=True, exist_ok=True)
+
     def has_output(self, context: OutputContext) -> bool:
-        return self._get_path(context).exists()
+        return self.path_exists(self._get_path(context))
+
+    def _with_extension(self, path: UPath) -> UPath:
+        return UPath(f"{path}{self.extension}") if self.extension else path
 
     def _get_path_without_extension(self, context: Union[InputContext, OutputContext]) -> UPath:
         if context.has_asset_key:
-            # we are dealing with an asset
-
-            # we are not using context.get_asset_identifier() because it already includes the partition_key
-            context_path = list(context.asset_key.path)
+            context_path = self.get_asset_relative_path(context)
         else:
             # we are dealing with an op output
-            context_path = list(context.get_identifier())
+            context_path = self.get_op_output_relative_path(context)
 
-        return self._base_path.joinpath(*context_path)
+        return self._base_path.joinpath(context_path)
+
+    def get_asset_relative_path(self, context: Union[InputContext, OutputContext]) -> UPath:
+        # we are not using context.get_asset_identifier() because it already includes the partition_key
+        return UPath(*context.asset_key.path)
+
+    def get_op_output_relative_path(self, context: Union[InputContext, OutputContext]) -> UPath:
+        return UPath(*context.get_identifier())
+
+    def get_loading_input_log_message(self, path: UPath) -> str:
+        return f"Loading file from: {path}"
+
+    def get_writing_output_log_message(self, path: UPath) -> str:
+        return f"Writing file at: {path}"
 
     def _get_path(self, context: Union[InputContext, OutputContext]) -> UPath:
-        """
-        Returns the I/O path for a given context.
+        """Returns the I/O path for a given context.
         Should not be used with partitions (use `_get_paths_for_partitions` instead).
         """
-        return self._get_path_without_extension(context).with_suffix(self.extension)
+        path = self._get_path_without_extension(context)
+        return self._with_extension(path)
 
     def _get_paths_for_partitions(
         self, context: Union[InputContext, OutputContext]
     ) -> Dict[str, UPath]:
-        """
-        Returns a dict of partition_keys into I/O paths for a given context.
-        """
+        """Returns a dict of partition_keys into I/O paths for a given context."""
+        if not context.has_asset_partitions:
+            raise TypeError(
+                f"Detected {context.dagster_type.typing_type} input type "
+                "but the asset is not partitioned"
+            )
+
+        def _formatted_multipartitioned_path(partition_key: MultiPartitionKey) -> str:
+            ordered_dimension_keys = [
+                key[1]
+                for key in sorted(partition_key.keys_by_dimension.items(), key=lambda x: x[0])
+            ]
+            return "/".join(ordered_dimension_keys)
+
+        formatted_partition_keys = [
+            _formatted_multipartitioned_path(pk) if isinstance(pk, MultiPartitionKey) else pk
+            for pk in context.asset_partition_keys
+        ]
+
+        asset_path = self._get_path_without_extension(context)
+        return {
+            partition_key: self._with_extension(asset_path / partition_key)
+            for partition_key in formatted_partition_keys
+        }
+
+    def _get_multipartition_backcompat_paths(
+        self, context: Union[InputContext, OutputContext]
+    ) -> Mapping[str, UPath]:
         if not context.has_asset_partitions:
             raise TypeError(
                 f"Detected {context.dagster_type.typing_type} input type "
@@ -90,15 +144,33 @@ class UPathIOManager(MemoizableIOManager):
             )
 
         partition_keys = context.asset_partition_keys
+
         asset_path = self._get_path_without_extension(context)
         return {
-            partition_key: (asset_path / partition_key).with_suffix(self.extension)
+            partition_key: self._with_extension(asset_path / partition_key)
             for partition_key in partition_keys
+            if isinstance(partition_key, MultiPartitionKey)
         }
 
-    def _load_single_input(self, path: UPath, context: InputContext) -> Any:
-        context.log.debug(f"Loading file from: {path}")
-        obj = self.load_from_path(context=context, path=path)
+    def _load_single_input(
+        self, path: UPath, context: InputContext, backcompat_path: Optional[UPath] = None
+    ) -> Any:
+        context.log.debug(self.get_loading_input_log_message(path))
+        try:
+            obj = self.load_from_path(context=context, path=path)
+        except FileNotFoundError as e:
+            if backcompat_path is not None:
+                try:
+                    obj = self.load_from_path(context=context, path=backcompat_path)
+                    context.log.debug(
+                        f"File not found at {path}. Loaded instead from backcompat path:"
+                        f" {backcompat_path}"
+                    )
+                except FileNotFoundError:
+                    raise e
+            else:
+                raise e
+
         context.add_input_metadata({"path": MetadataValue.path(str(path))})
         return obj
 
@@ -112,6 +184,7 @@ class UPathIOManager(MemoizableIOManager):
 
         objs: Dict[str, Any] = {}
         paths = self._get_paths_for_partitions(context)
+        backcompat_paths = self._get_multipartition_backcompat_paths(context)
 
         context.log.debug(f"Loading {len(paths)} partitions...")
 
@@ -121,8 +194,14 @@ class UPathIOManager(MemoizableIOManager):
                 obj = self.load_from_path(context=context, path=path)
                 objs[partition_key] = obj
             except FileNotFoundError as e:
-                if not allow_missing_partitions:
+                backcompat_path = backcompat_paths.get(partition_key)
+                if backcompat_path is not None:
+                    obj = self.load_from_path(context=context, path=backcompat_path)
+                    objs[partition_key] = obj
+
+                if not allow_missing_partitions and objs.get(partition_key) is None:
                     raise e
+
                 context.log.debug(
                     f"Couldn't load partition {path} and skipped it "
                     "because the input metadata includes allow_missing_partitions=True"
@@ -132,77 +211,34 @@ class UPathIOManager(MemoizableIOManager):
         return objs
 
     def load_input(self, context: InputContext) -> Union[Any, Dict[str, Any]]:
-        if not context.has_asset_key:
-            # we are dealing with an op output which is always non-partitioned
+        # If no asset key, we are dealing with an op output which is always non-partitioned
+        if not context.has_asset_key or not context.has_asset_partitions:
             path = self._get_path(context)
             return self._load_single_input(path, context)
         else:
-            if not context.has_asset_partitions:
-                # we are dealing with a non-partitioned asset
-                path = self._get_path(context)
-                return self._load_single_input(path, context)
-            else:
-                expected_type = inspect.signature(self.load_from_path).return_annotation
+            asset_partition_keys = context.asset_partition_keys
+            if len(asset_partition_keys) == 0:
+                return None
+            elif len(asset_partition_keys) == 1:
+                paths = self._get_paths_for_partitions(context)
+                check.invariant(len(paths) == 1, f"Expected 1 path, but got {len(paths)}")
+                path = list(paths.values())[0]
+                backcompat_paths = self._get_multipartition_backcompat_paths(context)
+                backcompat_path = (
+                    None if not backcompat_paths else list(backcompat_paths.values())[0]
+                )
 
-                asset_partition_keys = context.asset_partition_keys
-                if len(asset_partition_keys) == 0:
-                    return None
-                elif len(asset_partition_keys) == 1:
-                    if (
-                        hasattr(context.dagster_type.typing_type, "__origin__")
-                        and context.dagster_type.typing_type.__origin__ in (Dict, dict)
-                        and context.dagster_type.typing_type.__args__[1] == expected_type
-                    ):
-                        # the asset type annotation is accidentally a Dict[str, expected_type]
-                        # even tho no partition mappings are used
-                        return check.failed(
-                            f"Received `{context.dagster_type.typing_type}` type in input of"
-                            f" DagsterType {context.dagster_type}, but `{self.load_from_path}` has"
-                            f" {expected_type} type annotation for obj. They should match. If you"
-                            " are loading a single partition, the upstream asset type annotation"
-                            " should not be a typing.Dict, but a single partition type."
-                        )
+                return self._load_single_input(path, context, backcompat_path)
+            else:  # we are dealing with multiple partitions of an asset
+                type_annotation = context.dagster_type.typing_type
+                if type_annotation != Any and not is_dict_type(type_annotation):
+                    check.failed(
+                        "Loading an input that corresponds to multiple partitions, but the"
+                        " type annotation on the op input is not a dict, Dict, Mapping, or"
+                        f" Any: is '{type_annotation}'."
+                    )
 
-                    # we are dealing with a single partition of a non-partitioned asset
-                    paths = self._get_paths_for_partitions(context)
-                    check.invariant(len(paths) == 1, f"Expected 1 path, but got {len(paths)}")
-                    path = list(paths.values())[0]
-                    return self._load_single_input(path, context)
-                else:
-                    # we are dealing with multiple partitions of an asset
-
-                    if (
-                        context.dagster_type.typing_type != Any
-                    ):  # skip type checking if the type is Any
-                        if context.dagster_type.typing_type == expected_type:
-                            # error message if the user forgot to specify a Dict type
-                            # this case is checked separately because this type of mistake can be very common
-                            return check.failed(
-                                f"Received `{context.dagster_type.typing_type}` type in input"
-                                f" DagsterType {context.dagster_type}, but the input has multiple"
-                                f" partitions. `Dict[str, {context.dagster_type.typing_type}]`"
-                                " should be used in this case."
-                            )
-
-                        elif (
-                            hasattr(context.dagster_type.typing_type, "__origin__")
-                            and context.dagster_type.typing_type.__origin__ in (Dict, dict)
-                            and context.dagster_type.typing_type.__args__[1] == expected_type
-                        ):
-                            # type checking passed
-                            return self._load_multiple_inputs(context)
-                        else:
-                            # something is wrong with the types
-                            return check.failed(
-                                f"Received `{context.dagster_type.typing_type}` type in input of"
-                                f" DagsterType {context.dagster_type}, but `{self.load_from_path}`"
-                                f" has {expected_type} type annotation for obj. They should be both"
-                                " specified with type annotations and match. If you are loading"
-                                " multiple partitions, the upstream asset type annotation should"
-                                " be a typing.Dict."
-                            )
-                    else:
-                        return self._load_multiple_inputs(context)
+                return self._load_multiple_inputs(context)
 
     def handle_output(self, context: OutputContext, obj: Any):
         if context.dagster_type.typing_type == type(None):
@@ -221,8 +257,8 @@ class UPathIOManager(MemoizableIOManager):
             path = list(paths.values())[0]
         else:
             path = self._get_path(context)
-        path.parent.mkdir(parents=True, exist_ok=True)
-        context.log.debug(f"Writing file at: {path}")
+        self.make_directory(path.parent)
+        context.log.debug(self.get_writing_output_log_message(path))
         self.dump_to_path(context=context, obj=obj, path=path)
 
         metadata = {"path": MetadataValue.path(str(path))}
@@ -230,3 +266,13 @@ class UPathIOManager(MemoizableIOManager):
         metadata.update(custom_metadata)  # type: ignore
 
         context.add_output_metadata(metadata)
+
+
+def is_dict_type(type_obj) -> bool:
+    if type_obj == dict:
+        return True
+
+    if hasattr(type_obj, "__origin__") and type_obj.__origin__ in (dict, Dict, Mapping):
+        return True
+
+    return False

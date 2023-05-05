@@ -18,7 +18,7 @@ def branch_op(context, sec):
     if sec < 0:
         sleep(-sec)
         raise Exception("fail")
-    context.log.info("Sleeping for {} seconds".format(sec))
+    context.log.info(f"Sleeping for {sec} seconds")
     sleep(sec)
     return sec
 

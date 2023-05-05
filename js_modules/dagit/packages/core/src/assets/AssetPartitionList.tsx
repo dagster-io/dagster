@@ -2,21 +2,28 @@ import {Box, Colors} from '@dagster-io/ui';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 
-import {PartitionState, partitionStateToStyle} from '../partitions/PartitionStatus';
 import {Inner} from '../ui/VirtualizedTable';
 
 import {AssetListRow, AssetListContainer} from './AssetEventList';
+import {AssetPartitionStatus, assetPartitionStatusesToStyle} from './AssetPartitionStatus';
 
-export const AssetPartitionList: React.FC<{
-  partitions: {dimensionKey: string; state: PartitionState}[];
+export interface AssetPartitionListProps {
+  partitions: string[];
+  statusForPartition: (dimensionKey: string) => AssetPartitionStatus[];
   focusedDimensionKey?: string;
   setFocusedDimensionKey?: (dimensionKey: string | undefined) => void;
-}> = ({focusedDimensionKey, setFocusedDimensionKey, partitions}) => {
+}
+export const AssetPartitionList: React.FC<AssetPartitionListProps> = ({
+  focusedDimensionKey,
+  setFocusedDimensionKey,
+  statusForPartition,
+  partitions,
+}) => {
   const parentRef = React.useRef<HTMLDivElement | null>(null);
 
   const rowVirtualizer = useVirtualizer({
     count: partitions.length,
-    getItemKey: (idx) => partitions[idx].dimensionKey,
+    getItemKey: (idx) => partitions[idx],
     getScrollElement: () => parentRef.current,
     estimateSize: () => 36,
     overscan: 10,
@@ -26,10 +33,10 @@ export const AssetPartitionList: React.FC<{
 
   React.useEffect(() => {
     if (focusedDimensionKey) {
-      rowVirtualizer.scrollToIndex(
-        partitions.findIndex((p) => p.dimensionKey === focusedDimensionKey),
-        {smoothScroll: false, align: 'auto'},
-      );
+      rowVirtualizer.scrollToIndex(partitions.indexOf(focusedDimensionKey), {
+        smoothScroll: false,
+        align: 'auto',
+      });
     }
   }, [focusedDimensionKey, rowVirtualizer, partitions]);
 
@@ -42,18 +49,18 @@ export const AssetPartitionList: React.FC<{
         if (!setFocusedDimensionKey || !shift || !focusedDimensionKey || e.isDefaultPrevented()) {
           return;
         }
-        const nextIdx = partitions.findIndex((p) => p.dimensionKey === focusedDimensionKey) + shift;
+        const nextIdx = partitions.indexOf(focusedDimensionKey) + shift;
         const next = partitions[nextIdx];
         if (next) {
           e.preventDefault();
-          setFocusedDimensionKey(next.dimensionKey);
+          setFocusedDimensionKey(next);
         }
       }}
     >
       <Inner $totalHeight={totalHeight}>
         {items.map(({index, key, size, start}) => {
-          const {dimensionKey, state} = partitions[index];
-
+          const dimensionKey = partitions[index];
+          const state = statusForPartition(dimensionKey);
           return (
             <AssetListRow
               key={key}
@@ -81,13 +88,18 @@ export const AssetPartitionList: React.FC<{
                 <Box flex={{gap: 4, direction: 'row', alignItems: 'center'}}>
                   {dimensionKey}
                   <div style={{flex: 1}} />
-                  {(state === PartitionState.SUCCESS_MISSING ||
-                    state === PartitionState.SUCCESS) && (
-                    <StateDot state={PartitionState.SUCCESS} />
+                  {/* Note: we could just state.map, but we want these in a particular order*/}
+                  {state.includes(AssetPartitionStatus.MISSING) && (
+                    <AssetPartitionStatusDot status={[AssetPartitionStatus.MISSING]} />
                   )}
-                  {(state === PartitionState.SUCCESS_MISSING ||
-                    state === PartitionState.MISSING) && (
-                    <StateDot state={PartitionState.MISSING} />
+                  {state.includes(AssetPartitionStatus.FAILED) && (
+                    <AssetPartitionStatusDot status={[AssetPartitionStatus.FAILED]} />
+                  )}
+                  {state.includes(AssetPartitionStatus.MATERIALIZING) && (
+                    <AssetPartitionStatusDot status={[AssetPartitionStatus.MATERIALIZING]} />
+                  )}
+                  {state.includes(AssetPartitionStatus.MATERIALIZED) && (
+                    <AssetPartitionStatusDot status={[AssetPartitionStatus.MATERIALIZED]} />
                   )}
                 </Box>
               </Box>
@@ -99,14 +111,14 @@ export const AssetPartitionList: React.FC<{
   );
 };
 
-const StateDot = ({state}: {state: PartitionState}) => (
+export const AssetPartitionStatusDot = ({status}: {status: AssetPartitionStatus[]}) => (
   <div
-    key={state}
     style={{
       width: 10,
       height: 10,
       borderRadius: '100%',
-      ...partitionStateToStyle(state),
+      flexShrink: 0,
+      ...assetPartitionStatusesToStyle(status),
     }}
   />
 );

@@ -1,23 +1,20 @@
+import logging
 import sys
 from typing import Any, Mapping, Optional, Sequence
 
 import kubernetes
 from dagster import (
-    Field,
-    MetadataEntry,
-    StringSource,
     _check as check,
 )
 from dagster._cli.api import ExecuteRunArgs
 from dagster._core.events import EngineEventData
 from dagster._core.launcher import LaunchRunContext, ResumeRunContext, RunLauncher
 from dagster._core.launcher.base import CheckRunHealthResult, WorkerStatus
-from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.tags import DOCKER_IMAGE_TAG
 from dagster._grpc.types import ResumeRunArgs
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils.error import serializable_error_info_from_exc_info
-from dagster._utils.merger import merge_dicts
 
 from .client import DagsterKubernetesClient
 from .container_context import K8sContainerContext
@@ -56,7 +53,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         image_pull_secrets=None,
         load_incluster_config=True,
         kubeconfig_file=None,
-        inst_data=None,
+        inst_data: Optional[ConfigurableClassData] = None,
         job_namespace="default",
         env_config_maps=None,
         env_secrets=None,
@@ -188,32 +185,29 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         """Include all arguments required for DagsterK8sJobConfig along with additional arguments
         needed for the RunLauncher itself.
         """
-        job_cfg = DagsterK8sJobConfig.config_type_run_launcher()
-
-        run_launcher_extra_cfg = {
-            "job_namespace": Field(StringSource, is_required=False, default_value="default"),
-        }
-        return merge_dicts(job_cfg, run_launcher_extra_cfg)
+        return DagsterK8sJobConfig.config_type_run_launcher()
 
     @classmethod
     def from_config_value(cls, inst_data, config_value):
         return cls(inst_data=inst_data, **config_value)
 
     @property
-    def inst_data(self):
+    def inst_data(self) -> Optional[ConfigurableClassData]:
         return self._inst_data
 
-    def get_container_context_for_run(self, pipeline_run: DagsterRun) -> K8sContainerContext:
-        return K8sContainerContext.create_for_run(pipeline_run, self)
+    def get_container_context_for_run(self, dagster_run: DagsterRun) -> K8sContainerContext:
+        return K8sContainerContext.create_for_run(dagster_run, self, include_run_tags=True)
 
-    def _launch_k8s_job_with_args(self, job_name, args, run):
+    def _launch_k8s_job_with_args(
+        self, job_name: str, args: Optional[Sequence[str]], run: DagsterRun
+    ) -> None:
         container_context = self.get_container_context_for_run(run)
 
         pod_name = job_name
 
-        pipeline_origin = run.pipeline_code_origin
+        job_origin = check.not_none(run.job_code_origin)
         user_defined_k8s_config = container_context.get_run_user_defined_k8s_config()
-        repository_origin = pipeline_origin.repository_origin
+        repository_origin = job_origin.repository_origin
 
         job_config = container_context.get_k8s_job_config(
             job_image=repository_origin.container_image, run_launcher=self
@@ -232,14 +226,15 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             component="run_worker",
             user_defined_k8s_config=user_defined_k8s_config,
             labels={
-                "dagster/job": pipeline_origin.pipeline_name,
+                "dagster/job": job_origin.job_name,
                 "dagster/run-id": run.run_id,
             },
             env_vars=[
                 {
                     "name": "DAGSTER_RUN_JOB_NAME",
-                    "value": pipeline_origin.pipeline_name,
-                }
+                    "value": job_origin.job_name,
+                },
+                *container_context.env,
             ],
         )
 
@@ -247,11 +242,11 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             "Creating Kubernetes run worker job",
             run,
             EngineEventData(
-                [
-                    MetadataEntry("Kubernetes Job name", value=job_name),
-                    MetadataEntry("Kubernetes Namespace", value=container_context.namespace),
-                    MetadataEntry("Run ID", value=run.run_id),
-                ]
+                {
+                    "Kubernetes Job name": job_name,
+                    "Kubernetes Namespace": container_context.namespace,
+                    "Run ID": run.run_id,
+                }
             ),
             cls=self.__class__,
         )
@@ -266,13 +261,13 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         )
 
     def launch_run(self, context: LaunchRunContext) -> None:
-        run = context.pipeline_run
+        run = context.dagster_run
         job_name = get_job_name_from_run_id(run.run_id)
-        pipeline_origin = check.not_none(run.pipeline_code_origin)
+        job_origin = check.not_none(run.job_code_origin)
 
         args = ExecuteRunArgs(
-            pipeline_origin=pipeline_origin,
-            pipeline_run_id=run.run_id,
+            job_origin=job_origin,
+            run_id=run.run_id,
             instance_ref=self._instance.get_ref(),
             set_exit_code_on_failure=self._fail_pod_on_run_failure,
         ).get_command_args()
@@ -284,15 +279,15 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         return True
 
     def resume_run(self, context: ResumeRunContext) -> None:
-        run = context.pipeline_run
+        run = context.dagster_run
         job_name = get_job_name_from_run_id(
             run.run_id, resume_attempt_number=context.resume_attempt_number
         )
-        pipeline_origin = check.not_none(run.pipeline_code_origin)
+        job_origin = check.not_none(run.job_code_origin)
 
         args = ResumeRunArgs(
-            pipeline_origin=pipeline_origin,
-            pipeline_run_id=run.run_id,
+            job_origin=job_origin,
+            run_id=run.run_id,
             instance_ref=self._instance.get_ref(),
             set_exit_code_on_failure=self._fail_pod_on_run_failure,
         ).get_command_args()
@@ -303,10 +298,10 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
     def can_terminate(self, run_id):
         check.str_param(run_id, "run_id")
 
-        pipeline_run = self._instance.get_run_by_id(run_id)
-        if not pipeline_run:
+        dagster_run = self._instance.get_run_by_id(run_id)
+        if not dagster_run:
             return False
-        if pipeline_run.status != DagsterRunStatus.STARTED:
+        if dagster_run.status != DagsterRunStatus.STARTED:
             return False
         return True
 
@@ -322,8 +317,8 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         can_terminate = self.can_terminate(run_id)
         if not can_terminate:
             self._instance.report_engine_event(
-                message="Unable to terminate run; can_terminate returned {}".format(can_terminate),
-                pipeline_run=run,
+                message=f"Unable to terminate run; can_terminate returned {can_terminate}",
+                dagster_run=run,
                 cls=self.__class__,
             )
             return False
@@ -341,7 +336,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             if termination_result:
                 self._instance.report_engine_event(
                     message="Run was terminated successfully.",
-                    pipeline_run=run,
+                    dagster_run=run,
                     cls=self.__class__,
                 )
             else:
@@ -349,14 +344,14 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
                     message="Run was not terminated successfully; delete_job returned {}".format(
                         termination_result
                     ),
-                    pipeline_run=run,
+                    dagster_run=run,
                     cls=self.__class__,
                 )
             return termination_result
         except Exception:
             self._instance.report_engine_event(
                 message="Run was not terminated successfully; encountered error in delete_job",
-                pipeline_run=run,
+                dagster_run=run,
                 engine_event_data=EngineEventData.engine_error(
                     serializable_error_info_from_exc_info(sys.exc_info())
                 ),
@@ -367,12 +362,63 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
     def supports_check_run_worker_health(self):
         return True
 
+    @property
+    def supports_run_worker_crash_recovery(self):
+        return True
+
+    def get_run_worker_debug_info(self, run: DagsterRun) -> Optional[str]:
+        container_context = self.get_container_context_for_run(run)
+        if self.supports_run_worker_crash_recovery:
+            resume_attempt_number = self._instance.count_resume_run_attempts(run.run_id)
+        else:
+            resume_attempt_number = None
+
+        job_name = get_job_name_from_run_id(run.run_id, resume_attempt_number=resume_attempt_number)
+        namespace = container_context.namespace
+        user_defined_k8s_config = container_context.get_run_user_defined_k8s_config()
+        container_name = user_defined_k8s_config.container_config.get("name", "dagster")
+        pod_names = self._api_client.get_pod_names_in_job(job_name, namespace=namespace)
+        full_msg = ""
+        try:
+            pod_debug_info = [
+                self._api_client.get_pod_debug_info(
+                    pod_name, namespace, container_name=container_name
+                )
+                for pod_name in pod_names
+            ]
+            full_msg = "\n".join(pod_debug_info)
+        except Exception:
+            logging.exception(
+                "Error trying to get debug information for failed k8s job {job_name}".format(
+                    job_name=job_name
+                )
+            )
+        if pod_names:
+            full_msg = (
+                full_msg
+                + "\nFor more information about the failure, try running `kubectl describe pod"
+                f" {pod_names[0]}`, `kubectl logs {pod_names[0]}`, or `kubectl describe job"
+                f" {job_name}` in your cluster."
+            )
+
+        else:
+            full_msg = (
+                full_msg
+                + "\nFor more information about the failure, try running `kubectl describe job"
+                f" {job_name}` in your cluster."
+            )
+
+        return full_msg
+
     def check_run_worker_health(self, run: DagsterRun):
         container_context = self.get_container_context_for_run(run)
 
-        job_name = get_job_name_from_run_id(
-            run.run_id, resume_attempt_number=self._instance.count_resume_run_attempts(run.run_id)
-        )
+        if self.supports_run_worker_crash_recovery:
+            resume_attempt_number = self._instance.count_resume_run_attempts(run.run_id)
+        else:
+            resume_attempt_number = None
+
+        job_name = get_job_name_from_run_id(run.run_id, resume_attempt_number=resume_attempt_number)
         try:
             status = self._api_client.get_job_status(
                 namespace=container_context.namespace,
@@ -382,6 +428,21 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             return CheckRunHealthResult(
                 WorkerStatus.UNKNOWN, str(serializable_error_info_from_exc_info(sys.exc_info()))
             )
+
+        inactive_job_with_finished_pods = bool(
+            (not status.active) and (status.failed or status.succeeded)
+        )
+
+        # If the run is in a non-terminal (and non-STARTING) state but the k8s job is not active,
+        # something went wrong
+        if (
+            run.status in (DagsterRunStatus.STARTED, DagsterRunStatus.CANCELING)
+            and inactive_job_with_finished_pods
+        ):
+            return CheckRunHealthResult(
+                WorkerStatus.FAILED, "Run has not completed but K8s job has no active pods"
+            )
+
         if status.failed:
             return CheckRunHealthResult(WorkerStatus.FAILED, "K8s job failed")
         if status.succeeded:

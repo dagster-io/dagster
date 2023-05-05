@@ -41,6 +41,9 @@ dagit:
   # Support overriding the name prefix of the Dagit pods
   nameOverride: "dagit"
 
+  # Support path prefix (i.e. /dagster)
+  pathPrefix: ~
+
   service:
     type: ClusterIP
     # Defines the port where Dagit will serve requests; if changed, don't forget to update the
@@ -82,15 +85,17 @@ dagit:
   logLevel: ~
 
   # Additional environment variables to set.
-  # A Kubernetes ConfigMap will be created with these environment variables. See:
-  # https://kubernetes.io/docs/concepts/configuration/configmap/
+  # These will be directly applied to the daemon container. See
+  # https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/
   #
   # Example:
   #
   # env:
-  #   ENV_ONE: one
-  #   ENV_TWO: two
-  env: {}
+  # - name: ENV_ONE
+  #   value: "one"
+  # - name: ENV_TWO
+  #   value: "two"
+  env: []
 
   # Additional environment variables can be retrieved and set from ConfigMaps. See:
   # https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/#configure-all-key-value-pairs-in-a-configmap-as-container-environment-variables
@@ -205,6 +210,7 @@ computeLogManager:
   #     storageAccount: ~
   #     container: ~
   #     secretKey: ~
+  #     defaultAzureCredential: ~
   #     localDir: ~
   #     prefix: ~
   #     uploadInterval: ~
@@ -287,11 +293,11 @@ dagster-user-deployments:
         pullPolicy: Always
 
       # Arguments to `dagster api grpc`.
-      # Ex: "dagster api grpc -m dagster_test.test_project.test_pipelines.repo -a define_demo_execution_repo"
+      # Ex: "dagster api grpc -m dagster_test.test_project.test_jobs.repo -a define_demo_execution_repo"
       # would translate to:
       # dagsterApiGrpcArgs:
       #   - "-m"
-      #   - "dagster_test.test_project.test_pipelines.repo"
+      #   - "dagster_test.test_project.test_jobs.repo"
       #   - "-a"
       #   - "define_demo_execution_repo"
       dagsterApiGrpcArgs:
@@ -305,15 +311,17 @@ dagster-user-deployments:
         enabled: true
 
       # Additional environment variables to set.
-      # A Kubernetes ConfigMap will be created with these environment variables. See:
-      # https://kubernetes.io/docs/concepts/configuration/configmap/
+      # These will be directly applied to the daemon container. See
+      # https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/
       #
       # Example:
       #
       # env:
-      #   ENV_ONE: one
-      #   ENV_TWO: two
-      env: {}
+      # - name: ENV_ONE
+      #   value: "one"
+      # - name: ENV_TWO
+      #   value: "two"
+      env: []
 
       # Additional environment variables can be retrieved and set from ConfigMaps. See:
       # https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/#configure-all-key-value-pairs-in-a-configmap-as-container-environment-variables
@@ -461,7 +469,7 @@ runLauncher:
       #   tag: ""
       #   pullPolicy: Always
 
-      # The K8s namespace where new jobs will be launched.
+      # The Kubernetes namespace where new jobs will be launched.
       # By default, the release namespace is used.
       jobNamespace: ~
 
@@ -557,8 +565,9 @@ runLauncher:
       # runK8sConfig:
       #   containerConfig: # raw config for the pod's main container
       #     resources:
-      #       cpu: 100m
-      #       memory: 128Mi
+      #       limits:
+      #         cpu: 100m
+      #         memory: 128Mi
       #   podTemplateSpecMetadata: # raw config for the pod's metadata
       #     annotations:
       #       mykey: myvalue
@@ -586,6 +595,10 @@ runLauncher:
         repository: "docker.io/dagster/dagster-celery-k8s"
         tag: ~
         pullPolicy: Always
+
+      # The Kubernetes namespace where new jobs will be launched.
+      # By default, the release namespace is used.
+      jobNamespace: ~
 
       # Support overriding the name prefix of Celery worker pods
       nameOverride: "celery-workers"
@@ -740,7 +753,7 @@ postgresql:
   # Used by init container to check that db is running. (Even if enabled:false)
   image:
     repository: "library/postgres"
-    tag: "9.6.21"
+    tag: "14.6"
     pullPolicy: IfNotPresent
 
   # set this PostgreSQL hostname when using an external PostgreSQL database
@@ -1038,7 +1051,9 @@ dagsterDaemon:
   heartbeatTolerance: 300
 
   runCoordinator:
-    enabled: false
+    # Whether or not to enable the run queue (or some other custom run coordinator). See
+    # https://docs.dagster.io/deployment/run-coordinator for more information.
+    enabled: true
 
     # Type can be one of [
     #   QueuedRunCoordinator,
@@ -1047,11 +1062,21 @@ dagsterDaemon:
     type: QueuedRunCoordinator
     config:
       queuedRunCoordinator:
+        # The maximum number of runs to allow to be running at once. Defaults to no limit.
         maxConcurrentRuns: ~
+        # Tag based concurrency limits. See https://docs.dagster.io/deployment/run-coordinator#usage
+        # for examples.
         tagConcurrencyLimits: []
+        # How frequently in seconds to check for new runs to pull from the queue and launch.
+        # Defaults to 5.
         dequeueIntervalSeconds: ~
-        dequeueUseThreads: ~
-        dequeueNumWorkers: ~
+        # Whether to dequeue runs using an asynchronous thread pool, allowing multiple runs
+        # to be dequeued in parallel.
+        dequeueUseThreads: true
+        # The max number of worker threads to use when dequeing runs. Can be tuned
+        # to allow more runs to be dequeued in parallel, but may require allocating more
+        # resources to the daemon.
+        dequeueNumWorkers: 4
 
     ##  Uncomment this configuration if the CustomRunCoordinator is selected.
     ##  Using this setting requires a custom Daemon image that defines the user specified
@@ -1065,45 +1090,51 @@ dagsterDaemon:
   # marked as failed. If a run had started but then the run worker crashed, the monitoring daemon
   # will either fail the run or attempt to resume the run with a new run worker.
   runMonitoring:
-    enabled: false
+    enabled: true
     # Timeout for runs to start (avoids runs hanging in STARTED)
-    startTimeoutSeconds: 180
+    startTimeoutSeconds: 300
     # How often to check on in progress runs
     pollIntervalSeconds: 120
     # [Experimental] Max number of times to attempt to resume a run with a new run worker instead
     # of failing the run if the run worker has crashed. Only works for runs using the
-    # `k8s_job_executor` to run each op in its own Kubernetes job. If this value is set to nil,
-    # defaults to 3 if using the K8sRunLauncher, otherwise defaults to 0.
-    maxResumeRunAttempts: ~
+    # `k8s_job_executor` to run each op in its own Kubernetes job. To enable, set this value
+    # to a value greater than 0.
+    maxResumeRunAttempts: 0
 
   runRetries:
-    enabled: false
+    enabled: true
     maxRetries: 0
 
   sensors:
-    # Whether to evaluate sensors using an asynchronous thread pool.  Defaults to false
-    useThreads: false
-    # The max number of worker threads to use when asynchronously evaluating sensors. Will use the
-    # default value used by Python, which depends on the number of cores available.
-    numWorkers: ~
+    # Whether to evaluate sensors using an asynchronous thread pool, allowing sensprs
+    # to execute in parallel,
+    useThreads: true
+    # The max number of worker threads to use when evaluating sensors. Can be tuned
+    # to allow more sensors to run in parallel, but may require allocating more resources to the
+    # daemon.
+    numWorkers: 4
 
   schedules:
-    # Whether to evaluate schedules using an asynchronous thread pool.  Defaults to false
-    useThreads: false
-    # The max number of worker threads to use when asynchronously evaluating sensors. Will use the
-    # default value used by Python, which depends on the number of cores available.
-    numWorkers: ~
+    # Whether to evaluate schedules using an asynchronous thread pool, allowing schedules
+    # to execute in parallel
+    useThreads: true
+    # The max number of worker threads to use when evaluating sensors. Can be tuned
+    # to allow more schedules to run in parallel, but may require allocating more resources to the
+    # daemon.
+    numWorkers: 4
 
   # Additional environment variables to set.
-  # A Kubernetes ConfigMap will be created with these environment variables. See:
-  # https://kubernetes.io/docs/concepts/configuration/configmap/
+  # These will be directly applied to the daemon container. See
+  # https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/
   #
   # Example:
   #
   # env:
-  #   ENV_ONE: one
-  #   ENV_TWO: two
-  env: {}
+  # - name: ENV_ONE
+  #   value: "one"
+  # - name: ENV_TWO
+  #   value: "two"
+  env: []
 
   # Additional environment variables can be retrieved and set from ConfigMaps. See:
   # https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/#configure-all-key-value-pairs-in-a-configmap-as-container-environment-variables

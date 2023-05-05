@@ -4,22 +4,25 @@ import {InputGroupProps2, IPopoverProps} from '@blueprintjs/core';
 import {isCreateNewItem, Suggest as BlueprintSuggest, SuggestProps} from '@blueprintjs/select';
 import deepmerge from 'deepmerge';
 import * as React from 'react';
-import {List} from 'react-virtualized';
+import {List as _List} from 'react-virtualized';
 import {createGlobalStyle} from 'styled-components/macro';
 
 import {Colors} from './Colors';
 import {IconWrapper} from './Icon';
 import {TextInputContainerStyles, TextInputStyles} from './TextInput';
 
+// todo: react-virtualized needs updated types to work with React 18. For now lets any type.
+const List: any = _List;
+
 export const GlobalSuggestStyle = createGlobalStyle`
-  .dagit-suggest-input.bp3-input-group {
+  .dagit-suggest-input.bp4-input-group {
     ${TextInputContainerStyles}
 
     &:disabled ${IconWrapper}:first-child {
       background-color: ${Colors.Gray400};
     }
 
-    .bp3-input {
+    .bp4-input {
       ${TextInputStyles}
 
       height: auto;
@@ -29,15 +32,15 @@ export const GlobalSuggestStyle = createGlobalStyle`
       }
     }
 
-    .bp3-input-action {
+    .bp4-input-action {
       height: auto;
       top: 1px;
       right: 2px;
     }
   }
 
-  .bp3-select-popover.dagit-popover {
-    .bp3-popover-content li {
+  .bp4-select-popover.dagit-popover {
+    .bp4-popover-content li {
       list-style: none;
       margin: 0;
       padding: 0;
@@ -48,16 +51,20 @@ export const GlobalSuggestStyle = createGlobalStyle`
 export const MENU_ITEM_HEIGHT = 32;
 
 const MENU_WIDTH = 250; // arbitrary, just looks nice
-const MENU_HEIGHT_MAX = MENU_ITEM_HEIGHT * 7.5;
+const VISIBLE_ITEMS = 7.5;
 
-export const Suggest = <T,>(props: React.PropsWithChildren<SuggestProps<T>>) => {
-  const popoverProps: Partial<IPopoverProps> = {
-    ...props.popoverProps,
+interface Props<T> extends React.PropsWithChildren<SuggestProps<T>> {
+  itemHeight?: number;
+  menuWidth?: number;
+}
+
+export const Suggest = <T,>(props: Props<T>) => {
+  const {popoverProps = {}, itemHeight = MENU_ITEM_HEIGHT, menuWidth = MENU_WIDTH, ...rest} = props;
+
+  const allPopoverProps: Partial<IPopoverProps> = {
+    ...popoverProps,
     minimal: true,
-    modifiers: deepmerge(
-      {offset: {enabled: true, offset: '0 8px'}},
-      props.popoverProps?.modifiers || {},
-    ),
+    modifiers: deepmerge({offset: {enabled: true, offset: '0, 8px'}}, popoverProps.modifiers || {}),
     popoverClassName: `dagit-popover ${props.popoverProps?.className || ''}`,
   };
 
@@ -68,8 +75,8 @@ export const Suggest = <T,>(props: React.PropsWithChildren<SuggestProps<T>>) => 
 
   return (
     <BlueprintSuggest<T>
-      {...props}
-      inputProps={inputProps}
+      {...rest}
+      inputProps={inputProps as any}
       itemListRenderer={(props) => (
         <List
           style={{outline: 'none', marginRight: -5, paddingRight: 5}}
@@ -79,17 +86,17 @@ export const Suggest = <T,>(props: React.PropsWithChildren<SuggestProps<T>>) => 
               ? props.filteredItems.indexOf(props.activeItem)
               : undefined
           }
-          rowHeight={MENU_ITEM_HEIGHT}
-          rowRenderer={(a) => (
+          rowHeight={itemHeight}
+          rowRenderer={(a: any) => (
             <div key={a.index} style={a.style}>
               {props.renderItem(props.filteredItems[a.index] as T, a.index)}
             </div>
           )}
-          width={MENU_WIDTH}
-          height={Math.min(props.filteredItems.length * MENU_ITEM_HEIGHT, MENU_HEIGHT_MAX)}
+          width={menuWidth}
+          height={Math.min(props.filteredItems.length * itemHeight, itemHeight * VISIBLE_ITEMS)}
         />
       )}
-      popoverProps={popoverProps}
+      popoverProps={allPopoverProps}
     />
   );
 };

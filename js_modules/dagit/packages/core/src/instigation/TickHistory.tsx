@@ -19,7 +19,6 @@ import zoomPlugin from 'chartjs-plugin-zoom';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {TickLogDialog} from '../TickLogDialog';
 import {SharedToaster} from '../app/DomUtils';
 import {useFeatureFlags} from '../app/Flags';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
@@ -30,6 +29,7 @@ import {InstigationTickStatus, InstigationType} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
+import {TickLogDialog} from '../ticks/TickLogDialog';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -89,7 +89,7 @@ export const TicksTable = ({
     encode: (states) => {
       const queryState = {};
       Object.keys(states).map((state) => {
-        queryState[state.toLowerCase()] = String(states[state]);
+        (queryState as any)[state.toLowerCase()] = String(states[state as keyof typeof states]);
       });
       return queryState;
     },
@@ -97,7 +97,7 @@ export const TicksTable = ({
       const status: ShownStatusState = {...DEFAULT_SHOWN_STATUS_STATE};
       Object.keys(DEFAULT_SHOWN_STATUS_STATE).forEach((state) => {
         if (state.toLowerCase() in queryState) {
-          status[state] = !(queryState[state.toLowerCase()] === 'false');
+          (status as any)[state] = !(queryState[state.toLowerCase()] === 'false');
         }
       });
 
@@ -108,7 +108,7 @@ export const TicksTable = ({
   const {flagSensorScheduleLogging} = useFeatureFlags();
   const instigationSelector = {...repoAddressToSelector(repoAddress), name};
   const statuses = Object.keys(shownStates)
-    .filter((status) => shownStates[status])
+    .filter((status) => shownStates[status as keyof typeof shownStates])
     .map((status) => status as InstigationTickStatus);
   const {queryResult, paginationProps} = useCursorPaginatedQuery<
     TickHistoryQuery,
@@ -216,10 +216,10 @@ export const TicksTable = ({
                 {instigationType === InstigationType.SENSOR ? (
                   <td style={{width: 120}}>
                     {tick.cursor ? (
-                      <Box flex={{direction: 'row', alignItems: 'center'}}>
-                        <Box style={{fontFamily: FontFamily.monospace, marginRight: 10}}>
-                          <>{truncate(tick.cursor || '')}</>
-                        </Box>
+                      <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+                        <div style={{fontFamily: FontFamily.monospace, fontSize: '16px'}}>
+                          {truncate(tick.cursor || '')}
+                        </div>
                         <CopyButton
                           onClick={() => {
                             copyToClipboard(tick.cursor || '');
@@ -240,9 +240,9 @@ export const TicksTable = ({
                 <td>
                   {tick.runIds.length ? (
                     tick.runs.map((run) => (
-                      <>
-                        <RunStatusLink key={run.id} run={run} />
-                      </>
+                      <React.Fragment key={run.id}>
+                        <RunStatusLink run={run} />
+                      </React.Fragment>
                     ))
                   ) : (
                     <>&mdash;</>
@@ -369,12 +369,11 @@ const JOB_TICK_HISTORY_QUERY = gql`
     $statuses: [InstigationTickStatus!]
   ) {
     instigationStateOrError(instigationSelector: $instigationSelector) {
-      __typename
       ... on InstigationState {
         id
         instigationType
         nextTick {
-          ...NextTickForHistoy
+          ...NextTickForHistory
         }
         ticks(dayRange: $dayRange, limit: $limit, cursor: $cursor, statuses: $statuses) {
           id
@@ -385,7 +384,7 @@ const JOB_TICK_HISTORY_QUERY = gql`
     }
   }
 
-  fragment NextTickForHistoy on FutureInstigationTick {
+  fragment NextTickForHistory on DryRunInstigationTick {
     timestamp
   }
 

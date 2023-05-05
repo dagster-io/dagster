@@ -1,9 +1,12 @@
 import {gql} from '@apollo/client';
-import {Group, Table} from '@dagster-io/ui';
+import {Box, Checkbox, Group, Spinner, Table, Tag} from '@dagster-io/ui';
 import * as React from 'react';
 
+import {useConfirmation} from '../app/CustomConfirmationProvider';
+import {useUnscopedPermissions} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {Timestamp} from '../app/time/Timestamp';
+import {useAutomaterializeDaemonStatus} from '../assets/AutomaterializeDaemonStatusTag';
 import {TimeFromNow} from '../ui/TimeFromNow';
 
 import {DaemonHealth} from './DaemonHealth';
@@ -41,12 +44,16 @@ interface Props {
 const TIME_FORMAT = {showSeconds: true, showTimezone: false};
 
 export const DaemonList: React.FC<Props> = ({daemonStatuses, showTimestampColumn = true}) => {
-  if (!daemonStatuses?.length) {
-    return null;
-  }
+  const automaterialize = useAutomaterializeDaemonStatus();
+  const assetDaemon = daemonStatuses?.filter((daemon) => daemon.daemonType === 'ASSET')[0];
+  const nonAssetDaemons = daemonStatuses?.filter((daemon) => daemon.daemonType !== 'ASSET');
+
+  const confirm = useConfirmation();
+
+  const {permissions: {canToggleAutoMaterialize} = {}} = useUnscopedPermissions();
 
   return (
-    <Table $monospaceFont={false}>
+    <Table>
       <thead>
         <tr>
           <th style={{width: '25%'}}>Daemon</th>
@@ -55,8 +62,61 @@ export const DaemonList: React.FC<Props> = ({daemonStatuses, showTimestampColumn
         </tr>
       </thead>
       <tbody>
-        {daemonStatuses
-          .filter((daemon) => daemon.required)
+        {assetDaemon ? (
+          <tr>
+            <td>
+              <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
+                Auto-materializing
+                {automaterialize.loading ? (
+                  <Spinner purpose="body-text" />
+                ) : (
+                  <Checkbox
+                    format="switch"
+                    checked={!automaterialize.paused}
+                    disabled={!canToggleAutoMaterialize}
+                    onChange={async (e) => {
+                      const checked = e.target.checked;
+                      if (!checked) {
+                        await confirm({
+                          title: 'Pause Auto-materializing?',
+                          description:
+                            'Pausing Auto-materializing will prevent new materializations triggered by an Auto-materializing policy.',
+                        });
+                      }
+                      automaterialize.setPaused(!checked);
+                    }}
+                  />
+                )}
+              </Box>
+            </td>
+            <td>
+              {automaterialize.paused ? (
+                <Tag intent="warning">Paused</Tag>
+              ) : (
+                <DaemonHealth daemon={assetDaemon} />
+              )}
+            </td>
+            {showTimestampColumn && (
+              <td>
+                {assetDaemon.lastHeartbeatTime ? (
+                  <Group direction="row" spacing={4}>
+                    <Timestamp
+                      timestamp={{unix: assetDaemon.lastHeartbeatTime}}
+                      timeFormat={TIME_FORMAT}
+                    />
+                    <span>
+                      (<TimeFromNow unixTimestamp={assetDaemon.lastHeartbeatTime} />)
+                    </span>
+                  </Group>
+                ) : (
+                  'Never'
+                )}
+              </td>
+            )}
+          </tr>
+        ) : null}
+        {nonAssetDaemons
+          ?.filter((daemon) => daemon.required)
           .map((daemon) => {
             return (
               <tr key={daemon.daemonType}>
@@ -75,8 +135,7 @@ export const DaemonList: React.FC<Props> = ({daemonStatuses, showTimestampColumn
                           timeFormat={TIME_FORMAT}
                         />
                         <span>
-                          &nbsp;(
-                          <TimeFromNow unixTimestamp={daemon.lastHeartbeatTime} />)
+                          (<TimeFromNow unixTimestamp={daemon.lastHeartbeatTime} />)
                         </span>
                       </Group>
                     ) : (

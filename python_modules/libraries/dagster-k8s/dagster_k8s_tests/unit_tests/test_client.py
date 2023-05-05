@@ -367,9 +367,7 @@ def _create_status(state, ready):
 # wait_for_pod_success
 ###
 def test_wait_for_pod_success():
-    """
-    Ready pod right away.
-    """
+    """Ready pod right away."""
     mock_client = create_mocked_client()
 
     single_ready_running_pod = _pod_list_for_container_status(_ready_running_status())
@@ -524,7 +522,7 @@ def test_wait_for_ready_but_terminated():
         mock_client.logger,
         [
             'Waiting for pod "%s"' % pod_name,
-            "Pod {pod_name} exitted successfully".format(pod_name=pod_name),
+            f"Pod {pod_name} exitted successfully",
         ],
     )
 
@@ -592,7 +590,7 @@ def test_wait_for_termination_ready_then_terminate():
         mock_client.logger,
         [
             'Waiting for pod "%s"' % pod_name,
-            "Pod {pod_name} exitted successfully".format(pod_name=pod_name),
+            f"Pod {pod_name} exitted successfully",
         ],
     )
 

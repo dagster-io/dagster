@@ -20,14 +20,13 @@ from dagster._config import Permissive, Shape, validate_config
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.utils import parse_env_var
 from dagster._serdes import whitelist_for_serdes
-from dagster._utils import frozentags
 from dagster._utils.merger import merge_dicts
 
 from .models import k8s_model_from_dict, k8s_snake_case_dict
 from .utils import sanitize_k8s_label
 
 # To retry step worker, users should raise RetryRequested() so that the dagster system is aware of the
-# retry. As an example, see retry_pipeline in dagster_test.test_project.test_pipelines.repo
+# retry. As an example, see retry_job in dagster_test.test_project.test_jobs.repo
 # To override this config, user can specify UserDefinedDagsterK8sConfig.
 DEFAULT_K8S_JOB_BACKOFF_LIMIT = 0
 
@@ -138,7 +137,7 @@ class UserDefinedDagsterK8sConfig(
         }
 
     @classmethod
-    def from_dict(self, config_dict):
+    def from_dict(cls, config_dict):
         return UserDefinedDagsterK8sConfig(
             container_config=config_dict.get("container_config"),
             pod_template_spec_metadata=config_dict.get("pod_template_spec_metadata"),
@@ -149,8 +148,8 @@ class UserDefinedDagsterK8sConfig(
         )
 
 
-def get_k8s_resource_requirements(tags):
-    check.inst_param(tags, "tags", frozentags)
+def get_k8s_resource_requirements(tags: Mapping[str, str]):
+    check.mapping_param(tags, "tags", key_type=str, value_type=str)
     check.invariant(K8S_RESOURCE_REQUIREMENTS_KEY in tags)
 
     resource_requirements = json.loads(tags[K8S_RESOURCE_REQUIREMENTS_KEY])
@@ -158,7 +157,7 @@ def get_k8s_resource_requirements(tags):
 
     if not result.success:
         raise DagsterInvalidConfigError(
-            "Error in tags for {}".format(K8S_RESOURCE_REQUIREMENTS_KEY),
+            f"Error in tags for {K8S_RESOURCE_REQUIREMENTS_KEY}",
             result.errors,
             result,
         )
@@ -166,8 +165,8 @@ def get_k8s_resource_requirements(tags):
     return result.value
 
 
-def get_user_defined_k8s_config(tags):
-    check.inst_param(tags, "tags", frozentags)
+def get_user_defined_k8s_config(tags: Mapping[str, str]):
+    check.mapping_param(tags, "tags", key_type=str, value_type=str)
 
     if not any(key in tags for key in [K8S_RESOURCE_REQUIREMENTS_KEY, USER_DEFINED_K8S_CONFIG_KEY]):
         return UserDefinedDagsterK8sConfig()
@@ -180,14 +179,14 @@ def get_user_defined_k8s_config(tags):
 
         if not result.success:
             raise DagsterInvalidConfigError(
-                "Error in tags for {}".format(USER_DEFINED_K8S_CONFIG_KEY),
+                f"Error in tags for {USER_DEFINED_K8S_CONFIG_KEY}",
                 result.errors,
                 result,
             )
 
         user_defined_k8s_config = result.value
 
-    container_config = user_defined_k8s_config.get("container_config", {})
+    container_config = user_defined_k8s_config.get("container_config", {})  # type: ignore
 
     # Backcompat for resource requirements key
     if K8S_RESOURCE_REQUIREMENTS_KEY in tags:
@@ -198,17 +197,17 @@ def get_user_defined_k8s_config(tags):
 
     return UserDefinedDagsterK8sConfig(
         container_config=container_config,
-        pod_template_spec_metadata=user_defined_k8s_config.get("pod_template_spec_metadata"),
-        pod_spec_config=user_defined_k8s_config.get("pod_spec_config"),
-        job_config=user_defined_k8s_config.get("job_config"),
-        job_metadata=user_defined_k8s_config.get("job_metadata"),
-        job_spec_config=user_defined_k8s_config.get("job_spec_config"),
+        pod_template_spec_metadata=user_defined_k8s_config.get("pod_template_spec_metadata"),  # type: ignore
+        pod_spec_config=user_defined_k8s_config.get("pod_spec_config"),  # type: ignore
+        job_config=user_defined_k8s_config.get("job_config"),  # type: ignore
+        job_metadata=user_defined_k8s_config.get("job_metadata"),  # type: ignore
+        job_spec_config=user_defined_k8s_config.get("job_spec_config"),  # type: ignore
     )
 
 
 def get_job_name_from_run_id(run_id, resume_attempt_number=None):
-    return "dagster-run-{}".format(run_id) + (
-        "" if not resume_attempt_number else "-{}".format(resume_attempt_number)
+    return f"dagster-run-{run_id}" + (
+        "" if not resume_attempt_number else f"-{resume_attempt_number}"
     )
 
 
@@ -390,6 +389,7 @@ class DagsterK8sJobConfig(
                     is_required=False,
                     description="Raw Kubernetes configuration for launched runs.",
                 ),
+                "job_namespace": Field(StringSource, is_required=False, default_value="default"),
             },
         )
 
@@ -573,6 +573,17 @@ class DagsterK8sJobConfig(
                     is_required=False,
                     description="Raw Kubernetes configuration for launched code servers.",
                 ),
+                "env": Field(
+                    Array(
+                        Permissive(
+                            {
+                                "name": str,
+                            }
+                        )
+                    ),
+                    is_required=False,
+                    default_value=[],
+                ),
             },
         )
 
@@ -620,7 +631,7 @@ def construct_dagster_k8s_job(
     labels: Optional[Mapping[str, str]] = None,
     env_vars: Optional[Sequence[Mapping[str, Any]]] = None,
 ) -> kubernetes.client.V1Job:
-    """Constructs a Kubernetes Job object
+    """Constructs a Kubernetes Job object.
 
     Args:
         job_config: Job configuration to use for constructing the Kubernetes
@@ -715,6 +726,8 @@ def construct_dagster_k8s_job(
 
     user_defined_resources = container_config.pop("resources", {})
 
+    container_name = container_config.pop("name", "dagster")
+
     volume_mounts = job_config.volume_mounts + user_defined_k8s_volume_mounts
 
     resources = user_defined_resources if user_defined_resources else job_config.resources
@@ -724,7 +737,7 @@ def construct_dagster_k8s_job(
     container_config = merge_dicts(
         container_config,
         {
-            "name": "dagster",
+            "name": container_name,
             "image": job_image,
             "image_pull_policy": job_config.image_pull_policy,
             "env": [*env, *job_config.env, *user_defined_env_vars],

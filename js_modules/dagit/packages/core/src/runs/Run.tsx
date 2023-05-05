@@ -1,8 +1,13 @@
-import {Box, NonIdealState, FirstOrSecondPanelToggle, SplitPanelContainer} from '@dagster-io/ui';
+import {
+  Box,
+  NonIdealState,
+  FirstOrSecondPanelToggle,
+  SplitPanelContainer,
+  ErrorBoundary,
+} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {CapturedOrExternalLogPanel} from '../CapturedLogPanel';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {filterByQuery} from '../app/GraphQueryImpl';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
@@ -15,6 +20,7 @@ import {useFavicon} from '../hooks/useFavicon';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useSupportsCapturedLogs} from '../instance/useSupportsCapturedLogs';
 
+import {CapturedOrExternalLogPanel} from './CapturedLogPanel';
 import {ComputeLogPanel} from './ComputeLogPanel';
 import {LogFilter, LogsProvider, LogsProviderLogs} from './LogsProvider';
 import {LogsScrollingTable} from './LogsScrollingTable';
@@ -22,13 +28,13 @@ import {LogsToolbar, LogType} from './LogsToolbar';
 import {RunActionButtons} from './RunActionButtons';
 import {RunContext} from './RunContext';
 import {ILogCaptureInfo, IRunMetadataDict, RunMetadataProvider} from './RunMetadataProvider';
-import {RunDagsterRunEventFragment, RunFragment} from './types/RunFragments.types';
+import {RunDagsterRunEventFragment, RunPageFragment} from './types/RunFragments.types';
 import {useJobReExecution} from './useJobReExecution';
 import {useQueryPersistedLogFilter} from './useQueryPersistedLogFilter';
 
 interface RunProps {
   runId: string;
-  run?: RunFragment;
+  run?: RunPageFragment;
 }
 
 const runStatusFavicon = (status: RunStatus) => {
@@ -108,7 +114,7 @@ export const Run: React.FC<RunProps> = (props) => {
 };
 
 interface RunWithDataProps {
-  run?: RunFragment;
+  run?: RunPageFragment;
   runId: string;
   selectionQuery: string;
   logs: LogsProviderLogs;
@@ -283,30 +289,32 @@ const RunWithData: React.FC<RunWithDataProps> = ({
 
     if (run.executionPlan && runtimeGraph) {
       return (
-        <GanttChart
-          options={{
-            mode: GanttChartMode.WATERFALL_TIMED,
-          }}
-          toolbarActions={
-            <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
-              <FirstOrSecondPanelToggle axis="vertical" container={splitPanelContainer} />
-              <RunActionButtons
-                run={run}
-                onLaunch={onLaunch}
-                graph={runtimeGraph}
-                metadata={metadata}
-                selection={{query: selectionQuery, keys: selectionStepKeys}}
-              />
-            </Box>
-          }
-          runId={runId}
-          graph={runtimeGraph}
-          metadata={metadata}
-          selection={{query: selectionQuery, keys: selectionStepKeys}}
-          onClickStep={onClickStep}
-          onSetSelection={onSetSelectionQuery}
-          focusedTime={logsFilter.focusedTime}
-        />
+        <ErrorBoundary region="gantt chart">
+          <GanttChart
+            options={{
+              mode: GanttChartMode.WATERFALL_TIMED,
+            }}
+            toolbarActions={
+              <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
+                <FirstOrSecondPanelToggle axis="vertical" container={splitPanelContainer} />
+                <RunActionButtons
+                  run={run}
+                  onLaunch={onLaunch}
+                  graph={runtimeGraph}
+                  metadata={metadata}
+                  selection={{query: selectionQuery, keys: selectionStepKeys}}
+                />
+              </Box>
+            }
+            runId={runId}
+            graph={runtimeGraph}
+            metadata={metadata}
+            selection={{query: selectionQuery, keys: selectionStepKeys}}
+            onClickStep={onClickStep}
+            onSetSelection={onSetSelectionQuery}
+            focusedTime={logsFilter.focusedTime}
+          />
+        </ErrorBoundary>
       );
     }
 
@@ -328,46 +336,48 @@ const RunWithData: React.FC<RunWithDataProps> = ({
         firstMinSize={56}
         first={gantt(metadata)}
         second={
-          <LogsContainer>
-            <LogsToolbar
-              logType={logType}
-              onSetLogType={setLogType}
-              filter={logsFilter}
-              onSetFilter={onSetLogsFilter}
-              steps={stepKeys}
-              metadata={metadata}
-              computeLogFileKey={computeLogFileKey}
-              onSetComputeLogKey={onSetComputeLogKey}
-              computeLogUrl={computeLogUrl}
-              counts={logs.counts}
-            />
-            {logType !== LogType.structured ? (
-              supportsCapturedLogs ? (
-                <CapturedOrExternalLogPanel
-                  logKey={computeLogFileKey ? [runId, 'compute_logs', computeLogFileKey] : []}
-                  externalUrl={logCaptureInfo?.externalUrl}
-                  visibleIOType={LogType[logType]}
-                  onSetDownloadUrl={setComputeLogUrl}
-                />
-              ) : (
-                <ComputeLogPanel
-                  runId={runId}
-                  stepKeys={stepKeys}
-                  computeLogFileKey={computeLogFileKey}
-                  ioType={LogType[logType]}
-                  setComputeLogUrl={setComputeLogUrl}
-                />
-              )
-            ) : (
-              <LogsScrollingTable
-                logs={logs}
+          <ErrorBoundary region="logs">
+            <LogsContainer>
+              <LogsToolbar
+                logType={logType}
+                onSetLogType={setLogType}
                 filter={logsFilter}
-                filterStepKeys={logsFilterStepKeys}
-                filterKey={`${JSON.stringify(logsFilter)}`}
+                onSetFilter={onSetLogsFilter}
+                steps={stepKeys}
                 metadata={metadata}
+                computeLogFileKey={computeLogFileKey}
+                onSetComputeLogKey={onSetComputeLogKey}
+                computeLogUrl={computeLogUrl}
+                counts={logs.counts}
               />
-            )}
-          </LogsContainer>
+              {logType !== LogType.structured ? (
+                supportsCapturedLogs ? (
+                  <CapturedOrExternalLogPanel
+                    logKey={computeLogFileKey ? [runId, 'compute_logs', computeLogFileKey] : []}
+                    logCaptureInfo={logCaptureInfo}
+                    visibleIOType={LogType[logType]}
+                    onSetDownloadUrl={setComputeLogUrl}
+                  />
+                ) : (
+                  <ComputeLogPanel
+                    runId={runId}
+                    stepKeys={stepKeys}
+                    computeLogFileKey={computeLogFileKey}
+                    ioType={LogType[logType]}
+                    setComputeLogUrl={setComputeLogUrl}
+                  />
+                )
+              ) : (
+                <LogsScrollingTable
+                  logs={logs}
+                  filter={logsFilter}
+                  filterStepKeys={logsFilterStepKeys}
+                  filterKey={`${JSON.stringify(logsFilter)}`}
+                  metadata={metadata}
+                />
+              )}
+            </LogsContainer>
+          </ErrorBoundary>
         }
       />
     </>

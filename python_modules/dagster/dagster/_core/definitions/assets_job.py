@@ -1,20 +1,35 @@
-import warnings
 from collections import defaultdict
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Set, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+)
 
 from toposort import CircularDependencyError, toposort
 
 import dagster._check as check
-from dagster._annotations import experimental
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.selector.subset_selector import AssetSelectionData
-from dagster._utils.backcompat import ExperimentalWarning
 from dagster._utils.merger import merge_dicts
 
 from .asset_layer import AssetLayer
 from .assets import AssetsDefinition
 from .config import ConfigMapping
-from .dependency import DependencyDefinition, IDependencyDefinition, NodeHandle, NodeInvocation
+from .dependency import (
+    DependencyDefinition,
+    DependencyMapping,
+    IDependencyDefinition,
+    NodeHandle,
+    NodeInvocation,
+)
 from .events import AssetKey
 from .executor_definition import ExecutorDefinition
 from .graph_definition import GraphDefinition
@@ -29,8 +44,11 @@ from .utils import DEFAULT_IO_MANAGER_KEY
 # Prefix for auto created jobs that are used to materialize assets
 ASSET_BASE_JOB_PREFIX = "__ASSET_JOB"
 
+if TYPE_CHECKING:
+    from dagster._core.definitions.run_config import RunConfig
 
-def is_base_asset_job_name(name) -> bool:
+
+def is_base_asset_job_name(name: str) -> bool:
     return name.startswith(ASSET_BASE_JOB_PREFIX)
 
 
@@ -40,60 +58,66 @@ def get_base_asset_jobs(
     resource_defs: Optional[Mapping[str, ResourceDefinition]],
     executor_def: Optional[ExecutorDefinition],
 ) -> Sequence[JobDefinition]:
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=ExperimentalWarning)
+    assets_by_partitions_def: Dict[
+        Optional[PartitionsDefinition], List[AssetsDefinition]
+    ] = defaultdict(list)
+    for assets_def in assets:
+        assets_by_partitions_def[assets_def.partitions_def].append(assets_def)
 
-        assets_by_partitions_def: Dict[
-            Optional[PartitionsDefinition], List[AssetsDefinition]
-        ] = defaultdict(list)
-        for assets_def in assets:
-            assets_by_partitions_def[assets_def.partitions_def].append(assets_def)
+    # We need to create "empty" jobs for each partitions def that is used by an observable but no
+    # materializable asset. They are empty because we don't assign the source asset to the `assets`,
+    # but rather the `source_assets` argument of `build_assets_job`.
+    for observable in [sa for sa in source_assets if sa.is_observable]:
+        if observable.partitions_def not in assets_by_partitions_def:
+            assets_by_partitions_def[observable.partitions_def] = []
+    if len(assets_by_partitions_def.keys()) == 0 or assets_by_partitions_def.keys() == {None}:
+        return [
+            build_assets_job(
+                name=ASSET_BASE_JOB_PREFIX,
+                assets=assets,
+                source_assets=source_assets,
+                executor_def=executor_def,
+                resource_defs=resource_defs,
+            )
+        ]
+    else:
+        unpartitioned_assets = assets_by_partitions_def.get(None, [])
+        partitioned_assets_by_partitions_def = {
+            k: v for k, v in assets_by_partitions_def.items() if k is not None
+        }
+        jobs = []
 
-        if len(assets_by_partitions_def.keys()) == 0 or assets_by_partitions_def.keys() == {None}:
-            return [
+        # sort to ensure some stability in the ordering
+        for i, (partitions_def, assets_with_partitions) in enumerate(
+            sorted(partitioned_assets_by_partitions_def.items(), key=lambda item: repr(item[0]))
+        ):
+            jobs.append(
                 build_assets_job(
-                    name=ASSET_BASE_JOB_PREFIX,
-                    assets=assets,
-                    source_assets=source_assets,
-                    executor_def=executor_def,
+                    f"{ASSET_BASE_JOB_PREFIX}_{i}",
+                    assets=[*assets_with_partitions, *unpartitioned_assets],
+                    source_assets=[*source_assets, *assets],
                     resource_defs=resource_defs,
+                    executor_def=executor_def,
+                    # Only explicitly set partitions_def for observable-only jobs since it can't be
+                    # auto-detected from the passed assets (which is an empty list).
+                    partitions_def=partitions_def if len(assets_with_partitions) == 0 else None,
                 )
-            ]
-        else:
-            unpartitioned_assets = assets_by_partitions_def.get(None, [])
-            partitioned_assets_by_partitions_def = {
-                k: v for k, v in assets_by_partitions_def.items() if k is not None
-            }
-            jobs = []
-
-            # sort to ensure some stability in the ordering
-            for i, (_, assets_with_partitions) in enumerate(
-                sorted(partitioned_assets_by_partitions_def.items(), key=lambda item: repr(item[0]))
-            ):
-                jobs.append(
-                    build_assets_job(
-                        f"{ASSET_BASE_JOB_PREFIX}_{i}",
-                        assets=assets_with_partitions + unpartitioned_assets,
-                        source_assets=[*source_assets, *assets],
-                        resource_defs=resource_defs,
-                        executor_def=executor_def,
-                    )
-                )
-
-            return jobs
+            )
+        return jobs
 
 
-@experimental
 def build_assets_job(
     name: str,
     assets: Sequence[AssetsDefinition],
     source_assets: Optional[Sequence[Union[SourceAsset, AssetsDefinition]]] = None,
-    resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+    resource_defs: Optional[Mapping[str, object]] = None,
     description: Optional[str] = None,
-    config: Optional[Union[ConfigMapping, Mapping[str, object], PartitionedConfig[object]]] = None,
+    config: Optional[
+        Union[ConfigMapping, Mapping[str, object], PartitionedConfig, "RunConfig"]
+    ] = None,
     tags: Optional[Mapping[str, str]] = None,
     executor_def: Optional[ExecutorDefinition] = None,
-    partitions_def: Optional[PartitionsDefinition[object]] = None,
+    partitions_def: Optional[PartitionsDefinition] = None,
     _asset_selection_data: Optional[AssetSelectionData] = None,
 ) -> JobDefinition:
     """Builds a job that materializes the given assets.
@@ -108,7 +132,7 @@ def build_assets_job(
             decorator.
         source_assets (Optional[Sequence[Union[SourceAsset, AssetsDefinition]]]): A list of
             assets that are not materialized by this job, but that assets in this job depend on.
-        resource_defs (Optional[Mapping[str, ResourceDefinition]]): Resource defs to be included in
+        resource_defs (Optional[Mapping[str, object]]): Resource defs to be included in
             this job.
         description (Optional[str]): A description of the job.
 
@@ -128,6 +152,8 @@ def build_assets_job(
     Returns:
         JobDefinition: A job that materializes the given assets.
     """
+    from dagster._core.execution.build_resources import wrap_resources_for_execution
+
     check.str_param(name, "name")
     check.iterable_param(assets, "assets", of_type=(AssetsDefinition, SourceAsset))
     source_assets = check.opt_sequence_param(
@@ -141,6 +167,7 @@ def build_assets_job(
 
     resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
     resource_defs = merge_dicts({DEFAULT_IO_MANAGER_KEY: default_job_io_manager}, resource_defs)
+    wrapped_resource_defs = wrap_resources_for_execution(resource_defs)
 
     # turn any AssetsDefinitions into SourceAssets
     resolved_source_assets: List[SourceAsset] = []
@@ -179,7 +206,7 @@ def build_assets_job(
         graph, assets_defs_by_node_handle, resolved_source_assets, resolved_asset_deps
     )
 
-    all_resource_defs = get_all_resource_defs(assets, resolved_source_assets, resource_defs)
+    all_resource_defs = get_all_resource_defs(assets, resolved_source_assets, wrapped_resource_defs)
 
     if _asset_selection_data:
         original_job = _asset_selection_data.parent_job_def
@@ -191,10 +218,10 @@ def build_assets_job(
             partitions_def=partitions_def,
             asset_layer=asset_layer,
             _asset_selection_data=_asset_selection_data,
-            _metadata_entries=original_job._metadata_entries,  # pylint: disable=protected-access
-            logger_defs=original_job.get_mode_definition().loggers,
+            metadata=original_job.metadata,
+            logger_defs=original_job.loggers,
             hooks=original_job.hook_defs,
-            op_retry_policy=original_job._solid_retry_policy,  # pylint: disable=protected-access
+            op_retry_policy=original_job._op_retry_policy,  # noqa: SLF001
             version_strategy=original_job.version_strategy,
         )
 
@@ -209,7 +236,6 @@ def build_assets_job(
     )
 
 
-@experimental
 def build_source_asset_observation_job(
     name: str,
     source_assets: Sequence[SourceAsset],
@@ -291,10 +317,10 @@ def build_source_asset_observation_job(
             partitions_def=partitions_def,
             asset_layer=asset_layer,
             _asset_selection_data=_asset_selection_data,
-            _metadata_entries=original_job._metadata_entries,  # pylint: disable=protected-access
-            logger_defs=original_job.get_mode_definition().loggers,
+            metadata=original_job.metadata,
+            logger_defs=original_job.loggers,
             hooks=original_job.hook_defs,
-            op_retry_policy=original_job._solid_retry_policy,  # pylint: disable=protected-access
+            op_retry_policy=original_job._op_retry_policy,  # noqa: SLF001
             version_strategy=original_job.version_strategy,
         )
 
@@ -343,10 +369,7 @@ def _key_for_asset(asset: Union[AssetsDefinition, SourceAsset]) -> AssetKey:
 def build_node_deps(
     assets_defs: Iterable[AssetsDefinition],
     resolved_asset_deps: ResolvedAssetDependencies,
-) -> Tuple[
-    Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]],
-    Mapping[NodeHandle, AssetsDefinition],
-]:
+) -> Tuple[DependencyMapping[NodeInvocation], Mapping[NodeHandle, AssetsDefinition],]:
     # sort so that nodes get a consistent name
     assets_defs = sorted(assets_defs, key=lambda ad: (sorted((ak for ak in ad.keys))))
 
@@ -370,15 +393,12 @@ def build_node_deps(
         for output_name, key in assets_def.keys_by_output_name.items():
             node_alias_and_output_by_asset_key[key] = (node_alias, output_name)
 
-    deps: Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]] = {}
+    deps: Dict[NodeInvocation, Dict[str, IDependencyDefinition]] = {}
     for node_handle, assets_def in assets_defs_by_node_handle.items():
         # the key that we'll use to reference the node inside this AssetsDefinition
         node_def_name = assets_def.node_def.name
-        node_key: Union[NodeInvocation, str]
-        if node_handle.name != node_def_name:
-            node_key = NodeInvocation(node_def_name, alias=node_handle.name)
-        else:
-            node_key = node_def_name
+        alias = node_handle.name if node_handle.name != node_def_name else None
+        node_key = NodeInvocation(node_def_name, alias=alias)
         deps[node_key] = {}
 
         # connect each input of this AssetsDefinition to the proper upstream node
@@ -403,18 +423,14 @@ def build_node_deps(
 
 
 def _has_cycles(
-    deps: Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]]
+    deps: DependencyMapping[NodeInvocation],
 ) -> bool:
     """Detect if there are cycles in a dependency dictionary."""
     try:
         node_deps: Dict[str, Set[str]] = {}
         for upstream_node, downstream_deps in deps.items():
             # handle either NodeInvocation or str
-            node_name = (
-                upstream_node.alias or upstream_node.name
-                if isinstance(upstream_node, NodeInvocation)
-                else upstream_node
-            )
+            node_name = upstream_node.alias or upstream_node.name
             node_deps[node_name] = set()
             for dep in downstream_deps.values():
                 if isinstance(dep, DependencyDefinition):
@@ -433,8 +449,7 @@ def _attempt_resolve_cycles(
     assets_defs: Iterable["AssetsDefinition"],
     source_assets: Iterable["SourceAsset"],
 ) -> Sequence["AssetsDefinition"]:
-    """
-    DFS starting at root nodes to color the asset dependency graph. Each time you leave your
+    """DFS starting at root nodes to color the asset dependency graph. Each time you leave your
     current AssetsDefinition, the color increments.
 
     At the end of this process, we'll have a coloring for the asset graph such that any asset which

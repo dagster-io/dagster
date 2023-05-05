@@ -10,7 +10,6 @@ from dagster import (
     InputManager,
     IOManager,
     IOManagerDefinition,
-    MetadataEntry,
     Out,
     PythonObjectDagsterType,
     RootInputManagerDefinition,
@@ -21,10 +20,12 @@ from dagster import (
     job,
     materialize,
     op,
+    repository,
     resource,
     root_input_manager,
 )
 from dagster._core.definitions.events import Failure, RetryRequested
+from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.instance import InstanceRef
 from dagster._utils.test import wrap_op_in_graph_and_execute
@@ -408,9 +409,80 @@ def test_input_manager_with_assets():
         resources={"special_io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
     )
 
-    assert (
-        output._get_output_for_handle("downstream", "result")  # pylint: disable=protected-access
-        == 3
+    assert output._get_output_for_handle("downstream", "result") == 3  # noqa: SLF001
+
+
+def test_input_manager_with_assets_no_default_io_manager():
+    """Tests loading an upstream asset with an input manager when the downstream asset also uses a
+    custom io manager. Fixes a bug where dagster expected the io_manager key to be provided.
+    """
+
+    @asset
+    def upstream() -> int:
+        return 1
+
+    @asset(
+        ins={"upstream": AssetIn(input_manager_key="special_io_manager")},
+        io_manager_key="special_io_manager",
+    )
+    def downstream(upstream) -> int:
+        return upstream + 1
+
+    class MyIOManager(IOManager):
+        def load_input(self, context):
+            assert context.upstream_output is not None
+            assert context.upstream_output.asset_key == AssetKey(["upstream"])
+
+            return 2
+
+        def handle_output(self, context, obj):
+            return None
+
+    materialize(
+        [upstream, downstream],
+        resources={"special_io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+    )
+
+    materialize(
+        [*upstream.to_source_assets(), downstream],
+        resources={"special_io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+    )
+
+
+def test_input_manager_with_assets_and_config():
+    """Tests that the correct config is passed to the io manager when using input_manager_key.
+    Fixes a bug when the config for the default io manager was passed to the input_manager_key io manager.
+    """
+
+    @asset
+    def upstream() -> int:
+        return 1
+
+    @asset(
+        ins={"upstream": AssetIn(input_manager_key="special_io_manager")},
+        io_manager_key="special_io_manager",
+    )
+    def downstream(upstream) -> int:
+        return upstream + 1
+
+    class MyIOManager(IOManager):
+        def load_input(self, context):
+            assert context.resource_config["foo"] == "bar"
+            assert context.upstream_output is not None
+            assert context.upstream_output.asset_key == AssetKey(["upstream"])
+
+            return 2
+
+        def handle_output(self, context, obj):
+            return None
+
+    @io_manager(config_schema={"foo": str})
+    def my_io_manager():
+        return MyIOManager()
+
+    materialize(
+        [upstream, downstream],
+        resources={"special_io_manager": my_io_manager.configured({"foo": "bar"})},
     )
 
 
@@ -481,7 +553,7 @@ def test_configurable_root_input_manager():
 
 
 def test_only_used_for_root():
-    metadata = {"name": 5}
+    metadata = {"name": MetadataValue.int(5)}
 
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
@@ -550,7 +622,7 @@ def test_input_manager_with_failure():
     def should_fail(_):
         raise Failure(
             description="Foolure",
-            metadata_entries=[MetadataEntry("label", value="text")],
+            metadata={"label": "text"},
         )
 
     @op(ins={"_fail_input": In(root_manager_key="should_fail")})
@@ -573,8 +645,7 @@ def test_input_manager_with_failure():
         assert failure_data.error.cls_name == "Failure"
 
         assert failure_data.user_failure_data.description == "Foolure"
-        assert failure_data.user_failure_data.metadata_entries[0].label == "label"
-        assert failure_data.user_failure_data.metadata_entries[0].entry_data.text == "text"
+        assert failure_data.user_failure_data.metadata["label"] == MetadataValue.text("text")
 
 
 def test_input_manager_with_retries():
@@ -705,6 +776,10 @@ def test_resource_not_input_manager():
         def basic():
             op_requires_manager()
 
+        @repository
+        def _my_repo():
+            return [basic]
+
 
 def test_mode_missing_input_manager():
     @op(ins={"a": In(root_manager_key="missing_root_manager")})
@@ -716,6 +791,10 @@ def test_mode_missing_input_manager():
         @job
         def _my_job():
             my_op()
+
+        @repository
+        def _my_repo():
+            return [_my_job]
 
 
 def test_missing_input_manager():

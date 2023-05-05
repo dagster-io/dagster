@@ -7,6 +7,7 @@ from typing import (
     Dict,
     Generator,
     Iterator,
+    Mapping,
     Optional,
     Sequence,
     Tuple,
@@ -17,16 +18,15 @@ from typing import (
 
 from typing_extensions import get_args
 
-from dagster._config.structured_config import Config
+from dagster._config.pythonic_config import Config
 from dagster._core.definitions import (
     AssetMaterialization,
     DynamicOutput,
     ExpectationResult,
-    Materialization,
     Output,
     OutputDefinition,
 )
-from dagster._core.definitions.decorators.solid_decorator import DecoratedOpFunction
+from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.types.dagster_type import DagsterTypeKind, is_generic_output_annotation
@@ -38,11 +38,11 @@ class NoAnnotationSentinel:
     pass
 
 
-def create_solid_compute_wrapper(solid_def: OpDefinition):
-    compute_fn = cast(DecoratedOpFunction, solid_def.compute_fn)
+def create_op_compute_wrapper(op_def: OpDefinition):
+    compute_fn = cast(DecoratedOpFunction, op_def.compute_fn)
     fn = compute_fn.decorated_fn
-    input_defs = solid_def.input_defs
-    output_defs = solid_def.output_defs
+    input_defs = op_def.input_defs
+    output_defs = op_def.output_defs
     context_arg_provided = compute_fn.has_context_arg()
     config_arg_cls = compute_fn.get_config_arg().annotation if compute_fn.has_config_arg() else None
     resource_arg_mapping = {arg.name: arg.name for arg in compute_fn.get_resource_args()}
@@ -69,13 +69,13 @@ def create_solid_compute_wrapper(solid_def: OpDefinition):
                 fn, context, kwargs, context_arg_provided, config_arg_cls, resource_arg_mapping
             )
             if inspect.iscoroutine(result):
-                return _coerce_async_solid_to_async_gen(result, context, output_defs)
+                return _coerce_async_op_to_async_gen(result, context, output_defs)
             # already a generator
             return result
         else:
             # we have a regular function, do not execute it before we are in an iterator
             # (as we want all potential failures to happen inside iterators)
-            return _coerce_solid_compute_fn_to_iterator(
+            return _coerce_op_compute_fn_to_iterator(
                 fn,
                 output_defs,
                 context,
@@ -88,7 +88,7 @@ def create_solid_compute_wrapper(solid_def: OpDefinition):
     return compute
 
 
-async def _coerce_async_solid_to_async_gen(awaitable, context, output_defs):
+async def _coerce_async_op_to_async_gen(awaitable, context, output_defs):
     result = await awaitable
     for event in validate_and_coerce_op_result_to_iterator(result, context, output_defs):
         yield event
@@ -97,12 +97,12 @@ async def _coerce_async_solid_to_async_gen(awaitable, context, output_defs):
 def invoke_compute_fn(
     fn: Callable,
     context: OpExecutionContext,
-    kwargs: Dict[str, Any],
+    kwargs: Mapping[str, Any],
     context_arg_provided: bool,
     config_arg_cls: Optional[Type[Config]],
     resource_args: Optional[Dict[str, str]] = None,
 ) -> Any:
-    args_to_pass = kwargs
+    args_to_pass = {**kwargs}
     if config_arg_cls:
         # config_arg_cls is either a Config class or a primitive type
         if issubclass(config_arg_cls, Config):
@@ -111,11 +111,14 @@ def invoke_compute_fn(
             args_to_pass["config"] = context.op_config
     if resource_args:
         for resource_name, arg_name in resource_args.items():
-            args_to_pass[arg_name] = getattr(context.resources, resource_name)
+            args_to_pass[arg_name] = context.resources._original_resource_dict[  # noqa: SLF001
+                resource_name
+            ]
+
     return fn(context, **args_to_pass) if context_arg_provided else fn(**args_to_pass)
 
 
-def _coerce_solid_compute_fn_to_iterator(
+def _coerce_op_compute_fn_to_iterator(
     fn, output_defs, context, context_arg_provided, kwargs, config_arg_class, resource_arg_mapping
 ):
     result = invoke_compute_fn(
@@ -125,7 +128,7 @@ def _coerce_solid_compute_fn_to_iterator(
         yield event
 
 
-def _zip_and_iterate_solid_result(
+def _zip_and_iterate_op_result(
     result: Any, context: OpExecutionContext, output_defs: Sequence[OutputDefinition]
 ) -> Iterator[Tuple[int, Any, OutputDefinition]]:
     if len(output_defs) > 1:
@@ -189,10 +192,10 @@ def validate_and_coerce_op_result_to_iterator(
     result: Any, context: OpExecutionContext, output_defs: Sequence[OutputDefinition]
 ) -> Generator[Any, None, None]:
     if inspect.isgenerator(result):
-        # this happens when a user explicitly returns a generator in the solid
+        # this happens when a user explicitly returns a generator in the op
         for event in result:
             yield event
-    elif isinstance(result, (AssetMaterialization, Materialization, ExpectationResult)):
+    elif isinstance(result, (AssetMaterialization, ExpectationResult)):
         raise DagsterInvariantViolationError(
             f"Error in {context.describe_op()}: If you are "
             "returning an AssetMaterialization "
@@ -210,7 +213,7 @@ def validate_and_coerce_op_result_to_iterator(
             " return no results."
         )
     elif output_defs:
-        for position, output_def, element in _zip_and_iterate_solid_result(
+        for position, output_def, element in _zip_and_iterate_op_result(
             result, context, output_defs
         ):
             annotation = _get_annotation_for_output_position(position, context.op_def, output_defs)
@@ -240,7 +243,7 @@ def validate_and_coerce_op_result_to_iterator(
                             output_name=output_def.name,
                             value=dynamic_output.value,
                             mapping_key=dynamic_output.mapping_key,
-                            metadata_entries=list(dynamic_output.metadata_entries),
+                            metadata=dynamic_output.metadata,
                         )
             elif isinstance(element, Output):
                 if annotation != inspect.Parameter.empty and not is_generic_output_annotation(
@@ -251,16 +254,16 @@ def validate_and_coerce_op_result_to_iterator(
                         f" output '{output_def.name}' which does not have an Output annotation."
                         f" Annotation has type {annotation}."
                     )
-                output = cast(Output, element)
-                _check_output_object_name(output, output_def, position)
+                _check_output_object_name(element, output_def, position)
 
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore", category=DeprecationWarning)
 
                     yield Output(
                         output_name=output_def.name,
-                        value=output.value,
-                        metadata_entries=output.metadata_entries,
+                        value=element.value,
+                        metadata=element.metadata,
+                        data_version=element.data_version,
                     )
             else:
                 # If annotation indicates a generic output annotation, and an
@@ -273,7 +276,7 @@ def validate_and_coerce_op_result_to_iterator(
                         f"Received instead an object of type {type(element)}."
                     )
                 if result is None and output_def.is_required is False:
-                    context.log.warn(
+                    context.log.warning(
                         'Value "None" returned for non-required output '
                         f'"{output_def.name}" of {context.describe_op()}. '
                         "This value will be passed to downstream "

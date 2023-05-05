@@ -1,17 +1,17 @@
-# pylint: disable=no-value-for-parameter
-
 import datetime
 import sys
 import uuid
 from unittest import mock
 
+import google
 import google.api_core.exceptions
 import pandas as pd
 import pytest
 from dagster import DagsterExecutionStepExecutionError, List, Nothing, job, op
 from dagster._config import process_config, validate_config
 from dagster._core.definitions import create_run_config_schema
-from dagster._legacy import InputDefinition, OutputDefinition
+from dagster._core.definitions.input import In
+from dagster._core.definitions.output import Out
 from dagster_gcp import (
     bigquery_resource,
     bq_create_dataset,
@@ -21,7 +21,7 @@ from dagster_gcp import (
     import_gcs_paths_to_bq,
 )
 from dagster_pandas import DataFrame
-from google.cloud import bigquery  # type: ignore
+from google.cloud import bigquery
 from google.cloud.exceptions import NotFound
 
 
@@ -52,7 +52,6 @@ def test_simple_queries():
                 # Toy example query
                 "SELECT 1 AS field1, 2 AS field2;",
                 # Test access of public BQ historical dataset (only processes ~2MB here)
-                # pylint: disable=line-too-long
                 """SELECT *
             FROM `weathersource-com.pub_weather_data_samples.sample_weather_history_anomaly_us_zipcode_daily`
             ORDER BY postal_code ASC, date_valid_std ASC
@@ -83,7 +82,6 @@ def test_simple_queries():
     }
 
 
-# pylint: disable=line-too-long
 def test_bad_config():
     configs_and_expected_errors = [
         (
@@ -218,10 +216,10 @@ def test_pd_df_load():
     delete_op = bq_delete_dataset.alias("delete_op")
 
     @op(
-        input_defs=[InputDefinition("success", Nothing)],
-        output_defs=[OutputDefinition(DataFrame)],
+        ins={"success": In(Nothing)},
+        out=Out(DataFrame),
     )
-    def return_df(_context):  # pylint: disable=unused-argument
+    def return_df(_context):
         return test_df
 
     @job(resource_defs={"bigquery": bigquery_resource})
@@ -290,10 +288,10 @@ def test_gcs_load():
     delete_op = bq_delete_dataset.alias("delete_op")
 
     @op(
-        input_defs=[InputDefinition("success", Nothing)],
-        output_defs=[OutputDefinition(List[str])],
+        ins={"success": In(Nothing)},
+        out=Out(List[str]),
     )
-    def return_gcs_uri(_context):  # pylint: disable=unused-argument
+    def return_gcs_uri(_context):
         return ["gs://cloud-samples-data/bigquery/us-states/us-states.csv"]
 
     @job(resource_defs={"bigquery": bigquery_resource})

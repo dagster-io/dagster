@@ -9,27 +9,29 @@ from dagster._utils.backcompat import deprecation_warning
 
 if TYPE_CHECKING:
     from dagster._core.definitions.graph_definition import GraphDefinition
-    from dagster._core.definitions.pipeline_definition import PipelineDefinition
+    from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.run_status_sensor_definition import RunFailureSensorContext
+    from dagster._core.definitions.selector import JobSelector, RepositorySelector
     from dagster._core.definitions.unresolved_asset_job_definition import (
         UnresolvedAssetJobDefinition,
     )
-    from dagster._core.host_representation.selector import JobSelector, RepositorySelector
 
 
-def _default_failure_email_body(context) -> str:
+def _default_failure_email_body(context: "RunFailureSensorContext") -> str:
+    from dagster._core.host_representation.external_data import DEFAULT_MODE_NAME
+
     return "<br>".join(
         [
-            f"Pipeline {context.pipeline_run.pipeline_name} failed!",
-            f"Run ID: {context.pipeline_run.run_id}",
-            f"Mode: {context.pipeline_run.mode}",
+            f"Pipeline {context.dagster_run.job_name} failed!",
+            f"Run ID: {context.dagster_run.run_id}",
+            f"Mode: {DEFAULT_MODE_NAME}",
             f"Error: {context.failure_event.message}",
         ]
     )
 
 
 def _default_failure_email_subject(context) -> str:
-    return f"Dagster Run Failed: {context.pipeline_run.pipeline_name}"
+    return f"Dagster Run Failed: {context.pipeline_run.job_name}"
 
 
 EMAIL_MESSAGE = """From: {email_from}
@@ -88,7 +90,7 @@ def make_email_on_run_failure_sensor(
     monitored_jobs: Optional[
         Sequence[
             Union[
-                "PipelineDefinition",
+                "JobDefinition",
                 "GraphDefinition",
                 "UnresolvedAssetJobDefinition",
                 "RepositorySelector",
@@ -99,7 +101,7 @@ def make_email_on_run_failure_sensor(
     job_selection: Optional[
         Sequence[
             Union[
-                "PipelineDefinition",
+                "JobDefinition",
                 "GraphDefinition",
                 "UnresolvedAssetJobDefinition",
                 "RepositorySelector",
@@ -128,14 +130,14 @@ def make_email_on_run_failure_sensor(
         name: (Optional[str]): The name of the sensor. Defaults to "email_on_job_failure".
         dagit_base_url: (Optional[str]): The base url of your Dagit instance. Specify this to allow
             messages to include deeplinks to the failed run.
-        monitored_jobs (Optional[List[Union[JobDefinition, GraphDefinition, PipelineDefinition, RepositorySelector, JobSelector]]]):
+        monitored_jobs (Optional[List[Union[JobDefinition, GraphDefinition, JobDefinition, RepositorySelector, JobSelector]]]):
             The jobs that will be monitored by this failure sensor. Defaults to None, which means the alert will
             be sent when any job in the repository fails. To monitor jobs in external repositories,
             use RepositorySelector and JobSelector.
         monitor_all_repositories (bool): If set to True, the sensor will monitor all runs in the
             Dagster instance. If set to True, an error will be raised if you also specify
             monitored_jobs or job_selection. Defaults to False.
-        job_selection (Optional[List[Union[JobDefinition, GraphDefinition, PipelineDefinition,  RepositorySelector, JobSelector]]]):
+        job_selection (Optional[List[Union[JobDefinition, GraphDefinition, JobDefinition,  RepositorySelector, JobSelector]]]):
             (deprecated in favor of monitored_jobs) The jobs that will be monitored by this failure
             sensor. Defaults to None, which means the alert will be sent when any job in the repository fails.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
@@ -158,7 +160,7 @@ def make_email_on_run_failure_sensor(
 
             def my_message_fn(context: RunFailureSensorContext) -> str:
                 return (
-                    f"Job {context.pipeline_run.pipeline_name} failed!"
+                    f"Job {context.pipeline_run.job_name} failed!"
                     f"Error: {context.failure_event.message}"
                 )
 
@@ -192,7 +194,7 @@ def make_email_on_run_failure_sensor(
         email_body = email_body_fn(context)
         if dagit_base_url:
             email_body += (
-                f'<p><a href="{dagit_base_url}/instance/runs/{context.pipeline_run.run_id}">View in'
+                f'<p><a href="{dagit_base_url}/instance/runs/{context.dagster_run.run_id}">View in'
                 " Dagit</a></p>"
             )
 

@@ -27,15 +27,16 @@ export type RunsRootQuery = {
         results: Array<{
           __typename: 'Run';
           id: string;
-          runId: string;
           status: Types.RunStatus;
           stepKeysToExecute: Array<string> | null;
           canTerminate: boolean;
+          hasReExecutePermission: boolean;
+          hasTerminatePermission: boolean;
+          hasDeletePermission: boolean;
           mode: string;
           rootRunId: string | null;
           parentRunId: string | null;
           pipelineSnapshotId: string | null;
-          parentPipelineSnapshotId: string | null;
           pipelineName: string;
           solidSelection: Array<string> | null;
           startTime: number | null;
@@ -59,6 +60,7 @@ export type QueueDaemonStatusQuery = {
   __typename: 'DagitQuery';
   instance: {
     __typename: 'Instance';
+    id: string;
     daemonHealth: {
       __typename: 'DaemonHealth';
       id: string;

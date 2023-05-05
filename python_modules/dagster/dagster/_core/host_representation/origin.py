@@ -1,42 +1,34 @@
 import os
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from inspect import Parameter
 from typing import (
     TYPE_CHECKING,
     Any,
-    Dict,
-    Generator,
+    Iterator,
     Mapping,
     NamedTuple,
     NoReturn,
     Optional,
     Sequence,
-    Set,
-    Type,
     cast,
 )
 
 import dagster._check as check
+from dagster._core.definitions.selector import PartitionSetSelector, RepositorySelector
 from dagster._core.errors import DagsterInvariantViolationError, DagsterUserCodeUnreachableError
 from dagster._core.instance.config import DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT
 from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._serdes import (
-    DefaultNamedTupleSerializer,
     create_snapshot_id,
-    register_serdes_tuple_fallbacks,
     whitelist_for_serdes,
 )
-from dagster._serdes.serdes import WhitelistMap, unpack_inner_value
-
-from .selector import PartitionSetSelector, RepositorySelector
 
 if TYPE_CHECKING:
-    from dagster._core.host_representation.repository_location import (
-        GrpcServerRepositoryLocation,
-        InProcessRepositoryLocation,
-        RepositoryLocation,
+    from dagster._core.host_representation.code_location import (
+        CodeLocation,
+        GrpcServerCodeLocation,
+        InProcessCodeLocation,
     )
     from dagster._core.instance import DagsterInstance
     from dagster._grpc.client import DagsterGrpcClient
@@ -83,8 +75,8 @@ def _assign_loadable_target_origin_name(loadable_target_origin: LoadableTargetOr
     )
 
 
-class RepositoryLocationOrigin(ABC, tuple):
-    """Serializable representation of a RepositoryLocation that can be used to
+class CodeLocationOrigin(ABC, tuple):
+    """Serializable representation of a CodeLocation that can be used to
     uniquely identify the location or reload it in across process boundaries.
     """
 
@@ -104,7 +96,9 @@ class RepositoryLocationOrigin(ABC, tuple):
         pass
 
     def get_id(self) -> str:
-        return create_snapshot_id(self)
+        # Type-ignored because `create_snapshot` takes a `NamedTuple`, and all descendants of this
+        # class are `NamedTuple`, but we can't specify `NamedTuple` in the signature here.
+        return create_snapshot_id(self)  # type: ignore
 
     @property
     @abstractmethod
@@ -112,14 +106,15 @@ class RepositoryLocationOrigin(ABC, tuple):
         pass
 
     @abstractmethod
-    def create_location(self) -> "RepositoryLocation":
+    def create_location(self) -> "CodeLocation":
         pass
 
 
-@whitelist_for_serdes
-class RegisteredRepositoryLocationOrigin(
-    NamedTuple("RegisteredRepositoryLocationOrigin", [("location_name", str)]),
-    RepositoryLocationOrigin,
+# Different storage name for backcompat
+@whitelist_for_serdes(storage_name="RegisteredRepositoryLocationOrigin")
+class RegisteredCodeLocationOrigin(
+    NamedTuple("RegisteredCodeLocationOrigin", [("location_name", str)]),
+    CodeLocationOrigin,
 ):
     """Identifies a repository location of a handle managed using metadata stored outside of the
     origin - can only be loaded in an environment that is managing repository locations using
@@ -127,22 +122,23 @@ class RegisteredRepositoryLocationOrigin(
     """
 
     def __new__(cls, location_name: str):
-        return super(RegisteredRepositoryLocationOrigin, cls).__new__(cls, location_name)
+        return super(RegisteredCodeLocationOrigin, cls).__new__(cls, location_name)
 
     def get_display_metadata(self) -> Mapping[str, Any]:
         return {}
 
     def create_location(self) -> NoReturn:
         raise DagsterInvariantViolationError(
-            "A RegisteredRepositoryLocationOrigin does not have enough information to load its "
+            "A RegisteredCodeLocationOrigin does not have enough information to load its "
             "repository location on its own."
         )
 
 
-@whitelist_for_serdes
-class InProcessRepositoryLocationOrigin(
+# Different storage name for backcompat
+@whitelist_for_serdes(storage_name="InProcessRepositoryLocationOrigin")
+class InProcessCodeLocationOrigin(
     NamedTuple(
-        "_InProcessRepositoryLocationOrigin",
+        "_InProcessCodeLocationOrigin",
         [
             ("loadable_target_origin", LoadableTargetOrigin),
             ("container_image", Optional[str]),
@@ -151,7 +147,7 @@ class InProcessRepositoryLocationOrigin(
             ("location_name", str),
         ],
     ),
-    RepositoryLocationOrigin,
+    CodeLocationOrigin,
 ):
     """Identifies a repository location constructed in the same process. Primarily
     used in tests, since Dagster system processes like Dagit and the daemon do not
@@ -166,7 +162,7 @@ class InProcessRepositoryLocationOrigin(
         container_context=None,
         location_name: Optional[str] = None,
     ):
-        return super(InProcessRepositoryLocationOrigin, cls).__new__(
+        return super(InProcessCodeLocationOrigin, cls).__new__(
             cls,
             check.inst_param(
                 loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin
@@ -190,21 +186,22 @@ class InProcessRepositoryLocationOrigin(
     def get_display_metadata(self) -> Mapping[str, Any]:
         return {}
 
-    def create_location(self) -> "InProcessRepositoryLocation":
-        from dagster._core.host_representation.repository_location import (
-            InProcessRepositoryLocation,
+    def create_location(self) -> "InProcessCodeLocation":
+        from dagster._core.host_representation.code_location import (
+            InProcessCodeLocation,
         )
 
-        return InProcessRepositoryLocation(self)
+        return InProcessCodeLocation(self)
 
 
-@whitelist_for_serdes
-class ManagedGrpcPythonEnvRepositoryLocationOrigin(
+# Different storage name for backcompat
+@whitelist_for_serdes(storage_name="ManagedGrpcPythonEnvRepositoryLocationOrigin")
+class ManagedGrpcPythonEnvCodeLocationOrigin(
     NamedTuple(
-        "_ManagedGrpcPythonEnvRepositoryLocationOrigin",
+        "_ManagedGrpcPythonEnvCodeLocationOrigin",
         [("loadable_target_origin", LoadableTargetOrigin), ("location_name", str)],
     ),
-    RepositoryLocationOrigin,
+    CodeLocationOrigin,
 ):
     """Identifies a repository location in a Python environment. Dagster creates a gRPC server
     for these repository locations on startup.
@@ -213,7 +210,7 @@ class ManagedGrpcPythonEnvRepositoryLocationOrigin(
     def __new__(
         cls, loadable_target_origin: LoadableTargetOrigin, location_name: Optional[str] = None
     ):
-        return super(ManagedGrpcPythonEnvRepositoryLocationOrigin, cls).__new__(
+        return super(ManagedGrpcPythonEnvCodeLocationOrigin, cls).__new__(
             cls,
             check.inst_param(
                 loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin
@@ -236,7 +233,7 @@ class ManagedGrpcPythonEnvRepositoryLocationOrigin(
 
     def create_location(self) -> NoReturn:
         raise DagsterInvariantViolationError(
-            "A ManagedGrpcPythonEnvRepositoryLocationOrigin needs a DynamicWorkspace"
+            "A ManagedGrpcPythonEnvCodeLocationOrigin needs a DynamicWorkspace"
             " in order to create a handle."
         )
 
@@ -244,13 +241,13 @@ class ManagedGrpcPythonEnvRepositoryLocationOrigin(
     def create_single_location(
         self,
         instance: "DagsterInstance",
-    ) -> Generator["RepositoryLocation", None, None]:
+    ) -> Iterator["GrpcServerCodeLocation"]:
         from dagster._core.workspace.context import DAGIT_GRPC_SERVER_HEARTBEAT_TTL
 
-        from .grpc_server_registry import ProcessGrpcServerRegistry
-        from .repository_location import GrpcServerRepositoryLocation
+        from .code_location import GrpcServerCodeLocation
+        from .grpc_server_registry import GrpcServerRegistry
 
-        with ProcessGrpcServerRegistry(
+        with GrpcServerRegistry(
             instance=instance,
             reload_interval=0,
             heartbeat_ttl=DAGIT_GRPC_SERVER_HEARTBEAT_TTL,
@@ -259,7 +256,7 @@ class ManagedGrpcPythonEnvRepositoryLocationOrigin(
             else DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT,
         ) as grpc_server_registry:
             endpoint = grpc_server_registry.get_grpc_endpoint(self)
-            with GrpcServerRepositoryLocation(
+            with GrpcServerCodeLocation(
                 origin=self,
                 server_id=endpoint.server_id,
                 port=endpoint.port,
@@ -272,16 +269,13 @@ class ManagedGrpcPythonEnvRepositoryLocationOrigin(
                 yield location
 
 
-class GrpcServerOriginSerializer(DefaultNamedTupleSerializer):
-    @classmethod
-    def skip_when_empty(cls) -> Set[str]:
-        return {"use_ssl"}  # Maintain stable origin ID for origins without use_ssl set
-
-
-@whitelist_for_serdes(serializer=GrpcServerOriginSerializer)
-class GrpcServerRepositoryLocationOrigin(
+# Different storage name for backcompat
+@whitelist_for_serdes(
+    storage_name="GrpcServerRepositoryLocationOrigin", skip_when_empty_fields={"use_ssl"}
+)
+class GrpcServerCodeLocationOrigin(
     NamedTuple(
-        "_GrpcServerRepositoryLocationOrigin",
+        "_GrpcServerCodeLocationOrigin",
         [
             ("host", str),
             ("port", Optional[int]),
@@ -290,7 +284,7 @@ class GrpcServerRepositoryLocationOrigin(
             ("use_ssl", Optional[bool]),
         ],
     ),
-    RepositoryLocationOrigin,
+    CodeLocationOrigin,
 ):
     """Identifies a repository location hosted in a gRPC server managed by the user. Dagster
     is not responsible for managing the lifecycle of the server.
@@ -304,7 +298,7 @@ class GrpcServerRepositoryLocationOrigin(
         location_name: Optional[str] = None,
         use_ssl: Optional[bool] = None,
     ):
-        return super(GrpcServerRepositoryLocationOrigin, cls).__new__(
+        return super(GrpcServerCodeLocationOrigin, cls).__new__(
             cls,
             check.str_param(host, "host"),
             check.opt_int_param(port, "port"),
@@ -323,12 +317,12 @@ class GrpcServerRepositoryLocationOrigin(
         }
         return {key: value for key, value in metadata.items() if value is not None}
 
-    def create_location(self) -> "GrpcServerRepositoryLocation":
-        from dagster._core.host_representation.repository_location import (
-            GrpcServerRepositoryLocation,
+    def create_location(self) -> "GrpcServerCodeLocation":
+        from dagster._core.host_representation.code_location import (
+            GrpcServerCodeLocation,
         )
 
-        return GrpcServerRepositoryLocation(self)
+        return GrpcServerCodeLocation(self)
 
     def create_client(self) -> "DagsterGrpcClient":
         from dagster._grpc.client import DagsterGrpcClient
@@ -352,23 +346,22 @@ class GrpcServerRepositoryLocationOrigin(
             pass
 
 
-@whitelist_for_serdes
+# Different storage field name for backcompat
+@whitelist_for_serdes(storage_field_names={"code_location_origin": "repository_location_origin"})
 class ExternalRepositoryOrigin(
     NamedTuple(
         "_ExternalRepositoryOrigin",
-        [("repository_location_origin", RepositoryLocationOrigin), ("repository_name", str)],
+        [("code_location_origin", CodeLocationOrigin), ("repository_name", str)],
     )
 ):
     """Serializable representation of an ExternalRepository that can be used to
     uniquely it or reload it in across process boundaries.
     """
 
-    def __new__(cls, repository_location_origin: RepositoryLocationOrigin, repository_name: str):
+    def __new__(cls, code_location_origin: CodeLocationOrigin, repository_name: str):
         return super(ExternalRepositoryOrigin, cls).__new__(
             cls,
-            check.inst_param(
-                repository_location_origin, "repository_location_origin", RepositoryLocationOrigin
-            ),
+            check.inst_param(code_location_origin, "code_location_origin", CodeLocationOrigin),
             check.str_param(repository_name, "repository_name"),
         )
 
@@ -377,14 +370,14 @@ class ExternalRepositoryOrigin(
 
     def get_selector_id(self) -> str:
         return create_snapshot_id(
-            RepositorySelector(self.repository_location_origin.location_name, self.repository_name)
+            RepositorySelector(self.code_location_origin.location_name, self.repository_name)
         )
 
     def get_label(self) -> str:
-        return f"{self.repository_name}@{self.repository_location_origin.location_name}"
+        return f"{self.repository_name}@{self.code_location_origin.location_name}"
 
-    def get_pipeline_origin(self, pipeline_name: str) -> "ExternalPipelineOrigin":
-        return ExternalPipelineOrigin(self, pipeline_name)
+    def get_job_origin(self, job_name: str) -> "ExternalJobOrigin":
+        return ExternalJobOrigin(self, job_name)
 
     def get_instigator_origin(self, instigator_name: str) -> "ExternalInstigatorOrigin":
         return ExternalInstigatorOrigin(self, instigator_name)
@@ -393,26 +386,28 @@ class ExternalRepositoryOrigin(
         return ExternalPartitionSetOrigin(self, partition_set_name)
 
 
-@whitelist_for_serdes
-class ExternalPipelineOrigin(
+@whitelist_for_serdes(
+    storage_name="ExternalPipelineOrigin", storage_field_names={"job_name": "pipeline_name"}
+)
+class ExternalJobOrigin(
     NamedTuple(
-        "_ExternalPipelineOrigin",
-        [("external_repository_origin", ExternalRepositoryOrigin), ("pipeline_name", str)],
+        "_ExternalJobOrigin",
+        [("external_repository_origin", ExternalRepositoryOrigin), ("job_name", str)],
     )
 ):
     """Serializable representation of an ExternalPipeline that can be used to
     uniquely it or reload it in across process boundaries.
     """
 
-    def __new__(cls, external_repository_origin: ExternalRepositoryOrigin, pipeline_name: str):
-        return super(ExternalPipelineOrigin, cls).__new__(
+    def __new__(cls, external_repository_origin: ExternalRepositoryOrigin, job_name: str):
+        return super(ExternalJobOrigin, cls).__new__(
             cls,
             check.inst_param(
                 external_repository_origin,
                 "external_repository_origin",
                 ExternalRepositoryOrigin,
             ),
-            check.str_param(pipeline_name, "pipeline_name"),
+            check.str_param(job_name, "job_name"),
         )
 
     def get_id(self) -> str:
@@ -420,57 +415,18 @@ class ExternalPipelineOrigin(
 
     @property
     def location_name(self) -> str:
-        return self.external_repository_origin.repository_location_origin.location_name
+        return self.external_repository_origin.code_location_origin.location_name
 
 
-class ExternalInstigatorOriginSerializer(DefaultNamedTupleSerializer):
-    @classmethod
-    def value_from_storage_dict(
-        cls,
-        storage_dict: Dict[str, Any],
-        klass: Type,
-        args_for_class: Mapping[str, Parameter],
-        whitelist_map: WhitelistMap,
-        descent_path: str,
-    ) -> NamedTuple:
-        raw_dict = {
-            key: unpack_inner_value(value, whitelist_map, f"{descent_path}.{key}")
-            for key, value in storage_dict.items()
-        }
-        # the stored key for the instigator name should always be `job_name`, for backcompat
-        # and origin id stability (hash of the serialized tuple).  Make sure we fetch it from the
-        # raw storage dict and pass it in as instigator_name to ExternalInstigatorOrigin
-        instigator_name = raw_dict.get("job_name")
-        return klass(
-            **{key: value for key, value in raw_dict.items() if key in args_for_class},
-            instigator_name=instigator_name,
-        )
-
-    @classmethod
-    def value_to_storage_dict(
-        cls,
-        value: NamedTuple,
-        whitelist_map: WhitelistMap,
-        descent_path: str,
-    ) -> Dict[str, Any]:
-        storage = super().value_to_storage_dict(
-            value,
-            whitelist_map,
-            descent_path,
-        )
-        instigator_name = storage.get("instigator_name") or storage.get("job_name")
-        if "instigator_name" in storage:
-            del storage["instigator_name"]
-        # the stored key for the instigator name should always be `job_name`, for backcompat
-        # and origin id stability (hash of the serialized tuple).  Make sure we fetch it from the
-        # raw storage dict and pass it in as instigator_name to ExternalInstigatorOrigin
-        storage["job_name"] = instigator_name
-        # persist using legacy name
-        storage["__class__"] = "ExternalJobOrigin"
-        return storage
-
-
-@whitelist_for_serdes(serializer=ExternalInstigatorOriginSerializer)
+@whitelist_for_serdes(
+    # ExternalInstigatorOrigin used to be called ExternalJobOrigin, before the concept of "job" was
+    # introduced in 0.12.0. For clarity, we changed the name of the namedtuple with `0.14.0`, but we
+    # need to maintain the serialized format in order to avoid changing the origin id that is stored in
+    # our schedule storage.  This registers the serialized ExternalJobOrigin named tuple class to be
+    # deserialized as an ExternalInstigatorOrigin, using its corresponding serializer for serdes.
+    storage_name="ExternalJobOrigin",
+    storage_field_names={"instigator_name": "job_name"},
+)
 class ExternalInstigatorOrigin(
     NamedTuple(
         "_ExternalInstigatorOrigin",
@@ -494,14 +450,6 @@ class ExternalInstigatorOrigin(
 
     def get_id(self) -> str:
         return create_snapshot_id(self)
-
-
-# ExternalInstigatorOrigin used to be called ExternalJobOrigin, before the concept of "job" was
-# introduced in 0.12.0. For clarity, we changed the name of the namedtuple with `0.14.0`, but we
-# need to maintain the serialized format in order to avoid changing the origin id that is stored in
-# our schedule storage.  This registers the serialized ExternalJobOrigin named tuple class to be
-# deserialized as an ExternalInstigatorOrigin, using its corresponding serializer for serdes.
-register_serdes_tuple_fallbacks({"ExternalJobOrigin": ExternalInstigatorOrigin})
 
 
 @whitelist_for_serdes
@@ -532,7 +480,7 @@ class ExternalPartitionSetOrigin(
     @property
     def selector(self) -> PartitionSetSelector:
         return PartitionSetSelector(
-            self.external_repository_origin.repository_location_origin.location_name,
+            self.external_repository_origin.code_location_origin.location_name,
             self.external_repository_origin.repository_name,
             self.partition_set_name,
         )

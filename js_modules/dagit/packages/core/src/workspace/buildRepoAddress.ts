@@ -19,8 +19,3 @@ export const buildRepoPathForURL = (name: string, location: string) => {
   const encodedLocation = encodeURIComponent(location);
   return name === DUNDER_REPO_NAME ? encodedLocation : `${name}@${encodedLocation}`;
 };
-
-// todo dish: Temporary for cloud compatibility. Delete after cloud is updated.
-export const buildRepoPath = (name: string, location: string) => {
-  return buildRepoPathForHuman(name, location);
-};

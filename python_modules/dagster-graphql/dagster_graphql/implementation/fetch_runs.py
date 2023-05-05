@@ -1,81 +1,95 @@
 from collections import defaultdict
-from typing import TYPE_CHECKING, Dict, KeysView, List, Mapping, Sequence, cast
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Dict,
+    KeysView,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    cast,
+)
 
 from dagster import (
     AssetKey,
     _check as check,
 )
-from dagster._config import validate_config
-from dagster._core.definitions import create_run_config_schema
+from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.errors import DagsterRunNotFoundError
 from dagster._core.execution.stats import RunStepKeyStatsSnapshot, StepEventStatus
-from dagster._core.host_representation import PipelineSelector
-from dagster._core.storage.pipeline_run import RunRecord, RunsFilter
+from dagster._core.storage.dagster_run import DagsterRunStatus, RunRecord, RunsFilter
 from dagster._core.storage.tags import TagType, get_tag_type
-from dagster._legacy import DagsterRunStatus, PipelineDefinition
-from graphene import ResolveInfo
 
-from .external import ensure_valid_config, get_external_pipeline_or_raise
-from .utils import UserFacingGraphQLError, capture_error
+from .external import ensure_valid_config, get_external_job_or_raise
+from .utils import capture_error
 
 if TYPE_CHECKING:
-    from ..schema.asset_graph import GrapheneAssetNode
+    from ..schema.asset_graph import GrapheneAssetLatestInfo, GrapheneAssetNode
+    from ..schema.errors import GrapheneRunNotFoundError
+    from ..schema.execution import GrapheneExecutionPlan
+    from ..schema.logs.events import GrapheneRunStepStats
+    from ..schema.pipelines.config import GraphenePipelineConfigValidationValid
+    from ..schema.pipelines.pipeline import GrapheneEventConnection, GrapheneRun
+    from ..schema.pipelines.pipeline_run_stats import GrapheneRunStatsSnapshot
+    from ..schema.runs import GrapheneRunGroup, GrapheneRunTagKeys, GrapheneRunTags
+    from ..schema.util import ResolveInfo
 
 
-def is_config_valid(pipeline_def, run_config, mode):
-    check.str_param(mode, "mode")
-    check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
-
-    run_config_schema = create_run_config_schema(pipeline_def, mode)
-    validated_config = validate_config(run_config_schema.config_type, run_config)
-    return validated_config.success
-
-
-def get_validated_config(pipeline_def, run_config, mode):
-    from ..schema.pipelines.config import GrapheneRunConfigValidationInvalid
-
-    check.str_param(mode, "mode")
-    check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
-
-    run_config_schema = create_run_config_schema(pipeline_def, mode)
-
-    validated_config = validate_config(run_config_schema.config_type, run_config)
-
-    if not validated_config.success:
-        raise UserFacingGraphQLError(
-            GrapheneRunConfigValidationInvalid.for_validation_errors(
-                pipeline_def.get_external_pipeline(), validated_config.errors
-            )
-        )
-
-    return validated_config
-
-
-def get_run_by_id(graphene_info, run_id):
+def get_run_by_id(
+    graphene_info: "ResolveInfo", run_id: str
+) -> Union["GrapheneRun", "GrapheneRunNotFoundError"]:
     from ..schema.errors import GrapheneRunNotFoundError
     from ..schema.pipelines.pipeline import GrapheneRun
 
     instance = graphene_info.context.instance
-    records = instance.get_run_records(RunsFilter(run_ids=[run_id]))
-    if not records:
+    record = instance.get_run_record_by_id(run_id)
+    if not record:
         return GrapheneRunNotFoundError(run_id)
     else:
-        return GrapheneRun(records[0])
-
-
-def get_run_tags(graphene_info):
-    from ..schema.tags import GraphenePipelineTagAndValues
-
-    instance = graphene_info.context.instance
-    return [
-        GraphenePipelineTagAndValues(key=key, values=values)
-        for key, values in instance.get_run_tags()
-        if get_tag_type(key) != TagType.HIDDEN
-    ]
+        return GrapheneRun(record)
 
 
 @capture_error
-def get_run_group(graphene_info, run_id):
+def get_run_tag_keys(graphene_info: "ResolveInfo") -> "GrapheneRunTagKeys":
+    from ..schema.runs import GrapheneRunTagKeys
+
+    return GrapheneRunTagKeys(
+        keys=[
+            tag_key
+            for tag_key in graphene_info.context.instance.get_run_tag_keys()
+            if get_tag_type(tag_key) != TagType.HIDDEN
+        ]
+    )
+
+
+@capture_error
+def get_run_tags(
+    graphene_info: "ResolveInfo",
+    tag_keys: Optional[List[str]] = None,
+    value_prefix: Optional[str] = None,
+    limit: Optional[int] = None,
+) -> "GrapheneRunTags":
+    from ..schema.runs import GrapheneRunTags
+    from ..schema.tags import GraphenePipelineTagAndValues
+
+    instance = graphene_info.context.instance
+    return GrapheneRunTags(
+        tags=[
+            GraphenePipelineTagAndValues(key=key, values=values)
+            for key, values in instance.get_run_tags(
+                tag_keys=tag_keys, value_prefix=value_prefix, limit=limit
+            )
+            if get_tag_type(key) != TagType.HIDDEN
+        ]
+    )
+
+
+@capture_error
+def get_run_group(graphene_info: "ResolveInfo", run_id: str) -> "GrapheneRunGroup":
     from ..schema.errors import GrapheneRunGroupNotFoundError
     from ..schema.pipelines.pipeline import GrapheneRun
     from ..schema.runs import GrapheneRunGroup
@@ -83,21 +97,28 @@ def get_run_group(graphene_info, run_id):
     instance = graphene_info.context.instance
     try:
         result = instance.get_run_group(run_id)
+        if result is None:
+            return GrapheneRunGroupNotFoundError(run_id)
     except DagsterRunNotFoundError:
         return GrapheneRunGroupNotFoundError(run_id)
     root_run_id, run_group = result
     run_group_run_ids = [run.run_id for run in run_group]
     records_by_id = {
-        record.pipeline_run.run_id: record
+        record.dagster_run.run_id: record
         for record in instance.get_run_records(RunsFilter(run_ids=run_group_run_ids))
     }
     return GrapheneRunGroup(
         root_run_id=root_run_id,
-        runs=[GrapheneRun(records_by_id.get(run_id)) for run_id in run_group_run_ids],
+        runs=[GrapheneRun(records_by_id[run_id]) for run_id in run_group_run_ids],
     )
 
 
-def get_runs(graphene_info, filters, cursor=None, limit=None):
+def get_runs(
+    graphene_info: "ResolveInfo",
+    filters: Optional[RunsFilter],
+    cursor: Optional[str] = None,
+    limit: Optional[int] = None,
+) -> Sequence["GrapheneRun"]:
     from ..schema.pipelines.pipeline import GrapheneRun
 
     check.opt_inst_param(filters, "filters", RunsFilter)
@@ -129,7 +150,7 @@ IN_PROGRESS_STATUSES = [
 def add_all_upstream_keys(
     all_asset_nodes: Mapping[AssetKey, "GrapheneAssetNode"],
     requested_asset_keys: KeysView[AssetKey],
-):
+) -> Sequence[AssetKey]:
     required: Dict[AssetKey, bool] = {}
 
     def append_key_and_upstream(key: AssetKey):
@@ -143,10 +164,12 @@ def add_all_upstream_keys(
     for asset_key in requested_asset_keys:
         append_key_and_upstream(asset_key)
 
-    return required.keys()
+    return list(required.keys())
 
 
-def get_assets_latest_info(graphene_info, step_keys_by_asset: Mapping[AssetKey, Sequence[str]]):
+def get_assets_latest_info(
+    graphene_info: "ResolveInfo", step_keys_by_asset: Mapping[AssetKey, Sequence[str]]
+) -> Sequence["GrapheneAssetLatestInfo"]:
     from dagster_graphql.implementation.fetch_assets import get_asset_nodes_by_asset_key
 
     from ..schema.asset_graph import GrapheneAssetLatestInfo
@@ -186,9 +209,9 @@ def get_assets_latest_info(graphene_info, step_keys_by_asset: Mapping[AssetKey, 
     if run_ids:
         run_records = instance.get_run_records(RunsFilter(run_ids=run_ids))
         for run_record in run_records:
-            if run_record.pipeline_run.status in PENDING_STATUSES:
+            if run_record.dagster_run.status in PENDING_STATUSES:
                 in_progress_records.append(run_record)
-            run_records_by_run_id[run_record.pipeline_run.run_id] = run_record
+            run_records_by_run_id[run_record.dagster_run.run_id] = run_record
 
     (
         in_progress_run_ids_by_asset,
@@ -213,10 +236,10 @@ def get_assets_latest_info(graphene_info, step_keys_by_asset: Mapping[AssetKey, 
 
 
 def _get_in_progress_runs_for_assets(
-    graphene_info,
+    graphene_info: "ResolveInfo",
     in_progress_records: Sequence[RunRecord],
     step_keys_by_asset: Mapping[AssetKey, Sequence[str]],
-):
+) -> Tuple[Mapping[AssetKey, AbstractSet[str]], Mapping[AssetKey, AbstractSet[str]]]:
     # Build mapping of step key to the assets it generates
     asset_key_by_step_key = defaultdict(set)
     for asset_key, step_keys in step_keys_by_asset.items():
@@ -227,10 +250,10 @@ def _get_in_progress_runs_for_assets(
     unstarted_run_ids_by_asset = defaultdict(set)
 
     for record in in_progress_records:
-        run = record.pipeline_run
+        run = record.dagster_run
         asset_selection = run.asset_selection
         run_step_keys = graphene_info.context.instance.get_execution_plan_snapshot(
-            run.execution_plan_snapshot_id
+            check.not_none(run.execution_plan_snapshot_id)
         ).step_keys_to_execute
 
         selected_assets = (
@@ -250,32 +273,37 @@ def _get_in_progress_runs_for_assets(
                     step_stats_by_asset[asset_key].append(step_stat)
 
             for asset in selected_assets:
-                step_stats = step_stats_by_asset.get(asset)
-                if step_stats:
-                    # step_stats will contain all steps that are in progress or complete
+                asset_step_stats = step_stats_by_asset.get(asset)
+                if asset_step_stats:
+                    # asset_step_stats will contain all steps that are in progress or complete
                     if any(
                         [
                             step_stat.status == StepEventStatus.IN_PROGRESS
-                            for step_stat in step_stats
+                            for step_stat in asset_step_stats
                         ]
                     ):
-                        in_progress_run_ids_by_asset[asset].add(record.pipeline_run.run_id)
+                        in_progress_run_ids_by_asset[asset].add(record.dagster_run.run_id)
                     # else if step_stats exist and none are in progress, the step has completed
                 else:  # if step stats is none, then the step has not started
-                    unstarted_run_ids_by_asset[asset].add(record.pipeline_run.run_id)
+                    unstarted_run_ids_by_asset[asset].add(record.dagster_run.run_id)
         else:
             # the run never began execution, all steps are unstarted
             for asset in selected_assets:
-                unstarted_run_ids_by_asset[asset].add(record.pipeline_run.run_id)
+                unstarted_run_ids_by_asset[asset].add(record.dagster_run.run_id)
 
     return in_progress_run_ids_by_asset, unstarted_run_ids_by_asset
 
 
-def get_runs_count(graphene_info, filters):
+def get_runs_count(graphene_info: "ResolveInfo", filters: Optional[RunsFilter]) -> int:
     return graphene_info.context.instance.get_runs_count(filters)
 
 
-def get_run_groups(graphene_info, filters=None, cursor=None, limit=None):
+def get_run_groups(
+    graphene_info: "ResolveInfo",
+    filters: Optional[RunsFilter] = None,
+    cursor: Optional[str] = None,
+    limit: Optional[int] = None,
+) -> Sequence["GrapheneRunGroup"]:
     from ..schema.pipelines.pipeline import GrapheneRun
     from ..schema.runs import GrapheneRunGroup
 
@@ -287,13 +315,13 @@ def get_run_groups(graphene_info, filters=None, cursor=None, limit=None):
     run_groups = instance.get_run_groups(filters=filters, cursor=cursor, limit=limit)
     run_ids = {run.run_id for run_group in run_groups.values() for run in run_group.get("runs", [])}
     records_by_ids = {
-        record.pipeline_run.run_id: record
+        record.dagster_run.run_id: record
         for record in instance.get_run_records(RunsFilter(run_ids=list(run_ids)))
     }
 
     for root_run_id in run_groups:
         run_groups[root_run_id]["runs"] = [
-            GrapheneRun(records_by_ids.get(run.run_id)) for run in run_groups[root_run_id]["runs"]
+            GrapheneRun(records_by_ids[run.run_id]) for run in run_groups[root_run_id]["runs"]
         ]
 
     return [
@@ -303,32 +331,35 @@ def get_run_groups(graphene_info, filters=None, cursor=None, limit=None):
 
 
 @capture_error
-def validate_pipeline_config(graphene_info, selector, run_config, mode):
+def validate_pipeline_config(
+    graphene_info: "ResolveInfo",
+    selector: JobSubsetSelector,
+    run_config: Union[str, Mapping[str, object]],
+) -> "GraphenePipelineConfigValidationValid":
     from ..schema.pipelines.config import GraphenePipelineConfigValidationValid
 
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
-    check.inst_param(selector, "selector", PipelineSelector)
-    check.opt_str_param(mode, "mode")
+    check.inst_param(selector, "selector", JobSubsetSelector)
 
-    external_pipeline = get_external_pipeline_or_raise(graphene_info, selector)
-    ensure_valid_config(external_pipeline, mode, run_config)
-    return GraphenePipelineConfigValidationValid(pipeline_name=external_pipeline.name)
+    external_job = get_external_job_or_raise(graphene_info, selector)
+    ensure_valid_config(external_job, run_config)
+    return GraphenePipelineConfigValidationValid(pipeline_name=external_job.name)
 
 
 @capture_error
-def get_execution_plan(graphene_info, selector, run_config, mode):
+def get_execution_plan(
+    graphene_info: "ResolveInfo",
+    selector: JobSubsetSelector,
+    run_config: Mapping[str, Any],
+) -> "GrapheneExecutionPlan":
     from ..schema.execution import GrapheneExecutionPlan
 
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
-    check.inst_param(selector, "selector", PipelineSelector)
-    check.opt_str_param(mode, "mode")
+    check.inst_param(selector, "selector", JobSubsetSelector)
 
-    external_pipeline = get_external_pipeline_or_raise(graphene_info, selector)
-    ensure_valid_config(external_pipeline, mode, run_config)
+    external_job = get_external_job_or_raise(graphene_info, selector)
+    ensure_valid_config(external_job, run_config)
     return GrapheneExecutionPlan(
         graphene_info.context.get_external_execution_plan(
-            external_pipeline=external_pipeline,
-            mode=mode,
+            external_job=external_job,
             run_config=run_config,
             step_keys_to_execute=None,
             known_state=None,
@@ -337,15 +368,17 @@ def get_execution_plan(graphene_info, selector, run_config, mode):
 
 
 @capture_error
-def get_stats(graphene_info, run_id):
+def get_stats(graphene_info: "ResolveInfo", run_id: str) -> "GrapheneRunStatsSnapshot":
     from ..schema.pipelines.pipeline_run_stats import GrapheneRunStatsSnapshot
 
     stats = graphene_info.context.instance.get_run_stats(run_id)
-    stats.id = "stats-{run_id}"
+    stats.id = "stats-{run_id}"  # type: ignore  # (unused code path)
     return GrapheneRunStatsSnapshot(stats)
 
 
-def get_step_stats(graphene_info, run_id, step_keys=None):
+def get_step_stats(
+    graphene_info: "ResolveInfo", run_id: str, step_keys: Optional[Sequence[str]] = None
+) -> Sequence["GrapheneRunStepStats"]:
     from ..schema.logs.events import GrapheneRunStepStats
 
     step_stats = graphene_info.context.instance.get_run_step_stats(run_id, step_keys)
@@ -353,7 +386,12 @@ def get_step_stats(graphene_info, run_id, step_keys=None):
 
 
 @capture_error
-def get_logs_for_run(graphene_info, run_id, cursor=None, limit=None):
+def get_logs_for_run(
+    graphene_info: "ResolveInfo",
+    run_id: str,
+    cursor: Optional[str] = None,
+    limit: Optional[int] = None,
+) -> Union["GrapheneRunNotFoundError", "GrapheneEventConnection"]:
     from ..schema.errors import GrapheneRunNotFoundError
     from ..schema.pipelines.pipeline import GrapheneEventConnection
     from .events import from_event_record
@@ -365,9 +403,7 @@ def get_logs_for_run(graphene_info, run_id, cursor=None, limit=None):
 
     conn = instance.get_records_for_run(run_id, cursor=cursor, limit=limit)
     return GrapheneEventConnection(
-        events=[
-            from_event_record(record.event_log_entry, run.pipeline_name) for record in conn.records
-        ],
+        events=[from_event_record(record.event_log_entry, run.job_name) for record in conn.records],
         cursor=conn.cursor,
         hasMore=conn.has_more,
     )

@@ -114,7 +114,7 @@ export const TickTag: React.FC<{
                 Failure
               </Tag>
             </LinkButton>
-            <ButtonLink onClick={showError} style={{marginLeft: 8, fontSize: 12}}>
+            <ButtonLink onClick={showError} style={{marginLeft: 4, fontSize: 12}}>
               View
             </ButtonLink>
           </>
@@ -230,7 +230,6 @@ const LAUNCHED_RUN_LIST_QUERY = gql`
         results {
           ...RunTableRunFragment
           id
-          runId
         }
       }
       ... on InvalidPipelineRunsFilterError {

@@ -14,7 +14,7 @@ from dagster import (
     op,
 )
 from dagster._check import ParameterCheckError
-from dagster._core.utility_solids import define_stub_solid
+from dagster._core.utility_ops import create_stub_op
 
 
 def solid_a_b_list():
@@ -34,14 +34,12 @@ def solid_a_b_list():
     ]
 
 
-def test_create_pipeline_with_bad_solids_list():
+def test_create_job_with_bad_ops_list():
     with pytest.raises(
         ParameterCheckError,
         match=r'Param "node_defs" is not one of \[\'Sequence\'\]',
     ):
-        GraphDefinition(
-            name="a_pipeline", node_defs=define_stub_solid("stub", [{"a key": "a value"}])  # type: ignore
-        )
+        GraphDefinition(name="a_pipeline", node_defs=create_stub_op("stub", [{"a key": "a value"}]))
 
 
 def test_circular_dep():
@@ -53,7 +51,7 @@ def test_circular_dep():
         )
 
 
-def test_from_solid_not_there():
+def test_from_op_not_there():
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match='node "NOTTHERE" in dependency dictionary not found',
@@ -81,7 +79,7 @@ def test_from_non_existant_input():
         )
 
 
-def test_to_solid_not_there():
+def test_to_op_not_there():
     with pytest.raises(
         DagsterInvalidDefinitionError, match='node "NOTTHERE" not found in node list'
     ):
@@ -92,7 +90,7 @@ def test_to_solid_not_there():
         )
 
 
-def test_to_solid_output_not_there():
+def test_to_op_output_not_there():
     with pytest.raises(
         DagsterInvalidDefinitionError, match='node "A" does not have output "NOTTHERE"'
     ):
@@ -103,7 +101,7 @@ def test_to_solid_output_not_there():
         )
 
 
-def test_invalid_item_in_solid_list():
+def test_invalid_item_in_op_list():
     with pytest.raises(
         DagsterInvalidDefinitionError, match="Invalid item in node list: 'not_a_op'"
     ):
@@ -140,12 +138,12 @@ def test_malformed_dependencies():
 def test_list_dependencies():
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match='The expected type for "dependencies" is Dict',
+        match=r'The expected type for "dependencies" is Union\[Mapping\[',
     ):
         GraphDefinition(node_defs=solid_a_b_list(), name="test", dependencies=[])
 
 
-def test_pass_unrelated_type_to_field_error_solid_definition():
+def test_pass_unrelated_type_to_field_error_op_definition():
     with pytest.raises(DagsterInvalidConfigDefinitionError) as exc_info:
 
         @op(config_schema="nope")
@@ -223,7 +221,7 @@ def test_bad_out():
         _output = Out(Exotic())
 
 
-def test_solid_tags():
+def test_op_tags():
     @op(tags={"good": {"ok": "fine"}})
     def _fine_tags(_):
         pass

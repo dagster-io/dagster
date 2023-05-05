@@ -1,22 +1,38 @@
 from abc import abstractmethod
 from collections import defaultdict
 from datetime import datetime
-from typing import Callable, Iterable, Mapping, Optional, Sequence, cast
+from typing import (
+    Any,
+    Callable,
+    ContextManager,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Set,
+    Type,
+    TypeVar,
+)
 
 import pendulum
 import sqlalchemy as db
+import sqlalchemy.exc as db_exc
+from sqlalchemy.engine import Connection
 
 import dagster._check as check
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.scheduler.instigation import (
     InstigatorState,
+    InstigatorStatus,
     InstigatorTick,
     TickData,
     TickStatus,
 )
-from dagster._serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
-from dagster._utils import utc_datetime_from_timestamp
+from dagster._core.storage.sql import SqlAlchemyQuery, SqlAlchemyRow
+from dagster._serdes import serialize_value
+from dagster._serdes.serdes import deserialize_value
+from dagster._utils import PrintFn, utc_datetime_from_timestamp
 
 from .base import ScheduleStorage
 from .migration import (
@@ -27,15 +43,17 @@ from .migration import (
 )
 from .schema import InstigatorsTable, JobTable, JobTickTable, SecondaryIndexMigrationTable
 
+T_NamedTuple = TypeVar("T_NamedTuple", bound=NamedTuple)
+
 
 class SqlScheduleStorage(ScheduleStorage):
     """Base class for SQL backed schedule storage."""
 
     @abstractmethod
-    def connect(self):
+    def connect(self) -> ContextManager[Connection]:
         """Context manager yielding a sqlalchemy.engine.Connection."""
 
-    def execute(self, query):
+    def execute(self, query: SqlAlchemyQuery) -> Sequence[SqlAlchemyRow]:
         with self.connect() as conn:
             result_proxy = conn.execute(query)
             res = result_proxy.fetchall()
@@ -43,12 +61,18 @@ class SqlScheduleStorage(ScheduleStorage):
 
         return res
 
-    def _deserialize_rows(self, rows):
-        return list(map(lambda r: deserialize_json_to_dagster_namedtuple(r[0]), rows))
+    def _deserialize_rows(
+        self, rows: Sequence[SqlAlchemyRow], as_type: Type[T_NamedTuple]
+    ) -> Sequence[T_NamedTuple]:
+        return list(map(lambda r: deserialize_value(r[0], as_type), rows))
 
     def all_instigator_state(
-        self, repository_origin_id=None, repository_selector_id=None, instigator_type=None
-    ):
+        self,
+        repository_origin_id: Optional[str] = None,
+        repository_selector_id: Optional[str] = None,
+        instigator_type: Optional[InstigatorType] = None,
+        instigator_statuses: Optional[Set[InstigatorStatus]] = None,
+    ) -> Sequence[InstigatorState]:
         check.opt_inst_param(instigator_type, "instigator_type", InstigatorType)
 
         if self.has_instigators_table() and self.has_built_index(SCHEDULE_JOBS_SELECTOR_ID):
@@ -59,17 +83,26 @@ class SqlScheduleStorage(ScheduleStorage):
                 )
             if instigator_type:
                 query = query.where(InstigatorsTable.c.instigator_type == instigator_type.value)
+            if instigator_statuses:
+                query = query.where(
+                    InstigatorsTable.c.status.in_([status.value for status in instigator_statuses])
+                )
+
         else:
             query = db.select([JobTable.c.job_body]).select_from(JobTable)
             if repository_origin_id:
                 query = query.where(JobTable.c.repository_origin_id == repository_origin_id)
             if instigator_type:
                 query = query.where(JobTable.c.job_type == instigator_type.value)
+            if instigator_statuses:
+                query = query.where(
+                    JobTable.c.status.in_([status.value for status in instigator_statuses])
+                )
 
         rows = self.execute(query)
-        return self._deserialize_rows(rows)
+        return self._deserialize_rows(rows, InstigatorState)
 
-    def get_instigator_state(self, origin_id, selector_id):
+    def get_instigator_state(self, origin_id: str, selector_id: str) -> Optional[InstigatorState]:
         check.str_param(origin_id, "origin_id")
         check.str_param(selector_id, "selector_id")
 
@@ -87,9 +120,9 @@ class SqlScheduleStorage(ScheduleStorage):
             )
 
         rows = self.execute(query)
-        return self._deserialize_rows(rows[:1])[0] if len(rows) else None
+        return self._deserialize_rows(rows[:1], InstigatorState)[0] if len(rows) else None
 
-    def _has_instigator_state_by_selector(self, selector_id):
+    def _has_instigator_state_by_selector(self, selector_id: str) -> bool:
         check.str_param(selector_id, "selector_id")
 
         query = (
@@ -99,46 +132,46 @@ class SqlScheduleStorage(ScheduleStorage):
         )
 
         rows = self.execute(query)
-        return self._deserialize_rows(rows[:1])[0] if len(rows) else None
+        return self._deserialize_rows(rows[:1])[0] if len(rows) else None  # type: ignore
 
-    def _add_or_update_instigators_table(self, conn, state):
+    def _add_or_update_instigators_table(self, conn: Connection, state: InstigatorState) -> None:
         selector_id = state.selector_id
         try:
             conn.execute(
-                InstigatorsTable.insert().values(  # pylint: disable=no-value-for-parameter
+                InstigatorsTable.insert().values(
                     selector_id=selector_id,
                     repository_selector_id=state.repository_selector_id,
                     status=state.status.value,
                     instigator_type=state.instigator_type.value,
-                    instigator_body=serialize_dagster_namedtuple(state),
+                    instigator_body=serialize_value(state),
                 )
             )
-        except db.exc.IntegrityError:
+        except db_exc.IntegrityError:
             conn.execute(
                 InstigatorsTable.update()
                 .where(InstigatorsTable.c.selector_id == selector_id)
                 .values(
                     status=state.status.value,
                     instigator_type=state.instigator_type.value,
-                    instigator_body=serialize_dagster_namedtuple(state),
+                    instigator_body=serialize_value(state),
                     update_timestamp=pendulum.now("UTC"),
                 )
             )
 
-    def add_instigator_state(self, state) -> InstigatorState:
+    def add_instigator_state(self, state: InstigatorState) -> InstigatorState:
         check.inst_param(state, "state", InstigatorState)
         with self.connect() as conn:
             try:
                 conn.execute(
-                    JobTable.insert().values(  # pylint: disable=no-value-for-parameter
+                    JobTable.insert().values(
                         job_origin_id=state.instigator_origin_id,
                         repository_origin_id=state.repository_origin_id,
                         status=state.status.value,
                         job_type=state.instigator_type.value,
-                        job_body=serialize_dagster_namedtuple(state),
+                        job_body=serialize_value(state),
                     )
                 )
-            except db.exc.IntegrityError as exc:
+            except db_exc.IntegrityError as exc:
                 raise DagsterInvariantViolationError(
                     f"InstigatorState {state.instigator_origin_id} is already present in storage"
                 ) from exc
@@ -149,7 +182,7 @@ class SqlScheduleStorage(ScheduleStorage):
 
         return state
 
-    def update_instigator_state(self, state) -> InstigatorState:
+    def update_instigator_state(self, state: InstigatorState) -> InstigatorState:
         check.inst_param(state, "state", InstigatorState)
         if not self.get_instigator_state(state.instigator_origin_id, state.selector_id):
             raise DagsterInvariantViolationError(
@@ -160,7 +193,7 @@ class SqlScheduleStorage(ScheduleStorage):
 
         values = {
             "status": state.status.value,
-            "job_body": serialize_dagster_namedtuple(state),
+            "job_body": serialize_value(state),
             "update_timestamp": pendulum.now("UTC"),
         }
         if self.has_instigators_table():
@@ -168,7 +201,7 @@ class SqlScheduleStorage(ScheduleStorage):
 
         with self.connect() as conn:
             conn.execute(
-                JobTable.update()  # pylint: disable=no-value-for-parameter
+                JobTable.update()
                 .where(JobTable.c.job_origin_id == state.instigator_origin_id)
                 .values(**values)
             )
@@ -177,31 +210,27 @@ class SqlScheduleStorage(ScheduleStorage):
 
         return state
 
-    def delete_instigator_state(self, origin_id, selector_id):
+    def delete_instigator_state(self, origin_id: str, selector_id: str) -> None:
         check.str_param(origin_id, "origin_id")
         check.str_param(selector_id, "selector_id")
 
         if not self.get_instigator_state(origin_id, selector_id):
             raise DagsterInvariantViolationError(
-                "InstigatorState {id} is not present in storage".format(id=origin_id)
+                f"InstigatorState {origin_id} is not present in storage"
             )
 
         with self.connect() as conn:
-            conn.execute(
-                JobTable.delete().where(  # pylint: disable=no-value-for-parameter
-                    JobTable.c.job_origin_id == origin_id
-                )
-            )
+            conn.execute(JobTable.delete().where(JobTable.c.job_origin_id == origin_id))
 
             if self._has_instigators_table(conn):
                 if not self._jobs_has_selector_state(conn, selector_id):
                     conn.execute(
-                        InstigatorsTable.delete().where(  # pylint: disable=no-value-for-parameter
+                        InstigatorsTable.delete().where(
                             InstigatorsTable.c.selector_id == selector_id
                         )
                     )
 
-    def _jobs_has_selector_state(self, conn, selector_id):
+    def _jobs_has_selector_state(self, conn: Connection, selector_id: str) -> bool:
         query = (
             db.select([db.func.count()])
             .select_from(JobTable)
@@ -210,9 +239,16 @@ class SqlScheduleStorage(ScheduleStorage):
         result = conn.execute(query)
         row = result.fetchone()
         result.close()
-        return row[0] > 0
+        return row[0] > 0  # type: ignore  # (possible none)
 
-    def _add_filter_limit(self, query, before=None, after=None, limit=None, statuses=None):
+    def _add_filter_limit(
+        self,
+        query: SqlAlchemyQuery,
+        before: Optional[float] = None,
+        after: Optional[float] = None,
+        limit: Optional[int] = None,
+        statuses=None,
+    ) -> SqlAlchemyQuery:
         check.opt_float_param(before, "before")
         check.opt_float_param(after, "after")
         check.opt_int_param(limit, "limit")
@@ -229,14 +265,14 @@ class SqlScheduleStorage(ScheduleStorage):
         return query
 
     @property
-    def supports_batch_queries(self):
+    def supports_batch_queries(self) -> bool:
         return self.has_instigators_table() and self.has_built_index(SCHEDULE_TICKS_SELECTOR_ID)
 
-    def has_instigators_table(self):
+    def has_instigators_table(self) -> bool:
         with self.connect() as conn:
             return self._has_instigators_table(conn)
 
-    def _has_instigators_table(self, conn):
+    def _has_instigators_table(self, conn: Connection) -> bool:
         table_names = db.inspect(conn).get_table_names()
         return "instigators" in table_names
 
@@ -245,7 +281,7 @@ class SqlScheduleStorage(ScheduleStorage):
         selector_ids: Sequence[str],
         limit: Optional[int] = None,
         statuses: Optional[Sequence[TickStatus]] = None,
-    ) -> Mapping[str, Iterable[InstigatorTick]]:
+    ) -> Mapping[str, Sequence[InstigatorTick]]:
         check.sequence_param(selector_ids, "selector_ids", of_type=str)
         check.opt_int_param(limit, "limit")
         check.opt_sequence_param(statuses, "statuses", of_type=TickStatus)
@@ -287,11 +323,19 @@ class SqlScheduleStorage(ScheduleStorage):
         for row in rows:
             tick_id = row[0]
             selector_id = row[1]
-            tick_data = cast(TickData, deserialize_json_to_dagster_namedtuple(row[2]))
+            tick_data = deserialize_value(row[2], TickData)
             results[selector_id].append(InstigatorTick(tick_id, tick_data))
         return results
 
-    def get_ticks(self, origin_id, selector_id, before=None, after=None, limit=None, statuses=None):
+    def get_ticks(
+        self,
+        origin_id: str,
+        selector_id: str,
+        before: Optional[float] = None,
+        after: Optional[float] = None,
+        limit: Optional[int] = None,
+        statuses: Optional[Sequence[TickStatus]] = None,
+    ) -> Sequence[InstigatorTick]:
         check.str_param(origin_id, "origin_id")
         check.opt_float_param(before, "before")
         check.opt_float_param(after, "after")
@@ -321,11 +365,9 @@ class SqlScheduleStorage(ScheduleStorage):
         )
 
         rows = self.execute(query)
-        return list(
-            map(lambda r: InstigatorTick(r[0], deserialize_json_to_dagster_namedtuple(r[1])), rows)
-        )
+        return list(map(lambda r: InstigatorTick(r[0], deserialize_value(r[1], TickData)), rows))
 
-    def create_tick(self, tick_data):
+    def create_tick(self, tick_data: TickData) -> InstigatorTick:
         check.inst_param(tick_data, "tick_data", TickData)
 
         values = {
@@ -333,56 +375,56 @@ class SqlScheduleStorage(ScheduleStorage):
             "status": tick_data.status.value,
             "type": tick_data.instigator_type.value,
             "timestamp": utc_datetime_from_timestamp(tick_data.timestamp),
-            "tick_body": serialize_dagster_namedtuple(tick_data),
+            "tick_body": serialize_value(tick_data),
         }
         if self.has_instigators_table() and tick_data.selector_id:
             values["selector_id"] = tick_data.selector_id
 
         with self.connect() as conn:
             try:
-                tick_insert = JobTickTable.insert().values(
-                    **values
-                )  # pylint: disable=no-value-for-parameter
+                tick_insert = JobTickTable.insert().values(**values)
                 result = conn.execute(tick_insert)
                 tick_id = result.inserted_primary_key[0]
                 return InstigatorTick(tick_id, tick_data)
-            except db.exc.IntegrityError as exc:
+            except db_exc.IntegrityError as exc:
                 raise DagsterInvariantViolationError(
                     f"Unable to insert InstigatorTick for job {tick_data.instigator_name} in"
                     " storage"
                 ) from exc
 
-    def update_tick(self, tick):
+    def update_tick(self, tick: InstigatorTick) -> InstigatorTick:
         check.inst_param(tick, "tick", InstigatorTick)
 
         values = {
             "status": tick.status.value,
             "type": tick.instigator_type.value,
             "timestamp": utc_datetime_from_timestamp(tick.timestamp),
-            "tick_body": serialize_dagster_namedtuple(tick.tick_data),
+            "tick_body": serialize_value(tick.tick_data),
         }
         if self.has_instigators_table() and tick.selector_id:
             values["selector_id"] = tick.selector_id
 
         with self.connect() as conn:
             conn.execute(
-                JobTickTable.update()  # pylint: disable=no-value-for-parameter
-                .where(JobTickTable.c.id == tick.tick_id)
-                .values(**values)
+                JobTickTable.update().where(JobTickTable.c.id == tick.tick_id).values(**values)
             )
 
         return tick
 
-    def purge_ticks(self, origin_id, selector_id, before, tick_statuses=None):
+    def purge_ticks(
+        self,
+        origin_id: str,
+        selector_id: str,
+        before: float,
+        tick_statuses: Optional[Sequence[TickStatus]] = None,
+    ) -> None:
         check.str_param(origin_id, "origin_id")
         check.float_param(before, "before")
         check.opt_list_param(tick_statuses, "tick_statuses", of_type=TickStatus)
 
         utc_before = utc_datetime_from_timestamp(before)
 
-        query = JobTickTable.delete().where(  # pylint: disable=no-value-for-parameter
-            JobTickTable.c.timestamp < utc_before
-        )
+        query = JobTickTable.delete().where(JobTickTable.c.timestamp < utc_before)
         if tick_statuses:
             query = query.where(
                 JobTickTable.c.status.in_([tick_status.value for tick_status in tick_statuses])
@@ -404,18 +446,18 @@ class SqlScheduleStorage(ScheduleStorage):
         with self.connect() as conn:
             conn.execute(query)
 
-    def wipe(self):
+    def wipe(self) -> None:
         """Clears the schedule storage."""
         with self.connect() as conn:
             # https://stackoverflow.com/a/54386260/324449
-            conn.execute(JobTable.delete())  # pylint: disable=no-value-for-parameter
-            conn.execute(JobTickTable.delete())  # pylint: disable=no-value-for-parameter
+            conn.execute(JobTable.delete())
+            conn.execute(JobTickTable.delete())
             if self._has_instigators_table(conn):
                 conn.execute(InstigatorsTable.delete())
 
     # MIGRATIONS
 
-    def has_secondary_index_table(self):
+    def has_secondary_index_table(self) -> bool:
         with self.connect() as conn:
             return "secondary_indexes" in db.inspect(conn).get_table_names()
 
@@ -434,31 +476,32 @@ class SqlScheduleStorage(ScheduleStorage):
 
         return len(results) > 0
 
-    def mark_index_built(self, migration_name: str):
-        query = (
-            SecondaryIndexMigrationTable.insert().values(  # pylint: disable=no-value-for-parameter
-                name=migration_name,
-                migration_completed=datetime.now(),
-            )
+    def mark_index_built(self, migration_name: str) -> None:
+        query = SecondaryIndexMigrationTable.insert().values(
+            name=migration_name,
+            migration_completed=datetime.now(),
         )
         with self.connect() as conn:
             try:
                 conn.execute(query)
-            except db.exc.IntegrityError:
+            except db_exc.IntegrityError:
                 conn.execute(
-                    SecondaryIndexMigrationTable.update()  # pylint: disable=no-value-for-parameter
+                    SecondaryIndexMigrationTable.update()
                     .where(SecondaryIndexMigrationTable.c.name == migration_name)
                     .values(migration_completed=datetime.now())
                 )
 
     def _execute_data_migrations(
-        self, migrations, print_fn: Optional[Callable] = None, force_rebuild_all: bool = False
-    ):
+        self,
+        migrations: Mapping[str, Callable[..., Any]],
+        print_fn: Optional[Callable] = None,
+        force_rebuild_all: bool = False,
+    ) -> None:
         for migration_name, migration_fn in migrations.items():
             if self.has_built_index(migration_name):
                 if not force_rebuild_all:
                     if print_fn:
-                        print_fn("Skipping already applied migration: {}".format(migration_name))
+                        print_fn(f"Skipping already applied migration: {migration_name}")
                     continue
             if print_fn:
                 print_fn(f"Starting data migration: {migration_name}")
@@ -467,12 +510,12 @@ class SqlScheduleStorage(ScheduleStorage):
             if print_fn:
                 print_fn(f"Finished data migration: {migration_name}")
 
-    def migrate(self, print_fn: Optional[Callable] = None, force_rebuild_all: bool = False):
+    def migrate(self, print_fn: Optional[PrintFn] = None, force_rebuild_all: bool = False) -> None:
         self._execute_data_migrations(
             REQUIRED_SCHEDULE_DATA_MIGRATIONS, print_fn, force_rebuild_all
         )
 
-    def optimize(self, print_fn: Optional[Callable] = None, force_rebuild_all: bool = False):
+    def optimize(self, print_fn: Optional[PrintFn] = None, force_rebuild_all: bool = False) -> None:
         self._execute_data_migrations(
             OPTIONAL_SCHEDULE_DATA_MIGRATIONS, print_fn, force_rebuild_all
         )

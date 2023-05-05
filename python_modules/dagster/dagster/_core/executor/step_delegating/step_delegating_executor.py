@@ -6,7 +6,8 @@ from typing import Any, Dict, List, Optional, Sequence, cast
 import pendulum
 
 import dagster._check as check
-from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData, MetadataEntry
+from dagster._core.definitions.metadata import MetadataValue
+from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData
 from dagster._core.execution.context.system import PlanOrchestrationContext
 from dagster._core.execution.plan.active import ActiveExecution
 from dagster._core.execution.plan.objects import StepFailureData
@@ -83,22 +84,22 @@ class StepDelegatingExecutor(Executor):
             plan_context=plan_context,
             steps=steps,
             execute_step_args=ExecuteStepArgs(
-                pipeline_origin=plan_context.reconstructable_pipeline.get_python_origin(),
-                pipeline_run_id=plan_context.pipeline_run.run_id,
+                job_origin=plan_context.reconstructable_job.get_python_origin(),
+                run_id=plan_context.dagster_run.run_id,
                 step_keys_to_execute=[step.key for step in steps],
                 instance_ref=plan_context.plan_data.instance.get_ref(),
                 retry_mode=self.retries.for_inner_plan(),
                 known_state=active_execution.get_known_state(),
                 should_verify_step=self._should_verify_step,
             ),
-            pipeline_run=plan_context.pipeline_run,
+            dagster_run=plan_context.dagster_run,
         )
 
     def execute(self, plan_context: PlanOrchestrationContext, execution_plan: ExecutionPlan):
         check.inst_param(plan_context, "plan_context", PlanOrchestrationContext)
         check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
 
-        self._event_cursor = -1  # pylint: disable=attribute-defined-outside-init
+        self._event_cursor = -1
 
         DagsterEvent.engine_event(
             plan_context,
@@ -212,11 +213,9 @@ class StepDelegatingExecutor(Executor):
                                 " because run will be resumed"
                             ),
                             EngineEventData(
-                                metadata_entries=[
-                                    MetadataEntry(
-                                        "steps_in_flight", value=str(running_steps.keys())
-                                    )
-                                ]
+                                metadata={
+                                    "steps_in_flight": MetadataValue.text(str(running_steps.keys()))
+                                },
                             ),
                         )
 
@@ -225,7 +224,7 @@ class StepDelegatingExecutor(Executor):
                 for dagster_event in self._pop_events(
                     plan_context.instance,
                     plan_context.run_id,
-                ):  # type: ignore
+                ):
                     yield dagster_event
                     # STEP_SKIPPED events are only emitted by ActiveExecution, which already handles
                     # and yields them.

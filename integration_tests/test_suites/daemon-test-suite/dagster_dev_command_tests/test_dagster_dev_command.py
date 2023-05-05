@@ -11,6 +11,48 @@ from dagster._core.test_utils import environ, new_cwd
 from dagster._utils import find_free_port
 
 
+def _wait_for_dagit_running(dagit_port):
+    start_time = time.time()
+    while True:
+        try:
+            dagit_json = requests.get(f"http://localhost:{dagit_port}/dagit_info").json()
+            if dagit_json:
+                return
+        except:
+            print("Waiting for Dagit to be ready..")  # noqa: T201
+
+        if time.time() - start_time > 30:
+            raise Exception("Timed out waiting for Dagit to serve requests")
+
+        time.sleep(1)
+
+
+def test_dagster_dev_command_workspace():
+    with tempfile.TemporaryDirectory() as tempdir:
+        with environ({"DAGSTER_HOME": ""}):
+            with new_cwd(tempdir):
+                dagit_port = find_free_port()
+                dev_process = subprocess.Popen(
+                    [
+                        "dagster",
+                        "dev",
+                        "-w",
+                        os.path.join(
+                            os.path.dirname(__file__),
+                            "workspace.yaml",
+                        ),
+                        "--dagit-port",
+                        str(dagit_port),
+                    ],
+                    cwd=tempdir,
+                )
+                try:
+                    _wait_for_dagit_running(dagit_port)
+                finally:
+                    dev_process.send_signal(signal.SIGINT)
+                    dev_process.communicate()
+
+
 # E2E test that spins up "dagster dev", accesses dagit,
 # and waits for a schedule run to launch
 def test_dagster_dev_command_no_dagster_home():
@@ -37,27 +79,17 @@ def test_dagster_dev_command_no_dagster_home():
                             os.path.dirname(__file__),
                             "repo.py",
                         ),
+                        "--working-directory",
+                        os.path.dirname(__file__),
                         "--dagit-port",
                         str(dagit_port),
+                        "--dagit-host",
+                        "127.0.0.1",
                     ],
                     cwd=tempdir,
                 )
 
-                start_time = time.time()
-                while True:
-                    try:
-                        dagit_json = requests.get(
-                            f"http://localhost:{dagit_port}/dagit_info"
-                        ).json()
-                        if dagit_json:
-                            break
-                    except:
-                        print("Waiting for Dagit to be ready..")
-
-                    if time.time() - start_time > 30:
-                        raise Exception("Timed out waiting for Dagit to serve requests")
-
-                    time.sleep(1)
+                _wait_for_dagit_running(dagit_port)
 
                 instance = None
 

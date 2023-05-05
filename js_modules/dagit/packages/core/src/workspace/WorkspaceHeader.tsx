@@ -1,10 +1,13 @@
 import {QueryResult} from '@apollo/client';
-import {PageHeader, Box, Heading, Colors, Button, Icon} from '@dagster-io/ui';
+import {PageHeader, Box, Heading, Colors, Button, Icon, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {QueryRefreshState} from '../app/QueryRefresh';
-import {ReloadRepositoryLocationButton} from '../nav/ReloadRepositoryLocationButton';
+import {
+  NO_RELOAD_PERMISSION_TEXT,
+  ReloadRepositoryLocationButton,
+} from '../nav/ReloadRepositoryLocationButton';
 
 import {WorkspaceTabs} from './WorkspaceTabs';
 import {repoAddressAsHumanString} from './repoAddressAsString';
@@ -42,19 +45,27 @@ export const WorkspaceHeader = <TData extends Record<string, any>>(props: Props<
         />
       }
       right={
-        <ReloadRepositoryLocationButton location={repoAddress.location}>
-          {({tryReload, reloading}) => {
+        <ReloadRepositoryLocationButton
+          location={repoAddress.location}
+          ChildComponent={({tryReload, reloading, hasReloadPermission}) => {
             return (
-              <Button
-                onClick={() => tryReload()}
-                loading={reloading}
-                icon={<Icon name="refresh" />}
+              <Tooltip
+                canShow={!hasReloadPermission}
+                content={hasReloadPermission ? '' : NO_RELOAD_PERMISSION_TEXT}
+                useDisabledButtonTooltipFix
               >
-                Reload definitions
-              </Button>
+                <Button
+                  onClick={() => tryReload()}
+                  loading={reloading}
+                  disabled={!hasReloadPermission}
+                  icon={<Icon name="refresh" />}
+                >
+                  Reload definitions
+                </Button>
+              </Tooltip>
             );
           }}
-        </ReloadRepositoryLocationButton>
+        />
       }
     />
   );

@@ -1,5 +1,6 @@
 # isort: skip_file
-# pylint: disable=reimported
+
+from typing import List
 from dagster import job, op
 
 
@@ -30,26 +31,54 @@ def write_csv(_path, _obj):
 
 
 # start_io_manager_marker
-from dagster import IOManager, io_manager
+from dagster import ConfigurableIOManager, InputContext, OutputContext
 
 
-class MyIOManager(IOManager):
+class MyIOManager(ConfigurableIOManager):
+    # specifies an optional string list input, via config system
+    path_prefix: List[str] = []
+
     def _get_path(self, context) -> str:
-        return "/".join(context.asset_key.path)
+        return "/".join(self.path_prefix + context.asset_key.path)
 
-    def handle_output(self, context, obj):
+    def handle_output(self, context: OutputContext, obj):
         write_csv(self._get_path(context), obj)
 
-    def load_input(self, context):
+    def load_input(self, context: InputContext):
         return read_csv(self._get_path(context))
 
 
-@io_manager
-def my_io_manager():
-    return MyIOManager()
-
-
 # end_io_manager_marker
+
+# start_io_manager_factory_marker
+
+from dagster import IOManager, ConfigurableIOManagerFactory
+import requests
+
+
+class ExternalIOManager(IOManager):
+    def __init__(self, api_token):
+        self._api_token = api_token
+        # setup stateful cache
+        self._cache = {}
+
+    def handle_output(self, context, obj):
+        ...
+
+    def load_input(self, context):
+        if context.asset_key in self._cache:
+            return self._cache[context.asset_key]
+        ...
+
+
+class ConfigurableExternalIOManager(ConfigurableIOManagerFactory):
+    api_token: str
+
+    def create_io_manager(self, context) -> ExternalIOManager:
+        return ExternalIOManager(self.api_token)
+
+
+# end_io_manager_factory_marker
 
 
 # start_partitioned_marker
@@ -70,10 +99,10 @@ class MyPartitionedIOManager(IOManager):
 # end_partitioned_marker
 
 # start_df_marker
-from dagster import IOManager, io_manager
+from dagster import ConfigurableIOManager, io_manager
 
 
-class DataframeTableIOManager(IOManager):
+class DataframeTableIOManager(ConfigurableIOManager):
     def handle_output(self, context, obj):
         # name is the name given to the Out that we're storing for
         table_name = context.name
@@ -85,12 +114,7 @@ class DataframeTableIOManager(IOManager):
         return read_dataframe_from_table(name=table_name)
 
 
-@io_manager
-def df_table_io_manager():
-    return DataframeTableIOManager()
-
-
-@job(resource_defs={"io_manager": df_table_io_manager})
+@job(resource_defs={"io_manager": DataframeTableIOManager()})
 def my_job():
     op_2(op_1())
 
@@ -99,7 +123,7 @@ def my_job():
 
 
 # start_metadata_marker
-class DataframeTableIOManagerWithMetadata(IOManager):
+class DataframeTableIOManagerWithMetadata(ConfigurableIOManager):
     def handle_output(self, context, obj):
         table_name = context.name
         write_dataframe_to_table(name=table_name, dataframe=obj)
@@ -114,11 +138,6 @@ class DataframeTableIOManagerWithMetadata(IOManager):
 # end_metadata_marker
 
 
-@io_manager
-def df_table_io_manager_with_metadata(_):
-    return DataframeTableIOManagerWithMetadata()
-
-
-@job(resource_defs={"io_manager": df_table_io_manager_with_metadata})
+@job(resource_defs={"io_manager": DataframeTableIOManagerWithMetadata()})
 def my_job_with_metadata():
     op_2(op_1())

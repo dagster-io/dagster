@@ -95,7 +95,6 @@ export const SensorRoot: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) 
 const SENSOR_ROOT_QUERY = gql`
   query SensorRootQuery($sensorSelector: SensorSelector!) {
     sensorOrError(sensorSelector: $sensorSelector) {
-      __typename
       ... on Sensor {
         id
         ...SensorFragment
@@ -103,6 +102,7 @@ const SENSOR_ROOT_QUERY = gql`
       ...PythonErrorFragment
     }
     instance {
+      id
       daemonHealth {
         id
         daemonStatus(daemonType: "SENSOR") {

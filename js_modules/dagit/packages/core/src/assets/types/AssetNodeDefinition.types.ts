@@ -10,10 +10,21 @@ export type AssetNodeDefinitionFragment = {
   opNames: Array<string>;
   opVersion: string | null;
   jobNames: Array<string>;
+  hasMaterializePermission: boolean;
   computeKind: string | null;
   isPartitioned: boolean;
   isObservable: boolean;
   isSource: boolean;
+  autoMaterializePolicy: {
+    __typename: 'AutoMaterializePolicy';
+    policyType: Types.AutoMaterializePolicyType;
+  } | null;
+  freshnessPolicy: {
+    __typename: 'FreshnessPolicy';
+    maximumLagMinutes: number;
+    cronSchedule: string | null;
+    cronScheduleTimezone: string | null;
+  } | null;
   partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
   repository: {
     __typename: 'Repository';
@@ -21,6 +32,7 @@ export type AssetNodeDefinitionFragment = {
     name: string;
     location: {__typename: 'RepositoryLocation'; id: string; name: string};
   };
+  requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
   configField: {
     __typename: 'ConfigTypeField';
     name: string;

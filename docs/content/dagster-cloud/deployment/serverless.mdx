@@ -40,18 +40,25 @@ Enterprise customers may request a quota increase by [contacting Sales](mailto:s
 ## Getting started with Serverless
 
 - [With GitHub](#with-github)
-- [Without GitHub (GitLab, BitBucket, or local development)](#without-github-gitlab-bitbucket-or-local-development)
+- [With Gitlab](#with-gitlab)
+- [Other Git providers or local development)](#other-bitbucket-or-local-development)
 - [Adding secrets](#adding-secrets)
 
 ### With GitHub
 
 If you are a GitHub user, our GitHub integration is the fastest way to get started. It uses a GitHub app and GitHub Actions to set up a repo containing skeleton code and configuration consistent with Dagster Cloud's best practices with a single click.
 
-When you create a new Dagster Cloud organization, you'll be prompted to choose Serverless or Hybrid deployment. Once activated, our GitHub integration will scaffold a new git repo for you with Serverless and Branch Deployments already configured. Pushing to the `main` branch will deploy to your `prod` Serverless deployment. Pull requests will spin up ephemeral [branch deployments](/dagster-cloud/developing-testing/branch-deployments) using the Serverless agent.
+When you create a new Dagster Cloud organization, you'll be prompted to choose Serverless or Hybrid deployment. Once activated, our GitHub integration will scaffold a new git repo for you with Serverless and Branch Deployments already configured. Pushing to the `main` branch will deploy to your `prod` Serverless deployment. Pull requests will spin up ephemeral [branch deployments](/dagster-cloud/managing-deployments/branch-deployments) using the Serverless agent.
 
-### Without GitHub (GitLab, BitBucket, or local development)
+### With Gitlab
 
-If you don't want to use our GitHub integration, we offer a powerful CLI that you can use in another CI environment or on your local laptop.
+If you are a Gitlab user, our Gitlab integration is the fastest way to get started. It uses a Gitlab app to set up a repo containing skeleton code and CI/CD configuration consistent with Dagster Cloud's best practices with a single click.
+
+When you create a new Dagster Cloud organization, you'll be prompted to choose Serverless or Hybrid deployment. Once activated, our Gitlab integration will scaffold a new git repo for you with Serverless and Branch Deployments already configured. Pushing to the `main` branch will deploy to your `prod` Serverless deployment. Pull requests will spin up ephemeral [branch deployments](/dagster-cloud/managing-deployments/branch-deployments) using the Serverless agent.
+
+### Other (BitBucket or local development)
+
+If you don't want to use our GitHub/Gitlab integrations, we offer a powerful CLI that you can use in another CI environment or on your local laptop.
 
 First, [create a new project](https://docs.dagster.io/getting-started/create-new-project#create-a-new-project) with the Dagster open-source CLI.
 
@@ -67,26 +74,35 @@ dagster project from-example \
   <code>setup.py</code> file.
 </Note>
 
-Next, install the [dagster-cloud CLI](/dagster-cloud/developing-testing/dagster-cloud-cli) and log in to your org. **Note**: The CLI requires a recent version of Python 3 and Docker.
+Next, install the [dagster-cloud CLI](/dagster-cloud/managing-deployments/dagster-cloud-cli) and log in to your org. **Note**: The CLI requires a recent version of Python 3 and Docker.
 
 ```shell
 pip install dagster-cloud
 dagster-cloud configure
 ```
 
-You can also configure the `dagster-cloud` tool noninteractively; see [the CLI docs](/dagster-cloud/developing-testing/dagster-cloud-cli#environment-variables-and-cli-options) for more information.
+You can also configure the `dagster-cloud` tool noninteractively; see [the CLI docs](/dagster-cloud/managing-deployments/dagster-cloud-cli#environment-variables-and-cli-options) for more information.
+
+Add `dagster-cloud` as a dependency to `my-dagster-project/setup.py`:
+
+```python
+install_requires=[
+    "dagster",
+    "dagster-cloud",    # add this line
+    "dagster-airbyte",
+```
 
 Finally, deploy your project with Dagster Cloud Serverless:
 
 ```shell
-dagster-cloud serverless deploy-python-executable \
+dagster-cloud serverless deploy-python-executable ./my-dagster-project \
   --location-name example \
   --package-name assets_modern_data_stack
 ```
 
 ### Adding secrets
 
-Often you'll need to securely access secrets from your jobs. Dagster Cloud supports several methods for adding secrets - refer to the [Dagster Cloud environment variables and secrets documentation](/dagster-cloud/developing-testing/environment-variables-and-secrets) for more info.
+Often you'll need to securely access secrets from your jobs. Dagster Cloud supports several methods for adding secrets - refer to the [Dagster Cloud environment variables and secrets documentation](/dagster-cloud/managing-deployments/environment-variables-and-secrets) for more info.
 
 ### Adding dependencies
 
@@ -131,7 +147,7 @@ if __name__ == "__main__":
 
 ### Using a different Python version
 
-The default version of Python for Serverless deployments is Python 3.8. Versions 3.7, 3.9 and 3.10 are also supported. You can specify the version you want by updating your GitHub workflow or using the `--python-version` command line argument:
+The default version of Python for Serverless deployments is Python 3.8. Versions 3.7, 3.9, 3.10, and 3.11 are also supported. You can specify the version you want by updating your GitHub workflow or using the `--python-version` command line argument:
 
 - **With GitHub**: Change the `python_version` parameter for the `build_deploy_python_executable` job in your `.github/workflows` files. For example:
 
@@ -285,7 +301,7 @@ Unlike Hybrid, Serverless Deployments on Dagster Cloud require direct access to 
 
 Dagster Cloud Serverless offers two settings for run isolation: isolated and non-isolated. Non-isolated runs are for iterating quickly and trade off isolation for speed. Isolated runs are for production and compute heavy Assets/Jobs.
 
-### Isolated runs
+### Isolated runs (default)
 
 Isolated runs each take place in their own container with their own compute resources: 4 cpu cores and 16GB of RAM.
 
@@ -315,7 +331,7 @@ Non-isolated runs provide a faster start time by using a standing, shared contai
 
 They have fewer compute resources: 0.25 vCPU cores and 1GB of RAM. These resources are shared with other processes for a code location like sensors. As a result, it's recommended to use isolated runs for compute intensive jobs and asset materializations.
 
-While launching runs from the Launchpad, leave `Isolate run environment` unchecked to launch a non-isolated run. Materializing assets from the UI also defaults to non-isolated.
+While launching runs from the Launchpad, uncheck `Isolate run environment`. When materializing an asset, shift-click `Materialize all` and uncheck it in the modal.
 
 <Image
 alt="The isolated run toggle in Dagster Cloud"
@@ -326,7 +342,7 @@ height={35}
 
 By default only one non-isolated run will execute at once. While a run is in progress, the the Launchpad will swap to only launching isolated runs.
 
-This limit can be configured in [deployment settings](/dagster-cloud/developing-testing/deployment-settings-reference#non-isolated-runs). Take caution; The limit is in place to help wih avoiding crashes due to OOMs.
+This limit can be configured in [deployment settings](/dagster-cloud/managing-deployments/deployment-settings-reference#non-isolated-runs). Take caution; The limit is in place to help wih avoiding crashes due to OOMs.
 
 ```yaml
 non_isolated_runs:

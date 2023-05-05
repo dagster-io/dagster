@@ -9,7 +9,8 @@ export type SensorFragment = {
   name: string;
   description: string | null;
   minIntervalSeconds: number;
-  nextTick: {__typename: 'FutureInstigationTick'; timestamp: number} | null;
+  sensorType: Types.SensorType;
+  nextTick: {__typename: 'DryRunInstigationTick'; timestamp: number | null} | null;
   sensorState: {
     __typename: 'InstigationState';
     id: string;
@@ -17,6 +18,8 @@ export type SensorFragment = {
     name: string;
     instigationType: Types.InstigationType;
     status: Types.InstigationStatus;
+    hasStartPermission: boolean;
+    hasStopPermission: boolean;
     repositoryName: string;
     repositoryLocationName: string;
     runningCount: number;
@@ -27,7 +30,6 @@ export type SensorFragment = {
     runs: Array<{
       __typename: 'Run';
       id: string;
-      runId: string;
       status: Types.RunStatus;
       startTime: number | null;
       endTime: number | null;

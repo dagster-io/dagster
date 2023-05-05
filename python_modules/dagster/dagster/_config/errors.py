@@ -143,7 +143,7 @@ def _get_type_msg(type_in_context):
     if type_in_context.given_name is None:
         return ""
     else:
-        return ' on type "{type_name}"'.format(type_name=type_in_context.given_name)
+        return f' on type "{type_in_context.given_name}"'
 
 
 def create_dict_type_mismatch_error(context: ContextData, config_value: object) -> EvaluationError:
@@ -492,8 +492,7 @@ def create_failed_post_processing_error(
 
 
 class PostProcessingError(Exception):
-    """
-    This is part of the formal API for implementing post_process
+    """This is part of the formal API for implementing post_process
     methods on config types. Throw this error to indicate a
     that post processing cannot happen, and that the user
     must make a configuration and environment change in

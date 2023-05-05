@@ -1,4 +1,5 @@
-# pylint: disable=protected-access
+# ruff: noqa: SLF001
+import datetime
 import os
 import subprocess
 import tempfile
@@ -18,6 +19,7 @@ from dagster import (
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
+from dagster._daemon.types import DaemonHeartbeat
 from dagster._utils import file_relative_path
 from sqlalchemy import create_engine, inspect
 
@@ -34,22 +36,24 @@ def get_tables(instance):
     return instance.run_storage._engine.table_names()
 
 
-def _reconstruct_from_file(conn_string, path, _username="root", _password="test"):
-    parse_result = urlparse(conn_string)
+def _reconstruct_from_file(backcompat_conn_string, path, _username="root", _password="test"):
+    parse_result = urlparse(backcompat_conn_string)
     hostname = parse_result.hostname
     port = parse_result.port
-    engine = create_engine(conn_string)
+    engine = create_engine(backcompat_conn_string)
     engine.execute("drop schema test;")
     engine.execute("create schema test;")
     env = os.environ.copy()
     env["MYSQL_PWD"] = "test"
-    subprocess.check_call(f"mysql -uroot -h{hostname} -P{port} test < {path}", shell=True, env=env)
+    subprocess.check_call(
+        f"mysql -uroot -h{hostname} -P{port} -ptest test < {path}", shell=True, env=env
+    )
     return hostname, port
 
 
-def test_0_13_17_mysql_convert_float_cols(conn_string):
+def test_0_13_17_mysql_convert_float_cols(backcompat_conn_string):
     hostname, port = _reconstruct_from_file(
-        conn_string,
+        backcompat_conn_string,
         file_relative_path(__file__, "snapshot_0_13_18_start_end_timestamp.sql"),
     )
 
@@ -79,9 +83,9 @@ def test_0_13_17_mysql_convert_float_cols(conn_string):
         assert int(record.end_time) == 1643788834
 
 
-def test_instigators_table_backcompat(conn_string):
+def test_instigators_table_backcompat(backcompat_conn_string):
     hostname, port = _reconstruct_from_file(
-        conn_string,
+        backcompat_conn_string,
         file_relative_path(__file__, "snapshot_0_14_6_instigators_table.sql"),
     )
 
@@ -102,9 +106,9 @@ def test_instigators_table_backcompat(conn_string):
         assert instance.schedule_storage.has_instigators_table()
 
 
-def test_asset_observation_backcompat(conn_string):
+def test_asset_observation_backcompat(backcompat_conn_string):
     hostname, port = _reconstruct_from_file(
-        conn_string,
+        backcompat_conn_string,
         file_relative_path(__file__, "snapshot_0_11_16_pre_add_asset_key_index_cols.sql"),
     )
 
@@ -134,13 +138,13 @@ def test_asset_observation_backcompat(conn_string):
             assert storage.has_asset_key(AssetKey(["a"]))
 
 
-def test_jobs_selector_id_migration(conn_string):
+def test_jobs_selector_id_migration(backcompat_conn_string):
     import sqlalchemy as db
     from dagster._core.storage.schedules.migration import SCHEDULE_JOBS_SELECTOR_ID
     from dagster._core.storage.schedules.schema import InstigatorsTable, JobTable, JobTickTable
 
     hostname, port = _reconstruct_from_file(
-        conn_string,
+        backcompat_conn_string,
         file_relative_path(__file__, "snapshot_0_14_6_post_schema_pre_data_migration.sql"),
     )
 
@@ -194,12 +198,12 @@ def test_jobs_selector_id_migration(conn_string):
             assert migrated_tick_count == legacy_tick_count
 
 
-def test_add_bulk_actions_columns(conn_string):
+def test_add_bulk_actions_columns(backcompat_conn_string):
     new_columns = {"selector_id", "action_type"}
     new_indexes = {"idx_bulk_actions_action_type", "idx_bulk_actions_selector_id"}
 
     hostname, port = _reconstruct_from_file(
-        conn_string,
+        backcompat_conn_string,
         # use an old snapshot, it has the bulk actions table but not the new columns
         file_relative_path(__file__, "snapshot_0_14_6_post_schema_pre_data_migration.sql"),
     )
@@ -221,9 +225,9 @@ def test_add_bulk_actions_columns(conn_string):
             assert new_indexes <= get_indexes(instance, "bulk_actions")
 
 
-def test_add_kvs_table(conn_string):
+def test_add_kvs_table(backcompat_conn_string):
     hostname, port = _reconstruct_from_file(
-        conn_string,
+        backcompat_conn_string,
         # use an old snapshot
         file_relative_path(__file__, "snapshot_0_14_6_post_schema_pre_data_migration.sql"),
     )
@@ -244,7 +248,7 @@ def test_add_kvs_table(conn_string):
             assert "idx_kvs_keys_unique" in get_indexes(instance, "kvs")
 
 
-def test_add_asset_event_tags_table(conn_string):
+def test_add_asset_event_tags_table(backcompat_conn_string):
     @op
     def yields_materialization_w_tags(_):
         yield AssetMaterialization(asset_key=AssetKey(["a"]), tags={"dagster/foo": "bar"})
@@ -255,7 +259,7 @@ def test_add_asset_event_tags_table(conn_string):
         yields_materialization_w_tags()
 
     hostname, port = _reconstruct_from_file(
-        conn_string,
+        backcompat_conn_string,
         # use an old snapshot
         file_relative_path(__file__, "snapshot_1_0_12_pre_add_asset_event_tags_table.sql"),
     )
@@ -319,11 +323,11 @@ def test_add_asset_event_tags_table(conn_string):
             assert "idx_asset_event_tags_event_id" in indexes
 
 
-def test_add_cached_status_data_column(conn_string):
+def test_add_cached_status_data_column(backcompat_conn_string):
     new_columns = {"cached_status_data"}
 
     hostname, port = _reconstruct_from_file(
-        conn_string,
+        backcompat_conn_string,
         # use an old snapshot, it has the bulk actions table but not the new columns
         file_relative_path(__file__, "snapshot_1_0_17_add_cached_status_data_column.sql"),
     )
@@ -341,3 +345,109 @@ def test_add_cached_status_data_column(conn_string):
 
             instance.upgrade()
             assert new_columns <= get_columns(instance, "asset_keys")
+
+
+def test_add_dynamic_partitions_table(backcompat_conn_string):
+    hostname, port = _reconstruct_from_file(
+        backcompat_conn_string,
+        file_relative_path(__file__, "snapshot_1_0_17_add_cached_status_data_column.sql"),
+    )
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+                template = template_fd.read().format(hostname=hostname, port=port)
+                target_fd.write(template)
+
+        with DagsterInstance.from_config(tempdir) as instance:
+            assert "dynamic_partitions" not in get_tables(instance)
+
+            instance.wipe()
+
+            with pytest.raises(DagsterInvalidInvocationError, match="does not exist"):
+                instance.get_dynamic_partitions("foo")
+
+            instance.upgrade()
+            assert "dynamic_partitions" in get_tables(instance)
+            assert instance.get_dynamic_partitions("foo") == []
+
+
+def _get_table_row_count(run_storage, table, with_non_null_id=False):
+    import sqlalchemy as db
+
+    query = db.select([db.func.count()]).select_from(table)
+    if with_non_null_id:
+        query = query.where(table.c.id.isnot(None))
+    with run_storage.connect() as conn:
+        row_count = conn.execute(query).fetchone()[0]
+    return row_count
+
+
+def test_add_primary_keys(backcompat_conn_string):
+    from dagster._core.storage.runs.schema import (
+        DaemonHeartbeatsTable,
+        InstanceInfo,
+        KeyValueStoreTable,
+    )
+
+    hostname, port = _reconstruct_from_file(
+        backcompat_conn_string,
+        file_relative_path(__file__, "snapshot_1_1_22_pre_primary_key.sql"),
+    )
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+                template = template_fd.read().format(hostname=hostname, port=port)
+                target_fd.write(template)
+
+        with DagsterInstance.from_config(tempdir) as instance:
+            assert "id" not in get_columns(instance, "kvs")
+            # trigger insert, and update
+            instance.run_storage.set_cursor_values({"a": "A"})
+            instance.run_storage.set_cursor_values({"a": "A"})
+
+            kvs_row_count = _get_table_row_count(instance.run_storage, KeyValueStoreTable)
+            assert kvs_row_count > 0
+
+            assert "id" not in get_columns(instance, "instance_info")
+            instance_info_row_count = _get_table_row_count(instance.run_storage, InstanceInfo)
+            assert instance_info_row_count > 0
+
+            assert "id" not in get_columns(instance, "daemon_heartbeats")
+            heartbeat = DaemonHeartbeat(
+                timestamp=datetime.datetime.now().timestamp(), daemon_type="test", daemon_id="test"
+            )
+            instance.run_storage.add_daemon_heartbeat(heartbeat)
+            instance.run_storage.add_daemon_heartbeat(heartbeat)
+            daemon_heartbeats_row_count = _get_table_row_count(
+                instance.run_storage, DaemonHeartbeatsTable
+            )
+            assert daemon_heartbeats_row_count > 0
+
+            instance.upgrade()
+
+            assert "id" in get_columns(instance, "kvs")
+            with instance.run_storage.connect():
+                kvs_id_count = _get_table_row_count(
+                    instance.run_storage, KeyValueStoreTable, with_non_null_id=True
+                )
+            assert kvs_id_count == kvs_row_count
+
+            assert "id" in get_columns(instance, "instance_info")
+            with instance.run_storage.connect():
+                instance_info_id_count = _get_table_row_count(
+                    instance.run_storage, InstanceInfo, with_non_null_id=True
+                )
+            assert instance_info_id_count == instance_info_row_count
+
+            assert "id" in get_columns(instance, "daemon_heartbeats")
+            with instance.run_storage.connect():
+                daemon_heartbeats_id_count = _get_table_row_count(
+                    instance.run_storage, DaemonHeartbeatsTable, with_non_null_id=True
+                )
+            assert daemon_heartbeats_id_count == daemon_heartbeats_row_count

@@ -79,7 +79,7 @@ export const JobBackfillsTable = ({
             if (cursor) {
               setCursorStack((current) => [...current, cursor]);
             }
-            const nextCursor = backfills && backfills[backfills.length - 1].backfillId;
+            const nextCursor = backfills && backfills[backfills.length - 1].id;
             if (!nextCursor) {
               return;
             }
@@ -121,6 +121,7 @@ const JOB_BACKFILLS_QUERY = gql`
         id
         pipelineName
         backfills(cursor: $cursor, limit: $limit) {
+          id
           ...BackfillTableFragment
         }
       }

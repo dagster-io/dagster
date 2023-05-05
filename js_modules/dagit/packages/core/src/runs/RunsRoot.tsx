@@ -13,6 +13,7 @@ import partition from 'lodash/partition';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {useFeatureFlags} from '../app/Flags';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
@@ -32,8 +33,10 @@ import {
   RunFilterToken,
 } from './RunsFilterInput';
 import {RunsPageHeader} from './RunsPageHeader';
+import RunsRootNew from './RunsRootNew';
 import {
   QueueDaemonStatusQuery,
+  QueueDaemonStatusQueryVariables,
   RunsRootQuery,
   RunsRootQueryVariables,
 } from './types/RunsRoot.types';
@@ -42,6 +45,11 @@ import {useCursorPaginatedQuery} from './useCursorPaginatedQuery';
 const PAGE_SIZE = 25;
 
 export const RunsRoot = () => {
+  const {flagRunsTableFiltering} = useFeatureFlags();
+  return flagRunsTableFiltering ? <RunsRootNew /> : <RunsRootImpl />;
+};
+
+const RunsRootImpl = () => {
   useTrackPageView();
 
   const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters();
@@ -56,7 +64,7 @@ export const RunsRoot = () => {
       if (runs.pipelineRunsOrError.__typename !== 'Runs') {
         return undefined;
       }
-      return runs.pipelineRunsOrError.results[PAGE_SIZE - 1]?.runId;
+      return runs.pipelineRunsOrError.results[PAGE_SIZE - 1]?.id;
     },
     getResultArray: (data) => {
       if (!data || data.pipelineRunsOrError.__typename !== 'Runs') {
@@ -197,7 +205,7 @@ export const RunsRoot = () => {
                             {filterTokens
                               .filter((token) => token.token === 'status')
                               .map(({token, value}) => (
-                                <Tag key={token}>{`${token}:${value}`}</Tag>
+                                <Tag key={`${token}:${value}`}>{`${token}:${value}`}</Tag>
                               ))}
                           </Box>
                         ) : null}
@@ -250,7 +258,9 @@ const RUNS_ROOT_QUERY = gql`
 `;
 
 const QueueDaemonAlert = () => {
-  const {data} = useQuery<QueueDaemonStatusQuery>(QUEUE_DAEMON_STATUS_QUERY);
+  const {data} = useQuery<QueueDaemonStatusQuery, QueueDaemonStatusQueryVariables>(
+    QUEUE_DAEMON_STATUS_QUERY,
+  );
   const {pageTitle} = React.useContext(InstancePageContext);
   const status = data?.instance.daemonHealth.daemonStatus;
   if (status?.required && !status?.healthy) {
@@ -272,6 +282,7 @@ const QueueDaemonAlert = () => {
 const QUEUE_DAEMON_STATUS_QUERY = gql`
   query QueueDaemonStatusQuery {
     instance {
+      id
       daemonHealth {
         id
         daemonStatus(daemonType: "QUEUED_RUN_COORDINATOR") {

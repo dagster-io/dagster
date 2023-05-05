@@ -44,7 +44,7 @@ def test_tempdir():
 
 
 def test_get_arg_names():
-    def foo(one, two=2, three=None):  # pylint: disable=unused-argument
+    def foo(one, two=2, three=None):
         pass
 
     assert len(_seven.get_arg_names(foo)) == 3

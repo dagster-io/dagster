@@ -35,6 +35,11 @@ export const WorkspaceTabs = <TData extends Record<string, any>>(props: Props<TD
         />
         <TabLink id="graphs" title="Graphs" to={workspacePathFromAddress(repoAddress, '/graphs')} />
         <TabLink id="ops" title="Ops" to={workspacePathFromAddress(repoAddress, '/ops')} />
+        <TabLink
+          id="resources"
+          title="Resources"
+          to={workspacePathFromAddress(repoAddress, '/resources')}
+        />
       </Tabs>
       {refreshState ? (
         <Box padding={{bottom: 8}}>

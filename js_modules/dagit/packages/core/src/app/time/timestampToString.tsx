@@ -1,3 +1,4 @@
+import {HourCycle} from './HourCycle';
 import {TimeFormat, DEFAULT_TIME_FORMAT} from './TimestampFormat';
 import {browserTimezone} from './browserTimezone';
 
@@ -6,10 +7,18 @@ type Config = {
   locale: string;
   timezone: string;
   timeFormat?: TimeFormat;
+  hourCycle?: HourCycle;
 };
 
 export const timestampToString = (config: Config) => {
-  const {timestamp, locale, timezone, timeFormat = DEFAULT_TIME_FORMAT} = config;
+  const {
+    timestamp,
+    locale,
+    timezone,
+    timeFormat = DEFAULT_TIME_FORMAT,
+    hourCycle = 'Automatic',
+  } = config;
+
   const msec = 'ms' in timestamp ? timestamp.ms : timestamp.unix * 1000;
   const date = new Date(msec);
   const targetTimezone = timezone === 'Automatic' ? browserTimezone() : timezone;
@@ -31,6 +40,7 @@ export const timestampToString = (config: Config) => {
     hour: 'numeric',
     minute: 'numeric',
     second: timeFormat.showSeconds ? 'numeric' : undefined,
+    hourCycle: hourCycle === 'Automatic' ? undefined : hourCycle,
     timeZone: targetTimezone,
     timeZoneName: timeFormat.showTimezone ? 'short' : undefined,
   });

@@ -21,7 +21,7 @@ interface Props {
 
 export const BackfillStepStatusDialog = ({backfill, onClose}: Props) => {
   const content = () => {
-    if (!backfill?.partitionSet) {
+    if (!backfill?.partitionSet || backfill.partitionNames === null) {
       return null;
     }
 
@@ -34,6 +34,7 @@ export const BackfillStepStatusDialog = ({backfill, onClose}: Props) => {
       <BackfillStepStatusDialogContent
         backfill={backfill}
         partitionSet={backfill.partitionSet}
+        partitionNames={backfill.partitionNames}
         repoAddress={repoAddress}
         onClose={onClose}
       />
@@ -43,7 +44,7 @@ export const BackfillStepStatusDialog = ({backfill, onClose}: Props) => {
   return (
     <Dialog
       isOpen={!!backfill?.partitionSet}
-      title={`Step status for backfill: ${backfill?.backfillId}`}
+      title={`Step status for backfill: ${backfill?.id}`}
       onClose={onClose}
       style={{width: '80vw'}}
     >
@@ -58,27 +59,29 @@ export const BackfillStepStatusDialog = ({backfill, onClose}: Props) => {
 interface ContentProps {
   backfill: BackfillTableFragment;
   partitionSet: PartitionSetForBackfillTableFragment;
+  partitionNames: string[];
   repoAddress: RepoAddress;
   onClose: () => void;
 }
 
-export const BackfillStepStatusDialogContent = ({
+const BackfillStepStatusDialogContent = ({
   backfill,
   partitionSet,
+  partitionNames,
   repoAddress,
 }: ContentProps) => {
   const [pageSize, setPageSize] = React.useState(60);
   const [offset, setOffset] = React.useState<number>(0);
 
   const runsFilter = React.useMemo(() => {
-    const token: RunFilterToken = {token: 'tag', value: `dagster/backfill=${backfill.backfillId}`};
+    const token: RunFilterToken = {token: 'tag', value: `dagster/backfill=${backfill.id}`};
     return [token];
-  }, [backfill.backfillId]);
+  }, [backfill.id]);
 
   const partitions = usePartitionStepQuery({
     partitionSetName: partitionSet.name,
     partitionTagName: DagsterTag.Partition,
-    partitionNames: backfill.partitionNames,
+    partitionNames,
     pageSize,
     runsFilter,
     repositorySelector: repoAddressToSelector(repoAddress),
@@ -89,7 +92,7 @@ export const BackfillStepStatusDialogContent = ({
 
   return (
     <PartitionPerOpStatus
-      partitionNames={backfill.partitionNames}
+      partitionNames={partitionNames}
       partitions={partitions}
       pipelineName={partitionSet?.pipelineName}
       repoAddress={repoAddress}

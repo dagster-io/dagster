@@ -14,17 +14,15 @@ export const BackfillPartitionsRequestedDialog = ({backfill, onClose}: Props) =>
       title={
         <span>
           Partitions requested for backfill:{' '}
-          <span style={{fontSize: '18px', fontFamily: FontFamily.monospace}}>
-            {backfill?.backfillId}
-          </span>
+          <span style={{fontSize: '18px', fontFamily: FontFamily.monospace}}>{backfill?.id}</span>
         </span>
       }
       onClose={onClose}
     >
       <DialogBody>
-        {backfill ? (
+        {backfill && backfill.partitionNames ? (
           <Box flex={{direction: 'column', gap: 8}} style={{maxHeight: '80vh', overflowY: 'auto'}}>
-            {backfill.partitionNames.map((partitionName: string) => (
+            {backfill.partitionNames.map((partitionName) => (
               <div key={partitionName}>{partitionName}</div>
             ))}
           </Box>

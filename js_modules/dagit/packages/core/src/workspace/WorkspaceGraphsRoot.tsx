@@ -7,6 +7,7 @@ import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 
 import {Graph, VirtualizedGraphTable} from './VirtualizedGraphTable';
 import {WorkspaceHeader} from './WorkspaceHeader';
@@ -24,8 +25,11 @@ export const WorkspaceGraphsRoot = ({repoAddress}: {repoAddress: RepoAddress}) =
   const repoName = repoAddressAsHumanString(repoAddress);
   useDocumentTitle(`Graphs: ${repoName}`);
 
-  const [searchValue, setSearchValue] = React.useState('');
   const selector = repoAddressToSelector(repoAddress);
+  const [searchValue, setSearchValue] = useQueryPersistedState<string>({
+    queryKey: 'search',
+    defaults: {search: ''},
+  });
 
   const queryResultOverview = useQuery<WorkspaceGraphsQuery, WorkspaceGraphsQueryVariables>(
     WORSKPACE_GRAPHS_QUERY,
@@ -155,7 +159,6 @@ const WORSKPACE_GRAPHS_QUERY = gql`
         id
         usedSolids {
           definition {
-            __typename
             ... on CompositeSolidDefinition {
               id
               name

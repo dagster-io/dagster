@@ -21,14 +21,6 @@ class OpVersionContext(NamedTuple):
     op_def: "OpDefinition"
     op_config: Any
 
-    @property
-    def solid_def(self) -> "OpDefinition":
-        return self.op_def
-
-    @property
-    def solid_config(self) -> Any:
-        return self.op_config
-
 
 class ResourceVersionContext(NamedTuple):
     """Provides execution-time information for computing the version for a resource.
@@ -51,7 +43,7 @@ class VersionStrategy(ABC):
     `get_op_version` should ingest an OpVersionContext, and `get_resource_version` should ingest a
     ResourceVersionContext. From that,  each synthesize a unique string called
     a `version`, which will
-    be tagged to outputs of that solid in the pipeline. Providing a
+    be tagged to outputs of that op in the job. Providing a
     `VersionStrategy` instance to a
     job will enable memoization on that job, such that only steps whose
     outputs do not have an up-to-date version will run.
@@ -63,9 +55,7 @@ class VersionStrategy(ABC):
         raise NotImplementedError()
 
     @public
-    def get_resource_version(
-        self, context: ResourceVersionContext  # pylint: disable=unused-argument
-    ) -> Optional[str]:
+    def get_resource_version(self, context: ResourceVersionContext) -> Optional[str]:
         return None
 
 

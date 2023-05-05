@@ -1,3 +1,4 @@
+import logging
 import os
 from typing import Callable, Dict, Iterator, List, Mapping, Optional, Sequence
 
@@ -5,7 +6,7 @@ import dagster._check as check
 from dagster import DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.pipeline_run import RunRecord, RunsFilter
+from dagster._core.storage.dagster_run import RunRecord, RunsFilter
 from dagster._core.workspace.context import IWorkspaceProcessContext
 
 from ..daemon import IntervalDaemon
@@ -34,8 +35,7 @@ class EventLogConsumerDaemon(IntervalDaemon):
     def handle_updated_runs_fns(
         self,
     ) -> Sequence[Callable[[IWorkspaceProcessContext, Sequence[RunRecord]], Iterator]]:
-        """
-        List of functions that will be called with the list of run records that have new events.
+        """List of functions that will be called with the list of run records that have new events.
         """
         return [consume_new_runs_for_automatic_reexecution]
 
@@ -94,20 +94,20 @@ class EventLogConsumerDaemon(IntervalDaemon):
         _persist_cursors(instance, new_cursors)
 
 
-def _create_cursor_key(event_type: DagsterEventType):
+def _create_cursor_key(event_type: DagsterEventType) -> str:
     check.inst_param(event_type, "event_type", DagsterEventType)
 
     return f"EVENT_LOG_CONSUMER_CURSOR-{event_type.value}"
 
 
 def _fetch_persisted_cursors(
-    instance: DagsterInstance, event_types: Sequence[DagsterEventType], logger
+    instance: DagsterInstance, event_types: Sequence[DagsterEventType], logger: logging.Logger
 ) -> Dict[DagsterEventType, Optional[int]]:
     check.inst_param(instance, "instance", DagsterInstance)
     check.sequence_param(event_types, "event_types", of_type=DagsterEventType)
 
     # get the persisted cursor for each event type
-    persisted_cursors = instance.run_storage.kvs_get(
+    persisted_cursors = instance.daemon_cursor_storage.get_cursor_values(
         {_create_cursor_key(event_type) for event_type in event_types}
     )
 
@@ -116,15 +116,13 @@ def _fetch_persisted_cursors(
         raw_cursor_value = persisted_cursors.get(_create_cursor_key(event_type))
 
         if raw_cursor_value is None:
-            logger.warn("No cursor for event type {}, ignoring older events".format(event_type))
+            logger.warn(f"No cursor for event type {event_type}, ignoring older events")
             fetched_cursors[event_type] = None
         else:
             try:
                 cursor_value = int(raw_cursor_value)
             except ValueError:
-                logger.exception(
-                    "Invalid cursor for event_type {}: {}".format(event_type, raw_cursor_value)
-                )
+                logger.exception(f"Invalid cursor for event_type {event_type}: {raw_cursor_value}")
                 raise
             fetched_cursors[event_type] = cursor_value
 
@@ -136,7 +134,7 @@ def _persist_cursors(instance: DagsterInstance, cursors: Mapping[DagsterEventTyp
     check.mapping_param(cursors, "cursors", key_type=DagsterEventType, value_type=int)
 
     if cursors:
-        instance.run_storage.kvs_set(
+        instance.daemon_cursor_storage.set_cursor_values(
             {
                 _create_cursor_key(event_type): str(cursor_value)
                 for event_type, cursor_value in cursors.items()
@@ -150,9 +148,9 @@ def get_new_cursor(
     fetch_limit: int,
     new_event_ids: Sequence[int],
 ) -> int:
-    """
-    Return the new cursor value for an event type, or None if one shouldn't be persisted. The cursor
-    is guaranteed to be:
+    """Return the new cursor value for an event type, or None if one shouldn't be persisted.
+
+    The cursor is guaranteed to be:
 
     - greater than or equal to any id in new_event_ids (otherwise we could process an event twice)
     - less than the id of any event of the desired type that hasn't been fetched yet (otherwise we

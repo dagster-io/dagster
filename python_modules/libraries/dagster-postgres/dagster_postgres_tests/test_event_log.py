@@ -15,7 +15,7 @@ class TestPostgresEventLogStorage(TestEventLogStorage):
     __test__ = True
 
     @pytest.fixture(scope="function", name="storage")
-    def event_log_storage(self, conn_string):  # pylint: disable=arguments-renamed
+    def event_log_storage(self, conn_string):
         storage = PostgresEventLogStorage.create_clean_storage(conn_string)
         assert storage
         try:
@@ -106,11 +106,10 @@ class TestPostgresEventLogStorage(TestEventLogStorage):
             hostname=hostname
         )
 
-        # pylint: disable=protected-access
         with instance_for_test(overrides=yaml.safe_load(url_cfg)) as from_url_instance:
-            from_url = from_url_instance._event_storage
+            from_url = from_url_instance._event_storage  # noqa: SLF001
 
             with instance_for_test(overrides=yaml.safe_load(explicit_cfg)) as explicit_instance:
-                from_explicit = explicit_instance._event_storage
+                from_explicit = explicit_instance._event_storage  # noqa: SLF001
 
                 assert from_url.postgres_url == from_explicit.postgres_url

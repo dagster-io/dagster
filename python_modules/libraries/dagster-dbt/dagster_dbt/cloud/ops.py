@@ -1,61 +1,58 @@
-from dagster import Array, Bool, Field, In, Noneable, Nothing, Out, Output, op
+from typing import List, Optional
+
+from dagster import Config, In, Nothing, Out, Output, op
+from pydantic import Field
 
 from ..utils import generate_materializations
 from .resources import DEFAULT_POLL_INTERVAL
 from .types import DbtCloudOutput
 
 
+class DbtCloudRunOpConfig(Config):
+    job_id: int = Field(
+        description=(
+            "The integer ID of the relevant dbt Cloud job. You can find this value by going to the"
+            " details page of your job in the dbt Cloud UI. It will be the final number in the url,"
+            " e.g.:    "
+            " https://cloud.getdbt.com/#/accounts/{account_id}/projects/{project_id}/jobs/{job_id}/"
+        )
+    )
+    poll_interval: float = Field(
+        default=DEFAULT_POLL_INTERVAL,
+        description="The time (in seconds) that will be waited between successive polls.",
+    )
+    poll_timeout: Optional[float] = Field(
+        default=None,
+        description=(
+            "The maximum time that will waited before this operation is timed out. By "
+            "default, this will never time out."
+        ),
+    )
+    yield_materializations: bool = Field(
+        default=True,
+        description=(
+            "If True, materializations corresponding to the results of the dbt operation will "
+            "be yielded when the op executes."
+        ),
+    )
+
+    asset_key_prefix: List[str] = Field(
+        default=["dbt"],
+        description=(
+            "If provided and yield_materializations is True, these components will be used to "
+            "prefix the generated asset keys."
+        ),
+    )
+
+
 @op(
     required_resource_keys={"dbt_cloud"},
     ins={"start_after": In(Nothing)},
     out=Out(DbtCloudOutput, description="Parsed output from running the dbt Cloud job."),
-    config_schema={
-        "job_id": Field(
-            config=int,
-            is_required=True,
-            description=(
-                "The integer ID of the relevant dbt Cloud job. You can find this value by going to "
-                "the details page of your job in the dbt Cloud UI. It will be the final number in"
-                " the "
-                "url, e.g.: "
-                "    https://cloud.getdbt.com/#/accounts/{account_id}/projects/{project_id}/jobs/{job_id}/"
-            ),
-        ),
-        "poll_interval": Field(
-            float,
-            default_value=DEFAULT_POLL_INTERVAL,
-            description="The time (in seconds) that will be waited between successive polls.",
-        ),
-        "poll_timeout": Field(
-            Noneable(float),
-            default_value=None,
-            description=(
-                "The maximum time that will waited before this operation is timed out. By "
-                "default, this will never time out."
-            ),
-        ),
-        "yield_materializations": Field(
-            config=Bool,
-            default_value=True,
-            description=(
-                "If True, materializations corresponding to the results of the dbt operation will "
-                "be yielded when the op executes."
-            ),
-        ),
-        "asset_key_prefix": Field(
-            config=Array(str),
-            default_value=["dbt"],
-            description=(
-                "If provided and yield_materializations is True, these components will be used to "
-                "prefix the generated asset keys."
-            ),
-        ),
-    },
     tags={"kind": "dbt_cloud"},
 )
-def dbt_cloud_run_op(context):
-    """
-    Initiates a run for a dbt Cloud job, then polls until the run completes. If the job
+def dbt_cloud_run_op(context, config: DbtCloudRunOpConfig):
+    """Initiates a run for a dbt Cloud job, then polls until the run completes. If the job
     fails or is otherwised stopped before succeeding, a `dagster.Failure` exception will be raised,
     and this op will fail.
 
@@ -100,14 +97,10 @@ def dbt_cloud_run_op(context):
 
     """
     dbt_output = context.resources.dbt_cloud.run_job_and_poll(
-        context.op_config["job_id"],
-        poll_interval=context.op_config["poll_interval"],
-        poll_timeout=context.op_config["poll_timeout"],
+        config.job_id, poll_interval=config.poll_interval, poll_timeout=config.poll_timeout
     )
-    if context.op_config["yield_materializations"] and "results" in dbt_output.result:
-        yield from generate_materializations(
-            dbt_output, asset_key_prefix=context.op_config["asset_key_prefix"]
-        )
+    if config.yield_materializations and "results" in dbt_output.result:
+        yield from generate_materializations(dbt_output, asset_key_prefix=config.asset_key_prefix)
     yield Output(
         dbt_output,
         metadata={

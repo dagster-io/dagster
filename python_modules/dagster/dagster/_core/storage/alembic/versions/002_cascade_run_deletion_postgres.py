@@ -8,7 +8,6 @@ Create Date: 2020-02-10 12:52:49.540462
 from alembic import op
 from sqlalchemy import inspect
 
-# pylint: disable=no-member
 # alembic dynamically populates the alembic.context module
 
 # revision identifiers, used by Alembic.

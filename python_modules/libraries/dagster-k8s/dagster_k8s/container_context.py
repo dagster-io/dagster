@@ -2,12 +2,13 @@ from typing import TYPE_CHECKING, Any, Dict, Mapping, NamedTuple, Optional, Sequ
 
 import dagster._check as check
 import kubernetes
+import kubernetes.client
 from dagster._config import process_config
 from dagster._core.container_context import process_shared_container_context_config
 from dagster._core.errors import DagsterInvalidConfigError
-from dagster._core.storage.pipeline_run import DagsterRun
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.utils import parse_env_var
-from dagster._utils import frozentags, make_readonly_value
+from dagster._utils import hash_collection
 
 if TYPE_CHECKING:
     from . import K8sRunLauncher
@@ -17,7 +18,13 @@ from .models import k8s_snake_case_dict
 
 
 def _dedupe_list(values):
-    return sorted(list(set([make_readonly_value(value) for value in values])), key=hash)
+    new_list = []
+    for value in values:
+        if value not in new_list:
+            new_list.append(value)
+    return sorted(
+        new_list, key=lambda x: hash_collection(x) if isinstance(x, (list, dict)) else hash(x)
+    )
 
 
 class K8sContainerContext(
@@ -39,11 +46,12 @@ class K8sContainerContext(
             ("security_context", Mapping[str, Any]),
             ("server_k8s_config", Mapping[str, Any]),
             ("run_k8s_config", Mapping[str, Any]),
+            ("env", Sequence[Mapping[str, Any]]),
         ],
     )
 ):
     """Encapsulates configuration that can be applied to a K8s job running Dagster code.
-    Can be persisted on a PipelineRun at run submission time based on metadata from the
+    Can be persisted on a DagsterRun at run submission time based on metadata from the
     code location and then included in the job's configuration at run launch time or step
     launch time.
     """
@@ -65,6 +73,7 @@ class K8sContainerContext(
         security_context: Optional[Mapping[str, Any]] = None,
         server_k8s_config: Optional[Mapping[str, Any]] = None,
         run_k8s_config: Optional[Mapping[str, Any]] = None,
+        env: Optional[Sequence[Mapping[str, Any]]] = None,
     ):
         return super(K8sContainerContext, cls).__new__(
             cls,
@@ -93,6 +102,10 @@ class K8sContainerContext(
             run_k8s_config=UserDefinedDagsterK8sConfig(
                 **check.opt_mapping_param(run_k8s_config, "run_k8s_config")
             ).to_dict(),
+            env=[
+                k8s_snake_case_dict(kubernetes.client.V1EnvVar, e)
+                for e in check.opt_sequence_param(env, "env")
+            ],
         )
 
     def _merge_k8s_config(
@@ -132,6 +145,7 @@ class K8sContainerContext(
                 self.server_k8s_config, other.server_k8s_config
             ),
             run_k8s_config=self._merge_k8s_config(self.run_k8s_config, other.run_k8s_config),
+            env=_dedupe_list([*other.env, *self.env]),
         )
 
     def get_environment_dict(self) -> Mapping[str, str]:
@@ -140,7 +154,9 @@ class K8sContainerContext(
 
     @staticmethod
     def create_for_run(
-        pipeline_run: DagsterRun, run_launcher: Optional["K8sRunLauncher"]
+        dagster_run: DagsterRun,
+        run_launcher: Optional["K8sRunLauncher"],
+        include_run_tags: bool,
     ) -> "K8sContainerContext":
         context = K8sContainerContext()
 
@@ -164,21 +180,20 @@ class K8sContainerContext(
                 )
             )
 
-        if pipeline_run.pipeline_code_origin:
-            run_container_context = (
-                pipeline_run.pipeline_code_origin.repository_origin.container_context
-            )
+        if dagster_run.job_code_origin:
+            run_container_context = dagster_run.job_code_origin.repository_origin.container_context
 
             if run_container_context:
                 context = context.merge(
                     K8sContainerContext.create_from_config(run_container_context)
                 )
 
-        user_defined_k8s_config = get_user_defined_k8s_config(frozentags(pipeline_run.tags))
+        if include_run_tags:
+            user_defined_k8s_config = get_user_defined_k8s_config(dagster_run.tags)
 
-        context = context.merge(
-            K8sContainerContext(run_k8s_config=user_defined_k8s_config.to_dict())
-        )
+            context = context.merge(
+                K8sContainerContext(run_k8s_config=user_defined_k8s_config.to_dict())
+            )
 
         return context
 
@@ -228,6 +243,7 @@ class K8sContainerContext(
                 security_context=processed_context_value.get("security_context"),
                 server_k8s_config=processed_context_value.get("server_k8s_config"),
                 run_k8s_config=processed_context_value.get("run_k8s_config"),
+                env=processed_context_value.get("env"),
             )
         )
 

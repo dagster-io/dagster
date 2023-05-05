@@ -694,7 +694,11 @@ export function expandAutocompletionContextAtCursor(editor: any) {
 
   let searchString: string;
   let start: number;
-  if (token.type === 'whitespace' || token.string.startsWith(':')) {
+  if (
+    token.type === 'whitespace' ||
+    token.type?.startsWith('indent ') ||
+    token.string.startsWith(':')
+  ) {
     searchString = '';
     start = token.end;
   } else {
@@ -734,7 +738,7 @@ export type YamlModeValidationResult =
 
 export type YamlModeValidateFunction = (configYaml: string) => Promise<YamlModeValidationResult>;
 
-export type YamlModeValidationError = {
+type YamlModeValidationError = {
   message: string;
   path: string[];
   reason: string;
@@ -831,7 +835,7 @@ const registerYamlLint = () => {
   );
 };
 
-export function validationErrorToCodemirrorError(
+function validationErrorToCodemirrorError(
   error: YamlModeValidationError,
   yamlDoc: yaml.Document,
   codeMirrorDoc: any,

@@ -7,7 +7,7 @@ from setuptools import find_packages, setup
 def get_version() -> str:
     version: Dict[str, str] = {}
     with open(Path(__file__).parent / "dagster_docker/version.py", encoding="utf8") as fp:
-        exec(fp.read(), version)  # pylint: disable=W0122
+        exec(fp.read(), version)
 
     return version["__version__"]
 
@@ -28,10 +28,13 @@ setup(
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_docker_tests*"]),
-    install_requires=[f"dagster{pin}", "docker", "docker-image-py"],
+    # urllib3<2 pin needed until docker-py is updated
+    # see: https://github.com/docker/docker-py/issues/3113
+    install_requires=[f"dagster{pin}", "docker", "docker-image-py", "urllib3<2"],
     zip_safe=False,
 )

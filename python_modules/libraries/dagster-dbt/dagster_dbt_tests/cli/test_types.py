@@ -16,7 +16,7 @@ class TestDbtCliOutput:
         )
         assert len(dco.result["results"]) == len(DBT_RESULT_DICT["results"])
 
-    def test_pickle_roundtrip(self):  # pylint: disable=unused-argument
+    def test_pickle_roundtrip(self):
         dco = DbtCliOutput(
             command="dbt run",
             return_code=0,

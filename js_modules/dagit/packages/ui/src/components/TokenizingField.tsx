@@ -15,6 +15,7 @@ export interface SuggestionProvider {
   token?: string;
   values: () => string[];
   suggestionFilter?: (query: string, suggestion: Suggestion) => boolean;
+  textOnly?: boolean;
 }
 
 export interface Suggestion {
@@ -47,6 +48,7 @@ interface TokenizingFieldProps {
 
   fullwidth?: boolean;
 
+  onTextChange?: (text: string) => void;
   suggestionProviders: SuggestionProvider[];
   suggestionRenderer?: (suggestion: Suggestion) => React.ReactNode;
   suggestionProvidersFilter?: (
@@ -122,6 +124,7 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
   onChange,
   onChangeBeforeCommit,
   onFocus,
+  onTextChange,
   placeholder,
   addOnBlur,
   loading,
@@ -173,7 +176,10 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
       return provider
         .values()
         .filter(suggestionNotUsed)
-        .map((v) => ({text: provider?.token ? `${provider.token}:${v}` : v, final: true}))
+        .map((v) => ({
+          text: provider?.token ? `${provider.token}:${v}` : v,
+          final: !provider.textOnly,
+        }))
         .filter((s) => suggestionFilter(lastPart, s))
         .slice(0, MAX_SUGGESTIONS); // never show too many suggestions for one provider
     };
@@ -213,6 +219,11 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
 
     return suggestionsArr;
   }, [atMaxValues, filteredSuggestionProviders, lastPart, parts, typed.length, values]);
+
+  const _onTextChange = (text: string) => {
+    setTyped(text);
+    onTextChange && onTextChange(text);
+  };
 
   // We need to manage selection in the dropdown by ourselves. To ensure the
   // best behavior we store the active item's index and text (the text allows
@@ -262,12 +273,12 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
     if (suggestion.final) {
       // The user has finished a key-value pair
       onConfirmText(suggestion.text);
-      setTyped('');
+      _onTextChange('');
       setActive(null);
       setOpen(false);
     } else {
       // The user has finished a key
-      setTyped(suggestion.text);
+      _onTextChange(suggestion.text);
     }
   };
 
@@ -282,7 +293,7 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
       return;
     }
 
-    setTyped('');
+    _onTextChange('');
     onChange([...values, tokenizedValueFromString(str, filteredSuggestionProviders)]);
   };
 
@@ -395,7 +406,7 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
           onChange(next);
         }}
         onInputChange={(e) => {
-          setTyped(e.currentTarget.value);
+          _onTextChange(e.currentTarget.value);
 
           if (onChangeBeforeCommit) {
             const tokenized = tokenizedValueFromString(
@@ -444,7 +455,7 @@ export const StyledTagInput = styled(TagInput)<{$maxWidth?: any}>`
   max-width: ${(p) => (p.$maxWidth ? p.$maxWidth : '600px')};
   transition: box-shadow 150ms;
 
-  &.bp3-active {
+  &.bp4-active {
     box-shadow: ${Colors.Gray300} inset 0px 0px 0px 1px, ${Colors.KeylineGray} inset 2px 2px 1.5px,
       rgba(58, 151, 212, 0.6) 0 0 0 3px;
   }
@@ -457,20 +468,20 @@ export const StyledTagInput = styled(TagInput)<{$maxWidth?: any}>`
     padding-top: 2px;
   }
 
-  && .bp3-tag-input-values:first-child .bp3-input-ghost:first-child {
+  && .bp4-tag-input-values:first-child .bp4-input-ghost:first-child {
     padding-left: 8px;
   }
 
-  && .bp3-tag-input-values {
+  && .bp4-tag-input-values {
     margin-right: 4px;
     margin-top: 4px;
   }
 
-  && .bp3-tag-input-values > * {
+  && .bp4-tag-input-values > * {
     margin-bottom: 4px;
   }
 
-  .bp3-tag {
+  .bp4-tag {
     border-radius: 6px;
     display: inline-flex;
     flex-direction: row;
@@ -485,22 +496,22 @@ export const StyledTagInput = styled(TagInput)<{$maxWidth?: any}>`
     user-select: none;
   }
 
-  .bp3-tag.bp3-minimal:not([class*='bp3-intent-']) {
+  .bp4-tag.bp4-minimal:not([class*='bp4-intent-']) {
     background-color: ${Colors.Gray100};
     color: ${Colors.Gray900};
   }
 
-  .bp3-tag.bp3-minimal.bp3-intent-success {
+  .bp4-tag.bp4-minimal.bp4-intent-success {
     background-color: ${Colors.Green50};
     color: ${Colors.Green700};
   }
 
-  .bp3-tag.bp3-minimal.bp3-intent-warning {
+  .bp4-tag.bp4-minimal.bp4-intent-warning {
     background-color: ${Colors.Yellow50};
     color: ${Colors.Yellow700};
   }
 
-  .bp3-tag.bp3-minimal.bp3-intent-danger {
+  .bp4-tag.bp4-minimal.bp4-intent-danger {
     background-color: ${Colors.Red50};
     color: ${Colors.Red700};
   }

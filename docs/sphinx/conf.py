@@ -25,6 +25,7 @@ paths = [
     "../../python_modules/libraries/dagster-azure",
     "../../python_modules/libraries/dagster-celery",
     "../../python_modules/libraries/dagster-celery-docker",
+    "../../python_modules/libraries/dagster-census",
     "../../python_modules/libraries/dagster-dask",
     "../../python_modules/libraries/dagster-datadog",
     "../../python_modules/libraries/dagster-datahub",
@@ -45,6 +46,7 @@ paths = [
     "../../python_modules/libraries/dagster-slack",
     "../../python_modules/libraries/dagster-snowflake",
     "../../python_modules/libraries/dagster-snowflake-pandas",
+    "../../python_modules/libraries/dagster-snowflake-pyspark",
     "../../python_modules/libraries/dagster-spark",
     "../../python_modules/libraries/dagster-ssh",
     "../../python_modules/libraries/dagster-twilio",
@@ -53,11 +55,15 @@ paths = [
     "../../python_modules/libraries/dagster-dbt",
     "../../python_modules/libraries/dagster-ge",
     "../../python_modules/libraries/dagster-gcp",
+    "../../python_modules/libraries/dagster-gcp-pandas",
+    "../../python_modules/libraries/dagster-gcp-pyspark",
     "../../python_modules/libraries/dagster-pyspark",
     "../../python_modules/libraries/dagster-databricks",
     "../../python_modules/libraries/dagster-duckdb",
     "../../python_modules/libraries/dagster-duckdb-pandas",
+    "../../python_modules/libraries/dagster-duckdb-polars",
     "../../python_modules/libraries/dagster-duckdb-pyspark",
+    "../../python_modules/libraries/dagster-wandb",
     ### autodoc_dagster extension
     "./_ext",
 ]
@@ -68,7 +74,7 @@ for path in paths:
 # -- Project information -----------------------------------------------------
 
 project = "Dagster"
-copyright = "2019, Elementl, Inc"  # pylint: disable=redefined-builtin
+copyright = "2019, Elementl, Inc"  # noqa: A001
 author = "The Dagster Team"
 
 # The short X.Y version
@@ -112,7 +118,7 @@ extensions = [
 # directive invocation. Note that filtration by publicity (done in the `autodoc_dagster` extension)
 # is performed on the member list controlled by this option-- without `members` set, even a method
 # marked `@public` will _not_ be included in the docs!
-autodoc_default_options = {"members": True}
+autodoc_default_options = {"members": True, "undoc-members": True}
 
 # List of all packages that should be mocked when autodoc is running. Autodoc is going to import
 # dagster packages, which in turn import various third-party packages. The vast majority of those
@@ -127,6 +133,7 @@ autodoc_mock_imports = [
     "croniter",
     "dask",
     "databricks_api",
+    "databricks_cli",
     "datadog",
     "docker",
     "docker_image",
@@ -148,6 +155,9 @@ autodoc_mock_imports = [
     "sshtunnel",
     "toposort",
     "twilio",
+    "polars",
+    "wandb",
+    "pandas_gbq",
 ]
 
 autodoc_typehints = "none"

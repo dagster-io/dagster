@@ -95,7 +95,7 @@ class DagsterDbtCliOutputsNotFoundError(DagsterDbtError):
     """
 
     def __init__(self, path: str):
-        super().__init__("Expected to find file at path {}".format(path))
+        super().__init__(f"Expected to find file at path {path}")
 
 
 class DagsterDbtCloudJobInvariantViolationError(DagsterDbtError, DagsterInvariantViolationError):

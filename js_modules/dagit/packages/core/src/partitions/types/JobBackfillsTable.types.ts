@@ -18,11 +18,15 @@ export type JobBackfillsQuery = {
         pipelineName: string;
         backfills: Array<{
           __typename: 'PartitionBackfill';
-          backfillId: string;
+          id: string;
           status: Types.BulkActionStatus;
+          isAssetBackfill: boolean;
+          hasCancelPermission: boolean;
+          hasResumePermission: boolean;
           numCancelable: number;
-          partitionNames: Array<string>;
-          numPartitions: number;
+          partitionNames: Array<string> | null;
+          isValidSerialization: boolean;
+          numPartitions: number | null;
           timestamp: number;
           partitionSetName: string | null;
           partitionSet: {

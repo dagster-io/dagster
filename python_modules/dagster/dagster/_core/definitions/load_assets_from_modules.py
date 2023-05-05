@@ -6,19 +6,24 @@ from types import ModuleType
 from typing import Dict, Generator, Iterable, List, Optional, Sequence, Set, Tuple, Union
 
 import dagster._check as check
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.errors import DagsterInvalidDefinitionError
 
 from .assets import AssetsDefinition
 from .cacheable_assets import CacheableAssetsDefinition
-from .events import AssetKey, CoercibleToAssetKeyPrefix
+from .events import (
+    AssetKey,
+    CoercibleToAssetKeyPrefix,
+    check_opt_coercible_to_asset_key_prefix_param,
+)
 from .source_asset import SourceAsset
 
 
 def _find_assets_in_module(
     module: ModuleType,
 ) -> Generator[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition], None, None]:
-    """
-    Finds assets in the given module and adds them to the given sets of assets and source assets.
+    """Finds assets in the given module and adds them to the given sets of assets and source assets.
     """
     for attr in dir(module):
         value = getattr(module, attr)
@@ -34,8 +39,7 @@ def _find_assets_in_module(
 def assets_from_modules(
     modules: Iterable[ModuleType], extra_source_assets: Optional[Sequence[SourceAsset]] = None
 ) -> Tuple[Sequence[AssetsDefinition], Sequence[SourceAsset], Sequence[CacheableAssetsDefinition]]:
-    """
-    Constructs three lists, a list of assets, a list of source assets, and a list of cacheable
+    """Constructs three lists, a list of assets, a list of source assets, and a list of cacheable
     assets from the given modules.
 
     Args:
@@ -95,9 +99,12 @@ def load_assets_from_modules(
     modules: Iterable[ModuleType],
     group_name: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    *,
+    freshness_policy: Optional[FreshnessPolicy] = None,
+    auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
+    source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
 ) -> Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
-    """
-    Constructs a list of assets and source assets from the given modules.
+    """Constructs a list of assets and source assets from the given modules.
 
     Args:
         modules (Iterable[ModuleType]): The Python modules to look for assets inside.
@@ -107,49 +114,51 @@ def load_assets_from_modules(
         key_prefix (Optional[Union[str, Sequence[str]]]):
             Prefix to prepend to the keys of the loaded assets. The returned assets will be copies
             of the loaded objects, with the prefix prepended.
+        freshness_policy (Optional[FreshnessPolicy]): FreshnessPolicy to apply to all the loaded
+            assets.
+        auto_materialize_policy (Optional[AutoMaterializePolicy]): AutoMaterializePolicy to apply
+            to all the loaded assets.
+        source_key_prefix (bool): Prefix to prepend to the keys of loaded SourceAssets. The returned
+            assets will be copies of the loaded objects, with the prefix prepended.
 
     Returns:
         Sequence[Union[AssetsDefinition, SourceAsset]]:
             A list containing assets and source assets defined in the given modules.
     """
     group_name = check.opt_str_param(group_name, "group_name")
-    key_prefix = check.opt_inst_param(key_prefix, "key_prefix", (str, list))
+    key_prefix = check_opt_coercible_to_asset_key_prefix_param(key_prefix, "key_prefix")
+    freshness_policy = check.opt_inst_param(freshness_policy, "freshness_policy", FreshnessPolicy)
+    auto_materialize_policy = check.opt_inst_param(
+        auto_materialize_policy, "auto_materialize_policy", AutoMaterializePolicy
+    )
 
-    # There is a tricky edge case here where if a non-cacheable asset depends on a cacheable asset,
-    # and the assets are prefixed, the non-cacheable asset's dependency will not be prefixed since
-    # at prefix-time it is not known that its dependency is one of the cacheable assets.
-    # https://github.com/dagster-io/dagster/pull/10389#pullrequestreview-1170913271
     (
         assets,
         source_assets,
         cacheable_assets,
     ) = assets_from_modules(modules)
-    if key_prefix:
-        assets = prefix_assets(assets, key_prefix)
-        cacheable_assets = [
-            cached_asset.with_prefix_for_all(key_prefix) for cached_asset in cacheable_assets
-        ]
-    if group_name:
-        assets = [
-            asset.with_prefix_or_group(
-                group_names_by_key={asset_key: group_name for asset_key in asset.keys}
-            )
-            for asset in assets
-        ]
-        source_assets = [source_asset.with_group_name(group_name) for source_asset in source_assets]
-        cacheable_assets = [
-            cached_asset.with_group_for_all(group_name) for cached_asset in cacheable_assets
-        ]
 
-    return [*assets, *source_assets, *cacheable_assets]
+    return assets_with_attributes(
+        assets,
+        source_assets,
+        cacheable_assets,
+        key_prefix=key_prefix,
+        group_name=group_name,
+        freshness_policy=freshness_policy,
+        auto_materialize_policy=auto_materialize_policy,
+        source_key_prefix=source_key_prefix,
+    )
 
 
 def load_assets_from_current_module(
     group_name: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    *,
+    freshness_policy: Optional[FreshnessPolicy] = None,
+    auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
+    source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
 ) -> Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
-    """
-    Constructs a list of assets, source assets, and cacheable assets from the module where
+    """Constructs a list of assets, source assets, and cacheable assets from the module where
     this function is called.
 
     Args:
@@ -159,6 +168,12 @@ def load_assets_from_current_module(
         key_prefix (Optional[Union[str, Sequence[str]]]):
             Prefix to prepend to the keys of the loaded assets. The returned assets will be copies
             of the loaded objects, with the prefix prepended.
+        freshness_policy (Optional[FreshnessPolicy]): FreshnessPolicy to apply to all the loaded
+            assets.
+        auto_materialize_policy (Optional[AutoMaterializePolicy]): AutoMaterializePolicy to apply
+            to all the loaded assets.
+        source_key_prefix (bool): Prefix to prepend to the keys of loaded SourceAssets. The returned
+            assets will be copies of the loaded objects, with the prefix prepended.
 
     Returns:
         Sequence[Union[AssetsDefinition, SourceAsset, CachableAssetsDefinition]]:
@@ -173,6 +188,8 @@ def load_assets_from_current_module(
         [module],
         group_name=group_name,
         key_prefix=key_prefix,
+        freshness_policy=freshness_policy,
+        auto_materialize_policy=auto_materialize_policy,
     )
 
 
@@ -180,8 +197,7 @@ def assets_from_package_module(
     package_module: ModuleType,
     extra_source_assets: Optional[Sequence[SourceAsset]] = None,
 ) -> Tuple[Sequence[AssetsDefinition], Sequence[SourceAsset], Sequence[CacheableAssetsDefinition]]:
-    """
-    Constructs three lists, a list of assets, a list of source assets, and a list of cacheable assets
+    """Constructs three lists, a list of assets, a list of source assets, and a list of cacheable assets
     from the given package module.
 
     Args:
@@ -203,9 +219,12 @@ def load_assets_from_package_module(
     package_module: ModuleType,
     group_name: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    *,
+    freshness_policy: Optional[FreshnessPolicy] = None,
+    auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
+    source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
 ) -> Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
-    """
-    Constructs a list of assets and source assets that includes all asset
+    """Constructs a list of assets and source assets that includes all asset
     definitions, source assets, and cacheable assets in all sub-modules of the given package module.
 
     A package module is the result of importing a package.
@@ -218,45 +237,51 @@ def load_assets_from_package_module(
         key_prefix (Optional[Union[str, Sequence[str]]]):
             Prefix to prepend to the keys of the loaded assets. The returned assets will be copies
             of the loaded objects, with the prefix prepended.
+        freshness_policy (Optional[FreshnessPolicy]): FreshnessPolicy to apply to all the loaded
+            assets.
+        auto_materialize_policy (Optional[AutoMaterializePolicy]): AutoMaterializePolicy to apply
+            to all the loaded assets.
+        source_key_prefix (bool): Prefix to prepend to the keys of loaded SourceAssets. The returned
+            assets will be copies of the loaded objects, with the prefix prepended.
 
     Returns:
         Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
             A list containing assets, source assets, and cacheable assets defined in the module.
     """
     group_name = check.opt_str_param(group_name, "group_name")
-    key_prefix = check.opt_inst_param(key_prefix, "key_prefix", (str, list))
+    key_prefix = check_opt_coercible_to_asset_key_prefix_param(key_prefix, "key_prefix")
+    freshness_policy = check.opt_inst_param(freshness_policy, "freshness_policy", FreshnessPolicy)
+    auto_materialize_policy = check.opt_inst_param(
+        auto_materialize_policy, "auto_materialize_policy", AutoMaterializePolicy
+    )
 
-    # There is a tricky edge case here where if a non-cacheable asset depends on a cacheable asset,
-    # and the assets are prefixed, the non-cacheable asset's dependency will not be prefixed since
-    # at prefix-time it is not known that its dependency is one of the cacheable assets.
-    # https://github.com/dagster-io/dagster/pull/10389#pullrequestreview-1170913271
     (
         assets,
         source_assets,
         cacheable_assets,
     ) = assets_from_package_module(package_module)
-    if key_prefix:
-        assets = prefix_assets(assets, key_prefix)
-        cacheable_assets = [
-            cached_asset.with_prefix_for_all(key_prefix) for cached_asset in cacheable_assets
-        ]
-    if group_name:
-        assets = list(with_group(assets, group_name))
-        source_assets = [asset.with_group_name(group_name) for asset in source_assets]
-        cacheable_assets = [
-            cached_asset.with_group_for_all(group_name) for cached_asset in cacheable_assets
-        ]
-
-    return [*assets, *source_assets, *cacheable_assets]
+    return assets_with_attributes(
+        assets,
+        source_assets,
+        cacheable_assets,
+        key_prefix=key_prefix,
+        group_name=group_name,
+        freshness_policy=freshness_policy,
+        auto_materialize_policy=auto_materialize_policy,
+        source_key_prefix=source_key_prefix,
+    )
 
 
 def load_assets_from_package_name(
     package_name: str,
     group_name: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    *,
+    freshness_policy: Optional[FreshnessPolicy] = None,
+    auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
+    source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
 ) -> Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
-    """
-    Constructs a list of assets, source assets, and cacheable assets that includes all asset
+    """Constructs a list of assets, source assets, and cacheable assets that includes all asset
     definitions and source assets in all sub-modules of the given package.
 
     Args:
@@ -267,6 +292,12 @@ def load_assets_from_package_name(
         key_prefix (Optional[Union[str, Sequence[str]]]):
             Prefix to prepend to the keys of the loaded assets. The returned assets will be copies
             of the loaded objects, with the prefix prepended.
+        freshness_policy (Optional[FreshnessPolicy]): FreshnessPolicy to apply to all the loaded
+            assets.
+        auto_materialize_policy (Optional[AutoMaterializePolicy]): AutoMaterializePolicy to apply
+            to all the loaded assets.
+        source_key_prefix (bool): Prefix to prepend to the keys of loaded SourceAssets. The returned
+            assets will be copies of the loaded objects, with the prefix prepended.
 
     Returns:
         Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
@@ -277,6 +308,8 @@ def load_assets_from_package_name(
         package_module,
         group_name=group_name,
         key_prefix=key_prefix,
+        freshness_policy=freshness_policy,
+        auto_materialize_policy=auto_materialize_policy,
     )
 
 
@@ -297,10 +330,12 @@ def _find_modules_in_package(package_module: ModuleType) -> Iterable[ModuleType]
 
 
 def prefix_assets(
-    assets_defs: Sequence[AssetsDefinition], key_prefix: CoercibleToAssetKeyPrefix
-) -> Sequence[AssetsDefinition]:
-    """
-    Given a list of assets, prefix the input and output asset keys with key_prefix.
+    assets_defs: Sequence[AssetsDefinition],
+    key_prefix: CoercibleToAssetKeyPrefix,
+    source_assets: Sequence[SourceAsset],
+    source_key_prefix: Optional[CoercibleToAssetKeyPrefix],
+) -> Tuple[Sequence[AssetsDefinition], Sequence[SourceAsset]]:
+    """Given a list of assets, prefix the input and output asset keys with key_prefix.
     The prefix is not added to source assets.
 
     Input asset keys that reference other assets within assets_defs are "brought along" -
@@ -336,6 +371,7 @@ def prefix_assets(
 
     """
     asset_keys = {asset_key for assets_def in assets_defs for asset_key in assets_def.keys}
+    source_asset_keys = {source_asset.key for source_asset in source_assets}
 
     if isinstance(key_prefix, str):
         key_prefix = [key_prefix]
@@ -352,29 +388,74 @@ def prefix_assets(
                 input_asset_key_replacements[dep_asset_key] = AssetKey(
                     [*key_prefix, *dep_asset_key.path]
                 )
+            elif source_key_prefix and dep_asset_key in source_asset_keys:
+                input_asset_key_replacements[dep_asset_key] = AssetKey(
+                    [*source_key_prefix, *dep_asset_key.path]
+                )
 
         result_assets.append(
-            assets_def.with_prefix_or_group(
+            assets_def.with_attributes(
                 output_asset_key_replacements=output_asset_key_replacements,
                 input_asset_key_replacements=input_asset_key_replacements,
             )
         )
-    return result_assets
+
+    if source_key_prefix:
+        result_source_assets = [
+            source_asset.with_attributes(key=AssetKey([*source_key_prefix, *source_asset.key.path]))
+            for source_asset in source_assets
+        ]
+    else:
+        result_source_assets = source_assets
+
+    return result_assets, result_source_assets
 
 
-def with_group(
-    assets_defs: Sequence[AssetsDefinition], group_name: Optional[str]
-) -> Sequence[AssetsDefinition]:
-    """
-    Given a list of assets, groups them under the group_name.
-    """
-    group_name = check.opt_str_param(group_name, "group_name")
-    if not group_name:
-        return assets_defs
-
-    return [
-        assets_def.with_prefix_or_group(
-            group_names_by_key={asset_key: group_name for asset_key in assets_def.keys}
+def assets_with_attributes(
+    assets_defs: Sequence[AssetsDefinition],
+    source_assets: Sequence[SourceAsset],
+    cacheable_assets: Sequence[CacheableAssetsDefinition],
+    key_prefix: Optional[Sequence[str]],
+    group_name: Optional[str],
+    freshness_policy: Optional[FreshnessPolicy],
+    auto_materialize_policy: Optional[AutoMaterializePolicy],
+    source_key_prefix: Optional[Sequence[str]],
+) -> Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
+    # There is a tricky edge case here where if a non-cacheable asset depends on a cacheable asset,
+    # and the assets are prefixed, the non-cacheable asset's dependency will not be prefixed since
+    # at prefix-time it is not known that its dependency is one of the cacheable assets.
+    # https://github.com/dagster-io/dagster/pull/10389#pullrequestreview-1170913271
+    if key_prefix:
+        assets_defs, source_assets = prefix_assets(
+            assets_defs, key_prefix, source_assets, source_key_prefix
         )
-        for assets_def in assets_defs
-    ]
+        cacheable_assets = [
+            cached_asset.with_prefix_for_all(key_prefix) for cached_asset in cacheable_assets
+        ]
+
+    if group_name or freshness_policy or auto_materialize_policy:
+        assets_defs = [
+            asset.with_attributes(
+                group_names_by_key={asset_key: group_name for asset_key in asset.keys}
+                if group_name
+                else None,
+                freshness_policy=freshness_policy,
+                auto_materialize_policy=auto_materialize_policy,
+            )
+            for asset in assets_defs
+        ]
+        if group_name:
+            source_assets = [
+                source_asset.with_attributes(group_name=group_name)
+                for source_asset in source_assets
+            ]
+        cacheable_assets = [
+            cached_asset.with_attributes_for_all(
+                group_name,
+                freshness_policy=freshness_policy,
+                auto_materialize_policy=auto_materialize_policy,
+            )
+            for cached_asset in cacheable_assets
+        ]
+
+    return [*assets_defs, *source_assets, *cacheable_assets]

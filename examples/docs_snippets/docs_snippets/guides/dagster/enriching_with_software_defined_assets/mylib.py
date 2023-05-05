@@ -14,7 +14,7 @@ def train_recommender_model(df: DataFrame) -> Any:
     del df
 
 
-def pickle_to_s3(object: Any, key: str) -> None:
+def pickle_to_s3(object: Any, key: str) -> None:  # noqa: A002
     pass
 
 

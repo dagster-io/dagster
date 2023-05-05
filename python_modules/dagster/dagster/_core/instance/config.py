@@ -30,7 +30,7 @@ def dagster_instance_config(
     base_dir: str,
     config_filename: str = DAGSTER_CONFIG_YAML_FILENAME,
     overrides: Optional[Mapping[str, object]] = None,
-) -> Tuple[Mapping[str, object], Optional[Type["DagsterInstance"]]]:
+) -> Tuple[Mapping[str, Any], Optional[Type["DagsterInstance"]]]:
     check.str_param(base_dir, "base_dir")
     check.invariant(os.path.isdir(base_dir), "base_dir should be a directory")
     overrides = check.opt_mapping_param(overrides, "overrides")
@@ -55,7 +55,7 @@ def dagster_instance_config(
         )
         if not validate_custom_config.success:
             raise DagsterInvalidConfigError(
-                "Errors whilst loading dagster custom class config at {}".format(config_filename),
+                f"Errors whilst loading dagster custom class config at {config_filename}",
                 validate_custom_config.errors,
                 custom_instance_class_data,
             )
@@ -78,6 +78,16 @@ def dagster_instance_config(
     else:
         custom_instance_class = None
         schema = dagster_instance_config_schema()
+
+    if "run_queue" in dagster_config_dict and "run_coordinator" in dagster_config_dict:
+        raise DagsterInvalidConfigError(
+            (
+                "Found config for `run_queue` which is incompatible with `run_coordinator` config"
+                " entry."
+            ),
+            [],
+            None,
+        )
 
     if "storage" in dagster_config_dict and (
         "run_storage" in dagster_config_dict
@@ -106,7 +116,7 @@ def dagster_instance_config(
     dagster_config = validate_config(schema, dagster_config_dict)
     if not dagster_config.success:
         raise DagsterInvalidConfigError(
-            "Errors whilst loading dagster instance config at {}.".format(config_filename),
+            f"Errors whilst loading dagster instance config at {config_filename}.",
             dagster_config.errors,
             dagster_config_dict,
         )
@@ -116,6 +126,15 @@ def dagster_instance_config(
 
 def config_field_for_configurable_class() -> Field:
     return Field(configurable_class_schema(), is_required=False)
+
+
+def run_queue_config_schema() -> Field:
+    from dagster._core.run_coordinator.queued_run_coordinator import QueuedRunCoordinator
+
+    return Field(
+        QueuedRunCoordinator.config_type(),
+        is_required=False,
+    )
 
 
 def storage_config_schema() -> Field:
@@ -206,7 +225,7 @@ def retention_config_schema() -> Field:
 
 
 def get_tick_retention_settings(
-    settings: Optional[Mapping],
+    settings: Optional[Mapping[str, Any]],
     default_retention_settings: Mapping["TickStatus", int],
 ) -> Mapping["TickStatus", int]:
     if not settings or not settings.get("purge_after_days"):
@@ -265,6 +284,7 @@ def dagster_instance_config_schema() -> Mapping[str, Field]:
         "local_artifact_storage": config_field_for_configurable_class(),
         "compute_logs": config_field_for_configurable_class(),
         "storage": storage_config_schema(),
+        "run_queue": run_queue_config_schema(),
         "run_storage": config_field_for_configurable_class(),
         "event_log_storage": config_field_for_configurable_class(),
         "schedule_storage": config_field_for_configurable_class(),
@@ -272,6 +292,9 @@ def dagster_instance_config_schema() -> Mapping[str, Field]:
         "run_coordinator": config_field_for_configurable_class(),
         "run_launcher": config_field_for_configurable_class(),
         "telemetry": Field(
+            {"enabled": Field(Bool, is_required=False)},
+        ),
+        "nux": Field(
             {"enabled": Field(Bool, is_required=False)},
         ),
         "instance_class": config_field_for_configurable_class(),
@@ -292,10 +315,21 @@ def dagster_instance_config_schema() -> Mapping[str, Field]:
             }
         ),
         "code_servers": Field(
-            {"local_startup_timeout": Field(int, is_required=False)}, is_required=False
+            {
+                "local_startup_timeout": Field(int, is_required=False),
+                "wait_for_local_processes_on_shutdown": Field(bool, is_required=False),
+            },
+            is_required=False,
         ),
         "secrets": secrets_loader_config_schema(),
         "retention": retention_config_schema(),
         "sensors": sensors_daemon_config(),
         "schedules": schedules_daemon_config(),
+        "auto_materialize": Field(
+            {
+                "enabled": Field(Bool, is_required=False),
+                "minimum_interval_seconds": Field(int, is_required=False),
+                "run_tags": Field(dict, is_required=False),
+            }
+        ),
     }

@@ -4,6 +4,7 @@ from typing import (
     AbstractSet,
     Dict,
     Iterable,
+    List,
     Mapping,
     Optional,
     Sequence,
@@ -11,6 +12,8 @@ from typing import (
     Tuple,
 )
 
+from dagster._core.definitions.assets_job import ASSET_BASE_JOB_PREFIX
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.host_representation.handle import RepositoryHandle
 from dagster._core.selector.subset_selector import DependencyGraph
@@ -29,15 +32,18 @@ if TYPE_CHECKING:
 class ExternalAssetGraph(AssetGraph):
     def __init__(
         self,
-        asset_dep_graph: DependencyGraph,
+        asset_dep_graph: DependencyGraph[AssetKey],
         source_asset_keys: AbstractSet[AssetKey],
         partitions_defs_by_key: Mapping[AssetKey, Optional[PartitionsDefinition]],
         partition_mappings_by_key: Mapping[AssetKey, Optional[Mapping[AssetKey, PartitionMapping]]],
         group_names_by_key: Mapping[AssetKey, Optional[str]],
         freshness_policies_by_key: Mapping[AssetKey, Optional[FreshnessPolicy]],
+        auto_materialize_policies_by_key: Mapping[AssetKey, Optional[AutoMaterializePolicy]],
         required_multi_asset_sets_by_key: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]],
         repo_handles_by_key: Mapping[AssetKey, RepositoryHandle],
         job_names_by_key: Mapping[AssetKey, Sequence[str]],
+        code_versions_by_key: Mapping[AssetKey, Optional[str]],
+        is_observable_by_key: Mapping[AssetKey, bool],
     ):
         super().__init__(
             asset_dep_graph=asset_dep_graph,
@@ -46,22 +52,30 @@ class ExternalAssetGraph(AssetGraph):
             partition_mappings_by_key=partition_mappings_by_key,
             group_names_by_key=group_names_by_key,
             freshness_policies_by_key=freshness_policies_by_key,
+            auto_materialize_policies_by_key=auto_materialize_policies_by_key,
             required_multi_asset_sets_by_key=required_multi_asset_sets_by_key,
+            code_versions_by_key=code_versions_by_key,
+            is_observable_by_key=is_observable_by_key,
         )
         self._repo_handles_by_key = repo_handles_by_key
-        self._job_names_by_key = job_names_by_key
+        self._materialization_job_names_by_key = job_names_by_key
+
+        self._asset_keys_by_job_name: Mapping[str, List[AssetKey]] = defaultdict(list)
+        for asset_key, job_names in self._materialization_job_names_by_key.items():
+            for job_name in job_names:
+                self._asset_keys_by_job_name[job_name].append(asset_key)
 
     @classmethod
     def from_workspace(cls, context: IWorkspace) -> "ExternalAssetGraph":
-        repo_locations = (
-            location_entry.repository_location
+        code_locations = (
+            location_entry.code_location
             for location_entry in context.get_workspace_snapshot().values()
-            if location_entry.repository_location
+            if location_entry.code_location
         )
         repos = (
             repo
-            for repo_location in repo_locations
-            for repo in repo_location.get_repositories().values()
+            for code_location in code_locations
+            for repo in code_location.get_repositories().values()
         )
         repo_handle_external_asset_nodes: Sequence[Tuple[RepositoryHandle, "ExternalAssetNode"]] = [
             (repo.handle, external_asset_node)
@@ -89,14 +103,15 @@ class ExternalAssetGraph(AssetGraph):
         cls,
         repo_handle_external_asset_nodes: Sequence[Tuple[RepositoryHandle, "ExternalAssetNode"]],
     ) -> "ExternalAssetGraph":
-        upstream = {}
-        source_asset_keys = set()
-        partitions_defs_by_key = {}
+        upstream: Dict[AssetKey, AbstractSet[AssetKey]] = {}
+        source_asset_keys: Set[AssetKey] = set()
+        partitions_defs_by_key: Dict[AssetKey, Optional[PartitionsDefinition]] = {}
         partition_mappings_by_key: Dict[AssetKey, Dict[AssetKey, PartitionMapping]] = defaultdict(
             defaultdict
         )
         group_names_by_key = {}
         freshness_policies_by_key = {}
+        auto_materialize_policies_by_key = {}
         asset_keys_by_atomic_execution_unit_id: Dict[str, Set[AssetKey]] = defaultdict(set)
         repo_handles_by_key = {
             node.asset_key: repo_handle
@@ -108,15 +123,25 @@ class ExternalAssetGraph(AssetGraph):
             for _, node in repo_handle_external_asset_nodes
             if not node.is_source
         }
+        code_versions_by_key = {
+            node.asset_key: node.code_version
+            for _, node in repo_handle_external_asset_nodes
+            if not node.is_source
+        }
 
         all_non_source_keys = {
             node.asset_key for _, node in repo_handle_external_asset_nodes if not node.is_source
         }
 
+        is_observable_by_key = {key: False for key in all_non_source_keys}
+
         for repo_handle, node in repo_handle_external_asset_nodes:
             if node.is_source:
+                # We need to set this even if the node is a regular asset in another code location.
+                # `is_observable` will only ever be consulted in the source asset context.
+                is_observable_by_key[node.asset_key] = node.is_observable
                 if node.asset_key in all_non_source_keys:
-                    # one repo's source is another repo's non-source
+                    # one location's source is another location's non-source
                     continue
 
                 source_asset_keys.add(node.asset_key)
@@ -134,6 +159,7 @@ class ExternalAssetGraph(AssetGraph):
             )
             group_names_by_key[node.asset_key] = node.group_name
             freshness_policies_by_key[node.asset_key] = node.freshness_policy
+            auto_materialize_policies_by_key[node.asset_key] = node.auto_materialize_policy
 
             if node.atomic_execution_unit_id is not None:
                 asset_keys_by_atomic_execution_unit_id[node.atomic_execution_unit_id].add(
@@ -158,9 +184,12 @@ class ExternalAssetGraph(AssetGraph):
             partition_mappings_by_key=partition_mappings_by_key,
             group_names_by_key=group_names_by_key,
             freshness_policies_by_key=freshness_policies_by_key,
+            auto_materialize_policies_by_key=auto_materialize_policies_by_key,
             required_multi_asset_sets_by_key=required_multi_asset_sets_by_key,
             repo_handles_by_key=repo_handles_by_key,
             job_names_by_key=job_names_by_key,
+            code_versions_by_key=code_versions_by_key,
+            is_observable_by_key=is_observable_by_key,
         )
 
     @property
@@ -170,5 +199,41 @@ class ExternalAssetGraph(AssetGraph):
     def get_repository_handle(self, asset_key: AssetKey) -> RepositoryHandle:
         return self._repo_handles_by_key[asset_key]
 
-    def get_job_names(self, asset_key: AssetKey) -> Iterable[str]:
-        return self._job_names_by_key[asset_key]
+    def get_materialization_job_names(self, asset_key: AssetKey) -> Iterable[str]:
+        """Returns the names of jobs that materialize this asset."""
+        return self._materialization_job_names_by_key[asset_key]
+
+    def get_materialization_asset_keys_for_job(self, job_name: str) -> Sequence[AssetKey]:
+        """Returns asset keys that are targeted for materialization in the given job."""
+        return [
+            k
+            for k in self.non_source_asset_keys
+            if job_name in self.get_materialization_job_names(k)
+        ]
+
+    def get_asset_keys_for_job(self, job_name: str) -> Sequence[AssetKey]:
+        return self._asset_keys_by_job_name[job_name]
+
+    def get_implicit_job_name_for_assets(self, asset_keys: Iterable[AssetKey]) -> Optional[str]:
+        """Returns the name of the asset base job that contains all the given assets, or None if there is no such
+        job.
+
+        Note: all asset_keys should be in the same repository.
+        """
+        for job_name in sorted(self._asset_keys_by_job_name.keys()):
+            if not job_name.startswith(ASSET_BASE_JOB_PREFIX):
+                continue
+            if all(asset_key in self._asset_keys_by_job_name[job_name] for asset_key in asset_keys):
+                return job_name
+        return None
+
+    def split_asset_keys_by_repository(
+        self, asset_keys: AbstractSet[AssetKey]
+    ) -> Sequence[AbstractSet[AssetKey]]:
+        asset_keys_by_repo = defaultdict(set)
+        for asset_key in asset_keys:
+            repo_handle = self.get_repository_handle(asset_key)
+            asset_keys_by_repo[(repo_handle.location_name, repo_handle.repository_name)].add(
+                asset_key
+            )
+        return list(asset_keys_by_repo.values())

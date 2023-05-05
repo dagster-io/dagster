@@ -1,32 +1,27 @@
-from dagster import DefaultSensorStatus, RunRequest, repository, sensor
-from dagster._legacy import pipeline, solid
+from bar import foo_op  # requires working_directory
+from dagster import DefaultSensorStatus, RunRequest, job, repository, sensor
 
 
-@solid()
-def foo_solid(_):
-    pass
+@job
+def foo_job():
+    foo_op()
 
 
-@pipeline
-def foo_pipeline():
-    foo_solid()
+@job
+def other_foo_job():
+    foo_op()
 
 
-@pipeline
-def other_foo_pipeline():
-    foo_solid()
-
-
-@sensor(job_name="foo_pipeline", default_status=DefaultSensorStatus.RUNNING)
+@sensor(job_name="foo_job", default_status=DefaultSensorStatus.RUNNING)
 def always_on_sensor(_context):
     return RunRequest(run_key="only_one", run_config={}, tags={})
 
 
 @repository
 def example_repo():
-    return [foo_pipeline, always_on_sensor]
+    return [foo_job, always_on_sensor]
 
 
 @repository
 def other_example_repo():
-    return [other_foo_pipeline]
+    return [other_foo_job]

@@ -5,9 +5,9 @@ import {Line} from 'react-chartjs-2';
 
 import {InstigationTickStatus} from '../graphql/types';
 
-import {NextTickForHistoyFragment, HistoryTickFragment} from './types/TickHistory.types';
+import {NextTickForHistoryFragment, HistoryTickFragment} from './types/TickHistory.types';
 
-type FutureTick = NextTickForHistoyFragment;
+type FutureTick = NextTickForHistoryFragment;
 type InstigationTick = HistoryTickFragment;
 
 const COLOR_MAP = {
@@ -36,12 +36,12 @@ export const LiveTickTimeline: React.FC<{
   });
 
   React.useEffect(() => {
-    if (!isPaused && (!nextTick || now < 1000 * nextTick.timestamp)) {
+    if (!isPaused && (!nextTick || now < 1000 * nextTick.timestamp!)) {
       setGraphNow(now);
     }
   }, [isPaused, nextTick, now]);
 
-  const isAtFutureTick = nextTick && 1000 * nextTick.timestamp <= now;
+  const isAtFutureTick = nextTick && 1000 * nextTick.timestamp! <= now;
   const PULSE_DURATION = 2000;
   const nextTickRadius = isAtFutureTick
     ? 4 + Math.sin((2 * Math.PI * (now % PULSE_DURATION)) / PULSE_DURATION)
@@ -52,7 +52,7 @@ export const LiveTickTimeline: React.FC<{
   const tickRadii = Array(ticks.length).fill(3);
 
   if (nextTick) {
-    tickData.push({x: 1000 * nextTick.timestamp, y: 0});
+    tickData.push({x: 1000 * nextTick.timestamp!, y: 0});
     tickColors.push(Colors.Gray200);
     tickRadii.push(nextTickRadius);
   }
@@ -191,5 +191,5 @@ export const LiveTickTimeline: React.FC<{
     maintainAspectRatio: false,
   };
 
-  return <Line type="line" data={graphData} height={150} options={options} key="100%" />;
+  return <Line data={graphData} height={150} options={options as any} key="100%" />;
 };

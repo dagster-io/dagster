@@ -1,5 +1,6 @@
-# pylint: disable=protected-access
+# ruff: noqa: SLF001
 
+import datetime
 import os
 import re
 import subprocess
@@ -19,11 +20,11 @@ from dagster import (
     reconstructable,
 )
 from dagster._core.errors import DagsterInvalidInvocationError
+from dagster._core.execution.api import execute_job
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
-from dagster._core.storage.pipeline_run import RunsFilter
 from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
-from dagster._legacy import execute_pipeline, pipeline, solid
+from dagster._daemon.types import DaemonHeartbeat
 from dagster._utils import file_relative_path
 from sqlalchemy import inspect
 
@@ -61,18 +62,18 @@ def test_0_7_6_postgres_pre_add_pipeline_snapshot(hostname, conn_string):
 
         instance = DagsterInstance.from_config(tempdir)
 
-        @solid
-        def noop_solid(_):
+        @op
+        def noop_op(_):
             pass
 
-        @pipeline
-        def noop_pipeline():
-            noop_solid()
+        @job
+        def noop_job():
+            noop_op()
 
         with pytest.raises(
             (db.exc.OperationalError, db.exc.ProgrammingError, db.exc.StatementError)
         ):
-            execute_pipeline(noop_pipeline, instance=instance)
+            noop_job.execute_in_process(instance=instance)
 
         # ensure migration is run
         instance.upgrade()
@@ -86,8 +87,8 @@ def test_0_7_6_postgres_pre_add_pipeline_snapshot(hostname, conn_string):
         run = instance.get_run_by_id(run_id)
 
         assert run.run_id == run_id
-        assert run.pipeline_snapshot_id is None
-        result = execute_pipeline(noop_pipeline, instance=instance)
+        assert run.job_snapshot_id is None
+        result = noop_job.execute_in_process(instance=instance)
 
         assert result.success
 
@@ -98,7 +99,7 @@ def test_0_7_6_postgres_pre_add_pipeline_snapshot(hostname, conn_string):
 
         new_run = instance.get_run_by_id(new_run_id)
 
-        assert new_run.pipeline_snapshot_id
+        assert new_run.job_snapshot_id
 
 
 def test_0_9_22_postgres_pre_asset_partition(hostname, conn_string):
@@ -118,26 +119,26 @@ def test_0_9_22_postgres_pre_asset_partition(hostname, conn_string):
 
         instance = DagsterInstance.from_config(tempdir)
 
-        @solid
-        def asset_solid(_):
+        @op
+        def asset_op(_):
             yield AssetMaterialization(
                 asset_key=AssetKey(["path", "to", "asset"]), partition="partition_1"
             )
             yield Output(1)
 
-        @pipeline
-        def asset_pipeline():
-            asset_solid()
+        @job
+        def asset_job():
+            asset_op()
 
         with pytest.raises(
             (db.exc.OperationalError, db.exc.ProgrammingError, db.exc.StatementError)
         ):
-            execute_pipeline(asset_pipeline, instance=instance)
+            asset_job.execute_in_process(instance=instance)
 
         # ensure migration is run
         instance.upgrade()
 
-        result = execute_pipeline(asset_pipeline, instance=instance)
+        result = asset_job.execute_in_process(instance=instance)
         assert result.success
 
 
@@ -157,13 +158,13 @@ def test_0_9_22_postgres_pre_run_partition(hostname, conn_string):
 
         instance = DagsterInstance.from_config(tempdir)
 
-        @solid
-        def simple_solid(_):
+        @op
+        def simple_op(_):
             return 1
 
-        @pipeline
-        def simple_pipeline():
-            simple_solid()
+        @job
+        def simple_job():
+            simple_op()
 
         tags = {
             PARTITION_NAME_TAG: "my_partition",
@@ -173,12 +174,12 @@ def test_0_9_22_postgres_pre_run_partition(hostname, conn_string):
         with pytest.raises(
             (db.exc.OperationalError, db.exc.ProgrammingError, db.exc.StatementError)
         ):
-            execute_pipeline(simple_pipeline, tags=tags, instance=instance)
+            simple_job.execute_in_process(tags=tags, instance=instance)
 
         # ensure migration is run
         instance.upgrade()
 
-        result = execute_pipeline(simple_pipeline, tags=tags, instance=instance)
+        result = simple_job.execute_in_process(tags=tags, instance=instance)
         assert result.success
 
 
@@ -280,30 +281,23 @@ def test_0_12_0_add_mode_column(hostname, conn_string):
         # migration-required column.
         assert len(instance.get_runs()) == 1
 
-        @solid
+        @op
         def basic():
             pass
 
-        @pipeline
-        def noop_pipeline():
+        @job
+        def noop_job():
             basic()
 
-        # Ensure that you don't get a migration required exception when running a pipeline
+        # Ensure that you don't get a migration required exception when running a job
         # pre-migration.
-        result = execute_pipeline(noop_pipeline, instance=instance)
+        result = noop_job.execute_in_process(instance=instance)
         assert result.success
         assert len(instance.get_runs()) == 2
 
-        # Ensure that migration required exception throws, since you are trying to use the
-        # migration-required column.
-        with pytest.raises(
-            (db.exc.OperationalError, db.exc.ProgrammingError, db.exc.StatementError)
-        ):
-            instance.get_runs(filters=RunsFilter(mode="the_mode"))
-
         instance.upgrade()
 
-        result = execute_pipeline(noop_pipeline, instance=instance)
+        result = noop_job.execute_in_process(instance=instance)
         assert result.success
         assert len(instance.get_runs()) == 3
 
@@ -315,14 +309,14 @@ def test_0_12_0_extract_asset_index_cols(hostname, conn_string):
         file_relative_path(__file__, "snapshot_0_12_0_pre_asset_index_cols/postgres/pg_dump.txt"),
     )
 
-    @solid
-    def asset_solid(_):
+    @op
+    def asset_op(_):
         yield AssetMaterialization(asset_key=AssetKey(["a"]), partition="partition_1")
         yield Output(1)
 
-    @pipeline
-    def asset_pipeline():
-        asset_solid()
+    @job
+    def asset_job():
+        asset_op()
 
     with tempfile.TemporaryDirectory() as tempdir:
         with open(
@@ -335,15 +329,15 @@ def test_0_12_0_extract_asset_index_cols(hostname, conn_string):
         with DagsterInstance.from_config(tempdir) as instance:
             storage = instance._event_storage
 
-            # make sure that executing the pipeline works
-            execute_pipeline(asset_pipeline, instance=instance)
+            # make sure that executing the job works
+            asset_job.execute_in_process(instance=instance)
             assert storage.has_asset_key(AssetKey(["a"]))
 
             # make sure that wiping works
             storage.wipe_asset(AssetKey(["a"]))
             assert not storage.has_asset_key(AssetKey(["a"]))
 
-            execute_pipeline(asset_pipeline, instance=instance)
+            asset_job.execute_in_process(instance=instance)
             assert storage.has_asset_key(AssetKey(["a"]))
             old_keys = storage.all_asset_keys()
 
@@ -353,7 +347,7 @@ def test_0_12_0_extract_asset_index_cols(hostname, conn_string):
             assert set(old_keys) == set(new_keys)
 
             # make sure that storing assets still works
-            execute_pipeline(asset_pipeline, instance=instance)
+            asset_job.execute_in_process(instance=instance)
 
             # make sure that wiping still works
             storage.wipe_asset(AssetKey(["a"]))
@@ -389,7 +383,7 @@ def test_0_12_0_asset_observation_backcompat(hostname, conn_string):
 
             assert not storage.has_secondary_index(ASSET_KEY_INDEX_COLS)
 
-            # make sure that executing the pipeline works
+            # make sure that executing the job works
             asset_job.execute_in_process(instance=instance)
             assert storage.has_asset_key(AssetKey(["a"]))
 
@@ -413,13 +407,13 @@ def _migration_regex(current_revision, expected_revision=None):
 
     if expected_revision:
         revision = re.escape(
-            "Database is at revision {}, head is {}.".format(current_revision, expected_revision)
+            f"Database is at revision {current_revision}, head is {expected_revision}."
         )
     else:
-        revision = "Database is at revision {}, head is [a-z0-9]+.".format(current_revision)
+        revision = f"Database is at revision {current_revision}, head is [a-z0-9]+."
     instruction = re.escape("To migrate, run `dagster instance migrate`.")
 
-    return "{} {} {}".format(warning, revision, instruction)
+    return f"{warning} {revision} {instruction}"
 
 
 def get_the_job():
@@ -453,24 +447,24 @@ def test_0_13_12_add_start_time_end_time(hostname, conn_string):
         # migration-required column.
         assert len(instance.get_runs()) == 1
 
-        # Ensure that you don't get a migration required exception when running a pipeline
+        # Ensure that you don't get a migration required exception when running a job
         # pre-migration.
-        result = execute_pipeline(reconstructable(get_the_job), instance=instance)
-        assert result.success
-        assert len(instance.get_runs()) == 2
+        with execute_job(reconstructable(get_the_job), instance=instance) as result:
+            assert result.success
+            assert len(instance.get_runs()) == 2
 
         instance.upgrade()
         instance.reindex()
 
-        result = execute_pipeline(reconstructable(get_the_job), instance=instance)
-        assert result.success
-        assert len(instance.get_runs()) == 3
-        latest_run_record = instance.get_run_records()[0]
-        assert latest_run_record.end_time > latest_run_record.start_time
+        with execute_job(reconstructable(get_the_job), instance=instance) as result:
+            assert result.success
+            assert len(instance.get_runs()) == 3
+            latest_run_record = instance.get_run_records()[0]
+            assert latest_run_record.end_time > latest_run_record.start_time
 
-        # Verify that historical records also get updated via data migration
-        earliest_run_record = instance.get_run_records()[-1]
-        assert earliest_run_record.end_time > earliest_run_record.start_time
+            # Verify that historical records also get updated via data migration
+            earliest_run_record = instance.get_run_records()[-1]
+            assert earliest_run_record.end_time > earliest_run_record.start_time
 
 
 def test_schedule_secondary_index_table_backcompat(hostname, conn_string):
@@ -774,3 +768,114 @@ def test_add_cached_status_data_column(hostname, conn_string):
             instance.upgrade()
             assert instance.can_cache_asset_status_data() is True
             assert {"cached_status_data"} <= get_columns(instance, "asset_keys")
+
+
+def test_add_dynamic_partitions_table(hostname, conn_string):
+    _reconstruct_from_file(
+        hostname,
+        conn_string,
+        file_relative_path(
+            __file__,
+            "snapshot_1_0_17_pre_add_cached_status_data_column/postgres/pg_dump.txt",
+        ),
+    )
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+                template = template_fd.read().format(hostname=hostname)
+                target_fd.write(template)
+
+        with DagsterInstance.from_config(tempdir) as instance:
+            assert "dynamic_partitions" not in get_tables(instance)
+
+            instance.wipe()
+
+            with pytest.raises(DagsterInvalidInvocationError, match="does not exist"):
+                instance.get_dynamic_partitions("foo")
+
+            instance.upgrade()
+            assert "dynamic_partitions" in get_tables(instance)
+            assert instance.get_dynamic_partitions("foo") == []
+
+
+def _get_table_row_count(run_storage, table, with_non_null_id=False):
+    query = db.select([db.func.count()]).select_from(table)
+    if with_non_null_id:
+        query = query.where(table.c.id.isnot(None))
+    with run_storage.connect() as conn:
+        row_count = conn.execute(query).fetchone()[0]
+    return row_count
+
+
+def test_add_primary_keys(hostname, conn_string):
+    from dagster._core.storage.runs.schema import (
+        DaemonHeartbeatsTable,
+        InstanceInfo,
+        KeyValueStoreTable,
+    )
+
+    _reconstruct_from_file(
+        hostname,
+        conn_string,
+        file_relative_path(
+            __file__,
+            "snapshot_1_1_22_pre_primary_key/postgres/pg_dump.txt",
+        ),
+    )
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+                template = template_fd.read().format(hostname=hostname)
+                target_fd.write(template)
+
+        with DagsterInstance.from_config(tempdir) as instance:
+            assert "id" not in get_columns(instance, "kvs")
+            # trigger insert, and update
+            instance.run_storage.set_cursor_values({"a": "A"})
+            instance.run_storage.set_cursor_values({"a": "A"})
+            kvs_row_count = _get_table_row_count(instance.run_storage, KeyValueStoreTable)
+            assert kvs_row_count > 0
+
+            assert "id" not in get_columns(instance, "instance_info")
+            instance_info_row_count = _get_table_row_count(instance.run_storage, InstanceInfo)
+            assert instance_info_row_count > 0
+
+            assert "id" not in get_columns(instance, "daemon_heartbeats")
+            heartbeat = DaemonHeartbeat(
+                timestamp=datetime.datetime.now().timestamp(), daemon_type="test", daemon_id="test"
+            )
+            instance.run_storage.add_daemon_heartbeat(heartbeat)
+            instance.run_storage.add_daemon_heartbeat(heartbeat)
+            daemon_heartbeats_row_count = _get_table_row_count(
+                instance.run_storage, DaemonHeartbeatsTable
+            )
+            assert daemon_heartbeats_row_count > 0
+
+            instance.upgrade()
+
+            assert "id" in get_columns(instance, "kvs")
+            with instance.run_storage.connect():
+                kvs_id_count = _get_table_row_count(
+                    instance.run_storage, KeyValueStoreTable, with_non_null_id=True
+                )
+            assert kvs_id_count == kvs_row_count
+
+            assert "id" in get_columns(instance, "instance_info")
+            with instance.run_storage.connect():
+                instance_info_id_count = _get_table_row_count(
+                    instance.run_storage, InstanceInfo, with_non_null_id=True
+                )
+            assert instance_info_id_count == instance_info_row_count
+
+            assert "id" in get_columns(instance, "daemon_heartbeats")
+            with instance.run_storage.connect():
+                daemon_heartbeats_id_count = _get_table_row_count(
+                    instance.run_storage, DaemonHeartbeatsTable, with_non_null_id=True
+                )
+            assert daemon_heartbeats_id_count == daemon_heartbeats_row_count

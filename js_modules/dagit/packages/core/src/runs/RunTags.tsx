@@ -9,7 +9,7 @@ import {DagsterTag, RunTag, TagType} from './RunTag';
 import {RunFilterToken} from './RunsFilterInput';
 
 // Sort these tags to the start of the list.
-export const priorityTagSet = new Set([
+const priorityTagSet = new Set([
   DagsterTag.ScheduleName as string,
   DagsterTag.SensorName as string,
   DagsterTag.Backfill as string,
@@ -19,7 +19,7 @@ const renamedTags = {
   [DagsterTag.SolidSelection]: DagsterTag.OpSelection,
 };
 
-export const canAddTagToFilter = (key: string) => {
+const canAddTagToFilter = (key: string) => {
   return key !== DagsterTag.SolidSelection && key !== DagsterTag.OpSelection;
 };
 
@@ -65,11 +65,11 @@ export const RunTags: React.FC<{
   const displayedTags = React.useMemo(() => {
     const priority = [];
     const others = [];
-    const copiedTags = tags.map(({key, value}) => ({key, value}));
+    const copiedTags = tags.map(({key, value, link}) => ({key, value, link}));
     for (const tag of copiedTags) {
       const {key} = tag;
       if (renamedTags.hasOwnProperty(key)) {
-        tag.key = renamedTags[key];
+        tag.key = renamedTags[key as keyof typeof renamedTags];
       }
 
       if (

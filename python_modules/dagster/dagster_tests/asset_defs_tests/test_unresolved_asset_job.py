@@ -1,3 +1,5 @@
+import hashlib
+
 import pytest
 from dagster import (
     AssetKey,
@@ -19,18 +21,17 @@ from dagster import (
     op,
     repository,
 )
-from dagster._check import CheckError
 from dagster._core.definitions import asset, multi_asset
 from dagster._core.definitions.load_assets_from_modules import prefix_assets
 from dagster._core.definitions.partition import (
     StaticPartitionsDefinition,
     static_partitioned_config,
 )
+from dagster._core.definitions.partitioned_schedule import build_schedule_from_partitioned_job
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidSubsetError
 from dagster._core.execution.with_resources import with_resources
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import schedule_from_partitions
 
 
 def _all_asset_keys(result):
@@ -65,7 +66,8 @@ def asset_aware_io_manager():
 
 
 def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
-    """
+    """Get a predefined set of assets for testing.
+
     Dependencies:
         "upstream": {
             "start": set(),
@@ -348,7 +350,7 @@ def test_define_selection_job(job_selection, expected_assets, use_multi, prefixe
     prefixed_assets = _get_assets_defs(use_multi=use_multi, allow_subset=use_multi)
     # apply prefixes
     for prefix in reversed(prefixes or []):
-        prefixed_assets = prefix_assets(prefixed_assets, prefix)
+        prefixed_assets, _ = prefix_assets(prefixed_assets, prefix, [], None)
 
     final_assets = with_resources(
         prefixed_assets,
@@ -410,7 +412,22 @@ def test_define_selection_job(job_selection, expected_assets, use_multi, prefixe
         if asset_name in expected_assets.split(","):
             # dealing with multi asset
             if output != asset_name:
-                assert result.output_for_node(output.split(".")[0], asset_name)
+                node_def_name = output.split(".")[0]
+                keys_for_node = {AssetKey([*(prefixes or []), c]) for c in node_def_name[:-1]}
+                selected_keys_for_node = keys_for_node.intersection(expected_asset_keys)
+                if (
+                    selected_keys_for_node != keys_for_node
+                    # too much of a pain to explicitly encode the cases where we need to create a
+                    # new node definition
+                    and not result.job_def.has_node_named(node_def_name)
+                ):
+                    node_def_name += (
+                        "_subset_"
+                        + hashlib.md5(
+                            (str(list(sorted(selected_keys_for_node)))).encode()
+                        ).hexdigest()[-5:]
+                    )
+                assert result.output_for_node(node_def_name, asset_name)
             # dealing with regular asset
             else:
                 assert result.output_for_node(output, "result") == value
@@ -440,7 +457,7 @@ def test_define_selection_job_assets_definition_selection():
     job1.execute_in_process()
 
 
-def test_source_asset_selection():
+def test_root_asset_selection():
     @asset
     def a(source):
         return source + 1
@@ -449,6 +466,7 @@ def test_source_asset_selection():
     def b(a):
         return a + 1
 
+    # Source asset should not be included in the job
     assert define_asset_job("job", selection="*b").resolve(
         assets=[a, b], source_assets=[SourceAsset("source")]
     )
@@ -474,7 +492,7 @@ def foo():
 
 def test_executor_def():
     job = define_asset_job("with_exec", executor_def=in_process_executor).resolve([foo], [])
-    assert job.executor_def == in_process_executor  # pylint: disable=comparison-with-callable
+    assert job.executor_def == in_process_executor
 
 
 def test_tags():
@@ -591,7 +609,7 @@ def test_partitioned_schedule():
     partitions_def = HourlyPartitionsDefinition(start_date="2020-01-01-00:00")
     job = define_asset_job("hourly", partitions_def=partitions_def)
 
-    schedule = schedule_from_partitions(job)
+    schedule = build_schedule_from_partitioned_job(job)
 
     spd = schedule.job.partitions_def
     assert spd == partitions_def
@@ -601,7 +619,7 @@ def test_partitioned_schedule_on_repo():
     partitions_def = HourlyPartitionsDefinition(start_date="2020-01-01-00:00")
     job = define_asset_job("hourly", partitions_def=partitions_def)
 
-    schedule = schedule_from_partitions(job)
+    schedule = build_schedule_from_partitioned_job(job)
 
     @repository
     def my_repo():
@@ -618,13 +636,13 @@ def test_intersecting_partitions_on_repo_invalid():
     partitions_def = HourlyPartitionsDefinition(start_date="2020-01-01-00:00")
     job = define_asset_job("hourly", partitions_def=partitions_def)
 
-    schedule = schedule_from_partitions(job)
+    schedule = build_schedule_from_partitioned_job(job)
 
     @asset(partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"))
     def d(c):
         return c
 
-    with pytest.raises(CheckError, match="partitions_def of Daily"):
+    with pytest.raises(DagsterInvalidDefinitionError, match="must have the same partitions def"):
 
         @repository
         def my_repo():
@@ -642,8 +660,8 @@ def test_intersecting_partitions_on_repo_valid():
     job = define_asset_job("hourly", partitions_def=partitions_def, selection="a++")
     job2 = define_asset_job("daily", partitions_def=partitions_def2, selection="d")
 
-    schedule = schedule_from_partitions(job)
-    schedule2 = schedule_from_partitions(job2)
+    schedule = build_schedule_from_partitioned_job(job)
+    schedule2 = build_schedule_from_partitioned_job(job2)
 
     @asset(partitions_def=partitions_def2)
     def d(c):
@@ -708,3 +726,17 @@ def test_job_run_request():
     assert my_job_hardcoded_config.run_request_for_partition(
         partition_key="a", run_config={"a": 5}
     ).run_config == {"a": 5}
+
+
+def test_job_partitions_def_unpartitioned_assets():
+    @asset
+    def my_asset():
+        pass
+
+    my_job = define_asset_job(
+        "my_job", partitions_def=DailyPartitionsDefinition(start_date="2020-01-01")
+    )
+
+    @repository
+    def my_repo():
+        return [my_asset, my_job]

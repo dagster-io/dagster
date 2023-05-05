@@ -22,8 +22,6 @@ def execute_backfill_iteration(
         yield None
         return
 
-    workspace = workspace_process_context.create_request_context()
-
     for backfill_job in backfills:
         backfill_id = backfill_job.backfill_id
 
@@ -31,10 +29,12 @@ def execute_backfill_iteration(
         backfill = cast(PartitionBackfill, instance.get_backfill(backfill_id))
         try:
             if backfill.is_asset_backfill:
-                yield from execute_asset_backfill_iteration(backfill, workspace, instance)
+                yield from execute_asset_backfill_iteration(
+                    backfill, workspace_process_context, instance
+                )
             else:
                 yield from execute_job_backfill_iteration(
-                    backfill, logger, workspace, debug_crash_flags, instance
+                    backfill, logger, workspace_process_context, debug_crash_flags, instance
                 )
         except Exception:
             error_info = serializable_error_info_from_exc_info(sys.exc_info())

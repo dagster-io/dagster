@@ -1,10 +1,13 @@
 import {Box, Caption, Colors, Popover, Tag} from '@dagster-io/ui';
 import * as React from 'react';
+import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 export enum DagsterTag {
+  Automaterialize = 'dagster/auto_materialize',
   Namespace = 'dagster/',
   Backfill = 'dagster/backfill',
+  CreatedBy = 'dagster/created_by',
   SolidSelection = 'dagster/solid_selection',
   OpSelection = 'dagster/op_selection',
   StepSelection = 'dagster/step_selection',
@@ -16,6 +19,13 @@ export enum DagsterTag {
   RootRunId = 'dagster/root_run_id',
   ScheduleName = 'dagster/schedule_name',
   SensorName = 'dagster/sensor_name',
+  AssetPartitionRangeStart = 'dagster/asset_partition_range_start',
+  AssetPartitionRangeEnd = 'dagster/asset_partition_range_end',
+  AssetEventDataVersion = 'dagster/data_version',
+  AssetEventDataVersionDeprecated = 'dagster/logical_version',
+  AssetEventCodeVersion = 'dagster/code_version',
+  SnapshotID = 'dagster/snapshot_id', // This only exists on the client, not the server.
+  User = 'user',
 
   // Hidden tags (using ".dagster" HIDDEN_TAG_PREFIX)
   RepositoryLabelTag = '.dagster/repository',
@@ -24,11 +34,12 @@ export enum DagsterTag {
 export type TagType = {
   key: string;
   value: string;
+  link?: string;
 };
 
-type TagAction = {
+export type TagAction = {
   label: React.ReactNode;
-  onClick: (tag: TagType) => void;
+  onClick: (tag: TagType) => any;
 };
 
 interface IRunTagProps {
@@ -48,6 +59,8 @@ export const RunTag = ({tag, actions}: IRunTagProps) => {
         case DagsterTag.ScheduleName:
         case DagsterTag.SensorName:
           return null;
+        case DagsterTag.SnapshotID:
+          return 'Snapshot';
         default:
           return key.slice(DagsterTag.Namespace.length);
       }
@@ -68,9 +81,27 @@ export const RunTag = ({tag, actions}: IRunTagProps) => {
     }
   }, [key]);
 
+  const displayValue = React.useMemo(() => {
+    switch (key) {
+      case DagsterTag.SnapshotID:
+        return value.slice(0, 8);
+      default:
+        return value;
+    }
+  }, [key, value]);
+
+  const ValueWrapper = ({children}: {children: React.ReactNode}) =>
+    tag.link ? <Link to={tag.link}>{children}</Link> : <>{children}</>;
+
   const tagElement = (
     <Tag intent={isDagsterTag ? 'none' : 'primary'} interactive icon={icon || undefined}>
-      {displayedKey ? `${displayedKey}: ${value}` : value}
+      {displayedKey ? (
+        <span>
+          {displayedKey}: <ValueWrapper>{displayValue}</ValueWrapper>
+        </span>
+      ) : (
+        <ValueWrapper>{displayValue}</ValueWrapper>
+      )}
     </Tag>
   );
 

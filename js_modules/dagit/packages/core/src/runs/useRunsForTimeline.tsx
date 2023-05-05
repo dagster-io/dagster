@@ -1,7 +1,7 @@
 import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 
-import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {isHiddenAssetGroupJob, __ASSET_JOB_PREFIX} from '../asset-graph/Utils';
 import {InstigationStatus, RunsFilter, RunStatus} from '../graphql/types';
 import {SCHEDULE_FUTURE_TICKS_FRAGMENT} from '../instance/NextTick';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
@@ -100,7 +100,7 @@ export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilt
       return [];
     }
 
-    const jobs = [];
+    const jobs: TimelineJob[] = [];
     for (const locationEntry of workspaceOrError.locationEntries) {
       if (
         locationEntry.__typename !== 'WorkspaceLocationEntry' ||
@@ -125,7 +125,7 @@ export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilt
           for (const schedule of schedules) {
             if (schedule.scheduleState.status === InstigationStatus.RUNNING) {
               schedule.futureTicks.results.forEach(({timestamp}) => {
-                const startTime = timestamp * 1000;
+                const startTime = timestamp! * 1000;
                 if (startTime > now && overlap({start, end}, {start: startTime, end: startTime})) {
                   jobTicks.push({
                     id: `${schedule.pipelineName}-future-run-${timestamp}`,
@@ -143,21 +143,34 @@ export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilt
           const jobName = isAdHoc ? 'Ad hoc materializations' : pipeline.name;
 
           const jobRuns = runsByJobKey[jobKey] || [];
-          if (jobTicks.length || jobRuns.length) {
-            jobs.push({
-              key: jobKey,
-              jobName,
-              jobType: isAdHoc ? 'asset' : 'job',
-              repoAddress,
-              path: workspacePipelinePath({
-                repoName: repoAddress.name,
-                repoLocation: repoAddress.location,
-                pipelineName: pipeline.name,
-                isJob: pipeline.isJob,
-              }),
-              runs: [...jobRuns, ...jobTicks],
-            } as TimelineJob);
+          if (!jobTicks.length && !jobRuns.length) {
+            continue;
           }
+
+          const jobsAndTicksToAdd = [...jobRuns, ...jobTicks];
+          if (isAdHoc) {
+            const adHocJobs = jobs.find(
+              (job) => job.jobType === 'asset' && job.repoAddress === repoAddress,
+            );
+            if (adHocJobs) {
+              adHocJobs.runs.push(...jobsAndTicksToAdd);
+              continue;
+            }
+          }
+
+          jobs.push({
+            key: jobKey,
+            jobName,
+            jobType: isAdHoc ? 'asset' : 'job',
+            repoAddress,
+            path: workspacePipelinePath({
+              repoName: repoAddress.name,
+              repoLocation: repoAddress.location,
+              pipelineName: pipeline.name,
+              isJob: pipeline.isJob,
+            }),
+            runs: [...jobRuns, ...jobTicks],
+          } as TimelineJob);
         }
       }
     }
@@ -220,6 +233,7 @@ const RUN_TIMELINE_QUERY = gql`
     }
     workspaceOrError {
       ... on Workspace {
+        id
         locationEntries {
           id
           name

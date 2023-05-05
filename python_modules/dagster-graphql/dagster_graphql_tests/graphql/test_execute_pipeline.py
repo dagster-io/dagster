@@ -2,13 +2,13 @@ import json
 import time
 import uuid
 
-from dagster._core.storage.pipeline_run import RunsFilter
+from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
 from dagster._core.test_utils import wait_for_runs_to_finish
-from dagster._legacy import DagsterRunStatus
+from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._utils import file_relative_path
-from dagster._utils.test import get_temp_file_name
 from dagster_graphql.client.query import (
     LAUNCH_PIPELINE_EXECUTION_MUTATION,
+    METADATA_ENTRY_FRAGMENT,
     RUN_EVENTS_QUERY,
     SUBSCRIPTION_QUERY,
 )
@@ -22,7 +22,7 @@ from .graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
     ReadonlyGraphQLContextTestMatrix,
 )
-from .repo import csv_hello_world_solids_config
+from .repo import csv_hello_world_ops_config
 from .utils import (
     get_all_logs_for_finished_run_via_subscription,
     step_did_not_run,
@@ -30,7 +30,8 @@ from .utils import (
     sync_execute_get_run_log_data,
 )
 
-STEP_FAILURE_EVENTS_QUERY = """
+STEP_FAILURE_EVENTS_QUERY = (
+    """
 query pipelineRunEvents($runId: ID!) {
   logsForRun(runId: $runId) {
     __typename
@@ -41,6 +42,11 @@ query pipelineRunEvents($runId: ID!) {
           stepKey
           message
           level
+          failureMetadata {
+            metadataEntries {
+              ...metadataEntryFragment
+            }
+          }
           error {
             message
             className
@@ -65,10 +71,12 @@ query pipelineRunEvents($runId: ID!) {
   }
 }
 """
+    + METADATA_ENTRY_FRAGMENT
+)
 
 
 class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
-    def test_start_pipeline_execution(self, graphql_context):
+    def test_start_pipeline_execution(self, graphql_context: WorkspaceRequestContext):
         selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
         result = execute_dagster_graphql(
             graphql_context,
@@ -76,8 +84,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             variables={
                 "executionParams": {
                     "selector": selector,
-                    "runConfigData": csv_hello_world_solids_config(),
-                    "mode": "default",
+                    "runConfigData": csv_hello_world_ops_config(),
                 }
             },
         )
@@ -92,7 +99,9 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             result.data["launchPipelineExecution"]["run"]["pipeline"]["name"] == "csv_hello_world"
         )
 
-    def test_start_pipeline_execution_serialized_config(self, graphql_context):
+    def test_start_pipeline_execution_serialized_config(
+        self, graphql_context: WorkspaceRequestContext
+    ):
         selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
         result = execute_dagster_graphql(
             graphql_context,
@@ -100,8 +109,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             variables={
                 "executionParams": {
                     "selector": selector,
-                    "runConfigData": json.dumps(csv_hello_world_solids_config()),
-                    "mode": "default",
+                    "runConfigData": json.dumps(csv_hello_world_ops_config()),
                 }
             },
         )
@@ -116,7 +124,9 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             result.data["launchPipelineExecution"]["run"]["pipeline"]["name"] == "csv_hello_world"
         )
 
-    def test_start_pipeline_execution_malformed_config(self, graphql_context):
+    def test_start_pipeline_execution_malformed_config(
+        self, graphql_context: WorkspaceRequestContext
+    ):
         selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
         result = execute_dagster_graphql(
             graphql_context,
@@ -125,7 +135,6 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
                 "executionParams": {
                     "selector": selector,
                     "runConfigData": '{"foo": {{{{',
-                    "mode": "default",
                 }
             },
         )
@@ -136,30 +145,9 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert result.data["launchPipelineExecution"]["__typename"] == "PythonError"
         assert "yaml.parser.ParserError" in result.data["launchPipelineExecution"]["message"]
 
-    def test_basic_start_pipeline_execution_with_preset(self, graphql_context):
-        selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
-        result = execute_dagster_graphql(
-            graphql_context,
-            LAUNCH_PIPELINE_EXECUTION_MUTATION,
-            variables={
-                "executionParams": {
-                    "selector": selector,
-                    "preset": "test_inline",
-                }
-            },
-        )
-
-        assert not result.errors
-        assert result.data
-
-        # just test existence
-        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
-        assert uuid.UUID(result.data["launchPipelineExecution"]["run"]["runId"])
-        assert (
-            result.data["launchPipelineExecution"]["run"]["pipeline"]["name"] == "csv_hello_world"
-        )
-
-    def test_basic_start_pipeline_execution_with_pipeline_def_tags(self, graphql_context):
+    def test_basic_start_pipeline_execution_with_pipeline_def_tags(
+        self, graphql_context: WorkspaceRequestContext
+    ):
         selector = infer_pipeline_selector(graphql_context, "hello_world_with_tags")
         result = execute_dagster_graphql(
             graphql_context,
@@ -167,7 +155,6 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             variables={
                 "executionParams": {
                     "selector": selector,
-                    "mode": "default",
                 },
             },
         )
@@ -194,7 +181,6 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             variables={
                 "executionParams": {
                     "selector": selector,
-                    "mode": "default",
                     "executionMetadata": {
                         "tags": [{"key": "tag_key", "value": "new_tag_value"}],
                     },
@@ -210,7 +196,9 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         }
         assert tags_by_key["tag_key"] == "new_tag_value"
 
-    def test_basic_start_pipeline_execution_with_non_existent_preset(self, graphql_context):
+    def test_basic_start_pipeline_execution_with_non_existent_preset(
+        self, graphql_context: WorkspaceRequestContext
+    ):
         selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
 
         result = execute_dagster_graphql(
@@ -232,36 +220,9 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             == "Preset undefined_preset not found in pipeline csv_hello_world."
         )
 
-    def test_basic_start_pipeline_execution_with_preset_failure(self, graphql_context):
-        subset_selector = infer_pipeline_selector(
-            graphql_context, "csv_hello_world", ["sum_sq_solid"]
-        )
-
-        result = execute_dagster_graphql(
-            graphql_context,
-            LAUNCH_PIPELINE_EXECUTION_MUTATION,
-            variables={
-                "executionParams": {
-                    "selector": subset_selector,
-                    "preset": "test_inline",
-                }
-            },
-        )
-
-        # while illegally defining selector.solid_selection
-        assert not result.errors
-        assert result.data
-        assert (
-            result.data["launchPipelineExecution"]["__typename"]
-            == "ConflictingExecutionParamsError"
-        )
-        assert (
-            result.data["launchPipelineExecution"]["message"]
-            == "Invalid ExecutionParams. Cannot define selector.solid_selection when using a"
-            " preset."
-        )
-
-        # while illegally defining runConfigData
+    def test_basic_start_pipeline_execution_config_failure(
+        self, graphql_context: WorkspaceRequestContext
+    ):
         selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
         result = execute_dagster_graphql(
             graphql_context,
@@ -269,57 +230,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             variables={
                 "executionParams": {
                     "selector": selector,
-                    "preset": "test_inline",
-                    "runConfigData": csv_hello_world_solids_config(),
-                }
-            },
-        )
-
-        assert not result.errors
-        assert result.data
-        assert (
-            result.data["launchPipelineExecution"]["__typename"]
-            == "ConflictingExecutionParamsError"
-        )
-        assert (
-            result.data["launchPipelineExecution"]["message"]
-            == "Invalid ExecutionParams. Cannot define runConfigData when using a preset."
-        )
-
-        # while illegally defining mode
-        result = execute_dagster_graphql(
-            graphql_context,
-            LAUNCH_PIPELINE_EXECUTION_MUTATION,
-            variables={
-                "executionParams": {
-                    "selector": selector,
-                    "preset": "test_inline",
-                    "mode": "default",
-                }
-            },
-        )
-
-        assert not result.errors
-        assert result.data
-        assert (
-            result.data["launchPipelineExecution"]["__typename"]
-            == "ConflictingExecutionParamsError"
-        )
-        assert (
-            result.data["launchPipelineExecution"]["message"]
-            == "Invalid ExecutionParams. Cannot define mode when using a preset."
-        )
-
-    def test_basic_start_pipeline_execution_config_failure(self, graphql_context):
-        selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
-        result = execute_dagster_graphql(
-            graphql_context,
-            LAUNCH_PIPELINE_EXECUTION_MUTATION,
-            variables={
-                "executionParams": {
-                    "selector": selector,
-                    "runConfigData": {"solids": {"sum_solid": {"inputs": {"num": 384938439}}}},
-                    "mode": "default",
+                    "runConfigData": {"ops": {"sum_op": {"inputs": {"num": 384938439}}}},
                 }
             },
         )
@@ -328,7 +239,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert result.data
         assert result.data["launchPipelineExecution"]["__typename"] == "RunConfigValidationInvalid"
 
-    def test_basis_start_pipeline_not_found_error(self, graphql_context):
+    def test_basis_start_pipeline_not_found_error(self, graphql_context: WorkspaceRequestContext):
         selector = infer_pipeline_selector(graphql_context, "sjkdfkdjkf")
         result = execute_dagster_graphql(
             graphql_context,
@@ -336,8 +247,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             variables={
                 "executionParams": {
                     "selector": selector,
-                    "runConfigData": {"solids": {"sum_solid": {"inputs": {"num": "test.csv"}}}},
-                    "mode": "default",
+                    "runConfigData": {"ops": {"sum_op": {"inputs": {"num": "test.csv"}}}},
                 }
             },
         )
@@ -403,7 +313,9 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             "RunSuccessEvent",
         ]
 
-    def test_basic_start_pipeline_execution_and_subscribe(self, graphql_context):
+    def test_basic_start_pipeline_execution_and_subscribe(
+        self, graphql_context: WorkspaceRequestContext
+    ):
         selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
         run_logs = sync_execute_get_run_log_data(
             context=graphql_context,
@@ -411,13 +323,12 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
                 "executionParams": {
                     "selector": selector,
                     "runConfigData": {
-                        "solids": {
-                            "sum_solid": {
+                        "ops": {
+                            "sum_op": {
                                 "inputs": {"num": file_relative_path(__file__, "../data/num.csv")}
                             }
                         }
                     },
-                    "mode": "default",
                 }
             },
         )
@@ -434,7 +345,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             or non_engine_event_types == self._legacy_csv_hello_world_event_sequence()
         )
 
-    def test_basic_start_pipeline_and_fetch(self, graphql_context):
+    def test_basic_start_pipeline_and_fetch(self, graphql_context: WorkspaceRequestContext):
         selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
         exc_result = execute_dagster_graphql(
             graphql_context,
@@ -443,13 +354,12 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
                 "executionParams": {
                     "selector": selector,
                     "runConfigData": {
-                        "solids": {
-                            "sum_solid": {
+                        "ops": {
+                            "sum_op": {
                                 "inputs": {"num": file_relative_path(__file__, "../data/num.csv")}
                             }
                         }
                     },
-                    "mode": "default",
                 }
             },
         )
@@ -481,7 +391,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             or non_engine_event_types == self._legacy_csv_hello_world_event_sequence()
         )
 
-    def test_basic_start_pipeline_and_poll(self, graphql_context):
+    def test_basic_start_pipeline_and_poll(self, graphql_context: WorkspaceRequestContext):
         selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
         exc_result = execute_dagster_graphql(
             graphql_context,
@@ -490,13 +400,12 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
                 "executionParams": {
                     "selector": selector,
                     "runConfigData": {
-                        "solids": {
-                            "sum_solid": {
+                        "ops": {
+                            "sum_op": {
                                 "inputs": {"num": file_relative_path(__file__, "../data/num.csv")}
                             }
                         }
                     },
-                    "mode": "default",
                 }
             },
         )
@@ -549,8 +458,8 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             or non_engine_event_types == self._legacy_csv_hello_world_event_sequence()
         )
 
-    def test_step_failure(self, graphql_context):
-        selector = infer_pipeline_selector(graphql_context, "naughty_programmer_pipeline")
+    def test_step_failure(self, graphql_context: WorkspaceRequestContext):
+        selector = infer_pipeline_selector(graphql_context, "naughty_programmer_job")
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -558,7 +467,6 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             variables={
                 "executionParams": {
                     "selector": selector,
-                    "mode": "default",
                 }
             },
         )
@@ -594,29 +502,36 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert step_run_log_entry["error"]
         assert step_run_log_entry["level"] == "ERROR"
 
-        causes = step_run_log_entry["error"]["causes"]
+        assert step_run_log_entry["failureMetadata"]
+        assert step_run_log_entry["failureMetadata"]["metadataEntries"] == [
+            {
+                "__typename": "BoolMetadataEntry",
+                "label": "top_level",
+                "description": None,
+                "boolValue": True,
+            }
+        ]
 
-        assert len(causes) == 3
+        causes = step_run_log_entry["error"]["causes"]
+        assert len(causes) == 2
         assert [cause["message"] for cause in causes] == [
-            "Exception: Even more outer exception\n",
             "Exception: Outer exception\n",
             "Exception: bad programmer, bad\n",
         ]
         assert all([len(cause["stack"]) > 0 for cause in causes])
 
         error_chain = step_run_log_entry["error"]["errorChain"]
-        assert len(error_chain) == 4
+        assert len(error_chain) == 3
         assert [
             (chain_link["error"]["message"], chain_link["isExplicitLink"])
             for chain_link in error_chain
         ] == [
-            ("Exception: Even more outer exception\n", True),
             ("Exception: Outer exception\n", True),
             ("Exception: bad programmer, bad\n", True),
             ("Exception: The inner sanctum\n", False),
         ]
 
-    def test_subscribe_bad_run_id(self, graphql_context):
+    def test_subscribe_bad_run_id(self, graphql_context: WorkspaceRequestContext):
         run_id = "nope"
         subscribe_results = execute_dagster_graphql_subscription(
             graphql_context, SUBSCRIPTION_QUERY, variables={"runId": run_id}
@@ -631,15 +546,14 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         )
         assert subscribe_result.data["pipelineRunLogs"]["missingRunId"] == "nope"
 
-    def test_basic_sync_execution_no_config(self, graphql_context):
-        selector = infer_pipeline_selector(graphql_context, "no_config_pipeline")
+    def test_basic_sync_execution_no_config(self, graphql_context: WorkspaceRequestContext):
+        selector = infer_pipeline_selector(graphql_context, "no_config_job")
         result = sync_execute_get_run_log_data(
             context=graphql_context,
             variables={
                 "executionParams": {
                     "selector": selector,
                     "runConfigData": None,
-                    "mode": "default",
                 }
             },
         )
@@ -649,15 +563,14 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert has_event_of_type(logs, "RunSuccessEvent")
         assert not has_event_of_type(logs, "RunFailureEvent")
 
-    def test_basic_filesystem_sync_execution(self, graphql_context):
+    def test_basic_filesystem_sync_execution(self, graphql_context: WorkspaceRequestContext):
         selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
         result = sync_execute_get_run_log_data(
             context=graphql_context,
             variables={
                 "executionParams": {
                     "selector": selector,
-                    "runConfigData": csv_hello_world_solids_config(),
-                    "mode": "default",
+                    "runConfigData": csv_hello_world_ops_config(),
                 }
             },
         )
@@ -670,11 +583,13 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
 
         assert first_event_of_type(logs, "RunStartEvent")["level"] == "DEBUG"
 
-        sum_solid_output = get_step_output_event(logs, "sum_solid")
-        assert sum_solid_output["stepKey"] == "sum_solid"
-        assert sum_solid_output["outputName"] == "result"
+        sum_op_output = get_step_output_event(logs, "sum_op")
+        assert sum_op_output["stepKey"] == "sum_op"
+        assert sum_op_output["outputName"] == "result"
 
-    def test_basic_start_pipeline_execution_with_tags(self, graphql_context):
+    def test_basic_start_pipeline_execution_with_tags(
+        self, graphql_context: WorkspaceRequestContext
+    ):
         selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
         result = execute_dagster_graphql(
             graphql_context,
@@ -682,11 +597,10 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             variables={
                 "executionParams": {
                     "selector": selector,
-                    "runConfigData": csv_hello_world_solids_config(),
+                    "runConfigData": csv_hello_world_ops_config(),
                     "executionMetadata": {
                         "tags": [{"key": "dagster/test_key", "value": "test_value"}]
                     },
-                    "mode": "default",
                 }
             },
         )
@@ -709,44 +623,9 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert len(runs_with_tag) == 1
         assert runs_with_tag[0].run_id == run_id
 
-    def test_basic_start_pipeline_execution_with_materialization(self, graphql_context):
-        selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
-
-        with get_temp_file_name() as out_csv_path:
-            run_config = {
-                "solids": {
-                    "sum_solid": {
-                        "inputs": {"num": file_relative_path(__file__, "../data/num.csv")},
-                        "outputs": [{"result": out_csv_path}],
-                    }
-                }
-            }
-
-            run_logs = sync_execute_get_run_log_data(
-                context=graphql_context,
-                variables={
-                    "executionParams": {
-                        "selector": selector,
-                        "runConfigData": run_config,
-                        "mode": "default",
-                    }
-                },
-            )
-
-            step_mat_event = None
-
-            for message in run_logs["messages"]:
-                if message["__typename"] == "MaterializationEvent":
-                    # ensure only one event
-                    assert step_mat_event is None
-                    step_mat_event = message
-
-            # ensure only one event
-            assert step_mat_event
-            assert len(step_mat_event["metadataEntries"]) == 1
-            assert step_mat_event["metadataEntries"][0]["path"] == out_csv_path
-
-    def test_start_job_execution_with_default_config(self, graphql_context):
+    def test_start_job_execution_with_default_config(
+        self, graphql_context: WorkspaceRequestContext
+    ):
         selector = infer_pipeline_selector(graphql_context, "job_with_default_config")
         result = execute_dagster_graphql(
             graphql_context,
@@ -763,23 +642,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert result.data
         assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
 
-    def test_pipeline_execution_fails_no_mode(self, graphql_context):
-        selector = infer_pipeline_selector(graphql_context, "multi_mode_with_resources")
-        result = execute_dagster_graphql(
-            graphql_context,
-            LAUNCH_PIPELINE_EXECUTION_MUTATION,
-            variables={
-                "executionParams": {
-                    "selector": selector,
-                }
-            },
-        )
-
-        assert not result.errors
-        assert result.data
-        assert result.data["launchPipelineExecution"]["__typename"] == "NoModeProvidedError"
-
-    def test_two_ins_job_subset_and_config(self, graphql_context):
+    def test_two_ins_job_subset_and_config(self, graphql_context: WorkspaceRequestContext):
         selector = infer_pipeline_selector(
             graphql_context, "two_ins_job", ["op_1", "op_with_2_ins"]
         )
@@ -793,7 +656,6 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
                 "executionParams": {
                     "selector": selector,
                     "runConfigData": run_config,
-                    "mode": "default",
                 }
             },
         )
@@ -807,7 +669,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             ]
         )
 
-    def test_nested_graph_op_selection_and_config(self, graphql_context):
+    def test_nested_graph_op_selection_and_config(self, graphql_context: WorkspaceRequestContext):
         selector = infer_pipeline_selector(
             graphql_context, "nested_job", ["subgraph.adder", "subgraph.op_1"]
         )
@@ -818,7 +680,6 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
                 "executionParams": {
                     "selector": selector,
                     "runConfigData": run_config,
-                    "mode": "default",
                 }
             },
         )
@@ -829,7 +690,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert step_did_not_run(logs, "plus_one")
         assert step_did_not_run(logs, "subgraph.op_2")
 
-    def test_memoization_job(self, graphql_context):
+    def test_memoization_job(self, graphql_context: WorkspaceRequestContext):
         selector = infer_pipeline_selector(graphql_context, "memoization_job")
         run_config = {}
         result = execute_dagster_graphql(
@@ -839,7 +700,6 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
                 "executionParams": {
                     "selector": selector,
                     "runConfigData": run_config,
-                    "mode": "default",
                 }
             },
         )
@@ -848,7 +708,8 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
 
         wait_for_runs_to_finish(graphql_context.instance)
 
-        assert graphql_context.instance.get_run_by_id(run_id).status == DagsterRunStatus.SUCCESS
+        run = graphql_context.instance.get_run_by_id(run_id)
+        assert run and run.status == DagsterRunStatus.SUCCESS
 
         logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[
             "pipelineRunLogs"
@@ -864,7 +725,6 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
                 "executionParams": {
                     "selector": selector,
                     "runConfigData": run_config,
-                    "mode": "default",
                 }
             },
         )
@@ -873,7 +733,8 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
 
         wait_for_runs_to_finish(graphql_context.instance)
 
-        assert graphql_context.instance.get_run_by_id(run_id).status == DagsterRunStatus.SUCCESS
+        run = graphql_context.instance.get_run_by_id(run_id)
+        assert run and run.status == DagsterRunStatus.SUCCESS
 
         logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[
             "pipelineRunLogs"
@@ -913,7 +774,9 @@ def get_step_output_event(logs, step_key, output_name="result"):
 
 
 class TestExecutePipelineReadonlyFailure(ReadonlyGraphQLContextTestMatrix):
-    def test_start_pipeline_execution_readonly_failure(self, graphql_context):
+    def test_start_pipeline_execution_readonly_failure(
+        self, graphql_context: WorkspaceRequestContext
+    ):
         selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
         result = execute_dagster_graphql(
             graphql_context,
@@ -921,8 +784,7 @@ class TestExecutePipelineReadonlyFailure(ReadonlyGraphQLContextTestMatrix):
             variables={
                 "executionParams": {
                     "selector": selector,
-                    "runConfigData": csv_hello_world_solids_config(),
-                    "mode": "default",
+                    "runConfigData": csv_hello_world_ops_config(),
                 }
             },
         )

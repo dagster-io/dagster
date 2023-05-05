@@ -15,14 +15,16 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {usePermissionsForLocation} from '../app/Permissions';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {buildRepoAddress, DUNDER_REPO_NAME} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
-import {ReloadRepositoryLocationButton} from './ReloadRepositoryLocationButton';
+import {
+  NO_RELOAD_PERMISSION_TEXT,
+  ReloadRepositoryLocationButton,
+} from './ReloadRepositoryLocationButton';
 import {RepoSelector, RepoSelectorOption} from './RepoSelector';
 
 interface Props {
@@ -100,7 +102,6 @@ const SingleRepoSummary: React.FC<{repo: RepoSelectorOption; onlyRepo: boolean}>
 }) => {
   const repoAddress = buildRepoAddress(repo.repository.name, repo.repositoryLocation.name);
   const isDunder = repoAddress.name === DUNDER_REPO_NAME;
-  const {canReloadRepositoryLocation} = usePermissionsForLocation(repoAddress.location);
   return (
     <Group direction="row" spacing={4} alignItems="center">
       <SingleRepoNameLink
@@ -110,40 +111,52 @@ const SingleRepoSummary: React.FC<{repo: RepoSelectorOption; onlyRepo: boolean}>
       >
         {isDunder ? repoAddress.location : repoAddress.name}
       </SingleRepoNameLink>
-      {canReloadRepositoryLocation.enabled ? (
-        <ReloadRepositoryLocationButton location={repoAddress.location}>
-          {({tryReload, reloading}) => (
+      <ReloadRepositoryLocationButton
+        location={repoAddress.location}
+        ChildComponent={({codeLocation, tryReload, reloading, hasReloadPermission}) => {
+          return (
             <ShortcutHandler
-              onShortcut={tryReload}
+              onShortcut={() => {
+                if (hasReloadPermission) {
+                  tryReload();
+                }
+              }}
               shortcutLabel="⌥R"
               shortcutFilter={(e) => e.code === 'KeyR' && e.altKey}
             >
               <ReloadTooltip
                 placement="top"
                 content={
-                  <Reloading>
-                    {reloading ? (
-                      'Reloading…'
-                    ) : (
-                      <>
-                        Reload location <strong>{repoAddress.location}</strong>
-                      </>
-                    )}
-                  </Reloading>
+                  hasReloadPermission ? (
+                    <Reloading>
+                      {reloading ? (
+                        'Reloading…'
+                      ) : (
+                        <>
+                          Reload location <strong>{codeLocation}</strong>
+                        </>
+                      )}
+                    </Reloading>
+                  ) : (
+                    NO_RELOAD_PERMISSION_TEXT
+                  )
                 }
               >
                 {reloading ? (
                   <Spinner purpose="body-text" />
                 ) : (
-                  <ReloadButton onClick={tryReload}>
-                    <Icon name="refresh" color={Colors.Gray900} />
+                  <ReloadButton disabled={!hasReloadPermission} onClick={tryReload}>
+                    <Icon
+                      name="refresh"
+                      color={hasReloadPermission ? Colors.Gray900 : Colors.Gray400}
+                    />
                   </ReloadButton>
                 )}
               </ReloadTooltip>
             </ShortcutHandler>
-          )}
-        </ReloadRepositoryLocationButton>
-      ) : null}
+          );
+        }}
+      />
     </Group>
   );
 };

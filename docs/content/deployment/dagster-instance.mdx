@@ -221,6 +221,15 @@ To do this, provide a `$DAGSTER_HOME/dagster.yaml` file, which Dagit and all Dag
       </td>
       <td>Controls how schedules are evaluated.</td>
     </tr>
+    <tr>
+      <td>
+        <a href="#auto-materialize">Auto-materialize</a>
+      </td>
+      <td>
+        <code>auto_materialize</code>
+      </td>
+      <td>Controls how assets are auto-materialized.</td>
+    </tr>
   </tbody>
 </table>
 
@@ -603,6 +612,46 @@ compute_logs:
 ---
 
 </TabItem>
+<TabItem name="GCSComputeLogManager">
+
+#### GCSComputeLogManager
+
+The <PyObject module="dagster_gcp.gcs" object="GCSComputeLogManager" /> writes `stdout` and `stderr` to Google Cloud Storage.
+
+```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_compute_log_storage_blob endbefore=end_marker_compute_log_storage_blob
+# there are multiple ways to configure the AzureBlobComputeLogManager
+
+# you can set the necessary configuration values directly:
+compute_logs:
+  module: dagster_azure.blob.compute_log_manager
+  class: AzureBlobComputeLogManager
+  config:
+    storage_account: mycorp-dagster
+    container: compute-logs
+    secret_key: foo
+    local_dir: /tmp/bar
+    prefix: dagster-test-
+
+# alternatively, you can obtain any of these config values from environment variables
+compute_logs:
+  module: dagster_azure.blob.compute_log_manager
+  class: AzureBlobComputeLogManager
+  config:
+    storage_account:
+      env: MYCORP_DAGSTER_STORAGE_ACCOUNT_NAME
+    container:
+      env: CONTAINER_NAME
+    secret_key:
+      env: SECRET_KEY
+    local_dir:
+      env: LOCAL_DIR_PATH
+    prefix:
+      env: DAGSTER_COMPUTE_LOG_PREFIX
+```
+
+---
+
+</TabItem>
 <TabItem name="S3ComputeLogManager">
 
 #### S3ComputeLogManager
@@ -734,4 +783,14 @@ To asynchronously evaluate schedules, set the `use_threads` and `num_workers` ke
 schedules:
   use_threads: true
   num_workers: 8
+```
+
+### Auto-materialize
+
+The `auto_materialize` key allows you to adjust configuration related to [auto-materializing assets](/concepts/assets/asset-auto-execution).
+
+```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_auto_materialize endbefore=end_marker_auto_materialize
+auto_materialize:
+  run_tags:
+    key: value
 ```

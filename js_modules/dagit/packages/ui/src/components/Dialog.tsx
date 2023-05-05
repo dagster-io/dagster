@@ -5,6 +5,7 @@ import styled, {createGlobalStyle} from 'styled-components/macro';
 
 import {Box} from './Box';
 import {Colors} from './Colors';
+import {ErrorBoundary} from './ErrorBoundary';
 import {Group} from './Group';
 import {IconName, Icon} from './Icon';
 
@@ -13,11 +14,12 @@ interface Props
     React.ComponentProps<typeof BlueprintDialog>,
     'title' | 'icon' | 'backdropClassName'
   > {
+  children: React.ReactNode;
   title?: React.ReactNode;
   icon?: IconName;
 }
 
-export const Dialog: React.FC<Props> = (props) => {
+export const Dialog = (props: Props) => {
   const {icon, title, children, ...rest} = props;
   return (
     <BlueprintDialog
@@ -27,7 +29,7 @@ export const Dialog: React.FC<Props> = (props) => {
       className="dagit-dialog"
     >
       {title ? <DialogHeader icon={icon} label={title} /> : null}
-      {children}
+      <ErrorBoundary region="dialog">{children}</ErrorBoundary>
     </BlueprintDialog>
   );
 };
@@ -53,20 +55,29 @@ export const DialogHeader: React.FC<HeaderProps> = (props) => {
   );
 };
 
-export const DialogBody: React.FC = (props) => {
+interface BodyProps {
+  children: React.ReactNode;
+}
+
+export const DialogBody = ({children, ...rest}: BodyProps) => {
   return (
-    <Box padding={{vertical: 16, horizontal: 20}} background={Colors.White}>
-      {props.children}
+    <Box padding={{vertical: 16, horizontal: 20}} background={Colors.White} {...rest}>
+      {children}
     </Box>
   );
 };
 
 interface DialogFooterProps {
+  children: React.ReactNode;
   topBorder?: boolean;
-  left?: React.ReactFragment;
+  left?: React.ReactNode;
 }
 
-export const DialogFooter: React.FC<DialogFooterProps> = ({children, left, topBorder}) => {
+export const DialogFooter: React.FC<DialogFooterProps> = ({
+  children,
+  left,
+  topBorder,
+}: DialogFooterProps) => {
   return (
     <Box
       padding={{bottom: 16, top: topBorder ? 16 : 8, horizontal: 20}}
@@ -90,17 +101,17 @@ const DialogHeaderText = styled.div`
 `;
 
 export const GlobalDialogStyle = createGlobalStyle`
-  .dagit-portal .bp3-overlay-backdrop {
+  .dagit-portal .bp4-overlay-backdrop {
     background-color: ${Colors.WashGray};
   }
 
-  .dagit-portal .bp3-dialog-container {
+  .dagit-portal .bp4-dialog-container {
     display: grid;
     grid-template-rows: minmax(40px, 1fr) auto minmax(40px, 2fr);
     grid-template-columns: 40px 8fr 40px;
   }
 
-  .dagit-portal .bp3-dialog {
+  .dagit-portal .bp4-dialog {
     background-color: ${Colors.White};
     border-radius: 4px;
     box-shadow: rgba(0, 0, 0, 0.12) 0px 2px 12px;
@@ -111,24 +122,24 @@ export const GlobalDialogStyle = createGlobalStyle`
     padding: 0;
   }
 
-  .dagit-portal .bp3-dialog > :first-child {
+  .dagit-portal .bp4-dialog > :first-child {
     border-top-left-radius: 4px;
     border-top-right-radius: 4px;
   }
 
-  .dagit-portal .bp3-dialog > :last-child {
+  .dagit-portal .bp4-dialog > :last-child {
     border-bottom-right-radius: 4px;
     border-bottom-left-radius: 4px;
   }
 
-  .dagit-portal .bp3-dialog-container.bp3-overlay-enter > .bp3-dialog,
-  .dagit-portal .bp3-dialog-container.bp3-overlay-appear > .bp3-dialog {
+  .dagit-portal .bp4-dialog-container.bp4-overlay-enter > .bp4-dialog,
+  .dagit-portal .bp4-dialog-container.bp4-overlay-appear > .bp4-dialog {
     opacity: 0;
     transform:scale(0.95);
   }
 
-  .dagit-portal .bp3-dialog-container.bp3-overlay-enter-active > .bp3-dialog,
-  .dagit-portal .bp3-dialog-container.bp3-overlay-appear-active > .bp3-dialog {
+  .dagit-portal .bp4-dialog-container.bp4-overlay-enter-active > .bp4-dialog,
+  .dagit-portal .bp4-dialog-container.bp4-overlay-appear-active > .bp4-dialog {
     opacity: 1;
     transform: scale(1);
     transition-delay: 0;
@@ -137,12 +148,12 @@ export const GlobalDialogStyle = createGlobalStyle`
     transition-timing-function: ease-in-out;
   }
 
-  .dagit-portal .bp3-dialog-container.bp3-overlay-exit > .bp3-dialog {
+  .dagit-portal .bp4-dialog-container.bp4-overlay-exit > .bp4-dialog {
     opacity: 1;
     transform: scale(1);
   }
 
-  .dagit-portal .bp3-dialog-container.bp3-overlay-exit-active > .bp3-dialog {
+  .dagit-portal .bp4-dialog-container.bp4-overlay-exit-active > .bp4-dialog {
     opacity: 0;
     transform: scale(0.95);
     transition-delay:0;

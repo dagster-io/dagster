@@ -1,12 +1,14 @@
 import json
+from typing import Sequence
 
 import dagster._check as check
 from dagster._config import ALL_CONFIG_BUILTINS
+from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._utils import file_relative_path
-from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
+from dagster_graphql.test.utils import GqlResult, execute_dagster_graphql, infer_pipeline_selector
 
 from .graphql_context_test_suite import NonLaunchableGraphQLContextTestMatrix
-from .repo import csv_hello_world_solids_config
+from .repo import csv_hello_world_ops_config
 
 CONFIG_VALIDATION_QUERY = """
 query PipelineQuery(
@@ -86,41 +88,45 @@ def field_stack(error_data):
     ]
 
 
-def single_error_data(result):
+def single_error_data(result: GqlResult):
     assert len(result.data["isPipelineConfigValid"]["errors"]) == 1
     return result.data["isPipelineConfigValid"]["errors"][0]
 
 
-def find_error(result, field_stack_to_find, reason):
+def find_error(result: GqlResult, field_stack_to_find: Sequence[str], reason: str):
     llist = list(find_errors(result, field_stack_to_find, reason))
     assert len(llist) == 1
     return llist[0]
 
 
-def find_errors(result, field_stack_to_find, reason):
+def find_errors(result: GqlResult, field_stack_to_find: Sequence[str], reason: str):
     error_datas = result.data["isPipelineConfigValid"]["errors"]
     for error_data in error_datas:
         if field_stack_to_find == field_stack(error_data) and error_data["reason"] == reason:
             yield error_data
 
 
-def execute_config_graphql(context, pipeline_name, run_config, mode):
-    selector = infer_pipeline_selector(context, pipeline_name)
+def execute_config_graphql(
+    context: WorkspaceRequestContext, job_name: str, run_config
+) -> GqlResult:
+    selector = infer_pipeline_selector(context, job_name)
     return execute_dagster_graphql(
         context,
         CONFIG_VALIDATION_QUERY,
         {
             "runConfigData": run_config,
             "pipeline": selector,
-            "mode": mode,
+            "mode": "default",
         },
     )
 
 
 class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
-    def test_pipeline_not_found(self, graphql_context):
+    def test_pipeline_not_found(self, graphql_context: WorkspaceRequestContext):
         result = execute_config_graphql(
-            graphql_context, pipeline_name="nope", run_config={}, mode="default"
+            graphql_context,
+            job_name="nope",
+            run_config={},
         )
 
         assert not result.errors
@@ -128,12 +134,11 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
         assert result.data["isPipelineConfigValid"]["__typename"] == "PipelineNotFoundError"
         assert result.data["isPipelineConfigValid"]["pipelineName"] == "nope"
 
-    def test_basic_valid_config(self, graphql_context):
+    def test_basic_valid_config(self, graphql_context: WorkspaceRequestContext):
         result = execute_config_graphql(
             graphql_context,
-            pipeline_name="csv_hello_world",
-            run_config=csv_hello_world_solids_config(),
-            mode="default",
+            job_name="csv_hello_world",
+            run_config=csv_hello_world_ops_config(),
         )
 
         assert not result.errors
@@ -141,12 +146,11 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
         assert result.data["isPipelineConfigValid"]["__typename"] == "PipelineConfigValidationValid"
         assert result.data["isPipelineConfigValid"]["pipelineName"] == "csv_hello_world"
 
-    def test_basic_valid_config_serialized_config(self, graphql_context):
+    def test_basic_valid_config_serialized_config(self, graphql_context: WorkspaceRequestContext):
         result = execute_config_graphql(
             graphql_context,
-            pipeline_name="csv_hello_world",
-            run_config=json.dumps(csv_hello_world_solids_config()),
-            mode="default",
+            job_name="csv_hello_world",
+            run_config=json.dumps(csv_hello_world_ops_config()),
         )
 
         assert not result.errors
@@ -154,12 +158,11 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
         assert result.data["isPipelineConfigValid"]["__typename"] == "PipelineConfigValidationValid"
         assert result.data["isPipelineConfigValid"]["pipelineName"] == "csv_hello_world"
 
-    def test_basic_valid_config_empty_string_config(self, graphql_context):
+    def test_basic_valid_config_empty_string_config(self, graphql_context: WorkspaceRequestContext):
         result = execute_config_graphql(
             graphql_context,
-            pipeline_name="csv_hello_world",
+            job_name="csv_hello_world",
             run_config="",
-            mode="default",
         )
 
         assert not result.errors
@@ -167,12 +170,11 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
         assert result.data["isPipelineConfigValid"]["__typename"] == "RunConfigValidationInvalid"
         assert result.data["isPipelineConfigValid"]["pipelineName"] == "csv_hello_world"
 
-    def test_basic_valid_config_non_dict_config(self, graphql_context):
+    def test_basic_valid_config_non_dict_config(self, graphql_context: WorkspaceRequestContext):
         result = execute_config_graphql(
             graphql_context,
-            pipeline_name="csv_hello_world",
+            job_name="csv_hello_world",
             run_config="daggy",
-            mode="default",
         )
 
         assert not result.errors
@@ -180,19 +182,16 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
         assert result.data["isPipelineConfigValid"]["__typename"] == "RunConfigValidationInvalid"
         assert result.data["isPipelineConfigValid"]["pipelineName"] == "csv_hello_world"
 
-    def test_root_field_not_defined(self, graphql_context):
+    def test_root_field_not_defined(self, graphql_context: WorkspaceRequestContext):
         result = execute_config_graphql(
             graphql_context,
-            pipeline_name="csv_hello_world",
+            job_name="csv_hello_world",
             run_config={
-                "solids": {
-                    "sum_solid": {
-                        "inputs": {"num": file_relative_path(__file__, "../data/num.csv")}
-                    }
+                "ops": {
+                    "sum_op": {"inputs": {"num": file_relative_path(__file__, "../data/num.csv")}}
                 },
                 "nope": {},
             },
-            mode="default",
         )
 
         assert not result.errors
@@ -206,12 +205,11 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
         assert error["fieldName"] == "nope"
         assert not error["stack"]["entries"]
 
-    def test_basic_invalid_not_defined_field(self, graphql_context):
+    def test_basic_invalid_not_defined_field(self, graphql_context: WorkspaceRequestContext):
         result = execute_config_graphql(
             graphql_context,
-            pipeline_name="csv_hello_world",
-            run_config={"solids": {"sum_solid": {"inputs": {"num": "foo.txt", "extra": "nope"}}}},
-            mode="default",
+            job_name="csv_hello_world",
+            run_config={"ops": {"sum_op": {"inputs": {"num": "foo.txt", "extra": "nope"}}}},
         )
 
         assert not result.errors
@@ -220,22 +218,21 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
         assert result.data["isPipelineConfigValid"]["pipelineName"] == "csv_hello_world"
         assert len(result.data["isPipelineConfigValid"]["errors"]) == 1
         error_data = result.data["isPipelineConfigValid"]["errors"][0]
-        assert ["solids", "sum_solid", "inputs"] == field_stack(error_data)
+        assert ["ops", "sum_op", "inputs"] == field_stack(error_data)
         assert error_data["reason"] == "FIELD_NOT_DEFINED"
         assert error_data["fieldName"] == "extra"
 
-    def test_multiple_not_defined_fields(self, graphql_context):
+    def test_multiple_not_defined_fields(self, graphql_context: WorkspaceRequestContext):
         result = execute_config_graphql(
             graphql_context,
-            pipeline_name="csv_hello_world",
+            job_name="csv_hello_world",
             run_config={
-                "solids": {
-                    "sum_solid": {
+                "ops": {
+                    "sum_op": {
                         "inputs": {"num": "foo.txt", "extra_one": "nope", "extra_two": "nope"}
                     }
                 }
             },
-            mode="default",
         )
 
         assert not result.errors
@@ -244,14 +241,12 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
         assert result.data["isPipelineConfigValid"]["pipelineName"] == "csv_hello_world"
         assert len(result.data["isPipelineConfigValid"]["errors"]) == 1
         error_data = result.data["isPipelineConfigValid"]["errors"][0]
-        assert ["solids", "sum_solid", "inputs"] == field_stack(error_data)
+        assert ["ops", "sum_op", "inputs"] == field_stack(error_data)
         assert error_data["reason"] == "FIELDS_NOT_DEFINED"
         assert error_data["fieldNames"] == ["extra_one", "extra_two"]
 
-    def test_root_wrong_type(self, graphql_context):
-        result = execute_config_graphql(
-            graphql_context, pipeline_name="csv_hello_world", run_config=123, mode="default"
-        )
+    def test_root_wrong_type(self, graphql_context: WorkspaceRequestContext):
+        result = execute_config_graphql(graphql_context, job_name="csv_hello_world", run_config=123)
 
         assert not result.errors
         assert result.data
@@ -261,12 +256,11 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
         error_data = result.data["isPipelineConfigValid"]["errors"][0]
         assert error_data["reason"] == "RUNTIME_TYPE_MISMATCH"
 
-    def test_basic_invalid_config_type_mismatch(self, graphql_context):
+    def test_basic_invalid_config_type_mismatch(self, graphql_context: WorkspaceRequestContext):
         result = execute_config_graphql(
             graphql_context,
-            pipeline_name="csv_hello_world",
-            run_config={"solids": {"sum_solid": {"inputs": {"num": 123}}}},
-            mode="default",
+            job_name="csv_hello_world",
+            run_config={"ops": {"sum_op": {"inputs": {"num": 123}}}},
         )
 
         assert not result.errors
@@ -281,14 +275,13 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
         assert error_data["reason"] == "RUNTIME_TYPE_MISMATCH"
         assert error_data["valueRep"] == "123"
 
-        assert ["solids", "sum_solid", "inputs", "num"] == field_stack(error_data)
+        assert ["ops", "sum_op", "inputs", "num"] == field_stack(error_data)
 
-    def test_basic_invalid_config_missing_field(self, graphql_context):
+    def test_basic_invalid_config_missing_field(self, graphql_context: WorkspaceRequestContext):
         result = execute_config_graphql(
             graphql_context,
-            pipeline_name="csv_hello_world",
-            run_config={"solids": {"sum_solid": {"inputs": {}}}},
-            mode="default",
+            job_name="csv_hello_world",
+            run_config={"ops": {"sum_op": {"inputs": {}}}},
         )
 
         assert not result.errors
@@ -298,53 +291,27 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
         assert len(result.data["isPipelineConfigValid"]["errors"]) == 1
         error_data = result.data["isPipelineConfigValid"]["errors"][0]
 
-        assert ["solids", "sum_solid", "inputs"] == field_stack(error_data)
+        assert ["ops", "sum_op", "inputs"] == field_stack(error_data)
         assert error_data["reason"] == "MISSING_REQUIRED_FIELD"
         assert error_data["field"]["name"] == "num"
 
-    def test_mode_resource_config_works(self, graphql_context):
+    def test_resource_config_works(self, graphql_context: WorkspaceRequestContext):
         result = execute_config_graphql(
             graphql_context,
-            pipeline_name="multi_mode_with_resources",
-            run_config={"resources": {"op": {"config": 2}}},
-            mode="add_mode",
+            job_name="required_resource_job",
+            run_config={"resources": {"R1": {"config": 2}}},
         )
 
         assert not result.errors
         assert result.data
         assert result.data["isPipelineConfigValid"]["__typename"] == "PipelineConfigValidationValid"
-        assert result.data["isPipelineConfigValid"]["pipelineName"] == "multi_mode_with_resources"
+        assert result.data["isPipelineConfigValid"]["pipelineName"] == "required_resource_job"
 
+    def test_missing_resource(self, graphql_context: WorkspaceRequestContext):
         result = execute_config_graphql(
             graphql_context,
-            pipeline_name="multi_mode_with_resources",
-            run_config={"resources": {"op": {"config": 2}}},
-            mode="mult_mode",
-        )
-
-        assert not result.errors
-        assert result.data
-        assert result.data["isPipelineConfigValid"]["__typename"] == "PipelineConfigValidationValid"
-        assert result.data["isPipelineConfigValid"]["pipelineName"] == "multi_mode_with_resources"
-
-        result = execute_config_graphql(
-            graphql_context,
-            pipeline_name="multi_mode_with_resources",
-            run_config={"resources": {"op": {"config": {"num_one": 2, "num_two": 3}}}},
-            mode="double_adder",
-        )
-
-        assert not result.errors
-        assert result.data
-        assert result.data["isPipelineConfigValid"]["__typename"] == "PipelineConfigValidationValid"
-        assert result.data["isPipelineConfigValid"]["pipelineName"] == "multi_mode_with_resources"
-
-    def test_missing_resource(self, graphql_context):
-        result = execute_config_graphql(
-            graphql_context,
-            pipeline_name="multi_mode_with_resources",
+            job_name="required_resource_config_job",
             run_config={"resources": {}},
-            mode="add_mode",
         )
 
         assert not result.errors
@@ -352,31 +319,30 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
         assert result.data["isPipelineConfigValid"]["__typename"] == "RunConfigValidationInvalid"
         error_data = single_error_data(result)
         assert error_data["reason"] == "MISSING_REQUIRED_FIELD"
-        assert error_data["field"]["name"] == "op"
+        assert error_data["field"]["name"] == "R1"
 
-    def test_undefined_resource(self, graphql_context):
+    def test_undefined_resource(self, graphql_context: WorkspaceRequestContext):
         result = execute_config_graphql(
             graphql_context,
-            pipeline_name="multi_mode_with_resources",
+            job_name="required_resource_job",
             run_config={"resources": {"nope": {}}},
-            mode="add_mode",
         )
 
         assert not result.errors
         assert result.data
         assert result.data["isPipelineConfigValid"]["__typename"] == "RunConfigValidationInvalid"
-        assert {"FieldNotDefinedConfigError", "MissingFieldConfigError"} == {
+        assert {"FieldNotDefinedConfigError"} == {
             error_data["__typename"]
             for error_data in result.data["isPipelineConfigValid"]["errors"]
         }
 
-    def test_more_complicated_works(self, graphql_context):
+    def test_more_complicated_works(self, graphql_context: WorkspaceRequestContext):
         result = execute_config_graphql(
             graphql_context,
-            pipeline_name="more_complicated_nested_config",
+            job_name="more_complicated_nested_config",
             run_config={
-                "solids": {
-                    "a_solid_with_multilayered_config": {
+                "ops": {
+                    "op_with_multilayered_config": {
                         "config": {
                             "field_any": {"123": 123},
                             "field_one": "foo.txt",
@@ -387,7 +353,6 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
                     }
                 }
             },
-            mode="default",
         )
         assert not result.errors
         assert result.data
@@ -395,12 +360,11 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
         assert valid_data["__typename"] == "PipelineConfigValidationValid"
         assert valid_data["pipelineName"] == "more_complicated_nested_config"
 
-    def test_multiple_missing_fields(self, graphql_context):
+    def test_multiple_missing_fields(self, graphql_context: WorkspaceRequestContext):
         result = execute_config_graphql(
             graphql_context,
-            pipeline_name="more_complicated_nested_config",
-            run_config={"solids": {"a_solid_with_multilayered_config": {"config": {}}}},
-            mode="default",
+            job_name="more_complicated_nested_config",
+            run_config={"ops": {"op_with_multilayered_config": {"config": {}}}},
         )
 
         assert not result.errors
@@ -413,15 +377,15 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
         error_data = valid_data["errors"][0]
         missing_names = {field_data["name"] for field_data in error_data["fields"]}
         assert missing_names == {"nested_field", "field_one", "field_any"}
-        assert field_stack(error_data) == ["solids", "a_solid_with_multilayered_config", "config"]
+        assert field_stack(error_data) == ["ops", "op_with_multilayered_config", "config"]
 
-    def test_more_complicated_multiple_errors(self, graphql_context):
+    def test_more_complicated_multiple_errors(self, graphql_context: WorkspaceRequestContext):
         result = execute_config_graphql(
             graphql_context,
-            pipeline_name="more_complicated_nested_config",
+            job_name="more_complicated_nested_config",
             run_config={
-                "solids": {
-                    "a_solid_with_multilayered_config": {
+                "ops": {
+                    "op_with_multilayered_config": {
                         "config": {
                             "field_any": [],
                             # 'field_one': 'foo.txt', # missing
@@ -437,7 +401,6 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
                     }
                 }
             },
-            mode="default",
         )
 
         assert not result.errors
@@ -450,29 +413,25 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
 
         missing_error_one = find_error(
             result,
-            ["solids", "a_solid_with_multilayered_config", "config"],
+            ["ops", "op_with_multilayered_config", "config"],
             "MISSING_REQUIRED_FIELD",
         )
-        assert ["solids", "a_solid_with_multilayered_config", "config"] == field_stack(
-            missing_error_one
-        )
+        assert ["ops", "op_with_multilayered_config", "config"] == field_stack(missing_error_one)
         assert missing_error_one["reason"] == "MISSING_REQUIRED_FIELD"
         assert missing_error_one["field"]["name"] == "field_one"
 
         not_defined_one = find_error(
-            result, ["solids", "a_solid_with_multilayered_config", "config"], "FIELD_NOT_DEFINED"
+            result, ["ops", "op_with_multilayered_config", "config"], "FIELD_NOT_DEFINED"
         )
-        assert ["solids", "a_solid_with_multilayered_config", "config"] == field_stack(
-            not_defined_one
-        )
+        assert ["ops", "op_with_multilayered_config", "config"] == field_stack(not_defined_one)
         assert not_defined_one["reason"] == "FIELD_NOT_DEFINED"
         assert not_defined_one["fieldName"] == "extra_one"
 
         dagster_type_error = find_error(
             result,
             [
-                "solids",
-                "a_solid_with_multilayered_config",
+                "ops",
+                "op_with_multilayered_config",
                 "config",
                 "nested_field",
                 "field_four_str",
@@ -480,8 +439,8 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
             "RUNTIME_TYPE_MISMATCH",
         )
         assert [
-            "solids",
-            "a_solid_with_multilayered_config",
+            "ops",
+            "op_with_multilayered_config",
             "config",
             "nested_field",
             "field_four_str",
@@ -491,13 +450,13 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
 
         not_defined_two = find_error(
             result,
-            ["solids", "a_solid_with_multilayered_config", "config", "nested_field"],
+            ["ops", "op_with_multilayered_config", "config", "nested_field"],
             "FIELD_NOT_DEFINED",
         )
 
         assert [
-            "solids",
-            "a_solid_with_multilayered_config",
+            "ops",
+            "op_with_multilayered_config",
             "config",
             "nested_field",
         ] == field_stack(not_defined_two)
@@ -506,67 +465,61 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
 
         # TODO: two more errors
 
-    def test_config_list(self, graphql_context):
+    def test_config_list(self, graphql_context: WorkspaceRequestContext):
         result = execute_config_graphql(
             graphql_context,
-            pipeline_name="pipeline_with_list",
-            run_config={"solids": {"solid_with_list": {"config": [1, 2]}}},
-            mode="default",
+            job_name="job_with_list",
+            run_config={"ops": {"op_with_list": {"config": [1, 2]}}},
         )
 
         assert not result.errors
         assert result.data
         valid_data = result.data["isPipelineConfigValid"]
         assert valid_data["__typename"] == "PipelineConfigValidationValid"
-        assert valid_data["pipelineName"] == "pipeline_with_list"
+        assert valid_data["pipelineName"] == "job_with_list"
 
-    def test_config_list_invalid(self, graphql_context):
+    def test_config_list_invalid(self, graphql_context: WorkspaceRequestContext):
         result = execute_config_graphql(
             graphql_context,
-            pipeline_name="pipeline_with_list",
-            run_config={"solids": {"solid_with_list": {"config": "foo"}}},
-            mode="default",
+            job_name="job_with_list",
+            run_config={"ops": {"op_with_list": {"config": "foo"}}},
         )
 
         assert not result.errors
         assert result.data
         valid_data = result.data["isPipelineConfigValid"]
         assert valid_data["__typename"] == "RunConfigValidationInvalid"
-        assert valid_data["pipelineName"] == "pipeline_with_list"
+        assert valid_data["pipelineName"] == "job_with_list"
         assert len(valid_data["errors"]) == 1
-        assert ["solids", "solid_with_list", "config"] == field_stack(valid_data["errors"][0])
+        assert ["ops", "op_with_list", "config"] == field_stack(valid_data["errors"][0])
 
-    def test_config_list_item_invalid(self, graphql_context):
+    def test_config_list_item_invalid(self, graphql_context: WorkspaceRequestContext):
         result = execute_config_graphql(
             graphql_context,
-            pipeline_name="pipeline_with_list",
-            run_config={"solids": {"solid_with_list": {"config": [1, "foo"]}}},
-            mode="default",
+            job_name="job_with_list",
+            run_config={"ops": {"op_with_list": {"config": [1, "foo"]}}},
         )
 
         assert not result.errors
         assert result.data
         valid_data = result.data["isPipelineConfigValid"]
         assert valid_data["__typename"] == "RunConfigValidationInvalid"
-        assert valid_data["pipelineName"] == "pipeline_with_list"
+        assert valid_data["pipelineName"] == "job_with_list"
         assert len(valid_data["errors"]) == 1
         entries = valid_data["errors"][0]["stack"]["entries"]
         assert len(entries) == 4
-        assert ["solids", "solid_with_list", "config"] == field_stack(valid_data["errors"][0])
+        assert ["ops", "op_with_list", "config"] == field_stack(valid_data["errors"][0])
 
         last_entry = entries[3]
         assert last_entry["__typename"] == "EvaluationStackListItemEntry"
         assert last_entry["listIndex"] == 1
 
-    def test_config_map(self, graphql_context):
+    def test_config_map(self, graphql_context: WorkspaceRequestContext):
         # Check validity
         result = execute_config_graphql(
             graphql_context,
-            pipeline_name="config_with_map",
-            run_config={
-                "solids": {"a_solid_with_map_config": {"config": {"field_one": {"test": 5}}}}
-            },
-            mode="default",
+            job_name="config_with_map",
+            run_config={"ops": {"op_with_map_config": {"config": {"field_one": {"test": 5}}}}},
         )
 
         assert not result.errors
@@ -591,14 +544,11 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
             for config_type_data in config_types_data
         )
 
-    def test_config_map_invalid(self, graphql_context):
+    def test_config_map_invalid(self, graphql_context: WorkspaceRequestContext):
         result = execute_config_graphql(
             graphql_context,
-            pipeline_name="config_with_map",
-            run_config={
-                "solids": {"a_solid_with_map_config": {"config": {"field_one": "not_a_map"}}}
-            },
-            mode="default",
+            job_name="config_with_map",
+            run_config={"ops": {"op_with_map_config": {"config": {"field_one": "not_a_map"}}}},
         )
 
         assert not result.errors
@@ -607,16 +557,15 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
         assert valid_data["__typename"] == "RunConfigValidationInvalid"
         assert valid_data["pipelineName"] == "config_with_map"
         assert len(valid_data["errors"]) == 1
-        assert ["solids", "a_solid_with_map_config", "config", "field_one"] == field_stack(
+        assert ["ops", "op_with_map_config", "config", "field_one"] == field_stack(
             valid_data["errors"][0]
         )
 
-    def test_config_map_key_invalid(self, graphql_context):
+    def test_config_map_key_invalid(self, graphql_context: WorkspaceRequestContext):
         result = execute_config_graphql(
             graphql_context,
-            pipeline_name="config_with_map",
-            run_config={"solids": {"a_solid_with_map_config": {"config": {"field_one": {5: 5}}}}},
-            mode="default",
+            job_name="config_with_map",
+            run_config={"ops": {"op_with_map_config": {"config": {"field_one": {5: 5}}}}},
         )
 
         assert not result.errors
@@ -627,7 +576,7 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
         assert len(valid_data["errors"]) == 1
         entries = valid_data["errors"][0]["stack"]["entries"]
         assert len(entries) == 5
-        assert ["solids", "a_solid_with_map_config", "config", "field_one"] == field_stack(
+        assert ["ops", "op_with_map_config", "config", "field_one"] == field_stack(
             valid_data["errors"][0]
         )
 
@@ -635,18 +584,17 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
         assert last_entry["__typename"] == "EvaluationStackMapKeyEntry"
         assert last_entry["mapKey"] == 5
 
-    def test_config_map_value_invalid(self, graphql_context):
+    def test_config_map_value_invalid(self, graphql_context: WorkspaceRequestContext):
         result = execute_config_graphql(
             graphql_context,
-            pipeline_name="config_with_map",
+            job_name="config_with_map",
             run_config={
-                "solids": {
-                    "a_solid_with_map_config": {
+                "ops": {
+                    "op_with_map_config": {
                         "config": {"field_one": {"test": "not_a_valid_int_value"}}
                     }
                 }
             },
-            mode="default",
         )
 
         assert not result.errors
@@ -657,7 +605,7 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
         assert len(valid_data["errors"]) == 1
         entries = valid_data["errors"][0]["stack"]["entries"]
         assert len(entries) == 5
-        assert ["solids", "a_solid_with_map_config", "config", "field_one"] == field_stack(
+        assert ["ops", "op_with_map_config", "config", "field_one"] == field_stack(
             valid_data["errors"][0]
         )
 
@@ -665,7 +613,7 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
         assert last_entry["__typename"] == "EvaluationStackMapValueEntry"
         assert last_entry["mapKey"] == "test"
 
-    def test_smoke_test_config_type_system(self, graphql_context):
+    def test_smoke_test_config_type_system(self, graphql_context: WorkspaceRequestContext):
         selector = infer_pipeline_selector(graphql_context, "more_complicated_nested_config")
         result = execute_dagster_graphql(
             graphql_context,

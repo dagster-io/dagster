@@ -26,9 +26,9 @@ from dagster import MetadataValue, Output, asset
 
 @asset
 def hackernews_top_story_ids():
-    """
-    Get top stories from the HackerNews top stories endpoint.
-    API Docs: https://github.com/HackerNews/API#new-top-and-best-stories
+    """Get top stories from the HackerNews top stories endpoint.
+
+    API Docs: https://github.com/HackerNews/API#new-top-and-best-stories.
     """
     top_story_ids = requests.get(
         "https://hacker-news.firebaseio.com/v0/topstories.json"
@@ -39,7 +39,7 @@ def hackernews_top_story_ids():
 # asset dependencies can be inferred from parameter names
 @asset
 def hackernews_top_stories(hackernews_top_story_ids):
-    """Get items based on story ids from the HackerNews items endpoint"""
+    """Get items based on story ids from the HackerNews items endpoint."""
     results = []
     for item_id in hackernews_top_story_ids:
         item = requests.get(
@@ -73,13 +73,13 @@ Unsure? Check out the [installation guide](/getting-started/install).
 
 ---
 
-## Step 3: Start Dagit and materialize assets
+## Step 3: Start the UI and materialize assets
 
-1. In the same directory as `hello-dagster.py`, run `dagit`. This command starts Dagster's user interface:
+1. In the same directory as `hello-dagster.py`, run `dagster dev`. This command starts a web server to host Dagster's user interface:
 
    ```bash
    # run in a terminal in your favorite python environment
-   dagit -f hello-dagster.py
+   dagster dev -f hello-dagster.py
    ```
 
 2. In your browser, navigate to [http://localhost:3000/](http://localhost:3000).
@@ -87,7 +87,7 @@ Unsure? Check out the [installation guide](/getting-started/install).
 3. Click **Materialize All** to run the pipeline and create your assets. Materializing an asset runs the asset function and saves the result. This pipeline uses the Dagster defaults to save the result to a pickle file on disk.
 
    <Image
-   alt="HackerNews assets in Dagit's Asset Graph, unmaterialized"
+   alt="HackerNews assets in Dagster's Asset Graph, unmaterialized"
    src="/images/getting-started/hello-dagster/hello-dagster-unmaterialized.png"
    width={1000}
    height={816}
@@ -102,7 +102,7 @@ width={2402}
 height={1956}
 />
 
-But wait - there's more. Because the `hackernews_top_stories` asset specified `metadata`, you can view the metadata right in Dagit:
+But wait - there's more. Because the `hackernews_top_stories` asset specified `metadata`, you can view the metadata right in the UI:
 
 1. Click the asset.
 2. In the sidebar that displays, click the **Show Markdown** link in the **Materialization in Last Run** section. This opens a preview of the pipeline result, allowing you to view the top 10 HackerNews stories:

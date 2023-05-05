@@ -14,6 +14,7 @@ import {findRepoContainingPipeline} from './findRepoContainingPipeline';
 import {RepoAddress} from './types';
 import {
   RootWorkspaceQuery,
+  RootWorkspaceQueryVariables,
   WorkspaceLocationFragment,
   WorkspaceLocationNodeFragment,
   WorkspaceRepositoryFragment,
@@ -33,7 +34,7 @@ export interface DagsterRepoOption {
   repository: Repository;
 }
 
-export type WorkspaceState = {
+type WorkspaceState = {
   error: PythonErrorFragment | null;
   loading: boolean;
   locationEntries: WorkspaceRepositoryLocationNode[];
@@ -50,10 +51,11 @@ export const WorkspaceContext = React.createContext<WorkspaceState>(
 
 export const HIDDEN_REPO_KEYS = 'dagit.hidden-repo-keys';
 
-const ROOT_WORKSPACE_QUERY = gql`
+export const ROOT_WORKSPACE_QUERY = gql`
   query RootWorkspaceQuery {
     workspaceOrError {
       ... on Workspace {
+        id
         locationEntries {
           id
           ...WorkspaceLocationNode
@@ -90,6 +92,10 @@ const ROOT_WORKSPACE_QUERY = gql`
     isReloadSupported
     serverId
     name
+    dagsterLibraryVersions {
+      name
+      version
+    }
     repositories {
       id
       ...WorkspaceRepository
@@ -121,6 +127,9 @@ const ROOT_WORKSPACE_QUERY = gql`
     }
     assetGroups {
       groupName
+    }
+    allTopLevelResourceDetails {
+      name
     }
     ...RepositoryInfoFragment
   }
@@ -164,7 +173,9 @@ const ROOT_WORKSPACE_QUERY = gql`
  * in the workspace, and loading/error state for the relevant query.
  */
 const useWorkspaceState = (): WorkspaceState => {
-  const {data, loading, refetch} = useQuery<RootWorkspaceQuery>(ROOT_WORKSPACE_QUERY);
+  const {data, loading, refetch} = useQuery<RootWorkspaceQuery, RootWorkspaceQueryVariables>(
+    ROOT_WORKSPACE_QUERY,
+  );
   const workspaceOrError = data?.workspaceOrError;
 
   const locationEntries = React.useMemo(
@@ -276,11 +287,10 @@ const useVisibleRepos = (
 
 // Public
 
-export const getRepositoryOptionHash = (a: DagsterRepoOption) =>
+const getRepositoryOptionHash = (a: DagsterRepoOption) =>
   `${a.repository.name}:${a.repositoryLocation.name}`;
 
-export const WorkspaceProvider: React.FC = (props) => {
-  const {children} = props;
+export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
   const workspaceState = useWorkspaceState();
 
   return <WorkspaceContext.Provider value={workspaceState}>{children}</WorkspaceContext.Provider>;

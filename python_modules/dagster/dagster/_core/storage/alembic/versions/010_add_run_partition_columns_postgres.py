@@ -9,9 +9,6 @@ import sqlalchemy as sa
 from alembic import op
 from sqlalchemy import inspect
 
-# pylint: disable=no-member
-
-
 # revision identifiers, used by Alembic.
 revision = "f3e43ff66603"
 down_revision = "9483999bad92"

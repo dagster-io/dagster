@@ -33,7 +33,7 @@ COMPUTE_LOGS_SUBSCRIPTION = """
 
 class TestComputeLogs(ExecutingGraphQLContextTestMatrix):
     def test_get_compute_logs_over_graphql(self, graphql_context, snapshot):
-        selector = infer_pipeline_selector(graphql_context, "spew_pipeline")
+        selector = infer_pipeline_selector(graphql_context, "spew_job")
         payload = sync_execute_get_run_log_data(
             context=graphql_context,
             variables={"executionParams": {"selector": selector, "mode": "default"}},
@@ -52,7 +52,7 @@ class TestComputeLogs(ExecutingGraphQLContextTestMatrix):
         snapshot.assert_match(compute_logs)
 
     def test_compute_logs_subscription_graphql(self, graphql_context, snapshot):
-        selector = infer_pipeline_selector(graphql_context, "spew_pipeline")
+        selector = infer_pipeline_selector(graphql_context, "spew_job")
         payload = sync_execute_get_run_log_data(
             context=graphql_context,
             variables={"executionParams": {"selector": selector, "mode": "default"}},

@@ -7,7 +7,6 @@ from typing import (
     Mapping,
     NamedTuple,
     Optional,
-    Sequence,
     Set,
     Type,
     TypeVar,
@@ -18,8 +17,8 @@ import dagster._check as check
 from dagster._annotations import PublicAttr
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import (
-    MetadataEntry,
-    PartitionMetadataEntry,
+    ArbitraryMetadataMapping,
+    MetadataValue,
     RawMetadataValue,
     normalize_metadata,
 )
@@ -70,9 +69,9 @@ def _check_default_value(input_name: str, dagster_type: DagsterType, default_val
 
 
 class InputDefinition:
-    """Defines an argument to a solid's compute function.
+    """Defines an argument to an op's compute function.
 
-    Inputs may flow from previous solids' outputs, or be stubbed using config. They may optionally
+    Inputs may flow from previous op outputs, or be stubbed using config. They may optionally
     be typed using the Dagster type system.
 
     Args:
@@ -102,8 +101,8 @@ class InputDefinition:
     _default_value: Any
     _input_manager_key: Optional[str]
     _root_manager_key: Optional[str]
-    _metadata: Mapping[str, RawMetadataValue]
-    _metadata_entries: Sequence[Union[MetadataEntry, PartitionMetadataEntry]]
+    _raw_metadata: ArbitraryMetadataMapping
+    _metadata: Mapping[str, MetadataValue]
     _asset_key: Optional[Union[AssetKey, Callable[["InputContext"], AssetKey]]]
     _asset_partitions_fn: Optional[Callable[["InputContext"], Set[str]]]
 
@@ -114,7 +113,7 @@ class InputDefinition:
         description: Optional[str] = None,
         default_value: object = NoValueSentinel,
         root_manager_key: Optional[str] = None,
-        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
+        metadata: Optional[ArbitraryMetadataMapping] = None,
         asset_key: Optional[Union[AssetKey, Callable[["InputContext"], AssetKey]]] = None,
         asset_partitions: Optional[Union[Set[str], Callable[["InputContext"], Set[str]]]] = None,
         input_manager_key: Optional[str] = None
@@ -146,8 +145,8 @@ class InputDefinition:
 
         self._input_manager_key = check.opt_str_param(input_manager_key, "input_manager_key")
 
-        self._metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
-        self._metadata_entries = normalize_metadata(self._metadata, [], allow_invalid=True)
+        self._raw_metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
+        self._metadata = normalize_metadata(self._raw_metadata, allow_invalid=True)
 
         if asset_key:
             experimental_arg_warning("asset_key", "InputDefinition.__init__")
@@ -202,16 +201,12 @@ class InputDefinition:
         return self._input_manager_key
 
     @property
-    def metadata(self) -> Mapping[str, RawMetadataValue]:
-        return self._metadata
+    def metadata(self) -> ArbitraryMetadataMapping:
+        return self._raw_metadata
 
     @property
     def is_asset(self) -> bool:
         return self._asset_key is not None
-
-    @property
-    def metadata_entries(self) -> Sequence[Union[MetadataEntry, PartitionMetadataEntry]]:
-        return self._metadata_entries
 
     @property
     def hardcoded_asset_key(self) -> Optional[AssetKey]:
@@ -234,7 +229,7 @@ class InputDefinition:
             return self.hardcoded_asset_key
 
     def get_asset_partitions(self, context: "InputContext") -> Optional[Set[str]]:
-        """Get the set of partitions that this solid will read from this InputDefinition for the given
+        """Get the set of partitions that this op will read from this InputDefinition for the given
         :py:class:`InputContext` (if any).
 
         Args:
@@ -247,32 +242,32 @@ class InputDefinition:
         return self._asset_partitions_fn(context)
 
     def mapping_to(
-        self, solid_name: str, input_name: str, fan_in_index: Optional[int] = None
+        self, node_name: str, input_name: str, fan_in_index: Optional[int] = None
     ) -> "InputMapping":
-        """Create an input mapping to an input of a child solid.
+        """Create an input mapping to an input of a child node.
 
-        In a CompositeSolidDefinition, you can use this helper function to construct
-        an :py:class:`InputMapping` to the input of a child solid.
+        In a GraphDefinition, you can use this helper function to construct
+        an :py:class:`InputMapping` to the input of a child node.
 
         Args:
-            solid_name (str): The name of the child solid to which to map this input.
-            input_name (str): The name of the child solid' input to which to map this input.
+            node_name (str): The name of the child node to which to map this input.
+            input_name (str): The name of the child node' input to which to map this input.
             fan_in_index (Optional[int]): The index in to a fanned in input, else None
 
         Examples:
             .. code-block:: python
 
                 input_mapping = InputDefinition('composite_input', Int).mapping_to(
-                    'child_solid', 'int_input'
+                    'child_node', 'int_input'
                 )
         """
-        check.str_param(solid_name, "solid_name")
+        check.str_param(node_name, "node_name")
         check.str_param(input_name, "input_name")
         check.opt_int_param(fan_in_index, "fan_in_index")
 
         return InputMapping(
             graph_input_name=self.name,
-            mapped_node_name=solid_name,
+            mapped_node_name=node_name,
             mapped_node_input_name=input_name,
             fan_in_index=fan_in_index,
             graph_input_description=self.description,
@@ -289,8 +284,7 @@ class InputDefinition:
         )
 
     def combine_with_inferred(self, inferred: InferredInputProps) -> "InputDefinition":
-        """
-        Return a new InputDefinition that merges this ones properties with those inferred from type signature.
+        """Return a new InputDefinition that merges this ones properties with those inferred from type signature.
         This can update: dagster_type, description, and default_value if they are not set.
         """
         check.invariant(
@@ -319,7 +313,7 @@ class InputDefinition:
             description=description,
             default_value=default_value,
             root_manager_key=self._root_manager_key,
-            metadata=self._metadata,
+            metadata=self.metadata,
             asset_key=self._asset_key,
             asset_partitions=self._asset_partitions_fn,
             input_manager_key=self._input_manager_key,
@@ -332,7 +326,7 @@ class InputDefinition:
             description=self.description,
             default_value=self.default_value if self.has_default_value else NoValueSentinel,
             root_manager_key=self._root_manager_key,
-            metadata=self._metadata,
+            metadata=self.metadata,
             asset_key=self._asset_key,
             asset_partitions=self._asset_partitions_fn,
             input_manager_key=self._input_manager_key,
@@ -360,35 +354,27 @@ def _checked_inferred_type(inferred: InferredInputProps) -> DagsterType:
     return resolved_type
 
 
-class InputPointer(NamedTuple("_InputPointer", [("solid_name", str), ("input_name", str)])):
-    def __new__(cls, solid_name: str, input_name: str):
+class InputPointer(NamedTuple("_InputPointer", [("node_name", str), ("input_name", str)])):
+    def __new__(cls, node_name: str, input_name: str):
         return super(InputPointer, cls).__new__(
             cls,
-            check.str_param(solid_name, "solid_name"),
+            check.str_param(node_name, "node_name"),
             check.str_param(input_name, "input_name"),
         )
-
-    @property
-    def node_name(self) -> str:
-        return self.solid_name
 
 
 class FanInInputPointer(
     NamedTuple(
-        "_FanInInputPointer", [("solid_name", str), ("input_name", str), ("fan_in_index", int)]
+        "_FanInInputPointer", [("node_name", str), ("input_name", str), ("fan_in_index", int)]
     )
 ):
-    def __new__(cls, solid_name: str, input_name: str, fan_in_index: int):
+    def __new__(cls, node_name: str, input_name: str, fan_in_index: int):
         return super(FanInInputPointer, cls).__new__(
             cls,
-            check.str_param(solid_name, "solid_name"),
+            check.str_param(node_name, "node_name"),
             check.str_param(input_name, "input_name"),
             check.int_param(fan_in_index, "fan_in_index"),
         )
-
-    @property
-    def node_name(self) -> str:
-        return self.solid_name
 
 
 class InputMapping(NamedTuple):
@@ -450,9 +436,7 @@ class InputMapping(NamedTuple):
 
     def describe(self) -> str:
         idx = self.maps_to.fan_in_index if isinstance(self.maps_to, FanInInputPointer) else ""
-        return (
-            f"{self.graph_input_name} -> {self.maps_to.solid_name}:{self.maps_to.input_name}{idx}"
-        )
+        return f"{self.graph_input_name} -> {self.maps_to.node_name}:{self.maps_to.input_name}{idx}"
 
     def get_definition(self) -> "InputDefinition":
         return InputDefinition(
@@ -483,8 +467,7 @@ class In(
         ],
     )
 ):
-    """
-    Defines an argument to an op's compute function.
+    """Defines an argument to an op's compute function.
 
     Inputs may flow from previous op's outputs, or be stubbed using config. They may optionally
     be typed using the Dagster type system.
@@ -540,7 +523,7 @@ class In(
             default_value=default_value,
             root_manager_key=check.opt_str_param(root_manager_key, "root_manager_key"),
             metadata=check.opt_mapping_param(metadata, "metadata", key_type=str),
-            asset_key=check.opt_inst_param(asset_key, "asset_key", (AssetKey, FunctionType)),  # type: ignore  # (mypy bug)
+            asset_key=check.opt_inst_param(asset_key, "asset_key", (AssetKey, FunctionType)),
             asset_partitions=asset_partitions,
             input_manager_key=check.opt_str_param(input_manager_key, "input_manager_key"),
         )
@@ -550,11 +533,11 @@ class In(
         return In(
             dagster_type=input_def.dagster_type,
             description=input_def.description,
-            default_value=input_def._default_value,  # pylint: disable=protected-access
+            default_value=input_def._default_value,  # noqa: SLF001
             root_manager_key=input_def.root_manager_key,
             metadata=input_def.metadata,
-            asset_key=input_def._asset_key,  # pylint: disable=protected-access
-            asset_partitions=input_def._asset_partitions_fn,  # pylint: disable=protected-access
+            asset_key=input_def._asset_key,  # noqa: SLF001
+            asset_partitions=input_def._asset_partitions_fn,  # noqa: SLF001
             input_manager_key=input_def.input_manager_key,
         )
 
@@ -574,8 +557,7 @@ class In(
 
 
 class GraphIn(NamedTuple("_GraphIn", [("description", PublicAttr[Optional[str]])])):
-    """
-    Represents information about an input that a graph maps.
+    """Represents information about an input that a graph maps.
 
     Args:
         description (Optional[str]): Human-readable description of the input.

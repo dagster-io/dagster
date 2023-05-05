@@ -6,11 +6,21 @@ from dagster_k8s.client import DagsterK8sError, DagsterKubernetesClient
 from dagster_k8s.job import get_k8s_job_name
 
 
-def _get_pod_logs(cluster_provider, job_name, namespace):
+def _get_pods_logs(cluster_provider, job_name, namespace, container_name=None):
     kubernetes.config.load_kube_config(cluster_provider.kubeconfig_file)
     api_client = DagsterKubernetesClient.production_client()
     pod_names = api_client.get_pod_names_in_job(job_name, namespace=namespace)
-    return api_client.retrieve_pod_logs(pod_names[0], namespace=namespace)
+    pods_logs = []
+    for pod_name in pod_names:
+        pod_logs = api_client.retrieve_pod_logs(
+            pod_name, namespace=namespace, container_name=container_name
+        )
+        pods_logs.append(pod_logs)
+    return pods_logs
+
+
+def _get_pod_logs(cluster_provider, job_name, namespace, container_name=None):
+    return _get_pods_logs(cluster_provider, job_name, namespace, container_name)[0]
 
 
 @pytest.mark.default
@@ -164,7 +174,7 @@ def test_k8s_job_op_with_failure(namespace, cluster_provider):
     def failure_job():
         failure_op()
 
-    with pytest.raises(DagsterK8sError, match="Timed out while waiting for pod to become ready"):
+    with pytest.raises(DagsterK8sError):
         failure_job.execute_in_process()
 
 
@@ -218,6 +228,49 @@ def test_k8s_job_op_with_container_config_and_command(namespace, cluster_provide
 
 
 @pytest.mark.default
+def test_k8s_job_op_with_multiple_containers(namespace, cluster_provider):
+    with_multiple_containers = k8s_job_op.configured(
+        {
+            "image": "busybox",
+            "container_config": {
+                "name": "first-container",
+            },
+            "command": ["/bin/sh", "-c"],
+            "args": ["echo MAIN_CONTAINER"],
+            "namespace": namespace,
+            "load_incluster_config": False,
+            "kubeconfig_file": cluster_provider.kubeconfig_file,
+            "pod_spec_config": {
+                "containers": [
+                    {
+                        "name": "other-container",
+                        "image": "busybox",
+                        "command": ["/bin/sh", "-c"],
+                        "args": ["echo OTHER_CONTAINER"],
+                    }
+                ]
+            },
+        },
+        name="with_multiple_containers",
+    )
+
+    @job
+    def with_multiple_containers_job():
+        with_multiple_containers()
+
+    execute_result = with_multiple_containers_job.execute_in_process()
+    run_id = execute_result.dagster_run.run_id
+    job_name = get_k8s_job_name(run_id, with_multiple_containers.name)
+
+    assert "MAIN_CONTAINER" in _get_pod_logs(
+        cluster_provider, job_name, namespace, container_name="first-container"
+    )
+    assert "OTHER_CONTAINER" in _get_pod_logs(
+        cluster_provider, job_name, namespace, container_name="other-container"
+    )
+
+
+@pytest.mark.default
 def test_k8s_job_op_retries(namespace, cluster_provider):
     @op
     def fails_sometimes(context):
@@ -243,3 +296,84 @@ def test_k8s_job_op_retries(namespace, cluster_provider):
 
     assert "HERE IS RETRY NUMBER 0" in _get_pod_logs(cluster_provider, job_name, namespace)
     assert "HERE IS RETRY NUMBER 1" in _get_pod_logs(cluster_provider, job_name + "-1", namespace)
+
+
+@pytest.mark.default
+def test_k8s_job_op_ignore_job_tags(namespace, cluster_provider):
+    @op
+    def the_op(context):
+        execute_k8s_job(
+            context,
+            image="busybox",
+            command=["/bin/sh", "-c"],
+            args=["echo DID I GET CONFIG? $THE_ENV_VAR_FROM_JOB $THE_ENV_VAR_FROM_OP"],
+            namespace=namespace,
+            load_incluster_config=False,
+            kubeconfig_file=cluster_provider.kubeconfig_file,
+            container_config={
+                "env": [
+                    {
+                        "name": "THE_ENV_VAR_FROM_OP",
+                        "value": "FROM_OP_TAGS",
+                    }
+                ]
+            },
+        )
+
+    @job(
+        tags={
+            "dagster-k8s/config": {
+                "container_config": {
+                    "env": [
+                        {
+                            "name": "THE_ENV_VAR_FROM_JOB",
+                            "value": "FROM_JOB_TAGS",
+                        }
+                    ]
+                }
+            }
+        }
+    )
+    def tagged_job():
+        the_op()
+
+    execute_result = tagged_job.execute_in_process()
+    run_id = execute_result.dagster_run.run_id
+
+    job_name = get_k8s_job_name(run_id, the_op.name)
+
+    # Env var is not incorporated into the launched pod
+    pod_logs = _get_pod_logs(cluster_provider, job_name, namespace)
+    assert "FROM_JOB_TAGS" not in pod_logs
+    assert "FROM_OP_TAGS" in pod_logs
+
+
+@pytest.mark.default
+def test_k8s_job_op_with_paralellism(namespace, cluster_provider):
+    with_parallelism = k8s_job_op.configured(
+        {
+            "image": "busybox",
+            "command": ["/bin/sh", "-c"],
+            "args": ["echo HI"],
+            "namespace": namespace,
+            "load_incluster_config": False,
+            "kubeconfig_file": cluster_provider.kubeconfig_file,
+            "job_spec_config": {
+                "parallelism": 2,
+                "completions": 2,
+            },
+        },
+        name="with_parallelism",
+    )
+
+    @job
+    def with_parallelism_job():
+        with_parallelism()
+
+    execute_result = with_parallelism_job.execute_in_process()
+    run_id = execute_result.dagster_run.run_id
+    job_name = get_k8s_job_name(run_id, with_parallelism.name)
+    pods_logs = _get_pods_logs(cluster_provider, job_name, namespace)
+
+    assert "HI" in pods_logs[0]
+    assert "HI" in pods_logs[1]

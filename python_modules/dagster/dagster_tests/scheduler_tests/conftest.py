@@ -1,14 +1,18 @@
 import os
 import sys
+from typing import Iterator, Optional
 
 import pytest
+from dagster._core.host_representation.external import ExternalRepository
+from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import create_test_daemon_workspace_context, instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import ModuleTarget
 
 
 @pytest.fixture(name="instance_session_scoped", scope="session")
-def instance_session_scoped_fixture():
+def instance_session_scoped_fixture() -> Iterator[DagsterInstance]:
     with instance_for_test(
         overrides={
             "run_launcher": {"module": "dagster._core.test_utils", "class": "MockedRunLauncher"}
@@ -17,14 +21,23 @@ def instance_session_scoped_fixture():
         yield instance
 
 
-@pytest.fixture(name="instance", scope="function")
-def instance_fixture(instance_session_scoped):
+@pytest.fixture(name="instance_module_scoped", scope="module")
+def instance_module_scoped_fixture(
+    instance_session_scoped: DagsterInstance,
+) -> Iterator[DagsterInstance]:
     instance_session_scoped.wipe()
     instance_session_scoped.wipe_all_schedules()
     yield instance_session_scoped
 
 
-def workspace_load_target(attribute="the_repo"):
+@pytest.fixture(name="instance", scope="function")
+def instance_fixture(instance_session_scoped: DagsterInstance) -> Iterator[DagsterInstance]:
+    instance_session_scoped.wipe()
+    instance_session_scoped.wipe_all_schedules()
+    yield instance_session_scoped
+
+
+def workspace_load_target(attribute: Optional[str] = "the_repo") -> ModuleTarget:
     return ModuleTarget(
         module_name="dagster_tests.scheduler_tests.test_scheduler_run",
         attribute=attribute,
@@ -34,7 +47,9 @@ def workspace_load_target(attribute="the_repo"):
 
 
 @pytest.fixture(name="workspace_context", scope="session")
-def workspace_fixture(instance_session_scoped):
+def workspace_fixture(
+    instance_session_scoped: DagsterInstance,
+) -> Iterator[WorkspaceProcessContext]:
     with create_test_daemon_workspace_context(
         workspace_load_target=workspace_load_target(), instance=instance_session_scoped
     ) as workspace:
@@ -42,13 +57,15 @@ def workspace_fixture(instance_session_scoped):
 
 
 @pytest.fixture(name="external_repo", scope="session")
-def external_repo_fixture(workspace_context):
+def external_repo_fixture(workspace_context: WorkspaceProcessContext) -> ExternalRepository:
     return next(
         iter(workspace_context.create_request_context().get_workspace_snapshot().values())
-    ).repository_location.get_repository("the_repo")
+    ).code_location.get_repository(  # type: ignore  # (possible none)
+        "the_repo"
+    )
 
 
-def loadable_target_origin():
+def loadable_target_origin() -> LoadableTargetOrigin:
     return LoadableTargetOrigin(
         executable_path=sys.executable,
         module_name="dagster_tests.scheduler_tests.test_scheduler_run",

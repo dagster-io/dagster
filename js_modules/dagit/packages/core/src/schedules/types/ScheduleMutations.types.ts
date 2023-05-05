@@ -28,7 +28,7 @@ export type StartThisScheduleMutation = {
           runningCount: number;
         };
       }
-    | {__typename: 'UnauthorizedError'};
+    | {__typename: 'UnauthorizedError'; message: string};
 };
 
 export type StopScheduleMutationVariables = Types.Exact<{
@@ -58,5 +58,5 @@ export type StopScheduleMutation = {
           runningCount: number;
         };
       }
-    | {__typename: 'UnauthorizedError'};
+    | {__typename: 'UnauthorizedError'; message: string};
 };

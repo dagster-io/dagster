@@ -1,5 +1,5 @@
 import subprocess
-from distutils import spawn  # pylint: disable=deprecated-module
+from distutils import spawn
 from typing import Iterable, List, Optional
 
 import click

@@ -76,8 +76,6 @@ Dagster also provides a growing set of optional add-on libraries to integrate wi
 
 - [dbt](/\_apidocs/libraries/dagster-dbt) (`dagster-dbt`) Provides ops and resources to run [dbt](https://getdbt.com/) projects.
 
-- [Fivetran](/\_apidocs/libraries/dagster-fivetran) (`dagster-fivetran`) Provides ops and resources to run [Fivetran](https://fivetran.com/) syncs.
-
 - [Databricks](/\_apidocs/libraries/dagster-databricks) (`dagster-databricks`) Provides ops and resources for integrating with Databricks.
 
 - [Datadog](/\_apidocs/libraries/dagster-datadog) (`dagster-datadog`) Provides an integration with Datadog, to support publishing metrics to Datadog from within Dagster ops.
@@ -86,11 +84,27 @@ Dagster also provides a growing set of optional add-on libraries to integrate wi
 
 - [Docker](/\_apidocs/libraries/dagster-docker) (`dagster-docker`) Provides components for deploying Dagster to Docker.
 
+- [DuckDB](/\_apidocs/libraries/dagster-duckdb) (`dagster-duckdb`) Provides resources for querying DuckDB from Dagster.
+
+- [DuckDB+Pandas](/\_apidocs/libraries/dagster-duckdb-pandas) (`dagster-duckdb-pandas`) Provides support for storing Pandas DataFrames in DuckDB.
+
+- [DuckDB+Polars](/\_apidocs/libraries/dagster-duckdb-polars) (`dagster-duckdb-polars`) Provides support for storing Polars DataFrames in DuckDB.
+
+- [DuckDB+PySpark](/\_apidocs/libraries/dagster-duckdb-pyspark) (`dagster-duckdb-pyspark`) Provides support for storing PySpark DataFrames in DuckDB.
+
+- [Fivetran](/\_apidocs/libraries/dagster-fivetran) (`dagster-fivetran`) Provides ops and resources to run [Fivetran](https://fivetran.com/) syncs.
+
 - [GCP](/\_apidocs/libraries/dagster-gcp) (`dagster-gcp`) Dagster integrations for working with Google Cloud Platform resources.
+
+- [GCP+Pandas](/\_apidocs/libraries/dagster-gcp-pandas) (`dagster-gcp-pandas`) Dagster integrations for working with Google Cloud Platform resources with Pandas DataFrames. Currently contains integrations for BigQuery.
+
+- [GCP+PySpark](/\_apidocs/libraries/dagster-gcp-pyspark) (`dagster-gcp-pyspark`) Dagster integrations for working with Google Cloud Platform resources with PySpark DataFrames. Currently contains integrations for BigQuery.
 
 - [GE](/\_apidocs/libraries/dagster-ge) (`dagster-ge`) Dagster integrations for working with [Great Expectations](https://greatexpectations.io/) data quality tests.
 
 - [GitHub](/\_apidocs/libraries/dagster-github) (`dagster-github`) Provides a resource for issuing GitHub GraphQL queries and filing GitHub issues from Dagster jobs.
+
+- [GraphQL](/\_apidocs/libraries/dagster-graphql) (`dagster-graphql`) Provides resources for interfacing with a Dagster deployment over GraphQL.
 
 - [Kubernetes](/\_apidocs/libraries/dagster-k8s) (`dagster-k8s`) Provides components for deploying Dagster to Kubernetes.
 
@@ -120,10 +134,12 @@ Dagster also provides a growing set of optional add-on libraries to integrate wi
 
 - [Snowflake+Pandas](/\_apidocs/libraries/dagster-snowflake-pandas) (`dagster-snowflake-pandas`) Provides support for storing Pandas DataFrames in Snowflake.
 
+- [Snowflake+PySpark](/\_apidocs/libraries/dagster-snowflake-pyspark) (`dagster-snowflake-pyspark`) Provides support for storing PySpark DataFrames in Snowflake.
+
 - [Spark](/\_apidocs/libraries/dagster-spark) (`dagster-spark`) Provides an integration for working with Spark in Dagster.
 
 - [SSH / SFTP](/\_apidocs/libraries/dagster-ssh) (`dagster-ssh`) Provides an integration for running commands over SSH and retrieving / posting files via SFTP.
 
 - [Twilio](/\_apidocs/libraries/dagster-twilio) (`dagster-twilio`) Provides a resource for posting SMS messages from ops via Twilio.
 
-- [GraphQL](/\_apidocs/libraries/dagster-graphql) (`dagster-graphql`) Provides resources for interfacing with a Dagster deployment over GraphQL.
+- [Weights & Biases](/\_apidocs/libraries/dagster-wandb) (`dagster-wandb`) Provides an integration with Weights & Biases (W\&B).

@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 def build_resources_for_manager(
     io_manager_key: str, step_context: "StepExecutionContext"
 ) -> "Resources":
-    required_resource_keys = step_context.mode_def.resource_defs[
+    required_resource_keys = step_context.job_def.resource_defs[
         io_manager_key
     ].required_resource_keys
     return step_context.scoped_resources_builder.build(required_resource_keys)
@@ -36,8 +36,7 @@ def op_execution_error_boundary(
     step_context: "StepExecutionContext",
     **kwargs: Any,
 ) -> Iterator[None]:
-    """
-    A specialization of user_code_error_boundary for the steps involved in executing a solid.
+    """A specialization of user_code_error_boundary for the steps involved in executing a solid.
     This variant supports the control flow exceptions RetryRequested and Failure as well
     as respecting the RetryPolicy if present.
     """
@@ -49,7 +48,7 @@ def op_execution_error_boundary(
 
     with raise_execution_interrupts():
         step_context.log.begin_python_log_capture()
-        retry_policy = step_context.solid_retry_policy
+        retry_policy = step_context.op_retry_policy
 
         try:
             yield
@@ -57,7 +56,7 @@ def op_execution_error_boundary(
             # The system has thrown an error that is part of the user-framework contract
             raise de
 
-        except Exception as e:  # pylint: disable=W0703
+        except Exception as e:
             # An exception has been thrown by user code and computation should cease
             # with the error reported further up the stack
 

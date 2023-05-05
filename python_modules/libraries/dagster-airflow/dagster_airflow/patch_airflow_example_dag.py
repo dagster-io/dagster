@@ -1,4 +1,4 @@
-import pkg_resources
+from dagster_airflow.utils import is_airflow_2_loaded_in_environment
 
 
 # There is a bug in airflow v1
@@ -6,8 +6,7 @@ import pkg_resources
 # v1.10 stable: https://github.com/apache/airflow/blob/v1-10-stable/airflow/example_dags/example_complex.py#L133
 # master (05-05-2020): https://github.com/apache/airflow/blob/master/airflow/example_dags/example_complex.py#L136s
 def patch_airflow_example_dag(dag_bag):
-    airflow_version = pkg_resources.get_distribution("apache-airflow").version
-    if airflow_version >= "2.0.0":
+    if is_airflow_2_loaded_in_environment():
         return
 
     dag = dag_bag.dags.get("example_complex")

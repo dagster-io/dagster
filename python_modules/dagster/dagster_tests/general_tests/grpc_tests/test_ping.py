@@ -51,16 +51,20 @@ def test_server_socket():
 
 
 @pytest.mark.skipif(seven.IS_WINDOWS, reason="Unix-only test")
-def test_process_killed_after_client_finished():
+def test_process_killed_after_server_finished():
     with instance_for_test() as instance:
-        server_process = GrpcServerProcess(instance_ref=instance.get_ref())
+        raw_process = None
         try:
-            with server_process.create_ephemeral_client() as client:
+            with GrpcServerProcess(instance_ref=instance.get_ref()) as server_process:
+                client = server_process.create_client()
+                raw_process = server_process.server_process
                 socket = client.socket
                 assert socket and os.path.exists(socket)
 
+            # Verify server process cleans up eventually
+
             start_time = time.time()
-            while server_process.server_process.poll() is None:
+            while raw_process.poll() is None:
                 time.sleep(0.05)
                 # Verify server process cleans up eventually
                 assert time.time() - start_time < 5
@@ -68,8 +72,8 @@ def test_process_killed_after_client_finished():
             # verify socket is cleaned up
             assert not os.path.exists(socket)
         finally:
-            server_process.server_process.terminate()
-            server_process.server_process.wait()
+            raw_process.terminate()
+            raw_process.wait()
 
 
 def test_server_port():

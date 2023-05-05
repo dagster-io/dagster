@@ -3,7 +3,7 @@
 # DAGSTER BUILDKITE TEST
 #
 # This Dockerfile specifies an image that serves as base for all Python testing
-# steps (both integration and unit) run on BK. 
+# steps (both integration and unit) run on BK.
 #
 ####################################################################################################
 ARG BASE_IMAGE
@@ -38,8 +38,7 @@ ENV LANG=en_US.UTF-8 \
     DOCKER_COMPOSE_VERSION=1.29.1 \
     KIND_VERSION=v0.14.0 \
     KUBECTL_VERSION=v1.20.1 \
-    PYSPARK_VERSION=3.0.1 \
-    FOSSA_VERSION=v1.1.10
+    FOSSA_VERSION=1.1.10
 
 # Install Kubernetes tools: kubectl, kind, helm
 RUN curl -LO "https://storage.googleapis.com/kubernetes-release/release/$KUBECTL_VERSION/bin/linux/amd64/kubectl" \
@@ -62,7 +61,7 @@ RUN apt-get update -yqq \
 # - nodejs/yarn (dagit)
 # - assorted others-- some may no longer be required, but leaving in place for now
 #
-# deb.nodesource script adds node source to apt 
+# deb.nodesource script adds node source to apt
 RUN curl -sL https://deb.nodesource.com/setup_14.x | bash - \
     # Add yarn GPG key and apt source
     && curl -sL https://dl.yarnpkg.com/debian/pubkey.gpg | \
@@ -96,6 +95,15 @@ RUN curl -sL https://deb.nodesource.com/setup_14.x | bash - \
        yarn \
     # Confirm Java works
     && java -version
+
+# Install FOSSA cli for analyzing our open-source dependencies
+# https://github.com/fossas/fossa-cli
+RUN wget https://github.com/fossas/fossa-cli/releases/download/v${FOSSA_VERSION}/fossa-cli_${FOSSA_VERSION}_linux_amd64.tar.gz \
+   && tar xvzf fossa-cli_${FOSSA_VERSION}_linux_amd64.tar.gz fossa \
+   && chmod +x ./fossa \
+   && mv ./fossa /usr/local/bin/fossa \
+   && rm fossa-cli_${FOSSA_VERSION}_linux_amd64.tar.gz \
+   && fossa --version
 
 # Install Google Cloud SDK
 # https://cloud.google.com/sdk/docs/install#deb
@@ -138,16 +146,10 @@ RUN wget http://download.redis.io/redis-stable.tar.gz \
     && cd redis-stable \
     && make install
 
-# Install FOSSA cli for analyzing our open-source dependencies
-# https://github.com/fossas/fossa-cli
-RUN curl -H 'Cache-Control: no-cache' https://raw.githubusercontent.com/fossas/fossa-cli/master/install.sh | \
-       sh -s $FOSSA_VERSION
-
 # Clean up
 RUN apt-get remove -yqq \
     && apt-get autoremove -yqq --purge \
     && apt-get clean
-
 
 # Temp image used to get non-dagster Python dependencies
 FROM system_base AS snapshot_builder
@@ -156,7 +158,7 @@ FROM system_base AS snapshot_builder
 # package. We also install `awscli` (used in Buildkite) at this stage so that it can be installed
 # together with Dagster dependencies. This allows pip's dependency resolver to account for
 # everything.
-RUN git clone https://github.com/dagster-io/dagster.git
+RUN git clone --depth 1 https://github.com/dagster-io/dagster.git
 
 WORKDIR dagster
 
@@ -172,3 +174,6 @@ COPY --from=snapshot_builder /snapshot-reqs.txt .
 # builds faster in Buildkite.
 RUN pip install -r /snapshot-reqs.txt \
     && rm /snapshot-reqs.txt
+
+# New versions of debian require allowlisting folders where `git` can run
+RUN git config --system --add safe.directory \*

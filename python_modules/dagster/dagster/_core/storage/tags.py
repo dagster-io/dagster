@@ -7,13 +7,13 @@ HIDDEN_TAG_PREFIX = ".dagster/"
 
 REPOSITORY_LABEL_TAG = f"{HIDDEN_TAG_PREFIX}repository"
 
-SCHEDULE_NAME_TAG = "{prefix}schedule_name".format(prefix=SYSTEM_TAG_PREFIX)
+SCHEDULE_NAME_TAG = f"{SYSTEM_TAG_PREFIX}schedule_name"
 
-SENSOR_NAME_TAG = "{prefix}sensor_name".format(prefix=SYSTEM_TAG_PREFIX)
+SENSOR_NAME_TAG = f"{SYSTEM_TAG_PREFIX}sensor_name"
 
-BACKFILL_ID_TAG = "{prefix}backfill".format(prefix=SYSTEM_TAG_PREFIX)
+BACKFILL_ID_TAG = f"{SYSTEM_TAG_PREFIX}backfill"
 
-PARTITION_NAME_TAG = "{prefix}partition".format(prefix=SYSTEM_TAG_PREFIX)
+PARTITION_NAME_TAG = f"{SYSTEM_TAG_PREFIX}partition"
 
 MULTIDIMENSIONAL_PARTITION_PREFIX = f"{PARTITION_NAME_TAG}/"
 get_multidimensional_partition_tag = (
@@ -25,39 +25,52 @@ ASSET_PARTITION_RANGE_START_TAG = "{prefix}asset_partition_range_start".format(
     prefix=SYSTEM_TAG_PREFIX
 )
 
-ASSET_PARTITION_RANGE_END_TAG = "{prefix}asset_partition_range_end".format(prefix=SYSTEM_TAG_PREFIX)
+ASSET_PARTITION_RANGE_END_TAG = f"{SYSTEM_TAG_PREFIX}asset_partition_range_end"
 
-PARTITION_SET_TAG = "{prefix}partition_set".format(prefix=SYSTEM_TAG_PREFIX)
+PARTITION_SET_TAG = f"{SYSTEM_TAG_PREFIX}partition_set"
 
-PARENT_RUN_ID_TAG = "{prefix}parent_run_id".format(prefix=SYSTEM_TAG_PREFIX)
+PARENT_RUN_ID_TAG = f"{SYSTEM_TAG_PREFIX}parent_run_id"
 
-ROOT_RUN_ID_TAG = "{prefix}root_run_id".format(prefix=SYSTEM_TAG_PREFIX)
+ROOT_RUN_ID_TAG = f"{SYSTEM_TAG_PREFIX}root_run_id"
 
-RESUME_RETRY_TAG = "{prefix}is_resume_retry".format(prefix=SYSTEM_TAG_PREFIX)
+RESUME_RETRY_TAG = f"{SYSTEM_TAG_PREFIX}is_resume_retry"
 
-MEMOIZED_RUN_TAG = "{prefix}is_memoized_run".format(prefix=SYSTEM_TAG_PREFIX)
+MEMOIZED_RUN_TAG = f"{SYSTEM_TAG_PREFIX}is_memoized_run"
 
-STEP_SELECTION_TAG = "{prefix}step_selection".format(prefix=SYSTEM_TAG_PREFIX)
+STEP_SELECTION_TAG = f"{SYSTEM_TAG_PREFIX}step_selection"
 
-SOLID_SELECTION_TAG = "{prefix}solid_selection".format(prefix=SYSTEM_TAG_PREFIX)
+SOLID_SELECTION_TAG = f"{SYSTEM_TAG_PREFIX}solid_selection"
 
-PRESET_NAME_TAG = "{prefix}preset_name".format(prefix=SYSTEM_TAG_PREFIX)
+PRESET_NAME_TAG = f"{SYSTEM_TAG_PREFIX}preset_name"
 
-GRPC_INFO_TAG = "{prefix}grpc_info".format(prefix=HIDDEN_TAG_PREFIX)
+GRPC_INFO_TAG = f"{HIDDEN_TAG_PREFIX}grpc_info"
 
-SCHEDULED_EXECUTION_TIME_TAG = "{prefix}scheduled_execution_time".format(prefix=HIDDEN_TAG_PREFIX)
+SCHEDULED_EXECUTION_TIME_TAG = f"{HIDDEN_TAG_PREFIX}scheduled_execution_time"
 
-RUN_KEY_TAG = "{prefix}run_key".format(prefix=SYSTEM_TAG_PREFIX)
+RUN_KEY_TAG = f"{SYSTEM_TAG_PREFIX}run_key"
 
-PRIORITY_TAG = "{prefix}priority".format(prefix=SYSTEM_TAG_PREFIX)
+PRIORITY_TAG = f"{SYSTEM_TAG_PREFIX}priority"
 
-DOCKER_IMAGE_TAG = "{prefix}image".format(prefix=SYSTEM_TAG_PREFIX)
+DOCKER_IMAGE_TAG = f"{SYSTEM_TAG_PREFIX}image"
 
-MAX_RETRIES_TAG = "{prefix}max_retries".format(prefix=SYSTEM_TAG_PREFIX)
-RETRY_NUMBER_TAG = "{prefix}retry_number".format(prefix=SYSTEM_TAG_PREFIX)
-RETRY_STRATEGY_TAG = "{prefix}retry_strategy".format(prefix=SYSTEM_TAG_PREFIX)
+MAX_RETRIES_TAG = f"{SYSTEM_TAG_PREFIX}max_retries"
+RETRY_NUMBER_TAG = f"{SYSTEM_TAG_PREFIX}retry_number"
+RETRY_STRATEGY_TAG = f"{SYSTEM_TAG_PREFIX}retry_strategy"
 
-USER_EDITABLE_SYSTEM_TAGS = [PRIORITY_TAG, MAX_RETRIES_TAG, RETRY_STRATEGY_TAG]
+MAX_RUNTIME_SECONDS_TAG = f"{SYSTEM_TAG_PREFIX}max_runtime"
+
+AUTO_MATERIALIZE_TAG = f"{SYSTEM_TAG_PREFIX}auto_materialize"
+
+USER_EDITABLE_SYSTEM_TAGS = [
+    PRIORITY_TAG,
+    MAX_RETRIES_TAG,
+    RETRY_STRATEGY_TAG,
+    MAX_RUNTIME_SECONDS_TAG,
+]
+
+# In cloud, we tag runs with the email of the user who triggered the run
+# This is used to display the user in the UI
+USER_TAG = "user"
 
 
 class TagType(Enum):
@@ -88,5 +101,5 @@ def check_reserved_tags(tags):
         if tag not in USER_EDITABLE_SYSTEM_TAGS:
             check.invariant(
                 not tag.startswith(SYSTEM_TAG_PREFIX),
-                desc="Attempted to set tag with reserved system prefix: {tag}".format(tag=tag),
+                desc=f"Attempted to set tag with reserved system prefix: {tag}",
             )

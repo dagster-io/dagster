@@ -1,15 +1,18 @@
-# pylint: disable=redefined-outer-name, unused-argument
-
 import logging
+from typing import Mapping, Optional, Sequence, Union
 
 import mock
 import pytest
 from dagster import get_dagster_logger, reconstructable, resource
-from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
-from dagster._legacy import ModeDefinition, execute_pipeline, pipeline, solid
+from dagster._core.definitions.decorators import op
+from dagster._core.definitions.decorators.job_decorator import job
+from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.reconstruct import ReconstructableJob
+from dagster._core.execution.api import execute_job
+from dagster._core.test_utils import instance_for_test
 
 
-def _reset_logging():
+def _reset_logging() -> None:
     logging.root = logging.RootLogger(logging.WARNING)
     logging.Logger.root = logging.root
     logging.Logger.manager = logging.Manager(logging.Logger.root)
@@ -24,7 +27,12 @@ def reset_logging():
         _reset_logging()
 
 
-def get_log_records(pipe, managed_loggers=None, python_logging_level=None, run_config=None):
+def get_log_records(
+    job_def: Union[JobDefinition, ReconstructableJob],
+    managed_loggers: Optional[Sequence[str]] = None,
+    python_logging_level: Optional[str] = None,
+    run_config: Optional[Mapping[str, object]] = None,
+):
     python_logs_overrides = {}
     if managed_loggers is not None:
         python_logs_overrides["managed_python_loggers"] = managed_loggers
@@ -36,7 +44,10 @@ def get_log_records(pipe, managed_loggers=None, python_logging_level=None, run_c
         overrides["python_logs"] = python_logs_overrides
 
     with instance_for_test(overrides=overrides) as instance:
-        result = execute_pipeline(pipe, instance=instance, run_config=run_config)
+        if isinstance(job_def, JobDefinition):
+            result = job_def.execute_in_process(run_config=run_config, instance=instance)
+        else:
+            result = execute_job(job_def, instance=instance, run_config=run_config)
         assert result.success
         event_records = instance.event_log_storage.get_logs_for_run(result.run_id)
     return [er for er in event_records if er.user_message]
@@ -56,22 +67,22 @@ def test_logging_capture_logger_defined_outside(managed_logs, expect_output, res
     logger = logging.getLogger("python_logger")
     logger.setLevel(logging.INFO)
 
-    @solid
-    def my_solid():
+    @op
+    def my_op():
         logger.info("some info")
 
-    @pipeline
-    def my_pipeline():
-        my_solid()
+    @job
+    def my_job():
+        my_op()
 
     log_event_records = [
-        lr for lr in get_log_records(my_pipeline, managed_logs) if lr.user_message == "some info"
+        lr for lr in get_log_records(my_job, managed_logs) if lr.user_message == "some info"
     ]
 
     if expect_output:
         assert len(log_event_records) == 1
         log_event_record = log_event_records[0]
-        assert log_event_record.step_key == "my_solid"
+        assert log_event_record.step_key == "my_op"
         assert log_event_record.level == logging.INFO
     else:
         assert len(log_event_records) == 0
@@ -88,24 +99,24 @@ def test_logging_capture_logger_defined_outside(managed_logs, expect_output, res
     ],
 )
 def test_logging_capture_logger_defined_inside(managed_logs, expect_output, reset_logging):
-    @solid
-    def my_solid():
+    @op
+    def my_op():
         logger = logging.getLogger("python_logger")
         logger.setLevel(logging.INFO)
         logger.info("some info")
 
-    @pipeline
-    def my_pipeline():
-        my_solid()
+    @job
+    def my_job():
+        my_op()
 
     log_event_records = [
-        lr for lr in get_log_records(my_pipeline, managed_logs) if lr.user_message == "some info"
+        lr for lr in get_log_records(my_job, managed_logs) if lr.user_message == "some info"
     ]
 
     if expect_output:
         assert len(log_event_records) == 1
         log_event_record = log_event_records[0]
-        assert log_event_record.step_key == "my_solid"
+        assert log_event_record.step_key == "my_op"
         assert log_event_record.level == logging.INFO
     else:
         assert len(log_event_records) == 0
@@ -139,18 +150,18 @@ def test_logging_capture_resource(managed_logs, expect_output, reset_logging):
 
         return fn
 
-    @solid(required_resource_keys={"foo", "bar"})
+    @op(required_resource_keys={"foo", "bar"})
     def process(context):
         context.resources.foo()
         context.resources.bar()
 
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={"foo": foo_resource, "bar": bar_resource})])
-    def my_pipeline():
+    @job(resource_defs={"foo": foo_resource, "bar": bar_resource})
+    def my_job():
         process()
 
     log_event_records = [
         lr
-        for lr in get_log_records(my_pipeline, managed_logs)
+        for lr in get_log_records(my_job, managed_logs)
         if lr.user_message.startswith("log from resource")
     ]
 
@@ -162,12 +173,12 @@ def test_logging_capture_resource(managed_logs, expect_output, reset_logging):
         assert len(log_event_records) == 0
 
 
-def define_multilevel_logging_pipeline(inside, python):
+def define_multilevel_logging_job(inside: bool, python: bool) -> JobDefinition:
     if not inside:
         outside_logger = logging.getLogger("my_logger_outside") if python else get_dagster_logger()
 
-    @solid
-    def my_solid1():
+    @op
+    def my_op1():
         if inside:
             logger = logging.getLogger("my_logger_inside") if python else get_dagster_logger()
         else:
@@ -178,8 +189,8 @@ def define_multilevel_logging_pipeline(inside, python):
         ]:
             logger.log(level, "foobar%s", "baz")
 
-    @solid
-    def my_solid2(_in):
+    @op
+    def my_op2(_in):
         if inside:
             logger = logging.getLogger("my_logger_inside") if python else get_dagster_logger()
         else:
@@ -191,27 +202,27 @@ def define_multilevel_logging_pipeline(inside, python):
         ]:
             logger.log(level=level, msg="foobarbaz")
 
-    @pipeline(mode_defs=[default_mode_def_for_test])
-    def my_pipeline():
-        my_solid2(my_solid1())
+    @job
+    def my_job():
+        my_op2(my_op1())
 
-    return my_pipeline
+    return my_job
 
 
 def multilevel_logging_python_inside():
-    return define_multilevel_logging_pipeline(inside=True, python=True)
+    return define_multilevel_logging_job(inside=True, python=True)
 
 
 def multilevel_logging_python_outside():
-    return define_multilevel_logging_pipeline(inside=False, python=True)
+    return define_multilevel_logging_job(inside=False, python=True)
 
 
 def multilevel_logging_builtin_inisde():
-    return define_multilevel_logging_pipeline(inside=True, python=False)
+    return define_multilevel_logging_job(inside=True, python=False)
 
 
 def multilevel_logging_builtin_outside():
-    return define_multilevel_logging_pipeline(inside=False, python=False)
+    return define_multilevel_logging_job(inside=False, python=False)
 
 
 @pytest.mark.parametrize(
@@ -308,28 +319,28 @@ def test_logging_capture_builtin_inside(log_level, expected_msgs, reset_logging)
     assert len(log_event_records) == expected_msgs
 
 
-def define_logging_pipeline():
+def define_logging_job():
     loggerA = logging.getLogger("loggerA")
 
-    @solid
-    def solidA():
+    @op
+    def opA():
         loggerA.debug("loggerA")
         loggerA.info("loggerA")
         return 1
 
-    @solid
-    def solidB(_in):
+    @op
+    def opB(_in):
         loggerB = logging.getLogger("loggerB")
         loggerB.debug("loggerB")
         loggerB.info("loggerB")
         loggerA.debug("loggerA")
         loggerA.info("loggerA")
 
-    @pipeline(mode_defs=[default_mode_def_for_test])
-    def pipe():
-        solidB(solidA())
+    @job
+    def foo_job():
+        opB(opA())
 
-    return pipe
+    return foo_job
 
 
 @pytest.mark.parametrize(
@@ -339,20 +350,20 @@ def define_logging_pipeline():
         (
             ["root"],
             {
-                "execution": {"multiprocess": {}},
+                "execution": {"config": {"multiprocess": {}}},
             },
         ),
         (
             ["loggerA", "loggerB"],
             {
-                "execution": {"multiprocess": {}},
+                "execution": {"config": {"multiprocess": {}}},
             },
         ),
     ],
 )
 def test_execution_logging(managed_loggers, run_config, reset_logging):
     log_records = get_log_records(
-        reconstructable(define_logging_pipeline),
+        reconstructable(define_logging_job),
         managed_loggers=managed_loggers,
         python_logging_level="INFO",
         run_config=run_config,
@@ -375,8 +386,9 @@ def test_failure_logging(managed_loggers, reset_logging):
             }
         }
     ) as instance:
-        result = execute_pipeline(
-            reconstructable(define_logging_pipeline),
+        result = execute_job(
+            reconstructable(define_logging_job),
+            run_config={"execution": {"config": {"in_process": {}}}},
             instance=instance,
         )
         assert result.success
@@ -399,8 +411,9 @@ def test_failure_logging(managed_loggers, reset_logging):
             return orig_handle_new_event(event)
 
         with mock.patch.object(instance, "handle_new_event", _fake_handle_new_event):
-            result = execute_pipeline(
-                reconstructable(define_logging_pipeline),
+            result = execute_job(
+                reconstructable(define_logging_job),
+                run_config={"execution": {"config": {"in_process": {}}}},
                 instance=instance,
             )
             assert result.success
@@ -428,7 +441,8 @@ def test_failure_logging(managed_loggers, reset_logging):
             instance, "handle_new_event", side_effect=Exception("failed writing event")
         ):
             with pytest.raises(Exception, match="failed writing event"):
-                execute_pipeline(
-                    reconstructable(define_logging_pipeline),
+                execute_job(
+                    reconstructable(define_logging_job),
+                    run_config={"execution": {"config": {"in_process": {}}}},
                     instance=instance,
                 )

@@ -1,7 +1,7 @@
 import json
 import os
 import subprocess
-from typing import Any, Mapping, Optional, Sequence
+from typing import Any, Iterator, List, Mapping, NamedTuple, Optional, Sequence, Union
 
 import dagster._check as check
 from dagster._core.utils import coerce_valid_log_level
@@ -11,8 +11,70 @@ from ..errors import (
     DagsterDbtCliHandledRuntimeError,
     DagsterDbtCliOutputsNotFoundError,
 )
-from .constants import DBT_RUN_RESULTS_COMMANDS, DEFAULT_DBT_TARGET_PATH
 from .types import DbtCliOutput
+
+DEFAULT_DBT_TARGET_PATH = "target"
+
+DBT_RUN_RESULTS_COMMANDS = ["run", "test", "seed", "snapshot", "docs generate", "build"]
+
+
+class DbtCliEvent(NamedTuple):
+    """Helper class to encapsulate parsed information from an active dbt CLI process."""
+
+    line: Optional[str]
+    message: Optional[str]
+    parsed_json_line: Optional[Mapping[str, Any]]
+    log_level: Optional[int]
+
+    @classmethod
+    def from_line(cls, line: str, json_log_format: bool) -> "DbtCliEvent":
+        message = line
+        parsed_json_line = None
+        log_level = "info"
+
+        # parse attributes out of json fields
+        if json_log_format:
+            try:
+                parsed_json_line = json.loads(line)
+            except json.JSONDecodeError:
+                pass
+            else:
+                # in rare cases, the loaded json line may be a string rather than a dictionary
+                if isinstance(parsed_json_line, dict):
+                    message = parsed_json_line.get(
+                        # Attempt to get the message from the dbt-core==1.3.* format
+                        "msg",
+                        # Otherwise, try to get the message from the dbt-core==1.4.* format
+                        parsed_json_line.get("info", {}).get(
+                            "msg",
+                            # If all else fails, default to the whole line
+                            line,
+                        ),
+                    )
+                    log_level = parsed_json_line.get(
+                        # Attempt to get the log level from the dbt-core==1.3.* format
+                        "level",
+                        # Otherwise, try to get the message from the dbt-core==1.4.* format
+                        parsed_json_line.get("info", {}).get(
+                            "level",
+                            # If all else fails, default to the `debug` level
+                            "debug",
+                        ),
+                    )
+        # attempt to parse log level out of raw line
+        elif "Done." not in line:
+            # attempt to parse a log level out of the line
+            if "ERROR" in line:
+                log_level = "error"
+            elif "WARN" in line:
+                log_level = "warn"
+
+        return DbtCliEvent(
+            line=line,
+            message=message,
+            parsed_json_line=parsed_json_line,
+            log_level=coerce_valid_log_level(log_level),
+        )
 
 
 def _create_command_list(
@@ -21,12 +83,15 @@ def _create_command_list(
     json_log_format: bool,
     command: str,
     flags_dict: Mapping[str, Any],
+    debug: bool,
 ) -> Sequence[str]:
     prefix = [executable]
     if warn_error:
         prefix += ["--warn-error"]
     if json_log_format:
-        prefix += ["--no-use-color", "--log-format", "json"]
+        prefix += ["--no-use-colors", "--log-format", "json"]
+    if debug:
+        prefix += ["--debug"]
 
     full_command = command.split(" ")
     for flag, value in flags_dict.items():
@@ -48,6 +113,87 @@ def _create_command_list(
     return prefix + full_command
 
 
+def _core_execute_cli(
+    command_list: Sequence[str],
+    ignore_handled_error: bool,
+    json_log_format: bool,
+    project_dir: str,
+) -> Iterator[Union[DbtCliEvent, int]]:
+    """Runs a dbt command in a subprocess and yields parsed output line by line."""
+    # Execute the dbt CLI command in a subprocess.
+    messages: List[str] = []
+
+    # run dbt with unbuffered output
+    passenv = os.environ.copy()
+    passenv["PYTHONUNBUFFERED"] = "1"
+    process = subprocess.Popen(
+        command_list,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        env=passenv,
+        cwd=project_dir if os.path.exists(project_dir) else None,
+    )
+    for raw_line in process.stdout or []:
+        line = raw_line.decode().strip()
+
+        cli_event = DbtCliEvent.from_line(line, json_log_format)
+
+        if cli_event.message is not None:
+            messages.append(cli_event.message)
+
+        # yield the parsed values
+        yield cli_event
+
+    process.wait()
+    return_code = process.returncode
+
+    if return_code == 2:
+        raise DagsterDbtCliFatalRuntimeError(messages=messages)
+
+    if return_code == 1 and not ignore_handled_error:
+        raise DagsterDbtCliHandledRuntimeError(messages=messages)
+
+    yield return_code
+
+
+def execute_cli_stream(
+    executable: str,
+    command: str,
+    flags_dict: Mapping[str, Any],
+    log: Any,
+    warn_error: bool,
+    ignore_handled_error: bool,
+    json_log_format: bool = True,
+    capture_logs: bool = True,
+    debug: bool = False,
+) -> Iterator[DbtCliEvent]:
+    """Executes a command on the dbt CLI in a subprocess."""
+    command_list = _create_command_list(
+        executable=executable,
+        warn_error=warn_error,
+        json_log_format=json_log_format,
+        command=command,
+        flags_dict=flags_dict,
+        debug=debug,
+    )
+    log.info(f"Executing command: {' '.join(command_list)}")
+
+    for event in _core_execute_cli(
+        command_list=command_list,
+        json_log_format=json_log_format,
+        ignore_handled_error=ignore_handled_error,
+        project_dir=flags_dict["project-dir"],
+    ):
+        if isinstance(event, int):
+            return_code = event
+            log.info(f"dbt exited with return code {return_code}")
+            break
+
+        yield event
+        if capture_logs:
+            log.log(event.log_level, event.message)
+
+
 def execute_cli(
     executable: str,
     command: str,
@@ -59,21 +205,14 @@ def execute_cli(
     docs_url: Optional[str] = None,
     json_log_format: bool = True,
     capture_logs: bool = True,
+    debug: bool = False,
 ) -> DbtCliOutput:
     """Executes a command on the dbt CLI in a subprocess."""
-    try:
-        import dbt  # noqa: F401
-    except ImportError as e:
-        raise check.CheckError(
-            "You must have `dbt-core` installed in order to execute dbt CLI commands."
-        ) from e
-
     check.str_param(executable, "executable")
     check.str_param(command, "command")
     check.mapping_param(flags_dict, "flags_dict", key_type=str)
     check.bool_param(warn_error, "warn_error")
     check.bool_param(ignore_handled_error, "ignore_handled_error")
-    check.bool_param(capture_logs, "capture_logs")
 
     command_list = _create_command_list(
         executable=executable,
@@ -81,69 +220,30 @@ def execute_cli(
         json_log_format=json_log_format,
         command=command,
         flags_dict=flags_dict,
+        debug=debug,
     )
-
-    # Execute the dbt CLI command in a subprocess.
-    full_command = " ".join(command_list)
     log.info(f"Executing command: {' '.join(command_list)}")
 
     return_code = 0
+    lines, parsed_json_lines = [], []
+    for event in _core_execute_cli(
+        command_list=command_list,
+        json_log_format=json_log_format,
+        ignore_handled_error=ignore_handled_error,
+        project_dir=flags_dict["project-dir"],
+    ):
+        if isinstance(event, int):
+            return_code = event
+            log.info(f"dbt exited with return code {return_code}")
+            break
 
-    # raw lines
-    raw_output = []
+        if event.line is not None:
+            lines.append(event.line)
+        if event.parsed_json_line is not None:
+            parsed_json_lines.append(event.parsed_json_line)
 
-    # parsed messages from the log output
-    messages = []
-
-    # json dictionaries for each line (if applicable)
-    json_lines = []
-
-    process = subprocess.Popen(
-        command_list,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-    )
-    for raw_line in process.stdout or []:
-        line = raw_line.decode("utf-8").rstrip()
-
-        log_level = "info"
-        message = line
-        raw_output.append(line)
-
-        if json_log_format:
-            try:
-                json_line = json.loads(line)
-                json_lines.append(json_line)
-            except json.JSONDecodeError:
-                pass
-            else:
-                # in rare cases, the loaded json line may be a string rather than a dictionary
-                if isinstance(json_line, dict):
-                    message = json_line.get("message", json_line.get("msg", message))
-                    log_level = json_line.get("levelname", json_line.get("level", "debug"))
-        elif "Done." not in line:
-            # attempt to parse a log level out of the line
-            if "ERROR" in line:
-                log_level = "error"
-            elif "WARN" in line:
-                log_level = "warn"
-
-        messages.append(message)
         if capture_logs:
-            log.log(coerce_valid_log_level(log_level), message)
-
-    process.wait()
-    return_code = process.returncode
-
-    log.info("dbt exited with return code {return_code}".format(return_code=return_code))
-
-    raw_output = "\n\n".join(raw_output)
-
-    if return_code == 2:
-        raise DagsterDbtCliFatalRuntimeError(messages=messages)
-
-    if return_code == 1 and not ignore_handled_error:
-        raise DagsterDbtCliHandledRuntimeError(messages=messages)
+            log.log(event.log_level, event.message)
 
     run_results = (
         parse_run_results(flags_dict["project-dir"], target_path)
@@ -152,10 +252,10 @@ def execute_cli(
     )
 
     return DbtCliOutput(
-        command=full_command,
+        command=" ".join(command_list),
         return_code=return_code,
-        raw_output=raw_output,
-        logs=json_lines,
+        raw_output="\n\n".join(lines),
+        logs=parsed_json_lines,
         result=run_results,
         docs_url=docs_url,
     )

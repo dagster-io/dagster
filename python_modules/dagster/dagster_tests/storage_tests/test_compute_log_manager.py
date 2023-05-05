@@ -30,7 +30,7 @@ from dagster._core.test_utils import environ, instance_for_test
 def test_compute_log_manager_instance():
     with instance_for_test() as instance:
         assert instance.compute_log_manager
-        assert instance.compute_log_manager._instance  # pylint: disable=protected-access
+        assert instance.compute_log_manager._instance  # noqa: SLF001
 
 
 class BrokenCapturedLogManager(CapturedLogManager, ComputeLogManager):
@@ -83,6 +83,9 @@ class BrokenCapturedLogManager(CapturedLogManager, ComputeLogManager):
     def _watch_logs(self, pipeline_run, step_key=None):
         pass
 
+    def get_local_path(self, run_id, key, io_type):
+        pass
+
     def is_watch_completed(self, run_id, key):
         return True
 
@@ -127,12 +130,15 @@ class BrokenComputeLogManager(ComputeLogManager):
         if self._fail_on_teardown:
             raise Exception("blahhh")
 
+    def get_local_path(self, run_id: str, key: str, io_type: ComputeIOType):
+        pass
+
     def download_url(self, run_id, key, io_type):
         return None
 
     def read_logs_file(self, run_id, key, io_type, cursor=0, max_bytes=MAX_BYTES_FILE_READ):
         return ComputeLogFileData(
-            path="{}.{}".format(key, io_type), data=None, cursor=0, size=0, download_url=None
+            path=f"{key}.{io_type}", data=None, cursor=0, size=0, download_url=None
         )
 
     def on_subscribe(self, subscription):
@@ -204,14 +210,14 @@ def _has_teardown_exception(execute_result):
 @op
 def yay(context):
     context.log.info("yay")
-    print("HELLOOO")  # pylint: disable=print-call
+    print("HELLOOO")  # noqa: T201
     return "yay"
 
 
 @op
 def boo(context):
     context.log.info("boo")
-    print("HELLOOO")  # pylint: disable=print-call
+    print("HELLOOO")  # noqa: T201
     raise Exception("booo")
 
 

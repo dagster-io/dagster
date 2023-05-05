@@ -1,5 +1,3 @@
-import {all} from 'deepmerge';
-
 import {
   PartitionDimensionSelection,
   PartitionDimensionSelectionRange,
@@ -36,15 +34,16 @@ export function allPartitionsRange({
 }: {
   partitionKeys: string[];
 }): PartitionDimensionSelectionRange {
-  return [
-    {idx: 0, key: partitionKeys[0]},
-    {idx: partitionKeys.length - 1, key: partitionKeys[partitionKeys.length - 1]},
-  ];
+  return {
+    start: {idx: 0, key: partitionKeys[0]},
+    end: {idx: partitionKeys.length - 1, key: partitionKeys[partitionKeys.length - 1]},
+  };
 }
 
 export function spanTextToSelections(
   allPartitionKeys: string[],
   text: string,
+  skipPartitionKeyValidation?: boolean, // This is used by Dynamic Partitions as a workaround to be able to select a newly added partition before the partition health data is refetched
 ): Omit<PartitionDimensionSelection, 'dimension'> {
   const terms = text.split(',').map((s) => s.trim());
   const result: Omit<PartitionDimensionSelection, 'dimension'> = {
@@ -65,25 +64,27 @@ export function spanTextToSelections(
         throw new Error(`Could not find partitions for provided range: ${start}...${end}`);
       }
       result.selectedKeys.push(...allPartitionKeys.slice(allStartIdx, allEndIdx + 1));
-      result.selectedRanges.push([
-        {idx: allStartIdx, key: allPartitionKeys[allStartIdx]},
-        {idx: allEndIdx, key: allPartitionKeys[allEndIdx]},
-      ]);
+      result.selectedRanges.push({
+        start: {idx: allStartIdx, key: allPartitionKeys[allStartIdx]},
+        end: {idx: allEndIdx, key: allPartitionKeys[allEndIdx]},
+      });
     } else if (term.includes('*')) {
       const [prefix, suffix] = term.split('*');
 
       let start = -1;
       const close = (end: number) => {
         result.selectedKeys.push(...allPartitionKeys.slice(start, end + 1));
-        result.selectedRanges.push([
-          {idx: start, key: allPartitionKeys[start]},
-          {idx: end, key: allPartitionKeys[end]},
-        ]);
+        result.selectedRanges.push({
+          start: {idx: start, key: allPartitionKeys[start]},
+          end: {idx: end, key: allPartitionKeys[end]},
+        });
         start = -1;
       };
 
-      for (let idx = 0; idx < all.length; idx++) {
-        const match = all[idx].startsWith(prefix) && all[idx].endsWith(suffix);
+      // todo bengotow: Was this change correct??
+      for (let idx = 0; idx < allPartitionKeys.length; idx++) {
+        const match =
+          allPartitionKeys[idx].startsWith(prefix) && allPartitionKeys[idx].endsWith(suffix);
         if (match && start === -1) {
           start = idx;
         }
@@ -92,18 +93,18 @@ export function spanTextToSelections(
         }
       }
       if (start !== -1) {
-        close(all.length - 1);
+        close(allPartitionKeys.length - 1);
       }
     } else {
       const idx = allPartitionKeys.indexOf(term);
-      if (idx === -1) {
+      if (idx === -1 && !skipPartitionKeyValidation) {
         throw new Error(`Could not find partition: ${term}`);
       }
       result.selectedKeys.push(term);
-      result.selectedRanges.push([
-        {idx, key: term},
-        {idx, key: term},
-      ]);
+      result.selectedRanges.push({
+        start: {idx, key: term},
+        end: {idx, key: term},
+      });
     }
   }
 
@@ -112,11 +113,14 @@ export function spanTextToSelections(
   return result;
 }
 
-export function partitionsToText(selected: string[], all: string[]) {
-  if (selected.length === all.length) {
+export function partitionsToText(selected: string[], all?: string[]) {
+  if (selected.length === all?.length) {
     return allPartitionsSpan({partitionKeys: all});
   }
   const selectedSet = new Set(selected);
+  if (!all) {
+    return Array.from(selectedSet).join(', ');
+  }
   return assembleIntoSpans(all, (key) => selectedSet.has(key))
     .filter((s) => s.status)
     .map((s) => stringForSpan(s, all))

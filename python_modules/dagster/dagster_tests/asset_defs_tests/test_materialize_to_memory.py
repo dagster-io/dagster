@@ -1,6 +1,7 @@
 import pytest
 from dagster import (
     AssetKey,
+    AssetOut,
     AssetsDefinition,
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
@@ -20,6 +21,7 @@ from dagster import (
     op,
     with_resources,
 )
+from dagster._core.errors import DagsterInvalidInvocationError
 
 
 def test_basic_materialize_to_memory():
@@ -29,7 +31,7 @@ def test_basic_materialize_to_memory():
 
     result = materialize_to_memory([the_asset])
     assert result.success
-    assert len(result.asset_materializations_for_node("the_asset")[0].metadata_entries) == 0
+    assert len(result.asset_materializations_for_node("the_asset")[0].metadata) == 0
     assert result.asset_value(the_asset.key) == 5
 
 
@@ -115,11 +117,11 @@ def test_materialize_conflicting_resources():
         materialize_to_memory([first, second])
 
     with pytest.raises(
-        DagsterInvalidDefinitionError,
+        DagsterInvalidInvocationError,
         match=(
-            "resource with key 'foo' provided to job conflicts with resource provided to assets."
-            " When constructing a job, all resource definitions provided must match by reference"
-            " equality for a given key."
+            r'AssetsDefinition with key \["first"\] has conflicting resource definitions with'
+            r" provided resources for the following keys: foo. Either remove the existing"
+            r" resources from the asset or change the resource keys"
         ),
     ):
         materialize_to_memory(
@@ -221,15 +223,15 @@ def test_materialize_multi_asset():
 
     @multi_asset(
         outs={
-            "my_out_name": Out(metadata={"foo": "bar"}),
-            "my_other_out_name": Out(metadata={"bar": "foo"}),
+            "my_out_name": AssetOut(metadata={"foo": "bar"}),
+            "my_other_out_name": AssetOut(metadata={"bar": "foo"}),
         },
         internal_asset_deps={
             "my_out_name": {AssetKey("my_other_out_name")},
             "my_other_out_name": {AssetKey("thing")},
         },
     )
-    def multi_asset_with_internal_deps(thing):  # pylint: disable=unused-argument
+    def multi_asset_with_internal_deps(thing):
         yield Output(1, "my_out_name")
         yield Output(2, "my_other_out_name")
 
@@ -319,3 +321,21 @@ def test_raise_on_error():
         raise ValueError()
 
     assert not materialize_to_memory([asset1], raise_on_error=False).success
+
+
+def test_selection():
+    @asset
+    def upstream():
+        ...
+
+    @asset
+    def downstream(upstream):
+        ...
+
+    assets = [upstream, downstream]
+
+    result1 = materialize_to_memory(assets, selection=[upstream])
+    assert result1.success
+    materialization_events = result1.get_asset_materialization_events()
+    assert len(materialization_events) == 1
+    assert materialization_events[0].materialization.asset_key == AssetKey("upstream")

@@ -92,7 +92,7 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
       if (runs.pipelineRunsOrError.__typename !== 'Runs') {
         return undefined;
       }
-      return runs.pipelineRunsOrError.results[PAGE_SIZE - 1]?.runId;
+      return runs.pipelineRunsOrError.results[PAGE_SIZE - 1]?.id;
     },
     getResultArray: (data) => {
       if (!data || data.pipelineRunsOrError.__typename !== 'Runs') {

@@ -1,5 +1,7 @@
 from datetime import datetime
-from typing import Mapping, NamedTuple, Optional, Sequence, Union
+from typing import Callable, Mapping, NamedTuple, Optional, Sequence, Union
+
+from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import PublicAttr
@@ -8,6 +10,8 @@ from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.events import DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._serdes import whitelist_for_serdes
+
+EventHandlerFn: TypeAlias = Callable[[EventLogEntry, str], None]
 
 
 class RunShardedEventsCursor(NamedTuple):
@@ -20,6 +24,7 @@ class RunShardedEventsCursor(NamedTuple):
     run_updated_after: datetime
 
 
+@whitelist_for_serdes
 class EventLogRecord(NamedTuple):
     """Internal representation of an event record, as stored in a
     :py:class:`~dagster._core.storage.event_log.EventLogStorage`.
@@ -83,7 +88,7 @@ class EventRecordsFilter(
         asset_key (Optional[AssetKey]): Asset key for which to get asset materialization event
             entries / records.
         asset_partitions (Optional[List[str]]): Filter parameter such that only asset
-            materialization events with a partition value matching one of the provided values.  Only
+            events with a partition value matching one of the provided values.  Only
             valid when the `asset_key` parameter is provided.
         after_cursor (Optional[Union[int, RunShardedEventsCursor]]): Filter parameter such that only
             records with storage_id greater than the provided value are returned. Using a
@@ -126,10 +131,10 @@ class EventRecordsFilter(
             event_type=event_type,
             asset_key=check.opt_inst_param(asset_key, "asset_key", AssetKey),
             asset_partitions=asset_partitions,
-            after_cursor=check.opt_inst_param(  # type: ignore
+            after_cursor=check.opt_inst_param(
                 after_cursor, "after_cursor", (int, RunShardedEventsCursor)
             ),
-            before_cursor=check.opt_inst_param(  # type: ignore
+            before_cursor=check.opt_inst_param(
                 before_cursor, "before_cursor", (int, RunShardedEventsCursor)
             ),
             after_timestamp=check.opt_float_param(after_timestamp, "after_timestamp"),

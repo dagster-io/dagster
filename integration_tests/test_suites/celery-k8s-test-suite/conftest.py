@@ -30,7 +30,7 @@ def dagster_docker_image():
         try:
             client = docker.from_env()
             client.images.get(docker_image)
-            print(  # pylint: disable=print-call
+            print(  # noqa: T201
                 "Found existing image tagged {image}, skipping image build. To rebuild, first run: "
                 "docker rmi {image}".format(image=docker_image)
             )

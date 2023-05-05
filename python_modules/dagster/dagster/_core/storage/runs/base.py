@@ -1,11 +1,13 @@
 from abc import ABC, abstractmethod
-from typing import Callable, Iterable, Mapping, Optional, Sequence, Set, Tuple, Union
+from typing import TYPE_CHECKING, Mapping, Optional, Sequence, Set, Tuple, Union
+
+from typing_extensions import TypedDict
 
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
-from dagster._core.instance import MayHaveInstanceWeakref
-from dagster._core.snap import ExecutionPlanSnapshot, PipelineSnapshot
-from dagster._core.storage.pipeline_run import (
+from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
+from dagster._core.snap import ExecutionPlanSnapshot, JobSnapshot
+from dagster._core.storage.dagster_run import (
     DagsterRun,
     JobBucket,
     RunPartitionData,
@@ -13,10 +15,22 @@ from dagster._core.storage.pipeline_run import (
     RunsFilter,
     TagBucket,
 )
+from dagster._core.storage.sql import AlembicVersion
 from dagster._daemon.types import DaemonHeartbeat
+from dagster._utils import PrintFn
+
+from ..daemon_cursor import DaemonCursorStorage
+
+if TYPE_CHECKING:
+    from dagster._core.host_representation.origin import ExternalJobOrigin
 
 
-class RunStorage(ABC, MayHaveInstanceWeakref):
+class RunGroupInfo(TypedDict):
+    count: int
+    runs: Sequence[DagsterRun]
+
+
+class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorStorage):
     """Abstract base class for storing pipeline run history.
 
     Note that run storages using SQL databases as backing stores should implement
@@ -29,18 +43,18 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
     """
 
     @abstractmethod
-    def add_run(self, pipeline_run: DagsterRun) -> DagsterRun:
+    def add_run(self, dagster_run: DagsterRun) -> DagsterRun:
         """Add a run to storage.
 
         If a run already exists with the same ID, raise DagsterRunAlreadyExists
         If the run's snapshot ID does not exist raise DagsterSnapshotDoesNotExist
 
         Args:
-            pipeline_run (PipelineRun): The run to add.
+            dagster_run (DagsterRun): The run to add.
         """
 
     @abstractmethod
-    def handle_run_event(self, run_id: str, event: DagsterEvent):
+    def handle_run_event(self, run_id: str, event: DagsterEvent) -> None:
         """Update run storage in accordance to a pipeline run related DagsterEvent.
 
         Args:
@@ -55,7 +69,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
         bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
-    ) -> Iterable[DagsterRun]:
+    ) -> Sequence[DagsterRun]:
         """Return all the runs present in the storage that match the given filters.
 
         Args:
@@ -83,7 +97,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         """
 
     @abstractmethod
-    def get_run_group(self, run_id: str) -> Optional[Tuple[str, Iterable[DagsterRun]]]:
+    def get_run_group(self, run_id: str) -> Optional[Tuple[str, Sequence[DagsterRun]]]:
         """Get the run group to which a given run belongs.
 
         Args:
@@ -104,7 +118,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         filters: Optional[RunsFilter] = None,
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
-    ) -> Mapping[str, Mapping[str, Union[Iterable[DagsterRun], int]]]:
+    ) -> Mapping[str, RunGroupInfo]:
         """Return all of the run groups present in the storage that include rows matching the
         given filter.
 
@@ -138,17 +152,6 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         # more than 2x total instances of PipelineRun.
 
     @abstractmethod
-    def get_run_by_id(self, run_id: str) -> Optional[DagsterRun]:
-        """Get a run by its id.
-
-        Args:
-            run_id (str): The id of the run
-
-        Returns:
-            Optional[PipelineRun]
-        """
-
-    @abstractmethod
     def get_run_records(
         self,
         filters: Optional[RunsFilter] = None,
@@ -172,15 +175,31 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         """
 
     @abstractmethod
-    def get_run_tags(self) -> Sequence[Tuple[str, Set[str]]]:
+    def get_run_tags(
+        self,
+        tag_keys: Optional[Sequence[str]] = None,
+        value_prefix: Optional[str] = None,
+        limit: Optional[int] = None,
+    ) -> Sequence[Tuple[str, Set[str]]]:
         """Get a list of tag keys and the values that have been associated with them.
+
+        Args:
+            tag_keys (Optional[Sequence[str]]): tag keys to filter by.
 
         Returns:
             List[Tuple[str, Set[str]]]
         """
 
     @abstractmethod
-    def add_run_tags(self, run_id: str, new_tags: Mapping[str, str]):
+    def get_run_tag_keys(self) -> Sequence[str]:
+        """Get a list of tag keys.
+
+        Returns:
+            List[str]
+        """
+
+    @abstractmethod
+    def add_run_tags(self, run_id: str, new_tags: Mapping[str, str]) -> None:
         """Add additional tags for a pipeline run.
 
         Args:
@@ -201,9 +220,9 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
 
     def add_snapshot(
         self,
-        snapshot: Union[PipelineSnapshot, ExecutionPlanSnapshot],
+        snapshot: Union[JobSnapshot, ExecutionPlanSnapshot],
         snapshot_id: Optional[str] = None,
-    ):
+    ) -> None:
         """Add a snapshot to the storage.
 
         Args:
@@ -213,18 +232,16 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
                 in debugging, where we might want to import a historical run whose snapshots were
                 calculated using a different hash function than the current code.
         """
-        if isinstance(snapshot, PipelineSnapshot):
-            self.add_pipeline_snapshot(snapshot, snapshot_id)
+        if isinstance(snapshot, JobSnapshot):
+            self.add_job_snapshot(snapshot, snapshot_id)
         else:
             self.add_execution_plan_snapshot(snapshot, snapshot_id)
 
     def has_snapshot(self, snapshot_id: str):
-        return self.has_pipeline_snapshot(snapshot_id) or self.has_execution_plan_snapshot(
-            snapshot_id
-        )
+        return self.has_job_snapshot(snapshot_id) or self.has_execution_plan_snapshot(snapshot_id)
 
     @abstractmethod
-    def has_pipeline_snapshot(self, pipeline_snapshot_id: str) -> bool:
+    def has_job_snapshot(self, job_snapshot_id: str) -> bool:
         """Check to see if storage contains a pipeline snapshot.
 
         Args:
@@ -235,9 +252,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         """
 
     @abstractmethod
-    def add_pipeline_snapshot(
-        self, pipeline_snapshot: PipelineSnapshot, snapshot_id: Optional[str] = None
-    ) -> str:
+    def add_job_snapshot(self, job_snapshot: JobSnapshot, snapshot_id: Optional[str] = None) -> str:
         """Add a pipeline snapshot to the run store.
 
         Pipeline snapshots are content-addressable, meaning
@@ -246,22 +261,22 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         that snapshot ID.
 
         Args:
-            pipeline_snapshot (PipelineSnapshot)
+            job_snapshot (PipelineSnapshot)
             snapshot_id (Optional[str]): [Internal] The id of the snapshot. If not provided, the
                 snapshot id will be generated from a hash of the snapshot. This should only be used
                 in debugging, where we might want to import a historical run whose snapshots were
                 calculated using a different hash function than the current code.
 
         Return:
-            str: The pipeline_snapshot_id
+            str: The job_snapshot_id
         """
 
     @abstractmethod
-    def get_pipeline_snapshot(self, pipeline_snapshot_id: str) -> PipelineSnapshot:
+    def get_job_snapshot(self, job_snapshot_id: str) -> JobSnapshot:
         """Fetch a snapshot by ID.
 
         Args:
-            pipeline_snapshot_id (str)
+            job_snapshot_id (str)
 
         Returns:
             PipelineSnapshot
@@ -312,31 +327,31 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         """
 
     @abstractmethod
-    def wipe(self):
+    def wipe(self) -> None:
         """Clears the run storage."""
 
     @abstractmethod
-    def delete_run(self, run_id: str):
+    def delete_run(self, run_id: str) -> None:
         """Remove a run from storage."""
 
     @property
-    def supports_bucket_queries(self):
+    def supports_bucket_queries(self) -> bool:
         return True
 
     @abstractmethod
     def get_run_partition_data(self, runs_filter: RunsFilter) -> Sequence[RunPartitionData]:
         """Get run partition data for a given partitioned job."""
 
-    def migrate(self, print_fn: Optional[Callable] = None, force_rebuild_all: bool = False):
+    def migrate(self, print_fn: Optional[PrintFn] = None, force_rebuild_all: bool = False) -> None:
         """Call this method to run any required data migrations."""
 
-    def optimize(self, print_fn: Optional[Callable] = None, force_rebuild_all: bool = False):
+    def optimize(self, print_fn: Optional[PrintFn] = None, force_rebuild_all: bool = False) -> None:
         """Call this method to run any optional data migrations for optimized reads."""
 
-    def dispose(self):
+    def dispose(self) -> None:
         """Explicit lifecycle management."""
 
-    def optimize_for_dagit(self, statement_timeout: int, pool_recycle: int):
+    def optimize_for_dagit(self, statement_timeout: int, pool_recycle: int) -> None:
         """Allows for optimizing database connection / use in the context of a long lived dagit process.
         """
 
@@ -348,7 +363,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
     # should be split out once all metadata storages are configured together.
 
     @abstractmethod
-    def add_daemon_heartbeat(self, daemon_heartbeat: DaemonHeartbeat):
+    def add_daemon_heartbeat(self, daemon_heartbeat: DaemonHeartbeat) -> None:
         """Called on a regular interval by the daemon."""
 
     @abstractmethod
@@ -356,7 +371,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         """Latest heartbeats of all daemon types."""
 
     @abstractmethod
-    def wipe_daemon_heartbeats(self):
+    def wipe_daemon_heartbeats(self) -> None:
         """Wipe all daemon heartbeats."""
 
     # Backfill storage
@@ -381,21 +396,9 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
     def update_backfill(self, partition_backfill: PartitionBackfill):
         """Update a partition backfill in run storage."""
 
-    def alembic_version(self):
+    def alembic_version(self) -> Optional[AlembicVersion]:
         return None
 
-    # Key Value Storage
-    #
-    # Stores arbitrary key-value pairs. Currently used for the cursor for the auto-reexecution
-    # deamon. Bundled into run storage for convenience.
-
-    def supports_kvs(self):
-        return True
-
     @abstractmethod
-    def kvs_get(self, keys: Set[str]) -> Mapping[str, str]:
-        """Retrieve the value for a given key in the current deployment."""
-
-    @abstractmethod
-    def kvs_set(self, pairs: Mapping[str, str]) -> None:
-        """Set the value for a given key in the current deployment."""
+    def replace_job_origin(self, run: "DagsterRun", job_origin: "ExternalJobOrigin") -> None:
+        ...

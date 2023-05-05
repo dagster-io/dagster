@@ -8,6 +8,7 @@ export type InstanceWarningQuery = {
   __typename: 'DagitQuery';
   instance: {
     __typename: 'Instance';
+    id: string;
     hasInfo: boolean;
     daemonHealth: {
       __typename: 'DaemonHealth';
@@ -35,7 +36,7 @@ export type InstanceWarningQuery = {
   partitionBackfillsOrError:
     | {
         __typename: 'PartitionBackfills';
-        results: Array<{__typename: 'PartitionBackfill'; backfillId: string}>;
+        results: Array<{__typename: 'PartitionBackfill'; id: string}>;
       }
     | {__typename: 'PythonError'};
 };

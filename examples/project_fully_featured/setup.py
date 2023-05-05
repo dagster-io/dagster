@@ -15,7 +15,7 @@ setup(
     packages=find_packages(exclude=["test"]),
     package_data={"project_fully_featured": ["hacker_news_dbt/*"]},
     install_requires=[
-        "aiobotocore==1.3.3",
+        "aiobotocore",
         "dagster",
         "dagster-aws",
         "dagster-dbt",
@@ -23,7 +23,6 @@ setup(
         "dagster-pyspark",
         "dagster-slack",
         "dagster-postgres",
-        "dbt-core",
         "dbt-duckdb",
         "dbt-snowflake",
         "duckdb!=0.3.3, <= 6.0.0",  # missing wheels

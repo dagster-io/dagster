@@ -41,7 +41,7 @@ def get_main_loadable_target_origin():
 
 
 @contextmanager
-def graphql_postgres_instance(overrides):
+def graphql_postgres_instance(overrides=None):
     with tempfile.TemporaryDirectory() as temp_dir:
         with TestPostgresInstance.docker_service_up_or_skip(
             file_relative_path(__file__, "docker-compose.yml"),
@@ -82,10 +82,9 @@ def graphql_postgres_instance(overrides):
 
 
 class MarkedManager:
-    """
-    MarkedManagers are passed to GraphQLContextVariants. They contain
+    """MarkedManagers are passed to GraphQLContextVariants. They contain
     a contextmanager function "manager_fn" that yield the relevant
-    instace, and it includes marks that will be applied to any
+    instance, and it includes marks that will be applied to any
     context-variant-driven test case that includes this MarkedManager.
 
     See InstanceManagers for an example construction.
@@ -206,13 +205,6 @@ class InstanceManagers:
                             "class": "FilesystemTestScheduler",
                             "config": {"base_dir": temp_dir},
                         },
-                        "run_launcher": {
-                            "module": "dagster",
-                            "class": "DefaultRunLauncher",
-                            "config": {
-                                "wait_for_processes": True,
-                            },
-                        },
                     },
                 ) as instance:
                     yield instance
@@ -245,17 +237,7 @@ class InstanceManagers:
     def postgres_instance_with_default_run_launcher():
         @contextmanager
         def _postgres_instance_with_default_hijack():
-            with graphql_postgres_instance(
-                overrides={
-                    "run_launcher": {
-                        "module": "dagster",
-                        "class": "DefaultRunLauncher",
-                        "config": {
-                            "wait_for_processes": True,
-                        },
-                    },
-                }
-            ) as instance:
+            with graphql_postgres_instance() as instance:
                 yield instance
 
         return MarkedManager(
@@ -320,29 +302,27 @@ class EnvironmentManagers:
     def deployed_grpc(target=None, location_name="test"):
         @contextmanager
         def _mgr_fn(instance, read_only):
-            server_process = GrpcServerProcess(
+            with GrpcServerProcess(
                 instance_ref=instance.get_ref(),
                 location_name=location_name,
                 loadable_target_origin=target
                 if target is not None
                 else get_main_loadable_target_origin(),
-            )
-            try:
-                with server_process.create_ephemeral_client() as api_client:
-                    with WorkspaceProcessContext(
-                        instance,
-                        GrpcServerTarget(
-                            port=api_client.port,
-                            socket=api_client.socket,
-                            host=api_client.host,
-                            location_name=location_name,
-                        ),
-                        version="",
-                        read_only=read_only,
-                    ) as workspace:
-                        yield workspace
-            finally:
-                server_process.wait()
+                wait_on_exit=True,
+            ) as server_process:
+                api_client = server_process.create_client()
+                with WorkspaceProcessContext(
+                    instance,
+                    GrpcServerTarget(
+                        port=api_client.port,
+                        socket=api_client.socket,
+                        host=api_client.host,
+                        location_name=location_name,
+                    ),
+                    version="",
+                    read_only=read_only,
+                ) as workspace:
+                    yield workspace
 
         return MarkedManager(_mgr_fn, [Marks.deployed_grpc_env])
 
@@ -421,8 +401,7 @@ def none_manager():
 
 
 class GraphQLContextVariant:
-    """
-    An instance of this class represents a context variant that will be run
+    """An instance of this class represents a context variant that will be run
     against *every* method in the test class, defined as a class
     created by inheriting from make_graphql_context_test_suite.
 
@@ -596,8 +575,7 @@ class GraphQLContextVariant:
 
     @staticmethod
     def all_variants():
-        """
-        There is a test case that keeps this up-to-date. If you add a static
+        """There is a test case that keeps this up-to-date. If you add a static
         method that returns a GraphQLContextVariant you have to add it to this
         list in order for tests to pass.
         """
@@ -637,16 +615,12 @@ class GraphQLContextVariant:
 
     @staticmethod
     def all_readonly_variants():
-        """
-        Return all read only variants. If you try to run any mutation these will error.
-        """
+        """Return all read only variants. If you try to run any mutation these will error."""
         return _variants_with_mark(GraphQLContextVariant.all_variants(), pytest.mark.read_only)
 
     @staticmethod
     def all_non_launchable_variants():
-        """
-        Return all non_launchable variants. If you try to start or launch these will error.
-        """
+        """Return all non_launchable variants. If you try to start or launch these will error."""
         return _variants_with_mark(GraphQLContextVariant.all_variants(), pytest.mark.non_launchable)
 
     @staticmethod
@@ -717,8 +691,7 @@ def graphql_context_variants_fixture(context_variants):
 
 
 def make_graphql_context_test_suite(context_variants):
-    """
-    Arguments:
+    """Arguments:
         context_variants (List[GraphQLContextVariant]): List of runs to run per test in this class.
 
         This is the base class factory for test suites in the dagster-graphql test.

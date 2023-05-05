@@ -118,9 +118,9 @@ class ConfiguredDefinitionConfigSchema(IDefinitionConfigSchema):
 
         # type-ignores for mypy "Cannot assign to a method" (pyright works)
         if not callable(config_or_config_fn):
-            self._config_fn = lambda _: config_or_config_fn  # type: ignore
+            self._config_fn = lambda _: config_or_config_fn
         else:
-            self._config_fn = config_or_config_fn  # type: ignore
+            self._config_fn = config_or_config_fn
 
     def as_field(self) -> Field:
         return check.not_none(self._current_field)

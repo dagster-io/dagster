@@ -13,13 +13,15 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {usePermissionsDEPRECATED} from '../app/Permissions';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
-import {ReloadRepositoryLocationButton} from './ReloadRepositoryLocationButton';
+import {
+  NO_RELOAD_PERMISSION_TEXT,
+  ReloadRepositoryLocationButton,
+} from './ReloadRepositoryLocationButton';
 
 export interface RepoSelectorOption {
   repositoryLocation: {name: string};
@@ -41,7 +43,6 @@ interface Props {
 
 export const RepoSelector: React.FC<Props> = (props) => {
   const {onBrowse, onToggle, options, selected} = props;
-  const {canReloadRepositoryLocation} = usePermissionsDEPRECATED();
 
   const optionCount = options.length;
   const selectedCount = selected.length;
@@ -64,7 +65,7 @@ export const RepoSelector: React.FC<Props> = (props) => {
         />
         {`${selected.length} of ${options.length} selected`}
       </Box>
-      <Table $monospaceFont={false}>
+      <Table>
         <tbody>
           {options.map((option) => {
             const checked = selected.includes(option);
@@ -106,11 +107,9 @@ export const RepoSelector: React.FC<Props> = (props) => {
                     Browse
                   </Link>
                 </td>
-                {canReloadRepositoryLocation.enabled ? (
-                  <td>
-                    <ReloadButton repoAddress={repoAddress} />
-                  </td>
-                ) : null}
+                <td>
+                  <ReloadButton repoAddress={repoAddress} />
+                </td>
               </tr>
             );
           })}
@@ -147,30 +146,38 @@ const RepoLocation = styled.div`
 
 const ReloadButton: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) => {
   return (
-    <ReloadRepositoryLocationButton location={repoAddress.location}>
-      {({tryReload, reloading}) => (
-        <Tooltip
-          placement="right"
-          content={
-            reloading ? (
-              'Reloading…'
-            ) : (
-              <>
-                Reload <strong>{repoAddress.location}</strong>
-              </>
-            )
+    <ReloadRepositoryLocationButton
+      location={repoAddress.location}
+      ChildComponent={({codeLocation, tryReload, reloading, hasReloadPermission}) => {
+        const tooltipContent = () => {
+          if (!hasReloadPermission) {
+            return NO_RELOAD_PERMISSION_TEXT;
           }
-        >
-          <ReloadButtonInner onClick={tryReload}>
-            {reloading ? (
-              <Spinner purpose="body-text" />
-            ) : (
-              <Icon name="refresh" color={Colors.Gray200} />
-            )}
-          </ReloadButtonInner>
-        </Tooltip>
-      )}
-    </ReloadRepositoryLocationButton>
+          return reloading ? (
+            'Reloading…'
+          ) : (
+            <>
+              Reload <strong>{codeLocation}</strong>
+            </>
+          );
+        };
+
+        return (
+          <Tooltip placement="right" content={tooltipContent()} useDisabledButtonTooltipFix>
+            <ReloadButtonInner disabled={!hasReloadPermission} onClick={tryReload}>
+              {reloading ? (
+                <Spinner purpose="body-text" />
+              ) : (
+                <Icon
+                  name="refresh"
+                  color={hasReloadPermission ? Colors.Gray200 : Colors.Gray100}
+                />
+              )}
+            </ReloadButtonInner>
+          </Tooltip>
+        );
+      }}
+    />
   );
 };
 
@@ -182,12 +189,21 @@ const ReloadButtonInner = styled.button`
   margin: -6px;
   outline: none;
 
+  :disabled {
+    cursor: default;
+  }
+
+  :disabled ${IconWrapper} {
+    background-color: ${Colors.Gray300};
+    transition: background-color 100ms;
+  }
+
   ${IconWrapper} {
     background-color: ${Colors.Gray600};
     transition: background-color 100ms;
   }
 
-  :hover ${IconWrapper} {
+  :hover:not(:disabled) ${IconWrapper} {
     background-color: ${Colors.Gray800};
   }
 

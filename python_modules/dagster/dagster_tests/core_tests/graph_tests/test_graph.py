@@ -1,6 +1,7 @@
 import enum
 import json
 from datetime import datetime
+from itertools import count
 from typing import Any, List, Optional
 
 import pendulum
@@ -13,6 +14,7 @@ from dagster import (
     DynamicOutput,
     Enum,
     Field,
+    GraphOut,
     In,
     InputMapping,
     Nothing,
@@ -20,6 +22,7 @@ from dagster import (
     Permissive,
     Shape,
     graph,
+    input_manager,
     logger,
     op,
     resource,
@@ -27,12 +30,11 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._core.definitions.graph_definition import GraphDefinition
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.partition import (
-    Partition,
     PartitionedConfig,
     StaticPartitionsDefinition,
 )
-from dagster._core.definitions.pipeline_definition import PipelineSubsetDefinition
 from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition, TimeWindow
 from dagster._core.errors import (
     DagsterConfigMappingFunctionError,
@@ -251,24 +253,24 @@ def test_partitions():
     def my_graph():
         my_op()
 
-    def config_fn(partition: Partition):
-        return {"ops": {"my_op": {"config": {"date": partition.value}}}}
+    def config_fn(partition_key: str):
+        return {"ops": {"my_op": {"config": {"date": partition_key}}}}
 
-    job = my_graph.to_job(
+    job_def = my_graph.to_job(
         config=PartitionedConfig(
-            run_config_for_partition_fn=config_fn,
+            run_config_for_partition_key_fn=config_fn,
             partitions_def=StaticPartitionsDefinition(["2020-02-25", "2020-02-26"]),
         ),
     )
-    partition_set = job.get_partition_set_def()
-    partitions = partition_set.get_partitions()
-    assert len(partitions) == 2
-    assert partitions[0].value == "2020-02-25"
-    assert partitions[0].name == "2020-02-25"
-    assert partition_set.run_config_for_partition(partitions[0]) == {
+    assert job_def.partitions_def
+    assert job_def.partitioned_config
+    partition_keys = job_def.partitions_def.get_partition_keys()
+    assert len(partition_keys) == 2
+    assert partition_keys[0] == "2020-02-25"
+    assert job_def.partitioned_config.get_run_config_for_partition_key(partition_keys[0]) == {
         "ops": {"my_op": {"config": {"date": "2020-02-25"}}}
     }
-    assert partition_set.run_config_for_partition(partitions[1]) == {
+    assert job_def.partitioned_config.get_run_config_for_partition_key(partition_keys[1]) == {
         "ops": {"my_op": {"config": {"date": "2020-02-26"}}}
     }
 
@@ -276,25 +278,25 @@ def test_partitions():
     # when returning run config, the result partitions have different config
     SHARED_CONFIG = {}
 
-    def shared_config_fn(partition: Partition):
+    def shared_config_fn(partition_key: str):
         my_config = SHARED_CONFIG
-        my_config["ops"] = {"my_op": {"config": {"date": partition.value}}}
+        my_config["ops"] = {"my_op": {"config": {"date": partition_key}}}
         return my_config
 
-    job = my_graph.to_job(
+    job_def = my_graph.to_job(
         config=PartitionedConfig(
-            run_config_for_partition_fn=shared_config_fn,
+            run_config_for_partition_key_fn=shared_config_fn,
             partitions_def=StaticPartitionsDefinition(["2020-02-25", "2020-02-26"]),
         ),
     )
-    partition_set = job.get_partition_set_def()
-    partitions = partition_set.get_partitions()
-    assert len(partitions) == 2
-    assert partitions[0].value == "2020-02-25"
-    assert partitions[0].name == "2020-02-25"
+    assert job_def.partitions_def
+    assert job_def.partitioned_config
+    partition_keys = job_def.partitions_def.get_partition_keys()
+    assert len(partition_keys) == 2
+    assert partition_keys[0] == "2020-02-25"
 
-    first_config = partition_set.run_config_for_partition(partitions[0])
-    second_config = partition_set.run_config_for_partition(partitions[1])
+    first_config = job_def.partitioned_config.get_run_config_for_partition_key(partition_keys[0])
+    second_config = job_def.partitioned_config.get_run_config_for_partition_key(partition_keys[1])
     assert first_config != second_config
 
     assert first_config == {"ops": {"my_op": {"config": {"date": "2020-02-25"}}}}
@@ -350,7 +352,7 @@ def test_logger_defs():
         pass
 
     my_job = my_graph.to_job(logger_defs={"abc": my_logger})
-    assert my_job.mode_definitions[0].loggers == {"abc": my_logger}
+    assert my_job.loggers == {"abc": my_logger}
 
 
 def test_job_with_hooks():
@@ -405,7 +407,7 @@ def test_composition_bug():
 
     my_job = my_graph_final.to_job()
 
-    index = my_job.get_pipeline_index()
+    index = my_job.get_job_index()
     assert index.get_node_def_snap("my_graph1")
     assert index.get_node_def_snap("my_graph2")
 
@@ -441,7 +443,7 @@ def test_desc():
 
 
 def test_config_naming_collisions():
-    @op(config_schema={"solids": Permissive(), "ops": Permissive()})
+    @op(config_schema={"ops": Permissive()})
     def my_op(context):
         return context.op_config
 
@@ -450,8 +452,7 @@ def test_config_naming_collisions():
         return my_op()
 
     config = {
-        "solids": {"solids": {"foo": {"config": {"foobar": "bar"}}}},
-        "ops": {"solids": {"foo": {"config": {"foobar": "bar"}}}},
+        "ops": {"ops": {"foo": {"config": {"foobar": "bar"}}}},
     }
     result = my_graph.execute_in_process(run_config={"ops": {"my_op": {"config": config}}})
     assert result.success
@@ -464,27 +465,6 @@ def test_config_naming_collisions():
     result = ops.execute_in_process(run_config={"ops": {"my_op": {"config": config}}})
     assert result.success
     assert result.output_value() == config
-
-
-def test_to_job_default_config_field_aliasing():
-    @op
-    def add_one(x):
-        return x + 1
-
-    @graph
-    def my_graph():
-        return add_one()
-
-    my_job = my_graph.to_job(config={"ops": {"add_one": {"inputs": {"x": {"value": 1}}}}})
-
-    result = my_job.execute_in_process()
-    assert result.success
-
-    result = my_job.execute_in_process({"solids": {"add_one": {"inputs": {"x": {"value": 1}}}}})
-    assert result.success
-
-    result = my_job.execute_in_process({"ops": {"add_one": {"inputs": {"x": {"value": 1}}}}})
-    assert result.success
 
 
 def test_to_job_incomplete_default_config():
@@ -512,13 +492,6 @@ def test_to_job_incomplete_default_config():
             },
             invalid_default_error,
         ),  # Providing extraneous config for an op that doesn't exist.
-        (
-            {
-                "ops": {"my_op": {"config": {"foo": "bar"}}},
-                "solids": {"my_op": {"config": {"foo": "bar"}}},
-            },
-            default_config_error,
-        ),  # Providing the same config with multiple aliases.
     ]
     # Ensure that errors nested into the config tree are caught
     for invalid_config, error_msg in invalid_configs:
@@ -690,7 +663,7 @@ def test_job_subset():
 
     the_job = basic.to_job()
 
-    assert isinstance(the_job.get_pipeline_subset_def({"my_op"}), PipelineSubsetDefinition)
+    assert isinstance(the_job.get_subset(op_selection=["my_op"]), JobDefinition)
 
 
 def test_tags():
@@ -857,8 +830,7 @@ def test_top_level_graph_config_mapping_failure():
     with pytest.raises(
         DagsterInvalidConfigError,
         match=(
-            "In pipeline 'my_nested_graph', top level graph 'my_nested_graph' has a configuration"
-            " error."
+            "In job 'my_nested_graph', top level graph 'my_nested_graph' has a configuration error."
         ),
     ):
         my_nested_graph.execute_in_process()
@@ -1402,3 +1374,57 @@ def test_infer_graph_input_type_from_inner_input_mixed_fan_in():
     assert graph1.input_defs[0].dagster_type.typing_type == int
 
     assert graph1.execute_in_process(run_config={"inputs": {"in1": {"value": 5}}}).success
+
+
+def test_input_manager_key_and_custom_dagster_type_resolved():
+    class CustomType:
+        def __init__(self, value):
+            self.value = value
+
+    @input_manager
+    def data_input_manager():
+        return CustomType(5)
+
+    @op(ins={"df_train": In(CustomType, input_manager_key="data_input_manager")})
+    def target_extractor_op(df_train):
+        return 1
+
+    @graph(
+        out={"target": GraphOut()},
+    )
+    def target_extractor_graph():
+        target = target_extractor_op()
+        return target
+
+    local_target_extractor_job = target_extractor_graph.to_job(
+        name="target_extractor_job",
+        resource_defs={"data_input_manager": data_input_manager},
+    )
+    assert local_target_extractor_job.execute_in_process().success
+
+
+def test_collision():
+    numbers = count()
+
+    @op
+    def next_num():
+        return next(numbers)
+
+    @op
+    def echo(context, value):
+        return value
+
+    @graph
+    def composed(value):
+        echo(value)
+        return next_num()
+
+    @graph
+    def collision_test():
+        starting_value = next_num()
+        composed(starting_value)
+        composed(starting_value)
+
+    result = collision_test.execute_in_process()
+    assert result.output_for_node("composed.echo") == 0
+    assert result.output_for_node("composed_2.echo") == 0

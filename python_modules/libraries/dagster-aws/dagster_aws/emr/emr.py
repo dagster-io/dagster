@@ -364,7 +364,7 @@ class EmrJobRunner:
             cluster_id (str): EMR cluster ID
             step_id (str): EMR step ID for the job that was submitted.
 
-        Returns
+        Returns:
             (str, str): Tuple of stdout log string contents, and stderr log string contents
         """
         check.str_param(cluster_id, "cluster_id")
@@ -375,8 +375,8 @@ class EmrJobRunner:
         prefix = "{log_key_prefix}{cluster_id}/steps/{step_id}".format(
             log_key_prefix=log_key_prefix, cluster_id=cluster_id, step_id=step_id
         )
-        stdout_log = self.wait_for_log(log, log_bucket, "{prefix}/stdout.gz".format(prefix=prefix))
-        stderr_log = self.wait_for_log(log, log_bucket, "{prefix}/stderr.gz".format(prefix=prefix))
+        stdout_log = self.wait_for_log(log, log_bucket, f"{prefix}/stdout.gz")
+        stderr_log = self.wait_for_log(log, log_bucket, f"{prefix}/stderr.gz")
         return stdout_log, stderr_log
 
     def wait_for_log(self, log, log_bucket, log_key, waiter_delay=30, waiter_max_attempts=20):

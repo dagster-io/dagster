@@ -26,15 +26,15 @@ def test_sync_run_launcher_run():
         },
     ) as instance:
         with get_main_workspace(instance) as workspace:
-            location = workspace.get_repository_location(main_repo_location_name())
+            location = workspace.get_code_location(main_repo_location_name())
             external_repo = location.get_repository(main_repo_name())
-            external_pipeline = external_repo.get_full_external_job("noop_pipeline")
+            external_pipeline = external_repo.get_full_external_job("noop_job")
 
             run = create_run_for_test(
                 instance=instance,
-                pipeline_name=external_pipeline.name,
-                external_pipeline_origin=external_pipeline.get_external_origin(),
-                pipeline_code_origin=external_pipeline.get_python_origin(),
+                job_name=external_pipeline.name,
+                external_job_origin=external_pipeline.get_external_origin(),
+                job_code_origin=external_pipeline.get_python_origin(),
             )
 
             run = instance.launch_run(run_id=run.run_id, workspace=workspace)

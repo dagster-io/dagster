@@ -1,11 +1,13 @@
 import inspect
+import warnings
 from functools import wraps
-from typing import Callable, Optional, Type, TypeVar, Union, cast
+from typing import Any, Callable, Optional, Type, TypeVar, Union, cast
 
 from typing_extensions import Annotated, Final, TypeAlias
 
 import dagster._check as check
 from dagster._utils.backcompat import (
+    ExperimentalWarning,
     experimental_class_warning,
     experimental_decorator_warning,
     experimental_fn_warning,
@@ -19,8 +21,7 @@ T_Annotatable = TypeVar("T_Annotatable", bound=Annotatable)
 
 
 def public(obj: T_Annotatable) -> T_Annotatable:
-    """
-    Mark a method on a public class as public. This distinguishes the method from "internal"
+    """Mark a method on a public class as public. This distinguishes the method from "internal"
     methods, which are methods that are public in the Python sense of being non-underscored, but
     not intended for user access. Only `public` methods of a class are rendered in the docs.
     """
@@ -52,8 +53,7 @@ PublicAttr: TypeAlias = Annotated[T, PUBLIC]
 
 
 def deprecated(obj: T_Annotatable) -> T_Annotatable:
-    """
-    Mark a class/method/function as deprecated. This appends some metadata to the function that
+    """Mark a class/method/function as deprecated. This appends some metadata to the function that
     causes it to be rendered with a "deprecated" tag in the docs.
 
     Note that this decorator does not add any warnings-- they should be added separately.
@@ -72,8 +72,7 @@ def is_deprecated(obj: Annotatable, attr: Optional[str] = None) -> bool:
 
 
 def experimental(obj: T_Annotatable, *, decorator: bool = False) -> T_Annotatable:
-    """
-    Mark a class/method/function as experimental. This appends some metadata to the function that
+    """Mark a class/method/function as experimental. This appends some metadata to the function that
     causes it to be rendered with an "experimental" tag in the docs.
 
     Also triggers an "experimental" warning whenever the passed callable is called. If the argument
@@ -96,7 +95,7 @@ def experimental(obj: T_Annotatable, *, decorator: bool = False) -> T_Annotatabl
 
     if isinstance(obj, (property, staticmethod, classmethod)):
         # warning not currently supported for these cases
-        return obj  # type: ignore
+        return obj
 
     elif inspect.isfunction(target):
         warning_fn = experimental_decorator_warning if decorator else experimental_fn_warning
@@ -136,3 +135,37 @@ def is_experimental(obj: Annotatable, attr: Optional[str] = None) -> bool:
 def _get_target(obj: Annotatable, attr: Optional[str] = None):
     lookup_obj = obj.__dict__[attr] if attr else obj
     return lookup_obj.fget if isinstance(lookup_obj, property) else lookup_obj
+
+
+def quiet_experimental_warnings(obj: T_Annotatable) -> T_Annotatable:
+    """Mark a method/function as ignoring experimental warnings. This quiets any "experimental" warnings
+    emitted inside the passed callable. Useful when we want to use experimental features internally
+    in a way that we don't want to warn users about.
+
+    Usage:
+
+        .. code-block:: python
+
+            @quiet_experimental_warnings
+            def invokes_some_experimental_stuff(my_arg):
+                my_experimental_function(my_arg)
+    """
+    target = _get_target(obj)
+
+    if isinstance(obj, (property, staticmethod, classmethod)):
+        # warning not currently supported for these cases
+        return obj
+
+    if inspect.isfunction(target):
+
+        @wraps(target)
+        def inner(*args, **kwargs) -> Any:
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=ExperimentalWarning)
+
+                return target(*args, **kwargs)
+
+        return cast(T_Annotatable, inner)
+
+    else:
+        check.failed("obj must be a function or a class")

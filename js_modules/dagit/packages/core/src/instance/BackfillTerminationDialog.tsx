@@ -28,7 +28,7 @@ export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props
     SINGLE_BACKFILL_STATUS_DETAILS_QUERY,
     {
       variables: {
-        backfillId: backfill?.backfillId || '',
+        backfillId: backfill?.id || '',
       },
       notifyOnNetworkStatusChange: true,
       skip: !backfill,
@@ -58,7 +58,7 @@ export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props
   const numUnscheduled = backfill.numCancelable;
   const cancel = async () => {
     setIsSubmitting(true);
-    await cancelBackfill({variables: {backfillId: backfill.backfillId}});
+    await cancelBackfill({variables: {backfillId: backfill.id}});
     onComplete();
     setIsSubmitting(false);
     onClose();
@@ -107,7 +107,6 @@ export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props
 const CANCEL_BACKFILL_MUTATION = gql`
   mutation CancelBackfill($backfillId: String!) {
     cancelPartitionBackfill(backfillId: $backfillId) {
-      __typename
       ... on CancelBackfillSuccess {
         backfillId
       }

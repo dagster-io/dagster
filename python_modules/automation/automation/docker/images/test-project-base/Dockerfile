@@ -19,7 +19,7 @@ RUN apt-get update -yqq \
         git \
         make
 
-RUN git clone https://github.com/dagster-io/dagster.git \
+RUN git clone --depth 1 https://github.com/dagster-io/dagster.git \
     && cd dagster \
     && pip install \
         -e python_modules/dagster \
@@ -51,3 +51,6 @@ RUN apt-get update -yqq \
 
 RUN pip install -r /snapshot-reqs.txt \
     && rm /snapshot-reqs.txt
+
+# New versions of debian require allowlisting folders where `git` can run
+RUN git config --system --add safe.directory \*

@@ -7,7 +7,7 @@ from setuptools import find_packages, setup
 def get_version() -> str:
     version: Dict[str, str] = {}
     with open(Path(__file__).parent / "dagster_mlflow/version.py", encoding="utf8") as fp:
-        exec(fp.read(), version)  # pylint: disable=W0122
+        exec(fp.read(), version)
 
     return version["__version__"]
 
@@ -29,10 +29,6 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_mlflow_tests*"]),
-    install_requires=[
-        "dagster",
-        "mlflow<=1.26.0",  # https://github.com/mlflow/mlflow/issues/5968
-        "pandas",
-    ],
+    install_requires=["dagster", "mlflow", "pandas"],
     zip_safe=False,
 )

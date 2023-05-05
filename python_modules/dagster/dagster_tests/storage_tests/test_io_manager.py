@@ -1,6 +1,7 @@
 import os
 import tempfile
 import time
+from typing import Mapping
 
 import mock
 import pytest
@@ -15,7 +16,6 @@ from dagster import (
     Field,
     In,
     IOManagerDefinition,
-    MetadataEntry,
     Nothing,
     Out,
     ReexecutionOptions,
@@ -32,6 +32,8 @@ from dagster import (
     resource,
 )
 from dagster._check import CheckError
+from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
 from dagster._core.errors import DagsterInvalidMetadata
 from dagster._core.execution.api import create_execution_plan, execute_plan
@@ -131,7 +133,9 @@ def test_io_manager_with_required_resource_keys():
     assert result.success
 
 
-def define_job(manager, metadata_dict):
+def define_job(
+    manager: IOManagerDefinition, metadata_dict: Mapping[str, ArbitraryMetadataMapping]
+) -> JobDefinition:
     @op(out=Out(metadata=metadata_dict.get("op_a")))
     def op_a(_context):
         return [1, 2, 3]
@@ -335,15 +339,15 @@ def execute_job_with_steps(
     plan = create_execution_plan(
         recon_job, step_keys_to_execute=step_keys_to_execute, run_config=run_config
     )
-    pipeline_run = instance.create_run_for_pipeline(
-        pipeline_def=recon_job.get_definition(),
+    dagster_run = instance.create_run_for_job(
+        job_def=recon_job.get_definition(),
         run_id=run_id,
         # the backfill flow can inject run group info
         parent_run_id=parent_run_id,
         root_run_id=root_run_id,
         run_config=run_config,
     )
-    return execute_plan(plan, recon_job, instance, pipeline_run, run_config=run_config)
+    return execute_plan(plan, recon_job, instance, dagster_run, run_config=run_config)
 
 
 def define_metadata_job():
@@ -393,9 +397,7 @@ def test_step_subset_with_custom_paths():
         )
         assert len(step_materialization_events) == 1
         assert os.path.join(tmpdir_path, test_metadata_dict["op_b"]["path"]) == (
-            step_materialization_events[0]
-            .event_specific_data.materialization.metadata_entries[0]
-            .entry_data.path
+            step_materialization_events[0].event_specific_data.materialization.metadata["path"].path
         )
 
         # test reexecution via backfills (not via re-execution apis)
@@ -508,7 +510,7 @@ def test_fan_in_skip():
         @op(out={"skip": Out(is_required=False)})
         def skip():
             return
-            yield  # pylint: disable=unreachable
+            yield
 
         @op
         def one():
@@ -594,7 +596,7 @@ def test_io_manager_resources_on_context():
     assert result.success
 
 
-def test_mem_io_managers_result_for_solid():
+def test_mem_io_managers_result_for_op():
     @op
     def one():
         return 1
@@ -648,7 +650,7 @@ def test_get_output_context_with_resources():
     ):
         get_output_context(
             execution_plan=create_execution_plan(basic_job),
-            pipeline_def=basic_job,
+            job_def=basic_job,
             resolved_run_config=ResolvedRunConfig.build(basic_job),
             step_output_handle=StepOutputHandle("basic_op", "result"),
             run_id=None,
@@ -677,10 +679,10 @@ def test_error_boundary_with_gen():
         return 5
 
     @job(resource_defs={"io_manager": error_io_manager})
-    def single_solid_job():
+    def single_op_job():
         basic_op()
 
-    result = single_solid_job.execute_in_process(raise_on_error=False)
+    result = single_op_job.execute_in_process(raise_on_error=False)
     step_failure = [
         event for event in result.all_events if event.event_type_value == "STEP_FAILURE"
     ][0]
@@ -728,33 +730,24 @@ def test_output_identifier_dynamic_memoization():
 
 
 def test_asset_key():
-    in_asset_key = AssetKey(["a", "b"])
-    out_asset_key = AssetKey(["c", "d"])
-
-    @op(out=Out(asset_key=out_asset_key))
+    @asset
     def before():
         pass
 
-    @op(ins={"a": In(asset_key=in_asset_key)}, out={})
-    def after(a):
-        assert a
+    @asset
+    def after(before):
+        assert before
 
     class MyIOManager(IOManager):
         def load_input(self, context):
-            assert context.asset_key == in_asset_key
-            assert context.upstream_output.asset_key == out_asset_key
+            assert context.asset_key == before.asset_key
+            assert context.upstream_output.asset_key == before.asset_key
             return 1
 
         def handle_output(self, context, obj):
-            assert context.asset_key == out_asset_key
+            assert context.asset_key in {before.asset_key, after.asset_key}
 
-    @graph
-    def my_graph():
-        after(before())
-
-    result = my_graph.to_job(
-        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())}
-    ).execute_in_process()
+    result = materialize([before, after], resources={"io_manager": MyIOManager()})
     assert result.success
 
 
@@ -856,7 +849,7 @@ def test_context_logging_metadata():
                 self.values[keys] = obj
 
                 context.add_output_metadata({"foo": "bar"})
-                yield MetadataEntry("baz", value="baz")
+                yield {"baz": "baz"}
                 context.add_output_metadata({"bar": "bar"})
                 yield materialization
 
@@ -864,43 +857,35 @@ def test_context_logging_metadata():
                 keys = tuple(context.upstream_output.get_identifier())
                 return self.values[keys]
 
-        @op(out=Out(asset_key=AssetKey("key_on_out")))
-        def the_op():
+        @asset
+        def key_on_out():
             return 5
 
-        @graph
-        def the_graph():
-            the_op()
-
-        return the_graph.execute_in_process(resources={"io_manager": DummyIOManager()})
+        return materialize([key_on_out], resources={"io_manager": DummyIOManager()})
 
     result = build_for_materialization(AssetMaterialization("no_metadata"))
     assert result.success
 
     output_event = result.all_node_events[4]
-    entry_labels = [entry.label for entry in output_event.event_specific_data.metadata_entries]
+    metadata = output_event.event_specific_data.metadata
     # Ensure that ordering is preserved among yields and calls to log
-    assert entry_labels == ["foo", "baz", "bar"]
+    assert set(metadata.keys()) == {"foo", "baz", "bar"}
 
     materialization_event = result.all_node_events[2]
-    metadata_entries = materialization_event.event_specific_data.materialization.metadata_entries
+    metadata = materialization_event.event_specific_data.materialization.metadata
 
-    assert len(metadata_entries) == 3
-    entry_labels = [entry.label for entry in metadata_entries]
-    assert entry_labels == ["foo", "baz", "bar"]
+    assert len(metadata) == 3
+    assert set(metadata.keys()) == {"foo", "baz", "bar"}
 
     implicit_materialization_event = result.all_node_events[3]
-    metadata_entries = (
-        implicit_materialization_event.event_specific_data.materialization.metadata_entries
-    )
-    assert len(metadata_entries) == 3
-    entry_labels = [entry.label for entry in metadata_entries]
-    assert entry_labels == ["foo", "baz", "bar"]
+    metadata = implicit_materialization_event.event_specific_data.materialization.metadata
+    assert len(metadata) == 3
+    assert set(metadata.keys()) == {"foo", "baz", "bar"}
 
     with pytest.raises(
         DagsterInvariantViolationError,
         match=(
-            "When handling output 'result' of op 'the_op', received a materialization with"
+            "When handling output 'result' of op 'key_on_out', received a materialization with"
             " metadata, while context.add_output_metadata was used within the same call to"
             " handle_output. Due to potential conflicts, this is not allowed. Please specify"
             " metadata in one place within the `handle_output` function."
@@ -929,15 +914,15 @@ def test_context_logging_metadata_add_output_metadata_called_twice():
 
     assert result.success
     materialization = result.asset_materializations_for_node("asset1")[0]
-    assert [entry.label for entry in materialization.metadata_entries] == ["foo", "bar"]
+    assert set(materialization.metadata.keys()) == {"foo", "bar"}
 
     handled_output_event = [
         event for event in result.all_node_events if event.event_type_value == "HANDLED_OUTPUT"
     ][0]
-    assert [entry.label for entry in handled_output_event.event_specific_data.metadata_entries] == [
+    assert set(handled_output_event.event_specific_data.metadata.keys()) == {
         "foo",
         "bar",
-    ]
+    }
 
 
 def test_metadata_dynamic_outputs():
@@ -949,13 +934,13 @@ def test_metadata_dynamic_outputs():
             keys = tuple(context.get_identifier())
             self.values[keys] = obj
 
-            yield MetadataEntry("handle_output", value="I come from handle_output")
+            yield {"handle_output": "I come from handle_output"}
 
         def load_input(self, context):
             keys = tuple(context.upstream_output.get_identifier())
             return self.values[keys]
 
-    @op(out=DynamicOut(asset_key=AssetKey(["foo"])))
+    @op(out=DynamicOut())
     def the_op():
         yield DynamicOutput(1, mapping_key="one", metadata={"one": "blah"})
         yield DynamicOutput(2, mapping_key="two", metadata={"two": "blah"})
@@ -964,15 +949,7 @@ def test_metadata_dynamic_outputs():
     def the_graph():
         the_op()
 
-    result = the_graph.execute_in_process(resources={"io_manager": DummyIOManager()})
-    materializations = result.asset_materializations_for_node("the_op")
-    assert len(materializations) == 2
-    for materialization in materializations:
-        assert materialization.metadata_entries[1].label == "handle_output"
-        assert materialization.metadata_entries[1].entry_data.text == "I come from handle_output"
-
-    assert materializations[0].metadata_entries[0].label == "one"
-    assert materializations[1].metadata_entries[0].label == "two"
+    assert the_graph.execute_in_process(resources={"io_manager": DummyIOManager()}).success
 
 
 def test_nothing_output_nothing_input():

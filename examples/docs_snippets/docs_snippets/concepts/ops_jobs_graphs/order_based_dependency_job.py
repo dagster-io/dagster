@@ -1,6 +1,3 @@
-# pylint: disable=unused-argument, no-value-for-parameter
-
-
 class MockDatabase:
     def execute(self, query: str):
         pass

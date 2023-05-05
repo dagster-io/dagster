@@ -21,7 +21,7 @@ import {useDocumentTitle} from '../hooks/useDocumentTitle';
 
 import {InstancePageContext} from './InstancePageContext';
 import {InstanceTabs} from './InstanceTabs';
-import {InstanceConfigQuery} from './types/InstanceConfig.types';
+import {InstanceConfigQuery, InstanceConfigQueryVariables} from './types/InstanceConfig.types';
 
 const InstanceConfigStyle = createGlobalStyle`
   .react-codemirror2 .CodeMirror.cm-s-instance-config {
@@ -40,9 +40,12 @@ export const InstanceConfig = React.memo(() => {
   useDocumentTitle('Configuration');
 
   const {pageTitle} = React.useContext(InstancePageContext);
-  const queryResult = useQuery<InstanceConfigQuery>(INSTANCE_CONFIG_QUERY, {
-    notifyOnNetworkStatusChange: true,
-  });
+  const queryResult = useQuery<InstanceConfigQuery, InstanceConfigQueryVariables>(
+    INSTANCE_CONFIG_QUERY,
+    {
+      notifyOnNetworkStatusChange: true,
+    },
+  );
 
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
   const {data} = queryResult;
@@ -102,6 +105,7 @@ export const INSTANCE_CONFIG_QUERY = gql`
   query InstanceConfigQuery {
     version
     instance {
+      id
       info
     }
   }

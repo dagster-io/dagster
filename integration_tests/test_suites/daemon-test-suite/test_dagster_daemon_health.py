@@ -110,7 +110,7 @@ def test_thread_die_daemon(monkeypatch):
         def run_loop_error(_, _ctx, _shutdown_event):
             iteration_ran["ran"] = True
             raise KeyboardInterrupt
-            yield  # pylint: disable=unreachable
+            yield
 
         monkeypatch.setattr(SensorDaemon, "core_loop", run_loop_error)
 

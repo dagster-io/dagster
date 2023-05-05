@@ -4,7 +4,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {usePermissionsDEPRECATED} from '../app/Permissions';
+import {useFeatureFlags} from '../app/Flags';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {RunsFilter} from '../graphql/types';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
@@ -17,12 +17,13 @@ import {
   useRepositoryOptions,
 } from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
-import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
+import {useRepositoryForRunWithoutSnapshot} from '../workspace/useRepositoryForRun';
 import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
 
 import {AssetKeyTagCollection} from './AssetKeyTagCollection';
 import {RunActionsMenu, RunBulkActionsMenu} from './RunActionsMenu';
 import {RunStatusTagWithStats} from './RunStatusTag';
+import {RunTable as RunTableNew} from './RunTableNew';
 import {RunTags} from './RunTags';
 import {
   assetKeysForRun,
@@ -40,19 +41,24 @@ interface RunTableProps {
   onAddTag?: (token: RunFilterToken) => void;
   actionBarComponents?: React.ReactNode;
   highlightedIds?: string[];
+  hideCreatedBy?: boolean;
   additionalColumnHeaders?: React.ReactNode[];
   additionalColumnsForRow?: (run: RunTableRunFragment) => React.ReactNode[];
 }
-
 export const RunTable = (props: RunTableProps) => {
+  const {flagRunsTableFiltering} = useFeatureFlags();
+  return flagRunsTableFiltering ? <RunTableNew {...props} /> : <RunTableImpl {...props} />;
+};
+
+const RunTableImpl = (props: RunTableProps) => {
   const {runs, filter, onAddTag, highlightedIds, actionBarComponents} = props;
-  const allIds = runs.map((r) => r.runId);
+  const allIds = runs.map((r) => r.id);
 
   const [{checkedIds}, {onToggleFactory, onToggleAll}] = useSelectionReducer(allIds);
 
-  const {canTerminatePipelineExecution, canDeletePipelineRun} = usePermissionsDEPRECATED();
-  const canTerminateOrDelete =
-    canTerminatePipelineExecution.enabled || canDeletePipelineRun.enabled;
+  const canTerminateOrDeleteAny = React.useMemo(() => {
+    return runs.some((run) => run.hasTerminatePermission || run.hasDeletePermission);
+  }, [runs]);
 
   const {options} = useRepositoryOptions();
 
@@ -111,7 +117,7 @@ export const RunTable = (props: RunTableProps) => {
     }
   }
 
-  const selectedFragments = runs.filter((run) => checkedIds.has(run.runId));
+  const selectedFragments = runs.filter((run) => checkedIds.has(run.id));
 
   return (
     <>
@@ -128,7 +134,7 @@ export const RunTable = (props: RunTableProps) => {
         <thead>
           <tr>
             <th style={{width: 42, paddingTop: 0, paddingBottom: 0}}>
-              {canTerminateOrDelete ? (
+              {canTerminateOrDeleteAny ? (
                 <Checkbox
                   indeterminate={checkedIds.size > 0 && checkedIds.size !== runs.length}
                   checked={checkedIds.size === runs.length}
@@ -152,14 +158,14 @@ export const RunTable = (props: RunTableProps) => {
         <tbody>
           {runs.map((run) => (
             <RunRow
-              canTerminateOrDelete={canTerminateOrDelete}
+              canTerminateOrDelete={run.hasTerminatePermission || run.hasDeletePermission}
               run={run}
-              key={run.runId}
+              key={run.id}
               onAddTag={onAddTag}
-              checked={checkedIds.has(run.runId)}
+              checked={checkedIds.has(run.id)}
               additionalColumns={props.additionalColumnsForRow?.(run)}
-              onToggleChecked={onToggleFactory(run.runId)}
-              isHighlighted={highlightedIds && highlightedIds.includes(run.runId)}
+              onToggleChecked={onToggleFactory(run.id)}
+              isHighlighted={highlightedIds && highlightedIds.includes(run.id)}
             />
           ))}
         </tbody>
@@ -171,15 +177,16 @@ export const RunTable = (props: RunTableProps) => {
 export const RUN_TABLE_RUN_FRAGMENT = gql`
   fragment RunTableRunFragment on Run {
     id
-    runId
     status
     stepKeysToExecute
     canTerminate
+    hasReExecutePermission
+    hasTerminatePermission
+    hasDeletePermission
     mode
     rootRunId
     parentRunId
     pipelineSnapshotId
-    parentPipelineSnapshotId
     pipelineName
     repositoryOrigin {
       id
@@ -221,7 +228,7 @@ const RunRow: React.FC<{
   isHighlighted,
 }) => {
   const {pipelineName} = run;
-  const repo = useRepositoryForRun(run);
+  const repo = useRepositoryForRunWithoutSnapshot(run);
 
   const isJob = React.useMemo(() => {
     if (repo) {
@@ -242,17 +249,17 @@ const RunRow: React.FC<{
   };
 
   return (
-    <Row key={run.runId} highlighted={!!isHighlighted}>
+    <Row highlighted={!!isHighlighted}>
       <td>
         {canTerminateOrDelete && onToggleChecked ? (
           <Checkbox checked={!!checked} onChange={onChange} />
         ) : null}
       </td>
       <td>
-        <RunStatusTagWithStats status={run.status} runId={run.runId} />
+        <RunStatusTagWithStats status={run.status} runId={run.id} />
       </td>
       <td>
-        <Link to={`/runs/${run.runId}`}>
+        <Link to={`/runs/${run.id}`}>
           <Mono>{titleForRun(run)}</Mono>
         </Link>
       </td>
@@ -279,6 +286,7 @@ const RunRow: React.FC<{
                       })
                     : workspacePipelinePathGuessRepo(run.pipelineName)
                 }
+                target="_blank"
               >
                 <Icon name="open_in_new" color={Colors.Blue500} />
               </Link>

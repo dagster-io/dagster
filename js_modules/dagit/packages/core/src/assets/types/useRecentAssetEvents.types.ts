@@ -10,12 +10,12 @@ export type AssetMaterializationFragment = {
   stepKey: string | null;
   label: string | null;
   description: string | null;
+  tags: Array<{__typename: 'EventTag'; key: string; value: string}>;
   runOrError:
     | {__typename: 'PythonError'}
     | {
         __typename: 'Run';
         id: string;
-        runId: string;
         mode: string;
         status: Types.RunStatus;
         pipelineName: string;
@@ -146,12 +146,12 @@ export type AssetObservationFragment = {
   stepKey: string | null;
   label: string | null;
   description: string | null;
+  tags: Array<{__typename: 'EventTag'; key: string; value: string}>;
   runOrError:
     | {__typename: 'PythonError'}
     | {
         __typename: 'Run';
         id: string;
-        runId: string;
         mode: string;
         status: Types.RunStatus;
         pipelineName: string;
@@ -291,12 +291,12 @@ export type AssetEventsQuery = {
           stepKey: string | null;
           label: string | null;
           description: string | null;
+          tags: Array<{__typename: 'EventTag'; key: string; value: string}>;
           runOrError:
             | {__typename: 'PythonError'}
             | {
                 __typename: 'Run';
                 id: string;
-                runId: string;
                 mode: string;
                 status: Types.RunStatus;
                 pipelineName: string;
@@ -441,12 +441,12 @@ export type AssetEventsQuery = {
           stepKey: string | null;
           label: string | null;
           description: string | null;
+          tags: Array<{__typename: 'EventTag'; key: string; value: string}>;
           runOrError:
             | {__typename: 'PythonError'}
             | {
                 __typename: 'Run';
                 id: string;
-                runId: string;
                 mode: string;
                 status: Types.RunStatus;
                 pipelineName: string;

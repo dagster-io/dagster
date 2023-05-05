@@ -25,6 +25,7 @@ import {
   InstanceBackfillsQuery,
   InstanceBackfillsQueryVariables,
   InstanceHealthForBackfillsQuery,
+  InstanceHealthForBackfillsQueryVariables,
 } from './types/InstanceBackfills.types';
 
 const PAGE_SIZE = 10;
@@ -33,7 +34,10 @@ export const InstanceBackfills = () => {
   useTrackPageView();
   useDocumentTitle('Overview | Backfills');
 
-  const queryData = useQuery<InstanceHealthForBackfillsQuery>(INSTANCE_HEALTH_FOR_BACKFILLS_QUERY);
+  const queryData = useQuery<
+    InstanceHealthForBackfillsQuery,
+    InstanceHealthForBackfillsQueryVariables
+  >(INSTANCE_HEALTH_FOR_BACKFILLS_QUERY);
 
   const {queryResult, paginationProps} = useCursorPaginatedQuery<
     InstanceBackfillsQuery,
@@ -44,7 +48,7 @@ export const InstanceBackfills = () => {
     pageSize: PAGE_SIZE,
     nextCursorForResult: (result) =>
       result.partitionBackfillsOrError.__typename === 'PartitionBackfills'
-        ? result.partitionBackfillsOrError.results[PAGE_SIZE - 1]?.backfillId
+        ? result.partitionBackfillsOrError.results[PAGE_SIZE - 1]?.id
         : undefined,
     getResultArray: (result) =>
       result?.partitionBackfillsOrError.__typename === 'PartitionBackfills'
@@ -109,6 +113,7 @@ export const InstanceBackfills = () => {
 const INSTANCE_HEALTH_FOR_BACKFILLS_QUERY = gql`
   query InstanceHealthForBackfillsQuery {
     instance {
+      id
       ...InstanceHealthFragment
     }
   }
@@ -121,8 +126,9 @@ const BACKFILLS_QUERY = gql`
     partitionBackfillsOrError(cursor: $cursor, limit: $limit) {
       ... on PartitionBackfills {
         results {
-          backfillId
+          id
           status
+          isValidSerialization
           numPartitions
           timestamp
           partitionSetName

@@ -77,6 +77,11 @@ spec:
                 secretKeyRef:
                   name: {{ include "dagster.postgresql.secretName" . | quote }}
                   key: postgresql-password
+            # This is a list by default, but for backcompat it can be a map. As a map it's written to the dagit-env
+            # configmap.
+            {{- if and (.Values.dagit.env) (kindIs "slice" .Values.dagit.env) }}
+            {{- toYaml .Values.dagit.env | nindent 12 }}
+            {{- end}}
           envFrom:
             - configMapRef:
                 name: {{ template "dagster.fullname" . }}-dagit-env

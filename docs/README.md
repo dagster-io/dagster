@@ -1,5 +1,7 @@
 # Dagster Documentation Site
 
+> **Submitting a pull request to update the docs?** If so, please verify that the updates follow the [docs style checklist](https://github.com/dagster-io/dagster/blob/master/docs/DOC_CHECKLIST.md).
+
 This directory contains the code for the Dagster documentation site at https://docs.dagster.io. The site is built with [NextJS](https://nextjs.org/), with the code for the site living in `next`. To serve the site locally in development mode (hot-reloading), run:
 
 ```

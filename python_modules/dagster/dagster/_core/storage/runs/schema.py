@@ -1,4 +1,5 @@
 import sqlalchemy as db
+from sqlalchemy.dialects import sqlite
 
 from ..sql import MySQLCompatabilityTypes, get_current_timestamp
 
@@ -72,6 +73,12 @@ SnapshotsTable = db.Table(
 DaemonHeartbeatsTable = db.Table(
     "daemon_heartbeats",
     RunStorageSqlMetadata,
+    db.Column(
+        "id",
+        db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    ),
     db.Column("daemon_type", db.String(255), unique=True, nullable=False),
     db.Column("daemon_id", db.String(255)),
     db.Column("timestamp", db.types.TIMESTAMP, nullable=False),
@@ -93,18 +100,38 @@ BulkActionsTable = db.Table(
 InstanceInfo = db.Table(
     "instance_info",
     RunStorageSqlMetadata,
+    db.Column(
+        "id",
+        db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    ),
     db.Column("run_storage_id", db.Text),
 )
 
 KeyValueStoreTable = db.Table(
     "kvs",
     RunStorageSqlMetadata,
+    db.Column(
+        "id",
+        db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    ),
     db.Column("key", db.Text, nullable=False),
     db.Column("value", db.Text),
 )
 
 db.Index("idx_run_tags", RunTagsTable.c.key, RunTagsTable.c.value, mysql_length=64)
 db.Index("idx_run_partitions", RunsTable.c.partition_set, RunsTable.c.partition, mysql_length=64)
+db.Index(
+    "idx_runs_by_job",
+    RunsTable.c.pipeline_name,
+    RunsTable.c.id,
+    mysql_length={
+        "pipeline_name": 255,
+    },
+)
 db.Index("idx_bulk_actions", BulkActionsTable.c.key, mysql_length=32)
 db.Index("idx_bulk_actions_status", BulkActionsTable.c.status, mysql_length=32)
 db.Index("idx_bulk_actions_action_type", BulkActionsTable.c.action_type, mysql_length=32)

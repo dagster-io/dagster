@@ -7,21 +7,10 @@ import {RunStatus} from '../graphql/types';
 import {StepSummaryForRun} from '../instance/StepSummaryForRun';
 
 import {RunStatusIndicator} from './RunStatusDots';
+import {RUN_STATUS_COLORS} from './RunStatusTag';
 import {failedStatuses, inProgressStatuses} from './RunStatuses';
 import {RunStateSummary, RunTime, titleForRun} from './RunUtils';
 import {RunTimeFragment} from './types/RunUtils.types';
-
-const RUN_STATUS_COLORS = {
-  QUEUED: Colors.Blue500,
-  NOT_STARTED: Colors.Blue500,
-  STARTING: Colors.Blue500,
-  MANAGED: Colors.Blue500,
-  STARTED: Colors.Blue500,
-  SUCCESS: Colors.Green500,
-  FAILURE: Colors.Red500,
-  CANCELING: Colors.Red500,
-  CANCELED: Colors.Red500,
-};
 
 const MIN_OPACITY = 0.2;
 const MAX_OPACITY = 1.0;
@@ -55,7 +44,7 @@ export const RunStatusPezList = (props: ListProps) => {
     <Box flex={{direction: 'row', alignItems: 'center', gap: 2}}>
       {runs.map((run, ii) => (
         <Popover
-          key={run.runId}
+          key={run.id}
           position="top"
           interactionKind="hover"
           content={
@@ -66,8 +55,8 @@ export const RunStatusPezList = (props: ListProps) => {
           hoverOpenDelay={100}
         >
           <RunStatusPez
-            key={run.runId}
-            runId={run.runId}
+            key={run.id}
+            runId={run.id}
             status={run.status}
             opacity={fade ? MAX_OPACITY - (count - ii - 1) * step : 1.0}
           />
@@ -89,7 +78,7 @@ export const RunStatusOverlay = ({name, run}: OverlayProps) => {
       <RunRow>
         <Box flex={{alignItems: 'center', direction: 'row', gap: 8}}>
           <RunStatusIndicator status={run.status} />
-          <Link to={`/runs/${run.runId}`}>
+          <Link to={`/runs/${run.id}`}>
             <Mono style={{fontSize: '14px'}}>{titleForRun(run)}</Mono>
           </Link>
         </Box>

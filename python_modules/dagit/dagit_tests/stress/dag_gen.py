@@ -17,7 +17,7 @@ from dagster import (
 def generate_op(op_id, num_inputs, num_outputs, num_cfg) -> OpDefinition:
     def compute_fn(_context, **_kwargs):
         for i in range(num_outputs):
-            yield Output(i, "out_{}".format(i))
+            yield Output(i, f"out_{i}")
 
     config = {}
     for i in range(num_cfg):
@@ -45,7 +45,7 @@ def generate_job(name, size, connect_factor=1.0):
         num_inputs = random.randint(1, 3)
         num_outputs = random.randint(1, 3)
         num_cfg = random.randint(0, 5)
-        op_id = "{}_op_{}".format(name, i)
+        op_id = f"{name}_op_{i}"
         ops[op_id] = generate_op(
             op_id=op_id,
             num_inputs=num_inputs,

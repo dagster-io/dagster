@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 
 from snapshottest import Snapshot
 
+
 snapshots = Snapshot()
 
 snapshots['test_create_execution_plan_with_dep 1'] = '''{
@@ -20,7 +21,7 @@ snapshots['test_create_execution_plan_with_dep 1'] = '''{
     },
     "step_output_versions": []
   },
-  "pipeline_snapshot_id": "f75661b82259b1378e2c059f0fe9993b93829558",
+  "pipeline_snapshot_id": "ee8de04ca32fa0656a0c040f0e503a5851dc8b8c",
   "snapshot_version": 1,
   "step_keys_to_execute": [
     "op_one",
@@ -44,6 +45,7 @@ snapshots['test_create_execution_plan_with_dep 1'] = '''{
             "__class__": "StepOutputProperties",
             "asset_key": null,
             "is_asset": false,
+            "is_asset_partitioned": false,
             "is_dynamic": false,
             "is_required": true,
             "should_materialize": false
@@ -114,6 +116,7 @@ snapshots['test_create_execution_plan_with_dep 1'] = '''{
             "__class__": "StepOutputProperties",
             "asset_key": null,
             "is_asset": false,
+            "is_asset_partitioned": false,
             "is_dynamic": false,
             "is_required": true,
             "should_materialize": false
@@ -154,7 +157,7 @@ snapshots['test_create_noop_execution_plan 1'] = '''{
     },
     "step_output_versions": []
   },
-  "pipeline_snapshot_id": "86087d07c532ad431cd2fda8a2506157d0680933",
+  "pipeline_snapshot_id": "0b967d368d23e3e2d71555cf3afa343548a291fd",
   "snapshot_version": 1,
   "step_keys_to_execute": [
     "noop_op"
@@ -177,6 +180,7 @@ snapshots['test_create_noop_execution_plan 1'] = '''{
             "__class__": "StepOutputProperties",
             "asset_key": null,
             "is_asset": false,
+            "is_asset_partitioned": false,
             "is_dynamic": false,
             "is_required": true,
             "should_materialize": false
@@ -217,7 +221,7 @@ snapshots['test_create_noop_execution_plan_with_tags 1'] = '''{
     },
     "step_output_versions": []
   },
-  "pipeline_snapshot_id": "b857057c66aa4c23d8f49ea630be742c1283b5f7",
+  "pipeline_snapshot_id": "25ab027dd42414ee540dfba3020f90ff4c0c6196",
   "snapshot_version": 1,
   "step_keys_to_execute": [
     "noop_op"
@@ -251,6 +255,7 @@ snapshots['test_create_noop_execution_plan_with_tags 1'] = '''{
             "__class__": "StepOutputProperties",
             "asset_key": null,
             "is_asset": false,
+            "is_asset_partitioned": false,
             "is_dynamic": false,
             "is_required": true,
             "should_materialize": false
@@ -294,7 +299,7 @@ snapshots['test_create_with_graph 1'] = '''{
     },
     "step_output_versions": []
   },
-  "pipeline_snapshot_id": "fab36b9d8cde94f28a2003eac11d03ea450d0043",
+  "pipeline_snapshot_id": "10446802a7b75c5c4da33361665a159f9a70215b",
   "snapshot_version": 1,
   "step_keys_to_execute": [
     "comp_1.return_one",
@@ -380,6 +385,7 @@ snapshots['test_create_with_graph 1'] = '''{
             "__class__": "StepOutputProperties",
             "asset_key": null,
             "is_asset": false,
+            "is_asset_partitioned": false,
             "is_dynamic": false,
             "is_required": true,
             "should_materialize": false
@@ -450,6 +456,7 @@ snapshots['test_create_with_graph 1'] = '''{
             "__class__": "StepOutputProperties",
             "asset_key": null,
             "is_asset": false,
+            "is_asset_partitioned": false,
             "is_dynamic": false,
             "is_required": true,
             "should_materialize": false
@@ -498,6 +505,7 @@ snapshots['test_create_with_graph 1'] = '''{
             "__class__": "StepOutputProperties",
             "asset_key": null,
             "is_asset": false,
+            "is_asset_partitioned": false,
             "is_dynamic": false,
             "is_required": true,
             "should_materialize": false
@@ -576,6 +584,7 @@ snapshots['test_create_with_graph 1'] = '''{
             "__class__": "StepOutputProperties",
             "asset_key": null,
             "is_asset": false,
+            "is_asset_partitioned": false,
             "is_dynamic": false,
             "is_required": true,
             "should_materialize": false
@@ -624,6 +633,7 @@ snapshots['test_create_with_graph 1'] = '''{
             "__class__": "StepOutputProperties",
             "asset_key": null,
             "is_asset": false,
+            "is_asset_partitioned": false,
             "is_dynamic": false,
             "is_required": true,
             "should_materialize": false

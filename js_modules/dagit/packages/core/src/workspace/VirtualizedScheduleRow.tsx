@@ -3,6 +3,7 @@ import {
   Box,
   Button,
   Caption,
+  Checkbox,
   Colors,
   Icon,
   Menu,
@@ -18,6 +19,7 @@ import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
 import {InstigationStatus, InstigationType} from '../graphql/types';
 import {LastRunSummary} from '../instance/LastRunSummary';
 import {TickTag, TICK_TAG_FRAGMENT} from '../instigation/InstigationTick';
+import {BasicInstigationStateFragment} from '../overview/types/BasicInstigationStateFragment.types';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {ScheduleSwitch, SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
@@ -36,17 +38,31 @@ import {
 } from './types/VirtualizedScheduleRow.types';
 import {workspacePathFromAddress} from './workspacePath';
 
-const TEMPLATE_COLUMNS = '76px 1fr 1fr 148px 180px 80px';
+const TEMPLATE_COLUMNS_WITH_CHECKBOX = '60px 1fr 1fr 76px 148px 210px 92px';
+const TEMPLATE_COLUMNS = '1fr 1fr 76px 148px 210px 92px';
 
 interface ScheduleRowProps {
   name: string;
   repoAddress: RepoAddress;
+  checked: boolean;
+  onToggleChecked: (values: {checked: boolean; shiftKey: boolean}) => void;
+  showCheckboxColumn: boolean;
+  scheduleState: BasicInstigationStateFragment;
   height: number;
   start: number;
 }
 
 export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
-  const {name, repoAddress, start, height} = props;
+  const {
+    name,
+    repoAddress,
+    checked,
+    onToggleChecked,
+    showCheckboxColumn,
+    scheduleState,
+    start,
+    height,
+  } = props;
 
   const repo = useRepository(repoAddress);
 
@@ -83,21 +99,43 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
     ? humanCronString(scheduleData.cronSchedule, scheduleData.executionTimezone || 'UTC')
     : '';
 
+  const onChange = (e: React.FormEvent<HTMLInputElement>) => {
+    if (onToggleChecked && e.target instanceof HTMLInputElement) {
+      const {checked} = e.target;
+      const shiftKey =
+        e.nativeEvent instanceof MouseEvent && e.nativeEvent.getModifierState('Shift');
+      onToggleChecked({checked, shiftKey});
+    }
+  };
+
+  const checkboxState = React.useMemo(() => {
+    const {hasStartPermission, hasStopPermission, status} = scheduleState;
+    if (status === InstigationStatus.RUNNING && !hasStopPermission) {
+      return {disabled: true, message: 'You do not have permission to stop this schedule'};
+    }
+    if (status === InstigationStatus.STOPPED && !hasStartPermission) {
+      return {disabled: true, message: 'You do not have permission to start this schedule'};
+    }
+    return {disabled: false};
+  }, [scheduleState]);
+
   return (
     <Row $height={height} $start={start}>
-      <RowGrid border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}>
-        <RowCell>
-          {scheduleData ? (
-            <Box flex={{direction: 'column', gap: 4}}>
-              {/* Keyed so that a new switch is always rendered, otherwise it's reused and animates on/off */}
-              <ScheduleSwitch key={name} repoAddress={repoAddress} schedule={scheduleData} />
-              {errorDisplay(
-                scheduleData.scheduleState.status,
-                scheduleData.scheduleState.runningCount,
-              )}
-            </Box>
-          ) : null}
-        </RowCell>
+      <RowGrid
+        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+        $showCheckboxColumn={showCheckboxColumn}
+      >
+        {showCheckboxColumn ? (
+          <RowCell>
+            <Tooltip
+              canShow={checkboxState.disabled}
+              content={checkboxState.message || ''}
+              placement="top"
+            >
+              <Checkbox disabled={checkboxState.disabled} checked={checked} onChange={onChange} />
+            </Tooltip>
+          </RowCell>
+        ) : null}
         <RowCell>
           <Box flex={{direction: 'column', gap: 4}}>
             <span style={{fontWeight: 500}}>
@@ -150,7 +188,7 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
                   >
                     Next tick:&nbsp;
                     <TimestampDisplay
-                      timestamp={scheduleData.scheduleState.nextTick.timestamp}
+                      timestamp={scheduleData.scheduleState.nextTick.timestamp!}
                       timezone={scheduleData.executionTimezone}
                       timeFormat={{showSeconds: false, showTimezone: true}}
                     />
@@ -161,6 +199,18 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
           ) : (
             <LoadingOrNone queryResult={queryResult} />
           )}
+        </RowCell>
+        <RowCell>
+          {scheduleData ? (
+            <Box flex={{direction: 'column', gap: 4}}>
+              {/* Keyed so that a new switch is always rendered, otherwise it's reused and animates on/off */}
+              <ScheduleSwitch key={name} repoAddress={repoAddress} schedule={scheduleData} />
+              {errorDisplay(
+                scheduleData.scheduleState.status,
+                scheduleData.scheduleState.runningCount,
+              )}
+            </Box>
+          ) : null}
         </RowCell>
         <RowCell>
           {scheduleData?.scheduleState.ticks.length ? (
@@ -216,45 +266,54 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
             >
               <Button icon={<Icon name="expand_more" />} />
             </Popover>
-          ) : null}
+          ) : (
+            <span style={{color: Colors.Gray400}}>{'\u2013'}</span>
+          )}
         </RowCell>
       </RowGrid>
     </Row>
   );
 };
 
-export const VirtualizedScheduleHeader = () => {
+export const VirtualizedScheduleHeader = (props: {checkbox: React.ReactNode}) => {
+  const {checkbox} = props;
   return (
     <Box
       border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
       style={{
         display: 'grid',
-        gridTemplateColumns: TEMPLATE_COLUMNS,
+        gridTemplateColumns: checkbox ? TEMPLATE_COLUMNS_WITH_CHECKBOX : TEMPLATE_COLUMNS,
         height: '32px',
         fontSize: '12px',
         color: Colors.Gray600,
       }}
     >
-      <HeaderCell />
+      {checkbox ? (
+        <HeaderCell>
+          <div style={{position: 'relative', top: '-1px'}}>{checkbox}</div>
+        </HeaderCell>
+      ) : null}
       <HeaderCell>Schedule name</HeaderCell>
       <HeaderCell>Schedule</HeaderCell>
+      <HeaderCell>Running</HeaderCell>
       <HeaderCell>Last tick</HeaderCell>
       <HeaderCell>Last run</HeaderCell>
-      <HeaderCell />
+      <HeaderCell>Actions</HeaderCell>
     </Box>
   );
 };
 
-const RowGrid = styled(Box)`
+const RowGrid = styled(Box)<{$showCheckboxColumn: boolean}>`
   display: grid;
-  grid-template-columns: ${TEMPLATE_COLUMNS};
+  grid-template-columns: ${({$showCheckboxColumn}) =>
+    $showCheckboxColumn ? TEMPLATE_COLUMNS_WITH_CHECKBOX : TEMPLATE_COLUMNS};
   height: 100%;
 `;
 
 const ScheduleStringContainer = styled.div`
   max-width: 100%;
 
-  .bp3-popover2-target {
+  .bp4-popover2-target {
     max-width: 100%;
 
     :focus {

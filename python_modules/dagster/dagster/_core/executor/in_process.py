@@ -1,10 +1,11 @@
 import os
+from typing import Iterator, Optional
 
 import dagster._check as check
 from dagster._core.events import DagsterEvent, EngineEventData
 from dagster._core.execution.api import ExecuteRunWithPlanIterable
 from dagster._core.execution.context.system import PlanOrchestrationContext
-from dagster._core.execution.context_creation_pipeline import PlanExecutionContextManager
+from dagster._core.execution.context_creation_job import PlanExecutionContextManager
 from dagster._core.execution.plan.execute_plan import inner_plan_execution_iterator
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.retries import RetryMode
@@ -14,15 +15,17 @@ from .base import Executor
 
 
 class InProcessExecutor(Executor):
-    def __init__(self, retries, marker_to_close):
+    def __init__(self, retries: RetryMode, marker_to_close: Optional[str] = None):
         self._retries = check.inst_param(retries, "retries", RetryMode)
         self.marker_to_close = check.opt_str_param(marker_to_close, "marker_to_close")
 
     @property
-    def retries(self):
+    def retries(self) -> RetryMode:
         return self._retries
 
-    def execute(self, plan_context, execution_plan):
+    def execute(
+        self, plan_context: PlanOrchestrationContext, execution_plan: ExecutionPlan
+    ) -> Iterator[DagsterEvent]:
         check.inst_param(plan_context, "plan_context", PlanOrchestrationContext)
         check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
 
@@ -30,7 +33,7 @@ class InProcessExecutor(Executor):
 
         yield DagsterEvent.engine_event(
             plan_context,
-            "Executing steps in process (pid: {pid})".format(pid=os.getpid()),
+            f"Executing steps in process (pid: {os.getpid()})",
             event_specific_data=EngineEventData.in_process(os.getpid(), step_keys_to_execute),
         )
 
@@ -40,11 +43,11 @@ class InProcessExecutor(Executor):
                     execution_plan=plan_context.execution_plan,
                     iterator=inner_plan_execution_iterator,
                     execution_context_manager=PlanExecutionContextManager(
-                        pipeline=plan_context.pipeline,
+                        job=plan_context.job,
                         retry_mode=plan_context.retry_mode,
                         execution_plan=plan_context.execution_plan,
                         run_config=plan_context.run_config,
-                        pipeline_run=plan_context.pipeline_run,
+                        dagster_run=plan_context.dagster_run,
                         instance=plan_context.instance,
                         raise_on_error=plan_context.raise_on_error,
                         output_capture=plan_context.output_capture,

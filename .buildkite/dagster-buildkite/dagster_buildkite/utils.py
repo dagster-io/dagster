@@ -7,7 +7,7 @@ from typing import Dict, List, Optional, Union
 
 import packaging.version
 import yaml
-from typing_extensions import Literal, TypeAlias, TypedDict
+from typing_extensions import Literal, TypeAlias, TypedDict, TypeGuard
 
 from dagster_buildkite.git import ChangedFiles, get_commit_message
 
@@ -65,6 +65,12 @@ WaitStep: TypeAlias = Literal["wait"]
 
 BuildkiteStep: TypeAlias = Union[CommandStep, GroupStep, TriggerStep, WaitStep]
 BuildkiteLeafStep = Union[CommandStep, TriggerStep, WaitStep]
+BuildkiteTopLevelStep = Union[CommandStep, GroupStep]
+
+
+def is_command_step(step: BuildkiteStep) -> TypeGuard[CommandStep]:
+    return isinstance(step, dict) and "commands" in step
+
 
 # ########################
 # ##### FUNCTIONS
@@ -113,7 +119,7 @@ def check_for_release() -> bool:
 
     version: Dict[str, object] = {}
     with open("python_modules/dagster/dagster/version.py", encoding="utf8") as fp:
-        exec(fp.read(), version)  # pylint: disable=W0122
+        exec(fp.read(), version)
 
     if git_tag == version["__version__"]:
         return True
@@ -200,11 +206,15 @@ def skip_if_no_python_changes():
 
 
 @functools.lru_cache(maxsize=None)
+def has_helm_changes():
+    return any(Path("helm") in path.parents for path in ChangedFiles.all)
+
+
 def skip_if_no_helm_changes():
     if not is_feature_branch():
         return None
 
-    if any(Path("helm") in path.parents for path in ChangedFiles.all):
+    if has_helm_changes():
         logging.info("Run helm steps because files in the helm directory changed")
         return None
 

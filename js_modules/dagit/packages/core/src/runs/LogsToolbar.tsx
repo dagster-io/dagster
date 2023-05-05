@@ -14,7 +14,6 @@ import {
   IconWrapper,
   Colors,
   Tooltip,
-  FontFamily,
 } from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -22,9 +21,9 @@ import styled from 'styled-components/macro';
 import {useCopyToClipboard} from '../app/browser';
 import {OptionsContainer, OptionsDivider} from '../gantt/VizComponents';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
-import {compactNumber} from '../ui/formatters';
 
 import {ExecutionStateDot} from './ExecutionStateDot';
+import {FilterOption, LogFilterSelect} from './LogFilterSelect';
 import {LogLevel} from './LogLevel';
 import {LogsFilterInput} from './LogsFilterInput';
 import {LogFilter, LogFilterValue} from './LogsProvider';
@@ -35,6 +34,7 @@ import {
   IStepState,
 } from './RunMetadataProvider';
 import {getRunFilterProviders} from './getRunFilterProviders';
+import {EnabledRunLogLevelsKey, validateLogLevels} from './useQueryPersistedLogFilter';
 
 export enum LogType {
   structured = 'structured',
@@ -97,15 +97,16 @@ export const LogsToolbar: React.FC<ILogsToolbarProps> = (props) => {
 
   return (
     <OptionsContainer>
-      <ButtonGroup
-        activeItems={activeItems}
-        buttons={[
-          {id: LogType.structured, icon: 'list', tooltip: 'Structured event logs'},
-          {id: initialComputeLogType, icon: 'wysiwyg', tooltip: 'Raw compute logs'},
-        ]}
-        onClick={(id) => onSetLogType(id)}
-      />
-      <OptionsDivider />
+      <Box margin={{right: 12}}>
+        <ButtonGroup
+          activeItems={activeItems}
+          buttons={[
+            {id: LogType.structured, icon: 'list', tooltip: 'Structured event logs'},
+            {id: initialComputeLogType, icon: 'wysiwyg', tooltip: 'Raw compute logs'},
+          ]}
+          onClick={(id) => onSetLogType(id)}
+        />
+      </Box>
       {logType === 'structured' ? (
         <StructuredLogToolbar
           counts={counts}
@@ -165,13 +166,13 @@ const ComputeLogToolbar = ({
 }) => {
   const logCaptureSteps =
     metadata.logCaptureSteps || extractLogCaptureStepsFromLegacySteps(Object.keys(metadata.steps));
-  const isValidStepSelection = computeLogFileKey && logCaptureSteps[computeLogFileKey];
+  const isValidStepSelection = computeLogFileKey && (logCaptureSteps as any)[computeLogFileKey];
 
   const fileKeyText = (fileKey?: string) => {
-    if (!fileKey || !logCaptureSteps[fileKey]) {
+    if (!fileKey || !(logCaptureSteps as any)[fileKey]) {
       return null;
     }
-    const captureInfo = logCaptureSteps[fileKey];
+    const captureInfo = (logCaptureSteps as any)[fileKey];
     if (captureInfo.stepKeys.length === 1 && fileKey === captureInfo.stepKeys[0]) {
       return fileKey;
     }
@@ -222,12 +223,13 @@ const ComputeLogToolbar = ({
       </Group>
       {isValidStepSelection ? (
         <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
-          {computeLogFileKey && logCaptureSteps[computeLogFileKey] ? (
-            resolveState(metadata, logCaptureSteps[computeLogFileKey]) === IStepState.RUNNING ? (
+          {computeLogFileKey && (logCaptureSteps as any)[computeLogFileKey] ? (
+            resolveState(metadata, (logCaptureSteps as any)[computeLogFileKey]) ===
+            IStepState.RUNNING ? (
               <Spinner purpose="body-text" />
             ) : (
               <ExecutionStateDot
-                state={resolveState(metadata, logCaptureSteps[computeLogFileKey])}
+                state={resolveState(metadata, (logCaptureSteps as any)[computeLogFileKey])}
               />
             )
           ) : null}
@@ -235,8 +237,11 @@ const ComputeLogToolbar = ({
             <Tooltip
               placement="top-end"
               content={
-                computeLogFileKey && logCaptureSteps[computeLogFileKey]?.stepKeys.length === 1
-                  ? `Download ${logCaptureSteps[computeLogFileKey]?.stepKeys[0]} compute logs`
+                computeLogFileKey &&
+                (logCaptureSteps as any)[computeLogFileKey]?.stepKeys.length === 1
+                  ? `Download ${
+                      (logCaptureSteps as any)[computeLogFileKey]?.stepKeys[0]
+                    } compute logs`
                   : `Download compute logs`
               }
             >
@@ -291,6 +296,11 @@ const StructuredLogToolbar = ({
   const [queryString, setQueryString] = React.useState<string>(() => logQueryString);
   const copyToClipboard = useCopyToClipboard();
 
+  // Persist the user's selected log level filters as defaults. We only _set_ the value here,
+  // when the filter select changes -- the default is read from localStorage by
+  // useQueryPersistedLogFilter.
+  const [_, setStoredLogLevels] = useStateWithStorage(EnabledRunLogLevelsKey, validateLogLevels);
+
   const selectedStep = filter.logQuery.find((v) => v.token === 'step')?.value || null;
   const filterText = filter.logQuery.reduce((accum, value) => accum + value.value, '');
 
@@ -313,6 +323,29 @@ const StructuredLogToolbar = ({
     setQueryString(value);
   };
 
+  const onChangeFilter = React.useCallback(
+    (level: LogLevel, enabled: boolean) => {
+      const allEnabledFilters = new Set(
+        Object.keys(filter.levels).filter((level) => !!filter.levels[level]),
+      );
+
+      // When changing log level filters, update localStorage with the selected levels
+      // so that it persists as the default.
+      enabled ? allEnabledFilters.add(level) : allEnabledFilters.delete(level);
+      setStoredLogLevels(Array.from(allEnabledFilters));
+
+      // Then, update the querystring.
+      onSetFilter({
+        ...filter,
+        levels: {
+          ...filter.levels,
+          [level]: enabled,
+        },
+      });
+    },
+    [filter, onSetFilter, setStoredLogLevels],
+  );
+
   // Restore the clipboard icon after a delay.
   React.useEffect(() => {
     let token: any;
@@ -325,6 +358,19 @@ const StructuredLogToolbar = ({
       token && clearTimeout(token);
     };
   }, [copyIcon]);
+
+  const filterOptions = Object.fromEntries(
+    Object.keys(LogLevel).map((level) => {
+      return [
+        level,
+        {
+          label: level.toLowerCase(),
+          count: counts[level as LogLevel],
+          enabled: !!filter.levels[level],
+        },
+      ] as [LogLevel, FilterOption];
+    }),
+  );
 
   return (
     <>
@@ -342,32 +388,11 @@ const StructuredLogToolbar = ({
           label="Hide non-matches"
         />
       ) : null}
-      <OptionsDivider />
-      <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
-        {Object.keys(LogLevel).map((level) => {
-          const enabled = filter.levels[level];
-          return (
-            <FilterLabel key={level} $enabled={enabled}>
-              <Checkbox
-                format="switch"
-                size="small"
-                checked={!!enabled}
-                fillColor={enabled ? Colors.Blue500 : Colors.Gray200}
-                onChange={() =>
-                  onSetFilter({
-                    ...filter,
-                    levels: {
-                      ...filter.levels,
-                      [level]: !enabled,
-                    },
-                  })
-                }
-              />
-              <LogLabel $enabled={enabled}>{level.toLowerCase()}</LogLabel>
-              <LogCount $enabled={enabled}>{compactNumber(counts[level])}</LogCount>
-            </FilterLabel>
-          );
-        })}
+      <Box flex={{direction: 'row', alignItems: 'center', gap: 8}} margin={{left: 12}}>
+        <LogFilterSelect
+          options={filterOptions as Record<LogLevel, FilterOption>}
+          onSetFilter={onChangeFilter}
+        />
       </Box>
       {selectedStep && <OptionsDivider />}
       <div style={{minWidth: 15, flex: 1}} />
@@ -390,49 +415,4 @@ const NonMatchCheckbox = styled(Checkbox)`
   }
 
   white-space: nowrap;
-`;
-
-const FilterLabel = styled.label<{$enabled: boolean}>`
-  background-color: ${({$enabled}) => ($enabled ? Colors.Blue50 : Colors.Gray100)};
-  border: none;
-  border-radius: 8px;
-  margin: 0;
-  padding: 4px 6px;
-  overflow: hidden;
-  cursor: pointer;
-  display: inline-flex;
-  flex-direction: row;
-  align-items: center;
-  font-size: 12px;
-  font-weight: 500;
-  gap: 6px;
-
-  box-shadow: transparent inset 0px 0px 0px 1px;
-  transition: background 50ms linear;
-
-  :focus {
-    box-shadow: rgba(58, 151, 212, 0.6) 0 0 0 3px;
-    outline: none;
-  }
-
-  :focus:not(:focus-visible) {
-    box-shadow: transparent inset 0px 0px 0px 1px, rgba(0, 0, 0, 0.12) 0px 2px 12px 0px;
-  }
-`;
-
-const LogLabel = styled.span<{$enabled: boolean}>`
-  color: ${({$enabled}) => ($enabled ? Colors.Blue500 : Colors.Gray700)};
-  line-height: 16px;
-  transition: background 50ms linear;
-`;
-
-const LogCount = styled.span<{$enabled: boolean}>`
-  background-color: ${({$enabled}) => ($enabled ? Colors.Blue100 : Colors.Gray200)};
-  border-radius: 6px;
-  color: ${({$enabled}) => ($enabled ? Colors.Blue500 : Colors.Gray700)};
-  font-weight: 600;
-  font-family: ${FontFamily.monospace};
-  line-height: 16px;
-  padding: 1px 4px;
-  transition: background 50ms linear;
 `;

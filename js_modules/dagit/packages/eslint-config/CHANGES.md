@@ -1,3 +1,8 @@
+## 1.0.11 (March 31, 2023)
+
+- Dependency upgrades: Jest 29, TypeScript 5+, `@typescript-eslint` packages.
+- Update `missing-graphql-variables-type` to fix mutations and subscriptions as well.
+
 ## 1.0.10 (Janaury 11, 2022)
 
 - Restore `missing-graphql-variables-type`. The new codegen approach had too many drawbacks for developer experience.

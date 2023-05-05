@@ -14,7 +14,7 @@ def test_jobs():
 
 def test_hello_world_repository():
     assert hello_world_repository
-    assert len(hello_world_repository.get_all_pipelines()) == 1
+    assert len(hello_world_repository.get_all_jobs()) == 1
 
 
 def test_workspace_yamls():
@@ -27,7 +27,7 @@ def test_workspace_yamls():
             )
         ],
     ) as workspace_process_context:
-        assert workspace_process_context.repository_locations_count == 1
+        assert workspace_process_context.code_locations_count == 1
 
     with load_workspace_process_context_from_yaml_paths(
         DagsterInstance.ephemeral(),
@@ -38,7 +38,7 @@ def test_workspace_yamls():
             )
         ],
     ) as workspace_process_context:
-        assert workspace_process_context.repository_locations_count == 1
+        assert workspace_process_context.code_locations_count == 1
 
     with load_workspace_process_context_from_yaml_paths(
         DagsterInstance.ephemeral(),
@@ -49,7 +49,7 @@ def test_workspace_yamls():
             )
         ],
     ) as workspace_process_context:
-        assert workspace_process_context.repository_locations_count == 1
+        assert workspace_process_context.code_locations_count == 1
 
     with load_workspace_process_context_from_yaml_paths(
         DagsterInstance.ephemeral(),
@@ -60,7 +60,7 @@ def test_workspace_yamls():
             )
         ],
     ) as workspace_process_context:
-        assert workspace_process_context.repository_locations_count == 1
+        assert workspace_process_context.code_locations_count == 1
 
     with load_workspace_process_context_from_yaml_paths(
         DagsterInstance.ephemeral(),
@@ -71,4 +71,4 @@ def test_workspace_yamls():
             )
         ],
     ) as workspace_process_context:
-        assert workspace_process_context.repository_locations_count == 1
+        assert workspace_process_context.code_locations_count == 1

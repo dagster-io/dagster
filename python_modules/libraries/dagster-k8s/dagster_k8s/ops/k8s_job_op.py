@@ -1,12 +1,13 @@
 import time
 from typing import Any, Dict, List, Optional
 
-import kubernetes
+import kubernetes.config
+import kubernetes.watch
 from dagster import Field, In, Noneable, Nothing, OpExecutionContext, Permissive, StringSource, op
 from dagster._annotations import experimental
 from dagster._utils.merger import merge_dicts
 
-from ..client import DagsterKubernetesClient
+from ..client import DEFAULT_JOB_POD_COUNT, DagsterKubernetesClient
 from ..container_context import K8sContainerContext
 from ..job import DagsterK8sJobConfig, construct_dagster_k8s_job, get_k8s_job_name
 from ..launcher import K8sRunLauncher
@@ -130,8 +131,7 @@ def execute_k8s_job(
     job_metadata: Optional[Dict[str, Any]] = None,
     job_spec_config: Optional[Dict[str, Any]] = None,
 ):
-    """
-    This function is a utility for executing a Kubernetes job from within a Dagster op.
+    """This function is a utility for executing a Kubernetes job from within a Dagster op.
 
     Args:
         image (str): The image in which to launch the k8s job.
@@ -197,15 +197,18 @@ def execute_k8s_job(
             Keys can either snake_case or camelCase.Default: None.
     """
     run_container_context = K8sContainerContext.create_for_run(
-        context.pipeline_run,
+        context.dagster_run,
         context.instance.run_launcher
         if isinstance(context.instance.run_launcher, K8sRunLauncher)
         else None,
+        include_run_tags=False,
     )
 
     container_config = container_config.copy() if container_config else {}
     if command:
         container_config["command"] = command
+
+    container_name = container_config.get("name", "dagster")
 
     op_container_context = K8sContainerContext(
         image_pull_policy=image_pull_policy,
@@ -252,7 +255,7 @@ def execute_k8s_job(
         resources=container_context.resources,
     )
 
-    job_name = get_k8s_job_name(context.run_id, context.op.name)
+    job_name = get_k8s_job_name(context.run_id, context.get_step_execution_context().step.key)
 
     retry_number = context.retry_number
     if retry_number > 0:
@@ -266,9 +269,9 @@ def execute_k8s_job(
         component="k8s_job_op",
         user_defined_k8s_config=user_defined_k8s_config,
         labels={
-            "dagster/job": context.pipeline_run.pipeline_name,
+            "dagster/job": context.dagster_run.job_name,
             "dagster/op": context.op.name,
-            "dagster/run-id": context.pipeline_run.run_id,
+            "dagster/run-id": context.dagster_run.run_id,
         },
     )
 
@@ -315,7 +318,10 @@ def execute_k8s_job(
     api_client.wait_for_pod(pod_to_watch, namespace, wait_timeout=timeout, start_time=start_time)
 
     log_stream = watch.stream(
-        api_client.core_api.read_namespaced_pod_log, name=pod_to_watch, namespace=namespace
+        api_client.core_api.read_namespaced_pod_log,
+        name=pod_to_watch,
+        namespace=namespace,
+        container=container_name,
     )
 
     while True:
@@ -325,23 +331,27 @@ def execute_k8s_job(
 
         try:
             log_entry = next(log_stream)
-            print(log_entry)  # pylint: disable=print-call
+            print(log_entry)  # noqa: T201
         except StopIteration:
             break
 
+    if job_spec_config and job_spec_config.get("parallelism"):
+        num_pods_to_wait_for = job_spec_config["parallelism"]
+    else:
+        num_pods_to_wait_for = DEFAULT_JOB_POD_COUNT
     api_client.wait_for_running_job_to_succeed(
         job_name=job_name,
         namespace=namespace,
         wait_timeout=timeout,
         start_time=start_time,
+        num_pods_to_wait_for=num_pods_to_wait_for,
     )
 
 
 @op(ins={"start_after": In(Nothing)}, config_schema=K8S_JOB_OP_CONFIG)
 @experimental
 def k8s_job_op(context):
-    """
-    An op that runs a Kubernetes job using the k8s API.
+    """An op that runs a Kubernetes job using the k8s API.
 
     Contrast with the `k8s_job_executor`, which runs each Dagster op in a Dagster job in its
     own k8s job.
@@ -351,15 +361,15 @@ def k8s_job_op(context):
       - You want to run the rest of a Dagster job using a specific executor, and only a single
         op in k8s.
 
-    You can create your own op with the same implementation by calling the `execute_k8s_job` function
-    inside your own op.
-
     For example:
 
     .. literalinclude:: ../../../../../../python_modules/libraries/dagster-k8s/dagster_k8s_tests/unit_tests/test_example_k8s_job_op.py
       :start-after: start_marker
       :end-before: end_marker
       :language: python
+
+    You can create your own op with the same implementation by calling the `execute_k8s_job` function
+    inside your own op.
 
     The service account that is used to run this job should have the following RBAC permissions:
 

@@ -10,16 +10,19 @@ import {DaemonList} from './DaemonList';
 import {INSTANCE_HEALTH_FRAGMENT} from './InstanceHealthFragment';
 import {InstancePageContext} from './InstancePageContext';
 import {InstanceTabs} from './InstanceTabs';
-import {InstanceHealthQuery} from './types/InstanceHealthPage.types';
+import {InstanceHealthQuery, InstanceHealthQueryVariables} from './types/InstanceHealthPage.types';
 
 export const InstanceHealthPage = () => {
   useTrackPageView();
   useDocumentTitle('Daemons');
 
   const {pageTitle} = React.useContext(InstancePageContext);
-  const queryData = useQuery<InstanceHealthQuery>(INSTANCE_HEALTH_QUERY, {
-    notifyOnNetworkStatusChange: true,
-  });
+  const queryData = useQuery<InstanceHealthQuery, InstanceHealthQueryVariables>(
+    INSTANCE_HEALTH_QUERY,
+    {
+      notifyOnNetworkStatusChange: true,
+    },
+  );
   const refreshState = useQueryRefreshAtInterval(queryData, FIFTEEN_SECONDS);
   const {loading, data} = queryData;
 
@@ -57,6 +60,7 @@ export default InstanceHealthPage;
 const INSTANCE_HEALTH_QUERY = gql`
   query InstanceHealthQuery {
     instance {
+      id
       ...InstanceHealthFragment
     }
   }

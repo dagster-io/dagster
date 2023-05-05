@@ -27,9 +27,7 @@ def schema():
 
 @schema.command()
 def show():
-    """
-    Displays the json schema on the console.
-    """
+    """Displays the json schema on the console."""
     click.echo("--- Dagster Helm Values ---")
     click.echo(DagsterHelmValues.schema_json(indent=4))
 
@@ -40,9 +38,7 @@ def show():
 
 @schema.command()
 def apply():
-    """
-    Saves the json schema in the Helm `values.schema.json`.
-    """
+    """Saves the json schema in the Helm `values.schema.json`."""
     helm_values_path_tuples = {
         (DagsterHelmValues, os.path.join(git_repo_root(), "helm", "dagster", "values.schema.json")),
         (

@@ -4,7 +4,8 @@ from urllib.parse import urlparse
 import pytest
 import sqlalchemy as db
 import yaml
-from dagster._core.instance import DagsterInstance, InstanceRef
+from dagster._core.instance import DagsterInstance
+from dagster._core.instance.ref import InstanceRef
 from dagster._core.storage.sql import create_engine, get_alembic_config, stamp_alembic_rev
 from dagster._core.test_utils import instance_for_test
 from dagster._utils import file_relative_path
@@ -137,13 +138,13 @@ def test_statement_timeouts(conn_string):
         instance.upgrade()
 
         with pytest.raises(db.exc.OperationalError, match="QueryCanceled"):
-            with instance._run_storage.connect() as conn:  # pylint: disable=protected-access
+            with instance._run_storage.connect() as conn:  # noqa: SLF001
                 conn.execute("select pg_sleep(1)").fetchone()
 
         with pytest.raises(db.exc.OperationalError, match="QueryCanceled"):
-            with instance._event_storage.connect() as conn:  # pylint: disable=protected-access
+            with instance._event_storage.connect() as conn:  # noqa: SLF001
                 conn.execute("select pg_sleep(1)").fetchone()
 
         with pytest.raises(db.exc.OperationalError, match="QueryCanceled"):
-            with instance._schedule_storage.connect() as conn:  # pylint: disable=protected-access
+            with instance._schedule_storage.connect() as conn:  # noqa: SLF001
                 conn.execute("select pg_sleep(1)").fetchone()

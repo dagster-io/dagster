@@ -11,7 +11,10 @@ import {
 import {RepositoryLocationErrorDialog} from './RepositoryLocationErrorDialog';
 
 export const ReloadAllButton: React.FC<{label?: string}> = ({label = 'Reload all'}) => {
-  const {canReloadWorkspace} = useUnscopedPermissions();
+  const {
+    permissions: {canReloadWorkspace},
+    disabledReasons,
+  } = useUnscopedPermissions();
   const {reloading, tryReload, error, errorLocationId} = useRepositoryLocationReload({
     scope: 'workspace',
     reloadFn: reloadFnForWorkspace,
@@ -20,9 +23,9 @@ export const ReloadAllButton: React.FC<{label?: string}> = ({label = 'Reload all
   const [isOpen, setIsOpen] = React.useState(!!error);
   React.useEffect(() => setIsOpen(!!error), [error]);
 
-  if (!canReloadWorkspace.enabled) {
+  if (!canReloadWorkspace) {
     return (
-      <Tooltip content={canReloadWorkspace.disabledReason}>
+      <Tooltip content={disabledReasons.canReloadWorkspace}>
         <Button icon={<Icon name="refresh" />} disabled intent="none">
           {label}
         </Button>

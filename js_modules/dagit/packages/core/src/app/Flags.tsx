@@ -7,9 +7,12 @@ export const DAGIT_FLAGS_KEY = 'DAGIT_FLAGS';
 
 // Use const because we need to extend this in cloud. https://blog.logrocket.com/extend-enums-typescript/
 export const FeatureFlag = {
+  flagDAGPanWithScrollWheel: 'flagDAGPanWithScrollWheel' as const,
   flagDebugConsoleLogging: 'flagDebugConsoleLogging' as const,
   flagDisableWebsockets: 'flagDisableWebsockets' as const,
   flagSensorScheduleLogging: 'flagSensorScheduleLogging' as const,
+  flagSidebarResources: 'flagSidebarResources' as const,
+  flagRunsTableFiltering: 'flagRunsTableFiltering' as const,
 };
 export type FeatureFlagType = keyof typeof FeatureFlag;
 
@@ -26,7 +29,7 @@ type FlagMap = {
 export const useFeatureFlags = () => {
   return React.useMemo(() => {
     const flagSet = new Set(getFeatureFlags());
-    const all = {};
+    const all: Record<string, boolean> = {};
     for (const flag in FeatureFlag) {
       all[flag] = flagSet.has(flag as FeatureFlagType);
     }

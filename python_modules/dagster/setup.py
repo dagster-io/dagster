@@ -55,6 +55,7 @@ setup(
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
         "License :: OSI Approved :: Apache Software License",
         "Topic :: System :: Monitoring",
         "Topic :: Software Development :: Libraries :: Application Frameworks",
@@ -73,13 +74,15 @@ setup(
         # pin around issues in specific versions of alembic that broke our migrations
         "alembic>=1.2.1,!=1.6.3,!=1.7.0",
         "croniter>=0.3.34",
-        # grpcio>=1.48.1 has hanging/crashing issues: https://github.com/grpc/grpc/issues/30843 and https://github.com/grpc/grpc/issues/31885
-        # ensure version we require is >= that with which we generated the grpc code (set in dev-requirements)
-        "grpcio>=1.32.0,<1.48.1",
-        "grpcio-health-checking>=1.32.0,<1.44.0",
+        # grpcio 1.44.0 is the min version compatible with both protobuf 3 and 4
+        # Also pinned <1.48.0 until the resolution of https://github.com/grpc/grpc/issues/31885
+        # (except on python 3.11, where newer versions are required just to install the grpcio package)
+        "grpcio>=1.44.0,<1.48.0; python_version<'3.11'",
+        "grpcio>=1.44.0; python_version>='3.11'",
+        "grpcio-health-checking>=1.44.0",
         "packaging>=20.9",
         "pendulum",
-        "protobuf>=3.13.0,<4",  # ensure version we require is >= that with which we generated the proto code (set in dev-requirements)
+        "protobuf>=3.20.0",  # min protobuf version to be compatible with both protobuf 3 and 4
         "python-dateutil",
         "python-dotenv",
         "pytz",
@@ -88,8 +91,8 @@ setup(
         "tabulate",
         "tomli",
         "tqdm",
-        "typing_extensions>=4.0.1",
-        "sqlalchemy>=1.0",
+        "typing_extensions>=4.4.0",
+        "sqlalchemy>=1.0,<2.0.0",
         "toposort>=1.0",
         "watchdog>=0.8.3",
         'psutil >= 1.0; platform_system=="Windows"',
@@ -104,10 +107,9 @@ setup(
         "test": [
             "buildkite-test-collector ; python_version>='3.8'",
             "docker",
-            "grpcio-tools>=1.32.0,<1.44.0",  # related to above grpcio pins
+            "grpcio-tools>=1.44.0",  # related to above grpcio pins
             "mock==3.0.5",
             "objgraph",
-            "protobuf==3.13.0",  # without this, pip will install the most up-to-date protobuf
             "pytest-cov==2.10.1",
             "pytest-dependency==0.5.1",
             "pytest-mock==3.3.1",
@@ -125,6 +127,11 @@ setup(
         ],
         "mypy": [
             "mypy==0.991",
+        ],
+        "pyright": [
+            "pyright==1.1.298",
+            ### Stub packages
+            "pandas-stubs",  # version will be resolved against pandas
             "types-backports",  # version will be resolved against backports
             "types-certifi",  # version will be resolved against certifi
             "types-chardet",  # chardet is a 2+-order dependency of some Dagster libs
@@ -133,7 +140,6 @@ setup(
             "types-mock",  # version will be resolved against mock
             "types-paramiko",  # version will be resolved against paramiko
             "types-pkg-resources",  # version will be resolved against setuptools (contains pkg_resources)
-            "types-protobuf<=3.19.21",  # version will be resolved against protobuf (3.19.22 introduced breaking change)
             "types-pyOpenSSL",  # version will be resolved against pyOpenSSL
             "types-python-dateutil",  # version will be resolved against python-dateutil
             "types-PyYAML",  # version will be resolved against PyYAML
@@ -141,12 +147,13 @@ setup(
             "types-requests",  # version will be resolved against requests
             "types-simplejson",  # version will be resolved against simplejson
             "types-six",  # needed but not specified by grpcio
+            "types-sqlalchemy==1.4.53.34",  # later versions introduce odd errors
             "types-tabulate",  # version will be resolved against tabulate
             "types-tzlocal",  # version will be resolved against tzlocal
             "types-toml",  # version will be resolved against toml
         ],
         "ruff": [
-            "ruff==0.0.212",
+            "ruff==0.0.255",
         ],
     },
     entry_points={

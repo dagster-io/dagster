@@ -24,7 +24,7 @@ from dagster import (
     reconstructable,
     resource,
 )
-from dagster._core.definitions.pipeline_base import InMemoryPipeline
+from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.resource_definition import make_values_resource
 from dagster._core.errors import DagsterConfigMappingFunctionError, DagsterInvalidDefinitionError
 from dagster._core.events.log import EventLogEntry, construct_event_logger
@@ -343,12 +343,12 @@ def test_none_resource():
         assert context.resources.test_null is None
         called["yup"] = True
 
-    the_job = GraphDefinition(
+    job_def = GraphDefinition(
         name="test_none_resource",
         node_defs=[op_test_null],
     ).to_job(resource_defs={"test_null": ResourceDefinition.none_resource()})
 
-    result = the_job.execute_in_process()
+    result = job_def.execute_in_process()
 
     assert result.success
     assert called["yup"]
@@ -362,12 +362,12 @@ def test_string_resource():
         assert context.resources.test_string == "foo"
         called["yup"] = True
 
-    the_job = GraphDefinition(
+    job_def = GraphDefinition(
         name="test_string_resource",
         node_defs=[op_test_string],
     ).to_job(resource_defs={"test_string": ResourceDefinition.string_resource()})
 
-    result = the_job.execute_in_process({"resources": {"test_string": {"config": "foo"}}})
+    result = job_def.execute_in_process({"resources": {"test_string": {"config": "foo"}}})
 
     assert result.success
     assert called["yup"]
@@ -417,12 +417,12 @@ def test_hardcoded_resource():
         assert context.resources.hardcoded("called")
         called["yup"] = True
 
-    the_job = GraphDefinition(
+    job_def = GraphDefinition(
         name="hardcoded_resource",
         node_defs=[op_hardcoded],
     ).to_job(resource_defs={"hardcoded": ResourceDefinition.hardcoded_resource(mock_obj)})
 
-    result = the_job.execute_in_process()
+    result = job_def.execute_in_process()
 
     assert result.success
     assert called["yup"]
@@ -437,12 +437,12 @@ def test_mock_resource():
         assert context.resources.test_mock is not None
         called["yup"] = True
 
-    the_job = GraphDefinition(
+    job_def = GraphDefinition(
         name="test_mock_resource",
         node_defs=[op_test_mock],
     ).to_job(resource_defs={"test_mock": ResourceDefinition.mock_resource()})
 
-    result = the_job.execute_in_process()
+    result = job_def.execute_in_process()
 
     assert result.success
     assert called["yup"]
@@ -461,12 +461,12 @@ def test_no_config_resource_pass_none():
         called["solid"] = True
         assert context.resources.return_thing == "thing"
 
-    the_job = GraphDefinition(
+    job_def = GraphDefinition(
         name="test_no_config_resource",
         node_defs=[check_thing],
     ).to_job(resource_defs={"return_thing": return_thing})
 
-    the_job.execute_in_process()
+    job_def.execute_in_process()
 
     assert called["resource"]
     assert called["solid"]
@@ -485,12 +485,12 @@ def test_no_config_resource_no_arg():
         called["solid"] = True
         assert context.resources.return_thing == "thing"
 
-    the_job = GraphDefinition(
+    job_def = GraphDefinition(
         name="test_no_config_resource",
         node_defs=[check_thing],
     ).to_job(resource_defs={"return_thing": return_thing})
 
-    the_job.execute_in_process()
+    job_def.execute_in_process()
 
     assert called["resource"]
     assert called["solid"]
@@ -509,12 +509,12 @@ def test_no_config_resource_bare_no_arg():
         called["solid"] = True
         assert context.resources.return_thing == "thing"
 
-    the_job = GraphDefinition(
+    job_def = GraphDefinition(
         name="test_no_config_resource",
         node_defs=[check_thing],
     ).to_job(resource_defs={"return_thing": return_thing})
 
-    the_job.execute_in_process()
+    job_def.execute_in_process()
 
     assert called["resource"]
     assert called["solid"]
@@ -532,12 +532,12 @@ def test_no_config_resource_definition():
         called["solid"] = True
         assert context.resources.return_thing == "thing"
 
-    the_job = GraphDefinition(
+    job_def = GraphDefinition(
         name="test_no_config_resource",
         node_defs=[check_thing],
     ).to_job(resource_defs={"return_thing": ResourceDefinition(_return_thing_resource_fn)})
 
-    the_job.execute_in_process()
+    job_def.execute_in_process()
 
     assert called["resource"]
     assert called["solid"]
@@ -556,12 +556,12 @@ def test_resource_cleanup():
         called["solid"] = True
         assert context.resources.resource_with_cleanup is True
 
-    the_job = GraphDefinition(
+    job_def = GraphDefinition(
         name="test_resource_cleanup",
         node_defs=[check_resource_created],
     ).to_job(resource_defs={"resource_with_cleanup": ResourceDefinition(_cleanup_resource_fn)})
 
-    the_job.execute_in_process()
+    job_def.execute_in_process()
 
     assert called["creation"] is True
     assert called["solid"] is True
@@ -587,7 +587,7 @@ def test_stacked_resource_cleanup():
         assert context.resources.resource_with_cleanup_1 is True
         assert context.resources.resource_with_cleanup_2 is True
 
-    the_job = GraphDefinition(
+    job_def = GraphDefinition(
         name="test_resource_cleanup",
         node_defs=[check_resource_created],
     ).to_job(
@@ -597,7 +597,7 @@ def test_stacked_resource_cleanup():
         }
     )
 
-    the_job.execute_in_process()
+    job_def.execute_in_process()
 
     assert called == ["creation_1", "creation_2", "solid", "cleanup_2", "cleanup_1"]
 
@@ -648,7 +648,7 @@ def test_resource_init_failure():
 
     instance = DagsterInstance.ephemeral()
     execution_plan = create_execution_plan(the_job)
-    run = instance.create_run_for_pipeline(the_job, execution_plan=execution_plan)
+    dagster_run = instance.create_run_for_job(the_job, execution_plan=execution_plan)
 
     with pytest.raises(
         DagsterResourceFunctionError,
@@ -656,8 +656,8 @@ def test_resource_init_failure():
     ):
         execute_plan(
             execution_plan,
-            InMemoryPipeline(the_job),
-            pipeline_run=run,
+            InMemoryJob(the_job),
+            dagster_run=dagster_run,
             instance=instance,
         )
 
@@ -698,7 +698,7 @@ def test_resource_init_failure_with_teardown():
         try:
             called.append("B")
             raise Exception("uh oh")
-            yield "B"  # pylint: disable=unreachable
+            yield "B"
         finally:
             cleaned.append("B")
 
@@ -706,12 +706,12 @@ def test_resource_init_failure_with_teardown():
     def resource_op(_):
         pass
 
-    the_job = GraphDefinition(
+    job_def = GraphDefinition(
         name="test_resource_init_failure_with_cleanup",
         node_defs=[resource_op],
     ).to_job(resource_defs={"a": resource_a, "b": resource_b})
 
-    res = the_job.execute_in_process(raise_on_error=False)
+    res = job_def.execute_in_process(raise_on_error=False)
     event_types = [event.event_type_value for event in res.all_events]
     assert DagsterEventType.PIPELINE_FAILURE.value in event_types
 
@@ -721,7 +721,7 @@ def test_resource_init_failure_with_teardown():
     called = []
     cleaned = []
 
-    events = the_job.execute_in_process(raise_on_error=False).all_events
+    events = job_def.execute_in_process(raise_on_error=False).all_events
 
     event_types = [event.event_type_value for event in events]
     assert DagsterEventType.PIPELINE_FAILURE.value in event_types
@@ -729,7 +729,7 @@ def test_resource_init_failure_with_teardown():
     assert cleaned == ["B", "A"]
 
 
-def test_solid_failure_resource_teardown():
+def test_op_failure_resource_teardown():
     called = []
     cleaned = []
 
@@ -753,12 +753,12 @@ def test_solid_failure_resource_teardown():
     def resource_op(_):
         raise Exception("uh oh")
 
-    the_job = GraphDefinition(
+    job_def = GraphDefinition(
         name="test_solid_failure_resource_teardown",
         node_defs=[resource_op],
     ).to_job(resource_defs={"a": resource_a, "b": resource_b})
 
-    res = the_job.execute_in_process(raise_on_error=False)
+    res = job_def.execute_in_process(raise_on_error=False)
     assert res.all_events[-1].event_type_value == "PIPELINE_FAILURE"
     assert called == ["A", "B"]
     assert cleaned == ["B", "A"]
@@ -766,7 +766,7 @@ def test_solid_failure_resource_teardown():
     called = []
     cleaned = []
 
-    events = the_job.execute_in_process(raise_on_error=False).all_events
+    events = job_def.execute_in_process(raise_on_error=False).all_events
 
     assert len(events) > 1
     assert events[-1].event_type_value == "PIPELINE_FAILURE"
@@ -774,7 +774,7 @@ def test_solid_failure_resource_teardown():
     assert cleaned == ["B", "A"]
 
 
-def test_solid_failure_resource_teardown_raise():
+def test_op_failure_resource_teardown_raise():
     """Test that teardown is invoked in resources for tests that raise_on_error."""
     called = []
     cleaned = []
@@ -799,13 +799,13 @@ def test_solid_failure_resource_teardown_raise():
     def resource_op(_):
         raise Exception("uh oh")
 
-    the_job = GraphDefinition(
+    job_def = GraphDefinition(
         name="test_solid_failure_resource_teardown",
         node_defs=[resource_op],
     ).to_job(resource_defs={"a": resource_a, "b": resource_b})
 
     with pytest.raises(Exception):
-        the_job.execute_in_process()
+        job_def.execute_in_process()
 
     assert called == ["A", "B"]
     assert cleaned == ["B", "A"]
@@ -833,18 +833,18 @@ def test_resource_teardown_failure():
             yield "B"
         finally:
             raise Exception("uh oh")
-            cleaned.append("B")  # pylint: disable=unreachable
+            cleaned.append("B")
 
     @op(required_resource_keys={"a", "b"})
     def resource_op(_):
         pass
 
-    the_job = GraphDefinition(
+    job_def = GraphDefinition(
         name="test_resource_teardown_failure",
         node_defs=[resource_op],
     ).to_job(resource_defs={"a": resource_a, "b": resource_b})
 
-    result = the_job.execute_in_process(raise_on_error=False)
+    result = job_def.execute_in_process(raise_on_error=False)
     # Document that failure during resource teardown is not considered a run failure.
     assert result.success
     assert len(result.filter_events(lambda evt: evt.is_run_failure)) == 0
@@ -1101,28 +1101,28 @@ def test_resource_op_subset():
         bar_op()
         baz_op()
 
-    assert set(nested.get_required_resource_defs_for_mode("default").keys()) == {
+    assert set(nested.get_required_resource_defs().keys()) == {
         "foo",
         "bar",
         "baz",
         "io_manager",
     }
 
-    assert nested.get_job_def_for_subset_selection(["foo_op"]).get_required_resource_defs_for_mode(
-        "default"
-    ).keys() == {
+    assert nested.get_subset(op_selection=["foo_op"]).get_required_resource_defs().keys() == {
         "foo",
         "bar",
         "io_manager",
     }
 
-    assert nested.get_job_def_for_subset_selection(["bar_op"]).get_required_resource_defs_for_mode(
-        "default"
-    ).keys() == {"bar", "io_manager"}
+    assert nested.get_subset(op_selection=["bar_op"]).get_required_resource_defs().keys() == {
+        "bar",
+        "io_manager",
+    }
 
-    assert nested.get_job_def_for_subset_selection(["baz_op"]).get_required_resource_defs_for_mode(
-        "default"
-    ).keys() == {"baz", "io_manager"}
+    assert nested.get_subset(op_selection=["baz_op"]).get_required_resource_defs().keys() == {
+        "baz",
+        "io_manager",
+    }
 
 
 def test_config_with_no_schema():

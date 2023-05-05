@@ -28,8 +28,6 @@ Partitioned Schedules
 
 .. autofunction:: build_schedule_from_partitioned_job
 
-.. autoclass:: PartitionScheduleDefinition
-
 .. autodecorator:: hourly_partitioned_config
     :noindex:
 
@@ -93,3 +91,9 @@ Sensors
 .. autodecorator:: run_status_sensor
 
 .. autodecorator:: run_failure_sensor
+
+.. autoclass:: SensorResult
+
+.. autoclass:: AddDynamicPartitionsRequest
+
+.. autoclass:: DeleteDynamicPartitionsRequest

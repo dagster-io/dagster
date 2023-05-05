@@ -233,14 +233,9 @@ load_from:
 ```
 
 </TabItem>
-<TabItem name="Loading multiple repositories">
+<TabItem name="Loading multiple Python environments">
 
-### Loading multiple repositories
-
-<Note>
-  This is applicable only for code locations defined using{" "}
-  <PyObject object="repository" decorator />.
-</Note>
+### Loading multiple Python environments
 
 By default, Dagit and other Dagster tools assume that code locations should be loaded using the same Python environment used to load Dagster. However, it's often useful for code locations to use independent environments. For example, a data engineering team running Spark can have dramatically different dependencies than an ML team running Tensorflow.
 

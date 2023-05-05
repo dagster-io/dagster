@@ -1,39 +1,40 @@
 import sys
 import threading
 import time
+from unittest import mock
 
 import pytest
-from dagster import file_relative_path, repository
+from dagster import file_relative_path, job, repository
 from dagster._core.errors import DagsterUserCodeProcessError
-from dagster._core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
+from dagster._core.host_representation.code_location import GrpcServerCodeLocation
+from dagster._core.host_representation.grpc_server_registry import GrpcServerRegistry
 from dagster._core.host_representation.origin import (
-    ManagedGrpcPythonEnvRepositoryLocationOrigin,
-    RegisteredRepositoryLocationOrigin,
+    ManagedGrpcPythonEnvCodeLocationOrigin,
+    RegisteredCodeLocationOrigin,
 )
-from dagster._core.host_representation.repository_location import GrpcServerRepositoryLocation
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._legacy import pipeline
+from dagster._grpc.server import GrpcServerProcess
 
 
-@pipeline
-def noop_pipeline():
+@job
+def noop_job():
     pass
 
 
 @repository
 def repo():
-    return [noop_pipeline]
+    return [noop_job]
 
 
 @repository
 def other_repo():
-    return [noop_pipeline]
+    return [noop_job]
 
 
 def _can_connect(origin, endpoint):
     try:
-        with GrpcServerRepositoryLocation(
+        with GrpcServerCodeLocation(
             origin=origin,
             server_id=endpoint.server_id,
             port=endpoint.port,
@@ -53,22 +54,25 @@ def instance():
 
 
 def test_error_repo_in_registry(instance):
-    error_origin = ManagedGrpcPythonEnvRepositoryLocationOrigin(
+    error_origin = ManagedGrpcPythonEnvCodeLocationOrigin(
         loadable_target_origin=LoadableTargetOrigin(
             executable_path=sys.executable,
             attribute="error_repo",
             python_file=file_relative_path(__file__, "error_repo.py"),
         ),
     )
-    with ProcessGrpcServerRegistry(
-        instance=instance, reload_interval=5, heartbeat_ttl=10, startup_timeout=5
+    with GrpcServerRegistry(
+        instance=instance,
+        reload_interval=5,
+        heartbeat_ttl=10,
+        startup_timeout=5,
     ) as registry:
         # Repository with a loading error does not raise an exception
         endpoint = registry.get_grpc_endpoint(error_origin)
 
         # But using that endpoint to load a location results in an error
         with pytest.raises(DagsterUserCodeProcessError, match="object is not callable"):
-            with GrpcServerRepositoryLocation(
+            with GrpcServerCodeLocation(
                 origin=error_origin,
                 server_id=endpoint.server_id,
                 port=endpoint.port,
@@ -80,7 +84,7 @@ def test_error_repo_in_registry(instance):
 
         # that error is idempotent
         with pytest.raises(DagsterUserCodeProcessError, match="object is not callable"):
-            with GrpcServerRepositoryLocation(
+            with GrpcServerCodeLocation(
                 origin=error_origin,
                 server_id=endpoint.server_id,
                 port=endpoint.port,
@@ -91,8 +95,8 @@ def test_error_repo_in_registry(instance):
                 pass
 
 
-def test_process_server_registry(instance):
-    origin = ManagedGrpcPythonEnvRepositoryLocationOrigin(
+def test_server_registry(instance):
+    origin = ManagedGrpcPythonEnvCodeLocationOrigin(
         loadable_target_origin=LoadableTargetOrigin(
             executable_path=sys.executable,
             attribute="repo",
@@ -100,8 +104,11 @@ def test_process_server_registry(instance):
         ),
     )
 
-    with ProcessGrpcServerRegistry(
-        instance=instance, reload_interval=5, heartbeat_ttl=10, startup_timeout=5
+    with GrpcServerRegistry(
+        instance=instance,
+        reload_interval=5,
+        heartbeat_ttl=10,
+        startup_timeout=5,
     ) as registry:
         endpoint_one = registry.get_grpc_endpoint(origin)
         endpoint_two = registry.get_grpc_endpoint(origin)
@@ -146,7 +153,6 @@ def test_process_server_registry(instance):
                 assert _can_connect(origin, endpoint_four)
                 break
 
-    registry.wait_for_processes()
     assert not _can_connect(origin, endpoint_three)
     assert not _can_connect(origin, endpoint_four)
 
@@ -157,7 +163,7 @@ def _registry_thread(origin, registry, endpoint, event):
 
 
 def test_registry_multithreading(instance):
-    origin = ManagedGrpcPythonEnvRepositoryLocationOrigin(
+    origin = ManagedGrpcPythonEnvCodeLocationOrigin(
         loadable_target_origin=LoadableTargetOrigin(
             executable_path=sys.executable,
             attribute="repo",
@@ -165,8 +171,11 @@ def test_registry_multithreading(instance):
         ),
     )
 
-    with ProcessGrpcServerRegistry(
-        instance=instance, reload_interval=300, heartbeat_ttl=600, startup_timeout=30
+    with GrpcServerRegistry(
+        instance=instance,
+        reload_interval=300,
+        heartbeat_ttl=600,
+        startup_timeout=30,
     ) as registry:
         endpoint = registry.get_grpc_endpoint(origin)
 
@@ -189,21 +198,20 @@ def test_registry_multithreading(instance):
 
         assert _can_connect(origin, endpoint)
 
-    registry.wait_for_processes()
     assert not _can_connect(origin, endpoint)
 
 
-class TestMockProcessGrpcServerRegistry(ProcessGrpcServerRegistry):
+class TestMockProcessGrpcServerRegistry(GrpcServerRegistry):
     def __init__(self, instance):
         self.mocked_loadable_target_origin = None
         super(TestMockProcessGrpcServerRegistry, self).__init__(
             instance=instance, reload_interval=300, heartbeat_ttl=600, startup_timeout=30
         )
 
-    def supports_origin(self, repository_location_origin):
-        return isinstance(repository_location_origin, RegisteredRepositoryLocationOrigin)
+    def supports_origin(self, code_location_origin):
+        return isinstance(code_location_origin, RegisteredCodeLocationOrigin)
 
-    def _get_loadable_target_origin(self, repository_location_origin):
+    def _get_loadable_target_origin(self, code_location_origin):
         return self.mocked_loadable_target_origin
 
 
@@ -222,7 +230,7 @@ def test_custom_loadable_target_origin(instance):
         python_file=file_relative_path(__file__, "test_grpc_server_registry.py"),
     )
 
-    origin = RegisteredRepositoryLocationOrigin("test_location")
+    origin = RegisteredCodeLocationOrigin("test_location")
 
     with TestMockProcessGrpcServerRegistry(instance) as registry:
         registry.mocked_loadable_target_origin = first_loadable_target_origin
@@ -241,3 +249,19 @@ def test_custom_loadable_target_origin(instance):
     registry.wait_for_processes()
     assert not _can_connect(origin, endpoint_one)
     assert not _can_connect(origin, endpoint_two)
+
+
+def test_failure_on_open_server_process(instance):
+    loadable_target_origin = LoadableTargetOrigin(
+        executable_path=sys.executable,
+        attribute="repo",
+        python_file=file_relative_path(__file__, "test_grpc_server_registry.py"),
+    )
+    with mock.patch("dagster._grpc.server.open_server_process") as mock_open_server_process:
+        mock_open_server_process.side_effect = Exception("OOPS")
+        with pytest.raises(Exception, match="OOPS"):
+            with GrpcServerProcess(
+                instance_ref=instance.get_ref(),
+                loadable_target_origin=loadable_target_origin,
+            ):
+                pass

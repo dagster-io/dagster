@@ -4,17 +4,12 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {ASSET_NODE_FRAGMENT} from '../asset-graph/AssetNode';
-import {
-  displayNameForAssetKey,
-  isHiddenAssetGroupJob,
-  LiveData,
-  toGraphId,
-} from '../asset-graph/Utils';
+import {isHiddenAssetGroupJob, LiveData, toGraphId} from '../asset-graph/Utils';
 import {AssetNodeForGraphQueryFragment} from '../asset-graph/types/useAssetGraphData.types';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {Description} from '../pipelines/Description';
 import {PipelineReference} from '../pipelines/PipelineReference';
-import {Version} from '../versions/Version';
+import {ResourceContainer, ResourceHeader} from '../pipelines/SidebarOpHelpers';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -27,8 +22,14 @@ import {
   metadataForAssetNode,
 } from './AssetMetadata';
 import {AssetNodeList} from './AssetNodeList';
+import {
+  automaterializePolicyDescription,
+  AutomaterializePolicyTag,
+} from './AutomaterializePolicyTag';
 import {CurrentMinutesLateTag, freshnessPolicyDescription} from './CurrentMinutesLateTag';
 import {DependsOnSelfBanner} from './DependsOnSelfBanner';
+import {UnderlyingOpsOrGraph} from './UnderlyingOpsOrGraph';
+import {Version} from './Version';
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinition.types';
 
 export const AssetNodeDefinition: React.FC<{
@@ -90,17 +91,44 @@ export const AssetNodeDefinition: React.FC<{
               </Box>
             </>
           )}
-          {liveDataForNode?.freshnessPolicy && (
+          {assetNode.freshnessPolicy && (
             <>
               <Box
                 padding={{vertical: 16, horizontal: 24}}
                 border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
               >
-                <Subheading>Freshness Policy</Subheading>
+                <Subheading>Freshness policy</Subheading>
               </Box>
-              <Box padding={{vertical: 16, horizontal: 24}} flex={{gap: 12, alignItems: 'center'}}>
-                <CurrentMinutesLateTag liveData={liveDataForNode} />
-                <Body>{freshnessPolicyDescription(liveDataForNode.freshnessPolicy)}</Body>
+              <Box
+                padding={{vertical: 16, horizontal: 24}}
+                flex={{gap: 12, alignItems: 'flex-start'}}
+              >
+                <Body style={{flex: 1}}>
+                  {freshnessPolicyDescription(assetNode.freshnessPolicy)}
+                </Body>
+                <CurrentMinutesLateTag
+                  liveData={liveDataForNode}
+                  policy={assetNode.freshnessPolicy}
+                />
+              </Box>
+            </>
+          )}
+          {assetNode.autoMaterializePolicy && (
+            <>
+              <Box
+                padding={{vertical: 16, horizontal: 24}}
+                border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+              >
+                <Subheading>Auto-materialize policy</Subheading>
+              </Box>
+              <Box
+                padding={{vertical: 16, horizontal: 24}}
+                flex={{gap: 12, alignItems: 'flex-start'}}
+              >
+                <Body style={{flex: 1}}>
+                  {automaterializePolicyDescription(assetNode.autoMaterializePolicy)}
+                </Body>
+                <AutomaterializePolicyTag policy={assetNode.autoMaterializePolicy} />
               </Box>
             </>
           )}
@@ -110,7 +138,7 @@ export const AssetNodeDefinition: React.FC<{
             flex={{justifyContent: 'space-between', gap: 8}}
           >
             <Subheading>
-              Upstream Assets{upstream?.length ? ` (${upstream.length})` : ''}
+              Upstream assets{upstream?.length ? ` (${upstream.length})` : ''}
             </Subheading>
             <Link to="?view=lineage&lineageScope=upstream">
               <Box flex={{gap: 4, alignItems: 'center'}}>
@@ -127,7 +155,7 @@ export const AssetNodeDefinition: React.FC<{
             flex={{justifyContent: 'space-between', gap: 8}}
           >
             <Subheading>
-              Downstream Assets{downstream?.length ? ` (${downstream.length})` : ''}
+              Downstream assets{downstream?.length ? ` (${downstream.length})` : ''}
             </Subheading>
             <Link to="?view=lineage&lineageScope=downstream">
               <Box flex={{gap: 4, alignItems: 'center'}}>
@@ -140,24 +168,60 @@ export const AssetNodeDefinition: React.FC<{
           {/** Ensures the line between the left and right columns goes to the bottom of the page */}
           <div style={{flex: 1}} />
         </Box>
-        {assetConfigSchema ? (
+        {assetConfigSchema || assetNode.requiredResources.length > 0 ? (
           <Box
             border={{side: 'vertical', width: 1, color: Colors.KeylineGray}}
             style={{flex: 0.5, minWidth: 0}}
             flex={{direction: 'column'}}
           >
-            <Box
-              padding={{vertical: 16, horizontal: 24}}
-              border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-            >
-              <Subheading>Config</Subheading>
-            </Box>
-            <Box padding={{vertical: 16, horizontal: 24}}>
-              <ConfigTypeSchema
-                type={assetConfigSchema}
-                typesInScope={assetConfigSchema.recursiveConfigTypes}
-              />
-            </Box>
+            {assetNode.requiredResources.length > 0 && (
+              <>
+                <Box
+                  padding={{vertical: 16, horizontal: 24}}
+                  border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+                >
+                  <Subheading>Required Resources</Subheading>
+                </Box>
+                <Box
+                  padding={{vertical: 16, horizontal: 24}}
+                  border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+                >
+                  {assetNode.requiredResources.map((resource) => (
+                    <ResourceContainer key={resource.resourceKey}>
+                      <Icon name="resource" color={Colors.Gray700} />
+                      {repoAddress ? (
+                        <Link
+                          to={workspacePathFromAddress(
+                            repoAddress,
+                            `/resources/${resource.resourceKey}`,
+                          )}
+                        >
+                          <ResourceHeader>{resource.resourceKey}</ResourceHeader>
+                        </Link>
+                      ) : (
+                        <ResourceHeader>{resource.resourceKey}</ResourceHeader>
+                      )}
+                    </ResourceContainer>
+                  ))}
+                </Box>
+              </>
+            )}
+            {assetConfigSchema && (
+              <>
+                <Box
+                  padding={{vertical: 16, horizontal: 24}}
+                  border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+                >
+                  <Subheading>Config</Subheading>
+                </Box>
+                <Box padding={{vertical: 16, horizontal: 24}}>
+                  <ConfigTypeSchema
+                    type={assetConfigSchema}
+                    typesInScope={assetConfigSchema.recursiveConfigTypes}
+                  />
+                </Box>
+              </>
+            )}
           </Box>
         ) : null}
 
@@ -215,57 +279,12 @@ const DescriptionAnnotations: React.FC<{
           />
         </Mono>
       ))}
-    <OpNamesDisplay assetNode={assetNode} repoAddress={repoAddress} />
+    <UnderlyingOpsOrGraph assetNode={assetNode} repoAddress={repoAddress} />
     {assetNode.isSource && (
       <Caption style={{lineHeight: '16px', marginTop: 2}}>Source Asset</Caption>
     )}
   </Box>
 );
-
-const OpNamesDisplay = (props: {
-  assetNode: AssetNodeDefinitionFragment;
-  repoAddress: RepoAddress;
-}) => {
-  const {assetNode, repoAddress} = props;
-  const {assetKey, graphName, opNames, jobNames} = assetNode;
-  const opCount = opNames.length;
-
-  if (!opCount) {
-    return null;
-  }
-
-  if (!graphName) {
-    const firstOp = opNames[0];
-    if (displayNameForAssetKey(assetKey) === firstOp) {
-      return null;
-    }
-    const opPath = workspacePathFromAddress(repoAddress, `/ops/${firstOp}`);
-    return (
-      <Box flex={{gap: 4, alignItems: 'center'}}>
-        <Icon name="op" size={16} />
-        <Mono>
-          <Link to={opPath}>{firstOp}</Link>
-        </Mono>
-      </Box>
-    );
-  }
-
-  if (!jobNames.length) {
-    return null;
-  }
-
-  return (
-    <Box flex={{gap: 4, alignItems: 'center'}}>
-      <Icon name="schema" size={16} />
-      <Mono>
-        <Link to={workspacePathFromAddress(repoAddress, `/graphs/${jobNames[0]}/${graphName}/`)}>
-          {graphName}
-        </Link>
-        {` (${opCount === 1 ? '1 op' : `${opCount} ops`})`}
-      </Mono>
-    </Box>
-  );
-};
 
 export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
   fragment AssetNodeDefinitionFragment on AssetNode {
@@ -275,6 +294,15 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
     opNames
     opVersion
     jobNames
+    autoMaterializePolicy {
+      policyType
+    }
+    freshnessPolicy {
+      maximumLagMinutes
+      cronSchedule
+      cronScheduleTimezone
+    }
+
     partitionDefinition {
       description
     }
@@ -286,6 +314,10 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
         name
       }
     }
+    requiredResources {
+      resourceKey
+    }
+
     ...AssetNodeConfigFragment
     ...AssetNodeFragment
     ...AssetNodeOpMetadataFragment

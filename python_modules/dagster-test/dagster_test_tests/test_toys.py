@@ -1,6 +1,7 @@
 import pytest
 from dagster import DagsterResourceFunctionError, DagsterTypeCheckDidNotPass, multiprocess_executor
-from dagster._core.definitions.assets_job import get_base_asset_jobs
+from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.events import DagsterEventType
 from dagster._core.storage.fs_io_manager import fs_io_manager
 from dagster._utils import file_relative_path
@@ -17,7 +18,6 @@ from dagster_test.toys.hammer import hammer
 from dagster_test.toys.log_spew import log_spew
 from dagster_test.toys.longitudinal import IntentionalRandomFailure, longitudinal
 from dagster_test.toys.many_events import many_events
-from dagster_test.toys.partitioned_assets import partitioned_asset_group
 from dagster_test.toys.pyspark_assets.pyspark_assets_job import dir_resources, pyspark_assets
 from dagster_test.toys.repo import toys_repository
 from dagster_test.toys.resources import lots_of_resources, resource_ops
@@ -76,7 +76,7 @@ def test_many_events_subset_job(executor_def):
 
 def test_sleepy_job(executor_def):
     assert (
-        lambda: sleepy.to_job(  # type: ignore
+        lambda: sleepy.to_job(
             config={
                 "ops": {"giver": {"config": [2, 2, 2, 2]}},
             },
@@ -115,7 +115,7 @@ def test_branch_job_failed(executor_def):
         )
 
 
-def test_spew_pipeline(executor_def):
+def test_spew_job(executor_def):
     assert log_spew.to_job(executor_def=executor_def).execute_in_process().success
 
 
@@ -142,7 +142,7 @@ def test_resource_job_with_config(executor_def):
 def test_pyspark_assets_job(executor_def):
     with get_temp_dir() as temp_dir:
         run_config = {
-            "solids": {
+            "ops": {
                 "get_max_temp_per_station": {
                     "config": {
                         "temperature_file": "temperature.csv",
@@ -247,7 +247,7 @@ def test_error_monster_type_error(executor_def):
 
 def test_composition_job():
     result = composition_job.execute_in_process(
-        run_config={"solids": {"add_four": {"inputs": {"num": {"value": 3}}}}},
+        run_config={"ops": {"add_four": {"inputs": {"num": {"value": 3}}}}},
     )
 
     assert result.success
@@ -276,17 +276,12 @@ def test_retry_job(executor_def):
 
 
 def test_software_defined_assets_job():
-    assert software_defined_assets.build_job("all_assets").execute_in_process().success
-
-
-def test_partitioned_assets():
-    for job_def in get_base_asset_jobs(
-        assets=partitioned_asset_group.assets,
-        source_assets=[],
-        executor_def=None,
-        resource_defs=None,
-    ):
-        partition_key = job_def.mode_definitions[
-            0
-        ].partitioned_config.partitions_def.get_partition_keys()[0]
-        assert job_def.execute_in_process(partition_key=partition_key).success
+    assert (
+        Definitions(
+            assets=software_defined_assets,
+            jobs=[define_asset_job("all_assets")],
+        )
+        .get_job_def("all_assets")
+        .execute_in_process()
+        .success
+    )

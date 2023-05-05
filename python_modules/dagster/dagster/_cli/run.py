@@ -8,9 +8,7 @@ from dagster._core.instance import DagsterInstance
 
 @click.group(name="run")
 def run_cli():
-    """
-    Commands for working with Dagster job runs.
-    """
+    """Commands for working with Dagster job runs."""
 
 
 @run_cli.command(name="list", help="List the runs in the current Dagster instance.")
@@ -18,8 +16,8 @@ def run_cli():
 def run_list_command(limit):
     with DagsterInstance.get() as instance:
         for run in instance.get_runs(limit=limit):
-            click.echo("Run: {}".format(run.run_id))
-            click.echo("     Job: {}".format(run.pipeline_name))
+            click.echo(f"Run: {run.run_id}")
+            click.echo(f"     Job: {run.job_name}")
 
 
 @run_cli.command(
@@ -87,7 +85,7 @@ def run_wipe_command(force):
 )
 @job_target_argument
 def run_migrate_command(from_label, **kwargs):
-    from dagster._core.storage.pipeline_run import RunsFilter
+    from dagster._core.storage.dagster_run import RunsFilter
     from dagster._core.storage.runs.sql_run_storage import SqlRunStorage
     from dagster._core.storage.tags import REPOSITORY_LABEL_TAG
 
@@ -134,7 +132,7 @@ def run_migrate_command(from_label, **kwargs):
 
         if should_migrate:
             for record in tqdm(records):
-                instance.run_storage.replace_job_origin(record.pipeline_run, new_job_origin)
+                instance.run_storage.replace_job_origin(record.dagster_run, new_job_origin)
             click.echo(f"Migrated the run history for {job_name} from {from_label} to {to_label}.")
         else:
             raise click.ClickException("Exiting without migrating.")

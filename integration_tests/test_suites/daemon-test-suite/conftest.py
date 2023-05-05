@@ -37,4 +37,4 @@ def foo_example_workspace_fixture(instance):
 
 @pytest.fixture
 def foo_example_repo(foo_example_workspace):
-    return foo_example_workspace.repository_locations[0].get_repository("example_repo")
+    return foo_example_workspace.code_locations[0].get_repository("example_repo")

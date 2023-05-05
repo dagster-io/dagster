@@ -74,6 +74,7 @@ export const MenuItem: React.FC<ItemProps> = (props) => {
       {...rest}
       $textColor={intentToTextColor(intent)}
       icon={iconWithColor(icon, intent)}
+      tabIndex={0}
     />
   );
 };
@@ -88,7 +89,7 @@ interface MenuExternalLinkProps
  * If you want to use a menu item as a link, use `MenuLink` and provide a `to` prop.
  */
 export const MenuExternalLink: React.FC<MenuExternalLinkProps> = (props) => {
-  const {icon, intent, ...rest} = props;
+  const {icon, intent = 'none', ...rest} = props;
   return (
     <StyledMenuItem
       {...rest}
@@ -131,19 +132,21 @@ const StyledMenuItem = styled(BlueprintMenuItem)<StyledMenuItemProps>`
     margin-top: 2px;
   }
 
-  &.bp3-intent-primary.bp3-active {
+  &.bp4-active,
+  &.bp4-active:hover {
     background-color: ${Colors.Blue500};
+    color: ${Colors.White};
 
     ${IconWrapper} {
       background-color: ${Colors.White};
     }
   }
 
-  &.bp3-disabled ${IconWrapper} {
+  &.bp4-disabled ${IconWrapper} {
     opacity: 0.5;
   }
 
-  &.bp3-active ${IconWrapper} {
+  &.bp4-active ${IconWrapper} {
     color: ${Colors.White};
   }
 

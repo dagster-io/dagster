@@ -69,11 +69,15 @@ class TestMySQLInstance:
             TestMySQLInstance.dagster_mysql_installed(),
             "dagster_mysql must be installed to test with mysql",
         )
-        from dagster_mysql.utils import get_conn_string  # pylint: disable=import-error
+        from dagster_mysql.utils import get_conn_string
 
-        env_name = (
-            "MYSQL_TEST_BACKCOMPAT_DB_HOST" if kwargs.get("port") == 3307 else "MYSQL_TEST_DB_HOST"
-        )
+        if kwargs.get("port") == 3307:
+            env_name = "MYSQL_TEST_PINNED_DB_HOST"
+        elif kwargs.get("port") == 3308:
+            env_name = "MYSQL_TEST_PINNED_BACKCOMPAT_DB_HOST"
+        else:
+            env_name = "MYSQL_TEST_DB_HOST"
+
         return get_conn_string(
             **dict(
                 dict(
@@ -92,7 +96,7 @@ class TestMySQLInstance:
             TestMySQLInstance.dagster_mysql_installed(),
             "dagster_mysql must be installed to test with mysql",
         )
-        from dagster_mysql.run_storage import MySQLRunStorage  # pylint: disable=import-error
+        from dagster_mysql.run_storage import MySQLRunStorage
 
         storage = MySQLRunStorage.create_clean_storage(conn_string)
         assert storage
@@ -104,7 +108,7 @@ class TestMySQLInstance:
             TestMySQLInstance.dagster_mysql_installed(),
             "dagster_mysql must be installed to test with mysql",
         )
-        from dagster_mysql.event_log import MySQLEventLogStorage  # pylint: disable=import-error
+        from dagster_mysql.event_log import MySQLEventLogStorage
 
         storage = MySQLEventLogStorage.create_clean_storage(conn_string)
         assert storage
@@ -116,7 +120,7 @@ class TestMySQLInstance:
             TestMySQLInstance.dagster_mysql_installed(),
             "dagster_mysql must be installed to test with mysql",
         )
-        from dagster_mysql.schedule_storage.schedule_storage import (  # pylint: disable=import-error
+        from dagster_mysql.schedule_storage.schedule_storage import (
             MySQLScheduleStorage,
         )
 
@@ -138,7 +142,7 @@ class TestMySQLInstance:
         )
         conn_args = check.opt_dict_param(conn_args, "conn_args") if conn_args else {}
 
-        from dagster_mysql.utils import wait_for_connection  # pylint: disable=import-error
+        from dagster_mysql.utils import wait_for_connection
 
         if BUILDKITE:
             yield TestMySQLInstance.conn_string(
@@ -164,7 +168,7 @@ class TestMySQLInstance:
         except subprocess.CalledProcessError as ex:
             err_text = ex.output.decode()
             raise MySQLDockerError(
-                "Failed to launch docker container(s) via docker-compose: {}".format(err_text),
+                f"Failed to launch docker container(s) via docker-compose: {err_text}",
                 ex,
             ) from ex
 
@@ -200,7 +204,7 @@ def is_mysql_running(service_name):
                 "container",
                 "ps",
                 "-f",
-                "name={}".format(service_name),
+                f"name={service_name}",
                 "-f",
                 "status=running",
             ],

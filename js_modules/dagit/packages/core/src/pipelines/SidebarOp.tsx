@@ -155,7 +155,7 @@ export const SidebarOp: React.FC<SidebarOpProps> = ({
   );
 };
 
-export const SIDEBAR_OP_FRAGMENT = gql`
+const SIDEBAR_OP_FRAGMENT = gql`
   fragment SidebarOpFragment on SolidContainer {
     id
     name
@@ -164,7 +164,6 @@ export const SIDEBAR_OP_FRAGMENT = gql`
         ...SidebarOpInvocationFragment
 
         definition {
-          __typename
           ...SidebarOpDefinitionFragment
         }
       }
@@ -178,7 +177,6 @@ export const SIDEBAR_OP_FRAGMENT = gql`
 const SIDEBAR_PIPELINE_OP_QUERY = gql`
   query SidebarPipelineOpQuery($selector: PipelineSelector!, $handleID: String!) {
     pipelineOrError(params: $selector) {
-      __typename
       ... on Pipeline {
         id
         ...SidebarOpFragment
@@ -192,7 +190,6 @@ const SIDEBAR_PIPELINE_OP_QUERY = gql`
 const SIDEBAR_GRAPH_OP_QUERY = gql`
   query SidebarGraphOpQuery($selector: GraphSelector!, $handleID: String!) {
     graphOrError(selector: $selector) {
-      __typename
       ... on Graph {
         id
         ...SidebarOpFragment

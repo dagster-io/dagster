@@ -21,15 +21,15 @@ export const workspacePipelinePath = ({
   isJob,
   path = '',
 }: PathConfig) => {
-  const finalPath = path.startsWith('/') ? path : `/${path}`;
+  const finalPath = path === '' ? '' : path.startsWith('/') ? path : `/${path}`;
   return `/locations/${buildRepoPathForURL(repoName, repoLocation)}/${
     isJob ? 'jobs' : 'pipelines'
   }/${pipelineName}${finalPath}`;
 };
 
 export const workspacePipelinePathGuessRepo = (pipelineName: string, isJob = false, path = '') => {
-  const finalPath = path.startsWith('/') ? path : `/${path}`;
-  return `/locations/${isJob ? 'jobs' : 'pipelines'}/${pipelineName}${finalPath}`;
+  const finalPath = path === '' ? '' : path.startsWith('/') ? path : `/${path}`;
+  return `/guess/${isJob ? 'jobs' : 'pipelines'}/${pipelineName}${finalPath}`;
 };
 
 export const workspacePathFromAddress = (repoAddress: RepoAddress, path = '') => {

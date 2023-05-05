@@ -20,6 +20,7 @@ import {AssetsEmptyState} from './AssetsEmptyState';
 import {AssetTableFragment} from './types/AssetTableFragment.types';
 import {
   AssetCatalogTableQuery,
+  AssetCatalogTableQueryVariables,
   AssetCatalogGroupTableQuery,
   AssetCatalogGroupTableNodeFragment,
   AssetCatalogGroupTableQueryVariables,
@@ -36,10 +37,13 @@ function useAllAssets(
   assets: Asset[] | undefined;
   error: PythonErrorFragment | undefined;
 } {
-  const assetsQuery = useQuery<AssetCatalogTableQuery>(ASSET_CATALOG_TABLE_QUERY, {
-    skip: !!groupSelector,
-    notifyOnNetworkStatusChange: true,
-  });
+  const assetsQuery = useQuery<AssetCatalogTableQuery, AssetCatalogTableQueryVariables>(
+    ASSET_CATALOG_TABLE_QUERY,
+    {
+      skip: !!groupSelector,
+      notifyOnNetworkStatusChange: true,
+    },
+  );
   const groupQuery = useQuery<AssetCatalogGroupTableQuery, AssetCatalogGroupTableQueryVariables>(
     ASSET_CATALOG_GROUP_TABLE_QUERY,
     {
@@ -242,10 +246,9 @@ const AssetGroupSuggest: React.FC<{
   );
 };
 
-const ASSET_CATALOG_TABLE_QUERY = gql`
+export const ASSET_CATALOG_TABLE_QUERY = gql`
   query AssetCatalogTableQuery {
     assetsOrError {
-      __typename
       ... on AssetConnection {
         nodes {
           id
@@ -260,7 +263,7 @@ const ASSET_CATALOG_TABLE_QUERY = gql`
   ${PYTHON_ERROR_FRAGMENT}
 `;
 
-const ASSET_CATALOG_GROUP_TABLE_QUERY = gql`
+export const ASSET_CATALOG_GROUP_TABLE_QUERY = gql`
   query AssetCatalogGroupTableQuery($group: AssetGroupSelector) {
     assetNodes(group: $group) {
       id

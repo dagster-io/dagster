@@ -1,28 +1,35 @@
 import glob
 import logging
 import os
+import re
 import sqlite3
 import threading
 import time
 from collections import defaultdict
 from contextlib import contextmanager
-from typing import Iterable, Optional
+from typing import TYPE_CHECKING, Any, ContextManager, Iterable, Iterator, Optional, Sequence
 
 import sqlalchemy as db
+import sqlalchemy.exc as db_exc
+from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.pool import NullPool
 from tqdm import tqdm
-from watchdog.events import PatternMatchingEventHandler
+from watchdog.events import FileSystemEvent, PatternMatchingEventHandler
 from watchdog.observers import Observer
 
 import dagster._check as check
 import dagster._seven as seven
 from dagster._config import StringSource
+from dagster._config.config_schema import UserConfigSchema
+from dagster._core.definitions.events import AssetKey
 from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.event_api import EventHandlerFn
 from dagster._core.events import ASSET_EVENTS
 from dagster._core.events.log import EventLogEntry
+from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
 from dagster._core.storage.event_log.base import EventLogCursor, EventLogRecord, EventRecordsFilter
-from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
 from dagster._core.storage.sql import (
+    AlembicVersion,
     check_alembic_revision,
     create_engine,
     get_alembic_config,
@@ -33,13 +40,16 @@ from dagster._core.storage.sqlite import create_db_conn_string
 from dagster._serdes import (
     ConfigurableClass,
     ConfigurableClassData,
-    deserialize_json_to_dagster_namedtuple,
 )
+from dagster._serdes.errors import DeserializationError
+from dagster._serdes.serdes import deserialize_value
 from dagster._utils import mkdir_p
 
 from ..schema import SqlEventLogStorageMetadata, SqlEventLogStorageTable
 from ..sql_event_log import RunShardedEventsCursor, SqlEventLogStorage
 
+if TYPE_CHECKING:
+    from dagster._core.storage.sqlite_storage import SqliteStorageConfig
 INDEX_SHARD_NAME = "index"
 
 
@@ -68,7 +78,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     run.
     """
 
-    def __init__(self, base_dir, inst_data=None):
+    def __init__(self, base_dir: str, inst_data: Optional[ConfigurableClassData] = None):
         """Note that idempotent initialization of the SQLite database is done on a per-run_id
         basis in the body of connect, since each run is stored in a separate database.
         """
@@ -96,36 +106,36 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         super().__init__()
 
-    def upgrade(self):
+    def upgrade(self) -> None:
         all_run_ids = self.get_all_run_ids()
-        print(  # pylint: disable=print-call
-            f"Updating event log storage for {len(all_run_ids)} runs on disk..."
-        )
+        print(f"Updating event log storage for {len(all_run_ids)} runs on disk...")  # noqa: T201
         alembic_config = get_alembic_config(__file__)
         if all_run_ids:
             for run_id in tqdm(all_run_ids):
                 with self.run_connection(run_id) as conn:
                     run_alembic_upgrade(alembic_config, conn, run_id)
 
-        print("Updating event log storage for index db on disk...")  # pylint: disable=print-call
+        print("Updating event log storage for index db on disk...")  # noqa: T201
         with self.index_connection() as conn:
             run_alembic_upgrade(alembic_config, conn, "index")
 
         self._initialized_dbs = set()
 
     @property
-    def inst_data(self):
+    def inst_data(self) -> Optional[ConfigurableClassData]:
         return self._inst_data
 
     @classmethod
-    def config_type(cls):
+    def config_type(cls) -> UserConfigSchema:
         return {"base_dir": StringSource}
 
-    @staticmethod
-    def from_config_value(inst_data, config_value):
+    @classmethod
+    def from_config_value(
+        cls, inst_data: Optional[ConfigurableClassData], config_value: "SqliteStorageConfig"
+    ) -> "SqliteEventLogStorage":
         return SqliteEventLogStorage(inst_data=inst_data, **config_value)
 
-    def get_all_run_ids(self):
+    def get_all_run_ids(self) -> Sequence[str]:
         all_filenames = glob.glob(os.path.join(self._base_dir, "*.db"))
         return [
             os.path.splitext(os.path.basename(filename))[0]
@@ -136,16 +146,17 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def has_table(self, table_name: str) -> bool:
         conn_string = self.conn_string_for_shard(INDEX_SHARD_NAME)
         engine = create_engine(conn_string, poolclass=NullPool)
-        return bool(engine.dialect.has_table(engine.connect(), table_name))
+        with engine.connect() as conn:
+            return bool(engine.dialect.has_table(conn, table_name))
 
-    def path_for_shard(self, run_id):
-        return os.path.join(self._base_dir, "{run_id}.db".format(run_id=run_id))
+    def path_for_shard(self, run_id: str) -> str:
+        return os.path.join(self._base_dir, f"{run_id}.db")
 
-    def conn_string_for_shard(self, shard_name):
+    def conn_string_for_shard(self, shard_name: str) -> str:
         check.str_param(shard_name, "shard_name")
         return create_db_conn_string(self._base_dir, shard_name)
 
-    def _initdb(self, engine):
+    def _initdb(self, engine: Engine) -> None:
         alembic_config = get_alembic_config(__file__)
 
         retry_limit = 10
@@ -157,11 +168,11 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
                     if not (db_revision and head_revision):
                         SqlEventLogStorageMetadata.create_all(engine)
-                        engine.execute("PRAGMA journal_mode=WAL;")
+                        connection.execute("PRAGMA journal_mode=WAL;")
                         stamp_alembic_rev(alembic_config, connection)
 
                 break
-            except (db.exc.DatabaseError, sqlite3.DatabaseError, sqlite3.OperationalError) as exc:
+            except (db_exc.DatabaseError, sqlite3.DatabaseError, sqlite3.OperationalError) as exc:
                 # This is SQLite-specific handling for concurrency issues that can arise when
                 # multiple processes (e.g. the dagit process and user code process) contend with
                 # each other to init the db. When we hit the following errors, we know that another
@@ -169,11 +180,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 err_msg = str(exc)
 
                 if not (
-                    "table asset_keys already exists" in err_msg
-                    or "table secondary_indexes already exists" in err_msg
-                    or "table event_logs already exists" in err_msg
-                    or "table asset_event_tags already exists" in err_msg
-                    or "table alembic_version already exists" in err_msg
+                    re.search(r"table [A-Za-z_]* already exists", err_msg)
                     or "database is locked" in err_msg
                     or "UNIQUE constraint failed: alembic_version.version_num" in err_msg
                 ):
@@ -194,7 +201,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                     retry_limit -= 1
 
     @contextmanager
-    def _connect(self, shard):
+    def _connect(self, shard: str) -> Iterator[Connection]:
         with self._db_lock:
             check.str_param(shard, "shard")
 
@@ -213,15 +220,14 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 conn.close()
             engine.dispose()
 
-    def run_connection(self, run_id=None):
-        return self._connect(run_id)
+    def run_connection(self, run_id: Optional[str] = None) -> Any:
+        return self._connect(run_id)  # type: ignore  # bad sig
 
-    def index_connection(self):
+    def index_connection(self) -> ContextManager[Connection]:
         return self._connect(INDEX_SHARD_NAME)
 
-    def store_event(self, event):
-        """
-        Overridden method to replicate asset events in a central assets.db sqlite shard, enabling
+    def store_event(self, event: EventLogEntry) -> None:
+        """Overridden method to replicate asset events in a central assets.db sqlite shard, enabling
         cross-run asset queries.
 
         Args:
@@ -234,7 +240,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         with self.run_connection(run_id) as conn:
             conn.execute(insert_event_statement)
 
-        if event.is_dagster_event and event.dagster_event.asset_key:
+        if event.is_dagster_event and event.dagster_event.asset_key:  # type: ignore
             check.invariant(
                 event.dagster_event_type in ASSET_EVENTS,
                 (
@@ -250,7 +256,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 result = conn.execute(insert_event_statement)
                 event_id = result.inserted_primary_key[0]
 
-            self.store_asset_event(event)
+            self.store_asset_event(event, event_id)
 
             if event_id is None:
                 raise DagsterInvariantViolationError(
@@ -328,24 +334,22 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         event_records = []
         for run_record in run_records:
-            run_id = run_record.pipeline_run.run_id
+            run_id = run_record.dagster_run.run_id
             with self.run_connection(run_id) as conn:
                 results = conn.execute(query).fetchall()
 
             for row_id, json_str in results:
                 try:
-                    event_record = deserialize_json_to_dagster_namedtuple(json_str)
-                    if not isinstance(event_record, EventLogEntry):
-                        logging.warning(
-                            "Could not resolve event record as EventLogEntry for id `%s`.", row_id
-                        )
-                        continue
-                    else:
-                        event_records.append(
-                            EventLogRecord(storage_id=row_id, event_log_entry=event_record)
-                        )
+                    event_record = deserialize_value(json_str, EventLogEntry)
+                    event_records.append(
+                        EventLogRecord(storage_id=row_id, event_log_entry=event_record)
+                    )
                     if limit and len(event_records) >= limit:
                         break
+                except DeserializationError:
+                    logging.warning(
+                        "Could not resolve event record as EventLogEntry for id `%s`.", row_id
+                    )
                 except seven.JSONDecodeError:
                     logging.warning("Could not parse event record id `%s`.", row_id)
 
@@ -354,10 +358,10 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         return event_records[:limit]
 
-    def supports_event_consumer_queries(self):
+    def supports_event_consumer_queries(self) -> bool:
         return False
 
-    def delete_events(self, run_id):
+    def delete_events(self, run_id: str) -> None:
         with self.run_connection(run_id) as conn:
             self.delete_events_for_run(conn, run_id)
 
@@ -365,7 +369,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         with self.index_connection() as conn:
             self.delete_events_for_run(conn, run_id)
 
-    def wipe(self):
+    def wipe(self) -> None:
         # should delete all the run-sharded dbs as well as the index db
         for filename in (
             glob.glob(os.path.join(self._base_dir, "*.db"))
@@ -376,25 +380,22 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         self._initialized_dbs = set()
 
-    def _delete_mirrored_events_for_asset_key(self, asset_key):
+    def _delete_mirrored_events_for_asset_key(self, asset_key: AssetKey) -> None:
         with self.index_connection() as conn:
             conn.execute(
-                SqlEventLogStorageTable.delete().where(  # pylint: disable=no-value-for-parameter
-                    db.or_(
-                        SqlEventLogStorageTable.c.asset_key == asset_key.to_string(),
-                        SqlEventLogStorageTable.c.asset_key == asset_key.to_string(legacy=True),
-                    )
+                SqlEventLogStorageTable.delete().where(
+                    SqlEventLogStorageTable.c.asset_key == asset_key.to_string(),
                 )
             )
 
-    def wipe_asset(self, asset_key):
+    def wipe_asset(self, asset_key: AssetKey) -> None:
         # default implementation will update the event_logs in the sharded dbs, and the asset_key
         # table in the asset shard, but will not remove the mirrored event_log events in the asset
         # shard
         super(SqliteEventLogStorage, self).wipe_asset(asset_key)
         self._delete_mirrored_events_for_asset_key(asset_key)
 
-    def watch(self, run_id, cursor, callback):
+    def watch(self, run_id: str, cursor: Optional[str], callback: EventHandlerFn) -> None:
         if not self._obs:
             self._obs = Observer()
             self._obs.start()
@@ -405,29 +406,36 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             self._obs.schedule(watchdog, self._base_dir, True),
         )
 
-    def end_watch(self, run_id, handler):
+    def end_watch(self, run_id: str, handler: EventHandlerFn) -> None:
         if handler in self._watchers[run_id]:
             event_handler, watch = self._watchers[run_id][handler]
-            self._obs.remove_handler_for_watch(event_handler, watch)
+            self._obs.remove_handler_for_watch(event_handler, watch)  # type: ignore  # (possible none)
             del self._watchers[run_id][handler]
 
-    def dispose(self):
+    def dispose(self) -> None:
         if self._obs:
             self._obs.stop()
             self._obs.join(timeout=15)
 
-    def alembic_version(self):
+    def alembic_version(self) -> AlembicVersion:
         alembic_config = get_alembic_config(__file__)
         with self.index_connection() as conn:
             return check_alembic_revision(alembic_config, conn)
 
     @property
-    def is_run_sharded(self):
+    def is_run_sharded(self) -> bool:
         return True
 
 
 class SqliteEventLogStorageWatchdog(PatternMatchingEventHandler):
-    def __init__(self, event_log_storage, run_id, callback, cursor, **kwargs):
+    def __init__(
+        self,
+        event_log_storage: SqliteEventLogStorage,
+        run_id: str,
+        callback: EventHandlerFn,
+        cursor: Optional[str],
+        **kwargs: object,
+    ):
         self._event_log_storage = check.inst_param(
             event_log_storage, "event_log_storage", SqliteEventLogStorage
         )
@@ -437,7 +445,7 @@ class SqliteEventLogStorageWatchdog(PatternMatchingEventHandler):
         self._cursor = cursor
         super(SqliteEventLogStorageWatchdog, self).__init__(patterns=[self._log_path], **kwargs)
 
-    def _process_log(self):
+    def _process_log(self) -> None:
         connection = self._event_log_storage.get_records_for_run(self._run_id, self._cursor)
         if connection.cursor:
             self._cursor = connection.cursor
@@ -457,6 +465,6 @@ class SqliteEventLogStorageWatchdog(PatternMatchingEventHandler):
             ):
                 self._event_log_storage.end_watch(self._run_id, self._cb)
 
-    def on_modified(self, event):
+    def on_modified(self, event: FileSystemEvent) -> None:
         check.invariant(event.src_path == self._log_path)
         self._process_log()

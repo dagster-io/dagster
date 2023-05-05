@@ -1,5 +1,5 @@
 import pytest
 
-nettest = pytest.mark.nettest
-requires_k8s = pytest.mark.requires_k8s  # requires k8s (and optionally airflow db)
-requires_airflow_db = pytest.mark.requires_airflow_db  # requires airflow db (but not k8s)
+requires_local_db = pytest.mark.requires_local_db  # requires airflow db (but not k8s)
+requires_persistent_db = pytest.mark.requires_persistent_db  # requires persistent airflow db
+requires_no_db = pytest.mark.requires_no_db  # requires no database

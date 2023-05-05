@@ -1,5 +1,5 @@
-from dagster._core.utils import check_dagster_package_version
+from dagster._core.libraries import DagsterLibraryRegistry
 
 from .version import __version__
 
-check_dagster_package_version("dagit", __version__)
+DagsterLibraryRegistry.register("dagit", __version__)

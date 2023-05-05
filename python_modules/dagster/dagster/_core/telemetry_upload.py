@@ -3,15 +3,16 @@ import os
 import threading
 import zlib
 from contextlib import contextmanager
+from typing import Iterator
 
 from .telemetry import MAX_BYTES, get_or_create_dir_from_dagster_home
 
 
-def get_dagster_telemetry_url():
+def get_dagster_telemetry_url() -> str:
     return os.getenv("DAGSTER_TELEMETRY_URL", default="http://telemetry.dagster.io/actions")
 
 
-def is_running_in_test():
+def is_running_in_test() -> bool:
     return (
         os.getenv("BUILDKITE") is not None
         or os.getenv("TF_BUILD") is not None
@@ -20,7 +21,7 @@ def is_running_in_test():
 
 
 @contextmanager
-def uploading_logging_thread():
+def uploading_logging_thread() -> Iterator[None]:
     stop_event = threading.Event()
     logging_thread = threading.Thread(
         target=upload_logs, args=([stop_event]), name="telemetry-upload"
@@ -33,7 +34,7 @@ def uploading_logging_thread():
         logging_thread.join()
 
 
-def upload_logs(stop_event, raise_errors=False):
+def upload_logs(stop_event: threading.Event, raise_errors: bool = False) -> None:
     """Upload logs to telemetry server every hour, or when log directory size is > 10MB."""
     # We add a sanity check to ensure that no logs are uploaded in our
     # buildkite/azure testing pipelines. The check is present at upload to
@@ -86,7 +87,9 @@ def upload_logs(stop_event, raise_errors=False):
             raise
 
 
-def _upload_logs(dagster_log_dir, log_size, dagster_log_queue_dir, raise_errors):
+def _upload_logs(
+    dagster_log_dir: str, log_size: int, dagster_log_queue_dir: str, raise_errors: bool
+) -> None:
     """Send POST request to telemetry server with the contents of $DAGSTER_HOME/logs/ directory."""
     try:
         # lazy import for perf

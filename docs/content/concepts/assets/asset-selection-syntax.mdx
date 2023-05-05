@@ -1,0 +1,32 @@
+---
+title: Asset Selection Syntax | Dagster
+description: To specify an asset selection, Dagster supports a simple query syntax.
+---
+
+# Asset Selection Syntax
+
+To specify an asset selection as a string, Dagster supports a simple query syntax. This selection syntax is accepted in a few different places:
+
+- The `list` and `materialize` commands in the [asset command-line interface](/\_apidocs/cli#dagster-asset).
+- The asset filter text box on the asset graph page, in the UI.
+- The `selection` parameter of <PyObject object="define_asset_job" />. (This parameter alternatively accepts an <PyObject object="AssetSelection"/> object, which supports more complex selections built from compositions of Python objects.)
+
+It works as follows:
+
+- A query includes a list of clauses. Clauses are separated by commas, except in the case of the `selection` parameter of <PyObject object="define_asset_job" />, <PyObject object="materialize" />, and <PyObject object="materialize_to_memory" />, where each clause is a separate element in a list.
+- A clause can be an asset key, in which case that asset is selected.
+- An asset key with multiple components can be specified by inserting slashes between the components.
+- A clause can be an asset key preceded by `*`, in which case that asset and all of its ancestors (upstream dependencies) are selected.
+- A clause can be an asset key followed by `*`, in which case that asset and all of its descendents (downstream dependencies) are selected.
+- A clause can be an asset key followed by any number of `+`s, in which case that asset and descendents up to that many hops away are selected.
+- A clause can be an asset key preceded by any number of `+`s, in which case that asset and ancestors up to that many hops away are selected.
+
+**Clause examples**
+
+- `some_asset`: select "some_asset" itself
+- `my/prefixed/asset`: select the asset whose <PyObject object="AssetKey"/> in Python is `AssetKey(["my", "prefixed", "asset"])`
+- `*some_asset`: select "some_asset" and all ancestors (upstream dependencies).
+- `some_asset*`: select "some_asset" and all descendants (downstream dependencies).
+- `*some_asset*`: select "some_asset" and all of its ancestors and descendants.
+- `+some_asset`: select "some_asset" and its direct parents.
+- `some_asset+++`: select "some_asset" and its children, its children's children, and its children's children's children.

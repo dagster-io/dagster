@@ -169,7 +169,7 @@ def emr_pyspark_step_launcher(context):
     ) or context.resource_config.get("local_pipeline_package_path")
 
     if context.resource_config.get("deploy_local_job_package") and context.resource_config.get(
-        "deploy_local_job_package"
+        "deploy_local_pipeline_package"
     ):
         raise DagsterInvariantViolationError(
             "Provided both ``deploy_local_job_package`` and legacy version "
@@ -255,8 +255,7 @@ class EmrPySparkStepLauncher(StepLauncher):
         self.emr_job_runner = EmrJobRunner(region=self.region_name)
 
     def _post_artifacts(self, log, step_run_ref, run_id, step_key):
-        """
-        Synchronize the step run ref and pyspark code to an S3 staging bucket for use on EMR.
+        """Synchronize the step run ref and pyspark code to an S3 staging bucket for use on EMR.
 
         For the zip file, consider the following toy example:
 
@@ -319,13 +318,13 @@ class EmrPySparkStepLauncher(StepLauncher):
     def launch_step(self, step_context):
         step_run_ref = step_context_to_step_run_ref(step_context, self.local_job_package_path)
 
-        run_id = step_context.pipeline_run.run_id
+        run_id = step_context.dagster_run.run_id
         log = step_context.log
 
         step_key = step_run_ref.step_key
         self._post_artifacts(log, step_run_ref, run_id, step_key)
 
-        emr_step_def = self._get_emr_step_def(run_id, step_key, step_context.solid.name)
+        emr_step_def = self._get_emr_step_def(run_id, step_key, step_context.op.name)
         emr_step_id = self.emr_job_runner.add_job_flow_steps(log, self.cluster_id, [emr_step_def])[
             0
         ]
@@ -377,7 +376,7 @@ class EmrPySparkStepLauncher(StepLauncher):
                 all_events = all_events_new
 
     def read_events(self, s3, run_id, step_key):
-        events_s3_obj = s3.Object(  # pylint: disable=no-member
+        events_s3_obj = s3.Object(
             self.staging_bucket, self._artifact_s3_key(run_id, step_key, PICKLED_EVENTS_FILE_NAME)
         )
 
@@ -472,7 +471,7 @@ class EmrPySparkStepLauncher(StepLauncher):
 
     def _artifact_s3_uri(self, run_id, step_key, filename):
         key = self._artifact_s3_key(run_id, self._sanitize_step_key(step_key), filename)
-        return "s3://{bucket}/{key}".format(bucket=self.staging_bucket, key=key)
+        return f"s3://{self.staging_bucket}/{key}"
 
     def _artifact_s3_key(self, run_id, step_key, filename):
         return "/".join(

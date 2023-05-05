@@ -7,7 +7,7 @@ from dagster import (
     DagsterEventType,
     _check as check,
 )
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import DOCKER_IMAGE_TAG
 from dagster._utils.merger import merge_dicts
 from dagster._utils.yaml_utils import load_yaml_from_path, merge_yamls
@@ -38,17 +38,17 @@ def test_k8s_run_launcher_default(
     check.invariant(not celery_pod_names)
 
     run_config = load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml"))
-    pipeline_name = "demo_pipeline"
+    job_name = "demo_job"
 
     run_id = launch_run_over_graphql(
-        dagit_url_for_k8s_run_launcher, run_config=run_config, pipeline_name=pipeline_name
+        dagit_url_for_k8s_run_launcher, run_config=run_config, job_name=job_name
     )
 
     result = wait_for_job_and_get_raw_logs(
         job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
     )
 
-    assert "PIPELINE_SUCCESS" in result, "no match, result: {}".format(result)
+    assert "PIPELINE_SUCCESS" in result, f"no match, result: {result}"
 
     updated_run = dagster_instance_for_k8s_run_launcher.get_run_by_id(run_id)
     assert updated_run.tags[DOCKER_IMAGE_TAG] == get_test_project_docker_image()
@@ -60,12 +60,10 @@ IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 def get_celery_engine_config(dagster_docker_image, job_namespace):
     return {
         "execution": {
-            "celery-k8s": {
-                "config": {
-                    "job_image": dagster_docker_image,
-                    "job_namespace": job_namespace,
-                    "image_pull_policy": image_pull_policy(),
-                }
+            "config": {
+                "job_image": dagster_docker_image,
+                "job_namespace": job_namespace,
+                "image_pull_policy": image_pull_policy(),
             }
         },
     }
@@ -90,10 +88,10 @@ def test_k8s_run_launcher_with_celery_executor_fails(
         ),
     )
 
-    pipeline_name = "demo_pipeline_celery"
+    job_name = "demo_job_celery_k8s"
 
     run_id = launch_run_over_graphql(
-        dagit_url_for_k8s_run_launcher, run_config=run_config, pipeline_name=pipeline_name
+        dagit_url_for_k8s_run_launcher, run_config=run_config, job_name=job_name
     )
 
     timeout = datetime.timedelta(0, 120)
@@ -101,18 +99,16 @@ def test_k8s_run_launcher_with_celery_executor_fails(
     start_time = datetime.datetime.now()
 
     while True:
-        assert (
-            datetime.datetime.now() < start_time + timeout
-        ), "Timed out waiting for pipeline failure"
+        assert datetime.datetime.now() < start_time + timeout, "Timed out waiting for job failure"
         event_records = dagster_instance_for_k8s_run_launcher.all_logs(run_id)
 
-        found_pipeline_failure = False
+        found_job_failure = False
         for event_record in event_records:
             if event_record.dagster_event:
                 if event_record.dagster_event.event_type == DagsterEventType.PIPELINE_FAILURE:
-                    found_pipeline_failure = True
+                    found_job_failure = True
 
-        if found_pipeline_failure:
+        if found_job_failure:
             break
 
         time.sleep(5)
@@ -131,17 +127,17 @@ def test_failing_k8s_run_launcher(
 ):
     run_config = load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml"))
 
-    pipeline_name = "always_fail_pipeline"
+    job_name = "always_fail_job"
 
     run_id = launch_run_over_graphql(
-        dagit_url_for_k8s_run_launcher, run_config=run_config, pipeline_name=pipeline_name
+        dagit_url_for_k8s_run_launcher, run_config=run_config, job_name=job_name
     )
 
     result = wait_for_job_and_get_raw_logs(
         job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
     )
 
-    assert "PIPELINE_SUCCESS" not in result, "no match, result: {}".format(result)
+    assert "PIPELINE_SUCCESS" not in result, f"no match, result: {result}"
 
     event_records = dagster_instance_for_k8s_run_launcher.all_logs(run_id)
 
@@ -154,14 +150,14 @@ def test_k8s_run_launcher_terminate(
     user_code_namespace_for_k8s_run_launcher,
     dagit_url_for_k8s_run_launcher,
 ):
-    pipeline_name = "slow_pipeline"
+    job_name = "slow_job_k8s"
 
     run_config = load_yaml_from_path(
         os.path.join(get_test_project_environments_path(), "env_s3.yaml")
     )
 
     run_id = launch_run_over_graphql(
-        dagit_url_for_k8s_run_launcher, run_config=run_config, pipeline_name=pipeline_name
+        dagit_url_for_k8s_run_launcher, run_config=run_config, job_name=job_name
     )
 
     DagsterKubernetesClient.production_client().wait_for_job(
@@ -179,15 +175,15 @@ def test_k8s_run_launcher_terminate(
     terminate_run_over_graphql(dagit_url_for_k8s_run_launcher, run_id=run_id)
 
     start_time = datetime.datetime.now()
-    pipeline_run = None
+    dagster_run = None
     while True:
         assert datetime.datetime.now() < start_time + timeout, "Timed out waiting for termination"
-        pipeline_run = dagster_instance_for_k8s_run_launcher.get_run_by_id(run_id)
-        if pipeline_run.status == DagsterRunStatus.CANCELED:
+        dagster_run = dagster_instance_for_k8s_run_launcher.get_run_by_id(run_id)
+        if dagster_run.status == DagsterRunStatus.CANCELED:
             break
         time.sleep(5)
 
-    assert pipeline_run.status == DagsterRunStatus.CANCELED
+    assert dagster_run.status == DagsterRunStatus.CANCELED
 
     assert not can_terminate_run_over_graphql(dagit_url_for_k8s_run_launcher, run_id)
 
@@ -204,14 +200,14 @@ def test_k8s_run_launcher_secret_from_deployment(
     run_config = load_yaml_from_path(
         os.path.join(get_test_project_environments_path(), "env_config_from_secrets.yaml")
     )
-    pipeline_name = "demo_pipeline"
+    job_name = "demo_job"
 
     run_id = launch_run_over_graphql(
-        dagit_url_for_k8s_run_launcher, run_config=run_config, pipeline_name=pipeline_name
+        dagit_url_for_k8s_run_launcher, run_config=run_config, job_name=job_name
     )
 
     result = wait_for_job_and_get_raw_logs(
         job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
     )
 
-    assert "PIPELINE_SUCCESS" in result, "no match, result: {}".format(result)
+    assert "PIPELINE_SUCCESS" in result, f"no match, result: {result}"

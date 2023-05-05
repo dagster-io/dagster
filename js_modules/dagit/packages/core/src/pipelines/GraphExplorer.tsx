@@ -1,7 +1,7 @@
 import {gql} from '@apollo/client';
 // eslint-disable-next-line no-restricted-imports
 import {Breadcrumbs} from '@blueprintjs/core';
-import {Checkbox, Colors, SplitPanelContainer, TextInput} from '@dagster-io/ui';
+import {Checkbox, Colors, SplitPanelContainer, TextInput, ErrorBoundary} from '@dagster-io/ui';
 import Color from 'color';
 import qs from 'qs';
 import * as React from 'react';
@@ -194,7 +194,7 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
       identifier="explorer"
       firstInitialPercent={70}
       first={
-        <>
+        <ErrorBoundary region="op graph">
           {solidsQueryEnabled ? (
             <QueryOverlay>
               <GraphQueryInput
@@ -281,7 +281,7 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
               layout={layout}
             />
           )}
-        </>
+        </ErrorBoundary>
       }
       second={
         <RightInfoPanel>
@@ -376,7 +376,7 @@ export const OptionsOverlay = styled.div`
   gap: 8px;
 `;
 
-export const HighlightOverlay = styled.div`
+const HighlightOverlay = styled.div`
   background-color: ${Color(Colors.White).fade(0.6).toString()};
   z-index: 2;
   padding: 8px 12px 0 0;
@@ -397,7 +397,7 @@ export const QueryOverlay = styled.div`
   gap: 10px;
 `;
 
-export const BreadcrumbsOverlay = styled.div`
+const BreadcrumbsOverlay = styled.div`
   background-color: ${Color(Colors.White).fade(0.6).toString()};
   z-index: 2;
   padding: 12px 0 0 20px;

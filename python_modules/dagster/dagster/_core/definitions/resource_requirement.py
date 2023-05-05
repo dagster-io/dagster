@@ -177,17 +177,6 @@ class TypeLoaderResourceRequirement(
         )
 
 
-class TypeMaterializerResourceRequirement(
-    NamedTuple("_TypeMaterializerResourceRequirement", [("key", str), ("type_display_name", str)]),
-    ResourceRequirement,
-):
-    def describe_requirement(self) -> str:
-        return (
-            f"resource with key '{self.key}' required by the materializer on type"
-            f" '{self.type_display_name}'"
-        )
-
-
 class ResourceDependencyRequirement(
     NamedTuple("_ResourceDependencyRequirement", [("key", str), ("source_key", Optional[str])]),
     ResourceRequirement,
@@ -213,33 +202,28 @@ class RequiresResources(ABC):
 def ensure_resources_of_expected_type(
     resource_defs: Mapping[str, "ResourceDefinition"],
     requirements: Sequence[ResourceRequirement],
-    mode_name: Optional[str] = None,
 ) -> None:
-    mode_descriptor = f" by mode '{mode_name}'" if mode_name and mode_name != "default" else ""
     for requirement in requirements:
         if requirement.resources_contain_key(
             resource_defs
         ) and not requirement.resource_is_expected_type(resource_defs):
             raise DagsterInvalidDefinitionError(
                 f"{requirement.describe_requirement()}, but received"
-                f" {type(resource_defs[requirement.key])}{mode_descriptor}."
+                f" {type(resource_defs[requirement.key])}."
             )
 
 
 def ensure_requirements_satisfied(
     resource_defs: Mapping[str, "ResourceDefinition"],
     requirements: Sequence[ResourceRequirement],
-    mode_name: Optional[str] = None,
 ) -> None:
-    ensure_resources_of_expected_type(resource_defs, requirements, mode_name)
-
-    mode_descriptor = f" by mode '{mode_name}'" if mode_name and mode_name != "default" else ""
+    ensure_resources_of_expected_type(resource_defs, requirements)
 
     # Error if resource defs don't provide the correct resource key
     for requirement in requirements:
         if not requirement.resources_contain_key(resource_defs):
             raise DagsterInvalidDefinitionError(
-                f"{requirement.describe_requirement()} was not provided{mode_descriptor}. Please"
+                f"{requirement.describe_requirement()} was not provided. Please"
                 f" provide a {str(requirement.expected_type)} to key '{requirement.key}', or change"
                 " the required key to one of the following keys which points to an"
                 f" {str(requirement.expected_type)}:"

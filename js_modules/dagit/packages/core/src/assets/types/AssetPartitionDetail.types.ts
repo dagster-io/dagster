@@ -13,6 +13,12 @@ export type AssetPartitionDetailQuery = {
     | {
         __typename: 'AssetNode';
         id: string;
+        latestRunForPartition: {
+          __typename: 'Run';
+          id: string;
+          status: Types.RunStatus;
+          endTime: number | null;
+        } | null;
         assetMaterializations: Array<{
           __typename: 'MaterializationEvent';
           runId: string;
@@ -21,12 +27,12 @@ export type AssetPartitionDetailQuery = {
           stepKey: string | null;
           label: string | null;
           description: string | null;
+          tags: Array<{__typename: 'EventTag'; key: string; value: string}>;
           runOrError:
             | {__typename: 'PythonError'}
             | {
                 __typename: 'Run';
                 id: string;
-                runId: string;
                 mode: string;
                 status: Types.RunStatus;
                 pipelineName: string;
@@ -176,12 +182,12 @@ export type AssetPartitionDetailQuery = {
           stepKey: string | null;
           label: string | null;
           description: string | null;
+          tags: Array<{__typename: 'EventTag'; key: string; value: string}>;
           runOrError:
             | {__typename: 'PythonError'}
             | {
                 __typename: 'Run';
                 id: string;
-                runId: string;
                 mode: string;
                 status: Types.RunStatus;
                 pipelineName: string;
@@ -320,4 +326,11 @@ export type AssetPartitionDetailQuery = {
         }>;
       }
     | {__typename: 'AssetNotFoundError'};
+};
+
+export type AssetPartitionLatestRunFragment = {
+  __typename: 'Run';
+  id: string;
+  status: Types.RunStatus;
+  endTime: number | null;
 };

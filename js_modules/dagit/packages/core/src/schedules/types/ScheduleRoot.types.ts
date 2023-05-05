@@ -37,6 +37,8 @@ export type ScheduleRootQuery = {
           name: string;
           instigationType: Types.InstigationType;
           status: Types.InstigationStatus;
+          hasStartPermission: boolean;
+          hasStopPermission: boolean;
           repositoryName: string;
           repositoryLocationName: string;
           runningCount: number;
@@ -47,7 +49,6 @@ export type ScheduleRootQuery = {
           runs: Array<{
             __typename: 'Run';
             id: string;
-            runId: string;
             status: Types.RunStatus;
             startTime: number | null;
             endTime: number | null;
@@ -75,13 +76,14 @@ export type ScheduleRootQuery = {
           }>;
         };
         futureTicks: {
-          __typename: 'FutureInstigationTicks';
-          results: Array<{__typename: 'FutureInstigationTick'; timestamp: number}>;
+          __typename: 'DryRunInstigationTicks';
+          results: Array<{__typename: 'DryRunInstigationTick'; timestamp: number | null}>;
         };
       }
     | {__typename: 'ScheduleNotFoundError'; message: string};
   instance: {
     __typename: 'Instance';
+    id: string;
     hasInfo: boolean;
     daemonHealth: {
       __typename: 'DaemonHealth';
@@ -124,15 +126,16 @@ export type PreviousRunsForScheduleQuery = {
         results: Array<{
           __typename: 'Run';
           id: string;
-          runId: string;
           status: Types.RunStatus;
           stepKeysToExecute: Array<string> | null;
           canTerminate: boolean;
+          hasReExecutePermission: boolean;
+          hasTerminatePermission: boolean;
+          hasDeletePermission: boolean;
           mode: string;
           rootRunId: string | null;
           parentRunId: string | null;
           pipelineSnapshotId: string | null;
-          parentPipelineSnapshotId: string | null;
           pipelineName: string;
           solidSelection: Array<string> | null;
           startTime: number | null;

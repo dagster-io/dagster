@@ -14,8 +14,7 @@ from dagster._utils import PICKLE_PROTOCOL, mkdir_p
 
 
 class MemoizableIOManager(IOManager):
-    """
-    Base class for IO manager enabled to work with memoized execution. Users should implement
+    """Base class for IO manager enabled to work with memoized execution. Users should implement
     the ``load_input`` and ``handle_output`` methods described in the ``IOManager`` API, and the
     ``has_output`` method, which returns a boolean representing whether a data object can be found.
     """
@@ -93,7 +92,7 @@ class VersionedPickledObjectFilesystemIOManager(MemoizableIOManager):
         return os.path.exists(filepath) and not os.path.isdir(filepath)
 
 
-@io_manager(config_schema={"base_dir": Field(StringSource, is_required=False)})  # type: ignore  # (mypy bug)
+@io_manager(config_schema={"base_dir": Field(StringSource, is_required=False)})
 @experimental
 def versioned_filesystem_io_manager(init_context):
     """Filesystem IO manager that utilizes versioning of stored objects.

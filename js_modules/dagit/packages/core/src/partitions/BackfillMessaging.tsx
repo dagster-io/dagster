@@ -7,6 +7,7 @@ import {showCustomAlert} from '../app/CustomAlertProvider';
 import {SharedToaster} from '../app/DomUtils';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {LaunchPartitionBackfillMutation} from '../instance/types/BackfillUtils.types';
+import {runsPathWithFilters} from '../runs/RunsFilterInput';
 
 import {
   DaemonNotRunningAlertInstanceFragment,
@@ -63,7 +64,11 @@ export function showBackfillErrorToast(data: LaunchPartitionBackfillMutation | n
   });
 }
 
-export function showBackfillSuccessToast(history: History<unknown>, backfillId: string) {
+export function showBackfillSuccessToast(
+  history: History<unknown>,
+  backfillId: string,
+  isAssetBackfill: boolean,
+) {
   SharedToaster.show({
     intent: 'success',
     message: (
@@ -73,13 +78,21 @@ export function showBackfillSuccessToast(history: History<unknown>, backfillId: 
     ),
     action: {
       text: 'View',
-      onClick: () => history.push('/overview/backfills'),
+      href: isAssetBackfill
+        ? `/overview/backfills/${backfillId}`
+        : runsPathWithFilters([
+            {
+              token: 'tag',
+              value: `dagster/backfill=${backfillId}`,
+            },
+          ]),
     },
   });
 }
 
 export const DAEMON_NOT_RUNNING_ALERT_INSTANCE_FRAGMENT = gql`
   fragment DaemonNotRunningAlertInstanceFragment on Instance {
+    id
     daemonHealth {
       id
       daemonStatus(daemonType: "BACKFILL") {
@@ -117,6 +130,7 @@ export const DaemonNotRunningAlertBody = () => (
 
 export const USING_DEFAULT_LAUNCH_ERALERT_INSTANCE_FRAGMENT = gql`
   fragment UsingDefaultLauncherAlertInstanceFragment on Instance {
+    id
     runQueuingSupported
     runLauncher {
       name

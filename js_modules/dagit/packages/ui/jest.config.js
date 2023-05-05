@@ -133,10 +133,15 @@ module.exports = {
   // snapshotSerializers: [],
 
   // The test environment that will be used for testing
-  testEnvironment: 'jest-environment-jsdom',
+  testEnvironment: 'jsdom',
 
   // Options that will be passed to the testEnvironment
-  // testEnvironmentOptions: {},
+  // https://jestjs.io/docs/configuration#testenvironmentoptions-object
+  // Even though we're loading in a "JSDOM" compatible environment, we want to load the /node/ versions of
+  // modules that are required, not the browser-ready versions.
+  testEnvironmentOptions: {
+    customExportConditions: ['node', 'node-addons'],
+  },
 
   // Adds a location field to test results
   // testLocationInResults: false,

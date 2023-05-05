@@ -13,13 +13,21 @@ app = typer.Typer()
 
 @app.command()
 def cache_compile_references(
-    auth_token: str = typer.Argument(..., envvar="DBT_CLOUD_API_KEY"),
-    account_id: int = typer.Argument(..., envvar="DBT_CLOUD_ACCOUNT_ID"),
-    project_id: int = typer.Argument(..., envvar="DBT_CLOUD_PROJECT_ID"),
+    auth_token: str = typer.Argument(
+        ...,
+        envvar=["DBT_CLOUD_API_TOKEN", "DBT_CLOUD_API_KEY"],
+        help="The API token for your dbt Cloud account.",
+    ),
+    account_id: int = typer.Argument(
+        ..., envvar="DBT_CLOUD_ACCOUNT_ID", help="The id of your dbt Cloud account"
+    ),
+    project_id: int = typer.Argument(
+        ...,
+        envvar="DBT_CLOUD_PROJECT_ID",
+        help="The id of your dbt Cloud project, that corresponds to the dbt project managed in git",
+    ),
 ) -> None:
-    """
-    Cache the latest dbt cloud compile run id for a given project.
-    """
+    """Cache the latest dbt cloud compile run id for a given project."""
     dbt_cloud_resource = DbtCloudResource(
         auth_token=auth_token, account_id=account_id, disable_schedule_on_trigger=False
     )
@@ -30,9 +38,24 @@ def cache_compile_references(
     # Compile each job with an override
     for dbt_cloud_job in dbt_cloud_jobs:
         job_id: int = dbt_cloud_job["id"]
-        job_commands: List[str] = dbt_cloud_job["execute_steps"]
+
+        # Only run on jobs with the Dagster dbt Cloud compile run id env var set
+        compile_run_environment_variable_response = (
+            dbt_cloud_resource.get_job_environment_variables(project_id=project_id, job_id=job_id)
+            .get(DAGSTER_DBT_COMPILE_RUN_ID_ENV_VAR, {})
+            .get("job")
+        )
+
+        if not compile_run_environment_variable_response:
+            typer.echo(
+                f"Skipping cache for job id `{job_id}` as it does not have a job override for the"
+                f" environment variable `{DAGSTER_DBT_COMPILE_RUN_ID_ENV_VAR}`. To start the cache,"
+                " set this environment variable to `-1`."
+            )
+            continue
 
         # Retrieve the filters for the compile override step
+        job_commands: List[str] = dbt_cloud_job["execute_steps"]
         job_materialization_command_step = (
             DbtCloudCacheableAssetsDefinition.get_job_materialization_command_step(
                 execute_steps=job_commands
@@ -52,17 +75,12 @@ def cache_compile_references(
             job_id=job_id,
             cause="Generating software-defined assets for Dagster.",
             steps_override=[dbt_compile_command],
-            generate_docs_override=True,
+            generate_docs_override=dbt_cloud_job.get("generate_docs", False),
         )
 
         # Cache the compile run as a reference in the dbt Cloud job's env var
         dbt_cloud_compile_run_id = str(dbt_cloud_compile_run["id"])
-        dbt_cloud_job_env_vars = dbt_cloud_resource.get_job_environment_variables(
-            project_id=project_id, job_id=job_id
-        )
-        compile_run_environment_variable_id = dbt_cloud_job_env_vars[
-            DAGSTER_DBT_COMPILE_RUN_ID_ENV_VAR
-        ]["job"]["id"]
+        compile_run_environment_variable_id = compile_run_environment_variable_response["id"]
 
         typer.echo(
             f"Updating the value of environment variable `{DAGSTER_DBT_COMPILE_RUN_ID_ENV_VAR}`"

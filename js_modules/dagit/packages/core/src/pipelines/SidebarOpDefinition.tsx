@@ -12,6 +12,7 @@ import {pluginForMetadata} from '../plugins';
 import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
 import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from '../typeexplorer/TypeWithTooltip';
 import {RepoAddress} from '../workspace/types';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {Description} from './Description';
 import {
@@ -45,6 +46,7 @@ const DEFAULT_INVOCATIONS_SHOWN = 20;
 
 export const SidebarOpDefinition: React.FC<SidebarOpDefinitionProps> = (props) => {
   const {definition, getInvocations, showingSubgraph, onClickInvocation, repoAddress} = props;
+
   const Plugin = pluginForMetadata(definition.metadata);
   const isComposite = definition.__typename === 'CompositeSolidDefinition';
   const configField = definition.__typename === 'SolidDefinition' ? definition.configField : null;
@@ -113,7 +115,18 @@ export const SidebarOpDefinition: React.FC<SidebarOpDefinitionProps> = (props) =
             {[...requiredResources].sort().map((requirement) => (
               <ResourceContainer key={requirement.resourceKey}>
                 <Icon name="resource" color={Colors.Gray700} />
-                <ResourceHeader>{requirement.resourceKey}</ResourceHeader>
+                {repoAddress ? (
+                  <Link
+                    to={workspacePathFromAddress(
+                      repoAddress,
+                      `/resources/${requirement.resourceKey}`,
+                    )}
+                  >
+                    <ResourceHeader>{requirement.resourceKey}</ResourceHeader>
+                  </Link>
+                ) : (
+                  <ResourceHeader>{requirement.resourceKey}</ResourceHeader>
+                )}
               </ResourceContainer>
             ))}
           </Box>
@@ -173,7 +186,6 @@ export const SidebarOpDefinition: React.FC<SidebarOpDefinitionProps> = (props) =
 
 export const SIDEBAR_OP_DEFINITION_FRAGMENT = gql`
   fragment SidebarOpDefinitionFragment on ISolidDefinition {
-    __typename
     name
     description
     metadata {

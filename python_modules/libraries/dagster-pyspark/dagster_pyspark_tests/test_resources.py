@@ -1,11 +1,11 @@
 from dagster import job, multiprocess_executor, op, reconstructable
+from dagster._core.execution.api import execute_job
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import execute_pipeline
 from dagster_pyspark.resources import lazy_pyspark_resource, pyspark_resource
 from pyspark.sql import SparkSession
 
 
-def assert_pipeline_runs_with_resource(resource_def):
+def assert_job_runs_with_resource(resource_def):
     called = {}
 
     @op(required_resource_keys={"some_name"})
@@ -22,17 +22,15 @@ def assert_pipeline_runs_with_resource(resource_def):
     assert called["yup"]
 
 
-def assert_pipeline_runs_with_lazy_resource(resource_def):
+def assert_job_runs_with_lazy_resource(resource_def):
     called = {}
 
     @op(required_resource_keys={"some_name"})
     def a_op(context):
-        assert (
-            context.resources.some_name._spark_session is None  # pylint: disable=protected-access
-        )
+        assert context.resources.some_name._spark_session is None  # noqa: SLF001
         assert isinstance(context.resources.some_name.spark_session, SparkSession)
         assert isinstance(
-            context.resources.some_name._spark_session,  # pylint: disable=protected-access
+            context.resources.some_name._spark_session,  # noqa: SLF001
             SparkSession,
         )
         called["yup"] = True
@@ -49,22 +47,22 @@ def assert_pipeline_runs_with_lazy_resource(resource_def):
 
 def test_pyspark_resource():
     pyspark_resource.configured({"spark_conf": {"spark": {"executor": {"memory": "1024MB"}}}})
-    assert_pipeline_runs_with_resource(pyspark_resource)
+    assert_job_runs_with_resource(pyspark_resource)
 
 
 def test_lazy_pyspark_resource():
     lazy_pyspark_resource.configured({"spark_conf": {"spark": {"executor": {"memory": "1024MB"}}}})
-    assert_pipeline_runs_with_lazy_resource(lazy_pyspark_resource)
+    assert_job_runs_with_lazy_resource(lazy_pyspark_resource)
 
 
 def test_pyspark_resource_escape_hatch():
     pyspark_resource.configured({"spark_conf": {"spark.executor.memory": "1024MB"}})
-    assert_pipeline_runs_with_resource(pyspark_resource)
+    assert_job_runs_with_resource(pyspark_resource)
 
 
 def test_lazy_pyspark_resource_escape_hatch():
     lazy_pyspark_resource.configured({"spark_conf": {"spark.executor.memory": "1024MB"}})
-    assert_pipeline_runs_with_lazy_resource(lazy_pyspark_resource)
+    assert_job_runs_with_lazy_resource(lazy_pyspark_resource)
 
 
 @op(required_resource_keys={"pyspark"})
@@ -87,11 +85,11 @@ def test_multiproc_preload():
 
     with instance_for_test() as instance:
         # "smart" module preload
-        result = execute_pipeline(reconstructable(multiproc_job), instance=instance)
-        assert result.success
+        with execute_job(reconstructable(multiproc_job), instance=instance) as result:
+            assert result.success
 
         # explicit module preload
-        result = execute_pipeline(
+        with execute_job(
             reconstructable(multiproc_job),
             run_config={
                 "execution": {
@@ -99,5 +97,5 @@ def test_multiproc_preload():
                 }
             },
             instance=instance,
-        )
-        assert result.success
+        ) as result:
+            assert result.success

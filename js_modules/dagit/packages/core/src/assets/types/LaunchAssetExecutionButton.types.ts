@@ -8,12 +8,19 @@ export type LaunchAssetExecutionAssetNodeFragment = {
   opNames: Array<string>;
   jobNames: Array<string>;
   graphName: string | null;
+  hasMaterializePermission: boolean;
   isObservable: boolean;
   isSource: boolean;
   partitionDefinition: {
     __typename: 'PartitionDefinition';
     description: string;
-    dimensionTypes: Array<{__typename: 'DimensionDefinitionType'; name: string}>;
+    type: Types.PartitionDefinitionType;
+    name: string | null;
+    dimensionTypes: Array<{
+      __typename: 'DimensionDefinitionType';
+      name: string;
+      dynamicPartitionsDefinitionName: string | null;
+    }>;
   } | null;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
   dependencyKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
@@ -581,7 +588,13 @@ export type LaunchAssetExecutionAssetNodeFragment = {
 export type PartitionDefinitionForLaunchAssetFragment = {
   __typename: 'PartitionDefinition';
   description: string;
-  dimensionTypes: Array<{__typename: 'DimensionDefinitionType'; name: string}>;
+  type: Types.PartitionDefinitionType;
+  name: string | null;
+  dimensionTypes: Array<{
+    __typename: 'DimensionDefinitionType';
+    name: string;
+    dynamicPartitionsDefinitionName: string | null;
+  }>;
 };
 
 export type LaunchAssetLoaderQueryVariables = Types.Exact<{
@@ -596,12 +609,19 @@ export type LaunchAssetLoaderQuery = {
     opNames: Array<string>;
     jobNames: Array<string>;
     graphName: string | null;
+    hasMaterializePermission: boolean;
     isObservable: boolean;
     isSource: boolean;
     partitionDefinition: {
       __typename: 'PartitionDefinition';
       description: string;
-      dimensionTypes: Array<{__typename: 'DimensionDefinitionType'; name: string}>;
+      type: Types.PartitionDefinitionType;
+      name: string | null;
+      dimensionTypes: Array<{
+        __typename: 'DimensionDefinitionType';
+        name: string;
+        dynamicPartitionsDefinitionName: string | null;
+      }>;
     } | null;
     assetKey: {__typename: 'AssetKey'; path: Array<string>};
     dependencyKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;

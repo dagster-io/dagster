@@ -1,92 +1,183 @@
 ---
-title: Managing users in Dagster Cloud | Dagster Docs
+title: Managing users and permissions in Dagster Cloud | Dagster Docs
 ---
 
-# Managing users in Dagster Cloud
+# Managing users and permissions in Dagster Cloud
 
 <Note>This guide is applicable to Dagster Cloud.</Note>
 
-In this guide, we'll walk you through adding, removing, and assigning user roles to users in Dagster Cloud.
+Users in Dagster Cloud can be granted specific permissions what they can and cannot do in your organization. Granularly assigning permissions to users ensures that the right people have appropriate access to what they require in Dagster Cloud, and no more.
+
+In this guide, we'll cover the available user roles, how permissions are assigned, and how to add and remove users in your organization.
 
 ---
 
-## Adding and removing users
+## Understanding user roles
 
-<Note>
-  <strong>Organization Admin</strong> or <strong>Admin</strong> permissions are
-  required to add or remove users in Dagster Cloud.
-</Note>
+<TabGroup>
+  <TabItem name="Overview">
 
-- [Adding a user](#adding-a-user)
-- [Removing a user](#removing-a-user)
+### User roles
 
-### Adding a user
-
-Before you start, note that:
-
-- **Users are managed on a per-deployment basis**. **Organization Admins** are the exception and have access to the entire organization.
-
-  For example, if you have two full deployments (`prod` and `dev`), users who aren't **Organization Admins** must be added to each deployment to have access.
-
-- **If using Google for SSO**, users must be added in Dagster Cloud before they can log in.
-
-- **If using a SAML-based solution like Okta**, users must be assigned to the Dagster app in the SSO portal to log in. By default, users will be granted Viewer permissions on each deployment. The default role can be adjusted by modifying the [`sso_default_role` deployment setting](/dagster-cloud/developing-testing/deployment-settings-reference#sso-default-role).
-
-To add a new user to a deployment:
-
-1. Sign in to your Dagster Cloud account.
-
-2. Click the **user menu (your icon) > Cloud Settings**.
-
-3. Fill in the following:
-
-   - **Email** - Enter the user's email address
-   - **Role** - Select the [user role](#understanding-user-permissions) for the user. **Note**: With the exception of the **Organization Admin** role, this role will only apply to the full deployment you're adding the user to.
-
-   For example:
-
-   <Image
-   alt="Cloud Settings Interface for Permissions"
-   src="/images/dagster-cloud/user-token-management/cloud_settings_permissions.png"
-   width={842}
-   height={346}
-   />
-
-4. Click **+ Add**.
-
-### Removing a user
-
-To remove a user from a deployment:
-
-1. Sign in to your Dagster Cloud account.
-2. Click the **user menu (your icon) > Cloud Settings**.
-3. Locate the user in the user list.
-4. Click **Remove**.
-5. When prompted, confirm the removal.
-
-**Note**: This won't remove users from other deployments. For example, if a user has been added to both `prod` and `dev` but only removed in `prod`, they'll still be a user in `dev`.
-
----
-
-## Understanding user permissions
-
-With the exception of the **Organization Admin** role, user roles are set on a per-deployment basis and enforced both in Dagster Cloud and the GraphQL API.
-
-Dagster Cloud currently includes support for four levels of role-based access control:
-
-- **Viewer** - The least permissive role
-- **Editor**
-- **Admin**
-- **Organization Admin** - The most permissive role
+Dagster Cloud supports five user roles for several levels of role-based access control:
 
 <table>
   <thead>
     <tr>
-      <th>&nbsp;</th>
-      <th>Viewer</th>
-      <th>Editor</th>
-      <th>Admin</th>
-      <th>Organization Admin</th>
+      <th width="20%; fixed">Role</th>
+      <th width="15%; fixed">Plan</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        <strong>Viewer</strong>
+      </td>
+      <td>Enterprise</td>
+      <td>
+        The least permissive role. Grants view access to most things in a
+        deployment, with some exceptions. Refer to the{" "}
+        <a href="#user-role-permissions">
+          <strong>User role permissions</strong>
+        </a>{" "}
+        tab for more info.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>Launcher</strong>
+      </td>
+      <td>Enterprise</td>
+      <td>
+        Includes all Viewer permissions and the ability to launch and terminate
+        runs.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>Editor</strong>
+      </td>
+      <td>All plans</td>
+      <td>
+        Includes all Launcher permissions and the ability to:
+        <ul>
+          <li>
+            Manage{" "}
+            <a href="/concepts/partitions-schedules-sensors/sensors">sensors</a>{" "}
+            and{" "}
+            <a href="/concepts/partitions-schedules-sensors/schedules">
+              schedules
+            </a>
+          </li>
+          <li>
+            Launch and cancel{" "}
+            <a href="/concepts/partitions-schedules-sensors/backfills">
+              backfills
+            </a>
+          </li>
+          <li>
+            Manage{" "}
+            <a href="/dagster-cloud/managing-deployments/environment-variables-and-secrets">
+              environment variables
+            </a>
+          </li>
+          <li>
+            Manage{" "}
+            <a href="/dagster-cloud/managing-deployments/code-locations">
+              code locations
+            </a>
+          </li>
+          <li>
+            Manage{" "}
+            <a href="/dagster-cloud/account/managing-user-agent-tokens#managing-agent-tokens">
+              agents
+            </a>{" "}
+            and{" "}
+            <a href="dagster-cloud/managing-deployments/setting-up-alerts">
+              alerts
+            </a>
+          </li>
+          <li>
+            Manage own{" "}
+            <a href="/dagster-cloud/account/managing-user-agent-tokens#managing-user-tokens">
+              user tokens
+            </a>
+          </li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>Admin</strong>
+      </td>
+      <td>All plans</td>
+      <td>
+        Includes all Editor permissions and the ability to:
+        <ul>
+          <li>
+            Add and edit{" "}
+            <a href="/dagster-cloud/account/managing-users">users</a>
+          </li>
+          <li>
+            Manage and revoke others'
+            <a href="/dagster-cloud/account/managing-user-agent-tokens#managing-user-tokens">
+              user tokens
+            </a>
+          </li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>Organization Admin</strong>
+      </td>
+      <td>All plans</td>
+      <td>
+        The most permissive role. Includes all Admin permissions and the ability
+        to:
+        <ul>
+          <li>
+            Create and delete{" "}
+            <a href="/dagster-cloud/managing-deployments/managing-deployments">
+              deployments
+            </a>
+          </li>
+          <li>
+            <a href="/dagster-cloud/account/authentication">Administer SAML</a>
+          </li>
+          <li>
+            Remove <a href="/dagster-cloud/account/managing-users">users</a>
+          </li>
+          <li>View account usage</li>
+          <li>Manage billing</li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+Click the **User role permissions** tab to view all granular permissions for each user role.
+
+  </TabItem>
+  <TabItem name="User role permissions">
+
+### User role permissions
+
+View <a href="#user-roles">user role summaries</a>.
+
+<table>
+  <thead>
+    <tr>
+      <th width="50%; fixed">&nbsp;</th>
+      <th width="10%; fixed">Viewer</th>
+      <th width="10%; fixed">Launcher</th>
+      <th width="10%; fixed">Editor</th>
+      <th width="10%; fixed">Admin</th>
+      <th width="10%; fixed">
+        Organization <br />
+        Admin
+      </th>
     </tr>
   </thead>
   <tbody>
@@ -96,39 +187,63 @@ Dagster Cloud currently includes support for four levels of role-based access co
       </td>
     </tr>
     <tr>
+      <td>
+        View runs of <a href="/concepts/ops-jobs-graphs/jobs">jobs</a>
+      </td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+    </tr>
+    <tr>
       <td>Launch, re-execute, terminate, and delete runs of jobs</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
-      <td>Start and stop schedules</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
+      <td>
+        Start and stop{" "}
+        <a href="/concepts/partitions-schedules-sensors/schedules">schedules</a>
+      </td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
-      <td>Start and stop sensors</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
+      <td>
+        Start and stop{" "}
+        <a href="/concepts/partitions-schedules-sensors/sensors">sensors</a>
+      </td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td>Wipe assets</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
-      <td>Launch and cancel backfills</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
+      <td>
+        Launch and cancel{" "}
+        <a href="/concepts/partitions-schedules-sensors/backfills">backfills</a>
+      </td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td colspan="5">
@@ -138,76 +253,82 @@ Dagster Cloud currently includes support for four levels of role-based access co
     <tr>
       <td>
         View{" "}
-        <a href="/dagster-cloud/developing-testing/managing-deployments">
+        <a href="/dagster-cloud/managing-deployments/managing-deployments">
           deployments
         </a>
       </td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-    </tr>
-    <tr>
-      <td>
-        Create and delete{" "}
-        <a href="/dagster-cloud/developing-testing/managing-deployments">
-          deployments
-        </a>
-      </td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td>
         Modify{" "}
-        <a href="/dagster-cloud/developing-testing/managing-deployments">
-          deployments
+        <a href="/dagster-cloud/managing-deployments/managing-deployments">
+          deployment
         </a>{" "}
         settings
       </td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td>
         Create, edit, delete{" "}
-        <a href="/dagster-cloud/developing-testing/environment-variables-and-secrets">
+        <a href="/dagster-cloud/managing-deployments/environment-variables-and-secrets">
           environment variables
         </a>
       </td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td>
         View{" "}
-        <a href="/dagster-cloud/developing-testing/environment-variables-and-secrets">
-          environment variables
+        <a href="/dagster-cloud/managing-deployments/environment-variables-and-secrets">
+          environment variable
         </a>{" "}
         values
       </td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td>
         Export{" "}
-        <a href="/dagster-cloud/developing-testing/environment-variables-and-secrets##exporting-variables-to-a-env-file">
+        <a href="/dagster-cloud/managing-deployments/environment-variables-and-secrets##exporting-variables-to-a-env-file">
           environment variables
         </a>
       </td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+    </tr>
+    <tr>
+      <td>
+        Create and delete{" "}
+        <a href="/dagster-cloud/managing-deployments/managing-deployments">
+          deployments
+        </a>
+      </td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td colspan="5">
@@ -217,39 +338,42 @@ Dagster Cloud currently includes support for four levels of role-based access co
     <tr>
       <td>
         View
-        <a href="/dagster-cloud/developing-testing/code-locations">
+        <a href="/dagster-cloud/managing-deployments/code-locations">
           code locations
         </a>
       </td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td>
         Create and remove
-        <a href="/dagster-cloud/developing-testing/code-locations">
+        <a href="/dagster-cloud/managing-deployments/code-locations">
           code locations
         </a>
       </td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td>
         Reload{" "}
-        <a href="/dagster-cloud/developing-testing/code-locations">
+        <a href="/dagster-cloud/managing-deployments/code-locations">
           code locations
         </a>{" "}
         and workspaces
       </td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td colspan="5">
@@ -263,31 +387,35 @@ Dagster Cloud currently includes support for four levels of role-based access co
           agent tokens
         </a>
       </td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td>Create agent tokens</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td>Edit agent tokens</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td>Revoke agent tokens</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td colspan="5">
@@ -301,24 +429,27 @@ Dagster Cloud currently includes support for four levels of role-based access co
           user tokens
         </a>
       </td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td>List all user tokens</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td>Revoke all user tokens</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td colspan="5">
@@ -329,31 +460,35 @@ Dagster Cloud currently includes support for four levels of role-based access co
       <td>
         <a href="/dagster-cloud/account/managing-users">View users</a>
       </td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
-      <td>Create users</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
+      <td>Add users</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td>Edit users</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td>Remove users</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td colspan="5">
@@ -362,42 +497,188 @@ Dagster Cloud currently includes support for four levels of role-based access co
     </tr>
     <tr>
       <td>
-        Manage <a href="/dagster-cloud/account/setting-up-alerts">alerts</a>
+        Manage{" "}
+        <a href="dagster-cloud/managing-deployments/setting-up-alerts">
+          alerts
+        </a>
       </td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td>Edit workspace</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td>
         <a href="/dagster-cloud/account/authentication">Administer SAML</a>
       </td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td>View usage</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td>Manage billing</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
     </tr>
   </tbody>
 </table>
+
+  </TabItem>
+</TabGroup>
+
+### Assigning user roles
+
+All user roles are enforced both in Dagster Cloud and the GraphQL API. With the exception of the **Organization Admin** role, user roles are set on a per-deployment basis. Organization Admins have access to the entire organization, including all [full deployments](/dagster-cloud/managing-deployments/managing-deployments), [code locations](/dagster-cloud/managing-deployments/code-locations), and [Branch Deployments](/dagster-cloud/managing-deployments/branch-deployments).
+
+#### Deployment permissions
+
+All Dagster Cloud accounts - Enterprise plan or not - can set permissions at the deployment level. When defined, the selected user role will be used as the default for all code locations contained in the deployment.
+
+For example, if a user is assigned the **Editor** user role for a deployment, they'll also be an **Editor** for all code locations in the deployment:
+
+<!-- ![Default Editor user role for prod code locations](/images/dagster-cloud/user-token-management/editor-permissions.png) -->
+
+<Image
+alt="Default Editor user role for prod code locations"
+src="/images/dagster-cloud/user-token-management/editor-permissions.png"
+width={1798}
+height={354}
+/>
+
+For Dagster Cloud Enterprise users, default user roles can be overridden at the [code location level](#code-location-permissions). For non-Enterprise users, the user will have the same level of access for all code locations in the deployment.
+
+**Note**: Having access to a deployment doesn't automatically grant access to Branch Deployments. [Branch deployment permissions](#branch-deployment-permissions) must be granted separately.
+
+#### Code location permissions
+
+<Note>Code location permissions are a Dagster Cloud Enterprise feature.</Note>
+
+Dagster Cloud Enterprise users can override the deployment-level user role by setting permissions at the code location level. Overrides can only be performed if:
+
+- The user is not **Organization Admin**, and
+- The current user role for the deployment is **Viewer** or **Launcher**
+
+For example, if a user is assigned the **Viewer** user role for a deployment, only a more permissive role can be assigned for a code location in the deployment. Specifically, an **Editor** or **Launcher** user role:
+
+<!-- ![Overriding the Viewer user role for a code location](/images/dagster-cloud/user-token-management/code-location-override.png) -->
+
+<Image
+alt="Overriding the Viewer user role for a code location"
+src="/images/dagster-cloud/user-token-management/code-location-override.png"
+width={700}
+height={499}
+/>
+
+If a user is an **Organization Admin** or a deployment-level **Admin** or **Editor**, they already have the most permissive user role possible for the code location. In this case, an override is unnecessary and the **Edit user role** button next to the code location will be disabled:
+
+<!-- ![Override for a code location not allowed](/images/dagster-cloud/user-token-management/not-allowed-code-location-override.png) -->
+
+<Image
+alt="Override for a code location not allowed"
+src="/images/dagster-cloud/user-token-management/not-allowed-code-location-override.png"
+width={2064}
+height={1052}
+/>
+
+To remove an override, click **Edit user role** next to the code location to open the user role selection dialog. Then, click the **Remove override** button:
+
+<!-- ![Removing the override for a code location](/images/dagster-cloud/user-token-management/remove-code-location-override.png) -->
+
+<Image
+alt="Removing the override for a code location"
+src="/images/dagster-cloud/user-token-management/remove-code-location-override.png"
+width={700}
+height={500}
+/>
+
+#### Branch deployment permissions
+
+Granting access to Branch Deployments gives users access to all Branch Deployments for all the code locations they have access to. Consider the following example:
+
+<!-- ![User roles for prod, staging, and all Branch Deployments](/images/dagster-cloud/user-token-management/branch-deployment-example.png) -->
+
+<Image
+alt="User roles for prod, staging, and all Branch Deployments"
+src="/images/dagster-cloud/user-token-management/branch-deployment-example.png"
+width={992}
+height={636}
+/>
+
+In this case, the user would have **Editor** access to Branch Deployments for all code locations in the `prod` deployment, but not in `staging`. This is because they're a **Viewer** for the code locations in the `prod` deployment, but they don't have access to the `staging` deployment or any of its code locations.
+
+---
+
+## Adding users
+
+<Note>
+  <strong>Organization Admin</strong> or <strong>Admin</strong> permissions are
+  required to add users in Dagster Cloud.
+</Note>
+
+Before you start, note that:
+
+- **If using Google for SSO**, users must be added in Dagster Cloud before they can log in.
+
+- **If using a SAML-based solution like Okta**, users must be assigned to the Dagster app in the SSO portal to log in. By default, users will be granted Viewer permissions on each deployment. The default role can be adjusted by modifying the [`sso_default_role` deployment setting](/dagster-cloud/managing-deployments/deployment-settings-reference#sso-default-role).
+
+1. Sign in to your Dagster Cloud account.
+2. Click the **user menu (your icon) > Cloud Settings**.
+3. Click the **Users** tab.
+4. In the **Enter an email...** field, enter the user's email address.
+5. Click **Add user**. The user will be added to the list of users.
+6. In the window that displays, select the appropriate [user role](#understanding-user-roles) for each deployment. **Note**: For Admins, you can only set permissions for deployments where you're an Admin:
+   1. Next to a deployment, click **Edit user role**.
+   2. Select the user role for the deployment. This [user role](#understanding-user-roles) will be used as the default for all code locations in the deployment.
+   3. Click **Save**.
+   4. **Enterprise only**: To set permissions for individual [code locations](#code-location-permissions) in a deployment:
+      1. Click the toggle to the left of the deployment to open a list of code locations.
+      2. Next to a code location, click **Edit user role**.
+      3. Select the user role for the code location.
+      4. Click **Save**.
+7. Repeat step 6 for each deployment.
+8. **Optional**: To change the user's permissions for branch deployments:
+   1. Next to **All branch deployments**, click **Edit user role**.
+   2. Select the user role to use for all branch deployments.
+   3. Click **Save**.
+9. Click **Done**.
+
+---
+
+## Removing users
+
+<Note>
+  <strong>Organization Admin</strong> permissions are required to remove users
+  in Dagster Cloud.
+</Note>
+
+Removing a user removes them from the organization. **Note**: If using a SAML-based SSO solution like Okta, you'll also need to remove the user from the Identity Provider (IdP). Removing the user in Dagster Cloud doesn't remove them from the IdP.
+
+1. Sign in to your Dagster Cloud account.
+2. Click the **user menu (your icon) > Cloud Settings**.
+3. Click the **Users** tab.
+4. Locate the user in the user list.
+5. Click **Edit**.
+6. Click **Remove user**.
+7. When prompted, confirm the removal.

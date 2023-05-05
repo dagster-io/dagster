@@ -16,6 +16,7 @@ EXAMPLES_TO_IGNORE = ["docs_snippets", "experimental"]
 # repo to make sure it's up-to-date.
 AVAILABLE_EXAMPLES = [
     "assets_dbt_python",
+    "assets_dynamic_partitions",
     "assets_modern_data_stack",
     "assets_pandas_pyspark",
     "assets_pandas_type_metadata",
@@ -36,6 +37,7 @@ AVAILABLE_EXAMPLES = [
     "with_great_expectations",
     "with_pyspark",
     "with_pyspark_emr",
+    "with_wandb",
 ]
 
 

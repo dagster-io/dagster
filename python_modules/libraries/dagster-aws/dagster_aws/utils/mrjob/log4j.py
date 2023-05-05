@@ -95,9 +95,9 @@ def parse_hadoop_log4j_records(lines):
     last_record = None
     line_num = 0
 
-    for line_num, line in enumerate(lines.split("\n")):
+    for line_num, raw_line in enumerate(lines.split("\n")):
         # convert from bytes to unicode, if needed, and strip trailing newlines
-        line = line.rstrip("\r\n")
+        line = raw_line.rstrip("\r\n")
 
         m = _HADOOP_LOG4J_LINE_RE.match(line) or _HADOOP_LOG4J_LINE_ALTERNATE_RE.match(line)
 

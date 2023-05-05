@@ -7,10 +7,8 @@ from dagster import (
     DagsterInstance,
     _check as check,
 )
+from dagster._core.definitions.data_version import CachingStaleStatusResolver
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.logical_version import (
-    CachingProjectedLogicalVersionResolver,
-)
 from dagster._core.events.log import EventLogEntry
 from dagster._core.host_representation import ExternalRepository
 from dagster._core.host_representation.external_data import (
@@ -18,8 +16,8 @@ from dagster._core.host_representation.external_data import (
     ExternalAssetDependency,
     ExternalAssetNode,
 )
-from dagster._core.scheduler.instigation import InstigatorType
-from dagster._core.storage.pipeline_run import JobBucket, RunRecord, RunsFilter, TagBucket
+from dagster._core.scheduler.instigation import InstigatorState, InstigatorType
+from dagster._core.storage.dagster_run import JobBucket, RunRecord, RunsFilter, TagBucket
 from dagster._core.storage.tags import REPOSITORY_LABEL_TAG, SCHEDULE_NAME_TAG, SENSOR_NAME_TAG
 from dagster._core.workspace.context import WorkspaceRequestContext
 
@@ -35,8 +33,7 @@ class RepositoryDataType(Enum):
 
 
 class RepositoryScopedBatchLoader:
-    """
-    A batch loader that fetches an assortment of data for a given repository.  This loader is
+    """A batch loader that fetches an assortment of data for a given repository.  This loader is
     expected to be instantiated once per repository, and then passed to various child graphene
     objects to batch calls to the DB.
 
@@ -88,7 +85,7 @@ class RepositoryScopedBatchLoader:
                         list(
                             self._instance.get_run_records(
                                 filters=RunsFilter(
-                                    pipeline_name=job_name,
+                                    job_name=job_name,
                                     tags={
                                         REPOSITORY_LABEL_TAG: self._repository.get_external_origin().get_label(),
                                     },
@@ -98,7 +95,7 @@ class RepositoryScopedBatchLoader:
                         )
                     )
             for record in records:
-                fetched[record.pipeline_run.pipeline_name].append(record)
+                fetched[record.dagster_run.job_name].append(record)
 
         elif data_type == RepositoryDataType.SCHEDULE_RUNS:
             schedule_names = [
@@ -134,7 +131,7 @@ class RepositoryScopedBatchLoader:
                         )
                     )
             for record in records:
-                tag: str = check.not_none(record.pipeline_run.tags.get(SCHEDULE_NAME_TAG))
+                tag: str = check.not_none(record.dagster_run.tags.get(SCHEDULE_NAME_TAG))
                 fetched[tag].append(record)
 
         elif data_type == RepositoryDataType.SENSOR_RUNS:
@@ -169,7 +166,7 @@ class RepositoryScopedBatchLoader:
                         )
                     )
             for record in records:
-                tag = check.not_none(record.pipeline_run.tags.get(SENSOR_NAME_TAG))
+                tag = check.not_none(record.dagster_run.tags.get(SENSOR_NAME_TAG))
                 fetched[tag].append(record)
 
         elif data_type == RepositoryDataType.SCHEDULE_STATES:
@@ -242,7 +239,7 @@ class RepositoryScopedBatchLoader:
         check.invariant(self._repository.has_external_sensor(sensor_name))
         return self._get(RepositoryDataType.SENSOR_RUNS, sensor_name, limit)
 
-    def get_schedule_state(self, schedule_name: str) -> Optional[Sequence[Any]]:
+    def get_schedule_state(self, schedule_name: str) -> Optional[InstigatorState]:
         check.invariant(self._repository.has_external_schedule(schedule_name))
         states = self._get(RepositoryDataType.SCHEDULE_STATES, schedule_name, 1)
         return states[0] if states else None
@@ -272,8 +269,7 @@ class RepositoryScopedBatchLoader:
 
 
 class BatchRunLoader:
-    """
-    A batch loader that fetches a set of runs by run_id. This loader is expected to be instantiated
+    """A batch loader that fetches a set of runs by run_id. This loader is expected to be instantiated
     once with a set of run_ids. For example, for a particular asset, we can fetch a list of asset
     materializations, all of which may have been materialized from a different run.
     """
@@ -295,12 +291,11 @@ class BatchRunLoader:
     def _fetch(self) -> None:
         records = self._instance.get_run_records(RunsFilter(run_ids=list(self._run_ids)))
         for record in records:
-            self._records[record.pipeline_run.run_id] = record
+            self._records[record.dagster_run.run_id] = record
 
 
 class BatchMaterializationLoader:
-    """
-    A batch loader that fetches materializations for asset keys.  This loader is expected to be
+    """A batch loader that fetches materializations for asset keys.  This loader is expected to be
     instantiated with a set of asset keys.
     """
 
@@ -332,8 +327,7 @@ class BatchMaterializationLoader:
 
 
 class CrossRepoAssetDependedByLoader:
-    """
-    A batch loader that computes cross-repository asset dependencies. Locates source assets
+    """A batch loader that computes cross-repository asset dependencies. Locates source assets
     within all workspace repositories, and determines if they are derived (defined) assets in
     other repositories.
 
@@ -359,74 +353,85 @@ class CrossRepoAssetDependedByLoader:
         Dict[AssetKey, ExternalAssetNode],
         Dict[Tuple[str, str], Dict[AssetKey, List[ExternalAssetDependedBy]]],
     ]:
-        """
-        This method constructs a sink asset as an ExternalAssetNode for every asset immediately
-        downstream of a source asset that is defined in another repository as a derived asset.
-
-        In Dagit, sink assets will display as ForeignAssets, which are external from the repository.
+        """For asset X, find all "sink assets" and define them as ExternalAssetNodes. A "sink asset" is
+        any asset that depends on X and exists in other repository. This enables displaying cross-repo
+        dependencies for a source asset in a given repository.
 
         This method also stores a mapping from source asset key to ExternalAssetDependedBy nodes
-        that depend on the asset with that key. When get_cross_repo_dependent_assets is called with a derived
-        asset's asset key and its location, all dependent ExternalAssetDependedBy nodes are returned.
+        that depend on that asset key. When get_cross_repo_dependent_assets is called with
+        a source asset key and its location, all dependent ExternalAssetDependedBy nodes outside of the
+        source asset location are returned.
         """
-        depended_by_assets_by_source_asset: Dict[AssetKey, List[ExternalAssetDependedBy]] = {}
+        depended_by_assets_by_location_by_source_asset: Dict[
+            AssetKey, Dict[Tuple[str, str], List[ExternalAssetDependedBy]]
+        ] = defaultdict(lambda: defaultdict(list))
 
-        map_defined_asset_to_location: Dict[
+        # A mapping containing all derived (non-source) assets and their location
+        map_derived_asset_to_location: Dict[
             AssetKey, Tuple[str, str]
         ] = {}  # key is asset key, value is tuple (location_name, repo_name)
 
-        external_asset_node_by_asset_key: Dict[
-            AssetKey, ExternalAssetNode
-        ] = {}  # only contains derived assets
-        for location in self._context.repository_locations:
+        for location in self._context.code_locations:
             repositories = location.get_repositories()
             for repo_name, external_repo in repositories.items():
                 asset_nodes = external_repo.get_external_asset_nodes()
                 for asset_node in asset_nodes:
+                    location_tuple = (location.name, repo_name)
                     if not asset_node.op_name:  # is source asset
-                        if asset_node.asset_key not in depended_by_assets_by_source_asset:
-                            depended_by_assets_by_source_asset[asset_node.asset_key] = []
-                        depended_by_assets_by_source_asset[asset_node.asset_key].extend(
-                            asset_node.depended_by
-                        )
-                    else:
-                        map_defined_asset_to_location[asset_node.asset_key] = (
-                            location.name,
-                            repo_name,
-                        )
-                        external_asset_node_by_asset_key[asset_node.asset_key] = asset_node
+                        depended_by_assets_by_location_by_source_asset[asset_node.asset_key][
+                            location_tuple
+                        ].extend(asset_node.depended_by)
+                    else:  # derived asset
+                        map_derived_asset_to_location[asset_node.asset_key] = location_tuple
 
         sink_assets: Dict[AssetKey, ExternalAssetNode] = {}
         external_asset_deps: Dict[
             Tuple[str, str], Dict[AssetKey, List[ExternalAssetDependedBy]]
-        ] = (
-            {}
+        ] = defaultdict(
+            lambda: defaultdict(list)
         )  # nested dict that maps dependedby assets by asset key by location tuple (repo_location.name, repo_name)
 
-        for source_asset, depended_by_assets in depended_by_assets_by_source_asset.items():
-            asset_def_location = map_defined_asset_to_location.get(source_asset, None)
-            if asset_def_location:  # source asset is defined as asset in another repository
-                if asset_def_location not in external_asset_deps:
-                    external_asset_deps[asset_def_location] = {}
-                if source_asset not in external_asset_deps[asset_def_location]:
-                    external_asset_deps[asset_def_location][source_asset] = []
-                external_asset_deps[asset_def_location][source_asset].extend(depended_by_assets)
-                for asset in depended_by_assets:
-                    # SourceAssets defined as ExternalAssetNodes contain no definition data (e.g.
-                    # no output or partition definition data) and no job_names. Dagit displays
-                    # all ExternalAssetNodes with no job_names as foreign assets, so sink assets
-                    # are defined as ExternalAssetNodes with no definition data.
-                    sink_assets[asset.downstream_asset_key] = ExternalAssetNode(
-                        asset_key=asset.downstream_asset_key,
-                        dependencies=[
-                            ExternalAssetDependency(
-                                upstream_asset_key=source_asset,
-                                input_name=asset.input_name,
-                                output_name=asset.output_name,
-                            )
-                        ],
-                        depended_by=[],
+        for (
+            source_asset,
+            depended_by_assets_by_location,
+        ) in depended_by_assets_by_location_by_source_asset.items():
+            all_depended_by_assets = set()
+            for depended_by_assets in depended_by_assets_by_location.values():
+                all_depended_by_assets = all_depended_by_assets | set(depended_by_assets)
+
+            # source_asset_locations contains a list of all locations where the source asset is defined,
+            # including the location where it is defined as a derived asset
+            source_asset_locations = set(depended_by_assets_by_location.keys())
+            if source_asset in map_derived_asset_to_location:
+                source_asset_locations.add(map_derived_asset_to_location[source_asset])
+
+            for source_asset_location in source_asset_locations:
+                # Map each source asset location and asset key to all assets outside of that location
+                # that depend on the source asset
+                external_asset_deps[source_asset_location][source_asset].extend(
+                    list(
+                        all_depended_by_assets
+                        - set(depended_by_assets_by_location[source_asset_location])
                     )
+                )
+
+            for asset in all_depended_by_assets:
+                # SourceAssets defined as ExternalAssetNodes contain no definition data (e.g.
+                # no output or partition definition data) and no job_names. Dagit displays
+                # all ExternalAssetNodes with no job_names as foreign assets, so sink assets
+                # are defined as ExternalAssetNodes with no definition data.
+                sink_assets[asset.downstream_asset_key] = ExternalAssetNode(
+                    asset_key=asset.downstream_asset_key,
+                    dependencies=[
+                        ExternalAssetDependency(
+                            upstream_asset_key=source_asset,
+                            input_name=asset.input_name,
+                            output_name=asset.output_name,
+                        )
+                    ],
+                    depended_by=[],
+                )
+
         return sink_assets, external_asset_deps
 
     def get_sink_asset(self, asset_key: AssetKey) -> ExternalAssetNode:
@@ -435,31 +440,12 @@ class CrossRepoAssetDependedByLoader:
 
     def get_cross_repo_dependent_assets(
         self, repository_location_name: str, repository_name: str, asset_key: AssetKey
-    ) -> List[ExternalAssetDependedBy]:
+    ) -> Sequence[ExternalAssetDependedBy]:
         _, external_asset_deps = self._build_cross_repo_deps()
         return external_asset_deps.get((repository_location_name, repository_name), {}).get(
             asset_key, []
         )
 
 
-class ProjectedLogicalVersionLoader:
-    """
-    A batch loader that computes the projected logical version for a set of asset keys. This is
-    necessary to avoid recomputation, since each asset's logical version is a function of its
-    dependency logical versions. We use similar functionality in core, so this loader simply proxies
-    to `CachingProjectedLogicalVersionResolver` and extracts the string value of the returned
-    `LogicalVersion` objects.
-    """
-
-    def __init__(
-        self,
-        instance: DagsterInstance,
-        repositories: Sequence[ExternalRepository],
-        key_to_node_map: Optional[Mapping[AssetKey, ExternalAssetNode]],
-    ):
-        self._caching_resolver = CachingProjectedLogicalVersionResolver(
-            instance, repositories, key_to_node_map
-        )
-
-    def get(self, asset_key: AssetKey) -> str:
-        return self._caching_resolver.get(asset_key).value
+# CachingStaleStatusResolver from core can be used directly as a GQL batch loader.
+StaleStatusLoader = CachingStaleStatusResolver

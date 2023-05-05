@@ -4,7 +4,11 @@ export const ASSET_TABLE_DEFINITION_FRAGMENT = gql`
   fragment AssetTableDefinitionFragment on AssetNode {
     id
     groupName
+    opNames
     isSource
+    isObservable
+    computeKind
+    hasMaterializePermission
     partitionDefinition {
       description
     }
@@ -22,7 +26,6 @@ export const ASSET_TABLE_DEFINITION_FRAGMENT = gql`
 
 export const ASSET_TABLE_FRAGMENT = gql`
   fragment AssetTableFragment on Asset {
-    __typename
     id
     key {
       path

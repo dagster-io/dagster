@@ -1,3 +1,9 @@
+# pyright: reportPrivateImportUsage=none
+
+# NOTE (2022-12-12): We ignore private attribute access errors because dask does not correctly mark
+# the symbols we are accessing as public (though they are intending to). Should be fixed in later
+# releases of dask. See: https://github.com/dask/dask/issues/9710
+
 import re
 
 import dask.dataframe as dd

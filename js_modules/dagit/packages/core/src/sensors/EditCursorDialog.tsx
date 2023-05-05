@@ -1,7 +1,14 @@
 import {gql, useMutation} from '@apollo/client';
-// eslint-disable-next-line no-restricted-imports
-import {TextArea} from '@blueprintjs/core';
-import {ButtonLink, Button, Colors, DialogBody, DialogFooter, Dialog, Group} from '@dagster-io/ui';
+import {
+  ButtonLink,
+  Button,
+  Colors,
+  DialogBody,
+  DialogFooter,
+  Dialog,
+  Group,
+  TextArea,
+} from '@dagster-io/ui';
 import * as React from 'react';
 
 import 'chartjs-adapter-date-fns';
@@ -18,10 +25,11 @@ import {
 } from './types/EditCursorDialog.types';
 
 export const EditCursorDialog: React.FC<{
+  isOpen: boolean;
   cursor: string;
   sensorSelector: SensorSelector;
   onClose: () => void;
-}> = ({sensorSelector, cursor, onClose}) => {
+}> = ({isOpen, sensorSelector, cursor, onClose}) => {
   const [cursorValue, setCursorValue] = React.useState(cursor);
   const [isSaving, setIsSaving] = React.useState(false);
   const [requestSet] = useMutation<SetSensorCursorMutation, SetSensorCursorMutationVariables>(
@@ -68,16 +76,20 @@ export const EditCursorDialog: React.FC<{
 
   return (
     <Dialog
-      isOpen={true}
-      onClose={onClose}
+      isOpen={isOpen}
+      onClose={() => {
+        onClose();
+        setCursorValue(cursor);
+      }}
       style={{
-        width: '50vw',
+        width: '500px',
       }}
       title={`Edit ${sensorSelector.sensorName} cursor`}
     >
       <DialogBody>
         <TextArea
           value={cursorValue}
+          $resize="vertical"
           onChange={(e) => setCursorValue(e.target.value)}
           style={{width: '100%'}}
         />
@@ -92,7 +104,7 @@ export const EditCursorDialog: React.FC<{
   );
 };
 
-const SET_CURSOR_MUTATION = gql`
+export const SET_CURSOR_MUTATION = gql`
   mutation SetSensorCursorMutation($sensorSelector: SensorSelector!, $cursor: String) {
     setSensorCursor(sensorSelector: $sensorSelector, cursor: $cursor) {
       ... on Sensor {

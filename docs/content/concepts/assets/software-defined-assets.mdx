@@ -35,10 +35,10 @@ A software-defined asset includes the following:
 
 ## Relevant APIs
 
-| Name                                  | Description                                                                                                                                                                                                                  |
-| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| <PyObject object="asset" decorator /> | A decorator used to define assets.                                                                                                                                                                                           |
-| <PyObject object="SourceAsset" />     | A class that describes an asset, but doesn't define how to compute it. <PyObject object="SourceAsset" />s are used to represent assets that other assets depend on, in settings where they can't be materialized themselves. |
+| Name                                  | Description                                                                                                                                                                                                                          |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| <PyObject object="asset" decorator /> | A decorator used to define assets.                                                                                                                                                                                                   |
+| <PyObject object="SourceAsset" />     | A class that describes an asset, but doesn't define how to compute it. <PyObject object="SourceAsset" />s are used to represent assets that other assets or jobs depend on, in settings where they can't be materialized themselves. |
 
 ---
 
@@ -220,42 +220,63 @@ If you'd like to define more complex assets, Dagster offers augmented software-d
 - [Multi-assets](/concepts/assets/multi-assets): A set of software-defined assets that are all updated by the same [op](/concepts/ops-jobs-graphs/ops) or [graph](/concepts/ops-jobs-graphs/graphs).
 - [Graph-backed assets](/concepts/assets/graph-backed-assets): An asset whose computations are separated into multiple [ops](/concepts/ops-jobs-graphs/ops) that are combined to build a [graph](/concepts/ops-jobs-graphs/graphs). If the graph outputs multiple assets, the graph-backed asset is a [multi-asset](/concepts/assets/multi-assets).
 
-### Asset context
-
-Since a software-defined asset contains an op, all the typical functionality of an op - like the use of [resources](/concepts/resources) and [configuration](#asset-configuration) - is available to an asset. Supplying the `context` parameter provides access to system information for the op, for example:
-
-```python file=/concepts/assets/asset_w_context.py startafter=start_w_context endbefore=end_w_context
-@asset(required_resource_keys={"api"})
-def my_asset(context):
-    # fetches contents of an asset
-    return context.resources.api.fetch_table("my_asset")
-```
-
 ### Asset configuration
 
-Like ops, configuration is also supported for assets. Configuration is accessible through the asset context at runtime and can be used to specify behavior. Note that asset configuration behaves the same as configuration for ops.
+Like ops, assets in Dagster can specify a config schema. The configuration system is explained in detail in the [Config schema documentation](/concepts/configuration/config-schema).
 
-For example, the following asset queries an API endpoint defined through configuration:
+Asset functions can specify an annotated `config` parameter for the assets's configuration. The config class, which subclasses <PyObject object="Config"/> (which inherits from [`pydantic.BaseModel`](https://docs.pydantic.dev/usage/models/#basic-model-usage)) specifies the configuration schema for the asset.
+
+For example, the following downstream asset queries an API endpoint defined through configuration:
 
 ```python file=/concepts/assets/asset_config.py startafter=start_example endbefore=end_example
-@asset(config_schema={"api_endpoint": str})
-def my_configurable_asset(context):
-    api_endpoint = context.op_config["api_endpoint"]
-    data = requests.get(f"{api_endpoint}/data").json()
-    return data
+from dagster import Config, asset
+
+
+@asset
+def my_upstream_asset() -> int:
+    return 5
+
+
+class MyDownstreamAssetConfig(Config):
+    api_endpoint: str
+
+
+@asset
+def my_downstream_asset(config: MyDownstreamAssetConfig, my_upstream_asset: int) -> int:
+    data = requests.get(f"{config.api_endpoint}/data").json()
+    return data["value"] + my_upstream_asset
 ```
 
 Refer to the [Config schema documentation](/concepts/configuration/config-schema) for more configuration info and examples.
 
+### Asset context
+
+When writing an asset, users can optionally provide a first parameter, `context`. When this parameter is supplied, Dagster will supply a context object to the body of the asset which provides access to system information like loggers and the current run id. Since a software-defined asset contains an op, this is an <PyObject object="OpExecutionContext"/>.
+
+For example, to access the logger and log a info message:
+
+```python file=/concepts/assets/asset_w_context.py startafter=start_w_context endbefore=end_w_context
+@asset
+def context_asset(context):
+    context.log.info("My run ID is {context.run_id}")
+    ...
+```
+
 ### Conditional materialization
 
-In some cases, an asset may not need to be updated in storage each time the decorated function is executed. In this case you can use the `output_required` parameter along with `yield` syntax to invoke this behavior. If the `output_required` parameter is set to `False`, you may indicate to the Dagster framework that no data should be persisted to storage by not yielding an output from your computation function. If an output is not emitted during computation, no asset materialization event will be created, the I/O manager will not be invoked, downstream assets will not be materialized, and asset sensors monitoring the asset will not trigger.
+In some cases, an asset may not need to be updated in storage each time the decorated function is executed. You can use the `output_required` parameter along with `yield` syntax to implement this behavior.
 
-```python file=/concepts/assets/conditional_materialization.py startafter=start_conditional endbefore=end_conditional
+If the `output_required` parameter is set to `False`, and your function does not `yield` an <PyObject object="Output" /> object, then no asset materialization event will be created, the I/O manager will not be invoked, downstream assets will not be materialized, and asset sensors monitoring the asset will not trigger.
+
+```python file=/concepts/assets/conditional_materialization.py
+import random
+
+from dagster import Output, asset
+
+
 @asset(output_required=False)
 def may_not_materialize():
     # to simulate an asset that may not always materialize.
-    random.seed()
     if random.randint(1, 10) < 5:
         yield Output([1, 2, 3, 4])
 
@@ -268,7 +289,7 @@ def downstream(may_not_materialize):
 
 ### Asset code versions
 
-Assets may be assigned a `code_version`. Versions let you help Dagster track what assets are stale and avoid performing redundant computation.
+Assets may be assigned a `code_version`. Versions let you help Dagster track what assets haven't been re-materialized since their code has changed, and avoid performing redundant computation.
 
 ```python file=/concepts/assets/code_versions.py startafter=start_single_asset endbefore=end_single_asset
 @asset(code_version="1")
@@ -276,7 +297,7 @@ def asset_with_version():
     return 100
 ```
 
-When an asset with a code version is materialized, the generated `AssetMaterialization` is tagged with the version. An asset that has a different code version than the code version used for its most recent materialization will be considered stale. Any assets downstream of a stale asset are also considered stale.
+When an asset with a code version is materialized, the generated `AssetMaterialization` is tagged with the version. The UI will indicate when an asset has a different code version than the code version used for its most recent materialization.
 
 Multi-assets may assign different code versions for each of their outputs:
 
@@ -292,7 +313,7 @@ def multi_asset_with_versions():
     yield Output(200, "b")
 ```
 
-Just as with regular assets, these versions are attached to the `AssetMaterialization` objects for each of the constituent assets and accounted for when determining asset staleness.
+Just as with regular assets, these versions are attached to the `AssetMaterialization` objects for each of the constituent assets and represented in the UI.
 
 ---
 
@@ -329,7 +350,6 @@ A <PyObject object="Definitions" /> object defines a code location, which is a c
 - [Viewing all assets](#asset-catalog)
 - [Details for an asset](#asset-details)
 - [Dependency graph](#dependency-graph)
-- [Upstream changes](#upstream-changed)
 
 <TabGroup>
 <TabItem name="Asset catalog (all assets)">
@@ -381,40 +401,6 @@ src="/images/concepts/assets/software-defined-assets/graph.png"
 width={3574}
 height={1962}
 />
-
-</TabItem>
-<TabItem name="Upstream changed indicator">
-
-#### Upstream changed
-
-<Note>
-  Currently, the <strong>upstream changed</strong> indicator won't display in
-  the following scenarios:
-  <ul>
-    <li>The upstream asset is in another code location definition or job</li>
-    <li>The assets are partitioned</li>
-  </ul>
-</Note>
-
-On occasion, you might see an **upstream changed** indicator on an asset in the dependency graph or on the **Asset Details** page:
-
-<Image
-alt="Asset Graph with an upstream changed indicator"
-src="/images/concepts/assets/software-defined-assets/upstream-changed.png"
-width={1556}
-height={790}
-/>
-
-This occurs when a downstream asset's last materialization took place **earlier than the asset it depends on.** Dagit displays this alert to notify you that the contents of an asset may be stale. For example:
-
-- `comments` is upstream of `comment_stories`
-- `comment_stories` depends on `comments`
-- `comment_stories` was last materialized on February 25 at **5:30PM**
-- `comments` was last materialized on February 25 at **7:05PM**
-
-In this case, the contents of `comment_stories` may be outdated, as the most recent data from `comments` wasn't used to compute them.
-
-You can resolve this issue by re-materializing the downstream asset. This will re-compute the contents with the most recent data/changes to its upstream dependency.
 
 </TabItem>
 </TabGroup>
@@ -528,21 +514,46 @@ def test_more_complex_asset():
     assert result == [0, 4, 5, 6]
 ```
 
-If you use a context object in your function, `@asset` will provide the correct context during execution. When writing a unit test, you can mock it with <PyObject object="build_op_context" />. You can use <PyObject object="build_op_context" /> to generate the `context` object because under the hood the function decorated by `@asset` is an op.
+If you use config of resources in your asset, they will be provided automatically during execution. When writing unit tests, you may provide them directly when invoking the asset function:
 
-Consider this asset that uses a resource:
+```python file=/concepts/assets/asset_testing.py startafter=start_asset_with_resource endbefore=end_asset_with_resource
+class MyConfig(Config):
+    api_url: str
+
+
+class MyAPIResource(ConfigurableResource):
+    def query(self, url) -> Dict[str, Any]:
+        return requests.get(url).json()
+
+
+@asset
+def uses_config_and_resource(config: MyConfig, my_api: MyAPIResource):
+    return my_api.query(config.api_url)
+
+
+def test_uses_resource() -> None:
+    result = uses_config_and_resource(
+        config=MyConfig(api_url="https://dagster.io"), my_api=MyAPIResource()
+    )
+    assert result == {"foo": "bar"}
+```
+
+If you use a context object in your function, you can use <PyObject object="build_op_context" /> to generate the `context` object, because under the hood the function decorated by `@asset` is an op.
+
+Consider the following asset that uses a context object:
 
 ```python file=/concepts/assets/asset_testing.py startafter=start_with_context_asset endbefore=end_with_context_asset
 @asset
 def uses_context(context):
-    return context.resources.foo
+    context.log.info(context.run_id)
+    return "bar"
 ```
 
 When writing a unit test, use <PyObject object="build_op_context" /> to mock the `context` and provide values for testing:
 
 ```python file=/concepts/assets/asset_testing.py startafter=start_test_with_context_asset endbefore=end_test_with_context_asset
 def test_uses_context():
-    context = build_op_context(resources={"foo": "bar"})
+    context = build_op_context()
     result = uses_context(context)
     assert result == "bar"
 ```
@@ -595,7 +606,7 @@ def downstream_asset(upstream_asset):
 
 ### Recording materialization metadata
 
-Dagster supports attaching arbitrary [metadata](/\_apidocs/ops#dagster.MetadataEntry) to asset materializations. This metadata will be displayed on the "Activity" tab of the "Asset Details" page in Dagit. If it's numeric, it will be plotted. To attach metadata, your asset's op can return an <PyObject object="Output" /> object that contains the output value and a dictionary of metadata:
+Dagster supports attaching arbitrary [metadata](/\_apidocs/ops#dagster.MetadataValue) to asset materializations. This metadata will be displayed on the "Activity" tab of the "Asset Details" page in Dagit. If it's numeric, it will be plotted. To attach metadata, your asset's op can return an <PyObject object="Output" /> object that contains the output value and a dictionary of metadata:
 
 ```python file=/concepts/assets/asset_materialization_metadata.py
 from pandas import DataFrame
@@ -627,7 +638,7 @@ Sometimes it's useful to record the same metadata for all assets that are stored
 
 ### Attaching definition metadata
 
-Dagster supports attaching arbitrary [metadata](/\_apidocs/ops#dagster.MetadataEntry) to asset definitions. This metadata will be displayed on the "Definition" tab of the "Asset Details" page in Dagit. This is useful for metadata that describes how the asset should be handled, rather than metadata describes the contents that were produced by a particular run.
+Dagster supports attaching arbitrary [metadata](/\_apidocs/ops#dagster.MetadataValue) to asset definitions. This metadata will be displayed on the "Definition" tab of the "Asset Details" page in Dagit. This is useful for metadata that describes how the asset should be handled, rather than metadata that describes the contents that were produced by a particular run.
 
 To attach metadata, supply a `metadata` dictionary to the asset:
 

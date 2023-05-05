@@ -1,4 +1,5 @@
-# pylint: disable=print-call, redefined-outer-name, unused-argument
+# ruff: noqa: T201
+
 import base64
 import os
 import subprocess
@@ -260,7 +261,7 @@ def helm_namespace_for_user_deployments_subchart_disabled(
     configmaps,
     aws_configmap,
     secrets,
-):  # pylint: disable=unused-argument
+):
     namespace = helm_namespace_for_user_deployments_subchart
 
     with helm_chart_for_user_deployments_subchart_disabled(
@@ -279,7 +280,7 @@ def helm_namespace_for_user_deployments_subchart(
     configmaps,
     aws_configmap,
     secrets,
-):  # pylint: disable=unused-argument
+):
     with helm_chart_for_user_deployments_subchart(namespace, dagster_docker_image, should_cleanup):
         yield namespace
 
@@ -293,7 +294,7 @@ def helm_namespace_for_daemon(
     configmaps,
     aws_configmap,
     secrets,
-):  # pylint: disable=unused-argument
+):
     with helm_chart_for_daemon(namespace, dagster_docker_image, should_cleanup):
         yield namespace
 
@@ -319,7 +320,7 @@ def helm_namespace(
     aws_configmap,
     secrets,
     celery_backend,
-):  # pylint: disable=unused-argument
+):
     with helm_chart(namespace, dagster_docker_image, celery_backend, should_cleanup):
         yield namespace
 
@@ -391,7 +392,7 @@ def helm_namespaces_for_k8s_run_launcher(
     aws_configmap,
     secrets,
     request,
-):  # pylint: disable=unused-argument
+):
     subchart_enabled = request.param
     with ExitStack() as stack:
         if subchart_enabled:
@@ -466,7 +467,7 @@ def _helm_chart_helper(
     check.bool_param(should_cleanup, "should_cleanup")
     check.str_param(helm_install_name, "helm_install_name")
 
-    print("--- \033[32m:helm: Installing Helm chart {}\033[0m".format(helm_install_name))
+    print(f"--- \033[32m:helm: Installing Helm chart {helm_install_name}\033[0m")
 
     try:
         helm_config_yaml = yaml.dump(helm_config, default_flow_style=False)
@@ -745,7 +746,12 @@ def helm_chart_for_k8s_run_launcher(
                 "runCoordinator": {"enabled": False},  # No run queue
                 "env": ({"BUILDKITE": os.getenv("BUILDKITE")} if os.getenv("BUILDKITE") else {}),
                 "annotations": {"dagster-integration-tests": "daemon-pod-annotation"},
-                "runMonitoring": {"enabled": True, "pollIntervalSeconds": 5}
+                "runMonitoring": {
+                    "enabled": True,
+                    "pollIntervalSeconds": 5,
+                    "startTimeoutSeconds": 60,
+                    "maxResumeRunAttempts": 3,
+                }
                 if run_monitoring
                 else {},
             },
@@ -834,7 +840,7 @@ def _deployment_config(docker_image):
             "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
             "dagsterApiGrpcArgs": [
                 "-m",
-                "dagster_test.test_project.test_pipelines.repo",
+                "dagster_test.test_project.test_jobs.repo",
                 "-a",
                 "define_demo_execution_repo",
             ],
@@ -842,7 +848,12 @@ def _deployment_config(docker_image):
             "includeConfigInLaunchedRuns": {
                 "enabled": True,
             },
-            "env": ({"BUILDKITE": os.getenv("BUILDKITE")} if os.getenv("BUILDKITE") else {}),
+            "env": (
+                [{"name": "BUILDKITE", "value": os.getenv("BUILDKITE")}]
+                if os.getenv("BUILDKITE")
+                else []
+            )
+            + [{"name": "MY_POD_NAME", "valueFrom": {"fieldRef": {"fieldPath": "metadata.name"}}}],
             "envConfigMaps": ([{"name": TEST_AWS_CONFIGMAP_NAME}] if not IS_BUILDKITE else []),
             "envSecrets": [{"name": TEST_DEPLOYMENT_SECRET_NAME}],
             "annotations": {"dagster-integration-tests": "ucd-1-pod-annotation"},
@@ -934,6 +945,7 @@ def _base_helm_config(system_namespace, docker_image, enable_subchart=True):
                     "labels": {
                         "run_launcher_label_key": "run_launcher_label_value",
                     },
+                    "jobNamespace": system_namespace,
                 },
             },
         },
@@ -957,6 +969,8 @@ def _base_helm_config(system_namespace, docker_image, enable_subchart=True):
             "runMonitoring": {
                 "enabled": True,
                 "pollIntervalSeconds": 5,
+                "startTimeoutSeconds": 180,
+                "maxResumeRunAttempts": 0,
             },
         },
         # Used to set the environment variables in dagster.shared_env that determine the run config
@@ -1037,7 +1051,7 @@ def _port_forward_dagit(namespace):
                 "--namespace",
                 namespace,
                 dagit_pod_name,
-                "{forward_port}:80".format(forward_port=forward_port),
+                f"{forward_port}:80",
             ],
             # Squelch the verbose "Handling connection for..." messages
             stdout=subprocess.DEVNULL,

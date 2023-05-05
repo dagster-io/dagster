@@ -10,7 +10,6 @@ import dagster._check as check
 import dagster._seven as seven
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.storage.tags import check_reserved_tags
-from dagster._utils import frozentags
 from dagster._utils.yaml_utils import merge_yaml_strings, merge_yamls
 
 DEFAULT_OUTPUT = "result"
@@ -89,15 +88,17 @@ def _kv_str(key: object, value: object) -> str:
 def struct_to_string(name: str, **kwargs: object) -> str:
     # Sort the kwargs to ensure consistent representations across Python versions
     props_str = ", ".join([_kv_str(key, value) for key, value in sorted(kwargs.items())])
-    return "{name}({props_str})".format(name=name, props_str=props_str)
+    return f"{name}({props_str})"
 
 
-def validate_tags(tags: Optional[Mapping[str, Any]], allow_reserved_tags=True) -> frozentags:
-    valid_tags = {}
+def validate_tags(
+    tags: Optional[Mapping[str, Any]], allow_reserved_tags: bool = True
+) -> Mapping[str, str]:
+    valid_tags: Dict[str, str] = {}
     for key, value in check.opt_mapping_param(tags, "tags", key_type=str).items():
         if not isinstance(value, str):
             valid = False
-            err_reason = 'Could not JSON encode value "{}"'.format(value)
+            err_reason = f'Could not JSON encode value "{value}"'
             str_val = None
             try:
                 str_val = seven.json.dumps(value)
@@ -118,14 +119,14 @@ def validate_tags(tags: Optional[Mapping[str, Any]], allow_reserved_tags=True) -
                     )
                 )
 
-            valid_tags[key] = str_val
+            valid_tags[key] = str_val  # type: ignore  # (possible none)
         else:
             valid_tags[key] = value
 
     if not allow_reserved_tags:
         check_reserved_tags(valid_tags)
 
-    return frozentags(valid_tags)
+    return valid_tags
 
 
 def validate_group_name(group_name: Optional[str]) -> str:
@@ -205,15 +206,14 @@ def config_from_pkg_resources(pkg_resource_defs: Sequence[Tuple[str, str]]) -> M
     """Load a run config from a package resource, using :py:func:`pkg_resources.resource_string`.
 
     Example:
+        .. code-block:: python
 
-    .. code-block:: python
-
-        config_from_pkg_resources(
-            pkg_resource_defs=[
-                ('dagster_examples.airline_demo.environments', 'local_base.yaml'),
-                ('dagster_examples.airline_demo.environments', 'local_warehouse.yaml'),
-            ],
-        )
+            config_from_pkg_resources(
+                pkg_resource_defs=[
+                    ('dagster_examples.airline_demo.environments', 'local_base.yaml'),
+                    ('dagster_examples.airline_demo.environments', 'local_warehouse.yaml'),
+                ],
+            )
 
 
     Args:

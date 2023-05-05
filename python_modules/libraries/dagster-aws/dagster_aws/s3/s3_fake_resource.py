@@ -21,7 +21,7 @@ class S3FakeSession:
         self.buckets = defaultdict(dict, buckets) if buckets else defaultdict(dict)
         self.mock_extras = mock.MagicMock()
 
-    def head_bucket(self, Bucket, *args, **kwargs):  # pylint: disable=unused-argument
+    def head_bucket(self, Bucket, *args, **kwargs):
         self.mock_extras.head_bucket(*args, **kwargs)
 
     def head_object(self, Bucket, Key, *args, **kwargs):

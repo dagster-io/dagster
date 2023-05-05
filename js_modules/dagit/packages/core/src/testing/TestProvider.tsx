@@ -24,6 +24,7 @@ export const PERMISSIONS_ALLOW_ALL: PermissionsFromJSON = {
   start_schedule: DEFAULT_PERMISSIONS,
   stop_running_schedule: DEFAULT_PERMISSIONS,
   edit_sensor: DEFAULT_PERMISSIONS,
+  update_sensor_cursor: DEFAULT_PERMISSIONS,
   terminate_pipeline_execution: DEFAULT_PERMISSIONS,
   delete_pipeline_run: DEFAULT_PERMISSIONS,
   reload_repository_location: DEFAULT_PERMISSIONS,
@@ -47,13 +48,14 @@ const websocketValue: WebSocketContextType = {
 };
 
 interface Props {
+  children: React.ReactNode;
   apolloProps?: ApolloTestProps;
   appContextProps?: Partial<AppContextValue>;
   permissionOverrides?: {[permission: string]: {enabled: boolean; disabledReason: string | null}};
   routerProps?: MemoryRouterProps;
 }
 
-export const TestProvider: React.FC<Props> = (props) => {
+export const TestProvider = (props: Props) => {
   const {apolloProps, appContextProps, permissionOverrides, routerProps} = props;
   const permissions: PermissionFragment[] = React.useMemo(() => {
     return Object.keys(PERMISSIONS_ALLOW_ALL).map((permission) => {
@@ -85,7 +87,7 @@ export const TestProvider: React.FC<Props> = (props) => {
         >
           <AnalyticsContext.Provider value={analytics}>
             <MemoryRouter {...routerProps}>
-              <ApolloTestProvider {...apolloProps} typeDefs={typeDefs}>
+              <ApolloTestProvider {...apolloProps} typeDefs={typeDefs as any}>
                 <WorkspaceProvider>{props.children}</WorkspaceProvider>
               </ApolloTestProvider>
             </MemoryRouter>

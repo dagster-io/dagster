@@ -49,6 +49,10 @@ export type JobMetadataQuery = {
   assetNodes: Array<{
     __typename: 'AssetNode';
     id: string;
+    autoMaterializePolicy: {
+      __typename: 'AutoMaterializePolicy';
+      policyType: Types.AutoMaterializePolicyType;
+    } | null;
     assetKey: {__typename: 'AssetKey'; path: Array<string>};
   }>;
   pipelineRunsOrError:
@@ -60,7 +64,6 @@ export type JobMetadataQuery = {
           __typename: 'Run';
           id: string;
           status: Types.RunStatus;
-          runId: string;
           startTime: number | null;
           endTime: number | null;
           updateTime: number | null;
@@ -76,6 +79,10 @@ export type JobMetadataQuery = {
 export type JobMetadataAssetNodeFragment = {
   __typename: 'AssetNode';
   id: string;
+  autoMaterializePolicy: {
+    __typename: 'AutoMaterializePolicy';
+    policyType: Types.AutoMaterializePolicyType;
+  } | null;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
 };
 
@@ -117,7 +124,6 @@ export type RunMetadataFragment = {
   __typename: 'Run';
   id: string;
   status: Types.RunStatus;
-  runId: string;
   startTime: number | null;
   endTime: number | null;
   updateTime: number | null;

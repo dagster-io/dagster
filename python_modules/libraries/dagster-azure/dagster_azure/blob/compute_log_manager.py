@@ -1,11 +1,13 @@
 import os
 from contextlib import contextmanager
-from typing import Optional, Sequence
+from typing import Any, Mapping, Optional, Sequence
 
 import dagster._seven as seven
+from azure.identity import DefaultAzureCredential
 from dagster import (
     Field,
     Noneable,
+    Permissive,
     StringSource,
     _check as check,
 )
@@ -20,6 +22,7 @@ from dagster._core.storage.local_compute_log_manager import (
 )
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils import ensure_dir, ensure_file
+from typing_extensions import Self
 
 from .utils import create_blob_client, generate_blob_sas
 
@@ -41,6 +44,8 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
             storage_account: my-storage-account
             container: my-container
             credential: sas-token-or-secret-key
+            default_azure_credential:
+              exclude_environment_credential: true
             prefix: "dagster-test-"
             local_dir: "/tmp/cool"
             upload_interval: 30
@@ -48,8 +53,10 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
     Args:
         storage_account (str): The storage account name to which to log.
         container (str): The container (or ADLS2 filesystem) to which to log.
-        secret_key (str): Secret key for the storage account. SAS tokens are not
+        secret_key (Optional[str]): Secret key for the storage account. SAS tokens are not
             supported because we need a secret key to generate a SAS token for a download URL.
+        default_azure_credential (Optional[dict]): Use and configure DefaultAzureCredential.
+            Cannot be used with sas token or secret key config.
         local_dir (Optional[str]): Path to the local directory in which to stage logs. Default:
             ``dagster._seven.get_system_temp_directory()``.
         prefix (Optional[str]): Prefix for the log file keys.
@@ -62,18 +69,31 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
         self,
         storage_account,
         container,
-        secret_key,
+        secret_key=None,
         local_dir=None,
-        inst_data=None,
+        inst_data: Optional[ConfigurableClassData] = None,
         prefix="dagster",
         upload_interval=None,
+        default_azure_credential=None,
     ):
         self._storage_account = check.str_param(storage_account, "storage_account")
         self._container = check.str_param(container, "container")
         self._blob_prefix = self._clean_prefix(check.str_param(prefix, "prefix"))
-        check.str_param(secret_key, "secret_key")
+        self._default_azure_credential = check.opt_dict_param(
+            default_azure_credential, "default_azure_credential"
+        )
+        check.opt_str_param(secret_key, "secret_key")
+        check.invariant(
+            secret_key is not None or default_azure_credential is not None,
+            "Missing config: need to provide one of secret_key or default_azure_credential",
+        )
 
-        self._blob_client = create_blob_client(storage_account, secret_key)
+        if default_azure_credential is None:
+            self._blob_client = create_blob_client(storage_account, secret_key)
+        else:
+            credential = DefaultAzureCredential(**self._default_azure_credential)
+            self._blob_client = create_blob_client(storage_account, credential)
+
         self._container_client = self._blob_client.get_container_client(container)
         self._download_urls = {}
 
@@ -87,11 +107,9 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
 
     @contextmanager
-    def _watch_logs(self, pipeline_run, step_key=None):
+    def _watch_logs(self, dagster_run, step_key=None):
         # proxy watching to the local compute log manager, interacting with the filesystem
-        with self.local_manager._watch_logs(  # pylint: disable=protected-access
-            pipeline_run, step_key
-        ):
+        with self.local_manager._watch_logs(dagster_run, step_key):  # noqa: SLF001
             yield
 
     @property
@@ -103,14 +121,21 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
         return {
             "storage_account": StringSource,
             "container": StringSource,
-            "secret_key": StringSource,
+            "secret_key": Field(StringSource, is_required=False),
+            "default_azure_credential": Field(
+                Noneable(Permissive(description="keyword arguments for DefaultAzureCredential")),
+                is_required=False,
+                default_value=None,
+            ),
             "local_dir": Field(StringSource, is_required=False),
             "prefix": Field(StringSource, is_required=False, default_value="dagster"),
             "upload_interval": Field(Noneable(int), is_required=False, default_value=None),
         }
 
-    @staticmethod
-    def from_config_value(inst_data, config_value):
+    @classmethod
+    def from_config_value(
+        cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
+    ) -> Self:
         return AzureBlobComputeLogManager(inst_data=inst_data, **config_value)
 
     @property
@@ -144,6 +169,8 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
         elif prefix:
             # add the trailing '/' to make sure that ['a'] does not match ['apple']
             prefix_path = "/".join([self._blob_prefix, "storage", *prefix, ""])
+        else:
+            prefix_path = None
 
         blob_list = {
             b.name for b in list(self._container_client.list_blobs(name_starts_with=prefix_path))

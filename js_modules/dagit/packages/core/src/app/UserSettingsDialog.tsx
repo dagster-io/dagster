@@ -16,6 +16,7 @@ import {useStateWithStorage} from '../hooks/useStateWithStorage';
 
 import {FeatureFlagType, getFeatureFlags, setFeatureFlags} from './Flags';
 import {SHORTCUTS_STORAGE_KEY} from './ShortcutHandler';
+import {HourCycleSelect} from './time/HourCycleSelect';
 import {TimezoneSelect} from './time/TimezoneSelect';
 import {automaticLabel} from './time/browserTimezone';
 
@@ -50,10 +51,7 @@ interface DialogContentProps {
  * Separate the content from the `Dialog` so that we don't prepare its state before
  * we want to render it.
  */
-export const UserSettingsDialogContent: React.FC<DialogContentProps> = ({
-  onClose,
-  visibleFlags,
-}) => {
+const UserSettingsDialogContent: React.FC<DialogContentProps> = ({onClose, visibleFlags}) => {
   const [flags, setFlags] = React.useState<FeatureFlagType[]>(() => getFeatureFlags());
   const [reloading, setReloading] = React.useState(false);
 
@@ -112,6 +110,14 @@ export const UserSettingsDialogContent: React.FC<DialogContentProps> = ({
                 value: (
                   <Box margin={{bottom: 4}}>
                     <TimezoneSelect trigger={trigger} />
+                  </Box>
+                ),
+              },
+              {
+                key: 'Hour format',
+                value: (
+                  <Box margin={{bottom: 4}}>
+                    <HourCycleSelect />
                   </Box>
                 ),
               },

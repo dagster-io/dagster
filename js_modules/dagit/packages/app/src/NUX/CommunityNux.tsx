@@ -103,12 +103,15 @@ const Form: React.FC<{
             Connect with thousands of other data practitioners building with Dagster. Share
             knowledge, get help, and contribute to the open-source project.
           </Body>
-          <ExternalAnchorButton icon={<Icon name="slack" />} href="https://www.dagster.io/slack">
+          <ExternalAnchorButton
+            icon={<Icon name="slack" />}
+            href="https://www.dagster.io/slack?utm_source=local-nux"
+          >
             Join us on Slack
           </ExternalAnchorButton>
         </Box>
         <video autoPlay muted loop playsInline width={120} height={120}>
-          <source src="/Dagster_world.mp4" type="video/mp4" />
+          <source src={`${process.env.PUBLIC_URL}/Dagster_world.mp4`} type="video/mp4" />
         </video>
       </Box>
       <Box flex={{direction: 'column', justifyContent: 'stretch', gap: 12}}>

@@ -8,6 +8,7 @@ export type InstanceHealthForBackfillsQuery = {
   __typename: 'DagitQuery';
   instance: {
     __typename: 'Instance';
+    id: string;
     hasInfo: boolean;
     daemonHealth: {
       __typename: 'DaemonHealth';
@@ -46,13 +47,17 @@ export type InstanceBackfillsQuery = {
         __typename: 'PartitionBackfills';
         results: Array<{
           __typename: 'PartitionBackfill';
-          backfillId: string;
+          id: string;
           status: Types.BulkActionStatus;
-          numPartitions: number;
+          isValidSerialization: boolean;
+          numPartitions: number | null;
           timestamp: number;
           partitionSetName: string | null;
+          isAssetBackfill: boolean;
+          hasCancelPermission: boolean;
+          hasResumePermission: boolean;
           numCancelable: number;
-          partitionNames: Array<string>;
+          partitionNames: Array<string> | null;
           partitionSet: {
             __typename: 'PartitionSet';
             id: string;

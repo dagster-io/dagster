@@ -1,4 +1,4 @@
-from dagster._core.utils import check_dagster_package_version
+from dagster._core.libraries import DagsterLibraryRegistry
 
 from .constraints import (
     ColumnWithMetadataException,
@@ -25,7 +25,7 @@ from .data_frame import (
 from .validation import PandasColumn
 from .version import __version__
 
-check_dagster_package_version("dagster-pandas", __version__)
+DagsterLibraryRegistry.register("dagster-pandas", __version__)
 
 __all__ = [
     "DataFrame",

@@ -2,6 +2,7 @@
 import {Overlay} from '@blueprintjs/core';
 import {Box, Colors, Icon, Spinner, FontFamily} from '@dagster-io/ui';
 import Fuse from 'fuse.js';
+import debounce from 'lodash/debounce';
 import * as React from 'react';
 import {useHistory, useLocation} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -11,7 +12,7 @@ import {useTrackEvent} from '../app/analytics';
 
 import {SearchResults} from './SearchResults';
 import {SearchResult} from './types';
-import {useRepoSearch} from './useRepoSearch';
+import {useGlobalSearch} from './useGlobalSearch';
 
 const MAX_DISPLAYED_RESULTS = 50;
 
@@ -19,7 +20,8 @@ type State = {
   shown: boolean;
   queryString: string;
   searching: boolean;
-  results: Fuse.FuseResult<SearchResult>[];
+  primaryResults: Fuse.FuseResult<SearchResult>[];
+  secondaryResults: Fuse.FuseResult<SearchResult>[];
   highlight: number;
   loaded: boolean;
 };
@@ -29,20 +31,29 @@ type Action =
   | {type: 'hide-dialog'}
   | {type: 'highlight'; highlight: number}
   | {type: 'change-query'; queryString: string}
-  | {type: 'complete-search'; results: Fuse.FuseResult<SearchResult>[]};
+  | {type: 'complete-primary'; queryString: string; results: Fuse.FuseResult<SearchResult>[]}
+  | {type: 'complete-secondary'; queryString: string; results: Fuse.FuseResult<SearchResult>[]};
 
 const reducer = (state: State, action: Action) => {
   switch (action.type) {
     case 'show-dialog':
       return {...state, shown: true, loaded: true};
     case 'hide-dialog':
-      return {...state, shown: false, queryString: ''};
+      return {...state, shown: false, queryString: '', primaryResults: [], secondaryResults: []};
     case 'highlight':
       return {...state, highlight: action.highlight};
     case 'change-query':
       return {...state, queryString: action.queryString, searching: true, highlight: 0};
-    case 'complete-search':
-      return {...state, results: action.results, searching: false};
+    case 'complete-primary':
+      // If the received results match the current querystring, use them. Otherwise discard.
+      const primaryResults =
+        action.queryString === state.queryString ? action.results : state.primaryResults;
+      return {...state, primaryResults, searching: false};
+    case 'complete-secondary':
+      // If the received results match the current querystring, use them. Otherwise discard.
+      const secondaryResults =
+        action.queryString === state.queryString ? action.results : state.secondaryResults;
+      return {...state, secondaryResults, searching: false};
     default:
       return state;
   }
@@ -52,37 +63,61 @@ const initialState: State = {
   shown: false,
   queryString: '',
   searching: false,
-  results: [],
+  primaryResults: [],
+  secondaryResults: [],
   highlight: 0,
   loaded: false,
 };
 
+const DEBOUNCE_MSEC = 100;
+
 export const SearchDialog: React.FC<{searchPlaceholder: string}> = ({searchPlaceholder}) => {
   const location = useLocation();
   const history = useHistory();
-  const {performBootstrapQuery, loading, performSearch} = useRepoSearch();
+  const {initialize, loading, searchPrimary, searchSecondary} = useGlobalSearch();
   const trackEvent = useTrackEvent();
 
   const [state, dispatch] = React.useReducer(reducer, initialState);
-  const {shown, queryString, results, highlight, loaded} = state;
+  const {shown, queryString, primaryResults, secondaryResults, highlight} = state;
 
+  const results = [...primaryResults, ...secondaryResults];
   const renderedResults = results.slice(0, MAX_DISPLAYED_RESULTS);
   const numRenderedResults = renderedResults.length;
 
   const openSearch = React.useCallback(() => {
     trackEvent('searchOpen');
-    performBootstrapQuery();
+    initialize();
     dispatch({type: 'show-dialog'});
-  }, [performBootstrapQuery, trackEvent]);
+  }, [initialize, trackEvent]);
 
-  const onChange = React.useCallback((e) => {
-    dispatch({type: 'change-query', queryString: e.target.value});
-  }, []);
+  const searchAndHandlePrimary = React.useCallback(
+    async (queryString: string) => {
+      const {queryString: queryStringForResults, results} = await searchPrimary(queryString);
+      dispatch({type: 'complete-primary', queryString: queryStringForResults, results});
+    },
+    [searchPrimary],
+  );
 
-  React.useEffect(() => {
-    const results = performSearch(queryString, loaded);
-    dispatch({type: 'complete-search', results});
-  }, [queryString, performSearch, loaded]);
+  const searchAndHandleSecondary = React.useCallback(
+    async (queryString: string) => {
+      const {queryString: queryStringForResults, results} = await searchSecondary(queryString);
+      dispatch({type: 'complete-secondary', queryString: queryStringForResults, results});
+    },
+    [searchSecondary],
+  );
+
+  const debouncedSearch = React.useMemo(() => {
+    return debounce(async (queryString: string) => {
+      searchAndHandlePrimary(queryString);
+      searchAndHandleSecondary(queryString);
+    }, DEBOUNCE_MSEC);
+  }, [searchAndHandlePrimary, searchAndHandleSecondary]);
+
+  const onChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    dispatch({type: 'change-query', queryString: newValue});
+    debouncedSearch(newValue);
+  };
 
   React.useEffect(() => {
     dispatch({type: 'hide-dialog'});
@@ -95,6 +130,18 @@ export const SearchDialog: React.FC<{searchPlaceholder: string}> = ({searchPlace
     },
     [history],
   );
+
+  const shortcutFilter = React.useCallback((e: KeyboardEvent) => {
+    if (e.altKey || e.shiftKey) {
+      return false;
+    }
+
+    if (e.ctrlKey || e.metaKey) {
+      return e.code === 'KeyK';
+    }
+
+    return e.code === 'Slash';
+  }, []);
 
   const highlightedResult = renderedResults[highlight] || null;
 
@@ -137,17 +184,7 @@ export const SearchDialog: React.FC<{searchPlaceholder: string}> = ({searchPlace
 
   return (
     <>
-      <ShortcutHandler
-        onShortcut={openSearch}
-        shortcutLabel="/"
-        shortcutFilter={(e) =>
-          (e.key === '/' || (e.code === 'KeyK' && e.metaKey)) &&
-          !(e.key === '/' && e.metaKey) &&
-          !e.altKey &&
-          !e.shiftKey &&
-          !e.ctrlKey
-        }
-      >
+      <ShortcutHandler onShortcut={openSearch} shortcutLabel="/" shortcutFilter={shortcutFilter}>
         <SearchTrigger onClick={openSearch}>
           <Box flex={{justifyContent: 'space-between', alignItems: 'center'}}>
             <Box flex={{alignItems: 'center', gap: 8}}>

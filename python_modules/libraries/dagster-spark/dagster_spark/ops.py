@@ -26,7 +26,7 @@ def create_spark_op(
         tags={"kind": "spark", "main_class": main_class},
         required_resource_keys=required_resource_keys,
     )
-    def spark_op(context):  # pylint: disable=unused-argument
+    def spark_op(context):
         context.resources.spark.run_spark_job(context.op_config, main_class)
 
     return spark_op

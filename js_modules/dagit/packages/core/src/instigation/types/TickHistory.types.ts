@@ -17,7 +17,7 @@ export type TickHistoryQuery = {
         __typename: 'InstigationState';
         id: string;
         instigationType: Types.InstigationType;
-        nextTick: {__typename: 'FutureInstigationTick'; timestamp: number} | null;
+        nextTick: {__typename: 'DryRunInstigationTick'; timestamp: number | null} | null;
         ticks: Array<{
           __typename: 'InstigationTick';
           id: string;
@@ -29,7 +29,7 @@ export type TickHistoryQuery = {
           originRunIds: Array<string>;
           logKey: Array<string> | null;
           runKeys: Array<string>;
-          runs: Array<{__typename: 'Run'; id: string; status: Types.RunStatus; runId: string}>;
+          runs: Array<{__typename: 'Run'; id: string; status: Types.RunStatus}>;
           error: {
             __typename: 'PythonError';
             message: string;
@@ -55,7 +55,10 @@ export type TickHistoryQuery = {
       };
 };
 
-export type NextTickForHistoyFragment = {__typename: 'FutureInstigationTick'; timestamp: number};
+export type NextTickForHistoryFragment = {
+  __typename: 'DryRunInstigationTick';
+  timestamp: number | null;
+};
 
 export type HistoryTickFragment = {
   __typename: 'InstigationTick';
@@ -68,7 +71,7 @@ export type HistoryTickFragment = {
   originRunIds: Array<string>;
   logKey: Array<string> | null;
   runKeys: Array<string>;
-  runs: Array<{__typename: 'Run'; id: string; status: Types.RunStatus; runId: string}>;
+  runs: Array<{__typename: 'Run'; id: string; status: Types.RunStatus}>;
   error: {
     __typename: 'PythonError';
     message: string;

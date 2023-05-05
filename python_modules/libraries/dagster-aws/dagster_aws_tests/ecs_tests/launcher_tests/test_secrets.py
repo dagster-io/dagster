@@ -1,6 +1,3 @@
-# pylint: disable=redefined-outer-name
-# pylint: disable=unused-argument
-# pylint: disable=unused-variable
 from unittest.mock import MagicMock, patch
 
 import pytest

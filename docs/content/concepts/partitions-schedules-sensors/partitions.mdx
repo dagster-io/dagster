@@ -5,19 +5,19 @@ description: Partitioned assets and jobs enable launching backfills, where each 
 
 # Partitioned assets and jobs
 
-Partitioning allows a software-defined asset or job to correspond to a set of entities with identical structure but different parameters.
+A software-defined asset can represent a collection of _partitions_ that can be tracked and materialized independently. In many ways, each partition functions like its own mini-asset, but they all share a common materialization function and dependencies. Typically, each partition will correspond to a separate file, or a slice of a table in a database.
 
-A _partitioned asset_ is an asset that's composed of a set of partitions, which can be materialized and tracked independently. Most commonly, each partition represents all the records in a data set that fall within a particular time window. Depending on where the asset is stored, each partition might correspond to a file or a slice of a table in a database.
+A common use is for each partition to represent all the records in a data set that fall within a particular time window, e.g. hourly, daily or monthly. Alternatively, each partition can represent a region, a customer, an experiment - any dimension along which you want to be able to materialize and monitor independently. An asset can also be partitioned along multiple dimensions, e.g. by region and by hour.
 
-A _partitioned job_ is a job where each run corresponds to a partition key. Most commonly, each partition key represents a time window, so, when a job executes, it processes data within one of the time windows.
+A graph of assets with the same partitions implicitly forms a partitioned data pipeline, and you can launch a run that selects multiple assets and materializes the same partition in each asset.
 
-It's common to construct a partitioned job that materializes a particular set of partitioned assets every time it runs.
+Similarly, a _partitioned job_ is a job where each run corresponds to a partition. It's common to construct a partitioned job that materializes a single partition across a set of partitioned assets every time it runs.
 
-Having defined a partitioned job or asset, you can:
+Having defined a partitioned asset or job, you can:
 
 - View runs by partition in Dagit.
 - Define a [schedule](/concepts/partitions-schedules-sensors/schedules) that fills in a partition each time it runs. For example, a job might run each day and process the data that arrived during the previous day.
-- Launch [backfills](/concepts/partitions-schedules-sensors/backfills), which are sets of runs that each process a different partition. For example, after making a code change, you might want to run your job on all time windows instead of just one of them.
+- Launch [backfills](/concepts/partitions-schedules-sensors/backfills), which are sets of runs that each process a different partition. For example, after making a code change, you might want to run your job on all partitions instead of just one of them.
 
 ---
 
@@ -41,6 +41,7 @@ Having defined a partitioned job or asset, you can:
 | <PyObject object="StaticPartitionsDefinition" />  | A partitions definition with a fixed set of partitions.                           |
 | <PyObject object="MultiPartitionsDefinition" />   | A partitions definition with multiple dimensions.                                 |
 | <PyObject object="MultiPartitionKey" />           | A multi-dimensional partition key.                                                |
+| <PyObject object="DynamicPartitionsDefinition" /> | A partitions definition whose partitions can be dynamically added and removed.    |
 
 A software-defined asset can be assigned a <PyObject object="PartitionsDefinition" />, which determines the set of partitions that compose it. If the asset is stored in a filesystem or an object store, then each partition will typically correspond to a file or object. If the asset is stored in a database, then each partition will typically correspond to a range of values in a table that fall within a particular window.
 
@@ -91,10 +92,6 @@ If you're using the default I/O manager, materializing partition `2022-07-23` of
 
 #### Multi-dimensionally partitioned assets
 
-<Note>
-  This feature is <strong>experimental</strong>.
-</Note>
-
 The <PyObject object="MultiPartitionsDefinition" /> class accepts a mapping of dimension name to partitions definition, creating a partition for each unique combination of dimension partitions. For example, the asset below would contain a partition for each combination of color and date: `red|2022-01-01`, `yellow|2022-01-01`, `blue|2022-01-01`, `red|2022-01-02` and so on.
 
 ```python file=/concepts/partitions_schedules_sensors/multipartitions_asset.py startafter=start_multi_partitions_marker endbefore=end_multi_partitions_marker
@@ -132,6 +129,59 @@ result = materialize(
     partition_key=MultiPartitionKey({"date": "2022-01-01", "color": "red"}),
 )
 ```
+
+#### Dynamically partitioned assets
+
+<Experimental />
+
+<Note>
+  This feature is <strong>experimental</strong>. Until this feature is marked as
+  stable, further migrations may be required and partition history is not
+  guaranteed to be retained.
+</Note>
+
+Sometimes you don't know the set of partitions ahead of time when you're defining your assets. For example, maybe you want to add a new partition every time a new data file lands in a directory, or every time you want to experiment with a new set of hyperparameters. In these cases, you can use a <PyObject object="DynamicPartitionsDefinition"/>.
+
+The <PyObject object="DynamicPartitionsDefinition" /> class accepts a name argument, representing the name of the partition set:
+
+```python file=/concepts/partitions_schedules_sensors/dynamic_partitioned_asset.py startafter=start_dynamic_partitions_marker endbefore=end_dynamic_partitions_marker
+images_partitions_def = DynamicPartitionsDefinition(name="images")
+
+
+@asset(partitions_def=images_partitions_def)
+def images(context):
+    ...
+```
+
+For a given dynamic partition set, partition keys can be added and removed. One common pattern is detecting the presence of a new partition through a [sensor](/concepts/partitions-schedules-sensors/sensors), adding the partition, and then triggering a run for that partition:
+
+```python file=/concepts/partitions_schedules_sensors/dynamic_partitioned_asset.py startafter=start_dynamic_partitions_2 endbefore=end_dynamic_partitions_2
+images_job = define_asset_job(
+    "images_job", AssetSelection.keys("images"), partitions_def=images_partitions_def
+)
+
+
+@sensor(job=images_job)
+def image_sensor(context):
+    new_images = [
+        img_filename
+        for img_filename in os.listdir(os.getenv("MY_DIRECTORY"))
+        if not context.instance.has_dynamic_partition(
+            images_partitions_def.name, img_filename
+        )
+    ]
+
+    return SensorResult(
+        run_requests=[
+            RunRequest(partition_key=img_filename) for img_filename in new_images
+        ],
+        dynamic_partitions_requests=[
+            images_partitions_def.build_add_request(new_images)
+        ],
+    )
+```
+
+The [dynamic partitions example](https://github.com/dagster-io/dagster/tree/master/examples/assets_dynamic_partitions) contains a full project that uses dynamic partitions.
 
 ### Viewing asset partition status
 
@@ -177,12 +227,48 @@ height={1618}
 
 When a partitioned asset depends on another partitioned asset, each partition in the downstream asset depends on a partition or multiple partitions in the upstream asset.
 
-A few rules govern partition-to-partition dependencies:
+A few rules govern default partition-to-partition dependencies:
 
 - When the upstream asset and downstream asset have the same <PyObject object="PartitionsDefinition" />, each partition in the downstream asset depends on the same partition in the upstream asset.
 - When the upstream asset and downstream asset are both time window-partitioned, each partition in the downstream asset depends on all partitions in the upstream asset that intersect its time window.
 
   For example, if an asset with a <PyObject object="DailyPartitionsDefinition" /> depends on an asset with an <PyObject object="HourlyPartitionsDefinition" />, then partition `2022-04-12` of the daily asset the would depend on 24 partitions of the hourly asset: `2022-04-12-00:00` through `2022-04-12-23:00`.
+
+#### PartitionMappings
+
+You can override the default partition dependency rules by providing a <PyObject object="PartitionMapping" /> when specifying a dependency on an asset. For example, here's how to specify that each partition of a daily-partitioned asset depends on the prior day's partition in an upstream asset:
+
+```python file=/concepts/partitions_schedules_sensors/partition_mapping.py
+from dagster import (
+    AssetIn,
+    DailyPartitionsDefinition,
+    TimeWindowPartitionMapping,
+    asset,
+)
+
+partitions_def = DailyPartitionsDefinition(start_date="2023-01-21")
+
+
+@asset(partitions_def=partitions_def)
+def events():
+    ...
+
+
+@asset(
+    partitions_def=partitions_def,
+    ins={
+        "events": AssetIn(
+            partition_mapping=TimeWindowPartitionMapping(
+                start_offset=-1, end_offset=-1
+            ),
+        )
+    },
+)
+def yesterday_event_stats(events):
+    ...
+```
+
+Refer to the [API docs](https://docs.dagster.io/\_apidocs/partitions#partition-mapping) for a list of available `PartitionMappings`.
 
 ---
 
@@ -262,12 +348,16 @@ The most common kind of partitioned job is a time-partitioned job - each partiti
 Before we define a partitioned job, let's look at a non-partitioned job that computes some data for a given date:
 
 ```python file=/concepts/partitions_schedules_sensors/date_config_job.py
-from dagster import job, op
+from dagster import Config, job, op
 
 
-@op(config_schema={"date": str})
-def process_data_for_date(context):
-    date = context.op_config["date"]
+class ProcessDateConfig(Config):
+    date: str
+
+
+@op
+def process_data_for_date(context, config: ProcessDateConfig):
+    date = config.date
     context.log.info(f"processing data for {date}")
 
 
@@ -344,7 +434,7 @@ In addition to the <PyObject object="daily_partitioned_config" decorator /> deco
 Not all jobs are partitioned by time. Here's a partitioned job where the partitions are continents:
 
 ```python file=/concepts/partitions_schedules_sensors/static_partitioned_job.py
-from dagster import job, op, static_partitioned_config
+from dagster import Config, job, op, static_partitioned_config
 
 CONTINENTS = [
     "Africa",
@@ -362,9 +452,13 @@ def continent_config(partition_key: str):
     return {"ops": {"continent_op": {"config": {"continent_name": partition_key}}}}
 
 
-@op(config_schema={"continent_name": str})
-def continent_op(context):
-    context.log.info(context.op_config["continent_name"])
+class ContinentOpConfig(Config):
+    continent_name: str
+
+
+@op
+def continent_op(context, config: ContinentOpConfig):
+    context.log.info(config.continent_name)
 
 
 @job(config=continent_config)
@@ -395,14 +489,13 @@ do_stuff_partitioned_schedule = build_schedule_from_partitioned_job(
 Schedules can also be made from static partitioned jobs. If you wanted to make a schedule for the `continent_job` above that runs each partition, you could write:
 
 ```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_static_partition endbefore=end_static_partition
-from dagster import schedule
+from dagster import schedule, RunRequest
 
 
 @schedule(cron_schedule="0 0 * * *", job=continent_job)
 def continent_schedule():
     for c in CONTINENTS:
-        request = continent_job.run_request_for_partition(partition_key=c, run_key=c)
-        yield request
+        yield RunRequest(run_key=c, partition_key=c)
 ```
 
 Or a schedule that will run a subselection of the partition
@@ -410,10 +503,7 @@ Or a schedule that will run a subselection of the partition
 ```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_single_partition endbefore=end_single_partition
 @schedule(cron_schedule="0 0 * * *", job=continent_job)
 def antarctica_schedule():
-    request = continent_job.run_request_for_partition(
-        partition_key="Antarctica", run_key=None
-    )
-    yield request
+    return RunRequest(partition_key="Antarctica")
 ```
 
 Refer to the [Schedules documentation](/concepts/partitions-schedules-sensors/schedules#schedules-from-partitioned-assets-and-jobs) for more info about constructing both schedule types.
@@ -460,6 +550,9 @@ def test_my_partitioned_config():
 If you want to test that your <PyObject object="PartitionedConfig" /> creates the partitions you expect, you can use the `get_partition_keys` or `get_run_config_for_partition_key` functions.
 
 ```python file=/concepts/partitions_schedules_sensors/partitioned_config_test.py startafter=start_partition_keys endbefore=end_partition_keys
+from dagster import Config
+
+
 @daily_partitioned_config(start_date=datetime(2020, 1, 1), minute_offset=15)
 def my_offset_partitioned_config(start: datetime, _end: datetime):
     return {
@@ -474,10 +567,15 @@ def my_offset_partitioned_config(start: datetime, _end: datetime):
     }
 
 
-@op(config_schema={"start": str, "end": str})
-def process_data(context):
-    s = context.op_config["start"]
-    e = context.op_config["end"]
+class ProcessDataConfig(Config):
+    start: str
+    end: str
+
+
+@op
+def process_data(context, config: ProcessDataConfig):
+    s = config.start
+    e = config.end
     context.log.info(f"processing data for {s} - {e}")
 
 

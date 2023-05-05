@@ -162,33 +162,38 @@ Like inputs, outputs can also have [Dagster Types](/concepts/types).
 
 While many use cases can be served using built-in python annotations, <PyObject object="Output"/> and <PyObject object="DynamicOutput"/> objects unlock additional functionality. Check out the docs on [Op Outputs](/concepts/ops-jobs-graphs/op-events#output-objects) to learn more.
 
-### Op Context
-
-When writing an op, users can optionally provide a first parameter, `context`. When this parameter is supplied, Dagster will supply a context object to the body of the op. The context provides access to system information like op configuration, loggers, resources, and the current run id. See <PyObject object="OpExecutionContext"/> for the full list of properties accessible from the op context.
-
-For example, to access the logger and log a info message:
-
-```python file=/concepts/ops_jobs_graphs/ops.py startafter=start_op_context_marker endbefore=end_op_context_marker
-@op(config_schema={"name": str})
-def context_op(context):
-    name = context.op_config["name"]
-    context.log.info(f"My name is {name}")
-```
-
 ### Op Configuration
 
-All definitions in dagster expose a `config_schema`, making them configurable and parameterizable. The configuration system is explained in detail on [Config Schema](/concepts/configuration/config-schema).
+Ops in Dagster can specify a config schema which makes them configurable and parameterizable at execution time. The configuration system is explained in detail in the [Config schema documentation](/concepts/configuration/config-schema).
 
-Op definitions can specify a `config_schema` for the op's configuration. The configuration is accessible through the [op context](#op-context) at runtime. Therefore, op configuration can be used to specify op behavior at runtime, making ops more flexible and reusable.
+Op functions can specify an annotated `config` parameter for the op's configuration. The config class, which subclasses <PyObject object="Config"/> (which wraps [`pydantic.BaseModel`](https://docs.pydantic.dev/usage/models/#basic-model-usage)) specifies the configuration schema for the op. Op configuration can be used to specify op behavior at runtime, making ops more flexible and reusable.
 
 For example, we can define an op where the API endpoint it queries is defined through its configuration:
 
 ```python file=/concepts/ops_jobs_graphs/ops.py startafter=start_configured_op_marker endbefore=end_configured_op_marker
-@op(config_schema={"api_endpoint": str})
-def my_configurable_op(context):
-    api_endpoint = context.op_config["api_endpoint"]
-    data = requests.get(f"{api_endpoint}/data").json()
+from dagster import Config
+
+
+class MyOpConfig(Config):
+    api_endpoint: str
+
+
+@op
+def my_configurable_op(config: MyOpConfig):
+    data = requests.get(f"{config.api_endpoint}/data").json()
     return data
+```
+
+### Op Context
+
+When writing an op, users can optionally provide a first parameter, `context`. When this parameter is supplied, Dagster will supply a context object to the body of the op. The context provides access to system information like loggers and the current run id. See <PyObject object="OpExecutionContext"/> for the full list of properties accessible from the op context.
+
+For example, to access the logger and log a info message:
+
+```python file=/concepts/ops_jobs_graphs/ops.py startafter=start_op_context_marker endbefore=end_op_context_marker
+@op
+def context_op(context: OpExecutionContext):
+    context.log.info(f"My run ID is {context.run_id}")
 ```
 
 ## Using an op
@@ -209,8 +214,7 @@ def my_op_factory(
     ins=None,
     **kwargs,
 ):
-    """
-    Args:
+    """Args:
         name (str): The name of the new op.
         ins (Dict[str, In]): Any Ins for the new op. Default: None.
 

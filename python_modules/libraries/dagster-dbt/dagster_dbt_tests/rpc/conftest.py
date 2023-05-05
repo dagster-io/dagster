@@ -15,7 +15,7 @@ TEST_PORT = 8580
 RPC_ESTABLISH_RETRIES = 10
 RPC_ESTABLISH_RETRY_INTERVAL_S = 1.5
 
-RPC_ENDPOINT = "http://{hostname}:{port}/jsonrpc".format(hostname=TEST_HOSTNAME, port=TEST_PORT)
+RPC_ENDPOINT = f"http://{TEST_HOSTNAME}:{TEST_PORT}/jsonrpc"
 
 # ======= SOLIDS I ========
 
@@ -43,9 +43,7 @@ atexit.register(kill_all_subprocs)
 
 
 @pytest.fixture(scope="class")
-def dbt_rpc_server(
-    dbt_seed, dbt_executable, dbt_config_dir
-):  # pylint: disable=unused-argument, redefined-outer-name
+def dbt_rpc_server(dbt_seed, dbt_executable, dbt_config_dir):
     proc = subprocess.Popen(
         [
             "dbt-rpc",
@@ -102,7 +100,7 @@ def rsps():
 
 
 @pytest.fixture
-def non_terminal_poll_result(rpc_logs):  # pylint: disable=redefined-outer-name
+def non_terminal_poll_result(rpc_logs):
     result = {
         "result": {
             "state": "running",
@@ -119,7 +117,7 @@ def non_terminal_poll_result(rpc_logs):  # pylint: disable=redefined-outer-name
 
 
 @pytest.fixture
-def terminal_poll_result(rpc_logs):  # pylint: disable=redefined-outer-name
+def terminal_poll_result(rpc_logs):
     result = {
         "result": {
             "state": "success",

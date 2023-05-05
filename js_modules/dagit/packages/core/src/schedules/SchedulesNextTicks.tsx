@@ -85,14 +85,14 @@ export const SchedulesNextTicks: React.FC<{
     const minMaxTimestamp = Math.min(
       ...futureTickSchedules.map(
         (schedule) =>
-          schedule.futureTicks.results[schedule.futureTicks.results.length - 1].timestamp,
+          schedule.futureTicks.results[schedule.futureTicks.results.length - 1].timestamp!,
       ),
     );
 
     futureTickSchedules.forEach((schedule) => {
       schedule.futureTicks.results.forEach((tick) => {
-        if (tick.timestamp <= minMaxTimestamp) {
-          nextTicks.push({schedule, timestamp: tick.timestamp, repoAddress});
+        if (tick.timestamp! <= minMaxTimestamp) {
+          nextTicks.push({schedule, timestamp: tick.timestamp!, repoAddress});
         }
       });
     });
@@ -139,7 +139,7 @@ export const SchedulesNextTicks: React.FC<{
   }
 
   return (
-    <Table $monospaceFont={false}>
+    <Table>
       <thead>
         <tr>
           <th style={{width: '260px'}}>Timestamp</th>
@@ -488,7 +488,7 @@ const NextTickDialog: React.FC<{
   );
 };
 
-export const SCHEDULE_NEXT_FIVE_TICKS_FRAGMENT = gql`
+const SCHEDULE_NEXT_FIVE_TICKS_FRAGMENT = gql`
   fragment ScheduleNextFiveTicksFragment on Schedule {
     id
     name

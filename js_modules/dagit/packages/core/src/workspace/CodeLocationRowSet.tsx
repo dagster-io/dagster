@@ -11,9 +11,14 @@ import {
 } from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
+import styled from 'styled-components/macro';
 
-import {usePermissionsForLocation} from '../app/Permissions';
-import {ReloadRepositoryLocationButton} from '../nav/ReloadRepositoryLocationButton';
+import {SharedToaster} from '../app/DomUtils';
+import {useCopyToClipboard} from '../app/browser';
+import {
+  NO_RELOAD_PERMISSION_TEXT,
+  ReloadRepositoryLocationButton,
+} from '../nav/ReloadRepositoryLocationButton';
 import {
   buildReloadFnForLocation,
   useRepositoryLocationReload,
@@ -104,20 +109,59 @@ export const CodeLocationRowSet: React.FC<Props> = ({locationNode}) => {
 };
 
 export const ImageName: React.FC<{metadata: WorkspaceDisplayMetadataFragment[]}> = ({metadata}) => {
+  const copy = useCopyToClipboard();
   const imageKV = metadata.find(({key}) => key === 'image');
+  const value = imageKV?.value || '';
+
+  const onClick = React.useCallback(() => {
+    copy(value);
+    SharedToaster.show({
+      intent: 'success',
+      icon: 'done',
+      message: 'Image string copied!',
+    });
+  }, [copy, value]);
+
   if (imageKV) {
     return (
-      <Box
-        flex={{direction: 'row', gap: 4}}
-        style={{width: '100%', color: Colors.Gray700, fontSize: 12}}
-      >
+      <ImageNameBox flex={{direction: 'row', gap: 4}}>
         <span style={{fontWeight: 500}}>image:</span>
-        <MiddleTruncate text={imageKV.value} />
-      </Box>
+        <Tooltip content="Click to copy" placement="top" display="block">
+          <button onClick={onClick}>
+            <MiddleTruncate text={imageKV.value} />
+          </button>
+        </Tooltip>
+      </ImageNameBox>
     );
   }
   return null;
 };
+
+const ImageNameBox = styled(Box)`
+  width: 100%;
+  color: ${Colors.Gray700};
+  font-size: 12px;
+
+  .bp4-popover2-target {
+    overflow: hidden;
+  }
+
+  button {
+    background: transparent;
+    border: none;
+    color: ${Colors.Gray700};
+    cursor: pointer;
+    font-size: 12px;
+    overflow: hidden;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+
+    :focus {
+      outline: none;
+    }
+  }
+`;
 
 export const ModuleOrPackageOrFile: React.FC<{metadata: WorkspaceDisplayMetadataFragment[]}> = ({
   metadata,
@@ -198,31 +242,30 @@ const LocationStatus: React.FC<{
   );
 };
 
-const ReloadButton: React.FC<{
-  location: string;
-}> = (props) => {
-  const {location} = props;
-  const {canReloadRepositoryLocation} = usePermissionsForLocation(location);
-
-  if (!canReloadRepositoryLocation.enabled) {
-    return (
-      <Tooltip content={canReloadRepositoryLocation.disabledReason} useDisabledButtonTooltipFix>
-        <Button icon={<Icon name="refresh" />} disabled>
-          Reload
-        </Button>
-      </Tooltip>
-    );
-  }
-
+const ReloadButton: React.FC<{location: string}> = ({location}) => {
   return (
-    <ReloadRepositoryLocationButton location={location}>
-      {({reloading, tryReload}) => (
-        <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-          <Button icon={<Icon name="refresh" />} loading={reloading} onClick={() => tryReload()}>
-            Reload
-          </Button>
-        </Box>
-      )}
-    </ReloadRepositoryLocationButton>
+    <ReloadRepositoryLocationButton
+      location={location}
+      ChildComponent={({reloading, tryReload, hasReloadPermission}) => {
+        return (
+          <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+            <Tooltip
+              content={hasReloadPermission ? '' : NO_RELOAD_PERMISSION_TEXT}
+              canShow={!hasReloadPermission}
+              useDisabledButtonTooltipFix
+            >
+              <Button
+                icon={<Icon name="refresh" />}
+                disabled={!hasReloadPermission}
+                loading={reloading}
+                onClick={() => tryReload()}
+              >
+                Reload
+              </Button>
+            </Tooltip>
+          </Box>
+        );
+      }}
+    />
   );
 };

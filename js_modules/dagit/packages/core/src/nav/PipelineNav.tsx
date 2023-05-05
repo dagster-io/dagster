@@ -2,7 +2,12 @@ import {Box, PageHeader, Tabs, Tag, Heading, Tooltip} from '@dagster-io/ui';
 import React from 'react';
 import {useRouteMatch} from 'react-router-dom';
 
-import {PermissionsMap, PermissionResult, usePermissionsForLocation} from '../app/Permissions';
+import {
+  PermissionResult,
+  usePermissionsForLocation,
+  PermissionsState,
+  permissionResultForKey,
+} from '../app/Permissions';
 import {
   explorerPathFromString,
   explorerPathToString,
@@ -19,7 +24,7 @@ import {RepositoryLink} from './RepositoryLink';
 interface TabConfig {
   title: string;
   pathComponent: string;
-  getPermissionsResult?: (permissions: PermissionsMap) => PermissionResult;
+  getPermissionsResult?: (permissionsState: PermissionsState) => PermissionResult;
 }
 
 const pipelineTabs: {[key: string]: TabConfig} = {
@@ -27,7 +32,8 @@ const pipelineTabs: {[key: string]: TabConfig} = {
   playground: {
     title: 'Launchpad',
     pathComponent: 'playground',
-    getPermissionsResult: (permissions: PermissionsMap) => permissions.canLaunchPipelineExecution,
+    getPermissionsResult: (permissionsState: PermissionsState) =>
+      permissionResultForKey(permissionsState, 'canLaunchPipelineExecution'),
   },
   runs: {
     title: 'Runs',

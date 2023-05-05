@@ -36,7 +36,7 @@ def get_aws_region() -> str:
 def ensure_ecr_login(aws_region: str = DEFAULT_AWS_ECR_REGION):
     check.str_param(aws_region, "aws_region")
 
-    cmd = "aws ecr get-login --no-include-email --region {} | sh".format(aws_region)
+    cmd = f"aws ecr get-login --no-include-email --region {aws_region} | sh"
 
     check.invariant(
         subprocess.call(cmd, shell=True) == 0,

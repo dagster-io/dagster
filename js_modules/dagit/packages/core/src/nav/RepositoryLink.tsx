@@ -3,12 +3,14 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {usePermissionsForLocation} from '../app/Permissions';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
-import {ReloadRepositoryLocationButton} from './ReloadRepositoryLocationButton';
+import {
+  NO_RELOAD_PERMISSION_TEXT,
+  ReloadRepositoryLocationButton,
+} from './ReloadRepositoryLocationButton';
 
 export const RepositoryLink: React.FC<{
   repoAddress: RepoAddress;
@@ -16,7 +18,6 @@ export const RepositoryLink: React.FC<{
   showRefresh?: boolean;
 }> = ({repoAddress, showIcon = false, showRefresh = true}) => {
   const {location} = repoAddress;
-  const {canReloadRepositoryLocation} = usePermissionsForLocation(repoAddress.location);
   const repoString = repoAddressAsHumanString(repoAddress);
 
   return (
@@ -25,30 +26,40 @@ export const RepositoryLink: React.FC<{
       <RepositoryName to={workspacePathFromAddress(repoAddress)} style={{flex: 1}}>
         <MiddleTruncate text={repoString} />
       </RepositoryName>
-      {canReloadRepositoryLocation.enabled && showRefresh ? (
-        <ReloadRepositoryLocationButton location={location}>
-          {({tryReload, reloading}) => (
-            <ReloadTooltip
-              content={
-                reloading ? (
-                  'Reloading…'
-                ) : (
-                  <>
-                    Reload location <strong>{location}</strong>
-                  </>
-                )
+      {showRefresh ? (
+        <ReloadRepositoryLocationButton
+          location={location}
+          ChildComponent={({codeLocation, tryReload, reloading, hasReloadPermission}) => {
+            const tooltipContent = () => {
+              if (!hasReloadPermission) {
+                return NO_RELOAD_PERMISSION_TEXT;
               }
-            >
-              {reloading ? (
-                <Spinner purpose="body-text" />
+
+              return reloading ? (
+                'Reloading…'
               ) : (
-                <StyledButton onClick={tryReload}>
-                  <Icon name="refresh" color={Colors.Gray400} />
-                </StyledButton>
-              )}
-            </ReloadTooltip>
-          )}
-        </ReloadRepositoryLocationButton>
+                <>
+                  Reload location <strong>{codeLocation}</strong>
+                </>
+              );
+            };
+
+            return (
+              <ReloadTooltip content={tooltipContent()}>
+                {reloading ? (
+                  <Spinner purpose="body-text" />
+                ) : (
+                  <StyledButton disabled={!hasReloadPermission} onClick={tryReload}>
+                    <Icon
+                      name="refresh"
+                      color={hasReloadPermission ? Colors.Gray400 : Colors.Gray300}
+                    />
+                  </StyledButton>
+                )}
+              </ReloadTooltip>
+            );
+          }}
+        />
       ) : null}
     </Box>
   );
@@ -73,6 +84,10 @@ const StyledButton = styled.button`
   display: block;
   padding: 0;
   margin: 0;
+
+  :disabled {
+    cursor: default;
+  }
 
   :focus:not(:focus-visible) {
     outline: none;

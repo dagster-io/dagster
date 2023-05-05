@@ -1,11 +1,10 @@
-import {Colors, Icon, Tooltip, Box, Spinner, Tag, CaptionMono} from '@dagster-io/ui';
+import {Tooltip, Spinner, FontFamily} from '@dagster-io/ui';
 import React from 'react';
 import {Link} from 'react-router-dom';
 
-import {CurrentMinutesLateTag} from '../assets/CurrentMinutesLateTag';
 import {titleForRun, linkToRunEvent} from '../runs/RunUtils';
 
-import {LiveDataForNode, MISSING_LIVE_DATA} from './Utils';
+import {LiveDataForNode} from './Utils';
 
 export const AssetLatestRunSpinner: React.FC<{
   liveData?: LiveDataForNode;
@@ -28,88 +27,20 @@ export const AssetLatestRunSpinner: React.FC<{
   return null;
 };
 
-export const AssetLatestRunWithNotices: React.FC<{
-  liveData?: LiveDataForNode;
-  includeFreshness: boolean;
-  includeRunStatus: boolean;
-}> = ({liveData, includeFreshness, includeRunStatus}) => {
-  const {
-    lastMaterialization,
-    unstartedRunIds,
-    inProgressRunIds,
-    runWhichFailedToMaterialize,
-    stepKey,
-  } = liveData || MISSING_LIVE_DATA;
-
-  const buildRunTagContent = () => {
-    if (inProgressRunIds?.length > 0) {
-      return (
-        <Box flex={{gap: 4, alignItems: 'center'}}>
-          {includeRunStatus && <AssetLatestRunSpinner liveData={liveData} />}
-          <AssetRunLink runId={inProgressRunIds[0]} />
-        </Box>
-      );
-    }
-    if (unstartedRunIds?.length > 0) {
-      return (
-        <Box flex={{gap: 4, alignItems: 'center'}}>
-          {includeRunStatus && <AssetLatestRunSpinner liveData={liveData} />}
-          <AssetRunLink runId={unstartedRunIds[0]} />
-        </Box>
-      );
-    }
-    if (runWhichFailedToMaterialize?.__typename === 'Run') {
-      return (
-        <Box flex={{gap: 4, alignItems: 'center'}}>
-          {includeRunStatus && (
-            <Tooltip
-              content={`Run ${titleForRun({
-                runId: runWhichFailedToMaterialize.id,
-              })} failed to materialize this asset`}
-            >
-              <Icon name="warning" color={Colors.Red500} />
-            </Tooltip>
-          )}
-          <AssetRunLink runId={runWhichFailedToMaterialize.id} />
-        </Box>
-      );
-    }
-    if (lastMaterialization) {
-      return (
-        <Box flex={{gap: 6, alignItems: 'center'}}>
-          <AssetRunLink
-            runId={lastMaterialization.runId}
-            event={{stepKey, timestamp: lastMaterialization.timestamp}}
-          />
-        </Box>
-      );
-    }
-    return undefined;
-  };
-
-  const runTagContent = buildRunTagContent();
-
-  if (!includeFreshness) {
-    return runTagContent || <span>–</span>;
-  }
-
-  return (
-    <Box flex={{direction: 'row', gap: 4}}>
-      {runTagContent ? <Tag>{runTagContent}</Tag> : <span>–</span>}
-      {liveData && <CurrentMinutesLateTag liveData={liveData} policyOnHover />}
-    </Box>
-  );
-};
-
 export const AssetRunLink: React.FC<{
+  children?: React.ReactNode;
   runId: string;
   event?: Parameters<typeof linkToRunEvent>[1];
 }> = ({runId, children, event}) => (
   <Link
-    to={event ? linkToRunEvent({runId}, event) : `/runs/${runId}`}
+    to={event ? linkToRunEvent({id: runId}, event) : `/runs/${runId}`}
     target="_blank"
     rel="noreferrer"
   >
-    {children || <CaptionMono>{titleForRun({runId})}</CaptionMono>}
+    {children || (
+      <span style={{fontSize: '1.2em', fontFamily: FontFamily.monospace}}>
+        {titleForRun({id: runId})}
+      </span>
+    )}
   </Link>
 );

@@ -3,7 +3,7 @@ import {writeFileSync} from 'fs';
 
 import {buildClientSchema, getIntrospectionQuery, printSchema} from 'graphql';
 
-console.log('Downloading schema...');
+console.log('Downloading schema…');
 
 const TARGET_FILE = './src/graphql/schema.graphql';
 
@@ -17,7 +17,7 @@ const result = execSync(
 const schemaJson = JSON.parse(result).data;
 const sdl = printSchema(buildClientSchema(schemaJson));
 
-console.log('Generating schema.graphql...');
+console.log('Generating schema.graphql…');
 
 writeFileSync(TARGET_FILE, sdl);
 
@@ -25,7 +25,7 @@ execSync(`yarn prettier --loglevel silent --write ${TARGET_FILE}`, {stdio: 'inhe
 
 // Write `possibleTypes.generated.json`, used in prod for `AppCache` and in tests for creating
 // a mocked schema.
-const possibleTypes = {};
+const possibleTypes: Record<string, string[]> = {};
 
 schemaJson.__schema.types.forEach((supertype: {name: string; possibleTypes: [{name: string}]}) => {
   if (supertype.possibleTypes) {
@@ -33,11 +33,15 @@ schemaJson.__schema.types.forEach((supertype: {name: string; possibleTypes: [{na
   }
 });
 
-console.log('Generating possibleTypes.generated.json...');
+console.log('Generating possibleTypes.generated.json…');
 
 writeFileSync('./src/graphql/possibleTypes.generated.json', JSON.stringify(possibleTypes));
 
-console.log('Generating TypeScript types...');
+console.log('Cleaning up existing types…');
+
+execSync('find src -type d -name types | xargs rm -r', {stdio: 'inherit'});
+
+console.log('Generating TypeScript types…');
 
 execSync('yarn graphql-codegen', {stdio: 'inherit'});
 

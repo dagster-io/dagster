@@ -2,11 +2,11 @@
 
 import * as Types from '../../graphql/types';
 
-export type PipelineEnvironmentYamlQueryVariables = Types.Exact<{
+export type PipelineEnvironmentQueryVariables = Types.Exact<{
   runId: Types.Scalars['ID'];
 }>;
 
-export type PipelineEnvironmentYamlQuery = {
+export type PipelineEnvironmentQuery = {
   __typename: 'DagitQuery';
   pipelineRunOrError:
     | {__typename: 'PythonError'}

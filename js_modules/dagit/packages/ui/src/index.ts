@@ -19,7 +19,6 @@ export * from './components/Icon';
 export * from './components/Dialog';
 export * from './components/Group';
 export * from './components/MainContent';
-export * from './components/Markdown';
 export * from './components/Menu';
 export * from './components/MetadataTable';
 export * from './components/MiddleTruncate';
@@ -28,16 +27,19 @@ export * from './components/Page';
 export * from './components/PageHeader';
 export * from './components/Popover';
 export * from './components/ProductTour';
+export * from './components/Radio';
 export * from './components/RefreshableCountdown';
 export * from './components/Select';
 export * from './components/Slider';
 export * from './components/Spinner';
 export * from './components/SplitPanelContainer';
 export * from './components/StyledButton';
+export * from './components/SubwayDot';
 export * from './components/Suggest';
 export * from './components/Table';
 export * from './components/Tabs';
 export * from './components/Tag';
+export * from './components/TagSelector';
 export * from './components/Text';
 export * from './components/TextInput';
 export * from './components/Toaster';
@@ -47,6 +49,8 @@ export * from './components/Trace';
 export * from './components/Warning';
 export * from './components/styles';
 export * from './components/useSuggestionsForString';
+export * from './components/ErrorBoundary';
+export * from './components/useViewport';
 
 // Global font styles, exported as styled-component components to render in
 // your app tree root. E.g. <GlobalInconsolata />

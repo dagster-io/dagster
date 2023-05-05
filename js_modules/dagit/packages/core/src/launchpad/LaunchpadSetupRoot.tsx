@@ -16,10 +16,12 @@ import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 export const LaunchpadSetupRoot: React.FC<{repoAddress: RepoAddress}> = (props) => {
   const {repoAddress} = props;
-  const {canLaunchPipelineExecution} = usePermissionsForLocation(repoAddress.location);
+  const {
+    permissions: {canLaunchPipelineExecution},
+  } = usePermissionsForLocation(repoAddress.location);
   const {repoPath, pipelinePath} = useParams<{repoPath: string; pipelinePath: string}>();
 
-  if (!canLaunchPipelineExecution.enabled) {
+  if (!canLaunchPipelineExecution) {
     return <Redirect to={`/locations/${repoPath}/pipeline_or_job/${pipelinePath}`} />;
   }
   return <LaunchpadSetupAllowedRoot pipelinePath={pipelinePath} repoAddress={repoAddress} />;
@@ -45,7 +47,13 @@ const LaunchpadSetupAllowedRoot: React.FC<Props> = (props) => {
   const queryString = qs.parse(window.location.search, {ignoreQueryPrefix: true});
 
   React.useEffect(() => {
-    if (queryString.config || queryString.mode || queryString.solidSelection) {
+    if (
+      queryString.config ||
+      queryString.mode ||
+      queryString.solidSelection ||
+      queryString.tags ||
+      queryString.assetSelection
+    ) {
       const newSession: Partial<IExecutionSession> = {};
       if (typeof queryString.config === 'string') {
         newSession.runConfigYaml = queryString.config;
@@ -60,6 +68,14 @@ const LaunchpadSetupAllowedRoot: React.FC<Props> = (props) => {
       }
       if (typeof queryString.solidSelectionQuery === 'string') {
         newSession.solidSelectionQuery = queryString.solidSelectionQuery;
+      }
+
+      if (Array.isArray(queryString.tags)) {
+        newSession.tags = queryString.tags as any;
+      }
+
+      if (Array.isArray(queryString.assetSelection)) {
+        newSession.assetSelection = queryString.assetSelection as any;
       }
 
       onSave(applyCreateSession(data, newSession));

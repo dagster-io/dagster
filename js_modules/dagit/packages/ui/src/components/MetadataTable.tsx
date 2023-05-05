@@ -52,7 +52,7 @@ export const StyledTable = styled.table`
     vertical-align: top;
   }
 
-  td .bp3-control {
+  td .bp4-control {
     margin-bottom: 0;
   }
 `;

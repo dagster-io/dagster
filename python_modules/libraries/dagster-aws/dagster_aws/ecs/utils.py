@@ -56,3 +56,40 @@ def task_definitions_match(
         return False
 
     return True
+
+
+def get_task_logs(ecs, logs_client, cluster, task_arn, container_name, limit=10):
+    task = ecs.describe_tasks(cluster=cluster, tasks=[task_arn]).get("tasks")[0]
+
+    task_definition_arn = task.get("taskDefinitionArn")
+    task_definition = ecs.describe_task_definition(taskDefinition=task_definition_arn).get(
+        "taskDefinition"
+    )
+
+    matching_container_definitions = [
+        container_definition
+        for container_definition in task_definition.get("containerDefinitions", [])
+        if container_definition["name"] == container_name
+    ]
+    if not matching_container_definitions:
+        raise Exception(f"Could not find container with name {container_name}")
+
+    container_definition = matching_container_definitions[0]
+
+    log_options = container_definition.get("logConfiguration", {}).get("options", {})
+    log_group = log_options.get("awslogs-group")
+    log_stream_prefix = log_options.get("awslogs-stream-prefix")
+
+    if not log_group or not log_stream_prefix:
+        return []
+
+    container_name = container_definition.get("name")
+    task_id = task_arn.split("/")[-1]
+
+    log_stream = f"{log_stream_prefix}/{container_name}/{task_id}"
+
+    events = logs_client.get_log_events(
+        logGroupName=log_group, logStreamName=log_stream, limit=limit
+    ).get("events")
+
+    return [event.get("message") for event in events]

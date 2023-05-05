@@ -1,10 +1,10 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, Button, Dialog, Icon, Tooltip, Colors, Subheading} from '@dagster-io/ui';
+import {Box, Button, Dialog, Icon, Tooltip, Colors, Subheading, useViewport} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {usePermissionsForLocation} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {useViewport} from '../gantt/useViewport';
+import {RunStatus} from '../graphql/types';
 import {DagsterTag} from '../runs/RunTag';
 import {Loading} from '../ui/Loading';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
@@ -13,7 +13,7 @@ import {RepoAddress} from '../workspace/types';
 import {BackfillPartitionSelector} from './BackfillSelector';
 import {JobBackfillsTable} from './JobBackfillsTable';
 import {PartitionGraph} from './PartitionGraph';
-import {PartitionState, PartitionStatus, runStatusToPartitionState} from './PartitionStatus';
+import {PartitionStatus} from './PartitionStatus';
 import {getVisibleItemCount, PartitionPerOpStatus} from './PartitionStepStatus';
 import {GRID_FLOATING_CONTAINER_WIDTH} from './RunMatrixUtils';
 import {
@@ -94,7 +94,10 @@ const OpJobPartitionsViewContent: React.FC<{
   partitionSet: OpJobPartitionSetFragment;
   repoAddress: RepoAddress;
 }> = ({partitionSet, partitionNames, repoAddress}) => {
-  const {canLaunchPartitionBackfill} = usePermissionsForLocation(repoAddress.location);
+  const {
+    permissions: {canLaunchPartitionBackfill},
+    disabledReasons,
+  } = usePermissionsForLocation(repoAddress.location);
   const {viewport, containerProps} = useViewport();
 
   const [pageSize, setPageSize] = React.useState(60);
@@ -134,25 +137,32 @@ const OpJobPartitionsViewContent: React.FC<{
       )
     : partitionNames;
 
-  const runDurationData: {[name: string]: number | undefined} = {};
   const stepDurationData = usePartitionDurations(partitions).stepDurationData;
 
-  // Note: This view reads "run duration" from the `partitionStatusesOrError` GraphQL API,
-  // rather than looking at the duration of the most recent run returned in `partitions` above
-  // so that the latter can be loaded when you click "Show per-step status" only.
-
-  const statusData: {[name: string]: PartitionState} = {};
-  (partitionSet.partitionStatusesOrError.__typename === 'PartitionStatuses'
-    ? partitionSet.partitionStatusesOrError.results
-    : []
-  ).forEach((p) => {
-    statusData[p.partitionName] = runStatusToPartitionState(p.runStatus);
-    if (selectedPartitions.includes(p.partitionName)) {
-      runDurationData[p.partitionName] = p.runDuration || undefined;
-    }
-  });
-
   const onSubmit = React.useCallback(() => setBlockDialog(true), []);
+
+  const {runStatusData, runDurationData} = React.useMemo(() => {
+    // Note: This view reads "run duration" from the `partitionStatusesOrError` GraphQL API,
+    // rather than looking at the duration of the most recent run returned in `partitions` above
+    // so that the latter can be loaded when you click "Show per-step status" only.
+    const runStatusData: {[name: string]: RunStatus} = {};
+    const runDurationData: {[name: string]: number | undefined} = {};
+
+    (partitionSet.partitionStatusesOrError.__typename === 'PartitionStatuses'
+      ? partitionSet.partitionStatusesOrError.results
+      : []
+    ).forEach((p) => {
+      runStatusData[p.partitionName] = p.runStatus || RunStatus.NOT_STARTED;
+      if (selectedPartitions.includes(p.partitionName)) {
+        runDurationData[p.partitionName] = p.runDuration || undefined;
+      }
+    });
+    return {runStatusData, runDurationData};
+  }, [partitionSet, selectedPartitions]);
+
+  const health = React.useMemo(() => {
+    return {runStatusForPartitionKey: (name: string) => runStatusData[name]};
+  }, [runStatusData]);
 
   return (
     <div>
@@ -168,7 +178,7 @@ const OpJobPartitionsViewContent: React.FC<{
           <BackfillPartitionSelector
             partitionSetName={partitionSet.name}
             partitionNames={partitionNames}
-            partitionData={statusData}
+            runStatusData={runStatusData}
             pipelineName={partitionSet.pipelineName}
             onCancel={() => setShowBackfillSetup(false)}
             onLaunch={(_backfillId, _stepQuery) => {
@@ -191,7 +201,7 @@ const OpJobPartitionsViewContent: React.FC<{
           <Button onClick={() => setShowSteps(!showSteps)} active={showBackfillSetup}>
             {showSteps ? 'Hide per-step status' : 'Show per-step status'}
           </Button>
-          {canLaunchPartitionBackfill.enabled ? (
+          {canLaunchPartitionBackfill ? (
             <Button
               onClick={() => setShowBackfillSetup(!showBackfillSetup)}
               icon={<Icon name="add_circle" />}
@@ -200,7 +210,7 @@ const OpJobPartitionsViewContent: React.FC<{
               Launch backfill...
             </Button>
           ) : (
-            <Tooltip content={canLaunchPartitionBackfill.disabledReason}>
+            <Tooltip content={disabledReasons.canLaunchPartitionBackfill}>
               <Button icon={<Icon name="add_circle" />} disabled>
                 Launch backfill...
               </Button>
@@ -215,11 +225,15 @@ const OpJobPartitionsViewContent: React.FC<{
       >
         <CountBox count={partitionNames.length} label="Total partitions" />
         <CountBox
-          count={partitionNames.filter((x) => statusData[x] === PartitionState.FAILURE).length}
+          count={partitionNames.filter((x) => runStatusData[x] === RunStatus.FAILURE).length}
           label="Failed partitions"
         />
         <CountBox
-          count={partitionNames.filter((x) => !statusData[x]).length}
+          count={
+            partitionNames.filter(
+              (x) => !runStatusData[x] || runStatusData[x] === RunStatus.NOT_STARTED,
+            ).length
+          }
           label="Missing partitions"
         />
       </Box>
@@ -227,7 +241,7 @@ const OpJobPartitionsViewContent: React.FC<{
         <div {...containerProps}>
           <PartitionStatus
             partitionNames={partitionNames}
-            partitionStateForKey={(name) => statusData[name]}
+            health={health}
             selected={showSteps ? selectedPartitions : undefined}
             selectionWindowSize={pageSize}
             onClick={(partitionName) => {
@@ -349,7 +363,6 @@ const PARTITIONS_STATUS_QUERY = gql`
       }
     }
     partitionStatusesOrError {
-      __typename
       ... on PartitionStatuses {
         results {
           id

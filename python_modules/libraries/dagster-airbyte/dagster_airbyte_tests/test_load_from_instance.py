@@ -1,18 +1,24 @@
+from typing import Any
+
 import pytest
 import responses
 from dagster import (
     AssetKey,
     FreshnessPolicy,
+    InputContext,
     IOManager,
+    OutputContext,
     asset,
-    build_init_resource_context,
     io_manager,
     materialize,
 )
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
+from dagster._core.errors import DagsterInvalidInvocationError
+from dagster._core.execution.context.init import build_init_resource_context
 from dagster._core.execution.with_resources import with_resources
-from dagster_airbyte import airbyte_resource
+from dagster_airbyte import AirbyteCloudResource, AirbyteResource, airbyte_resource
 from dagster_airbyte.asset_defs import AirbyteConnectionMetadata, load_assets_from_airbyte_instance
 
 from .utils import (
@@ -26,6 +32,14 @@ from .utils import (
 TEST_FRESHNESS_POLICY = FreshnessPolicy(maximum_lag_minutes=60)
 
 
+@pytest.fixture(name="airbyte_instance", params=[True, False], scope="module")
+def airbyte_instance_fixture(request) -> AirbyteResource:
+    if request.param:
+        return AirbyteResource(host="some_host", port="8000")
+    else:
+        return airbyte_resource(build_init_resource_context({"host": "some_host", "port": "8000"}))
+
+
 @responses.activate
 @pytest.mark.parametrize("use_normalization_tables", [True, False])
 @pytest.mark.parametrize("connection_to_group_fn", [None, lambda x: f"{x[0]}_group"])
@@ -36,92 +50,85 @@ TEST_FRESHNESS_POLICY = FreshnessPolicy(maximum_lag_minutes=60)
 @pytest.mark.parametrize(
     "connection_to_freshness_policy_fn", [None, lambda _: TEST_FRESHNESS_POLICY]
 )
+@pytest.mark.parametrize(
+    "connection_to_auto_materialize_policy_fn", [None, lambda _: AutoMaterializePolicy.lazy()]
+)
 def test_load_from_instance(
     use_normalization_tables,
     connection_to_group_fn,
     filter_connection,
     connection_to_asset_key_fn,
     connection_to_freshness_policy_fn,
+    connection_to_auto_materialize_policy_fn,
+    airbyte_instance: AirbyteResource,
 ):
     load_calls = []
 
     @io_manager
-    def test_io_manager(_context):
+    def test_io_manager(_context) -> IOManager:
         class TestIOManager(IOManager):
-            def handle_output(self, context, obj):
+            def handle_output(self, context: OutputContext, obj) -> None:
+                assert context.dagster_type.is_nothing
                 return
 
-            def load_input(self, context):
+            def load_input(self, context: InputContext) -> Any:
                 load_calls.append(context.asset_key)
                 return None
 
         return TestIOManager()
 
-    ab_resource = airbyte_resource(
-        build_init_resource_context(
-            config={
-                "host": "some_host",
-                "port": "8000",
-            }
-        )
-    )
-    ab_instance = airbyte_resource.configured(
-        {
-            "host": "some_host",
-            "port": "8000",
-        }
-    )
-
     responses.add(
         method=responses.POST,
-        url=ab_resource.api_base_url + "/workspaces/list",
+        url=airbyte_instance.api_base_url + "/workspaces/list",
         json=get_instance_workspaces_json(),
         status=200,
     )
     responses.add(
         method=responses.POST,
-        url=ab_resource.api_base_url + "/connections/list",
+        url=airbyte_instance.api_base_url + "/connections/list",
         json=get_instance_connections_json(),
         status=200,
     )
     responses.add(
         method=responses.POST,
-        url=ab_resource.api_base_url + "/operations/list",
+        url=airbyte_instance.api_base_url + "/operations/list",
         json=get_instance_operations_json(),
         status=200,
     )
     if connection_to_group_fn:
         ab_cacheable_assets = load_assets_from_airbyte_instance(
-            ab_instance,
+            airbyte_instance,
             create_assets_for_normalization_tables=use_normalization_tables,
             connection_to_group_fn=connection_to_group_fn,
             connection_filter=(lambda _: False) if filter_connection else None,
             connection_to_io_manager_key_fn=(lambda _: "test_io_manager"),
             connection_to_asset_key_fn=connection_to_asset_key_fn,
             connection_to_freshness_policy_fn=connection_to_freshness_policy_fn,
+            connection_to_auto_materialize_policy_fn=connection_to_auto_materialize_policy_fn,
         )
     else:
         ab_cacheable_assets = load_assets_from_airbyte_instance(
-            ab_instance,
+            airbyte_instance,
             create_assets_for_normalization_tables=use_normalization_tables,
             connection_filter=(lambda _: False) if filter_connection else None,
             io_manager_key="test_io_manager",
             connection_to_asset_key_fn=connection_to_asset_key_fn,
             connection_to_freshness_policy_fn=connection_to_freshness_policy_fn,
+            connection_to_auto_materialize_policy_fn=connection_to_auto_materialize_policy_fn,
         )
     ab_assets = ab_cacheable_assets.build_definitions(ab_cacheable_assets.compute_cacheable_data())
-    ab_assets = with_resources(ab_assets, {"test_io_manager": test_io_manager})
+    ab_assets = list(with_resources(ab_assets, {"test_io_manager": test_io_manager}))
 
     if connection_to_asset_key_fn:
 
         @asset
-        def downstream_asset(G_dagster_tags):  # pylint: disable=unused-argument
+        def downstream_asset(G_dagster_tags):
             return
 
     else:
 
         @asset
-        def downstream_asset(dagster_tags):  # pylint: disable=unused-argument
+        def downstream_asset(dagster_tags):
             return
 
     all_assets = [downstream_asset] + ab_assets
@@ -210,21 +217,30 @@ def test_load_from_instance(
     freshness_policies = ab_assets[0].freshness_policies_by_key
     assert all(freshness_policies[key] == expected_freshness_policy for key in freshness_policies)
 
+    expected_auto_materialize_policy = (
+        AutoMaterializePolicy.lazy() if connection_to_auto_materialize_policy_fn else None
+    )
+    auto_materialize_policies_by_key = ab_assets[0].auto_materialize_policies_by_key
+    assert all(
+        auto_materialize_policies_by_key[key] == expected_auto_materialize_policy
+        for key in auto_materialize_policies_by_key
+    )
+
     responses.add(
         method=responses.POST,
-        url=ab_resource.api_base_url + "/connections/get",
+        url=airbyte_instance.api_base_url + "/connections/get",
         json=get_project_connection_json(),
         status=200,
     )
     responses.add(
         method=responses.POST,
-        url=ab_resource.api_base_url + "/connections/sync",
+        url=airbyte_instance.api_base_url + "/connections/sync",
         json={"job": {"id": 1}},
         status=200,
     )
     responses.add(
         method=responses.POST,
-        url=ab_resource.api_base_url + "/jobs/get",
+        url=airbyte_instance.api_base_url + "/jobs/get",
         json=get_project_job_json(),
         status=200,
     )
@@ -232,7 +248,7 @@ def test_load_from_instance(
     res = materialize(all_assets)
 
     materializations = [
-        event.event_specific_data.materialization
+        event.event_specific_data.materialization  # type: ignore[attr-defined]
         for event in res.events_for_node("airbyte_sync_87b7f")
         if event.event_type_value == "ASSET_MATERIALIZATION"
     ]
@@ -242,3 +258,13 @@ def test_load_from_instance(
     assert load_calls == [
         AssetKey("G_dagster_tags" if connection_to_asset_key_fn else "dagster_tags")
     ]
+
+
+def test_load_from_instance_cloud() -> None:
+    airbyte_cloud_instance = AirbyteCloudResource(api_key="foo")
+
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match="load_assets_from_airbyte_instance is not yet supported for AirbyteCloudResource",
+    ):
+        load_assets_from_airbyte_instance(airbyte_cloud_instance)  # type: ignore

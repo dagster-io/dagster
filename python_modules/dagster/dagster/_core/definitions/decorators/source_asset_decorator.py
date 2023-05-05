@@ -1,13 +1,12 @@
-from typing import Mapping, Optional, Sequence, Union, overload
+from typing import AbstractSet, Mapping, Optional, Union, overload
 
+import dagster._check as check
 from dagster._annotations import experimental
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKeyPrefix
 from dagster._core.definitions.metadata import (
-    MetadataEntry,
     MetadataUserInput,
-    PartitionMetadataEntry,
 )
-from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.source_asset import SourceAsset, SourceAssetObserveFunction
 from dagster._core.storage.io_manager import IOManagerDefinition
@@ -27,9 +26,8 @@ def observable_source_asset(
     io_manager_key: Optional[str] = None,
     io_manager_def: Optional[IOManagerDefinition] = None,
     description: Optional[str] = None,
-    partitions_def: Optional[PartitionsDefinition] = None,
-    _metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
     group_name: Optional[str] = None,
+    required_resource_keys: Optional[AbstractSet[str]] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
 ) -> "_ObservableSourceAsset":
     ...
@@ -45,9 +43,8 @@ def observable_source_asset(
     io_manager_key: Optional[str] = None,
     io_manager_def: Optional[IOManagerDefinition] = None,
     description: Optional[str] = None,
-    partitions_def: Optional[PartitionsDefinition] = None,
-    _metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
     group_name: Optional[str] = None,
+    required_resource_keys: Optional[AbstractSet[str]] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
 ) -> Union[SourceAsset, "_ObservableSourceAsset"]:
     """Create a `SourceAsset` with an associated observation function.
@@ -71,10 +68,9 @@ def observable_source_asset(
         io_manager_def (Optional[IOManagerDefinition]): (Experimental) The definition of the IOManager that will be used to load the contents of
             the source asset when it's used as an input to other assets inside a job.
         description (Optional[str]): The description of the asset.
-        partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
-            compose the source asset.
         group_name (Optional[str]): A string name used to organize multiple assets into groups. If not provided,
             the name "default" is used.
+        required_resource_keys (Optional[Set[str]]): Set of resource keys required by the observe op.
         resource_defs (Optional[Mapping[str, ResourceDefinition]]): (Experimental) resource
             definitions that may be required by the :py:class:`dagster.IOManagerDefinition` provided in
             the `io_manager_def` argument.
@@ -90,9 +86,8 @@ def observable_source_asset(
         io_manager_key,
         io_manager_def,
         description,
-        partitions_def,
-        _metadata_entries,
         group_name,
+        required_resource_keys,
         resource_defs,
     )
 
@@ -106,9 +101,8 @@ class _ObservableSourceAsset:
         io_manager_key: Optional[str] = None,
         io_manager_def: Optional[IOManagerDefinition] = None,
         description: Optional[str] = None,
-        partitions_def: Optional[PartitionsDefinition] = None,
-        _metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
         group_name: Optional[str] = None,
+        required_resource_keys: Optional[AbstractSet[str]] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     ):
         self.name = name
@@ -121,14 +115,24 @@ class _ObservableSourceAsset:
         self.io_manager_key = io_manager_key
         self.io_manager_def = io_manager_def
         self.description = description
-        self.partitions_def = partitions_def
-        self._metadata_entries = _metadata_entries
         self.group_name = group_name
+        self.required_resource_keys = required_resource_keys
         self.resource_defs = resource_defs
 
     def __call__(self, observe_fn: SourceAssetObserveFunction) -> SourceAsset:
         source_asset_name = self.name or observe_fn.__name__
         source_asset_key = AssetKey([*self.key_prefix, source_asset_name])
+
+        arg_resource_keys = {arg.name for arg in get_resource_args(observe_fn)}
+        decorator_resource_keys = set(self.required_resource_keys or [])
+        check.param_invariant(
+            len(decorator_resource_keys) == 0 or len(arg_resource_keys) == 0,
+            (
+                "Cannot specify resource requirements in both @op decorator and as arguments to the"
+                " decorated function"
+            ),
+        )
+        resolved_resource_keys = decorator_resource_keys.union(arg_resource_keys)
 
         return SourceAsset(
             key=source_asset_key,
@@ -136,9 +140,8 @@ class _ObservableSourceAsset:
             io_manager_key=self.io_manager_key,
             io_manager_def=self.io_manager_def,
             description=self.description,
-            partitions_def=self.partitions_def,
-            _metadata_entries=self._metadata_entries,
             group_name=self.group_name,
+            _required_resource_keys=resolved_resource_keys,
             resource_defs=self.resource_defs,
             observe_fn=observe_fn,
         )

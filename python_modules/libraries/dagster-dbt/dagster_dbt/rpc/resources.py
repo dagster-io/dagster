@@ -8,6 +8,7 @@ from base64 import standard_b64encode as b64
 from typing import Any, Dict, Mapping, Optional, Sequence, cast
 
 import requests
+import requests.utils
 from dagster import (
     Failure,
     Field,
@@ -347,9 +348,9 @@ class DbtRpcResource(DbtResource):
         """
         explicit_params = dict(models=models, exclude=exclude, data=data, schema=schema)
         params = self._format_params({**explicit_params, **kwargs})
-        data = self._default_request(method="test", params=params)
+        request_data = self._default_request(method="test", params=params)
 
-        return self._get_result(data=json.dumps(data))
+        return self._get_result(data=json.dumps(request_data))
 
     def seed(
         self,
@@ -372,10 +373,11 @@ class DbtRpcResource(DbtResource):
             Response: the HTTP response from the dbt RPC server.
         """
         data = self._default_request(method="seed")
-        data["params"] = {"show": show}
+        params: Dict[str, Any] = {"show": show}
 
         if kwargs is not None:
-            data["params"]["task_tags"] = kwargs
+            params["task_tags"] = kwargs
+        data["params"] = params
 
         return self._get_result(data=json.dumps(data))
 
@@ -472,8 +474,7 @@ class DbtRpcResource(DbtResource):
         return self._get_result(data=json.dumps(data))
 
     def build(self, select: Optional[Sequence[str]] = None, **kwargs) -> DbtRpcOutput:
-        """
-        Run the ``build`` command on a dbt project. kwargs are passed in as additional parameters.
+        """Run the ``build`` command on a dbt project. kwargs are passed in as additional parameters.
 
         Args:
             select (List[str], optional): the models/resources to include in the run.
@@ -481,29 +482,27 @@ class DbtRpcResource(DbtResource):
         Returns:
             DbtOutput: object containing parsed output from dbt
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
         raise NotImplementedError()
 
     def get_run_results_json(self, **kwargs) -> Optional[Mapping[str, Any]]:
-        """
-        Get a parsed version of the run_results.json file for the relevant dbt project.
+        """Get a parsed version of the run_results.json file for the relevant dbt project.
 
         Returns:
             Dict[str, Any]: dictionary containing the parsed contents of the run_results json file
                 for this dbt project.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
         raise NotImplementedError()
 
     def get_manifest_json(self, **kwargs) -> Optional[Mapping[str, Any]]:
-        """
-        Get a parsed version of the manifest.json file for the relevant dbt project.
+        """Get a parsed version of the manifest.json file for the relevant dbt project.
 
         Returns:
             Dict[str, Any]: dictionary containing the parsed contents of the manifest json file
                 for this dbt project.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
         raise NotImplementedError()
 
 

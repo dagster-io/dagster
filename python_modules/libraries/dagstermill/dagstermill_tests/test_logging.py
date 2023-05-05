@@ -2,17 +2,22 @@ import json
 import logging
 import os
 
+import pytest
 from dagster import (
     String,
     _seven as seven,
+    execute_job,
+    job,
     logger,
     reconstructable,
 )
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import ModeDefinition, execute_pipeline, pipeline
 from dagster._utils import safe_tempfile_path
 from dagstermill.examples.repository import hello_logging
-from dagstermill.io_managers import local_output_notebook_io_manager
+from dagstermill.io_managers import (
+    ConfigurableLocalOutputNotebookIOManager,
+    local_output_notebook_io_manager,
+)
 
 
 class LogTestFileHandler(logging.Handler):
@@ -41,30 +46,47 @@ def test_file_logger(init_context):
     return logger_
 
 
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            logger_defs={
-                "test": test_file_logger,
-                "critical": test_file_logger,
-            },
-            resource_defs={
-                "output_notebook_io_manager": local_output_notebook_io_manager,
-            },
-        )
-    ]
+@job(
+    logger_defs={
+        "test": test_file_logger,
+        "critical": test_file_logger,
+    },
+    resource_defs={
+        "output_notebook_io_manager": local_output_notebook_io_manager,
+    },
 )
-def hello_logging_pipeline():
+def hello_logging_job():
     hello_logging()
 
 
-def test_logging():
+@job(
+    logger_defs={
+        "test": test_file_logger,
+        "critical": test_file_logger,
+    },
+    resource_defs={
+        "output_notebook_io_manager": ConfigurableLocalOutputNotebookIOManager.configure_at_launch(),
+    },
+)
+def hello_logging_job_pythonic():
+    hello_logging()
+
+
+@pytest.fixture(name="hello_logging_job_type", params=[True, False])
+def hello_logging_job_type_fixture(request):
+    if request.param:
+        return hello_logging_job
+    else:
+        return hello_logging_job_pythonic
+
+
+def test_logging(hello_logging_job_type) -> None:
     with safe_tempfile_path() as test_file_path:
         with safe_tempfile_path() as critical_file_path:
             with instance_for_test() as instance:
-                execute_pipeline(
-                    reconstructable(hello_logging_pipeline),
-                    {
+                execute_job(
+                    reconstructable(hello_logging_job_type),
+                    run_config={
                         "loggers": {
                             "test": {
                                 "config": {

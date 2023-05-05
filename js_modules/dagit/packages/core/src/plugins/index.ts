@@ -3,7 +3,7 @@ import * as ipynb from '../plugins/ipynb';
 import * as sql from '../plugins/sql';
 import {RepoAddress} from '../workspace/types';
 
-const plugins = {
+const plugins: Record<string, any> = {
   sql,
   ipynb,
   snowflake: sql,
@@ -22,7 +22,7 @@ export interface IPluginSidebarProps {
 }
 
 interface IPluginInterface {
-  SidebarComponent: React.ComponentClass<IPluginSidebarProps> | React.SFC<IPluginSidebarProps>;
+  SidebarComponent: React.ComponentClass<IPluginSidebarProps> | React.FC<IPluginSidebarProps>;
 }
 
 export function pluginForMetadata(

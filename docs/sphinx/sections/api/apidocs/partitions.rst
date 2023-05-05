@@ -4,7 +4,6 @@ Partitioned Config
 ==================
 
 .. autoclass:: PartitionedConfig
-    :members:
 
 .. autofunction:: static_partitioned_config
 
@@ -23,35 +22,26 @@ Partitions Definitions
 ======================
 
 .. autoclass:: PartitionsDefinition
-    :members:
 
 .. autoclass:: HourlyPartitionsDefinition
-    :members:
 
 .. autoclass:: DailyPartitionsDefinition
-    :members:
 
 .. autoclass:: WeeklyPartitionsDefinition
-    :members:
 
 .. autoclass:: MonthlyPartitionsDefinition
-    :members:
 
 .. autoclass:: TimeWindowPartitionsDefinition
-    :members:
 
 .. autoclass:: TimeWindow
-    :members:
 
 .. autoclass:: StaticPartitionsDefinition
-    :members:
 
 .. autoclass:: MultiPartitionsDefinition
-    :members:
 
 .. autoclass:: MultiPartitionKey
-    :members:
 
+.. autoclass:: DynamicPartitionsDefinition
 
 Partitioned Schedules
 =====================
@@ -59,23 +49,17 @@ Partitioned Schedules
 .. autofunction:: build_schedule_from_partitioned_job
     :noindex:
 
-Partition Mapping (Experimental)
+Partition Mapping
 ================================
 
 .. autoclass:: PartitionMapping
-    :members:
 
 .. autoclass:: TimeWindowPartitionMapping
-    :members:
 
 .. autoclass:: IdentityPartitionMapping
-    :members:
 
 .. autoclass:: AllPartitionMapping
-    :members:
 
 .. autoclass:: LastPartitionMapping
-    :members:
 
 .. autoclass:: StaticPartitionMapping
-    :members:

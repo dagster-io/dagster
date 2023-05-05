@@ -1,7 +1,8 @@
-import {Box, Button, Colors, Subheading} from '@dagster-io/ui';
+import {Box, Button, Colors, Subheading, useViewport} from '@dagster-io/ui';
 import React from 'react';
 
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
+import {AssetPartitionStatus} from '../assets/AssetPartitionStatus';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {
   mergedAssetHealth,
@@ -9,7 +10,6 @@ import {
   isTimeseriesDimension,
 } from '../assets/MultipartitioningSupport';
 import {usePartitionHealthData} from '../assets/usePartitionHealthData';
-import {useViewport} from '../gantt/useViewport';
 import {RepositorySelector} from '../graphql/types';
 import {DagsterTag} from '../runs/RunTag';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
@@ -18,7 +18,7 @@ import {RepoAddress} from '../workspace/types';
 import {JobBackfillsTable} from './JobBackfillsTable';
 import {CountBox, usePartitionDurations} from './OpJobPartitionsView';
 import {PartitionGraph} from './PartitionGraph';
-import {PartitionState, PartitionStatus} from './PartitionStatus';
+import {PartitionStatus} from './PartitionStatus';
 import {getVisibleItemCount, PartitionPerAssetStatus} from './PartitionStepStatus';
 import {GRID_FLOATING_CONTAINER_WIDTH} from './RunMatrixUtils';
 import {allPartitionsRange} from './SpanRepresentation';
@@ -54,7 +54,7 @@ export const AssetJobPartitionsView: React.FC<{
     return {
       merged,
       total: allKeys.length,
-      missing: allKeys.filter((p) => p.state === PartitionState.MISSING).length,
+      missing: allKeys.filter((p) => p.state.includes(AssetPartitionStatus.MISSING)).length,
     };
   }, [assetHealth]);
 
@@ -115,7 +115,7 @@ export const AssetJobPartitionsView: React.FC<{
           <PartitionStatus
             partitionNames={dimensionKeys}
             splitPartitions={dimension ? !isTimeseriesDimension(dimension) : false}
-            partitionStateForKey={(key) => merged.stateForSingleDimension(dimensionIdx, key)}
+            health={{ranges: merged.rangesForSingleDimension(dimensionIdx)}}
             selected={selectedDimensionKeys}
             selectionWindowSize={pageSize}
             tooltipMessage="Click to view per-asset status"
@@ -177,7 +177,7 @@ export const AssetJobPartitionsView: React.FC<{
   );
 };
 
-export const AssetJobPartitionGraphs: React.FC<{
+const AssetJobPartitionGraphs: React.FC<{
   repositorySelector: RepositorySelector;
   pipelineName: string;
   partitionSetName: string;

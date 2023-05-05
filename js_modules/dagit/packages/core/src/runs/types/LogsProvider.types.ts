@@ -1145,8 +1145,10 @@ export type PipelineRunLogsSubscription = {
               fileKey: string;
               stepKeys: Array<string> | null;
               pid: number | null;
-              externalUrl: string | null;
+              externalStdoutUrl: string | null;
+              externalStderrUrl: string | null;
               eventType: Types.DagsterEventType | null;
+              externalUrl: string | null;
             }
           | {
               __typename: 'MaterializationEvent';
@@ -3575,8 +3577,10 @@ export type RunLogsSubscriptionSuccessFragment = {
         fileKey: string;
         stepKeys: Array<string> | null;
         pid: number | null;
-        externalUrl: string | null;
+        externalStdoutUrl: string | null;
+        externalStderrUrl: string | null;
         eventType: Types.DagsterEventType | null;
+        externalUrl: string | null;
       }
     | {
         __typename: 'MaterializationEvent';
@@ -4865,7 +4869,6 @@ export type RunLogsSubscriptionSuccessFragment = {
 export type PipelineRunLogsSubscriptionStatusFragment = {
   __typename: 'Run';
   id: string;
-  runId: string;
   status: Types.RunStatus;
   canTerminate: boolean;
 };
@@ -4880,7 +4883,7 @@ export type RunLogsQuery = {
   __typename: 'DagitQuery';
   pipelineRunOrError:
     | {__typename: 'PythonError'}
-    | {__typename: 'Run'; id: string; runId: string; status: Types.RunStatus; canTerminate: boolean}
+    | {__typename: 'Run'; id: string; status: Types.RunStatus; canTerminate: boolean}
     | {__typename: 'RunNotFoundError'};
   logsForRun:
     | {
@@ -6012,8 +6015,10 @@ export type RunLogsQuery = {
               fileKey: string;
               stepKeys: Array<string> | null;
               pid: number | null;
-              externalUrl: string | null;
+              externalStdoutUrl: string | null;
+              externalStderrUrl: string | null;
               eventType: Types.DagsterEventType | null;
+              externalUrl: string | null;
             }
           | {
               __typename: 'MaterializationEvent';

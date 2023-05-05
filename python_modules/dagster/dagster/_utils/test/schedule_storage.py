@@ -6,7 +6,7 @@ import pytest
 
 from dagster._core.host_representation import (
     ExternalRepositoryOrigin,
-    ManagedGrpcPythonEnvRepositoryLocationOrigin,
+    ManagedGrpcPythonEnvCodeLocationOrigin,
 )
 from dagster._core.scheduler.instigation import (
     InstigatorState,
@@ -22,8 +22,7 @@ from dagster._utils.error import SerializableErrorInfo
 
 
 class TestScheduleStorage:
-    """
-    You can extend this class to easily run these set of tests on any schedule storage. When extending,
+    """You can extend this class to easily run these set of tests on any schedule storage. When extending,
     you simply need to override the `schedule_storage` fixture and return your implementation of
     `ScheduleStorage`.
 
@@ -34,7 +33,7 @@ class TestScheduleStorage:
         __test__ = True
 
         @pytest.fixture(scope='function', name='storage')
-        def schedule_storage(self):  # pylint: disable=arguments-differ
+        def schedule_storage(self):
             return MyStorageImplementation()
     ```
     """
@@ -56,7 +55,7 @@ class TestScheduleStorage:
     @staticmethod
     def fake_repo_target():
         return ExternalRepositoryOrigin(
-            ManagedGrpcPythonEnvRepositoryLocationOrigin(
+            ManagedGrpcPythonEnvCodeLocationOrigin(
                 LoadableTargetOrigin(
                     executable_path=sys.executable, module_name="fake", attribute="fake"
                 ),
@@ -103,9 +102,13 @@ class TestScheduleStorage:
     def test_add_multiple_schedules(self, storage):
         assert storage
 
-        schedule = self.build_schedule("my_schedule", "* * * * *")
-        schedule_2 = self.build_schedule("my_schedule_2", "* * * * *")
-        schedule_3 = self.build_schedule("my_schedule_3", "* * * * *")
+        schedule = self.build_schedule("my_schedule", "* * * * *", status=InstigatorStatus.RUNNING)
+        schedule_2 = self.build_schedule(
+            "my_schedule_2", "* * * * *", status=InstigatorStatus.STOPPED
+        )
+        schedule_3 = self.build_schedule(
+            "my_schedule_3", "* * * * *", status=InstigatorStatus.AUTOMATICALLY_RUNNING
+        )
 
         storage.add_instigator_state(schedule)
         storage.add_instigator_state(schedule_2)
@@ -121,6 +124,25 @@ class TestScheduleStorage:
         assert any(s.instigator_name == "my_schedule" for s in schedules)
         assert any(s.instigator_name == "my_schedule_2" for s in schedules)
         assert any(s.instigator_name == "my_schedule_3" for s in schedules)
+
+        running = storage.all_instigator_state(
+            self.fake_repo_target().get_id(),
+            self.fake_repo_target().get_selector_id(),
+            InstigatorType.SCHEDULE,
+            {InstigatorStatus.RUNNING, InstigatorStatus.AUTOMATICALLY_RUNNING},
+        )
+        assert len(running) == 2
+        assert "my_schedule" in [state.instigator_name for state in running]
+        assert "my_schedule_3" in [state.instigator_name for state in running]
+
+        stopped = storage.all_instigator_state(
+            self.fake_repo_target().get_id(),
+            self.fake_repo_target().get_selector_id(),
+            InstigatorType.SCHEDULE,
+            {InstigatorStatus.STOPPED},
+        )
+        assert len(stopped) == 1
+        assert stopped[0].instigator_name == "my_schedule_2"
 
     def test_get_schedule_state(self, storage):
         assert storage

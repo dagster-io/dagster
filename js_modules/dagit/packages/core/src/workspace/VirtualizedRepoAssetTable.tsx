@@ -1,3 +1,4 @@
+import {gql} from '@apollo/client';
 import {Box, Colors, Icon, IconWrapper, Tag} from '@dagster-io/ui';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
@@ -5,15 +6,17 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {AppContext} from '../app/AppContext';
+import {ASSET_TABLE_DEFINITION_FRAGMENT} from '../assets/AssetTableFragment';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {Container, Inner, Row} from '../ui/VirtualizedTable';
 
 import {VirtualizedAssetHeader, VirtualizedAssetRow} from './VirtualizedAssetRow';
 import {repoAddressAsHumanString} from './repoAddressAsString';
 import {RepoAddress} from './types';
+import {RepoAssetTableFragment} from './types/VirtualizedRepoAssetTable.types';
 import {workspacePathFromAddress} from './workspacePath';
 
-type Asset = {id: string; groupName: string | null; assetKey: {path: string[]}};
+type Asset = RepoAssetTableFragment;
 
 interface Props {
   repoAddress: RepoAddress;
@@ -22,7 +25,7 @@ interface Props {
 
 type RowType =
   | {type: 'group'; name: string; assetCount: number}
-  | {type: 'asset'; id: string; path: string[]};
+  | {type: 'asset'; id: string; definition: Asset};
 
 const UNGROUPED_NAME = 'UNGROUPED';
 const ASSET_GROUPS_EXPANSION_STATE_STORAGE_KEY = 'assets-virtualized-expansion-state';
@@ -34,8 +37,8 @@ export const VirtualizedRepoAssetTable: React.FC<Props> = ({repoAddress, assets}
     `${repoKey}-${ASSET_GROUPS_EXPANSION_STATE_STORAGE_KEY}`,
   );
 
-  const grouped: {[key: string]: Asset[]} = React.useMemo(() => {
-    const groups = {};
+  const grouped: Record<string, Asset[]> = React.useMemo(() => {
+    const groups: Record<string, Asset[]> = {};
     for (const asset of assets) {
       const groupName = asset.groupName || UNGROUPED_NAME;
       const assetsForGroup = groups[groupName] || [];
@@ -50,8 +53,8 @@ export const VirtualizedRepoAssetTable: React.FC<Props> = ({repoAddress, assets}
       const assetsForGroup = grouped[groupName];
       flat.push({type: 'group', name: groupName, assetCount: assetsForGroup.length});
       if (expandedKeys.includes(groupName)) {
-        assetsForGroup.forEach(({id, assetKey}) => {
-          flat.push({type: 'asset', id, path: assetKey.path});
+        assetsForGroup.forEach((asset) => {
+          flat.push({type: 'asset', id: asset.id, definition: asset});
         });
       }
     });
@@ -65,7 +68,7 @@ export const VirtualizedRepoAssetTable: React.FC<Props> = ({repoAddress, assets}
       const row = flattened[ii];
       return row?.type === 'group' ? 48 : 64;
     },
-    overscan: 10,
+    overscan: 5,
   });
 
   const totalHeight = rowVirtualizer.getTotalSize();
@@ -94,15 +97,14 @@ export const VirtualizedRepoAssetTable: React.FC<Props> = ({repoAddress, assets}
               ) : (
                 <VirtualizedAssetRow
                   showCheckboxColumn={false}
+                  definition={row.definition}
+                  path={row.definition.assetKey.path}
                   key={key}
-                  // todo dish: Fix this
                   type="asset"
-                  path={row.path}
                   repoAddress={repoAddress}
                   showRepoColumn={false}
                   height={size}
                   start={start}
-                  // todo dish: Fix this
                   checked={false}
                   onToggleChecked={() => {}}
                   onWipe={() => {}}
@@ -116,7 +118,7 @@ export const VirtualizedRepoAssetTable: React.FC<Props> = ({repoAddress, assets}
   );
 };
 
-export const GroupNameRow: React.FC<{
+const GroupNameRow: React.FC<{
   repoAddress: RepoAddress;
   groupName: string;
   assetCount: number;
@@ -194,7 +196,7 @@ const validateExpandedKeys = (parsed: unknown) => (Array.isArray(parsed) ? parse
 /**
  * Use localStorage to persist the expanded/collapsed visual state of asset groups.
  */
-export const useAssetGroupExpansionState = (storageKey: string) => {
+const useAssetGroupExpansionState = (storageKey: string) => {
   const {basePath} = React.useContext(AppContext);
   const [expandedKeys, setExpandedKeys] = useStateWithStorage<string[]>(
     `${basePath}:dagit.${storageKey}`,
@@ -224,3 +226,16 @@ export const useAssetGroupExpansionState = (storageKey: string) => {
     [expandedKeys, onToggle],
   );
 };
+
+export const REPO_ASSET_TABLE_FRAGMENT = gql`
+  fragment RepoAssetTableFragment on AssetNode {
+    id
+    assetKey {
+      path
+    }
+    groupName
+    ...AssetTableDefinitionFragment
+  }
+
+  ${ASSET_TABLE_DEFINITION_FRAGMENT}
+`;

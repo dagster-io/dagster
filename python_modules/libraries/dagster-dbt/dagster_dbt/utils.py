@@ -1,4 +1,16 @@
-from typing import Any, Callable, Dict, Iterator, Mapping, Optional, Sequence, Union, cast
+from pathlib import Path
+from typing import (
+    AbstractSet,
+    Any,
+    Callable,
+    Dict,
+    Iterator,
+    Mapping,
+    Optional,
+    Sequence,
+    Union,
+    cast,
+)
 
 import dateutil
 from dagster import (
@@ -26,12 +38,12 @@ def _resource_type(unique_id: str) -> str:
     return unique_id.split(".")[0]
 
 
-def _get_input_name(node_info: Mapping[str, Any]) -> str:
+def input_name_fn(node_info: Mapping[str, Any]) -> str:
     # * can be present when sources are sharded tables
     return node_info["unique_id"].replace(".", "_").replace("*", "_star")
 
 
-def _get_output_name(node_info: Mapping[str, Any]) -> str:
+def output_name_fn(node_info: Mapping[str, Any]) -> str:
     return node_info["unique_id"].split(".")[-1]
 
 
@@ -77,8 +89,7 @@ def result_to_events(
     extra_metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     generate_asset_outputs: bool = False,
 ) -> Iterator[Union[AssetMaterialization, AssetObservation, Output]]:
-    """
-    This is a hacky solution that attempts to consolidate parsing many of the potential formats
+    """This is a hacky solution that attempts to consolidate parsing many of the potential formats
     that dbt can provide its results in. This is known to work for CLI Outputs for dbt versions 0.18+,
     as well as RPC responses for a similar time period, but as the RPC response schema is not documented
     nor enforced, this can become out of date easily.
@@ -127,7 +138,7 @@ def result_to_events(
         if generate_asset_outputs:
             yield Output(
                 value=None,
-                output_name=_get_output_name(node_info),
+                output_name=output_name_fn(node_info),
                 metadata=metadata,
             )
         else:
@@ -137,7 +148,7 @@ def result_to_events(
                 metadata=metadata,
             )
     # can only associate tests with assets if we have manifest_json available
-    elif node_resource_type == "test" and manifest_json:
+    elif node_resource_type == "test" and manifest_json and status != "skipped":
         upstream_unique_ids = manifest_json["nodes"][unique_id]["depends_on"]["nodes"]
         # tests can apply to multiple asset keys
         for upstream_id in upstream_unique_ids:
@@ -163,8 +174,7 @@ def generate_events(
     node_info_to_asset_key: Optional[Callable[[Mapping[str, Any]], AssetKey]] = None,
     manifest_json: Optional[Mapping[str, Any]] = None,
 ) -> Iterator[Union[AssetMaterialization, AssetObservation]]:
-    """
-    This function yields :py:class:`dagster.AssetMaterialization` events for each model updated by
+    """This function yields :py:class:`dagster.AssetMaterialization` events for each model updated by
     a dbt command, and :py:class:`dagster.AssetObservation` events for each test run.
 
     Information parsed from a :py:class:`~DbtOutput` object.
@@ -186,8 +196,7 @@ def generate_materializations(
     dbt_output: DbtOutput,
     asset_key_prefix: Optional[Sequence[str]] = None,
 ) -> Iterator[AssetMaterialization]:
-    """
-    This function yields :py:class:`dagster.AssetMaterialization` events for each model updated by
+    """This function yields :py:class:`dagster.AssetMaterialization` events for each model updated by
     a dbt command.
 
     Information parsed from a :py:class:`~DbtOutput` object.
@@ -228,3 +237,83 @@ def generate_materializations(
         ),
     ):
         yield check.inst(cast(AssetMaterialization, event), AssetMaterialization)
+
+
+def select_unique_ids_from_manifest(
+    select: str,
+    exclude: str,
+    state_path: Optional[str] = None,
+    manifest_json_path: Optional[str] = None,
+    manifest_json: Optional[Mapping[str, Any]] = None,
+) -> AbstractSet[str]:
+    """Method to apply a selection string to an existing manifest.json file."""
+    import dbt.graph.cli as graph_cli
+    import dbt.graph.selector as graph_selector
+    from dbt.contracts.graph.manifest import Manifest, WritableManifest
+    from dbt.contracts.state import PreviousState
+    from dbt.graph import SelectionSpec
+    from dbt.graph.selector_spec import IndirectSelection
+    from networkx import DiGraph
+
+    if state_path is not None:
+        previous_state = PreviousState(
+            path=Path(state_path),
+            current_path=Path("/tmp/null")
+            if manifest_json_path is None
+            else Path(manifest_json_path),
+        )
+    else:
+        previous_state = None
+
+    if manifest_json_path is not None:
+        manifest = WritableManifest.read_and_check_versions(manifest_json_path)
+        child_map = manifest.child_map
+    elif manifest_json is not None:
+
+        class _DictShim(dict):
+            """Shim to enable hydrating a dictionary into a dot-accessible object."""
+
+            def __getattr__(self, item):
+                ret = super().get(item)
+                # allow recursive access e.g. foo.bar.baz
+                return _DictShim(ret) if isinstance(ret, dict) else ret
+
+        manifest = Manifest(
+            # dbt expects dataclasses that can be accessed with dot notation, not bare dictionaries
+            nodes={
+                unique_id: _DictShim(info) for unique_id, info in manifest_json["nodes"].items()  # type: ignore
+            },
+            sources={
+                unique_id: _DictShim(info) for unique_id, info in manifest_json["sources"].items()  # type: ignore
+            },
+            metrics={
+                unique_id: _DictShim(info) for unique_id, info in manifest_json["metrics"].items()  # type: ignore
+            },
+            exposures={
+                unique_id: _DictShim(info) for unique_id, info in manifest_json["exposures"].items()  # type: ignore
+            },
+        )
+        child_map = manifest_json["child_map"]
+    else:
+        check.failed("Must provide either a manifest_json_path or manifest_json.")
+    graph = graph_selector.Graph(DiGraph(incoming_graph_data=child_map))
+
+    # create a parsed selection from the select string
+    try:
+        from dbt.flags import GLOBAL_FLAGS
+    except ImportError:
+        # dbt < 1.5.0 compat
+        import dbt.flags as GLOBAL_FLAGS
+    setattr(GLOBAL_FLAGS, "INDIRECT_SELECTION", IndirectSelection.Eager)
+    setattr(GLOBAL_FLAGS, "WARN_ERROR", True)
+    parsed_spec: SelectionSpec = graph_cli.parse_union([select], True)
+
+    if exclude:
+        parsed_spec = graph_cli.SelectionDifference(
+            components=[parsed_spec, graph_cli.parse_union([exclude], True)]
+        )
+
+    # execute this selection against the graph
+    selector = graph_selector.NodeSelector(graph, manifest, previous_state=previous_state)
+    selected, _ = selector.select_nodes(parsed_spec)
+    return selected

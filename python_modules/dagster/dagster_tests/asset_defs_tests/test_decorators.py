@@ -3,10 +3,13 @@ from typing import Any
 
 import pytest
 from dagster import (
+    AllPartitionMapping,
     AssetKey,
     AssetOut,
     DagsterInvalidDefinitionError,
     DailyPartitionsDefinition,
+    FreshnessPolicy,
+    In,
     Nothing,
     OpExecutionContext,
     Out,
@@ -16,8 +19,11 @@ from dagster import (
     TimeWindowPartitionMapping,
     _check as check,
     build_op_context,
+    graph_asset,
+    graph_multi_asset,
     io_manager,
     materialize_to_memory,
+    op,
     resource,
 )
 from dagster._core.definitions import (
@@ -27,23 +33,20 @@ from dagster._core.definitions import (
     build_assets_job,
     multi_asset,
 )
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_requirement import ensure_requirements_satisfied
 from dagster._core.errors import DagsterInvalidConfigError
+from dagster._core.test_utils import ignore_warning
 from dagster._core.types.dagster_type import resolve_dagster_type
 
 
 @pytest.fixture(autouse=True)
-def check_experimental_warnings():
-    with warnings.catch_warnings(record=True) as record:
-        # turn off any outer warnings filters
-        warnings.resetwarnings()
+def error_on_warning():
+    # turn off any outer warnings filters, e.g. ignores that are set in pyproject.toml
+    warnings.resetwarnings()
 
-        yield
-
-        for w in record:
-            if "asset_key" in w.message.args[0]:
-                assert False, f"Unexpected warning: {w.message.args[0]}"
+    warnings.filterwarnings("error")
 
 
 def test_asset_no_decorator_args():
@@ -60,6 +63,29 @@ def test_asset_with_inputs():
     @asset
     def my_asset(arg1):
         return arg1
+
+    assert isinstance(my_asset, AssetsDefinition)
+    assert len(my_asset.op.output_defs) == 1
+    assert len(my_asset.op.input_defs) == 1
+    assert AssetKey("arg1") in my_asset.keys_by_input_name.values()
+
+
+def test_asset_no_decorator_args_direct_call():
+    def func():
+        return 1
+
+    my_asset = asset(func)
+
+    assert isinstance(my_asset, AssetsDefinition)
+    assert len(my_asset.op.output_defs) == 1
+    assert len(my_asset.op.input_defs) == 0
+
+
+def test_asset_with_inputs_direct_call():
+    def func(arg1):
+        return arg1
+
+    my_asset = asset(func)
 
     assert isinstance(my_asset, AssetsDefinition)
     assert len(my_asset.op.output_defs) == 1
@@ -139,8 +165,8 @@ def test_multi_asset_key_prefix():
 def test_multi_asset_out_backcompat():
     @multi_asset(
         outs={
-            "my_out_name": Out(asset_key=AssetKey("my_asset_name")),
-            "my_other_out_name": Out(asset_key=AssetKey("my_other_asset")),
+            "my_out_name": AssetOut(key=AssetKey("my_asset_name")),
+            "my_other_out_name": AssetOut(key=AssetKey("my_other_asset")),
         }
     )
     def my_asset():
@@ -163,7 +189,7 @@ def test_multi_asset_group_names():
     @multi_asset(
         outs={
             "out1": AssetOut(group_name="foo", key=AssetKey(["cool", "key1"])),
-            "out2": Out(),
+            "out2": AssetOut(),
             "out3": AssetOut(),
             "out4": AssetOut(group_name="bar", key_prefix="prefix4"),
             "out5": AssetOut(group_name="bar"),
@@ -185,7 +211,7 @@ def test_multi_asset_group_name():
     @multi_asset(
         outs={
             "out1": AssetOut(key=AssetKey(["cool", "key1"])),
-            "out2": Out(),
+            "out2": AssetOut(),
             "out3": AssetOut(),
             "out4": AssetOut(key_prefix="prefix4"),
             "out5": AssetOut(),
@@ -210,7 +236,7 @@ def test_multi_asset_group_names_and_group_name():
         @multi_asset(
             outs={
                 "out1": AssetOut(group_name="foo", key=AssetKey(["cool", "key1"])),
-                "out2": Out(),
+                "out2": AssetOut(),
                 "out3": AssetOut(),
                 "out4": AssetOut(group_name="bar", key_prefix="prefix4"),
                 "out5": AssetOut(group_name="bar"),
@@ -232,7 +258,7 @@ def test_multi_asset_internal_asset_deps_metadata():
             "my_other_out_name": {AssetKey("my_in_name")},
         },
     )
-    def my_asset(my_in_name):  # pylint: disable=unused-argument
+    def my_asset(my_in_name):
         yield Output(1, "my_out_name")
         yield Output(2, "my_other_out_name")
 
@@ -273,10 +299,22 @@ def test_asset_with_dagster_type():
     assert my_asset.op.output_defs[0].dagster_type.display_name == "String"
 
 
+@ignore_warning("`version` property on OpDefinition is deprecated")
 def test_asset_with_code_version():
     @asset(code_version="foo")
     def my_asset(arg1):
         return arg1
+
+    assert my_asset.op.version == "foo"
+    assert my_asset.op.output_def_named("result").code_version == "foo"
+
+
+@ignore_warning("`version` property on OpDefinition is deprecated")
+def test_asset_with_code_version_direct_call():
+    def func(arg1):
+        return arg1
+
+    my_asset = asset(func, code_version="foo")
 
     assert my_asset.op.version == "foo"
     assert my_asset.op.output_def_named("result").code_version == "foo"
@@ -615,6 +653,7 @@ def test_kwargs_multi_asset_with_context():
     assert materialize_to_memory([upstream, my_asset]).success
 
 
+@ignore_warning('"resource_defs" is an experimental argument')
 def test_multi_asset_resource_defs():
     @resource
     def baz_resource():
@@ -630,8 +669,8 @@ def test_multi_asset_resource_defs():
 
     @multi_asset(
         outs={
-            "key1": Out(asset_key=AssetKey("key1"), io_manager_key="foo"),
-            "key2": Out(asset_key=AssetKey("key2"), io_manager_key="bar"),
+            "key1": AssetOut(key=AssetKey("key1"), io_manager_key="foo"),
+            "key2": AssetOut(key=AssetKey("key2"), io_manager_key="bar"),
         },
         resource_defs={"foo": foo_manager, "bar": bar_manager, "baz": baz_resource},
     )
@@ -661,6 +700,8 @@ def test_multi_asset_code_versions():
     }
 
 
+@ignore_warning('"io_manager_def" is an experimental argument')
+@ignore_warning('"resource_defs" is an experimental argument')
 def test_asset_io_manager_def():
     @io_manager
     def the_manager():
@@ -698,8 +739,8 @@ def test_multi_asset_retry_policy():
 
     @multi_asset(
         outs={
-            "key1": Out(asset_key=AssetKey("key1")),
-            "key2": Out(asset_key=AssetKey("key2")),
+            "key1": AssetOut(key=AssetKey("key1")),
+            "key2": AssetOut(key=AssetKey("key2")),
         },
         retry_policy=retry_policy,
     )
@@ -769,3 +810,260 @@ def test_asset_in_nothing_context():
 
     assert AssetKey("upstream") in asset1.keys_by_input_name.values()
     assert materialize_to_memory([asset1]).success
+
+
+def test_graph_asset_decorator_no_args():
+    @op
+    def my_op(x, y):
+        del y
+        return x
+
+    @graph_asset
+    def my_graph(x, y):
+        return my_op(x, y)
+
+    assert my_graph.keys_by_input_name["x"] == AssetKey("x")
+    assert my_graph.keys_by_input_name["y"] == AssetKey("y")
+    assert my_graph.keys_by_output_name["result"] == AssetKey("my_graph")
+
+
+@ignore_warning('"FreshnessPolicy" is an experimental class')
+@ignore_warning('"AutoMaterializePolicy" is an experimental class')
+@ignore_warning('"resource_defs" is an experimental argument')
+def test_graph_asset_with_args():
+    @resource
+    def foo_resource():
+        pass
+
+    @op
+    def my_op1(x):
+        return x
+
+    @op
+    def my_op2(y):
+        return y
+
+    @graph_asset(
+        group_name="group1",
+        metadata={"my_metadata": "some_metadata"},
+        freshness_policy=FreshnessPolicy(maximum_lag_minutes=5),
+        auto_materialize_policy=AutoMaterializePolicy.lazy(),
+        resource_defs={"foo": foo_resource},
+    )
+    def my_asset(x):
+        return my_op2(my_op1(x))
+
+    assert my_asset.group_names_by_key[AssetKey("my_asset")] == "group1"
+    assert my_asset.metadata_by_key[AssetKey("my_asset")] == {"my_metadata": "some_metadata"}
+    assert my_asset.freshness_policies_by_key[AssetKey("my_asset")] == FreshnessPolicy(
+        maximum_lag_minutes=5
+    )
+    assert (
+        my_asset.auto_materialize_policies_by_key[AssetKey("my_asset")]
+        == AutoMaterializePolicy.lazy()
+    )
+    assert my_asset.resource_defs["foo"] == foo_resource
+
+
+def test_graph_asset_partitioned():
+    @op
+    def my_op(context):
+        assert context.partition_key == "a"
+
+    @graph_asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c"]))
+    def my_asset():
+        return my_op()
+
+    assert materialize_to_memory([my_asset], partition_key="a").success
+
+
+def test_graph_asset_partition_mapping():
+    partitions_def = StaticPartitionsDefinition(["a", "b", "c"])
+
+    @asset(partitions_def=partitions_def)
+    def asset1():
+        ...
+
+    @op(ins={"in1": In(Nothing)})
+    def my_op(context):
+        assert context.partition_key == "a"
+        assert context.asset_partition_keys_for_input("in1") == ["a"]
+
+    @graph_asset(
+        partitions_def=partitions_def,
+        ins={"asset1": AssetIn(partition_mapping=AllPartitionMapping())},
+    )
+    def my_asset(asset1):
+        return my_op(asset1)
+
+    assert materialize_to_memory([asset1, my_asset], partition_key="a").success
+
+
+def test_graph_asset_w_key_prefix():
+    @op
+    def foo():
+        return 1
+
+    @op
+    def bar(i):
+        return i + 1
+
+    @graph_asset(key_prefix=["this", "is", "a", "prefix"], group_name="abc")
+    def the_asset():
+        return bar(foo())
+
+    assert the_asset.keys_by_output_name["result"].path == [
+        "this",
+        "is",
+        "a",
+        "prefix",
+        "the_asset",
+    ]
+
+    assert the_asset.group_names_by_key == {
+        AssetKey(["this", "is", "a", "prefix", "the_asset"]): "abc"
+    }
+
+    @graph_asset(key_prefix="prefix", group_name="abc")
+    def str_prefix():
+        return bar(foo())
+
+    assert str_prefix.keys_by_output_name["result"].path == ["prefix", "str_prefix"]
+
+
+@ignore_warning('"FreshnessPolicy" is an experimental class')
+@ignore_warning('"AutoMaterializePolicy" is an experimental class')
+@ignore_warning('"resource_defs" is an experimental argument')
+def test_graph_multi_asset_decorator():
+    @resource
+    def foo_resource():
+        pass
+
+    @op(out={"one": Out(), "two": Out()})
+    def two_in_two_out(context, in1, in2):
+        assert context.asset_key_for_input("in1") == AssetKey("x")
+        assert context.asset_key_for_input("in2") == AssetKey("y")
+        assert context.asset_key_for_output("one") == AssetKey("first_asset")
+        assert context.asset_key_for_output("two") == AssetKey("second_asset")
+        return 4, 5
+
+    @graph_multi_asset(
+        outs={
+            "first_asset": AssetOut(auto_materialize_policy=AutoMaterializePolicy.eager()),
+            "second_asset": AssetOut(freshness_policy=FreshnessPolicy(maximum_lag_minutes=5)),
+        },
+        group_name="grp",
+        resource_defs={"foo": foo_resource},
+    )
+    def two_assets(x, y):
+        one, two = two_in_two_out(x, y)
+        return {"first_asset": one, "second_asset": two}
+
+    assert two_assets.keys_by_input_name["x"] == AssetKey("x")
+    assert two_assets.keys_by_input_name["y"] == AssetKey("y")
+    assert two_assets.keys_by_output_name["first_asset"] == AssetKey("first_asset")
+    assert two_assets.keys_by_output_name["second_asset"] == AssetKey("second_asset")
+
+    assert two_assets.group_names_by_key[AssetKey("first_asset")] == "grp"
+    assert two_assets.group_names_by_key[AssetKey("second_asset")] == "grp"
+
+    assert two_assets.freshness_policies_by_key.get(AssetKey("first_asset")) is None
+    assert two_assets.freshness_policies_by_key[AssetKey("second_asset")] == FreshnessPolicy(
+        maximum_lag_minutes=5
+    )
+
+    assert (
+        two_assets.auto_materialize_policies_by_key[AssetKey("first_asset")]
+        == AutoMaterializePolicy.eager()
+    )
+    assert two_assets.auto_materialize_policies_by_key.get(AssetKey("second_asset")) is None
+
+    assert two_assets.resource_defs["foo"] == foo_resource
+
+    @asset
+    def x():
+        return 1
+
+    @asset
+    def y():
+        return 1
+
+    assert materialize_to_memory([x, y, two_assets]).success
+
+
+def test_graph_multi_asset_w_key_prefix():
+    @op(out={"one": Out(), "two": Out()})
+    def two_in_two_out(context, in1, in2):
+        assert context.asset_key_for_input("in1") == AssetKey("x")
+        assert context.asset_key_for_input("in2") == AssetKey("y")
+        assert context.asset_key_for_output("one") == AssetKey("first_asset")
+        assert context.asset_key_for_output("two") == AssetKey("second_asset")
+        return 4, 5
+
+    @graph_multi_asset(
+        ins={"x": AssetIn(key_prefix=["this", "is", "another", "prefix"])},
+        outs={
+            "first_asset": AssetOut(key_prefix=["this", "is", "a", "prefix"]),
+            "second_asset": AssetOut(),
+        },
+        group_name="grp",
+    )
+    def two_assets(x, y):
+        one, two = two_in_two_out(x, y)
+        return {"first_asset": one, "second_asset": two}
+
+    assert two_assets.keys_by_output_name["first_asset"].path == [
+        "this",
+        "is",
+        "a",
+        "prefix",
+        "first_asset",
+    ]
+
+    assert two_assets.keys_by_input_name["x"].path == [
+        "this",
+        "is",
+        "another",
+        "prefix",
+        "x",
+    ]
+
+    assert two_assets.group_names_by_key == {
+        AssetKey(["this", "is", "a", "prefix", "first_asset"]): "grp",
+        AssetKey(["second_asset"]): "grp",
+    }
+
+
+@ignore_warning('"resource_defs" is an experimental argument')
+def test_multi_asset_with_bare_resource():
+    class BareResourceObject:
+        pass
+
+    executed = {}
+
+    @multi_asset(outs={"o1": AssetOut()}, resource_defs={"bare_resource": BareResourceObject()})
+    def my_asset(context):
+        assert context.resources.bare_resource
+        executed["yes"] = True
+
+    materialize_to_memory([my_asset])
+
+    assert executed["yes"]
+
+
+@ignore_warning('"AutoMaterializePolicy" is an experimental class')
+def test_multi_asset_with_auto_materialize_policy():
+    @multi_asset(
+        outs={
+            "o1": AssetOut(),
+            "o2": AssetOut(auto_materialize_policy=AutoMaterializePolicy.eager()),
+            "o3": AssetOut(auto_materialize_policy=AutoMaterializePolicy.lazy()),
+        }
+    )
+    def my_asset():
+        ...
+
+    assert my_asset.auto_materialize_policies_by_key == {
+        AssetKey("o2"): AutoMaterializePolicy.eager(),
+        AssetKey("o3"): AutoMaterializePolicy.lazy(),
+    }

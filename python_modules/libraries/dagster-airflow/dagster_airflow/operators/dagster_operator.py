@@ -1,11 +1,11 @@
 import json
 
-from airflow import __version__ as airflow_version
 from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
 
 from dagster_airflow.hooks.dagster_hook import DagsterHook
 from dagster_airflow.links.dagster_link import LINK_FMT, DagsterLink
+from dagster_airflow.utils import is_airflow_2_loaded_in_environment
 
 
 class DagsterOperator(BaseOperator):
@@ -48,7 +48,7 @@ class DagsterOperator(BaseOperator):
     ) -> None:
         super().__init__(*args, **kwargs)
         self.run_id = None
-        self.dagster_conn_id = dagster_conn_id if airflow_version >= "2.0.0" else None
+        self.dagster_conn_id = dagster_conn_id if is_airflow_2_loaded_in_environment() else None
         self.run_config = run_config or {}
         self.repository_name = repository_name
         self.repostitory_location_name = repostitory_location_name

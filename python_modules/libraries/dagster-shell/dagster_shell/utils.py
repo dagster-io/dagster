@@ -60,7 +60,7 @@ def execute_script_file(shell_script_path, output_logging, log, cwd=None, env=No
     check.str_param(shell_script_path, "shell_script_path")
     check.str_param(output_logging, "output_logging")
     check.opt_str_param(cwd, "cwd", default=os.path.dirname(shell_script_path))
-    env = check.opt_dict_param(env, "env")
+    env = check.opt_nullable_dict_param(env, "env", key_type=str, value_type=str)
 
     if output_logging not in OUTPUT_LOGGING_OPTIONS:
         raise Exception("Unrecognized output_logging %s" % output_logging)
@@ -77,7 +77,6 @@ def execute_script_file(shell_script_path, output_logging, log, cwd=None, env=No
 
     log.info(f"Running command:\n{shell_command}")
 
-    # pylint: disable=subprocess-popen-preexec-fn
     sub_process = None
     try:
         stdout_pipe = PIPE
@@ -111,18 +110,17 @@ def execute_script_file(shell_script_path, output_logging, log, cwd=None, env=No
             log.info(output)
 
         sub_process.wait()
-        log.info("Command exited with return code {retcode}".format(retcode=sub_process.returncode))
+        log.info(f"Command exited with return code {sub_process.returncode}")
 
         return output, sub_process.returncode
     finally:
-        # Always terminate subprocess, including in cases where the pipeline run is terminated
+        # Always terminate subprocess, including in cases where the run is terminated
         if sub_process:
             sub_process.terminate()
 
 
 def execute(shell_command, output_logging, log, cwd=None, env=None):
-    """
-    This function is a utility for executing shell commands from within a Dagster op (or from Python in general).
+    """This function is a utility for executing shell commands from within a Dagster op (or from Python in general).
     It can be used to execute shell commands on either op input data, or any data generated within a generic python op.
 
     Internally, it executes a shell script specified by the argument ``shell_command``. The script will be written
@@ -159,7 +157,7 @@ def execute(shell_command, output_logging, log, cwd=None, env=None):
             tmp_file.write(shell_command.encode("utf-8"))
             tmp_file.flush()
             script_location = os.path.abspath(tmp_file.name)
-            log.info("Temporary script location: {location}".format(location=script_location))
+            log.info(f"Temporary script location: {script_location}")
             return execute_script_file(
                 shell_script_path=tmp_file.name,
                 output_logging=output_logging,

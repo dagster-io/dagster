@@ -1,10 +1,9 @@
-import shutil
-
 import pytest
 from dagster import file_relative_path
-from dagster._legacy import InputDefinition, ModeDefinition, OutputDefinition, execute_solid, solid
+from dagster._core.definitions.decorators import op
+from dagster._core.definitions.input import In
 from dagster._utils import dict_without_keys
-from dagster._utils.test import get_temp_dir
+from dagster._utils.test import wrap_op_in_graph_and_execute
 from dagster_pyspark import (
     DataFrame as DagsterPySparkDataFrame,
     lazy_pyspark_resource,
@@ -12,7 +11,7 @@ from dagster_pyspark import (
 )
 from pyspark.sql import Row, SparkSession
 
-spark = SparkSession.builder.getOrCreate()
+spark = SparkSession.builder.getOrCreate()  # type: ignore
 
 dataframe_parametrize_argnames = "file_type,read,other,resource"
 dataframe_parametrize_argvalues = [
@@ -37,75 +36,23 @@ def create_pyspark_df():
 
 
 @pytest.mark.parametrize(dataframe_parametrize_argnames, dataframe_parametrize_argvalues)
-def test_dataframe_outputs(file_type, read, other, resource):
-    df = create_pyspark_df()
-
-    @solid(output_defs=[OutputDefinition(dagster_type=DagsterPySparkDataFrame, name="df")])
-    def return_df(_):
-        return df
-
-    with get_temp_dir() as temp_path:
-        shutil.rmtree(temp_path)
-
-        options = {"path": temp_path}
-        if other:
-            options["format"] = file_type
-            file_type = "other"
-
-        result = execute_solid(
-            return_df,
-            mode_def=ModeDefinition(resource_defs={"pyspark": resource}),
-            run_config={"solids": {"return_df": {"outputs": [{"df": {file_type: options}}]}}},
-        )
-        assert result.success
-        actual = read(options["path"], **dict_without_keys(options, "path"))
-        assert sorted(df.collect()) == sorted(actual.collect())
-
-        result = execute_solid(
-            return_df,
-            mode_def=ModeDefinition(resource_defs={"pyspark": resource}),
-            run_config={
-                "solids": {
-                    "return_df": {
-                        "outputs": [
-                            {
-                                "df": {
-                                    file_type: dict(
-                                        {
-                                            "mode": "overwrite",
-                                            "compression": "gzip",
-                                        },
-                                        **options,
-                                    )
-                                }
-                            }
-                        ]
-                    }
-                }
-            },
-        )
-        assert result.success
-        actual = read(options["path"], **dict_without_keys(options, "path"))
-        assert sorted(df.collect()) == sorted(actual.collect())
-
-
-@pytest.mark.parametrize(dataframe_parametrize_argnames, dataframe_parametrize_argvalues)
 def test_dataframe_inputs(file_type, read, other, resource):
-    @solid(
-        input_defs=[InputDefinition(dagster_type=DagsterPySparkDataFrame, name="input_df")],
+    @op(
+        ins={"input_df": In(DagsterPySparkDataFrame)},
     )
     def return_df(_, input_df):
         return input_df
 
-    options = {"path": file_relative_path(__file__, "num.{file_type}".format(file_type=file_type))}
+    options = {"path": file_relative_path(__file__, f"num.{file_type}")}
     if other:
         options["format"] = file_type
         file_type = "other"
 
-    result = execute_solid(
+    result = wrap_op_in_graph_and_execute(
         return_df,
-        mode_def=ModeDefinition(resource_defs={"pyspark": resource}),
-        run_config={"solids": {"return_df": {"inputs": {"input_df": {file_type: options}}}}},
+        resources={"pyspark": resource},
+        run_config={"ops": {"return_df": {"inputs": {"input_df": {file_type: options}}}}},
+        do_input_mapping=False,
     )
     assert result.success
     actual = read(options["path"], **dict_without_keys(options, "path"))

@@ -56,6 +56,7 @@ def build_test_project_steps() -> List[GroupStep]:
                 "export"
                 " TEST_PROJECT_IMAGE=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com/test-project:$${BUILDKITE_BUILD_ID}-"
                 + version,
+                "git config --global --add safe.directory /workdir",
                 "./python_modules/dagster-test/dagster_test/test_project/build.sh "
                 + version
                 + " $${TEST_PROJECT_IMAGE}",
@@ -66,7 +67,7 @@ def build_test_project_steps() -> List[GroupStep]:
             )
             .on_python_image(
                 "buildkite-build-test-project-image:py{python_version}-{image_version}".format(
-                    python_version=AvailablePythonVersion.V3_8,
+                    python_version=AvailablePythonVersion.V3_8,  # py version can be bumped when rebuilt
                     image_version=BUILDKITE_BUILD_TEST_PROJECT_IMAGE_IMAGE_VERSION,
                 ),
                 [

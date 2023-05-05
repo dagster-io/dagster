@@ -8,7 +8,7 @@ from dagster._core.definitions.utils import DEFAULT_OUTPUT
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.plan.outputs import StepOutputHandle
-from dagster._core.storage.pipeline_run import DagsterRun
+from dagster._core.storage.dagster_run import DagsterRun
 
 from .execution_result import ExecutionResult
 
@@ -47,23 +47,23 @@ class ExecuteInProcessResult(ExecutionResult):
             output_capture, "output_capture", key_type=StepOutputHandle
         )
 
-    @public  # type: ignore
+    @public
     @property
     def job_def(self) -> JobDefinition:
         return self._job_def
 
-    @public  # type: ignore
+    @public
     @property
     def dagster_run(self) -> DagsterRun:
         return self._dagster_run
 
-    @public  # type: ignore
+    @public
     @property
     def all_events(self) -> Sequence[DagsterEvent]:
         """List[DagsterEvent]: All dagster events emitted during execution."""
         return self._event_list
 
-    @public  # type: ignore
+    @public
     @property
     def run_id(self) -> str:
         return self.dagster_run.run_id
@@ -121,7 +121,7 @@ class ExecuteInProcessResult(ExecutionResult):
     @public
     def asset_value(self, asset_key: CoercibleToAssetKey) -> Any:
         node_output_handle = self._job_def.asset_layer.node_output_handle_for_asset(
-            AssetKey.from_coerceable(asset_key)
+            AssetKey.from_coercible(asset_key)
         )
         return self.output_for_node(
             node_str=str(node_output_handle.node_handle), output_name=node_output_handle.output_name

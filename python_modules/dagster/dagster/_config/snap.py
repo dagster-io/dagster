@@ -1,7 +1,7 @@
 from typing import Any, List, Mapping, NamedTuple, Optional, Sequence, Set, cast
 
 import dagster._check as check
-from dagster._serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
+from dagster._serdes import whitelist_for_serdes
 
 from .config_type import ConfigScalarKind, ConfigType, ConfigTypeKind
 from .field import Field
@@ -52,13 +52,7 @@ class ConfigSchemaSnapshot(
         return key in self.all_config_snaps_by_key
 
 
-class ConfigTypeSnapSerializer(DefaultNamedTupleSerializer):
-    @classmethod
-    def skip_when_empty(cls) -> Set[str]:
-        return {"field_aliases"}  # Maintain stable snapshot ID for back-compat purposes
-
-
-@whitelist_for_serdes(serializer=ConfigTypeSnapSerializer)
+@whitelist_for_serdes(skip_when_empty_fields={"field_aliases"})
 class ConfigTypeSnap(
     NamedTuple(
         "_ConfigTypeSnap",
@@ -167,7 +161,7 @@ class ConfigTypeSnap(
     def get_field(self, name: str) -> "ConfigFieldSnap":
         field = self._get_field(name)
         if not field:
-            check.failed("Field {name} not found".format(name=name))
+            check.failed(f"Field {name} not found")
         return field
 
     def has_field(self, name: str) -> bool:

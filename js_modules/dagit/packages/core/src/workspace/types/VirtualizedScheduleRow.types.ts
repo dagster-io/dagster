@@ -46,13 +46,12 @@ export type SingleScheduleQuery = {
           runs: Array<{
             __typename: 'Run';
             id: string;
-            runId: string;
             status: Types.RunStatus;
             startTime: number | null;
             endTime: number | null;
             updateTime: number | null;
           }>;
-          nextTick: {__typename: 'FutureInstigationTick'; timestamp: number} | null;
+          nextTick: {__typename: 'DryRunInstigationTick'; timestamp: number | null} | null;
         };
         partitionSet: {__typename: 'PartitionSet'; id: string; name: string} | null;
       }

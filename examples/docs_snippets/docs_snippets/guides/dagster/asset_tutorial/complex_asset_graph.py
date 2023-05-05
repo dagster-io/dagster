@@ -14,15 +14,13 @@ def cereals():
 
 @asset
 def nabisco_cereals(cereals):
-    """Cereals manufactured by Nabisco"""
+    """Cereals manufactured by Nabisco."""
     return [row for row in cereals if row["mfr"] == "N"]
 
 
 @asset
 def cereal_protein_fractions(cereals):
-    """
-    For each cereal, records its protein content as a fraction of its total mass.
-    """
+    """For each cereal, records its protein content as a fraction of its total mass."""
     result = {}
     for cereal in cereals:
         total_grams = float(cereal["weight"]) * 28.35
@@ -33,9 +31,7 @@ def cereal_protein_fractions(cereals):
 
 @asset
 def highest_protein_nabisco_cereal(nabisco_cereals, cereal_protein_fractions):
-    """
-    The name of the nabisco cereal that has the highest protein content.
-    """
+    """The name of the nabisco cereal that has the highest protein content."""
     sorted_by_protein = sorted(
         nabisco_cereals, key=lambda cereal: cereal_protein_fractions[cereal["name"]]
     )

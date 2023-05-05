@@ -2,11 +2,13 @@ import datetime
 import os
 import time
 import uuid
+from typing import Any, Mapping
 
 import dagster._check as check
 import pytest
 from dagster._core.events import DagsterEventType
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.instance import DagsterInstance
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import DOCKER_IMAGE_TAG
 from dagster._utils.merger import deep_merge_dicts, merge_dicts
 from dagster._utils.yaml_utils import load_yaml_from_path
@@ -32,7 +34,9 @@ from dagster_test.test_project import (
     get_test_project_docker_image,
     get_test_project_environments_path,
 )
-from dagster_test.test_project.test_pipelines.repo import define_memoization_pipeline
+from dagster_test.test_project.test_jobs.repo import (
+    define_memoization_job,
+)
 
 
 @pytest.mark.integration
@@ -56,12 +60,10 @@ def test_k8s_run_launcher_default(
         load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
         {
             "execution": {
-                "k8s": {
-                    "config": {
-                        "job_namespace": user_code_namespace_for_k8s_run_launcher,
-                        "job_image": dagster_docker_image,
-                        "image_pull_policy": image_pull_policy(),
-                    }
+                "config": {
+                    "job_namespace": user_code_namespace_for_k8s_run_launcher,
+                    "job_image": dagster_docker_image,
+                    "image_pull_policy": image_pull_policy(),
                 }
             },
         },
@@ -85,12 +87,10 @@ def test_k8s_run_launcher_volume_mounts(
         load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
         {
             "execution": {
-                "k8s": {
-                    "config": {
-                        "job_namespace": user_code_namespace_for_k8s_run_launcher,
-                        "job_image": dagster_docker_image,
-                        "image_pull_policy": image_pull_policy(),
-                    }
+                "config": {
+                    "job_namespace": user_code_namespace_for_k8s_run_launcher,
+                    "job_image": dagster_docker_image,
+                    "image_pull_policy": image_pull_policy(),
                 }
             },
         },
@@ -100,9 +100,8 @@ def test_k8s_run_launcher_volume_mounts(
         run_config,
         dagster_instance_for_k8s_run_launcher,
         user_code_namespace_for_k8s_run_launcher,
-        pipeline_name="volume_mount_pipeline",
+        job_name="volume_mount_job_k8s",
         num_steps=1,
-        mode="k8s",
     )
 
 
@@ -118,7 +117,7 @@ def test_k8s_executor_get_config_from_run_launcher(
         load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml")),
         load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
         {
-            "execution": {"k8s": {"config": {"job_image": dagster_docker_image}}},
+            "execution": {"config": {"job_image": dagster_docker_image}},
         },
     )
     _launch_executor_run(
@@ -144,17 +143,15 @@ def test_k8s_executor_combine_configs(
         load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
         {
             "execution": {
-                "k8s": {
-                    "config": {
-                        "job_image": dagster_docker_image,
-                        "image_pull_secrets": [
-                            {"name": TEST_OTHER_IMAGE_PULL_SECRET_NAME},
-                            {"name": TEST_OTHER_IMAGE_PULL_SECRET_NAME},
-                        ],
-                        "env_config_maps": [TEST_OTHER_CONFIGMAP_NAME, TEST_OTHER_CONFIGMAP_NAME],
-                        "env_secrets": [TEST_OTHER_SECRET_NAME, TEST_OTHER_SECRET_NAME],
-                        "labels": {"executor_label_key": "executor_label_value"},
-                    }
+                "config": {
+                    "job_image": dagster_docker_image,
+                    "image_pull_secrets": [
+                        {"name": TEST_OTHER_IMAGE_PULL_SECRET_NAME},
+                        {"name": TEST_OTHER_IMAGE_PULL_SECRET_NAME},
+                    ],
+                    "env_config_maps": [TEST_OTHER_CONFIGMAP_NAME, TEST_OTHER_CONFIGMAP_NAME],
+                    "env_secrets": [TEST_OTHER_SECRET_NAME, TEST_OTHER_SECRET_NAME],
+                    "labels": {"executor_label_key": "executor_label_value"},
                 }
             },
         },
@@ -211,26 +208,23 @@ def _get_step_execution_events(events):
 
 
 def _launch_executor_run(
-    dagit_url,
-    run_config,
-    dagster_instance_for_k8s_run_launcher,
-    user_code_namespace_for_k8s_run_launcher,
-    pipeline_name="demo_k8s_executor_pipeline",
-    num_steps=2,
-    mode="default",
+    dagit_url: str,
+    run_config: Mapping[str, Any],
+    dagster_instance_for_k8s_run_launcher: DagsterInstance,
+    user_code_namespace_for_k8s_run_launcher: str,
+    job_name: str = "demo_job_k8s",
+    num_steps: int = 2,
 ):
-    run_id = launch_run_over_graphql(
-        dagit_url, run_config=run_config, pipeline_name=pipeline_name, mode=mode
-    )
+    run_id = launch_run_over_graphql(dagit_url, run_config=run_config, job_name=job_name)
 
     result = wait_for_job_and_get_raw_logs(
         job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
     )
 
-    assert "PIPELINE_SUCCESS" in result, "no match, result: {}".format(result)
+    assert "PIPELINE_SUCCESS" in result, f"no match, result: {result}"
 
     updated_run = dagster_instance_for_k8s_run_launcher.get_run_by_id(run_id)
-    assert updated_run.tags[DOCKER_IMAGE_TAG] == get_test_project_docker_image()
+    assert updated_run.tags[DOCKER_IMAGE_TAG] == get_test_project_docker_image()  # type: ignore  # (possible none)
 
     events = dagster_instance_for_k8s_run_launcher.all_logs(run_id)
     assert len(_get_step_execution_events(events)) == num_steps
@@ -257,27 +251,25 @@ def test_k8s_run_launcher_image_from_origin(
         load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
         {
             "execution": {
-                "k8s": {
-                    "config": {
-                        "job_namespace": user_code_namespace_for_k8s_run_launcher,
-                        "image_pull_policy": image_pull_policy(),
-                    }
+                "config": {
+                    "job_namespace": user_code_namespace_for_k8s_run_launcher,
+                    "image_pull_policy": image_pull_policy(),
                 }
             },
         },
     )
 
-    pipeline_name = "demo_k8s_executor_pipeline"
+    job_name = "demo_job_k8s"
 
     run_id = launch_run_over_graphql(
-        dagit_url_for_k8s_run_launcher, run_config=run_config, pipeline_name=pipeline_name
+        dagit_url_for_k8s_run_launcher, run_config=run_config, job_name=job_name
     )
 
     result = wait_for_job_and_get_raw_logs(
         job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
     )
 
-    assert "PIPELINE_SUCCESS" in result, "no match, result: {}".format(result)
+    assert "PIPELINE_SUCCESS" in result, f"no match, result: {result}"
 
     updated_run = dagster_instance_for_k8s_run_launcher.get_run_by_id(run_id)
     assert updated_run.tags[DOCKER_IMAGE_TAG] == get_test_project_docker_image()
@@ -290,18 +282,16 @@ def test_k8s_run_launcher_terminate(
     dagster_docker_image,
     dagit_url_for_k8s_run_launcher,
 ):
-    pipeline_name = "slow_pipeline"
+    job_name = "slow_job_k8s"
 
     run_config = merge_dicts(
         load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
         {
             "execution": {
-                "k8s": {
-                    "config": {
-                        "job_namespace": user_code_namespace_for_k8s_run_launcher,
-                        "job_image": dagster_docker_image,
-                        "image_pull_policy": image_pull_policy(),
-                    }
+                "config": {
+                    "job_namespace": user_code_namespace_for_k8s_run_launcher,
+                    "job_image": dagster_docker_image,
+                    "image_pull_policy": image_pull_policy(),
                 }
             },
         },
@@ -310,8 +300,7 @@ def test_k8s_run_launcher_terminate(
     run_id = launch_run_over_graphql(
         dagit_url_for_k8s_run_launcher,
         run_config=run_config,
-        pipeline_name=pipeline_name,
-        mode="k8s",
+        job_name=job_name,
     )
 
     DagsterKubernetesClient.production_client().wait_for_job(
@@ -328,19 +317,19 @@ def test_k8s_run_launcher_terminate(
     terminate_run_over_graphql(dagit_url_for_k8s_run_launcher, run_id=run_id)
 
     start_time = datetime.datetime.now()
-    pipeline_run = None
+    dagster_run = None
     while True:
         assert datetime.datetime.now() < start_time + timeout, "Timed out waiting for termination"
-        pipeline_run = dagster_instance_for_k8s_run_launcher.get_run_by_id(run_id)
-        if pipeline_run.status == DagsterRunStatus.CANCELED:
+        dagster_run = dagster_instance_for_k8s_run_launcher.get_run_by_id(run_id)
+        if dagster_run.status == DagsterRunStatus.CANCELED:
             break
 
         time.sleep(5)
 
     # useful to have logs here, because the worker pods get deleted
-    print(dagster_instance_for_k8s_run_launcher.all_logs(run_id))  # pylint: disable=print-call
+    print(dagster_instance_for_k8s_run_launcher.all_logs(run_id))  # noqa: T201
 
-    assert pipeline_run.status == DagsterRunStatus.CANCELED
+    assert dagster_run.status == DagsterRunStatus.CANCELED
 
     assert not can_terminate_run_over_graphql(dagit_url_for_k8s_run_launcher, run_id)
 
@@ -363,38 +352,35 @@ def test_k8s_executor_resource_requirements(
         load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
         {
             "execution": {
-                "k8s": {
-                    "config": {
-                        "job_namespace": user_code_namespace_for_k8s_run_launcher,
-                        "job_image": dagster_docker_image,
-                        "image_pull_policy": image_pull_policy(),
-                    }
+                "config": {
+                    "job_namespace": user_code_namespace_for_k8s_run_launcher,
+                    "job_image": dagster_docker_image,
+                    "image_pull_policy": image_pull_policy(),
                 }
             },
         },
     )
 
-    pipeline_name = "resources_limit_pipeline"
+    job_name = "resources_limit_job_k8s"
 
     run_id = launch_run_over_graphql(
         dagit_url_for_k8s_run_launcher,
         run_config=run_config,
-        pipeline_name=pipeline_name,
-        mode="k8s",
+        job_name=job_name,
     )
 
     result = wait_for_job_and_get_raw_logs(
         job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
     )
 
-    assert "PIPELINE_SUCCESS" in result, "no match, result: {}".format(result)
+    assert "PIPELINE_SUCCESS" in result, f"no match, result: {result}"
 
     updated_run = dagster_instance_for_k8s_run_launcher.get_run_by_id(run_id)
     assert updated_run.tags[DOCKER_IMAGE_TAG] == get_test_project_docker_image()
 
 
 @pytest.mark.integration
-def test_execute_on_k8s_retry_pipeline(  # pylint: disable=redefined-outer-name
+def test_execute_on_k8s_retry_job(
     dagster_instance_for_k8s_run_launcher,
     user_code_namespace_for_k8s_run_launcher,
     dagster_docker_image,
@@ -404,31 +390,28 @@ def test_execute_on_k8s_retry_pipeline(  # pylint: disable=redefined-outer-name
         load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
         {
             "execution": {
-                "k8s": {
-                    "config": {
-                        "job_namespace": user_code_namespace_for_k8s_run_launcher,
-                        "job_image": dagster_docker_image,
-                        "image_pull_policy": image_pull_policy(),
-                    }
+                "config": {
+                    "job_namespace": user_code_namespace_for_k8s_run_launcher,
+                    "job_image": dagster_docker_image,
+                    "image_pull_policy": image_pull_policy(),
                 }
             },
         },
     )
 
-    pipeline_name = "retry_pipeline"
+    job_name = "retry_job_k8s"
 
     run_id = launch_run_over_graphql(
         dagit_url_for_k8s_run_launcher,
         run_config=run_config,
-        pipeline_name=pipeline_name,
-        mode="k8s",
+        job_name=job_name,
     )
 
     result = wait_for_job_and_get_raw_logs(
         job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
     )
 
-    assert "PIPELINE_SUCCESS" in result, "no match, result: {}".format(result)
+    assert "PIPELINE_SUCCESS" in result, f"no match, result: {result}"
 
     stats = dagster_instance_for_k8s_run_launcher.get_run_stats(run_id)
     assert stats.steps_succeeded == 1
@@ -464,12 +447,10 @@ def test_memoization_k8s_executor(
         load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
         {
             "execution": {
-                "k8s": {
-                    "config": {
-                        "job_namespace": user_code_namespace_for_k8s_run_launcher,
-                        "job_image": dagster_docker_image,
-                        "image_pull_policy": image_pull_policy(),
-                    }
+                "config": {
+                    "job_namespace": user_code_namespace_for_k8s_run_launcher,
+                    "job_image": dagster_docker_image,
+                    "image_pull_policy": image_pull_policy(),
                 }
             },
         },
@@ -482,15 +463,14 @@ def test_memoization_k8s_executor(
 
     # wrap in try-catch to ensure that memoized results are always cleaned from s3 bucket
     try:
-        pipeline_name = "memoization_pipeline"
+        job_name = "memoization_job_k8s"
 
         run_ids = []
         for _ in range(2):
             run_id = launch_run_over_graphql(
                 dagit_url_for_k8s_run_launcher,
                 run_config=run_config,
-                pipeline_name=pipeline_name,
-                mode="k8s",
+                job_name=job_name,
             )
 
             result = wait_for_job_and_get_raw_logs(
@@ -498,7 +478,7 @@ def test_memoization_k8s_executor(
                 namespace=user_code_namespace_for_k8s_run_launcher,
             )
 
-            assert "PIPELINE_SUCCESS" in result, "no match, result: {}".format(result)
+            assert "PIPELINE_SUCCESS" in result, f"no match, result: {result}"
 
             run_ids.append(run_id)
 
@@ -514,5 +494,5 @@ def test_memoization_k8s_executor(
         assert len(_get_step_execution_events(events)) == 0
     finally:
         cleanup_memoized_results(
-            define_memoization_pipeline(), "k8s", dagster_instance_for_k8s_run_launcher, run_config
+            define_memoization_job("k8s")(), dagster_instance_for_k8s_run_launcher, run_config
         )

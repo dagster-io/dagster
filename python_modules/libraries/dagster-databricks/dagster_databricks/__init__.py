@@ -8,34 +8,35 @@ This package provides:
     to execute an arbitrary task in Databricks.
 """
 
-from dagster._core.utils import check_dagster_package_version
+from dagster._core.libraries import DagsterLibraryRegistry
 
-from .databricks import DatabricksError, DatabricksJobRunner
+from .databricks import DatabricksClient, DatabricksError, DatabricksJobRunner
 from .databricks_pyspark_step_launcher import (
     DatabricksConfig,
     DatabricksPySparkStepLauncher,
     databricks_pyspark_step_launcher,
 )
-from .resources import databricks_client
-from .solids import create_databricks_job_op
-from .types import (
-    DATABRICKS_RUN_TERMINATED_STATES,
-    DatabricksRunLifeCycleState,
-    DatabricksRunResultState,
+from .ops import (
+    create_databricks_run_now_op,
+    create_databricks_submit_run_op,
+)
+from .resources import (
+    DatabricksClientResource as DatabricksClientResource,
+    databricks_client,
 )
 from .version import __version__
 
-check_dagster_package_version("dagster-databricks", __version__)
+DagsterLibraryRegistry.register("dagster-databricks", __version__)
 
 __all__ = [
-    "create_databricks_job_op",
+    "create_databricks_run_now_op",
+    "create_databricks_submit_run_op",
     "databricks_client",
+    "DatabricksClient",
     "DatabricksConfig",
     "DatabricksError",
     "DatabricksJobRunner",
     "DatabricksPySparkStepLauncher",
     "databricks_pyspark_step_launcher",
-    "DATABRICKS_RUN_TERMINATED_STATES",
-    "DatabricksRunLifeCycleState",
-    "DatabricksRunResultState",
+    "DatabricksClientResource",
 ]

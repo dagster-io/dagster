@@ -1,4 +1,4 @@
-import {Box, ButtonGroup, Colors, Spinner, Subheading} from '@dagster-io/ui';
+import {Box, ButtonGroup, Colors, Spinner, Subheading, ErrorBoundary} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {LiveDataForNode} from '../asset-graph/Utils';
@@ -9,7 +9,7 @@ import {AssetEventList} from './AssetEventList';
 import {AssetPartitionDetail, AssetPartitionDetailEmpty} from './AssetPartitionDetail';
 import {AssetViewParams} from './AssetView';
 import {CurrentRunsBanner} from './CurrentRunsBanner';
-import {FailedRunsSinceMaterializationBanner} from './FailedRunsSinceMaterializationBanner';
+import {FailedRunSinceMaterializationBanner} from './FailedRunSinceMaterializationBanner';
 import {AssetEventGroup, useGroupedEvents} from './groupByPartition';
 import {AssetKey} from './types';
 import {useRecentAssetEvents} from './useRecentAssetEvents';
@@ -20,11 +20,11 @@ interface Props {
   params: AssetViewParams;
   paramsTimeWindowOnly: boolean;
   setParams: (params: AssetViewParams) => void;
+  assetHasDefinedPartitions: boolean;
 
   // This timestamp is a "hint", when it changes this component will refetch
   // to retrieve new data. Just don't want to poll the entire table query.
-  assetLastMaterializedAt: string | undefined;
-  assetHasDefinedPartitions: boolean;
+  dataRefreshHint: string | undefined;
 
   repository?: RepositorySelector;
   opName?: string | null;
@@ -32,11 +32,11 @@ interface Props {
 
 export const AssetEvents: React.FC<Props> = ({
   assetKey,
-  assetLastMaterializedAt,
   assetHasDefinedPartitions,
   params,
   setParams,
   liveData,
+  dataRefreshHint,
 }) => {
   const {
     xAxis,
@@ -52,7 +52,7 @@ export const AssetEvents: React.FC<Props> = ({
       return;
     }
     refetch();
-  }, [params.asOf, assetLastMaterializedAt, refetch]);
+  }, [params.asOf, dataRefreshHint, refetch]);
 
   const grouped = useGroupedEvents(xAxis, materializations, observations, loadedPartitionKeys);
 
@@ -122,15 +122,18 @@ export const AssetEvents: React.FC<Props> = ({
         </Box>
       )}
 
-      <FailedRunsSinceMaterializationBanner
-        liveData={liveData}
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-      />
-
-      <CurrentRunsBanner
-        liveData={liveData}
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-      />
+      {!assetHasDefinedPartitions && (
+        <>
+          <FailedRunSinceMaterializationBanner
+            run={liveData?.runWhichFailedToMaterialize || null}
+            border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+          />
+          <CurrentRunsBanner
+            liveData={liveData}
+            border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+          />
+        </>
+      )}
 
       <Box
         style={{flex: 1, minHeight: 0, outline: 'none'}}
@@ -158,25 +161,28 @@ export const AssetEvents: React.FC<Props> = ({
         </Box>
 
         <Box
-          style={{flex: 3, minWidth: 0}}
           flex={{direction: 'column'}}
+          style={{flex: 3, minWidth: 0, overflowY: 'auto'}}
           border={{side: 'left', color: Colors.KeylineGray, width: 1}}
         >
-          {xAxis === 'partition' ? (
-            focused ? (
-              <AssetPartitionDetail
-                group={focused}
-                hasLineage={assetHasLineage}
-                assetKey={assetKey}
-              />
+          <ErrorBoundary region="event" resetErrorOnChange={[focused]}>
+            {xAxis === 'partition' ? (
+              focused ? (
+                <AssetPartitionDetail
+                  group={focused}
+                  hasLineage={assetHasLineage}
+                  assetKey={assetKey}
+                  latestRunForPartition={null}
+                />
+              ) : (
+                <AssetPartitionDetailEmpty />
+              )
+            ) : focused?.latest ? (
+              <AssetEventDetail assetKey={assetKey} event={focused.latest} />
             ) : (
-              <AssetPartitionDetailEmpty />
-            )
-          ) : focused?.latest ? (
-            <AssetEventDetail assetKey={assetKey} event={focused.latest} />
-          ) : (
-            <AssetEventDetailEmpty />
-          )}
+              <AssetEventDetailEmpty />
+            )}
+          </ErrorBoundary>
         </Box>
       </Box>
     </>

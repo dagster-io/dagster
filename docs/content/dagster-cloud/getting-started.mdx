@@ -25,7 +25,7 @@ Let's get started!
 
 If you don't already have a Dagster Cloud account, [sign up for one](https://dagster.cloud/signup) before continuing.
 
-You'll also be asked to create a Dagster Cloud organization. When your organization is created, a single deployment, named `prod`, will also be created. Refer to the [Managing deployments guide](/dagster-cloud/developing-testing/managing-deployments) for more information about deployments in Dagster Cloud.
+You'll also be asked to create a Dagster Cloud organization. When your organization is created, a single deployment, named `prod`, will also be created. Refer to the [Managing deployments guide](/dagster-cloud/managing-deployments/managing-deployments) for more information about deployments in Dagster Cloud.
 
 ---
 
@@ -145,7 +145,7 @@ Select the deployment type you want to use and [proceed to the next step](#step-
 
 ## Step 3: Deploy your code
 
-Now that you've selected a deployment type, the next step is to tell Dagster Cloud the location of your Dagster code. In addition to this, you'll set up Continuous Integration (CI) and Continuous Deployment (CD). Once completed, [Branch Deployments](/dagster-cloud/developing-testing/branch-deployments) and continuous code location deployments will be enabled for your Dagster project.
+Now that you've selected a deployment type, the next step is to tell Dagster Cloud the location of your Dagster code. In addition to this, you'll set up Continuous Integration (CI) and Continuous Deployment (CD). Once completed, [Branch Deployments](/dagster-cloud/managing-deployments/branch-deployments) and continuous code location deployments will be enabled for your Dagster project.
 
 The steps for accomplishing this vary depending on the **deployment type** you selected in the previous step:
 
@@ -163,12 +163,12 @@ For **Serverless deployments**, there are two ways to deploy your code to Dagste
 
 - **Start from a template** - Use one of our quickstart templates to get up and running. All templates come with CI/CD already configured and will be cloned to a new GitHub repository.
 
-- **Import an existing project** - Import an existing GitHub repository using our GitHub integration or the [dagster-cloud CLI](/dagster-cloud/developing-testing/dagster-cloud-cli). **Note**: If using the GitHub integration, Dagster Cloud will automatically set up CI/CD for you.
+- **Import an existing project** - Import an existing GitHub repository using our GitHub integration or the [dagster-cloud CLI](/dagster-cloud/managing-deployments/dagster-cloud-cli). **Note**: If using the GitHub integration, Dagster Cloud will automatically set up CI/CD for you.
 
 <TabGroup>
 <TabItem name="Use a template">
 
-#### Using a template
+**With GitHub**
 
 1. Click **Select** to select a template.
 2. Sign in to your GitHub account, if prompted.
@@ -180,21 +180,28 @@ For **Serverless deployments**, there are two ways to deploy your code to Dagste
 
 When finished, [continue to the next step](#step-4-set-up-environment-variables-and-secrets).
 
+**With Gitlab**
+
+1. Click **Select** to select a template.
+2. Sign in to your Gitlab account, if prompted.
+3. In Dagster Cloud, define the following:
+   - **Namespace** - Select the group or account to create the new project in.
+   - **Project** - Enter a name for the new project.
+   - Check the **Make git project private** box to make the project private.
+4. When finished, click **Clone and deploy**.
+
+When finished, [continue to the next step](#step-4-set-up-environment-variables-and-secrets).
+
 </TabItem>
 <TabItem name="Import an existing project">
 
-#### Import an existing project
-
-To import existing Dagster code, you can use Dagster's GitHub app or the dagster-cloud CLI.
-
-<TabGroup>
-<TabItem name="GitHub integration">
+To import existing Dagster code, you can use Dagster's GitHub / Gitlab app or the dagster-cloud CLI.
 
 **Using the GitHub integration**
 
 Using the GitHub integration to import an existing GitHub repository also sets up CI/CD for you.
 
-Before you get started, note that the repository must have a `dagster_cloud.yaml` file in order for Dagster Cloud to deploy it. This file defines the [code locations](/concepts/code-locations) in your Dagster code.
+Before you get started, note that the repository must have a [`dagster_cloud.yaml` file](/dagster-cloud/managing-deployments/dagster-cloud-yaml) in order for Dagster Cloud to deploy it. This file defines the [code locations](/concepts/code-locations) in your Dagster code.
 
 If this file doesn't currently exist, create it in the root of your repository with the following code:
 
@@ -218,8 +225,33 @@ After you've committed the file to the repository, come back to Dagster Cloud to
 
 When finished, [continue to the next step](#step-4-set-up-environment-variables-and-secrets).
 
-</TabItem>
-<TabItem name="dagster-cloud CLI">
+**Using the Gitlab integration**
+
+Using the Gitlab integration to import an existing Gitlab project also sets up CI/CD for you.
+
+Before you get started, note that the project must have a [`dagster_cloud.yaml` file](/dagster-cloud/managing-deployments/dagster-cloud-yaml) in order for Dagster Cloud to deploy it. This file defines the [code locations](/concepts/code-locations) in your Dagster code.
+
+If this file doesn't currently exist, create it in the root of your repository with the following code:
+
+```yaml
+# dagster_cloud.yaml
+
+locations:
+  - location_name: my_location_name # the name of the code location
+    code_source:
+      package_name: hackernews # the name of the python package associated with the code location
+```
+
+After you've committed the file to the project, come back to Dagster Cloud to complete the import process:
+
+1. Click the **Import an existing project** tab.
+2. Sign in to your Gitlab account, if prompted.
+3. In Dagster Cloud, define the following:
+   - **Namespace** - Select the group or account that the project is in.
+   - **Project** - Select the project.
+4. Click **Deploy**.
+
+When finished, [continue to the next step](#step-4-set-up-environment-variables-and-secrets).
 
 **Using the dagster-cloud CLI**
 
@@ -227,7 +259,7 @@ When finished, [continue to the next step](#step-4-set-up-environment-variables-
   Using the dagster-cloud CLI requires a recent version of Python 3 and Docker.
 </Note>
 
-To complete this step using the CLI, you can use your own Dagster code or the [Dagster starter kit](https://github.com/dagster-io/quickstart-etl). The starter kit is a template with everything you need to get started using Serverless in Dagster Cloud, including CI/CD configuration and the required `dagster_cloud.yaml` file.
+To complete this step using the CLI, you can use your own Dagster code or the [Dagster starter kit](https://github.com/dagster-io/quickstart-etl). The starter kit is a template with everything you need to get started using Serverless in Dagster Cloud, including CI/CD configuration and the required [`dagster_cloud.yaml` file](/dagster-cloud/managing-deployments/dagster-cloud-yaml).
 
 - **If using the template**, [clone the repository](https://github.com/dagster-io/quickstart-etl) to your local environment.
 
@@ -256,9 +288,6 @@ After you've finished setting up your local project, move on to deploying using 
    ```
 
 When finished, [continue to the next step](#step-4-set-up-environment-variables-and-secrets).
-
-</TabItem>
-</TabGroup>
 
 </TabItem>
 </TabGroup>
@@ -341,9 +370,9 @@ For continuous integration using a CI/CD provider other than GitHub, your system
        --package-name PACKAGE_NAME \
    ```
 
-   Refer to the [Adding a code location guide](/dagster-cloud/developing-testing/code-locations#managing-code-locations-using-the-dagster-cloud-cli) for more info.
+   Refer to the [Adding a code location guide](/dagster-cloud/managing-deployments/code-locations#managing-code-locations-using-the-dagster-cloud-cli) for more info.
 
-**Note**: Creating Branch Deployments using the CLI requires some additional steps. Refer to the [Branch Deployments with the dagster-cloud CLI guide](/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments) for more info.
+**Note**: Creating Branch Deployments using the CLI requires some additional steps. Refer to the [Branch Deployments with the dagster-cloud CLI guide](/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments) for more info.
 
 When finished, [continue to the next step](#step-4-set-up-environment-variables-and-secrets).
 
@@ -357,7 +386,7 @@ When finished, [continue to the next step](#step-4-set-up-environment-variables-
 
 ## Step 4: Set up environment variables and secrets
 
-Congrats! At this point, your Dagster Cloud deployment should be up and running. To ensure the external services you use in your Dagster project work correctly, start setting up your [environment variables](/dagster-cloud/developing-testing/environment-variables-and-secrets). Using environment variables, you can securely pass in sensitive info like passwords, API tokens, etc.
+Congrats! At this point, your Dagster Cloud deployment should be up and running. To ensure the external services you use in your Dagster project work correctly, start setting up your [environment variables](/dagster-cloud/managing-deployments/environment-variables-and-secrets). Using environment variables, you can securely pass in sensitive info like passwords, API tokens, etc.
 
 ---
 
@@ -367,5 +396,5 @@ From here, you can:
 
 - [Invite your team](/dagster-cloud/account/managing-users)
 - [Configure authentication for your account](/dagster-cloud/account/authentication)
-- [Set up monitoring and alerting](/dagster-cloud/account/setting-up-alerts)
-- [Learn more about Branch Deployments](/dagster-cloud/developing-testing/branch-deployments)
+- [Set up monitoring and alerting](/dagster-cloud/managing-deployments/setting-up-alerts)
+- [Learn more about Branch Deployments](/dagster-cloud/managing-deployments/branch-deployments)

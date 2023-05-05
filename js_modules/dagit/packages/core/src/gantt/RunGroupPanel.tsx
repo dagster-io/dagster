@@ -98,7 +98,7 @@ export const RunGroupPanel: React.FC<{runId: string; runStatusLastChangedAt: num
       <>
         {runs.map((g, idx) =>
           g ? (
-            <RunGroupRun key={g.runId} to={`/runs/${g.runId}`} selected={g.runId === runId}>
+            <RunGroupRun key={g.id} to={`/runs/${g.id}`} selected={g.id === runId}>
               {idx < runs.length - 1 && <ThinLine style={{height: 36}} />}
               <Box padding={{top: 4}}>
                 <RunStatusIndicator status={g.status} />
@@ -113,7 +113,7 @@ export const RunGroupPanel: React.FC<{runId: string; runStatusLastChangedAt: num
               >
                 <div style={{display: 'flex', justifyContent: 'space-between'}}>
                   <RunTitle>
-                    {g.runId.split('-')[0]}
+                    {g.id.split('-')[0]}
                     {idx === 0 && RootTag}
                   </RunTitle>
                   <RunTime run={g} />
@@ -140,7 +140,6 @@ export const RunGroupPanel: React.FC<{runId: string; runStatusLastChangedAt: num
 const RUN_GROUP_PANEL_QUERY = gql`
   query RunGroupPanelQuery($runId: ID!) {
     runGroupOrError(runId: $runId) {
-      __typename
       ... on RunGroup {
         rootRunId
         runs {
@@ -154,7 +153,6 @@ const RUN_GROUP_PANEL_QUERY = gql`
 
   fragment RunGroupPanelRun on Run {
     id
-    runId
     parentRunId
     status
     stepKeysToExecute

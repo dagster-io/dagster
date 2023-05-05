@@ -1,4 +1,4 @@
-from dagster._core.utils import check_dagster_package_version
+from dagster._core.libraries import DagsterLibraryRegistry
 
 from .asset_defs import (
     load_assets_from_dbt_manifest as load_assets_from_dbt_manifest,
@@ -6,11 +6,13 @@ from .asset_defs import (
 )
 from .asset_selection import DbtManifestAssetSelection as DbtManifestAssetSelection
 from .cli import (
+    DbtCliClientResource as DbtCliClientResource,
     DbtCliOutput as DbtCliOutput,
     DbtCliResource as DbtCliResource,
     dbt_cli_resource as dbt_cli_resource,
 )
 from .cloud import (
+    DbtCloudClientResource as DbtCloudClientResource,
     DbtCloudOutput as DbtCloudOutput,
     DbtCloudResource as DbtCloudResource,
     DbtCloudResourceV2 as DbtCloudResourceV2,
@@ -50,4 +52,4 @@ from .rpc import (
 from .types import DbtOutput as DbtOutput
 from .version import __version__ as __version__
 
-check_dagster_package_version("dagster-dbt", __version__)
+DagsterLibraryRegistry.register("dagster-dbt", __version__)

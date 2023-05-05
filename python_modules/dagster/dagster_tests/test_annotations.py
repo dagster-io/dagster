@@ -1,4 +1,5 @@
 import sys
+import warnings
 from abc import abstractmethod
 from typing import NamedTuple, get_type_hints
 
@@ -12,6 +13,7 @@ from dagster._annotations import (
     is_experimental,
     is_public,
     public,
+    quiet_experimental_warnings,
 )
 from typing_extensions import Annotated
 
@@ -76,3 +78,62 @@ def test_public_attr():
         else get_type_hints(Foo)
     )
     assert hints["bar"] == Annotated[int, PUBLIC]
+
+
+def test_experimental_quiet_experimental() -> None:
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+
+        @experimental
+        def my_experimental_function(my_arg) -> None:
+            pass
+
+        assert len(w) == 0
+        my_experimental_function("foo")
+        assert len(w) == 1
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+
+        @experimental
+        def my_experimental_function(my_arg) -> None:
+            pass
+
+        @quiet_experimental_warnings
+        def my_quiet_wrapper(my_arg) -> None:
+            my_experimental_function(my_arg)
+
+        assert len(w) == 0
+        my_quiet_wrapper("foo")
+        assert len(w) == 0
+
+
+def test_experimental_quiet_experimental_class() -> None:
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+
+        @experimental
+        class MyExperimental:
+            def __init__(self, _string_in: str) -> None:
+                pass
+
+        assert len(w) == 0
+        MyExperimental("foo")
+        assert len(w) == 1
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+
+        @experimental
+        class MyExperimentalTwo:
+            def __init__(self, _string_in: str) -> None:
+                pass
+
+        class MyExperimentalWrapped(MyExperimentalTwo):
+            @quiet_experimental_warnings
+            def __init__(self, string_in: str) -> None:
+                super().__init__(string_in)
+
+        assert len(w) == 0
+        MyExperimentalWrapped("foo")
+        assert len(w) == 0

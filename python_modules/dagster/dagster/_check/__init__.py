@@ -245,11 +245,9 @@ def dict_param(
     """Ensures argument obj is a native Python dictionary, raises an exception if not, and otherwise
     returns obj.
     """
-    from dagster._utils import frozendict
-
-    if not isinstance(obj, (frozendict, dict)):
+    if not isinstance(obj, dict):
         raise _param_type_mismatch_exception(
-            obj, (frozendict, dict), param_name, additional_message=additional_message
+            obj, dict, param_name, additional_message=additional_message
         )
 
     if not (key_type or value_type):
@@ -268,12 +266,8 @@ def opt_dict_param(
     """Ensures argument obj is either a dictionary or None; if the latter, instantiates an empty
     dictionary.
     """
-    from dagster._utils import frozendict
-
-    if obj is not None and not isinstance(obj, (frozendict, dict)):
-        raise _param_type_mismatch_exception(
-            obj, (frozendict, dict), param_name, additional_message
-        )
+    if obj is not None and not isinstance(obj, dict):
+        raise _param_type_mismatch_exception(obj, dict, param_name, additional_message)
 
     if not obj:
         return {}
@@ -283,7 +277,7 @@ def opt_dict_param(
 
 # pyright understands this overload but not mypy
 @overload
-def opt_nullable_dict_param(  # type: ignore
+def opt_nullable_dict_param(
     obj: None,
     param_name: str,
     key_type: Optional[TypeOrTupleOfTypes] = ...,
@@ -312,12 +306,8 @@ def opt_nullable_dict_param(
     additional_message: Optional[str] = None,
 ) -> Optional[Dict]:
     """Ensures argument obj is either a dictionary or None."""
-    from dagster._utils import frozendict
-
-    if obj is not None and not isinstance(obj, (frozendict, dict)):
-        raise _param_type_mismatch_exception(
-            obj, (frozendict, dict), param_name, additional_message
-        )
+    if obj is not None and not isinstance(obj, dict):
+        raise _param_type_mismatch_exception(obj, dict, param_name, additional_message)
 
     if not obj:
         return None if obj is None else {}
@@ -361,8 +351,6 @@ def dict_elem(
     value_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
 ) -> Dict:
-    from dagster._utils import frozendict
-
     dict_param(obj, "obj")
     str_param(key, "key")
 
@@ -370,8 +358,8 @@ def dict_elem(
         raise CheckError(f"{key} not present in dictionary {obj}")
 
     value = obj[key]
-    if not isinstance(value, (frozendict, dict)):
-        raise _element_check_error(key, value, obj, (frozendict, dict), additional_message)
+    if not isinstance(value, dict):
+        raise _element_check_error(key, value, obj, dict, additional_message)
     else:
         return _check_mapping_entries(value, key_type, value_type, mapping_type=dict)
 
@@ -383,8 +371,6 @@ def opt_dict_elem(
     value_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
 ) -> Dict:
-    from dagster._utils import frozendict
-
     dict_param(obj, "obj")
     str_param(key, "key")
 
@@ -392,7 +378,7 @@ def opt_dict_elem(
 
     if value is None:
         return {}
-    elif not isinstance(value, (frozendict, dict)):
+    elif not isinstance(value, dict):
         raise _element_check_error(key, value, obj, dict, additional_message)
     else:
         return _check_mapping_entries(value, key_type, value_type, mapping_type=dict)
@@ -405,8 +391,6 @@ def opt_nullable_dict_elem(
     value_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
 ) -> Optional[Dict]:
-    from dagster._utils import frozendict
-
     dict_param(obj, "obj")
     str_param(key, "key")
 
@@ -414,7 +398,7 @@ def opt_nullable_dict_elem(
 
     if value is None:
         return None
-    elif not isinstance(value, (frozendict, dict)):
+    elif not isinstance(value, dict):
         raise _element_check_error(key, value, obj, dict, additional_message)
     else:
         return _check_mapping_entries(value, key_type, value_type, mapping_type=dict)
@@ -446,10 +430,8 @@ def is_dict(
     value_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
 ) -> Dict:
-    from dagster._utils import frozendict
-
-    if not isinstance(obj, (frozendict, dict)):
-        raise _type_mismatch_error(obj, (frozendict, dict), additional_message)
+    if not isinstance(obj, dict):
+        raise _type_mismatch_error(obj, dict, additional_message)
 
     if not (key_type or value_type):
         return obj
@@ -768,12 +750,8 @@ def list_param(
     of_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
 ) -> List[Any]:
-    from dagster._utils import frozenlist
-
-    if not isinstance(obj, (frozenlist, list)):
-        raise _param_type_mismatch_exception(
-            obj, (frozenlist, list), param_name, additional_message
-        )
+    if not isinstance(obj, list):
+        raise _param_type_mismatch_exception(obj, list, param_name, additional_message)
 
     if not of_type:
         return obj
@@ -793,12 +771,8 @@ def opt_list_param(
     If the of_type argument is provided, also ensures that list items conform to the type specified
     by of_type.
     """
-    from dagster._utils import frozenlist
-
-    if obj is not None and not isinstance(obj, (frozenlist, list)):
-        raise _param_type_mismatch_exception(
-            obj, (frozenlist, list), param_name, additional_message
-        )
+    if obj is not None and not isinstance(obj, list):
+        raise _param_type_mismatch_exception(obj, list, param_name, additional_message)
 
     if not obj:
         return []
@@ -810,7 +784,7 @@ def opt_list_param(
 
 # pyright understands this overload but not mypy
 @overload
-def opt_nullable_list_param(  # type: ignore
+def opt_nullable_list_param(
     obj: None,
     param_name: str,
     of_type: Optional[TypeOrTupleOfTypes] = ...,
@@ -840,12 +814,8 @@ def opt_nullable_list_param(
     If the of_type argument is provided, also ensures that list items conform to the type specified
     by of_type.
     """
-    from dagster._utils import frozenlist
-
-    if obj is not None and not isinstance(obj, (frozenlist, list)):
-        raise _param_type_mismatch_exception(
-            obj, (frozenlist, list), param_name, additional_message
-        )
+    if obj is not None and not isinstance(obj, list):
+        raise _param_type_mismatch_exception(obj, list, param_name, additional_message)
 
     if not obj:
         return None if obj is None else []
@@ -865,7 +835,7 @@ def two_dim_list_param(
     if not obj:
         raise CheckError("You must pass a list of lists. Received an empty list.")
     for sublist in obj:
-        sublist = list_param(
+        list_param(
             sublist, f"sublist_{param_name}", of_type=of_type, additional_message=additional_message
         )
         if len(sublist) != len(obj[0]):
@@ -1014,7 +984,7 @@ def opt_mapping_param(
 
 # pyright understands this overload but not mypy
 @overload
-def opt_nullable_mapping_param(  # type: ignore
+def opt_nullable_mapping_param(
     obj: None,
     param_name: str,
     key_type: Optional[TypeOrTupleOfTypes] = ...,
@@ -1043,7 +1013,7 @@ def opt_nullable_mapping_param(
     additional_message: Optional[str] = None,
 ) -> Optional[Mapping[T, U]]:
     if obj is None:
-        return dict()
+        return None
     else:
         return mapping_param(obj, param_name, key_type, value_type, additional_message)
 
@@ -1269,6 +1239,18 @@ def iterable_param(
     return _check_iterable_items(obj, of_type, "iterable")
 
 
+def opt_iterable_param(
+    obj: Optional[Iterable[T]],
+    param_name: str,
+    of_type: Optional[TypeOrTupleOfTypes] = None,
+    additional_message: Optional[str] = None,
+) -> Optional[Iterable[T]]:
+    if obj is None:
+        return None
+
+    return iterable_param(obj, param_name, of_type, additional_message)
+
+
 # ########################
 # ##### SET
 # ########################
@@ -1446,7 +1428,7 @@ def tuple_param(
     defines a fixed-length tuple type-- each element must match the corresponding element in
     `of_shape`. Passing both `of_type` and `of_shape` will raise an error.
     """
-    if not isinstance(obj, tuple):  # type: ignore
+    if not isinstance(obj, tuple):
         raise _param_type_mismatch_exception(obj, tuple, param_name, additional_message)
 
     if of_type is None and of_shape is None:
@@ -1490,7 +1472,7 @@ def opt_tuple_param(
     """Ensures argument obj is a tuple or None; in the latter case, instantiates an empty tuple
     and returns it.
     """
-    if obj is not None and not isinstance(obj, tuple):  # type: ignore
+    if obj is not None and not isinstance(obj, tuple):
         raise _param_type_mismatch_exception(obj, tuple, param_name, additional_message)
 
     if obj is None:
@@ -1609,6 +1591,51 @@ def _check_tuple_items(
         _check_iterable_items(obj_tuple, of_type, "tuple")
 
     return obj_tuple
+
+
+def tuple_elem(
+    ddict: Mapping,
+    key: str,
+    of_type: Optional[TypeOrTupleOfTypes] = None,
+    additional_message: Optional[str] = None,
+) -> Tuple:
+    dict_param(ddict, "ddict")
+    str_param(key, "key")
+    opt_class_param(of_type, "of_type")
+
+    value = ddict.get(key)
+
+    if isinstance(value, tuple):
+        if not of_type:
+            return value
+
+        return _check_iterable_items(value, of_type, "tuple")
+
+    raise _element_check_error(key, value, ddict, tuple, additional_message)
+
+
+def opt_tuple_elem(
+    ddict: Mapping,
+    key: str,
+    of_type: Optional[TypeOrTupleOfTypes] = None,
+    additional_message: Optional[str] = None,
+) -> Tuple:
+    dict_param(ddict, "ddict")
+    str_param(key, "key")
+    opt_class_param(of_type, "of_type")
+
+    value = ddict.get(key)
+
+    if value is None:
+        return tuple()
+
+    if isinstance(value, tuple):
+        if not of_type:
+            return value
+
+        return _check_iterable_items(value, of_type, "tuple")
+
+    raise _element_check_error(key, value, ddict, tuple, additional_message)
 
 
 # ###################################################################################################

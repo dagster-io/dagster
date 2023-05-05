@@ -26,6 +26,7 @@ import {CompatRouter} from 'react-router-dom-v5-compat';
 import {createGlobalStyle} from 'styled-components/macro';
 import {SubscriptionClient} from 'subscriptions-transport-ws';
 
+import {AssetRunLogObserver} from '../asset-graph/AssetRunLogObserver';
 import {DeploymentStatusProvider, DeploymentStatusType} from '../instance/DeploymentStatusProvider';
 import {InstancePageContext} from '../instance/InstancePageContext';
 import {WorkspaceProvider} from '../workspace/WorkspaceContext';
@@ -38,7 +39,7 @@ import {PermissionsProvider} from './Permissions';
 import {patchCopyToRemoveZeroWidthUnderscores} from './Util';
 import {WebSocketProvider} from './WebSocketProvider';
 import {AnalyticsContext, dummyAnalytics} from './analytics';
-import {TimezoneProvider} from './time/TimezoneContext';
+import {TimeProvider} from './time/TimeContext';
 
 import './blueprint.css';
 
@@ -95,6 +96,7 @@ const GlobalStyle = createGlobalStyle`
 `;
 
 export interface AppProviderProps {
+  children: React.ReactNode;
   appCache: InMemoryCache;
   config: {
     apolloLinks: ApolloLink[];
@@ -103,7 +105,7 @@ export interface AppProviderProps {
     origin: string;
     staticPathRoot?: string;
     telemetryEnabled?: boolean;
-    statusPolling?: Set<DeploymentStatusType>;
+    statusPolling: Set<DeploymentStatusType>;
   };
 }
 
@@ -177,12 +179,6 @@ export const AppProvider: React.FC<AppProviderProps> = (props) => {
     [],
   );
 
-  // todo dish: Make `statusPolling` non-optional once Cloud defines it.
-  const deploymentStatuses = React.useMemo(
-    () => statusPolling || new Set<DeploymentStatusType>(['code-locations']),
-    [statusPolling],
-  );
-
   return (
     <AppContext.Provider value={appContextValue}>
       <WebSocketProvider websocketClient={websocketClient}>
@@ -198,9 +194,9 @@ export const AppProvider: React.FC<AppProviderProps> = (props) => {
           <PermissionsProvider>
             <BrowserRouter basename={basePath || ''}>
               <CompatRouter>
-                <TimezoneProvider>
+                <TimeProvider>
                   <WorkspaceProvider>
-                    <DeploymentStatusProvider include={deploymentStatuses}>
+                    <DeploymentStatusProvider include={statusPolling}>
                       <CustomConfirmationProvider>
                         <AnalyticsContext.Provider value={analytics}>
                           <InstancePageContext.Provider value={instancePageValue}>
@@ -210,9 +206,10 @@ export const AppProvider: React.FC<AppProviderProps> = (props) => {
                       </CustomConfirmationProvider>
                       <CustomTooltipProvider />
                       <CustomAlertProvider />
+                      <AssetRunLogObserver />
                     </DeploymentStatusProvider>
                   </WorkspaceProvider>
-                </TimezoneProvider>
+                </TimeProvider>
               </CompatRouter>
             </BrowserRouter>
           </PermissionsProvider>

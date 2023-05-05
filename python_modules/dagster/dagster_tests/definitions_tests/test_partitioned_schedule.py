@@ -2,9 +2,21 @@ from datetime import datetime
 from typing import cast
 
 import pendulum
-from dagster import build_schedule_context, graph, op, repository
+import pytest
+from dagster import (
+    DagsterInvalidDefinitionError,
+    asset,
+    build_schedule_context,
+    define_asset_job,
+    graph,
+    op,
+    repository,
+)
+from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
+from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.definitions.partitioned_schedule import build_schedule_from_partitioned_job
 from dagster._core.definitions.time_window_partitions import (
+    DailyPartitionsDefinition,
     TimeWindow,
     daily_partitioned_config,
     hourly_partitioned_config,
@@ -50,8 +62,11 @@ def test_daily_schedule():
     assert keys[0] == "2021-05-05"
     assert keys[1] == "2021-05-06"
 
-    partitions = my_partitioned_config.partitions_def.get_partitions()
-    assert partitions[0].value == time_window("2021-05-05", "2021-05-06")
+    partitions_def = my_partitioned_config.partitions_def
+    partition_keys = partitions_def.get_partition_keys()
+    assert partitions_def.time_window_for_partition_key(partition_keys[0]) == time_window(
+        "2021-05-05", "2021-05-06"
+    )
 
     assert my_partitioned_config.get_run_config_for_partition_key(keys[0]) == {
         "start": "2021-05-05T00:00:00+00:00",
@@ -88,8 +103,9 @@ def test_daily_schedule_with_offsets():
     assert keys[0] == "2021-05-05"
     assert keys[1] == "2021-05-06"
 
-    partitions = my_partitioned_config.partitions_def.get_partitions()
-    assert partitions[0].value == time_window("2021-05-05T02:15:00", "2021-05-06T02:15:00")
+    assert my_partitioned_config.partitions_def.time_window_for_partition_key(
+        keys[0]
+    ) == time_window("2021-05-05T02:15:00", "2021-05-06T02:15:00")
 
     assert my_partitioned_config.get_run_config_for_partition_key(keys[0]) == {
         "start": "2021-05-05T02:15:00+00:00",
@@ -125,8 +141,9 @@ def test_hourly_schedule():
     assert keys[0] == "2021-05-05-00:00"
     assert keys[1] == "2021-05-05-01:00"
 
-    partitions = my_partitioned_config.partitions_def.get_partitions()
-    assert partitions[0].value == time_window("2021-05-05T00:00:00", "2021-05-05T01:00:00")
+    assert my_partitioned_config.partitions_def.time_window_for_partition_key(
+        keys[0]
+    ) == time_window("2021-05-05T00:00:00", "2021-05-05T01:00:00")
 
     assert my_partitioned_config.get_run_config_for_partition_key(keys[0]) == {
         "start": "2021-05-05T00:00:00+00:00",
@@ -161,9 +178,9 @@ def test_hourly_schedule_with_offsets():
     keys = my_partitioned_config.get_partition_keys()
     assert keys[0] == "2021-05-05-00:20"
     assert keys[1] == "2021-05-05-01:20"
-
-    partitions = my_partitioned_config.partitions_def.get_partitions()
-    assert partitions[0].value == time_window("2021-05-05T00:20:00", "2021-05-05T01:20:00")
+    assert my_partitioned_config.partitions_def.time_window_for_partition_key(
+        keys[0]
+    ) == time_window("2021-05-05T00:20:00", "2021-05-05T01:20:00")
 
     assert my_partitioned_config.get_run_config_for_partition_key(keys[0]) == {
         "start": "2021-05-05T00:20:00+00:00",
@@ -195,9 +212,9 @@ def test_weekly_schedule():
     keys = my_partitioned_config.get_partition_keys()
     assert keys[0] == "2021-05-09"
     assert keys[1] == "2021-05-16"
-
-    partitions = my_partitioned_config.partitions_def.get_partitions()
-    assert partitions[0].value == time_window("2021-05-09", "2021-05-16")
+    assert my_partitioned_config.partitions_def.time_window_for_partition_key(
+        keys[0]
+    ) == time_window("2021-05-09", "2021-05-16")
 
     assert my_partitioned_config.get_run_config_for_partition_key(keys[0]) == {
         "start": "2021-05-09T00:00:00+00:00",
@@ -233,9 +250,9 @@ def test_weekly_schedule_with_offsets():
     keys = my_partitioned_config.get_partition_keys()
     assert keys[0] == "2021-05-05"
     assert keys[1] == "2021-05-12"
-
-    partitions = my_partitioned_config.partitions_def.get_partitions()
-    assert partitions[0].value == time_window("2021-05-05T13:10:00", "2021-05-12T13:10:00")
+    assert my_partitioned_config.partitions_def.time_window_for_partition_key(
+        keys[0]
+    ) == time_window("2021-05-05T13:10:00", "2021-05-12T13:10:00")
 
     assert my_partitioned_config.get_run_config_for_partition_key(keys[0]) == {
         "start": "2021-05-05T13:10:00+00:00",
@@ -269,9 +286,9 @@ def test_monthly_schedule():
     keys = my_partitioned_config.get_partition_keys()
     assert keys[0] == "2021-06-01"
     assert keys[1] == "2021-07-01"
-
-    partitions = my_partitioned_config.partitions_def.get_partitions()
-    assert partitions[0].value == time_window("2021-06-01", "2021-07-01")
+    assert my_partitioned_config.partitions_def.time_window_for_partition_key(
+        keys[0]
+    ) == time_window("2021-06-01", "2021-07-01")
 
     assert my_partitioned_config.get_run_config_for_partition_key(keys[0]) == {
         "start": "2021-06-01T00:00:00+00:00",
@@ -307,9 +324,9 @@ def test_monthly_schedule_with_offsets():
     keys = my_partitioned_config.get_partition_keys()
     assert keys[0] == "2021-05-12"
     assert keys[1] == "2021-06-12"
-
-    partitions = my_partitioned_config.partitions_def.get_partitions()
-    assert partitions[0].value == time_window("2021-05-12T16:15:00", "2021-06-12T16:15:00")
+    assert my_partitioned_config.partitions_def.time_window_for_partition_key(
+        keys[0]
+    ) == time_window("2021-05-12T16:15:00", "2021-06-12T16:15:00")
 
     assert my_partitioned_config.get_run_config_for_partition_key(keys[0]) == {
         "start": "2021-05-12T16:15:00+00:00",
@@ -354,3 +371,108 @@ def test_empty_partitions():
 
     assert len(result.run_requests) == 0
     assert result.skip_message is not None
+
+
+def test_future_tick():
+    with pendulum.test(pendulum.parse("2022-02-28")):
+
+        @daily_partitioned_config(start_date="2021-05-05")
+        def my_partitioned_config(start, end):
+            return {"start": str(start), "end": str(end)}
+
+        my_schedule = schedule_for_partitioned_config(my_partitioned_config)
+
+        run_request = my_schedule.evaluate_tick(
+            build_schedule_context(
+                scheduled_execution_time=datetime.strptime("2022-03-05", DATE_FORMAT)
+            )
+        ).run_requests[0]
+        assert run_request.run_config == {
+            "start": "2022-03-04T00:00:00+00:00",
+            "end": "2022-03-05T00:00:00+00:00",
+        }
+        assert run_request.tags["test_tag_key"] == "test_tag_value"
+
+
+def test_multipartitioned_job_schedule():
+    time_window_partitions = DailyPartitionsDefinition(start_date="2020-01-01")
+    static_partitions = StaticPartitionsDefinition(["a", "b", "c", "d"])
+    multipartitions_def = MultiPartitionsDefinition(
+        {
+            "static": static_partitions,
+            "date": time_window_partitions,
+        }
+    )
+
+    @asset(partitions_def=multipartitions_def)
+    def my_asset():
+        return 1
+
+    my_job = define_asset_job("multipartitions_job", [my_asset], partitions_def=multipartitions_def)
+    my_schedule = build_schedule_from_partitioned_job(my_job)
+
+    @repository
+    def my_repo():
+        return [my_asset, my_schedule, my_job]
+
+    run_requests = my_schedule.evaluate_tick(
+        build_schedule_context(
+            scheduled_execution_time=datetime.strptime("2020-01-02", DATE_FORMAT),
+            repository_def=my_repo,
+        )
+    ).run_requests
+    assert len(run_requests) == 4
+    assert set([req.partition_key for req in run_requests]) == set(
+        [
+            "2020-01-01|a",
+            "2020-01-01|b",
+            "2020-01-01|c",
+            "2020-01-01|d",
+        ]
+    )
+
+
+def test_invalid_multipartitioned_job_schedule():
+    static_partitions = StaticPartitionsDefinition(["a", "b", "c", "d"])
+    multipartitions_def = MultiPartitionsDefinition(
+        {
+            "1": static_partitions,
+            "2": static_partitions,
+        }
+    )
+
+    @asset(partitions_def=multipartitions_def)
+    def my_asset():
+        return 1
+
+    with pytest.raises(DagsterInvalidDefinitionError):
+        build_schedule_from_partitioned_job(
+            define_asset_job("multipartitions_job", [my_asset], partitions_def=multipartitions_def)
+        )
+
+
+def test_unresolved_partitioned_schedule():
+    partitions_def = DailyPartitionsDefinition(start_date="2020-01-01")
+
+    @asset(partitions_def=partitions_def)
+    def asset1():
+        return 1
+
+    job1 = define_asset_job("job1")
+    schedule1 = build_schedule_from_partitioned_job(job1)
+
+    @repository
+    def my_repo():
+        return [asset1, job1, schedule1]
+
+    run_requests = (
+        my_repo.get_schedule_def("job1_schedule")
+        .evaluate_tick(
+            build_schedule_context(
+                scheduled_execution_time=datetime.strptime("2020-01-02", DATE_FORMAT)
+            )
+        )
+        .run_requests
+    )
+    assert len(run_requests) == 1
+    assert run_requests[0].partition_key == "2020-01-01"

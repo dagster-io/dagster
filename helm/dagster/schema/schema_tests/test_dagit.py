@@ -28,6 +28,16 @@ def service_helm_template() -> HelmTemplate:
     )
 
 
+@pytest.fixture(name="configmap_template")
+def configmap_helm_template() -> HelmTemplate:
+    return HelmTemplate(
+        helm_dir_path="helm/dagster",
+        subchart_paths=["charts/dagster-user-deployments"],
+        output="templates/configmap-env-dagit.yaml",
+        model=models.V1ConfigMap,
+    )
+
+
 @pytest.mark.parametrize(
     "service_port",
     [
@@ -167,6 +177,18 @@ def test_dagit_name_override(deployment_template, name_override):
     deployment_name = dagit_deployments[0].metadata.name
 
     assert deployment_name == f"{deployment_template.release_name}-{name_override}"
+
+
+@pytest.mark.parametrize("path_prefix", ["dagit", "some-path"])
+def test_dagit_path_prefix(deployment_template, path_prefix):
+    helm_values = DagsterHelmValues.construct(dagit=Dagit.construct(pathPrefix=path_prefix))
+    dagit_deployments = deployment_template.render(helm_values)
+
+    assert len(dagit_deployments) == 1
+
+    command = " ".join(dagit_deployments[0].spec.template.spec.containers[0].command)
+
+    assert f"--path-prefix {path_prefix}" in command
 
 
 def test_dagit_service(service_template):
@@ -347,3 +369,62 @@ def test_dagit_security_context(deployment_template: HelmTemplate):
         )
         for container in dagit_deployment.spec.template.spec.init_containers
     )
+
+
+def test_env(deployment_template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(dagit=Dagit.construct())
+    [daemon_deployment] = deployment_template.render(helm_values)
+
+    assert len(daemon_deployment.spec.template.spec.containers[0].env) == 1
+
+    helm_values = DagsterHelmValues.construct(
+        dagit=Dagit.construct(
+            env=[
+                {"name": "TEST_ENV", "value": "test_value"},
+            ]
+        )
+    )
+    [daemon_deployment] = deployment_template.render(helm_values)
+
+    assert len(daemon_deployment.spec.template.spec.containers[0].env) == 2
+    assert daemon_deployment.spec.template.spec.containers[0].env[1].name == "TEST_ENV"
+    assert daemon_deployment.spec.template.spec.containers[0].env[1].value == "test_value"
+
+    # env dict doesn't get written to deployment
+    helm_values = DagsterHelmValues.construct(
+        dagit=Dagit.construct(
+            env={"TEST_ENV": "test_value"},
+        )
+    )
+    [daemon_deployment] = deployment_template.render(helm_values)
+    assert len(daemon_deployment.spec.template.spec.containers[0].env) == 1
+
+
+def test_env_configmap(configmap_template):
+    # env list doesn't get rendered into configmap
+    helm_values = DagsterHelmValues.construct(
+        dagit=Dagit.construct(
+            env=[
+                {"name": "TEST_ENV", "value": "test_value"},
+                {
+                    "name": "TEST_ENV_FROM",
+                    "valueFrom": {"fieldRef": {"fieldPath": "metadata.uid", "apiVersion": "v1"}},
+                },
+            ]
+        )
+    )
+    [cm] = configmap_template.render(helm_values)
+    assert len(cm.data) == 7
+    assert cm.data["DAGSTER_HOME"] == "/opt/dagster/dagster_home"
+    assert "TEST_ENV" not in cm.data
+
+    # env dict gets rendered into configmap
+    helm_values = DagsterHelmValues.construct(
+        dagit=Dagit.construct(
+            env={"TEST_ENV": "test_value"},
+        )
+    )
+    [cm] = configmap_template.render(helm_values)
+    assert len(cm.data) == 8
+    assert cm.data["DAGSTER_HOME"] == "/opt/dagster/dagster_home"
+    assert cm.data["TEST_ENV"] == "test_value"

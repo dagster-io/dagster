@@ -1,0 +1,46 @@
+### Requirements: alt-1
+#
+# This file defines the dependencies for an alternative pyright environment. The packages listed in
+# this file will not be present in the environment that pyright/pylance will use by default when
+# running as a language server.
+#
+# NOTE: It is important that dagster-* dependencies of any package listed here are also listed.
+# e.g. if examples/foo depends on python_modules/libraries/dagster-foo, then dagster-foo must be
+# listed if examples/foo is listed.
+#
+# NOTE: Paths are relative to repo root.
+
+### examples/assets_smoke_test
+# -e examples/assets_smoke_test
+#   -e python_modules/dagster[pyright,test]
+#   -e python_modules/dagit
+#   -e python_modules/dagster-graphql
+#   -e python_modules/libraries/dagster-pandas/
+#   -e python_modules/libraries/dagster-dbt/
+#   -e python_modules/libraries/dagster-snowflake/
+#   -e python_modules/libraries/dagster-snowflake-pandas/
+
+### examples/assets_pandas_type_metadata
+-e examples/assets_pandas_type_metadata
+  -e python_modules/dagster[pyright,test]
+  -e python_modules/dagit
+  -e python_modules/dagster-graphql
+  -e python_modules/libraries/dagster-pandera/
+
+### examples/project_fully_featured (and experimental version)
+-e examples/project_fully_featured[tests]
+  -e python_modules/dagster[pyright,test]
+  -e python_modules/dagit
+  -e python_modules/dagster-graphql
+  -e python_modules/libraries/dagster-aws/
+  -e python_modules/libraries/dagster-dbt/
+  -e python_modules/libraries/dagster-duckdb-pandas/
+    -e python_modules/libraries/dagster-duckdb/
+    -e python_modules/libraries/dagster-duckdb-pyspark/
+  -e python_modules/libraries/dagster-postgres/
+  -e python_modules/libraries/dagster-pyspark/
+  -e python_modules/libraries/dagster-slack/
+  -e python_modules/libraries/dagster-spark/
+  -e python_modules/libraries/dagster-snowflake/
+    -e python_modules/libraries/dagster-snowflake-pandas/
+    -e python_modules/libraries/dagster-snowflake-pyspark/

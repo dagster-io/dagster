@@ -1,7 +1,10 @@
 import pytest
-from dagster import DailyPartitionsDefinition, StaticPartitionsDefinition
+from dagster import DailyPartitionsDefinition, MultiPartitionsDefinition, StaticPartitionsDefinition
+from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsSubset
 from dagster._core.definitions.partition import DefaultPartitionsSubset
-from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsSubset
+from dagster._core.definitions.time_window_partitions import (
+    TimeWindowPartitionsSubset,
+)
 from dagster._core.errors import DagsterInvalidDeserializationVersionError
 
 
@@ -58,3 +61,20 @@ def test_time_window_subset_cannot_deserialize_invalid_version():
 
     with pytest.raises(DagsterInvalidDeserializationVersionError, match="version -2"):
         NewSerializationVersionSubset.from_serialized(daily_partitions_def, serialized_subset)
+
+
+time_window_partitions = DailyPartitionsDefinition(start_date="2021-05-05")
+static_partitions = StaticPartitionsDefinition(["a", "b", "c"])
+composite = MultiPartitionsDefinition({"date": time_window_partitions, "abc": static_partitions})
+
+
+def test_get_subset_type():
+    assert composite.__class__.__name__ == MultiPartitionsDefinition.__name__
+    assert static_partitions.__class__.__name__ == StaticPartitionsDefinition.__name__
+    assert time_window_partitions.__class__.__name__ == DailyPartitionsDefinition.__name__
+
+
+def test_empty_subsets():
+    assert type(composite.empty_subset()) is MultiPartitionsSubset
+    assert type(static_partitions.empty_subset()) is DefaultPartitionsSubset
+    assert type(time_window_partitions.empty_subset()) is TimeWindowPartitionsSubset

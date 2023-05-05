@@ -52,6 +52,7 @@ const OverflowButton = styled.button`
 
 export class CellTruncationProvider extends React.Component<
   {
+    children: React.ReactNode;
     style: React.CSSProperties;
     onExpand?: () => void;
     forceExpandability?: boolean;
@@ -80,7 +81,8 @@ export class CellTruncationProvider extends React.Component<
       return;
     }
 
-    const isOverflowing = child.scrollHeight > this.props.style.height!;
+    const isOverflowing =
+      typeof this.props.style.height === 'number' && child.scrollHeight > this.props.style.height;
     if (isOverflowing !== this.state.isOverflowing) {
       this.setState({isOverflowing});
     }

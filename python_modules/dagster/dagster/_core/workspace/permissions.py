@@ -9,6 +9,7 @@ class Permissions(str, Enum):
     START_SCHEDULE = "start_schedule"
     STOP_RUNNING_SCHEDULE = "stop_running_schedule"
     EDIT_SENSOR = "edit_sensor"
+    UPDATE_SENSOR_CURSOR = "update_sensor_cursor"
     TERMINATE_PIPELINE_EXECUTION = "terminate_pipeline_execution"
     DELETE_PIPELINE_RUN = "delete_pipeline_run"
     RELOAD_REPOSITORY_LOCATION = "reload_repository_location"
@@ -16,6 +17,8 @@ class Permissions(str, Enum):
     WIPE_ASSETS = "wipe_assets"
     LAUNCH_PARTITION_BACKFILL = "launch_partition_backfill"
     CANCEL_PARTITION_BACKFILL = "cancel_partition_backfill"
+    EDIT_DYNAMIC_PARTITIONS = "edit_dynamic_partitions"
+    TOGGLE_AUTO_MATERIALIZE = "toggle_auto_materialize"
 
     def __str__(self) -> str:
         return str.__str__(self)
@@ -27,6 +30,7 @@ VIEWER_PERMISSIONS: Dict[str, bool] = {
     Permissions.START_SCHEDULE: False,
     Permissions.STOP_RUNNING_SCHEDULE: False,
     Permissions.EDIT_SENSOR: False,
+    Permissions.UPDATE_SENSOR_CURSOR: False,
     Permissions.TERMINATE_PIPELINE_EXECUTION: False,
     Permissions.DELETE_PIPELINE_RUN: False,
     Permissions.RELOAD_REPOSITORY_LOCATION: False,
@@ -34,6 +38,8 @@ VIEWER_PERMISSIONS: Dict[str, bool] = {
     Permissions.WIPE_ASSETS: False,
     Permissions.LAUNCH_PARTITION_BACKFILL: False,
     Permissions.CANCEL_PARTITION_BACKFILL: False,
+    Permissions.EDIT_DYNAMIC_PARTITIONS: False,
+    Permissions.TOGGLE_AUTO_MATERIALIZE: False,
 }
 
 EDITOR_PERMISSIONS: Dict[str, bool] = {
@@ -42,6 +48,7 @@ EDITOR_PERMISSIONS: Dict[str, bool] = {
     Permissions.START_SCHEDULE: True,
     Permissions.STOP_RUNNING_SCHEDULE: True,
     Permissions.EDIT_SENSOR: True,
+    Permissions.UPDATE_SENSOR_CURSOR: True,
     Permissions.TERMINATE_PIPELINE_EXECUTION: True,
     Permissions.DELETE_PIPELINE_RUN: True,
     Permissions.RELOAD_REPOSITORY_LOCATION: True,
@@ -49,6 +56,8 @@ EDITOR_PERMISSIONS: Dict[str, bool] = {
     Permissions.WIPE_ASSETS: True,
     Permissions.LAUNCH_PARTITION_BACKFILL: True,
     Permissions.CANCEL_PARTITION_BACKFILL: True,
+    Permissions.EDIT_DYNAMIC_PARTITIONS: True,
+    Permissions.TOGGLE_AUTO_MATERIALIZE: True,
 }
 
 LOCATION_SCOPED_PERMISSIONS = {
@@ -57,11 +66,13 @@ LOCATION_SCOPED_PERMISSIONS = {
     Permissions.START_SCHEDULE,
     Permissions.STOP_RUNNING_SCHEDULE,
     Permissions.EDIT_SENSOR,
+    Permissions.UPDATE_SENSOR_CURSOR,
     Permissions.TERMINATE_PIPELINE_EXECUTION,
     Permissions.DELETE_PIPELINE_RUN,
     Permissions.RELOAD_REPOSITORY_LOCATION,
     Permissions.LAUNCH_PARTITION_BACKFILL,
     Permissions.CANCEL_PARTITION_BACKFILL,
+    Permissions.EDIT_DYNAMIC_PARTITIONS,
 }
 
 

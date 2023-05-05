@@ -1,21 +1,30 @@
 from itertools import chain
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional, Union
 
 import dagster._check as check
 from dagster._core.definitions.instigation_logger import get_instigation_log_records
 from dagster._core.definitions.run_request import InstigatorType
-from dagster._core.host_representation import InstigatorSelector
+from dagster._core.definitions.selector import InstigatorSelector
 from dagster._core.log_manager import DAGSTER_META_KEY
 from dagster._core.scheduler.instigation import InstigatorStatus
 
 from .utils import capture_error
 
 if TYPE_CHECKING:
-    from dagster_graphql.schema.util import HasContext
+    from dagster_graphql.schema.util import ResolveInfo
+
+    from ..schema.instigation import (
+        GrapheneInstigationEventConnection,
+        GrapheneInstigationState,
+        GrapheneInstigationStateNotFoundError,
+        GrapheneInstigationStates,
+    )
 
 
 @capture_error
-def get_unloadable_instigator_states_or_error(graphene_info: "HasContext", instigator_type=None):
+def get_unloadable_instigator_states_or_error(
+    graphene_info: "ResolveInfo", instigator_type: Optional[InstigatorType] = None
+) -> "GrapheneInstigationStates":
     from ..schema.instigation import GrapheneInstigationState, GrapheneInstigationStates
 
     check.opt_inst_param(instigator_type, "instigator_type", InstigatorType)
@@ -24,17 +33,14 @@ def get_unloadable_instigator_states_or_error(graphene_info: "HasContext", insti
     )
     external_instigators = [
         instigator
-        for repository_location in graphene_info.context.repository_locations
+        for repository_location in graphene_info.context.code_locations
         for repository in repository_location.get_repositories().values()
         for instigator in chain(
             repository.get_external_schedules(), repository.get_external_sensors()
         )
     ]
 
-    instigator_selector_ids = {
-        instigator.selector_id  # type: ignore # mypy getting confused by chain
-        for instigator in external_instigators
-    }
+    instigator_selector_ids = {instigator.selector_id for instigator in external_instigators}
     unloadable_states = [
         instigator_state
         for instigator_state in instigator_states
@@ -51,11 +57,13 @@ def get_unloadable_instigator_states_or_error(graphene_info: "HasContext", insti
 
 
 @capture_error
-def get_instigator_state_or_error(graphene_info, selector):
+def get_instigator_state_or_error(
+    graphene_info: "ResolveInfo", selector: InstigatorSelector
+) -> Union["GrapheneInstigationState", "GrapheneInstigationStateNotFoundError"]:
     from ..schema.instigation import GrapheneInstigationState, GrapheneInstigationStateNotFoundError
 
     check.inst_param(selector, "selector", InstigatorSelector)
-    location = graphene_info.context.get_repository_location(selector.location_name)
+    location = graphene_info.context.get_code_location(selector.location_name)
     repository = location.get_repository(selector.repository_name)
 
     if repository.has_external_sensor(selector.name):
@@ -78,7 +86,7 @@ def get_instigator_state_or_error(graphene_info, selector):
     return GrapheneInstigationState(current_state)
 
 
-def get_tick_log_events(graphene_info, tick):
+def get_tick_log_events(graphene_info: "ResolveInfo", tick) -> "GrapheneInstigationEventConnection":
     from ..schema.instigation import GrapheneInstigationEvent, GrapheneInstigationEventConnection
     from ..schema.logs.log_level import GrapheneLogLevel
 

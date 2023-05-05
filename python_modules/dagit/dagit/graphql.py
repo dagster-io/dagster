@@ -4,7 +4,9 @@ from enum import Enum
 from typing import Any, AsyncGenerator, Dict, List, Optional, Sequence, Tuple, Union, cast
 
 import dagster._check as check
+from dagster._serdes import pack_value
 from dagster._seven import json
+from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster_graphql.implementation.utils import ErrorCapture
 from graphene import Schema
 from graphql import GraphQLError, GraphQLFormattedError
@@ -66,13 +68,32 @@ class GraphQLServer(ABC):
         ...
 
     def handle_graphql_errors(self, errors: Sequence[GraphQLError]):
-        return [err.formatted for err in errors]
+        results = []
+        for err in errors:
+            fmtd = err.formatted
+            if err.original_error and err.original_error.__traceback__:
+                serializable_error = serializable_error_info_from_exc_info(
+                    exc_info=(
+                        type(err.original_error),
+                        err.original_error,
+                        err.original_error.__traceback__,
+                    )
+                )
+                fmtd["extensions"] = {
+                    **fmtd.get("extensions", {}),
+                    "errorInfo": pack_value(serializable_error),
+                }
+
+            results.append(fmtd)
+
+        return results
 
     async def graphql_http_endpoint(self, request: Request):
-        """
-        fork of starlette GraphQLApp to allow for
-            * our context type (crucial)
-            * our GraphiQL playground (could change).
+        """Fork of starlette GraphQLApp.
+
+        Allows for:
+        * our context type (crucial)
+        * our GraphiQL playground (could change).
         """
         if request.method == "GET":
             # render graphiql
@@ -144,8 +165,7 @@ class GraphQLServer(ABC):
         )
 
     async def graphql_ws_endpoint(self, websocket: WebSocket):
-        """
-        Implementation of websocket ASGI endpoint for GraphQL.
+        """Implementation of websocket ASGI endpoint for GraphQL.
         Once we are free of conflicting deps, we should be able to use an impl from
         strawberry-graphql or the like.
         """

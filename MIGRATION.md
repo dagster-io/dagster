@@ -2,6 +2,108 @@
 
 When new releases include breaking changes or deprecations, this document describes how to migrate.
 
+## Migrating to 1.3.0
+
+### Deprecations
+
+- **[deprecation, 1.4.0]** `build_asset_reconciliation_sensor`, which was experimental, is now deprecated, in favor of setting `AutoMaterializePolicy` on assets. Refer to the docs on `AutoMaterializePolicy` for how this works: [https://docs.dagster.io/concepts/assets/asset-auto-execution](https://docs.dagster.io/concepts/assets/asset-auto-execution).
+- **[deprecation, 2.0.0]** Previously, the recommended pattern for creating a run request for a given partition of a job within a sensor was `yield job_def.run_request_for_partition(partition_key="...")`. This has been deprecated, in favor of `yield RunRequest(partition_key="...")`.
+
+### Breaking Changes
+
+- By default, resources defined on `Definitions` are now automatically bound to jobs. This will only result in a change in behavior if you a) have a job with no "io_manager" defined in its `resource_defs` and b) have supplied an `IOManager` with key "io_manager" to the `resource_defs` argument of your `Definitions`. Prior to 1.3.0, this would result in the job using the default filesystem-based `IOManager` for the key "io_manager". In 1.3.0, this will result in the "io_manager" supplied to your `Definitions` being used instead. The `BindResourcesToJobs` wrapper, introduced in 1.2 to simulate this behavior, no longer has any effect.
+- **[experimental]** The `minutes_late` and `previous_minutes_late` properties on the experimental `FreshnesPolicySensorContext` have been renamed to `minutes_overdue` and `previous_minutes_overdue`, respectively.
+- **[previously deprecated, 0.15.0]** The `metadata_entries` arguments to user-constructed events (`AssetObservation`,  `AssetMaterialization`,  `ExpectationResult`,  `TypeCheck`,  `Failure`,  `Output`,  `DynamicOutput`), as well as the `DagsterType` object have been removed. Instead, a dictionary of metadata should be passed into the `metadata` argument.
+- **[dagster-celery-k8s]** The default kubernetes namespace for run pods when using the Dagster Helm chart with the `CeleryK8sRunLauncher` is now the same namespace as the Helm chart, instead of the `default` namespace. To restore the previous behavior, you can set the `celeryK8sRunLauncher.jobNamespace` field to the string `default`.
+- **[dagster-snowflake-pandas]** Prior to `dagster-snowflake` version `0.19.0` the Snowflake I/O manager converted all timestamp data to strings before loading the data in Snowflake, and did the opposite conversion when fetching a DataFrame from Snowflake. The I/O manager now ensures timestamp data has a timezone attached and stores the data as TIMESTAMP_NTZ(9) type. If you used the Snowflake I/O manager prior to version `0.19.0` you can set the `store_timestamps_as_strings=True` configuration value for the Snowflake I/O manager to continue storing time data as strings while you do table migrations.
+
+To migrate a table created prior to `0.19.0` to one with a TIMESTAMP_NTZ(9) type, you can run the follow SQL queries in Snowflake. In the example, our table is located at `database.schema.table` and the column we want to migrate is called `time`:
+
+```sql
+
+// Add a column of type TIMESTAMP_NTZ(9)
+ALTER TABLE database.schema.table
+ADD COLUMN time_copy TIMESTAMP_NTZ(9)
+
+// copy the data from time and convert to timestamp data
+UPDATE database.schema.table
+SET time_copy = to_timestamp_ntz(time)
+
+// drop the time column
+ALTER TABLE database.schema.table
+DROP COLUMN time
+
+// rename the time_copy column to time
+ALTER TABLER database.schema.table
+RENAME COLUMN time_copy TO time
+
+```
+
+## Migrating to 1.2.0
+
+### Database migration
+
+1.2.0 adds a set of optional database schema migrations, which can be run via `dagster instance migrate`:
+
+- Improves Dagit performance by adding a database index which should speed up job run views.
+- Enables dynamic partitions definitions by creating a database table to store partition keys. This feature is experimental and may require future migrations.
+- Adds a primary key `id` column to the `kvs`, `daemon_heartbeats` and `instance_info` tables, enforcing that all tables have a primary key.
+
+### Breaking changes
+
+#### Core changes
+
+- The minimum `grpcio` version supported by Dagster has been increased to 1.44.0 so that Dagster can support both `protobuf` 3 and `protobuf` 4. Similarly, the minimum `protobuf` version supported by Dagster has been increased to 3.20.0. We are working closely with the gRPC team on resolving the upstream issues keeping the upper-bound `grpcio` pin in place in Dagster, and hope to be able to remove it very soon.
+- Prior to 0.9.19, asset keys were serialized in a legacy format. This release removes support for querying asset events serialized with this legacy format. Contact #dagster-support for tooling to migrate legacy events to the supported version. Users who began using assets after 0.9.19 will not be affected by this change.
+
+#### Changes to experimental APIs
+
+- [experimental] `LogicalVersion` has been renamed to `DataVersion` and `LogicalVersionProvenance` has been renamed to `DataProvenance`.
+- [experimental] Methods on the experimental `DynamicPartitionsDefinition` to add, remove, and check for existence of partitions have been removed. Refer to documentation for updated API methods.
+
+#### Removal of deprecated APIs
+
+- [previously deprecated, 0.15.0] Static constructors on `MetadataEntry` have been removed.
+- [previously deprecated, 1.0.0] `DagsterTypeMaterializer`, `DagsterTypeMaterializerContext`, and `@dagster_type_materializer` have been removed.
+- [previously deprecated, 1.0.0] `PartitionScheduleDefinition` has been removed.
+- [previously deprecated, 1.0.0] `RunRecord.pipeline_run` has been removed (use `RunRecord.dagster_run`).
+- [previously deprecated, 1.0.0] `DependencyDefinition.solid` has been removed (use `DependencyDefinition.node`).
+- [previously deprecated, 1.0.0] The `pipeline_run` argument to `build_resources` has been removed (use `dagster_run`)
+
+#### Extension Libraries
+
+- [dagster-snowflake] The `execute_query`and `execute_queries` methods of the `SnowflakeResource` now have consistent behavior based on the values of the `fetch_results` and `use_pandas_result` parameters. If `fetch_results` is True, the standard Snowflake result will be returned. If `fetch_results` and `use_pandas_result` are True, a pandas DataFrame will be returned. If `fetch_results` is False and `use_pandas_result` is True, an error will be raised. If both are False, no result will be returned.
+- [dagster-snowflake] The `execute_queries` command now returns a list of DataFrames when `use_pandas_result` is True, rather than appending the results of each query to a single DataFrame.
+- [dagster-shell] The default behavior of the `execute` and `execute_shell_command` functions is now to include any environment variables in the calling op. To restore the previous behavior, you can pass in `env={}` to these functions.
+- [dagster-k8s] Several Dagster features that were previously disabled by default in the Dagster Helm chart are now enabled by default. These features are:
+
+  - The [run queue](https://docs.dagster.io/deployment/run-coordinator#limiting-run-concurrency) (by default, without a limit). Runs will now always be launched from the Daemon.
+  - Run queue parallelism - by default, up to 4 runs can now be pulled off of the queue at a time (as long as the global run limit or tag-based concurrency limits are not exceeded).
+  - [Run retries](https://docs.dagster.io/deployment/run-retries#run-retries) - runs will now retry if they have the `dagster/max_retries` tag set. You can configure a global number of retries in the Helm chart by setting `run_retries.max_retries` to a value greater than the default of 0.
+  - Schedule and sensor parallelism - by default, the daemon will now run up to 4 sensors and up to 4 schedules in parallel.
+  - [Run monitoring](https://docs.dagster.io/deployment/run-monitoring) - Dagster will detect hanging runs and move them into a FAILURE state for you (or start a retry for you if the run is configured to allow retries). By default, runs that have been in STARTING for more than 5 minutes will be assumed to be hanging and will be terminated.
+
+  Each of these features can be disabled in the Helm chart to restore the previous behavior.
+
+- [dagster-k8s] The experimental `[k8s_job_op](https://docs.dagster.io/_apidocs/libraries/dagster-k8s#dagster_k8s.k8s_job_op)` op and `[execute_k8s_job](https://docs.dagster.io/_apidocs/libraries/dagster-k8s#dagster_k8s.execute_k8s_job)` functions no longer automatically include configuration from a `dagster-k8s/config` tag on the Dagster job in the launched Kubernetes job. To include raw Kubernetes configuration in a `k8s_job_op`, you can set the `container_config`, `pod_template_spec_metadata`, `pod_spec_config`, or `job_metadata` config fields on the `k8s_job_op` (or arguments to the `execute_k8s_job` function).
+- [dagster-databricks] The integration has now been refactored to support the official Databricks API.
+  - `create_databricks_job_op` is now deprecated. To submit one-off runs of Databricks tasks, you must now use the `create_databricks_submit_run_op`.
+  - The Databricks token that is passed to the `databricks_client` resource must now begin with `https://`.
+
+## Migrating to 1.1.1
+
+### Database migration
+
+Two optional database schema migrations, which can be run via `dagster instance migrate`:
+
+- Improves Dagit performance by adding database indexes which should speed up the run view as well as a range of asset-based queries.
+- Enables multi-dimensional asset partitions and asset versioning.
+
+### Breaking changes and deprecations
+
+- `define_dagstermill_solid`, a legacy API, has been removed from `dagstermill`. Use `define_dagstermill_op` or `define_dagstermill_asset` instead to create an `op` or `asset` from a Jupyter notebook, respectively.
+- The internal `ComputeLogManager` API is marked as deprecated in favor of an updated interface: `CapturedLogManager`. It will be removed in `1.2.0`. This should only affect dagster instances that have implemented a custom compute log manager.
+
 ## Migrating to 1.0
 
 - Most of the classes and decorators in Dagster have moved to using a bare asterisk argument, enforcing that arguments are provided as keywords. **If using long lists of non-keyword arguments with dagster decorators or classes, you will likely run into errors in 1.0.** This can be fixed by switching to using keyword arguments.
@@ -454,7 +556,7 @@ For example, the following workspace entry:
 
 ```yaml
 - python_environment:
-    executable_path: '/path/to/venvs/dagster-dev-3.7.6/bin/python'
+    executable_path: "/path/to/venvs/dagster-dev-3.7.6/bin/python"
     target:
       python_package:
         package_name: dagster_examples
@@ -465,7 +567,7 @@ should now be expressed as:
 
 ```yaml
 - python_package:
-    executable_path: '/path/to/venvs/dagster-dev-3.7.6/bin/python'
+    executable_path: "/path/to/venvs/dagster-dev-3.7.6/bin/python"
     package_name: dagster_examples
     location_name: dagster_examples
 ```
@@ -840,7 +942,7 @@ load_from:
   - python_module: dagster_examples.intro_tutorial.repos
   - python_file: repos.py
   - python_environment:
-      executable_path: '/path/to/venvs/dagster-dev-3.7.6/bin/python'
+      executable_path: "/path/to/venvs/dagster-dev-3.7.6/bin/python"
       target:
         python_module:
           module_name: dagster_examples

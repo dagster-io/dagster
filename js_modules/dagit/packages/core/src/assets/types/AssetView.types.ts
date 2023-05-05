@@ -23,6 +23,7 @@ export type AssetViewDefinitionQuery = {
           opNames: Array<string>;
           opVersion: string | null;
           jobNames: Array<string>;
+          hasMaterializePermission: boolean;
           computeKind: string | null;
           isPartitioned: boolean;
           isObservable: boolean;
@@ -65,6 +66,18 @@ export type AssetViewDefinitionQuery = {
               };
             }>;
           }>;
+          autoMaterializePolicy: {
+            __typename: 'AutoMaterializePolicy';
+            policyType: Types.AutoMaterializePolicyType;
+          } | null;
+          freshnessPolicy: {
+            __typename: 'FreshnessPolicy';
+            maximumLagMinutes: number;
+            cronSchedule: string | null;
+            cronScheduleTimezone: string | null;
+          } | null;
+          requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
+          assetKey: {__typename: 'AssetKey'; path: Array<string>};
           configField: {
             __typename: 'ConfigTypeField';
             name: string;
@@ -621,7 +634,6 @@ export type AssetViewDefinitionQuery = {
                   >;
                 };
           } | null;
-          assetKey: {__typename: 'AssetKey'; path: Array<string>};
           metadataEntries: Array<
             | {
                 __typename: 'AssetMetadataEntry';
@@ -15722,6 +15734,7 @@ export type AssetViewDefinitionNodeFragment = {
   opNames: Array<string>;
   opVersion: string | null;
   jobNames: Array<string>;
+  hasMaterializePermission: boolean;
   computeKind: string | null;
   isPartitioned: boolean;
   isObservable: boolean;
@@ -15764,6 +15777,18 @@ export type AssetViewDefinitionNodeFragment = {
       };
     }>;
   }>;
+  autoMaterializePolicy: {
+    __typename: 'AutoMaterializePolicy';
+    policyType: Types.AutoMaterializePolicyType;
+  } | null;
+  freshnessPolicy: {
+    __typename: 'FreshnessPolicy';
+    maximumLagMinutes: number;
+    cronSchedule: string | null;
+    cronScheduleTimezone: string | null;
+  } | null;
+  requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
+  assetKey: {__typename: 'AssetKey'; path: Array<string>};
   configField: {
     __typename: 'ConfigTypeField';
     name: string;
@@ -16316,7 +16341,6 @@ export type AssetViewDefinitionNodeFragment = {
           >;
         };
   } | null;
-  assetKey: {__typename: 'AssetKey'; path: Array<string>};
   metadataEntries: Array<
     | {
         __typename: 'AssetMetadataEntry';

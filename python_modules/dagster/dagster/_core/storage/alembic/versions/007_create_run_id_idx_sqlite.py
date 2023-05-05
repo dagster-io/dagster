@@ -8,8 +8,6 @@ Create Date: 2020-06-11 10:40:25.216776
 from alembic import op
 from sqlalchemy import inspect
 
-# pylint: disable=no-member
-
 # revision identifiers, used by Alembic.
 revision = "c34498c29964"
 down_revision = "07f83cc13695"

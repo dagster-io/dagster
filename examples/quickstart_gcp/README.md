@@ -15,10 +15,8 @@ This guide covers:
   - [Step 1: Materializing assets](#step-1-materializing-assets)
   - [Step 2: Viewing and monitoring assets](#step-2-viewing-and-monitoring-assets)
   - [Step 3: Scheduling a daily job](#step-3-scheduling-a-daily-job)
-    - [(Optional) Running daemon locally](#optional-running-daemon-locally)
   - [Learning more](#learning-more)
     - [Changing the code locally](#changing-the-code-locally)
-    - [Writing a custom I/O manager](#writing-a-custom-io-manager)
     - [Adding new Python dependencies](#adding-new-python-dependencies)
     - [Testing](#testing)
 
@@ -28,7 +26,6 @@ This guide covers:
 This starter kit includes:
 - Basics of creating, connecting, and testing [assets](https://docs.dagster.io/concepts/assets/software-defined-assets) in Dagster.
 - Convenient ways to organize and monitor assets, e.g. [grouping assets](https://docs.dagster.io/concepts/assets/software-defined-assets#grouping-assets), [recording asset metadata](https://docs.dagster.io/concepts/assets/software-defined-assets#recording-materialization-metadata), etc.
-- A custom I/O Manager that stores Pandas DataFrames to BigQuery Tables and reads the tables into DataFrames, which [uses environment variables](https://docs.dagster.io/guides/dagster/using-environment-variables-and-secrets) to handle the Google service account credentials.
 - A [schedule](https://docs.dagster.io/concepts/partitions-schedules-sensors/schedules) defined to run a job that generates assets daily.
 - [Scaffolded project layout](https://docs.dagster.io/getting-started/create-new-project) that helps you to quickly get started with everything set up.
 
@@ -58,12 +55,11 @@ To connect to GCP, you'll need to set up your credentials in Dagster.
 
 Dagster allows using environment variables to handle sensitive information. You can define various configuration options and access environment variables through them. This also allows you to parameterize your pipeline without modifying code.
 
-In this example, we write a custom [`bigquery_pandas_io_manager`](./quickstart_gcp/io_managers.py) to write outputs to BigQuery and read inputs from it.
-
-The configurations of the Bigquery connection are defined in [`quickstart_gcp/repository.py`](./quickstart_gcp/repository.py), which requires the following environment variables:
-- `BIGQUERY_SERVICE_ACCOUNT_CREDENTIALS`
-  - *Note: In this example, we use [`from_service_account_info`](https://googleapis.dev/python/google-auth/1.7.0/reference/google.oauth2.service_account.html#google.oauth2.service_account.Credentials.from_service_account_info) to set up the GCP connection. It accepts a dictionary corresponding to the JSON file contents, so the value of this environment variable needs to be a JSON string. If you'd like to refer to the JSON file path instead, change the I/O manager to use [`from_service_account_file`](https://googleapis.dev/python/google-auth/1.7.0/reference/google.oauth2.service_account.html#google.oauth2.service_account.Credentials.from_service_account_file).
+In this example, we use [BigQueryPandasIOManager](https://docs.dagster.io/_apidocs/libraries/dagster-gcp-pandas#dagster_gcp_pandas.BigQueryPandasIOManager) to write outputs to BigQuery and read inputs from it. The configurations of the BigQuery connection are defined [in `quickstart_gcp/__init__.py`](./quickstart_snowflake/__init__.py), which requires the following environment variables:
 - `BIGQUERY_PROJECT_ID`
+
+To authenticate with Bigquery, you can either use the `gcloud` CLI, or set the environment variable `GOOGLE_APPLICATION_CREDENTIALS` to point at a credentials file. See [this page](https://cloud.google.com/docs/authentication/provide-credentials-adc). If neither of these authentication methods is feasible (for example if you are deploying this project in Dagster Serverless and cannot upload a credentials file) you can use the `gcp_credentials` configuration for the `BigQueryPandasIOManager`. See the `BigQueryPandasIOManager` [documentation](https://docs.dagster.io/_apidocs/libraries/dagster-gcp-pandas#dagster_gcp_pandas.BigQueryPandasIOManager) for more information.
+
 
 You can declare environment variables in various ways:
 - **Local development**: [Using `.env` files to load env vars into local environments](https://docs.dagster.io/guides/dagster/using-environment-variables-and-secrets#declaring-environment-variables)
@@ -88,10 +84,10 @@ First, install your Dagster repository as a Python package. By using the `--edit
 pip install -e ".[dev]"
 ```
 
-Then, start the Dagit web server:
+Then, start the Dagster UI web server:
 
 ```bash
-dagit
+dagster dev
 ```
 
 Open http://localhost:3000 with your browser to see the project.
@@ -200,33 +196,6 @@ You can now turn on the schedule switch to set up the daily job we defined in [q
     <img height="500" src="https://raw.githubusercontent.com/dagster-io/dagster/master/docs/next/public/images/quickstarts/basic/step-3-2-schedule-on.png" />
 </p>
 
-### (Optional) Running daemon locally
-
-If you're running Dagster locally, you will see a warning that your daemon isn’t running.
-
-<p align="center">
-    <img height="300" src="https://raw.githubusercontent.com/dagster-io/dagster/master/docs/next/public/images/quickstarts/basic/step-3-3-daemon-warning.png" />
-</p>
-
-<details><summary>👈 Expand to learn how to set up a local daemon</summary>
-
-If you want to enable Dagster [schedules](https://docs.dagster.io/concepts/partitions-schedules-sensors/schedules) for your jobs, start the [Dagster daemon](https://docs.dagster.io/deployment/dagster-daemon) process in the same folder as your `workspace.yaml` file, but in a different shell or terminal.
-
-The `$DAGSTER_HOME` environment variable must be set to a directory for the daemon to work. Note: using directories within `/tmp` may cause issues. See [Dagster Instance default local behavior](https://docs.dagster.io/deployment/dagster-instance#default-local-behavior) for more details.
-
-In this case, go to the project root directory and run:
-```bash
-dagster-daemon run
-```
-
-Once your Dagster daemon is running, the schedules that are turned on will start running.
-
-<p align="center">
-    <img height="500" src="https://raw.githubusercontent.com/dagster-io/dagster/master/docs/next/public/images/quickstarts/basic/step-3-4-daemon-on.png" />
-</p>
-
-</details>
-
 <br />
 <br />
 
@@ -256,10 +225,6 @@ Or from the left nav or on each job page:
 </p>
 
 </details>
-
-### Writing a custom I/O manager
-
-This example comes with a custom I/O manager. To learn more about I/O managers and see more examples, check out the [I/O Manager concept page](https://docs.dagster.io/concepts/io-management/io-managers#a-custom-io-manager-that-stores-pandas-dataframes-in-tables).
 
 ### Adding new Python dependencies
 

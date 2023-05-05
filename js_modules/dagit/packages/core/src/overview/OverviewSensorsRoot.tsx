@@ -11,6 +11,7 @@ import {
   PageHeader,
   Spinner,
   TextInput,
+  Tooltip,
 } from '@dagster-io/ui';
 import * as React from 'react';
 
@@ -19,23 +20,32 @@ import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {RepoFilterButton} from '../instance/RepoFilterButton';
 import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
 import {UnloadableSensors} from '../instigation/Unloadable';
+import {filterPermissionedInstigationState} from '../instigation/filterPermissionedInstigationState';
+import {SensorBulkActionMenu} from '../sensors/SensorBulkActionMenu';
 import {SensorInfo} from '../sensors/SensorInfo';
+import {makeSensorKey} from '../sensors/makeSensorKey';
+import {CheckAllBox} from '../ui/CheckAllBox';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
+import {BASIC_INSTIGATION_STATE_FRAGMENT} from './BasicInstigationStateFragment';
 import {OverviewSensorTable} from './OverviewSensorsTable';
 import {OverviewTabs} from './OverviewTabs';
 import {sortRepoBuckets} from './sortRepoBuckets';
+import {BasicInstigationStateFragment} from './types/BasicInstigationStateFragment.types';
 import {
   OverviewSensorsQuery,
   OverviewSensorsQueryVariables,
   UnloadableSensorsQuery,
+  UnloadableSensorsQueryVariables,
 } from './types/OverviewSensorsRoot.types';
 import {visibleRepoKeys} from './visibleRepoKeys';
 
@@ -43,9 +53,12 @@ export const OverviewSensorsRoot = () => {
   useTrackPageView();
   useDocumentTitle('Overview | Sensors');
 
-  const [searchValue, setSearchValue] = React.useState('');
   const {allRepos, visibleRepos} = React.useContext(WorkspaceContext);
   const repoCount = allRepos.length;
+  const [searchValue, setSearchValue] = useQueryPersistedState<string>({
+    queryKey: 'search',
+    defaults: {search: ''},
+  });
 
   const queryResultOverview = useQuery<OverviewSensorsQuery, OverviewSensorsQueryVariables>(
     OVERVIEW_SENSORS_QUERY,
@@ -73,10 +86,69 @@ export const OverviewSensorsRoot = () => {
     return repoBuckets
       .map(({repoAddress, sensors}) => ({
         repoAddress,
-        sensors: sensors.filter((name) => name.toLocaleLowerCase().includes(searchToLower)),
+        sensors: sensors.filter(({name}) => name.toLocaleLowerCase().includes(searchToLower)),
       }))
       .filter(({sensors}) => sensors.length > 0);
   }, [repoBuckets, sanitizedSearch]);
+
+  const anySensorsVisible = React.useMemo(
+    () => filteredBySearch.some(({sensors}) => sensors.length > 0),
+    [filteredBySearch],
+  );
+
+  // Collect all sensors across visible code locations that the viewer has permission
+  // to start or stop.
+  const allPermissionedSensors = React.useMemo(() => {
+    return repoBuckets
+      .map(({repoAddress, sensors}) => {
+        return sensors
+          .filter(({sensorState}) => filterPermissionedInstigationState(sensorState))
+          .map(({name, sensorState}) => ({
+            repoAddress,
+            sensorName: name,
+            sensorState,
+          }));
+      })
+      .flat();
+  }, [repoBuckets]);
+
+  // Build a list of keys from the permissioned schedules for use in checkbox state.
+  // This includes collapsed code locations.
+  const allPermissionedSensorKeys = React.useMemo(() => {
+    return allPermissionedSensors.map(({repoAddress, sensorName}) =>
+      makeSensorKey(repoAddress, sensorName),
+    );
+  }, [allPermissionedSensors]);
+
+  const [{checkedIds: checkedKeys}, {onToggleFactory, onToggleAll}] = useSelectionReducer(
+    allPermissionedSensorKeys,
+  );
+
+  // Filter to find keys that are visible given any text search.
+  const permissionedKeysOnScreen = React.useMemo(() => {
+    const filteredKeys = new Set(
+      filteredBySearch
+        .map(({repoAddress, sensors}) => {
+          return sensors.map(({name}) => makeSensorKey(repoAddress, name));
+        })
+        .flat(),
+    );
+    return allPermissionedSensorKeys.filter((key) => filteredKeys.has(key));
+  }, [allPermissionedSensorKeys, filteredBySearch]);
+
+  // Determine the list of sensor objects that have been checked by the viewer.
+  // These are the sensors that will be operated on by the bulk start/stop action.
+  const checkedSensors = React.useMemo(() => {
+    const checkedKeysOnScreen = new Set(
+      permissionedKeysOnScreen.filter((key: string) => checkedKeys.has(key)),
+    );
+    return allPermissionedSensors.filter(({repoAddress, sensorName}) => {
+      return checkedKeysOnScreen.has(makeSensorKey(repoAddress, sensorName));
+    });
+  }, [permissionedKeysOnScreen, allPermissionedSensors, checkedKeys]);
+
+  const viewerHasAnyInstigationPermission = allPermissionedSensorKeys.length > 0;
+  const checkedCount = checkedSensors.length;
 
   const content = () => {
     if (loading && !data) {
@@ -132,7 +204,22 @@ export const OverviewSensorsRoot = () => {
       );
     }
 
-    return <OverviewSensorTable repos={filteredBySearch} />;
+    return (
+      <OverviewSensorTable
+        headerCheckbox={
+          viewerHasAnyInstigationPermission ? (
+            <CheckAllBox
+              checkedCount={checkedCount}
+              totalCount={permissionedKeysOnScreen.length}
+              onToggleAll={onToggleAll}
+            />
+          ) : undefined
+        }
+        repos={filteredBySearch}
+        checkedKeys={checkedKeys}
+        onToggleCheckFactory={onToggleFactory}
+      />
+    );
   };
 
   return (
@@ -143,16 +230,32 @@ export const OverviewSensorsRoot = () => {
       />
       <Box
         padding={{horizontal: 24, vertical: 16}}
-        flex={{direction: 'row', alignItems: 'center', gap: 12, grow: 0}}
+        flex={{
+          direction: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+          grow: 0,
+        }}
       >
-        {repoCount > 0 ? <RepoFilterButton /> : null}
-        <TextInput
-          icon="search"
-          value={searchValue}
-          onChange={(e) => setSearchValue(e.target.value)}
-          placeholder="Filter by sensor name…"
-          style={{width: '340px'}}
-        />
+        <Box flex={{direction: 'row', gap: 12}}>
+          {repoCount > 0 ? <RepoFilterButton /> : null}
+          <TextInput
+            icon="search"
+            value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value)}
+            placeholder="Filter by sensor name…"
+            style={{width: '340px'}}
+          />
+        </Box>
+        <Tooltip
+          content="You do not have permission to start or stop these schedules"
+          canShow={anySensorsVisible && !viewerHasAnyInstigationPermission}
+          placement="top-end"
+          useDisabledButtonTooltipFix
+        >
+          <SensorBulkActionMenu sensors={checkedSensors} onDone={() => refreshState.refetch()} />
+        </Tooltip>
       </Box>
       {loading && !repoCount ? (
         <Box padding={64}>
@@ -230,7 +333,9 @@ const UnloadableSensorsAlert: React.FC<{
 };
 
 const UnloadableSensorDialog: React.FC = () => {
-  const {data} = useQuery<UnloadableSensorsQuery>(UNLOADABLE_SENSORS_QUERY);
+  const {data} = useQuery<UnloadableSensorsQuery, UnloadableSensorsQueryVariables>(
+    UNLOADABLE_SENSORS_QUERY,
+  );
   if (!data) {
     return <Spinner purpose="section" />;
   }
@@ -249,7 +354,7 @@ const UnloadableSensorDialog: React.FC = () => {
 
 type RepoBucket = {
   repoAddress: RepoAddress;
-  sensors: string[];
+  sensors: {name: string; sensorState: BasicInstigationStateFragment}[];
 };
 
 const buildBuckets = (data?: OverviewSensorsQuery): RepoBucket[] => {
@@ -269,12 +374,11 @@ const buildBuckets = (data?: OverviewSensorsQuery): RepoBucket[] => {
     for (const repo of entry.repositories) {
       const {name, sensors} = repo;
       const repoAddress = buildRepoAddress(name, entry.name);
-      const sensorNames = sensors.map(({name}) => name);
 
-      if (sensorNames.length > 0) {
+      if (sensors.length > 0) {
         buckets.push({
           repoAddress,
-          sensors: sensorNames,
+          sensors,
         });
       }
     }
@@ -287,6 +391,7 @@ const OVERVIEW_SENSORS_QUERY = gql`
   query OverviewSensorsQuery {
     workspaceOrError {
       ... on Workspace {
+        id
         locationEntries {
           id
           locationOrLoadError {
@@ -300,6 +405,11 @@ const OVERVIEW_SENSORS_QUERY = gql`
                   id
                   name
                   description
+                  sensorType
+                  sensorState {
+                    id
+                    ...BasicInstigationStateFragment
+                  }
                 }
               }
             }
@@ -317,10 +427,12 @@ const OVERVIEW_SENSORS_QUERY = gql`
       }
     }
     instance {
+      id
       ...InstanceHealthFragment
     }
   }
 
+  ${BASIC_INSTIGATION_STATE_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
   ${INSTANCE_HEALTH_FRAGMENT}
 `;

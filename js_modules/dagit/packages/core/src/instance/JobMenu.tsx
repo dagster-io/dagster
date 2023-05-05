@@ -25,7 +25,11 @@ interface Props {
 export const JobMenu = (props: Props) => {
   const {job, repoAddress} = props;
   const lastRun = job.runs.length ? job.runs[0] : null;
-  const {canLaunchPipelineReexecution} = usePermissionsForLocation(repoAddress.location);
+  const {
+    permissions: {canLaunchPipelineReexecution},
+    disabledReasons,
+  } = usePermissionsForLocation(repoAddress.location);
+
   const [fetchHasExecutionPlan, {data}] = useLazyQuery<
     RunReExecutionQuery,
     RunReExecutionQueryVariables
@@ -46,7 +50,7 @@ export const JobMenu = (props: Props) => {
       icon="replay"
       text="Re-execute latest run"
       onClick={() => onLaunch({type: 'all'})}
-      disabled={!canLaunchPipelineReexecution.enabled || !run || !canRunAllSteps(run)}
+      disabled={!canLaunchPipelineReexecution || !run || !canRunAllSteps(run)}
     />
   );
 
@@ -55,7 +59,7 @@ export const JobMenu = (props: Props) => {
       icon="sync_problem"
       text="Re-execute latest run from failure"
       onClick={() => onLaunch({type: 'from-failure'})}
-      disabled={!canLaunchPipelineReexecution.enabled || !run || !canRunFromFailure(run)}
+      disabled={!canLaunchPipelineReexecution || !run || !canRunFromFailure(run)}
     />
   );
 
@@ -85,17 +89,17 @@ export const JobMenu = (props: Props) => {
             icon="checklist"
             text="View all recent runs"
           />
-          {canLaunchPipelineReexecution.enabled ? (
+          {canLaunchPipelineReexecution ? (
             reExecuteAllItem
           ) : (
-            <Tooltip content={canLaunchPipelineReexecution.disabledReason} display="block">
+            <Tooltip content={disabledReasons.canLaunchPipelineReexecution} display="block">
               {reExecuteAllItem}
             </Tooltip>
           )}
-          {canLaunchPipelineReexecution.enabled ? (
+          {canLaunchPipelineReexecution ? (
             reExecuteFromFailureItem
           ) : (
-            <Tooltip content={canLaunchPipelineReexecution.disabledReason} display="block">
+            <Tooltip content={disabledReasons.canLaunchPipelineReexecution} display="block">
               {reExecuteFromFailureItem}
             </Tooltip>
           )}
@@ -113,6 +117,7 @@ const RUN_RE_EXECUTION_QUERY = gql`
     pipelineRunOrError(runId: $runId) {
       ... on Run {
         id
+        parentPipelineSnapshotId
         ...RunFragment
       }
     }

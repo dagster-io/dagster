@@ -20,10 +20,7 @@ It's recommended to only use multiple agents of the same type (e.g. multiple Kub
 To complete the steps in this guide, you'll need:
 
 - **dagster-cloud version 0.13.0 or later for both agents and job code.**
-- **To use a Kubernetes, Docker, or local agent.** These agent types can support running multiple agents. Additionally, note that:
-
-  - **Kubernetes agents must run in their own namespace or container.** Running multiple agents within a single namespace isn't currently supported.
-  - **Docker agents must run in containers orchestrated by separate Docker daemons** (e.g. on a separate host machine). Running multiple agents on one Docker daemon isn't currently supported.
+- **To use a Kubernetes, Docker, or local agent.** These agent types can support running multiple agents.
 
 ---
 
@@ -48,8 +45,6 @@ Follow the instructions for your agent:
 <details>
   <summary><strong>DOCKER AGENTS</strong></summary>
 
-**Docker agents must run in containers orchestrated by separate Docker daemons** (e.g. on a separate host machine). Running multiple agents on one Docker daemon isn't currently supported.
-
 Add the following to the `dagster.yaml` file:
 
 ```yaml
@@ -65,8 +60,6 @@ dagster_cloud_api:
 
 <details>
   <summary><strong>KUBERNETES AGENTS</strong></summary>
-
-**Kubernetes agents must run in their own namespace or container.** Running multiple agents within a single namespace isn't currently supported.
 
 Add the following options to your Helm command:
 

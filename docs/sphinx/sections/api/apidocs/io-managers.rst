@@ -6,23 +6,24 @@ IO Managers
 IO managers are user-provided objects that store op outputs and load them as inputs to downstream
 ops.
 
-.. autodecorator:: io_manager
+
+.. autoclass:: ConfigurableIOManager
+
+.. autoclass:: ConfigurableIOManagerFactory
+
 
 .. autoclass:: IOManager
-    :members:
 
 .. autoclass:: IOManagerDefinition
-    :members:
 
+.. autodecorator:: io_manager
 
 Input and Output Contexts
 -------------------------
 
 .. autoclass:: InputContext
-    :members:
 
 .. autoclass:: OutputContext
-    :members:
 
 
 .. autofunction:: build_input_context
@@ -37,6 +38,9 @@ Built-in IO Managers
 ------------------------
 
 .. autodata:: mem_io_manager
+  :annotation: IOManagerDefinition
+
+.. autodata:: FilesystemIOManager
   :annotation: IOManagerDefinition
 
 .. autodata:: fs_io_manager
@@ -55,7 +59,6 @@ Input managers load inputs from either upstream outputs or from provided default
 .. autodecorator:: input_manager
 
 .. autoclass:: InputManager
-    :members:
 
 Root Input Managers (Experimental)
 ----------------------------------
@@ -66,7 +69,5 @@ to upstream outputs.
 .. autodecorator:: root_input_manager
 
 .. autoclass:: RootInputManager
-    :members:
 
 .. autoclass:: RootInputManagerDefinition
-    :members:

@@ -80,3 +80,13 @@ def test_filter_dagster_events_from_cli_logs_coalesce():
     event = res[0]
     check.inst(event, DagsterEvent)
     check.inst(event.event_specific_data, StepSuccessData)
+
+
+def test_filter_dagster_events_from_cli_logs_user_json():
+    logs = """
+    {}
+    """.split(
+        "\n"
+    )
+
+    assert filter_dagster_events_from_cli_logs(logs) == []

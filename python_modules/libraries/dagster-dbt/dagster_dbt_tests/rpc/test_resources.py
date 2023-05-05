@@ -1,6 +1,7 @@
 import pytest
 import responses
-from dagster._legacy import ModeDefinition, execute_solid, solid
+from dagster import op
+from dagster._utils.test import wrap_op_in_graph_and_execute
 from dagster_dbt import (
     DbtRpcOutput,
     DbtRpcResource,
@@ -18,7 +19,7 @@ def test_url(client):
 @pytest.mark.parametrize("method", ["status", "poll", "kill", "cli_args"])
 def test_default_request(client, method):
     expected = {"jsonrpc": client.jsonrpc_version, "method": method, "params": {}}
-    resp = client._default_request(method=method)  # pylint: disable=protected-access
+    resp = client._default_request(method=method)  # noqa: SLF001
     assert resp["jsonrpc"] == expected["jsonrpc"]
     assert resp["method"] == expected["method"]
     assert resp["params"] == expected["params"]
@@ -30,7 +31,7 @@ def test_format_params(client):
         "select": "snapshot_1 snapshot_2 snapshot_3",
         "exclude": "model_4+",
     }
-    data = client._format_params(  # pylint: disable=protected-access
+    data = client._format_params(  # noqa: SLF001
         dict(
             models=["@model_1", "+model_2+", "model_3+", "model_3+"],
             select=["snapshot_1", "snapshot_2", "snapshot_3"],
@@ -89,19 +90,17 @@ def test_poll(client):
 def test_dbt_rpc_resource():
     it = {}
 
-    @solid(required_resource_keys={"dbt_rpc"})
+    @op(required_resource_keys={"dbt_rpc"})
     def a_solid(context):
         assert isinstance(context.resources.dbt_rpc, DbtRpcResource)
         assert context.resources.dbt_rpc.host == "<default host>"
         assert context.resources.dbt_rpc.port == 8580
         it["ran"] = True
 
-    execute_solid(
+    wrap_op_in_graph_and_execute(
         a_solid,
-        ModeDefinition(resource_defs={"dbt_rpc": dbt_rpc_resource}),
-        None,
-        None,
-        {"resources": {"dbt_rpc": {"config": {"host": "<default host>"}}}},
+        resources={"dbt_rpc": dbt_rpc_resource},
+        run_config={"resources": {"dbt_rpc": {"config": {"host": "<default host>"}}}},
     )
     assert it["ran"]
 
@@ -109,33 +108,33 @@ def test_dbt_rpc_resource():
 def test_local_dbt_rpc_resource():
     it = {}
 
-    @solid(required_resource_keys={"dbt_rpc"})
+    @op(required_resource_keys={"dbt_rpc"})
     def a_solid(context):
         assert isinstance(context.resources.dbt_rpc, DbtRpcResource)
         assert context.resources.dbt_rpc.host == "0.0.0.0"
         assert context.resources.dbt_rpc.port == 8580
         it["ran"] = True
 
-    execute_solid(a_solid, ModeDefinition(resource_defs={"dbt_rpc": local_dbt_rpc_resource}))
+    wrap_op_in_graph_and_execute(a_solid, resources={"dbt_rpc": local_dbt_rpc_resource})
     assert it["ran"]
 
 
 def test_dbt_rpc_sync_resource():
     it = {}
 
-    @solid(required_resource_keys={"dbt_rpc"})
+    @op(required_resource_keys={"dbt_rpc"})
     def a_solid(context):
         assert isinstance(context.resources.dbt_rpc, DbtRpcSyncResource)
         assert context.resources.dbt_rpc.host == "<default host>"
         assert context.resources.dbt_rpc.port == 8580
         it["ran"] = True
 
-    execute_solid(
+    wrap_op_in_graph_and_execute(
         a_solid,
-        ModeDefinition(resource_defs={"dbt_rpc": dbt_rpc_sync_resource}),
-        None,
-        None,
-        {"resources": {"dbt_rpc": {"config": {"host": "<default host>", "poll_interval": 5}}}},
+        resources={"dbt_rpc": dbt_rpc_sync_resource},
+        run_config={
+            "resources": {"dbt_rpc": {"config": {"host": "<default host>", "poll_interval": 5}}}
+        },
     )
     assert it["ran"]
 
@@ -150,18 +149,16 @@ def test_dbt_rpc_sync_resource():
     "client_class,resource",
     [(DbtRpcResource, dbt_rpc_resource), (DbtRpcSyncResource, dbt_rpc_sync_resource)],
 )
-def test_dbt_rpc_resource_status(
-    dbt_rpc_server, client_class, resource
-):  # pylint: disable=unused-argument
-    @solid(required_resource_keys={"dbt_rpc"})
+def test_dbt_rpc_resource_status(dbt_rpc_server, client_class, resource):
+    @op(required_resource_keys={"dbt_rpc"})
     def compile_solid(context):
         assert isinstance(context.resources.dbt_rpc, client_class)
         out = context.resources.dbt_rpc.status()
         return out
 
-    result = execute_solid(
+    result = wrap_op_in_graph_and_execute(
         compile_solid,
-        ModeDefinition(resource_defs={"dbt_rpc": resource.configured({"host": "localhost"})}),
+        resources={"dbt_rpc": resource.configured({"host": "localhost"})},
     )
 
     assert result.success
@@ -176,18 +173,15 @@ def test_dbt_rpc_resource_status(
 )
 def test_dbt_rpc_resource_is_not_waiting(
     dbt_rpc_server,
-):  # pylint: disable=unused-argument
-    @solid(required_resource_keys={"dbt_rpc"})
+):
+    @op(required_resource_keys={"dbt_rpc"})
     def cli_solid(context):
         assert isinstance(context.resources.dbt_rpc, DbtRpcResource)
         out = context.resources.dbt_rpc.cli("run")
         return out
 
-    result = execute_solid(
-        cli_solid,
-        ModeDefinition(
-            resource_defs={"dbt_rpc": dbt_rpc_resource.configured({"host": "localhost"})}
-        ),
+    result = wrap_op_in_graph_and_execute(
+        cli_solid, resources={"dbt_rpc": dbt_rpc_resource.configured({"host": "localhost"})}
     )
 
     assert result.success
@@ -207,18 +201,15 @@ def test_dbt_rpc_resource_is_not_waiting(
 )
 def test_dbt_rpc_sync_resource_is_waiting(
     dbt_rpc_server,
-):  # pylint: disable=unused-argument
-    @solid(required_resource_keys={"dbt_rpc"})
+):
+    @op(required_resource_keys={"dbt_rpc"})
     def cli_solid(context):
         assert isinstance(context.resources.dbt_rpc, DbtRpcSyncResource)
         out = context.resources.dbt_rpc.cli("run")
         return out
 
-    result = execute_solid(
-        cli_solid,
-        ModeDefinition(
-            resource_defs={"dbt_rpc": dbt_rpc_sync_resource.configured({"host": "localhost"})}
-        ),
+    result = wrap_op_in_graph_and_execute(
+        cli_solid, resources={"dbt_rpc": dbt_rpc_sync_resource.configured({"host": "localhost"})}
     )
 
     assert result.success
@@ -240,18 +231,16 @@ def test_dbt_rpc_sync_resource_is_waiting(
     "client_class,resource",
     [(DbtRpcResource, dbt_rpc_resource), (DbtRpcSyncResource, dbt_rpc_sync_resource)],
 )
-def test_dbt_rpc_resource_cli(
-    dbt_rpc_server, client_class, resource
-):  # pylint: disable=unused-argument
-    @solid(required_resource_keys={"dbt_rpc"})
+def test_dbt_rpc_resource_cli(dbt_rpc_server, client_class, resource):
+    @op(required_resource_keys={"dbt_rpc"})
     def cli_solid(context):
         assert isinstance(context.resources.dbt_rpc, client_class)
         out = context.resources.dbt_rpc.cli("run")
         return out
 
-    result = execute_solid(
+    result = wrap_op_in_graph_and_execute(
         cli_solid,
-        ModeDefinition(resource_defs={"dbt_rpc": resource.configured({"host": "localhost"})}),
+        resources={"dbt_rpc": resource.configured({"host": "localhost"})},
     )
 
     assert result.success
@@ -268,18 +257,16 @@ def test_dbt_rpc_resource_cli(
     "client_class,resource",
     [(DbtRpcResource, dbt_rpc_resource), (DbtRpcSyncResource, dbt_rpc_sync_resource)],
 )
-def test_dbt_rpc_resource_run(
-    dbt_rpc_server, client_class, resource
-):  # pylint: disable=unused-argument
-    @solid(required_resource_keys={"dbt_rpc"})
+def test_dbt_rpc_resource_run(dbt_rpc_server, client_class, resource):
+    @op(required_resource_keys={"dbt_rpc"})
     def cli_solid(context):
         assert isinstance(context.resources.dbt_rpc, client_class)
         out = context.resources.dbt_rpc.run(["sort_by_calories"])
         return out
 
-    result = execute_solid(
+    result = wrap_op_in_graph_and_execute(
         cli_solid,
-        ModeDefinition(resource_defs={"dbt_rpc": resource.configured({"host": "localhost"})}),
+        resources={"dbt_rpc": resource.configured({"host": "localhost"})},
     )
 
     assert result.success
@@ -296,18 +283,16 @@ def test_dbt_rpc_resource_run(
     "client_class,resource",
     [(DbtRpcResource, dbt_rpc_resource), (DbtRpcSyncResource, dbt_rpc_sync_resource)],
 )
-def test_dbt_rpc_resource_generate_docs(
-    dbt_rpc_server, client_class, resource
-):  # pylint: disable=unused-argument
-    @solid(required_resource_keys={"dbt_rpc"})
+def test_dbt_rpc_resource_generate_docs(dbt_rpc_server, client_class, resource):
+    @op(required_resource_keys={"dbt_rpc"})
     def compile_solid(context):
         assert isinstance(context.resources.dbt_rpc, client_class)
         out = context.resources.dbt_rpc.generate_docs(True)
         return out
 
-    result = execute_solid(
+    result = wrap_op_in_graph_and_execute(
         compile_solid,
-        ModeDefinition(resource_defs={"dbt_rpc": resource.configured({"host": "localhost"})}),
+        resources={"dbt_rpc": resource.configured({"host": "localhost"})},
     )
 
     assert result.success
@@ -324,18 +309,16 @@ def test_dbt_rpc_resource_generate_docs(
     "client_class,resource",
     [(DbtRpcResource, dbt_rpc_resource), (DbtRpcSyncResource, dbt_rpc_sync_resource)],
 )
-def test_dbt_rpc_resource_run_operation(
-    dbt_rpc_server, client_class, resource
-):  # pylint: disable=unused-argument
-    @solid(required_resource_keys={"dbt_rpc"})
+def test_dbt_rpc_resource_run_operation(dbt_rpc_server, client_class, resource):
+    @op(required_resource_keys={"dbt_rpc"})
     def compile_solid(context):
         assert isinstance(context.resources.dbt_rpc, client_class)
         out = context.resources.dbt_rpc.run_operation("log_macro", {"msg": "hello world"})
         return out
 
-    result = execute_solid(
+    result = wrap_op_in_graph_and_execute(
         compile_solid,
-        ModeDefinition(resource_defs={"dbt_rpc": resource.configured({"host": "localhost"})}),
+        resources={"dbt_rpc": resource.configured({"host": "localhost"})},
     )
 
     assert result.success

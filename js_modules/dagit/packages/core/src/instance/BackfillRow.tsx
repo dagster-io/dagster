@@ -1,4 +1,4 @@
-import {gql, useLazyQuery} from '@apollo/client';
+import {gql, QueryResult, useLazyQuery} from '@apollo/client';
 import {Box, Button, Colors, Icon, MenuItem, Menu, Popover, Tag, Mono} from '@dagster-io/ui';
 import countBy from 'lodash/countBy';
 import * as React from 'react';
@@ -6,16 +6,11 @@ import {useHistory, Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {usePermissionsDEPRECATED} from '../app/Permissions';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {RunStatus, BulkActionStatus} from '../graphql/types';
-import {
-  PartitionState,
-  PartitionStatus,
-  runStatusToPartitionState,
-} from '../partitions/PartitionStatus';
+import {PartitionStatus, PartitionStatusHealthSourceOps} from '../partitions/PartitionStatus';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {AssetKeyTagCollection} from '../runs/AssetKeyTagCollection';
 import {inProgressStatuses} from '../runs/RunStatuses';
@@ -37,6 +32,11 @@ import {
 } from './types/BackfillRow.types';
 import {BackfillTableFragment} from './types/BackfillTable.types';
 
+const NoBackfillStatusQuery = [
+  () => Promise.resolve({data: undefined} as QueryResult<undefined>),
+  {data: undefined, called: true, loading: false} as QueryResult<undefined>,
+] as const;
+
 export const BackfillRow = ({
   backfill,
   allPartitions,
@@ -57,7 +57,7 @@ export const BackfillRow = ({
   const statusDetails = useLazyQuery<SingleBackfillQuery, SingleBackfillQueryVariables>(
     SINGLE_BACKFILL_STATUS_DETAILS_QUERY,
     {
-      variables: {backfillId: backfill.backfillId},
+      variables: {backfillId: backfill.id},
       notifyOnNetworkStatusChange: true,
     },
   );
@@ -65,20 +65,29 @@ export const BackfillRow = ({
   const statusCounts = useLazyQuery<SingleBackfillCountsQuery, SingleBackfillCountsQueryVariables>(
     SINGLE_BACKFILL_STATUS_COUNTS_QUERY,
     {
-      variables: {backfillId: backfill.backfillId},
+      variables: {backfillId: backfill.id},
       notifyOnNetworkStatusChange: true,
     },
   );
 
+  const statusUnsupported = backfill.numPartitions === null || backfill.partitionNames === null;
+
   // Note: We switch queries based on how many partitions there are to display,
-  // because the detail is nice for small backfills but breaks for 100k+ partitions
-  const [queryStatus, queryResult] =
-    backfill.numPartitions > BACKFILL_PARTITIONS_COUNTS_THRESHOLD ? statusCounts : statusDetails;
+  // because the detail is nice for small backfills but breaks for 100k+ partitions.
+  //
+  // If the number of partitions or partition names are missing, we use a mock to
+  // avoid executing any query at all. This is a bit awkward, but seems cleaner than
+  // making the hooks below support an optional query function / result.
+  const [statusQueryFn, statusQueryResult] = statusUnsupported
+    ? NoBackfillStatusQuery
+    : (backfill.numPartitions || 0) > BACKFILL_PARTITIONS_COUNTS_THRESHOLD
+    ? statusCounts
+    : statusDetails;
 
-  useDelayedRowQuery(queryStatus);
-  useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
+  useDelayedRowQuery(statusQueryFn);
+  useQueryRefreshAtInterval(statusQueryResult, FIFTEEN_SECONDS);
 
-  const {data} = queryResult;
+  const {data} = statusQueryResult;
   const {counts, statuses} = React.useMemo(() => {
     if (data?.partitionBackfillOrError.__typename !== 'PartitionBackfill') {
       return {counts: null, statuses: null};
@@ -94,18 +103,24 @@ export const BackfillRow = ({
     return {counts, statuses};
   }, [data]);
 
-  const runsUrl = runsPathWithFilters([
-    {
-      token: 'tag',
-      value: `dagster/backfill=${backfill.backfillId}`,
-    },
-  ]);
-
   return (
     <tr>
       <td style={{width: 120}}>
         <Mono style={{fontSize: '16px', lineHeight: '18px'}}>
-          <Link to={runsUrl}>{backfill.backfillId}</Link>
+          <Link
+            to={
+              backfill.isAssetBackfill
+                ? `/overview/backfills/${backfill.id}`
+                : runsPathWithFilters([
+                    {
+                      token: 'tag',
+                      value: `dagster/backfill=${backfill.id}`,
+                    },
+                  ])
+            }
+          >
+            {backfill.id}
+          </Link>
         </Mono>
       </td>
       <td style={{width: 220}}>
@@ -124,17 +139,21 @@ export const BackfillRow = ({
         />
       </td>
       <td style={{width: 140}}>
-        {counts ? (
+        {counts || statusUnsupported ? (
           <BackfillStatusTag backfill={backfill} counts={counts} />
         ) : (
-          <LoadingOrNone queryResult={queryResult} />
+          <LoadingOrNone queryResult={statusQueryResult} noneString={'\u2013'} />
         )}
       </td>
       <td>
-        {counts ? (
-          <BackfillRunStatus backfill={backfill} counts={counts} statuses={statuses} />
+        {backfill.isValidSerialization ? (
+          counts ? (
+            <BackfillRunStatus backfill={backfill} counts={counts} statuses={statuses} />
+          ) : (
+            <LoadingOrNone queryResult={statusQueryResult} noneString={'\u2013'} />
+          )
         ) : (
-          <LoadingOrNone queryResult={queryResult} />
+          <p>A partitions definition has changed since this backfill ran.</p>
         )}
       </td>
       <td>
@@ -166,11 +185,12 @@ const BackfillMenu = ({
   onShowStepStatus: (backfill: BackfillTableFragment) => void;
 }) => {
   const history = useHistory();
-  const {canCancelPartitionBackfill, canLaunchPartitionBackfill} = usePermissionsDEPRECATED();
+  const {hasResumePermission} = backfill;
+
   const runsUrl = runsPathWithFilters([
     {
       token: 'tag',
-      value: `dagster/backfill=${backfill.backfillId}`,
+      value: `dagster/backfill=${backfill.id}`,
     },
   ]);
 
@@ -178,7 +198,7 @@ const BackfillMenu = ({
     <Popover
       content={
         <Menu>
-          {canCancelPartitionBackfill.enabled ? (
+          {backfill.hasCancelPermission ? (
             <>
               {backfill.numCancelable > 0 ? (
                 <MenuItem
@@ -198,7 +218,7 @@ const BackfillMenu = ({
               ) : null}
             </>
           ) : null}
-          {canLaunchPartitionBackfill.enabled &&
+          {hasResumePermission &&
           backfill.status === BulkActionStatus.FAILED &&
           backfill.partitionSet ? (
             <MenuItem
@@ -240,21 +260,24 @@ const BackfillRunStatus = ({
   counts: {[status: string]: number};
 }) => {
   const history = useHistory();
-
-  // Note: The backend reports a run status as the state of each partition, but
-  // Dagit doesn't consider all run statuses (eg: "Canceling") a valid partition state.
-  // Coerce the data from the backend into PartitionState, collapsing the counts.
   const partitionCounts = Object.entries(counts).reduce((partitionCounts, [runStatus, count]) => {
-    const key = runStatusToPartitionState(runStatus as RunStatus);
-    partitionCounts[key] = (partitionCounts[key] || 0) + count;
+    partitionCounts[runStatus] = (partitionCounts[runStatus] || 0) + count;
     return partitionCounts;
-  }, {});
+  }, {} as {[status: string]: number});
 
-  return statuses ? (
+  const health: PartitionStatusHealthSourceOps = React.useMemo(
+    () => ({
+      runStatusForPartitionKey: (key: string) =>
+        statuses?.filter((s) => s.partitionName === key)[0]?.runStatus || RunStatus.NOT_STARTED,
+    }),
+    [statuses],
+  );
+
+  return statuses && backfill.partitionNames ? (
     <PartitionStatus
       partitionNames={backfill.partitionNames}
-      partitionStateForKey={(key) => runStatusToPartitionState(statuses[key])}
-      splitPartitions={true}
+      health={health}
+      splitPartitions
       onClick={(partitionName) => {
         const entry = statuses.find((r) => r.partitionName === partitionName);
         if (entry?.runId) {
@@ -264,9 +287,9 @@ const BackfillRunStatus = ({
     />
   ) : (
     <RunStatusTagsWithCounts
-      succeededCount={partitionCounts[PartitionState.SUCCESS]}
-      inProgressCount={partitionCounts[PartitionState.STARTED]}
-      failedCount={partitionCounts[PartitionState.FAILURE]}
+      succeededCount={partitionCounts[RunStatus.SUCCESS]}
+      inProgressCount={partitionCounts[RunStatus.STARTED]}
+      failedCount={partitionCounts[RunStatus.FAILURE]}
     />
   );
 };
@@ -306,7 +329,10 @@ const BackfillTarget: React.FC<{
         </Link>
       );
     }
-    return <span style={{fontWeight: 500}}>{partitionSetName}</span>;
+    if (partitionSetName) {
+      return <span style={{fontWeight: 500}}>{partitionSetName}</span>;
+    }
+    return null;
   };
 
   const buildRepoLink = () =>
@@ -360,39 +386,56 @@ const BackfillRequestedRange = ({
   allPartitions?: string[];
   onExpand: () => void;
 }) => {
+  const {partitionNames, numPartitions} = backfill;
+
+  if (numPartitions === null) {
+    return <span />;
+  }
+
+  const numPartitionsLabel = `${numPartitions.toLocaleString()} ${
+    numPartitions === 1 ? 'partition' : 'partitions'
+  }`;
   return (
     <Box flex={{direction: 'column', gap: 8}}>
       <div>
-        <TagButton onClick={onExpand}>
-          <Tag intent="primary" interactive>
-            {backfill.partitionNames.length.toLocaleString()} partitions
-          </Tag>
-        </TagButton>
+        {partitionNames ? (
+          <TagButton onClick={onExpand}>
+            <Tag intent="primary" interactive>
+              {numPartitionsLabel}
+            </Tag>
+          </TagButton>
+        ) : (
+          <Tag intent="primary">{numPartitionsLabel}</Tag>
+        )}
       </div>
-      {allPartitions && (
-        <PartitionStatus
-          small
-          hideStatusTooltip
-          partitionNames={allPartitions}
-          partitionStateForKey={(key) =>
-            backfill.partitionNames.includes(key) ? PartitionState.QUEUED : PartitionState.MISSING
-          }
-        />
+      {allPartitions && partitionNames && (
+        <RequestedPartitionStatusBar all={allPartitions} requested={partitionNames} />
       )}
     </Box>
   );
 };
 
-const BackfillStatusTag = ({
+const RequestedPartitionStatusBar = ({all, requested}: {all: string[]; requested: string[]}) => {
+  const health: PartitionStatusHealthSourceOps = React.useMemo(
+    () => ({
+      runStatusForPartitionKey: (key: string) =>
+        requested && requested.includes(key) ? RunStatus.QUEUED : RunStatus.NOT_STARTED,
+    }),
+    [requested],
+  );
+  return <PartitionStatus small hideStatusTooltip partitionNames={all} health={health} />;
+};
+
+export const BackfillStatusTag = ({
   backfill,
   counts,
 }: {
-  backfill: BackfillTableFragment;
-  counts: {[status: string]: number};
+  backfill: Pick<BackfillTableFragment, 'status' | 'error' | 'partitionNames'>;
+  counts: {[status: string]: number} | null;
 }) => {
   switch (backfill.status) {
     case BulkActionStatus.REQUESTED:
-      return <Tag>Requested</Tag>;
+      return <Tag>In Progress</Tag>;
     case BulkActionStatus.CANCELED:
     case BulkActionStatus.FAILED:
       return (
@@ -408,6 +451,12 @@ const BackfillStatusTag = ({
         </Box>
       );
     case BulkActionStatus.COMPLETED:
+      if (backfill.partitionNames === null) {
+        return <Tag intent="success">Completed</Tag>;
+      }
+      if (!counts) {
+        return <div style={{color: Colors.Gray500}}>None</div>;
+      }
       if (counts[RunStatus.SUCCESS] === backfill.partitionNames.length) {
         return <Tag intent="success">Completed</Tag>;
       }
@@ -434,7 +483,7 @@ export const SINGLE_BACKFILL_STATUS_COUNTS_QUERY = gql`
   query SingleBackfillCountsQuery($backfillId: String!) {
     partitionBackfillOrError(backfillId: $backfillId) {
       ... on PartitionBackfill {
-        backfillId
+        id
         partitionStatusCounts {
           runStatus
           count
@@ -448,7 +497,7 @@ export const SINGLE_BACKFILL_STATUS_DETAILS_QUERY = gql`
   query SingleBackfillQuery($backfillId: String!) {
     partitionBackfillOrError(backfillId: $backfillId) {
       ... on PartitionBackfill {
-        backfillId
+        id
         partitionStatuses {
           ...PartitionStatusesForBackfill
         }

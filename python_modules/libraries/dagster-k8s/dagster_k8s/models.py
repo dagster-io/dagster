@@ -4,7 +4,6 @@ from typing import Any, Mapping
 
 import dagster._check as check
 import kubernetes
-from dagster._utils import frozendict
 from dateutil.parser import parse
 from kubernetes.client import ApiClient
 
@@ -59,7 +58,7 @@ def _k8s_parse_value(data, classname, attr_name):
     elif klass == datetime.datetime:
         return parse(data)
     else:
-        if not isinstance(data, (frozendict, dict)):
+        if not isinstance(data, dict):
             raise Exception(
                 f"Attribute {attr_name} of type {klass.__name__} must be a dict, received"
                 f" {data} instead"
@@ -87,7 +86,7 @@ def _k8s_snake_case_value(val, attr_type, attr_name):
         ):
             return val
         else:
-            if not isinstance(val, (frozendict, dict)):
+            if not isinstance(val, dict):
                 raise Exception(
                     f"Attribute {attr_name} of type {klass.__name__} must be a dict, received"
                     f" {val} instead"

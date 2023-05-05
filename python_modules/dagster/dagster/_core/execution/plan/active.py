@@ -1,5 +1,21 @@
 import time
-from typing import Any, Callable, Dict, Iterator, List, Mapping, Optional, Sequence, Set, cast
+from types import TracebackType
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Set,
+    Type,
+    Union,
+    cast,
+)
+
+from typing_extensions import Self
 
 import dagster._check as check
 from dagster._core.errors import (
@@ -8,7 +24,11 @@ from dagster._core.errors import (
     DagsterUnknownStepStateError,
 )
 from dagster._core.events import DagsterEvent
-from dagster._core.execution.context.system import PlanOrchestrationContext
+from dagster._core.execution.context.system import (
+    IPlanContext,
+    PlanExecutionContext,
+    PlanOrchestrationContext,
+)
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.retries import RetryMode, RetryState
 from dagster._core.storage.tags import PRIORITY_TAG
@@ -98,11 +118,13 @@ class ActiveExecution:
         # Start the show by loading _executable with the set of _pending steps that have no deps
         self._update()
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         self._context_guard = True
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(
+        self, exc_type: Type[Exception], exc_value: Exception, traceback: TracebackType
+    ) -> None:
         self._context_guard = False
 
         # Exiting due to exception, return to allow exception to bubble
@@ -114,16 +136,14 @@ class ActiveExecution:
                 self._executable + self._pending_abandon + self._pending_retry + self._pending_skip
             )
             state_str = "{pending_str}{in_flight_str}{action_str}{retry_str}".format(
-                in_flight_str="\nSteps still in flight: {}".format(self._in_flight)
+                in_flight_str=f"\nSteps still in flight: {self._in_flight}"
                 if self._in_flight
                 else "",
-                pending_str="\nSteps pending processing: {}".format(self._pending.keys())
+                pending_str=f"\nSteps pending processing: {self._pending.keys()}"
                 if self._pending
                 else "",
-                action_str="\nSteps pending action: {}".format(pending_action)
-                if pending_action
-                else "",
-                retry_str="\nSteps waiting to retry: {}".format(self._waiting_to_retry.keys())
+                action_str=f"\nSteps pending action: {pending_action}" if pending_action else "",
+                retry_str=f"\nSteps waiting to retry: {self._waiting_to_retry.keys()}"
                 if self._waiting_to_retry
                 else "",
             )
@@ -155,9 +175,9 @@ class ActiveExecution:
         """Moves steps from _pending to _executable / _pending_skip / _pending_retry
         as a function of what has been _completed.
         """
-        new_steps_to_execute = []
-        new_steps_to_skip = []
-        new_steps_to_abandon = []
+        new_steps_to_execute: List[str] = []
+        new_steps_to_skip: List[str] = []
+        new_steps_to_abandon: List[str] = []
 
         successful_or_skipped_steps = self._success | self._skipped
         failed_or_abandoned_steps = self._failed | self._abandoned
@@ -246,7 +266,7 @@ class ActiveExecution:
             step = self.get_next_step()
 
         check.invariant(step is not None, "Unexpected ActiveExecution state")
-        return cast(ExecutionStep, step)
+        return step  # type: ignore  # (possible none)
 
     def get_step_by_key(self, step_key: str) -> ExecutionStep:
         step = self._plan.get_step_by_key(step_key)
@@ -255,7 +275,7 @@ class ActiveExecution:
     def get_steps_to_execute(
         self,
         limit: Optional[int] = None,
-    ) -> List[ExecutionStep]:
+    ) -> Sequence[ExecutionStep]:
         check.invariant(
             self._context_guard,
             "ActiveExecution must be used as a context manager",
@@ -331,12 +351,14 @@ class ActiveExecution:
 
         return sorted(steps, key=self._sort_key_fn)
 
-    def plan_events_iterator(self, pipeline_context) -> Iterator[DagsterEvent]:
+    def plan_events_iterator(
+        self, job_context: Union[PlanExecutionContext, PlanOrchestrationContext]
+    ) -> Iterator[DagsterEvent]:
         """Process all steps that can be skipped and abandoned."""
         steps_to_skip = self.get_steps_to_skip()
         while steps_to_skip:
             for step in steps_to_skip:
-                step_context = pipeline_context.for_step(step)
+                step_context = job_context.for_step(step)
                 step_context.log.info(
                     f"Skipping step {step.key} due to skipped dependencies:"
                     f" {self._skipped_deps[step.key]}."
@@ -350,7 +372,7 @@ class ActiveExecution:
         steps_to_abandon = self.get_steps_to_abandon()
         while steps_to_abandon:
             for step in steps_to_abandon:
-                step_context = pipeline_context.for_step(step)
+                step_context = job_context.for_step(step)
                 failed_inputs: List[str] = []
                 for step_input in step.step_inputs:
                     failed_inputs.extend(self._failed.intersection(step_input.dependency_keys))
@@ -364,8 +386,8 @@ class ActiveExecution:
                 step_context.log.error(
                     "Dependencies for step {step}{fail_str}{abandon_str}. Not executing.".format(
                         step=step.key,
-                        fail_str=" failed: {}".format(failed_inputs) if failed_inputs else "",
-                        abandon_str=" were not executed: {}".format(abandoned_inputs)
+                        fail_str=f" failed: {failed_inputs}" if failed_inputs else "",
+                        abandon_str=f" were not executed: {abandoned_inputs}"
                         if abandoned_inputs
                         else "",
                     )
@@ -401,7 +423,7 @@ class ActiveExecution:
     def mark_up_for_retry(self, step_key: str, at_time: Optional[float] = None) -> None:
         check.invariant(
             not self._retry_mode.disabled,
-            "Attempted to mark {} as up for retry but retries are disabled".format(step_key),
+            f"Attempted to mark {step_key} as up for retry but retries are disabled",
         )
         check.opt_float_param(at_time, "at_time")
 
@@ -449,7 +471,7 @@ class ActiveExecution:
         elif dagster_event.is_step_skipped:
             # Skip events are generated by this class. They should not be sent via handle_event
             raise DagsterInvariantViolationError(
-                "Step {} was reported as skipped from outside the ActiveExecution.".format(step_key)
+                f"Step {step_key} was reported as skipped from outside the ActiveExecution."
             )
         elif dagster_event.is_step_up_for_retry:
             self.mark_up_for_retry(
@@ -468,11 +490,11 @@ class ActiveExecution:
                     ],
                 ).append(dagster_event.step_output_data.step_output_handle.mapping_key)
 
-    def verify_complete(self, pipeline_context: PlanOrchestrationContext, step_key: str) -> None:
+    def verify_complete(self, job_context: IPlanContext, step_key: str) -> None:
         """Ensure that a step has reached a terminal state, if it has not mark it as an unexpected failure.
         """
         if step_key in self._in_flight:
-            pipeline_context.log.error(
+            job_context.log.error(
                 "Step {key} finished without success or failure event. Downstream steps will not"
                 " execute.".format(key=step_key)
             )
@@ -543,8 +565,7 @@ class ActiveExecution:
     def rebuild_from_events(
         self, dagster_events: Sequence[DagsterEvent]
     ) -> Sequence[ExecutionStep]:
-        """
-        Replay events to rebuild the execution state and continue after a failure.
+        """Replay events to rebuild the execution state and continue after a failure.
 
         Returns a list of steps that are possibly in flight. Current status of the event log implies
         that the previous run worker might have crashed before launching these steps, or it may have

@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 import {Box, Colors, Group, Icon, Mono, NonIdealState, Table} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -6,20 +5,25 @@ import styled from 'styled-components/macro';
 
 import {Timestamp} from '../app/time/Timestamp';
 import {isHiddenAssetGroupJob, LiveDataForNode} from '../asset-graph/Utils';
-import {StaleTag} from '../assets/StaleTag';
-import {MetadataEntry, METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
+import {AssetKeyInput} from '../graphql/types';
+import {MetadataEntry} from '../metadata/MetadataEntry';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {linkToRunEvent, titleForRun} from '../runs/RunUtils';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {AssetLineageElements} from './AssetLineageElements';
-import {LatestMaterializationMetadataFragment} from './types/LastMaterializationMetadata.types';
+import {StaleReasonsTags} from './Stale';
+import {
+  AssetObservationFragment,
+  AssetMaterializationFragment,
+} from './types/useRecentAssetEvents.types';
 
 export const LatestMaterializationMetadata: React.FC<{
-  latest: LatestMaterializationMetadataFragment | undefined;
+  assetKey: AssetKeyInput;
+  latest: AssetObservationFragment | AssetMaterializationFragment | undefined;
   liveData: LiveDataForNode | undefined;
-}> = ({latest, liveData}) => {
+}> = ({assetKey, latest, liveData}) => {
   const latestRun = latest?.runOrError.__typename === 'Run' ? latest?.runOrError : null;
   const repositoryOrigin = latestRun?.repositoryOrigin;
   const repoAddress = repositoryOrigin
@@ -32,15 +36,16 @@ export const LatestMaterializationMetadata: React.FC<{
       <Box padding={{top: 16, bottom: 32}}>
         <NonIdealState
           icon="materialization"
-          title="No materializations"
-          description="No materializations were found for this asset."
+          title="No metadata"
+          description="No metadata was found for this asset."
         />
       </Box>
     );
   }
 
   const latestEvent = latest;
-  const latestAssetLineage = latestEvent?.assetLineage;
+  const latestAssetLineage =
+    latestEvent.__typename === 'MaterializationEvent' ? latestEvent?.assetLineage : [];
 
   return (
     <MetadataTable>
@@ -53,7 +58,7 @@ export const LatestMaterializationMetadata: React.FC<{
                 <Box>
                   {'Run '}
                   <Link to={`/runs/${latestEvent.runId}?timestamp=${latestEvent.timestamp}`}>
-                    <Mono>{titleForRun({runId: latestEvent.runId})}</Mono>
+                    <Mono>{titleForRun({id: latestEvent.runId})}</Mono>
                   </Link>
                 </Box>
                 {!isHiddenAssetGroupJob(latestRun.pipelineName) && (
@@ -78,11 +83,13 @@ export const LatestMaterializationMetadata: React.FC<{
               'No materialization events'
             )}
           </td>
+          <td />
         </tr>
         {latest?.partition ? (
           <tr>
-            <td>Latest partition</td>
+            <td>Partition</td>
             <td>{latest ? latest.partition : 'No materialization events'}</td>
+            <td />
           </tr>
         ) : null}
         <tr>
@@ -94,9 +101,12 @@ export const LatestMaterializationMetadata: React.FC<{
               ) : (
                 'No materialization events'
               )}
-              {liveData && <StaleTag liveData={liveData} />}
+              {liveData && (
+                <StaleReasonsTags assetKey={assetKey} liveData={liveData} include="all" />
+              )}
             </Box>
           </td>
+          <td />
         </tr>
         {latestAssetLineage?.length ? (
           <tr>
@@ -107,6 +117,7 @@ export const LatestMaterializationMetadata: React.FC<{
                 timestamp={latestEvent.timestamp}
               />
             </td>
+            <td />
           </tr>
         ) : null}
         {latestEvent?.metadataEntries.map((entry) => (
@@ -136,38 +147,4 @@ const MetadataTable = styled(Table)`
     overflow: hidden;
     text-overflow: ellipsis;
   }
-`;
-
-export const LATEST_MATERIALIZATION_METADATA_FRAGMENT = gql`
-  fragment LatestMaterializationMetadataFragment on MaterializationEvent {
-    partition
-    runOrError {
-      ... on PipelineRun {
-        id
-        runId
-        mode
-        pipelineName
-        pipelineSnapshotId
-        repositoryOrigin {
-          id
-          repositoryName
-          repositoryLocationName
-        }
-      }
-    }
-    runId
-    timestamp
-    stepKey
-    metadataEntries {
-      ...MetadataEntryFragment
-    }
-    assetLineage {
-      assetKey {
-        path
-      }
-      partitions
-    }
-  }
-
-  ${METADATA_ENTRY_FRAGMENT}
 `;

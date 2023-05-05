@@ -7,7 +7,7 @@ from setuptools import find_packages, setup
 def get_version() -> str:
     version: Dict[str, str] = {}
     with open(Path(__file__).parent / "dagster_azure/version.py", encoding="utf8") as fp:
-        exec(fp.read(), version)  # pylint: disable=W0122
+        exec(fp.read(), version)
 
     return version["__version__"]
 
@@ -28,6 +28,7 @@ setup(
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
@@ -35,6 +36,7 @@ setup(
     include_package_data=True,
     install_requires=[
         "azure-core<2.0.0,>=1.7.0",
+        "azure-identity<2.0.0,>=1.7.0",
         "azure-storage-blob<13.0.0,>=12.5.0",
         "azure-storage-file-datalake<13.0.0,>=12.5",
         f"dagster{pin}",
