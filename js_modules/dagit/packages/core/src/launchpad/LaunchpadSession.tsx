@@ -271,6 +271,18 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
     }
   };
 
+  const onExpandDefaults = () => {
+    if (runConfigSchema?.rootDefaultYaml) {
+      const defaultsYaml = yaml.parse(sanitizeConfigYamlString(runConfigSchema?.rootDefaultYaml));
+
+      const currentUserConfig = yaml.parse(sanitizeConfigYamlString(currentSession.runConfigYaml));
+      const updatedRunConfigData = merge(defaultsYaml, currentUserConfig);
+      const mergedYaml = yaml.stringify(updatedRunConfigData);
+
+      onSaveSession({runConfigYaml: mergedYaml});
+    }
+  };
+
   const buildExecutionVariables = () => {
     if (!currentSession) {
       return;
@@ -716,6 +728,7 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
               onHighlightPath={(path) => editor.current?.moveCursorToPath(path)}
               onRemoveExtraPaths={(paths) => onRemoveExtraPaths(paths)}
               onScaffoldMissingConfig={onScaffoldMissingConfig}
+              onExpandDefaults={onExpandDefaults}
             />
           </>
         }

@@ -1736,7 +1736,7 @@ def infer_schema_from_config_class(
         "Config type annotation must inherit from dagster.Config",
     )
 
-    fields = {}
+    fields: Dict[str, Field] = {}
     for pydantic_field in model_cls.__fields__.values():
         if pydantic_field.name not in fields_to_omit:
             if isinstance(pydantic_field.default, Field):
@@ -1762,6 +1762,7 @@ def infer_schema_from_config_class(
     shape_cls = Permissive if model_cls.__config__.extra == Extra.allow else Shape
 
     docstring = model_cls.__doc__.strip() if model_cls.__doc__ else None
+
     return Field(config=shape_cls(fields), description=description or docstring)
 
 

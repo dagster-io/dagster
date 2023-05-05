@@ -12,6 +12,7 @@ export const CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT = gql`
     allConfigTypes {
       ...AllConfigTypesForEditor
     }
+    rootDefaultYaml
   }
 
   fragment AllConfigTypesForEditor on ConfigType {

@@ -201,6 +201,43 @@ const ScaffoldConfigButton = ({
   );
 };
 
+const ExpandDefaultButton = ({
+  onExpandDefaults,
+  disabled,
+}: {
+  onExpandDefaults: () => void;
+  disabled: boolean;
+}) => {
+  const confirm = useConfirmation();
+
+  const onClick = async () => {
+    await confirm({
+      title: 'Scaffold all default config',
+      description: (
+        <div>
+          Clicking confirm will automatically scaffold any unspecified configuration fields into
+          your run config with default values. You will need to change the values appropriately.
+        </div>
+      ),
+    });
+    onExpandDefaults();
+  };
+
+  return (
+    <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+      <Button disabled={disabled} onClick={onClick}>
+        Scaffold all default config
+      </Button>
+      {disabled ? (
+        <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+          <Icon name="check_circle" color={Colors.Green500} />
+          No missing config
+        </Box>
+      ) : null}
+    </Box>
+  );
+};
+
 interface RunPreviewProps {
   validation: RunPreviewValidationFragment | null;
   document: any | null;
@@ -210,6 +247,7 @@ interface RunPreviewProps {
   onHighlightPath: (path: string[]) => void;
   onRemoveExtraPaths: (paths: string[]) => void;
   onScaffoldMissingConfig: () => void;
+  onExpandDefaults: () => void;
   solidSelection: string[] | null;
 }
 
@@ -221,6 +259,7 @@ export const RunPreview: React.FC<RunPreviewProps> = (props) => {
     launchpadType,
     onRemoveExtraPaths,
     onScaffoldMissingConfig,
+    onExpandDefaults,
     solidSelection,
     runConfigSchema,
   } = props;
@@ -396,6 +435,7 @@ export const RunPreview: React.FC<RunPreviewProps> = (props) => {
                 missingNodes={missingNodes}
                 disabled={!missingNodes.length}
               />
+              <ExpandDefaultButton onExpandDefaults={onExpandDefaults} disabled={false} />
               <RemoveExtraConfigButton
                 onRemoveExtraPaths={onRemoveExtraPaths}
                 extraNodes={extraNodes}
