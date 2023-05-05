@@ -1,3 +1,11 @@
+docs_black:
+	black --fast \
+    ../examples/docs_snippets
+
+docs_ruff:
+	ruff --fix ../examples/docs_snippets
+
+
 apidoc-build:
 	tox -e sphinx && python scripts/pack_json.py
 
@@ -14,5 +22,5 @@ next-dev-install:
 next-watch-build:
 	yarn --cwd=next dev
 
-mdx-format:
+mdx-format: docs_black docs_ruff;
 	yarn --cwd=next mdx-format
