@@ -995,12 +995,12 @@ class DagsterInstance(DynamicPartitionsStore):
         execution_plan: Optional["ExecutionPlan"] = None,
         run_id: Optional[str] = None,
         run_config: Optional[Mapping[str, object]] = None,
-        solids_to_execute: Optional[AbstractSet[str]] = None,
+        resolved_op_selection: Optional[AbstractSet[str]] = None,
         status: Optional[Union[DagsterRunStatus, str]] = None,
         tags: Optional[Mapping[str, str]] = None,
         root_run_id: Optional[str] = None,
         parent_run_id: Optional[str] = None,
-        solid_selection: Optional[Sequence[str]] = None,
+        op_selection: Optional[Sequence[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
         external_job_origin: Optional["ExternalJobOrigin"] = None,
         job_code_origin: Optional[JobPythonOrigin] = None,
@@ -1014,21 +1014,21 @@ class DagsterInstance(DynamicPartitionsStore):
         check.inst_param(job_def, "pipeline_def", JobDefinition)
         check.opt_inst_param(execution_plan, "execution_plan", ExecutionPlan)
 
-        # note that solids_to_execute is required to execute the solid subset, which is the
+        # note that op_selection is required to execute the solid subset, which is the
         # frozenset version of the previous solid_subset.
-        # solid_selection is not required and will not be converted to solids_to_execute here.
+        # solid_selection is not required and will not be converted to op_selection here.
         # i.e. this function doesn't handle solid queries.
         # solid_selection is only used to pass the user queries further down.
-        check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
-        check.opt_list_param(solid_selection, "solid_selection", of_type=str)
+        check.opt_set_param(resolved_op_selection, "resolved_op_selection", of_type=str)
+        check.opt_list_param(op_selection, "solid_selection", of_type=str)
         check.opt_set_param(asset_selection, "asset_selection", of_type=AssetKey)
 
-        # solids_to_execute never provided
-        if asset_selection or solid_selection:
+        # op_selection never provided
+        if asset_selection or op_selection:
             # for cases when `create_run_for_pipeline` is directly called
             job_def = job_def.get_subset(
                 asset_selection=asset_selection,
-                op_selection=solid_selection,
+                op_selection=op_selection,
             )
         step_keys_to_execute = None
 
@@ -1048,9 +1048,9 @@ class DagsterInstance(DynamicPartitionsStore):
             job_name=job_def.name,
             run_id=run_id,
             run_config=run_config,
-            op_selection=solid_selection,
+            op_selection=op_selection,
             asset_selection=asset_selection,
-            resolved_op_selection=solids_to_execute,
+            resolved_op_selection=resolved_op_selection,
             step_keys_to_execute=step_keys_to_execute,
             status=DagsterRunStatus(status) if status else None,
             tags=tags,

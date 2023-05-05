@@ -608,7 +608,7 @@ def test_single_op_selection_execution(
     run = instance.create_run_for_job(
         job_def=math_diamond,
         run_config=run_config,
-        solid_selection=["return_one"],
+        op_selection=["return_one"],
         external_job_origin=external_job.get_external_origin(),
         job_code_origin=external_job.get_python_origin(),
     )
@@ -647,7 +647,7 @@ def test_multi_op_selection_execution(
     run = instance.create_run_for_job(
         job_def=math_diamond,
         run_config=run_config,
-        solid_selection=["return_one", "multiply_by_2"],
+        op_selection=["return_one", "multiply_by_2"],
         external_job_origin=external_job.get_external_origin(),
         job_code_origin=external_job.get_python_origin(),
     )

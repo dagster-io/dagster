@@ -497,8 +497,8 @@ def _logged_execute_job(
     dagster_run = instance.create_run_for_job(
         job_def=job_arg.get_definition(),
         run_config=run_config,
-        solid_selection=op_selection,
-        solids_to_execute=solids_to_execute,
+        op_selection=op_selection,
+        resolved_op_selection=solids_to_execute,
         tags=tags,
         job_code_origin=(
             job_arg.get_python_origin() if isinstance(job_arg, ReconstructableJob) else None
@@ -567,9 +567,9 @@ def _reexecute_job(
             execution_plan=execution_plan,
             run_config=run_config,
             tags=tags,
-            solid_selection=parent_dagster_run.op_selection,
+            op_selection=parent_dagster_run.op_selection,
             asset_selection=parent_dagster_run.asset_selection,
-            solids_to_execute=parent_dagster_run.resolved_op_selection,
+            resolved_op_selection=parent_dagster_run.resolved_op_selection,
             root_run_id=parent_dagster_run.root_run_id or parent_dagster_run.run_id,
             parent_run_id=parent_dagster_run.run_id,
             job_code_origin=(
