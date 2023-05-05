@@ -10,6 +10,7 @@ import time
 import uuid
 import warnings
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import ExitStack
 from multiprocessing.synchronize import Event as MPEvent
 from subprocess import Popen
 from threading import Event as ThreadingEventType
@@ -34,7 +35,10 @@ from dagster._core.host_representation.external_data import (
     external_job_data_from_def,
     external_repository_data_from_def,
 )
-from dagster._core.host_representation.origin import ExternalRepositoryOrigin
+from dagster._core.host_representation.origin import (
+    ExternalRepositoryOrigin,
+    ManagedGrpcPythonEnvCodeLocationOrigin,
+)
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.libraries import DagsterLibraryRegistry
 from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT, get_python_environment_entry_point
@@ -190,10 +194,190 @@ def _get_code_pointer(
         check.failed("Invalid loadable target origin")
 
 
+class DagsterProxyApiServer(DagsterApiServicer):
+    def __init__(
+        self,
+        server_termination_event: ThreadingEventType,
+        loadable_target_origin: LoadableTargetOrigin,
+        heartbeat: bool = False,
+        heartbeat_timeout: int = 30,
+        lazy_load_user_code: bool = False,
+        fixed_server_id: Optional[str] = None,
+        entry_point: Optional[Sequence[str]] = None,
+        container_image: Optional[str] = None,
+        container_context: Optional[dict] = None,
+        inject_env_vars_from_instance: Optional[bool] = False,
+        instance_ref: Optional[InstanceRef] = None,
+        location_name: Optional[str] = None,
+    ):
+        super(DagsterProxyApiServer, self).__init__()
+
+        check.bool_param(heartbeat, "heartbeat")
+        check.int_param(heartbeat_timeout, "heartbeat_timeout")
+        check.invariant(heartbeat_timeout > 0, "heartbeat_timeout must be greater than 0")
+
+        self._server_termination_event = check.inst_param(
+            server_termination_event, "server_termination_event", ThreadingEventType
+        )
+        self._loadable_target_origin = check.inst_param(
+            loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin
+        )
+
+        # Each server is initialized with a unique UUID. This UUID is used by clients to track when
+        # servers are replaced and is used for cache invalidation and reloading.
+        self._server_id = check.opt_str_param(fixed_server_id, "fixed_server_id", str(uuid.uuid4()))
+
+        self._exit_stack = ExitStack()
+
+        # Assume for now you have an instance, not always true (pull from )
+        self._instance = self._exit_stack.enter_context(DagsterInstance.get())
+
+        self._lock = threading.Lock()
+
+        # TODO Add all these other things
+
+        # Move this import (probably this whole class)
+        from dagster._core.host_representation.grpc_server_registry import GrpcServerRegistry
+
+        self._grpc_server_registry = self._exit_stack.enter_context(
+            GrpcServerRegistry(
+                self._instance,
+                reload_interval=0,
+                heartbeat_ttl=30,
+                startup_timeout=self._instance.code_server_process_startup_timeout,
+                log_level="INFO",
+            )
+        )
+
+        self._origin = ManagedGrpcPythonEnvCodeLocationOrigin(
+            loadable_target_origin=self._loadable_target_origin, location_name=location_name
+        )
+        self._reload_location()
+
+    def _reload_location(self):
+        from dagster._grpc.client import client_heartbeat_thread
+
+        endpoint = self._grpc_server_registry.reload_grpc_endpoint(self._origin)
+        self._client = endpoint.create_client()
+        self._heartbeat_shutdown_event = threading.Event()
+        self._heartbeat_thread = threading.Thread(
+            target=client_heartbeat_thread,
+            args=(
+                self._client,
+                self._heartbeat_shutdown_event,
+            ),
+            name="grpc-client-heartbeat",
+        )
+        self._heartbeat_thread.daemon = True
+        self._heartbeat_thread.start()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, _exception_type, _exception_value, _traceback):
+        if self._heartbeat_shutdown_event:
+            self._heartbeat_shutdown_event.set()
+            self._heartbeat_shutdown_event = None
+
+        if self._heartbeat_thread:
+            self._heartbeat_thread.join()
+            self._heartbeat_thread = None
+
+        self._exit_stack.close()
+
+    def _get_grpc_client(self):
+        return self._client
+
+    def _query(self, api_name: str, request, _context):
+        return self._client._get_response(api_name, request)  # noqa
+
+    def _streaming_query(self, api_name: str, request, _context):
+        return self._client._get_streaming_response(api_name, request)  # noqa
+
+    def ExecutionPlanSnapshot(self, request, context):
+        return self._query("ExecutionPlanSnapshot", request, context)
+
+    def ListRepositories(self, request, context):
+        return self._query("ListRepositories", request, context)
+
+    def Ping(self, request, context):
+        return self._query("Ping", request, context)
+
+    def GetServerId(self, request, context):
+        return self._query("GetServerId", request, context)
+
+    def GetCurrentImage(self, request, context):
+        return self._query("GetCurrentImage", request, context)
+
+    def StreamingExternalRepository(self, request, context):
+        return self._streaming_query("StreamingExternalRepository", request, context)
+
+    def Heartbeat(self, request, context):
+        return self._query("Heartbeat", request, context)
+
+    def StreamingPing(self, request, context):
+        return self._streaming_query("StreamingPing", request, context)
+
+    def ExternalPartitionNames(self, request, context):
+        return self._query("ExternalPartitionNames", request, context)
+
+    def ExternalNotebookData(self, request, context):
+        return self._query("ExternalNotebookData", request, context)
+
+    def ExternalPartitionConfig(self, request, context):
+        return self._query("ExternalPartitionConfig", request, context)
+
+    def ExternalPartitionTags(self, request, context):
+        return self._query("ExternalPartitionTags", request, context)
+
+    def ExternalPartitionSetExecutionParams(self, request, context):
+        return self._streaming_query("ExternalPartitionSetExecutionParams", request, context)
+
+    def ExternalPipelineSubsetSnapshot(self, request, context):
+        return self._query("ExternalPipelineSubsetSnapshot", request, context)
+
+    def ExternalRepository(self, request, context):
+        return self._query("ExternalRepository", request, context)
+
+    def ExternalJob(self, request, context):
+        return self._query("ExternalJob", request, context)
+
+    def ExternalScheduleExecution(self, request, context):
+        return self._streaming_query("ExternalScheduleExecution", request, context)
+
+    def ExternalSensorExecution(self, request, context):
+        return self._streaming_query("ExternalSensorExecution", request, context)
+
+    def ShutdownServer(self, request, context):
+        return self._query("ShutdownServer", request, context)
+
+    def CancelExecution(self, request, context):
+        # TODO Get fancy here and route to previous clients for
+        # older runs instead of always using the current client
+        return self._query("CancelExecution", request, context)
+
+    def CanCancelExecution(self, request, context):
+        return self._query("CanCancelExecution", request, context)
+
+    def StartRun(self, request, context):
+        return self._query("StartRun", request, context)
+
+    def ReloadCode(self, request, context):
+        with self._lock:  # can only call this method once at a time
+            old_heartbeat_shutdown_event = self._heartbeat_shutdown_event
+            old_heartbeat_thread = self._heartbeat_thread
+            old_client = self._client
+
+            self._reload_location()
+
+            old_client.shutdown_server()
+            old_heartbeat_shutdown_event.set()
+            old_heartbeat_thread.join()
+
+        return api_pb2.ReloadCodeReply()
+
+
 class DagsterApiServer(DagsterApiServicer):
-    # The loadable_target_origin is currently Noneable to support instaniating a server.
-    # This helps us test the ping methods, and incrementally migrate each method to
-    # the target passed in here instead of passing in a target in the argument.
     def __init__(
         self,
         server_termination_event: ThreadingEventType,
@@ -938,6 +1122,7 @@ class DagsterGrpcServer:
         inject_env_vars_from_instance=False,
         instance_ref=None,
         location_name=None,
+        run_code_in_subprocess=False,
     ):
         check.opt_str_param(host, "host")
         check.opt_int_param(port, "port")
@@ -974,6 +1159,8 @@ class DagsterGrpcServer:
         check.opt_inst_param(instance_ref, "instance_ref", InstanceRef)
         check.opt_str_param(location_name, "location_name")
 
+        self._exit_stack = ExitStack()
+
         self.server = grpc.server(
             ThreadPoolExecutor(
                 max_workers=max_workers,
@@ -988,20 +1175,38 @@ class DagsterGrpcServer:
         self._server_termination_event = threading.Event()
 
         try:
-            self._api_servicer = DagsterApiServer(
-                server_termination_event=self._server_termination_event,
-                loadable_target_origin=loadable_target_origin,
-                heartbeat=heartbeat,
-                heartbeat_timeout=heartbeat_timeout,
-                lazy_load_user_code=lazy_load_user_code,
-                fixed_server_id=fixed_server_id,
-                entry_point=entry_point,
-                container_image=container_image,
-                container_context=container_context,
-                inject_env_vars_from_instance=inject_env_vars_from_instance,
-                instance_ref=instance_ref,
-                location_name=location_name,
-            )
+            if run_code_in_subprocess:
+                self._api_servicer = self._exit_stack.enter_context(
+                    DagsterProxyApiServer(
+                        server_termination_event=self._server_termination_event,
+                        loadable_target_origin=loadable_target_origin,
+                        heartbeat=heartbeat,
+                        heartbeat_timeout=heartbeat_timeout,
+                        lazy_load_user_code=lazy_load_user_code,
+                        fixed_server_id=fixed_server_id,
+                        entry_point=entry_point,
+                        container_image=container_image,
+                        container_context=container_context,
+                        inject_env_vars_from_instance=inject_env_vars_from_instance,
+                        instance_ref=instance_ref,
+                        location_name=location_name,
+                    )
+                )
+            else:
+                self._api_servicer = DagsterApiServer(
+                    server_termination_event=self._server_termination_event,
+                    loadable_target_origin=loadable_target_origin,
+                    heartbeat=heartbeat,
+                    heartbeat_timeout=heartbeat_timeout,
+                    lazy_load_user_code=lazy_load_user_code,
+                    fixed_server_id=fixed_server_id,
+                    entry_point=entry_point,
+                    container_image=container_image,
+                    container_context=container_context,
+                    inject_env_vars_from_instance=inject_env_vars_from_instance,
+                    instance_ref=instance_ref,
+                    location_name=location_name,
+                )
         except Exception:
             if self._ipc_output_file:
                 with ipc_write_stream(self._ipc_output_file) as ipc_stream:
@@ -1038,6 +1243,12 @@ class DagsterGrpcServer:
                 with ipc_write_stream(self._ipc_output_file) as ipc_stream:
                     ipc_stream.send(GrpcServerFailedToBindEvent())
             raise CouldNotBindGrpcServerToAddress(port)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, _exception_type, _exception_value, _traceback):
+        self._exit_stack.close()
 
     def serve(self):
         # Unfortunately it looks like ports bind late (here) and so this can fail with an error

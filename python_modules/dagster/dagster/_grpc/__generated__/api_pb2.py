@@ -65,9 +65,10 @@ DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
     b" \x01(\t\x12\x10\n\x08job_name\x18\x02"
     b' \x01(\t"I\n\x10\x45xternalJobReply\x12\x1b\n\x13serialized_job_data\x18\x01'
     b" \x01(\t\x12\x18\n\x10serialized_error\x18\x02"
-    b' \x01(\t2\xd3\x0e\n\nDagsterApi\x12*\n\x04Ping\x12\x10.api.PingRequest\x1a\x0e.api.PingReply"\x00\x12/\n\tHeartbeat\x12\x10.api.PingRequest\x1a\x0e.api.PingReply"\x00\x12G\n\rStreamingPing\x12\x19.api.StreamingPingRequest\x1a\x17.api.StreamingPingEvent"\x00\x30\x01\x12\x32\n\x0bGetServerId\x12\n.api.Empty\x1a\x15.api.GetServerIdReply"\x00\x12]\n\x15\x45xecutionPlanSnapshot\x12!.api.ExecutionPlanSnapshotRequest\x1a\x1f.api.ExecutionPlanSnapshotReply"\x00\x12N\n\x10ListRepositories\x12\x1c.api.ListRepositoriesRequest\x1a\x1a.api.ListRepositoriesReply"\x00\x12`\n\x16\x45xternalPartitionNames\x12".api.ExternalPartitionNamesRequest\x1a'
+    b' \x01(\t"\x13\n\x11ReloadCodeRequest"+\n\x0fReloadCodeReply\x12\x18\n\x10serialized_error\x18\x02'
+    b' \x01(\t2\x91\x0f\n\nDagsterApi\x12*\n\x04Ping\x12\x10.api.PingRequest\x1a\x0e.api.PingReply"\x00\x12/\n\tHeartbeat\x12\x10.api.PingRequest\x1a\x0e.api.PingReply"\x00\x12G\n\rStreamingPing\x12\x19.api.StreamingPingRequest\x1a\x17.api.StreamingPingEvent"\x00\x30\x01\x12\x32\n\x0bGetServerId\x12\n.api.Empty\x1a\x15.api.GetServerIdReply"\x00\x12]\n\x15\x45xecutionPlanSnapshot\x12!.api.ExecutionPlanSnapshotRequest\x1a\x1f.api.ExecutionPlanSnapshotReply"\x00\x12N\n\x10ListRepositories\x12\x1c.api.ListRepositoriesRequest\x1a\x1a.api.ListRepositoriesReply"\x00\x12`\n\x16\x45xternalPartitionNames\x12".api.ExternalPartitionNamesRequest\x1a'
     b' .api.ExternalPartitionNamesReply"\x00\x12Z\n\x14\x45xternalNotebookData\x12'
-    b' .api.ExternalNotebookDataRequest\x1a\x1e.api.ExternalNotebookDataReply"\x00\x12\x63\n\x17\x45xternalPartitionConfig\x12#.api.ExternalPartitionConfigRequest\x1a!.api.ExternalPartitionConfigReply"\x00\x12]\n\x15\x45xternalPartitionTags\x12!.api.ExternalPartitionTagsRequest\x1a\x1f.api.ExternalPartitionTagsReply"\x00\x12t\n#ExternalPartitionSetExecutionParams\x12/.api.ExternalPartitionSetExecutionParamsRequest\x1a\x18.api.StreamingChunkEvent"\x00\x30\x01\x12x\n\x1e\x45xternalPipelineSubsetSnapshot\x12*.api.ExternalPipelineSubsetSnapshotRequest\x1a(.api.ExternalPipelineSubsetSnapshotReply"\x00\x12T\n\x12\x45xternalRepository\x12\x1e.api.ExternalRepositoryRequest\x1a\x1c.api.ExternalRepositoryReply"\x00\x12?\n\x0b\x45xternalJob\x12\x17.api.ExternalJobRequest\x1a\x15.api.ExternalJobReply"\x00\x12h\n\x1bStreamingExternalRepository\x12\x1e.api.ExternalRepositoryRequest\x1a%.api.StreamingExternalRepositoryEvent"\x00\x30\x01\x12`\n\x19\x45xternalScheduleExecution\x12%.api.ExternalScheduleExecutionRequest\x1a\x18.api.StreamingChunkEvent"\x00\x30\x01\x12\\\n\x17\x45xternalSensorExecution\x12#.api.ExternalSensorExecutionRequest\x1a\x18.api.StreamingChunkEvent"\x00\x30\x01\x12\x38\n\x0eShutdownServer\x12\n.api.Empty\x1a\x18.api.ShutdownServerReply"\x00\x12K\n\x0f\x43\x61ncelExecution\x12\x1b.api.CancelExecutionRequest\x1a\x19.api.CancelExecutionReply"\x00\x12T\n\x12\x43\x61nCancelExecution\x12\x1e.api.CanCancelExecutionRequest\x1a\x1c.api.CanCancelExecutionReply"\x00\x12\x36\n\x08StartRun\x12\x14.api.StartRunRequest\x1a\x12.api.StartRunReply"\x00\x12:\n\x0fGetCurrentImage\x12\n.api.Empty\x1a\x19.api.GetCurrentImageReply"\x00\x12\x38\n\x0eGetCurrentRuns\x12\n.api.Empty\x1a\x18.api.GetCurrentRunsReply"\x00\x62\x06proto3'
+    b' .api.ExternalNotebookDataRequest\x1a\x1e.api.ExternalNotebookDataReply"\x00\x12\x63\n\x17\x45xternalPartitionConfig\x12#.api.ExternalPartitionConfigRequest\x1a!.api.ExternalPartitionConfigReply"\x00\x12]\n\x15\x45xternalPartitionTags\x12!.api.ExternalPartitionTagsRequest\x1a\x1f.api.ExternalPartitionTagsReply"\x00\x12t\n#ExternalPartitionSetExecutionParams\x12/.api.ExternalPartitionSetExecutionParamsRequest\x1a\x18.api.StreamingChunkEvent"\x00\x30\x01\x12x\n\x1e\x45xternalPipelineSubsetSnapshot\x12*.api.ExternalPipelineSubsetSnapshotRequest\x1a(.api.ExternalPipelineSubsetSnapshotReply"\x00\x12T\n\x12\x45xternalRepository\x12\x1e.api.ExternalRepositoryRequest\x1a\x1c.api.ExternalRepositoryReply"\x00\x12?\n\x0b\x45xternalJob\x12\x17.api.ExternalJobRequest\x1a\x15.api.ExternalJobReply"\x00\x12h\n\x1bStreamingExternalRepository\x12\x1e.api.ExternalRepositoryRequest\x1a%.api.StreamingExternalRepositoryEvent"\x00\x30\x01\x12`\n\x19\x45xternalScheduleExecution\x12%.api.ExternalScheduleExecutionRequest\x1a\x18.api.StreamingChunkEvent"\x00\x30\x01\x12\\\n\x17\x45xternalSensorExecution\x12#.api.ExternalSensorExecutionRequest\x1a\x18.api.StreamingChunkEvent"\x00\x30\x01\x12\x38\n\x0eShutdownServer\x12\n.api.Empty\x1a\x18.api.ShutdownServerReply"\x00\x12K\n\x0f\x43\x61ncelExecution\x12\x1b.api.CancelExecutionRequest\x1a\x19.api.CancelExecutionReply"\x00\x12T\n\x12\x43\x61nCancelExecution\x12\x1e.api.CanCancelExecutionRequest\x1a\x1c.api.CanCancelExecutionReply"\x00\x12\x36\n\x08StartRun\x12\x14.api.StartRunRequest\x1a\x12.api.StartRunReply"\x00\x12:\n\x0fGetCurrentImage\x12\n.api.Empty\x1a\x19.api.GetCurrentImageReply"\x00\x12\x38\n\x0eGetCurrentRuns\x12\n.api.Empty\x1a\x18.api.GetCurrentRunsReply"\x00\x12<\n\nReloadCode\x12\x16.api.ReloadCodeRequest\x1a\x14.api.ReloadCodeReply"\x00\x62\x06proto3'
 )
 
 
@@ -119,6 +120,8 @@ _GETCURRENTIMAGEREPLY = DESCRIPTOR.message_types_by_name["GetCurrentImageReply"]
 _GETCURRENTRUNSREPLY = DESCRIPTOR.message_types_by_name["GetCurrentRunsReply"]
 _EXTERNALJOBREQUEST = DESCRIPTOR.message_types_by_name["ExternalJobRequest"]
 _EXTERNALJOBREPLY = DESCRIPTOR.message_types_by_name["ExternalJobReply"]
+_RELOADCODEREQUEST = DESCRIPTOR.message_types_by_name["ReloadCodeRequest"]
+_RELOADCODEREPLY = DESCRIPTOR.message_types_by_name["ReloadCodeReply"]
 Empty = _reflection.GeneratedProtocolMessageType(
     "Empty",
     (_message.Message,),
@@ -537,6 +540,28 @@ ExternalJobReply = _reflection.GeneratedProtocolMessageType(
 )
 _sym_db.RegisterMessage(ExternalJobReply)
 
+ReloadCodeRequest = _reflection.GeneratedProtocolMessageType(
+    "ReloadCodeRequest",
+    (_message.Message,),
+    {
+        "DESCRIPTOR": _RELOADCODEREQUEST,
+        "__module__": "api_pb2"
+        # @@protoc_insertion_point(class_scope:api.ReloadCodeRequest)
+    },
+)
+_sym_db.RegisterMessage(ReloadCodeRequest)
+
+ReloadCodeReply = _reflection.GeneratedProtocolMessageType(
+    "ReloadCodeReply",
+    (_message.Message,),
+    {
+        "DESCRIPTOR": _RELOADCODEREPLY,
+        "__module__": "api_pb2"
+        # @@protoc_insertion_point(class_scope:api.ReloadCodeReply)
+    },
+)
+_sym_db.RegisterMessage(ReloadCodeReply)
+
 _DAGSTERAPI = DESCRIPTOR.services_by_name["DagsterApi"]
 if _descriptor._USE_C_DESCRIPTORS == False:
     DESCRIPTOR._options = None
@@ -616,6 +641,10 @@ if _descriptor._USE_C_DESCRIPTORS == False:
     _EXTERNALJOBREQUEST._serialized_end = 2628
     _EXTERNALJOBREPLY._serialized_start = 2630
     _EXTERNALJOBREPLY._serialized_end = 2703
-    _DAGSTERAPI._serialized_start = 2706
-    _DAGSTERAPI._serialized_end = 4581
+    _RELOADCODEREQUEST._serialized_start = 2705
+    _RELOADCODEREQUEST._serialized_end = 2724
+    _RELOADCODEREPLY._serialized_start = 2726
+    _RELOADCODEREPLY._serialized_end = 2769
+    _DAGSTERAPI._serialized_start = 2772
+    _DAGSTERAPI._serialized_end = 4709
 # @@protoc_insertion_point(module_scope)

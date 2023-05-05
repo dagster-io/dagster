@@ -119,16 +119,15 @@ class GrpcServerRegistry(AbstractContextManager):
 
         self._log_level = check.str_param(log_level, "log_level")
 
-        if self._reload_interval > 0:
-            self._cleanup_thread_shutdown_event = threading.Event()
+        self._cleanup_thread_shutdown_event = threading.Event()
 
-            self._cleanup_thread = threading.Thread(
-                target=self._clear_old_processes,
-                name="grpc-server-registry-cleanup",
-                args=(self._cleanup_thread_shutdown_event, self._reload_interval),
-            )
-            self._cleanup_thread.daemon = True
-            self._cleanup_thread.start()
+        self._cleanup_thread = threading.Thread(
+            target=self._clear_old_processes,
+            name="grpc-server-registry-cleanup",
+            args=(self._cleanup_thread_shutdown_event, self._reload_interval),
+        )
+        self._cleanup_thread.daemon = True
+        self._cleanup_thread.start()
 
     def supports_origin(
         self, code_location_origin: CodeLocationOrigin
@@ -245,7 +244,8 @@ class GrpcServerRegistry(AbstractContextManager):
 
                 for origin_id, entry in self._active_entries.items():
                     if (
-                        current_time - entry.creation_timestamp > reload_interval
+                        reload_interval > 0
+                        and current_time - entry.creation_timestamp > reload_interval
                     ):  # Use a different threshold for errors so they aren't cached as long?
                         origin_ids_to_clear.append(origin_id)
 

@@ -317,6 +317,15 @@ class GrpcServerCodeLocationOrigin(
         }
         return {key: value for key, value in metadata.items() if value is not None}
 
+    def reload_location(self) -> "GrpcServerCodeLocation":
+        from dagster._core.host_representation.code_location import (
+            GrpcServerCodeLocation,
+        )
+
+        self.create_client().reload_code()
+
+        return GrpcServerCodeLocation(self)
+
     def create_location(self) -> "GrpcServerCodeLocation":
         from dagster._core.host_representation.code_location import (
             GrpcServerCodeLocation,

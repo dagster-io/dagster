@@ -296,6 +296,12 @@ class DagsterGrpcClient:
 
         return res.serialized_external_pipeline_subset_result
 
+    def reload_code(self):
+        return self._query(
+            "ReloadCode",
+            api_pb2.ReloadCodeRequest,
+        )
+
     def external_repository(
         self,
         external_repository_origin: ExternalRepositoryOrigin,

@@ -622,6 +622,13 @@ def _execute_step_command_body(
     help="[INTERNAL] Serialized InstanceRef to use for accessing the instance",
     envvar="DAGSTER_INSTANCE_REF",
 )
+@click.option(
+    "--run-code-in-subprocess",
+    is_flag=True,
+    required=False,
+    default=False,
+    help="Whether to run the user code in a subprocess that can be reloaded.",
+)
 def grpc_command(
     port=None,
     socket=None,
@@ -640,6 +647,7 @@ def grpc_command(
     location_name=None,
     instance_ref=None,
     inject_env_vars_from_instance=False,
+    run_code_in_subprocess=False,
     **kwargs,
 ):
     from dagster._core.test_utils import mock_system_timezone
@@ -689,29 +697,32 @@ def grpc_command(
         if override_system_timezone:
             exit_stack.enter_context(mock_system_timezone(override_system_timezone))
 
-        server = DagsterGrpcServer(
-            port=port,
-            socket=socket,
-            host=host,
-            loadable_target_origin=loadable_target_origin,
-            max_workers=max_workers,
-            heartbeat=heartbeat,
-            heartbeat_timeout=heartbeat_timeout,
-            lazy_load_user_code=lazy_load_user_code,
-            ipc_output_file=ipc_output_file,
-            fixed_server_id=fixed_server_id,
-            entry_point=(
-                get_python_environment_entry_point(sys.executable)
-                if use_python_environment_entry_point
-                else DEFAULT_DAGSTER_ENTRY_POINT
-            ),
-            container_image=container_image,
-            container_context=json.loads(container_context)
-            if container_context is not None
-            else None,
-            inject_env_vars_from_instance=inject_env_vars_from_instance,
-            instance_ref=deserialize_value(instance_ref, InstanceRef) if instance_ref else None,
-            location_name=location_name,
+        server = exit_stack.enter_context(
+            DagsterGrpcServer(
+                port=port,
+                socket=socket,
+                host=host,
+                loadable_target_origin=loadable_target_origin,
+                max_workers=max_workers,
+                heartbeat=heartbeat,
+                heartbeat_timeout=heartbeat_timeout,
+                lazy_load_user_code=lazy_load_user_code,
+                ipc_output_file=ipc_output_file,
+                fixed_server_id=fixed_server_id,
+                entry_point=(
+                    get_python_environment_entry_point(sys.executable)
+                    if use_python_environment_entry_point
+                    else DEFAULT_DAGSTER_ENTRY_POINT
+                ),
+                container_image=container_image,
+                container_context=json.loads(container_context)
+                if container_context is not None
+                else None,
+                inject_env_vars_from_instance=inject_env_vars_from_instance,
+                instance_ref=deserialize_value(instance_ref, InstanceRef) if instance_ref else None,
+                location_name=location_name,
+                run_code_in_subprocess=run_code_in_subprocess,
+            )
         )
 
         code_desc = " "
@@ -723,10 +734,15 @@ def grpc_command(
             elif loadable_target_origin.module_name:
                 code_desc = f" for module {loadable_target_origin.module_name} "
 
+        if run_code_in_subprocess:
+            server_name = "parent server"
+        else:
+            server_name = "code server"
+
         server_desc = (
-            f"Dagster code server{code_desc}on port {port} in process {os.getpid()}"
+            f"Dagster {server_name}{code_desc}on port {port} in process {os.getpid()}"
             if port
-            else f"Dagster code server{code_desc}in process {os.getpid()}"
+            else f"Dagster {server_name}{code_desc}in process {os.getpid()}"
         )
 
         logger.info("Started %s", server_desc)
