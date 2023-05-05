@@ -167,8 +167,8 @@ class JobSnapshot(
                 parent_snapshot_id=create_job_snapshot_id(
                     cls.from_job_def(job_def.op_selection_data.parent_job_def)
                 ),
-                node_selection=sorted(job_def.op_selection_data.op_selection),
-                nodes_to_execute=job_def.op_selection_data.resolved_op_selection,
+                op_selection=sorted(job_def.op_selection_data.op_selection),
+                resolved_op_selection=job_def.op_selection_data.resolved_op_selection,
             )
         if job_def.asset_selection_data:
             lineage = JobLineageSnapshot(
@@ -404,7 +404,7 @@ def construct_config_type_from_snap(
     storage_name="PipelineSnapshotLineage",
     storage_field_names={
         "node_selection": "solid_selection",
-        "nodes_to_execute": "solids_to_execute",
+        "op_selection": "solids_to_execute",
     },
 )
 class JobLineageSnapshot(
@@ -412,8 +412,8 @@ class JobLineageSnapshot(
         "_JobLineageSnapshot",
         [
             ("parent_snapshot_id", str),
-            ("node_selection", Optional[Sequence[str]]),
-            ("nodes_to_execute", Optional[AbstractSet[str]]),
+            ("op_selection", Optional[Sequence[str]]),
+            ("resolved_op_selection", Optional[AbstractSet[str]]),
             ("asset_selection", Optional[AbstractSet[AssetKey]]),
         ],
     )
@@ -421,15 +421,15 @@ class JobLineageSnapshot(
     def __new__(
         cls,
         parent_snapshot_id: str,
-        node_selection: Optional[Sequence[str]] = None,
-        nodes_to_execute: Optional[AbstractSet[str]] = None,
+        op_selection: Optional[Sequence[str]] = None,
+        resolved_op_selection: Optional[AbstractSet[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
     ):
-        check.opt_set_param(nodes_to_execute, "nodes_to_execute", of_type=str)
+        check.opt_set_param(resolved_op_selection, "resolved_op_selection", of_type=str)
         return super(JobLineageSnapshot, cls).__new__(
             cls,
             check.str_param(parent_snapshot_id, parent_snapshot_id),
-            node_selection,
-            nodes_to_execute,
+            op_selection,
+            resolved_op_selection,
             asset_selection,
         )

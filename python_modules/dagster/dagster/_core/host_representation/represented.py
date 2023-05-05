@@ -56,7 +56,7 @@ class RepresentedJob(ABC):
     @property
     def op_selection(self) -> Optional[Sequence[str]]:
         return (
-            self._job_index.job_snapshot.lineage_snapshot.node_selection
+            self._job_index.job_snapshot.lineage_snapshot.op_selection
             if self._job_index.job_snapshot.lineage_snapshot
             else None
         )
@@ -64,7 +64,7 @@ class RepresentedJob(ABC):
     @property
     def resolved_op_selection(self) -> Optional[AbstractSet[str]]:
         return (
-            self._job_index.job_snapshot.lineage_snapshot.nodes_to_execute
+            self._job_index.job_snapshot.lineage_snapshot.resolved_op_selection
             if self._job_index.job_snapshot.lineage_snapshot
             else None
         )
