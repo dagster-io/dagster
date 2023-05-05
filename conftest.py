@@ -6,4 +6,4 @@ def pytest_configure():
     # https://buildkite.com/docs/pipelines/managing-log-output
     # https://docs.pytest.org/en/7.1.x/reference/reference.html?highlight=pytest_configure#pytest.hookspec.pytest_configure
     if os.getenv("BUILDKITE"):
-        print("+++ Running :pytest: PyTest")
+        print("+++ Running :pytest: PyTest")  # noqa
