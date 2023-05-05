@@ -207,14 +207,14 @@ user_code_launcher:
   </ReferenceTableItem>
   <ReferenceTableItem
   propertyName="config.ecs_timeout">
-  How long (in seconds) to poll against ECS API endpoints. If your ECS tasks take an unusually long time to start and result in timeouts, you can increase this setting above the default.
+  How long (in seconds) to wait for ECS to spin up a new service and task for a code server. If your ECS tasks take an unusually long time to start and result in timeouts, you can increase this setting above the default.
   <ul>
   <li><strong>Default</strong> - 300 (seconds)</li>
   </ul>
   </ReferenceTableItem>
   <ReferenceTableItem
   propertyName="config.ecs_grace_period">
-  How long (in seconds) to continue polling if an ECS API endpoint fails (because the ECS API is eventually consistent).
+  How long (in seconds) to continue polling if an ECS API endpoint fails during creation of a new code server (because the ECS API is eventually consistent).
   <ul>
   <li><strong>Default</strong> - 30 (seconds)</li>
   </ul>
