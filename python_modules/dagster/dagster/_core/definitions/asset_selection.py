@@ -92,9 +92,7 @@ class AssetSelection(ABC):
                 AssetSelection.keys(*asset_key_list)
         """
         _asset_keys = [
-            AssetKey.from_user_string(key)
-            if isinstance(key, str)
-            else AssetKey.from_coerceable(key)
+            AssetKey.from_user_string(key) if isinstance(key, str) else AssetKey.from_coercible(key)
             for key in asset_keys
         ]
         return KeysAssetSelection(*_asset_keys)

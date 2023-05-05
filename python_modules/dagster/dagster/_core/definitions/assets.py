@@ -1118,7 +1118,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             )
 
         if key is not None:
-            resolved_key = AssetKey.from_coerceable(key)
+            resolved_key = AssetKey.from_coercible(key)
             check.invariant(
                 resolved_key in self.keys, f"Key {resolved_key} not found in AssetsDefinition"
             )

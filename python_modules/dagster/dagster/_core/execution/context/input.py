@@ -592,7 +592,7 @@ def build_input_context(
     resources = check.opt_mapping_param(resources, "resources", key_type=str)
     op_def = check.opt_inst_param(op_def, "op_def", OpDefinition)
     step_context = check.opt_inst_param(step_context, "step_context", StepExecutionContext)
-    asset_key = AssetKey.from_coerceable(asset_key) if asset_key else None
+    asset_key = AssetKey.from_coercible(asset_key) if asset_key else None
     partition_key = check.opt_str_param(partition_key, "partition_key")
     asset_partition_key_range = check.opt_inst_param(
         asset_partition_key_range, "asset_partition_key_range", PartitionKeyRange
