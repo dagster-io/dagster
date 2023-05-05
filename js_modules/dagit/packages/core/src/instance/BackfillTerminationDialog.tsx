@@ -34,6 +34,7 @@ export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props
       skip: !backfill,
     },
   );
+
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const unfinishedMap = React.useMemo(() => {
     if (!backfill || !data || data.partitionBackfillOrError.__typename !== 'PartitionBackfill') {
@@ -63,7 +64,6 @@ export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props
     setIsSubmitting(false);
     onClose();
   };
-
   return (
     <>
       <Dialog

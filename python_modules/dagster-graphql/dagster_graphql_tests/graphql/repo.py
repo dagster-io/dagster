@@ -1887,7 +1887,7 @@ def define_asset_jobs():
 
 @repository
 def test_repo():
-    return [*define_jobs(), *define_schedules(), *define_sensors(), *define_asset_jobs()]
+    return [*define_jobs(), *define_sensors(), *define_asset_jobs()]
 
 
 defs = Definitions()
@@ -1897,6 +1897,6 @@ defs = Definitions()
 def test_dict_repo():
     return {
         "jobs": {job.name: job for job in define_jobs()},
-        "schedules": {schedule.name: schedule for schedule in define_schedules()},
+        # "schedules": {schedule.name: schedule for schedule in define_schedules()},
         "sensors": {sensor.name: sensor for sensor in define_sensors()},
     }

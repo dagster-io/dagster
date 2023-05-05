@@ -260,7 +260,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         return self._backfill_job.get_num_partitions(_graphene_info.context)
 
     def resolve_numCancelable(self, _graphene_info: ResolveInfo) -> int:
-        return self._backfill_job.get_num_cancelable()
+        return self._backfill_job.get_num_cancelable(_graphene_info.context)
 
     def resolve_partitionSet(self, graphene_info: ResolveInfo) -> Optional["GraphenePartitionSet"]:
         from ..schema.partition_sets import GraphenePartitionSet
@@ -276,15 +276,27 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         )
 
     def resolve_partitionStatuses(self, graphene_info: ResolveInfo):
+        """
+        For asset backfills, returns only statuses for runs that have been created.
+        """
+
         partition_set_origin = self._backfill_job.partition_set_origin
         partition_set_name = (
             partition_set_origin.partition_set_name if partition_set_origin else None
         )
         partition_run_data = self._get_partition_run_data(graphene_info)
+
+        if not self._backfill_job.is_asset_backfill:
+            partition_names = check.not_none(
+                self._backfill_job.get_partition_names(graphene_info.context)
+            )
+        else:
+            partition_names = None
+
         return partition_statuses_from_run_partition_data(
             partition_set_name,
             partition_run_data,
-            check.not_none(self._backfill_job.get_partition_names(graphene_info.context)),
+            partition_names,
             backfill_id=self._backfill_job.backfill_id,
         )
 

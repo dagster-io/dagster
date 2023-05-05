@@ -259,7 +259,7 @@ def get_partition_set_partition_statuses(
 def partition_statuses_from_run_partition_data(
     partition_set_name: Optional[str],
     run_partition_data: Sequence[RunPartitionData],
-    partition_names: Sequence[str],
+    partition_names: Optional[Sequence[str]],
     backfill_id: Optional[str] = None,
 ) -> Sequence["GraphenePartitionStatus"]:
     from ..schema.partition_sets import GraphenePartitionStatus, GraphenePartitionStatuses
@@ -269,22 +269,19 @@ def partition_statuses_from_run_partition_data(
     }
 
     suffix = f":{backfill_id}" if backfill_id else ""
+    partition_id = (
+        lambda partition: f'{partition_set_name or "__NO_PARTITION_SET__"}:{partition}{suffix}'
+    )
 
     results = []
-    for name in partition_names:
-        partition_id = f'{partition_set_name or "__NO_PARTITION_SET__"}:{name}{suffix}'
-        if not partition_data_by_name.get(name):
-            results.append(
-                GraphenePartitionStatus(
-                    id=partition_id,
-                    partitionName=name,
-                )
-            )
+    for name, partition_data in partition_data_by_name.items():
+        if partition_names and name not in partition_names:
             continue
+
         partition_data = partition_data_by_name[name]
         results.append(
             GraphenePartitionStatus(
-                id=partition_id,
+                id=partition_id(name),
                 partitionName=name,
                 runId=partition_data.run_id,
                 runStatus=partition_data.status.value,
@@ -293,6 +290,16 @@ def partition_statuses_from_run_partition_data(
                 else None,
             )
         )
+
+    if partition_names:
+        for name in partition_names:
+            if not partition_data_by_name.get(name):
+                results.append(
+                    GraphenePartitionStatus(
+                        id=partition_id(name),
+                        partitionName=name,
+                    )
+                )
 
     return GraphenePartitionStatuses(results=results)
 

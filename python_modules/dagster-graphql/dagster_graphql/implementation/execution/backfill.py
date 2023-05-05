@@ -30,6 +30,24 @@ if TYPE_CHECKING:
     from ...schema.errors import GraphenePartitionSetNotFoundError
 
 
+def _assert_permission_for_asset_graph(
+    graphene_info: "ResolveInfo", asset_graph: ExternalAssetGraph, permission: str
+) -> None:
+    location_names = set(
+        repo_handle.code_location_origin.location_name
+        for repo_handle in asset_graph.repository_handles_by_key.values()
+    )
+
+    if not location_names:
+        assert_permission(
+            graphene_info,
+            permission,
+        )
+    else:
+        for location_name in location_names:
+            assert_permission_for_location(graphene_info, permission, location_name)
+
+
 def create_and_launch_partition_backfill(
     graphene_info: "ResolveInfo",
     backfill_params: BackfillParams,
@@ -90,7 +108,7 @@ def create_and_launch_partition_backfill(
         else:
             raise DagsterError(
                 'Backfill requested without specifying either "allPartitions" or "partitionNames" '
-                "arguments"
+                'arguments'
             )
 
         backfill = PartitionBackfill(
@@ -136,22 +154,9 @@ def create_and_launch_partition_backfill(
             raise DagsterError("fromFailure is not supported for pure asset backfills")
 
         asset_graph = ExternalAssetGraph.from_workspace(graphene_info.context)
-
-        location_names = set(
-            repo_handle.code_location_origin.location_name
-            for repo_handle in asset_graph.repository_handles_by_key.values()
+        _assert_permission_for_asset_graph(
+            graphene_info, asset_graph, Permissions.LAUNCH_PARTITION_BACKFILL
         )
-
-        if not location_names:
-            assert_permission(
-                graphene_info,
-                Permissions.LAUNCH_PARTITION_BACKFILL,
-            )
-        else:
-            for location_name in location_names:
-                assert_permission_for_location(
-                    graphene_info, Permissions.LAUNCH_PARTITION_BACKFILL, location_name
-                )
 
         backfill = PartitionBackfill.from_asset_partitions(
             asset_graph=asset_graph,
@@ -184,11 +189,20 @@ def cancel_partition_backfill(
     if not backfill:
         check.failed(f"No backfill found for id: {backfill_id}")
 
-    partition_set_origin = check.not_none(backfill.partition_set_origin)
-    location_name = partition_set_origin.selector.location_name
-    assert_permission_for_location(
-        graphene_info, Permissions.CANCEL_PARTITION_BACKFILL, location_name
-    )
+    if backfill.serialized_asset_backfill_data:
+        asset_graph = ExternalAssetGraph.from_workspace(graphene_info.context)
+        _assert_permission_for_asset_graph(
+            graphene_info, asset_graph, Permissions.CANCEL_PARTITION_BACKFILL
+        )
+        graphene_info.context.instance.update_backfill(
+            backfill.with_status(BulkActionStatus.CANCELING)
+        )
+    else:
+        partition_set_origin = check.not_none(backfill.partition_set_origin)
+        location_name = partition_set_origin.selector.location_name
+        assert_permission_for_location(
+            graphene_info, Permissions.CANCEL_PARTITION_BACKFILL, location_name
+        )
 
     graphene_info.context.instance.update_backfill(backfill.with_status(BulkActionStatus.CANCELED))
     return GrapheneCancelBackfillSuccess(backfill_id=backfill_id)
