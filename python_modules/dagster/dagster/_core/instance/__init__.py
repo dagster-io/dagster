@@ -34,7 +34,6 @@ from typing_extensions import Protocol, Self, TypeAlias, TypeVar, runtime_checka
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.errors import (
     DagsterHomeNotSetError,
     DagsterInvalidInvocationError,
@@ -1038,7 +1037,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
         else:
             execution_plan = create_execution_plan(
-                job=InMemoryJob(job_def),
+                job=job_def,
                 run_config=run_config,
                 instance_ref=self.get_ref() if self.is_persistent else None,
                 tags=tags,
@@ -1122,8 +1121,8 @@ class DagsterInstance(DynamicPartitionsStore):
             run_id=run_id,
             run_config=run_config,
             asset_selection=asset_selection,
-            solid_selection=solid_selection,
-            solids_to_execute=solids_to_execute,
+            op_selection=solid_selection,
+            resolved_op_selection=solids_to_execute,
             step_keys_to_execute=step_keys_to_execute,
             status=status,
             tags=tags,
@@ -1481,7 +1480,7 @@ class DagsterInstance(DynamicPartitionsStore):
             job_name=parent_run.job_name,
             run_id=None,
             run_config=run_config,
-            solids_to_execute=parent_run.solids_to_execute,
+            solids_to_execute=parent_run.resolved_op_selection,
             step_keys_to_execute=step_keys_to_execute,
             status=DagsterRunStatus.NOT_STARTED,
             tags=tags,
@@ -1490,7 +1489,7 @@ class DagsterInstance(DynamicPartitionsStore):
             job_snapshot=external_job.job_snapshot,
             execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
             parent_job_snapshot=external_job.parent_job_snapshot,
-            solid_selection=parent_run.solid_selection,
+            solid_selection=parent_run.op_selection,
             asset_selection=parent_run.asset_selection,
             external_job_origin=external_job.get_external_origin(),
             job_code_origin=external_job.get_python_origin(),

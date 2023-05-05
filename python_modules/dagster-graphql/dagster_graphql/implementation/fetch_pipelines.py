@@ -75,7 +75,9 @@ def get_job_reference_or_raise(
     from ..schema.pipelines.pipeline_ref import GrapheneUnknownPipeline
 
     check.inst_param(dagster_run, "pipeline_run", DagsterRun)
-    solid_selection = list(dagster_run.solids_to_execute) if dagster_run.solids_to_execute else None
+    solid_selection = (
+        list(dagster_run.resolved_op_selection) if dagster_run.resolved_op_selection else None
+    )
 
     if dagster_run.job_snapshot_id is None:
         return GrapheneUnknownPipeline(dagster_run.job_name, solid_selection)

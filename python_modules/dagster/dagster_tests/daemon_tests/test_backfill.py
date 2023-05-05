@@ -865,5 +865,5 @@ def test_backfill_from_failure_for_subselection(
     list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
     assert instance.get_runs_count() == 2
     child_run = list(instance.get_runs(limit=1))[0]
-    assert child_run.solids_to_execute == run.solids_to_execute
-    assert child_run.solid_selection == run.solid_selection
+    assert child_run.resolved_op_selection == run.resolved_op_selection
+    assert child_run.op_selection == run.op_selection

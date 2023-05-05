@@ -420,7 +420,7 @@ def _execute_step_command_body(
             recon_job_from_origin(cast(JobPythonOrigin, dagster_run.job_code_origin))
             .with_repository_load_data(repository_load_data)
             .get_subset(
-                op_selection=dagster_run.solids_to_execute,
+                op_selection=dagster_run.resolved_op_selection,
                 asset_selection=dagster_run.asset_selection,
             )
         )

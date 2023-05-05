@@ -428,13 +428,13 @@ class GrapheneRun(graphene.ObjectType):
         return self.dagster_run.job_name
 
     def resolve_solidSelection(self, _graphene_info: ResolveInfo):
-        return self.dagster_run.solid_selection
+        return self.dagster_run.op_selection
 
     def resolve_assetSelection(self, _graphene_info: ResolveInfo):
         return self.dagster_run.asset_selection
 
     def resolve_resolvedOpSelection(self, _graphene_info: ResolveInfo):
-        return self.dagster_run.solids_to_execute
+        return self.dagster_run.resolved_op_selection
 
     def resolve_pipelineSnapshotId(self, _graphene_info: ResolveInfo):
         return self.dagster_run.job_snapshot_id

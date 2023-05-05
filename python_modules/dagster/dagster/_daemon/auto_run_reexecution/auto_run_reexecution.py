@@ -125,7 +125,7 @@ def retry_run(
             location_name=origin.code_location_origin.location_name,
             repository_name=repo_name,
             job_name=failed_run.job_name,
-            op_selection=failed_run.solid_selection,
+            op_selection=failed_run.op_selection,
             asset_selection=None
             if failed_run.asset_selection is None
             else list(failed_run.asset_selection),
