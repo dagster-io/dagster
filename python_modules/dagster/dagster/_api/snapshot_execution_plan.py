@@ -47,7 +47,7 @@ def sync_get_external_execution_plan_grpc(
         api_client.execution_plan_snapshot(
             execution_plan_snapshot_args=ExecutionPlanSnapshotArgs(
                 job_origin=job_origin,
-                solid_selection=op_selection,
+                op_selection=op_selection,
                 run_config=run_config,
                 mode=DEFAULT_MODE_NAME,
                 step_keys_to_execute=step_keys_to_execute,
