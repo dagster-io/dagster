@@ -1016,11 +1016,11 @@ class DagsterInstance(DynamicPartitionsStore):
 
         # note that op_selection is required to execute the solid subset, which is the
         # frozenset version of the previous solid_subset.
-        # solid_selection is not required and will not be converted to op_selection here.
+        # op_selection is not required and will not be converted to op_selection here.
         # i.e. this function doesn't handle solid queries.
-        # solid_selection is only used to pass the user queries further down.
+        # op_selection is only used to pass the user queries further down.
         check.opt_set_param(resolved_op_selection, "resolved_op_selection", of_type=str)
-        check.opt_list_param(op_selection, "solid_selection", of_type=str)
+        check.opt_list_param(op_selection, "op_selection", of_type=str)
         check.opt_set_param(asset_selection, "asset_selection", of_type=AssetKey)
 
         # op_selection never provided
@@ -1332,8 +1332,8 @@ class DagsterInstance(DynamicPartitionsStore):
                 "If parent_job_snapshot is set, job_snapshot should also be.",
             )
 
-        # solid_selection is a sequence of selection queries assigned by the user.
-        # *Most* callers expand the solid_selection into an explicit set of
+        # op_selection is a sequence of selection queries assigned by the user.
+        # *Most* callers expand the op_selection into an explicit set of
         # resolved_op_selection via accessing external_job.resolved_op_selection
         # but not all do. Some (launch execution mutation in graphql and backfill run
         # creation, for example) actually pass the solid *selection* into the
@@ -1341,13 +1341,13 @@ class DagsterInstance(DynamicPartitionsStore):
         # fully resolving the selection, as the daemon launchers do. Given the
         # state of callers we just check to ensure that the arguments are well-formed.
         #
-        # asset_selection adds another dimension to this lovely dance. solid_selection
+        # asset_selection adds another dimension to this lovely dance. op_selection
         # and asset_selection are mutually exclusive and should never both be set.
         # This is invariant is checked in a sporadic fashion around
         # the codebase, but is never enforced in a typed fashion.
         #
         # Additionally, the way that callsites currently behave *if* asset selection
-        # is set (i.e., not None) then *neither* solid_selection *nor*
+        # is set (i.e., not None) then *neither* op_selection *nor*
         # resolved_op_selection is passed. In the asset selection case resolving
         # the set of assets into the canonical resolved_op_selection is done in
         # the user process, and the exact resolution is never persisted in the run.
@@ -1360,7 +1360,7 @@ class DagsterInstance(DynamicPartitionsStore):
         if asset_selection is not None:
             check.invariant(
                 op_selection is None,
-                "Cannot pass both asset_selection and solid_selection",
+                "Cannot pass both asset_selection and op_selection",
             )
 
             check.invariant(

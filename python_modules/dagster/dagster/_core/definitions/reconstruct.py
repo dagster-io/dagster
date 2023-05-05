@@ -271,7 +271,7 @@ class ReconstructableJob(
     ) -> Self:
         if op_selection and asset_selection:
             check.failed(
-                "solid_selection and asset_selection cannot both be provided as arguments",
+                "op_selection and asset_selection cannot both be provided as arguments",
             )
         op_selection = set(op_selection) if op_selection else None
         return ReconstructableJob(

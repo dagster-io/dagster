@@ -403,8 +403,8 @@ def construct_config_type_from_snap(
 @whitelist_for_serdes(
     storage_name="PipelineSnapshotLineage",
     storage_field_names={
-        "node_selection": "solid_selection",
-        "op_selection": "solids_to_execute",
+        "op_selection": "solid_selection",
+        "resolved_op_selection": "solids_to_execute",
     },
 )
 class JobLineageSnapshot(

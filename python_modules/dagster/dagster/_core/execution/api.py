@@ -911,11 +911,11 @@ def _check_execute_job_args(
     run_config = check.opt_mapping_param(run_config, "run_config")
 
     tags = check.opt_mapping_param(tags, "tags", key_type=str)
-    check.opt_sequence_param(op_selection, "solid_selection", of_type=str)
+    check.opt_sequence_param(op_selection, "op_selection", of_type=str)
 
     tags = merge_dicts(job_def.tags, tags)
 
-    # generate job subset from the given solid_selection
+    # generate job subset from the given op_selection
     if op_selection:
         job_arg = job_arg.get_subset(op_selection=op_selection)
 
