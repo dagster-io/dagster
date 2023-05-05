@@ -32,11 +32,6 @@ import {
 } from './types/BackfillRow.types';
 import {BackfillTableFragment} from './types/BackfillTable.types';
 
-const NoBackfillStatusQuery = [
-  () => Promise.resolve({data: undefined} as QueryResult<undefined>),
-  {data: undefined, called: true, loading: false} as QueryResult<undefined>,
-] as const;
-
 export const BackfillRow = ({
   backfill,
   allPartitions,
@@ -78,11 +73,10 @@ export const BackfillRow = ({
   // If the number of partitions or partition names are missing, we use a mock to
   // avoid executing any query at all. This is a bit awkward, but seems cleaner than
   // making the hooks below support an optional query function / result.
-  const [statusQueryFn, statusQueryResult] = statusUnsupported
-    ? NoBackfillStatusQuery
-    : (backfill.numPartitions || 0) > BACKFILL_PARTITIONS_COUNTS_THRESHOLD
-    ? statusCounts
-    : statusDetails;
+  const [statusQueryFn, statusQueryResult] =
+    (backfill.numPartitions || 0) > BACKFILL_PARTITIONS_COUNTS_THRESHOLD
+      ? statusCounts
+      : statusDetails;
 
   useDelayedRowQuery(statusQueryFn);
   useQueryRefreshAtInterval(statusQueryResult, FIFTEEN_SECONDS);
@@ -193,7 +187,6 @@ const BackfillMenu = ({
       value: `dagster/backfill=${backfill.id}`,
     },
   ]);
-
   return (
     <Popover
       content={
