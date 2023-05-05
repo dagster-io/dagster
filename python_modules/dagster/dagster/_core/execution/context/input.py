@@ -412,8 +412,8 @@ class InputContext:
         if len(time_windows) != 1:
             check.failed(
                 (
-                    "Tried to access asset_partition_key_range, but there are "
-                    f"({len(time_windows)}) partitions associated with this input."
+                    "Tried to access asset_partitions_time_window, but there are "
+                    f"({len(time_windows)}) time windows associated with this input."
                 ),
             )
 
