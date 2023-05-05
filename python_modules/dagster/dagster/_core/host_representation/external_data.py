@@ -89,6 +89,7 @@ from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.snap import JobSnapshot
 from dagster._core.snap.mode import ResourceDefSnap, build_resource_def_snap
+from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
 
@@ -1611,9 +1612,15 @@ def external_resource_data_from_def(
     if isinstance(resource_type_def, ResourceWithKeyMapping):
         resource_type_def = resource_type_def.wrapped_resource
 
-    resource_type = _get_class_name(type(resource_type_def))
+    # use the resource function name as the resource type if it's a function resource
+    # (ie direct instantiation of ResourceDefinition or IOManagerDefinition)
+    if type(resource_type_def) in (ResourceDefinition, IOManagerDefinition):
+        import inspect
 
-    if isinstance(
+        module_name = check.not_none(inspect.getmodule(resource_type_def.resource_fn)).__name__
+        resource_type = f"{module_name}.{resource_type_def.resource_fn.__name__}"
+    # if it's a Pythonic resource, get the underlying Pythonic class name
+    elif isinstance(
         resource_type_def,
         (
             ConfigurableResourceFactoryResourceDefinition,
@@ -1621,6 +1628,8 @@ def external_resource_data_from_def(
         ),
     ):
         resource_type = _get_class_name(resource_type_def.configurable_resource_cls)
+    else:
+        resource_type = _get_class_name(type(resource_type_def))
 
     return ExternalResourceData(
         name=name,
