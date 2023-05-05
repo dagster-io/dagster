@@ -176,9 +176,10 @@ def check_run_timeout(
             f" {max_time} seconds: terminating run."
         )
 
-        instance.report_run_canceling(
-            run_record.dagster_run,
-            message=f"Canceling due to exceeding maximum runtime of {int(max_time)} seconds.",
+        instance.report_engine_event(
+            f"Canceling due to exceeding maximum runtime of {int(max_time)} seconds.",
+            job_name=run_record.dagster_run.job_name,
+            run_id=run_record.dagster_run.run_id,
         )
         try:
             if instance.run_launcher.terminate(run_id=run_record.dagster_run.run_id):
