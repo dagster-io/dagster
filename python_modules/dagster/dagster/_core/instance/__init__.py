@@ -1071,7 +1071,7 @@ class DagsterInstance(DynamicPartitionsStore):
         job_name: str,
         run_id: str,
         run_config: Optional[Mapping[str, object]],
-        solids_to_execute: Optional[AbstractSet[str]],
+        resolved_op_selection: Optional[AbstractSet[str]],
         step_keys_to_execute: Optional[Sequence[str]],
         status: Optional[DagsterRunStatus],
         tags: Mapping[str, str],
@@ -1081,7 +1081,7 @@ class DagsterInstance(DynamicPartitionsStore):
         execution_plan_snapshot: Optional[ExecutionPlanSnapshot],
         parent_job_snapshot: Optional[JobSnapshot],
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
-        solid_selection: Optional[Sequence[str]] = None,
+        op_selection: Optional[Sequence[str]] = None,
         external_job_origin: Optional["ExternalJobOrigin"] = None,
         job_code_origin: Optional[JobPythonOrigin] = None,
     ) -> DagsterRun:
@@ -1121,8 +1121,8 @@ class DagsterInstance(DynamicPartitionsStore):
             run_id=run_id,
             run_config=run_config,
             asset_selection=asset_selection,
-            op_selection=solid_selection,
-            resolved_op_selection=solids_to_execute,
+            op_selection=op_selection,
+            resolved_op_selection=resolved_op_selection,
             step_keys_to_execute=step_keys_to_execute,
             status=status,
             tags=tags,
@@ -1334,10 +1334,10 @@ class DagsterInstance(DynamicPartitionsStore):
 
         # solid_selection is a sequence of selection queries assigned by the user.
         # *Most* callers expand the solid_selection into an explicit set of
-        # solids_to_execute via accessing external_job.solids_to_execute
+        # resolved_op_selection via accessing external_job.resolved_op_selection
         # but not all do. Some (launch execution mutation in graphql and backfill run
         # creation, for example) actually pass the solid *selection* into the
-        # solids_to_execute parameter, but just as a frozen set, rather than
+        # resolved_op_selection parameter, but just as a frozen set, rather than
         # fully resolving the selection, as the daemon launchers do. Given the
         # state of callers we just check to ensure that the arguments are well-formed.
         #
@@ -1348,13 +1348,13 @@ class DagsterInstance(DynamicPartitionsStore):
         #
         # Additionally, the way that callsites currently behave *if* asset selection
         # is set (i.e., not None) then *neither* solid_selection *nor*
-        # solids_to_execute is passed. In the asset selection case resolving
-        # the set of assets into the canonical solids_to_execute is done in
+        # resolved_op_selection is passed. In the asset selection case resolving
+        # the set of assets into the canonical resolved_op_selection is done in
         # the user process, and the exact resolution is never persisted in the run.
         # We are asserting that invariant here to maintain that behavior.
 
-        check.opt_set_param(resolved_op_selection, "solids_to_execute", of_type=str)
-        check.opt_sequence_param(op_selection, "solid_selection", of_type=str)
+        check.opt_set_param(resolved_op_selection, "resolved_op_selection", of_type=str)
+        check.opt_sequence_param(op_selection, "op_selection", of_type=str)
         check.opt_set_param(asset_selection, "asset_selection", of_type=AssetKey)
 
         if asset_selection is not None:
@@ -1365,7 +1365,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
             check.invariant(
                 resolved_op_selection is None,
-                "Cannot pass both asset_selection and solids_to_execute",
+                "Cannot pass both asset_selection and resolved_op_selection",
             )
 
         # The "python origin" arguments exist so a job can be reconstructed in memory
@@ -1385,8 +1385,8 @@ class DagsterInstance(DynamicPartitionsStore):
             run_id=run_id,  # type: ignore  # (possible none)
             run_config=run_config,
             asset_selection=asset_selection,
-            solid_selection=op_selection,
-            solids_to_execute=resolved_op_selection,
+            op_selection=op_selection,
+            resolved_op_selection=resolved_op_selection,
             step_keys_to_execute=step_keys_to_execute,
             status=status,
             tags=validated_tags,
@@ -1500,7 +1500,7 @@ class DagsterInstance(DynamicPartitionsStore):
         job_name: str,
         run_id: str,
         run_config: Optional[Mapping[str, object]],
-        solids_to_execute: Optional[AbstractSet[str]],
+        resolved_op_selection: Optional[AbstractSet[str]],
         step_keys_to_execute: Optional[Sequence[str]],
         tags: Mapping[str, str],
         root_run_id: Optional[str],
@@ -1508,7 +1508,7 @@ class DagsterInstance(DynamicPartitionsStore):
         job_snapshot: Optional[JobSnapshot],
         execution_plan_snapshot: Optional[ExecutionPlanSnapshot],
         parent_job_snapshot: Optional[JobSnapshot],
-        solid_selection: Optional[Sequence[str]] = None,
+        op_selection: Optional[Sequence[str]] = None,
         job_code_origin: Optional[JobPythonOrigin] = None,
     ) -> DagsterRun:
         # The usage of this method is limited to dagster-airflow, specifically in Dagster
@@ -1526,8 +1526,8 @@ class DagsterInstance(DynamicPartitionsStore):
             job_name=job_name,
             run_id=run_id,
             run_config=run_config,
-            solid_selection=solid_selection,
-            solids_to_execute=solids_to_execute,
+            op_selection=op_selection,
+            resolved_op_selection=resolved_op_selection,
             step_keys_to_execute=step_keys_to_execute,
             status=DagsterRunStatus.MANAGED,
             tags=tags,
