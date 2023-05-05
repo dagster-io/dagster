@@ -3,6 +3,7 @@ host processes and user processes. They should contain no
 business logic or clever indexing. Use the classes in external.py
 for that.
 """
+import inspect
 import json
 from abc import ABC, abstractmethod
 from collections import defaultdict
@@ -1615,8 +1616,6 @@ def external_resource_data_from_def(
     # use the resource function name as the resource type if it's a function resource
     # (ie direct instantiation of ResourceDefinition or IOManagerDefinition)
     if type(resource_type_def) in (ResourceDefinition, IOManagerDefinition):
-        import inspect
-
         module_name = check.not_none(inspect.getmodule(resource_type_def.resource_fn)).__name__
         resource_type = f"{module_name}.{resource_type_def.resource_fn.__name__}"
     # if it's a Pythonic resource, get the underlying Pythonic class name
