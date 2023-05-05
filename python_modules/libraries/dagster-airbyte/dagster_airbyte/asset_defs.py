@@ -30,8 +30,8 @@ from dagster import (
     Nothing,
     Output,
     ResourceDefinition,
-    _check as check,
 )
+from dagster import _check as check
 from dagster._annotations import experimental
 from dagster._core.definitions import AssetsDefinition, multi_asset
 from dagster._core.definitions.cacheable_assets import (
@@ -39,10 +39,7 @@ from dagster._core.definitions.cacheable_assets import (
     CacheableAssetsDefinition,
 )
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
-from dagster._core.definitions.metadata import (
-    MetadataValue,
-    TableSchemaMetadataValue,
-)
+from dagster._core.definitions.metadata import MetadataValue, TableSchemaMetadataValue
 from dagster._core.definitions.metadata.table import TableSchema
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.execution.context.init import build_init_resource_context

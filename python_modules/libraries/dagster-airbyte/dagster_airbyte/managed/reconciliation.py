@@ -634,22 +634,22 @@ class AirbyteManagedElementReconciler(ManagedElementReconciler):
     @public
     def __init__(
         self,
-        airbyte: ResourceDefinition,
+        airbyte: AirbyteResource,
         connections: Iterable[AirbyteConnection],
         delete_unmentioned_resources: bool = False,
     ):
         """Reconciles Python-specified Airbyte connections with an Airbyte instance.
 
         Args:
-            airbyte (ResourceDefinition): The Airbyte resource definition to reconcile against.
+            airbyte (AirbyteResource): The Airbyte resource definition to reconcile against.
             connections (Iterable[AirbyteConnection]): The Airbyte connection objects to reconcile.
             delete_unmentioned_resources (bool): Whether to delete resources that are not mentioned in
                 the set of connections provided. When True, all Airbyte instance contents are effectively
                 managed by the reconciler. Defaults to False.
         """
-        airbyte = check.inst_param(airbyte, "airbyte", ResourceDefinition)
+        # airbyte = check.inst_param(airbyte, "airbyte", ResourceDefinition)
 
-        self._airbyte_instance: AirbyteResource = airbyte(build_init_resource_context())
+        self._airbyte_instance: AirbyteResource = airbyte
         self._connections = list(
             check.iterable_param(connections, "connections", of_type=AirbyteConnection)
         )
@@ -681,7 +681,7 @@ class AirbyteManagedElementReconciler(ManagedElementReconciler):
 class AirbyteManagedElementCacheableAssetsDefinition(AirbyteInstanceCacheableAssetsDefinition):
     def __init__(
         self,
-        airbyte_resource_def: ResourceDefinition,
+        airbyte_resource_def: AirbyteResource,
         key_prefix: Sequence[str],
         create_assets_for_normalization_tables: bool,
         connection_to_group_fn: Optional[Callable[[str], Optional[str]]],
@@ -722,7 +722,7 @@ class AirbyteManagedElementCacheableAssetsDefinition(AirbyteInstanceCacheableAss
 
 @experimental
 def load_assets_from_connections(
-    airbyte: ResourceDefinition,
+    airbyte: AirbyteResource,
     connections: Iterable[AirbyteConnection],
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     create_assets_for_normalization_tables: bool = True,
@@ -740,7 +740,7 @@ def load_assets_from_connections(
     This method will raise an error on repo load if the passed AirbyteConnection objects are not in sync with the Airbyte instance.
 
     Args:
-        airbyte (ResourceDefinition): An AirbyteResource configured with the appropriate connection
+        airbyte (AirbyteResource): An AirbyteResource configured with the appropriate connection
             details.
         connections (Iterable[AirbyteConnection]): A list of AirbyteConnection objects to build assets for.
         key_prefix (Optional[CoercibleToAssetKeyPrefix]): A prefix for the asset keys created.
@@ -767,15 +767,13 @@ def load_assets_from_connections(
 
         from dagster_airbyte import (
             AirbyteConnection,
-            airbyte_resource,
+            AirbyteResource,
             load_assets_from_connections,
         )
 
-        airbyte_instance = airbyte_resource.configured(
-            {
-                "host": "localhost",
-                "port": "8000",
-            }
+        airbyte_instance = AirbyteResource(
+                host: "localhost",
+                port: "8000",
         )
         airbyte_connections = [
             AirbyteConnection(...),
@@ -795,7 +793,7 @@ def load_assets_from_connections(
         connection_to_io_manager_key_fn = lambda _: io_manager_key
 
     return AirbyteManagedElementCacheableAssetsDefinition(
-        airbyte_resource_def=check.inst_param(airbyte, "airbyte", ResourceDefinition),
+        airbyte_resource_def=airbyte,
         key_prefix=key_prefix,
         create_assets_for_normalization_tables=check.bool_param(
             create_assets_for_normalization_tables, "create_assets_for_normalization_tables"
