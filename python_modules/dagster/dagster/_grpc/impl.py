@@ -262,13 +262,13 @@ def start_run_in_subprocess(
 def get_external_pipeline_subset_result(
     repo_def: RepositoryDefinition,
     job_name: str,
-    solid_selection: Optional[Sequence[str]],
+    op_selection: Optional[Sequence[str]],
     asset_selection: Optional[AbstractSet[AssetKey]],
 ):
     try:
         definition = repo_def.get_maybe_subset_job_def(
             job_name,
-            op_selection=solid_selection,
+            op_selection=op_selection,
             asset_selection=frozenset(asset_selection) if asset_selection else None,
         )
         external_job_data = external_job_data_from_def(definition)
