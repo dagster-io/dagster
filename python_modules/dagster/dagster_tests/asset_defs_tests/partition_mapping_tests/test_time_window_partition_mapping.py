@@ -408,9 +408,7 @@ def test_get_upstream_with_current_time(
     mapping = TimeWindowPartitionMapping()
 
     if error_expected:
-        with pytest.raises(
-            DagsterInvalidInvocationError, match="does not exist for partitions definition"
-        ):
+        with pytest.raises(DagsterInvalidInvocationError, match="invalid time windows"):
             mapping.get_upstream_partitions_for_partitions(
                 subset_with_keys(downstream_partitions_def, downstream_keys),
                 upstream_partitions_def,

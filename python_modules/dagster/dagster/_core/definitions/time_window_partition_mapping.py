@@ -1,8 +1,6 @@
 from datetime import datetime
 from typing import NamedTuple, Optional, cast
 
-import pendulum
-
 import dagster._check as check
 from dagster._annotations import PublicAttr
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
@@ -221,54 +219,39 @@ class TimeWindowPartitionMapping(
                     else cast(TimeWindow, to_partitions_def.get_last_partition_window()).end
                 )
 
-                time_windows.append(TimeWindow(window_start, window_end))
-
-        current_time = cast(
-            datetime,
-            pendulum.instance(current_time, tz=to_partitions_def.timezone)
-            if current_time
-            else pendulum.now(to_partitions_def.timezone),
-        )
+                if window_start < window_end:
+                    time_windows.append(TimeWindow(window_start, window_end))
 
         first_window = to_partitions_def.get_first_partition_window(current_time=current_time)
         last_window = to_partitions_def.get_last_partition_window(current_time=current_time)
+
+        filtered_time_windows = []
+
+        for time_window in time_windows:
+            if (
+                first_window
+                and last_window
+                and time_window.start <= last_window.start
+                and time_window.end >= first_window.end
+            ):
+                window_end = min(time_window.end, last_window.end)
+                window_start = max(time_window.start, first_window.start)
+                filtered_time_windows.append(TimeWindow(window_start, window_end))
+
         if raise_on_non_existent_partition:
-            for time_window in time_windows:
-                if (
-                    not first_window
-                    or not last_window
-                    or time_window.start > last_window.end
-                    or time_window.end > last_window.end
-                    or time_window.start < first_window.start
-                    or time_window.end < first_window.start
-                ):
-                    raise DagsterInvalidInvocationError(
-                        f"Partition window {time_window} does not exist for partitions definition "
-                        f"{to_partitions_def}"
-                    )
-        else:
-            filtered_time_windows = []
-
-            for time_window in time_windows:
-                if (
-                    first_window
-                    and last_window
-                    and time_window.start <= last_window.start
-                    and time_window.end >= first_window.end
-                ):
-                    window_end = min(time_window.end, last_window.end)
-                    window_start = max(time_window.start, first_window.start)
-                    filtered_time_windows.append(TimeWindow(window_start, window_end))
-
-            time_windows = filtered_time_windows
+            if filtered_time_windows != time_windows:
+                raise DagsterInvalidInvocationError(
+                    f"Provided time windows {time_windows} contain invalid time windows for"
+                    f" partitions definition {to_partitions_def}"
+                )
 
         return TimeWindowPartitionsSubset(
             to_partitions_def,
             num_partitions=sum(
                 len(to_partitions_def.get_partition_keys_in_time_window(time_window))
-                for time_window in time_windows
+                for time_window in filtered_time_windows
             ),
-            included_time_windows=time_windows,
+            included_time_windows=filtered_time_windows,
         )
 
 
