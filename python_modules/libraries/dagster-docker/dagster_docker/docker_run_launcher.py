@@ -195,6 +195,12 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
 
     def terminate(self, run_id):
         run = self._instance.get_run_by_id(run_id)
+
+        if not run:
+            return False
+
+        self._instance.report_run_canceling(run)
+
         container = self._get_container(run)
 
         if not container:
@@ -204,8 +210,6 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
                 cls=self.__class__,
             )
             return False
-
-        self._instance.report_run_canceling(run)
 
         container.stop()
 
