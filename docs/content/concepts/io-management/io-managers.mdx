@@ -218,12 +218,12 @@ In this example,`first_asset` and `second_asset` will be stored using the defaul
 
 ```python file=/concepts/assets/asset_input_managers.py startafter=start_different_input_managers endbefore=end_different_input_managers
 @asset
-def first_asset():
+def first_asset() -> List[int]:
     return [1, 2, 3]
 
 
 @asset
-def second_asset():
+def second_asset() -> List[int]:
     return [4, 5, 6]
 
 
@@ -233,7 +233,7 @@ def second_asset():
         "second_asset": AssetIn(input_manager_key="pandas_series"),
     }
 )
-def third_asset(first_asset, second_asset):
+def third_asset(first_asset: pd.Series, second_asset: pd.Series) -> pd.Series:
     return pd.concat([first_asset, second_asset, pd.Series([7, 8])])
 
 
@@ -251,7 +251,7 @@ defs = Definitions(
 
 By default, all the inputs and outputs in a job use the same I/O manager. This I/O manager is determined by the <PyObject module="dagster" object="ResourceDefinition" /> provided for the `"io_manager"` resource key. `"io_manager"` is a resource key that Dagster reserves specifically for this purpose.
 
-Here’s how to specify that all op outputs are stored using the <PyObject module="dagster" object="fs_io_manager" />, which pickles outputs and stores them on the local filesystem. It stores files in a directory with the run ID in the path, so that outputs from prior runs will never be overwritten.
+Here’s how to specify that all op outputs are stored using the <PyObject module="dagster" object="FileSystemIOManager" />, which pickles outputs and stores them on the local filesystem. It stores files in a directory with the run ID in the path, so that outputs from prior runs will never be overwritten.
 
 ```python file=/concepts/io_management/default_io_manager.py
 from dagster import FilesystemIOManager, job, op
@@ -391,7 +391,7 @@ class ConfigurableExternalIOManager(ConfigurableIOManagerFactory):
 
 ### Handling partitioned assets
 
-I/O managers can be written to handle [partitioned](/concepts/partitions-schedules-sensors/partitions) assets. For a partitioned asset, each invocation of `handle_output` will (over)write a single partition, and each invocation of `load_input` will load one or more partitions. When the I/O manager is backed by a filesystem or object store, then each partition will typically correspond to a file or object. When it's backed by a database, then each partition will typically correspond to a range of values in a table that fall within a particular window.
+I/O managers can be written to handle [partitioned](/concepts/partitions-schedules-sensors/partitions) assets. For a partitioned asset, each invocation of `handle_output` will (over)write a single partition, and each invocation of `load_input` will load one or more partitions. When the I/O manager is backed by a filesystem or object store, then each partition will typically correspond to a file or object. When it's backed by a database, then each partition will typically correspond to a range of rows in a table that fall within a particular window.
 
 The default I/O manager has support for loading a partitioned upstream asset for a downstream asset with matching partitions out of the box (see the section below for loading multiple partitions). The <PyObject module="dagster" object="UPathIOManager" /> can be used to handle partitions in custom filesystem-based I/O managers.
 
@@ -477,7 +477,7 @@ Since the method for loading an input is directly affected by the way the corres
 ```python file=/concepts/io_management/input_managers.py startafter=start_plain_input_manager endbefore=end_plain_input_manager
 # in this case PandasIOManager is an existing IO Manager
 class MyNumpyLoader(PandasIOManager):
-    def load_input(self, context):
+    def load_input(self, context) -> np.ndarray:
         file_path = "path/to/dataframe"
         array = np.genfromtxt(file_path, delimiter=",", dtype=None)
         return array
@@ -518,7 +518,7 @@ class BetterPandasIOManager(ConfigurableIOManager):
 
 # write a subclass that uses _get_path for your custom loading logic
 class MyBetterNumpyLoader(BetterPandasIOManager):
-    def load_input(self, context):
+    def load_input(self, context) -> np.ndarray:
         file_path = self._get_path(context.upstream_output)
         array = np.genfromtxt(file_path, delimiter=",", dtype=None)
         return array
@@ -579,7 +579,7 @@ Dagster provides a feature-rich base class for filesystem-based I/O managers: <P
 
 The default I/O manager inherits from the `UPathIOManager` and therefore has these features too.
 
-The `UPathIOManager` already implements the `load_input` and `handle_output` methods. Instead, <PyObject module="dagster" object="UPathIOManager" method="dump_to_path" /> and <PyObject module="dagster" object="UPathIOManager" method="load_from_path" /> for a given `universal_pathlib.UPath` have to be implemented. Here are some examples:
+The `UPathIOManager` already implements the `load_input` and `handle_output` methods. Instead, if you want to write a custom `UPathIOManager` the <PyObject module="dagster" object="UPathIOManager" method="dump_to_path" /> and <PyObject module="dagster" object="UPathIOManager" method="load_from_path" /> for a given `universal_pathlib.UPath` should to be implemented. Here are some examples:
 
 ```python file=/concepts/io_management/filesystem_io_manager.py startafter=start_marker endbefore=end_class_marker
 import pandas as pd
@@ -606,7 +606,7 @@ class PandasParquetIOManager(UPathIOManager):
 
 The extension attribute defines the suffix all the file paths generated by the IOManager will end with.
 
-The i/o managers defined above will work with partitioned assets on any filesystem:
+The I/O managers defined above will work with partitioned assets on any filesystem:
 
 ```python file=/concepts/io_management/filesystem_io_manager.py startafter=start_def_marker endbefore=end_marker
 from typing import Optional
@@ -688,26 +688,26 @@ class PandasAssetIOManager(ConfigurableIOManager):
             f"{context.asset_key.path[-1]}.csv",
         )
 
-    def load_input(self, context):
+    def load_input(self, context) -> pd.DataFrame:
         file_path = self._get_path(context)
         return load_pandas_dataframe(name=file_path)
 
 
 class NumpyAssetIOManager(PandasAssetIOManager):
-    def load_input(self, context):
+    def load_input(self, context) -> np.ndarray:
         file_path = self._get_path(context)
         return load_numpy_array(name=file_path)
 
 
 @asset(io_manager_key="pandas_manager")
-def upstream_asset():
+def upstream_asset() -> pd.DataFrame:
     return pd.DataFrame([1, 2, 3])
 
 
 @asset(
     ins={"upstream": AssetIn(key_prefix="public", input_manager_key="numpy_manager")}
 )
-def downstream_asset(upstream):
+def downstream_asset(upstream: np.ndarray) -> tuple:
     return upstream.shape
 
 
