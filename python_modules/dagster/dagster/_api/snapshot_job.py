@@ -29,7 +29,7 @@ def sync_get_external_job_subset_grpc(
         api_client.external_pipeline_subset(
             pipeline_subset_snapshot_args=JobSubsetSnapshotArgs(
                 job_origin=job_origin,
-                solid_selection=op_selection,
+                op_selection=op_selection,
                 asset_selection=asset_selection,
             ),
         ),

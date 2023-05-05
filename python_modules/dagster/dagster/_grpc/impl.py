@@ -491,7 +491,7 @@ def get_external_execution_plan_snapshot(
     try:
         job_def = repo_def.get_maybe_subset_job_def(
             job_name,
-            op_selection=args.solid_selection,
+            op_selection=args.op_selection,
             asset_selection=args.asset_selection,
         )
 

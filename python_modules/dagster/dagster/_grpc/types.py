@@ -23,6 +23,7 @@ from dagster._utils.error import SerializableErrorInfo
     storage_field_names={
         "job_origin": "pipeline_origin",
         "job_snapshot_id": "pipeline_snapshot_id",
+        "op_selection": "solid_selection",
     }
 )
 class ExecutionPlanSnapshotArgs(
@@ -30,7 +31,7 @@ class ExecutionPlanSnapshotArgs(
         "_ExecutionPlanSnapshotArgs",
         [
             ("job_origin", ExternalJobOrigin),
-            ("solid_selection", Sequence[str]),
+            ("op_selection", Sequence[str]),
             ("run_config", Mapping[str, object]),
             ("step_keys_to_execute", Optional[Sequence[str]]),
             ("job_snapshot_id", str),
@@ -44,7 +45,7 @@ class ExecutionPlanSnapshotArgs(
     def __new__(
         cls,
         job_origin: ExternalJobOrigin,
-        solid_selection: Sequence[str],
+        op_selection: Sequence[str],
         run_config: Mapping[str, object],
         step_keys_to_execute: Optional[Sequence[str]],
         job_snapshot_id: str,
@@ -56,9 +57,7 @@ class ExecutionPlanSnapshotArgs(
         return super(ExecutionPlanSnapshotArgs, cls).__new__(
             cls,
             job_origin=check.inst_param(job_origin, "job_origin", ExternalJobOrigin),
-            solid_selection=check.opt_sequence_param(
-                solid_selection, "solid_selection", of_type=str
-            ),
+            op_selection=check.opt_sequence_param(op_selection, "op_selection", of_type=str),
             run_config=check.mapping_param(run_config, "run_config", key_type=str),
             mode=check.str_param(mode, "mode"),
             step_keys_to_execute=check.opt_nullable_sequence_param(

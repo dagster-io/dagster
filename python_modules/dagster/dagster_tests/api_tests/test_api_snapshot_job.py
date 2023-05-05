@@ -38,7 +38,7 @@ def test_job_snapshot_deserialize_error(instance):
             api_client.external_pipeline_subset(
                 pipeline_subset_snapshot_args=JobSubsetSnapshotArgs(
                     job_origin=job_handle.get_external_origin(),
-                    solid_selection=None,
+                    op_selection=None,
                     asset_selection=None,
                 )._replace(job_origin="INVALID"),
             )

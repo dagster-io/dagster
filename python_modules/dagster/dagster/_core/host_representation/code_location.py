@@ -738,7 +738,7 @@ class GrpcServerCodeLocation(CodeLocation):
             run_config=run_config,
             job_snapshot_id=external_job.identifying_job_snapshot_id,
             asset_selection=asset_selection,
-            solid_selection=external_job.op_selection,
+            op_selection=external_job.op_selection,
             step_keys_to_execute=step_keys_to_execute,
             known_state=known_state,
             instance=instance,
