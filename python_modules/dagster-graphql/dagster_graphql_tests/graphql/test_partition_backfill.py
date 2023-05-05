@@ -194,7 +194,7 @@ def _execute_asset_backfill_iteration(
 ):
     backfill = graphql_context.instance.get_backfill(backfill_id)
     asset_backfill_data = AssetBackfillData.from_serialized(
-        backfill.serialized_asset_backfill_data, asset_graph
+        backfill.serialized_asset_backfill_data, asset_graph, backfill.backfill_timestamp
     )
     result = None
     for result in execute_asset_backfill_iteration_inner(
@@ -203,6 +203,7 @@ def _execute_asset_backfill_iteration(
         instance=graphql_context.instance,
         asset_graph=asset_graph,
         run_tags=backfill.tags,
+        backfill_start_time=asset_backfill_data.backfill_start_time,
     ):
         pass
 
