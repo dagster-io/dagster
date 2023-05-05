@@ -940,7 +940,7 @@ def _create_sensor_run(
         job_name=target_data.job_name,
         run_id=None,
         run_config=run_request.run_config,
-        resolved_op_selection=external_job.solids_to_execute,
+        resolved_op_selection=external_job.resolved_op_selection,
         step_keys_to_execute=None,
         status=DagsterRunStatus.NOT_STARTED,
         op_selection=target_data.solid_selection,

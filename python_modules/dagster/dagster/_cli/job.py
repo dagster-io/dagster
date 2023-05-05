@@ -529,7 +529,7 @@ def _create_external_run(
         job_name=job_name,
         run_id=run_id,
         run_config=run_config,
-        resolved_op_selection=external_job.solids_to_execute,
+        resolved_op_selection=external_job.resolved_op_selection,
         step_keys_to_execute=execution_plan_snapshot.step_keys_to_execute,
         op_selection=solid_selection,
         status=None,

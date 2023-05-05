@@ -391,7 +391,7 @@ class InProcessCodeLocation(CodeLocation):
             job=self.get_reconstructable_job(
                 external_job.repository_handle.repository_name, external_job.name
             ).get_subset(
-                op_selection=external_job.solids_to_execute,
+                op_selection=external_job.resolved_op_selection,
                 asset_selection=external_job.asset_selection,
             ),
             run_config=run_config,
@@ -738,7 +738,7 @@ class GrpcServerCodeLocation(CodeLocation):
             run_config=run_config,
             job_snapshot_id=external_job.identifying_job_snapshot_id,
             asset_selection=asset_selection,
-            solid_selection=external_job.solid_selection,
+            solid_selection=external_job.op_selection,
             step_keys_to_execute=step_keys_to_execute,
             known_state=known_state,
             instance=instance,

@@ -712,7 +712,7 @@ class GrapheneIPipelineSnapshotMixin:
         return list(iterate_metadata_entries(represented_pipeline.job_snapshot.metadata))
 
     def resolve_solidSelection(self, _graphene_info: ResolveInfo):
-        return self.get_represented_job().solid_selection
+        return self.get_represented_job().op_selection
 
     def resolve_runs(
         self, graphene_info: ResolveInfo, cursor: Optional[str] = None, limit: Optional[int] = None
