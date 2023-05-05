@@ -240,11 +240,10 @@ def test_backcompat_ping_dagit(graphql_client: DagsterGraphQLClient):
 def assert_runs_and_exists(
     client: DagsterGraphQLClient, name: str, subset_selection: Optional[Sequence[str]] = None
 ):
-    run_id = client.submit_pipeline_execution(
-        pipeline_name=name,
-        mode="default",
+    run_id = client.submit_job_execution(
+        job_name=name,
         run_config={},
-        solid_selection=subset_selection,
+        op_selection=subset_selection,
     )
     assert_run_success(client, run_id)
 
