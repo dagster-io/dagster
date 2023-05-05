@@ -309,8 +309,8 @@ class DagsterInstance(DynamicPartitionsStore):
             pipeline runs. By default, this will be a
             :py:class:`dagster._core.storage.event_log.SqliteEventLogStorage`. Configurable in
             ``dagster.yaml`` using the :py:class:`~dagster.serdes.ConfigurableClass` machinery.
-        compute_log_manager (ComputeLogManager): The compute log manager handles stdout and stderr
-            logging for op compute functions. By default, this will be a
+        compute_log_manager (Optional[ComputeLogManager]): The compute log manager handles stdout
+            and stderr logging for op compute functions. By default, this will be a
             :py:class:`dagster._core.storage.local_compute_log_manager.LocalComputeLogManager`.
             Configurable in ``dagster.yaml`` using the
             :py:class:`~dagster.serdes.ConfigurableClass` machinery.
@@ -338,8 +338,8 @@ class DagsterInstance(DynamicPartitionsStore):
         local_artifact_storage: "LocalArtifactStorage",
         run_storage: "RunStorage",
         event_storage: "EventLogStorage",
-        compute_log_manager: "ComputeLogManager",
         run_coordinator: "RunCoordinator",
+        compute_log_manager: Optional["ComputeLogManager"],
         run_launcher: Optional["RunLauncher"],
         scheduler: Optional["Scheduler"] = None,
         schedule_storage: Optional["ScheduleStorage"] = None,
@@ -368,14 +368,23 @@ class DagsterInstance(DynamicPartitionsStore):
         self._run_storage = check.inst_param(run_storage, "run_storage", RunStorage)
         self._run_storage.register_instance(self)
 
-        self._compute_log_manager = check.inst_param(
-            compute_log_manager, "compute_log_manager", ComputeLogManager
-        )
-        if not isinstance(self._compute_log_manager, CapturedLogManager):
-            deprecation_warning(
-                "ComputeLogManager", "1.2.0", "Implement the CapturedLogManager interface instead."
+        if compute_log_manager:
+            self._compute_log_manager = check.inst_param(
+                compute_log_manager, "compute_log_manager", ComputeLogManager
             )
-        self._compute_log_manager.register_instance(self)
+            if not isinstance(self._compute_log_manager, CapturedLogManager):
+                deprecation_warning(
+                    "ComputeLogManager",
+                    "1.2.0",
+                    "Implement the CapturedLogManager interface instead.",
+                )
+            self._compute_log_manager.register_instance(self)
+        else:
+            check.invariant(
+                ref, "Compute log manager must be provided if instance is not from a ref"
+            )
+            self._compute_log_manager = None
+
         self._scheduler = check.opt_inst_param(scheduler, "scheduler", Scheduler)
 
         self._schedule_storage = check.opt_inst_param(
@@ -548,7 +557,7 @@ class DagsterInstance(DynamicPartitionsStore):
             run_storage=run_storage,  # type: ignore  # (possible none)
             event_storage=event_storage,  # type: ignore  # (possible none)
             schedule_storage=schedule_storage,
-            compute_log_manager=instance_ref.compute_log_manager,
+            compute_log_manager=None,  # lazy load
             scheduler=instance_ref.scheduler,
             run_coordinator=instance_ref.run_coordinator,  # type: ignore  # (possible none)
             run_launcher=None,  # lazy load
@@ -703,6 +712,18 @@ class DagsterInstance(DynamicPartitionsStore):
 
     @property
     def compute_log_manager(self) -> "ComputeLogManager":
+        from dagster._core.storage.compute_log_manager import ComputeLogManager
+
+        if not self._compute_log_manager:
+            check.invariant(
+                self._ref, "Compute log manager not provided, and no instance ref available"
+            )
+            compute_log_manager = cast(InstanceRef, self._ref).compute_log_manager
+            check.invariant(
+                compute_log_manager, "Compute log manager not configured in instance ref"
+            )
+            self._compute_log_manager = cast(ComputeLogManager, compute_log_manager)
+            self._compute_log_manager.register_instance(self)
         return self._compute_log_manager
 
     def get_settings(self, settings_key: str) -> Any:
@@ -864,7 +885,8 @@ class DagsterInstance(DynamicPartitionsStore):
         if self._run_launcher:
             self._run_launcher.dispose()
         self._event_storage.dispose()
-        self._compute_log_manager.dispose()
+        if self._compute_log_manager:
+            self._compute_log_manager.dispose()
         if self._secrets_loader:
             self._secrets_loader.dispose()
 
