@@ -382,8 +382,11 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         cursor: Optional[Union[str, int]] = None,
         of_type: Optional[Union["DagsterEventType", Set["DagsterEventType"]]] = None,
         limit: Optional[int] = None,
+        ascending: bool = True,
     ) -> Iterable["EventLogEntry"]:
-        return self._storage.event_log_storage.get_logs_for_run(run_id, cursor, of_type, limit)
+        return self._storage.event_log_storage.get_logs_for_run(
+            run_id, cursor, of_type, limit, ascending
+        )
 
     def get_stats_for_run(self, run_id: str) -> "DagsterRunStatsSnapshot":
         return self._storage.event_log_storage.get_stats_for_run(run_id)
@@ -532,8 +535,11 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         cursor: Optional[str] = None,
         of_type: Optional[Union["DagsterEventType", Set["DagsterEventType"]]] = None,
         limit: Optional[int] = None,
+        ascending: bool = True,
     ) -> EventLogConnection:
-        return self._storage.event_log_storage.get_records_for_run(run_id, cursor, of_type, limit)
+        return self._storage.event_log_storage.get_records_for_run(
+            run_id, cursor, of_type, limit, ascending
+        )
 
 
 class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
