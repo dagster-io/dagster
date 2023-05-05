@@ -468,6 +468,7 @@ class PartitionSetExecutionParamArgs(
     storage_name="PipelineSubsetSnapshotArgs",
     storage_field_names={
         "job_origin": "pipeline_origin",
+        "op_selection": "solid_selection",
     },
 )
 class JobSubsetSnapshotArgs(
@@ -475,7 +476,7 @@ class JobSubsetSnapshotArgs(
         "_JobSubsetSnapshotArgs",
         [
             ("job_origin", ExternalJobOrigin),
-            ("solid_selection", Optional[Sequence[str]]),
+            ("op_selection", Optional[Sequence[str]]),
             ("asset_selection", Optional[Sequence[AssetKey]]),
         ],
     )
@@ -483,14 +484,14 @@ class JobSubsetSnapshotArgs(
     def __new__(
         cls,
         job_origin: ExternalJobOrigin,
-        solid_selection: Sequence[str],
+        op_selection: Sequence[str],
         asset_selection: Optional[Sequence[AssetKey]] = None,
     ):
         return super(JobSubsetSnapshotArgs, cls).__new__(
             cls,
             job_origin=check.inst_param(job_origin, "job_origin", ExternalJobOrigin),
-            solid_selection=check.sequence_param(solid_selection, "solid_selection", of_type=str)
-            if solid_selection
+            op_selection=check.sequence_param(op_selection, "op_selection", of_type=str)
+            if op_selection
             else None,
             asset_selection=check.opt_sequence_param(
                 asset_selection, "asset_selection", of_type=AssetKey
