@@ -489,6 +489,27 @@ class TestEventLogStorage:
         storage.store_event(create_test_event_log_record(str(3), test_run_id))
         storage.store_event(create_test_event_log_record(str(4), test_run_id))
 
+        first_two_records = storage.get_records_for_run(test_run_id, limit=2)
+        assert len(first_two_records.records) == 2
+
+        last_two_records = storage.get_records_for_run(test_run_id, limit=2, ascending=False)
+        assert len(last_two_records.records) == 2
+
+        assert storage.get_logs_for_run(test_run_id, limit=2, ascending=True) == [
+            r.event_log_entry for r in first_two_records.records
+        ]
+
+        assert storage.get_logs_for_run(test_run_id, limit=2, ascending=False) == [
+            r.event_log_entry for r in last_two_records.records
+        ]
+
+        assert storage.get_records_for_run(
+            test_run_id, limit=2, cursor=first_two_records.cursor
+        ).records == list(reversed(last_two_records.records))
+        assert storage.get_records_for_run(
+            test_run_id, limit=2, cursor=last_two_records.cursor, ascending=False
+        ).records == list(reversed(first_two_records.records))
+
         attempts = 10
         while len(watched) < 3 and attempts > 0:
             time.sleep(0.5)
