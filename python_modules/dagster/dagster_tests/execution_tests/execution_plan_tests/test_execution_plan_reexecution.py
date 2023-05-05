@@ -15,8 +15,12 @@ from dagster._core.errors import (
     DagsterRunNotFoundError,
 )
 from dagster._core.events import get_step_output_event
-from dagster._core.execution.api import ReexecutionOptions, execute_job, execute_plan
-from dagster._core.execution.plan.plan import ExecutionPlan
+from dagster._core.execution.api import (
+    ReexecutionOptions,
+    create_execution_plan,
+    execute_job,
+    execute_plan,
+)
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance_for_test import instance_for_test
 from dagster._core.storage.mem_io_manager import mem_io_manager
@@ -94,9 +98,9 @@ def test_execution_plan_reexecution():
         )
         _check_known_state(known_state)
 
-        execution_plan = ExecutionPlan.build(
+        execution_plan = create_execution_plan(
             reconstructable(job_fn),
-            resolved_run_config,
+            run_config,
             known_state=known_state,
         )
 
@@ -166,9 +170,9 @@ def test_execution_plan_reexecution_with_in_memory():
         )
         _check_known_state(known_state)
 
-        execution_plan = ExecutionPlan.build(
+        execution_plan = create_execution_plan(
             reconstructable(define_addy_job_mem_io),
-            resolved_run_config,
+            run_config,
             known_state=known_state,
         )
 

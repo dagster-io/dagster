@@ -113,9 +113,7 @@ def create_context_creation_data(
         dagster_run=dagster_run,
         executor_def=executor_def,
         instance=instance,
-        resource_keys_to_init=get_required_resource_keys_to_init(
-            execution_plan, job_def, resolved_run_config
-        ),
+        resource_keys_to_init=get_required_resource_keys_to_init(execution_plan, job_def),
         execution_plan=execution_plan,
     )
 
