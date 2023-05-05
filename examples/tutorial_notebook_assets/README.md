@@ -27,7 +27,7 @@ cd my-dagster-project
 pip install -e ".[dev]"
 ```
 
-At this point, you can open the Dagster UI and see the finished tutorial, and an empty template tutorial. As you work through the tutorial, the template will be filled in.
+At this point, you can open the Dagster UI and see the finished tutorial. As you work through the tutorial, the template will be filled in and become viewable in the UI.
 
 ```shell
 dagster dev
