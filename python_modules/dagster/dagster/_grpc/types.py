@@ -16,6 +16,7 @@ from dagster._core.host_representation.origin import (
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.origin import JobPythonOrigin, get_python_environment_entry_point
 from dagster._serdes import serialize_value, whitelist_for_serdes
+from dagster._serdes.serdes import SetToSequenceFieldSerializer
 from dagster._utils.error import SerializableErrorInfo
 
 
@@ -469,6 +470,8 @@ class PartitionSetExecutionParamArgs(
         "job_origin": "pipeline_origin",
         "op_selection": "solid_selection",
     },
+    # asset_selection previously was erroneously represented as a sequence
+    field_serializers={"asset_selection": SetToSequenceFieldSerializer},
 )
 class JobSubsetSnapshotArgs(
     NamedTuple(
@@ -492,7 +495,7 @@ class JobSubsetSnapshotArgs(
             op_selection=check.opt_nullable_sequence_param(
                 op_selection, "op_selection", of_type=str
             ),
-            asset_selection=asset_selection,
+            asset_selection=check.opt_nullable_set_param(asset_selection, "asset_selection"),
         )
 
 
