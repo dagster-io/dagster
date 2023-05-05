@@ -106,8 +106,8 @@ class TestQueuedRunCoordinator:
                         },
                     }
                 }
-            ) as _:
-                pass
+            ) as instance:
+                print(instance.run_coordinator)  # noqa: T201
 
     def test_config_unique_value(self):
         with environ({"MAX_RUNS": "10", "DEQUEUE_INTERVAL": "7"}):
