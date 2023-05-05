@@ -8,9 +8,13 @@ from contextlib import contextmanager
 from typing import Any, Dict, List, Mapping, Optional, cast
 
 import requests
-from dagster import ConfigurableResource, Failure
-from dagster import _check as check
-from dagster import get_dagster_logger, resource
+from dagster import (
+    ConfigurableResource,
+    Failure,
+    _check as check,
+    get_dagster_logger,
+    resource,
+)
 from dagster._config.pythonic_config import infer_schema_from_config_class
 from dagster._utils.cached_method import cached_method
 from dagster._utils.merger import deep_merge_dicts

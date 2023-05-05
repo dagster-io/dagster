@@ -30,8 +30,8 @@ from dagster import (
     Nothing,
     Output,
     ResourceDefinition,
+    _check as check,
 )
-from dagster import _check as check
 from dagster._annotations import experimental
 from dagster._core.definitions import AssetsDefinition, multi_asset
 from dagster._core.definitions.cacheable_assets import (
