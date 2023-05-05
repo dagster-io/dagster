@@ -272,7 +272,6 @@ class RepositoryDefinition:
         job_name: str,
         op_selection: Optional[Iterable[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
-        solids_to_execute: Optional[AbstractSet[str]] = None,
     ):
         defn = self.get_job(job_name)
         return defn.get_subset(op_selection=op_selection, asset_selection=asset_selection)
