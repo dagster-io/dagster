@@ -321,6 +321,10 @@ In Dagit, you can manually trigger a test evaluation of a sensor and view the re
 
    If the run was successful, then for each produced run request, you can open the launchpad pre-scaffolded with the config produced by that run request. You'll also see a new computed cursor value from the evaluation, with the option to persist the value.
 
+<Note>
+  Sensors constructed with the `@asset_sensor`, `@run_status_sensor`, and `@run_failure_sensor` decorators cannot be tested using this button as of yet.
+</Note>
+
 </TabItem>
 <TabItem name="Via the CLI">
 
