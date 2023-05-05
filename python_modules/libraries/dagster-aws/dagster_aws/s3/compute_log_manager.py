@@ -174,11 +174,11 @@ class S3ComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
             else:
                 out_key = self._s3_key(log_key, ComputeIOType.STDOUT)
                 err_key = self._s3_key(log_key, ComputeIOType.STDERR)
-                s3_base = f"https://s3.{self._region}.amazonaws.com/{self._s3_bucket}"
+                s3_base = f"https://s3.console.aws.amazon.com/s3/object/{self._s3_bucket}?region={self._region}"
                 yield CapturedLogContext(
                     local_context.log_key,
-                    external_stdout_url=f"{s3_base}/{out_key}",
-                    external_stderr_url=f"{s3_base}/{err_key}",
+                    external_stdout_url=f"{s3_base}&prefix={out_key}",
+                    external_stderr_url=f"{s3_base}&prefix={err_key}",
                 )
 
     def delete_logs(
