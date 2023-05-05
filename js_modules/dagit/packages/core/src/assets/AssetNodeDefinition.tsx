@@ -42,7 +42,9 @@ export const AssetNodeDefinition: React.FC<{
   const {assetMetadata, assetType} = metadataForAssetNode(assetNode);
   const liveDataForNode = liveDataByNode[toGraphId(assetNode.assetKey)];
 
-  const assetConfigSchema = assetNode.configField?.configType;
+  const configType = assetNode.configField?.configType;
+  const assetConfigSchema = configType && configType.key !== 'Any' ? configType : null;
+
   const repoAddress = buildRepoAddress(
     assetNode.repository.name,
     assetNode.repository.location.name,
@@ -71,12 +73,13 @@ export const AssetNodeDefinition: React.FC<{
           </Box>
           <Box
             padding={{vertical: 16, horizontal: 24}}
-            style={{flex: 1, flexBasis: 'content', flexGrow: 0, minHeight: 120}}
+            style={{flex: 1, flexBasis: 'content', flexGrow: 0, minHeight: 123}}
           >
-            <Description
-              description={assetNode.description || 'No description provided.'}
-              maxHeight={260}
-            />
+            {assetNode.description ? (
+              <Description description={assetNode.description} maxHeight={260} />
+            ) : (
+              <Body>No description provided</Body>
+            )}
           </Box>
           {assetNode.opVersion && (
             <>
@@ -168,94 +171,131 @@ export const AssetNodeDefinition: React.FC<{
           {/** Ensures the line between the left and right columns goes to the bottom of the page */}
           <div style={{flex: 1}} />
         </Box>
-        {assetConfigSchema || assetNode.requiredResources.length > 0 ? (
-          <Box
-            border={{side: 'vertical', width: 1, color: Colors.KeylineGray}}
-            style={{flex: 0.5, minWidth: 0}}
-            flex={{direction: 'column'}}
-          >
-            {assetNode.requiredResources.length > 0 && (
-              <>
-                <Box
-                  padding={{vertical: 16, horizontal: 24}}
-                  border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-                >
-                  <Subheading>Required Resources</Subheading>
-                </Box>
-                <Box
-                  padding={{vertical: 16, horizontal: 24}}
-                  border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-                >
-                  {assetNode.requiredResources.map((resource) => (
-                    <ResourceContainer key={resource.resourceKey}>
-                      <Icon name="resource" color={Colors.Gray700} />
-                      {repoAddress ? (
-                        <Link
-                          to={workspacePathFromAddress(
-                            repoAddress,
-                            `/resources/${resource.resourceKey}`,
-                          )}
-                        >
-                          <ResourceHeader>{resource.resourceKey}</ResourceHeader>
-                        </Link>
-                      ) : (
-                        <ResourceHeader>{resource.resourceKey}</ResourceHeader>
-                      )}
-                    </ResourceContainer>
-                  ))}
-                </Box>
-              </>
-            )}
-            {assetConfigSchema && (
-              <>
-                <Box
-                  padding={{vertical: 16, horizontal: 24}}
-                  border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-                >
-                  <Subheading>Config</Subheading>
-                </Box>
-                <Box padding={{vertical: 16, horizontal: 24}}>
-                  <ConfigTypeSchema
-                    type={assetConfigSchema}
-                    typesInScope={assetConfigSchema.recursiveConfigTypes}
-                  />
-                </Box>
-              </>
-            )}
-          </Box>
-        ) : null}
 
-        <Box style={{flex: 0.5, minWidth: 0}} flex={{direction: 'column'}}>
-          <Box
-            padding={{vertical: 16, horizontal: 24}}
-            border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-          >
-            <Subheading>Type</Subheading>
-          </Box>
-          {assetType ? (
-            <DagsterTypeSummary type={assetType} />
-          ) : (
-            <Box padding={{vertical: 16, horizontal: 24}}>
-              <Description description="No type data provided." />
+        <Box
+          border={{side: 'vertical', width: 1, color: Colors.KeylineGray}}
+          style={{flex: 0.5, minWidth: 0}}
+          flex={{direction: 'column'}}
+        >
+          <>
+            <Box
+              padding={{vertical: 16, horizontal: 24}}
+              border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+            >
+              <Subheading>Required Resources</Subheading>
             </Box>
-          )}
-          {assetMetadata.length > 0 && (
-            <>
-              <Box
-                padding={{vertical: 16, horizontal: 24}}
-                border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
-                flex={{justifyContent: 'space-between', gap: 8}}
-              >
-                <Subheading>Metadata</Subheading>
+            <Box
+              padding={{vertical: 16, horizontal: 24}}
+              border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+            >
+              {assetNode.requiredResources.map((resource) => (
+                <ResourceContainer key={resource.resourceKey}>
+                  <Icon name="resource" color={Colors.Gray700} />
+                  {repoAddress ? (
+                    <Link
+                      to={workspacePathFromAddress(
+                        repoAddress,
+                        `/resources/${resource.resourceKey}`,
+                      )}
+                    >
+                      <ResourceHeader>{resource.resourceKey}</ResourceHeader>
+                    </Link>
+                  ) : (
+                    <ResourceHeader>{resource.resourceKey}</ResourceHeader>
+                  )}
+                </ResourceContainer>
+              ))}
+              {assetNode.requiredResources.length === 0 && (
+                <Body>
+                  No required resources to display
+                  <Box padding={{top: 4}}>
+                    <a href="https://docs.dagster.io/concepts/resources#using-software-defined-assets">
+                      View documentation
+                    </a>
+                  </Box>
+                </Body>
+              )}
+            </Box>
+          </>
+
+          <>
+            <Box
+              padding={{vertical: 16, horizontal: 24}}
+              border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+            >
+              <Subheading>Config</Subheading>
+            </Box>
+            <Box
+              padding={{vertical: 16, horizontal: 24}}
+              border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+            >
+              {assetConfigSchema ? (
+                <ConfigTypeSchema
+                  type={assetConfigSchema}
+                  typesInScope={assetConfigSchema.recursiveConfigTypes}
+                />
+              ) : (
+                <Body>
+                  No config schema defined
+                  <Box padding={{top: 4}}>
+                    <a href="https://docs.dagster.io/concepts/assets/software-defined-assets#asset-configuration">
+                      View documentation
+                    </a>
+                  </Box>
+                </Body>
+              )}
+            </Box>
+          </>
+
+          <>
+            <Box
+              padding={{vertical: 16, horizontal: 24}}
+              border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+            >
+              <Subheading>Type</Subheading>
+            </Box>
+            {assetType && assetType.displayName !== 'Any' ? (
+              <DagsterTypeSummary type={assetType} />
+            ) : (
+              <Box padding={{vertical: 16, horizontal: 24}}>
+                <Body>
+                  No input and output type data defined
+                  <Box padding={{top: 4}}>
+                    <a href="https://docs.dagster.io/concepts/types#overview">View documentation</a>
+                  </Box>
+                </Body>
               </Box>
-              <Box style={{flex: 1}}>
+            )}
+          </>
+
+          <>
+            <Box
+              padding={{vertical: 16, horizontal: 24}}
+              border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+              flex={{justifyContent: 'space-between', gap: 8}}
+            >
+              <Subheading>Metadata</Subheading>
+            </Box>
+            <Box style={{flex: 1}}>
+              {assetMetadata.length > 0 ? (
                 <AssetMetadataTable
                   assetMetadata={assetMetadata}
                   repoLocation={repoAddress?.location}
                 />
-              </Box>
-            </>
-          )}
+              ) : (
+                <Box padding={{vertical: 16, horizontal: 24}}>
+                  <Body>
+                    No asset definition metadata defined
+                    <Box padding={{top: 4}}>
+                      <a href="https://docs.dagster.io/concepts/assets/software-defined-assets#attaching-definition-metadata">
+                        View documentation
+                      </a>
+                    </Box>
+                  </Body>
+                </Box>
+              )}
+            </Box>
+          </>
         </Box>
       </Box>
     </>

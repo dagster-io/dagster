@@ -35,7 +35,7 @@ export const TypeExplorer: React.FC<ITypeExplorerProps> = (props) => {
       </Box>
       <SidebarSection title="Description">
         <Box padding={{vertical: 16, horizontal: 24}}>
-          <Description description={description || 'No Description Provided'} />
+          <Description description={description || 'No description provided'} />
         </Box>
       </SidebarSection>
       {tableSchema && (
