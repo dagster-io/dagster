@@ -15,7 +15,9 @@ from dagster._cli.workspace.cli_target import WORKSPACE_TARGET_WARNING, ClickArg
 from dagster._core.instance import InstanceRef
 from dagster._core.telemetry import START_DAGIT_WEBSERVER, log_action
 from dagster._core.telemetry_upload import uploading_logging_thread
-from dagster._core.workspace.context import WorkspaceProcessContext
+from dagster._core.workspace.context import (
+    IWorkspaceProcessContext,
+)
 from dagster._serdes import deserialize_value
 from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME, find_free_port, is_port_in_use
 from dagster._utils.log import configure_loggers
@@ -187,14 +189,14 @@ async def _lifespan(app):
 
 
 def host_dagit_ui_with_workspace_process_context(
-    workspace_process_context: WorkspaceProcessContext,
+    workspace_process_context: IWorkspaceProcessContext,
     host: Optional[str],
     port: Optional[int],
     path_prefix: str,
     log_level: str,
 ):
     check.inst_param(
-        workspace_process_context, "workspace_process_context", WorkspaceProcessContext
+        workspace_process_context, "workspace_process_context", IWorkspaceProcessContext
     )
     host = check.opt_str_param(host, "host", "127.0.0.1")
     check.opt_int_param(port, "port")
