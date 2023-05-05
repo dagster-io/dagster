@@ -187,14 +187,12 @@ export type StatusCaseObject =
       liveData: LiveDataForNode;
     } & Pick<GenericStatusProps, 'liveData' | 'currentMinutesLate' | 'late'> &
       Partial<Pick<GenericStatusProps, 'runWhichFailedToMaterialize'>>)
-  | {
+  | ({
       case: StatusCase.NEVER_MATERIALIZED;
-      liveData: LiveDataForNode;
-    }
-  | {
+    } & Pick<GenericStatusProps, 'liveData'>)
+  | ({
       case: StatusCase.MATERIALIZED;
-      liveData: LiveDataForNode;
-    }
+    } & Pick<GenericStatusProps, 'liveData'>)
   | ({
       case: StatusCase.PARTITIONS_FAILED;
     } & Pick<
@@ -570,19 +568,6 @@ export function buildAssetNodeStatusContent({
         ),
       };
   }
-
-  return {
-    background: Colors.Green50,
-    border: Colors.Green500,
-    content: (
-      <>
-        {expanded && <AssetPartitionStatusDot status={[AssetPartitionStatus.MATERIALIZED]} />}
-        <span style={{color: Colors.Green700}}>Materialized</span>
-        {expanded && <SpacerDot />}
-        {lastMaterializationLink}
-      </>
-    ),
-  };
 }
 
 export const AssetNodeMinimal: React.FC<{
