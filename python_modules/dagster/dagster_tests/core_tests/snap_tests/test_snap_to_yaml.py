@@ -13,18 +13,14 @@ from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 
 
 def test_basic_default():
-    snap = snap_from_config_type(
-        ConfigSchemaSnapshot({}), resolve_to_config_type({"a": Field(str, "foo")})
-    )
-    yaml_str = default_values_yaml_from_type_snap(snap)
+    snap = snap_from_config_type(resolve_to_config_type({"a": Field(str, "foo")}))
+    yaml_str = default_values_yaml_from_type_snap(ConfigSchemaSnapshot({}), snap)
     assert yaml_str == "a: foo\n"
 
 
 def test_with_spaces():
-    snap = snap_from_config_type(
-        ConfigSchemaSnapshot({}), resolve_to_config_type({"a": Field(str, "with spaces")})
-    )
-    yaml_str = default_values_yaml_from_type_snap(snap)
+    snap = snap_from_config_type(resolve_to_config_type({"a": Field(str, "with spaces")}))
+    yaml_str = default_values_yaml_from_type_snap(ConfigSchemaSnapshot({}), snap)
     assert yaml_str == "a: with spaces\n"
 
 
