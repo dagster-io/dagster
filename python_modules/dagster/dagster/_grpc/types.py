@@ -486,7 +486,6 @@ class JobSubsetSnapshotArgs(
         op_selection: Optional[Sequence[str]],
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
     ):
-        asset_selection = set(asset_selection) if asset_selection else None
         return super(JobSubsetSnapshotArgs, cls).__new__(
             cls,
             job_origin=check.inst_param(job_origin, "job_origin", ExternalJobOrigin),

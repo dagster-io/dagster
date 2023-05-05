@@ -269,7 +269,7 @@ def get_external_pipeline_subset_result(
         definition = repo_def.get_maybe_subset_job_def(
             job_name,
             op_selection=op_selection,
-            asset_selection=frozenset(asset_selection) if asset_selection else None,
+            asset_selection=asset_selection,
         )
         external_job_data = external_job_data_from_def(definition)
         return ExternalJobSubsetResult(success=True, external_job_data=external_job_data)
