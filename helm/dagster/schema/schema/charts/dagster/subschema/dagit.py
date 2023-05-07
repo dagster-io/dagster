@@ -10,6 +10,7 @@ class Server(BaseModel):
     host: str
     port: int
     name: Optional[str]
+    ssl: Optional[bool]
 
 
 class Workspace(BaseModel):

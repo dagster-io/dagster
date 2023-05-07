@@ -34,6 +34,9 @@ data:
       - grpc_server:
           host: {{ $deploymentHost }}
           port: {{ $deployment.port }}
+          {{- if $deployment.ssl }}
+          ssl: {{ $deployment.ssl }}
+          {{- end}}
           {{- if $deployment.name }}
           location_name: {{ $deployment.name }}
           {{else}}

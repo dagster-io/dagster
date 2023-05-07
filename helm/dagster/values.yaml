@@ -64,6 +64,7 @@ dagit:
       - host: "k8s-example-user-code-1"
         port: 3030
         name: "user-code-example"
+        ssl: true
 
     # Defines the name of a configmap provisioned outside of the
     # Helm release to use as workspace file. When set, `servers`
