@@ -18,7 +18,12 @@ from dagster._utils.backcompat import deprecation_warning
 
 from .asset_graph import AssetGraph
 from .assets import AssetsDefinition
-from .events import AssetKey, CoercibleToAssetKey
+from .events import (
+    AssetKey,
+    CoercibleToAssetKey,
+    CoercibleToAssetKeyPrefix,
+    key_prefix_from_coercible,
+)
 from .source_asset import SourceAsset
 
 CoercibleToAssetSelection: TypeAlias = Union[
@@ -96,6 +101,24 @@ class AssetSelection(ABC):
             for key in asset_keys
         ]
         return KeysAssetSelection(*_asset_keys)
+
+    @public
+    @staticmethod
+    def key_prefixes(*key_prefixes: CoercibleToAssetKeyPrefix) -> "KeyPrefixesAssetSelection":
+        """Returns a selection that includes assets that match any of the provided key prefixes.
+
+        Examples:
+            .. code-block:: python
+
+              # match any asset key where the first segment is equal to "a" or "b"
+              # e.g. AssetKey(["a", "b", "c"]) would match, but AssetKey(["abc"]) would not.
+              AssetSelection.key_prefixes("a", "b")
+
+              # match any asset key where the first two segments are ["a", "b"] or ["a", "c"]
+              AssetSelection.key_prefixes(["a", "b"], ["a", "c"])
+        """
+        _asset_key_prefixes = [key_prefix_from_coercible(key_prefix) for key_prefix in key_prefixes]
+        return KeyPrefixesAssetSelection(*_asset_key_prefixes)
 
     @public
     @staticmethod
@@ -393,6 +416,18 @@ class KeysAssetSelection(AssetSelection):
                 "are correctly added to the `Definitions`."
             )
         return specified_keys
+
+
+class KeyPrefixesAssetSelection(AssetSelection):
+    def __init__(self, *key_prefixes: Sequence[str]):
+        self._key_prefixes = key_prefixes
+
+    def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
+        return {
+            key
+            for key in asset_graph.all_asset_keys
+            if any(key.has_prefix(prefix) for prefix in self._key_prefixes)
+        }
 
 
 class OrAssetSelection(AssetSelection):
