@@ -1,10 +1,5 @@
 // eslint-disable-next-line no-restricted-imports
-import {
-  Toaster as BlueprintToaster,
-  IToasterProps,
-  ToasterInstance,
-  ToastProps,
-} from '@blueprintjs/core';
+import {IToasterProps, ToasterInstance, ToastProps} from '@blueprintjs/core';
 import React from 'react';
 import {createGlobalStyle} from 'styled-components/macro';
 
@@ -79,17 +74,11 @@ const setup = (instance: ToasterInstance): DToaster => {
   return Object.assign(instance, {show: showWithDagsterIcon}) as DToaster;
 };
 
-const create = (props?: IToasterProps, container?: HTMLElement): DToaster => {
-  const instance = BlueprintToaster.create({...props, className: 'dagster-toaster'}, container);
-  return setup(instance);
-};
-
 const asyncCreate = async (props?: IToasterProps, container?: HTMLElement): Promise<DToaster> => {
   const instance = await createToaster({...props, className: 'dagster-toaster'}, container);
   return setup(instance);
 };
 
 export const Toaster = {
-  create,
   asyncCreate,
 };
