@@ -1,7 +1,7 @@
 import {Box, Button, Group, Icon} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {SharedToaster} from '../app/DomUtils';
+import {showSharedToaster} from '../app/DomUtils';
 import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
 import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
 import {LaunchButtonConfiguration, LaunchButtonDropdown} from '../launchpad/LaunchButton';
@@ -29,11 +29,11 @@ export const CancelRunButton: React.FC<{run: RunFragment}> = ({run}) => {
   const closeDialog = React.useCallback(() => setShowDialog(false), []);
 
   const onComplete = React.useCallback(
-    (terminationState: TerminationState) => {
+    async (terminationState: TerminationState) => {
       const {errors} = terminationState;
       const error = runId && errors[runId];
       if (error && 'message' in error) {
-        SharedToaster.show({
+        await showSharedToaster({
           message: error.message,
           icon: 'error',
           intent: 'danger',

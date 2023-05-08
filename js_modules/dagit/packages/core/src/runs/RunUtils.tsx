@@ -5,7 +5,7 @@ import * as React from 'react';
 
 import {Mono} from '../../../ui/src';
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {SharedToaster} from '../app/DomUtils';
+import {showSharedToaster} from '../app/DomUtils';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {Timestamp} from '../app/time/Timestamp';
@@ -62,7 +62,7 @@ export function useDidLaunchEvent(cb: () => void, delay = 1500) {
 
 export type LaunchBehavior = 'open' | 'open-in-new-tab' | 'toast';
 
-export function handleLaunchResult(
+export async function handleLaunchResult(
   pipelineName: string,
   result: void | null | LaunchPipelineExecutionMutation['launchPipelineExecution'],
   history: History<unknown>,
@@ -84,7 +84,7 @@ export function handleLaunchResult(
     } else if (options.behavior === 'open') {
       openInSameTab();
     } else {
-      SharedToaster.show({
+      await showSharedToaster({
         intent: 'success',
         message: (
           <div>

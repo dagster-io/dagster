@@ -14,7 +14,7 @@ import * as React from 'react';
 import 'chartjs-adapter-date-fns';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {SharedToaster} from '../app/DomUtils';
+import {showSharedToaster} from '../app/DomUtils';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {SensorSelector} from '../graphql/types';
@@ -42,10 +42,10 @@ export const EditCursorDialog: React.FC<{
       variables: {sensorSelector, cursor: cursorValue},
     });
     if (data?.setSensorCursor.__typename === 'Sensor') {
-      SharedToaster.show({message: 'Cursor value updated', intent: 'success'});
+      await showSharedToaster({message: 'Cursor value updated', intent: 'success'});
     } else if (data?.setSensorCursor) {
       const error = data.setSensorCursor;
-      SharedToaster.show({
+      await showSharedToaster({
         intent: 'danger',
         message: (
           <Group direction="row" spacing={8}>

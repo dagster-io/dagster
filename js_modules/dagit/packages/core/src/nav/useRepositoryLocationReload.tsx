@@ -3,7 +3,7 @@ import {ApolloClient, gql, useApolloClient, useQuery} from '@apollo/client';
 import {Intent} from '@blueprintjs/core';
 import * as React from 'react';
 
-import {SharedToaster} from '../app/DomUtils';
+import {showSharedToaster} from '../app/DomUtils';
 import {useInvalidateConfigsForRepo} from '../app/ExecutionSessionStorage';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {UNAUTHORIZED_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
@@ -108,7 +108,7 @@ export const useRepositoryLocationReload = ({
     notifyOnNetworkStatusChange: true,
     onCompleted: (data: RepositoryLocationStatusQuery) => {
       // SetTimeout to avoid infinite loop in test
-      setTimeout(() => {
+      setTimeout(async () => {
         const workspace = data.workspaceOrError;
 
         if (workspace.__typename === 'PythonError') {
@@ -172,7 +172,7 @@ export const useRepositoryLocationReload = ({
         stopPolling();
 
         // On success, show the successful toast, hide the dialog (if open), and reset Apollo.
-        SharedToaster.show({
+        await showSharedToaster({
           message: `${scope === 'location' ? 'Code location' : 'Definitions'} reloaded!`,
           timeout: 3000,
           icon: 'check_circle',
