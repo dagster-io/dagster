@@ -1,6 +1,7 @@
+import {MockedProvider} from '@apollo/client/testing';
 import {Meta} from '@storybook/react';
 import * as React from 'react';
-import {AssetNodeDefinition} from '../AssetNodeDefinition';
+
 import {
   buildAssetNode,
   buildAutoMaterializePolicy,
@@ -11,10 +12,10 @@ import {
   buildFreshnessPolicy,
   buildIntMetadataEntry,
   buildPathMetadataEntry,
+  buildResourceRequirement,
+  buildAssetKey,
 } from '../../graphql/types';
-import {MockedProvider} from '@apollo/client/testing';
-import {buildResourceRequirement} from '../../graphql/types';
-import {buildAssetKey} from '../../graphql/types';
+import {AssetNodeDefinition} from '../AssetNodeDefinition';
 
 // eslint-disable-next-line import/no-default-export
 export default {
