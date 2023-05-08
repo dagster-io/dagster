@@ -1074,6 +1074,7 @@ class ExternalAssetNode(
             ("atomic_execution_unit_id", Optional[str]),
             ("required_top_level_resources", Optional[Sequence[str]]),
             ("auto_materialize_policy", Optional[AutoMaterializePolicy]),
+            ("auto_observe_interval_minutes", Optional[float]),
         ],
     )
 ):
@@ -1106,6 +1107,7 @@ class ExternalAssetNode(
         atomic_execution_unit_id: Optional[str] = None,
         required_top_level_resources: Optional[Sequence[str]] = None,
         auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
+        auto_observe_interval_minutes: Optional[float] = None,
     ):
         # backcompat logic to handle ExternalAssetNodes serialized without op_names/graph_name
         if not op_names:
@@ -1160,6 +1162,9 @@ class ExternalAssetNode(
                 auto_materialize_policy,
                 "auto_materialize_policy",
                 AutoMaterializePolicy,
+            ),
+            auto_observe_interval_minutes=check.opt_numeric_param(
+                auto_observe_interval_minutes, "auto_observe_interval_minutes"
             ),
         )
 
@@ -1422,6 +1427,7 @@ def external_asset_graph_from_defs(
                     group_name=source_asset.group_name,
                     is_source=True,
                     is_observable=source_asset.is_observable,
+                    auto_observe_interval_minutes=source_asset.auto_observe_interval_minutes,
                     partitions_def_data=external_partitions_definition_from_def(
                         source_asset.partitions_def
                     )

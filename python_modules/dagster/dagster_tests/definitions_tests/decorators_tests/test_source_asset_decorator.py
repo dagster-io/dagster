@@ -25,6 +25,7 @@ def test_all_fields():
         io_manager_key="lambda",
         io_manager_def=foo_manager,
         group_name="rho",
+        auto_observe_interval_minutes=5,
     )
     def foo_source_asset(context):
         raise Exception("not executed")
@@ -36,6 +37,7 @@ def test_all_fields():
     assert foo_source_asset.resource_defs == {"lambda": foo_manager}
     assert foo_source_asset.io_manager_def == foo_manager
     assert foo_source_asset.metadata == {"epsilon": MetadataValue.text("gamma")}
+    assert foo_source_asset.auto_observe_interval_minutes == 5
 
 
 def test_no_context_observable_asset():
