@@ -1,4 +1,5 @@
 import pytest
+import yaml
 from dagster_k8s.models import k8s_model_from_dict, k8s_snake_case_dict
 from kubernetes import client as k8s_client
 from kubernetes.client import models
@@ -351,11 +352,16 @@ def test_dagit_workspace_servers(workspace_configmap_template: HelmTemplate):
         ),
     )
 
+    expected = {
+        "load_from": [
+            {"grpc_server": {"host": "example.com", "port": 443, "location_name": "Example"}}
+        ]
+    }
+
     [dagit_workspace_configmap] = workspace_configmap_template.render(helm_values)
-    assert (
-        dagit_workspace_configmap.data["workspace.yaml"]
-        == """load_from:\n  - grpc_server:\n      host: example.com\n      port: 443\n      location_name: Example\n"""
-    )
+    actual = yaml.safe_load(dagit_workspace_configmap.data["workspace.yaml"])
+
+    assert actual == expected
 
 
 def test_dagit_workspace_servers_ssl(workspace_configmap_template: HelmTemplate):
@@ -376,11 +382,23 @@ def test_dagit_workspace_servers_ssl(workspace_configmap_template: HelmTemplate)
         ),
     )
 
+    expected = {
+        "load_from": [
+            {
+                "grpc_server": {
+                    "host": "example.com",
+                    "port": 443,
+                    "location_name": "Example",
+                    "ssl": True,
+                }
+            }
+        ]
+    }
+
     [dagit_workspace_configmap] = workspace_configmap_template.render(helm_values)
-    assert (
-        dagit_workspace_configmap.data["workspace.yaml"]
-        == """load_from:\n  - grpc_server:\n      host: example.com\n      port: 443\n      ssl: true\n      location_name: Example\n"""
-    )
+    actual = yaml.safe_load(dagit_workspace_configmap.data["workspace.yaml"])
+
+    assert actual == expected
 
 
 def test_dagit_scheduler_name_override(deployment_template: HelmTemplate):
