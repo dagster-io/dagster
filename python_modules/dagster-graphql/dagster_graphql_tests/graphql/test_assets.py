@@ -1142,6 +1142,40 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert result.data["assetNodes"][0]["partitionStats"]["numFailed"] == 2
         assert result.data["assetNodes"][0]["partitionStats"]["numMaterializing"] == 0
 
+        # in progress partitions don't count towards failed
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
+            variables={
+                "executionParams": {
+                    "selector": selector,
+                    "mode": "default",
+                    "executionMetadata": {"tags": [{"key": "dagster/partition", "value": "a"}]},
+                }
+            },
+        )
+        run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+
+        assert not result.errors
+        assert result.data
+
+        stats_result = execute_dagster_graphql(
+            graphql_context,
+            GET_PARTITION_STATS,
+            variables={"pipelineSelector": selector},
+        )
+
+        graphql_context.instance.run_launcher.terminate(run_id)
+
+        assert stats_result.data
+        assert stats_result.data["assetNodes"]
+        assert len(stats_result.data["assetNodes"]) == 1
+        assert stats_result.data["assetNodes"][0]["partitionStats"]["numPartitions"] == 4
+        assert stats_result.data["assetNodes"][0]["partitionStats"]["numMaterialized"] == 0
+        assert stats_result.data["assetNodes"][0]["partitionStats"]["numFailed"] == 1
+        assert stats_result.data["assetNodes"][0]["partitionStats"]["numMaterializing"] == 1
+
     def test_dynamic_partitions(self, graphql_context: WorkspaceRequestContext):
         traced_counter.set(Counter())
         selector = infer_pipeline_selector(graphql_context, "dynamic_partitioned_assets_job")
