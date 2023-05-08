@@ -24,7 +24,7 @@ describe('toGraphQueryItems', () => {
 
     expect(result.markers).toEqual([]);
     expect(result.boxes.length).toEqual(2);
-    expect(result.boxes[0]).toContain({
+    expect(result.boxes[0]).toMatchObject({
       key: 'depends_on_nothing',
       root: true,
       state: undefined,
@@ -33,7 +33,7 @@ describe('toGraphQueryItems', () => {
       y: 0,
     });
     expect(result.boxes[0].children.length).toEqual(1);
-    expect(result.boxes[1]).toContain({
+    expect(result.boxes[1]).toMatchObject({
       key: 'depends_on_yesterday',
       root: false,
       state: undefined,
