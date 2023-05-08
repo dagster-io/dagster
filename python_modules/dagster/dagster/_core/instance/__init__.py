@@ -6,6 +6,7 @@ import os
 import sys
 import time
 import weakref
+from abc import abstractmethod
 from collections import defaultdict
 from enum import Enum
 from tempfile import TemporaryDirectory
@@ -266,13 +267,13 @@ class MayHaveInstanceWeakref(Generic[T_DagsterInstance]):
 
 @runtime_checkable
 class DynamicPartitionsStore(Protocol):
+    @abstractmethod
     def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
-        return self.get_dynamic_partitions(partitions_def_name=partitions_def_name)
+        ...
 
+    @abstractmethod
     def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
-        return self.has_dynamic_partition(
-            partitions_def_name=partitions_def_name, partition_key=partition_key
-        )
+        ...
 
 
 class DagsterInstance(DynamicPartitionsStore):
