@@ -19,7 +19,7 @@ import React from 'react';
 import styled from 'styled-components/macro';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {SharedToaster} from '../app/DomUtils';
+import {showSharedToaster} from '../app/DomUtils';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {assertUnreachable} from '../app/Util';
@@ -177,11 +177,11 @@ const SensorDryRun: React.FC<Props> = ({repoAddress, name, currentCursor, onClos
       variables: {sensorSelector, cursor},
     });
     if (data?.setSensorCursor.__typename === 'Sensor') {
-      SharedToaster.show({message: 'Cursor value updated', intent: 'success'});
+      await showSharedToaster({message: 'Cursor value updated', intent: 'success'});
       setCursorState('Persisted');
     } else if (data?.setSensorCursor) {
       const error = data.setSensorCursor;
-      SharedToaster.show({
+      await showSharedToaster({
         intent: 'danger',
         message: (
           <Group direction="row" spacing={8}>

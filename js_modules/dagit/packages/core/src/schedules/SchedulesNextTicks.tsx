@@ -24,7 +24,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {SharedToaster} from '../app/DomUtils';
+import {showSharedToaster} from '../app/DomUtils';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {useCopyToClipboard} from '../app/browser';
@@ -468,9 +468,9 @@ const NextTickDialog: React.FC<{
         {selectedRunRequest ? (
           <Button
             autoFocus={false}
-            onClick={() => {
+            onClick={async () => {
               copy(selectedRunRequest.runConfigYaml);
-              SharedToaster.show({
+              await showSharedToaster({
                 intent: 'success',
                 icon: 'copy_to_clipboard_done',
                 message: 'Copied!',

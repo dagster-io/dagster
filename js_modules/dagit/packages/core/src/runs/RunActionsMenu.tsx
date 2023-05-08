@@ -18,7 +18,7 @@ import * as React from 'react';
 import {useHistory} from 'react-router-dom';
 
 import {AppContext} from '../app/AppContext';
-import {SharedToaster} from '../app/DomUtils';
+import {showSharedToaster} from '../app/DomUtils';
 import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
 import {useCopyToClipboard} from '../app/browser';
 import {ReexecutionStrategy} from '../graphql/types';
@@ -282,9 +282,9 @@ export const RunActionsMenu: React.FC<{
         <DialogFooter topBorder>
           <Button
             intent="none"
-            onClick={() => {
+            onClick={async () => {
               copyConfig(runConfigYaml || '');
-              SharedToaster.show({
+              await showSharedToaster({
                 intent: 'success',
                 icon: 'copy_to_clipboard_done',
                 message: 'Copied!',
