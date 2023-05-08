@@ -33,6 +33,7 @@ AVAILABLE_EXAMPLES = [
     "development_to_production",
     "feature_graph_backed_assets",
     "project_fully_featured",
+    "project_pypi_github",
     "with_airflow",
     "with_great_expectations",
     "with_pyspark",

@@ -1,15 +1,15 @@
 import os
+
 import pandas as pd
 from dagster import DailyPartitionsDefinition, MetadataValue, asset
 from dagster_dbt import load_assets_from_dbt_project
 
-from typing import Optional
 from .resources import (
     DBT_PROFILE_DIR,
     DBT_PROJECT_DIR,
     HEX_PROJECT_ID,
-    PyPiResource,
     GithubResource,
+    PyPiResource,
 )
 
 dbt_assets = load_assets_from_dbt_project(
@@ -30,7 +30,7 @@ def raw_pypi_downloads(context, pypi: PyPiResource) -> pd.DataFrame:
     context.add_output_metadata(
         {
             "num_records": len(df),
-            "preview": MetadataValue.md(df.head().to_markdown()),  # type: ignore
+            "preview": MetadataValue.md(df.head().to_markdown()),
         }
     )
     return df
@@ -46,7 +46,7 @@ def raw_github_stars(context, github: GithubResource) -> pd.DataFrame:
     context.add_output_metadata(
         {
             "num_records": len(df),
-            "preview": MetadataValue.md(df.head().to_markdown()),  # type: ignore
+            "preview": MetadataValue.md(df.head().to_markdown()),
         }
     )
 
@@ -64,7 +64,7 @@ def pypi_downloads(context, raw_pypi_downloads) -> pd.DataFrame:
     context.add_output_metadata(
         {
             "num_records": len(df),
-            "preview": MetadataValue.md(df.head().to_markdown()),  # type: ignore
+            "preview": MetadataValue.md(df.head().to_markdown()),
         }
     )
     return df
@@ -80,7 +80,7 @@ def github_stars(context, raw_github_stars) -> pd.DataFrame:
     context.add_output_metadata(
         {
             "num_records": len(df),
-            "preview": MetadataValue.md(df.head().to_markdown()),  # type: ignore
+            "preview": MetadataValue.md(df.head().to_markdown()),
         }
     )
 
@@ -88,7 +88,11 @@ def github_stars(context, raw_github_stars) -> pd.DataFrame:
 
 
 @asset(
-    non_argument_deps={"weekly_agg_activity", "daily_agg_activity", "monthly_agg_activity"},
+    non_argument_deps={
+        "weekly_agg_activity",
+        "daily_agg_activity",
+        "monthly_agg_activity"
+    },
     required_resource_keys={"hex"},
 )
 def hex_notebook(context) -> None:

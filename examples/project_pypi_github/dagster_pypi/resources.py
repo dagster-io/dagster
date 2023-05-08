@@ -1,14 +1,14 @@
 import datetime
 import os
-from dagster import ConfigurableResource, EnvVar
-from pydantic import Field
 
 import pandas as pd
+from dagster import ConfigurableResource, EnvVar
 from dagster_dbt import dbt_cli_resource
 from dagster_duckdb_pandas import duckdb_pandas_io_manager
 from dagster_gcp_pandas import bigquery_pandas_io_manager
 from dagster_hex.resources import hex_resource
 from google.cloud import bigquery
+from pydantic import Field
 
 FILE_PATH = os.path.dirname(__file__)
 DBT_PROJECT_DIR = os.path.join(FILE_PATH, "./dbt_project")
@@ -82,7 +82,9 @@ class GithubLocalResource(GithubResource):
 
 class GithubSteampipeResource(GithubResource):
     streampipe_conn: str = Field(
-        description="Steampipe connection string, use steampipe service status to retrieve."
+        description=(
+            "Steampipe connection string, "
+            "use steampipe service status to retrieve.")
     )
 
     def get_github_stars(self, date) -> pd.DataFrame:
