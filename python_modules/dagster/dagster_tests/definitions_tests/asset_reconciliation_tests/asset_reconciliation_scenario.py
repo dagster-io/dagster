@@ -43,8 +43,8 @@ from dagster import (
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.asset_reconciliation_sensor import (
     AssetReconciliationCursor,
-   AutoMaterializeReason,
-   AutoMaterializeSkipReason,
+    AutoMaterializeReason,
+    AutoMaterializeSkipReason,
     reconcile,
 )
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
