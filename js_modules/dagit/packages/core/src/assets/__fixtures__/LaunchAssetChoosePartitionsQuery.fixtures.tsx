@@ -6,17 +6,18 @@ import {
   buildInstance,
   buildRunLauncher,
 } from '../../graphql/types';
-import {LAUNCH_ASSET_CHOOSE_PARTITIONS_QUERY} from '../LaunchAssetChoosePartitionsDialog';
-import {LaunchAssetChoosePartitionsQuery} from '../types/LaunchAssetChoosePartitionsDialog.types';
+import {LAUNCH_ASSET_WARNINGS_QUERY} from '../LaunchAssetChoosePartitionsDialog';
+import {LaunchAssetWarningsQuery} from '../types/LaunchAssetChoosePartitionsDialog.types';
 
-export const ReleasesWorkspace: MockedResponse<LaunchAssetChoosePartitionsQuery> = {
+export const ReleasesWorkspace: MockedResponse<LaunchAssetWarningsQuery> = {
   request: {
-    query: LAUNCH_ASSET_CHOOSE_PARTITIONS_QUERY,
+    query: LAUNCH_ASSET_WARNINGS_QUERY,
     variables: {},
   },
   result: {
     data: {
       __typename: 'DagitQuery',
+      assetNodes: [],
       instance: buildInstance({
         daemonHealth: buildDaemonHealth({
           id: 'daemonHealth',
