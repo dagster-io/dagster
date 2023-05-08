@@ -137,16 +137,11 @@ const useLogsProviderWithSubscription = (runId: string) => {
       });
 
       if (local) {
-        const toWrite = {...local, status};
-        if (
-          status === RunStatus.FAILURE ||
-          status === RunStatus.SUCCESS ||
-          status === RunStatus.STARTING ||
-          status === RunStatus.CANCELING ||
-          status === RunStatus.CANCELED
-        ) {
-          toWrite.canTerminate = false;
-        }
+        const toWrite = {
+          ...local,
+          canTerminate: status === RunStatus.QUEUED || status === RunStatus.STARTED,
+          status,
+        };
 
         client.writeFragment({
           fragmentName: 'PipelineRunLogsSubscriptionStatusFragment',
