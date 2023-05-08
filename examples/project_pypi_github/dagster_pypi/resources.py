@@ -22,9 +22,7 @@ duckdb_io_manager = duckdb_pandas_io_manager.configured(
     {"database": os.path.join(DBT_PROJECT_DIR, "dbt_duckdb.db")}
 )
 
-bigquery_pandas_io_manager = bigquery_pandas_io_manager.configured(
-    {"project": "westmarindata"}
-)
+bigquery_pandas_io_manager = bigquery_pandas_io_manager.configured({"project": "westmarindata"})
 
 
 class PyPiResource(ConfigurableResource):
@@ -82,9 +80,7 @@ class GithubLocalResource(GithubResource):
 
 class GithubSteampipeResource(GithubResource):
     streampipe_conn: str = Field(
-        description=(
-            "Steampipe connection string, "
-            "use steampipe service status to retrieve.")
+        description="Steampipe connection string, use steampipe service status to retrieve."
     )
 
     def get_github_stars(self, date) -> pd.DataFrame:
@@ -110,9 +106,7 @@ resource_def = {
         "github": GithubLocalResource(
             input_file=os.path.join(FILE_PATH, "../data/github_star_count.csv")
         ),
-        "pypi": PyPiLocalResource(
-            input_file=os.path.join(FILE_PATH, "../data/pypi_downloads.csv")
-        ),
+        "pypi": PyPiLocalResource(input_file=os.path.join(FILE_PATH, "../data/pypi_downloads.csv")),
         "dbt": dbt_cli_resource.configured(
             {
                 "project_dir": DBT_PROJECT_DIR,
