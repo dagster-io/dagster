@@ -8,11 +8,13 @@ from dagster._core.definitions.asset_reconciliation_sensor import (
     reconcile,
 )
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.dagster_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.tags import AUTO_MATERIALIZE_TAG
 from dagster._core.workspace.context import IWorkspaceProcessContext
+from dagster._core.workspace.workspace import IWorkspace
 from dagster._daemon.daemon import DaemonIterator, IntervalDaemon
 
 CURSOR_KEY = "ASSET_DAEMON_CURSOR"
@@ -86,7 +88,12 @@ class AssetDaemon(IntervalDaemon):
             if asset_graph.get_auto_materialize_policy(target_key) is not None
         }
 
-        if not target_asset_keys:
+        has_auto_observe_assets = any(
+            asset_graph.get_auto_observe_interval_minutes(key) is not None
+            for key in asset_graph.source_asset_keys
+        )
+
+        if not target_asset_keys and not has_auto_observe_assets:
             yield
             return
 
@@ -103,6 +110,7 @@ class AssetDaemon(IntervalDaemon):
             instance=instance,
             cursor=cursor,
             run_tags=None,
+            auto_observe=True,
         )
 
         evaluations_by_asset_key = {evaluation.asset_key: evaluation for evaluation in evaluations}
@@ -111,63 +119,14 @@ class AssetDaemon(IntervalDaemon):
             yield
 
             asset_keys = check.not_none(run_request.asset_selection)
-            check.invariant(len(asset_keys) > 0)
 
-            repo_handle = asset_graph.get_repository_handle(asset_keys[0])
-
-            # Check that all asset keys are from the same repo
-            for key in asset_keys[1:]:
-                check.invariant(repo_handle == asset_graph.get_repository_handle(key))
-
-            location_name = repo_handle.code_location_origin.location_name
-            repository_name = repo_handle.repository_name
-            job_name = check.not_none(asset_graph.get_implicit_job_name_for_assets(asset_keys))
-
-            code_location = workspace.get_code_location(location_name)
-            external_job = code_location.get_external_job(
-                JobSubsetSelector(
-                    location_name=location_name,
-                    repository_name=repository_name,
-                    job_name=job_name,
-                    op_selection=None,
-                    asset_selection=asset_keys,
-                )
+            run = submit_asset_run(
+                run_request,
+                instance,
+                workspace,
+                asset_graph,
+                {AUTO_MATERIALIZE_TAG: "true", **instance.auto_materialize_run_tags},
             )
-
-            tags = {
-                **run_request.tags,
-                AUTO_MATERIALIZE_TAG: "true",
-                **instance.auto_materialize_run_tags,
-            }
-
-            external_execution_plan = code_location.get_external_execution_plan(
-                external_job,
-                run_request.run_config,
-                step_keys_to_execute=None,
-                known_state=None,
-                instance=instance,
-            )
-            execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
-
-            run = instance.create_run(
-                job_name=external_job.name,
-                run_id=None,
-                run_config=None,
-                resolved_op_selection=None,
-                step_keys_to_execute=None,
-                status=DagsterRunStatus.NOT_STARTED,
-                op_selection=None,
-                root_run_id=None,
-                parent_run_id=None,
-                tags=tags,
-                job_snapshot=external_job.job_snapshot,
-                execution_plan_snapshot=execution_plan_snapshot,
-                parent_job_snapshot=external_job.parent_job_snapshot,
-                external_job_origin=external_job.get_external_origin(),
-                job_code_origin=external_job.get_python_origin(),
-                asset_selection=frozenset(asset_keys),
-            )
-            instance.submit_run(run.run_id, workspace)
 
             # add run id to evaluations
             for asset_key in asset_keys:
@@ -187,3 +146,67 @@ class AssetDaemon(IntervalDaemon):
             schedule_storage.purge_asset_evaluations(
                 before=pendulum.now("UTC").subtract(days=EVALUATIONS_TTL_DAYS).timestamp(),
             )
+
+
+def submit_asset_run(
+    run_request: RunRequest,
+    instance: DagsterInstance,
+    workspace: IWorkspace,
+    asset_graph: ExternalAssetGraph,
+    extra_tags,
+) -> DagsterRun:
+    asset_keys = check.not_none(run_request.asset_selection)
+    check.invariant(len(asset_keys) > 0)
+
+    repo_handle = asset_graph.get_repository_handle(asset_keys[0])
+
+    # Check that all asset keys are from the same repo
+    for key in asset_keys[1:]:
+        check.invariant(repo_handle == asset_graph.get_repository_handle(key))
+
+    location_name = repo_handle.code_location_origin.location_name
+    repository_name = repo_handle.repository_name
+    job_name = check.not_none(asset_graph.get_implicit_job_name_for_assets(asset_keys))
+
+    code_location = workspace.get_code_location(location_name)
+    external_job = code_location.get_external_job(
+        JobSubsetSelector(
+            location_name=location_name,
+            repository_name=repository_name,
+            job_name=job_name,
+            op_selection=None,
+            asset_selection=asset_keys,
+        )
+    )
+
+    tags = {**run_request.tags, **extra_tags}
+
+    external_execution_plan = code_location.get_external_execution_plan(
+        external_job,
+        run_request.run_config,
+        step_keys_to_execute=None,
+        known_state=None,
+        instance=instance,
+    )
+    execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
+
+    run = instance.create_run(
+        job_name=external_job.name,
+        run_id=None,
+        run_config=None,
+        resolved_op_selection=None,
+        step_keys_to_execute=None,
+        status=DagsterRunStatus.NOT_STARTED,
+        op_selection=None,
+        root_run_id=None,
+        parent_run_id=None,
+        tags=tags,
+        job_snapshot=external_job.job_snapshot,
+        execution_plan_snapshot=execution_plan_snapshot,
+        parent_job_snapshot=external_job.parent_job_snapshot,
+        external_job_origin=external_job.get_external_origin(),
+        job_code_origin=external_job.get_python_origin(),
+        asset_selection=frozenset(asset_keys),
+    )
+    instance.submit_run(run.run_id, workspace)
+    return run

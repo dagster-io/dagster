@@ -252,6 +252,7 @@ class AssetReconciliationScenario(NamedTuple):
                 instance=instance,
                 run_tags={},
                 cursor=cursor,
+                auto_observe=True,
             )
 
         for run_request in run_requests:
