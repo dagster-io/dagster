@@ -616,6 +616,7 @@ class ExternalTimeWindowPartitionsDefinitionData(
         [
             ("start", float),
             ("timezone", Optional[str]),
+            ("end", float),
             ("fmt", str),
             ("end_offset", int),
             ("cron_schedule", Optional[str]),
@@ -634,6 +635,7 @@ class ExternalTimeWindowPartitionsDefinitionData(
         cls,
         start: float,
         timezone: Optional[str],
+        end: float,
         fmt: str,
         end_offset: int,
         cron_schedule: Optional[str] = None,
@@ -647,6 +649,7 @@ class ExternalTimeWindowPartitionsDefinitionData(
             schedule_type=check.opt_inst_param(schedule_type, "schedule_type", ScheduleType),
             start=check.float_param(start, "start"),
             timezone=check.opt_str_param(timezone, "timezone"),
+            end=check.float_param(end, "end"),
             fmt=check.str_param(fmt, "fmt"),
             end_offset=check.int_param(end_offset, "end_offset"),
             minute_offset=check.opt_int_param(minute_offset, "minute_offset"),
@@ -660,6 +663,7 @@ class ExternalTimeWindowPartitionsDefinitionData(
             return TimeWindowPartitionsDefinition(
                 cron_schedule=self.cron_schedule,
                 start=pendulum.from_timestamp(self.start, tz=self.timezone),
+                end=pendulum.from_timestamp(self.end, tz=self.timezone),
                 timezone=self.timezone,
                 fmt=self.fmt,
                 end_offset=self.end_offset,
@@ -669,6 +673,7 @@ class ExternalTimeWindowPartitionsDefinitionData(
             return TimeWindowPartitionsDefinition(
                 schedule_type=self.schedule_type,
                 start=pendulum.from_timestamp(self.start, tz=self.timezone),
+                end=pendulum.from_timestamp(self.end, tz=self.timezone),
                 timezone=self.timezone,
                 fmt=self.fmt,
                 end_offset=self.end_offset,
@@ -1678,6 +1683,7 @@ def external_time_window_partitions_definition_from_def(
     return ExternalTimeWindowPartitionsDefinitionData(
         cron_schedule=partitions_def.cron_schedule,
         start=pendulum.instance(partitions_def.start, tz=partitions_def.timezone).timestamp(),
+        end=pendulum.instance(partitions_def.end, tz=partitions_def.timezone).timestamp(),
         timezone=partitions_def.timezone,
         fmt=partitions_def.fmt,
         end_offset=partitions_def.end_offset,
