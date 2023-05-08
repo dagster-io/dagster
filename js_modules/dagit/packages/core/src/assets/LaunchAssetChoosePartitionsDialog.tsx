@@ -419,6 +419,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
     <>
       <div data-testid={testId('choose-partitions-dialog')}>
         <Warnings
+          target={target}
           launchAsBackfill={launchAsBackfill}
           upstreamAssetKeys={upstreamAssetKeys}
           selections={selections}
@@ -730,17 +731,13 @@ export const LAUNCH_ASSET_CHOOSE_PARTITIONS_QUERY = gql`
   ${USING_DEFAULT_LAUNCH_ERALERT_INSTANCE_FRAGMENT}
 `;
 
-const Warnings = ({
-  launchAsBackfill,
-  upstreamAssetKeys,
-  selections,
-  setSelections,
-}: {
+const Warnings: React.FC<{
+  target: LaunchAssetsChoosePartitionsTarget;
   launchAsBackfill: boolean;
   upstreamAssetKeys: AssetKey[];
   selections: PartitionDimensionSelection[];
   setSelections: (next: PartitionDimensionSelection[]) => void;
-}) => {
+}> = ({launchAsBackfill, upstreamAssetKeys, selections, setSelections, target}) => {
   const instanceResult = useQuery<
     LaunchAssetChoosePartitionsQuery,
     LaunchAssetChoosePartitionsQueryVariables
@@ -748,11 +745,12 @@ const Warnings = ({
   const instance = instanceResult.data?.instance;
 
   const alerts = [
-    UpstreamUnavailableWarning({
-      upstreamAssetKeys,
-      selections,
-      setSelections,
-    }),
+    target.type !== 'pureWithAnchorAsset' &&
+      UpstreamUnavailableWarning({
+        upstreamAssetKeys,
+        selections,
+        setSelections,
+      }),
     instance && launchAsBackfill && DaemonNotRunningAlert({instance}),
     instance && launchAsBackfill && UsingDefaultLauncherAlert({instance}),
   ]
