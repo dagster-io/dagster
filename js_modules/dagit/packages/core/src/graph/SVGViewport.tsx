@@ -5,8 +5,6 @@ import ReactDOM from 'react-dom';
 import {MemoryRouter} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {FeatureFlag, featureEnabled} from '../app/Flags';
-
 import {IBounds} from './common';
 import {makeSVGPortable} from './makeSVGPortable';
 
@@ -117,7 +115,6 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
 
   onWheel(viewport: SVGViewport, event: WheelEvent) {
     const cursorPosition = viewport.getOffsetXY(event);
-    const flagDAGPanWithScrollWheel = featureEnabled(FeatureFlag.flagDAGPanWithScrollWheel);
 
     // convert wheel event units to a better scroll speed
     const speed = 0.7;
@@ -125,24 +122,14 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
     if (!cursorPosition) {
       return;
     }
-    if (flagDAGPanWithScrollWheel) {
-      if (event.metaKey) {
-        const targetScale = viewport.state.scale * (1 - event.deltaY * 0.0025);
-        const scale = Math.max(viewport.getMinZoom(), Math.min(viewport.getMaxZoom(), targetScale));
-        viewport.adjustZoomRelativeToScreenPoint(scale, cursorPosition);
-      } else if (event.shiftKey) {
-        viewport.shiftXY(event.deltaX * speed, event.deltaY * speed);
-      } else {
-        viewport.shiftXY(-event.deltaX * speed, -event.deltaY * speed);
-      }
+    if (event.metaKey) {
+      const targetScale = viewport.state.scale * (1 - event.deltaY * 0.0025);
+      const scale = Math.max(viewport.getMinZoom(), Math.min(viewport.getMaxZoom(), targetScale));
+      viewport.adjustZoomRelativeToScreenPoint(scale, cursorPosition);
+    } else if (event.shiftKey) {
+      viewport.shiftXY(event.deltaX * speed, event.deltaY * speed);
     } else {
-      if (event.altKey || event.shiftKey) {
-        viewport.shiftXY(-event.deltaX, -event.deltaY);
-      } else {
-        const targetScale = viewport.state.scale * (1 - event.deltaY * 0.0025);
-        const scale = Math.max(viewport.getMinZoom(), Math.min(viewport.getMaxZoom(), targetScale));
-        viewport.adjustZoomRelativeToScreenPoint(scale, cursorPosition);
-      }
+      viewport.shiftXY(-event.deltaX * speed, -event.deltaY * speed);
     }
   },
 
