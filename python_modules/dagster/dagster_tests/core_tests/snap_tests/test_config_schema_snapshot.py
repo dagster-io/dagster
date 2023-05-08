@@ -222,7 +222,7 @@ def test_kitchen_sink():
     assert kitchen_sink_snap == rehydrated_snap
 
 
-def test_simple_pipeline_smoke_test():
+def test_simple_job_smoke_test():
     @op
     def op_without_config(_):
         pass
@@ -355,7 +355,7 @@ def test_kitchen_sink_break_out():
 
 
 def get_config_snap(job_def: JobDefinition, key: str) -> ConfigTypeSnap:
-    return job_def.get_pipeline_snapshot().config_schema_snapshot.get_config_snap(key)
+    return job_def.get_job_snapshot().config_schema_snapshot.get_config_snap(key)
 
 
 def test_scalar_union():

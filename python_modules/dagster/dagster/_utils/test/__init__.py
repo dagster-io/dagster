@@ -21,12 +21,12 @@ from dagster._core.definitions import (
 )
 from dagster._core.definitions.dependency import Node
 from dagster._core.definitions.executor_definition import in_process_executor
+from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.logger_definition import LoggerDefinition
-from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.context.system import PlanExecutionContext
-from dagster._core.execution.context_creation_pipeline import (
+from dagster._core.execution.context_creation_job import (
     create_context_creation_data,
     create_execution_data,
     create_executor,
@@ -36,8 +36,8 @@ from dagster._core.execution.context_creation_pipeline import (
 from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler import Scheduler
-from dagster._core.storage.pipeline_run import DagsterRun
-from dagster._core.utility_solids import create_stub_op
+from dagster._core.storage.dagster_run import DagsterRun
+from dagster._core.utility_ops import create_stub_op
 from dagster._serdes import ConfigurableClass
 
 # re-export
@@ -57,19 +57,19 @@ def create_test_pipeline_execution_context(
     loggers = check.opt_mapping_param(
         logger_defs, "logger_defs", key_type=str, value_type=LoggerDefinition
     )
-    pipeline_def = GraphDefinition(
+    job_def = GraphDefinition(
         name="test_legacy_context",
         node_defs=[],
     ).to_job(executor_def=in_process_executor, logger_defs=logger_defs)
     run_config: Dict[str, Dict[str, Dict]] = {"loggers": {key: {} for key in loggers}}
-    pipeline_run = DagsterRun(pipeline_name="test_legacy_context", run_config=run_config)
+    dagster_run = DagsterRun(job_name="test_legacy_context", run_config=run_config)
     instance = DagsterInstance.ephemeral()
-    execution_plan = create_execution_plan(pipeline=pipeline_def, run_config=run_config)
+    execution_plan = create_execution_plan(job=job_def, run_config=run_config)
     creation_data = create_context_creation_data(
-        InMemoryPipeline(pipeline_def),
+        InMemoryJob(job_def),
         execution_plan,
         run_config,
-        pipeline_run,
+        dagster_run,
         instance,
     )
     log_manager = create_log_manager(creation_data)

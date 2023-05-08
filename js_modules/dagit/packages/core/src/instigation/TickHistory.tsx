@@ -369,7 +369,6 @@ const JOB_TICK_HISTORY_QUERY = gql`
     $statuses: [InstigationTickStatus!]
   ) {
     instigationStateOrError(instigationSelector: $instigationSelector) {
-      __typename
       ... on InstigationState {
         id
         instigationType

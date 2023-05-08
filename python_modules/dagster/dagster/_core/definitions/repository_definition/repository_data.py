@@ -120,7 +120,7 @@ class RepositoryData(ABC):
         """Return all schedules in the repository as a list.
 
         Returns:
-            List[ScheduleDefinition]: All pipelines in the repository.
+            List[ScheduleDefinition]: All jobs in the repository.
         """
         return []
 
@@ -322,9 +322,8 @@ class CachingRepositoryData(RepositoryData):
         """Static constructor.
 
         Args:
-            repository_definitions (List[Union[PipelineDefinition, ScheduleDefinition, SensorDefinition, AssetGroup, GraphDefinition]]):
-                Use this constructor when you have no need to lazy load jobs or other
-                definitions.
+            repository_definitions (List[Union[JobDefinition, ScheduleDefinition, SensorDefinition, GraphDefinition]]):
+                Use this constructor when you have no need to lazy load jobs or other definitions.
             top_level_resources (Optional[Mapping[str, ResourceDefinition]]): A dict of top-level
                 resource keys to defintions, for resources which should be displayed in the UI.
         """
@@ -373,7 +372,7 @@ class CachingRepositoryData(RepositoryData):
         Note that this will construct any job that has not yet been constructed.
 
         Returns:
-            List[PipelineDefinition]: All jobs in the repository.
+            List[JobDefinition]: All jobs in the repository.
         """
         if self._all_jobs is not None:
             return self._all_jobs
@@ -467,7 +466,7 @@ class CachingRepositoryData(RepositoryData):
                     node_defs[node_def.name] = node_def
                     node_to_job[node_def.name] = job_def.name
 
-                if node_defs[node_def.name] is not node_def:
+                if node_defs[node_def.name] != node_def:
                     first_name, second_name = sorted([node_to_job[node_def.name], job_def.name])
                     raise DagsterInvalidDefinitionError(
                         f"Conflicting definitions found in repository with name '{node_def.name}'."
@@ -498,7 +497,7 @@ class CachingRepositoryData(RepositoryData):
             return sensor
 
         for target in sensor.targets:
-            if target.pipeline_name not in job_names:
+            if target.job_name not in job_names:
                 raise DagsterInvalidDefinitionError(
                     f'SensorDefinition "{sensor.name}" targets job "{sensor.job_name}" '
                     "which was not found in this repository."

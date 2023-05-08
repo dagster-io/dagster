@@ -1,7 +1,5 @@
-import os
 import random
 import string
-import sys
 import tempfile
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -52,10 +50,14 @@ from dagster._core.host_representation.origin import (
 )
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DAGSTER_META_KEY
-from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus, TickStatus
+from dagster._core.scheduler.instigation import (
+    DynamicPartitionsRequestResult,
+    InstigatorState,
+    InstigatorStatus,
+    TickStatus,
+)
 from dagster._core.storage.event_log.base import EventRecordsFilter
 from dagster._core.test_utils import (
-    SingleThreadPoolExecutor,
     create_test_daemon_workspace_context,
     instance_for_test,
     wait_for_futures,
@@ -418,10 +420,11 @@ def asset_job_sensor(context, _event):
 @run_failure_sensor
 def my_run_failure_sensor(context):
     assert isinstance(context.instance, DagsterInstance)
-    assert "failure_op" in context.failure_event.message
-    step_failure_events = context.get_step_failure_events()
-    assert len(step_failure_events) == 1
-    assert "womp womp" in step_failure_events[0].message
+    if "failure_op" in context.failure_event.message:
+        step_failure_events = context.get_step_failure_events()
+        assert len(step_failure_events) == 1
+        step_error_str = step_failure_events[0].event_specific_data.error.to_string()
+        assert "womp womp" in step_error_str, step_error_str
 
 
 @run_failure_sensor(job_selection=[failure_job])
@@ -545,7 +548,7 @@ quux_asset_job = define_asset_job("quux_asset_job", [quux_asset], partitions_def
 def add_dynamic_partitions_sensor(context):
     return SensorResult(
         dynamic_partitions_requests=[
-            quux.build_add_request(["baz"]),
+            quux.build_add_request(["baz", "foo"]),
         ],
     )
 
@@ -555,7 +558,7 @@ def add_delete_dynamic_partitions_and_yield_run_requests_sensor(context):
     return SensorResult(
         dynamic_partitions_requests=[
             quux.build_add_request(["1"]),
-            quux.build_delete_request(["2"]),
+            quux.build_delete_request(["2", "3"]),
         ],
         run_requests=[RunRequest(partition_key="1")],
     )
@@ -853,26 +856,6 @@ def asset_sensor_repo():
     ]
 
 
-def get_sensor_executors():
-    is_buildkite = os.getenv("BUILDKITE") is not None
-    return [
-        pytest.param(
-            None,
-            marks=pytest.mark.skipif(
-                is_buildkite and sys.version_info.minor != 9, reason="timeouts"
-            ),
-            id="synchronous",
-        ),
-        pytest.param(
-            SingleThreadPoolExecutor(),
-            marks=pytest.mark.skipif(
-                is_buildkite and sys.version_info.minor != 9, reason="timeouts"
-            ),
-            id="threadpool",
-        ),
-    ]
-
-
 def evaluate_sensors(workspace_context, executor, timeout=75):
     logger = get_default_daemon_logger("SensorDaemon")
     futures = {}
@@ -900,7 +883,7 @@ def validate_tick(
     assert tick_data.instigator_origin_id == external_sensor.get_external_origin_id()
     assert tick_data.instigator_name == external_sensor.name
     assert tick_data.instigator_type == InstigatorType.SENSOR
-    assert tick_data.status == expected_status
+    assert tick_data.status == expected_status, tick_data.error
     if expected_datetime:
         assert tick_data.timestamp == expected_datetime.timestamp()
     if expected_run_ids is not None:
@@ -955,7 +938,6 @@ def wait_for_all_runs_to_finish(instance, timeout=10):
             break
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_simple_sensor(instance, workspace_context, external_repo, executor):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
@@ -1016,7 +998,6 @@ def test_simple_sensor(instance, workspace_context, external_repo, executor):
         )
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_sensors_keyed_on_selector_not_origin(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
@@ -1065,7 +1046,6 @@ def test_sensors_keyed_on_selector_not_origin(
         assert len(ticks) == 1
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_bad_load_sensor_repository(
     caplog: pytest.LogCaptureFixture,
     executor: ThreadPoolExecutor,
@@ -1113,7 +1093,6 @@ def test_bad_load_sensor_repository(
         )
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_bad_load_sensor(caplog, executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
@@ -1148,7 +1127,6 @@ def test_bad_load_sensor(caplog, executor, instance, workspace_context, external
         assert "Could not find sensor invalid_sensor in repository the_repo." in caplog.text
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_error_sensor(caplog, executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
@@ -1204,7 +1182,6 @@ def test_error_sensor(caplog, executor, instance, workspace_context, external_re
         assert state.instigator_data.last_tick_timestamp == freeze_datetime.timestamp()
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_wrong_config_sensor(caplog, executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(
@@ -1274,7 +1251,6 @@ def test_wrong_config_sensor(caplog, executor, instance, workspace_context, exte
         assert "Error in config for job" in caplog.text
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_launch_failure(caplog, executor, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
@@ -1325,7 +1301,6 @@ def test_launch_failure(caplog, executor, workspace_context, external_repo):
             assert "The entire purpose of this is to throw on launch" in caplog.text
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_launch_once(caplog, executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(
@@ -1442,7 +1417,6 @@ def instance_with_sensors_no_run_bucketing():
             yield instance
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_launch_once_unbatched(caplog, executor, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(
@@ -1538,7 +1512,6 @@ def test_launch_once_unbatched(caplog, executor, workspace_context, external_rep
             )
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_custom_interval_sensor(executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=28, tz="UTC"), "US/Central"
@@ -1587,7 +1560,6 @@ def test_custom_interval_sensor(executor, instance, workspace_context, external_
         validate_tick(ticks[0], external_sensor, expected_datetime, TickStatus.SKIPPED)
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_custom_interval_sensor_with_offset(
     monkeypatch, executor, instance, workspace_context, external_repo
 ):
@@ -1652,7 +1624,6 @@ def test_custom_interval_sensor_with_offset(
         assert sum(sleeps) == 65
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_sensor_start_stop(executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
@@ -1710,7 +1681,6 @@ def test_sensor_start_stop(executor, instance, workspace_context, external_repo)
         assert len(ticks) == 2
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_large_sensor(executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
@@ -1732,7 +1702,6 @@ def test_large_sensor(executor, instance, workspace_context, external_repo):
         )
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_cursor_sensor(executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
@@ -1794,7 +1763,6 @@ def test_cursor_sensor(executor, instance, workspace_context, external_repo):
         assert run_ticks[0].cursor == "2"
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_run_request_asset_selection_sensor(executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
@@ -1832,7 +1800,6 @@ def test_run_request_asset_selection_sensor(executor, instance, workspace_contex
         assert planned_asset_keys == {AssetKey("a"), AssetKey("b")}
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_run_request_stale_asset_selection_sensor_never_materialized(
     executor, instance, workspace_context, external_repo
 ):
@@ -1850,7 +1817,6 @@ def test_run_request_stale_asset_selection_sensor_never_materialized(
         assert sensor_run.asset_selection == {AssetKey("a"), AssetKey("b"), AssetKey("c")}
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_run_request_stale_asset_selection_sensor_empty(
     executor, instance, workspace_context, external_repo
 ):
@@ -1869,7 +1835,6 @@ def test_run_request_stale_asset_selection_sensor_empty(
         assert sensor_run is None
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_run_request_stale_asset_selection_sensor_subset(
     executor, instance, workspace_context, external_repo
 ):
@@ -1889,7 +1854,6 @@ def test_run_request_stale_asset_selection_sensor_subset(
         assert sensor_run.asset_selection == {AssetKey("b"), AssetKey("c")}
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_targets_asset_selection_sensor(executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
@@ -1938,7 +1902,6 @@ def test_targets_asset_selection_sensor(executor, instance, workspace_context, e
         assert set(planned_asset_keys) == {AssetKey("asset_a"), AssetKey("asset_b")}
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_partitioned_asset_selection_sensor(executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
@@ -1978,7 +1941,6 @@ def test_partitioned_asset_selection_sensor(executor, instance, workspace_contex
         assert planned_asset_keys == {AssetKey("hourly_asset_3")}
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_asset_sensor(executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
@@ -2020,7 +1982,6 @@ def test_asset_sensor(executor, instance, workspace_context, external_repo):
         assert run.tags.get("dagster/sensor_name") == "asset_foo_sensor"
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_asset_job_sensor(executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
@@ -2063,7 +2024,6 @@ def test_asset_job_sensor(executor, instance, workspace_context, external_repo):
         assert run.tags.get("dagster/sensor_name") == "asset_job_sensor"
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_asset_sensor_not_triggered_on_observation(
     executor, instance, workspace_context, external_repo
 ):
@@ -2111,7 +2071,6 @@ def test_asset_sensor_not_triggered_on_observation(
         assert run.tags.get("dagster/sensor_name") == "asset_foo_sensor"
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_multi_asset_sensor(executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
@@ -2177,7 +2136,6 @@ def test_multi_asset_sensor(executor, instance, workspace_context, external_repo
         assert run.tags.get("dagster/sensor_name") == "asset_a_and_b_sensor"
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_asset_selection_sensor(executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
@@ -2201,7 +2159,6 @@ def test_asset_selection_sensor(executor, instance, workspace_context, external_
         )
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_multi_asset_sensor_targets_asset_selection(
     executor, instance, workspace_context, external_repo
 ):
@@ -2275,7 +2232,6 @@ def test_multi_asset_sensor_targets_asset_selection(
         assert run.asset_selection == {AssetKey(["asset_c"])}
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_multi_asset_sensor_w_many_events(executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
@@ -2340,7 +2296,6 @@ def test_multi_asset_sensor_w_many_events(executor, instance, workspace_context,
         assert run.tags.get("dagster/sensor_name") == "backlog_sensor"
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_multi_asset_sensor_w_no_cursor_update(
     executor, instance, workspace_context, external_repo
 ):
@@ -2383,7 +2338,6 @@ def test_multi_asset_sensor_w_no_cursor_update(
         )
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_multi_asset_sensor_hourly_to_weekly(executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2022, month=8, day=2, tz="UTC"),
@@ -2413,7 +2367,6 @@ def test_multi_asset_sensor_hourly_to_weekly(executor, instance, workspace_conte
         assert run.tags.get("dagster/partition") == "2022-07-31"
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_multi_asset_sensor_hourly_to_hourly(executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2022, month=8, day=3, tz="UTC"),
@@ -2458,7 +2411,6 @@ def test_multi_asset_sensor_hourly_to_hourly(executor, instance, workspace_conte
         validate_tick(ticks[0], cursor_sensor, freeze_datetime, TickStatus.SKIPPED)
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_sensor_result_multi_asset_sensor(executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2022, month=8, day=3, tz="UTC"),
@@ -2482,7 +2434,6 @@ def test_sensor_result_multi_asset_sensor(executor, instance, workspace_context,
         )
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_cursor_update_sensor_result_multi_asset_sensor(
     executor, instance, workspace_context, external_repo
 ):
@@ -2509,7 +2460,6 @@ def test_cursor_update_sensor_result_multi_asset_sensor(
         assert "Cannot set cursor in a multi_asset_sensor" in ticks[0].error.message
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_multi_job_sensor(executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
@@ -2554,7 +2504,6 @@ def test_multi_job_sensor(executor, instance, workspace_context, external_repo):
         assert run.job_name == "config_job"
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_bad_run_request_untargeted(executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
@@ -2582,7 +2531,6 @@ def test_bad_run_request_untargeted(executor, instance, workspace_context, exter
         )
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_bad_run_request_mismatch(executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
@@ -2609,7 +2557,6 @@ def test_bad_run_request_mismatch(executor, instance, workspace_context, externa
         )
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_bad_run_request_unspecified(executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
@@ -2637,7 +2584,6 @@ def test_bad_run_request_unspecified(executor, instance, workspace_context, exte
         )
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_status_in_code_sensor(executor, instance):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
@@ -2740,7 +2686,6 @@ def test_status_in_code_sensor(executor, instance):
             )
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_run_request_list_sensor(executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
@@ -2770,7 +2715,6 @@ def test_run_request_list_sensor(executor, instance, workspace_context, external
         assert len(ticks) == 1
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_sensor_purge(executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
@@ -2818,7 +2762,6 @@ def test_sensor_purge(executor, instance, workspace_context, external_repo):
         assert len(ticks) == 2
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_sensor_custom_purge(executor, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
@@ -2874,7 +2817,6 @@ def test_sensor_custom_purge(executor, workspace_context, external_repo):
             assert len(ticks) == 2
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_repository_namespacing(executor):
     freeze_datetime = to_timezone(
         create_pendulum_time(
@@ -2962,7 +2904,6 @@ def test_settings():
         assert thread_inst.get_settings("sensors") == settings
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_sensor_logging(executor, instance, workspace_context, external_repo):
     external_sensor = external_repo.get_external_sensor("logging_sensor")
     instance.add_instigator_state(
@@ -2993,12 +2934,13 @@ def test_sensor_logging(executor, instance, workspace_context, external_repo):
     instance.compute_log_manager.delete_logs(log_key=tick.log_key)
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_add_dynamic_partitions_sensor(
     caplog, executor, instance, workspace_context, external_repo
 ):
     foo_job.execute_in_process(instance=instance)  # creates event log storage tables
-    assert set(instance.get_dynamic_partitions("quux")) == set()
+    instance.add_dynamic_partitions("quux", ["foo"])
+    assert set(instance.get_dynamic_partitions("quux")) == set(["foo"])
+
     external_sensor = external_repo.get_external_sensor("add_dynamic_partitions_sensor")
     instance.add_instigator_state(
         InstigatorState(
@@ -3014,16 +2956,25 @@ def test_add_dynamic_partitions_sensor(
 
     evaluate_sensors(workspace_context, executor)
 
-    assert set(instance.get_dynamic_partitions("quux")) == set(["baz"])
+    assert set(instance.get_dynamic_partitions("quux")) == set(["baz", "foo"])
     ticks = instance.get_ticks(
         external_sensor.get_external_origin_id(), external_sensor.selector_id
     )
 
     assert "Added partition keys to dynamic partitions definition 'quux': ['baz']" in caplog.text
+    assert (
+        "Skipping addition of partition keys for dynamic partitions definition 'quux' that already"
+        " exist: ['foo']"
+        in caplog.text
+    )
+    assert ticks[0].tick_data.dynamic_partitions_request_results == [
+        DynamicPartitionsRequestResult(
+            "quux", added_partitions=["baz"], deleted_partitions=None, skipped_partitions=["foo"]
+        ),
+    ]
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
-def test_add_dynamic_partitions_and_launch_runs(
+def test_add_delete_skip_dynamic_partitions(
     caplog, executor, instance, workspace_context, external_repo
 ):
     foo_job.execute_in_process(instance=instance)  # creates event log storage tables
@@ -3044,24 +2995,83 @@ def test_add_dynamic_partitions_and_launch_runs(
     )
     assert len(ticks) == 0
 
-    evaluate_sensors(workspace_context, executor)
-
-    ticks = instance.get_ticks(
-        external_sensor.get_external_origin_id(), external_sensor.selector_id
+    freeze_datetime = to_timezone(
+        create_pendulum_time(
+            year=2023,
+            month=2,
+            day=27,
+            hour=23,
+            minute=59,
+            second=59,
+            tz="UTC",
+        ),
+        "US/Central",
     )
-    assert len(ticks) == 1
-    assert set(instance.get_dynamic_partitions("quux")) == set(["1"])
 
-    assert instance.get_runs_count() == 2
-    assert "Added partition keys to dynamic partitions definition 'quux': ['1']" in caplog.text
-    assert "Deleted partition keys from dynamic partitions definition 'quux': ['2']" in caplog.text
-    run = instance.get_runs()[0]
-    assert run.run_config == {}
-    assert run.tags
-    assert run.tags.get("dagster/partition") == "1"
+    with pendulum.test(freeze_datetime):
+        evaluate_sensors(workspace_context, executor)
+
+        ticks = instance.get_ticks(
+            external_sensor.get_external_origin_id(), external_sensor.selector_id
+        )
+        assert len(ticks) == 1
+        assert set(instance.get_dynamic_partitions("quux")) == set(["1"])
+
+        assert instance.get_runs_count() == 2
+
+        assert "Added partition keys to dynamic partitions definition 'quux': ['1']" in caplog.text
+        assert (
+            "Deleted partition keys from dynamic partitions definition 'quux': ['2']" in caplog.text
+        )
+        assert (
+            "Skipping deletion of partition keys for dynamic partitions definition 'quux' that do"
+            " not exist: ['3']"
+            in caplog.text
+        )
+        assert ticks[0].tick_data.dynamic_partitions_request_results == [
+            DynamicPartitionsRequestResult(
+                "quux", added_partitions=["1"], deleted_partitions=None, skipped_partitions=[]
+            ),
+            DynamicPartitionsRequestResult(
+                "quux", added_partitions=None, deleted_partitions=["2"], skipped_partitions=["3"]
+            ),
+        ]
+
+        run = instance.get_runs()[0]
+        assert run.run_config == {}
+        assert run.tags
+        assert run.tags.get("dagster/partition") == "1"
+
+    freeze_datetime = freeze_datetime.add(seconds=60)
+    with pendulum.test(freeze_datetime):
+        evaluate_sensors(workspace_context, executor)
+
+        ticks = instance.get_ticks(
+            external_sensor.get_external_origin_id(), external_sensor.selector_id
+        )
+        assert len(ticks) == 2
+
+        assert ticks[0].tick_data.dynamic_partitions_request_results == [
+            DynamicPartitionsRequestResult(
+                "quux", added_partitions=[], deleted_partitions=None, skipped_partitions=["1"]
+            ),
+            DynamicPartitionsRequestResult(
+                "quux", added_partitions=None, deleted_partitions=[], skipped_partitions=["2", "3"]
+            ),
+        ]
+
+        assert (
+            "Skipping addition of partition keys for dynamic partitions definition 'quux' that"
+            " already exist: ['1']"
+            in caplog.text
+        )
+        assert (
+            "Skipping deletion of partition keys for dynamic partitions definition 'quux' that do"
+            " not exist: ['2', '3']"
+            in caplog.text
+        )
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_error_on_deleted_dynamic_partitions_run_request(
     executor, instance, workspace_context, external_repo
 ):

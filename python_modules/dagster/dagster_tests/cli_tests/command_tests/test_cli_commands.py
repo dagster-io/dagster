@@ -3,7 +3,7 @@ import string
 import sys
 import tempfile
 from contextlib import contextmanager
-from typing import ContextManager, NoReturn, Tuple
+from typing import ContextManager, NoReturn, Optional, Tuple
 
 import mock
 import pytest
@@ -64,7 +64,7 @@ def foo_job():
     do_input(do_something())
 
 
-def define_foo_pipeline():
+def define_foo_job():
     return foo_job
 
 
@@ -86,7 +86,7 @@ def qux():
 qux_job = qux.to_job(
     config=PartitionedConfig(
         partitions_def=StaticPartitionsDefinition(["abc"]),
-        run_config_for_partition_fn=lambda _: {},
+        run_config_for_partition_key_fn=lambda _: {},
     ),
     tags={"foo": "bar"},
     executor_def=in_process_executor,
@@ -106,8 +106,8 @@ baz_partitions = StaticPartitionsDefinition(list(string.digits))
 
 baz_config = PartitionedConfig(
     partitions_def=baz_partitions,
-    run_config_for_partition_fn=lambda partition: {
-        "ops": {"do_input": {"inputs": {"x": {"value": partition.value}}}}
+    run_config_for_partition_key_fn=lambda key: {
+        "ops": {"do_input": {"inputs": {"x": {"value": key}}}}
     },
 )
 
@@ -123,7 +123,7 @@ def throw_error(*args) -> NoReturn:
 
 baz_error_config = PartitionedConfig(
     partitions_def=baz_partitions,
-    run_config_for_partition_fn=throw_error,
+    run_config_for_partition_key_fn=throw_error,
 )
 
 
@@ -307,7 +307,7 @@ def args_with_default_cli_test_instance(*args):
 
 
 @contextmanager
-def grpc_server_bar_kwargs(instance, pipeline_name=None):
+def grpc_server_bar_kwargs(instance, job_name: Optional[str] = None):
     with GrpcServerProcess(
         instance_ref=instance.get_ref(),
         loadable_target_origin=LoadableTargetOrigin(
@@ -319,7 +319,7 @@ def grpc_server_bar_kwargs(instance, pipeline_name=None):
     ) as server_process:
         client = server_process.create_client()
         args = {"grpc_host": client.host}
-        if pipeline_name:
+        if job_name:
             args["job_name"] = "foo"
         if client.port:
             args["grpc_port"] = client.port
@@ -371,7 +371,7 @@ def grpc_server_bar_cli_args(instance, job_name=None):
 @contextmanager
 def grpc_server_bar_pipeline_args():
     with default_cli_test_instance() as instance:
-        with grpc_server_bar_kwargs(instance, pipeline_name="foo") as kwargs:
+        with grpc_server_bar_kwargs(instance, job_name="foo") as kwargs:
             yield kwargs, instance
 
 
@@ -826,9 +826,9 @@ def test_run_delete_force(force_flag):
 
 def test_run_delete_incorrect_delete_message():
     with instance_for_test() as instance:
-        pipeline_result = foo_job.execute_in_process(instance=instance)
+        job_result = foo_job.execute_in_process(instance=instance)
         runner = CliRunner()
-        result = runner.invoke(run_delete_command, args=[pipeline_result.run_id], input="Wrong\n")
+        result = runner.invoke(run_delete_command, args=[job_result.run_id], input="Wrong\n")
         assert "Exiting without deleting" in result.output
         assert result.exit_code == 1
 
@@ -935,16 +935,16 @@ def create_repo_run(instance):
         external_job = repo.get_full_external_job("my_job")
         run = create_run_for_test(
             instance,
-            pipeline_name="my_job",
-            external_pipeline_origin=external_job.get_external_origin(),
-            pipeline_code_origin=external_job.get_python_origin(),
+            job_name="my_job",
+            external_job_origin=external_job.get_external_origin(),
+            job_code_origin=external_job.get_python_origin(),
         )
         instance.launch_run(run.run_id, context)
     return run
 
 
 def get_repo_runs(instance, repo_label):
-    from dagster._core.storage.pipeline_run import RunsFilter
+    from dagster._core.storage.dagster_run import RunsFilter
     from dagster._core.storage.tags import REPOSITORY_LABEL_TAG
 
     return instance.get_runs(filters=RunsFilter(tags={REPOSITORY_LABEL_TAG: repo_label}))

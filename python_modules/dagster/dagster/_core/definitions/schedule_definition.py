@@ -29,7 +29,7 @@ from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.scoped_resources_builder import Resources
 from dagster._serdes import whitelist_for_serdes
-from dagster._utils import ensure_gen
+from dagster._utils import IHasInternalInit, ensure_gen
 from dagster._utils.backcompat import deprecation_warning
 from dagster._utils.merger import merge_dicts
 from dagster._utils.schedules import is_valid_cron_schedule
@@ -44,7 +44,7 @@ from ..errors import (
 )
 from ..instance import DagsterInstance
 from ..instance.ref import InstanceRef
-from ..storage.pipeline_run import DagsterRun
+from ..storage.dagster_run import DagsterRun
 from .graph_definition import GraphDefinition
 from .job_definition import JobDefinition
 from .run_request import RunRequest, SkipReason
@@ -152,14 +152,6 @@ class ScheduleEvaluationContext:
 
     Users should not instantiate this object directly. To construct a `ScheduleEvaluationContext` for testing purposes, use :py:func:`dagster.build_schedule_context`.
 
-    Attributes:
-        instance_ref (Optional[InstanceRef]): The serialized instance configured to run the schedule
-        scheduled_execution_time (datetime):
-            The time in which the execution was scheduled to happen. May differ slightly
-            from both the actual execution time and the time at which the run config is computed.
-            Not available in all schedulers - currently only set in deployments using
-            DagsterDaemonScheduler.
-
     Example:
         .. code-block:: python
 
@@ -238,8 +230,12 @@ class ScheduleEvaluationContext:
     def resource_defs(self) -> Optional[Mapping[str, "ResourceDefinition"]]:
         return self._resource_defs
 
+    @public
     @property
     def resources(self) -> Resources:
+        """Mapping of resource key to resource definition to be made available
+        during schedule execution.
+        """
         from dagster._core.definitions.scoped_resources_builder import (
             IContainsGenerator,
         )
@@ -302,11 +298,15 @@ class ScheduleEvaluationContext:
 
     @property
     def instance_ref(self) -> Optional[InstanceRef]:
+        """The serialized instance configured to run the schedule."""
         return self._instance_ref
 
     @public
     @property
     def scheduled_execution_time(self) -> datetime:
+        """The time in which the execution was scheduled to happen. May differ slightly
+        from both the actual execution time and the time at which the run config is computed.
+        """
         if self._scheduled_execution_time is None:
             check.failed(
                 "Attempting to access scheduled_execution_time, but no scheduled_execution_time was"
@@ -448,7 +448,7 @@ def validate_and_get_schedule_resource_dict(
     return {k: getattr(resources, k) for k in required_resource_keys}
 
 
-class ScheduleDefinition:
+class ScheduleDefinition(IHasInternalInit):
     """Define a schedule that targets a job.
 
     Args:
@@ -500,7 +500,7 @@ class ScheduleDefinition:
             job (ExecutableDefinition): The job that should execute when this
                 schedule runs.
         """
-        return ScheduleDefinition(
+        return ScheduleDefinition.dagster_internal_init(
             name=self.name,
             cron_schedule=self._cron_schedule,
             job_name=self.job_name,
@@ -509,6 +509,13 @@ class ScheduleDefinition:
             description=self.description,
             job=new_job,
             default_status=self.default_status,
+            environment_vars=self._environment_vars,
+            required_resource_keys=self.required_resource_keys,
+            run_config=None,  # run_config, tags, should_execute encapsulated in execution_fn
+            run_config_fn=None,
+            tags=None,
+            tags_fn=None,
+            should_execute=None,
         )
 
     def __init__(
@@ -544,7 +551,7 @@ class ScheduleDefinition:
             self._target: Union[DirectTarget, RepoRelativeTarget] = DirectTarget(job)
         else:
             self._target = RepoRelativeTarget(
-                pipeline_name=check.str_param(job_name, "job_name"),
+                job_name=check.str_param(job_name, "job_name"),
                 solid_selection=None,
             )
 
@@ -615,7 +622,7 @@ class ScheduleDefinition:
             self._tags_fn = tags_fn
             self._tags = tags
 
-            _should_execute: ScheduleShouldExecuteFunction = check.opt_callable_param(
+            self._should_execute: ScheduleShouldExecuteFunction = check.opt_callable_param(
                 should_execute, "should_execute", default=lambda _context: True
             )
 
@@ -626,7 +633,7 @@ class ScheduleDefinition:
                     ScheduleExecutionError,
                     lambda: f"Error occurred during the execution of should_execute for schedule {name}",
                 ):
-                    if not _should_execute(context):
+                    if not self._should_execute(context):
                         yield SkipReason(
                             "should_execute function for {schedule_name} returned false.".format(
                                 schedule_name=name
@@ -691,6 +698,43 @@ class ScheduleDefinition:
             or resource_arg_names
         )
 
+    @staticmethod
+    def dagster_internal_init(
+        *,
+        name: Optional[str],
+        cron_schedule: Optional[Union[str, Sequence[str]]],
+        job_name: Optional[str],
+        run_config: Optional[Any],
+        run_config_fn: Optional[ScheduleRunConfigFunction],
+        tags: Optional[Mapping[str, str]],
+        tags_fn: Optional[ScheduleTagsFunction],
+        should_execute: Optional[ScheduleShouldExecuteFunction],
+        environment_vars: Optional[Mapping[str, str]],
+        execution_timezone: Optional[str],
+        execution_fn: Optional[ScheduleExecutionFunction],
+        description: Optional[str],
+        job: Optional[ExecutableDefinition],
+        default_status: DefaultScheduleStatus,
+        required_resource_keys: Optional[Set[str]],
+    ) -> "ScheduleDefinition":
+        return ScheduleDefinition(
+            name=name,
+            cron_schedule=cron_schedule,
+            job_name=job_name,
+            run_config=run_config,
+            run_config_fn=run_config_fn,
+            tags=tags,
+            tags_fn=tags_fn,
+            should_execute=should_execute,
+            environment_vars=environment_vars,
+            execution_timezone=execution_timezone,
+            execution_fn=execution_fn,
+            description=description,
+            job=job,
+            default_status=default_status,
+            required_resource_keys=required_resource_keys,
+        )
+
     def __call__(self, *args, **kwargs) -> ScheduleEvaluationFunctionReturn:
         from dagster._core.definitions.sensor_definition import get_context_param_name
 
@@ -724,7 +768,7 @@ class ScheduleDefinition:
     @public
     @property
     def job_name(self) -> str:
-        return self._target.pipeline_name
+        return self._target.job_name
 
     @public
     @property
@@ -825,7 +869,7 @@ class ScheduleDefinition:
                         " partitioned run requests"
                     )
 
-                scheduled_target = context.repository_def.get_job(self._target.pipeline_name)
+                scheduled_target = context.repository_def.get_job(self._target.job_name)
                 resolved_request = run_request.with_resolved_tags_and_config(
                     target_definition=scheduled_target,
                     dynamic_partitions_requests=[],

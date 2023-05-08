@@ -101,7 +101,7 @@ def _step_output_error_checked_user_event_sequence(
             )
 
         step_output = step.step_output_named(cast(str, output.output_name))
-        output_def = step_context.pipeline_def.get_node(step_output.node_handle).output_def_named(
+        output_def = step_context.job_def.get_node(step_output.node_handle).output_def_named(
             step_output.name
         )
 
@@ -346,9 +346,9 @@ def core_dagster_event_sequence_for_step(
             yield evt
 
     # The core execution loop expects a compute generator in a specific format: a generator that
-    # takes a context and dictionary of inputs as input, yields output events. If a solid definition
-    # was generated from the @solid or @lambda_solid decorator, then compute_fn needs to be coerced
-    # into this format. If the solid definition was created directly, then it is expected that the
+    # takes a context and dictionary of inputs as input, yields output events. If an op definition
+    # was generated from the @op decorator, then compute_fn needs to be coerced
+    # into this format. If the op definition was created directly, then it is expected that the
     # compute_fn is already in this format.
     if isinstance(step_context.op_def.compute_fn, DecoratedOpFunction):
         core_gen = create_op_compute_wrapper(step_context.op_def)
@@ -406,7 +406,7 @@ def _type_check_and_store_output(
         step_key=step_context.step.key, output_name=output.output_name, mapping_key=mapping_key
     )
 
-    # If we are executing using the execute_in_process API, then we allow for the outputs of solids
+    # If we are executing using the execute_in_process API, then we allow for the outputs of ops
     # to be directly captured to a dictionary after they are computed.
     if step_context.output_capture is not None:
         step_context.output_capture[step_output_handle] = output.value
@@ -416,9 +416,9 @@ def _type_check_and_store_output(
 
     version = (
         resolve_step_output_versions(
-            step_context.pipeline_def, step_context.execution_plan, step_context.resolved_run_config
+            step_context.job_def, step_context.execution_plan, step_context.resolved_run_config
         ).get(step_output_handle)
-        if MEMOIZED_RUN_TAG in step_context.pipeline.get_definition().tags
+        if MEMOIZED_RUN_TAG in step_context.job.get_definition().tags
         else None
     )
 
@@ -464,7 +464,7 @@ def _get_output_asset_materializations(
     tags: Dict[str, str]
     if (
         step_context.is_external_input_asset_records_loaded
-        and asset_key in step_context.pipeline_def.asset_layer.asset_keys
+        and asset_key in step_context.job_def.asset_layer.asset_keys
     ):
         assert isinstance(output, Output)
         code_version = _get_code_version(asset_key, step_context)
@@ -516,7 +516,7 @@ def _get_output_asset_materializations(
 
 def _get_code_version(asset_key: AssetKey, step_context: StepExecutionContext) -> str:
     return (
-        step_context.pipeline_def.asset_layer.code_version_for_asset(asset_key)
+        step_context.job_def.asset_layer.code_version_for_asset(asset_key)
         or step_context.dagster_run.run_id
     )
 
@@ -530,7 +530,7 @@ def _get_input_provenance_data(
     asset_key: AssetKey, step_context: StepExecutionContext
 ) -> Mapping[AssetKey, _InputProvenanceData]:
     input_provenance: Dict[AssetKey, _InputProvenanceData] = {}
-    deps = step_context.pipeline_def.asset_layer.upstream_assets_for_asset(asset_key)
+    deps = step_context.job_def.asset_layer.upstream_assets_for_asset(asset_key)
     for key in deps:
         # For deps external to this step, this will retrieve the cached record that was stored prior
         # to step execution. For inputs internal to this step, it may trigger a query to retrieve

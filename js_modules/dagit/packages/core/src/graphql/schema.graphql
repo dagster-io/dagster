@@ -1071,10 +1071,12 @@ type LogsCapturedEvent implements MessageEvent {
   solidHandleID: String
   eventType: DagsterEventType
   fileKey: String!
-  logKey: String!
   stepKeys: [String!]
   externalUrl: String
+  externalStdoutUrl: String
+  externalStderrUrl: String
   pid: Int
+  logKey: String!
 }
 
 type AlertStartEvent implements MessageEvent & RunEvent {
@@ -2140,10 +2142,22 @@ type DryRunInstigationTick {
 }
 
 type TickEvaluation {
+  dynamicPartitionsRequests: [DynamicPartitionRequest!]
   runRequests: [RunRequest!]
   skipReason: String
   error: PythonError
   cursor: String
+}
+
+type DynamicPartitionRequest {
+  partitionKeys: [String!]
+  partitionsDefName: String!
+  type: DynamicPartitionsRequestType!
+}
+
+enum DynamicPartitionsRequestType {
+  ADD_PARTITIONS
+  DELETE_PARTITIONS
 }
 
 type RunRequest {
@@ -2425,17 +2439,26 @@ enum BulkActionStatus {
 }
 
 type AssetBackfillData {
-  assetPartitionsStatusCounts: [AssetPartitionsStatusCounts!]!
+  assetBackfillStatuses: [AssetBackfillStatus!]!
   rootAssetTargetedRanges: [PartitionKeyRange!]
   rootAssetTargetedPartitions: [String!]
 }
 
+union AssetBackfillStatus = AssetPartitionsStatusCounts | UnpartitionedAssetStatus
+
 type AssetPartitionsStatusCounts {
   assetKey: AssetKey!
   numPartitionsTargeted: Int!
-  numPartitionsRequested: Int!
-  numPartitionsCompleted: Int!
+  numPartitionsInProgress: Int!
+  numPartitionsMaterialized: Int!
   numPartitionsFailed: Int!
+}
+
+type UnpartitionedAssetStatus {
+  assetKey: AssetKey!
+  inProgress: Boolean!
+  materialized: Boolean!
+  failed: Boolean!
 }
 
 type PartitionKeyRange {
@@ -2494,6 +2517,7 @@ type RunConfigSchema {
   rootConfigType: ConfigType!
   allConfigTypes: [ConfigType!]!
   isRunConfigValid(runConfigData: RunConfigData): PipelineConfigValidationResult!
+  rootDefaultYaml: String!
 }
 
 union RunConfigSchemaOrError =
@@ -2958,7 +2982,12 @@ type AssetNodeDefinitionCollision {
   repositories: [Repository!]!
 }
 
-union PartitionBackfillOrError = PartitionBackfill | PythonError
+union PartitionBackfillOrError = PartitionBackfill | BackfillNotFoundError | PythonError
+
+type BackfillNotFoundError implements Error {
+  message: String!
+  backfillId: String!
+}
 
 union PartitionBackfillsOrError = PartitionBackfills | PythonError
 

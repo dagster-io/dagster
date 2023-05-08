@@ -63,7 +63,7 @@ class MlFlow(metaclass=MlflowMeta):
     def __init__(self, context):
         # Context associated attributes
         self.log = context.log
-        self.run_name = context.dagster_run.pipeline_name
+        self.run_name = context.dagster_run.job_name
         self.dagster_run_id = context.run_id
 
         # resource config attributes
@@ -227,8 +227,8 @@ def mlflow_tracking(context):
 
     Usage:
 
-    1. Add the mlflow resource to any solids in which you want to invoke mlflow tracking APIs.
-    2. Add the `end_mlflow_on_run_finished` hook to your pipeline to end the MLflow run
+    1. Add the mlflow resource to any ops in which you want to invoke mlflow tracking APIs.
+    2. Add the `end_mlflow_on_run_finished` hook to your job to end the MLflow run
        when the Dagster run is finished.
 
     Examples:
@@ -237,7 +237,7 @@ def mlflow_tracking(context):
             from dagster_mlflow import end_mlflow_on_run_finished, mlflow_tracking
 
             @op(required_resource_keys={"mlflow"})
-            def mlflow_solid(context):
+            def mlflow_op(context):
                 mlflow.log_params(some_params)
                 mlflow.tracking.MlflowClient().create_registered_model(some_model_name)
 

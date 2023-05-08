@@ -247,7 +247,7 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
 
             evaluation_time = pendulum.now("UTC")
             asset_graph = context.repository_def.asset_graph
-            instance_queryer = CachingInstanceQueryer(context.instance)
+            instance_queryer = CachingInstanceQueryer(context.instance, evaluation_time)
             data_time_resolver = CachingDataTimeResolver(
                 instance_queryer=instance_queryer, asset_graph=asset_graph
             )

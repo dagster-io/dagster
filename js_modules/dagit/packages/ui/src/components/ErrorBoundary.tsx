@@ -48,7 +48,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   }
 
   componentDidCatch(error: Error, info: any) {
-    this.context.onReportError(error, {
+    (this.context as ErrorCollectionContextValue).onReportError(error, {
       info,
       region: this.props.region,
     });

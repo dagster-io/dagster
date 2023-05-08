@@ -133,24 +133,16 @@ class UnresolvedAssetJobDefinition(
                 " RunRequest(partition_key=...)"
             )
 
-        partition = self.partitions_def.get_partition(
-            partition_key, dynamic_partitions_store=None, current_time=current_time
-        )
+        self.partitions_def.validate_partition_key(partition_key, current_time=current_time)
+
         run_config = (
             run_config
             if run_config is not None
-            else partitioned_config.get_run_config_for_partition_key(
-                partition.name, dynamic_partitions_store=None, current_time=current_time
-            )
+            else partitioned_config.get_run_config_for_partition_key(partition_key)
         )
         run_request_tags = {
             **(tags or {}),
-            **partitioned_config.get_tags_for_partition_key(
-                partition_key,
-                dynamic_partitions_store=None,
-                current_time=current_time,
-                job_name=self.name,
-            ),
+            **partitioned_config.get_tags_for_partition_key(partition_key),
         }
 
         return RunRequest(
@@ -248,11 +240,11 @@ def define_asset_job(
     name: str,
     selection: Optional["CoercibleToAssetSelection"] = None,
     config: Optional[
-        Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig[object]", "RunConfig"]
+        Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig", "RunConfig"]
     ] = None,
     description: Optional[str] = None,
     tags: Optional[Mapping[str, Any]] = None,
-    partitions_def: Optional["PartitionsDefinition[Any]"] = None,
+    partitions_def: Optional["PartitionsDefinition"] = None,
     executor_def: Optional["ExecutorDefinition"] = None,
 ) -> UnresolvedAssetJobDefinition:
     """Creates a definition of a job which will either materialize a selection of assets or observe
@@ -282,7 +274,7 @@ def define_asset_job(
             Describes how the Job is parameterized at runtime.
 
             If no value is provided, then the schema for the job's run config is a standard
-            format based on its solids and resources.
+            format based on its ops and resources.
 
             If a dictionary is provided, then it must conform to the standard config schema, and
             it will be used as the job's run config for the job whenever the job is executed.

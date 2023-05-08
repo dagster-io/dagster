@@ -359,7 +359,6 @@ export const LogsProvider: React.FC<LogsProviderProps> = (props) => {
 const PIPELINE_RUN_LOGS_SUBSCRIPTION = gql`
   subscription PipelineRunLogsSubscription($runId: ID!, $cursor: String) {
     pipelineRunLogs(runId: $runId, cursor: $cursor) {
-      __typename
       ... on PipelineRunLogsSubscriptionFailure {
         missingRunId
         message
@@ -402,7 +401,6 @@ const RUN_LOGS_QUERY = gql`
     logsForRun(runId: $runId, afterCursor: $cursor, limit: $limit) {
       ... on EventConnection {
         events {
-          __typename
           ... on MessageEvent {
             runId
           }

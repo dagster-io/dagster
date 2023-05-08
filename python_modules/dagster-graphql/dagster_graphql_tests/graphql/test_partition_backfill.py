@@ -20,7 +20,7 @@ from dagster._core.execution.backfill import (
     PartitionBackfill,
 )
 from dagster._core.host_representation.origin import ExternalPartitionSetOrigin
-from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._core.test_utils import create_run_for_test
 from dagster._core.utils import make_new_backfill_id
@@ -67,19 +67,30 @@ PARTITION_PROGRESS_QUERY = """
   }
 """
 
-BACKFILL_PARTITION_STATUS_COUNTS_BY_ASSET = """
+BACKFILL_STATUS_BY_ASSET = """
   query BackfillStatusesByAsset($backfillId: String!) {
     partitionBackfillOrError(backfillId: $backfillId) {
+      __typename
       ... on PartitionBackfill {
         assetBackfillData {
-            assetPartitionsStatusCounts {
-                assetKey {
-                    path
+            assetBackfillStatuses {
+                ... on AssetPartitionsStatusCounts {
+                    assetKey {
+                        path
+                    }
+                    numPartitionsTargeted
+                    numPartitionsInProgress
+                    numPartitionsMaterialized
+                    numPartitionsFailed
                 }
-                numPartitionsTargeted
-                numPartitionsRequested
-                numPartitionsCompleted
-                numPartitionsFailed
+                ... on UnpartitionedAssetStatus {
+                    assetKey {
+                        path
+                    }
+                    inProgress
+                    materialized
+                    failed
+                }
             }
             rootAssetTargetedRanges {
                 start
@@ -87,6 +98,13 @@ BACKFILL_PARTITION_STATUS_COUNTS_BY_ASSET = """
             }
             rootAssetTargetedPartitions
         }
+      }
+      ... on PythonError {
+        message
+        stack
+      }
+      ... on BackfillNotFoundError {
+        message
       }
     }
   }
@@ -176,7 +194,7 @@ def _execute_asset_backfill_iteration(
 ):
     backfill = graphql_context.instance.get_backfill(backfill_id)
     asset_backfill_data = AssetBackfillData.from_serialized(
-        backfill.serialized_asset_backfill_data, asset_graph
+        backfill.serialized_asset_backfill_data, asset_graph, backfill.backfill_timestamp
     )
     result = None
     for result in execute_asset_backfill_iteration_inner(
@@ -185,6 +203,7 @@ def _execute_asset_backfill_iteration(
         instance=graphql_context.instance,
         asset_graph=asset_graph,
         run_tags=backfill.tags,
+        backfill_start_time=asset_backfill_data.backfill_start_time,
     ):
         pass
 
@@ -293,6 +312,19 @@ class TestPartitionBackillReadonlyFailure(ReadonlyGraphQLContextTestMatrix):
         assert result.data
         assert result.data["partitionBackfillOrError"]["hasCancelPermission"] is False
         assert result.data["partitionBackfillOrError"]["hasResumePermission"] is False
+
+    def test_bad_id(self, graphql_context):
+        result = execute_dagster_graphql(
+            graphql_context,
+            BACKFILL_STATUS_BY_ASSET,
+            variables={"backfillId": "Junk"},
+        )
+        assert not result.errors
+        assert result.data
+        assert (
+            result.data["partitionBackfillOrError"]["__typename"] == "BackfillNotFoundError"
+        ), result.data
+        assert "Junk" in result.data["partitionBackfillOrError"]["message"]
 
     def test_resume_backfill_failure(self, graphql_context):
         backfill_id = self._create_backfill(graphql_context)
@@ -623,12 +655,12 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
 
         result = execute_dagster_graphql(
             graphql_context,
-            BACKFILL_PARTITION_STATUS_COUNTS_BY_ASSET,
+            BACKFILL_STATUS_BY_ASSET,
             variables={"backfillId": backfill_id},
         )
 
         asset_status_counts = result.data["partitionBackfillOrError"]["assetBackfillData"][
-            "assetPartitionsStatusCounts"
+            "assetBackfillStatuses"
         ]
         assert len(asset_status_counts) == 4
         for i, path in enumerate(asset_key_paths_in_topo_order):
@@ -674,7 +706,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
 
         result = execute_dagster_graphql(
             graphql_context,
-            BACKFILL_PARTITION_STATUS_COUNTS_BY_ASSET,
+            BACKFILL_STATUS_BY_ASSET,
             variables={"backfillId": backfill_id},
         )
 
@@ -685,14 +717,14 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         assert backfill_data["rootAssetTargetedRanges"] is None
         assert set(backfill_data["rootAssetTargetedPartitions"]) == set(partitions)
 
-        asset_partition_status_counts = backfill_data["assetPartitionsStatusCounts"]
+        asset_partition_status_counts = backfill_data["assetBackfillStatuses"]
         assert len(asset_partition_status_counts) == 1
         assert asset_partition_status_counts[0]["assetKey"]["path"] == [
             "upstream_static_partitioned_asset"
         ]
         assert asset_partition_status_counts[0]["numPartitionsTargeted"] == 6
-        assert asset_partition_status_counts[0]["numPartitionsRequested"] == 1
-        assert asset_partition_status_counts[0]["numPartitionsCompleted"] == 3
+        assert asset_partition_status_counts[0]["numPartitionsInProgress"] == 1
+        assert asset_partition_status_counts[0]["numPartitionsMaterialized"] == 3
         assert asset_partition_status_counts[0]["numPartitionsFailed"] == 2
 
     def test_asset_backfill_status_with_upstream_failure(self, graphql_context):
@@ -744,7 +776,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
 
         result = execute_dagster_graphql(
             graphql_context,
-            BACKFILL_PARTITION_STATUS_COUNTS_BY_ASSET,
+            BACKFILL_STATUS_BY_ASSET,
             variables={"backfillId": backfill_id},
         )
 
@@ -756,23 +788,24 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
             {"start": "2023-01-09", "end": "2023-01-09"}
         ]
 
-        asset_partition_status_counts = backfill_data["assetPartitionsStatusCounts"]
-        assert len(asset_partition_status_counts) == 2
-        assert asset_partition_status_counts[0]["assetKey"]["path"] == [
-            "upstream_daily_partitioned_asset"
-        ]
-        assert asset_partition_status_counts[0]["numPartitionsTargeted"] == 1
-        assert asset_partition_status_counts[0]["numPartitionsRequested"] == 0
-        assert asset_partition_status_counts[0]["numPartitionsCompleted"] == 0
-        assert asset_partition_status_counts[0]["numPartitionsFailed"] == 1
+        asset_statuses = backfill_data["assetBackfillStatuses"]
+        assert len(asset_statuses) == 3
+        assert asset_statuses[0]["assetKey"]["path"] == ["unpartitioned_upstream_of_partitioned"]
+        assert asset_statuses[0]["inProgress"] is False
+        assert asset_statuses[0]["materialized"] is True
+        assert asset_statuses[0]["failed"] is False
 
-        assert asset_partition_status_counts[1]["assetKey"]["path"] == [
-            "downstream_weekly_partitioned_asset"
-        ]
-        assert asset_partition_status_counts[1]["numPartitionsTargeted"] == 1
-        assert asset_partition_status_counts[1]["numPartitionsRequested"] == 0
-        assert asset_partition_status_counts[1]["numPartitionsCompleted"] == 0
-        assert asset_partition_status_counts[1]["numPartitionsFailed"] == 1
+        assert asset_statuses[1]["assetKey"]["path"] == ["upstream_daily_partitioned_asset"]
+        assert asset_statuses[1]["numPartitionsTargeted"] == 1
+        assert asset_statuses[1]["numPartitionsInProgress"] == 0
+        assert asset_statuses[1]["numPartitionsMaterialized"] == 0
+        assert asset_statuses[1]["numPartitionsFailed"] == 1
+
+        assert asset_statuses[2]["assetKey"]["path"] == ["downstream_weekly_partitioned_asset"]
+        assert asset_statuses[2]["numPartitionsTargeted"] == 1
+        assert asset_statuses[2]["numPartitionsInProgress"] == 0
+        assert asset_statuses[2]["numPartitionsMaterialized"] == 0
+        assert asset_statuses[2]["numPartitionsFailed"] == 1
 
     def test_backfill_run_completed(self, graphql_context):
         repository_selector = infer_repository_selector(graphql_context)

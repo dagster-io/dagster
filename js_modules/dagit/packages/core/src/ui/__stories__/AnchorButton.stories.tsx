@@ -1,5 +1,5 @@
 import {ExternalAnchorButton, Group, Icon} from '@dagster-io/ui';
-import {Meta} from '@storybook/react/types-6-0';
+import {Meta} from '@storybook/react';
 import * as React from 'react';
 
 import {AnchorButton} from '../AnchorButton';

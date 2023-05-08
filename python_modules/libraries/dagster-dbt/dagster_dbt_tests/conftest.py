@@ -3,6 +3,7 @@ import subprocess
 
 import pytest
 from dagster._utils import file_relative_path, pushd
+from dagster_dbt import DbtCliClientResource, dbt_cli_resource
 
 # ======= CONFIG ========
 DBT_EXECUTABLE = "dbt"
@@ -46,6 +47,20 @@ def dbt_python_config_dir():
     return DBT_PYTHON_CONFIG_DIR
 
 
+@pytest.fixture(
+    scope="session",
+    params=[
+        "legacy",
+        "pythonic",
+    ],
+)
+def dbt_cli_resource_factory(request):
+    if request.param == "pythonic":
+        return DbtCliClientResource
+    else:
+        return lambda **kwargs: dbt_cli_resource.configured(kwargs)
+
+
 @pytest.fixture(scope="session")
 def dbt_seed(dbt_executable, dbt_config_dir):
     with pushd(TEST_PROJECT_DIR):
@@ -56,7 +71,8 @@ def dbt_seed(dbt_executable, dbt_config_dir):
 def dbt_seed_python(dbt_executable, dbt_python_config_dir):
     with pushd(TEST_PYTHON_PROJECT_DIR):
         subprocess.run(
-            [dbt_executable, "seed", "--profiles-dir", dbt_python_config_dir], check=True
+            [dbt_executable, "seed", "--threads", "1", "--profiles-dir", dbt_python_config_dir],
+            check=True,
         )
 
 

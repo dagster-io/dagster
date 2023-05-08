@@ -1,5 +1,4 @@
 import logging
-import warnings
 from contextlib import ExitStack
 from datetime import datetime
 from typing import (
@@ -32,7 +31,7 @@ from dagster._core.errors import (
 )
 from dagster._core.events import PIPELINE_RUN_STATUS_TO_EVENT_TYPE, DagsterEvent, DagsterEventType
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, RunsFilter
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._serdes import (
     serialize_value,
     whitelist_for_serdes,
@@ -47,8 +46,8 @@ from dagster._utils.error import serializable_error_info_from_exc_info
 from .graph_definition import GraphDefinition
 from .job_definition import JobDefinition
 from .sensor_definition import (
+    DagsterRunReaction,
     DefaultSensorStatus,
-    PipelineRunReaction,
     RawSensorEvaluationFunctionReturn,
     RunRequest,
     SensorDefinition,
@@ -112,15 +111,7 @@ class RunStatusSensorCursor(
 
 
 class RunStatusSensorContext:
-    """The ``context`` object available to a decorated function of ``run_status_sensor``.
-
-    Attributes:
-        sensor_name (str): the name of the sensor.
-        dagster_run (DagsterRun): the run of the job or pipeline.
-        dagster_event (DagsterEvent): the event associated with the job or pipeline run status.
-        instance (DagsterInstance): the current instance.
-        log (logging.Logger): the logger for the given sensor evaluation
-    """
+    """The ``context`` object available to a decorated function of ``run_status_sensor``."""
 
     def __init__(
         self,
@@ -205,26 +196,31 @@ class RunStatusSensorContext:
     @public
     @property
     def sensor_name(self) -> str:
+        """The name of the sensor."""
         return self._sensor_name
 
     @public
     @property
     def dagster_run(self) -> DagsterRun:
+        """The run of the job."""
         return self._dagster_run
 
     @public
     @property
     def dagster_event(self) -> DagsterEvent:
+        """The event associated with the job run status."""
         return self._dagster_event
 
     @public
     @property
     def instance(self) -> DagsterInstance:
+        """The current instance."""
         return self._instance
 
     @public
     @property
     def log(self) -> logging.Logger:
+        """The logger for the current sensor evaluation."""
         if not self._logger:
             self._logger = InstigationLogger()
 
@@ -234,14 +230,6 @@ class RunStatusSensorContext:
     @property
     def partition_key(self) -> Optional[str]:
         return self._partition_key
-
-    @property
-    def pipeline_run(self) -> DagsterRun:
-        warnings.warn(
-            "`RunStatusSensorContext.pipeline_run` is deprecated as of 0.13.0; use "
-            "`RunStatusSensorContext.dagster_run` instead."
-        )
-        return self.dagster_run
 
     def __enter__(self) -> "RunStatusSensorContext":
         self._cm_scope_entered = True
@@ -258,7 +246,6 @@ class RunFailureSensorContext(RunStatusSensorContext):
     Attributes:
         sensor_name (str): the name of the sensor.
         dagster_run (DagsterRun): the failed run.
-        failure_event (DagsterEvent): the failure event.
     """
 
     @public
@@ -278,8 +265,9 @@ class RunFailureSensorContext(RunStatusSensorContext):
         Examples:
             .. code-block:: python
 
-                error_messages_by_step_key = {
-                    event.step_key: event.message
+                error_strings_by_step_key = {
+                    # includes the stack trace
+                    event.step_key: event.event_specific_data.error.to_string()
                     for event in context.get_step_failure_events()
                 }
         """
@@ -486,14 +474,14 @@ def run_failure_sensor(
 
 
 class RunStatusSensorDefinition(SensorDefinition):
-    """Define a sensor that reacts to a given status of pipeline execution, where the decorated
+    """Define a sensor that reacts to a given status of job execution, where the decorated
     function will be evaluated when a run is at the given status.
 
     Args:
         name (str): The name of the sensor. Defaults to the name of the decorated function.
         run_status (DagsterRunStatus): The status of a run which will be
             monitored by the sensor.
-        run_status_sensor_fn (Callable[[RunStatusSensorContext], Union[SkipReason, PipelineRunReaction]]): The core
+        run_status_sensor_fn (Callable[[RunStatusSensorContext], Union[SkipReason, DagsterRunReaction]]): The core
             evaluation function for the sensor. Takes a :py:class:`~dagster.RunStatusSensorContext`.
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
@@ -601,7 +589,7 @@ class RunStatusSensorDefinition(SensorDefinition):
 
         def _wrapped_fn(
             context: SensorEvaluationContext,
-        ) -> Iterator[Union[RunRequest, SkipReason, PipelineRunReaction, SensorResult]]:
+        ) -> Iterator[Union[RunRequest, SkipReason, DagsterRunReaction, SensorResult]]:
             # initiate the cursor to (most recent event id, current timestamp) when:
             # * it's the first time starting the sensor
             # * or, the cursor isn't in valid format (backcompt)
@@ -668,7 +656,7 @@ class RunStatusSensorDefinition(SensorDefinition):
                     )
                     continue
 
-                pipeline_run = run_records[0].dagster_run
+                dagster_run = run_records[0].dagster_run
                 update_timestamp = run_records[0].update_timestamp
 
                 job_match = False
@@ -681,15 +669,15 @@ class RunStatusSensorDefinition(SensorDefinition):
                 if (
                     not job_match
                     and
-                    # the pipeline has a repository (not manually executed)
-                    pipeline_run.external_pipeline_origin
+                    # the job has a repository (not manually executed)
+                    dagster_run.external_job_origin
                     and
-                    # the pipeline belongs to the current repository
-                    pipeline_run.external_pipeline_origin.external_repository_origin.repository_name
+                    # the job belongs to the current repository
+                    dagster_run.external_job_origin.external_repository_origin.repository_name
                     == context.repository_name
                 ):
                     if monitored_jobs:
-                        if pipeline_run.pipeline_name in map(lambda x: x.name, current_repo_jobs):
+                        if dagster_run.job_name in map(lambda x: x.name, current_repo_jobs):
                             job_match = True
                     else:
                         job_match = True
@@ -698,12 +686,12 @@ class RunStatusSensorDefinition(SensorDefinition):
                     # check if the run is one of the jobs specified by JobSelector or RepositorySelector (ie in another repo)
                     # make a JobSelector for the run in question
                     external_repository_origin = check.not_none(
-                        pipeline_run.external_pipeline_origin
+                        dagster_run.external_job_origin
                     ).external_repository_origin
                     run_job_selector = JobSelector(
                         location_name=external_repository_origin.code_location_origin.location_name,
                         repository_name=external_repository_origin.repository_name,
-                        job_name=pipeline_run.pipeline_name,
+                        job_name=dagster_run.job_name,
                     )
                     if run_job_selector in other_repo_jobs:
                         job_match = True
@@ -734,12 +722,12 @@ class RunStatusSensorDefinition(SensorDefinition):
                 try:
                     with RunStatusSensorContext(
                         sensor_name=name,
-                        dagster_run=pipeline_run,
+                        dagster_run=dagster_run,
                         dagster_event=event_log_entry.dagster_event,
                         instance=context.instance,
                         resource_defs=context.resource_defs,
                         logger=context.log,
-                        partition_key=pipeline_run.tags.get("dagster/partition"),
+                        partition_key=dagster_run.tags.get("dagster/partition"),
                     ) as sensor_context, user_code_error_boundary(
                         RunStatusSensorExecutionError,
                         lambda: f'Error occurred during the execution sensor "{name}".',
@@ -772,7 +760,7 @@ class RunStatusSensorDefinition(SensorDefinition):
                                 yield sensor_return
                             elif isinstance(
                                 sensor_return,
-                                (RunRequest, SkipReason, PipelineRunReaction),
+                                (RunRequest, SkipReason, DagsterRunReaction),
                             ):
                                 yield sensor_return
                             else:
@@ -790,12 +778,12 @@ class RunStatusSensorDefinition(SensorDefinition):
                     ).to_json()
                 )
 
-                # Yield PipelineRunReaction to indicate the execution success/failure.
+                # Yield DagsterRunReaction to indicate the execution success/failure.
                 # The sensor machinery would
                 # * report back to the original run if success
                 # * update cursor and job state
-                yield PipelineRunReaction(
-                    pipeline_run=pipeline_run,
+                yield DagsterRunReaction(
+                    dagster_run=dagster_run,
                     run_status=run_status,
                     error=serializable_error,
                 )
@@ -867,8 +855,8 @@ def run_status_sensor(
     request_job: Optional[ExecutableDefinition] = None,
     request_jobs: Optional[Sequence[ExecutableDefinition]] = None,
 ) -> Callable[[RunStatusSensorEvaluationFunction], RunStatusSensorDefinition,]:
-    """Creates a sensor that reacts to a given status of pipeline execution, where the decorated
-    function will be run when a pipeline is at the given status.
+    """Creates a sensor that reacts to a given status of job execution, where the decorated
+    function will be run when a job is at the given status.
 
     Takes a :py:class:`~dagster.RunStatusSensorContext`.
 
@@ -879,14 +867,14 @@ def run_status_sensor(
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
-        monitored_jobs (Optional[List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition, RepositorySelector, JobSelector, CodeLocationSelector]]]):
+        monitored_jobs (Optional[List[Union[JobDefinition, GraphDefinition, UnresolvedAssetJobDefinition, RepositorySelector, JobSelector, CodeLocationSelector]]]):
             Jobs in the current repository that will be monitored by this sensor. Defaults to None, which means the alert will
             be sent when any job in the repository matches the requested run_status. Jobs in external repositories can be monitored by using
             RepositorySelector or JobSelector.
         monitor_all_repositories (bool): If set to True, the sensor will monitor all runs in the Dagster instance.
             If set to True, an error will be raised if you also specify monitored_jobs or job_selection.
             Defaults to False.
-        job_selection (Optional[List[Union[PipelineDefinition, GraphDefinition, RepositorySelector, JobSelector, CodeLocationSelector]]]):
+        job_selection (Optional[List[Union[JobDefinition, GraphDefinition, RepositorySelector, JobSelector, CodeLocationSelector]]]):
             (deprecated in favor of monitored_jobs) Jobs in the current repository that will be
             monitored by this sensor. Defaults to None, which means the alert will be sent when
             any job in the repository matches the requested run_status.

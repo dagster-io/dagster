@@ -18,7 +18,6 @@ Resources
     :annotation: ResourceDefinition
 
 .. autoclass:: FivetranResource
-    :members:
 
 Assets
 ======

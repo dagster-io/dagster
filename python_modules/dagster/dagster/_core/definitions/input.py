@@ -69,9 +69,9 @@ def _check_default_value(input_name: str, dagster_type: DagsterType, default_val
 
 
 class InputDefinition:
-    """Defines an argument to a solid's compute function.
+    """Defines an argument to an op's compute function.
 
-    Inputs may flow from previous solids' outputs, or be stubbed using config. They may optionally
+    Inputs may flow from previous op outputs, or be stubbed using config. They may optionally
     be typed using the Dagster type system.
 
     Args:
@@ -229,7 +229,7 @@ class InputDefinition:
             return self.hardcoded_asset_key
 
     def get_asset_partitions(self, context: "InputContext") -> Optional[Set[str]]:
-        """Get the set of partitions that this solid will read from this InputDefinition for the given
+        """Get the set of partitions that this op will read from this InputDefinition for the given
         :py:class:`InputContext` (if any).
 
         Args:
@@ -242,32 +242,32 @@ class InputDefinition:
         return self._asset_partitions_fn(context)
 
     def mapping_to(
-        self, solid_name: str, input_name: str, fan_in_index: Optional[int] = None
+        self, node_name: str, input_name: str, fan_in_index: Optional[int] = None
     ) -> "InputMapping":
-        """Create an input mapping to an input of a child solid.
+        """Create an input mapping to an input of a child node.
 
-        In a CompositeSolidDefinition, you can use this helper function to construct
-        an :py:class:`InputMapping` to the input of a child solid.
+        In a GraphDefinition, you can use this helper function to construct
+        an :py:class:`InputMapping` to the input of a child node.
 
         Args:
-            solid_name (str): The name of the child solid to which to map this input.
-            input_name (str): The name of the child solid' input to which to map this input.
+            node_name (str): The name of the child node to which to map this input.
+            input_name (str): The name of the child node' input to which to map this input.
             fan_in_index (Optional[int]): The index in to a fanned in input, else None
 
         Examples:
             .. code-block:: python
 
                 input_mapping = InputDefinition('composite_input', Int).mapping_to(
-                    'child_solid', 'int_input'
+                    'child_node', 'int_input'
                 )
         """
-        check.str_param(solid_name, "solid_name")
+        check.str_param(node_name, "node_name")
         check.str_param(input_name, "input_name")
         check.opt_int_param(fan_in_index, "fan_in_index")
 
         return InputMapping(
             graph_input_name=self.name,
-            mapped_node_name=solid_name,
+            mapped_node_name=node_name,
             mapped_node_input_name=input_name,
             fan_in_index=fan_in_index,
             graph_input_description=self.description,

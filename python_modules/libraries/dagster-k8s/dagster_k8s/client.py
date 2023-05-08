@@ -10,8 +10,8 @@ from dagster import (
     DagsterInstance,
     _check as check,
 )
-from dagster._core.storage.pipeline_run import DagsterRunStatus
-from kubernetes.client.models import V1JobStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
+from kubernetes.client.models import V1Job, V1JobStatus
 
 try:
     from kubernetes.client.models import EventsV1Event  # noqa
@@ -78,7 +78,7 @@ class DagsterK8sUnrecoverableAPIError(Exception):
         self.original_exc_info = original_exc_info
 
 
-class DagsterK8sPipelineStatusException(Exception):
+class DagsterK8sJobStatusException(Exception):
     pass
 
 
@@ -349,13 +349,13 @@ class DagsterKubernetesClient:
                 )
 
             if instance and run_id:
-                pipeline_run = instance.get_run_by_id(run_id)
-                if not pipeline_run:
-                    raise DagsterK8sPipelineStatusException()
+                dagster_run = instance.get_run_by_id(run_id)
+                if not dagster_run:
+                    raise DagsterK8sJobStatusException()
 
-                pipeline_run_status = pipeline_run.status
-                if pipeline_run_status != DagsterRunStatus.STARTED:
-                    raise DagsterK8sPipelineStatusException()
+                dagster_run_status = dagster_run.status
+                if dagster_run_status != DagsterRunStatus.STARTED:
+                    raise DagsterK8sJobStatusException()
 
             self.sleeper(wait_time_between_attempts)
 
@@ -748,4 +748,16 @@ class DagsterKubernetesClient:
             + (f"\n\n{specific_warning}" if specific_warning else "")
             + (f"\n\n{log_str}" if log_str else "")
             + f"\n\n{warning_str}"
+        )
+
+    def create_namespaced_job_with_retries(
+        self,
+        body: V1Job,
+        namespace: str,
+        wait_time_between_attempts: float = DEFAULT_WAIT_BETWEEN_ATTEMPTS,
+    ):
+        k8s_api_retry(
+            lambda: self.batch_api.create_namespaced_job(body=body, namespace=namespace),
+            max_retries=3,
+            timeout=wait_time_between_attempts,
         )

@@ -213,14 +213,14 @@ def test_invalid_instance():
         assert len(result.all_events) == 1
         assert result.all_events[0].is_failure
         assert (
-            result.all_events[0].pipeline_failure_data.error.cls_name
+            result.all_events[0].job_failure_data.error.cls_name
             == "DagsterUnmetExecutorRequirementsError"
         )
-        assert "non-ephemeral instance" in result.all_events[0].pipeline_failure_data.error.message
+        assert "non-ephemeral instance" in result.all_events[0].job_failure_data.error.message
 
 
 def test_no_handle():
-    with pytest.raises(CheckError, match='Param "job" is not a ReconstructablePipeline.'):
+    with pytest.raises(CheckError, match='Param "job" is not a ReconstructableJob.'):
         execute_job(
             define_diamond_job(),
             instance=DagsterInstance.ephemeral(),
@@ -284,7 +284,7 @@ def test_separate_sub_dags():
                 pipe,
                 run_config={
                     "execution": {"config": {"multiprocess": {"max_concurrent": 2}}},
-                    "solids": {
+                    "ops": {
                         "waiter": {"config": filename},
                         "writer": {"config": filename},
                     },

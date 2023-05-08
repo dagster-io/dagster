@@ -249,7 +249,6 @@ const AssetGroupSuggest: React.FC<{
 export const ASSET_CATALOG_TABLE_QUERY = gql`
   query AssetCatalogTableQuery {
     assetsOrError {
-      __typename
       ... on AssetConnection {
         nodes {
           id

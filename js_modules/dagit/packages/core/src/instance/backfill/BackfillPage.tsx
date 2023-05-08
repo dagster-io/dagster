@@ -12,6 +12,7 @@ import {
   DialogFooter,
   ButtonLink,
   DialogBody,
+  NonIdealState,
 } from '@dagster-io/ui';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
@@ -57,6 +58,7 @@ export const BackfillPage = () => {
   const {data} = queryResult;
 
   const backfill = data?.partitionBackfillOrError;
+
   let isInProgress = true;
   if (backfill && backfill.__typename === 'PartitionBackfill') {
     // for asset backfills, all of the requested runs have concluded in order for the status to be BulkActionStatus.COMPLETED
@@ -74,6 +76,9 @@ export const BackfillPage = () => {
     }
     if (backfill.__typename === 'PythonError') {
       return <PythonErrorInfo error={backfill} />;
+    }
+    if (backfill.__typename === 'BackfillNotFoundError') {
+      return <NonIdealState icon="no-results" title={backfill.message} />;
     }
 
     function getRunsUrl(status: 'requested' | 'complete' | 'failed' | 'targeted') {
@@ -182,31 +187,33 @@ export const BackfillPage = () => {
             </tr>
           </thead>
           <tbody>
-            {backfill.assetBackfillData?.assetPartitionsStatusCounts.map((asset) => (
-              <tr key={asset.assetKey.path.join('/')}>
-                <td>
-                  <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
-                    <div>
-                      <a href={assetDetailsPathForKey(asset.assetKey)}>
-                        {asset.assetKey.path.join('/')}
-                      </a>
-                    </div>
-                    <div>
-                      <StatusBar
-                        targeted={asset.numPartitionsTargeted}
-                        requested={asset.numPartitionsRequested}
-                        completed={asset.numPartitionsCompleted}
-                        failed={asset.numPartitionsFailed}
-                      />
-                    </div>
-                  </Box>
-                </td>
-                <td>{asset.numPartitionsTargeted}</td>
-                <td>{asset.numPartitionsRequested}</td>
-                <td>{asset.numPartitionsCompleted}</td>
-                <td>{asset.numPartitionsFailed}</td>
-              </tr>
-            ))}
+            {backfill.assetBackfillData?.assetBackfillStatuses.map((asset) => {
+              return asset.__typename === 'AssetPartitionsStatusCounts' ? (
+                <tr key={asset.assetKey.path.join('/')}>
+                  <td>
+                    <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
+                      <div>
+                        <a href={assetDetailsPathForKey(asset.assetKey)}>
+                          {asset.assetKey.path.join('/')}
+                        </a>
+                      </div>
+                      <div>
+                        <StatusBar
+                          targeted={asset.numPartitionsTargeted}
+                          requested={asset.numPartitionsInProgress}
+                          completed={asset.numPartitionsMaterialized}
+                          failed={asset.numPartitionsFailed}
+                        />
+                      </div>
+                    </Box>
+                  </td>
+                  <td>{asset.numPartitionsTargeted}</td>
+                  <td>{asset.numPartitionsInProgress}</td>
+                  <td>{asset.numPartitionsMaterialized}</td>
+                  <td>{asset.numPartitionsFailed}</td>
+                </tr>
+              ) : null;
+            })}
           </tbody>
         </Table>
       </>
@@ -325,6 +332,9 @@ export const BACKFILL_DETAILS_QUERY = gql`
     partitionBackfillOrError(backfillId: $backfillId) {
       ...PartitionBackfillFragment
       ...PythonErrorFragment
+      ... on BackfillNotFoundError {
+        message
+      }
     }
   }
 
@@ -343,14 +353,24 @@ export const BACKFILL_DETAILS_QUERY = gql`
         end
       }
       rootAssetTargetedPartitions
-      assetPartitionsStatusCounts {
-        assetKey {
-          path
+      assetBackfillStatuses {
+        ... on AssetPartitionsStatusCounts {
+          assetKey {
+            path
+          }
+          numPartitionsTargeted
+          numPartitionsInProgress
+          numPartitionsMaterialized
+          numPartitionsFailed
         }
-        numPartitionsTargeted
-        numPartitionsRequested
-        numPartitionsCompleted
-        numPartitionsFailed
+        ... on UnpartitionedAssetStatus {
+          assetKey {
+            path
+          }
+          inProgress
+          materialized
+          failed
+        }
       }
     }
   }

@@ -21,7 +21,7 @@ from dagster._core.definitions.partition import (
 )
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.instance import DynamicPartitionsStore
-from dagster._core.storage.pipeline_run import FINISHED_STATUSES, RunsFilter
+from dagster._core.storage.dagster_run import FINISHED_STATUSES, RunsFilter
 from dagster._core.storage.tags import (
     MULTIDIMENSIONAL_PARTITION_PREFIX,
     get_dimension_from_partition_tag,

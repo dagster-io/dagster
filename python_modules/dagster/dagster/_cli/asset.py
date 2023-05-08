@@ -11,11 +11,11 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._core.execution.api import execute_job
 from dagster._core.instance import DagsterInstance
-from dagster._core.origin import PipelinePythonOrigin
+from dagster._core.origin import JobPythonOrigin
 from dagster._core.selector.subset_selector import parse_asset_selection
 from dagster._core.telemetry import telemetry_wrapper
 from dagster._utils.hosted_user_process import (
-    recon_pipeline_from_origin,
+    recon_job_from_origin,
     recon_repository_from_origin,
 )
 from dagster._utils.interrupts import capture_interrupts
@@ -60,8 +60,8 @@ def execute_materialize_command(instance: DagsterInstance, kwargs: Mapping[str, 
             " PartitionsDefinition"
         )
 
-    reconstructable_job = recon_pipeline_from_origin(
-        PipelinePythonOrigin(implicit_job_def.name, repository_origin=repository_origin)
+    reconstructable_job = recon_job_from_origin(
+        JobPythonOrigin(implicit_job_def.name, repository_origin=repository_origin)
     )
     partition = kwargs.get("partition")
     if partition:
@@ -86,7 +86,6 @@ def execute_materialize_command(instance: DagsterInstance, kwargs: Mapping[str, 
 @click.option("--select", help="Asset selection to target", required=False)
 def asset_list_command(**kwargs):
     repository_origin = get_repository_python_origin_from_kwargs(kwargs)
-
     recon_repo = recon_repository_from_origin(repository_origin)
     repo_def = recon_repo.get_definition()
 

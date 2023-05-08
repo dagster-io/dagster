@@ -33,13 +33,13 @@ class TestEventLogConsumerDaemon(EventLogConsumerDaemon):
 def _create_success_event(instance, run):
     dagster_event = DagsterEvent(
         event_type_value=DagsterEventType.RUN_SUCCESS.value,
-        pipeline_name="foo",
+        job_name="foo",
         message="yay success",
     )
     event_record = EventLogEntry(
         user_message="",
         level=logging.INFO,
-        pipeline_name="foo",
+        job_name="foo",
         run_id=run.run_id,
         error_info=None,
         timestamp=time.time(),
@@ -55,7 +55,7 @@ def test_daemon(instance: DagsterInstance, empty_workspace_context):
     list(daemon.run_iteration(empty_workspace_context))
     assert daemon.run_records == []
 
-    run = create_run_for_test(instance, "test_pipeline")
+    run = create_run_for_test(instance, "test_job")
     instance.report_run_failed(run)
 
     list(daemon.run_iteration(empty_workspace_context))
@@ -72,7 +72,7 @@ def test_events_exceed_limit(instance: DagsterInstance, empty_workspace_context)
     list(daemon.run_iteration(empty_workspace_context))
 
     for _ in range(TEST_EVENT_LOG_FETCH_LIMIT + 1):
-        run = create_run_for_test(instance, "test_pipeline")
+        run = create_run_for_test(instance, "test_job")
         instance.report_run_failed(run)
 
     list(daemon.run_iteration(empty_workspace_context))

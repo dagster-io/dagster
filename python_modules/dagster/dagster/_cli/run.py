@@ -17,7 +17,7 @@ def run_list_command(limit):
     with DagsterInstance.get() as instance:
         for run in instance.get_runs(limit=limit):
             click.echo(f"Run: {run.run_id}")
-            click.echo(f"     Job: {run.pipeline_name}")
+            click.echo(f"     Job: {run.job_name}")
 
 
 @run_cli.command(
@@ -85,7 +85,7 @@ def run_wipe_command(force):
 )
 @job_target_argument
 def run_migrate_command(from_label, **kwargs):
-    from dagster._core.storage.pipeline_run import RunsFilter
+    from dagster._core.storage.dagster_run import RunsFilter
     from dagster._core.storage.runs.sql_run_storage import SqlRunStorage
     from dagster._core.storage.tags import REPOSITORY_LABEL_TAG
 

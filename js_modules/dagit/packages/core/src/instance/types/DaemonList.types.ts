@@ -43,19 +43,3 @@ export type DaemonStatusForListFragment = {
     }>;
   }>;
 };
-
-export type GetAutoMaterializePausedQueryVariables = Types.Exact<{[key: string]: never}>;
-
-export type GetAutoMaterializePausedQuery = {
-  __typename: 'DagitQuery';
-  instance: {__typename: 'Instance'; id: string; autoMaterializePaused: boolean};
-};
-
-export type SetAutoMaterializePausedMutationVariables = Types.Exact<{
-  paused: Types.Scalars['Boolean'];
-}>;
-
-export type SetAutoMaterializePausedMutation = {
-  __typename: 'DagitMutation';
-  setAutoMaterializePaused: boolean;
-};

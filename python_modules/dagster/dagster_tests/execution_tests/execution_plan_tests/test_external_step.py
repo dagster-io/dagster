@@ -36,7 +36,7 @@ from dagster._core.definitions.cacheable_assets import (
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.no_step_launcher import no_step_launcher
-from dagster._core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
+from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import (
     ReexecutionOptions,
@@ -45,7 +45,7 @@ from dagster._core.execution.api import (
     execute_run_iterator,
 )
 from dagster._core.execution.context.system import IStepContext
-from dagster._core.execution.context_creation_pipeline import PlanExecutionContextManager
+from dagster._core.execution.context_creation_job import PlanExecutionContextManager
 from dagster._core.execution.plan.external_step import (
     LocalExternalStepLauncher,
     local_external_step_launcher,
@@ -55,7 +55,7 @@ from dagster._core.execution.plan.external_step import (
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.retries import RetryMode
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.pipeline_run import DagsterRun
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.test_utils import instance_for_test
 from dagster._utils import safe_tempfile_path, send_interrupt
 from dagster._utils.merger import deep_merge_dicts, merge_dicts
@@ -303,7 +303,7 @@ def define_sleepy_job():
 
 def initialize_step_context(scratch_dir: str, instance: DagsterInstance) -> IStepContext:
     run = DagsterRun(
-        pipeline_name="foo_job",
+        job_name="foo_job",
         run_id=str(uuid.uuid4()),
         run_config=make_run_config(scratch_dir, "external"),
     )
@@ -313,7 +313,7 @@ def initialize_step_context(scratch_dir: str, instance: DagsterInstance) -> ISte
     plan = create_execution_plan(recon_job, run.run_config)
 
     initialization_manager = PlanExecutionContextManager(
-        pipeline=recon_job,
+        job=recon_job,
         execution_plan=plan,
         run_config=run.run_config,
         dagster_run=run,
@@ -341,7 +341,7 @@ def test_step_context_to_step_run_ref():
 
         rehydrated_step_context = step_run_ref_to_step_context(step_run_ref, instance)
         rehydrated_step = rehydrated_step_context.step
-        assert rehydrated_step.pipeline_name == step.pipeline_name
+        assert rehydrated_step.job_name == step.job_name
         assert rehydrated_step.step_inputs == step.step_inputs
         assert rehydrated_step.step_outputs == step.step_outputs
         assert rehydrated_step.kind == step.kind
@@ -562,7 +562,7 @@ def test_interrupt_step_launcher():
             event_types = []
 
             with instance_for_test() as instance:
-                dagster_run = instance.create_run_for_pipeline(
+                dagster_run = instance.create_run_for_job(
                     define_sleepy_job(),
                     run_config=sleepy_run_config,
                 )
@@ -616,9 +616,7 @@ def test_multiproc_launcher_with_repository_load_data():
                 file_relative_path(__file__, "test_external_step.py"),
                 fn_name="pending_repo",
             )
-            recon_job = ReconstructablePipeline(
-                repository=recon_repo, pipeline_name="all_asset_job"
-            )
+            recon_job = ReconstructableJob(repository=recon_repo, job_name="all_asset_job")
 
             with execute_job(
                 recon_job,

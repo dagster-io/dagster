@@ -19,6 +19,7 @@ import asset_plot from '../icon-svgs/asset_plot.svg';
 import assignment from '../icon-svgs/assignment.svg';
 import assignment_turned_in from '../icon-svgs/assignment_turned_in.svg';
 import attach_file from '../icon-svgs/attach_file.svg';
+import auto_materialize_policy from '../icon-svgs/auto-materialize-policy.svg';
 import backfill from '../icon-svgs/backfill.svg';
 import bolt from '../icon-svgs/bolt.svg';
 import expectation from '../icon-svgs/bp-automatic-updates.svg';
@@ -145,6 +146,7 @@ import {Colors} from './Colors';
 
 export const Icons = {
   // Core icons
+  auto_materialize_policy,
   asset,
   asset_plot,
   asset_non_sda,

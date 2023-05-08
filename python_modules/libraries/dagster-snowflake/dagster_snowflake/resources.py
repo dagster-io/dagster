@@ -6,11 +6,16 @@ from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence, Union
 import dagster._check as check
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
-from dagster import resource
+from dagster import (
+    ConfigurableResource,
+    IAttachDifferentObjectToOpContext,
+    get_dagster_logger,
+    resource,
+)
 from dagster._annotations import public
 from dagster._core.storage.event_log.sql_event_log import SqlDbConnection
-
-from .configs import define_snowflake_config
+from dagster._utils.cached_method import cached_method
+from pydantic import Field, root_validator, validator
 
 try:
     import snowflake.connector
@@ -26,25 +31,236 @@ except ImportError:
     raise
 
 
-class SnowflakeConnection:
-    """A connection to Snowflake that can execute queries. In general this class should not be
-    directly instantiated, but rather used as a resource in an op or asset via the
-    :py:func:`snowflake_resource`.
+class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
+    """A resource for connecting to the Snowflake data warehouse.
+
+    A simple example of loading data into Snowflake and subsequently querying that data is shown below:
+
+    Examples:
+        .. code-block:: python
+
+            from dagster import job, op
+            from dagster_snowflake import SnowflakeResource
+
+            @op
+            def get_one(snowflake_resource: SnowflakeResource):
+                snowflake_resource.get_client().execute_query('SELECT 1')
+
+            @job
+            def my_snowflake_job():
+                get_one()
+
+            my_snowflake_job.execute_in_process(
+                resources={
+                    'snowflake_resource': SnowflakeResource(
+                        account=EnvVar("SNOWFLAKE_ACCOUNT"),
+                        user=EnvVar("SNOWFLAKE_USER"),
+                        password=EnvVar("SNOWFLAKE_PASSWORD")
+                        database="MY_DATABASE",
+                        schema="MY_SCHEMA",
+                        warehouse="MY_WAREHOUSE"
+                    )
+                }
+            )
     """
 
-    def __init__(self, config: Mapping[str, str], log):
-        # Extract parameters from resource config. Note that we can't pass None values to
-        # snowflake.connector.connect() because they will override the default values set within the
-        # connector; remove them from the conn_args dict.
-        self.connector = config.get("connector", None)
-        self.sqlalchemy_engine_args = {}
+    account: Optional[str] = Field(
+        default=None,
+        description="Your Snowflake account name. For more details, see  https://bit.ly/2FBL320.",
+    )
 
-        # there are three different ways to authenticate with snowflake, we need to ensure that only
-        # one method is provided
+    user: str = Field(description="User login name.")
+
+    password: Optional[str] = Field(default=None, description="User password.")
+
+    database: Optional[str] = Field(
+        default=None,
+        description=(
+            "Name of the default database to use. After login, you can use USE DATABASE "
+            " to change the database."
+        ),
+    )
+
+    schema_: Optional[str] = Field(
+        default=None,
+        description=(
+            "Name of the default schema to use. After login, you can use USE SCHEMA to "
+            "change the schema."
+        ),
+        alias="schema",
+    )  # schema is a reserved word for pydantic
+
+    role: Optional[str] = Field(
+        default=None,
+        description=(
+            "Name of the default role to use. After login, you can use USE ROLE to change "
+            " the role."
+        ),
+    )
+
+    warehouse: Optional[str] = Field(
+        default=None,
+        description=(
+            "Name of the default warehouse to use. After login, you can use USE WAREHOUSE "
+            "to change the role."
+        ),
+    )
+
+    private_key: Optional[str] = Field(
+        default=None,
+        description=(
+            "Raw private key to use. See"
+            " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details. Alternately,"
+            " set private_key_path and private_key_password."
+        ),
+    )
+
+    private_key_password: Optional[str] = Field(
+        default=None,
+        description=(
+            "Raw private key password to use. See"
+            " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details. Required for"
+            " both private_key and private_key_path."
+        ),
+    )
+
+    private_key_path: Optional[str] = Field(
+        default=None,
+        description=(
+            "Raw private key path to use. See"
+            " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details. Alternately,"
+            " set the raw private key as private_key."
+        ),
+    )
+
+    autocommit: Optional[bool] = Field(
+        default=None,
+        description=(
+            "None by default, which honors the Snowflake parameter AUTOCOMMIT. Set to True "
+            "or False to enable or disable autocommit mode in the session, respectively."
+        ),
+    )
+
+    client_prefetch_threads: Optional[int] = Field(
+        default=None,
+        description=(
+            "Number of threads used to download the results sets (4 by default). "
+            "Increasing the value improves fetch performance but requires more memory."
+        ),
+    )
+
+    client_session_keep_alive: Optional[bool] = Field(
+        default=None,
+        description=(
+            "False by default. Set this to True to keep the session active indefinitely, "
+            "even if there is no activity from the user. Make certain to call the close method to "
+            "terminate the thread properly or the process may hang."
+        ),
+    )
+
+    login_timeout: Optional[int] = Field(
+        default=None,
+        description=(
+            "Timeout in seconds for login. By default, 60 seconds. The login request gives "
+            'up after the timeout length if the HTTP response is "success".'
+        ),
+    )
+
+    network_timeout: Optional[int] = Field(
+        default=None,
+        description=(
+            "Timeout in seconds for all other operations. By default, none/infinite. A general"
+            " request gives up after the timeout length if the HTTP response is not 'success'."
+        ),
+    )
+
+    ocsp_response_cache_filename: Optional[str] = Field(
+        default=None,
+        description=(
+            "URI for the OCSP response cache file.  By default, the OCSP response cache "
+            "file is created in the cache directory."
+        ),
+    )
+
+    validate_default_parameters: Optional[bool] = Field(
+        default=None,
+        description=(
+            "False by default. Raise an exception if either one of specified database, "
+            "schema or warehouse doesn't exists if True."
+        ),
+    )
+
+    paramstyle: Optional[str] = Field(
+        default=None,
+        description=(
+            "pyformat by default for client side binding. Specify qmark or numeric to "
+            "change bind variable formats for server side binding."
+        ),
+    )
+
+    timezone: Optional[str] = Field(
+        default=None,
+        description=(
+            "None by default, which honors the Snowflake parameter TIMEZONE. Set to a "
+            "valid time zone (e.g. America/Los_Angeles) to set the session time zone."
+        ),
+    )
+
+    connector: Optional[str] = Field(
+        default=None,
+        description=(
+            "Indicate alternative database connection engine. Permissible option is "
+            "'sqlalchemy' otherwise defaults to use the Snowflake Connector for Python."
+        ),
+        is_required=False,
+    )
+
+    cache_column_metadata: Optional[str] = Field(
+        default=None,
+        description=(
+            "Optional parameter when connector is set to sqlalchemy. Snowflake SQLAlchemy takes a"
+            " flag cache_column_metadata=True such that all of column metadata for all tables are"
+            ' "cached"'
+        ),
+    )
+
+    numpy: Optional[bool] = Field(
+        default=None,
+        description=(
+            "Optional parameter when connector is set to sqlalchemy. To enable fetching "
+            "NumPy data types, add numpy=True to the connection parameters."
+        ),
+    )
+
+    authenticator: Optional[str] = Field(
+        default=None,
+        description="Optional parameter to specify the authentication mechanism to use.",
+    )
+
+    @validator("paramstyle")
+    def validate_paramstyle(cls, v: Optional[str]) -> Optional[str]:
+        valid_config = ["pyformat", "qmark", "numeric"]
+        if v is not None and v not in valid_config:
+            raise ValueError(
+                "Snowflake Resource: 'paramstyle' configuration value must be one of:"
+                f" {','.join(valid_config)}."
+            )
+        return v
+
+    @validator("connector")
+    def validate_connector(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None and v != "sqlalchemy":
+            raise ValueError(
+                "Snowflake Resource: 'connector' configuration value must be None or sqlalchemy."
+            )
+        return v
+
+    @root_validator
+    def validate_authentication(cls, values):
         auths_set = 0
-        auths_set += 1 if config.get("password", None) is not None else 0
-        auths_set += 1 if config.get("private_key", None) is not None else 0
-        auths_set += 1 if config.get("private_key_path", None) is not None else 0
+        auths_set += 1 if values.get("password") is not None else 0
+        auths_set += 1 if values.get("private_key") is not None else 0
+        auths_set += 1 if values.get("private_key_path") is not None else 0
 
         # ensure at least 1 method is provided
         check.invariant(
@@ -64,64 +280,78 @@ class SnowflakeConnection:
             ),
         )
 
-        if self.connector == "sqlalchemy":
-            self.conn_args: Dict[str, Any] = {
-                k: config.get(k)
-                for k in (
-                    "account",
-                    "user",
-                    "password",
-                    "database",
-                    "schema",
-                    "role",
-                    "warehouse",
-                    "cache_column_metadata",
-                    "numpy",
-                )
-                if config.get(k) is not None
-            }
+        return values
 
-            if (
-                config.get("private_key", None) is not None
-                or config.get("private_key_path", None) is not None
-            ):
-                # sqlalchemy passes private key args separately, so store them in a new dict
-                self.sqlalchemy_engine_args["private_key"] = self.__snowflake_private_key(config)
+    @property
+    @cached_method
+    def _connection_args(self) -> Mapping[str, Any]:
+        conn_args = {
+            k: self._resolved_config_dict.get(k)
+            for k in (
+                "account",
+                "user",
+                "password",
+                "database",
+                "schema",
+                "role",
+                "warehouse",
+                "autocommit",
+                "client_prefetch_threads",
+                "client_session_keep_alive",
+                "login_timeout",
+                "network_timeout",
+                "ocsp_response_cache_filename",
+                "validate_default_parameters",
+                "paramstyle",
+                "timezone",
+                "authenticator",
+            )
+            if self._resolved_config_dict.get(k) is not None
+        }
+        if (
+            self._resolved_config_dict.get("private_key", None) is not None
+            or self._resolved_config_dict.get("private_key_path", None) is not None
+        ):
+            conn_args["private_key"] = self._snowflake_private_key(self._resolved_config_dict)
 
-        else:
-            self.conn_args = {
-                k: config.get(k)
-                for k in (
-                    "account",
-                    "user",
-                    "password",
-                    "database",
-                    "schema",
-                    "role",
-                    "warehouse",
-                    "autocommit",
-                    "client_prefetch_threads",
-                    "client_session_keep_alive",
-                    "login_timeout",
-                    "network_timeout",
-                    "ocsp_response_cache_filename",
-                    "validate_default_parameters",
-                    "paramstyle",
-                    "timezone",
-                    "authenticator",
-                )
-                if config.get(k) is not None
-            }
-            if (
-                config.get("private_key", None) is not None
-                or config.get("private_key_path", None) is not None
-            ):
-                self.conn_args["private_key"] = self.__snowflake_private_key(config)
+        return conn_args
 
-        self.autocommit = self.conn_args.get("autocommit", False)
-        self.log = log
+    @property
+    @cached_method
+    def _sqlalchemy_connection_args(self) -> Mapping[str, Any]:
+        conn_args: Dict[str, Any] = {
+            k: self._resolved_config_dict.get(k)
+            for k in (
+                "account",
+                "user",
+                "password",
+                "database",
+                "schema",
+                "role",
+                "warehouse",
+                "cache_column_metadata",
+                "numpy",
+            )
+            if self._resolved_config_dict.get(k) is not None
+        }
 
-    def __snowflake_private_key(self, config) -> bytes:
+        return conn_args
+
+    @property
+    @cached_method
+    def _sqlalchemy_engine_args(self) -> Mapping[str, Any]:
+        config = self._resolved_config_dict
+        sqlalchemy_engine_args = {}
+        if (
+            config.get("private_key", None) is not None
+            or config.get("private_key_path", None) is not None
+        ):
+            # sqlalchemy passes private key args separately, so store them in a new dict
+            sqlalchemy_engine_args["private_key"] = self._snowflake_private_key(config)
+
+        return sqlalchemy_engine_args
+
+    def _snowflake_private_key(self, config) -> bytes:
         private_key = config.get("private_key", None)
         # If the user has defined a path to a private key, we will use that.
         if config.get("private_key_path", None) is not None:
@@ -160,9 +390,9 @@ class SnowflakeConnection:
         Examples:
             .. code-block:: python
 
-                @op(required_resource_keys={"snowflake"})
-                def get_query_status(context, query_id):
-                    with context.resources.snowflake.get_connection() as conn:
+                @op
+                def get_query_status(snowflake: SnowflakeResource, query_id):
+                    with snowflake.get_connection() as conn:
                         # conn is a Snowflake Connection object or a SQLAlchemy Connection if
                         # sqlalchemy is specified as the connector in the Snowflake Resource config
 
@@ -173,19 +403,74 @@ class SnowflakeConnection:
             from snowflake.sqlalchemy import URL
             from sqlalchemy import create_engine
 
-            engine = create_engine(URL(**self.conn_args), connect_args=self.sqlalchemy_engine_args)
+            engine = create_engine(
+                URL(**self._sqlalchemy_connection_args), connect_args=self._sqlalchemy_engine_args
+            )
             conn = engine.raw_connection() if raw_conn else engine.connect()
 
             yield conn
             conn.close()
             engine.dispose()
         else:
-            conn = snowflake.connector.connect(**self.conn_args)
+            conn = snowflake.connector.connect(**self._connection_args)
 
             yield conn
             if not self.autocommit:
                 conn.commit()
             conn.close()
+
+    def get_object_to_set_on_execution_context(self) -> Any:
+        # Directly create a SnowflakeConnection here for backcompat since the SnowflakeConnection
+        # has methods this resource does not have
+        return SnowflakeConnection(
+            config=self._resolved_config_dict,
+            log=get_dagster_logger(),
+            snowflake_connection_resource=self,
+        )
+
+
+class SnowflakeConnection:
+    """A connection to Snowflake that can execute queries. In general this class should not be
+    directly instantiated, but rather used as a resource in an op or asset via the
+    :py:func:`SnowflakeResource`.
+    """
+
+    def __init__(
+        self, config: Mapping[str, str], log, snowflake_connection_resource: SnowflakeResource
+    ):
+        self.snowflake_connection_resource = snowflake_connection_resource
+        self.log = log
+
+    @public
+    @contextmanager
+    def get_connection(
+        self, raw_conn: bool = True
+    ) -> Iterator[Union[SqlDbConnection, snowflake.connector.SnowflakeConnection]]:
+        """Gets a connection to Snowflake as a context manager.
+
+        If using the execute_query, execute_queries, or load_table_from_local_parquet methods,
+        you do not need to create a connection using this context manager.
+
+        Args:
+            raw_conn (bool): If using the sqlalchemy connector, you can set raw_conn to True to create a raw
+                connection. Defaults to True.
+
+        Examples:
+            .. code-block:: python
+
+                @op(
+                    required_resource_keys={"snowflake"}
+                )
+                def get_query_status(query_id):
+                    with context.resources.snowflake.get_connection() as conn:
+                        # conn is a Snowflake Connection object or a SQLAlchemy Connection if
+                        # sqlalchemy is specified as the connector in the Snowflake Resource config
+
+                        return conn.get_query_status(query_id)
+
+        """
+        with self.snowflake_connection_resource.get_connection(raw_conn=raw_conn) as conn:
+            yield conn
 
     @public
     def execute_query(
@@ -213,9 +498,9 @@ class SnowflakeConnection:
         Examples:
             .. code-block:: python
 
-                @op(required_resource_keys={"snowflake"})
-                def drop_database(context):
-                    context.resources.snowflake.execute_query(
+                @op
+                def drop_database(snowflake: SnowflakeResource):
+                    snowflake.execute_query(
                         "DROP DATABASE IF EXISTS MY_DATABASE"
                     )
         """
@@ -265,10 +550,10 @@ class SnowflakeConnection:
         Examples:
             .. code-block:: python
 
-                @op(required_resource_keys={"snowflake"})
-                def create_fresh_database(context):
+                @op
+                def create_fresh_database(snowflake: SnowflakeResource):
                     queries = ["DROP DATABASE IF EXISTS MY_DATABASE", "CREATE DATABASE MY_DATABASE"]
-                    context.resources.snowflake.execute_queries(
+                    snowflake.execute_queries(
                         sql_queries=queries
                     )
 
@@ -310,12 +595,12 @@ class SnowflakeConnection:
                 import pyarrow as pa
                 import pyarrow.parquet as pq
 
-                @op(required_resource_keys={"snowflake"})
-                def write_parquet_file(context):
+                @op
+                def write_parquet_file(snowflake: SnowflakeResource):
                     df = pd.DataFrame({"one": [1, 2, 3], "ten": [11, 12, 13]})
                     table = pa.Table.from_pandas(df)
                     pq.write_table(table, "example.parquet')
-                    context.resources.snowflake.load_table_from_local_parquet(
+                    snowflake.load_table_from_local_parquet(
                         src="example.parquet",
                         table="MY_TABLE"
                     )
@@ -336,10 +621,10 @@ class SnowflakeConnection:
 
 
 @resource(
-    config_schema=define_snowflake_config(),
+    config_schema=SnowflakeResource.to_config_schema(),
     description="This resource is for connecting to the Snowflake data warehouse",
 )
-def snowflake_resource(context):
+def snowflake_resource(context) -> SnowflakeConnection:
     """A resource for connecting to the Snowflake data warehouse. The returned resource object is an
     instance of :py:class:`SnowflakeConnection`.
 
@@ -376,7 +661,10 @@ def snowflake_resource(context):
                 }
             )
     """
-    return SnowflakeConnection(context.resource_config, context.log)
+    snowflake_resource = SnowflakeResource.from_resource_context(context)
+    return SnowflakeConnection(
+        config=context, log=context.log, snowflake_connection_resource=snowflake_resource
+    )
 
 
 def _filter_password(args):

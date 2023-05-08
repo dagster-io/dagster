@@ -18,7 +18,7 @@ from dagster import (
 )
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
 from dagster._core.events.log import EventLogEntry
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import instance_for_test, poll_for_finished_run
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._utils import Counter, safe_tempfile_path, traced_counter
@@ -1142,6 +1142,40 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert result.data["assetNodes"][0]["partitionStats"]["numFailed"] == 2
         assert result.data["assetNodes"][0]["partitionStats"]["numMaterializing"] == 0
 
+        # in progress partitions don't count towards failed
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
+            variables={
+                "executionParams": {
+                    "selector": selector,
+                    "mode": "default",
+                    "executionMetadata": {"tags": [{"key": "dagster/partition", "value": "a"}]},
+                }
+            },
+        )
+        run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+
+        assert not result.errors
+        assert result.data
+
+        stats_result = execute_dagster_graphql(
+            graphql_context,
+            GET_PARTITION_STATS,
+            variables={"pipelineSelector": selector},
+        )
+
+        graphql_context.instance.run_launcher.terminate(run_id)
+
+        assert stats_result.data
+        assert stats_result.data["assetNodes"]
+        assert len(stats_result.data["assetNodes"]) == 1
+        assert stats_result.data["assetNodes"][0]["partitionStats"]["numPartitions"] == 4
+        assert stats_result.data["assetNodes"][0]["partitionStats"]["numMaterialized"] == 0
+        assert stats_result.data["assetNodes"][0]["partitionStats"]["numFailed"] == 1
+        assert stats_result.data["assetNodes"][0]["partitionStats"]["numMaterializing"] == 1
+
     def test_dynamic_partitions(self, graphql_context: WorkspaceRequestContext):
         traced_counter.set(Counter())
         selector = infer_pipeline_selector(graphql_context, "dynamic_partitioned_assets_job")
@@ -1486,7 +1520,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             ],
         )
         run = graphql_context.instance.get_run_by_id(run_id)
-        assert run and run.is_finished
+        assert run and run.is_success
 
         # Generate materializations with subselection of foo and baz
         run_id = _create_run(
@@ -2302,24 +2336,16 @@ class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):
 
 
 class TestCrossRepoAssetDependedBy(AllRepositoryGraphQLContextTestMatrix):
-    def test_cross_repo_assets(self, graphql_context: WorkspaceRequestContext):
-        code_location = graphql_context.get_code_location("cross_asset_repos")
-        repository = code_location.get_repository("upstream_assets_repository")
-
-        selector = {
-            "repositoryLocationName": code_location.name,
-            "repositoryName": repository.name,
-        }
+    def test_cross_repo_derived_asset_dependencies(self, graphql_context: WorkspaceRequestContext):
         result = execute_dagster_graphql(
             graphql_context,
             CROSS_REPO_ASSET_GRAPH,
-            variables={"repositorySelector": selector},
         )
         asset_nodes = result.data["assetNodes"]
-        upstream_asset = [
+        derived_asset = [
             node
             for node in asset_nodes
-            if node["id"] == 'cross_asset_repos.upstream_assets_repository.["upstream_asset"]'
+            if node["id"] == 'cross_asset_repos.upstream_assets_repository.["derived_asset"]'
         ][0]
         dependent_asset_keys = [
             {"path": ["downstream_asset1"]},
@@ -2327,7 +2353,26 @@ class TestCrossRepoAssetDependedBy(AllRepositoryGraphQLContextTestMatrix):
         ]
 
         result_dependent_keys = sorted(
-            upstream_asset["dependedByKeys"], key=lambda node: node.get("path")[0]
+            derived_asset["dependedByKeys"], key=lambda node: node.get("path")[0]
+        )
+        assert result_dependent_keys == dependent_asset_keys
+
+    def test_cross_repo_source_asset_dependencies(self, graphql_context: WorkspaceRequestContext):
+        result = execute_dagster_graphql(
+            graphql_context,
+            CROSS_REPO_ASSET_GRAPH,
+        )
+        asset_nodes = result.data["assetNodes"]
+        always_source_asset = [node for node in asset_nodes if "always_source_asset" in node["id"]][
+            0
+        ]
+        dependent_asset_keys = [
+            {"path": ["downstream_asset1"]},
+            {"path": ["downstream_asset2"]},
+        ]
+
+        result_dependent_keys = sorted(
+            always_source_asset["dependedByKeys"], key=lambda node: node.get("path")[0]
         )
         assert result_dependent_keys == dependent_asset_keys
 

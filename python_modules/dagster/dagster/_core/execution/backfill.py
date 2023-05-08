@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Mapping, NamedTuple, Optional, Sequence, Tuple
+from typing import Mapping, NamedTuple, Optional, Sequence, Union
 
 from dagster import _check as check
 from dagster._core.definitions import AssetKey
@@ -15,9 +15,14 @@ from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.storage.tags import USER_TAG
 from dagster._core.workspace.workspace import IWorkspace
 from dagster._serdes import whitelist_for_serdes
+from dagster._utils import utc_datetime_from_timestamp
 from dagster._utils.error import SerializableErrorInfo
 
-from .asset_backfill import AssetBackfillData, BackfillPartitionsStatus
+from .asset_backfill import (
+    AssetBackfillData,
+    PartitionedAssetBackfillStatus,
+    UnpartitionedAssetBackfillStatus,
+)
 
 
 @whitelist_for_serdes
@@ -134,52 +139,28 @@ class PartitionBackfill(
         else:
             return True
 
-    def get_partitions_status_counts_and_totals_by_asset(
+    def get_backfill_status_per_asset_key(
         self, workspace: IWorkspace
-    ) -> Mapping[AssetKey, Tuple[Mapping[BackfillPartitionsStatus, int], int]]:
-        """Returns a list of tuples of the form (asset_key, partitions_status_counts, total_partitions)
-        in topological order of the asset graph. Includes only partitioned assets.
+    ) -> Sequence[Union[PartitionedAssetBackfillStatus, UnpartitionedAssetBackfillStatus]]:
+        """Returns a sequence of backfill statuses for each targeted asset key in the asset graph,
+        in topological order.
         """
         if not self.is_valid_serialization(workspace):
-            return {}
+            return []
 
         if self.serialized_asset_backfill_data is not None:
             try:
                 asset_backfill_data = AssetBackfillData.from_serialized(
                     self.serialized_asset_backfill_data,
                     ExternalAssetGraph.from_workspace(workspace),
+                    self.backfill_timestamp,
                 )
             except DagsterDefinitionChangedDeserializationError:
-                return {}
+                return []
 
-            partitions_status_counts_by_asset_key = (
-                asset_backfill_data.get_partitions_status_counts_by_asset_key()
-            )
-            num_targeted_partitions_by_asset_key = (
-                asset_backfill_data.get_num_targeted_partitions_by_asset_key()
-            )
-            topological_order = (
-                asset_backfill_data.get_targeted_partitioned_asset_keys_topological_order()
-            )
-
-            check.invariant(
-                partitions_status_counts_by_asset_key.keys()
-                == num_targeted_partitions_by_asset_key.keys()
-            )
-            check.invariant(
-                set(partitions_status_counts_by_asset_key.keys()) == set(topological_order)
-            )
-
-            return {
-                asset_key: (
-                    partitions_status_counts_by_asset_key[asset_key],
-                    num_targeted_partitions_by_asset_key[asset_key],
-                )
-                for asset_key in topological_order
-            }
-
+            return asset_backfill_data.get_backfill_status_per_asset_key()
         else:
-            return {}
+            return []
 
     def get_target_root_partitions_subset(
         self, workspace: IWorkspace
@@ -192,6 +173,7 @@ class PartitionBackfill(
                 asset_backfill_data = AssetBackfillData.from_serialized(
                     self.serialized_asset_backfill_data,
                     ExternalAssetGraph.from_workspace(workspace),
+                    self.backfill_timestamp,
                 )
             except DagsterDefinitionChangedDeserializationError:
                 return None
@@ -209,6 +191,7 @@ class PartitionBackfill(
                 asset_backfill_data = AssetBackfillData.from_serialized(
                     self.serialized_asset_backfill_data,
                     ExternalAssetGraph.from_workspace(workspace),
+                    self.backfill_timestamp,
                 )
             except DagsterDefinitionChangedDeserializationError:
                 return 0
@@ -229,6 +212,7 @@ class PartitionBackfill(
                 asset_backfill_data = AssetBackfillData.from_serialized(
                     self.serialized_asset_backfill_data,
                     ExternalAssetGraph.from_workspace(workspace),
+                    self.backfill_timestamp,
                 )
             except DagsterDefinitionChangedDeserializationError:
                 return None
@@ -365,5 +349,6 @@ class PartitionBackfill(
                 asset_selection=asset_selection,
                 dynamic_partitions_store=dynamic_partitions_store,
                 all_partitions=all_partitions,
+                backfill_start_time=utc_datetime_from_timestamp(backfill_timestamp),
             ).serialize(dynamic_partitions_store=dynamic_partitions_store),
         )

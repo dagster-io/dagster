@@ -29,14 +29,14 @@ class _Job:
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         config: Optional[
-            Union[ConfigMapping, Mapping[str, Any], "RunConfig", "PartitionedConfig[object]"]
+            Union[ConfigMapping, Mapping[str, Any], "RunConfig", "PartitionedConfig"]
         ] = None,
         logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         executor_def: Optional["ExecutorDefinition"] = None,
         hooks: Optional[AbstractSet[HookDefinition]] = None,
         op_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,
-        partitions_def: Optional["PartitionsDefinition[object]"] = None,
+        partitions_def: Optional["PartitionsDefinition"] = None,
         input_values: Optional[Mapping[str, object]] = None,
     ):
         from dagster._core.definitions.run_config import convert_config_input
@@ -67,7 +67,7 @@ class _Job:
             input_mappings,
             output_mappings,
             dependencies,
-            solid_defs,
+            node_defs,
             config_mapping,
             positional_inputs,
             node_input_source_assets,
@@ -84,7 +84,7 @@ class _Job:
         graph_def = GraphDefinition(
             name=self.name,
             dependencies=dependencies,
-            node_defs=solid_defs,
+            node_defs=node_defs,
             description=self.description or format_docstring_for_description(fn),
             input_mappings=input_mappings,
             output_mappings=output_mappings,
@@ -123,7 +123,7 @@ def job(
     name: Optional[str] = ...,
     description: Optional[str] = ...,
     resource_defs: Optional[Mapping[str, object]] = ...,
-    config: Union[ConfigMapping, Mapping[str, Any], "RunConfig", "PartitionedConfig[object]"] = ...,
+    config: Union[ConfigMapping, Mapping[str, Any], "RunConfig", "PartitionedConfig"] = ...,
     tags: Optional[Mapping[str, Any]] = ...,
     metadata: Optional[Mapping[str, RawMetadataValue]] = ...,
     logger_defs: Optional[Mapping[str, LoggerDefinition]] = ...,
@@ -131,7 +131,7 @@ def job(
     hooks: Optional[AbstractSet[HookDefinition]] = ...,
     op_retry_policy: Optional[RetryPolicy] = ...,
     version_strategy: Optional[VersionStrategy] = ...,
-    partitions_def: Optional["PartitionsDefinition[object]"] = ...,
+    partitions_def: Optional["PartitionsDefinition"] = ...,
     input_values: Optional[Mapping[str, object]] = ...,
 ) -> _Job:
     ...
@@ -144,7 +144,7 @@ def job(
     description: Optional[str] = None,
     resource_defs: Optional[Mapping[str, object]] = None,
     config: Optional[
-        Union[ConfigMapping, Mapping[str, Any], "RunConfig", "PartitionedConfig[object]"]
+        Union[ConfigMapping, Mapping[str, Any], "RunConfig", "PartitionedConfig"]
     ] = None,
     tags: Optional[Mapping[str, Any]] = None,
     metadata: Optional[Mapping[str, RawMetadataValue]] = None,
@@ -153,7 +153,7 @@ def job(
     hooks: Optional[AbstractSet[HookDefinition]] = None,
     op_retry_policy: Optional[RetryPolicy] = None,
     version_strategy: Optional[VersionStrategy] = None,
-    partitions_def: Optional["PartitionsDefinition[object]"] = None,
+    partitions_def: Optional["PartitionsDefinition"] = None,
     input_values: Optional[Mapping[str, object]] = None,
 ) -> Union[JobDefinition, _Job]:
     """Creates a job with the specified parameters from the decorated graph/op invocation function.
@@ -189,7 +189,7 @@ def job(
             configuration in the standard format to configure the job.
 
             If a :py:class:`PartitionedConfig` object is provided, then it defines a discrete set of config
-            values that can parameterize the pipeline, as well as a function for mapping those
+            values that can parameterize the job, as well as a function for mapping those
             values to the base config. The values provided will be viewable and editable in the
             Dagit playground, so be careful with secrets.
         tags (Optional[Dict[str, Any]]):

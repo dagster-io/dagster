@@ -293,11 +293,11 @@ dagster-user-deployments:
         pullPolicy: Always
 
       # Arguments to `dagster api grpc`.
-      # Ex: "dagster api grpc -m dagster_test.test_project.test_pipelines.repo -a define_demo_execution_repo"
+      # Ex: "dagster api grpc -m dagster_test.test_project.test_jobs.repo -a define_demo_execution_repo"
       # would translate to:
       # dagsterApiGrpcArgs:
       #   - "-m"
-      #   - "dagster_test.test_project.test_pipelines.repo"
+      #   - "dagster_test.test_project.test_jobs.repo"
       #   - "-a"
       #   - "define_demo_execution_repo"
       dagsterApiGrpcArgs:

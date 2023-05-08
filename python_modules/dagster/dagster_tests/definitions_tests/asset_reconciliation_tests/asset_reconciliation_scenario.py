@@ -41,9 +41,11 @@ from dagster._core.definitions.observe import observe
 from dagster._core.definitions.partition import (
     PartitionsSubset,
 )
+from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.asset_backfill import AssetBackfillData
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.host_representation.origin import InProcessCodeLocationOrigin
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.test_utils import (
     InProcessTestWorkspaceLoadTarget,
     create_test_daemon_workspace_context,
@@ -68,6 +70,8 @@ class AssetReconciliationScenario(NamedTuple):
     current_time: Optional[datetime.datetime] = None
     asset_selection: Optional[AssetSelection] = None
     active_backfill_targets: Optional[Sequence[Mapping[AssetKey, PartitionsSubset]]] = None
+    dagster_runs: Optional[Sequence[DagsterRun]] = None
+    event_log_entries: Optional[Sequence[EventLogEntry]] = None
     expected_run_requests: Optional[Sequence[RunRequest]] = None
     code_locations: Optional[Mapping[str, Sequence[Union[SourceAsset, AssetsDefinition]]]] = None
 
@@ -91,11 +95,19 @@ class AssetReconciliationScenario(NamedTuple):
 
         test_time = self.current_time or pendulum.now()
 
-        with pendulum.test(test_time) if self.current_time else contextlib.nullcontext():
+        with pendulum.test(test_time):
 
             @repository
             def repo():
                 return self.assets
+
+            # add any runs to the instance
+            for dagster_run in self.dagster_runs or []:
+                instance.add_run(dagster_run)
+
+            # add any events to the instance
+            for event_log_entry in self.event_log_entries or []:
+                instance.store_event(event_log_entry)
 
             # add any backfills to the instance
             for i, target in enumerate(self.active_backfill_targets or []):
@@ -116,6 +128,7 @@ class AssetReconciliationScenario(NamedTuple):
                     materialized_subset=empty_subset,
                     requested_subset=empty_subset,
                     failed_and_downstream_subset=empty_subset,
+                    backfill_start_time=test_time,
                 )
                 backfill = PartitionBackfill(
                     backfill_id=f"backfill{i}",
@@ -141,7 +154,7 @@ class AssetReconciliationScenario(NamedTuple):
                     with_external_asset_graph=with_external_asset_graph,
                 )
                 for run_request in run_requests:
-                    instance.create_run_for_pipeline(
+                    instance.create_run_for_job(
                         prior_repo.get_implicit_job_def_for_assets(run_request.asset_selection),
                         asset_selection=set(run_request.asset_selection),
                         tags=run_request.tags,
@@ -339,7 +352,7 @@ def do_run(
 
 
 def single_asset_run(asset_key: str, partition_key: Optional[str] = None) -> RunSpec:
-    return RunSpec(asset_keys=[AssetKey.from_coerceable(asset_key)], partition_key=partition_key)
+    return RunSpec(asset_keys=[AssetKey.from_coercible(asset_key)], partition_key=partition_key)
 
 
 def run(
@@ -350,9 +363,9 @@ def run(
 ):
     return RunSpec(
         asset_keys=list(
-            map(AssetKey.from_coerceable, itertools.chain(asset_keys, failed_asset_keys or []))
+            map(AssetKey.from_coercible, itertools.chain(asset_keys, failed_asset_keys or []))
         ),
-        failed_asset_keys=list(map(AssetKey.from_coerceable, failed_asset_keys or [])),
+        failed_asset_keys=list(map(AssetKey.from_coercible, failed_asset_keys or [])),
         partition_key=partition_key,
         is_observation=is_observation,
     )

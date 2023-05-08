@@ -18,7 +18,7 @@ When [adding a code location](/dagster-cloud/managing-deployments/code-locations
 
 **Note**: If you're using the Dagster Cloud Github action, the `container_context` key can also be set for each location in your `dagster_cloud.yaml` file.
 
-The following example `dagster_cloud.yaml` file illustrates the available fields:
+The following example [`dagster_cloud.yaml`](/dagster-cloud/managing-deployments/dagster-cloud-yaml) file illustrates the available fields:
 
 ```yaml
 locations:
@@ -200,9 +200,23 @@ user_code_launcher:
   </ReferenceTableItem>
   <ReferenceTableItem
   propertyName="config.server_process_startup_timeout">
-  The amount of time, in seconds, to wait for code to import when launching a new service for a code location. If your code takes an unusually long time to load and results in timeouts in the <strong>Deployment</strong> tab, you can increase this setting above the default. <strong>Note</strong> This setting isn't applicable to the time it takes for a job to execute.
+  The amount of time, in seconds, to wait for code to import when launching a new service for a code location. If your code takes an unusually long time to load after your ECS task starts up and results in timeouts in the <strong>Deployment</strong> tab, you can increase this setting above the default. <strong>Note</strong> This setting isn't applicable to the time it takes for a job to execute.
   <ul>
   <li><strong>Default</strong> - 180 (seconds)</li>
+  </ul>
+  </ReferenceTableItem>
+  <ReferenceTableItem
+  propertyName="config.ecs_timeout">
+  How long (in seconds) to wait for ECS to spin up a new service and task for a code server. If your ECS tasks take an unusually long time to start and result in timeouts, you can increase this setting above the default.
+  <ul>
+  <li><strong>Default</strong> - 300 (seconds)</li>
+  </ul>
+  </ReferenceTableItem>
+  <ReferenceTableItem
+  propertyName="config.ecs_grace_period">
+  How long (in seconds) to continue polling if an ECS API endpoint fails during creation of a new code server (because the ECS API is eventually consistent).
+  <ul>
+  <li><strong>Default</strong> - 30 (seconds)</li>
   </ul>
   </ReferenceTableItem>
   <ReferenceTableItem

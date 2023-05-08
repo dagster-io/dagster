@@ -37,6 +37,13 @@ def get_indexes(instance, table_name: str):
     return set(c["name"] for c in inspect(instance.run_storage._engine).get_indexes(table_name))
 
 
+def get_primary_key(instance, table_name: str):
+    constraint = inspect(instance.run_storage._engine).get_pk_constraint(table_name)
+    if not constraint:
+        return None
+    return constraint.get("name")
+
+
 def get_tables(instance):
     return instance.run_storage._engine.table_names()
 
@@ -87,7 +94,7 @@ def test_0_7_6_postgres_pre_add_pipeline_snapshot(hostname, conn_string):
         run = instance.get_run_by_id(run_id)
 
         assert run.run_id == run_id
-        assert run.pipeline_snapshot_id is None
+        assert run.job_snapshot_id is None
         result = noop_job.execute_in_process(instance=instance)
 
         assert result.success
@@ -99,7 +106,7 @@ def test_0_7_6_postgres_pre_add_pipeline_snapshot(hostname, conn_string):
 
         new_run = instance.get_run_by_id(new_run_id)
 
-        assert new_run.pipeline_snapshot_id
+        assert new_run.job_snapshot_id
 
 
 def test_0_9_22_postgres_pre_asset_partition(hostname, conn_string):
@@ -289,7 +296,7 @@ def test_0_12_0_add_mode_column(hostname, conn_string):
         def noop_job():
             basic()
 
-        # Ensure that you don't get a migration required exception when running a pipeline
+        # Ensure that you don't get a migration required exception when running a job
         # pre-migration.
         result = noop_job.execute_in_process(instance=instance)
         assert result.success
@@ -329,7 +336,7 @@ def test_0_12_0_extract_asset_index_cols(hostname, conn_string):
         with DagsterInstance.from_config(tempdir) as instance:
             storage = instance._event_storage
 
-            # make sure that executing the pipeline works
+            # make sure that executing the job works
             asset_job.execute_in_process(instance=instance)
             assert storage.has_asset_key(AssetKey(["a"]))
 
@@ -383,7 +390,7 @@ def test_0_12_0_asset_observation_backcompat(hostname, conn_string):
 
             assert not storage.has_secondary_index(ASSET_KEY_INDEX_COLS)
 
-            # make sure that executing the pipeline works
+            # make sure that executing the job works
             asset_job.execute_in_process(instance=instance)
             assert storage.has_asset_key(AssetKey(["a"]))
 
@@ -447,7 +454,7 @@ def test_0_13_12_add_start_time_end_time(hostname, conn_string):
         # migration-required column.
         assert len(instance.get_runs()) == 1
 
-        # Ensure that you don't get a migration required exception when running a pipeline
+        # Ensure that you don't get a migration required exception when running a job
         # pre-migration.
         with execute_job(reconstructable(get_the_job), instance=instance) as result:
             assert result.success
@@ -865,6 +872,7 @@ def test_add_primary_keys(hostname, conn_string):
                     instance.run_storage, KeyValueStoreTable, with_non_null_id=True
                 )
             assert kvs_id_count == kvs_row_count
+            assert get_primary_key(instance, "kvs")
 
             assert "id" in get_columns(instance, "instance_info")
             with instance.run_storage.connect():
@@ -872,6 +880,7 @@ def test_add_primary_keys(hostname, conn_string):
                     instance.run_storage, InstanceInfo, with_non_null_id=True
                 )
             assert instance_info_id_count == instance_info_row_count
+            assert get_primary_key(instance, "instance_info")
 
             assert "id" in get_columns(instance, "daemon_heartbeats")
             with instance.run_storage.connect():
@@ -879,3 +888,4 @@ def test_add_primary_keys(hostname, conn_string):
                     instance.run_storage, DaemonHeartbeatsTable, with_non_null_id=True
                 )
             assert daemon_heartbeats_id_count == daemon_heartbeats_row_count
+            assert get_primary_key(instance, "daemon_heartbeats")

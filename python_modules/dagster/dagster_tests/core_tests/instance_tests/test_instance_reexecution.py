@@ -4,7 +4,7 @@ import pytest
 from dagster import DagsterInstance, job, op, reconstructable, repository
 from dagster._core.execution.api import execute_job
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import RESUME_RETRY_TAG
 from dagster._core.test_utils import (
     environ,
@@ -102,7 +102,7 @@ def test_create_reexecuted_run_from_failure(
     run = instance.create_reexecuted_run(
         parent_run=failed_run,
         code_location=code_location,
-        external_pipeline=external_job,
+        external_job=external_job,
         strategy=ReexecutionStrategy.FROM_FAILURE,
     )
 
@@ -126,7 +126,7 @@ def test_create_reexecuted_run_from_failure_tags(
     run = instance.create_reexecuted_run(
         parent_run=failed_run,
         code_location=code_location,
-        external_pipeline=external_job,
+        external_job=external_job,
         strategy=ReexecutionStrategy.FROM_FAILURE,
     )
 
@@ -136,7 +136,7 @@ def test_create_reexecuted_run_from_failure_tags(
     run = instance.create_reexecuted_run(
         parent_run=failed_run,
         code_location=code_location,
-        external_pipeline=external_job,
+        external_job=external_job,
         strategy=ReexecutionStrategy.FROM_FAILURE,
         use_parent_run_tags=True,
     )
@@ -147,7 +147,7 @@ def test_create_reexecuted_run_from_failure_tags(
     run = instance.create_reexecuted_run(
         parent_run=failed_run,
         code_location=code_location,
-        external_pipeline=external_job,
+        external_job=external_job,
         strategy=ReexecutionStrategy.FROM_FAILURE,
         use_parent_run_tags=True,
         extra_tags={"fizz": "not buzz!!"},
@@ -163,7 +163,7 @@ def test_create_reexecuted_run_all_steps(
     run = instance.create_reexecuted_run(
         parent_run=failed_run,
         code_location=code_location,
-        external_pipeline=external_job,
+        external_job=external_job,
         strategy=ReexecutionStrategy.ALL_STEPS,
     )
 

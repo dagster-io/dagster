@@ -1,6 +1,6 @@
 import graphene
 import pendulum
-from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
+from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
 
 from .pipelines.status import GrapheneRunStatus
 from .runs import GrapheneRunConfigData
@@ -53,7 +53,7 @@ class GrapheneRunsFilter(graphene.InputObjectType):
 
         return RunsFilter(
             run_ids=self.runIds if self.runIds else None,
-            pipeline_name=self.pipelineName,
+            job_name=self.pipelineName,
             tags=tags,
             statuses=statuses,
             snapshot_id=self.snapshotId,

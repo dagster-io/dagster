@@ -23,7 +23,6 @@ setup(
         "dagster-pyspark",
         "dagster-slack",
         "dagster-postgres",
-        "dbt-core",
         "dbt-duckdb",
         "dbt-snowflake",
         "duckdb!=0.3.3, <= 6.0.0",  # missing wheels

@@ -70,6 +70,12 @@ export type AssetViewDefinitionQuery = {
             __typename: 'AutoMaterializePolicy';
             policyType: Types.AutoMaterializePolicyType;
           } | null;
+          freshnessPolicy: {
+            __typename: 'FreshnessPolicy';
+            maximumLagMinutes: number;
+            cronSchedule: string | null;
+            cronScheduleTimezone: string | null;
+          } | null;
           requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
           assetKey: {__typename: 'AssetKey'; path: Array<string>};
           configField: {
@@ -15774,6 +15780,12 @@ export type AssetViewDefinitionNodeFragment = {
   autoMaterializePolicy: {
     __typename: 'AutoMaterializePolicy';
     policyType: Types.AutoMaterializePolicyType;
+  } | null;
+  freshnessPolicy: {
+    __typename: 'FreshnessPolicy';
+    maximumLagMinutes: number;
+    cronSchedule: string | null;
+    cronScheduleTimezone: string | null;
   } | null;
   requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};

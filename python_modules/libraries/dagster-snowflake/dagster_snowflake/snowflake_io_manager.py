@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from contextlib import contextmanager
-from typing import Mapping, Optional, Sequence, Type, cast
+from typing import Optional, Sequence, Type, cast
 
 from dagster import IOManagerDefinition, OutputContext, io_manager
 from dagster._config.pythonic_config import (
@@ -17,7 +17,7 @@ from dagster._core.storage.db_io_manager import (
 from pydantic import Field
 from sqlalchemy.exc import ProgrammingError
 
-from .resources import SnowflakeConnection
+from .resources import SnowflakeResource
 
 SNOWFLAKE_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
@@ -271,13 +271,8 @@ class SnowflakeDbClient(DbClient):
             if context.resource_config
             else {}
         )
-        with SnowflakeConnection(
-            dict(
-                schema=table_slice.schema,
-                connector="sqlalchemy",
-                **cast(Mapping[str, str], no_schema_config),
-            ),
-            context.log,
+        with SnowflakeResource(
+            schema=table_slice.schema, connector="sqlalchemy", **no_schema_config
         ).get_connection(raw_conn=False) as conn:
             yield conn
 

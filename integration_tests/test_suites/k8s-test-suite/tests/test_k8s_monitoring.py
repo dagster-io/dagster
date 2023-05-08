@@ -3,7 +3,7 @@ import os
 import time
 
 import pytest
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import poll_for_finished_run
 from dagster._utils.merger import merge_dicts
 from dagster._utils.yaml_utils import load_yaml_from_path
@@ -41,7 +41,7 @@ def test_k8s_run_monitoring_startup_fail(
         run_id = launch_run_over_graphql(
             dagit_url_for_k8s_run_launcher,
             run_config=run_config,
-            pipeline_name="slow_job_k8s",
+            job_name="slow_job_k8s",
             tags={
                 "dagster-k8s/config": json.dumps(
                     {
@@ -93,7 +93,7 @@ def _launch_run_and_wait_for_resume(
     run_config,
     instance,
     namespace,
-    pipeline_name="slow_job_k8s",
+    job_name="slow_job_k8s",
 ):
     run_id = None
 
@@ -101,7 +101,7 @@ def _launch_run_and_wait_for_resume(
         run_id = launch_run_over_graphql(
             dagit_url_for_k8s_run_launcher,
             run_config=run_config,
-            pipeline_name=pipeline_name,
+            job_name=job_name,
         )
 
         start_time = time.time()

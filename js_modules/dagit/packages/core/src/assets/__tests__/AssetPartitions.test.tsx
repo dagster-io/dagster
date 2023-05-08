@@ -1,6 +1,6 @@
 import {MockedProvider, MockedResponse} from '@apollo/client/testing';
 import {act, getByTestId, render, screen, waitFor} from '@testing-library/react';
-import userEvent, {specialChars} from '@testing-library/user-event';
+import userEvent from '@testing-library/user-event';
 import React from 'react';
 import {MemoryRouter, Route} from 'react-router-dom';
 
@@ -14,6 +14,8 @@ import {
   SingleDimensionTimePartitionHealthQuery,
   MultiDimensionTimeFirstPartitionHealthQuery,
 } from '../__fixtures__/PartitionHealthSummary.fixtures';
+
+jest.setTimeout(20000);
 
 // This file must be mocked because useVirtualizer tries to create a ResizeObserver,
 // and the component tree fails to mount. We still want to test whether certain partitions
@@ -77,9 +79,8 @@ describe('AssetPartitions', () => {
     });
 
     const partitionInput = screen.getByTestId('dimension-range-input');
-    await userEvent.type(partitionInput, specialChars.selectAll);
-    await userEvent.type(partitionInput, specialChars.backspace);
-    await userEvent.type(partitionInput, '[2022-11-28-20:00...2022-12-05-01:00]');
+    await userEvent.clear(partitionInput);
+    await userEvent.type(partitionInput, '{[}2022-11-28-20:00...2022-12-05-01:00{]}');
     await userEvent.tab();
 
     await waitFor(() => {
@@ -102,13 +103,12 @@ describe('AssetPartitions', () => {
       render(<SingleDimensionAssetPartitions assetKey={{path: ['single_dimension_time']}} />);
     });
 
-    await waitFor(async () => {
-      const partitionInput = screen.getByTestId('dimension-range-input');
-      await userEvent.type(partitionInput, specialChars.selectAll);
-      await userEvent.type(partitionInput, specialChars.backspace);
-      await userEvent.type(partitionInput, '[2022-11-28-20:00...2022-12-05-01:00]', {delay: 1});
-      await userEvent.tab();
+    const partitionInput = await waitFor(async () => {
+      return screen.getByTestId('dimension-range-input');
     });
+    await userEvent.clear(partitionInput);
+    await userEvent.type(partitionInput, '{[}2022-11-28-20:00...2022-12-05-01:00{]}');
+    await userEvent.tab();
 
     await waitFor(() => {
       expect(screen.getByTestId('router-search')).toHaveTextContent(
@@ -180,14 +180,19 @@ describe('AssetPartitions', () => {
       expect(screen.getByTestId('partitions-zstate')).toBeVisible();
     });
 
-    expect(
-      getByTestId(screen.getByTestId('partitions-date'), 'asset-partition-row-2023-02-05-index-0'),
-    ).toBeVisible();
-    expect(
-      getByTestId(screen.getByTestId('partitions-zstate'), 'asset-partition-row-TN-index-0'),
-    ).toBeVisible();
+    await waitFor(() => {
+      expect(
+        getByTestId(
+          screen.getByTestId('partitions-date'),
+          'asset-partition-row-2023-02-05-index-0',
+        ),
+      ).toBeVisible();
+      expect(
+        getByTestId(screen.getByTestId('partitions-zstate'), 'asset-partition-row-TN-index-0'),
+      ).toBeVisible();
+    });
 
-    userEvent.click(screen.getByTestId('sort-0'));
+    await userEvent.click(screen.getByTestId('sort-0'));
 
     await waitFor(() => {
       expect(
@@ -201,7 +206,7 @@ describe('AssetPartitions', () => {
       ).toBeVisible();
     });
 
-    userEvent.click(screen.getByTestId('sort-1'));
+    await userEvent.click(screen.getByTestId('sort-1'));
     await waitFor(() => {
       expect(
         getByTestId(screen.getByTestId('partitions-zstate'), 'asset-partition-row-WV-index-0'),

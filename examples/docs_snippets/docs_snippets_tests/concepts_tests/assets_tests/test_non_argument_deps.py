@@ -1,4 +1,4 @@
-from dagster._legacy import AssetGroup
+from dagster import materialize
 from docs_snippets.concepts.assets.non_argument_deps import (
     downstream_asset,
     upstream_asset,
@@ -6,4 +6,4 @@ from docs_snippets.concepts.assets.non_argument_deps import (
 
 
 def test_non_argument_deps():
-    AssetGroup([upstream_asset, downstream_asset]).materialize()
+    materialize([upstream_asset, downstream_asset])

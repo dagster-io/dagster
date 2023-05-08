@@ -18,7 +18,7 @@ from dagster import (
 )
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.execution.compute_logs import mirror_stream_to_file
-from dagster._core.storage.pipeline_run import DagsterRun
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._seven import json
 from dagster._utils import ensure_dir, ensure_file, touch_file
@@ -245,14 +245,12 @@ class LocalComputeLogManager(CapturedLogManager, ComputeLogManager, Configurable
     ###############################################
     @contextmanager
     def _watch_logs(
-        self, pipeline_run: DagsterRun, step_key: Optional[str] = None
+        self, dagster_run: DagsterRun, step_key: Optional[str] = None
     ) -> Iterator[None]:
-        check.inst_param(pipeline_run, "pipeline_run", DagsterRun)
+        check.inst_param(dagster_run, "dagster_run", DagsterRun)
         check.opt_str_param(step_key, "step_key")
 
-        log_key = self.build_log_key_for_run(
-            pipeline_run.run_id, step_key or pipeline_run.pipeline_name
-        )
+        log_key = self.build_log_key_for_run(dagster_run.run_id, step_key or dagster_run.job_name)
         with self.capture_logs(log_key):
             yield
 
@@ -292,24 +290,22 @@ class LocalComputeLogManager(CapturedLogManager, ComputeLogManager, Configurable
             download_url=download_url,
         )
 
-    def get_key(self, pipeline_run: DagsterRun, step_key: Optional[str]):
-        check.inst_param(pipeline_run, "pipeline_run", DagsterRun)
+    def get_key(self, dagster_run: DagsterRun, step_key: Optional[str]):
+        check.inst_param(dagster_run, "dagster_run", DagsterRun)
         check.opt_str_param(step_key, "step_key")
-        return step_key or pipeline_run.pipeline_name
+        return step_key or dagster_run.job_name
 
     def is_watch_completed(self, run_id: str, key: str) -> bool:
         log_key = self.build_log_key_for_run(run_id, key)
         return self.is_capture_complete(log_key)
 
-    def on_watch_start(self, pipeline_run: DagsterRun, step_key: Optional[str]):
+    def on_watch_start(self, dagster_run: DagsterRun, step_key: Optional[str]):
         pass
 
-    def on_watch_finish(self, pipeline_run: DagsterRun, step_key: Optional[str] = None):
-        check.inst_param(pipeline_run, "pipeline_run", DagsterRun)
+    def on_watch_finish(self, dagster_run: DagsterRun, step_key: Optional[str] = None):
+        check.inst_param(dagster_run, "dagster_run", DagsterRun)
         check.opt_str_param(step_key, "step_key")
-        log_key = self.build_log_key_for_run(
-            pipeline_run.run_id, step_key or pipeline_run.pipeline_name
-        )
+        log_key = self.build_log_key_for_run(dagster_run.run_id, step_key or dagster_run.job_name)
         touchpath = self.complete_artifact_path(log_key)
         touch_file(touchpath)
 

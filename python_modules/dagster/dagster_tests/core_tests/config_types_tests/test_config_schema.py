@@ -4,7 +4,7 @@ from dagster._check import CheckError
 from dagster._config import ConfigAnyInstance
 
 
-def test_solid_field_backcompat():
+def test_op_field_backcompat():
     @op
     def op_without_schema(_):
         pass

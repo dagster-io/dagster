@@ -6,7 +6,6 @@ import {
   AssetNodeKeyFragment,
   AssetNodeLiveFragment,
   AssetNodeLiveMaterializationFragment,
-  AssetNodeLiveFreshnessPolicyFragment,
   AssetNodeLiveFreshnessInfoFragment,
   AssetNodeLiveObservationFragment,
 } from './types/AssetNode.types';
@@ -131,7 +130,6 @@ export interface LiveDataForNode {
   runWhichFailedToMaterialize: AssetLatestInfoRunFragment | null;
   lastMaterialization: AssetNodeLiveMaterializationFragment | null;
   lastMaterializationRunStatus: RunStatus | null; // only available if runWhichFailedToMaterialize is null
-  freshnessPolicy: AssetNodeLiveFreshnessPolicyFragment | null;
   freshnessInfo: AssetNodeLiveFreshnessInfoFragment | null;
   lastObservation: AssetNodeLiveObservationFragment | null;
   staleStatus: StaleStatus | null;
@@ -154,7 +152,6 @@ export const MISSING_LIVE_DATA: LiveDataForNode = {
   inProgressRunIds: [],
   runWhichFailedToMaterialize: null,
   freshnessInfo: null,
-  freshnessPolicy: null,
   lastMaterialization: null,
   lastMaterializationRunStatus: null,
   lastObservation: null,
@@ -208,7 +205,6 @@ export const buildLiveDataForNode = (
     staleCauses: assetNode.staleCauses,
     stepKey: assetNode.opNames[0],
     freshnessInfo: assetNode.freshnessInfo,
-    freshnessPolicy: assetNode.freshnessPolicy,
     inProgressRunIds: assetLatestInfo?.inProgressRunIds || [],
     unstartedRunIds: assetLatestInfo?.unstartedRunIds || [],
     partitionStats: assetNode.partitionStats || null,

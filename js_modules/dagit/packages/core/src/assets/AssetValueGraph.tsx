@@ -1,5 +1,5 @@
 import {Colors} from '@dagster-io/ui';
-import {ActiveElement} from 'chart.js';
+import {ActiveElement, ChartEvent} from 'chart.js';
 import 'chartjs-adapter-date-fns';
 import * as React from 'react';
 import {Line} from 'react-chartjs-2';
@@ -94,7 +94,7 @@ export const AssetValueGraph: React.FC<{
         display: false,
       },
     },
-    onHover(_: MouseEvent, activeElements: ActiveElement[]) {
+    onHover(_: ChartEvent, activeElements: ActiveElement[]) {
       if (activeElements.length === 0) {
         props.onHoverX(null);
         return;
@@ -109,5 +109,5 @@ export const AssetValueGraph: React.FC<{
     },
   };
 
-  return <Line type="line" data={graphData} height={100} options={options} key={props.width} />;
+  return <Line data={graphData} height={100} options={options as any} key={props.width} />;
 };

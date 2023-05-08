@@ -20,7 +20,7 @@ from dagster._core.execution.context.logger import InitLoggerContext
 from dagster._core.execution.plan.objects import StepFailureData
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.log_manager import DagsterLogManager
-from dagster._core.storage.pipeline_run import DagsterRun
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.test_utils import instance_for_test
 from dagster._loggers import colored_console_logger, default_system_loggers, json_console_logger
 from dagster._utils.error import SerializableErrorInfo
@@ -78,7 +78,7 @@ def test_logging_basic():
     with _setup_logger("test") as (captured_results, logger):
         dl = DagsterLogManager.create(
             loggers=[logger],
-            dagster_run=DagsterRun(pipeline_name="system", run_id="123"),
+            dagster_run=DagsterRun(job_name="system", run_id="123"),
         )
         dl.debug("test")
         dl.info("test")
@@ -93,7 +93,7 @@ def test_logging_custom_log_levels():
     with _setup_logger("test", {"FOO": 3}) as (_captured_results, logger):
         dl = DagsterLogManager.create(
             loggers=[logger],
-            dagster_run=DagsterRun(pipeline_name="system", run_id="123"),
+            dagster_run=DagsterRun(job_name="system", run_id="123"),
         )
         with pytest.raises(AttributeError):
             dl.foo("test")
@@ -103,7 +103,7 @@ def test_logging_integer_log_levels():
     with _setup_logger("test", {"FOO": 3}) as (_captured_results, logger):
         dl = DagsterLogManager.create(
             loggers=[logger],
-            dagster_run=DagsterRun(pipeline_name="system", run_id="123"),
+            dagster_run=DagsterRun(job_name="system", run_id="123"),
         )
         dl.log(3, "test")
 
@@ -112,7 +112,7 @@ def test_logging_bad_custom_log_levels():
     with _setup_logger("test") as (_, logger):
         dl = DagsterLogManager.create(
             loggers=[logger],
-            dagster_run=DagsterRun(pipeline_name="system", run_id="123"),
+            dagster_run=DagsterRun(job_name="system", run_id="123"),
         )
         with pytest.raises(check.CheckError):
             dl.log(level="test", msg="foobar")
@@ -122,7 +122,7 @@ def test_multiline_logging_complex():
     msg = "DagsterEventType.STEP_FAILURE for step start.materialization.output.result.0"
     dagster_event = DagsterEvent(
         event_type_value="STEP_FAILURE",
-        pipeline_name="error_monster",
+        job_name="error_monster",
         step_key="start.materialization.output.result.0",
         node_handle=NodeHandle("start", None),
         step_kind_value="MATERIALIZATION_THUNK",
@@ -145,7 +145,7 @@ def test_multiline_logging_complex():
     with _setup_logger(DAGSTER_DEFAULT_LOGGER) as (captured_results, logger):
         dl = DagsterLogManager.create(
             loggers=[logger],
-            dagster_run=DagsterRun(run_id="123", pipeline_name="error_monster"),
+            dagster_run=DagsterRun(run_id="123", job_name="error_monster"),
         )
         dl.log_dagster_event(logging.INFO, msg, dagster_event)
 
@@ -178,7 +178,7 @@ def _setup_test_two_handler_log_mgr():
     return DagsterLogManager.create(
         loggers=[],
         handlers=[test_info_handler, test_warn_handler],
-        dagster_run=DagsterRun(pipeline_name="system", run_id="123"),
+        dagster_run=DagsterRun(job_name="system", run_id="123"),
     )
 
 
@@ -196,7 +196,7 @@ def test_handler_in_log_manager(capsys):
 
 def test_handler_in_log_manager_with_tags(capsys):
     dl = _setup_test_two_handler_log_mgr()
-    dl = dl.with_tags(**{"pipeline_name": "test_job"})
+    dl = dl.with_tags(**{"job_name": "test_job"})
 
     dl.info("test")
     dl.warning("test")
@@ -225,7 +225,7 @@ def test_capture_handler_log_records():
     dl = DagsterLogManager.create(
         loggers=[],
         handlers=[capture_handler],
-        dagster_run=DagsterRun(run_id="123456", pipeline_name="pipeline"),
+        dagster_run=DagsterRun(run_id="123456", job_name="pipeline"),
     ).with_tags(step_key="some_step")
 
     dl.info("info")
@@ -268,7 +268,7 @@ def test_colored_console_logger_with_integer_log_level():
         InitLoggerContext(
             {"name": "dagster", "log_level": 4},
             colored_console_logger,
-            pipeline_def=pipe,
+            job_def=pipe,
         )
     )
 

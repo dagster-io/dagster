@@ -72,7 +72,7 @@ class _Graph:
             input_mappings,
             output_mappings,
             dependencies,
-            solid_defs,
+            node_defs,
             config_mapping,
             positional_inputs,
             node_input_source_assets,
@@ -89,7 +89,7 @@ class _Graph:
         graph_def = GraphDefinition(
             name=self.name,
             dependencies=dependencies,
-            node_defs=solid_defs,
+            node_defs=node_defs,
             description=self.description or format_docstring_for_description(fn),
             input_mappings=input_mappings,
             output_mappings=output_mappings,

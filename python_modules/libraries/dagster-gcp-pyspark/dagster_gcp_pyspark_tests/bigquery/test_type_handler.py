@@ -166,10 +166,10 @@ def test_io_manager_with_bigquery_pyspark(spark, io_manager):
             assert df.count() == 2
 
         @job(resource_defs={"io_manager": io_manager})
-        def io_manager_test_pipeline():
+        def io_manager_test_job():
             read_pyspark_df(emit_pyspark_df())
 
-        res = io_manager_test_pipeline.execute_in_process()
+        res = io_manager_test_job.execute_in_process()
         assert res.success
 
 

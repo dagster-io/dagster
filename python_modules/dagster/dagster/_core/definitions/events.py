@@ -159,7 +159,7 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
         return {"path": self.path}
 
     @staticmethod
-    def from_coerceable(arg: "CoercibleToAssetKey") -> "AssetKey":
+    def from_coercible(arg: "CoercibleToAssetKey") -> "AssetKey":
         if isinstance(arg, AssetKey):
             return check.inst_param(arg, "arg", AssetKey)
         elif isinstance(arg, str):
@@ -632,7 +632,7 @@ class TypeCheck(
     :py:func:`as_dagster_type`, :py:func:`@usable_as_dagster_type <dagster_type>`, or the underlying
     :py:func:`PythonObjectDagsterType` API.)
 
-    Solid compute functions should generally avoid yielding events of this type to avoid confusion.
+    Op compute functions should generally avoid yielding events of this type to avoid confusion.
 
     Args:
         success (bool): ``True`` if the type check succeeded, ``False`` otherwise.

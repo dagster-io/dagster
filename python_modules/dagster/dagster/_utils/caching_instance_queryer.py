@@ -1,4 +1,5 @@
 from collections import defaultdict
+from datetime import datetime
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -11,7 +12,8 @@ from typing import (
     cast,
 )
 
-import dagster._check as check
+import pendulum
+
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.data_version import (
     DataVersion,
@@ -20,7 +22,7 @@ from dagster._core.definitions.data_version import (
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.events import DagsterEventType
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
-from dagster._core.storage.pipeline_run import (
+from dagster._core.storage.dagster_run import (
     DagsterRun,
     RunRecord,
 )
@@ -41,7 +43,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         instance (DagsterInstance): The instance to query.
     """
 
-    def __init__(self, instance: DagsterInstance):
+    def __init__(self, instance: DagsterInstance, evaluation_time: Optional[datetime] = None):
         self._instance = instance
 
         self._asset_record_cache: Dict[AssetKey, Optional[AssetRecord]] = {}
@@ -54,6 +56,8 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         ] = defaultdict(dict)
 
         self._dynamic_partitions_cache: Dict[str, Sequence[str]] = {}
+
+        self._evaluation_time = evaluation_time if evaluation_time else pendulum.now("UTC")
 
     @property
     def instance(self) -> DagsterInstance:
@@ -450,7 +454,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         """Returns True if the asset is planned to be materialized by the run."""
         run = self._get_run_by_id(run_id=run_id)
         if not run:
-            check.failed("")
+            return False
 
         if isinstance(asset, AssetKeyPartitionKey):
             asset_key = asset.asset_key
@@ -573,6 +577,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
 
         for parent in asset_graph.get_parents_partitions(
             self,
+            self._evaluation_time,
             asset_partition.asset_key,
             asset_partition.partition_key,
         ):
@@ -592,3 +597,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                 return False
 
         return True
+
+    @property
+    def evaluation_time(self) -> datetime:
+        return self._evaluation_time

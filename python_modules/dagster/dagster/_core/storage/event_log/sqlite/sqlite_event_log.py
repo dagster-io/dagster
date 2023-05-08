@@ -26,8 +26,8 @@ from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import EventHandlerFn
 from dagster._core.events import ASSET_EVENTS
 from dagster._core.events.log import EventLogEntry
+from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
 from dagster._core.storage.event_log.base import EventLogCursor, EventLogRecord, EventRecordsFilter
-from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
 from dagster._core.storage.sql import (
     AlembicVersion,
     check_alembic_revision,

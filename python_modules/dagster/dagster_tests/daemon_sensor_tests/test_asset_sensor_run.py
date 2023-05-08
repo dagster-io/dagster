@@ -1,7 +1,6 @@
 import threading
 
 import pendulum
-import pytest
 from dagster import AssetKey, materialize
 from dagster._core.scheduler.instigation import TickStatus
 from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
@@ -16,7 +15,6 @@ from .test_sensor_run import (
     e,
     evaluate_sensors,
     f,
-    get_sensor_executors,
     h,
     sleeper,
     validate_tick,
@@ -30,7 +28,6 @@ from .test_sensor_run import (
 TIMEOUT = 30
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_simple_parent_sensor(executor):
     """Asset graph:
         x
@@ -83,7 +80,7 @@ def test_simple_parent_sensor(executor):
 
             wait_for_all_runs_to_finish(instance, timeout=TIMEOUT)
             run_request = instance.get_runs(limit=1)[0]
-            assert run_request.pipeline_name == "__ASSET_JOB"
+            assert run_request.job_name == "__ASSET_JOB"
             assert run_request.asset_selection == {AssetKey("y")}
 
             freeze_datetime = freeze_datetime.add(seconds=60)
@@ -105,11 +102,10 @@ def test_simple_parent_sensor(executor):
 
             wait_for_all_runs_to_finish(instance, timeout=TIMEOUT)
             run_request = instance.get_runs(limit=1)[0]
-            assert run_request.pipeline_name == "__ASSET_JOB"
+            assert run_request.job_name == "__ASSET_JOB"
             assert run_request.asset_selection == {AssetKey("y")}
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_two_parents_AND_sensor(executor):
     r"""Asset graph:
         x   z
@@ -177,11 +173,10 @@ def test_two_parents_AND_sensor(executor):
 
             wait_for_all_runs_to_finish(instance, timeout=TIMEOUT)
             run_request = instance.get_runs(limit=1)[0]
-            assert run_request.pipeline_name == "__ASSET_JOB"
+            assert run_request.job_name == "__ASSET_JOB"
             assert run_request.asset_selection == {AssetKey("d")}
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_two_parents_OR_sensor(executor):
     r"""Asset graph:
         x   z
@@ -233,7 +228,7 @@ def test_two_parents_OR_sensor(executor):
             )
             wait_for_all_runs_to_finish(instance, timeout=TIMEOUT)
             run_request = instance.get_runs(limit=1)[0]
-            assert run_request.pipeline_name == "__ASSET_JOB"
+            assert run_request.job_name == "__ASSET_JOB"
             assert run_request.asset_selection == {AssetKey("d")}
 
             freeze_datetime = freeze_datetime.add(seconds=60)
@@ -255,11 +250,10 @@ def test_two_parents_OR_sensor(executor):
 
             wait_for_all_runs_to_finish(instance, timeout=TIMEOUT)
             run_request = instance.get_runs(limit=1)[0]
-            assert run_request.pipeline_name == "__ASSET_JOB"
+            assert run_request.job_name == "__ASSET_JOB"
             assert run_request.asset_selection == {AssetKey("d")}
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_two_downstream_OR_sensor(executor):
     r"""Asset graph:
         x   z   e
@@ -319,7 +313,7 @@ def test_two_downstream_OR_sensor(executor):
 
             wait_for_all_runs_to_finish(instance, timeout=TIMEOUT)
             run_request = instance.get_runs(limit=1)[0]
-            assert run_request.pipeline_name == "__ASSET_JOB"
+            assert run_request.job_name == "__ASSET_JOB"
             assert run_request.asset_selection == {AssetKey("d")}
 
             freeze_datetime = freeze_datetime.add(seconds=60)
@@ -343,7 +337,7 @@ def test_two_downstream_OR_sensor(executor):
 
             wait_for_all_runs_to_finish(instance, timeout=TIMEOUT)
             run_request = instance.get_runs(limit=1)[0]
-            assert run_request.pipeline_name == "__ASSET_JOB"
+            assert run_request.job_name == "__ASSET_JOB"
             assert run_request.asset_selection == {AssetKey("f")}
 
             freeze_datetime = freeze_datetime.add(seconds=60)
@@ -367,11 +361,10 @@ def test_two_downstream_OR_sensor(executor):
 
             wait_for_all_runs_to_finish(instance, timeout=TIMEOUT)
             run_request = instance.get_runs(limit=1)[0]
-            assert run_request.pipeline_name == "__ASSET_JOB"
+            assert run_request.job_name == "__ASSET_JOB"
             assert run_request.asset_selection == {AssetKey("f"), AssetKey("d")}
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_layered_sensor(executor):
     r"""Asset graph:
         x       z       e
@@ -424,11 +417,10 @@ def test_layered_sensor(executor):
 
             wait_for_all_runs_to_finish(instance, timeout=TIMEOUT)
             run_request = instance.get_runs(limit=1)[0]
-            assert run_request.pipeline_name == "__ASSET_JOB"
+            assert run_request.job_name == "__ASSET_JOB"
             assert run_request.asset_selection == {AssetKey("d"), AssetKey("f"), AssetKey("g")}
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_layered_AND_sensor_no_materialize(executor):
     r"""Asset graph:
         x       z       e
@@ -480,7 +472,6 @@ def test_layered_AND_sensor_no_materialize(executor):
             )
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_layered_OR_sensor_no_materialize(executor):
     r"""Asset graph:
         x       z       e
@@ -532,7 +523,6 @@ def test_layered_OR_sensor_no_materialize(executor):
             )
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_lots_of_materializations_sensor(executor):
     """Asset graph:
         x
@@ -572,7 +562,7 @@ def test_lots_of_materializations_sensor(executor):
 
             wait_for_all_runs_to_finish(instance, timeout=TIMEOUT)
             run_request = instance.get_runs(limit=1)[0]
-            assert run_request.pipeline_name == "__ASSET_JOB"
+            assert run_request.job_name == "__ASSET_JOB"
             assert run_request.asset_selection == {AssetKey("y")}
 
             freeze_datetime = freeze_datetime.add(seconds=60)
@@ -589,7 +579,6 @@ def test_lots_of_materializations_sensor(executor):
             )
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_many_materializations_for_one_parent_sensor(executor):
     r"""Asset graph:
         x    z
@@ -641,7 +630,7 @@ def test_many_materializations_for_one_parent_sensor(executor):
 
             wait_for_all_runs_to_finish(instance, timeout=TIMEOUT)
             run_request = instance.get_runs(limit=1)[0]
-            assert run_request.pipeline_name == "__ASSET_JOB"
+            assert run_request.job_name == "__ASSET_JOB"
             assert run_request.asset_selection == {AssetKey("y")}
 
             freeze_datetime = freeze_datetime.add(seconds=60)
@@ -663,7 +652,7 @@ def test_many_materializations_for_one_parent_sensor(executor):
 
             wait_for_all_runs_to_finish(instance, timeout=TIMEOUT)
             run_request = instance.get_runs(limit=1)[0]
-            assert run_request.pipeline_name == "__ASSET_JOB"
+            assert run_request.job_name == "__ASSET_JOB"
             assert run_request.asset_selection == {AssetKey("y")}
 
             freeze_datetime = freeze_datetime.add(seconds=60)
@@ -685,11 +674,10 @@ def test_many_materializations_for_one_parent_sensor(executor):
 
             wait_for_all_runs_to_finish(instance, timeout=TIMEOUT)
             run_request = instance.get_runs(limit=1)[0]
-            assert run_request.pipeline_name == "__ASSET_JOB"
+            assert run_request.job_name == "__ASSET_JOB"
             assert run_request.asset_selection == {AssetKey("d")}
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_two_graph_sensor(executor):
     """Asset graph:
         x   h
@@ -741,7 +729,7 @@ def test_two_graph_sensor(executor):
 
             wait_for_all_runs_to_finish(instance, timeout=TIMEOUT)
             run_request = instance.get_runs(limit=1)[0]
-            assert run_request.pipeline_name == "__ASSET_JOB"
+            assert run_request.job_name == "__ASSET_JOB"
             assert run_request.asset_selection == {AssetKey("y")}
 
             freeze_datetime = freeze_datetime.add(seconds=60)
@@ -763,11 +751,10 @@ def test_two_graph_sensor(executor):
 
             wait_for_all_runs_to_finish(instance, timeout=TIMEOUT)
             run_request = instance.get_runs(limit=1)[0]
-            assert run_request.pipeline_name == "__ASSET_JOB"
+            assert run_request.job_name == "__ASSET_JOB"
             assert run_request.asset_selection == {AssetKey("i")}
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_parent_in_progress_stops_materialization(executor):
     r"""Asset graph:
         sleeper    x
@@ -839,11 +826,10 @@ def test_parent_in_progress_stops_materialization(executor):
             )
 
             run_request = instance.get_runs(limit=1)[0]
-            assert run_request.pipeline_name == "__ASSET_JOB"
+            assert run_request.job_name == "__ASSET_JOB"
             assert run_request.asset_selection == {AssetKey("waits_on_sleep")}
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_materialization_of_parent_and_child(executor):
     """Asset graph:
         x
@@ -896,7 +882,6 @@ def test_materialization_of_parent_and_child(executor):
 ### Multi Asset Sensor Tests
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_monitor_source_asset_sensor(executor):
     """Tests a multi asset sensor that monitors an asset in another repo."""
     freeze_datetime = to_timezone(
@@ -939,10 +924,9 @@ def test_monitor_source_asset_sensor(executor):
                 TickStatus.SUCCESS,
             )
             run_request = instance.get_runs(limit=1)[0]
-            assert run_request.pipeline_name == "the_job"
+            assert run_request.job_name == "the_job"
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_with_tags(executor):
     """Asset graph:
         x
@@ -980,6 +964,6 @@ def test_with_tags(executor):
 
             wait_for_all_runs_to_finish(instance, timeout=TIMEOUT)
             run_request = instance.get_runs(limit=1)[0]
-            assert run_request.pipeline_name == "__ASSET_JOB"
+            assert run_request.job_name == "__ASSET_JOB"
             assert run_request.asset_selection == {AssetKey("y")}
             assert run_request.tags.get("hello") == "world"

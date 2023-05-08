@@ -16,11 +16,10 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._annotations import experimental
-from dagster._core.definitions import IPipeline, JobDefinition
+from dagster._core.definitions import IJob, JobDefinition
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.pipeline_base import InMemoryPipeline
-from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructablePipeline
+from dagster._core.definitions.job_base import InMemoryJob
+from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.repository_definition import RepositoryLoadData
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvariantViolationError
 from dagster._core.events import DagsterEvent, EngineEventData
@@ -32,22 +31,21 @@ from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.retries import RetryMode
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.selector import parse_step_selection
-from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.telemetry import log_dagster_event, log_repo_stats, telemetry_wrapper
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.interrupts import capture_interrupts
 from dagster._utils.merger import merge_dicts
 
-from .context_creation_pipeline import (
+from .context_creation_job import (
     ExecutionContextManager,
     PlanExecutionContextManager,
     PlanOrchestrationContextManager,
     orchestration_context_event_generator,
-    scoped_pipeline_context,
+    scoped_job_context,
 )
-from .execute_job_result import ExecuteJobResult
-from .results import PipelineExecutionResult
+from .job_execution_result import JobExecutionResult
 
 ## Brief guide to the execution APIs
 # | function name               | operates over      | sync  | supports    | creates new DagsterRun  |
@@ -67,12 +65,12 @@ from .results import PipelineExecutionResult
 
 
 def execute_run_iterator(
-    pipeline: IPipeline,
+    job: IJob,
     dagster_run: DagsterRun,
     instance: DagsterInstance,
     resume_from_failure: bool = False,
 ) -> Iterator[DagsterEvent]:
-    check.inst_param(pipeline, "pipeline", IPipeline)
+    check.inst_param(job, "job", IJob)
     check.inst_param(dagster_run, "dagster_run", DagsterRun)
     check.inst_param(instance, "instance", DagsterInstance)
 
@@ -115,7 +113,7 @@ def execute_run_iterator(
                 def gen_fail_restarted_run_worker():
                     yield instance.report_engine_event(
                         (
-                            f"{dagster_run.pipeline_name} ({dagster_run.run_id}) started a new"
+                            f"{dagster_run.job_name} ({dagster_run.run_id}) started a new"
                             f" run worker while the run was already in state {dagster_run.status}."
                             " This most frequently happens when the run worker unexpectedly stops"
                             " and is restarted by the cluster. Marking the run as failed."
@@ -133,7 +131,7 @@ def execute_run_iterator(
             desc=(
                 "Run of {} ({}) in state {}, expected STARTED or STARTING because it's "
                 "resuming from a run worker failure".format(
-                    dagster_run.pipeline_name, dagster_run.run_id, dagster_run.status
+                    dagster_run.job_name, dagster_run.run_id, dagster_run.status
                 )
             ),
         )
@@ -142,22 +140,24 @@ def execute_run_iterator(
         # when `execute_run_iterator` is directly called, the sub pipeline hasn't been created
         # note that when we receive the solids to execute via DagsterRun, it won't support
         # solid selection query syntax
-        pipeline = pipeline.subset_for_execution_from_existing_pipeline(
-            frozenset(dagster_run.solids_to_execute) if dagster_run.solids_to_execute else None,
+        job = job.get_subset(
+            op_selection=list(dagster_run.solids_to_execute)
+            if dagster_run.solids_to_execute
+            else None,
             asset_selection=dagster_run.asset_selection,
         )
 
-    execution_plan = _get_execution_plan_from_run(pipeline, dagster_run, instance)
-    if isinstance(pipeline, ReconstructablePipeline):
-        pipeline = pipeline.with_repository_load_data(execution_plan.repository_load_data)
+    execution_plan = _get_execution_plan_from_run(job, dagster_run, instance)
+    if isinstance(job, ReconstructableJob):
+        job = job.with_repository_load_data(execution_plan.repository_load_data)
 
     return iter(
         ExecuteRunWithPlanIterable(
             execution_plan=execution_plan,
-            iterator=pipeline_execution_iterator,
+            iterator=job_execution_iterator,
             execution_context_manager=PlanOrchestrationContextManager(
                 context_event_generator=orchestration_context_event_generator,
-                pipeline=pipeline,
+                job=job,
                 execution_plan=execution_plan,
                 dagster_run=dagster_run,
                 instance=instance,
@@ -172,26 +172,26 @@ def execute_run_iterator(
 
 
 def execute_run(
-    pipeline: IPipeline,
+    job: IJob,
     dagster_run: DagsterRun,
     instance: DagsterInstance,
     raise_on_error: bool = False,
-) -> PipelineExecutionResult:
-    """Executes an existing pipeline run synchronously.
+) -> JobExecutionResult:
+    """Executes an existing job run synchronously.
 
     Synchronous version of execute_run_iterator.
 
     Args:
-        pipeline (IPipeline): The pipeline to execute.
+        job (IJob): The pipeline to execute.
         dagster_run (DagsterRun): The run to execute
         instance (DagsterInstance): The instance in which the run has been created.
         raise_on_error (Optional[bool]): Whether or not to raise exceptions when they occur.
             Defaults to ``False``.
 
     Returns:
-        PipelineExecutionResult: The result of the execution.
+        JobExecutionResult: The result of the execution.
     """
-    if isinstance(pipeline, JobDefinition):
+    if isinstance(job, JobDefinition):
         raise DagsterInvariantViolationError(
             "execute_run requires a reconstructable job but received job definition directly"
             " instead. To support hand-off to other processes please wrap your definition in a call"
@@ -199,7 +199,7 @@ def execute_run(
             " https://docs.dagster.io/_apidocs/execution#dagster.reconstructable"
         )
 
-    check.inst_param(pipeline, "pipeline", IPipeline)
+    check.inst_param(job, "job", IJob)
     check.inst_param(dagster_run, "dagster_run", DagsterRun)
     check.inst_param(instance, "instance", DagsterInstance)
 
@@ -215,30 +215,32 @@ def execute_run(
         dagster_run.status == DagsterRunStatus.NOT_STARTED
         or dagster_run.status == DagsterRunStatus.STARTING,
         desc="Run {} ({}) in state {}, expected NOT_STARTED or STARTING".format(
-            dagster_run.pipeline_name, dagster_run.run_id, dagster_run.status
+            dagster_run.job_name, dagster_run.run_id, dagster_run.status
         ),
     )
     if dagster_run.solids_to_execute or dagster_run.asset_selection:
-        # when `execute_run` is directly called, the sub pipeline hasn't been created
+        # when `execute_run` is directly called, the sub job hasn't been created
         # note that when we receive the solids to execute via DagsterRun, it won't support
         # solid selection query syntax
-        pipeline = pipeline.subset_for_execution_from_existing_pipeline(
-            frozenset(dagster_run.solids_to_execute) if dagster_run.solids_to_execute else None,
-            dagster_run.asset_selection,
+        job = job.get_subset(
+            op_selection=list(dagster_run.solids_to_execute)
+            if dagster_run.solids_to_execute
+            else None,
+            asset_selection=dagster_run.asset_selection,
         )
 
-    execution_plan = _get_execution_plan_from_run(pipeline, dagster_run, instance)
-    if isinstance(pipeline, ReconstructablePipeline):
-        pipeline = pipeline.with_repository_load_data(execution_plan.repository_load_data)
+    execution_plan = _get_execution_plan_from_run(job, dagster_run, instance)
+    if isinstance(job, ReconstructableJob):
+        job = job.with_repository_load_data(execution_plan.repository_load_data)
 
     output_capture: Optional[Dict[StepOutputHandle, Any]] = {}
 
     _execute_run_iterable = ExecuteRunWithPlanIterable(
         execution_plan=execution_plan,
-        iterator=pipeline_execution_iterator,
+        iterator=job_execution_iterator,
         execution_context_manager=PlanOrchestrationContextManager(
             context_event_generator=orchestration_context_event_generator,
-            pipeline=pipeline,
+            job=job,
             execution_plan=execution_plan,
             dagster_run=dagster_run,
             instance=instance,
@@ -250,18 +252,20 @@ def execute_run(
     )
     event_list = list(_execute_run_iterable)
 
-    return PipelineExecutionResult(
-        pipeline.get_definition(),
-        dagster_run.run_id,
-        event_list,
-        lambda: scoped_pipeline_context(  # type: ignore
+    # We need to reload the run object after execution for it to be accurate
+    reloaded_dagster_run = check.not_none(instance.get_run_by_id(dagster_run.run_id))
+
+    return JobExecutionResult(
+        job.get_definition(),
+        scoped_job_context(
             execution_plan,
-            pipeline,
-            dagster_run.run_config,
-            dagster_run,
+            job,
+            reloaded_dagster_run.run_config,
+            reloaded_dagster_run,
             instance,
         ),
-        output_capture=output_capture,
+        event_list,
+        reloaded_dagster_run,
     )
 
 
@@ -322,7 +326,6 @@ class ReexecutionOptions(NamedTuple):
         return ReexecutionOptions(parent_run_id=run_id, step_selection=step_keys_to_execute)
 
 
-@experimental
 def execute_job(
     job: ReconstructableJob,
     instance: "DagsterInstance",
@@ -332,7 +335,7 @@ def execute_job(
     op_selection: Optional[Sequence[str]] = None,
     reexecution_options: Optional[ReexecutionOptions] = None,
     asset_selection: Optional[Sequence[AssetKey]] = None,
-) -> ExecuteJobResult:
+) -> JobExecutionResult:
     """Execute a job synchronously.
 
     This API represents dagster's python entrypoint for out-of-process
@@ -425,7 +428,7 @@ def execute_job(
     Returns:
       :py:class:`JobExecutionResult`: The result of job execution.
     """
-    check.inst_param(job, "job", ReconstructablePipeline)
+    check.inst_param(job, "job", ReconstructableJob)
     check.inst_param(instance, "instance", DagsterInstance)
     check.opt_sequence_param(asset_selection, "asset_selection", of_type=AssetKey)
 
@@ -441,7 +444,7 @@ def execute_job(
         if run_config is None:
             run = check.not_none(instance.get_run_by_id(reexecution_options.parent_run_id))
             run_config = run.run_config
-        result = _reexecute_job(
+        return _reexecute_job(
             job_arg=job_def,
             parent_run_id=reexecution_options.parent_run_id,
             run_config=run_config,
@@ -451,7 +454,7 @@ def execute_job(
             raise_on_error=raise_on_error,
         )
     else:
-        result = _logged_execute_job(
+        return _logged_execute_job(
             job_arg=job_def,
             instance=instance,
             run_config=run_config,
@@ -461,25 +464,17 @@ def execute_job(
             asset_selection=asset_selection,
         )
 
-    # We use PipelineExecutionResult to construct the JobExecutionResult.
-    return ExecuteJobResult(
-        job_def=cast(ReconstructableJob, job_def).get_definition(),
-        reconstruct_context=result.reconstruct_context(),
-        event_list=result.event_list,
-        dagster_run=instance.get_run_by_id(result.run_id),
-    )
-
 
 @telemetry_wrapper
 def _logged_execute_job(
-    job_arg: Union[IPipeline, JobDefinition],
+    job_arg: Union[IJob, JobDefinition],
     instance: DagsterInstance,
     run_config: Optional[Mapping[str, object]] = None,
     tags: Optional[Mapping[str, str]] = None,
     op_selection: Optional[Sequence[str]] = None,
     raise_on_error: bool = True,
     asset_selection: Optional[Sequence[AssetKey]] = None,
-) -> PipelineExecutionResult:
+) -> JobExecutionResult:
     check.inst_param(instance, "instance", DagsterInstance)
 
     job_arg, repository_load_data = _job_with_repository_load_data(job_arg)
@@ -497,15 +492,15 @@ def _logged_execute_job(
         op_selection=op_selection,
     )
 
-    log_repo_stats(instance=instance, pipeline=job_arg, source="execute_pipeline")
+    log_repo_stats(instance=instance, job=job_arg, source="execute_pipeline")
 
-    dagster_run = instance.create_run_for_pipeline(
-        pipeline_def=job_arg.get_definition(),
+    dagster_run = instance.create_run_for_job(
+        job_def=job_arg.get_definition(),
         run_config=run_config,
         solid_selection=op_selection,
         solids_to_execute=solids_to_execute,
         tags=tags,
-        pipeline_code_origin=(
+        job_code_origin=(
             job_arg.get_python_origin() if isinstance(job_arg, ReconstructableJob) else None
         ),
         repository_load_data=repository_load_data,
@@ -521,14 +516,14 @@ def _logged_execute_job(
 
 
 def _reexecute_job(
-    job_arg: Union[IPipeline, JobDefinition],
+    job_arg: Union[IJob, JobDefinition],
     parent_run_id: str,
     run_config: Optional[Mapping[str, object]] = None,
     step_selection: Optional[Sequence[str]] = None,
     tags: Optional[Mapping[str, str]] = None,
     instance: Optional[DagsterInstance] = None,
     raise_on_error: bool = True,
-) -> PipelineExecutionResult:
+) -> JobExecutionResult:
     """Reexecute an existing job run."""
     check.opt_sequence_param(step_selection, "step_selection", of_type=str)
 
@@ -563,12 +558,12 @@ def _reexecute_job(
             )
 
         if parent_dagster_run.asset_selection:
-            job_arg = job_arg.subset_for_execution(
-                solid_selection=None, asset_selection=parent_dagster_run.asset_selection
+            job_arg = job_arg.get_subset(
+                op_selection=None, asset_selection=parent_dagster_run.asset_selection
             )
 
-        dagster_run = execute_instance.create_run_for_pipeline(
-            pipeline_def=job_arg.get_definition(),
+        dagster_run = execute_instance.create_run_for_job(
+            job_def=job_arg.get_definition(),
             execution_plan=execution_plan,
             run_config=run_config,
             tags=tags,
@@ -577,7 +572,7 @@ def _reexecute_job(
             solids_to_execute=parent_dagster_run.solids_to_execute,
             root_run_id=parent_dagster_run.root_run_id or parent_dagster_run.run_id,
             parent_run_id=parent_dagster_run.run_id,
-            pipeline_code_origin=(
+            job_code_origin=(
                 job_arg.get_python_origin() if isinstance(job_arg, ReconstructableJob) else None
             ),
             repository_load_data=repository_load_data,
@@ -594,28 +589,28 @@ def _reexecute_job(
 
 def execute_plan_iterator(
     execution_plan: ExecutionPlan,
-    pipeline: IPipeline,
+    job: IJob,
     dagster_run: DagsterRun,
     instance: DagsterInstance,
     retry_mode: Optional[RetryMode] = None,
     run_config: Optional[Mapping[str, object]] = None,
 ) -> Iterator[DagsterEvent]:
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
-    check.inst_param(pipeline, "pipeline", IPipeline)
+    check.inst_param(job, "job", IJob)
     check.inst_param(dagster_run, "dagster_run", DagsterRun)
     check.inst_param(instance, "instance", DagsterInstance)
     retry_mode = check.opt_inst_param(retry_mode, "retry_mode", RetryMode, RetryMode.DISABLED)
     run_config = check.opt_mapping_param(run_config, "run_config")
 
-    if isinstance(pipeline, ReconstructablePipeline):
-        pipeline = pipeline.with_repository_load_data(execution_plan.repository_load_data)
+    if isinstance(job, ReconstructableJob):
+        job = job.with_repository_load_data(execution_plan.repository_load_data)
 
     return iter(
         ExecuteRunWithPlanIterable(
             execution_plan=execution_plan,
             iterator=inner_plan_execution_iterator,
             execution_context_manager=PlanExecutionContextManager(
-                pipeline=pipeline,
+                job=job,
                 retry_mode=retry_mode,
                 execution_plan=execution_plan,
                 run_config=run_config,
@@ -628,17 +623,17 @@ def execute_plan_iterator(
 
 def execute_plan(
     execution_plan: ExecutionPlan,
-    pipeline: IPipeline,
+    job: IJob,
     instance: DagsterInstance,
     dagster_run: DagsterRun,
     run_config: Optional[Mapping[str, object]] = None,
     retry_mode: Optional[RetryMode] = None,
 ) -> Sequence[DagsterEvent]:
     """This is the entry point of dagster-graphql executions. For the dagster CLI entry point, see
-    execute_pipeline() above.
+    execute_job() above.
     """
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
-    check.inst_param(pipeline, "pipeline", IPipeline)
+    check.inst_param(job, "job", IJob)
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(dagster_run, "dagster_run", DagsterRun)
     run_config = check.opt_mapping_param(run_config, "run_config")
@@ -647,7 +642,7 @@ def execute_plan(
     return list(
         execute_plan_iterator(
             execution_plan=execution_plan,
-            pipeline=pipeline,
+            job=job,
             run_config=run_config,
             dagster_run=dagster_run,
             instance=instance,
@@ -656,17 +651,17 @@ def execute_plan(
     )
 
 
-def _check_pipeline(job_arg: Union[JobDefinition, IPipeline]) -> IPipeline:
+def _check_job(job_arg: Union[JobDefinition, IJob]) -> IJob:
     # backcompat
     if isinstance(job_arg, JobDefinition):
-        job_arg = InMemoryPipeline(job_arg)
+        job_arg = InMemoryJob(job_arg)
 
-    check.inst_param(job_arg, "job_arg", IPipeline)
+    check.inst_param(job_arg, "job_arg", IJob)
     return job_arg
 
 
 def _get_execution_plan_from_run(
-    pipeline: IPipeline,
+    job: IJob,
     dagster_run: DagsterRun,
     instance: DagsterInstance,
 ) -> ExecutionPlan:
@@ -680,16 +675,16 @@ def _get_execution_plan_from_run(
     if (
         execution_plan_snapshot is not None
         and execution_plan_snapshot.can_reconstruct_plan
-        and pipeline.solids_to_execute == dagster_run.solids_to_execute
-        and pipeline.asset_selection == dagster_run.asset_selection
+        and job.solids_to_execute == dagster_run.solids_to_execute
+        and job.asset_selection == dagster_run.asset_selection
     ):
         return ExecutionPlan.rebuild_from_snapshot(
-            dagster_run.pipeline_name,
+            dagster_run.job_name,
             execution_plan_snapshot,
         )
 
     return create_execution_plan(
-        pipeline,
+        job,
         run_config=dagster_run.run_config,
         step_keys_to_execute=dagster_run.step_keys_to_execute,
         instance_ref=instance.get_ref() if instance.is_persistent else None,
@@ -703,7 +698,7 @@ def _get_execution_plan_from_run(
 
 
 def create_execution_plan(
-    pipeline: Union[IPipeline, JobDefinition],
+    job: Union[IJob, JobDefinition],
     run_config: Optional[Mapping[str, object]] = None,
     step_keys_to_execute: Optional[Sequence[str]] = None,
     known_state: Optional[KnownExecutionState] = None,
@@ -711,14 +706,14 @@ def create_execution_plan(
     tags: Optional[Mapping[str, str]] = None,
     repository_load_data: Optional[RepositoryLoadData] = None,
 ) -> ExecutionPlan:
-    pipeline = _check_pipeline(pipeline)
+    job = _check_job(job)
 
     # If you have repository_load_data, make sure to use it when building plan
-    if isinstance(pipeline, ReconstructablePipeline) and repository_load_data is not None:
-        pipeline = pipeline.with_repository_load_data(repository_load_data)
+    if isinstance(job, ReconstructableJob) and repository_load_data is not None:
+        job = job.with_repository_load_data(repository_load_data)
 
-    pipeline_def = pipeline.get_definition()
-    check.inst_param(pipeline_def, "pipeline_def", JobDefinition)
+    job_def = job.get_definition()
+    check.inst_param(job_def, "job_def", JobDefinition)
     run_config = check.opt_mapping_param(run_config, "run_config", key_type=str)
     check.opt_nullable_sequence_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
     check.opt_inst_param(instance_ref, "instance_ref", InstanceRef)
@@ -733,10 +728,10 @@ def create_execution_plan(
         repository_load_data, "repository_load_data", RepositoryLoadData
     )
 
-    resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config)
+    resolved_run_config = ResolvedRunConfig.build(job_def, run_config)
 
     return ExecutionPlan.build(
-        pipeline,
+        job,
         resolved_run_config,
         step_keys_to_execute=step_keys_to_execute,
         known_state=known_state,
@@ -746,8 +741,8 @@ def create_execution_plan(
     )
 
 
-def pipeline_execution_iterator(
-    pipeline_context: PlanOrchestrationContext, execution_plan: ExecutionPlan
+def job_execution_iterator(
+    job_context: PlanOrchestrationContext, execution_plan: ExecutionPlan
 ) -> Iterator[DagsterEvent]:
     """A complete execution of a pipeline. Yields pipeline start, success,
     and failure events.
@@ -757,58 +752,58 @@ def pipeline_execution_iterator(
         execution_plan (ExecutionPlan):
     """
     # TODO: restart event?
-    if not pipeline_context.resume_from_failure:
-        yield DagsterEvent.pipeline_start(pipeline_context)
+    if not job_context.resume_from_failure:
+        yield DagsterEvent.job_start(job_context)
 
-    pipeline_exception_info = None
-    pipeline_canceled_info = None
+    job_exception_info = None
+    job_canceled_info = None
     failed_steps = []
     generator_closed = False
     try:
-        for event in pipeline_context.executor.execute(pipeline_context, execution_plan):
+        for event in job_context.executor.execute(job_context, execution_plan):
             if event.is_step_failure:
                 failed_steps.append(event.step_key)
             elif event.is_resource_init_failure and event.step_key:
                 failed_steps.append(event.step_key)
 
             # Telemetry
-            log_dagster_event(event, pipeline_context)
+            log_dagster_event(event, job_context)
 
             yield event
     except GeneratorExit:
         # Shouldn't happen, but avoid runtime-exception in case this generator gets GC-ed
         # (see https://amir.rachum.com/blog/2017/03/03/generator-cleanup/).
         generator_closed = True
-        pipeline_exception_info = serializable_error_info_from_exc_info(sys.exc_info())
-        if pipeline_context.raise_on_error:
+        job_exception_info = serializable_error_info_from_exc_info(sys.exc_info())
+        if job_context.raise_on_error:
             raise
     except (KeyboardInterrupt, DagsterExecutionInterruptedError):
-        pipeline_canceled_info = serializable_error_info_from_exc_info(sys.exc_info())
-        if pipeline_context.raise_on_error:
+        job_canceled_info = serializable_error_info_from_exc_info(sys.exc_info())
+        if job_context.raise_on_error:
             raise
     except BaseException:
-        pipeline_exception_info = serializable_error_info_from_exc_info(sys.exc_info())
-        if pipeline_context.raise_on_error:
+        job_exception_info = serializable_error_info_from_exc_info(sys.exc_info())
+        if job_context.raise_on_error:
             raise  # finally block will run before this is re-raised
     finally:
-        if pipeline_canceled_info:
-            reloaded_run = pipeline_context.instance.get_run_by_id(pipeline_context.run_id)
+        if job_canceled_info:
+            reloaded_run = job_context.instance.get_run_by_id(job_context.run_id)
             if reloaded_run and reloaded_run.status == DagsterRunStatus.CANCELING:
-                event = DagsterEvent.pipeline_canceled(pipeline_context, pipeline_canceled_info)
+                event = DagsterEvent.job_canceled(job_context, job_canceled_info)
             elif reloaded_run and reloaded_run.status == DagsterRunStatus.CANCELED:
                 # This happens if the run was force-terminated but was still able to send
                 # a cancellation request
                 event = DagsterEvent.engine_event(
-                    pipeline_context,
+                    job_context,
                     (
                         "Computational resources were cleaned up after the run was forcibly marked"
                         " as canceled."
                     ),
                     EngineEventData(),
                 )
-            elif pipeline_context.instance.run_will_resume(pipeline_context.run_id):
+            elif job_context.instance.run_will_resume(job_context.run_id):
                 event = DagsterEvent.engine_event(
-                    pipeline_context,
+                    job_context,
                     (
                         "Execution was interrupted unexpectedly. No user initiated termination"
                         " request was found, not treating as failure because run will be resumed."
@@ -817,32 +812,32 @@ def pipeline_execution_iterator(
                 )
             elif reloaded_run and reloaded_run.status == DagsterRunStatus.FAILURE:
                 event = DagsterEvent.engine_event(
-                    pipeline_context,
+                    job_context,
                     "Execution was interrupted for a run that was already in a failure state.",
                     EngineEventData(),
                 )
             else:
-                event = DagsterEvent.pipeline_failure(
-                    pipeline_context,
+                event = DagsterEvent.job_failure(
+                    job_context,
                     (
                         "Execution was interrupted unexpectedly. "
                         "No user initiated termination request was found, treating as failure."
                     ),
-                    pipeline_canceled_info,
+                    job_canceled_info,
                 )
-        elif pipeline_exception_info:
-            event = DagsterEvent.pipeline_failure(
-                pipeline_context,
+        elif job_exception_info:
+            event = DagsterEvent.job_failure(
+                job_context,
                 "An exception was thrown during execution.",
-                pipeline_exception_info,
+                job_exception_info,
             )
         elif failed_steps:
-            event = DagsterEvent.pipeline_failure(
-                pipeline_context,
+            event = DagsterEvent.job_failure(
+                job_context,
                 f"Steps failed: {failed_steps}.",
             )
         else:
-            event = DagsterEvent.pipeline_success(pipeline_context)
+            event = DagsterEvent.job_success(job_context)
         if not generator_closed:
             yield event
 
@@ -851,7 +846,7 @@ class ExecuteRunWithPlanIterable:
     """Utility class to consolidate execution logic.
 
     This is a class and not a function because, e.g., in constructing a `scoped_pipeline_context`
-    for `PipelineExecutionResult`, we need to pull out the `pipeline_context` after we're done
+    for `JobExecutionResult`, we need to pull out the `pipeline_context` after we're done
     yielding events. This broadly follows a pattern we make use of in other places,
     cf. `dagster._utils.EventGenerationManager`.
     """
@@ -868,7 +863,7 @@ class ExecuteRunWithPlanIterable:
             execution_context_manager, "execution_context_manager", ExecutionContextManager
         )
 
-        self.pipeline_context = None
+        self.job_context = None
 
     def __iter__(self) -> Iterator[DagsterEvent]:
         # Since interrupts can't be raised at arbitrary points safely, delay them until designated
@@ -878,13 +873,13 @@ class ExecuteRunWithPlanIterable:
         # process that performs the execution.
         with capture_interrupts():
             yield from self.execution_context_manager.prepare_context()
-            self.pipeline_context = self.execution_context_manager.get_context()
+            self.job_context = self.execution_context_manager.get_context()
             generator_closed = False
             try:
-                if self.pipeline_context:  # False if we had a pipeline init failure
+                if self.job_context:  # False if we had a pipeline init failure
                     yield from self.iterator(
                         execution_plan=self.execution_plan,
-                        pipeline_context=self.pipeline_context,
+                        job_context=self.job_context,
                     )
             except GeneratorExit:
                 # Shouldn't happen, but avoid runtime-exception in case this generator gets GC-ed
@@ -898,18 +893,18 @@ class ExecuteRunWithPlanIterable:
 
 
 def _check_execute_job_args(
-    job_arg: Union[JobDefinition, IPipeline],
+    job_arg: Union[JobDefinition, IJob],
     run_config: Optional[Mapping[str, object]],
     tags: Optional[Mapping[str, str]],
     op_selection: Optional[Sequence[str]] = None,
 ) -> Tuple[
-    IPipeline,
+    IJob,
     Optional[Mapping],
     Mapping[str, str],
     Optional[AbstractSet[str]],
     Optional[Sequence[str]],
 ]:
-    job_arg = _check_pipeline(job_arg)
+    job_arg = _check_job(job_arg)
     job_def = job_arg.get_definition()
     check.inst_param(job_def, "job_def", JobDefinition)
 
@@ -920,9 +915,9 @@ def _check_execute_job_args(
 
     tags = merge_dicts(job_def.tags, tags)
 
-    # generate pipeline subset from the given solid_selection
+    # generate job subset from the given solid_selection
     if op_selection:
-        job_arg = job_arg.subset_for_execution(op_selection)
+        job_arg = job_arg.get_subset(op_selection=op_selection)
 
     return (
         job_arg,
@@ -935,24 +930,24 @@ def _check_execute_job_args(
 
 def _resolve_reexecute_step_selection(
     instance: DagsterInstance,
-    pipeline: IPipeline,
+    job: IJob,
     run_config: Optional[Mapping],
     parent_dagster_run: DagsterRun,
     step_selection: Sequence[str],
 ) -> ExecutionPlan:
     if parent_dagster_run.solid_selection:
-        pipeline = pipeline.subset_for_execution(parent_dagster_run.solid_selection, None)
+        job = job.get_subset(op_selection=parent_dagster_run.solid_selection)
 
     state = KnownExecutionState.build_for_reexecution(instance, parent_dagster_run)
 
     parent_plan = create_execution_plan(
-        pipeline,
+        job,
         parent_dagster_run.run_config,
         known_state=state,
     )
     step_keys_to_execute = parse_step_selection(parent_plan.get_all_step_deps(), step_selection)
     execution_plan = create_execution_plan(
-        pipeline,
+        job,
         run_config,
         step_keys_to_execute=list(step_keys_to_execute),
         known_state=state.update_for_step_selection(step_keys_to_execute),
@@ -962,13 +957,13 @@ def _resolve_reexecute_step_selection(
 
 
 def _job_with_repository_load_data(
-    job_arg: Union[JobDefinition, IPipeline],
-) -> Tuple[Union[JobDefinition, IPipeline], Optional[RepositoryLoadData]]:
-    """For ReconstructablePipeline, generate and return any required RepositoryLoadData, alongside
-    a ReconstructablePipeline with this repository load data baked in.
+    job_arg: Union[JobDefinition, IJob],
+) -> Tuple[Union[JobDefinition, IJob], Optional[RepositoryLoadData]]:
+    """For ReconstructableJob, generate and return any required RepositoryLoadData, alongside
+    a ReconstructableJob with this repository load data baked in.
     """
-    if isinstance(job_arg, ReconstructablePipeline):
-        # Unless this ReconstructablePipeline alread has repository_load_data attached, this will
+    if isinstance(job_arg, ReconstructableJob):
+        # Unless this ReconstructableJob alread has repository_load_data attached, this will
         # force the repository_load_data to be computed from scratch.
         repository_load_data = job_arg.repository.get_definition().repository_load_data
         return job_arg.with_repository_load_data(repository_load_data), repository_load_data

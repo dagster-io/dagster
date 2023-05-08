@@ -21,11 +21,11 @@ from dagster._core.events import (
     DagsterEvent,
     StepMaterializationData,
 )
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.partition_status_cache import (
     AssetStatusCacheValue,
     get_and_update_asset_status_cache_value,
 )
-from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.test_utils import create_run_for_test, instance_for_test
 from dagster._utils import Counter, traced_counter
 

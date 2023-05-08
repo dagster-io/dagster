@@ -8,7 +8,7 @@ from dagster._core.definitions.reconstruct import reconstructable
 from dagster._core.errors import DagsterUnmetExecutorRequirementsError
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.context.system import PlanData, PlanOrchestrationContext
-from dagster._core.execution.context_creation_pipeline import create_context_free_log_manager
+from dagster._core.execution.context_creation_job import create_context_free_log_manager
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.init import InitExecutorContext
 from dagster._core.executor.step_delegating.step_handler.base import StepHandlerContext
@@ -144,7 +144,7 @@ def test_requires_k8s_launcher_fail():
             execute_job(reconstructable(bar), instance=instance, raise_on_error=True)
 
 
-def _get_executor(instance, pipeline, executor_config=None):
+def _get_executor(instance, job_def, executor_config=None):
     process_result = process_config(
         resolve_to_config_type(_K8S_EXECUTOR_CONFIG_SCHEMA),
         executor_config or {},
@@ -153,7 +153,7 @@ def _get_executor(instance, pipeline, executor_config=None):
 
     return k8s_job_executor.executor_creation_fn(
         InitExecutorContext(
-            job=pipeline,
+            job=job_def,
             executor_def=k8s_job_executor,
             executor_config=process_result.value,
             instance=instance,
@@ -161,14 +161,14 @@ def _get_executor(instance, pipeline, executor_config=None):
     )
 
 
-def _step_handler_context(pipeline, pipeline_run, instance, executor):
-    execution_plan = create_execution_plan(pipeline)
-    log_manager = create_context_free_log_manager(instance, pipeline_run)
+def _step_handler_context(job_def, dagster_run, instance, executor):
+    execution_plan = create_execution_plan(job_def)
+    log_manager = create_context_free_log_manager(instance, dagster_run)
 
     plan_context = PlanOrchestrationContext(
         plan_data=PlanData(
-            pipeline=pipeline,
-            dagster_run=pipeline_run,
+            job=job_def,
+            dagster_run=dagster_run,
             instance=instance,
             execution_plan=execution_plan,
             raise_on_error=True,
@@ -180,7 +180,7 @@ def _step_handler_context(pipeline, pipeline_run, instance, executor):
     )
 
     execute_step_args = ExecuteStepArgs(
-        reconstructable(bar).get_python_origin(), pipeline_run.run_id, ["foo"]
+        reconstructable(bar).get_python_origin(), dagster_run.run_id, ["foo"]
     )
 
     return StepHandlerContext(
@@ -209,13 +209,13 @@ def test_executor_init(k8s_run_launcher_instance):
 
     run = create_run_for_test(
         k8s_run_launcher_instance,
-        pipeline_name="bar",
-        pipeline_code_origin=reconstructable(bar).get_python_origin(),
+        job_name="bar",
+        job_code_origin=reconstructable(bar).get_python_origin(),
     )
 
     step_handler_context = _step_handler_context(
-        pipeline=reconstructable(bar),
-        pipeline_run=run,
+        job_def=reconstructable(bar),
+        dagster_run=run,
         instance=k8s_run_launcher_instance,
         executor=executor,
     )
@@ -258,13 +258,13 @@ def test_executor_init_container_context(
 
     run = create_run_for_test(
         k8s_run_launcher_instance,
-        pipeline_name="bar",
-        pipeline_code_origin=python_origin_with_container_context,
+        job_name="bar",
+        job_code_origin=python_origin_with_container_context,
     )
 
     step_handler_context = _step_handler_context(
-        pipeline=reconstructable(bar),
-        pipeline_run=run,
+        job_def=reconstructable(bar),
+        dagster_run=run,
         instance=k8s_run_launcher_instance,
         executor=executor,
     )
@@ -336,14 +336,14 @@ def test_step_handler(kubeconfig_file, k8s_instance):
 
     run = create_run_for_test(
         k8s_instance,
-        pipeline_name="bar",
-        pipeline_code_origin=reconstructable(bar).get_python_origin(),
+        job_name="bar",
+        job_code_origin=reconstructable(bar).get_python_origin(),
     )
     list(
         handler.launch_step(
             _step_handler_context(
-                pipeline=reconstructable(bar),
-                pipeline_run=run,
+                job_def=reconstructable(bar),
+                dagster_run=run,
                 instance=k8s_instance,
                 executor=_get_executor(
                     k8s_instance,
@@ -381,14 +381,14 @@ def test_step_handler_user_defined_config(kubeconfig_file, k8s_instance):
     with environ({"FOO_TEST": "bar"}):
         run = create_run_for_test(
             k8s_instance,
-            pipeline_name="bar",
-            pipeline_code_origin=reconstructable(bar_with_resources).get_python_origin(),
+            job_name="bar",
+            job_code_origin=reconstructable(bar_with_resources).get_python_origin(),
         )
         list(
             handler.launch_step(
                 _step_handler_context(
-                    pipeline=reconstructable(bar_with_resources),
-                    pipeline_run=run,
+                    job_def=reconstructable(bar_with_resources),
+                    dagster_run=run,
                     instance=k8s_instance,
                     executor=_get_executor(
                         k8s_instance,
@@ -426,14 +426,14 @@ def test_step_handler_image_override(kubeconfig_file, k8s_instance):
 
     run = create_run_for_test(
         k8s_instance,
-        pipeline_name="bar",
-        pipeline_code_origin=reconstructable(bar_with_images).get_python_origin(),
+        job_name="bar",
+        job_code_origin=reconstructable(bar_with_images).get_python_origin(),
     )
     list(
         handler.launch_step(
             _step_handler_context(
-                pipeline=reconstructable(bar_with_images),
-                pipeline_run=run,
+                job_def=reconstructable(bar_with_images),
+                dagster_run=run,
                 instance=k8s_instance,
                 executor=_get_executor(
                     k8s_instance,
@@ -470,14 +470,14 @@ def test_step_handler_with_container_context(
         # Additional env vars come from container context on the run
         run = create_run_for_test(
             k8s_instance,
-            pipeline_name="bar",
-            pipeline_code_origin=python_origin_with_container_context,
+            job_name="bar",
+            job_code_origin=python_origin_with_container_context,
         )
         list(
             handler.launch_step(
                 _step_handler_context(
-                    pipeline=reconstructable(bar),
-                    pipeline_run=run,
+                    job_def=reconstructable(bar),
+                    dagster_run=run,
                     instance=k8s_instance,
                     executor=_get_executor(
                         k8s_instance,
@@ -527,13 +527,13 @@ def test_step_raw_k8s_config_inheritance(
 
     run = create_run_for_test(
         k8s_run_launcher_instance,
-        pipeline_name="bar_with_tags_in_job_and_op",
-        pipeline_code_origin=python_origin_with_container_context,
+        job_name="bar_with_tags_in_job_and_op",
+        job_code_origin=python_origin_with_container_context,
     )
 
     step_handler_context = _step_handler_context(
-        pipeline=reconstructable(bar_with_tags_in_job_and_op),
-        pipeline_run=run,
+        job_def=reconstructable(bar_with_tags_in_job_and_op),
+        dagster_run=run,
         instance=k8s_run_launcher_instance,
         executor=executor,
     )

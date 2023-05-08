@@ -46,21 +46,7 @@ def _check_property_on_test_context(
 
 
 class HookContext:
-    """The ``context`` object available to a hook function on an DagsterEvent.
-
-    Attributes:
-        log (DagsterLogManager): Centralized log dispatch from user code.
-        hook_def (HookDefinition): The hook that the context object belongs to.
-        op (Op): The op instance associated with the hook.
-        step_key (str): The key for the step where this hook is being triggered.
-        required_resource_keys (Set[str]): Resources required by this hook.
-        resources (Resources): Resources available in the hook context.
-        op_config (Any): The parsed config specific to this op.
-        job_name (str): The name of the job where this hook is being triggered.
-        run_id (str): The id of the run where this hook is being triggered.
-        op_exception (Optional[BaseException]): The thrown exception in a failed op.
-        op_output_values (Dict): Computed output values in an op.
-    """
+    """The ``context`` object available to a hook function on an DagsterEvent."""
 
     def __init__(
         self,
@@ -74,23 +60,22 @@ class HookContext:
             self._required_resource_keys
         )
 
-    @property
-    def pipeline_name(self) -> str:
-        return self.job_name
-
     @public
     @property
     def job_name(self) -> str:
+        """The name of the job where this hook is being triggered."""
         return self._step_execution_context.job_name
 
     @public
     @property
     def run_id(self) -> str:
+        """The id of the run where this hook is being triggered."""
         return self._step_execution_context.run_id
 
     @public
     @property
     def hook_def(self) -> HookDefinition:
+        """The hook that the context object belongs to."""
         return self._hook_def
 
     @public
@@ -100,7 +85,8 @@ class HookContext:
 
     @property
     def op(self) -> Node:
-        return self._step_execution_context.solid
+        """The op instance associated with the hook."""
+        return self._step_execution_context.op
 
     @property
     def step(self) -> ExecutionStep:
@@ -113,16 +99,19 @@ class HookContext:
     @public
     @property
     def step_key(self) -> str:
+        """The key for the step where this hook is being triggered."""
         return self._step_execution_context.step.key
 
     @public
     @property
     def required_resource_keys(self) -> AbstractSet[str]:
+        """Resources required by this hook."""
         return self._required_resource_keys
 
     @public
     @property
     def resources(self) -> "Resources":
+        """Resources available in the hook context."""
         return self._resources
 
     @property
@@ -135,6 +124,7 @@ class HookContext:
     @public
     @property
     def op_config(self) -> Any:
+        """The parsed config specific to this op."""
         return self.solid_config
 
     # Because of the fact that we directly use the log manager of the step, if a user calls
@@ -143,6 +133,7 @@ class HookContext:
     @public
     @property
     def log(self) -> DagsterLogManager:
+        """Centralized log dispatch from user code."""
         return self._step_execution_context.log
 
     @property
@@ -157,6 +148,7 @@ class HookContext:
     @public
     @property
     def op_exception(self) -> Optional[BaseException]:
+        """The thrown exception in a failed op."""
         exc = self._step_execution_context.step_exception
 
         if isinstance(exc, RetryRequestedFromPolicy):
@@ -195,6 +187,7 @@ class HookContext:
     @public
     @property
     def op_output_values(self):
+        """Computed output values in an op."""
         return self.solid_output_values
 
 
@@ -209,7 +202,7 @@ class UnboundHookContext(HookContext):
         instance: Optional["DagsterInstance"],
     ):
         from ..build_resources import build_resources, wrap_resources_for_execution
-        from ..context_creation_pipeline import initialize_console_manager
+        from ..context_creation_job import initialize_console_manager
 
         self._op = None
         if op is not None:
@@ -248,7 +241,7 @@ class UnboundHookContext(HookContext):
 
     @property
     def job_name(self) -> str:
-        return self.pipeline_name
+        return self.job_name
 
     @property
     def run_id(self) -> str:

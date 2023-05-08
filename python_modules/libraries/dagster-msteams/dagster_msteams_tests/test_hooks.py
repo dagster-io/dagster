@@ -24,7 +24,7 @@ def fail_op(_):
 
 
 @patch("dagster_msteams.client.TeamsClient.post_message")
-def test_failure_hook_on_solid_instance(mock_teams_post_message):
+def test_failure_hook_on_op_instance(mock_teams_post_message):
     @job(resource_defs={"msteams": msteams_resource})
     def job_def():
         pass_op.with_hooks(hook_defs={teams_on_failure()})()
@@ -43,7 +43,7 @@ def test_failure_hook_on_solid_instance(mock_teams_post_message):
 
 
 @patch("dagster_msteams.client.TeamsClient.post_message")
-def test_success_hook_on_solid_instance(mock_teams_post_message):
+def test_success_hook_on_op_instance(mock_teams_post_message):
     @job(resource_defs={"msteams": msteams_resource})
     def job_def():
         pass_op.with_hooks(hook_defs={teams_on_success()})()

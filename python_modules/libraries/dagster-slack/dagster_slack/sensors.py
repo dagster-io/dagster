@@ -50,8 +50,8 @@ def _build_slack_blocks_and_text(
     else:
         if isinstance(context, RunFailureSensorContext):
             text = (
-                f'*Job "{context.pipeline_run.pipeline_name}" failed.'
-                f' `{context.pipeline_run.run_id.split("-")[0]}`*'
+                f'*Job "{context.dagster_run.job_name}" failed.'
+                f' `{context.dagster_run.run_id.split("-")[0]}`*'
             )
         else:
             text = (
@@ -77,7 +77,7 @@ def _build_slack_blocks_and_text(
 
     if dagit_base_url:
         if isinstance(context, RunFailureSensorContext):
-            url = f"{dagit_base_url}/instance/runs/{context.pipeline_run.run_id}"
+            url = f"{dagit_base_url}/instance/runs/{context.dagster_run.run_id}"
         else:
             url = f"{dagit_base_url}/assets/{'/'.join(context.asset_key.path)}"
         blocks.append(
@@ -131,6 +131,7 @@ def make_slack_on_run_failure_sensor(
             ]
         ]
     ] = None,
+    monitor_all_repositories: bool = False,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
 ):
     """Create a sensor on job failures that will message the given Slack channel.
@@ -156,12 +157,15 @@ def make_slack_on_run_failure_sensor(
             messages to include deeplinks to the failed job run.
         minimum_interval_seconds: (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
-        monitored_jobs (Optional[List[Union[PipelineDefinition, GraphDefinition, RepositorySelector, JobSelector, CodeLocationSensor]]]): The jobs in the
+        monitored_jobs (Optional[List[Union[JobDefinition, GraphDefinition, RepositorySelector, JobSelector, CodeLocationSensor]]]): The jobs in the
             current repository that will be monitored by this failure sensor. Defaults to None, which
             means the alert will be sent when any job in the repository fails. To monitor jobs in external repositories, use RepositorySelector and JobSelector
-        job_selection (Optional[List[Union[PipelineDefinition, GraphDefinition, RepositorySelector, JobSelector, CodeLocationSensor]]]): (deprecated in favor of monitored_jobs)
+        job_selection (Optional[List[Union[JobDefinition, GraphDefinition, RepositorySelector, JobSelector, CodeLocationSensor]]]): (deprecated in favor of monitored_jobs)
             The jobs in the current repository that will be monitored by this failure sensor. Defaults to None, which means the alert will
             be sent when any job in the repository fails.
+        monitor_all_repositories (bool): If set to True, the sensor will monitor all runs in the
+            Dagster instance. If set to True, an error will be raised if you also specify
+            monitored_jobs or job_selection. Defaults to False.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
 
@@ -181,7 +185,7 @@ def make_slack_on_run_failure_sensor(
 
             def my_message_fn(context: RunFailureSensorContext) -> str:
                 return (
-                    f"Job {context.pipeline_run.pipeline_name} failed!"
+                    f"Job {context.dagster_run.job_name} failed!"
                     f"Error: {context.failure_event.message}"
                 )
 
@@ -204,6 +208,7 @@ def make_slack_on_run_failure_sensor(
         name=name,
         minimum_interval_seconds=minimum_interval_seconds,
         monitored_jobs=jobs,
+        monitor_all_repositories=monitor_all_repositories,
         default_status=default_status,
     )
     def slack_on_run_failure(context: RunFailureSensorContext):

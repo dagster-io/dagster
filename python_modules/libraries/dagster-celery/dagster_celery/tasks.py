@@ -2,7 +2,7 @@ from dagster import (
     DagsterInstance,
     _check as check,
 )
-from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.events import EngineEventData
 from dagster._core.execution.api import create_execution_plan, execute_plan_iterator
 from dagster._grpc.types import ExecuteStepArgs
@@ -19,32 +19,32 @@ def create_task(celery_app, **task_kwargs):
             check.dict_param(
                 execute_step_args_packed,
                 "execute_step_args_packed",
-            )
+            ),
+            as_type=ExecuteStepArgs,
         )
-        check.inst_param(execute_step_args, "execute_step_args", ExecuteStepArgs)
 
         check.dict_param(executable_dict, "executable_dict")
 
         instance = DagsterInstance.from_ref(execute_step_args.instance_ref)
 
-        pipeline = ReconstructablePipeline.from_dict(executable_dict)
+        recon_job = ReconstructableJob.from_dict(executable_dict)
         retry_mode = execute_step_args.retry_mode
 
-        pipeline_run = instance.get_run_by_id(execute_step_args.pipeline_run_id)
-        check.invariant(pipeline_run, f"Could not load run {execute_step_args.pipeline_run_id}")
+        dagster_run = instance.get_run_by_id(execute_step_args.run_id)
+        check.invariant(dagster_run, f"Could not load run {execute_step_args.run_id}")
 
         step_keys_str = ", ".join(execute_step_args.step_keys_to_execute)
 
         execution_plan = create_execution_plan(
-            pipeline,
-            pipeline_run.run_config,
+            recon_job,
+            dagster_run.run_config,
             step_keys_to_execute=execute_step_args.step_keys_to_execute,
             known_state=execute_step_args.known_state,
         )
 
         engine_event = instance.report_engine_event(
             f"Executing steps {step_keys_str} in celery worker",
-            pipeline_run,
+            dagster_run,
             EngineEventData(
                 {
                     "step_keys": step_keys_str,
@@ -59,11 +59,11 @@ def create_task(celery_app, **task_kwargs):
         events = [engine_event]
         for step_event in execute_plan_iterator(
             execution_plan=execution_plan,
-            pipeline=pipeline,
-            dagster_run=pipeline_run,
+            job=recon_job,
+            dagster_run=dagster_run,
             instance=instance,
             retry_mode=retry_mode,
-            run_config=pipeline_run.run_config,
+            run_config=dagster_run.run_config,
         ):
             events.append(step_event)
 

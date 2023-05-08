@@ -45,15 +45,16 @@ import {AssetLineageScope} from './AssetNodeLineageGraph';
 import {AssetPageHeader} from './AssetPageHeader';
 import {AssetPartitions} from './AssetPartitions';
 import {AssetPlots} from './AssetPlots';
+import {AutomaterializeDaemonStatusTag} from './AutomaterializeDaemonStatusTag';
 import {CurrentMinutesLateTag} from './CurrentMinutesLateTag';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {LaunchAssetObservationButton} from './LaunchAssetObservationButton';
 import {UNDERLYING_OPS_ASSET_NODE_FRAGMENT} from './UnderlyingOpsOrGraph';
 import {AssetKey} from './types';
 import {
-  AssetViewDefinitionNodeFragment,
   AssetViewDefinitionQuery,
   AssetViewDefinitionQueryVariables,
+  AssetViewDefinitionNodeFragment,
 } from './types/AssetView.types';
 import {healthRefreshHintFromLiveData} from './usePartitionHealthData';
 
@@ -62,7 +63,15 @@ interface Props {
 }
 
 export interface AssetViewParams {
-  view?: 'events' | 'definition' | 'lineage' | 'overview' | 'plots' | 'partitions';
+  view?:
+    | 'events'
+    | 'definition'
+    | 'lineage'
+    | 'overview'
+    | 'plots'
+    | 'partitions'
+    | 'auto-materialize-policy';
+
   lineageScope?: AssetLineageScope;
   lineageDepth?: number;
   partition?: string;
@@ -94,7 +103,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
 
   // Observe the live state of the visible assets. Note: We use the "last materialization"
   // provided by this hook to trigger resets of the datasets inside the Activity / Plots tabs
-  const {liveDataRefreshState, liveDataByNode, runWatchers} = useLiveDataForAssetKeys(
+  const {liveDataRefreshState, liveDataByNode} = useLiveDataForAssetKeys(
     visibleAssetGraph.graphAssetKeys,
   );
 
@@ -203,9 +212,18 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
     );
   };
 
+  // const renderAutomaterializePolicyTab = () => {
+  //   if (definitionQueryResult.loading && !definitionQueryResult.previousData) {
+  //     return <AssetLoadingDefinitionState />;
+  //   }
+  //   return <AssetAutomaterializePolicyPage />;
+  // };
+
   return (
-    <Box flex={{direction: 'column'}} style={{height: '100%', width: '100%', overflowY: 'auto'}}>
-      {runWatchers}
+    <Box
+      flex={{direction: 'column', grow: 1}}
+      style={{height: '100%', width: '100%', overflowY: 'auto'}}
+    >
       <AssetPageHeader
         assetKey={assetKey}
         tags={
@@ -243,6 +261,12 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
                 onClick={() => setParams({...params, view: 'lineage'})}
                 disabled={!definition}
               />
+              {/* <Tab
+                id="auto-materialize-policy"
+                title="Auto-materialize policy"
+                onClick={() => setParams({...params, view: 'auto-materialize-policy'})}
+                disabled={!definition}
+              /> */}
             </Tabs>
             {refreshState && (
               <Box padding={{bottom: 8}}>
@@ -283,6 +307,8 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
         ) : selectedTab === 'plots' ? (
           renderPlotsTab()
         ) : (
+          // ) : selectedTab === 'auto-materialize-policy' ? (
+          //   renderAutomaterializePolicyTab()
           <span />
         )}
       </ErrorBoundary>
@@ -400,7 +426,6 @@ export const ASSET_VIEW_DEFINITION_QUERY = gql`
     id
     groupName
     partitionDefinition {
-      __typename
       description
     }
     partitionKeysByDimension {
@@ -487,7 +512,14 @@ const AssetViewPageHeaderTags: React.FC<{
           </Link>
         </Tag>
       )}
-      {liveData?.freshnessPolicy && <CurrentMinutesLateTag liveData={liveData} policyOnHover />}
+      {definition && definition.autoMaterializePolicy && <AutomaterializeDaemonStatusTag />}
+      {definition && definition.freshnessPolicy && (
+        <CurrentMinutesLateTag
+          liveData={liveData}
+          policy={definition.freshnessPolicy}
+          policyOnHover
+        />
+      )}
       {definition && (
         <StaleReasonsTags
           liveData={liveData}

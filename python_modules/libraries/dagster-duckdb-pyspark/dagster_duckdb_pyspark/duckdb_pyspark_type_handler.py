@@ -77,7 +77,7 @@ class DuckDBPySparkTypeHandler(DbTypeHandler[pyspark.sql.DataFrame]):
         self, context: InputContext, table_slice: TableSlice, connection
     ) -> pyspark.sql.DataFrame:
         """Loads the return of the query as the correct type."""
-        spark = SparkSession.builder.getOrCreate()
+        spark = SparkSession.builder.getOrCreate()  # type: ignore
         if table_slice.partition_dimensions and len(context.asset_partition_keys) == 0:
             return spark.createDataFrame([], StructType([]))
 

@@ -25,7 +25,7 @@ from typing import (
 
 import dagster._check as check
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.selector import GraphSelector, PipelineSelector
+from dagster._core.definitions.selector import GraphSelector, JobSubsetSelector
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
 from dagster._utils.error import serializable_error_info_from_exc_info
 from typing_extensions import ParamSpec, TypeAlias
@@ -145,12 +145,12 @@ class UserFacingGraphQLError(Exception):
         super(UserFacingGraphQLError, self).__init__(message)
 
 
-def pipeline_selector_from_graphql(data: Mapping[str, Any]) -> PipelineSelector:
+def pipeline_selector_from_graphql(data: Mapping[str, Any]) -> JobSubsetSelector:
     asset_selection = cast(Optional[Iterable[Dict[str, List[str]]]], data.get("assetSelection"))
-    return PipelineSelector(
+    return JobSubsetSelector(
         location_name=data["repositoryLocationName"],
         repository_name=data["repositoryName"],
-        pipeline_name=data.get("pipelineName") or data.get("jobName"),  # type: ignore
+        job_name=data.get("pipelineName") or data.get("jobName"),  # type: ignore
         solid_selection=data.get("solidSelection"),
         asset_selection=[AssetKey.from_graphql_input(asset_key) for asset_key in asset_selection]
         if asset_selection
@@ -170,7 +170,7 @@ class ExecutionParams(
     NamedTuple(
         "_ExecutionParams",
         [
-            ("selector", PipelineSelector),
+            ("selector", JobSubsetSelector),
             ("run_config", Mapping[str, object]),
             ("mode", Optional[str]),
             ("execution_metadata", "ExecutionMetadata"),
@@ -180,7 +180,7 @@ class ExecutionParams(
 ):
     def __new__(
         cls,
-        selector: PipelineSelector,
+        selector: JobSubsetSelector,
         run_config: Optional[Mapping[str, object]],
         mode: Optional[str],
         execution_metadata: "ExecutionMetadata",
@@ -190,7 +190,7 @@ class ExecutionParams(
 
         return super(ExecutionParams, cls).__new__(
             cls,
-            selector=check.inst_param(selector, "selector", PipelineSelector),
+            selector=check.inst_param(selector, "selector", JobSubsetSelector),
             run_config=check.opt_mapping_param(run_config, "run_config", key_type=str),
             mode=check.opt_str_param(mode, "mode"),
             execution_metadata=check.inst_param(

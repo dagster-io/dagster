@@ -51,13 +51,12 @@ height={673}
 The first step in using dbt Cloud with Dagster is to tell Dagster how to connect to your dbt Cloud instance using a dbt Cloud [resource](/concepts/resources). This resource contains information on where the dbt Cloud instance is located and any credentials sourced from environment variables that are needed to access it.
 
 ```python startafter=start_define_dbt_cloud_instance endbefore=end_define_dbt_cloud_instance file=/integrations/dbt/dbt_cloud.py dedent=4
-from dagster_dbt import dbt_cloud_resource
+from dagster_dbt import DbtCloudClientResource
+from dagster import EnvVar
 
-dbt_cloud_instance = dbt_cloud_resource.configured(
-    {
-        "auth_token": {"env": "DBT_CLOUD_API_TOKEN"},
-        "account_id": {"env": "DBT_CLOUD_ACCOUNT_ID"},
-    }
+dbt_cloud_instance = DbtCloudClientResource(
+    auth_token=EnvVar("DBT_CLOUD_API_TOKEN"),
+    account_id=EnvVar.int("DBT_CLOUD_ACCOUNT_ID"),
 )
 ```
 

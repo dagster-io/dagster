@@ -812,7 +812,7 @@ class DagsterAssetMetadataValue(
     @public
     @property
     def value(self) -> "AssetKey":
-        return self.value
+        return self.asset_key
 
 
 # This should be deprecated or fixed so that `value` does not return itself.

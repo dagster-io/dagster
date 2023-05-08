@@ -18,7 +18,7 @@ from dagster._core.run_coordinator.queued_run_coordinator import (
     QueuedRunCoordinator,
     RunQueueConfig,
 )
-from dagster._core.storage.pipeline_run import (
+from dagster._core.storage.dagster_run import (
     IN_PROGRESS_RUN_STATUSES,
     DagsterRun,
     DagsterRunStatus,
@@ -245,7 +245,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                 continue
 
             location_name = (
-                run.external_pipeline_origin.location_name if run.external_pipeline_origin else None
+                run.external_job_origin.location_name if run.external_job_origin else None
             )
             if location_name and location_name in paused_location_names:
                 continue
@@ -306,9 +306,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
 
         # Very old (pre 0.10.0) runs and programatically submitted runs may not have an
         # attached code location name
-        location_name = (
-            run.external_pipeline_origin.location_name if run.external_pipeline_origin else None
-        )
+        location_name = run.external_job_origin.location_name if run.external_job_origin else None
 
         if location_name and self._is_location_pausing_dequeues(location_name, now):
             self._logger.info(
@@ -322,7 +320,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
 
         launch_started_event = DagsterEvent(
             event_type_value=DagsterEventType.PIPELINE_STARTING.value,
-            pipeline_name=run.pipeline_name,
+            job_name=run.job_name,
         )
 
         instance.report_dagster_event(launch_started_event, run_id=run.run_id)
@@ -394,7 +392,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                     # Re-submit the run into the queue
                     enqueued_event = DagsterEvent(
                         event_type_value=DagsterEventType.PIPELINE_ENQUEUED.value,
-                        pipeline_name=run.pipeline_name,
+                        job_name=run.job_name,
                     )
                     instance.report_dagster_event(enqueued_event, run_id=run.run_id)
                     return False

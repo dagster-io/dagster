@@ -5,7 +5,7 @@ from dagster import _check as check
 
 if TYPE_CHECKING:
     from dagster._core.execution.plan.step import ExecutionStep
-    from dagster._core.storage.pipeline_run import DagsterRun
+    from dagster._core.storage.dagster_run import DagsterRun
 
 
 class TagConcurrencyLimitsCounter:

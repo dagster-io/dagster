@@ -39,9 +39,9 @@ from typing_extensions import ParamSpec
 
 import dagster._check as check
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicyType
-from dagster._core.definitions.pipeline_base import IPipeline
+from dagster._core.definitions.job_base import IJob
 from dagster._core.definitions.reconstruct import (
-    ReconstructablePipeline,
+    ReconstructableJob,
     ReconstructableRepository,
     get_ephemeral_repository_name,
 )
@@ -54,7 +54,7 @@ from dagster._utils.merger import merge_dicts
 from dagster.version import __version__ as dagster_module_version
 
 if TYPE_CHECKING:
-    from dagster._core.host_representation.external import ExternalPipeline, ExternalRepository
+    from dagster._core.host_representation.external import ExternalJob, ExternalRepository
     from dagster._core.workspace.context import IWorkspaceProcessContext
 
 TELEMETRY_STR = ".telemetry"
@@ -542,19 +542,19 @@ def log_external_repo_stats(
     instance: DagsterInstance,
     source: str,
     external_repo: "ExternalRepository",
-    external_pipeline: Optional["ExternalPipeline"] = None,
+    external_job: Optional["ExternalJob"] = None,
 ):
-    from dagster._core.host_representation.external import ExternalPipeline, ExternalRepository
+    from dagster._core.host_representation.external import ExternalJob, ExternalRepository
 
     check.inst_param(instance, "instance", DagsterInstance)
     check.str_param(source, "source")
     check.inst_param(external_repo, "external_repo", ExternalRepository)
-    check.opt_inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
+    check.opt_inst_param(external_job, "external_job", ExternalJob)
 
     if _get_instance_telemetry_enabled(instance):
         instance_id = get_or_set_instance_id()
 
-        pipeline_name_hash = hash_name(external_pipeline.name) if external_pipeline else ""
+        job_name_hash = hash_name(external_job.name) if external_job else ""
         repo_hash = hash_name(external_repo.name)
         location_name_hash = hash_name(external_repo.handle.location_name)
 
@@ -567,7 +567,7 @@ def log_external_repo_stats(
                 metadata={
                     **get_stats_from_external_repo(external_repo),
                     "source": source,
-                    "pipeline_name_hash": pipeline_name_hash,
+                    "pipeline_name_hash": job_name_hash,
                     "repo_hash": repo_hash,
                     "location_name_hash": location_name_hash,
                 },
@@ -578,7 +578,7 @@ def log_external_repo_stats(
 def log_repo_stats(
     instance: DagsterInstance,
     source: str,
-    pipeline: Optional[IPipeline] = None,
+    job: Optional[IJob] = None,
     repo: Optional[ReconstructableRepository] = None,
 ) -> None:
     from dagster._core.definitions.assets import AssetsDefinition
@@ -586,7 +586,7 @@ def log_repo_stats(
 
     check.inst_param(instance, "instance", DagsterInstance)
     check.str_param(source, "source")
-    check.opt_inst_param(pipeline, "pipeline", IPipeline)
+    check.opt_inst_param(job, "job", IJob)
     check.opt_inst_param(repo, "repo", ReconstructableRepository)
 
     def _get_num_dynamic_partitioned_assets(asset_defs: Sequence[AssetsDefinition]) -> int:
@@ -600,30 +600,30 @@ def log_repo_stats(
     if _get_instance_telemetry_enabled(instance):
         instance_id = get_or_set_instance_id()
 
-        if isinstance(pipeline, ReconstructablePipeline):
-            pipeline_name_hash = hash_name(pipeline.get_definition().name)
-            repository = pipeline.get_reconstructable_repository().get_definition()
+        if isinstance(job, ReconstructableJob):
+            job_name_hash = hash_name(job.get_definition().name)
+            repository = job.get_reconstructable_repository().get_definition()
             repo_hash = hash_name(repository.name)
-            num_pipelines_in_repo = len(repository.pipeline_names)
+            num_jobs_in_repo = len(repository.job_names)
             num_schedules_in_repo = len(repository.schedule_defs)
             num_sensors_in_repo = len(repository.sensor_defs)
             all_assets = list(repository.assets_defs_by_key.values())
             num_assets_in_repo = len(all_assets)
             num_dynamic_partitioned_assets_in_repo = _get_num_dynamic_partitioned_assets(all_assets)
         elif isinstance(repo, ReconstructableRepository):
-            pipeline_name_hash = ""
+            job_name_hash = ""
             repository = repo.get_definition()
             repo_hash = hash_name(repository.name)
-            num_pipelines_in_repo = len(repository.pipeline_names)
+            num_jobs_in_repo = len(repository.job_names)
             num_schedules_in_repo = len(repository.schedule_defs)
             num_sensors_in_repo = len(repository.sensor_defs)
             all_assets = list(repository.assets_defs_by_key.values())
             num_assets_in_repo = len(all_assets)
             num_dynamic_partitioned_assets_in_repo = _get_num_dynamic_partitioned_assets(all_assets)
         else:
-            pipeline_name_hash = hash_name(pipeline.get_definition().name)  # type: ignore
-            repo_hash = hash_name(get_ephemeral_repository_name(pipeline.get_definition().name))  # type: ignore
-            num_pipelines_in_repo = 1
+            job_name_hash = hash_name(job.get_definition().name)  # type: ignore
+            repo_hash = hash_name(get_ephemeral_repository_name(job.get_definition().name))  # type: ignore
+            num_jobs_in_repo = 1
             num_schedules_in_repo = 0
             num_sensors_in_repo = 0
             num_assets_in_repo = 0
@@ -637,8 +637,8 @@ def log_repo_stats(
                 instance_id=instance_id,
                 metadata={
                     "source": source,
-                    "pipeline_name_hash": pipeline_name_hash,
-                    "num_pipelines_in_repo": str(num_pipelines_in_repo),
+                    "pipeline_name_hash": job_name_hash,
+                    "num_pipelines_in_repo": str(num_jobs_in_repo),
                     "num_schedules_in_repo": str(num_schedules_in_repo),
                     "num_sensors_in_repo": str(num_sensors_in_repo),
                     "num_assets_in_repo": str(num_assets_in_repo),
@@ -698,12 +698,12 @@ def log_action(
         )
 
 
-def log_dagster_event(event: DagsterEvent, pipeline_context: PlanOrchestrationContext) -> None:
+def log_dagster_event(event: DagsterEvent, job_context: PlanOrchestrationContext) -> None:
     if not any((event.is_step_start, event.is_step_success, event.is_step_failure)):
         return
 
     metadata = {
-        "run_id_hash": hash_name(pipeline_context.run_id),
+        "run_id_hash": hash_name(job_context.run_id),
         "step_key_hash": hash_name(event.step_key),  # type: ignore
     }
 
@@ -717,7 +717,7 @@ def log_dagster_event(event: DagsterEvent, pipeline_context: PlanOrchestrationCo
         action = STEP_FAILURE_EVENT
 
     log_action(
-        instance=pipeline_context.instance,
+        instance=job_context.instance,
         action=action,
         client_time=datetime.datetime.now(),
         metadata=metadata,

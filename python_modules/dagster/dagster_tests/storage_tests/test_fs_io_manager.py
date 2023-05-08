@@ -2,6 +2,7 @@ import os
 import pickle
 import shutil
 import tempfile
+from datetime import datetime
 from typing import Optional, Tuple
 
 import pytest
@@ -28,7 +29,8 @@ from dagster import (
     op,
     with_resources,
 )
-from dagster._core.definitions import AssetGroup, AssetIn, asset, build_assets_job, multi_asset
+from dagster._core.definitions import AssetIn, asset, build_assets_job, multi_asset
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.definitions.version_strategy import VersionStrategy
 from dagster._core.errors import DagsterInvariantViolationError
@@ -292,6 +294,7 @@ def test_fs_io_manager_partitioned_no_partitions():
                 self,
                 downstream_partitions_subset: Optional[PartitionsSubset],
                 upstream_partitions_def: PartitionsDefinition,
+                current_time: Optional[datetime] = None,
                 dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
             ) -> PartitionsSubset:
                 return upstream_partitions_def.empty_subset()
@@ -300,6 +303,7 @@ def test_fs_io_manager_partitioned_no_partitions():
                 self,
                 upstream_partitions_subset,
                 downstream_partitions_def,
+                current_time: Optional[datetime] = None,
                 dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
             ):
                 raise NotImplementedError()
@@ -363,14 +367,13 @@ def test_fs_io_manager_partitioned_multi_asset():
             del upstream_asset_1
             return 2
 
-        group = AssetGroup(
-            [upstream_asset, downstream_asset],
-            resource_defs={"io_manager": io_manager_def},
-        )
+        foo_job = Definitions(
+            assets=[upstream_asset, downstream_asset],
+            resources={"io_manager": io_manager_def},
+            jobs=[define_asset_job("TheJob")],
+        ).get_job_def("TheJob")
 
-        job = group.build_job(name="TheJob")
-
-        result = job.execute_in_process(partition_key="A")
+        result = foo_job.execute_in_process(partition_key="A")
         assert result.success
 
         handled_output_events = list(

@@ -1,7 +1,7 @@
 import os
 
 from dagster._cli.job import do_execute_command
-from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.execution.api import execute_job
 from dagster._core.test_utils import instance_for_test
 from dagster._utils import file_relative_path
@@ -18,9 +18,7 @@ def test_execute_job():
 
     with instance_for_test() as instance:
         with execute_job(
-            ReconstructablePipeline.for_module(
-                "dagster_pandas.examples", "pandas_hello_world_test"
-            ),
+            ReconstructableJob.for_module("dagster_pandas.examples", "pandas_hello_world_test"),
             run_config=environment,
             instance=instance,
         ) as result:
@@ -48,7 +46,7 @@ def test_cli_execute():
         os.chdir(file_relative_path(__file__, "../.."))
         with instance_for_test() as instance:
             do_execute_command(
-                recon_job=ReconstructablePipeline.for_module(
+                recon_job=ReconstructableJob.for_module(
                     "dagster_pandas.examples", "pandas_hello_world_test"
                 ),
                 instance=instance,
@@ -73,7 +71,7 @@ def test_cli_execute_failure():
         os.chdir(file_relative_path(__file__, "../.."))
         with instance_for_test() as instance:
             result = do_execute_command(
-                recon_job=ReconstructablePipeline.for_module(
+                recon_job=ReconstructableJob.for_module(
                     "dagster_pandas.examples",
                     "pandas_hello_world_fails_test",
                 ),

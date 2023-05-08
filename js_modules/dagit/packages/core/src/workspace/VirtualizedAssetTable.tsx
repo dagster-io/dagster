@@ -3,6 +3,7 @@ import * as React from 'react';
 
 import {AssetTableFragment} from '../assets/types/AssetTableFragment.types';
 import {AssetViewType} from '../assets/useAssetView';
+import {AssetKeyInput} from '../graphql/types';
 import {Container, Inner} from '../ui/VirtualizedTable';
 
 import {VirtualizedAssetCatalogHeader, VirtualizedAssetRow} from './VirtualizedAssetRow';
@@ -18,7 +19,7 @@ interface Props {
   groups: {[path: string]: AssetTableFragment[]};
   checkedPaths: Set<string>;
   onToggleFactory: (path: string) => (values: {checked: boolean; shiftKey: boolean}) => void;
-  onWipe: (assets: AssetTableFragment[]) => void;
+  onWipe: (assets: AssetKeyInput[]) => void;
   showRepoColumn: boolean;
   view?: AssetViewType;
 }
@@ -41,7 +42,7 @@ export const VirtualizedAssetTable: React.FC<Props> = (props) => {
     count,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 64,
-    overscan: 10,
+    overscan: 5,
   });
 
   const totalHeight = rowVirtualizer.getTotalSize();
@@ -88,6 +89,7 @@ export const VirtualizedAssetTable: React.FC<Props> = (props) => {
                   view={view}
                   type={rowType()}
                   path={row.path}
+                  definition={row.type === 'asset' ? row.asset.definition : null}
                   repoAddress={repoAddress()}
                   showCheckboxColumn
                   showRepoColumn={showRepoColumn}
@@ -95,7 +97,7 @@ export const VirtualizedAssetTable: React.FC<Props> = (props) => {
                   start={start}
                   checked={checkedPaths.has(path)}
                   onToggleChecked={onToggleFactory(path)}
-                  onWipe={() => onWipe(wipeableAssets)}
+                  onWipe={() => onWipe(wipeableAssets.map((a) => a.key))}
                 />
               );
             })}

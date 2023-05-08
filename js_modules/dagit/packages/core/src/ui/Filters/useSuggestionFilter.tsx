@@ -12,6 +12,12 @@ type Args<TValue> = {
   name: string;
   icon: IconName;
 
+  // Allows creating a custom search result from the query
+  freeformSearchResult?: (
+    query: string,
+    suggestionPath: TValue[],
+  ) => SuggestionFilterSuggestion<TValue>;
+
   state: TValue[]; // Active suggestions
   setState: (state: TValue[]) => void;
   initialSuggestions: SuggestionFilterSuggestion<TValue>[];
@@ -26,13 +32,14 @@ type Args<TValue> = {
   matchType?: 'any-of' | 'all-of';
 };
 
-export type SuggestionFilter<TValue> = FilterObject & {
+export type SuggestionFilter<TValue> = FilterObject<SuggestionFilterSuggestion<TValue>> & {
   state: TValue[];
 };
 
 export function useSuggestionFilter<TValue>({
   name,
   icon,
+  freeformSearchResult,
   state,
   setState,
   initialSuggestions,
@@ -50,6 +57,7 @@ export function useSuggestionFilter<TValue>({
   >(null);
   const nextSuggestionsRef = useUpdatingRef(nextSuggestions);
   const nextSuggestionsLoadingRef = useUpdatingRef(nextSuggestionsLoading);
+  const [suggestionPath, setSuggestionPath] = React.useState<TValue[]>([]);
 
   const filterObj: SuggestionFilter<TValue> = React.useMemo(
     () => ({
@@ -60,13 +68,21 @@ export function useSuggestionFilter<TValue>({
       onUnselected: () => {
         setNextSuggestions(null);
         setNextSuggestionsLoading(false);
+        setSuggestionPath([]);
       },
       isLoadingFilters: nextSuggestionsLoading,
       getResults: (query: string) => {
+        let results;
+        let hasExactMatch = false;
         if (nextSuggestionsRef.current || nextSuggestionsLoadingRef.current) {
-          return (
+          results =
             nextSuggestionsRef.current
-              ?.filter(({value}) => query === '' || isMatch(value, query))
+              ?.filter(({value}) => {
+                if (getStringValue(value) === query) {
+                  hasExactMatch = true;
+                }
+                return query === '' || isMatch(value, query);
+              })
               .map((value, index) => ({
                 label: (
                   <SuggestionFilterLabel
@@ -77,22 +93,42 @@ export function useSuggestionFilter<TValue>({
                 ),
                 key: getKey?.(value.value) || index.toString(),
                 value,
-              })) || []
-          );
+              })) || [];
+        } else {
+          results = initialSuggestions
+            .filter(({value}) => {
+              if (getStringValue(value) === query) {
+                hasExactMatch = true;
+              }
+              return query === '' || isMatch(value, query);
+            })
+            .map((value, index) => ({
+              label: (
+                <SuggestionFilterLabel
+                  value={value.value}
+                  renderLabel={renderLabel}
+                  filter={filterObjRef.current}
+                />
+              ),
+              key: getKey?.(value.value) || index.toString(),
+              value,
+            }));
         }
-        return initialSuggestions
-          .filter(({value}) => query === '' || isMatch(value, query))
-          .map((value, index) => ({
+        if (!hasExactMatch && freeformSearchResult && query.length) {
+          const suggestion = freeformSearchResult(query, suggestionPath);
+          results.unshift({
             label: (
               <SuggestionFilterLabel
-                value={value.value}
+                value={suggestion.value}
                 renderLabel={renderLabel}
                 filter={filterObjRef.current}
               />
             ),
-            key: getKey?.(value.value) || index.toString(),
-            value,
-          }));
+            key: getKey?.(suggestion.value) || 'freeform',
+            value: suggestion,
+          });
+        }
+        return results;
       },
 
       onSelect: async ({value, clearSearch}) => {
@@ -105,6 +141,7 @@ export function useSuggestionFilter<TValue>({
         } else {
           clearSearch();
           const result = onSuggestionClicked(value.value);
+          setSuggestionPath((path) => [...path, value.value]);
           if (result) {
             setNextSuggestionsLoading(true);
             const nextSuggestions = await result;
@@ -134,17 +171,20 @@ export function useSuggestionFilter<TValue>({
       name,
       icon,
       state,
-      getStringValue,
-      renderLabel,
-      renderActiveStateLabel,
-      nextSuggestions,
       nextSuggestionsLoading,
+      getStringValue,
+      renderActiveStateLabel,
+      renderLabel,
+      matchType,
+      nextSuggestionsRef,
+      nextSuggestionsLoadingRef,
       initialSuggestions,
-      getKey,
+      freeformSearchResult,
       isMatch,
+      getKey,
+      suggestionPath,
       setState,
       onSuggestionClicked,
-      matchType,
     ],
   );
   const filterObjRef = useUpdatingRef(filterObj);

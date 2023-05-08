@@ -2,7 +2,7 @@ import os
 from time import sleep
 
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import RESUME_RETRY_TAG
 from dagster._core.test_utils import create_run_for_test, poll_for_finished_run
 from dagster._core.utils import make_new_run_id
@@ -68,14 +68,14 @@ class TestRetryExecutionReadonly(ReadonlyGraphQLContextTestMatrix):
 
         code_location = graphql_context.get_code_location("test")
         repository = code_location.get_repository("test_repo")
-        external_pipeline_origin = repository.get_full_external_job(
+        external_job_origin = repository.get_full_external_job(
             "eventually_successful"
         ).get_external_origin()
 
         run_id = create_run_for_test(
             graphql_context.instance,
             "eventually_successful",
-            external_pipeline_origin=external_pipeline_origin,
+            external_job_origin=external_job_origin,
         ).run_id
 
         result = execute_dagster_graphql(

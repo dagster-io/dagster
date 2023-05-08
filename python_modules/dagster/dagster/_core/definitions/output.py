@@ -126,7 +126,7 @@ class OutputDefinition:
     ) -> "OutputMapping":
         """Create an output mapping from an output of a child node.
 
-        In a CompositeSolidDefinition, you can use this helper function to construct
+        In a GraphDefinition, you can use this helper function to construct
         an :py:class:`OutputMapping` from the output of a child node.
 
         Args:

@@ -247,7 +247,6 @@ def select_unique_ids_from_manifest(
     manifest_json: Optional[Mapping[str, Any]] = None,
 ) -> AbstractSet[str]:
     """Method to apply a selection string to an existing manifest.json file."""
-    import dbt.flags as flags
     import dbt.graph.cli as graph_cli
     import dbt.graph.selector as graph_selector
     from dbt.contracts.graph.manifest import Manifest, WritableManifest
@@ -282,16 +281,16 @@ def select_unique_ids_from_manifest(
         manifest = Manifest(
             # dbt expects dataclasses that can be accessed with dot notation, not bare dictionaries
             nodes={
-                unique_id: _DictShim(info) for unique_id, info in manifest_json["nodes"].items()
+                unique_id: _DictShim(info) for unique_id, info in manifest_json["nodes"].items()  # type: ignore
             },
             sources={
-                unique_id: _DictShim(info) for unique_id, info in manifest_json["sources"].items()
+                unique_id: _DictShim(info) for unique_id, info in manifest_json["sources"].items()  # type: ignore
             },
             metrics={
-                unique_id: _DictShim(info) for unique_id, info in manifest_json["metrics"].items()
+                unique_id: _DictShim(info) for unique_id, info in manifest_json["metrics"].items()  # type: ignore
             },
             exposures={
-                unique_id: _DictShim(info) for unique_id, info in manifest_json["exposures"].items()
+                unique_id: _DictShim(info) for unique_id, info in manifest_json["exposures"].items()  # type: ignore
             },
         )
         child_map = manifest_json["child_map"]
@@ -300,7 +299,13 @@ def select_unique_ids_from_manifest(
     graph = graph_selector.Graph(DiGraph(incoming_graph_data=child_map))
 
     # create a parsed selection from the select string
-    flags.INDIRECT_SELECTION = IndirectSelection.Eager
+    try:
+        from dbt.flags import GLOBAL_FLAGS
+    except ImportError:
+        # dbt < 1.5.0 compat
+        import dbt.flags as GLOBAL_FLAGS
+    setattr(GLOBAL_FLAGS, "INDIRECT_SELECTION", IndirectSelection.Eager)
+    setattr(GLOBAL_FLAGS, "WARN_ERROR", True)
     parsed_spec: SelectionSpec = graph_cli.parse_union([select], True)
 
     if exclude:

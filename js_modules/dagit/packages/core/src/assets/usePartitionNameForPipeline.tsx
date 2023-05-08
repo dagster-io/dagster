@@ -51,13 +51,10 @@ export const ASSET_JOB_PARTITION_SETS_QUERY = gql`
         repositoryLocationName: $repositoryLocationName
       }
     ) {
-      __typename
       ... on PipelineNotFoundError {
-        __typename
         message
       }
       ... on PartitionSets {
-        __typename
         results {
           id
           name

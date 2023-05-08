@@ -19,6 +19,7 @@ from dagster._core.definitions.events import (
     AssetKey,
     AssetMaterialization,
     AssetObservation,
+    CoercibleToAssetKey,
 )
 from dagster._core.definitions.metadata import (
     ArbitraryMetadataMapping,
@@ -52,25 +53,6 @@ class OutputContext:
     `OutputContext` for testing an IO Manager's `handle_output` method, use
     :py:func:`dagster.build_output_context`.
 
-    Attributes:
-        step_key (Optional[str]): The step_key for the compute step that produced the output.
-        name (Optional[str]): The name of the output that produced the output.
-        run_id (Optional[str]): The id of the run that produced the output.
-        metadata (Optional[Mapping[str, RawMetadataValue]]): A dict of the metadata that is assigned to the
-            OutputDefinition that produced the output.
-        mapping_key (Optional[str]): The key that identifies a unique mapped output. None for regular outputs.
-        config (Optional[Any]): The configuration for the output.
-        dagster_type (Optional[DagsterType]): The type of this output.
-        log (Optional[DagsterLogManager]): The log manager to use for this output.
-        version (Optional[str]): (Experimental) The version of the output.
-        resource_config (Optional[Mapping[str, Any]]): The config associated with the resource that
-            initializes the RootInputManager.
-        resources (Optional[Resources]): The resources required by the output manager, specified by the
-            `required_resource_keys` parameter.
-        op_def (Optional[OpDefinition]): The definition of the op that produced the output.
-        asset_info: Optional[AssetOutputInfo]: (Experimental) Asset info corresponding to the
-            output.
-
     Example:
     .. code-block:: python
 
@@ -84,7 +66,7 @@ class OutputContext:
 
     _step_key: Optional[str]
     _name: Optional[str]
-    _pipeline_name: Optional[str]
+    _job_name: Optional[str]
     _run_id: Optional[str]
     _metadata: ArbitraryMetadataMapping
     _user_generated_metadata: Mapping[str, MetadataValue]
@@ -109,7 +91,7 @@ class OutputContext:
         self,
         step_key: Optional[str] = None,
         name: Optional[str] = None,
-        pipeline_name: Optional[str] = None,
+        job_name: Optional[str] = None,
         run_id: Optional[str] = None,
         metadata: Optional[ArbitraryMetadataMapping] = None,
         mapping_key: Optional[str] = None,
@@ -130,7 +112,7 @@ class OutputContext:
 
         self._step_key = step_key
         self._name = name
-        self._pipeline_name = pipeline_name
+        self._job_name = job_name
         self._run_id = run_id
         self._metadata = metadata or {}
         self._mapping_key = mapping_key
@@ -184,6 +166,7 @@ class OutputContext:
     @public
     @property
     def step_key(self) -> str:
+        """The step_key for the compute step that produced the output."""
         if self._step_key is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access step_key, "
@@ -195,6 +178,7 @@ class OutputContext:
     @public
     @property
     def name(self) -> str:
+        """The name of the output that produced the output."""
         if self._name is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access name, "
@@ -204,18 +188,19 @@ class OutputContext:
         return self._name
 
     @property
-    def pipeline_name(self) -> str:
-        if self._pipeline_name is None:
+    def job_name(self) -> str:
+        if self._job_name is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access pipeline_name, "
                 "but it was not provided when constructing the OutputContext"
             )
 
-        return self._pipeline_name
+        return self._job_name
 
     @public
     @property
     def run_id(self) -> str:
+        """The id of the run that produced the output."""
         if self._run_id is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access run_id, "
@@ -227,21 +212,27 @@ class OutputContext:
     @public
     @property
     def metadata(self) -> Optional[ArbitraryMetadataMapping]:
+        """A dict of the metadata that is assigned to the OutputDefinition that produced
+        the output.
+        """
         return self._metadata
 
     @public
     @property
     def mapping_key(self) -> Optional[str]:
+        """The key that identifies a unique mapped output. None for regular outputs."""
         return self._mapping_key
 
     @public
     @property
     def config(self) -> Any:
+        """The configuration for the output."""
         return self._config
 
     @public
     @property
     def op_def(self) -> "OpDefinition":
+        """The definition of the op that produced the output."""
         from dagster._core.definitions import OpDefinition
 
         if self._op_def is None:
@@ -255,6 +246,7 @@ class OutputContext:
     @public
     @property
     def dagster_type(self) -> "DagsterType":
+        """The type of this output."""
         if self._dagster_type is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access dagster_type, "
@@ -266,6 +258,7 @@ class OutputContext:
     @public
     @property
     def log(self) -> "DagsterLogManager":
+        """The log manager to use for this output."""
         if self._log is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access log, "
@@ -277,16 +270,21 @@ class OutputContext:
     @public
     @property
     def version(self) -> Optional[str]:
+        """(Experimental) The version of the output."""
         return self._version
 
     @public
     @property
     def resource_config(self) -> Optional[Mapping[str, object]]:
+        """The config associated with the resource that initializes the RootInputManager."""
         return self._resource_config
 
     @public
     @property
     def resources(self) -> Any:
+        """The resources required by the output manager, specified by the `required_resource_keys`
+        parameter.
+        """
         if self._resources is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access resources, "
@@ -303,6 +301,7 @@ class OutputContext:
 
     @property
     def asset_info(self) -> Optional[AssetOutputInfo]:
+        """(Experimental) Asset info corresponding to the output."""
         return self._asset_info
 
     @public
@@ -326,7 +325,7 @@ class OutputContext:
     def asset_partitions_def(self) -> "PartitionsDefinition":
         """The PartitionsDefinition on the asset corresponding to this output."""
         asset_key = self.asset_key
-        result = self.step_context.pipeline_def.asset_layer.partitions_def_for_asset(asset_key)
+        result = self.step_context.job_def.asset_layer.partitions_def_for_asset(asset_key)
         if result is None:
             raise DagsterInvariantViolationError(
                 f"Attempting to access partitions def for asset {asset_key}, but it is not"
@@ -710,7 +709,7 @@ class OutputContext:
 
 def get_output_context(
     execution_plan: "ExecutionPlan",
-    pipeline_def: "JobDefinition",
+    job_def: "JobDefinition",
     resolved_run_config: "ResolvedRunConfig",
     step_output_handle: "StepOutputHandle",
     run_id: Optional[str],
@@ -735,13 +734,13 @@ def get_output_context(
         output_config = None
 
     step_output = execution_plan.get_step_output(step_output_handle)
-    output_def = pipeline_def.get_node(step_output.node_handle).output_def_named(step_output.name)
+    output_def = job_def.get_node(step_output.node_handle).output_def_named(step_output.name)
 
     io_manager_key = output_def.io_manager_key
     resource_config = resolved_run_config.resources[io_manager_key].config
 
     node_handle = execution_plan.get_step_by_key(step.key).node_handle
-    asset_info = pipeline_def.asset_layer.asset_info_for_output(
+    asset_info = job_def.asset_layer.asset_info_for_output(
         node_handle=node_handle, output_name=step_output.name
     )
 
@@ -759,12 +758,12 @@ def get_output_context(
     return OutputContext(
         step_key=step_output_handle.step_key,
         name=step_output_handle.output_name,
-        pipeline_name=pipeline_def.name,
+        job_name=job_def.name,
         run_id=run_id,
         metadata=output_def.metadata,
         mapping_key=step_output_handle.mapping_key,
         config=output_config,
-        op_def=pipeline_def.get_node(step.node_handle).definition,  # type: ignore  # (should be OpDefinition not NodeDefinition)
+        op_def=job_def.get_node(step.node_handle).definition,  # type: ignore  # (should be OpDefinition not NodeDefinition)
         dagster_type=output_def.dagster_type,
         log_manager=log_manager,
         version=version,
@@ -777,7 +776,7 @@ def get_output_context(
 
 
 def step_output_version(
-    pipeline_def: "JobDefinition",
+    job_def: "JobDefinition",
     execution_plan: "ExecutionPlan",
     resolved_run_config: "ResolvedRunConfig",
     step_output_handle: "StepOutputHandle",
@@ -785,7 +784,7 @@ def step_output_version(
     from dagster._core.execution.resolve_versions import resolve_step_output_versions
 
     step_output_versions = resolve_step_output_versions(
-        pipeline_def, execution_plan, resolved_run_config
+        job_def, execution_plan, resolved_run_config
     )
     return (
         step_output_versions[step_output_handle]
@@ -806,7 +805,7 @@ def build_output_context(
     resource_config: Optional[Mapping[str, object]] = None,
     resources: Optional[Mapping[str, object]] = None,
     op_def: Optional["OpDefinition"] = None,
-    asset_key: Optional[Union[AssetKey, str]] = None,
+    asset_key: Optional[CoercibleToAssetKey] = None,
     partition_key: Optional[str] = None,
 ) -> "OutputContext":
     """Builds output context from provided parameters.
@@ -845,7 +844,7 @@ def build_output_context(
 
     """
     from dagster._core.definitions import OpDefinition
-    from dagster._core.execution.context_creation_pipeline import initialize_console_manager
+    from dagster._core.execution.context_creation_job import initialize_console_manager
     from dagster._core.types.dagster_type import DagsterType
 
     step_key = check.opt_str_param(step_key, "step_key")
@@ -858,13 +857,13 @@ def build_output_context(
     resource_config = check.opt_mapping_param(resource_config, "resource_config", key_type=str)
     resources = check.opt_mapping_param(resources, "resources", key_type=str)
     op_def = check.opt_inst_param(op_def, "op_def", OpDefinition)
-    asset_key = AssetKey.from_coerceable(asset_key) if asset_key else None
+    asset_key = AssetKey.from_coercible(asset_key) if asset_key else None
     partition_key = check.opt_str_param(partition_key, "partition_key")
 
     return OutputContext(
         step_key=step_key,
         name=name,
-        pipeline_name=None,
+        job_name=None,
         run_id=run_id,
         metadata=metadata,
         mapping_key=mapping_key,

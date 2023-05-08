@@ -1,3 +1,4 @@
+import hashlib
 import os
 import warnings
 
@@ -33,12 +34,13 @@ from dagster import (
     with_resources,
 )
 from dagster._config import StringSource
-from dagster._core.definitions import AssetGroup, AssetIn, SourceAsset, asset, build_assets_job
+from dagster._core.definitions import AssetIn, SourceAsset, asset, build_assets_job
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.asset_selection import AssetSelection, CoercibleToAssetSelection
 from dagster._core.definitions.assets_job import get_base_asset_jobs
 from dagster._core.definitions.dependency import NodeHandle, NodeInvocation
 from dagster._core.definitions.executor_definition import in_process_executor
+from dagster._core.definitions.load_assets_from_modules import prefix_assets
 from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._core.execution.api import execute_run_iterator
 from dagster._core.snap import DependencyStructureIndex
@@ -47,31 +49,17 @@ from dagster._core.snap.dep_snapshot import (
     build_dep_structure_snapshot_from_graph_def,
 )
 from dagster._core.storage.event_log.base import EventRecordsFilter
-from dagster._core.test_utils import instance_for_test
+from dagster._core.test_utils import ignore_warning, instance_for_test
 from dagster._utils import safe_tempfile_path
 from dagster._utils.backcompat import ExperimentalWarning
 
 
 @pytest.fixture(autouse=True)
-def check_experimental_warnings():
-    with warnings.catch_warnings(record=True) as record:
-        # turn off any outer warnings filters
-        warnings.resetwarnings()
+def error_on_warning():
+    # turn off any outer warnings filters, e.g. ignores that are set in pyproject.toml
+    warnings.resetwarnings()
 
-        yield
-
-        for w in record:
-            # Expect experimental warnings to be thrown for direct
-            # resource_defs and io_manager_def arguments.
-            if (
-                "resource_defs" in w.message.args[0]
-                or "io_manager_def" in w.message.args[0]
-                or "build_assets_job" in w.message.args[0]
-                or "source_asset" in w.message.args[0]
-                or "SQLAlchemy" in w.message.args[0]  # deprecation API usage warnings
-            ):
-                continue
-            assert False, f"Unexpected warning: {w.message.args[0]}"
+    warnings.filterwarnings("error")
 
 
 def _all_asset_keys(result):
@@ -92,7 +80,7 @@ def _asset_keys_for_node(result, node_name):
     return ret
 
 
-def test_single_asset_pipeline():
+def test_single_asset_job():
     @asset
     def asset1(context):
         assert context.asset_key_for_output() == AssetKey(["asset1"])
@@ -103,7 +91,7 @@ def test_single_asset_pipeline():
     assert job.execute_in_process().success
 
 
-def test_two_asset_pipeline():
+def test_two_asset_job():
     @asset
     def asset1():
         return 1
@@ -121,7 +109,7 @@ def test_two_asset_pipeline():
     assert job.execute_in_process().success
 
 
-def test_single_asset_pipeline_with_config():
+def test_single_asset_job_with_config():
     @asset(config_schema={"foo": Field(StringSource)})
     def asset1(context):
         return context.op_config["foo"]
@@ -876,7 +864,7 @@ def test_execute_graph_asset():
         keys_by_output_name={"y": AssetKey("y_asset"), "x": AssetKey("x_asset")},
     )
 
-    assert AssetGroup([assets_def]).build_job("abc").execute_in_process().success
+    assert materialize_to_memory([assets_def]).success
 
 
 def test_graph_asset_partitioned():
@@ -892,7 +880,7 @@ def test_graph_asset_partitioned():
         graph_def=my_graph, partitions_def=StaticPartitionsDefinition(["a", "b", "c"])
     )
 
-    AssetGroup([assets_def]).build_job("abc").execute_in_process(partition_key="a")
+    assert materialize_to_memory([assets_def], partition_key="a").success
 
 
 def test_all_assets_job():
@@ -1242,13 +1230,14 @@ def unconnected():
     pass
 
 
-asset_group = AssetGroup([foo, ab, bar, foo_bar, baz, unconnected])
+asset_defs = [foo, ab, bar, foo_bar, baz, unconnected]
 
 
 def test_disconnected_subset():
     with instance_for_test() as instance:
-        job = asset_group.build_job("foo")
-        result = job.execute_in_process(
+        defs = Definitions(assets=asset_defs, jobs=[define_asset_job("foo")])
+        foo_job = defs.get_job_def("foo")
+        result = foo_job.execute_in_process(
             instance=instance, asset_selection=[AssetKey("unconnected"), AssetKey("bar")]
         )
         materialization_events = [
@@ -1262,8 +1251,9 @@ def test_disconnected_subset():
 
 def test_connected_subset():
     with instance_for_test() as instance:
-        job = asset_group.build_job("foo")
-        result = job.execute_in_process(
+        defs = Definitions(assets=asset_defs, jobs=[define_asset_job("foo")])
+        foo_job = defs.get_job_def("foo")
+        result = foo_job.execute_in_process(
             instance=instance,
             asset_selection=[AssetKey("foo"), AssetKey("bar"), AssetKey("foo_bar")],
         )
@@ -1280,7 +1270,8 @@ def test_connected_subset():
 
 def test_subset_of_asset_job():
     with instance_for_test() as instance:
-        foo_job = asset_group.build_job("foo_job", selection=["*baz"])
+        defs = Definitions(assets=asset_defs, jobs=[define_asset_job("foo", "*baz")])
+        foo_job = defs.get_job_def("foo")
         result = foo_job.execute_in_process(
             instance=instance,
             asset_selection=[AssetKey("foo"), AssetKey("bar"), AssetKey("foo_bar")],
@@ -1391,18 +1382,18 @@ def test_asset_selection_reconstructable():
         warnings.simplefilter("ignore", category=ExperimentalWarning)
         warnings.simplefilter("ignore", category=DeprecationWarning)
         with instance_for_test() as instance:
-            run = instance.create_run_for_pipeline(
-                pipeline_def=my_job, asset_selection=frozenset([AssetKey("f")])
+            run = instance.create_run_for_job(
+                job_def=my_job, asset_selection=frozenset([AssetKey("f")])
             )
             reconstructable_foo_job = build_reconstructable_job(
                 "dagster_tests.asset_defs_tests.test_assets_job",
                 "reconstruct_asset_job",
                 reconstructable_args=tuple(),
                 reconstructable_kwargs={},
-            ).subset_for_execution(asset_selection=frozenset([AssetKey("f")]))
+            ).get_subset(asset_selection=frozenset([AssetKey("f")]))
 
             events = list(execute_run_iterator(reconstructable_foo_job, run, instance=instance))
-            assert len([event for event in events if event.is_pipeline_success]) == 1
+            assert len([event for event in events if event.is_job_success]) == 1
 
             materialization_planned = list(
                 instance.get_event_records(
@@ -1512,21 +1503,26 @@ def test_raise_error_on_incomplete_graph_asset_subset():
         result = foo()
         return do_something(result), do_something(result)
 
-    job = AssetGroup(
-        [
+    defs = Definitions(
+        assets=[
             AssetsDefinition.from_graph(complicated_graph),
         ],
-    ).build_job("job")
+        jobs=[define_asset_job("foo_job")],
+    )
+    foo_job = defs.get_job_def("foo_job")
 
     with instance_for_test() as instance:
         with pytest.raises(DagsterInvalidSubsetError, match="complicated_graph"):
-            job.execute_in_process(instance=instance, asset_selection=[AssetKey("comments_table")])
+            foo_job.execute_in_process(
+                instance=instance, asset_selection=[AssetKey("comments_table")]
+            )
 
 
 def test_multi_subset():
     with instance_for_test() as instance:
-        job = asset_group.build_job("foo")
-        result = job.execute_in_process(
+        defs = Definitions(assets=asset_defs, jobs=[define_asset_job("foo")])
+        foo_job = defs.get_job_def("foo")
+        result = foo_job.execute_in_process(
             instance=instance,
             asset_selection=[AssetKey("foo"), AssetKey("a")],
         )
@@ -1542,8 +1538,9 @@ def test_multi_subset():
 
 def test_multi_all():
     with instance_for_test() as instance:
-        job = asset_group.build_job("foo")
-        result = job.execute_in_process(
+        defs = Definitions(assets=asset_defs, jobs=[define_asset_job("foo")])
+        foo_job = defs.get_job_def("foo")
+        result = foo_job.execute_in_process(
             instance=instance,
             asset_selection=[AssetKey("foo"), AssetKey("a"), AssetKey("b")],
         )
@@ -1576,11 +1573,11 @@ def test_subset_with_source_asset():
     def my_derived_asset(my_source_asset):
         return my_source_asset + 4
 
-    source_asset_job = AssetGroup(
-        assets=[my_derived_asset],
-        source_assets=[my_source_asset],
-        resource_defs={"the_manager": the_manager},
-    ).build_job("source_asset_job")
+    source_asset_job = Definitions(
+        assets=[my_derived_asset, my_source_asset],
+        resources={"the_manager": the_manager},
+        jobs=[define_asset_job("source_asset_job", [my_derived_asset])],
+    ).get_job_def("source_asset_job")
 
     result = source_asset_job.execute_in_process(asset_selection=[AssetKey("my_derived_asset")])
     assert result.success
@@ -1616,11 +1613,16 @@ def test_op_outputs_with_default_asset_io_mgr():
         assert asset_1 == 25
         return asset_1
 
-    my_job = AssetGroup(
-        [AssetsDefinition.from_graph(complicated_graph), my_asset],
-    ).build_job("my_job", executor_def=in_process_executor)
+    defs = Definitions(
+        assets=[
+            AssetsDefinition.from_graph(complicated_graph),
+            my_asset,
+        ],
+        jobs=[define_asset_job("foo_job", executor_def=in_process_executor)],
+    )
+    foo_job = defs.get_job_def("foo_job")
 
-    result = my_job.execute_in_process()
+    result = foo_job.execute_in_process()
     assert result.success
 
 
@@ -1658,11 +1660,15 @@ def test_graph_output_is_input_within_graph():
         one, two = nested()
         return one, two, transform(two)
 
-    my_job = AssetGroup(
-        [AssetsDefinition.from_graph(complicated_graph)],
-    ).build_job("my_job")
+    defs = Definitions(
+        assets=[
+            AssetsDefinition.from_graph(complicated_graph),
+        ],
+        jobs=[define_asset_job("foo_job")],
+    )
+    foo_job = defs.get_job_def("foo_job")
 
-    result = my_job.execute_in_process()
+    result = foo_job.execute_in_process()
     assert result.success
 
     assert result.output_for_node("complicated_graph.nested", "one") == 3
@@ -1673,6 +1679,7 @@ def test_graph_output_is_input_within_graph():
     assert result.output_for_node("complicated_graph", "asset_3") == 4
 
 
+@ignore_warning('"io_manager_def" is an experimental argument')
 def test_source_asset_io_manager_def():
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
@@ -1760,6 +1767,8 @@ def test_source_asset_io_manager_key_provided():
     assert result.output_for_node("my_derived_asset") == 9
 
 
+@ignore_warning('"resource_defs" is an experimental argument')
+@ignore_warning('"io_manager_def" is an experimental argument')
 def test_source_asset_requires_resource_defs():
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
@@ -1797,6 +1806,7 @@ def test_source_asset_requires_resource_defs():
     assert result.output_for_node("my_derived_asset") == 9
 
 
+@ignore_warning('"resource_defs" is an experimental argument')
 def test_other_asset_provides_req():
     # Demonstrate that assets cannot resolve each other's dependencies with
     # resources on each definition.
@@ -1815,6 +1825,7 @@ def test_other_asset_provides_req():
         build_assets_job(name="test", assets=[asset_reqs_foo, asset_provides_foo])
 
 
+@ignore_warning('"resource_defs" is an experimental argument')
 def test_transitive_deps_not_provided():
     @resource(required_resource_keys={"foo"})
     def unused_resource():
@@ -1831,6 +1842,7 @@ def test_transitive_deps_not_provided():
         build_assets_job(name="test", assets=[the_asset])
 
 
+@ignore_warning('"resource_defs" is an experimental argument')
 def test_transitive_resource_deps_provided():
     @resource(required_resource_keys={"foo"})
     def used_resource(context):
@@ -1846,6 +1858,7 @@ def test_transitive_resource_deps_provided():
     assert the_job.execute_in_process().success
 
 
+@ignore_warning('"io_manager_def" is an experimental argument')
 def test_transitive_io_manager_dep_not_provided():
     @io_manager(required_resource_keys={"foo"})
     def the_manager():
@@ -2108,6 +2121,26 @@ def test_asset_subset_io_managers(job_selection, expected_nodes):
         assert result.output_for_node(node) == _ACTUAL_OUTPUT_VAL
 
 
+def asset_aware_io_manager():
+    class MyIOManager(IOManager):
+        def __init__(self):
+            self.db = {}
+
+        def handle_output(self, context, obj):
+            self.db[context.asset_key] = obj
+
+        def load_input(self, context):
+            return self.db.get(context.asset_key)
+
+    io_manager_obj = MyIOManager()
+
+    @io_manager
+    def _asset_aware():
+        return io_manager_obj
+
+    return io_manager_obj, _asset_aware
+
+
 def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
     """Get a predefined set of assets definitions for testing.
 
@@ -2318,3 +2351,401 @@ def test_subset_does_not_respect_context():
 
     # should still emit asset materializations if we generate these outputs
     assert _all_asset_keys(result) == specified_keys | {AssetKey("a"), AssetKey("b")}
+
+
+@pytest.mark.parametrize(
+    "job_selection,expected_assets",
+    [
+        ("*", "a,b,c"),
+        ("a+", "a,b"),
+        ("+c", "b,c"),
+        (["a", "c"], "a,c"),
+    ],
+)
+def test_simple_graph_backed_asset_subset(
+    job_selection: CoercibleToAssetSelection, expected_assets: str
+):
+    @op
+    def one():
+        return 1
+
+    @op
+    def add_one(x):
+        return x + 1
+
+    @op(out=Out(io_manager_key="asset_io_manager"))
+    def create_asset(x):
+        return x * 2
+
+    @graph
+    def a():
+        return create_asset(add_one(add_one(one())))
+
+    @graph
+    def b(a):
+        return create_asset(add_one(add_one(a)))
+
+    @graph
+    def c(b):
+        return create_asset(add_one(add_one(b)))
+
+    a_asset = AssetsDefinition.from_graph(a)
+    b_asset = AssetsDefinition.from_graph(b)
+    c_asset = AssetsDefinition.from_graph(c)
+
+    _, io_manager_def = asset_aware_io_manager()
+    defs = Definitions(
+        assets=[a_asset, b_asset, c_asset],
+        jobs=[define_asset_job("assets_job", job_selection)],
+        resources={"asset_io_manager": io_manager_def},
+    )
+    # materialize all assets once so values exist to load from
+    defs.get_implicit_global_asset_job_def().execute_in_process()
+
+    # now build the subset job
+    job = defs.get_job_def("assets_job")
+
+    result = job.execute_in_process()
+
+    expected_asset_keys = set((AssetKey(a) for a in expected_assets.split(",")))
+
+    # make sure we've generated the correct set of keys
+    assert _all_asset_keys(result) == expected_asset_keys
+
+    if AssetKey("a") in expected_asset_keys:
+        # (1 + 1 + 1) * 2
+        assert result.output_for_node("a.create_asset") == 6
+    if AssetKey("b") in expected_asset_keys:
+        # (6 + 1 + 1) * 8
+        assert result.output_for_node("b.create_asset") == 16
+    if AssetKey("c") in expected_asset_keys:
+        # (16 + 1 + 1) * 2
+        assert result.output_for_node("c.create_asset") == 36
+
+
+@pytest.mark.parametrize("use_multi", [True, False])
+@pytest.mark.parametrize(
+    "job_selection,expected_assets,prefixes",
+    [
+        ("*", "start,a,b,c,d,e,f,final", None),
+        ("a", "a", None),
+        ("b+", "b,c,d", None),
+        ("+f", "f,d,e", None),
+        ("++f", "f,d,e,c,a,b", None),
+        ("start*", "start,a,d,f,final", None),
+        (["+a", "b+"], "start,a,b,c,d", None),
+        (["*c", "final"], "b,c,final", None),
+        ("*", "start,a,b,c,d,e,f,final", ["core", "models"]),
+        ("core/models/a", "a", ["core", "models"]),
+        ("core/models/b+", "b,c,d", ["core", "models"]),
+        ("+core/models/f", "f,d,e", ["core", "models"]),
+        ("++core/models/f", "f,d,e,c,a,b", ["core", "models"]),
+        ("core/models/start*", "start,a,d,f,final", ["core", "models"]),
+        (["+core/models/a", "core/models/b+"], "start,a,b,c,d", ["core", "models"]),
+        (["*core/models/c", "core/models/final"], "b,c,final", ["core", "models"]),
+    ],
+)
+def test_asset_group_build_subset_job(job_selection, expected_assets, use_multi, prefixes):
+    _, io_manager_def = asset_aware_io_manager()
+    all_assets = _get_assets_defs(use_multi=use_multi, allow_subset=use_multi)
+    # apply prefixes
+    for prefix in reversed(prefixes or []):
+        all_assets, _ = prefix_assets(all_assets, prefix, [], None)
+
+    defs = Definitions(
+        # for these, if we have multi assets, we'll always allow them to be subset
+        assets=all_assets,
+        jobs=[define_asset_job("assets_job", job_selection)],
+        resources={"io_manager": io_manager_def},
+    )
+
+    # materialize all assets once so values exist to load from
+    defs.get_implicit_global_asset_job_def().execute_in_process()
+
+    # now build the subset job
+    job = defs.get_job_def("assets_job")
+
+    with instance_for_test() as instance:
+        result = job.execute_in_process(instance=instance)
+        planned_asset_keys = {
+            record.event_log_entry.dagster_event.event_specific_data.asset_key
+            for record in instance.get_event_records(
+                EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION_PLANNED)
+            )
+        }
+
+    expected_asset_keys = set(
+        (AssetKey([*(prefixes or []), a]) for a in expected_assets.split(","))
+    )
+    # make sure we've planned on the correct set of keys
+    assert planned_asset_keys == expected_asset_keys
+
+    # make sure we've generated the correct set of keys
+    assert _all_asset_keys(result) == expected_asset_keys
+
+    if use_multi:
+        expected_outputs = {
+            "start": 1,
+            "abc_.a": 2,
+            "abc_.b": 1,
+            "abc_.c": 2,
+            "def_.d": 3,
+            "def_.e": 3,
+            "def_.f": 6,
+            "final": 5,
+        }
+    else:
+        expected_outputs = {"start": 1, "a": 2, "b": 1, "c": 2, "d": 3, "e": 3, "f": 6, "final": 5}
+
+    # check if the output values are as we expect
+    for output, value in expected_outputs.items():
+        asset_name = output.split(".")[-1]
+        if asset_name in expected_assets.split(","):
+            # dealing with multi asset
+            if output != asset_name:
+                node_def_name = output.split(".")[0]
+                keys_for_node = {AssetKey([*(prefixes or []), c]) for c in node_def_name[:-1]}
+                selected_keys_for_node = keys_for_node.intersection(expected_asset_keys)
+                if (
+                    selected_keys_for_node != keys_for_node
+                    # too much of a pain to explicitly encode the cases where we need to create a
+                    # new node definition
+                    and not result.job_def.has_node_named(node_def_name)
+                ):
+                    node_def_name += (
+                        "_subset_"
+                        + hashlib.md5(
+                            (str(list(sorted(selected_keys_for_node)))).encode()
+                        ).hexdigest()[-5:]
+                    )
+                assert result.output_for_node(node_def_name, asset_name)
+            # dealing with regular asset
+            else:
+                assert result.output_for_node(output, "result") == value
+
+
+def test_subset_cycle_resolution_embed_assets_in_complex_graph():
+    """This represents a single large multi-asset with two assets embedded inside of it.
+
+    Ops:
+        foo produces: a, b, c, d, e, f, g, h
+        x produces: x
+        y produces: y
+
+    Upstream Assets:
+        a: []
+        b: []
+        c: [b]
+        d: [b]
+        e: [x, c]
+        f: [d]
+        g: [e]
+        h: [g, y]
+        x: [a]
+        y: [e, f].
+    """
+    io_manager_obj, io_manager_def = asset_aware_io_manager()
+    for item in "abcdefghxy":
+        io_manager_obj.db[AssetKey(item)] = None
+
+    @multi_asset(
+        outs={name: AssetOut(is_required=False) for name in "a,b,c,d,e,f,g,h".split(",")},
+        internal_asset_deps={
+            "a": set(),
+            "b": set(),
+            "c": {AssetKey("b")},
+            "d": {AssetKey("b")},
+            "e": {AssetKey("c"), AssetKey("x")},
+            "f": {AssetKey("d")},
+            "g": {AssetKey("e")},
+            "h": {AssetKey("g"), AssetKey("y")},
+        },
+        can_subset=True,
+    )
+    def foo(context, x, y):
+        a = b = c = d = e = f = g = h = None
+        if "a" in context.selected_output_names:
+            a = 1
+            yield Output(a, "a")
+        if "b" in context.selected_output_names:
+            b = 1
+            yield Output(b, "b")
+        if "c" in context.selected_output_names:
+            c = (b or 1) + 1
+            yield Output(c, "c")
+        if "d" in context.selected_output_names:
+            d = (b or 1) + 1
+            yield Output(d, "d")
+        if "e" in context.selected_output_names:
+            e = x + (c or 2)
+            yield Output(e, "e")
+        if "f" in context.selected_output_names:
+            f = (d or 1) + 1
+            yield Output(f, "f")
+        if "g" in context.selected_output_names:
+            g = (e or 4) + 1
+            yield Output(g, "g")
+        if "h" in context.selected_output_names:
+            h = (g or 5) + y
+            yield Output(h, "h")
+
+    @asset
+    def x(a):
+        return a + 1
+
+    @asset
+    def y(e, f):
+        return e + f
+
+    job = Definitions(
+        assets=[foo, x, y],
+        resources={"io_manager": io_manager_def},
+    ).get_implicit_global_asset_job_def()
+
+    # should produce a job with foo(a,b,c,d,f) -> x -> foo(e,g) -> y -> foo(h)
+    assert len(list(job.graph.iterate_op_defs())) == 5
+    result = job.execute_in_process()
+
+    assert _all_asset_keys(result) == {AssetKey(x) for x in "a,b,c,d,e,f,g,h,x,y".split(",")}
+    assert result.output_for_node("foo_subset_53118", "h") == 12
+
+
+def test_subset_cycle_resolution_complex():
+    """Test cycle resolution.
+
+    Ops:
+        foo produces: a, b, c, d, e, f
+        x produces: x
+        y produces: y
+        z produces: z
+
+    Upstream Assets:
+        a: []
+        b: [x]
+        c: [x]
+        d: [y]
+        e: [c]
+        f: [d]
+        x: [a]
+        y: [b, c].
+    """
+    io_manager_obj, io_manager_def = asset_aware_io_manager()
+    for item in "abcdefxy":
+        io_manager_obj.db[AssetKey(item)] = None
+
+    @multi_asset(
+        outs={name: AssetOut(is_required=False) for name in "a,b,c,d,e,f".split(",")},
+        internal_asset_deps={
+            "a": set(),
+            "b": {AssetKey("x")},
+            "c": {AssetKey("x")},
+            "d": {AssetKey("y")},
+            "e": {AssetKey("c")},
+            "f": {AssetKey("d")},
+        },
+        can_subset=True,
+    )
+    def foo(context, x, y):
+        if "a" in context.selected_output_names:
+            yield Output(1, "a")
+        if "b" in context.selected_output_names:
+            yield Output(x + 1, "b")
+        if "c" in context.selected_output_names:
+            c = x + 2
+            yield Output(c, "c")
+        if "d" in context.selected_output_names:
+            d = y + 1
+            yield Output(d, "d")
+        if "e" in context.selected_output_names:
+            yield Output(c + 1, "e")
+        if "f" in context.selected_output_names:
+            yield Output(d + 1, "f")
+
+    @asset
+    def x(a):
+        return a + 1
+
+    @asset
+    def y(b, c):
+        return b + c
+
+    job = Definitions(
+        assets=[foo, x, y],
+        resources={"io_manager": io_manager_def},
+    ).get_implicit_global_asset_job_def()
+
+    # should produce a job with foo -> x -> foo -> y -> foo
+    assert len(list(job.graph.iterate_op_defs())) == 5
+    result = job.execute_in_process()
+
+    assert _all_asset_keys(result) == {AssetKey(x) for x in "a,b,c,d,e,f,x,y".split(",")}
+    assert result.output_for_node("x") == 2
+    assert result.output_for_node("y") == 7
+    assert result.output_for_node("foo_3", "f") == 9
+
+
+def test_subset_cycle_resolution_basic():
+    """Ops:
+        foo produces: a, b
+        foo_prime produces: a', b'
+    Assets:
+        s -> a -> a' -> b -> b'.
+    """
+    io_manager_obj, io_manager_def = asset_aware_io_manager()
+    for item in "a,b,a_prime,b_prime".split(","):
+        io_manager_obj.db[AssetKey(item)] = None
+    # some value for the source
+    io_manager_obj.db[AssetKey("s")] = 0
+
+    s = SourceAsset("s")
+
+    @multi_asset(
+        outs={"a": AssetOut(is_required=False), "b": AssetOut(is_required=False)},
+        internal_asset_deps={
+            "a": {AssetKey("s")},
+            "b": {AssetKey("a_prime")},
+        },
+        can_subset=True,
+    )
+    def foo(context, s, a_prime):
+        context.log.info(context.selected_asset_keys)
+        if AssetKey("a") in context.selected_asset_keys:
+            yield Output(s + 1, "a")
+        if AssetKey("b") in context.selected_asset_keys:
+            yield Output(a_prime + 1, "b")
+
+    @multi_asset(
+        outs={"a_prime": AssetOut(is_required=False), "b_prime": AssetOut(is_required=False)},
+        internal_asset_deps={
+            "a_prime": {AssetKey("a")},
+            "b_prime": {AssetKey("b")},
+        },
+        can_subset=True,
+    )
+    def foo_prime(context, a, b):
+        context.log.info(context.selected_asset_keys)
+        if AssetKey("a_prime") in context.selected_asset_keys:
+            yield Output(a + 1, "a_prime")
+        if AssetKey("b_prime") in context.selected_asset_keys:
+            yield Output(b + 1, "b_prime")
+
+    job = Definitions(
+        assets=[foo, foo_prime, s],
+        resources={"io_manager": io_manager_def},
+    ).get_implicit_global_asset_job_def()
+
+    # should produce a job with foo -> foo_prime -> foo_2 -> foo_prime_2
+    assert len(list(job.graph.iterate_op_defs())) == 4
+
+    result = job.execute_in_process()
+    assert result.output_for_node("foo", "a") == 1
+    assert result.output_for_node("foo_prime", "a_prime") == 2
+    assert result.output_for_node("foo_2", "b") == 3
+    assert result.output_for_node("foo_prime_2", "b_prime") == 4
+
+    assert _all_asset_keys(result) == {
+        AssetKey("a"),
+        AssetKey("b"),
+        AssetKey("a_prime"),
+        AssetKey("b_prime"),
+    }

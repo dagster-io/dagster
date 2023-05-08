@@ -305,7 +305,7 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
         DagsterEventType.RUN_FAILURE,
         DagsterEventType.PIPELINE_FAILURE,
     ):
-        data = dagster_event.pipeline_failure_data
+        data = dagster_event.job_failure_data
         return GrapheneRunFailureEvent(
             pipelineName=pipeline_name,
             error=GraphenePythonError(data.error) if (data and data.error) else None,
@@ -369,6 +369,8 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
             logKey=data.file_key,
             stepKeys=data.step_keys,
             externalUrl=data.external_url,
+            externalStdoutUrl=data.external_stdout_url or data.external_url,
+            externalStderrUrl=data.external_stderr_url or data.external_url,
             pid=dagster_event.pid,
             **basic_params,
         )

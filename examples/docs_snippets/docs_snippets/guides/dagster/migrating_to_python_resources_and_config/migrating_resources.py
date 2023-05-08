@@ -1,7 +1,6 @@
 from typing import Iterator
 
-from dagster import Definitions
-from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
+from dagster import Definitions, define_asset_job
 
 
 def initial_code_base() -> Definitions:

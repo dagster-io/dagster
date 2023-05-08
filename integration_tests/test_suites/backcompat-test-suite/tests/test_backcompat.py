@@ -11,7 +11,7 @@ import dagster._check as check
 import docker
 import pytest
 import requests
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._utils import (
     file_relative_path,
     library_version_from_core_version,
@@ -248,11 +248,9 @@ def assert_runs_and_exists(
     )
     assert_run_success(client, run_id)
 
-    locations = client._get_repo_locations_and_names_with_pipeline(  # noqa: SLF001
-        pipeline_name=name
-    )
+    locations = client._get_repo_locations_and_names_with_pipeline(job_name=name)  # noqa: SLF001
     assert len(locations) == 1
-    assert locations[0].pipeline_name == name
+    assert locations[0].job_name == name
 
 
 def is_0_release(release: str) -> bool:

@@ -62,12 +62,10 @@ const TYPE_EXPLORER_CONTAINER_QUERY = gql`
     $dagsterTypeName: String!
   ) {
     pipelineOrError(params: $pipelineSelector) {
-      __typename
       ... on Pipeline {
         id
         isJob
         dagsterTypeOrError(dagsterTypeName: $dagsterTypeName) {
-          __typename
           ... on RegularDagsterType {
             ...TypeExplorerFragment
           }

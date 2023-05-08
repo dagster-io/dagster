@@ -32,7 +32,6 @@ from dagster._check import CheckError
 from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.partition import (
-    Partition,
     PartitionedConfig,
     StaticPartitionsDefinition,
 )
@@ -254,25 +253,24 @@ def test_partitions():
     def my_graph():
         my_op()
 
-    def config_fn(partition: Partition):
-        return {"ops": {"my_op": {"config": {"date": partition.value}}}}
+    def config_fn(partition_key: str):
+        return {"ops": {"my_op": {"config": {"date": partition_key}}}}
 
     job_def = my_graph.to_job(
         config=PartitionedConfig(
-            run_config_for_partition_fn=config_fn,
+            run_config_for_partition_key_fn=config_fn,
             partitions_def=StaticPartitionsDefinition(["2020-02-25", "2020-02-26"]),
         ),
     )
     assert job_def.partitions_def
     assert job_def.partitioned_config
-    partitions = job_def.partitions_def.get_partitions()
-    assert len(partitions) == 2
-    assert partitions[0].value == "2020-02-25"
-    assert partitions[0].name == "2020-02-25"
-    assert job_def.partitioned_config.get_run_config_for_partition_key(partitions[0].name) == {
+    partition_keys = job_def.partitions_def.get_partition_keys()
+    assert len(partition_keys) == 2
+    assert partition_keys[0] == "2020-02-25"
+    assert job_def.partitioned_config.get_run_config_for_partition_key(partition_keys[0]) == {
         "ops": {"my_op": {"config": {"date": "2020-02-25"}}}
     }
-    assert job_def.partitioned_config.get_run_config_for_partition_key(partitions[1].name) == {
+    assert job_def.partitioned_config.get_run_config_for_partition_key(partition_keys[1]) == {
         "ops": {"my_op": {"config": {"date": "2020-02-26"}}}
     }
 
@@ -280,26 +278,25 @@ def test_partitions():
     # when returning run config, the result partitions have different config
     SHARED_CONFIG = {}
 
-    def shared_config_fn(partition: Partition):
+    def shared_config_fn(partition_key: str):
         my_config = SHARED_CONFIG
-        my_config["ops"] = {"my_op": {"config": {"date": partition.value}}}
+        my_config["ops"] = {"my_op": {"config": {"date": partition_key}}}
         return my_config
 
     job_def = my_graph.to_job(
         config=PartitionedConfig(
-            run_config_for_partition_fn=shared_config_fn,
+            run_config_for_partition_key_fn=shared_config_fn,
             partitions_def=StaticPartitionsDefinition(["2020-02-25", "2020-02-26"]),
         ),
     )
     assert job_def.partitions_def
     assert job_def.partitioned_config
-    partitions = job_def.partitions_def.get_partitions()
-    assert len(partitions) == 2
-    assert partitions[0].value == "2020-02-25"
-    assert partitions[0].name == "2020-02-25"
+    partition_keys = job_def.partitions_def.get_partition_keys()
+    assert len(partition_keys) == 2
+    assert partition_keys[0] == "2020-02-25"
 
-    first_config = job_def.partitioned_config.get_run_config_for_partition_key(partitions[0].name)
-    second_config = job_def.partitioned_config.get_run_config_for_partition_key(partitions[1].name)
+    first_config = job_def.partitioned_config.get_run_config_for_partition_key(partition_keys[0])
+    second_config = job_def.partitioned_config.get_run_config_for_partition_key(partition_keys[1])
     assert first_config != second_config
 
     assert first_config == {"ops": {"my_op": {"config": {"date": "2020-02-25"}}}}
@@ -410,7 +407,7 @@ def test_composition_bug():
 
     my_job = my_graph_final.to_job()
 
-    index = my_job.get_pipeline_index()
+    index = my_job.get_job_index()
     assert index.get_node_def_snap("my_graph1")
     assert index.get_node_def_snap("my_graph2")
 
@@ -446,7 +443,7 @@ def test_desc():
 
 
 def test_config_naming_collisions():
-    @op(config_schema={"solids": Permissive(), "ops": Permissive()})
+    @op(config_schema={"ops": Permissive()})
     def my_op(context):
         return context.op_config
 
@@ -455,8 +452,7 @@ def test_config_naming_collisions():
         return my_op()
 
     config = {
-        "solids": {"solids": {"foo": {"config": {"foobar": "bar"}}}},
-        "ops": {"solids": {"foo": {"config": {"foobar": "bar"}}}},
+        "ops": {"ops": {"foo": {"config": {"foobar": "bar"}}}},
     }
     result = my_graph.execute_in_process(run_config={"ops": {"my_op": {"config": config}}})
     assert result.success
@@ -469,27 +465,6 @@ def test_config_naming_collisions():
     result = ops.execute_in_process(run_config={"ops": {"my_op": {"config": config}}})
     assert result.success
     assert result.output_value() == config
-
-
-def test_to_job_default_config_field_aliasing():
-    @op
-    def add_one(x):
-        return x + 1
-
-    @graph
-    def my_graph():
-        return add_one()
-
-    my_job = my_graph.to_job(config={"ops": {"add_one": {"inputs": {"x": {"value": 1}}}}})
-
-    result = my_job.execute_in_process()
-    assert result.success
-
-    result = my_job.execute_in_process({"solids": {"add_one": {"inputs": {"x": {"value": 1}}}}})
-    assert result.success
-
-    result = my_job.execute_in_process({"ops": {"add_one": {"inputs": {"x": {"value": 1}}}}})
-    assert result.success
 
 
 def test_to_job_incomplete_default_config():
@@ -517,13 +492,6 @@ def test_to_job_incomplete_default_config():
             },
             invalid_default_error,
         ),  # Providing extraneous config for an op that doesn't exist.
-        (
-            {
-                "ops": {"my_op": {"config": {"foo": "bar"}}},
-                "solids": {"my_op": {"config": {"foo": "bar"}}},
-            },
-            default_config_error,
-        ),  # Providing the same config with multiple aliases.
     ]
     # Ensure that errors nested into the config tree are caught
     for invalid_config, error_msg in invalid_configs:
@@ -695,7 +663,7 @@ def test_job_subset():
 
     the_job = basic.to_job()
 
-    assert isinstance(the_job.get_job_def_for_subset_selection(["my_op"]), JobDefinition)
+    assert isinstance(the_job.get_subset(op_selection=["my_op"]), JobDefinition)
 
 
 def test_tags():

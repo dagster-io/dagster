@@ -3,7 +3,7 @@ import pytest
 from click.testing import CliRunner
 from dagster._cli.job import execute_launch_command, job_launch_command
 from dagster._core.errors import DagsterRunAlreadyExists
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import new_cwd
 from dagster._utils import file_relative_path
 
@@ -42,7 +42,7 @@ def run_job_launch_cli(execution_args, instance, expected_count=None):
 
 
 @pytest.mark.parametrize("gen_job_args", launch_command_contexts())
-def test_launch_pipeline(gen_job_args):
+def test_launch_job(gen_job_args):
     with gen_job_args as (cli_args, instance):
         run_launch(cli_args, instance, expected_count=1)
 

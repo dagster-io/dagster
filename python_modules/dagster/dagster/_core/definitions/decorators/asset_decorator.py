@@ -70,7 +70,7 @@ def asset(
     io_manager_key: Optional[str] = ...,
     compute_kind: Optional[str] = ...,
     dagster_type: Optional[DagsterType] = ...,
-    partitions_def: Optional[PartitionsDefinition[Any]] = ...,
+    partitions_def: Optional[PartitionsDefinition] = ...,
     op_tags: Optional[Mapping[str, Any]] = ...,
     group_name: Optional[str] = ...,
     output_required: bool = ...,
@@ -98,7 +98,7 @@ def asset(
     io_manager_key: Optional[str] = None,
     compute_kind: Optional[str] = None,
     dagster_type: Optional[DagsterType] = None,
-    partitions_def: Optional[PartitionsDefinition[Any]] = None,
+    partitions_def: Optional[PartitionsDefinition] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
     group_name: Optional[str] = None,
     output_required: bool = True,
@@ -355,7 +355,7 @@ class _Asset:
             if asset_in.partition_mapping is not None
         }
 
-        return AssetsDefinition(
+        return AssetsDefinition.dagster_internal_init(
             keys_by_input_name=keys_by_input_name,
             keys_by_output_name={"result": out_asset_key},
             node_def=op,
@@ -369,6 +369,11 @@ class _Asset:
             auto_materialize_policies_by_key={out_asset_key: self.auto_materialize_policy}
             if self.auto_materialize_policy
             else None,
+            asset_deps=None,  # no asset deps in single-asset decorator
+            selected_asset_keys=None,  # no subselection in decorator
+            can_subset=False,
+            metadata_by_key=None,  # not supported for now
+            descriptions_by_key=None,  # not supported for now
         )
 
 
@@ -383,7 +388,7 @@ def multi_asset(
     required_resource_keys: Optional[Set[str]] = None,
     compute_kind: Optional[str] = None,
     internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
-    partitions_def: Optional[PartitionsDefinition[object]] = None,
+    partitions_def: Optional[PartitionsDefinition] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
     can_subset: bool = False,
     resource_defs: Optional[Mapping[str, object]] = None,
@@ -566,7 +571,7 @@ def multi_asset(
             if asset_in.partition_mapping is not None
         }
 
-        return AssetsDefinition(
+        return AssetsDefinition.dagster_internal_init(
             keys_by_input_name=keys_by_input_name,
             keys_by_output_name=keys_by_output_name,
             node_def=op,
@@ -578,6 +583,9 @@ def multi_asset(
             group_names_by_key=group_names_by_key,
             freshness_policies_by_key=freshness_policies_by_key,
             auto_materialize_policies_by_key=auto_materialize_policies_by_key,
+            selected_asset_keys=None,  # no subselection in decorator
+            descriptions_by_key=None,  # not supported for now
+            metadata_by_key=None,  # not supported for now
         )
 
     return inner
@@ -820,7 +828,7 @@ def graph_multi_asset(
     outs: Mapping[str, AssetOut],
     name: Optional[str] = None,
     ins: Optional[Mapping[str, AssetIn]] = None,
-    partitions_def: Optional[PartitionsDefinition[object]] = None,
+    partitions_def: Optional[PartitionsDefinition] = None,
     group_name: Optional[str] = None,
     can_subset: bool = False,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,

@@ -16,10 +16,10 @@ ExecutableDefinition: TypeAlias = Union[
 
 
 class RepoRelativeTarget(NamedTuple):
-    """The thing to be executed by a schedule or sensor, selecting by name a pipeline in the same repository.
+    """The thing to be executed by a schedule or sensor, selecting by name a job in the same repository.
     """
 
-    pipeline_name: str
+    job_name: str
     solid_selection: Optional[Sequence[str]]
 
 
@@ -49,12 +49,12 @@ class DirectTarget(
         )
 
     @property
-    def pipeline_name(self) -> str:
+    def job_name(self) -> str:
         return self.target.name
 
     @property
     def solid_selection(self):
-        # open question on how to direct target subset pipeline
+        # open question on how to direct target subset job
         return None
 
     def load(self) -> ExecutableDefinition:

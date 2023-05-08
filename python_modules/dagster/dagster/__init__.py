@@ -21,6 +21,11 @@ sys.meta_path.insert(
             "dagster.serdes": "dagster._serdes",
             "dagster.seven": "dagster._seven",
             "dagster.utils": "dagster._utils",
+            # Added in 1.3.4 for backcompat when `_core.storage.pipeline_run` was renamed to
+            # `_core.storage.dagster_run`. This was necessary because some docs (incorrectly)
+            # demonstarted a direct import from `dagster._core.storage.pipeline_run` instead of
+            # using the top-level import.
+            "dagster._core.storage.pipeline_run": "dagster.core.storage.dagster_run",
         }
     ),
 )
@@ -434,7 +439,7 @@ from dagster._core.execution.context.system import (
 from dagster._core.execution.execute_in_process_result import (
     ExecuteInProcessResult as ExecuteInProcessResult,
 )
-from dagster._core.execution.execute_job_result import ExecuteJobResult as ExecuteJobResult
+from dagster._core.execution.job_execution_result import JobExecutionResult as JobExecutionResult
 from dagster._core.execution.plan.external_step import (
     external_instance_from_step_run_ref as external_instance_from_step_run_ref,
     run_step_from_ref as run_step_from_ref,
@@ -449,7 +454,17 @@ from dagster._core.instance import DagsterInstance as DagsterInstance
 from dagster._core.instance_for_test import instance_for_test as instance_for_test
 from dagster._core.launcher.default_run_launcher import DefaultRunLauncher as DefaultRunLauncher
 from dagster._core.log_manager import DagsterLogManager as DagsterLogManager
+from dagster._core.run_coordinator.queued_run_coordinator import (
+    QueuedRunCoordinator as QueuedRunCoordinator,
+    SubmitRunContext as SubmitRunContext,
+)
 from dagster._core.storage.asset_value_loader import AssetValueLoader as AssetValueLoader
+from dagster._core.storage.dagster_run import (
+    DagsterRun as DagsterRun,
+    DagsterRunStatus as DagsterRunStatus,
+    RunRecord as RunRecord,
+    RunsFilter as RunsFilter,
+)
 from dagster._core.storage.file_manager import (
     FileHandle as FileHandle,
     LocalFileHandle as LocalFileHandle,
@@ -474,12 +489,6 @@ from dagster._core.storage.mem_io_manager import (
     mem_io_manager as mem_io_manager,
 )
 from dagster._core.storage.memoizable_io_manager import MemoizableIOManager as MemoizableIOManager
-from dagster._core.storage.pipeline_run import (
-    DagsterRun as DagsterRun,
-    DagsterRunStatus as DagsterRunStatus,
-    RunRecord as RunRecord,
-    RunsFilter as RunsFilter,
-)
 from dagster._core.storage.root_input_manager import (
     RootInputManager as RootInputManager,
     RootInputManagerDefinition as RootInputManagerDefinition,
@@ -515,7 +524,9 @@ from dagster._serdes.serdes import (
     deserialize_value as deserialize_value,
     serialize_value as serialize_value,
 )
-from dagster._utils import file_relative_path as file_relative_path
+from dagster._utils import (
+    file_relative_path as file_relative_path,
+)
 from dagster._utils.alert import (
     make_email_on_run_failure_sensor as make_email_on_run_failure_sensor,
 )
@@ -553,7 +564,12 @@ if TYPE_CHECKING:
     # from dagster.some.module import (
     #     Foo as Foo,
     # )
-    pass
+
+    # JobExecutionResult used to be called ExecuteJobResult because it was only returned from
+    # `execute_job`.
+    from dagster._core.execution.job_execution_result import (
+        JobExecutionResult as ExecuteJobResult,  # noqa: F401
+    )
 
 
 _DEPRECATED: Final[Mapping[str, TypingTuple[str, str, str]]] = {
@@ -568,6 +584,7 @@ _DEPRECATED: Final[Mapping[str, TypingTuple[str, str, str]]] = {
 _DEPRECATED_RENAMED: Final[Mapping[str, TypingTuple[Callable, str]]] = {
     ##### EXAMPLE
     # "Foo": (Bar, "1.1.0"),
+    "ExecuteJobResult": (JobExecutionResult, "1.4.0"),
 }
 
 

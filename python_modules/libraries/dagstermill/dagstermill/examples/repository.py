@@ -574,8 +574,8 @@ yield_event_asset = dagstermill.define_dagstermill_asset(
 )
 
 
-# this is hacky. We need a ReconstructablePipeline to run dagstermill, and
-# ReconstructablePipeline.for_module() find the jobs defined in this file. So we need to resolve all
+# this is hacky. We need a ReconstructableJob to run dagstermill, and
+# ReconstructableJob.for_module() find the jobs defined in this file. So we need to resolve all
 # of the asset jobs outside of the repository function.
 assets = with_resources(
     [

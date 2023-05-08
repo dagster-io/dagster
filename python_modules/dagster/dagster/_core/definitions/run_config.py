@@ -24,7 +24,7 @@ from dagster._config import (
     Selector,
     Shape,
 )
-from dagster._config.pythonic_config import Config, config_dictionary_from_values
+from dagster._config.pythonic_config import Config
 from dagster._core.definitions.asset_layer import AssetLayer
 from dagster._core.definitions.executor_definition import (
     ExecutorDefinition,
@@ -92,7 +92,7 @@ def def_config_field(
 
 
 class RunConfigSchemaCreationData(NamedTuple):
-    pipeline_name: str
+    job_name: str
     nodes: Sequence[Node]
     graph_def: GraphDefinition
     dependency_structure: DependencyStructure
@@ -195,11 +195,9 @@ def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) ->
         )
 
     fields["ops"] = nodes_field
-    field_aliases = {"ops": "solids"}
 
     return Shape(
         fields=remove_none_entries(fields),
-        field_aliases=field_aliases,
     )
 
 
@@ -372,12 +370,11 @@ def get_output_manager_output_field(
 
 
 def node_config_field(fields: Mapping[str, Optional[Field]], ignored: bool) -> Optional[Field]:
-    field_aliases = {"ops": "solids"}
     trimmed_fields = remove_none_entries(fields)
     if trimmed_fields:
         if ignored:
             return Field(
-                Shape(trimmed_fields, field_aliases=field_aliases),
+                Shape(trimmed_fields),
                 is_required=False,
                 description=(
                     "This op is not present in the current op selection, "
@@ -385,7 +382,7 @@ def node_config_field(fields: Mapping[str, Optional[Field]], ignored: bool) -> O
                 ),
             )
         else:
-            return Field(Shape(trimmed_fields, field_aliases=field_aliases))
+            return Field(Shape(trimmed_fields))
     else:
         return None
 
@@ -554,7 +551,7 @@ def define_node_shape(
         if node_field:
             fields[node.name] = node_field
 
-    return Shape(fields, field_aliases={"ops": "solids"})
+    return Shape(fields)
 
 
 def iterate_node_def_config_types(node_def: NodeDefinition) -> Iterator[ConfigType]:
@@ -613,21 +610,24 @@ def construct_config_type_dictionary(
     return type_dict_by_name, type_dict_by_key
 
 
-def _convert_config_classes(configs: Dict[str, Any]) -> Dict[str, Any]:
+def _convert_config_classes_inner(configs: Any) -> Any:
+    if not isinstance(configs, dict):
+        return configs
+
     return {
-        k: {
-            "config": config_dictionary_from_values(
-                v._as_config_dict(), v.to_config_schema().as_field()  # noqa: SLF001
-            )
-            if isinstance(v, Config)
-            else v
-        }
+        k: {"config": v._convert_to_config_dictionary()}  # noqa: SLF001
+        if isinstance(v, Config)
+        else _convert_config_classes_inner(v)
         for k, v in configs.items()
     }
 
 
+def _convert_config_classes(configs: Dict[str, Any]) -> Dict[str, Any]:
+    return _convert_config_classes_inner(configs)
+
+
 class RunConfig:
-    """Container for all the configuration that can be passed to a pipeline run. Accepts Pythonic definitions
+    """Container for all the configuration that can be passed to a run. Accepts Pythonic definitions
     for op and asset config and resources and converts them under the hood to the appropriate config dictionaries.
 
     Example usage:

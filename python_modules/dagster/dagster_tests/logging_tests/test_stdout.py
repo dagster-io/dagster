@@ -17,7 +17,7 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.storage.captured_log_manager import CapturedLogManager
 from dagster._core.storage.compute_log_manager import ComputeIOType
-from dagster._core.storage.pipeline_run import DagsterRun
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.test_utils import create_run_for_test, instance_for_test
 from dagster._utils import ensure_dir, touch_file
 
@@ -307,7 +307,7 @@ def expected_outer_prefix():
 def test_single():
     with instance_for_test() as instance:
         job_name = "foo_job"
-        dagster_run = create_run_for_test(instance, pipeline_name=job_name)
+        dagster_run = create_run_for_test(instance, job_name=job_name)
 
         step_keys = ["A", "B", "C"]
 
@@ -348,7 +348,7 @@ def test_compute_log_base_with_spaces():
             },
         ) as instance:
             job_name = "foo_job"
-            dagster_run = create_run_for_test(instance, pipeline_name=job_name)
+            dagster_run = create_run_for_test(instance, job_name=job_name)
 
             step_keys = ["A", "B", "C"]
 
@@ -381,7 +381,7 @@ def test_multi():
 
     with instance_for_test() as instance:
         job_name = "foo_job"
-        dagster_run = create_run_for_test(instance, pipeline_name=job_name)
+        dagster_run = create_run_for_test(instance, job_name=job_name)
 
         step_keys = ["A", "B", "C"]
 

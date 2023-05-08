@@ -2,13 +2,13 @@ import multiprocessing
 import os
 import sys
 from multiprocessing.context import BaseContext as MultiprocessingBaseContext
-from typing import Any, Dict, Iterator, List, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Mapping, Optional, Sequence
 
 from dagster import (
     _check as check,
 )
 from dagster._core.definitions.metadata import MetadataValue
-from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.repository_definition import RepositoryLoadData
 from dagster._core.errors import (
     DagsterExecutionInterruptedError,
@@ -18,7 +18,7 @@ from dagster._core.errors import (
 from dagster._core.events import DagsterEvent, EngineEventData
 from dagster._core.execution.api import create_execution_plan, execute_plan_iterator
 from dagster._core.execution.context.system import IStepContext, PlanOrchestrationContext
-from dagster._core.execution.context_creation_pipeline import create_context_free_log_manager
+from dagster._core.execution.context_creation_job import create_context_free_log_manager
 from dagster._core.execution.plan.active import ActiveExecution
 from dagster._core.execution.plan.objects import StepFailureData
 from dagster._core.execution.plan.plan import ExecutionPlan
@@ -39,24 +39,28 @@ from .child_process_executor import (
     execute_child_process_command,
 )
 
+if TYPE_CHECKING:
+    from dagster._core.instance.ref import InstanceRef
+    from dagster._core.storage.dagster_run import DagsterRun
+
 DELEGATE_MARKER = "multiprocess_subprocess_init"
 
 
 class MultiprocessExecutorChildProcessCommand(ChildProcessCommand):
     def __init__(
         self,
-        run_config,
-        pipeline_run,
-        step_key,
-        instance_ref,
-        term_event,
-        recon_pipeline,
-        retry_mode,
-        known_state,
-        repository_load_data,
+        run_config: Mapping[str, object],
+        dagster_run: "DagsterRun",
+        step_key: str,
+        instance_ref: "InstanceRef",
+        term_event: Any,
+        recon_pipeline: ReconstructableJob,
+        retry_mode: RetryMode,
+        known_state: Optional[KnownExecutionState],
+        repository_load_data: Optional[RepositoryLoadData],
     ):
         self.run_config = run_config
-        self.pipeline_run = pipeline_run
+        self.dagster_run = dagster_run
         self.step_key = step_key
         self.instance_ref = instance_ref
         self.term_event = term_event
@@ -66,22 +70,22 @@ class MultiprocessExecutorChildProcessCommand(ChildProcessCommand):
         self.repository_load_data = repository_load_data
 
     def execute(self) -> Iterator[DagsterEvent]:
-        pipeline = self.recon_pipeline
+        recon_job = self.recon_pipeline
         with DagsterInstance.from_ref(self.instance_ref) as instance:
             start_termination_thread(self.term_event)
             execution_plan = create_execution_plan(
-                pipeline=pipeline,
+                job=recon_job,
                 run_config=self.run_config,
                 step_keys_to_execute=[self.step_key],
                 known_state=self.known_state,
                 repository_load_data=self.repository_load_data,
             )
 
-            log_manager = create_context_free_log_manager(instance, self.pipeline_run)
+            log_manager = create_context_free_log_manager(instance, self.dagster_run)
 
             yield DagsterEvent.step_worker_started(
                 log_manager,
-                self.pipeline_run.pipeline_name,
+                self.dagster_run.job_name,
                 message=f'Executing step "{self.step_key}" in subprocess.',
                 metadata={
                     "pid": MetadataValue.text(str(os.getpid())),
@@ -91,8 +95,8 @@ class MultiprocessExecutorChildProcessCommand(ChildProcessCommand):
 
             yield from execute_plan_iterator(
                 execution_plan,
-                pipeline,
-                self.pipeline_run,
+                recon_job,
+                self.dagster_run,
                 run_config=self.run_config,
                 retry_mode=self.retry_mode.for_inner_plan(),
                 instance=instance,
@@ -145,16 +149,16 @@ class MultiprocessExecutor(Executor):
         check.inst_param(plan_context, "plan_context", PlanOrchestrationContext)
         check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
 
-        pipeline = plan_context.reconstructable_pipeline
+        job = plan_context.reconstructable_job
 
         multiproc_ctx = multiprocessing.get_context(self._start_method)
         if self._start_method == "forkserver":
-            module = pipeline.get_module()
+            module = job.get_module()
             # if explicitly listed in config we will use that
             if self._explicit_forkserver_preload is not None:
                 preload = self._explicit_forkserver_preload
 
-            # or if the reconstructable pipeline has a module target, we will use that
+            # or if the reconstructable job has a module target, we will use that
             elif module is not None:
                 preload = [module]
 
@@ -222,7 +226,7 @@ class MultiprocessExecutor(Executor):
                             term_events[step.key] = multiproc_ctx.Event()
                             active_iters[step.key] = execute_step_out_of_process(
                                 multiproc_ctx,
-                                pipeline,
+                                job,
                                 step_context,
                                 step,
                                 errors,
@@ -326,7 +330,7 @@ class MultiprocessExecutor(Executor):
 
 def execute_step_out_of_process(
     multiproc_ctx: MultiprocessingBaseContext,
-    pipeline: ReconstructablePipeline,
+    recon_job: ReconstructableJob,
     step_context: IStepContext,
     step: ExecutionStep,
     errors: Dict[int, SerializableErrorInfo],
@@ -337,11 +341,11 @@ def execute_step_out_of_process(
 ) -> Iterator[Optional[DagsterEvent]]:
     command = MultiprocessExecutorChildProcessCommand(
         run_config=step_context.run_config,
-        pipeline_run=step_context.dagster_run,
+        dagster_run=step_context.dagster_run,
         step_key=step.key,
         instance_ref=step_context.instance.get_ref(),
         term_event=term_events[step.key],
-        recon_pipeline=pipeline,
+        recon_pipeline=recon_job,
         retry_mode=retries,
         known_state=known_state,
         repository_load_data=repository_load_data,

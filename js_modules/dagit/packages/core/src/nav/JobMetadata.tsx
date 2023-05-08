@@ -5,6 +5,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {tokenForAssetKey} from '../asset-graph/Utils';
+import {AutomaterializeDaemonStatusTag} from '../assets/AutomaterializeDaemonStatusTag';
 import {DagsterTag} from '../runs/RunTag';
 import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
@@ -78,6 +79,9 @@ export const JobMetadata: React.FC<Props> = (props) => {
         <JobScheduleOrSensorTag job={metadata.job} repoAddress={repoAddress} />
       ) : null}
       <LatestRunTag pipelineName={pipelineName} repoAddress={repoAddress} />
+      {metadata.assetNodes && metadata.assetNodes.some((a) => !!a.autoMaterializePolicy) && (
+        <AutomaterializeDaemonStatusTag />
+      )}
       {metadata.runsForAssetScan ? (
         <RelatedAssetsTag relatedAssets={getRelatedAssets(metadata)} />
       ) : null}
@@ -203,6 +207,9 @@ const JOB_METADATA_QUERY = gql`
 
   fragment JobMetadataAssetNode on AssetNode {
     id
+    autoMaterializePolicy {
+      policyType
+    }
     assetKey {
       path
     }

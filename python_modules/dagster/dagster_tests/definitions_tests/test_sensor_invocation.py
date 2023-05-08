@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from typing import Iterator, Optional, cast
+from typing import Iterator, List, Optional, cast
 from unittest import mock
 
 import pytest
@@ -25,6 +25,7 @@ from dagster import (
     RunConfig,
     RunRequest,
     SkipReason,
+    SourceAsset,
     StaticPartitionsDefinition,
     asset,
     build_freshness_policy_sensor_context,
@@ -57,14 +58,14 @@ from dagster._core.test_utils import instance_for_test
 
 def test_sensor_invocation_args():
     # Test no arg invocation
-    @sensor(job_name="foo_pipeline")
+    @sensor(job_name="foo_job")
     def basic_sensor_no_arg():
         return RunRequest(run_key=None, run_config={}, tags={})
 
     assert basic_sensor_no_arg().run_config == {}
 
     # Test underscore name
-    @sensor(job_name="foo_pipeline")
+    @sensor(job_name="foo_job")
     def basic_sensor(_):
         return RunRequest(run_key=None, run_config={}, tags={})
 
@@ -72,7 +73,7 @@ def test_sensor_invocation_args():
     assert basic_sensor(None).run_config == {}
 
     # Test sensor arbitrary arg name
-    @sensor(job_name="foo_pipeline")
+    @sensor(job_name="foo_job")
     def basic_sensor_with_context(_arbitrary_context):
         return RunRequest(run_key=None, run_config={}, tags={})
 
@@ -117,7 +118,7 @@ def test_sensor_invocation_resources() -> None:
         a_str: str
 
     # Test no arg invocation
-    @sensor(job_name="foo_pipeline")
+    @sensor(job_name="foo_job")
     def basic_sensor_resource_req(my_resource: MyResource):
         return RunRequest(run_key=None, run_config={"foo": my_resource.a_str}, tags={})
 
@@ -144,7 +145,7 @@ def test_sensor_invocation_resources_direct() -> None:
         a_str: str
 
     # Test no arg invocation
-    @sensor(job_name="foo_pipeline")
+    @sensor(job_name="foo_job")
     def basic_sensor_resource_req(my_resource: MyResource):
         return RunRequest(run_key=None, run_config={"foo": my_resource.a_str}, tags={})
 
@@ -193,7 +194,7 @@ def test_sensor_invocation_resources_direct() -> None:
     ).run_config == {"foo": "foo"}
 
     # Test with context arg requirement
-    @sensor(job_name="foo_pipeline")
+    @sensor(job_name="foo_job")
     def basic_sensor_with_context_resource_req(my_resource: MyResource, context):
         return RunRequest(run_key=None, run_config={"foo": my_resource.a_str}, tags={})
 
@@ -210,7 +211,7 @@ def test_sensor_invocation_resources_direct_many() -> None:
         a_str: str
 
     # Test no arg invocation
-    @sensor(job_name="foo_pipeline")
+    @sensor(job_name="foo_job")
     def basic_sensor_resource_req(my_resource: MyResource, my_other_resource: MyResource):
         return RunRequest(
             run_key=None,
@@ -237,7 +238,7 @@ def test_sensor_invocation_resources_direct_many() -> None:
 
 
 def test_sensor_invocation_resources_context_manager() -> None:
-    @sensor(job_name="foo_pipeline")
+    @sensor(job_name="foo_job")
     def basic_sensor_str_resource_req(my_resource: ResourceParam[str]):
         return RunRequest(run_key=None, run_config={"foo": my_resource}, tags={})
 
@@ -263,7 +264,7 @@ def test_sensor_invocation_resources_deferred() -> None:
         def create_resource(self, context) -> None:
             raise Exception()
 
-    @sensor(job_name="foo_pipeline", required_resource_keys={"my_resource"})
+    @sensor(job_name="foo_job", required_resource_keys={"my_resource"})
     def basic_sensor_resource_req() -> RunRequest:
         return RunRequest(run_key=None, run_config={}, tags={})
 
@@ -321,6 +322,52 @@ def test_multi_asset_sensor_invocation_resources() -> None:
             resources={"my_resource": MyResource(a_str="bar")},
         )
         assert cast(RunRequest, a_and_b_sensor(ctx)).run_config == {"foo": "bar"}
+
+
+def test_multi_asset_sensor_with_source_assets() -> None:
+    # upstream_asset1 exists in another repository
+    @asset(partitions_def=DailyPartitionsDefinition(start_date="2023-03-01"))
+    def upstream_asset1():
+        ...
+
+    upstream_asset1_source = SourceAsset(
+        key=upstream_asset1.key,
+        partitions_def=DailyPartitionsDefinition(start_date="2023-03-01"),
+    )
+
+    @asset()
+    def downstream_asset(upstream_asset1):
+        ...
+
+    @multi_asset_sensor(
+        monitored_assets=[
+            upstream_asset1.key,
+        ],
+        job=define_asset_job("foo", selection=[downstream_asset]),
+    )
+    def my_sensor(context):
+        run_requests = []
+        for partition, record in context.latest_materialization_records_by_partition(
+            AssetKey("upstream_asset1")
+        ).items():
+            context.advance_cursor({upstream_asset1.key: record})
+            run_requests.append(RunRequest(partition_key=partition))
+        return run_requests
+
+    @repository
+    def my_repo():
+        return [upstream_asset1_source, downstream_asset, my_sensor]
+
+    with instance_for_test() as instance:
+        materialize([upstream_asset1], instance=instance, partition_key="2023-03-01")
+        ctx = build_multi_asset_sensor_context(
+            monitored_assets=[AssetKey("upstream_asset1")],
+            instance=instance,
+            repository_def=my_repo,
+        )
+        run_requests = cast(List[RunRequest], my_sensor(ctx))
+        assert len(run_requests) == 1
+        assert run_requests[0].partition_key == "2023-03-01"
 
 
 def test_freshness_policy_sensor_invocation_resources() -> None:
@@ -1678,7 +1725,7 @@ def test_sensor_invocation_runconfig() -> None:
         an_int: int
 
     # Test no arg invocation
-    @sensor(job_name="foo_pipeline")
+    @sensor(job_name="foo_job")
     def basic_sensor():
         return RunRequest(
             run_key=None,

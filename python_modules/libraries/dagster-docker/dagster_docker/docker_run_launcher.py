@@ -9,7 +9,7 @@ from dagster._core.launcher.base import (
     RunLauncher,
     WorkerStatus,
 )
-from dagster._core.storage.pipeline_run import DagsterRun
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.storage.tags import DOCKER_IMAGE_TAG
 from dagster._core.utils import parse_env_var
 from dagster._grpc.types import ExecuteRunArgs, ResumeRunArgs
@@ -71,8 +71,8 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
     ) -> Self:
         return DockerRunLauncher(inst_data=inst_data, **config_value)
 
-    def get_container_context(self, pipeline_run: DagsterRun) -> DockerContainerContext:
-        return DockerContainerContext.create_for_run(pipeline_run, self)
+    def get_container_context(self, dagster_run: DagsterRun) -> DockerContainerContext:
+        return DockerContainerContext.create_for_run(dagster_run, self)
 
     def _get_client(self, container_context: DockerContainerContext):
         client = docker.client.from_env()
@@ -84,8 +84,8 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
             )
         return client
 
-    def _get_docker_image(self, pipeline_code_origin):
-        docker_image = pipeline_code_origin.repository_origin.container_image
+    def _get_docker_image(self, job_code_origin):
+        docker_image = job_code_origin.repository_origin.container_image
 
         if not docker_image:
             docker_image = self.image
@@ -136,7 +136,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
                     docker_image=docker_image,
                 )
             ),
-            pipeline_run=run,
+            dagster_run=run,
             cls=self.__class__,
         )
 
@@ -149,12 +149,12 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
 
     def launch_run(self, context: LaunchRunContext) -> None:
         run = context.dagster_run
-        pipeline_code_origin = check.not_none(context.pipeline_code_origin)
-        docker_image = self._get_docker_image(pipeline_code_origin)
+        job_code_origin = check.not_none(context.job_code_origin)
+        docker_image = self._get_docker_image(job_code_origin)
 
         command = ExecuteRunArgs(
-            pipeline_origin=pipeline_code_origin,
-            pipeline_run_id=run.run_id,
+            job_origin=job_code_origin,
+            run_id=run.run_id,
             instance_ref=self._instance.get_ref(),
         ).get_command_args()
 
@@ -166,12 +166,12 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
 
     def resume_run(self, context: ResumeRunContext) -> None:
         run = context.dagster_run
-        pipeline_code_origin = check.not_none(context.pipeline_code_origin)
-        docker_image = self._get_docker_image(pipeline_code_origin)
+        job_code_origin = check.not_none(context.job_code_origin)
+        docker_image = self._get_docker_image(job_code_origin)
 
         command = ResumeRunArgs(
-            pipeline_origin=pipeline_code_origin,
-            pipeline_run_id=run.run_id,
+            job_origin=job_code_origin,
+            run_id=run.run_id,
             instance_ref=self._instance.get_ref(),
         ).get_command_args()
 
@@ -195,17 +195,21 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
 
     def terminate(self, run_id):
         run = self._instance.get_run_by_id(run_id)
+
+        if not run:
+            return False
+
+        self._instance.report_run_canceling(run)
+
         container = self._get_container(run)
 
         if not container:
             self._instance.report_engine_event(
                 message="Unable to get docker container to send termination request to.",
-                pipeline_run=run,
+                dagster_run=run,
                 cls=self.__class__,
             )
             return False
-
-        self._instance.report_run_canceling(run)
 
         container.stop()
 

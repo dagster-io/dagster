@@ -232,7 +232,7 @@ def test_ssh_sftp(sftpserver):
             sftp_solid_get,
             resources={"ssh_resource": sshresource},
             run_config={
-                "solids": {
+                "ops": {
                     "sftp_solid_get": {
                         "config": {
                             "local_filepath": readme_file,

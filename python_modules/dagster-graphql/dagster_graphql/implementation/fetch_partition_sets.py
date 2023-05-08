@@ -12,7 +12,7 @@ from dagster._core.host_representation.external_data import (
     ExternalPartitionExecutionErrorData,
     ExternalPartitionNamesData,
 )
-from dagster._core.storage.pipeline_run import RunPartitionData, RunsFilter
+from dagster._core.storage.dagster_run import RunPartitionData, RunsFilter
 from dagster._core.storage.tags import (
     PARTITION_NAME_TAG,
     PARTITION_SET_TAG,
@@ -54,7 +54,7 @@ def get_partition_sets_or_error(
     partition_sets = [
         partition_set
         for partition_set in repository.get_external_partition_sets()
-        if partition_set.pipeline_name == pipeline_name
+        if partition_set.job_name == pipeline_name
     ]
 
     return GraphenePartitionSets(
@@ -66,7 +66,7 @@ def get_partition_sets_or_error(
             for partition_set in sorted(
                 partition_sets,
                 key=lambda partition_set: (
-                    partition_set.pipeline_name,
+                    partition_set.job_name,
                     partition_set.mode,
                     partition_set.name,
                 ),

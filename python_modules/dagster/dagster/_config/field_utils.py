@@ -1,6 +1,5 @@
 # encoding: utf-8
 import hashlib
-from enum import Enum
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Mapping, Sequence
 
 import dagster._check as check
@@ -114,7 +113,7 @@ class Shape(_ConfigHasFields):
             The specification of the config dict.
         field_aliases (Dict[str, str]):
             Maps a string key to an alias that can be used instead of the original key. For example,
-            an entry {"solids": "ops"} means that someone could use "ops" instead of "solids" as a
+            an entry {"foo": "bar"} means that someone could use "bar" instead of "foo" as a
             top level string key.
     """
 
@@ -460,28 +459,6 @@ def _convert_potential_field(
     return Field(_convert_potential_type(original_root, potential_field, stack))
 
 
-def _config_dictionary_from_values_inner(obj: Any):
-    from dagster._config.pythonic_config import Config
-
-    if isinstance(obj, dict):
-        return {k: _config_dictionary_from_values_inner(v) for k, v in obj.items() if v is not None}
-    elif isinstance(obj, list):
-        return [_config_dictionary_from_values_inner(v) for v in obj]
-    elif isinstance(obj, EnvVar):
-        return {"env": str(obj)}
-    elif isinstance(obj, IntEnvVar):
-        return {"env": obj.name}
-    elif isinstance(obj, Config):
-        return {
-            k: _config_dictionary_from_values_inner(v)
-            for k, v in obj._as_config_dict().items()  # noqa: SLF001
-        }
-    elif isinstance(obj, Enum):
-        return obj.name
-
-    return obj
-
-
 def config_dictionary_from_values(
     values: Mapping[str, Any], config_field: "Field"
 ) -> Dict[str, Any]:
@@ -491,7 +468,9 @@ def config_dictionary_from_values(
     """
     assert ConfigTypeKind.is_shape(config_field.config_type.kind)
 
-    return check.is_dict(_config_dictionary_from_values_inner(values))
+    from dagster._config.pythonic_config import _config_value_to_dict_representation
+
+    return check.is_dict(_config_value_to_dict_representation(None, values))
 
 
 class IntEnvVar(int):

@@ -5,7 +5,7 @@ from typing import Any
 import pytest
 from dagster._core.definitions.reconstruct import ReconstructableRepository
 from dagster._core.execution.api import execute_job
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import create_run_for_test
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._grpc.types import CancelExecutionRequest
@@ -86,7 +86,7 @@ class TestQueuedRunTermination(QueuedRunCoordinatorTestSuite):
                     "executionParams": {
                         "selector": selector,
                         "mode": "default",
-                        "runConfigData": {"solids": {"loop": {"config": {"file": path}}}},
+                        "runConfigData": {"ops": {"loop": {"config": {"file": path}}}},
                     }
                 },
             )
@@ -118,7 +118,7 @@ class TestQueuedRunTermination(QueuedRunCoordinatorTestSuite):
                     "executionParams": {
                         "selector": selector,
                         "mode": "default",
-                        "runConfigData": {"solids": {"loop": {"config": {"file": path}}}},
+                        "runConfigData": {"ops": {"loop": {"config": {"file": path}}}},
                     }
                 },
             )
@@ -181,7 +181,7 @@ class TestRunVariantTermination(RunTerminationTestSuite):
                     "executionParams": {
                         "selector": selector,
                         "mode": "default",
-                        "runConfigData": {"solids": {"loop": {"config": {"file": path}}}},
+                        "runConfigData": {"ops": {"loop": {"config": {"file": path}}}},
                     }
                 },
             )
@@ -214,7 +214,7 @@ class TestRunVariantTermination(RunTerminationTestSuite):
                     "executionParams": {
                         "selector": selector,
                         "mode": "default",
-                        "runConfigData": {"solids": {"loop": {"config": {"file": path}}}},
+                        "runConfigData": {"ops": {"loop": {"config": {"file": path}}}},
                     }
                 },
             )
@@ -276,7 +276,7 @@ class TestRunVariantTermination(RunTerminationTestSuite):
                     "executionParams": {
                         "selector": selector,
                         "mode": "default",
-                        "runConfigData": {"solids": {"loop": {"config": {"file": path}}}},
+                        "runConfigData": {"ops": {"loop": {"config": {"file": path}}}},
                     }
                 },
             )
@@ -326,7 +326,7 @@ class TestRunVariantTermination(RunTerminationTestSuite):
         recon_job = ReconstructableRepository.for_file(
             file_relative_path(__file__, "repo.py"),
             "test_repo",
-        ).get_reconstructable_pipeline("noop_job")
+        ).get_reconstructable_job("noop_job")
 
         with execute_job(recon_job, instance=instance) as exec_result:
             assert exec_result.success
@@ -372,7 +372,7 @@ class TestRunVariantTermination(RunTerminationTestSuite):
                     "executionParams": {
                         "selector": selector,
                         "mode": "default",
-                        "runConfigData": {"solids": {"loop": {"config": {"file": path}}}},
+                        "runConfigData": {"ops": {"loop": {"config": {"file": path}}}},
                     }
                 },
             )

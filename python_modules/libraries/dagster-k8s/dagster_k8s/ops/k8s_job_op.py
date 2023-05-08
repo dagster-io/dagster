@@ -197,7 +197,7 @@ def execute_k8s_job(
             Keys can either snake_case or camelCase.Default: None.
     """
     run_container_context = K8sContainerContext.create_for_run(
-        context.pipeline_run,
+        context.dagster_run,
         context.instance.run_launcher
         if isinstance(context.instance.run_launcher, K8sRunLauncher)
         else None,
@@ -269,9 +269,9 @@ def execute_k8s_job(
         component="k8s_job_op",
         user_defined_k8s_config=user_defined_k8s_config,
         labels={
-            "dagster/job": context.pipeline_run.pipeline_name,
+            "dagster/job": context.dagster_run.job_name,
             "dagster/op": context.op.name,
-            "dagster/run-id": context.pipeline_run.run_id,
+            "dagster/run-id": context.dagster_run.run_id,
         },
     )
 

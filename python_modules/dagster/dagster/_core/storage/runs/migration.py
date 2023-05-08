@@ -1,5 +1,5 @@
 from contextlib import ExitStack
-from typing import AbstractSet, Any, Callable, Iterator, Mapping, Optional
+from typing import AbstractSet, Any, Callable, Iterator, Mapping, Optional, cast
 
 import sqlalchemy as db
 import sqlalchemy.exc as db_exc
@@ -11,7 +11,7 @@ import dagster._check as check
 from dagster._serdes import deserialize_value
 
 from ...execution.job_backfill import PartitionBackfill
-from ..pipeline_run import DagsterRun, DagsterRunStatus, RunRecord
+from ..dagster_run import DagsterRun, DagsterRunStatus, RunRecord
 from ..runs.base import RunStorage
 from ..runs.schema import BulkActionsTable, RunsTable, RunTagsTable
 from ..tags import PARTITION_NAME_TAG, PARTITION_SET_TAG, REPOSITORY_LABEL_TAG
@@ -194,17 +194,17 @@ def migrate_run_repo_tags(run_storage: RunStorage, print_fn: Optional[PrintFn] =
 
             has_more = len(rows) >= CHUNK_SIZE
             for row in rows:
-                run = deserialize_value(row[0], DagsterRun)
+                run = deserialize_value(cast(str, row[0]), DagsterRun)
                 cursor = row[1]
                 write_repo_tag(conn, run)
 
 
 def write_repo_tag(conn: Connection, run: DagsterRun) -> None:
-    if not run.external_pipeline_origin:
+    if not run.external_job_origin:
         # nothing to do
         return
 
-    repository_label = run.external_pipeline_origin.external_repository_origin.get_label()
+    repository_label = run.external_job_origin.external_repository_origin.get_label()
     try:
         conn.execute(
             RunTagsTable.insert().values(

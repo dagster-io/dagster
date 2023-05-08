@@ -1,5 +1,5 @@
 import time
-from typing import Any, Mapping, Optional, cast
+from typing import TYPE_CHECKING, Any, Mapping, Optional, cast
 
 from typing_extensions import Self
 
@@ -9,7 +9,7 @@ from dagster import (
 )
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.errors import DagsterInvariantViolationError, DagsterLaunchFailedError
-from dagster._core.storage.pipeline_run import DagsterRun
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.storage.tags import GRPC_INFO_TAG
 from dagster._serdes import (
     ConfigurableClass,
@@ -19,6 +19,10 @@ from dagster._serdes.config_class import ConfigurableClassData
 from dagster._utils.merger import merge_dicts
 
 from .base import LaunchRunContext, RunLauncher
+
+if TYPE_CHECKING:
+    from dagster._core.instance import DagsterInstance
+    from dagster._grpc.client import DagsterGrpcClient
 
 
 # note: this class is a top level export, so we defer many imports til use for performance
@@ -50,9 +54,11 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         return DefaultRunLauncher(inst_data=inst_data)
 
     @staticmethod
-    def launch_run_from_grpc_client(instance, run, grpc_client):
+    def launch_run_from_grpc_client(
+        instance: "DagsterInstance", run: DagsterRun, grpc_client: "DagsterGrpcClient"
+    ):
         # defer for perf
-        from dagster._grpc.types import ExecuteExternalPipelineArgs, StartRunResult
+        from dagster._grpc.types import ExecuteExternalJobArgs, StartRunResult
 
         instance.add_run_tags(
             run.run_id,
@@ -73,13 +79,13 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
 
         res = deserialize_value(
             grpc_client.start_run(
-                ExecuteExternalPipelineArgs(
-                    pipeline_origin=run.external_pipeline_origin,
-                    pipeline_run_id=run.run_id,
+                ExecuteExternalJobArgs(
+                    job_origin=run.external_job_origin,  # type: ignore  # (possible none)
+                    run_id=run.run_id,
                     instance_ref=instance.get_ref(),
                 )
             ),
-            StartRunResult,
+            StartRunResult,  # type: ignore
         )
         if not res.success:
             raise (
@@ -103,9 +109,9 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
                 "DefaultRunLauncher requires a workspace to be included in its LaunchRunContext"
             )
 
-        external_pipeline_origin = check.not_none(run.external_pipeline_origin)
+        external_job_origin = check.not_none(run.external_job_origin)
         code_location = context.workspace.get_code_location(
-            external_pipeline_origin.external_repository_origin.code_location_origin.location_name
+            external_job_origin.external_repository_origin.code_location_origin.location_name
         )
 
         check.inst(
@@ -157,17 +163,18 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         if not run:
             return False
 
+        self._instance.report_run_canceling(run)
+
         client = self._get_grpc_client_for_termination(run_id)
 
         if not client:
             self._instance.report_engine_event(
                 message="Unable to get grpc client to send termination request to.",
-                pipeline_run=run,
+                dagster_run=run,
                 cls=self.__class__,
             )
             return False
 
-        self._instance.report_run_canceling(run)
         res = deserialize_value(
             client.cancel_execution(CancelExecutionRequest(run_id=run_id)), CancelExecutionResult
         )

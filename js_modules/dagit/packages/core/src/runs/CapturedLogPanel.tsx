@@ -6,6 +6,7 @@ import {AppContext} from '../app/AppContext';
 import {WebSocketContext} from '../app/WebSocketProvider';
 
 import {RawLogContent} from './RawLogContent';
+import {ILogCaptureInfo} from './RunMetadataProvider';
 import {
   CapturedLogFragment,
   CapturedLogsMetadataQuery,
@@ -23,11 +24,16 @@ interface CapturedLogProps {
 }
 
 interface CapturedOrExternalLogPanelProps extends CapturedLogProps {
-  externalUrl?: string;
+  logCaptureInfo?: ILogCaptureInfo;
 }
 
 export const CapturedOrExternalLogPanel: React.FC<CapturedOrExternalLogPanelProps> = React.memo(
-  ({externalUrl, ...props}) => {
+  ({logCaptureInfo, ...props}) => {
+    const externalUrl =
+      logCaptureInfo &&
+      (props.visibleIOType === 'stdout'
+        ? logCaptureInfo.externalStdoutUrl
+        : logCaptureInfo.externalStderrUrl);
     if (externalUrl) {
       return (
         <Box

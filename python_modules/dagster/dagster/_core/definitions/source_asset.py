@@ -117,7 +117,7 @@ class SourceAsset(ResourceAddable):
         if io_manager_def is not None:
             experimental_arg_warning("io_manager_def", "SourceAsset.__new__")
 
-        self.key = AssetKey.from_coerceable(key)
+        self.key = AssetKey.from_coercible(key)
         metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
         self.raw_metadata = metadata
         self.metadata = normalize_metadata(metadata, allow_invalid=True)
@@ -285,8 +285,10 @@ class SourceAsset(ResourceAddable):
                 _required_resource_keys=self._required_resource_keys,
             )
 
-    def with_group_name(self, group_name: str) -> "SourceAsset":
-        if self.group_name != DEFAULT_GROUP_NAME:
+    def with_attributes(
+        self, group_name: Optional[str] = None, key: Optional[AssetKey] = None
+    ) -> "SourceAsset":
+        if group_name is not None and self.group_name != DEFAULT_GROUP_NAME:
             raise DagsterInvalidDefinitionError(
                 "A group name has already been provided to source asset"
                 f" {self.key.to_user_string()}"
@@ -296,7 +298,7 @@ class SourceAsset(ResourceAddable):
             warnings.simplefilter("ignore", category=ExperimentalWarning)
 
             return SourceAsset(
-                key=self.key,
+                key=key or self.key,
                 metadata=self.raw_metadata,
                 io_manager_key=self.io_manager_key,
                 io_manager_def=self.io_manager_def,

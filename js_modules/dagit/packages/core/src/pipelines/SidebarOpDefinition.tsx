@@ -186,7 +186,6 @@ export const SidebarOpDefinition: React.FC<SidebarOpDefinitionProps> = (props) =
 
 export const SIDEBAR_OP_DEFINITION_FRAGMENT = gql`
   fragment SidebarOpDefinitionFragment on ISolidDefinition {
-    __typename
     name
     description
     metadata {

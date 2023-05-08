@@ -41,9 +41,9 @@ from ...implementation.fetch_instigators import (
 )
 from ...implementation.fetch_partition_sets import get_partition_set, get_partition_sets_or_error
 from ...implementation.fetch_pipelines import (
-    get_pipeline_or_error,
-    get_pipeline_snapshot_or_error_from_pipeline_selector,
-    get_pipeline_snapshot_or_error_from_snapshot_id,
+    get_job_or_error,
+    get_job_snapshot_or_error_from_job_selector,
+    get_job_snapshot_or_error_from_snapshot_id,
 )
 from ...implementation.fetch_resources import (
     get_resource_or_error,
@@ -501,11 +501,9 @@ class GrapheneDagitQuery(graphene.ObjectType):
 
         if activePipelineSelector:
             pipeline_selector = pipeline_selector_from_graphql(activePipelineSelector)
-            return get_pipeline_snapshot_or_error_from_pipeline_selector(
-                graphene_info, pipeline_selector
-            )
+            return get_job_snapshot_or_error_from_job_selector(graphene_info, pipeline_selector)
         elif snapshotId:
-            return get_pipeline_snapshot_or_error_from_snapshot_id(graphene_info, snapshotId)
+            return get_job_snapshot_or_error_from_snapshot_id(graphene_info, snapshotId)
         else:
             check.failed(
                 "Must set one of snapshotId or activePipelineSelector",
@@ -604,7 +602,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
         return get_unloadable_instigator_states_or_error(graphene_info, instigation_type)
 
     def resolve_pipelineOrError(self, graphene_info: ResolveInfo, params: GraphenePipelineSelector):
-        return get_pipeline_or_error(
+        return get_job_or_error(
             graphene_info,
             pipeline_selector_from_graphql(params),
         )
@@ -777,11 +775,11 @@ class GrapheneDagitQuery(graphene.ObjectType):
                 else []
             )
         elif pipeline is not None:
-            pipeline_name = pipeline.pipelineName
+            job_name = pipeline.pipelineName
             repo_sel = RepositorySelector.from_graphql_input(pipeline)
             repo_loc = graphene_info.context.get_code_location(repo_sel.location_name)
             repo = repo_loc.get_repository(repo_sel.repository_name)
-            external_asset_nodes = repo.get_external_asset_nodes(pipeline_name)
+            external_asset_nodes = repo.get_external_asset_nodes(job_name)
             results = (
                 [
                     GrapheneAssetNode(

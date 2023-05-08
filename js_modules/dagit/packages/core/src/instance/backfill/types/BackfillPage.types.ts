@@ -9,6 +9,7 @@ export type BackfillStatusesByAssetQueryVariables = Types.Exact<{
 export type BackfillStatusesByAssetQuery = {
   __typename: 'DagitQuery';
   partitionBackfillOrError:
+    | {__typename: 'BackfillNotFoundError'; message: string}
     | {
         __typename: 'PartitionBackfill';
         id: string;
@@ -34,14 +35,23 @@ export type BackfillStatusesByAssetQuery = {
             start: string;
             end: string;
           }> | null;
-          assetPartitionsStatusCounts: Array<{
-            __typename: 'AssetPartitionsStatusCounts';
-            numPartitionsTargeted: number;
-            numPartitionsRequested: number;
-            numPartitionsCompleted: number;
-            numPartitionsFailed: number;
-            assetKey: {__typename: 'AssetKey'; path: Array<string>};
-          }>;
+          assetBackfillStatuses: Array<
+            | {
+                __typename: 'AssetPartitionsStatusCounts';
+                numPartitionsTargeted: number;
+                numPartitionsInProgress: number;
+                numPartitionsMaterialized: number;
+                numPartitionsFailed: number;
+                assetKey: {__typename: 'AssetKey'; path: Array<string>};
+              }
+            | {
+                __typename: 'UnpartitionedAssetStatus';
+                inProgress: boolean;
+                materialized: boolean;
+                failed: boolean;
+                assetKey: {__typename: 'AssetKey'; path: Array<string>};
+              }
+          >;
         } | null;
       }
     | {
@@ -81,13 +91,22 @@ export type PartitionBackfillFragment = {
       start: string;
       end: string;
     }> | null;
-    assetPartitionsStatusCounts: Array<{
-      __typename: 'AssetPartitionsStatusCounts';
-      numPartitionsTargeted: number;
-      numPartitionsRequested: number;
-      numPartitionsCompleted: number;
-      numPartitionsFailed: number;
-      assetKey: {__typename: 'AssetKey'; path: Array<string>};
-    }>;
+    assetBackfillStatuses: Array<
+      | {
+          __typename: 'AssetPartitionsStatusCounts';
+          numPartitionsTargeted: number;
+          numPartitionsInProgress: number;
+          numPartitionsMaterialized: number;
+          numPartitionsFailed: number;
+          assetKey: {__typename: 'AssetKey'; path: Array<string>};
+        }
+      | {
+          __typename: 'UnpartitionedAssetStatus';
+          inProgress: boolean;
+          materialized: boolean;
+          failed: boolean;
+          assetKey: {__typename: 'AssetKey'; path: Array<string>};
+        }
+    >;
   } | null;
 };

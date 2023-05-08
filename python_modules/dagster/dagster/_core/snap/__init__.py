@@ -1,6 +1,6 @@
 """This module contains serializable classes that contain all the meta information
 in our definitions and type systems. The purpose is to be able to represent
-user-defined code artifacts (e.g. Pipelines Solids) in a serializable format
+user-defined code artifacts (e.g. jobs, ops) in a serializable format
 so that they can be persisted and manipulated in remote processes.
 
 This will have a number of uses, but the most immediately germane are:
@@ -53,6 +53,10 @@ from .execution_plan_snapshot import (
     create_execution_plan_snapshot_id as create_execution_plan_snapshot_id,
     snapshot_from_execution_plan as snapshot_from_execution_plan,
 )
+from .job_snapshot import (
+    JobSnapshot as JobSnapshot,
+    create_job_snapshot_id as create_job_snapshot_id,
+)
 from .mode import (
     LoggerDefSnap as LoggerDefSnap,
     ModeDefSnap as ModeDefSnap,
@@ -62,8 +66,4 @@ from .node import (
     GraphDefSnap as GraphDefSnap,
     OpDefSnap as OpDefSnap,
     build_graph_def_snap as build_graph_def_snap,
-)
-from .pipeline_snapshot import (
-    PipelineSnapshot as PipelineSnapshot,
-    create_pipeline_snapshot_id as create_pipeline_snapshot_id,
 )

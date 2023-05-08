@@ -6,7 +6,7 @@ from .conftest import MockClient, python_client_test_suite
 
 EXPECTED_RUN_ID = "foo"
 
-launch_pipeline_success_response = {
+launch_job_success_response = {
     "launchPipelineExecution": {
         "__typename": "LaunchRunSuccess",
         "run": {"runId": EXPECTED_RUN_ID},
@@ -16,7 +16,7 @@ launch_pipeline_success_response = {
 
 @python_client_test_suite
 def test_success(mock_client: MockClient):
-    mock_client.mock_gql_client.execute.return_value = launch_pipeline_success_response
+    mock_client.mock_gql_client.execute.return_value = launch_job_success_response
     actual_run_id = mock_client.python_client.submit_pipeline_execution(
         "bar",
         repository_location_name="baz",
@@ -28,7 +28,7 @@ def test_success(mock_client: MockClient):
 
 @python_client_test_suite
 def test_job_success(mock_client: MockClient):
-    mock_client.mock_gql_client.execute.return_value = launch_pipeline_success_response
+    mock_client.mock_gql_client.execute.return_value = launch_job_success_response
     actual_run_id = mock_client.python_client.submit_job_execution(
         "bar",
         repository_location_name="baz",
@@ -39,7 +39,7 @@ def test_job_success(mock_client: MockClient):
 
 @python_client_test_suite
 def test_tags_success(mock_client: MockClient):
-    mock_client.mock_gql_client.execute.return_value = launch_pipeline_success_response
+    mock_client.mock_gql_client.execute.return_value = launch_job_success_response
     actual_run_id = mock_client.python_client.submit_pipeline_execution(
         "bar",
         repository_location_name="baz",
@@ -52,7 +52,7 @@ def test_tags_success(mock_client: MockClient):
 
 @python_client_test_suite
 def test_job_tags_success(mock_client: MockClient):
-    mock_client.mock_gql_client.execute.return_value = launch_pipeline_success_response
+    mock_client.mock_gql_client.execute.return_value = launch_job_success_response
     actual_run_id = mock_client.python_client.submit_job_execution(
         "bar",
         repository_location_name="baz",
@@ -64,7 +64,7 @@ def test_job_tags_success(mock_client: MockClient):
 
 @python_client_test_suite
 def test_pipeline_subset_success(mock_client: MockClient):
-    mock_client.mock_gql_client.execute.return_value = launch_pipeline_success_response
+    mock_client.mock_gql_client.execute.return_value = launch_job_success_response
     actual_run_id = mock_client.python_client.submit_pipeline_execution(
         "bar",
         repository_location_name="baz",
@@ -77,7 +77,7 @@ def test_pipeline_subset_success(mock_client: MockClient):
 
 @python_client_test_suite
 def test_job_subset_success(mock_client: MockClient):
-    mock_client.mock_gql_client.execute.return_value = launch_pipeline_success_response
+    mock_client.mock_gql_client.execute.return_value = launch_job_success_response
     actual_run_id = mock_client.python_client.submit_job_execution(
         "bar",
         repository_location_name="baz",
@@ -141,8 +141,8 @@ def test_invalid_tags_failure(mock_client: MockClient):
 
 @python_client_test_suite
 def test_no_location_or_repo_provided_success(mock_client: MockClient):
-    repo_loc_name, repo_name, pipeline_name = "bar", "baz", "quux"
-    other_repo_name, other_pipeline_name = "other repo", "my_job"
+    repo_loc_name, repo_name, job_name = "bar", "baz", "quux"
+    other_repo_name, other_job_name = "other repo", "my_job"
     get_locations_and_names_response = {
         "repositoriesOrError": {
             "__typename": "RepositoryConnection",
@@ -150,12 +150,12 @@ def test_no_location_or_repo_provided_success(mock_client: MockClient):
                 {
                     "name": repo_name,
                     "location": {"name": repo_loc_name},
-                    "pipelines": [{"name": pipeline_name}, {"name": other_pipeline_name}],
+                    "pipelines": [{"name": job_name}, {"name": other_job_name}],
                 },
                 {
                     "name": other_repo_name,
                     "location": {"name": repo_loc_name},
-                    "pipelines": [{"name": "fun pipeline"}, {"name": other_pipeline_name}],
+                    "pipelines": [{"name": "fun pipeline"}, {"name": other_job_name}],
                 },
             ],
         }
@@ -172,7 +172,7 @@ def test_no_location_or_repo_provided_success(mock_client: MockClient):
     ]
 
     actual_run_id = mock_client.python_client.submit_pipeline_execution(
-        pipeline_name,
+        job_name,
         run_config={},
     )
     assert actual_run_id == EXPECTED_RUN_ID
@@ -182,12 +182,12 @@ def test_no_location_or_repo_provided_success(mock_client: MockClient):
         submit_execution_response,
     ]
 
-    actual_run_id = mock_client.python_client.submit_job_execution(pipeline_name, run_config={})
+    actual_run_id = mock_client.python_client.submit_job_execution(job_name, run_config={})
     assert actual_run_id == EXPECTED_RUN_ID
 
 
 def no_location_or_repo_provided_duplicate_pipeline_mock_config(mock_client: MockClient):
-    repo_loc_name, repo_name, pipeline_name = "bar", "baz", "quux"
+    repo_loc_name, repo_name, job_name = "bar", "baz", "quux"
     other_repo_name = "other repo"
     get_locations_and_names_response = {
         "repositoriesOrError": {
@@ -196,12 +196,12 @@ def no_location_or_repo_provided_duplicate_pipeline_mock_config(mock_client: Moc
                 {
                     "name": repo_name,
                     "location": {"name": repo_loc_name},
-                    "pipelines": [{"name": pipeline_name}],
+                    "pipelines": [{"name": job_name}],
                 },
                 {
                     "name": other_repo_name,
                     "location": {"name": repo_loc_name},
-                    "pipelines": [{"name": pipeline_name}],
+                    "pipelines": [{"name": job_name}],
                 },
             ],
         }
@@ -217,20 +217,20 @@ def no_location_or_repo_provided_duplicate_pipeline_mock_config(mock_client: Moc
         submit_execution_response,
     ]
 
-    return pipeline_name
+    return job_name
 
 
 @python_client_test_suite
 def test_no_location_or_repo_provided_duplicate_pipeline_failure(mock_client: MockClient):
-    pipeline_name = no_location_or_repo_provided_duplicate_pipeline_mock_config(mock_client)
+    job_name = no_location_or_repo_provided_duplicate_pipeline_mock_config(mock_client)
 
     with pytest.raises(DagsterGraphQLClientError) as exc_info:
         mock_client.python_client.submit_pipeline_execution(
-            pipeline_name,
+            job_name,
             run_config={},
         )
 
-    assert exc_info.value.args[0].find(f"multiple pipelines with the name {pipeline_name}") != -1
+    assert exc_info.value.args[0].find(f"multiple pipelines with the name {job_name}") != -1
 
 
 @python_client_test_suite
@@ -244,7 +244,7 @@ def test_no_location_or_repo_provided_duplicate_job_failure(mock_client: MockCli
 
 
 def no_location_or_repo_provided_mock_config(mock_client):
-    repo_loc_name, repo_name, pipeline_name = "bar", "baz", "quux"
+    repo_loc_name, repo_name, job_name = "bar", "baz", "quux"
     get_locations_and_names_response = {
         "repositoriesOrError": {
             "__typename": "RepositoryConnection",
@@ -252,7 +252,7 @@ def no_location_or_repo_provided_mock_config(mock_client):
                 {
                     "name": repo_name,
                     "location": {"name": repo_loc_name},
-                    "pipelines": [{"name": pipeline_name}],
+                    "pipelines": [{"name": job_name}],
                 }
             ],
         }

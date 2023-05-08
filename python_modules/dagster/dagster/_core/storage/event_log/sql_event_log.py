@@ -50,7 +50,7 @@ from dagster._utils import (
     utc_datetime_from_timestamp,
 )
 
-from ..pipeline_run import PipelineRunStatsSnapshot
+from ..dagster_run import DagsterRunStatsSnapshot
 from .base import (
     AssetEntry,
     AssetRecord,
@@ -395,6 +395,7 @@ class SqlEventLogStorage(EventLogStorage):
         cursor: Optional[str] = None,
         of_type: Optional[Union[DagsterEventType, Set[DagsterEventType]]] = None,
         limit: Optional[int] = None,
+        ascending: bool = True,
     ) -> EventLogConnection:
         """Get all of the logs corresponding to a run.
 
@@ -419,7 +420,11 @@ class SqlEventLogStorage(EventLogStorage):
         query = (
             db.select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event])
             .where(SqlEventLogStorageTable.c.run_id == run_id)
-            .order_by(SqlEventLogStorageTable.c.id.asc())
+            .order_by(
+                SqlEventLogStorageTable.c.id.asc()
+                if ascending
+                else SqlEventLogStorageTable.c.id.desc()
+            )
         )
         if dagster_event_types:
             query = query.where(
@@ -434,7 +439,10 @@ class SqlEventLogStorage(EventLogStorage):
             if cursor_obj.is_offset_cursor():
                 query = query.offset(cursor_obj.offset())
             elif cursor_obj.is_id_cursor():
-                query = query.where(SqlEventLogStorageTable.c.id > cursor_obj.storage_id())
+                if ascending:
+                    query = query.where(SqlEventLogStorageTable.c.id > cursor_obj.storage_id())
+                else:
+                    query = query.where(SqlEventLogStorageTable.c.id < cursor_obj.storage_id())
 
         if limit:
             query = query.limit(limit)
@@ -474,7 +482,7 @@ class SqlEventLogStorage(EventLogStorage):
             has_more=bool(limit and len(results) == limit),
         )
 
-    def get_stats_for_run(self, run_id: str) -> PipelineRunStatsSnapshot:
+    def get_stats_for_run(self, run_id: str) -> DagsterRunStatsSnapshot:
         check.str_param(run_id, "run_id")
 
         query = (
@@ -517,7 +525,7 @@ class SqlEventLogStorage(EventLogStorage):
                 ),
             )
 
-            return PipelineRunStatsSnapshot(
+            return DagsterRunStatsSnapshot(
                 run_id=run_id,
                 steps_succeeded=counts.get(DagsterEventType.STEP_SUCCESS.value, 0),
                 steps_failed=counts.get(DagsterEventType.STEP_FAILURE.value, 0),
@@ -654,7 +662,7 @@ class SqlEventLogStorage(EventLogStorage):
         )
 
         removed_asset_keys = [
-            AssetKey.from_db_string(row[0])
+            AssetKey.from_db_string(cast(Optional[str], row[0]))
             for row in conn.execute(removed_asset_key_query).fetchall()
         ]
         conn.execute(delete_statement)
@@ -1088,10 +1096,11 @@ class SqlEventLogStorage(EventLogStorage):
             event_rows = conn.execute(backcompat_query).fetchall()
 
         for row in event_rows:
-            asset_key = AssetKey.from_db_string(row[0])
+            asset_key = AssetKey.from_db_string(cast(Optional[str], row[0]))
             if asset_key:
                 results[asset_key] = EventLogRecord(
-                    storage_id=row[1], event_log_entry=deserialize_value(row[2], EventLogEntry)
+                    storage_id=cast(int, row[1]),
+                    event_log_entry=deserialize_value(cast(str, row[2]), EventLogEntry),
                 )
         return results
 
@@ -1256,7 +1265,7 @@ class SqlEventLogStorage(EventLogStorage):
         row_by_asset_key: Dict[AssetKey, SqlAlchemyRow] = OrderedDict()
 
         for row in rows:
-            asset_key = AssetKey.from_db_string(row[1])
+            asset_key = AssetKey.from_db_string(cast(str, row[1]))
             if not asset_key:
                 continue
             asset_details = AssetDetails.from_db_string(row[4])
@@ -1264,7 +1273,7 @@ class SqlEventLogStorage(EventLogStorage):
                 row_by_asset_key[asset_key] = row
                 continue
             materialization_or_event_or_record = (
-                deserialize_value(row[2], NamedTuple) if row[2] else None
+                deserialize_value(cast(str, row[2]), NamedTuple) if row[2] else None
             )
             if isinstance(materialization_or_event_or_record, (EventLogRecord, EventLogEntry)):
                 if isinstance(materialization_or_event_or_record, EventLogRecord):
@@ -1392,7 +1401,9 @@ class SqlEventLogStorage(EventLogStorage):
             ).fetchall()
 
             asset_key_to_details = {
-                row[0]: (deserialize_value(row[1], AssetDetails) if row[1] else None)
+                cast(str, row[0]): (
+                    deserialize_value(cast(str, row[1]), AssetDetails) if row[1] else None
+                )
                 for row in rows
             }
 
@@ -1665,9 +1676,9 @@ class SqlEventLogStorage(EventLogStorage):
             asset_key: {} for asset_key in asset_keys
         }
         for row in results:
-            asset_key = AssetKey.from_db_string(row[0])
+            asset_key = AssetKey.from_db_string(cast(Optional[str], row[0]))
             if asset_key:
-                materialization_count_by_partition[asset_key][row[1]] = row[2]
+                materialization_count_by_partition[asset_key][cast(str, row[1])] = cast(int, row[2])
 
         return materialization_count_by_partition
 
@@ -1761,14 +1772,16 @@ class SqlEventLogStorage(EventLogStorage):
             materialization_rows = conn.execute(materialization_events).fetchall()
 
         materialization_planned_rows_by_partition = {
-            row["partition"]: (row["run_id"], row["id"]) for row in materialization_planned_rows
+            cast(str, row["partition"]): (cast(str, row["run_id"]), cast(int, row["id"]))
+            for row in materialization_planned_rows
         }
         for row in materialization_rows:
             if (
                 row["partition"] in materialization_planned_rows_by_partition
-                and materialization_planned_rows_by_partition[row["partition"]][0] == row["run_id"]
+                and materialization_planned_rows_by_partition[cast(str, row["partition"])][0]
+                == row["run_id"]
             ):
-                materialization_planned_rows_by_partition.pop(row["partition"])
+                materialization_planned_rows_by_partition.pop(cast(str, row["partition"]))
 
         return materialization_planned_rows_by_partition
 
@@ -1795,7 +1808,7 @@ class SqlEventLogStorage(EventLogStorage):
         with self.index_connection() as conn:
             rows = conn.execute(query).fetchall()
 
-        return [row[1] for row in rows]
+        return [cast(str, row[1]) for row in rows]
 
     def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
         """Get the list of partition keys for a partition definition."""

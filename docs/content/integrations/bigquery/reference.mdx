@@ -357,7 +357,7 @@ In this example, the `iris_data` asset uses the I/O manager bound to the key `wa
 
 ## Storing and loading PySpark DataFrames in BigQuery
 
-The BigQuery I/O manager also supports storing and loading PySpark DataFrames. To use the <PyObject module="dagster_gcp_pyspark" object="bigquery_pyspark_io_manager" />, first install the package:
+The BigQuery I/O manager also supports storing and loading PySpark DataFrames. To use the <PyObject module="dagster_gcp_pyspark" object="BigQueryPySparkIOManager" />, first install the package:
 
 ```shell
 pip install dagster-gcp-pyspark
@@ -384,7 +384,7 @@ defs = Definitions(
 ```
 
 <Note>
-  When using the <code>bigquery_pyspark_io_manager</code> you may provide the{" "}
+  When using the <code>BigQueryPySparkIOManager</code> you may provide the{" "}
   <code>temporary_gcs_bucket</code> configuration. This will store the data is a
   temporary GCS bucket, then all of the data into BigQuery in one operation. If
   not provided, data will be directly written to BigQuery. If you choose to use
@@ -396,7 +396,7 @@ defs = Definitions(
   below).
 </Note>
 
-The `bigquery_pyspark_io_manager` requires that a `SparkSession` be active and configured with the [BigQuery connector for Spark](https://cloud.google.com/dataproc/docs/tutorials/bigquery-connector-spark-example). You can either create your own `SparkSession` or use the <PyObject module="dagster_spark" object="spark_resource"/>.
+The `BigQueryPySparkIOManager` requires that a `SparkSession` be active and configured with the [BigQuery connector for Spark](https://cloud.google.com/dataproc/docs/tutorials/bigquery-connector-spark-example). You can either create your own `SparkSession` or use the <PyObject module="dagster_spark" object="spark_resource"/>.
 
 <TabGroup>
 <TabItem name="With the spark_resource">
@@ -577,7 +577,7 @@ defs = Definitions(
 In addition to the BigQuery I/O manager, Dagster also provides a BigQuery [resource](/concepts/resources) for executing custom SQL queries.
 
 ```python file=/integrations/bigquery/resource.py
-from dagster_gcp import bigquery_resource
+from dagster_gcp import BigQueryResource
 
 from dagster import Definitions, asset
 
@@ -585,29 +585,28 @@ from dagster import Definitions, asset
 # Using Dagster with BigQuery tutorial
 
 
-@asset(required_resource_keys={"bigquery"})
-def small_petals(context):
-    return context.resources.bigquery.query(
-        (
-            'SELECT * FROM IRIS.IRIS_DATA WHERE "petal_length_cm" < 1 AND'
-            ' "petal_width_cm" < 1'
-        ),
-    ).result()
+@asset
+def small_petals(bigquery: BigQueryResource):
+    with bigquery.get_client() as client:
+        return client.query(
+            (
+                'SELECT * FROM IRIS.IRIS_DATA WHERE "petal_length_cm" < 1 AND'
+                ' "petal_width_cm" < 1'
+            ),
+        ).result()
 
 
 defs = Definitions(
     assets=[small_petals],
     resources={
-        "bigquery": bigquery_resource.configured(
-            {
-                "project": "my-gcp-project",
-                "location": "us-east5",
-            }
+        "bigquery": BigQueryResource(
+            project="my-gcp-project",
+            location="us-east5",
         )
     },
 )
 ```
 
-In this example, we attach the BigQuery resource to the `small_petals` asset. In the body of the asset function, we use the `execute_query` method of the resource to execute a custom SQL query against the `IRIS_DATA` table created in [Step 2: Create tables in BigQuery](/integrations/bigquery/using-bigquery-with-dagster#store-a-dagster-asset-as-a-table-in-bigquery) of the [Using Dagster with BigQuery tutorial](/integrations/bigquery/using-bigquery-with-dagster).
+In this example, we attach the BigQuery resource to the `small_petals` asset. In the body of the asset function, we use the `get_client` context manager method of the resource to get a [`bigquery.client.Client`](https://cloud.google.com/python/docs/reference/bigquery/latest/google.cloud.bigquery.client.Client). We can use the client to execute a custom SQL query against the `IRIS_DATA` table created in [Step 2: Create tables in BigQuery](/integrations/bigquery/using-bigquery-with-dagster#store-a-dagster-asset-as-a-table-in-bigquery) of the [Using Dagster with BigQuery tutorial](/integrations/bigquery/using-bigquery-with-dagster).
 
-For more information on the BigQuery resource, see the [BigQuery resource API docs](/\_apidocs/libraries/dagster-gcp#dagster_gcp.bigquery_resource).
+For more information on the BigQuery resource, see the [BigQuery resource API docs](/\_apidocs/libraries/dagster-gcp#dagster_gcp.BigQueryResource).

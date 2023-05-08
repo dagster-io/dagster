@@ -1,7 +1,7 @@
 import time
 
 from dagster import job, op, repository
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import instance_for_test
 from dagster_graphql.test.utils import (
     define_out_of_process_context,
@@ -182,10 +182,10 @@ def get_repo():
 def test_runs_query():
     with instance_for_test() as instance:
         repo = get_repo()
-        run_id_1 = instance.create_run_for_pipeline(
+        run_id_1 = instance.create_run_for_job(
             repo.get_job("foo_job"), status=DagsterRunStatus.STARTED
         ).run_id
-        run_id_2 = instance.create_run_for_pipeline(
+        run_id_2 = instance.create_run_for_job(
             repo.get_job("foo_job"), status=DagsterRunStatus.FAILURE
         ).run_id
         with define_out_of_process_context(__file__, "get_repo", instance) as context:
@@ -200,13 +200,13 @@ def test_runs_query():
 def test_paginated_runs_query():
     with instance_for_test() as instance:
         repo = get_repo()
-        _ = instance.create_run_for_pipeline(
+        _ = instance.create_run_for_job(
             repo.get_job("foo_job"), status=DagsterRunStatus.STARTED
         ).run_id
-        run_id_2 = instance.create_run_for_pipeline(
+        run_id_2 = instance.create_run_for_job(
             repo.get_job("foo_job"), status=DagsterRunStatus.FAILURE
         ).run_id
-        run_id_3 = instance.create_run_for_pipeline(
+        run_id_3 = instance.create_run_for_job(
             repo.get_job("foo_job"), status=DagsterRunStatus.SUCCESS
         ).run_id
         with define_out_of_process_context(__file__, "get_repo", instance) as context:
@@ -224,13 +224,13 @@ def test_paginated_runs_query():
 def test_filtered_runs_query():
     with instance_for_test() as instance:
         repo = get_repo()
-        _ = instance.create_run_for_pipeline(
+        _ = instance.create_run_for_job(
             repo.get_job("foo_job"), status=DagsterRunStatus.STARTED
         ).run_id
-        run_id_2 = instance.create_run_for_pipeline(
+        run_id_2 = instance.create_run_for_job(
             repo.get_job("foo_job"), status=DagsterRunStatus.FAILURE
         ).run_id
-        _ = instance.create_run_for_pipeline(
+        _ = instance.create_run_for_job(
             repo.get_job("foo_job"), status=DagsterRunStatus.SUCCESS
         ).run_id
         with define_out_of_process_context(__file__, "get_repo", instance) as context:

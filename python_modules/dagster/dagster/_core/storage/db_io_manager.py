@@ -232,7 +232,9 @@ class DbIOManager(IOManager):
                     partition_dimensions.append(
                         TablePartitionDimension(
                             partition_expr=cast(str, partition_expr),
-                            partitions=context.asset_partitions_time_window,
+                            partitions=context.asset_partitions_time_window
+                            if context.asset_partition_keys
+                            else [],
                         )
                     )
                 else:

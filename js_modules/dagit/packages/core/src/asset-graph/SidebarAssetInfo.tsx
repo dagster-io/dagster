@@ -224,6 +224,11 @@ const SIDEBAR_ASSET_FRAGMENT = gql`
     metadataEntries {
       ...MetadataEntryFragment
     }
+    freshnessPolicy {
+      maximumLagMinutes
+      cronSchedule
+      cronScheduleTimezone
+    }
     autoMaterializePolicy {
       policyType
     }
@@ -265,7 +270,6 @@ const SIDEBAR_ASSET_FRAGMENT = gql`
 export const SIDEBAR_ASSET_QUERY = gql`
   query SidebarAssetQuery($assetKey: AssetKeyInput!) {
     assetNodeOrError(assetKey: $assetKey) {
-      __typename
       ... on AssetNode {
         id
         ...SidebarAssetFragment

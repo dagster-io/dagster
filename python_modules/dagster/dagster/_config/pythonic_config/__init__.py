@@ -1,3 +1,4 @@
+import contextlib
 import inspect
 import re
 from enum import Enum
@@ -6,6 +7,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Generator,
     Generic,
     Iterable,
     Mapping,
@@ -25,14 +27,23 @@ from dagster import (
     Enum as DagsterEnum,
     Field as DagsterField,
 )
-from dagster._config.config_type import Array, ConfigFloatInstance, ConfigType, EnumValue, Noneable
+from dagster._config.config_type import (
+    Array,
+    ConfigFloatInstance,
+    ConfigType,
+    EnumValue,
+    Noneable,
+)
 from dagster._config.field_utils import config_dictionary_from_values
 from dagster._config.post_process import resolve_defaults
-from dagster._config.pythonic_config.typing_utils import TypecheckAllowPartialResourceInitParams
+from dagster._config.pythonic_config.typing_utils import (
+    TypecheckAllowPartialResourceInitParams,
+)
 from dagster._config.source import BoolSource, IntSource, StringSource
 from dagster._config.validate import process_config, validate_config
 from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.definition_config_schema import (
+    CoercableToConfigSchema,
     ConfiguredDefinitionConfigSchema,
     DefinitionConfigSchema,
 )
@@ -61,7 +72,13 @@ except ImportError:
 from abc import ABC, abstractmethod
 
 from pydantic import BaseModel, Extra
-from pydantic.fields import SHAPE_DICT, SHAPE_LIST, SHAPE_MAPPING, SHAPE_SINGLETON, ModelField
+from pydantic.fields import (
+    SHAPE_DICT,
+    SHAPE_LIST,
+    SHAPE_MAPPING,
+    SHAPE_SINGLETON,
+    ModelField,
+)
 
 import dagster._check as check
 from dagster import Field, Selector, Shape
@@ -200,23 +217,49 @@ class Config(MakeConfigCacheable):
         for key, value in config_dict.items():
             field = self.__fields__.get(key)
             if field and field.field_info.discriminator:
-                nested_items = list(check.is_dict(value).items())
+                nested_dict = value
+
+                discriminator_key = check.not_none(field.discriminator_key)
+                if isinstance(value, Config):
+                    nested_dict = _discriminated_union_config_dict_to_selector_config_dict(
+                        discriminator_key,
+                        value._get_non_none_public_field_values(),  # noqa: SLF001
+                    )
+
+                nested_items = list(check.is_dict(nested_dict).items())
                 check.invariant(
-                    len(nested_items) == 1, "Discriminated union must have exactly one key"
+                    len(nested_items) == 1,
+                    "Discriminated union must have exactly one key",
                 )
                 discriminated_value, nested_values = nested_items[0]
 
                 modified_data[key] = {
                     **nested_values,
-                    field.discriminator_key: discriminated_value,
+                    discriminator_key: discriminated_value,
                 }
             else:
                 modified_data[key] = value
         super().__init__(**modified_data)
 
-    def _as_config_dict(self) -> Mapping[str, Any]:
+    def _convert_to_config_dictionary(self) -> Mapping[str, Any]:
+        """Converts this Config object to a Dagster config dictionary, in the same format as the dictionary
+        accepted as run config or as YAML in the launchpad.
+
+        Inner fields are recursively converted to dictionaries, meaning nested config objects
+        or EnvVars will be converted to the appropriate dictionary representation.
+        """
+        public_fields = self._get_non_none_public_field_values()
+        return {
+            k: _config_value_to_dict_representation(self.__fields__.get(k), v)
+            for k, v in public_fields.items()
+        }
+
+    def _get_non_none_public_field_values(self) -> Mapping[str, Any]:
         """Returns a dictionary representation of this config object,
-        ignoring any private fields.
+        ignoring any private fields, and any optional fields that are None.
+
+        Inner fields are returned as-is in the dictionary,
+        meaning any nested config objects will be returned as config objects, not dictionaries.
         """
         output = {}
         for key, value in self.__dict__.items():
@@ -225,6 +268,7 @@ class Config(MakeConfigCacheable):
             field = self.__fields__.get(key)
             if field and value is None and not _is_pydantic_field_required(field):
                 continue
+
             if field:
                 output[field.alias] = value
             else:
@@ -243,6 +287,53 @@ class Config(MakeConfigCacheable):
         want the source of truth to be a config class.
         """
         return cast(Shape, cls.to_config_schema().as_field().config_type).fields
+
+
+def _discriminated_union_config_dict_to_selector_config_dict(
+    discriminator_key: str, config_dict: Mapping[str, Any]
+):
+    """Remaps a config dictionary which is a member of a discriminated union to
+    the appropriate structure for a Dagster config selector.
+
+    A discriminated union with key "my_key" and value "my_value" will be represented
+    as {"my_key": "my_value", "my_field": "my_field_value"}. When converted to a selector,
+    this should be represented as {"my_value": {"my_field": "my_field_value"}}.
+    """
+    updated_dict = dict(config_dict)
+    discriminator_value = updated_dict.pop(discriminator_key)
+    wrapped_dict = {discriminator_value: updated_dict}
+    return wrapped_dict
+
+
+def _config_value_to_dict_representation(field: Optional[ModelField], value: Any):
+    """Converts a config value to a dictionary representation. If a field is provided, it will be used
+    to determine the appropriate dictionary representation in the case of discriminated unions.
+    """
+    from dagster._config.field_utils import EnvVar, IntEnvVar
+
+    if isinstance(value, dict):
+        return {k: _config_value_to_dict_representation(None, v) for k, v in value.items()}
+    elif isinstance(value, list):
+        return [_config_value_to_dict_representation(None, v) for v in value]
+    elif isinstance(value, EnvVar):
+        return {"env": str(value)}
+    elif isinstance(value, IntEnvVar):
+        return {"env": value.name}
+    if isinstance(value, Config):
+        if field and field.discriminator_key:
+            return {
+                k: v
+                for k, v in _discriminated_union_config_dict_to_selector_config_dict(
+                    field.discriminator_key,
+                    value._convert_to_config_dictionary(),  # noqa: SLF001
+                ).items()
+            }
+        else:
+            return {k: v for k, v in value._convert_to_config_dictionary().items()}  # noqa: SLF001
+    elif isinstance(value, Enum):
+        return value.name
+
+    return value
 
 
 class PermissiveConfig(Config):
@@ -309,7 +400,8 @@ def _apply_defaults_to_schema_field(field: Field, additional_default_values: Any
         # applies the new value as the default value of the field in question.
         defaults_processed_evr = resolve_defaults(field.config_type, additional_default_values)
         check.invariant(
-            defaults_processed_evr.success, "Since validation passed, this should always work."
+            defaults_processed_evr.success,
+            "Since validation passed, this should always work.",
         )
         default_to_pass = defaults_processed_evr.value
         return copy_with_default(field, default_to_pass)
@@ -452,7 +544,9 @@ class ResourceWithKeyMapping(ResourceDefinition):
     """
 
     def __init__(
-        self, resource: ResourceDefinition, resource_id_to_key_mapping: Dict[ResourceId, str]
+        self,
+        resource: ResourceDefinition,
+        resource_id_to_key_mapping: Dict[ResourceId, str],
     ):
         self._resource = resource
         self._resource_id_to_key_mapping = resource_id_to_key_mapping
@@ -497,7 +591,9 @@ class IOManagerWithKeyMapping(ResourceWithKeyMapping, IOManagerDefinition):
     """Version of ResourceWithKeyMapping wrapper that also implements IOManagerDefinition."""
 
     def __init__(
-        self, resource: ResourceDefinition, resource_id_to_key_mapping: Dict[ResourceId, str]
+        self,
+        resource: ResourceDefinition,
+        resource_id_to_key_mapping: Dict[ResourceId, str],
     ):
         ResourceWithKeyMapping.__init__(self, resource, resource_id_to_key_mapping)
         IOManagerDefinition.__init__(
@@ -538,6 +634,7 @@ def coerce_to_resource(
 class ConfigurableResourceFactoryResourceDefinition(ResourceDefinition, AllowDelayedDependencies):
     def __init__(
         self,
+        configurable_resource_cls: Type,
         resource_fn: ResourceFunction,
         config_schema: Any,
         description: Optional[str],
@@ -545,10 +642,17 @@ class ConfigurableResourceFactoryResourceDefinition(ResourceDefinition, AllowDel
         nested_resources: Mapping[str, CoercibleToResource],
     ):
         super().__init__(
-            resource_fn=resource_fn, config_schema=config_schema, description=description
+            resource_fn=resource_fn,
+            config_schema=config_schema,
+            description=description,
         )
+        self._configurable_resource_cls = configurable_resource_cls
         self._resolve_resource_keys = resolve_resource_keys
         self._nested_resources = nested_resources
+
+    @property
+    def configurable_resource_cls(self) -> Type:
+        return self._configurable_resource_cls
 
     @property
     def nested_resources(
@@ -565,17 +669,39 @@ class ConfigurableResourceFactoryResourceDefinition(ResourceDefinition, AllowDel
 class ConfigurableIOManagerFactoryResourceDefinition(IOManagerDefinition, AllowDelayedDependencies):
     def __init__(
         self,
+        configurable_resource_cls: Type,
         resource_fn: ResourceFunction,
         config_schema: Any,
         description: Optional[str],
         resolve_resource_keys: Callable[[Mapping[int, str]], AbstractSet[str]],
         nested_resources: Mapping[str, CoercibleToResource],
+        input_config_schema: Optional[Union[CoercableToConfigSchema, Type[Config]]] = None,
+        output_config_schema: Optional[Union[CoercableToConfigSchema, Type[Config]]] = None,
     ):
+        input_config_schema_resolved: CoercableToConfigSchema = (
+            cast(Type[Config], input_config_schema).to_config_schema()
+            if safe_is_subclass(input_config_schema, Config)
+            else cast(CoercableToConfigSchema, input_config_schema)
+        )
+        output_config_schema_resolved: CoercableToConfigSchema = (
+            cast(Type[Config], output_config_schema).to_config_schema()
+            if safe_is_subclass(output_config_schema, Config)
+            else cast(CoercableToConfigSchema, output_config_schema)
+        )
         super().__init__(
-            resource_fn=resource_fn, config_schema=config_schema, description=description
+            resource_fn=resource_fn,
+            config_schema=config_schema,
+            description=description,
+            input_config_schema=input_config_schema_resolved,
+            output_config_schema=output_config_schema_resolved,
         )
         self._resolve_resource_keys = resolve_resource_keys
         self._nested_resources = nested_resources
+        self._configurable_resource_cls = configurable_resource_cls
+
+    @property
+    def configurable_resource_cls(self) -> Type:
+        return self._configurable_resource_cls
 
     @property
     def nested_resources(
@@ -633,7 +759,7 @@ class ConfigurableResourceFactory(
                 # Or you could just prefer to separate the concerns of configuration and runtime representation
                 return Database(self.connection_uri)
 
-    To use a resource created by a factory in a pipeline, you must use the Resource type annotation.
+    To use a resource created by a factory in a job, you must use the Resource type annotation.
 
     Example usage:
 
@@ -664,7 +790,9 @@ class ConfigurableResourceFactory(
         # We pull the values from the Pydantic config object, which may cast values
         # to the correct type under the hood - useful in particular for enums
         casted_data_without_resources = {
-            k: v for k, v in self._as_config_dict().items() if k in data_without_resources
+            k: v
+            for k, v in self._convert_to_config_dictionary().items()
+            if k in data_without_resources
         }
         resolved_config_dict = config_dictionary_from_values(casted_data_without_resources, schema)
 
@@ -702,10 +830,25 @@ class ConfigurableResourceFactory(
     def _resolved_config_dict(self):
         return self._state__internal__.resolved_config_dict
 
+    @classmethod
+    def _is_cm_resource_cls(cls: Type["ConfigurableResourceFactory"]) -> bool:
+        return (
+            cls.yield_for_execution != ConfigurableResourceFactory.yield_for_execution
+            or cls.teardown_after_execution != ConfigurableResourceFactory.teardown_after_execution
+        )
+
+    @property
+    def _is_cm_resource(self) -> bool:
+        return self.__class__._is_cm_resource_cls()  # noqa: SLF001
+
+    def _get_initialize_and_run_fn(self) -> Callable:
+        return self._initialize_and_run_cm if self._is_cm_resource else self._initialize_and_run
+
     @cached_method
     def get_resource_definition(self) -> ConfigurableResourceFactoryResourceDefinition:
         return ConfigurableResourceFactoryResourceDefinition(
-            resource_fn=self._initialize_and_run,
+            self.__class__,
+            resource_fn=self._get_initialize_and_run_fn(),
             config_schema=self._config_schema,
             description=self.__doc__,
             resolve_resource_keys=self._resolve_required_resource_keys,
@@ -742,7 +885,7 @@ class ConfigurableResourceFactory(
         # Since Resource extends BaseModel and is a dataclass, we know that the
         # signature of any __init__ method will always consist of the fields
         # of this class. We can therefore safely pass in the values as kwargs.
-        out = self.__class__(**{**self._as_config_dict(), **values})
+        out = self.__class__(**{**self._get_non_none_public_field_values(), **values})
         out._state__internal__ = out._state__internal__._replace(  # noqa: SLF001
             resource_context=self._state__internal__.resource_context
         )
@@ -760,9 +903,10 @@ class ConfigurableResourceFactory(
         )
         return self._with_updated_values(post_processed_data)
 
+    @contextlib.contextmanager
     def _resolve_and_update_nested_resources(
         self, context: InitResourceContext
-    ) -> "ConfigurableResourceFactory[TResValue]":
+    ) -> Generator["ConfigurableResourceFactory[TResValue]", None, None]:
         """Updates any nested resources with the resource values from the context.
         In this case, populating partially configured resources or
         resources that return plain Python types.
@@ -789,15 +933,18 @@ class ConfigurableResourceFactory(
             }
 
         # Also evaluate any resources that are not partial
-        resources_to_update, _ = separate_resource_params(self.__dict__)
-        resources_to_update = {
-            attr_name: _call_resource_fn_with_default(coerce_to_resource(resource), context)
-            for attr_name, resource in resources_to_update.items()
-            if attr_name not in partial_resources_to_update
-        }
+        with contextlib.ExitStack() as stack:
+            resources_to_update, _ = separate_resource_params(self.__dict__)
+            resources_to_update = {
+                attr_name: _call_resource_fn_with_default(
+                    stack, coerce_to_resource(resource), context
+                )
+                for attr_name, resource in resources_to_update.items()
+                if attr_name not in partial_resources_to_update
+            }
 
-        to_update = {**resources_to_update, **partial_resources_to_update}
-        return self._with_updated_values(to_update)
+            to_update = {**resources_to_update, **partial_resources_to_update}
+            yield self._with_updated_values(to_update)
 
     def with_resource_context(
         self, resource_context: InitResourceContext
@@ -812,16 +959,55 @@ class ConfigurableResourceFactory(
         return copy
 
     def _initialize_and_run(self, context: InitResourceContext) -> TResValue:
-        updated_resource = (
-            self._resolve_and_update_nested_resources(context)  # noqa: SLF001
-            .with_resource_context(context)
-            ._resolve_and_update_env_vars()
-        )
+        with self._resolve_and_update_nested_resources(context) as has_nested_resource:
+            updated_resource = has_nested_resource.with_resource_context(  # noqa: SLF001
+                context
+            )._resolve_and_update_env_vars()
 
-        return updated_resource._create_object_fn(context)  # noqa: SLF001
+            updated_resource.setup_for_execution(context)
+            return updated_resource.create_resource(context)
 
-    def _create_object_fn(self, context: InitResourceContext) -> TResValue:
-        return self.create_resource(context)
+    @contextlib.contextmanager
+    def _initialize_and_run_cm(
+        self, context: InitResourceContext
+    ) -> Generator[TResValue, None, None]:
+        with self._resolve_and_update_nested_resources(context) as has_nested_resource:
+            updated_resource = has_nested_resource.with_resource_context(  # noqa: SLF001
+                context
+            )._resolve_and_update_env_vars()
+
+            with updated_resource.yield_for_execution(context) as value:
+                yield value
+
+    def setup_for_execution(self, context: InitResourceContext) -> None:
+        """Optionally override this method to perform any pre-execution steps
+        needed before the resource is used in execution.
+        """
+        pass
+
+    def teardown_after_execution(self, context: InitResourceContext) -> None:
+        """Optionally override this method to perform any post-execution steps
+        needed after the resource is used in execution.
+
+        teardown_after_execution will be called even if any part of the run fails.
+        It will not be called if setup_for_execution fails.
+        """
+        pass
+
+    @contextlib.contextmanager
+    def yield_for_execution(self, context: InitResourceContext) -> Generator[TResValue, None, None]:
+        """Optionally override this method to perform any lifecycle steps
+        before or after the resource is used in execution. By default, calls
+        setup_for_execution before yielding, and teardown_after_execution after yielding.
+
+        Note that if you override this method and want setup_for_execution or
+        teardown_after_execution to be called, you must invoke them yourself.
+        """
+        self.setup_for_execution(context)
+        try:
+            yield self.create_resource(context)
+        finally:
+            self.teardown_after_execution(context)
 
     def get_resource_context(self) -> InitResourceContext:
         """Returns the context that this resource was initialized with."""
@@ -836,6 +1022,8 @@ class ConfigurableResourceFactory(
         Useful when creating a resource from a function-based resource, for backwards
         compatibility purposes.
 
+        For resources that have custom teardown behavior, use from_resource_context_cm instead.
+
         Example usage:
 
         .. code-block:: python
@@ -848,7 +1036,41 @@ class ConfigurableResourceFactory(
                 return MyResource.from_resource_context(context)
 
         """
-        return cls(**context.resource_config or {})._create_object_fn(context)  # noqa: SLF001
+        check.invariant(
+            not cls._is_cm_resource_cls(),
+            (
+                "Use from_resource_context_cm for resources which have custom teardown behavior,"
+                " e.g. overriding yield_for_execution or teardown_after_execution"
+            ),
+        )
+        return cls(**context.resource_config or {})._initialize_and_run(context)  # noqa: SLF001
+
+    @classmethod
+    @contextlib.contextmanager
+    def from_resource_context_cm(
+        cls, context: InitResourceContext
+    ) -> Generator[TResValue, None, None]:
+        """Context which generates a new instance of this resource from a populated InitResourceContext.
+        Useful when creating a resource from a function-based resource, for backwards
+        compatibility purposes. Handles custom teardown behavior.
+
+        Example usage:
+
+        .. code-block:: python
+
+            class MyResource(ConfigurableResource):
+                my_str: str
+
+            @resource(config_schema=MyResource.to_config_schema())
+            def my_resource(context: InitResourceContext) -> Generator[MyResource, None, None]:
+                with MyResource.from_resource_context_cm(context) as my_resource:
+                    yield my_resource
+
+        """
+        with cls(**context.resource_config or {})._initialize_and_run_cm(  # noqa: SLF001
+            context
+        ) as value:
+            yield value
 
 
 class ConfigurableResource(ConfigurableResourceFactory[TResValue]):
@@ -920,7 +1142,9 @@ class PartialResource(Generic[TResValue], AllowDelayedDependencies, MakeConfigCa
     resource_cls: Type[ConfigurableResourceFactory[TResValue]]
 
     def __init__(
-        self, resource_cls: Type[ConfigurableResourceFactory[TResValue]], data: Dict[str, Any]
+        self,
+        resource_cls: Type[ConfigurableResourceFactory[TResValue]],
+        data: Dict[str, Any],
     ):
         resource_pointers, _data_without_resources = separate_resource_params(data)
 
@@ -928,7 +1152,7 @@ class PartialResource(Generic[TResValue], AllowDelayedDependencies, MakeConfigCa
 
         def resource_fn(context: InitResourceContext):
             instantiated = resource_cls(**context.resource_config, **data)
-            return instantiated._initialize_and_run(context)  # noqa: SLF001
+            return instantiated._get_initialize_and_run_fn()(context)  # noqa: SLF001
 
         self._state__internal__ = PartialResourceState(
             # We keep track of any resources we depend on which are not fully configured
@@ -960,6 +1184,7 @@ class PartialResource(Generic[TResValue], AllowDelayedDependencies, MakeConfigCa
     @cached_method
     def get_resource_definition(self) -> ConfigurableResourceFactoryResourceDefinition:
         return ConfigurableResourceFactoryResourceDefinition(
+            self.__class__,
             resource_fn=self._state__internal__.resource_fn,
             config_schema=self._state__internal__.config_schema,
             description=self._state__internal__.description,
@@ -1028,6 +1253,7 @@ class ConfigurableLegacyResourceAdapter(ConfigurableResource, ABC):
     @cached_method
     def get_resource_definition(self) -> ConfigurableResourceFactoryResourceDefinition:
         return ConfigurableResourceFactoryResourceDefinition(
+            self.__class__,
             resource_fn=self.wrapped_resource.resource_fn,
             config_schema=self._config_schema,
             description=self.__doc__,
@@ -1092,13 +1318,8 @@ class ConfigurableIOManagerFactory(ConfigurableResourceFactory[TIOManagerValue])
         """Implement as one would implement a @io_manager decorator function."""
         raise NotImplementedError()
 
-    def _create_object_fn(self, context: InitResourceContext) -> TIOManagerValue:
-        return self.create_io_manager(context)
-
     def create_resource(self, context: InitResourceContext) -> TIOManagerValue:
-        # I/O manager factories execute a different code path that does not
-        # call create_resource
-        raise NotImplementedError()
+        return self.create_io_manager(context)
 
     @classmethod
     def configure_at_launch(cls: "Type[Self]", **kwargs) -> "PartialIOManager[Self]":
@@ -1110,28 +1331,57 @@ class ConfigurableIOManagerFactory(ConfigurableResourceFactory[TIOManagerValue])
     @cached_method
     def get_resource_definition(self) -> ConfigurableIOManagerFactoryResourceDefinition:
         return ConfigurableIOManagerFactoryResourceDefinition(
-            resource_fn=self._initialize_and_run,
+            self.__class__,
+            resource_fn=self._get_initialize_and_run_fn(),
             config_schema=self._config_schema,
             description=self.__doc__,
             resolve_resource_keys=self._resolve_required_resource_keys,
             nested_resources=self.nested_resources,
+            input_config_schema=self.__class__.input_config_schema(),
+            output_config_schema=self.__class__.output_config_schema(),
         )
+
+    @classmethod
+    def input_config_schema(
+        cls,
+    ) -> Optional[Union[CoercableToConfigSchema, Type[Config]]]:
+        return None
+
+    @classmethod
+    def output_config_schema(
+        cls,
+    ) -> Optional[Union[CoercableToConfigSchema, Type[Config]]]:
+        return None
 
 
 class PartialIOManager(Generic[TResValue], PartialResource[TResValue]):
     def __init__(
-        self, resource_cls: Type[ConfigurableResourceFactory[TResValue]], data: Dict[str, Any]
+        self,
+        resource_cls: Type[ConfigurableResourceFactory[TResValue]],
+        data: Dict[str, Any],
     ):
         PartialResource.__init__(self, resource_cls, data)
 
     @cached_method
     def get_resource_definition(self) -> ConfigurableIOManagerFactoryResourceDefinition:
+        input_config_schema = None
+        output_config_schema = None
+        if safe_is_subclass(self.resource_cls, ConfigurableIOManagerFactory):
+            factory_cls: Type[ConfigurableIOManagerFactory] = cast(
+                Type[ConfigurableIOManagerFactory], self.resource_cls
+            )
+            input_config_schema = factory_cls.input_config_schema()
+            output_config_schema = factory_cls.output_config_schema()
+
         return ConfigurableIOManagerFactoryResourceDefinition(
+            self.__class__,
             resource_fn=self._state__internal__.resource_fn,
             config_schema=self._state__internal__.config_schema,
             description=self._state__internal__.description,
             resolve_resource_keys=self._resolve_required_resource_keys,
             nested_resources=self._state__internal__.nested_resources,
+            input_config_schema=input_config_schema,
+            output_config_schema=output_config_schema,
         )
 
 
@@ -1183,7 +1433,9 @@ MAPPING_KEY_TYPE_TO_SCALAR = {
 
 
 def _wrap_config_type(
-    shape_type: PydanticShapeType, key_type: Optional[ConfigType], config_type: ConfigType
+    shape_type: PydanticShapeType,
+    key_type: Optional[ConfigType],
+    config_type: ConfigType,
 ) -> ConfigType:
     """Based on a Pydantic shape type, wraps a config type in the appropriate Dagster config wrapper.
     For example, if the shape type is a Pydantic list, the config type will be wrapped in an Array.
@@ -1333,6 +1585,7 @@ def _config_type_for_type_on_pydantic_field(
 
 def _is_pydantic_field_required(pydantic_field: ModelField) -> bool:
     # required is of type BoolUndefined = Union[bool, UndefinedType] in Pydantic
+
     if isinstance(pydantic_field.required, bool):
         return pydantic_field.required
 
@@ -1384,6 +1637,7 @@ class ConfigurableLegacyIOManagerAdapter(ConfigurableIOManagerFactory):
     @cached_method
     def get_resource_definition(self) -> ConfigurableIOManagerFactoryResourceDefinition:
         return ConfigurableIOManagerFactoryResourceDefinition(
+            self.__class__,
             resource_fn=self.wrapped_io_manager.resource_fn,
             config_schema=self._config_schema,
             description=self.__doc__,
@@ -1482,7 +1736,7 @@ def infer_schema_from_config_class(
         "Config type annotation must inherit from dagster.Config",
     )
 
-    fields = {}
+    fields: Dict[str, Field] = {}
     for pydantic_field in model_cls.__fields__.values():
         if pydantic_field.name not in fields_to_omit:
             if isinstance(pydantic_field.default, Field):
@@ -1508,6 +1762,7 @@ def infer_schema_from_config_class(
     shape_cls = Permissive if model_cls.__config__.extra == Extra.allow else Shape
 
     docstring = model_cls.__doc__.strip() if model_cls.__doc__ else None
+
     return Field(config=shape_cls(fields), description=description or docstring)
 
 
@@ -1526,16 +1781,27 @@ def separate_resource_params(data: Dict[str, Any]) -> SeparatedResourceParams:
     )
 
 
-def _call_resource_fn_with_default(obj: ResourceDefinition, context: InitResourceContext) -> Any:
+def _call_resource_fn_with_default(
+    stack: contextlib.ExitStack, obj: ResourceDefinition, context: InitResourceContext
+) -> Any:
     if isinstance(obj.config_schema, ConfiguredDefinitionConfigSchema):
         value = cast(Dict[str, Any], obj.config_schema.resolve_config({}).value)
         context = context.replace_config(value["config"])
     elif obj.config_schema.default_provided:
         context = context.replace_config(obj.config_schema.default_value)
-    if has_at_least_one_parameter(obj.resource_fn):
-        return cast(ResourceFunctionWithContext, obj.resource_fn)(context)
+
+    is_fn_generator = inspect.isgenerator(obj.resource_fn) or isinstance(
+        obj.resource_fn, contextlib.ContextDecorator
+    )
+    if has_at_least_one_parameter(obj.resource_fn):  # type: ignore[unreachable]
+        result = cast(ResourceFunctionWithContext, obj.resource_fn)(context)
     else:
-        return cast(ResourceFunctionWithoutContext, obj.resource_fn)()
+        result = cast(ResourceFunctionWithoutContext, obj.resource_fn)()
+
+    if is_fn_generator:
+        return stack.enter_context(cast(contextlib.AbstractContextManager, result))
+    else:
+        return result
 
 
 LateBoundTypesForResourceTypeChecking.set_actual_types_for_type_checking(

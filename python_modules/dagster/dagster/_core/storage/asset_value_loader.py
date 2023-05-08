@@ -92,7 +92,7 @@ class AssetValueLoader:
         Returns:
             The contents of an asset as a Python object.
         """
-        asset_key = AssetKey.from_coerceable(asset_key)
+        asset_key = AssetKey.from_coercible(asset_key)
         resource_config = resource_config or {}
 
         if asset_key in self._assets_defs_by_key:

@@ -6,7 +6,7 @@ import dagster._check as check
 from dagster._annotations import PublicAttr, experimental
 from dagster._core.definitions.events import AssetKey
 from dagster._core.instance import DynamicPartitionsStore
-from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
@@ -176,7 +176,6 @@ class RunRequest(
         from dagster._core.definitions.job_definition import JobDefinition
         from dagster._core.definitions.partition import (
             DynamicPartitionsDefinition,
-            Partition,
             PartitionedConfig,
             PartitionsDefinition,
         )
@@ -239,38 +238,26 @@ class RunRequest(
                     " applied, it does not exist in the set of valid partition keys."
                 )
 
-            partition = Partition(self.partition_key, self.partition_key)
-
         else:
-            # Relies on the partitions def to throw an error if the partition does not exist
-            partition = partitions_def.get_partition(
+            partitions_def.validate_partition_key(
                 self.partition_key,
-                current_time=current_time,
                 dynamic_partitions_store=dynamic_partitions_store,
+                current_time=current_time,
             )
 
-        get_run_request_tags = lambda partition: (
-            {
-                **self.tags,
-                **partitioned_config.get_tags_for_partition(
-                    partition,
-                    job_name=target_definition.name,
-                ),
-            }
-            if self.tags
-            else partitioned_config.get_tags_for_partition(
-                partition,
+        tags = {
+            **(self.tags or {}),
+            **partitioned_config.get_tags_for_partition_key(
+                self.partition_key,
                 job_name=target_definition.name,
-            )
-        )
+            ),
+        }
 
         return self.with_replaced_attrs(
             run_config=self.run_config
             if self.run_config
-            else partitioned_config.get_run_config_for_partition(
-                partition,
-            ),
-            tags=get_run_request_tags(partition),
+            else partitioned_config.get_run_config_for_partition_key(self.partition_key),
+            tags=tags,
         )
 
     def has_resolved_partition(self) -> bool:
@@ -279,35 +266,40 @@ class RunRequest(
         return self.tags.get(PARTITION_NAME_TAG) is not None if self.partition_key else True
 
 
-@whitelist_for_serdes
-class PipelineRunReaction(
+@whitelist_for_serdes(
+    storage_name="PipelineRunReaction",
+    storage_field_names={
+        "dagster_run": "pipeline_run",
+    },
+)
+class DagsterRunReaction(
     NamedTuple(
-        "_PipelineRunReaction",
+        "_DagsterRunReaction",
         [
-            ("pipeline_run", Optional[DagsterRun]),
+            ("dagster_run", Optional[DagsterRun]),
             ("error", Optional[SerializableErrorInfo]),
             ("run_status", Optional[DagsterRunStatus]),
         ],
     )
 ):
-    """Represents a request that reacts to an existing pipeline run. If success, it will report logs
+    """Represents a request that reacts to an existing dagster run. If success, it will report logs
     back to the run.
 
     Attributes:
-        pipeline_run (Optional[PipelineRun]): The pipeline run that originates this reaction.
+        dagster_run (Optional[DagsterRun]): The dagster run that originates this reaction.
         error (Optional[SerializableErrorInfo]): user code execution error.
-        run_status: (Optional[PipelineRunStatus]): The run status that triggered the reaction.
+        run_status: (Optional[DagsterRunStatus]): The run status that triggered the reaction.
     """
 
     def __new__(
         cls,
-        pipeline_run: Optional[DagsterRun],
+        dagster_run: Optional[DagsterRun],
         error: Optional[SerializableErrorInfo] = None,
         run_status: Optional[DagsterRunStatus] = None,
     ):
-        return super(PipelineRunReaction, cls).__new__(
+        return super(DagsterRunReaction, cls).__new__(
             cls,
-            pipeline_run=check.opt_inst_param(pipeline_run, "pipeline_run", DagsterRun),
+            dagster_run=check.opt_inst_param(dagster_run, "dagster_run", DagsterRun),
             error=check.opt_inst_param(error, "error", SerializableErrorInfo),
             run_status=check.opt_inst_param(run_status, "run_status", DagsterRunStatus),
         )

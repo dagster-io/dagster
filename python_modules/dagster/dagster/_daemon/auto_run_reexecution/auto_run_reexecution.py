@@ -2,11 +2,11 @@ import sys
 from typing import Iterator, Optional, Sequence, Tuple, cast
 
 from dagster._core.definitions.metadata import MetadataValue
-from dagster._core.definitions.selector import PipelineSelector
+from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.events import EngineEventData
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, RunRecord
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunRecord
 from dagster._core.storage.tags import MAX_RETRIES_TAG, RETRY_NUMBER_TAG, RETRY_STRATEGY_TAG
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._utils.error import serializable_error_info_from_exc_info
@@ -87,14 +87,14 @@ def retry_run(
     instance = workspace_context.instance
     tags = {RETRY_NUMBER_TAG: str(retry_number)}
     workspace = workspace_context.create_request_context()
-    if not failed_run.external_pipeline_origin:
+    if not failed_run.external_job_origin:
         instance.report_engine_event(
-            "Run does not have an external pipeline origin, unable to retry the run.",
+            "Run does not have an external job origin, unable to retry the run.",
             failed_run,
         )
         return
 
-    origin = failed_run.external_pipeline_origin.external_repository_origin
+    origin = failed_run.external_job_origin.external_repository_origin
     code_location = workspace.get_code_location(origin.code_location_origin.location_name)
     repo_name = origin.repository_name
 
@@ -110,21 +110,21 @@ def retry_run(
 
     external_repo = code_location.get_repository(repo_name)
 
-    if not external_repo.has_external_job(failed_run.pipeline_name):
+    if not external_repo.has_external_job(failed_run.job_name):
         instance.report_engine_event(
             (
-                f"Could not find job {failed_run.pipeline_name} in repository {repo_name}, unable"
+                f"Could not find job {failed_run.job_name} in repository {repo_name}, unable"
                 " to retry the run. It was likely renamed or deleted."
             ),
             failed_run,
         )
         return
 
-    external_pipeline = code_location.get_external_pipeline(
-        PipelineSelector(
+    external_job = code_location.get_external_job(
+        JobSubsetSelector(
             location_name=origin.code_location_origin.location_name,
             repository_name=repo_name,
-            pipeline_name=failed_run.pipeline_name,
+            job_name=failed_run.job_name,
             solid_selection=failed_run.solid_selection,
             asset_selection=None
             if failed_run.asset_selection is None
@@ -137,7 +137,7 @@ def retry_run(
     new_run = instance.create_reexecuted_run(
         parent_run=failed_run,
         code_location=code_location,
-        external_pipeline=external_pipeline,
+        external_job=external_job,
         strategy=strategy,
         extra_tags=tags,
         use_parent_run_tags=True,

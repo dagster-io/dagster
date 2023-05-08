@@ -37,7 +37,7 @@ from dagster._core.host_representation import (
     ExternalRepositoryOrigin,
     InProcessCodeLocationOrigin,
 )
-from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
+from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG
 from dagster._core.test_utils import (
     step_did_not_run,
@@ -144,7 +144,7 @@ def _large_partition_config(_):
 
 config_job_config = PartitionedConfig(
     partitions_def=one_two_three_partitions,
-    run_config_for_partition_fn=_large_partition_config,
+    run_config_for_partition_key_fn=_large_partition_config,
 )
 
 
@@ -634,9 +634,7 @@ def test_backfill_from_partitioned_job(
     workspace_context: WorkspaceProcessContext,
     external_repo: ExternalRepository,
 ):
-    partition_name_list = [
-        partition.name for partition in my_config.partitions_def.get_partitions()
-    ]
+    partition_keys = my_config.partitions_def.get_partition_keys()
     external_partition_set = external_repo.get_external_partition_set(
         "comp_always_succeed_partition_set"
     )
@@ -645,7 +643,7 @@ def test_backfill_from_partitioned_job(
             backfill_id="partition_schedule_from_job",
             partition_set_origin=external_partition_set.get_external_origin(),
             status=BulkActionStatus.REQUESTED,
-            partition_names=partition_name_list[:3],
+            partition_names=partition_keys[:3],
             from_failure=False,
             reexecution_steps=None,
             tags=None,
@@ -660,7 +658,7 @@ def test_backfill_from_partitioned_job(
     runs = reversed(list(instance.get_runs()))
     for idx, run in enumerate(runs):
         assert run.tags[BACKFILL_ID_TAG] == "partition_schedule_from_job"
-        assert run.tags[PARTITION_NAME_TAG] == partition_name_list[idx]
+        assert run.tags[PARTITION_NAME_TAG] == partition_keys[idx]
 
 
 def test_backfill_with_asset_selection(
@@ -668,7 +666,7 @@ def test_backfill_with_asset_selection(
     workspace_context: WorkspaceProcessContext,
     external_repo: ExternalRepository,
 ):
-    partition_name_list = [partition.name for partition in static_partitions.get_partitions()]
+    partition_keys = static_partitions.get_partition_keys()
     asset_selection = [AssetKey("foo"), AssetKey("a1"), AssetKey("bar")]
     job_def = the_repo.get_implicit_job_def_for_assets(asset_selection)
     assert job_def
@@ -680,7 +678,7 @@ def test_backfill_with_asset_selection(
             backfill_id="backfill_with_asset_selection",
             partition_set_origin=external_partition_set.get_external_origin(),
             status=BulkActionStatus.REQUESTED,
-            partition_names=partition_name_list,
+            partition_names=partition_keys,
             from_failure=False,
             reexecution_steps=None,
             tags=None,
@@ -699,7 +697,7 @@ def test_backfill_with_asset_selection(
     runs = reversed(list(instance.get_runs()))
     for idx, run in enumerate(runs):
         assert run.tags[BACKFILL_ID_TAG] == "backfill_with_asset_selection"
-        assert run.tags[PARTITION_NAME_TAG] == partition_name_list[idx]
+        assert run.tags[PARTITION_NAME_TAG] == partition_keys[idx]
         assert step_succeeded(instance, run, "foo")
         assert step_succeeded(instance, run, "reusable")
         assert step_succeeded(instance, run, "bar")
@@ -718,7 +716,7 @@ def test_pure_asset_backfill_with_multiple_assets_selected(
 ):
     asset_selection = [AssetKey("asset_a"), AssetKey("asset_b"), AssetKey("asset_c")]
 
-    partition_name_list = [partition.name for partition in partitions_a.get_partitions()]
+    partition_keys = partitions_a.get_partition_keys()
 
     instance.add_backfill(
         PartitionBackfill.from_asset_partitions(
@@ -729,7 +727,7 @@ def test_pure_asset_backfill_with_multiple_assets_selected(
             tags={"custom_tag_key": "custom_tag_value"},
             backfill_timestamp=pendulum.now().timestamp(),
             asset_selection=asset_selection,
-            partition_names=partition_name_list,
+            partition_names=partition_keys,
             dynamic_partitions_store=instance,
             all_partitions=False,
         )
@@ -782,7 +780,7 @@ def test_pure_asset_backfill(
 ):
     del external_repo
 
-    partition_name_list = [partition.name for partition in static_partitions.get_partitions()]
+    partition_keys = static_partitions.get_partition_keys()
     asset_selection = [AssetKey("foo"), AssetKey("a1"), AssetKey("bar")]
     instance.add_backfill(
         PartitionBackfill.from_asset_partitions(
@@ -793,7 +791,7 @@ def test_pure_asset_backfill(
             tags={"custom_tag_key": "custom_tag_value"},
             backfill_timestamp=pendulum.now().timestamp(),
             asset_selection=asset_selection,
-            partition_names=partition_name_list,
+            partition_names=partition_keys,
             dynamic_partitions_store=instance,
             all_partitions=False,
         )

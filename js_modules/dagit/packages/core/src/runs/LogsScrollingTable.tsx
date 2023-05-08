@@ -2,7 +2,13 @@ import {gql} from '@apollo/client';
 import {Colors, NonIdealState} from '@dagster-io/ui';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import {CellMeasurer, CellMeasurerCache, List, ListRowProps, ScrollParams} from 'react-virtualized';
+import {
+  CellMeasurer as _CellMeasurer,
+  CellMeasurerCache,
+  List as _List,
+  ListRowProps,
+  ScrollParams,
+} from 'react-virtualized';
 import styled from 'styled-components/macro';
 
 import {LogFilter, LogsProviderLogs} from './LogsProvider';
@@ -19,6 +25,10 @@ import {logNodeLevel} from './logNodeLevel';
 import {RunDagsterRunEventFragment} from './types/RunFragments.types';
 
 const LOGS_PADDING_BOTTOM = 50;
+
+// todo: react-virtualized needs updated types to work with React 18. For now lets any type.
+const List: any = _List;
+const CellMeasurer: any = _CellMeasurer;
 
 interface ILogsScrollingTableProps {
   logs: LogsProviderLogs;
@@ -120,7 +130,6 @@ export const LogsScrollingTable: React.FC<ILogsScrollingTableProps> = (props) =>
 
 export const LOGS_SCROLLING_TABLE_MESSAGE_FRAGMENT = gql`
   fragment LogsScrollingTableMessageFragment on DagsterRunEvent {
-    __typename
     ...LogsRowStructuredFragment
     ...LogsRowUnstructuredFragment
   }
@@ -130,7 +139,7 @@ export const LOGS_SCROLLING_TABLE_MESSAGE_FRAGMENT = gql`
 `;
 
 class LogsScrollingTableSized extends React.Component<ILogsScrollingTableSizedProps> {
-  list = React.createRef<List>();
+  list = React.createRef<typeof List>();
 
   get listEl() {
     // eslint-disable-next-line react/no-find-dom-node

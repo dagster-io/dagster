@@ -27,8 +27,7 @@ import {useCanSeeConfig} from '../instance/useCanSeeConfig';
 import {Loading} from '../ui/Loading';
 import {StickyTableContainer} from '../ui/StickyTableContainer';
 
-import {RUN_TABS_COUNT_QUERY, RunListTabs, useSelectedRunsTab} from './RunListTabs.new';
-import {queuedStatuses, inProgressStatuses} from './RunStatuses';
+import {useRunListTabs, useSelectedRunsTab} from './RunListTabs.new';
 import {RunTable, RUN_TABLE_RUN_FRAGMENT} from './RunTableNew';
 import {RunsQueryRefetchContext} from './RunUtils';
 import {
@@ -38,7 +37,6 @@ import {
   RunFilterToken,
   useRunsFilterInput,
 } from './RunsFilterInputNew';
-import {RunTabsCountQuery, RunTabsCountQueryVariables} from './types/RunListTabs.types';
 import {
   QueueDaemonStatusNewQuery,
   QueueDaemonStatusNewQueryVariables,
@@ -133,27 +131,8 @@ export const RunsRoot = () => {
     return filterTokens;
   }, [filterTokens, staticStatusTags]);
 
-  const runCountResult = useQuery<RunTabsCountQuery, RunTabsCountQueryVariables>(
-    RUN_TABS_COUNT_QUERY,
-    {
-      variables: {
-        queuedFilter: {...filter, statuses: Array.from(queuedStatuses)},
-        inProgressFilter: {...filter, statuses: Array.from(inProgressStatuses)},
-      },
-    },
-  );
-
-  const {data: countData} = runCountResult;
-  const {queuedCount, inProgressCount} = React.useMemo(() => {
-    return {
-      queuedCount:
-        countData?.queuedCount?.__typename === 'Runs' ? countData.queuedCount.count : null,
-      inProgressCount:
-        countData?.inProgressCount?.__typename === 'Runs' ? countData.inProgressCount.count : null,
-    };
-  }, [countData]);
-
-  const countRefreshState = useQueryRefreshAtInterval(runCountResult, FIFTEEN_SECONDS);
+  const {tabs, queryResult: runQueryResult} = useRunListTabs(filter);
+  const countRefreshState = useQueryRefreshAtInterval(runQueryResult, FIFTEEN_SECONDS);
   const combinedRefreshState = useMergedRefresh(countRefreshState, refreshState);
 
   const {button, activeFiltersJsx} = useRunsFilterInput({
@@ -166,19 +145,14 @@ export const RunsRoot = () => {
 
   function actionBar() {
     return (
-      <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+      <Box
+        flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between', grow: 1}}
+      >
+        <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+          {tabs}
+          {filtersSlot}
+        </Box>
         <QueryRefreshCountdown refreshState={combinedRefreshState} />
-        <RunListTabs queuedCount={queuedCount} inProgressCount={inProgressCount} />
-        {filtersSlot}
-        {activeFiltersJsx.length ? (
-          <ButtonLink
-            onClick={() => {
-              setFilterTokensWithStatus([]);
-            }}
-          >
-            Clear All
-          </ButtonLink>
-        ) : null}
       </Box>
     );
   }
@@ -251,7 +225,20 @@ export const RunsRoot = () => {
                     onAddTag={onAddTag}
                     filter={filter}
                     actionBarComponents={actionBar()}
-                    belowActionBarComponents={activeFiltersJsx}
+                    belowActionBarComponents={
+                      activeFiltersJsx.length ? (
+                        <>
+                          {activeFiltersJsx}
+                          <ButtonLink
+                            onClick={() => {
+                              setFilterTokensWithStatus([]);
+                            }}
+                          >
+                            Clear All
+                          </ButtonLink>
+                        </>
+                      ) : null
+                    }
                   />
                 </StickyTableContainer>
                 {pipelineRunsOrError.results.length > 0 ? (
