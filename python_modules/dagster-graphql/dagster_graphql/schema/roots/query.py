@@ -615,12 +615,13 @@ class GrapheneDagitQuery(graphene.ObjectType):
         limit: Optional[int] = None,
     ):
         selector = filter.to_selector() if filter is not None else None
-
-        return GrapheneRuns(
-            filters=selector,
-            cursor=cursor,
-            limit=limit,
+        asset_keys = (
+            [AssetKey(path=key.path) for key in filter.assetKeys]
+            if filter is not None and filter.assetKeys is not None
+            else None
         )
+
+        return GrapheneRuns(filters=selector, cursor=cursor, limit=limit, asset_keys=asset_keys)
 
     def resolve_pipelineRunOrError(self, graphene_info: ResolveInfo, runId: graphene.ID):
         return get_run_by_id(graphene_info, runId)
@@ -633,12 +634,13 @@ class GrapheneDagitQuery(graphene.ObjectType):
         limit: Optional[int] = None,
     ):
         selector = filter.to_selector() if filter is not None else None
-
-        return GrapheneRuns(
-            filters=selector,
-            cursor=cursor,
-            limit=limit,
+        asset_keys = (
+            [AssetKey(path=key.path) for key in filter.assetKeys]
+            if filter is not None and filter.assetKeys is not None
+            else None
         )
+
+        return GrapheneRuns(filters=selector, cursor=cursor, limit=limit, asset_keys=asset_keys)
 
     def resolve_runOrError(self, graphene_info: ResolveInfo, runId):
         return get_run_by_id(graphene_info, runId)

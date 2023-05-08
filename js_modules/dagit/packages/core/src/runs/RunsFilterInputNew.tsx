@@ -10,8 +10,8 @@ import memoize from 'lodash/memoize';
 import qs from 'qs';
 import * as React from 'react';
 
-import {__ASSET_JOB_PREFIX} from '../asset-graph/Utils';
-import {RunsFilter, RunStatus} from '../graphql/types';
+import {__ASSET_JOB_PREFIX, tokenForAssetKey} from '../asset-graph/Utils';
+import {AssetKeyInput, RunsFilter, RunStatus} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {TruncatedTextWithFullTextOnHover} from '../nav/getLeftNavItemsForOption';
@@ -24,7 +24,7 @@ import {useRepositoryOptions} from '../workspace/WorkspaceContext';
 
 import {DagsterTag} from './RunTag';
 import {
-  RunTagKeysNewQuery,
+  RunFilterSpaceQuery,
   RunTagValuesNewQuery,
   RunTagValuesNewQueryVariables,
 } from './types/RunsFilterInputNew.types';
@@ -34,6 +34,7 @@ export type RunFilterTokenType =
   | 'status'
   | 'pipeline'
   | 'job'
+  | 'assetKey'
   | 'snapshotId'
   | 'tag'
   | 'backfill'
@@ -44,6 +45,7 @@ export type RunFilterToken = {
   token?: RunFilterTokenType;
   value: string;
 };
+
 const CREATED_BY_TAGS = [
   DagsterTag.Automaterialize,
   DagsterTag.SensorName,
@@ -66,6 +68,10 @@ const RUN_PROVIDERS_EMPTY = [
   },
   {
     token: 'job',
+    values: () => [],
+  },
+  {
+    token: 'assetKey',
     values: () => [],
   },
   {
@@ -134,6 +140,9 @@ export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {
       obj.updatedAfter = parseInt(item.value);
     } else if (item.token === 'pipeline' || item.token === 'job') {
       obj.pipelineName = item.value;
+    } else if (item.token === 'assetKey') {
+      obj.assetKeys = obj.assetKeys || [];
+      obj.assetKeys.push({path: item.value.split('/')});
     } else if (item.token === 'id') {
       obj.runIds = obj.runIds || [];
       obj.runIds.push(item.value);
@@ -168,7 +177,9 @@ const tagsToExclude = [...CREATED_BY_TAGS, DagsterTag.Backfill];
 export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilterInputProps) => {
   const {options} = useRepositoryOptions();
 
-  const [fetchTagKeys, {data: tagKeyData}] = useLazyQuery<RunTagKeysNewQuery>(RUN_TAG_KEYS_QUERY);
+  const [fetchFilterSpace, {data: filterSpaceData}] = useLazyQuery<RunFilterSpaceQuery>(
+    RUN_FILTER_SPACE_QUERY,
+  );
   const client = useApolloClient();
   const {UserDisplay} = useLaunchPadHooks();
 
@@ -191,13 +202,20 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
     [client],
   );
 
+  const assets = React.useMemo(() => {
+    return (filterSpaceData?.assetNodes || []).map((a) => ({
+      value: tokenForAssetKey(a.assetKey),
+      match: [tokenForAssetKey(a.assetKey)],
+    }));
+  }, [filterSpaceData]);
+
   const tagSuggestions: SuggestionFilterSuggestion<{
     value: string;
     key?: string;
   }>[] = React.useMemo(() => {
-    if (tagKeyData?.runTagKeysOrError?.__typename === 'RunTagKeys') {
+    if (filterSpaceData?.runTagKeysOrError?.__typename === 'RunTagKeys') {
       return (
-        tagKeyData?.runTagKeysOrError.keys
+        filterSpaceData?.runTagKeysOrError.keys
           .filter((key) => !tagsToExclude.includes(key as DagsterTag))
           .map((tagKey) => ({
             final: false,
@@ -208,7 +226,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
       );
     }
     return [];
-  }, [tagKeyData]);
+  }, [filterSpaceData]);
 
   const [fetchSensorValues, sensorValues] = useTagDataFilterValues(DagsterTag.SensorName);
   const [fetchScheduleValues, scheduleValues] = useTagDataFilterValues(DagsterTag.ScheduleName);
@@ -218,7 +236,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
   const isBackfillsFilterEnabled = !enabledFilters || enabledFilters?.includes('backfill');
 
   const onFocus = React.useCallback(() => {
-    fetchTagKeys();
+    fetchFilterSpace();
     fetchSensorValues();
     fetchScheduleValues();
     fetchUserValues();
@@ -229,7 +247,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
     fetchBackfillValues,
     fetchScheduleValues,
     fetchSensorValues,
-    fetchTagKeys,
+    fetchFilterSpace,
     fetchUserValues,
     isBackfillsFilterEnabled,
   ]);
@@ -247,8 +265,8 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
   const isJobFilterEnabled = !enabledFilters || enabledFilters?.includes('job');
 
   const {pipelines, jobs} = React.useMemo(() => {
-    const pipelineNames = [];
-    const jobNames = [];
+    const pipelineNames: string[] = [];
+    const jobNames: string[] = [];
 
     if (!isJobFilterEnabled) {
       return {pipelines: [], jobs: []};
@@ -282,6 +300,33 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
 
   const isPipelineFilterEnabled =
     !enabledFilters || (enabledFilters?.includes('job') && pipelines.length);
+
+  const assetKeyFilter = useStaticSetFilter({
+    name: 'Asset',
+    icon: 'asset',
+    allowMultipleSelections: true,
+    allValues: assets,
+    renderLabel: ({value}) => (
+      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+        <Icon name="asset" />
+        <TruncatedTextWithFullTextOnHover text={value} />
+      </Box>
+    ),
+    getStringValue: (x) => x,
+    initialState: React.useMemo(
+      () => new Set(tokens.filter((x) => x.token === 'assetKey').map((x) => x.value)),
+      [tokens],
+    ),
+    onStateChanged: (values) => {
+      onChange([
+        ...tokens.filter((x) => x.token !== 'assetKey'),
+        ...Array.from(values).map((value) => ({
+          token: 'assetKey' as const,
+          value,
+        })),
+      ]);
+    },
+  });
 
   const jobFilter = useStaticSetFilter({
     name: 'Job',
@@ -482,6 +527,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
         },
       }),
       isJobFilterEnabled ? jobFilter : null,
+      assetKeyFilter,
       isPipelineFilterEnabled ? pipelinesFilter : null,
       isBackfillsFilterEnabled ? backfillsFilter : null,
       useSuggestionFilter({
@@ -562,8 +608,13 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
   return {button: <span onClick={onFocus}>{button}</span>, activeFiltersJsx};
 };
 
-export const RUN_TAG_KEYS_QUERY = gql`
-  query RunTagKeysNewQuery {
+export const RUN_FILTER_SPACE_QUERY = gql`
+  query RunFilterSpaceQuery {
+    assetNodes {
+      assetKey {
+        path
+      }
+    }
     runTagKeysOrError {
       ... on RunTagKeys {
         keys

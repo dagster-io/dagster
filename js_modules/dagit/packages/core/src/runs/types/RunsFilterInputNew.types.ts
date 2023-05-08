@@ -2,10 +2,14 @@
 
 import * as Types from '../../graphql/types';
 
-export type RunTagKeysNewQueryVariables = Types.Exact<{[key: string]: never}>;
+export type RunFilterSpaceQueryVariables = Types.Exact<{[key: string]: never}>;
 
-export type RunTagKeysNewQuery = {
+export type RunFilterSpaceQuery = {
   __typename: 'DagitQuery';
+  assetNodes: Array<{
+    __typename: 'AssetNode';
+    assetKey: {__typename: 'AssetKey'; path: Array<string>};
+  }>;
   runTagKeysOrError:
     | {__typename: 'PythonError'}
     | {__typename: 'RunTagKeys'; keys: Array<string>}

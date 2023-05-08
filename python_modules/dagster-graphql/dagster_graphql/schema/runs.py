@@ -104,18 +104,19 @@ class GrapheneRuns(graphene.ObjectType):
         interfaces = (GraphenePipelineRuns,)
         name = "Runs"
 
-    def __init__(self, filters, cursor, limit):
+    def __init__(self, filters, cursor, limit, asset_keys=None):
         super().__init__()
 
         self._filters = filters
         self._cursor = cursor
         self._limit = limit
+        self._asset_keys = asset_keys
 
     def resolve_results(self, graphene_info: ResolveInfo):
-        return get_runs(graphene_info, self._filters, self._cursor, self._limit)
+        return get_runs(graphene_info, self._filters, self._cursor, self._limit, self._asset_keys)
 
     def resolve_count(self, graphene_info: ResolveInfo):
-        return get_runs_count(graphene_info, self._filters)
+        return get_runs_count(graphene_info, self._filters, self._asset_keys)
 
 
 class GrapheneRunsOrError(graphene.Union):

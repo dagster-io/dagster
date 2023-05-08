@@ -33,6 +33,7 @@ export type RunFilterTokenType =
   | 'status'
   | 'pipeline'
   | 'job'
+  | 'assetKey'
   | 'snapshotId'
   | 'tag'
   | 'backfill'

@@ -31,6 +31,7 @@ class GrapheneRunsFilter(graphene.InputObjectType):
     updatedAfter = graphene.InputField(graphene.Float)
     createdBefore = graphene.InputField(graphene.Float)
     mode = graphene.InputField(graphene.String)
+    assetKeys = graphene.List(GrapheneAssetKeyInput)
 
     class Meta:
         description = """This type represents a filter on Dagster runs."""

@@ -807,6 +807,83 @@ def test_filtered_runs_multiple_statuses():
             assert run_id_3 in run_ids
 
 
+def test_filtered_runs_asset_keys():
+    with instance_for_test() as instance:
+        repo = get_repo_at_time_1()
+        run_id_1 = instance.create_run_for_job(
+            repo.get_job("foo_job"), status=DagsterRunStatus.FAILURE
+        ).run_id
+        run_id_2 = instance.create_run_for_job(
+            repo.get_job("foo_job"), status=DagsterRunStatus.FAILURE
+        ).run_id
+        run_id_3 = instance.create_run_for_job(
+            repo.get_job("foo_job"), status=DagsterRunStatus.FAILURE
+        ).run_id
+
+        mock_asset_runs = {"foo": [run_id_1], "bar": [run_id_1, run_id_2]}
+
+        with define_out_of_process_context(__file__, "get_repo_at_time_1", instance) as context:
+            with mock.patch.object(instance, "run_ids_for_asset_key") as ids_mock:
+
+                def _mock_run_ids_for_asset_key(asset_key):
+                    key = asset_key.path[0]
+                    return mock_asset_runs[key] if key in mock_asset_runs else []
+
+                ids_mock.side_effect = _mock_run_ids_for_asset_key
+
+                # Result for a single asset key
+                result = execute_dagster_graphql(
+                    context,
+                    FILTERED_RUN_QUERY,
+                    variables={"filter": {"assetKeys": [{"path": ["foo"]}]}},
+                )
+                assert result.data
+                run_ids = [run["runId"] for run in result.data["pipelineRunsOrError"]["results"]]
+                assert run_ids == [run_id_1]
+
+                # Result for two asset keys with some overlapping runs should OR results
+                result = execute_dagster_graphql(
+                    context,
+                    FILTERED_RUN_QUERY,
+                    variables={"filter": {"assetKeys": [{"path": ["foo"]}, {"path": ["bar"]}]}},
+                )
+                assert result.data
+                run_ids = [run["runId"] for run in result.data["pipelineRunsOrError"]["results"]]
+                assert run_ids.sort() == [run_id_1, run_id_2].sort()
+
+                # Result for a non-existent asset key should be no runs
+                result = execute_dagster_graphql(
+                    context,
+                    FILTERED_RUN_QUERY,
+                    variables={"filter": {"assetKeys": [{"path": ["dne"]}]}},
+                )
+                assert result.data
+                run_ids = [run["runId"] for run in result.data["pipelineRunsOrError"]["results"]]
+                assert run_ids == []
+
+                # Result when combined with existing run ids query should be set intersection
+                result = execute_dagster_graphql(
+                    context,
+                    FILTERED_RUN_QUERY,
+                    variables={
+                        "filter": {"runIds": [run_id_2, run_id_3], "assetKeys": [{"path": ["bar"]}]}
+                    },
+                )
+                assert result.data
+                run_ids = [run["runId"] for run in result.data["pipelineRunsOrError"]["results"]]
+                assert run_ids == [run_id_2]
+
+                # Result when combined with existing run ids query, no overlap
+                result = execute_dagster_graphql(
+                    context,
+                    FILTERED_RUN_QUERY,
+                    variables={"filter": {"runIds": [run_id_3], "assetKeys": [{"path": ["bar"]}]}},
+                )
+                assert result.data
+                run_ids = [run["runId"] for run in result.data["pipelineRunsOrError"]["results"]]
+                assert run_ids == []
+
+
 def test_filtered_runs_multiple_filters():
     with instance_for_test() as instance:
         repo = get_repo_at_time_1()

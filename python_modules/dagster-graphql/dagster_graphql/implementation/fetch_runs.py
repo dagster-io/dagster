@@ -21,6 +21,7 @@ from dagster import (
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.errors import DagsterRunNotFoundError
 from dagster._core.execution.stats import RunStepKeyStatsSnapshot, StepEventStatus
+from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunRecord, RunsFilter
 from dagster._core.storage.tags import TagType, get_tag_type
 
@@ -118,6 +119,7 @@ def get_runs(
     filters: Optional[RunsFilter],
     cursor: Optional[str] = None,
     limit: Optional[int] = None,
+    asset_keys: Optional[List[AssetKey]] = None,
 ) -> Sequence["GrapheneRun"]:
     from ..schema.pipelines.pipeline import GrapheneRun
 
@@ -126,6 +128,10 @@ def get_runs(
     check.opt_int_param(limit, "limit")
 
     instance = graphene_info.context.instance
+    if asset_keys is not None:
+        filters = filters_adding_asset_keys(instance, filters, asset_keys)
+        if not filters:
+            return []
 
     return [
         GrapheneRun(record)
@@ -145,6 +151,26 @@ IN_PROGRESS_STATUSES = [
     DagsterRunStatus.STARTED,
     DagsterRunStatus.CANCELING,
 ]
+
+
+def filters_adding_asset_keys(
+    instance: DagsterInstance, filters: Optional[RunsFilter], asset_keys: List[AssetKey]
+) -> Optional[RunsFilter]:
+    run_ids = []
+    for key in asset_keys:
+        run_ids += instance.run_ids_for_asset_key(key)
+
+    if filters and filters.run_ids:
+        run_ids = [v for v in run_ids if v in filters.run_ids]
+
+    if not run_ids:
+        return None
+
+    return (
+        RunsFilter(**{**filters._asdict(), "run_ids": run_ids})
+        if filters
+        else RunsFilter(run_ids=run_ids)
+    )
 
 
 def add_all_upstream_keys(
@@ -294,8 +320,18 @@ def _get_in_progress_runs_for_assets(
     return in_progress_run_ids_by_asset, unstarted_run_ids_by_asset
 
 
-def get_runs_count(graphene_info: "ResolveInfo", filters: Optional[RunsFilter]) -> int:
-    return graphene_info.context.instance.get_runs_count(filters)
+def get_runs_count(
+    graphene_info: "ResolveInfo",
+    filters: Optional[RunsFilter],
+    asset_keys: Optional[List[AssetKey]] = None,
+) -> int:
+    instance = graphene_info.context.instance
+    if asset_keys is not None:
+        filters = filters_adding_asset_keys(instance, filters, asset_keys)
+        if not filters:
+            return 0
+
+    return instance.get_runs_count(filters)
 
 
 def get_run_groups(

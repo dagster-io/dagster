@@ -113,6 +113,7 @@ export const RunsRoot = () => {
       'snapshotId',
       'id',
       'job',
+      'assetKey',
       'pipeline',
       'backfill',
     ];
