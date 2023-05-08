@@ -328,11 +328,12 @@ local_artifact_storage:
 
 # start_run_monitoring
 
-# Opt in to the experimental Monitoring Daemon
+# Opt in to run monitoring
 run_monitoring:
   enabled: true
   # values below are the defaults, and don't need to be specified execpt to override them
   start_timeout_seconds: 180
+  cancel_timeout_seconds: 180
   max_resume_run_attempts: 3 # experimental if above 0
   poll_interval_seconds: 120
 
