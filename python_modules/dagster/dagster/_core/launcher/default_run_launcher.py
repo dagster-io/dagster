@@ -163,6 +163,8 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         if not run:
             return False
 
+        self._instance.report_run_canceling(run)
+
         client = self._get_grpc_client_for_termination(run_id)
 
         if not client:
@@ -173,7 +175,6 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
             )
             return False
 
-        self._instance.report_run_canceling(run)
         res = deserialize_value(
             client.cancel_execution(CancelExecutionRequest(run_id=run_id)), CancelExecutionResult
         )
