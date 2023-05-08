@@ -1,9 +1,6 @@
 import {DToasterShowProps, Toaster} from '@dagster-io/ui';
 import memoize from 'lodash/memoize';
 
-// todo dish: Delete this after Cloud is updated.
-export const SharedToaster = Toaster.create({position: 'top'}, document.body);
-
 export const getSharedToaster = memoize(async () => {
   return await Toaster.asyncCreate({position: 'top'}, document.body);
 });
