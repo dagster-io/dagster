@@ -266,9 +266,7 @@ export const TicksTable = ({
                   </td>
                 ) : null}
                 <td>
-                  {tick.dynamicPartitionsRequestResults.length ? (
-                    <DynamicPartitionRequestsCell requests={tick.dynamicPartitionsRequestResults} />
-                  ) : null}
+                  <DynamicPartitionRequestsCell requests={tick.dynamicPartitionsRequestResults} />
                 </td>
               </tr>
             ))}
@@ -383,7 +381,8 @@ function DynamicPartitionRequestsCell({
   requests: DynamicPartitionsRequestResultFragment[];
 }) {
   const [isDialogOpen, setDialogOpen] = React.useState(false);
-  if (!requests.some((request) => request.partitionKeys?.length)) {
+  const nonSkipOnlyRequests = requests.filter((request) => request.partitionKeys?.length);
+  if (!nonSkipOnlyRequests.lengths) {
     return null;
   }
 
@@ -394,7 +393,8 @@ function DynamicPartitionRequestsCell({
           setDialogOpen(true);
         }}
       >
-        {requests.length} dynamic partition change{requests.length === 1 ? '' : 's'}
+        {nonSkipOnlyRequests.length} dynamic partition change
+        {nonSkipOnlyRequests.length === 1 ? '' : 's'}
       </ButtonLink>
       <Dialog
         isOpen={isDialogOpen}
@@ -402,16 +402,10 @@ function DynamicPartitionRequestsCell({
           setDialogOpen(false);
         }}
         style={{width: '60%', minWidth: '400px'}}
-        title={
-          <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-            <Icon name="partition" />
-            Dynamic partition changes
-          </Box>
-        }
+        icon="partition"
+        title="Dynamic partition changes"
       >
-        <DialogBody>
-          <DynamicPartitionRequests includeTitle={false} requests={requests} />
-        </DialogBody>
+        <DynamicPartitionRequests includeTitle={false} requests={nonSkipOnlyRequests} />
         <DialogFooter>
           <Button
             intent="primary"
