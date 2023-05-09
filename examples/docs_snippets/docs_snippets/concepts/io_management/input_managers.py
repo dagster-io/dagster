@@ -113,7 +113,7 @@ class BetterPandasIOManager(ConfigurableIOManager):
 
 
 # write a subclass that uses _get_path for your custom loading logic
-class MyBetterNumpyLoader(PandasIOManager):
+class MyBetterNumpyLoader(BetterPandasIOManager):
     def load_input(self, context):
         file_path = self._get_path(context.upstream_output)
         array = np.genfromtxt(file_path, delimiter=",", dtype=None)
@@ -128,7 +128,7 @@ def better_analyze_as_numpy(np_array_input: np.ndarray):
 @job(
     resource_defs={
         "numpy_manager": MyBetterNumpyLoader(),
-        "io_manager": PandasIOManager(),
+        "io_manager": BetterPandasIOManager(),
     }
 )
 def my_better_job():
