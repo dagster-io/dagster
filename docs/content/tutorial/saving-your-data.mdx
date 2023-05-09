@@ -175,4 +175,4 @@ Once you’ve outgrown being able to load all your data into memory in one chunk
 
 We also briefly mentioned resources. A property of resources is that they can be configured depending on the use case, such as using DuckDB as your data warehouse during development and Databricks during production.
 
-Assets don’t need to use I/O managers. Sometimes it’s impossible to separate business logic from I/O, or you’ll never want to load the data into memory. In situations like these, you’re able to not return any data, and dependencies can be defined without loading data in the dependent asset’s function. In the next section, you'll learn how to create assets and dependencies without using I/O managers.
+Assets don’t need to use I/O managers. Sometimes it’s impossible to separate business logic from I/O, or you’ll never want to load the data into memory. In situations like these, you’re able to not return any data, and dependencies can be defined without loading data in the dependent asset’s function. [In the next section](/tutorial/managing-your-own-io), you'll learn how to create assets and dependencies without using I/O managers.
