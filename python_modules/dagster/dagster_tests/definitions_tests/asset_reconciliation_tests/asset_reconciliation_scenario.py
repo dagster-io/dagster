@@ -177,8 +177,7 @@ class AssetReconciliationScenario(NamedTuple):
                 (
                     run_requests,
                     cursor,
-                    materialize_reasons,
-                    skip_reasons,
+                    evaluations,
                 ) = self.cursor_from.do_sensor_scenario(
                     instance,
                     scenario_name=scenario_name,
@@ -253,7 +252,7 @@ class AssetReconciliationScenario(NamedTuple):
                 else asset_graph.non_source_asset_keys
             )
 
-            run_requests, cursor, materialize_reasons, skip_reasons = reconcile(
+            run_requests, cursor, evaluations = reconcile(
                 asset_graph=asset_graph,
                 target_asset_keys=target_asset_keys,
                 instance=instance,
@@ -265,7 +264,7 @@ class AssetReconciliationScenario(NamedTuple):
             base_job = repo.get_implicit_job_def_for_assets(run_request.asset_selection)
             assert base_job is not None
 
-        return run_requests, cursor, materialize_reasons, skip_reasons
+        return run_requests, cursor, evaluations
 
     def do_daemon_scenario(self, instance, scenario_name):
         assert bool(self.assets) != bool(

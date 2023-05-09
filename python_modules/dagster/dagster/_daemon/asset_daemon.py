@@ -70,7 +70,7 @@ class AssetDaemon(IntervalDaemon):
             else AssetReconciliationCursor.empty()
         )
 
-        run_requests, new_cursor, _, _ = reconcile(
+        run_requests, new_cursor, _ = reconcile(
             asset_graph=asset_graph,
             target_asset_keys=target_asset_keys,
             instance=instance,

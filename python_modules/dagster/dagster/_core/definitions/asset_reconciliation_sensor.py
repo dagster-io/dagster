@@ -50,58 +50,75 @@ if TYPE_CHECKING:
     from dagster._utils.caching_instance_queryer import CachingInstanceQueryer  # expensive import
 
 
-class _AutoMaterializeCondition(Enum):
+class AutoMaterializeCondition(Enum):
+    """Represents the set of conditions that can trigger auto-materialization for an asset.
+    """
     FRESHNESS = "FRESHNESS"
     DOWNSTREAM_FRESHNESS = "DOWNSTREAM_FRESHNESS"
-    PARENT_UPDATED = "PARENT_UPDATED"
+    PARENT_MATERIALIZED = "PARENT_MATERIALIZED"
     MISSING = "MISSING"
 
 
 @whitelist_for_serdes
 class AutoMaterializeReason(NamedTuple):
-    condition: _AutoMaterializeCondition
+    """Denotes the reason that the auto-materialize logic decided that an asset should be materialized.
+
+    In the future, may be extended to support additional details attached to raw condition.
+
+    Should not be instantiated directly by the user.
+    """
+    condition: AutoMaterializeCondition
 
     @staticmethod
     def freshness() -> "AutoMaterializeReason":
-        return AutoMaterializeReason(condition=_AutoMaterializeCondition.FRESHNESS)
+        return AutoMaterializeReason(condition=AutoMaterializeCondition.FRESHNESS)
 
     @staticmethod
     def downstream_freshness() -> "AutoMaterializeReason":
-        return AutoMaterializeReason(condition=_AutoMaterializeCondition.DOWNSTREAM_FRESHNESS)
+        return AutoMaterializeReason(condition=AutoMaterializeCondition.DOWNSTREAM_FRESHNESS)
 
     @staticmethod
-    def parent_updated() -> "AutoMaterializeReason":
-        return AutoMaterializeReason(condition=_AutoMaterializeCondition.PARENT_UPDATED)
+    def parent_materialized() -> "AutoMaterializeReason":
+        return AutoMaterializeReason(condition=AutoMaterializeCondition.PARENT_MATERIALIZED)
 
     @staticmethod
     def missing() -> "AutoMaterializeReason":
-        return AutoMaterializeReason(condition=_AutoMaterializeCondition.MISSING)
+        return AutoMaterializeReason(condition=AutoMaterializeCondition.MISSING)
 
 
-class _AutoMaterializeSkipCondition(Enum):
+class AutoMaterializeSkipCondition(Enum):
+    """Represents the set of conditions that can prevent an asset from being auto-materialized.
+    """
     PARENT_UNRECONCILED = "PARENT_UNRECONCILED"
 
 
 @whitelist_for_serdes
 class AutoMaterializeSkipReason(NamedTuple):
-    condition: _AutoMaterializeSkipCondition
+    """Denotes the reason that the auto-materialize logic decided that an asset should not be
+    materialized.
+
+    In the future, may be extended to support additional details attached to raw condition.
+
+    Should not be instantiated directly by the user.
+    """
+    condition: AutoMaterializeSkipCondition
 
     @staticmethod
     def parent_unreconciled() -> "AutoMaterializeSkipReason":
         return AutoMaterializeSkipReason(
-            condition=_AutoMaterializeSkipCondition.PARENT_UNRECONCILED
+            condition=AutoMaterializeSkipCondition.PARENT_UNRECONCILED
         )
 
 
 @whitelist_for_serdes
-class AutoMaterializeDecision(NamedTuple):
+class AutoMaterializeEvaluation(NamedTuple):
     materialize_reasons: Union[
-        AbstractSet[AutoMaterializeReason],
-        AbstractSet[Tuple[AutoMaterializeReason, PartitionsSubset]],
+        Sequence[AutoMaterializeReason],
+        Sequence[Tuple[AutoMaterializeReason, PartitionsSubset]],
     ]
     skip_reasons: Union[
-        AbstractSet[AutoMaterializeSkipReason],
-        AbstractSet[Tuple[AutoMaterializeSkipReason, PartitionsSubset]],
+        Sequence[AutoMaterializeSkipReason],
+        Sequence[Tuple[AutoMaterializeSkipReason, PartitionsSubset]],
     ]
 
     @staticmethod
@@ -110,12 +127,12 @@ class AutoMaterializeDecision(NamedTuple):
         asset_key: AssetKey,
         materialize_reasons: Mapping[AssetKeyPartitionKey, AutoMaterializeReason],
         skip_reasons: Mapping[AssetKeyPartitionKey, AutoMaterializeSkipReason],
-    ):
+    ) -> "AutoMaterializeEvaluation":
         partitions_def = asset_graph.get_partitions_def(asset_key)
         if partitions_def is None:
-            return AutoMaterializeDecision(
-                materialize_reasons=set(materialize_reasons.values()),
-                skip_reasons=set(skip_reasons.values()),
+            return AutoMaterializeEvaluation(
+                materialize_reasons=list(materialize_reasons.values()),
+                skip_reasons=list(skip_reasons.values()),
             )
         else:
             subset_by_materialize_reason: Dict[AutoMaterializeReason, Set[str]] = defaultdict(set)
@@ -128,15 +145,15 @@ class AutoMaterializeDecision(NamedTuple):
             for asset_partition, reason in skip_reasons.items():
                 subset_by_skip_reason[reason].add(check.not_none(asset_partition.partition_key))
 
-            return AutoMaterializeDecision(
-                materialize_reasons=set(
+            return AutoMaterializeEvaluation(
+                materialize_reasons=[
                     (reason, partitions_def.empty_subset().with_partition_keys(partition_keys))
                     for reason, partition_keys in subset_by_materialize_reason.items()
-                ),
-                skip_reasons=set(
+                ],
+                skip_reasons=[
                     (reason, partitions_def.empty_subset().with_partition_keys(partition_keys))
                     for reason, partition_keys in subset_by_skip_reason.items()
-                ),
+                ],
             )
 
 
@@ -730,7 +747,7 @@ def determine_asset_partitions_to_auto_materialize(
         elif auto_materialize_policy.on_new_parent_data and not instance_queryer.is_reconciled(
             asset_partition=candidate, asset_graph=asset_graph
         ):
-            return AutoMaterializeReason.parent_updated()
+            return AutoMaterializeReason.parent_materialized()
         return None
 
     def should_reconcile(
@@ -978,8 +995,7 @@ def reconcile(
 ) -> Tuple[
     Sequence[RunRequest],
     AssetReconciliationCursor,
-    Mapping[AssetKeyPartitionKey, AbstractSet[AutoMaterializeReason]],
-    Mapping[AssetKeyPartitionKey, AbstractSet[AutoMaterializeSkipReason]],
+    Sequence[AutoMaterializeEvaluation],
 ]:
     from dagster._utils.caching_instance_queryer import CachingInstanceQueryer  # expensive import
 
@@ -1048,8 +1064,9 @@ def reconcile(
             newly_materialized_root_asset_keys=newly_materialized_root_asset_keys,
             newly_materialized_root_partitions_by_asset_key=newly_materialized_root_partitions_by_asset_key,
         ),
-        materialize_reasons,
-        skip_reasons,
+        build_auto_materialize_evaluations(
+            asset_graph, materialize_reasons, skip_reasons,
+        )
     )
 
 
@@ -1094,6 +1111,36 @@ def build_run_requests(
 
     return run_requests
 
+def build_auto_materialize_evaluations(
+    asset_graph: AssetGraph,
+    materialize_reasons: Mapping[AssetKeyPartitionKey, AbstractSet[AutoMaterializeReason]],
+    skip_reasons: Mapping[AssetKeyPartitionKey, AbstractSet[AutoMaterializeSkipReason]],
+) -> Sequence[AutoMaterializeEvaluation]:
+    """Bundles up the materialize and skip reasons into AutoMaterializeEvaluations."""
+    materialize_reasons_by_asset_key: Dict[
+        AssetKey, Set[Tuple[AssetKeyPartitionKey, AutoMaterializeReason]]
+    ] = defaultdict(set)
+    skip_reasons_by_asset_key: Dict[
+        AssetKey, Set[Tuple[AssetKeyPartitionKey, AutoMaterializeSkipReason]]
+    ] = defaultdict(set)
+
+    for asset_partition, reasons in materialize_reasons.items():
+        materialize_reasons_by_asset_key[asset_partition.asset_key].update({(asset_partition, reason) for reason in reasons})
+    for asset_partition, reasons in skip_reasons.items():
+        skip_reasons_by_asset_key[asset_partition.asset_key].update({(asset_partition, reason) for reason in reasons})
+
+    return [
+        AutoMaterializeEvaluation.from_reasons(
+            asset_graph,
+            asset_key,
+            dict(materialize_reasons_by_asset_key[asset_key]),
+            dict(skip_reasons_by_asset_key[asset_key]),
+        )
+        for asset_key in {
+            *materialize_reasons_by_asset_key.keys(),
+            *skip_reasons_by_asset_key.keys(),
+        }
+    ]
 
 @experimental
 def build_asset_reconciliation_sensor(
@@ -1239,7 +1286,7 @@ def build_asset_reconciliation_sensor(
                 ),
             )
 
-        run_requests, updated_cursor, _, _ = reconcile(
+        run_requests, updated_cursor, _ = reconcile(
             asset_graph=asset_graph,
             target_asset_keys=target_asset_keys,
             instance=context.instance,
@@ -1251,35 +1298,3 @@ def build_asset_reconciliation_sensor(
         return run_requests
 
     return _sensor
-
-
-def build_auto_materialize_decisions(
-    asset_graph: AssetGraph,
-    materialize_reasons: Mapping[AssetKeyPartitionKey, AutoMaterializeReason],
-    skip_reasons: Mapping[AssetKeyPartitionKey, AutoMaterializeSkipReason],
-) -> Sequence[AutoMaterializeDecision]:
-    """Bundles up the materialize and skip reasons into AutoMaterializeDecisions."""
-    materialize_reasons_by_asset_key: Dict[
-        AssetKey, Set[Tuple[AssetKeyPartitionKey, AutoMaterializeReason]]
-    ] = defaultdict(set)
-    skip_reasons_by_asset_key: Dict[
-        AssetKey, Set[Tuple[AssetKeyPartitionKey, AutoMaterializeSkipReason]]
-    ] = defaultdict(set)
-
-    for asset_partition, reason in materialize_reasons.items():
-        materialize_reasons_by_asset_key[asset_partition.asset_key].add((asset_partition, reason))
-    for asset_partition, reason in skip_reasons.items():
-        skip_reasons_by_asset_key[asset_partition.asset_key].add((asset_partition, reason))
-
-    return [
-        AutoMaterializeDecision.from_reasons(
-            asset_graph,
-            asset_key,
-            dict(materialize_reasons_by_asset_key[asset_key]),
-            dict(skip_reasons_by_asset_key[asset_key]),
-        )
-        for asset_key in {
-            *materialize_reasons_by_asset_key.keys(),
-            *skip_reasons_by_asset_key.keys(),
-        }
-    ]
