@@ -30,14 +30,11 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {ONE_MONTH, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useCopyToClipboard} from '../app/browser';
-import {
-  DynamicPartitionsRequestResult,
-  InstigationTickStatus,
-  InstigationType,
-} from '../graphql/types';
+import {InstigationTickStatus, InstigationType} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
+import {DynamicPartitionRequests} from '../ticks/DynamicPartitionRequests';
 import {TickLogDialog} from '../ticks/TickLogDialog';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
@@ -52,7 +49,6 @@ import {
   TickHistoryQuery,
   TickHistoryQueryVariables,
 } from './types/TickHistory.types';
-import {DynamicPartitionRequests} from '../ticks/DynamicPartitionRequests';
 
 Chart.register(zoomPlugin);
 
@@ -382,7 +378,7 @@ function DynamicPartitionRequestsCell({
 }) {
   const [isDialogOpen, setDialogOpen] = React.useState(false);
   const nonSkipOnlyRequests = requests.filter((request) => request.partitionKeys?.length);
-  if (!nonSkipOnlyRequests.lengths) {
+  if (!nonSkipOnlyRequests.length) {
     return null;
   }
 
