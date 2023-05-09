@@ -15,7 +15,6 @@ import {
   IconWrapper,
   ButtonLink,
   Dialog,
-  DialogBody,
   Button,
   DialogFooter,
 } from '@dagster-io/ui';
