@@ -1894,7 +1894,7 @@ class SqlEventLogStorage(EventLogStorage):
                     )
                 )
             ).fetchone()
-            count = count_row[0] if count_row else 0
+            count = cast(int, count_row[0]) if count_row else 0
 
             if count > num_int:
                 # need to delete some slots, favoring ones where the slot is unallocated
@@ -1970,8 +1970,8 @@ class SqlEventLogStorage(EventLogStorage):
                     )
                 )
             ).fetchone()
-        pending_count = pending_row[0] if pending_row else 0
-        slots_count = slots[0] if slots else 0
+        pending_count = cast(int, pending_row[0]) if pending_row else 0
+        slots_count = cast(int, slots[0]) if slots else 0
         return slots_count > pending_count
 
     def can_claim_from_pending(self, concurrency_key: str, run_id: str, step_key: str):
@@ -2000,7 +2000,7 @@ class SqlEventLogStorage(EventLogStorage):
                     )
                 )
             ).fetchone()
-            return row and row[0] > 0
+            return row and cast(int, row[0]) > 0
 
     def assign_pending_steps(self, concurrency_keys: Sequence[str]):
         if not concurrency_keys:
@@ -2143,7 +2143,7 @@ class SqlEventLogStorage(EventLogStorage):
                 .where(ConcurrencySlotsTable.c.deleted == False)  # noqa: E712
                 .distinct()
             ).fetchall()
-            return {row[0] for row in rows}
+            return {cast(str, row[0]) for row in rows}
 
     def get_concurrency_info(
         self, concurrency_key: str, include_deleted: bool = False
@@ -2167,7 +2167,7 @@ class SqlEventLogStorage(EventLogStorage):
             if not include_deleted:
                 query = query.where(ConcurrencySlotsTable.c.deleted == False)  # noqa: E712
             rows = conn.execute(query).fetchall()
-            return {row[0]: row[1] for row in rows}
+            return {cast(str, row[0]): cast(int, row[1]) for row in rows}
 
     def free_concurrency_slots(self, run_id: str, step_key: Optional[str] = None):
         # free up the active concurrency slots, keeping track of the now open slots
@@ -2227,7 +2227,7 @@ class SqlEventLogStorage(EventLogStorage):
             )
 
             # return the concurrency keys for the freed slots
-            return [row[1] for row in rows]
+            return [cast(str, row[1]) for row in rows]
 
 
 def _get_from_row(row: SqlAlchemyRow, column: str) -> object:
