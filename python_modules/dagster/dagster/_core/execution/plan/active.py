@@ -46,6 +46,9 @@ def _default_sort_key(step: ExecutionStep) -> float:
     return int(step.tags.get(PRIORITY_TAG, 0)) * -1
 
 
+BLOCKED_INTERVAL = 1
+
+
 class ActiveExecution:
     """State machine used to track progress through execution of an ExecutionPlan."""
 
@@ -105,6 +108,7 @@ class ActiveExecution:
         self._pending_retry: List[str] = []
         self._pending_abandon: List[str] = []
         self._waiting_to_retry: Dict[str, float] = {}
+        self._waiting_to_claim: Dict[str, float] = {}
 
         # then are considered _in_flight when vended via get_steps_to_*
         self._in_flight: Set[str] = set()
@@ -147,7 +151,7 @@ class ActiveExecution:
             pending_action = (
                 self._executable + self._pending_abandon + self._pending_retry + self._pending_skip
             )
-            state_str = "{pending_str}{in_flight_str}{action_str}{retry_str}".format(
+            state_str = "{pending_str}{in_flight_str}{action_str}{retry_str}{claim_str}".format(
                 in_flight_str=f"\nSteps still in flight: {self._in_flight}"
                 if self._in_flight
                 else "",
@@ -158,7 +162,14 @@ class ActiveExecution:
                 retry_str=f"\nSteps waiting to retry: {self._waiting_to_retry.keys()}"
                 if self._waiting_to_retry
                 else "",
+                claim_str=f"\nSteps waiting to claim: {self._waiting_to_claim.keys()}"
+                if self._waiting_to_claim
+                else "",
             )
+
+            if self._waiting_to_claim and self._run_id:
+                self._instance.event_log_storage.remove_pending_step(self._run_id)
+
             if self._interrupted:
                 raise DagsterExecutionInterruptedError(
                     f"Execution was interrupted before completing the execution plan. {state_str}"
@@ -259,9 +270,22 @@ class ActiveExecution:
             self._executable.append(key)
             del self._waiting_to_retry[key]
 
+        ready_to_claim = []
+        for key in self._waiting_to_claim.keys():
+            if tick_time >= self._waiting_to_claim[key]:
+                ready_to_claim.append(key)
+
+        for key in ready_to_claim:
+            del self._waiting_to_claim[key]
+
     def sleep_til_ready(self) -> None:
         now = time.time()
-        sleep_amt = min([ready_at - now for ready_at in self._waiting_to_retry.values()])
+        ready_at_times = []
+        if self._waiting_to_retry:
+            ready_at_times.extend(self._waiting_to_retry.values())
+        if self._waiting_to_claim:
+            ready_at_times.extend(self._waiting_to_claim.values())
+        sleep_amt = min([ready_at - now for ready_at in ready_at_times])
         if sleep_amt > 0:
             time.sleep(sleep_amt)
 
@@ -273,7 +297,7 @@ class ActiveExecution:
 
         if steps:
             step = steps[0]
-        elif self._waiting_to_retry:
+        elif self._waiting_to_retry or self._waiting_to_claim:
             self.sleep_til_ready()
             step = self.get_next_step(register_steps)
 
@@ -339,11 +363,13 @@ class ActiveExecution:
                 and step_concurrency_key
                 and step_concurrency_key in self._global_concurrency_keys
                 and self._run_id
+                and self._waiting_to_claim.get(step.key) is None
             ):
                 state = self._instance.event_log_storage.claim_concurrency_slot(
                     step_concurrency_key, self._run_id, step.key, priority
                 )
                 if state == ConcurrencyState.BLOCKED:
+                    self._waiting_to_claim[step.key] = time.time() + BLOCKED_INTERVAL
                     continue
 
             batch.append(step)
@@ -556,6 +582,7 @@ class ActiveExecution:
             and len(self._pending_retry) == 0
             and len(self._pending_abandon) == 0
             and len(self._waiting_to_retry) == 0
+            and len(self._waiting_to_claim) == 0
         )
 
     @property
