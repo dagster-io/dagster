@@ -265,7 +265,7 @@ class ActiveExecution:
         if sleep_amt > 0:
             time.sleep(sleep_amt)
 
-    def get_next_step(self, register_steps: bool = False) -> ExecutionStep:
+    def get_next_step(self, register_steps: bool = False) -> Optional[ExecutionStep]:
         check.invariant(not self.is_complete, "Can not call get_next_step when is_complete is True")
 
         steps = self.get_steps_to_execute(limit=1, register_steps=register_steps)
@@ -275,10 +275,10 @@ class ActiveExecution:
             step = steps[0]
         elif self._waiting_to_retry:
             self.sleep_til_ready()
-            step = self.get_next_step()
+            step = self.get_next_step(register_steps)
 
-        check.invariant(step is not None, "Unexpected ActiveExecution state")
-        return step  # type: ignore  # (possible none)
+        check.invariant(step is not None or register_steps, "Unexpected ActiveExecution state")
+        return step
 
     def get_step_by_key(self, step_key: str) -> ExecutionStep:
         step = self._plan.get_step_by_key(step_key)
