@@ -566,6 +566,14 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     def free_concurrency_slots(self, run_id: str, step_key: Optional[str] = None):
         return self._storage.event_log_storage.free_concurrency_slots(run_id, step_key)
 
+    def can_claim_from_pending(self, concurrency_key: str, run_id: str, step_key: str):
+        return self._storage.event_log_storage.can_claim_from_pending(
+            concurrency_key, run_id, step_key
+        )
+
+    def remove_pending_step(self, run_id: str, step_key: Optional[str] = None):
+        return self._storage.event_log_storage.remove_pending_step(run_id, step_key)
+
 
 class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
     def __init__(self, storage: DagsterStorage, inst_data: Optional[ConfigurableClassData] = None):
