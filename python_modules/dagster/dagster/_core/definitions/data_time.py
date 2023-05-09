@@ -212,7 +212,7 @@ class CachingDataTimeResolver:
             else:
                 return {}
 
-        data_time_by_key = {}
+        data_time_by_key: Dict[AssetKey, Optional[datetime.datetime]] = {}
         for parent_key, parent_record in upstream_records_by_key.items():
             # recurse to find the data times of this parent
             for upstream_key, data_time in self._calculate_data_time_by_key(
@@ -235,8 +235,9 @@ class CachingDataTimeResolver:
                 if data_time is None:
                     data_time_by_key[upstream_key] = None
                 else:
-                    data_time_by_key[upstream_key] = min(
-                        data_time_by_key.get(upstream_key, data_time), data_time
+                    cur_data_time = data_time_by_key.get(upstream_key, data_time)
+                    data_time_by_key[upstream_key] = (
+                        min(cur_data_time, data_time) if cur_data_time is not None else None
                     )
 
         return data_time_by_key
