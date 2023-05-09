@@ -109,6 +109,7 @@ class GrapheneBulkActionStatus(graphene.Enum):
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"
     CANCELED = "CANCELED"
+    CANCELING = "CANCELING"
 
     class Meta:
         name = "BulkActionStatus"
