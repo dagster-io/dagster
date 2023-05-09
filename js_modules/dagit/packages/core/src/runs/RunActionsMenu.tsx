@@ -13,6 +13,8 @@ import {
   StyledReadOnlyCodeMirror,
   JoinedButtons,
   DialogBody,
+  Box,
+  Colors,
 } from '@dagster-io/ui';
 import * as React from 'react';
 import {useHistory} from 'react-router-dom';
@@ -51,6 +53,7 @@ import {
   LaunchPipelineReexecutionMutationVariables,
 } from './types/RunUtils.types';
 import {useJobAvailabilityErrorForRun} from './useJobAvailabilityErrorForRun';
+import styled from 'styled-components';
 
 export const RunActionsMenu: React.FC<{
   run: RunTableRunFragment;
@@ -132,7 +135,21 @@ export const RunActionsMenu: React.FC<{
               />
               <MenuItem
                 tagName="button"
-                text="View all tags"
+                text={
+                  <div style={{display: 'contents'}}>
+                    View all tags
+                    <Box
+                      flex={{
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        display: 'inline-flex',
+                      }}
+                      padding={{vertical: 4, horizontal: 8}}
+                    >
+                      <SlashShortcut>t</SlashShortcut>
+                    </Box>
+                  </div>
+                }
                 icon="tag"
                 onClick={() => setVisibleDialog('tags')}
               />
@@ -483,4 +500,11 @@ const PIPELINE_ENVIRONMENT_QUERY = gql`
       }
     }
   }
+`;
+
+const SlashShortcut = styled.div`
+  border-radius: 4px;
+  padding: 0px 6px;
+  background: ${Colors.Gray100};
+  color: ${Colors.Gray500};
 `;
