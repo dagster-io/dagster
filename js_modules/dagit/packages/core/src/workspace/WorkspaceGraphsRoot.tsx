@@ -159,7 +159,6 @@ const WORSKPACE_GRAPHS_QUERY = gql`
         id
         usedSolids {
           definition {
-            __typename
             ... on CompositeSolidDefinition {
               id
               name

@@ -13,7 +13,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {SharedToaster} from '../app/DomUtils';
+import {showSharedToaster} from '../app/DomUtils';
 import {useCopyToClipboard} from '../app/browser';
 import {
   NO_RELOAD_PERMISSION_TEXT,
@@ -113,9 +113,9 @@ export const ImageName: React.FC<{metadata: WorkspaceDisplayMetadataFragment[]}>
   const imageKV = metadata.find(({key}) => key === 'image');
   const value = imageKV?.value || '';
 
-  const onClick = React.useCallback(() => {
+  const onClick = React.useCallback(async () => {
     copy(value);
-    SharedToaster.show({
+    await showSharedToaster({
       intent: 'success',
       icon: 'done',
       message: 'Image string copied!',

@@ -77,9 +77,7 @@ describe('useRepoExpansionState', () => {
     });
 
     const button = screen.getByRole('button', {name: 'toggle ipsum:lorem'});
-    await act(async () => {
-      userEvent.click(button);
-    });
+    await userEvent.click(button);
 
     expect(screen.getByText('ipsum:lorem expanded')).toBeVisible();
     expect(window.localStorage.getItem(fullCollapsedKey)).toEqual('[]');
@@ -93,9 +91,7 @@ describe('useRepoExpansionState', () => {
     });
 
     const button = screen.getByRole('button', {name: 'toggle ipsum:lorem'});
-    await act(async () => {
-      userEvent.click(button);
-    });
+    await userEvent.click(button);
 
     expect(screen.getByText('ipsum:lorem collapsed')).toBeVisible();
     expect(window.localStorage.getItem(fullCollapsedKey)).toEqual(JSON.stringify(['ipsum:lorem']));
@@ -109,9 +105,7 @@ describe('useRepoExpansionState', () => {
     });
 
     const button = screen.getByRole('button', {name: 'expand all'});
-    await act(async () => {
-      userEvent.click(button);
-    });
+    await userEvent.click(button);
 
     // Everything expanded!
     expect(screen.getByText('ipsum:lorem expanded')).toBeVisible();
@@ -128,7 +122,7 @@ describe('useRepoExpansionState', () => {
 
     const button = screen.getByRole('button', {name: 'collapse all'});
     await act(async () => {
-      userEvent.click(button);
+      await userEvent.click(button);
     });
 
     // Everything collapsed!

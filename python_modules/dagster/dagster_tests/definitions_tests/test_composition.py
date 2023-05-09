@@ -408,7 +408,7 @@ def test_deep_graph():
         )
 
     result = GraphDefinition(node_defs=[test], name="test").execute_in_process(
-        run_config={"ops": {"test": {"solids": {"download_num": {"config": 123}}}}}
+        run_config={"ops": {"test": {"ops": {"download_num": {"config": 123}}}}}
     )
     assert result.output_for_node("test.canonicalize_num") == 123
     assert result.output_for_node("test.load_num") == 126
@@ -842,7 +842,7 @@ def test_tag_subset():
         empty()
         emit.tag({"invoke": "2"})()
 
-    plan = create_execution_plan(tag.get_job_def_for_subset_selection(["emit"]))
+    plan = create_execution_plan(tag.get_subset(op_selection=["emit"]))
     step = list(plan.step_dict.values())[0]
     assert step.tags == {"def": "1", "invoke": "2"}
 

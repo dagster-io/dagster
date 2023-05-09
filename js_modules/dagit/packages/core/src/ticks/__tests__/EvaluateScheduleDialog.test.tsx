@@ -43,16 +43,16 @@ describe('EvaluateScheduleTest', () => {
     await act(async () => {
       render(<Test mocks={[GetScheduleQueryMock, ScheduleDryRunMutationRunRequests]} />);
     });
-    await waitFor(() => {
+    await waitFor(async () => {
       const selectButton = screen.getByTestId('tick-selection');
       expect(selectButton).toBeVisible();
-      userEvent.click(selectButton);
+      await userEvent.click(selectButton);
     });
     await waitFor(() => {
       expect(screen.getByTestId('tick-5')).toBeVisible();
     });
-    userEvent.click(screen.getByTestId('tick-5'));
-    userEvent.click(screen.getByTestId('evaluate'));
+    await userEvent.click(screen.getByTestId('tick-5'));
+    await userEvent.click(screen.getByTestId('evaluate'));
     await waitFor(() => {
       expect(screen.getByText(/1\s+run request/gi)).toBeVisible();
     });
@@ -62,16 +62,15 @@ describe('EvaluateScheduleTest', () => {
     await act(async () => {
       render(<Test mocks={[GetScheduleQueryMock, ScheduleDryRunMutationError]} />);
     });
-    await waitFor(() => {
-      const selectButton = screen.getByTestId('tick-selection');
-      expect(selectButton).toBeVisible();
-      userEvent.click(selectButton);
+    await waitFor(async () => {
+      expect(screen.getByTestId('tick-selection')).toBeVisible();
     });
+    await userEvent.click(screen.getByTestId('tick-selection'));
     await waitFor(() => {
       expect(screen.getByTestId('tick-5')).toBeVisible();
     });
-    userEvent.click(screen.getByTestId('tick-5'));
-    userEvent.click(screen.getByTestId('evaluate'));
+    await userEvent.click(screen.getByTestId('tick-5'));
+    await userEvent.click(screen.getByTestId('evaluate'));
     await waitFor(() => {
       expect(screen.getByText('Failed')).toBeVisible();
       expect(screen.queryByText('Skipped')).toBe(null);
@@ -82,16 +81,16 @@ describe('EvaluateScheduleTest', () => {
     await act(async () => {
       render(<Test mocks={[GetScheduleQueryMock, ScheduleDryRunMutationSkipped]} />);
     });
-    await waitFor(() => {
+    await waitFor(async () => {
       const selectButton = screen.getByTestId('tick-selection');
       expect(selectButton).toBeVisible();
-      userEvent.click(selectButton);
+      await userEvent.click(selectButton);
     });
     await waitFor(() => {
       expect(screen.getByTestId('tick-5')).toBeVisible();
     });
-    userEvent.click(screen.getByTestId('tick-5'));
-    userEvent.click(screen.getByTestId('evaluate'));
+    await userEvent.click(screen.getByTestId('tick-5'));
+    await userEvent.click(screen.getByTestId('evaluate'));
     await waitFor(() => {
       expect(screen.getByText('Skipped')).toBeVisible();
     });

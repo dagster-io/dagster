@@ -33,6 +33,7 @@ from dagster._core.definitions.resource_requirement import (
 )
 from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvariantViolationError
 from dagster._core.types.dagster_type import DagsterType, DagsterTypeKind
+from dagster._utils import IHasInternalInit
 from dagster._utils.backcompat import canonicalize_backcompat_args, deprecation_warning
 
 from .definition_config_schema import (
@@ -53,7 +54,7 @@ if TYPE_CHECKING:
 OpComputeFunction: TypeAlias = Callable[..., Any]
 
 
-class OpDefinition(NodeDefinition):
+class OpDefinition(NodeDefinition, IHasInternalInit):
     """Defines an op, the functional unit of user-defined computation.
 
     For more details on what a op is, refer to the
@@ -173,6 +174,34 @@ class OpDefinition(NodeDefinition):
             description=description,
             tags=check.opt_mapping_param(tags, "tags", key_type=str),
             positional_inputs=positional_inputs,
+        )
+
+    def dagster_internal_init(
+        *,
+        compute_fn: Union[Callable[..., Any], "DecoratedOpFunction"],
+        name: str,
+        ins: Optional[Mapping[str, In]],
+        outs: Optional[Mapping[str, Out]],
+        description: Optional[str],
+        config_schema: Optional[Union[UserConfigSchema, IDefinitionConfigSchema]],
+        required_resource_keys: Optional[AbstractSet[str]],
+        tags: Optional[Mapping[str, Any]],
+        version: Optional[str],
+        retry_policy: Optional[RetryPolicy],
+        code_version: Optional[str],
+    ) -> "OpDefinition":
+        return OpDefinition(
+            compute_fn=compute_fn,
+            name=name,
+            ins=ins,
+            outs=outs,
+            description=description,
+            config_schema=config_schema,
+            required_resource_keys=required_resource_keys,
+            tags=tags,
+            version=version,
+            retry_policy=retry_policy,
+            code_version=code_version,
         )
 
     @property
@@ -315,7 +344,7 @@ class OpDefinition(NodeDefinition):
         config_schema: Optional[IDefinitionConfigSchema] = None,
         description: Optional[str] = None,
     ) -> "OpDefinition":
-        return OpDefinition(
+        return OpDefinition.dagster_internal_init(
             name=name,
             ins=ins
             or {input_def.name: In.from_definition(input_def) for input_def in self.input_defs},
@@ -330,6 +359,7 @@ class OpDefinition(NodeDefinition):
             required_resource_keys=self.required_resource_keys,
             code_version=self._version,
             retry_policy=self.retry_policy,
+            version=None,  # code_version replaces version
         )
 
     def copy_for_configured(

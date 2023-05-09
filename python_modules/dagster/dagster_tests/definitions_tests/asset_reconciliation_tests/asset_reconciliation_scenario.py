@@ -95,7 +95,7 @@ class AssetReconciliationScenario(NamedTuple):
 
         test_time = self.current_time or pendulum.now()
 
-        with pendulum.test(test_time) if self.current_time else contextlib.nullcontext():
+        with pendulum.test(test_time):
 
             @repository
             def repo():
@@ -128,6 +128,7 @@ class AssetReconciliationScenario(NamedTuple):
                     materialized_subset=empty_subset,
                     requested_subset=empty_subset,
                     failed_and_downstream_subset=empty_subset,
+                    backfill_start_time=test_time,
                 )
                 backfill = PartitionBackfill(
                     backfill_id=f"backfill{i}",
@@ -351,7 +352,7 @@ def do_run(
 
 
 def single_asset_run(asset_key: str, partition_key: Optional[str] = None) -> RunSpec:
-    return RunSpec(asset_keys=[AssetKey.from_coerceable(asset_key)], partition_key=partition_key)
+    return RunSpec(asset_keys=[AssetKey.from_coercible(asset_key)], partition_key=partition_key)
 
 
 def run(
@@ -362,9 +363,9 @@ def run(
 ):
     return RunSpec(
         asset_keys=list(
-            map(AssetKey.from_coerceable, itertools.chain(asset_keys, failed_asset_keys or []))
+            map(AssetKey.from_coercible, itertools.chain(asset_keys, failed_asset_keys or []))
         ),
-        failed_asset_keys=list(map(AssetKey.from_coerceable, failed_asset_keys or [])),
+        failed_asset_keys=list(map(AssetKey.from_coercible, failed_asset_keys or [])),
         partition_key=partition_key,
         is_observation=is_observation,
     )

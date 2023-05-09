@@ -12,7 +12,7 @@ from dagster._core.execution.retries import RetryMode
 from dagster._core.launcher import LaunchRunContext, RunLauncher
 from dagster._core.launcher.base import CheckRunHealthResult, WorkerStatus
 from dagster._core.origin import JobPythonOrigin
-from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.storage.tags import DOCKER_IMAGE_TAG
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils.error import serializable_error_info_from_exc_info
@@ -268,19 +268,6 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             labels=merge_dicts(self._labels, exc_config.get("labels", {})),
         )
 
-    # https://github.com/dagster-io/dagster/issues/2741
-    def can_terminate(self, run_id):
-        check.str_param(run_id, "run_id")
-
-        dagster_run = self._instance.get_run_by_id(run_id)
-        if not dagster_run:
-            return False
-
-        if dagster_run.status != DagsterRunStatus.STARTED:
-            return False
-
-        return True
-
     def terminate(self, run_id):
         check.str_param(run_id, "run_id")
 
@@ -288,22 +275,11 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         if not run:
             return False
 
-        can_terminate = self.can_terminate(run_id)
-        if not can_terminate:
-            self._instance.report_engine_event(
-                message="Unable to terminate dagster job: can_terminate returned {}.".format(
-                    can_terminate
-                ),
-                dagster_run=run,
-                cls=self.__class__,
-            )
-            return False
+        self._instance.report_run_canceling(run)
 
         job_name = get_job_name_from_run_id(run_id)
 
         job_namespace = self.get_namespace_from_run_config(run_id)
-
-        self._instance.report_run_canceling(run)
 
         try:
             termination_result = self._api_client.delete_job(

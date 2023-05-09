@@ -4,7 +4,6 @@ from collections import defaultdict, deque
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
-    Any,
     Callable,
     Dict,
     FrozenSet,
@@ -20,10 +19,9 @@ from typing import (
     Set,
     Tuple,
     TypeVar,
-    Union,
 )
 
-from typing_extensions import Final, Literal, TypeAlias
+from typing_extensions import Literal, TypeAlias
 
 from dagster._core.definitions.dependency import DependencyStructure
 from dagster._core.definitions.events import AssetKey
@@ -32,6 +30,7 @@ from dagster._utils import check
 
 if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.graph_definition import GraphDefinition
     from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.source_asset import SourceAsset
 
@@ -130,7 +129,7 @@ def generate_asset_dep_graph(
     return {"upstream": upstream, "downstream": downstream}
 
 
-def generate_dep_graph(job_def: "JobDefinition") -> DependencyGraph[str]:
+def generate_dep_graph(job_def: "GraphDefinition") -> DependencyGraph[str]:
     """Pipeline to dependency graph. It currently only supports top-level solids.
 
     Args:
@@ -352,65 +351,10 @@ def clause_to_subset(
     return subset_list
 
 
-class SelectionTreeLeaf:
-    """Marker for no further nesting selection needed."""
-
-
-SelectionTreeBranch: TypeAlias = Dict[str, "SelectionTree"]
-SelectionTree: TypeAlias = Union[SelectionTreeBranch, SelectionTreeLeaf]
-
-SELECTION_TREE_LEAF_NODE: Final = SelectionTreeLeaf()
-
-
-def convert_dot_separated_string_to_selection_tree(
-    tree: SelectionTreeBranch, splits: Sequence[str]
-) -> SelectionTreeBranch:
-    # For example:
-    # "subgraph.subsubgraph.return_one" => {"subgraph": {"subsubgraph": {"return_one":
-    # SELECTION_TREE_LEAF_NODE}}}
-    key = splits[0]
-    if len(splits) == 1:
-        tree[key] = SELECTION_TREE_LEAF_NODE
-    else:
-        curr_node = tree.get(key, {})
-        assert not isinstance(curr_node, SelectionTreeLeaf), "Invalid selection tree"
-        tree[key] = convert_dot_separated_string_to_selection_tree(curr_node, splits[1:])
-    return tree
-
-
-def parse_op_selection(
-    job_def: "JobDefinition", op_selection: Sequence[str]
-) -> SelectionTreeBranch:
-    """Parse  an op selection into a nested dictionary.
-
-    Examples:
-        ["subgraph.return_one", "subgraph.adder", "subgraph.add_one", "add_one"]
-        => {"subgraph": {{"return_one": LeafNodeSelection}, {"adder": LeafNodeSelection}, {"add_one": LeafNodeSelection}}, "add_one": LeafNodeSelection}
-
-        ["subgraph.subsubgraph.return_one"]
-        => {"subgraph": {"subsubgraph": {"return_one": LeafNodeSelection}}}
-
-        ["top_level_op_1+"]
-        => {"top_level_op_1": LeafNodeSelection, "top_level_op_2": LeafNodeSelection}
-    """
-    if any(["." in item for item in op_selection]):
-        resolved_op_selection_dict: Dict[str, Any] = {}
-        for item in op_selection:
-            convert_dot_separated_string_to_selection_tree(
-                resolved_op_selection_dict, splits=item.split(".")
-            )
-        return resolved_op_selection_dict
-
-    return {
-        top_level_op: SELECTION_TREE_LEAF_NODE
-        for top_level_op in parse_solid_selection(job_def, op_selection)
-    }
-
-
-def parse_solid_selection(
-    job_def: "JobDefinition",
-    solid_selection: Sequence[str],
-) -> FrozenSet[str]:
+def parse_op_queries(
+    graph_def: "GraphDefinition",
+    op_queries: Sequence[str],
+) -> AbstractSet[str]:
     """Take pipeline definition and a list of solid selection queries (inlcuding names of solid
         invocations. See syntax examples below) and return a set of the qualified solid names.
 
@@ -437,25 +381,25 @@ def parse_solid_selection(
         FrozenSet[str]: a frozenset of qualified deduplicated solid names, empty if no qualified
             subset selected.
     """
-    check.sequence_param(solid_selection, "solid_selection", of_type=str)
+    check.sequence_param(op_queries, "solid_selection", of_type=str)
 
     # special case: select all
-    if len(solid_selection) == 1 and solid_selection[0] == "*":
-        return frozenset(job_def.graph.node_names())
+    if len(op_queries) == 1 and op_queries[0] == "*":
+        return frozenset(graph_def.node_names())
 
-    graph = generate_dep_graph(job_def)
-    solids_set: Set[str] = set()
+    graph = generate_dep_graph(graph_def)
+    node_names: Set[str] = set()
 
     # loop over clauses
-    for clause in solid_selection:
+    for clause in op_queries:
         subset = clause_to_subset(graph, clause, lambda x: x)
         if len(subset) == 0:
             raise DagsterInvalidSubsetError(
-                f"No qualified ops to execute found for op_selection={solid_selection}"
+                f"No qualified ops to execute found for op_selection={op_queries}"
             )
-        solids_set.update(subset)
+        node_names.update(subset)
 
-    return frozenset(solids_set)
+    return node_names
 
 
 def parse_step_selection(

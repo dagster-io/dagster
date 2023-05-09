@@ -17,8 +17,15 @@ from .bigquery.resources import (
     bigquery_resource as bigquery_resource,
 )
 from .bigquery.types import BigQueryError as BigQueryError
-from .dataproc.ops import dataproc_op as dataproc_op
-from .dataproc.resources import dataproc_resource as dataproc_resource
+from .dataproc.ops import (
+    DataprocOpConfig as DataprocOpConfig,
+    configurable_dataproc_op as configurable_dataproc_op,
+    dataproc_op as dataproc_op,
+)
+from .dataproc.resources import (
+    DataprocResource as DataprocResource,
+    dataproc_resource as dataproc_resource,
+)
 from .gcs import (
     GCSFileHandle as GCSFileHandle,
     gcs_file_manager as gcs_file_manager,

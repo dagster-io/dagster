@@ -351,6 +351,10 @@ class CachingDynamicPartitionsLoader(DynamicPartitionsStore):
     def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
         return self._instance.get_dynamic_partitions(partitions_def_name)
 
+    @cached_method
+    def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
+        return self._instance.has_dynamic_partition(partitions_def_name, partition_key)
+
 
 class DynamicPartitionsDefinition(
     PartitionsDefinition,

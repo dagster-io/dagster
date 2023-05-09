@@ -8,6 +8,7 @@ from dagster._core.definitions.output import Out
 from dagster_azure.adls2 import (
     ADLS2FileHandle,
     ADLS2FileManager,
+    ADLS2Key,
     FakeADLS2Resource,
     adls2_file_manager,
 )
@@ -108,7 +109,7 @@ def test_depends_on_adls2_resource_file_manager(storage_account, file_system):
         assert isinstance(local_path, str)
         assert open(local_path, "rb").read() == bar_bytes
 
-    adls2_fake_resource = FakeADLS2Resource(storage_account)
+    adls2_fake_resource = FakeADLS2Resource(account_name=storage_account)
     adls2_fake_file_manager = ADLS2FileManager(
         adls2_client=adls2_fake_resource.adls2_client,
         file_system=file_system,
@@ -168,7 +169,8 @@ def test_adls_file_manager_resource(MockADLS2FileManager, MockADLS2Resource):
             prefix=resource_config["adls2_prefix"],
         )
         MockADLS2Resource.assert_called_once_with(
-            resource_config["storage_account"], resource_config["credential"]["key"]
+            storage_account=resource_config["storage_account"],
+            credential=ADLS2Key(key=resource_config["credential"]["key"]),
         )
 
         did_it_run["it_ran"] = True
@@ -180,13 +182,11 @@ def test_adls_file_manager_resource(MockADLS2FileManager, MockADLS2Resource):
     assert did_it_run["it_ran"]
 
 
-@mock.patch("dagster_azure.adls2.resources.DefaultAzureCredential")
+@mock.patch("dagster_azure.adls2.resources.ADLS2DefaultAzureCredential")
 @mock.patch("dagster_azure.adls2.resources.ADLS2Resource")
 @mock.patch("dagster_azure.adls2.resources.ADLS2FileManager")
 def test_adls_file_manager_resource_defaultazurecredential(
-    MockADLS2FileManager,
-    MockADLS2Resource,
-    MockDefaultAzureCredential,
+    MockADLS2FileManager, MockADLS2Resource, MockADLS2DefaultAzureCredential
 ):
     did_it_run = dict(it_ran=False)
 
@@ -208,10 +208,12 @@ def test_adls_file_manager_resource_defaultazurecredential(
             file_system=resource_config["adls2_file_system"],
             prefix=resource_config["adls2_prefix"],
         )
-        MockDefaultAzureCredential.assert_called_once_with(exclude_environment_credential=True)
+        MockADLS2DefaultAzureCredential.assert_called_once_with(
+            kwargs={"exclude_environment_credential": True}
+        )
         MockADLS2Resource.assert_called_once_with(
-            resource_config["storage_account"],
-            MockDefaultAzureCredential.return_value,
+            storage_account=resource_config["storage_account"],
+            credential=MockADLS2DefaultAzureCredential.return_value,
         )
 
         did_it_run["it_ran"] = True

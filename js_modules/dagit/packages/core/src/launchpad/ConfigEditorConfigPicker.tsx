@@ -198,7 +198,7 @@ const ConfigEditorPartitionPicker: React.FC<ConfigEditorPartitionPickerProps> = 
     const selected = partitions.find((p) => p.name === value);
 
     const onClickSort = React.useCallback(
-      (event) => {
+      (event: React.MouseEvent<HTMLButtonElement>) => {
         event.preventDefault();
         setSortOrder((order) => (order === 'asc' ? 'desc' : 'asc'));
       },
@@ -451,7 +451,6 @@ const CONFIG_PARTITIONS_QUERY = gql`
       repositorySelector: $repositorySelector
       partitionSetName: $partitionSetName
     ) {
-      __typename
       ... on PartitionSet {
         id
         partitionsOrError {
@@ -490,7 +489,6 @@ export const CONFIG_PARTITION_SELECTION_QUERY = gql`
       repositorySelector: $repositorySelector
       partitionSetName: $partitionSetName
     ) {
-      __typename
       ... on PartitionSet {
         id
         partition(partitionName: $partitionName) {

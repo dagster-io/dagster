@@ -363,7 +363,6 @@ const PARTITIONS_STATUS_QUERY = gql`
       }
     }
     partitionStatusesOrError {
-      __typename
       ... on PartitionStatuses {
         results {
           id

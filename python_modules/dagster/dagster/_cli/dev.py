@@ -51,9 +51,7 @@ def dev_command_options(f):
     help="Set the log level for code servers spun up by dagster services.",
     show_default=True,
     default="warning",
-    type=click.Choice(
-        ["critical", "error", "warning", "info", "debug", "trace"], case_sensitive=False
-    ),
+    type=click.Choice(["critical", "error", "warning", "info", "debug"], case_sensitive=False),
 )
 @click.option("--dagit-port", "-p", help="Port to use for the Dagit UI.", required=False)
 @click.option("--dagit-host", "-h", help="Host to use for the Dagit UI.", required=False)

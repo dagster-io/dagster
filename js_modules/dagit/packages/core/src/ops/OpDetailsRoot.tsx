@@ -68,13 +68,11 @@ const USED_SOLID_DETAILS_QUERY = gql`
       ... on Repository {
         id
         usedSolid(name: $name) {
-          __typename
           definition {
             ...OpCardSolidDefinitionFragment
             ...SidebarOpDefinitionFragment
           }
           invocations {
-            __typename
             pipeline {
               id
               name

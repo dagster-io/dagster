@@ -5,7 +5,7 @@ import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {SharedToaster} from '../app/DomUtils';
+import {showSharedToaster} from '../app/DomUtils';
 import {useCopyToClipboard} from '../app/browser';
 
 type Props = {assetKey: {path: string[]}} & Partial<React.ComponentProps<typeof PageHeader>>;
@@ -16,14 +16,14 @@ export const AssetPageHeader: React.FC<Props> = ({assetKey, ...extra}) => {
   const [didCopy, setDidCopy] = React.useState(false);
   const iconTimeout = React.useRef<NodeJS.Timeout>();
 
-  const performCopy = React.useCallback(() => {
+  const performCopy = React.useCallback(async () => {
     if (iconTimeout.current) {
       clearTimeout(iconTimeout.current);
     }
 
     copy(copyableString);
     setDidCopy(true);
-    SharedToaster.show({
+    await showSharedToaster({
       icon: 'done',
       intent: 'primary',
       message: 'Copied asset key!',

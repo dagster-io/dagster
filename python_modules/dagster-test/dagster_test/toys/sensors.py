@@ -66,7 +66,7 @@ def get_toys_sensors():
             yield RunRequest(
                 run_key=f"{filename}:{str(mtime)}",
                 run_config={
-                    "solids": {
+                    "ops": {
                         "read_file": {"config": {"directory": directory_name, "filename": filename}}
                     }
                 },
@@ -92,7 +92,7 @@ def get_toys_sensors():
             yield RunRequest(
                 run_key=s3_key,
                 run_config={
-                    "solids": {"read_s3_key": {"config": {"bucket": bucket, "s3_key": s3_key}}}
+                    "ops": {"read_s3_key": {"config": {"bucket": bucket, "s3_key": s3_key}}}
                 },
             )
 

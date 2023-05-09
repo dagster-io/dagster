@@ -104,7 +104,7 @@ def test_init_compute_log_with_bad_config_module():
                 default_flow_style=False,
             )
         with pytest.raises(check.CheckError, match="Couldn't import module"):
-            DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
+            DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path)).compute_log_manager
 
 
 MOCK_HAS_RUN_CALLED = False

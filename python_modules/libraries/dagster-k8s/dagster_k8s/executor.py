@@ -262,9 +262,8 @@ class K8sStepHandler(StepHandler):
             },
         )
 
-        self._api_client.batch_api.create_namespaced_job(
-            body=job, namespace=container_context.namespace
-        )
+        namespace = check.not_none(container_context.namespace)
+        self._api_client.create_namespaced_job_with_retries(body=job, namespace=namespace)
 
     def check_step_health(self, step_handler_context: StepHandlerContext) -> CheckStepHealthResult:
         step_key = self._get_step_key(step_handler_context)

@@ -117,7 +117,6 @@ export const AssetMaterializationUpstreamData: React.FC<{
 export const ASSET_MATERIALIZATION_UPSTREAM_QUERY = gql`
   query AssetMaterializationUpstreamQuery($assetKey: AssetKeyInput!, $timestamp: String!) {
     assetNodeOrError(assetKey: $assetKey) {
-      __typename
       ... on AssetNode {
         id
         assetMaterializationUsedData(timestampMillis: $timestamp) {
@@ -128,7 +127,6 @@ export const ASSET_MATERIALIZATION_UPSTREAM_QUERY = gql`
   }
 
   fragment MaterializationUpstreamDataVersionFragment on MaterializationUpstreamDataVersion {
-    __typename
     timestamp
     assetKey {
       path

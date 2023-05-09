@@ -237,7 +237,7 @@ def test_engine_error(instance: DagsterInstance, tempdir: str):
                 run_config={
                     "resources": {"io_manager": {"config": {"base_dir": storage}}},
                     "execution": {"config": {"config_source": {"task_always_eager": True}}},
-                    "solids": {"destroy": {"config": storage}},
+                    "ops": {"destroy": {"config": storage}},
                 },
                 instance=instance,
             )

@@ -1,13 +1,11 @@
 // eslint-disable-next-line no-restricted-imports
-import {Intent, Position} from '@blueprintjs/core';
-import {Meta} from '@storybook/react/types-6-0';
+import {Intent} from '@blueprintjs/core';
+import {Meta} from '@storybook/react';
 import * as React from 'react';
 
 import {Button} from '../Button';
 import {Group} from '../Group';
-import {GlobalToasterStyle, Toaster} from '../Toaster';
-
-const SharedToaster = Toaster.create({position: Position.TOP}, document.body);
+import {DToaster, DToasterShowProps, GlobalToasterStyle, Toaster} from '../Toaster';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -15,13 +13,28 @@ export default {
 } as Meta;
 
 export const Sizes = () => {
+  const sharedToaster = React.useRef<DToaster | null>(null);
+
+  React.useEffect(() => {
+    const makeToaster = async () => {
+      sharedToaster.current = await Toaster.asyncCreate({position: 'top'}, document.body);
+    };
+    makeToaster();
+  }, []);
+
+  const showSharedToaster = async (config: DToasterShowProps) => {
+    if (sharedToaster.current) {
+      sharedToaster.current.show(config);
+    }
+  };
+
   return (
     <Group direction="column" spacing={16}>
       <GlobalToasterStyle />
 
       <Button
-        onClick={() =>
-          SharedToaster.show({
+        onClick={async () =>
+          await showSharedToaster({
             intent: Intent.NONE,
             message: 'Code location reloaded',
             timeout: 300000,
@@ -32,8 +45,8 @@ export const Sizes = () => {
         Basic Toast with Icon
       </Button>
       <Button
-        onClick={() =>
-          SharedToaster.show({
+        onClick={async () =>
+          await showSharedToaster({
             intent: Intent.SUCCESS,
             timeout: 300000,
             message: (
@@ -50,8 +63,8 @@ export const Sizes = () => {
         Success Toast with React Content
       </Button>
       <Button
-        onClick={() =>
-          SharedToaster.show({
+        onClick={async () =>
+          await showSharedToaster({
             intent: Intent.DANGER,
             timeout: 300000,
             message: 'This is an error message',
@@ -62,8 +75,8 @@ export const Sizes = () => {
         Error Toast
       </Button>
       <Button
-        onClick={() =>
-          SharedToaster.show({
+        onClick={async () =>
+          await showSharedToaster({
             intent: Intent.PRIMARY,
             timeout: 5000,
             message: 'This is a primary toaster',

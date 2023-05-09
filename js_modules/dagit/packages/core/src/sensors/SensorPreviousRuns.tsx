@@ -50,7 +50,6 @@ export const SensorPreviousRuns: React.FC<{
 const PREVIOUS_RUNS_FOR_SENSOR_QUERY = gql`
   query PreviousRunsForSensorQuery($filter: RunsFilter, $limit: Int) {
     pipelineRunsOrError(filter: $filter, limit: $limit) {
-      __typename
       ... on Runs {
         results {
           id

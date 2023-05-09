@@ -412,8 +412,8 @@ class InputContext:
         if len(time_windows) != 1:
             check.failed(
                 (
-                    "Tried to access asset_partition_key_range, but there are "
-                    f"({len(time_windows)}) partitions associated with this input."
+                    "Tried to access asset_partitions_time_window, but there are "
+                    f"({len(time_windows)}) time windows associated with this input."
                 ),
             )
 
@@ -592,7 +592,7 @@ def build_input_context(
     resources = check.opt_mapping_param(resources, "resources", key_type=str)
     op_def = check.opt_inst_param(op_def, "op_def", OpDefinition)
     step_context = check.opt_inst_param(step_context, "step_context", StepExecutionContext)
-    asset_key = AssetKey.from_coerceable(asset_key) if asset_key else None
+    asset_key = AssetKey.from_coercible(asset_key) if asset_key else None
     partition_key = check.opt_str_param(partition_key, "partition_key")
     asset_partition_key_range = check.opt_inst_param(
         asset_partition_key_range, "asset_partition_key_range", PartitionKeyRange

@@ -144,8 +144,7 @@ class ReOriginatedReconstructableJobForTest(ReconstructableJob):
             cls,
             reconstructable_job.repository,
             reconstructable_job.job_name,
-            reconstructable_job.solid_selection_str,
-            reconstructable_job.solids_to_execute,
+            reconstructable_job.op_selection,
         )
 
     def get_python_origin(self):

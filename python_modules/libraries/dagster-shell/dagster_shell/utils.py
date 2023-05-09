@@ -60,7 +60,7 @@ def execute_script_file(shell_script_path, output_logging, log, cwd=None, env=No
     check.str_param(shell_script_path, "shell_script_path")
     check.str_param(output_logging, "output_logging")
     check.opt_str_param(cwd, "cwd", default=os.path.dirname(shell_script_path))
-    env = check.opt_nullable_dict_param(env, "env")
+    env = check.opt_nullable_dict_param(env, "env", key_type=str, value_type=str)
 
     if output_logging not in OUTPUT_LOGGING_OPTIONS:
         raise Exception("Unrecognized output_logging %s" % output_logging)

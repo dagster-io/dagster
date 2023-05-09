@@ -12,6 +12,7 @@ import {
   DialogFooter,
   ButtonLink,
   DialogBody,
+  NonIdealState,
 } from '@dagster-io/ui';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
@@ -57,6 +58,7 @@ export const BackfillPage = () => {
   const {data} = queryResult;
 
   const backfill = data?.partitionBackfillOrError;
+
   let isInProgress = true;
   if (backfill && backfill.__typename === 'PartitionBackfill') {
     // for asset backfills, all of the requested runs have concluded in order for the status to be BulkActionStatus.COMPLETED
@@ -74,6 +76,9 @@ export const BackfillPage = () => {
     }
     if (backfill.__typename === 'PythonError') {
       return <PythonErrorInfo error={backfill} />;
+    }
+    if (backfill.__typename === 'BackfillNotFoundError') {
+      return <NonIdealState icon="no-results" title={backfill.message} />;
     }
 
     function getRunsUrl(status: 'requested' | 'complete' | 'failed' | 'targeted') {
@@ -327,6 +332,9 @@ export const BACKFILL_DETAILS_QUERY = gql`
     partitionBackfillOrError(backfillId: $backfillId) {
       ...PartitionBackfillFragment
       ...PythonErrorFragment
+      ... on BackfillNotFoundError {
+        message
+      }
     }
   }
 
@@ -354,6 +362,14 @@ export const BACKFILL_DETAILS_QUERY = gql`
           numPartitionsInProgress
           numPartitionsMaterialized
           numPartitionsFailed
+        }
+        ... on UnpartitionedAssetStatus {
+          assetKey {
+            path
+          }
+          inProgress
+          materialized
+          failed
         }
       }
     }

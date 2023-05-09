@@ -3,7 +3,7 @@ import {Group, Table} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {SharedToaster} from '../app/DomUtils';
+import {showSharedToaster} from '../app/DomUtils';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 
@@ -52,7 +52,7 @@ export const BackfillTable = ({
     if (data && data.resumePartitionBackfill.__typename === 'ResumeBackfillSuccess') {
       refetch();
     } else if (data && data.resumePartitionBackfill.__typename === 'UnauthorizedError') {
-      SharedToaster.show({
+      await showSharedToaster({
         message: (
           <Group direction="column" spacing={4}>
             <div>
@@ -65,7 +65,7 @@ export const BackfillTable = ({
       });
     } else if (data && data.resumePartitionBackfill.__typename === 'PythonError') {
       const error = data.resumePartitionBackfill;
-      SharedToaster.show({
+      await showSharedToaster({
         message: <div>An unexpected error occurred. This backfill was not retried.</div>,
         icon: 'error',
         intent: 'danger',

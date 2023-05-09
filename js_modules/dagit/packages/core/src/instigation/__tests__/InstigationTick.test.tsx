@@ -27,7 +27,7 @@ describe('TickTag', () => {
       const tag = screen.queryByText(/skipped/i);
       expect(tag).toBeVisible();
 
-      userEvent.hover(tag as HTMLElement);
+      await userEvent.hover(tag as HTMLElement);
       await waitFor(() => {
         expect(screen.queryByText('lol skipped')).toBeVisible();
       });
@@ -41,7 +41,7 @@ describe('TickTag', () => {
       const tag = screen.queryByText(/skipped/i);
       expect(tag).toBeVisible();
 
-      userEvent.hover(tag as HTMLElement);
+      await userEvent.hover(tag as HTMLElement);
       await waitFor(() => {
         expect(screen.queryByText(/2 runs requested, but skipped/i)).toBeVisible();
       });

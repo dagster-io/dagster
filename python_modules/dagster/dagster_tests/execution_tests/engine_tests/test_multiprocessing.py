@@ -284,7 +284,7 @@ def test_separate_sub_dags():
                 pipe,
                 run_config={
                     "execution": {"config": {"multiprocess": {"max_concurrent": 2}}},
-                    "solids": {
+                    "ops": {
                         "waiter": {"config": filename},
                         "writer": {"config": filename},
                     },

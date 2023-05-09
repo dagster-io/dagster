@@ -50,7 +50,6 @@ export function useFindAssetLocation() {
 const ASSET_FOR_NAVIGATION_QUERY = gql`
   query AssetForNavigationQuery($key: AssetKeyInput!) {
     assetOrError(assetKey: $key) {
-      __typename
       ... on Asset {
         id
         definition {

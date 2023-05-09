@@ -1,6 +1,14 @@
-import {Toaster} from '@dagster-io/ui';
+import {DToasterShowProps, Toaster} from '@dagster-io/ui';
+import memoize from 'lodash/memoize';
 
-export const SharedToaster = Toaster.create({position: 'top'}, document.body);
+export const getSharedToaster = memoize(async () => {
+  return await Toaster.asyncCreate({position: 'top'}, document.body);
+});
+
+export const showSharedToaster = async (config: DToasterShowProps) => {
+  const toaster = await getSharedToaster();
+  toaster.show(config);
+};
 
 export async function copyValue(event: React.MouseEvent<any>, value: string) {
   event.preventDefault();
@@ -12,7 +20,7 @@ export async function copyValue(event: React.MouseEvent<any>, value: string) {
   document.execCommand('copy');
   el.remove();
 
-  SharedToaster.show({
+  await showSharedToaster({
     message: 'Copied to clipboard!',
     icon: 'copy_to_clipboard_done',
     intent: 'none',

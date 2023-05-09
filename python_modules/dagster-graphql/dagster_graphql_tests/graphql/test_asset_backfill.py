@@ -598,7 +598,7 @@ def _get_backfill_data(
     assert backfill.serialized_asset_backfill_data
 
     return backfill_id, AssetBackfillData.from_serialized(
-        backfill.serialized_asset_backfill_data, repo.asset_graph
+        backfill.serialized_asset_backfill_data, repo.asset_graph, backfill.backfill_timestamp
     )
 
 

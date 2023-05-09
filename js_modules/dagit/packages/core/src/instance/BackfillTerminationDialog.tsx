@@ -107,7 +107,6 @@ export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props
 const CANCEL_BACKFILL_MUTATION = gql`
   mutation CancelBackfill($backfillId: String!) {
     cancelPartitionBackfill(backfillId: $backfillId) {
-      __typename
       ... on CancelBackfillSuccess {
         backfillId
       }

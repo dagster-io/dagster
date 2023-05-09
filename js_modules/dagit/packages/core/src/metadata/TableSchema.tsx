@@ -113,7 +113,6 @@ const ArbitraryConstraintTag: React.FC<{constraint: string}> = ({constraint}) =>
 
 export const TABLE_SCHEMA_FRAGMENT = gql`
   fragment TableSchemaFragment on TableSchema {
-    __typename
     columns {
       name
       description

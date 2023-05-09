@@ -20,6 +20,7 @@ from dagster_test.test_project import (
 from . import IS_BUILDKITE, docker_postgres_instance
 
 
+@pytest.mark.flaky(reruns=1)
 @pytest.mark.parametrize(
     "from_pending_repository, asset_selection",
     [
