@@ -65,7 +65,7 @@ export const RepositoryLink: React.FC<{
   );
 };
 
-const RepositoryName = styled(Link)`
+export const RepositoryName = styled(Link)`
   max-width: 280px;
 `;
 
