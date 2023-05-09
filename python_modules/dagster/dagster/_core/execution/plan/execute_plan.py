@@ -1,4 +1,5 @@
 import sys
+import time
 from contextlib import ExitStack
 from typing import Iterator, Sequence, cast
 
@@ -27,6 +28,8 @@ from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.storage.captured_log_manager import CapturedLogManager
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
+BLOCKED_SLEEP_INTERVAL = 1
+
 
 def inner_plan_execution_iterator(
     job_context: PlanExecutionContext,
@@ -38,7 +41,7 @@ def inner_plan_execution_iterator(
     compute_log_manager = job_context.instance.compute_log_manager
     step_keys = [step.key for step in execution_plan.get_steps_to_execute_in_topo_order()]
     with execution_plan.start(
-        job_context.instance, retry_mode=job_context.retry_mode
+        job_context.instance, retry_mode=job_context.retry_mode, run_id=job_context.run_id
     ) as active_execution:
         with ExitStack() as capture_stack:
             # begin capturing logs for the whole process if this is a captured log manager
@@ -58,6 +61,11 @@ def inner_plan_execution_iterator(
             # https://github.com/dagster-io/dagster/issues/811
             while not active_execution.is_complete:
                 step = active_execution.get_next_step(register_steps=register_steps)
+
+                if not step:
+                    time.sleep(BLOCKED_SLEEP_INTERVAL)
+                    continue
+
                 step_context = cast(
                     StepExecutionContext,
                     job_context.for_step(step, active_execution.get_known_state()),

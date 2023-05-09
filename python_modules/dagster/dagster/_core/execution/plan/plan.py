@@ -920,6 +920,7 @@ class ExecutionPlan(
         sort_key_fn: Optional[Callable[[ExecutionStep], float]] = None,
         max_concurrent: Optional[int] = None,
         tag_concurrency_limits: Optional[List[Dict[str, Any]]] = None,
+        run_id: Optional[str] = None,
     ) -> "ActiveExecution":
         from .active import ActiveExecution
 
@@ -930,6 +931,7 @@ class ExecutionPlan(
             sort_key_fn,
             max_concurrent,
             tag_concurrency_limits,
+            run_id=run_id,
         )
 
     def step_handle_for_single_step_plans(
