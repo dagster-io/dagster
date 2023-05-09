@@ -21,9 +21,9 @@ By the end of this section, you will:
 
 I/O stands for **input** and **output.** I/O managers are Dagster objects that control how Dagster reads and writes data to specific external services, such as Snowflake or Amazon Web Services (AWS) S3.
 
-They manage **input** by reading an asset from where it’s stored and loading it into memory to be used by a dependent asset. For example, `topstories_word_cloud` needs `topstories`. Therefore, the I/O manager that `topstories` uses will load the data into memory so the `topstories_word_cloud` asset can use it.
+They manage **input** by reading an asset from where it’s stored and loading it into memory to be used by a dependent asset. For example, `most_frequent_words` needs `topstories`. Therefore, the I/O manager that `topstories` uses will load the data into memory so the `most_frequent_words` asset can use it.
 
-I/O managers control \*_output_ by writing the asset's to the location configured. By the end of this section, you’ll configure an I/O manager to write the `hackernews_topstories` DataFrame into a database as a table.
+I/O managers control **output** by writing the asset's to the location configured. By the end of this section, you’ll configure an I/O manager to write the `hackernews_topstories` DataFrame into a database as a table.
 
 ---
 
@@ -161,7 +161,7 @@ def topstories(topstory_ids):
     )
 ```
 
-To validate that this worked, materialize your entire asset graph. The I/O manager should store the DataFrame in a table called `analytics.hackernews.topstories` and continue to store the IDs and word cloud in a directory called `data`.
+To validate that this worked, materialize your entire asset graph. The I/O manager should store the DataFrame in a table called `analytics.hackernews.topstories` and continue to store the IDs and most frequent words in a directory called `data`.
 
 Despite the changes in where the data is stored, the developer experience hasn’t changed. I/O managers deal with reading/writing data from storage for you so you can focus on the core logic and computation.
 
