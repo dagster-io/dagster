@@ -13,6 +13,7 @@ from dagster._utils.error import SerializableErrorInfo
 
 if TYPE_CHECKING:
     from dagster._core.definitions.job_definition import JobDefinition
+    from dagster._core.definitions.partition import PartitionsDefinition
     from dagster._core.definitions.run_config import RunConfig
     from dagster._core.definitions.unresolved_asset_job_definition import (
         UnresolvedAssetJobDefinition,
@@ -175,7 +176,6 @@ class RunRequest(
     ) -> "RunRequest":
         from dagster._core.definitions.job_definition import JobDefinition
         from dagster._core.definitions.partition import (
-            DynamicPartitionsDefinition,
             PartitionedConfig,
             PartitionsDefinition,
         )
@@ -205,45 +205,13 @@ class RunRequest(
                 "Cannot resolve partition for run request on unpartitioned job",
             )
 
-        if isinstance(partitions_def, DynamicPartitionsDefinition) and partitions_def.name:
-            if not dynamic_partitions_store:
-                check.failed(
-                    "Cannot resolve partition for run request on dynamic partitions without"
-                    " dynamic_partitions_store"
-                )
-
-            add_partition_keys: Set[str] = set()
-            delete_partition_keys: Set[str] = set()
-            for req in dynamic_partitions_requests:
-                if isinstance(req, AddDynamicPartitionsRequest):
-                    if req.partitions_def_name == partitions_def.name:
-                        add_partition_keys.update(set(req.partition_keys))
-                elif isinstance(req, DeleteDynamicPartitionsRequest):
-                    if req.partitions_def_name == partitions_def.name:
-                        delete_partition_keys.update(set(req.partition_keys))
-
-            partition_keys_after_requests_resolved = (
-                set(
-                    dynamic_partitions_store.get_dynamic_partitions(
-                        partitions_def_name=partitions_def.name
-                    )
-                )
-                | add_partition_keys
-            ) - delete_partition_keys
-
-            if self.partition_key not in partition_keys_after_requests_resolved:
-                check.failed(
-                    f"Dynamic partition key {self.partition_key} for partitions def"
-                    f" '{partitions_def.name}' is invalid. After dynamic partitions requests are"
-                    " applied, it does not exist in the set of valid partition keys."
-                )
-
-        else:
-            partitions_def.validate_partition_key(
-                self.partition_key,
-                dynamic_partitions_store=dynamic_partitions_store,
-                current_time=current_time,
-            )
+        _check_valid_partition_key_after_dynamic_partitions_requests(
+            self.partition_key,
+            partitions_def,
+            dynamic_partitions_requests,
+            current_time,
+            dynamic_partitions_store,
+        )
 
         tags = {
             **(self.tags or {}),
@@ -264,6 +232,73 @@ class RunRequest(
         # Backcompat run requests yielded via `run_request_for_partition` already have resolved
         # partitioning
         return self.tags.get(PARTITION_NAME_TAG) is not None if self.partition_key else True
+
+
+def _check_valid_partition_key_after_dynamic_partitions_requests(
+    partition_key: str,
+    partitions_def: "PartitionsDefinition",
+    dynamic_partitions_requests: Sequence[
+        Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]
+    ],
+    current_time: Optional[datetime] = None,
+    dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+):
+    from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
+    from dagster._core.definitions.partition import (
+        DynamicPartitionsDefinition,
+    )
+
+    if isinstance(partitions_def, MultiPartitionsDefinition):
+        multipartition_key = partitions_def.get_partition_key_from_str(partition_key)
+
+        for dimension in partitions_def.partitions_defs:
+            _check_valid_partition_key_after_dynamic_partitions_requests(
+                multipartition_key.keys_by_dimension[dimension.name],
+                dimension.partitions_def,
+                dynamic_partitions_requests,
+                current_time,
+                dynamic_partitions_store,
+            )
+
+    elif isinstance(partitions_def, DynamicPartitionsDefinition) and partitions_def.name:
+        if not dynamic_partitions_store:
+            check.failed(
+                "Cannot resolve partition for run request on dynamic partitions without"
+                " dynamic_partitions_store"
+            )
+
+        add_partition_keys: Set[str] = set()
+        delete_partition_keys: Set[str] = set()
+        for req in dynamic_partitions_requests:
+            if isinstance(req, AddDynamicPartitionsRequest):
+                if req.partitions_def_name == partitions_def.name:
+                    add_partition_keys.update(set(req.partition_keys))
+            elif isinstance(req, DeleteDynamicPartitionsRequest):
+                if req.partitions_def_name == partitions_def.name:
+                    delete_partition_keys.update(set(req.partition_keys))
+
+        partition_keys_after_requests_resolved = (
+            set(
+                dynamic_partitions_store.get_dynamic_partitions(
+                    partitions_def_name=partitions_def.name
+                )
+            )
+            | add_partition_keys
+        ) - delete_partition_keys
+
+        if partition_key not in partition_keys_after_requests_resolved:
+            check.failed(
+                f"Dynamic partition key {partition_key} for partitions def"
+                f" '{partitions_def.name}' is invalid. After dynamic partitions requests are"
+                " applied, it does not exist in the set of valid partition keys."
+            )
+
+    else:
+        partitions_def.validate_partition_key(
+            partition_key,
+            dynamic_partitions_store=dynamic_partitions_store,
+            current_time=current_time,
+        )
 
 
 @whitelist_for_serdes(
