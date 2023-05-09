@@ -268,7 +268,6 @@ const RunRow: React.FC<{
         setShowRunTagsIcon(true);
       }
     };
-    console.log('adding mousemove');
     document.addEventListener('mousemove', mousemoveListener);
     return () => {
       document.removeEventListener('mousemove', mousemoveListener);
