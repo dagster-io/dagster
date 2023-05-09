@@ -16,7 +16,7 @@ def test_typed_python_dict_failure():
     assert not res.success
 
 
-def test_basic_solid_dict_int_int_output():
+def test_basic_op_dict_int_int_output():
     @op(out=Out(Dict[int, int]))
     def emit_dict_int_int():
         return {1: 1}
@@ -24,7 +24,7 @@ def test_basic_solid_dict_int_int_output():
     assert wrap_op_in_graph_and_execute(emit_dict_int_int).output_value() == {1: 1}
 
 
-def test_basic_solid_dict_int_int_output_faile():
+def test_basic_op_dict_int_int_output_faile():
     @op(out=Out(Dict[int, int]))
     def emit_dict_int_int():
         return {1: "1"}
@@ -33,7 +33,7 @@ def test_basic_solid_dict_int_int_output_faile():
         wrap_op_in_graph_and_execute(emit_dict_int_int)
 
 
-def test_basic_solid_dict_int_int_input_pass():
+def test_basic_op_dict_int_int_input_pass():
     @op(ins={"ddict": In(Dict[int, int])})
     def emit_dict_int_int(ddict):
         return ddict
@@ -43,7 +43,7 @@ def test_basic_solid_dict_int_int_input_pass():
     ).output_value() == {1: 2}
 
 
-def test_basic_solid_dict_int_int_input_fails():
+def test_basic_op_dict_int_int_input_fails():
     @op(ins={"ddict": In(Dict[int, int])})
     def emit_dict_int_int(ddict):
         return ddict

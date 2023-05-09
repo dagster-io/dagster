@@ -15,7 +15,6 @@ from typing import (
     Sequence,
     Set,
     Tuple,
-    Type,
     Union,
     cast,
 )
@@ -27,20 +26,16 @@ from dagster._annotations import public
 from dagster._config import Field, Shape, StringSource
 from dagster._config.config_type import ConfigType
 from dagster._config.validate import validate_config
-from dagster._core.definitions.composition import MappedInputPlaceholder
 from dagster._core.definitions.dependency import (
-    DynamicCollectDependencyDefinition,
-    IDependencyDefinition,
-    MultiDependencyDefinition,
     Node,
     NodeHandle,
     NodeInputHandle,
     NodeInvocation,
-    NodeOutput,
 )
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.definitions.op_definition import OpDefinition
+from dagster._core.definitions.op_selection import OpSelection, get_graph_subset
 from dagster._core.definitions.partition import DynamicPartitionsDefinition
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_requirement import (
@@ -58,24 +53,20 @@ from dagster._core.errors import (
 from dagster._core.selector.subset_selector import (
     AssetSelectionData,
     OpSelectionData,
-    SelectionTreeBranch,
-    SelectionTreeLeaf,
-    parse_op_selection,
 )
 from dagster._core.storage.io_manager import IOManagerDefinition, io_manager
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.types.dagster_type import DagsterType
 from dagster._core.utils import str_format_set
+from dagster._utils import IHasInternalInit
 from dagster._utils.backcompat import deprecation_warning, experimental_class_warning
 from dagster._utils.merger import merge_dicts
 
 from .asset_layer import AssetLayer, build_asset_selection_job
 from .config import ConfigMapping
 from .dependency import (
-    DependencyDefinition,
     DependencyMapping,
     DependencyStructure,
-    GraphNode,
     OpNode,
 )
 from .executor_definition import ExecutorDefinition, multi_or_in_process_executor
@@ -103,7 +94,7 @@ if TYPE_CHECKING:
 DEFAULT_EXECUTOR_DEF = multi_or_in_process_executor
 
 
-class JobDefinition:
+class JobDefinition(IHasInternalInit):
     """Defines a Dagster job."""
 
     _name: str
@@ -258,6 +249,48 @@ class JobDefinition:
                     f"Error when constructing JobDefinition '{self.name}': Input value provided for"
                     f" key '{input_name}', but job has no top-level input with that name."
                 )
+
+    def dagster_internal_init(
+        *,
+        graph_def: GraphDefinition,
+        resource_defs: Optional[Mapping[str, ResourceDefinition]],
+        executor_def: Optional[ExecutorDefinition],
+        logger_defs: Optional[Mapping[str, LoggerDefinition]],
+        name: Optional[str],
+        config: Optional[
+            Union[ConfigMapping, Mapping[str, object], PartitionedConfig, "RunConfig"]
+        ],
+        description: Optional[str],
+        partitions_def: Optional[PartitionsDefinition],
+        tags: Optional[Mapping[str, Any]],
+        metadata: Optional[Mapping[str, RawMetadataValue]],
+        hook_defs: Optional[AbstractSet[HookDefinition]],
+        op_retry_policy: Optional[RetryPolicy],
+        version_strategy: Optional[VersionStrategy],
+        _subset_selection_data: Optional[Union[OpSelectionData, AssetSelectionData]],
+        asset_layer: Optional[AssetLayer],
+        input_values: Optional[Mapping[str, object]],
+        _was_explicitly_provided_resources: Optional[bool],
+    ) -> "JobDefinition":
+        return JobDefinition(
+            graph_def=graph_def,
+            resource_defs=resource_defs,
+            executor_def=executor_def,
+            logger_defs=logger_defs,
+            name=name,
+            config=config,
+            description=description,
+            partitions_def=partitions_def,
+            tags=tags,
+            metadata=metadata,
+            hook_defs=hook_defs,
+            op_retry_policy=op_retry_policy,
+            version_strategy=version_strategy,
+            _subset_selection_data=_subset_selection_data,
+            asset_layer=asset_layer,
+            input_values=input_values,
+            _was_explicitly_provided_resources=_was_explicitly_provided_resources,
+        )
 
     @property
     def name(self) -> str:
@@ -594,7 +627,7 @@ class JobDefinition:
         input_values = merge_dicts(self.input_values, input_values)
 
         bound_resource_defs = dict(self.resource_defs)
-        ephemeral_job = JobDefinition(
+        ephemeral_job = JobDefinition.dagster_internal_init(
             name=self._name,
             graph_def=self._graph_def,
             resource_defs={**_swap_default_io_man(bound_resource_defs, self), **resource_defs},
@@ -607,10 +640,16 @@ class JobDefinition:
             version_strategy=self.version_strategy,
             asset_layer=self.asset_layer,
             input_values=input_values,
+            description=self.description,
+            partitions_def=self.partitions_def,
+            metadata=self.metadata,
+            _subset_selection_data=None,  # this is added below
+            _was_explicitly_provided_resources=True,
         )
 
-        ephemeral_job = ephemeral_job.get_job_def_for_subset_selection(
-            op_selection, frozenset(asset_selection) if asset_selection else None
+        ephemeral_job = ephemeral_job.get_subset(
+            op_selection=op_selection,
+            asset_selection=frozenset(asset_selection) if asset_selection else None,
         )
 
         merged_tags = merge_dicts(self.tags, tags or {})
@@ -660,12 +699,13 @@ class JobDefinition:
         )
 
     @property
-    def is_subset_job(self) -> bool:
+    def is_subset(self) -> bool:
         return bool(self._subset_selection_data)
 
-    def get_job_def_for_subset_selection(
+    def get_subset(
         self,
-        op_selection: Optional[Sequence[str]] = None,
+        *,
+        op_selection: Optional[Iterable[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
     ) -> Self:
         check.invariant(
@@ -728,11 +768,9 @@ class JobDefinition:
         )
         return new_job
 
-    def _get_job_def_for_op_selection(self, op_selection: Sequence[str]) -> Self:
-        resolved_op_selection_dict = parse_op_selection(self, op_selection)
-
+    def _get_job_def_for_op_selection(self, op_selection: Iterable[str]) -> Self:
         try:
-            sub_graph = get_subselected_graph_definition(self.graph, resolved_op_selection_dict)
+            sub_graph = get_graph_subset(self.graph, op_selection)
 
             # if explicit config was passed the config_mapping that resolves the defaults implicitly is
             # very unlikely to work. The job will still present the default config in dagit.
@@ -746,10 +784,8 @@ class JobDefinition:
                 config=config,
                 graph_def=sub_graph,
                 _subset_selection_data=OpSelectionData(
-                    op_selection=op_selection,
-                    resolved_op_selection=set(
-                        resolved_op_selection_dict.keys()
-                    ),  # equivalent to solids_to_execute. currently only gets top level nodes.
+                    op_selection=list(op_selection),
+                    resolved_op_selection=OpSelection(op_selection).resolve(self.graph),
                     parent_job_def=self,  # used by job snapshot lineage
                 ),
                 # TODO: subset this structure.
@@ -760,8 +796,9 @@ class JobDefinition:
             # This handles the case when you construct a subset such that an unsatisfied
             # input cannot be loaded from config. Instead of throwing a DagsterInvalidDefinitionError,
             # we re-raise a DagsterInvalidSubsetError.
+            node_paths = OpSelection(op_selection).resolve(self.graph)
             raise DagsterInvalidSubsetError(
-                f"The attempted subset {str_format_set(resolved_op_selection_dict)} for graph "
+                f"The attempted subset {str_format_set(node_paths)} for graph "
                 f"{self.graph.name} results in an invalid graph."
             ) from exc
 
@@ -892,9 +929,11 @@ class JobDefinition:
             _subset_selection_data=self._subset_selection_data,
             asset_layer=self.asset_layer,
             input_values=self.input_values,
+            partitions_def=self.partitions_def,
+            _was_explicitly_provided_resources=None,
         )
         resolved_kwargs = {**base_kwargs, **kwargs}  # base kwargs overwritten for conflicts
-        job_def = JobDefinition(**resolved_kwargs)
+        job_def = JobDefinition.dagster_internal_init(**resolved_kwargs)
         update_wrapper(job_def, self, updated=())
         return job_def
 
@@ -918,6 +957,14 @@ class JobDefinition:
     def with_logger_defs(self, logger_defs: Mapping[str, LoggerDefinition]) -> "JobDefinition":
         return self._copy(logger_defs=logger_defs)
 
+    @property
+    def op_selection(self) -> Optional[AbstractSet[str]]:
+        return set(self.op_selection_data.op_selection) if self.op_selection_data else None
+
+    @property
+    def asset_selection(self) -> Optional[AbstractSet[AssetKey]]:
+        return self.asset_selection_data.asset_selection if self.asset_selection_data else None
+
 
 def _swap_default_io_man(resources: Mapping[str, ResourceDefinition], job: JobDefinition):
     """Used to create the user facing experience of the default io_manager
@@ -934,112 +981,6 @@ def _swap_default_io_man(resources: Mapping[str, ResourceDefinition], job: JobDe
         return updated_resources
 
     return resources
-
-
-def _dep_key_of(node: Node) -> NodeInvocation:
-    return NodeInvocation(
-        name=node.definition.name,
-        alias=node.name,
-        tags=node.tags,
-        hook_defs=node.hook_defs,
-        retry_policy=node.retry_policy,
-    )
-
-
-def get_subselected_graph_definition(
-    graph: GraphDefinition,
-    resolved_op_selection_dict: SelectionTreeBranch,
-    parent_handle: Optional[NodeHandle] = None,
-) -> SubselectedGraphDefinition:
-    deps: Dict[
-        NodeInvocation,
-        Dict[str, IDependencyDefinition],
-    ] = {}
-
-    selected_nodes: List[Tuple[str, NodeDefinition]] = []
-
-    for node in graph.nodes_in_topological_order:
-        node_handle = NodeHandle(node.name, parent=parent_handle)
-        # skip if the node isn't selected
-        if node.name not in resolved_op_selection_dict:
-            continue
-
-        # rebuild graph if any nodes inside the graph are selected
-        definition: Union[SubselectedGraphDefinition, NodeDefinition]
-        selection_node = resolved_op_selection_dict[node.name]
-        if isinstance(node, GraphNode) and not isinstance(selection_node, SelectionTreeLeaf):
-            definition = get_subselected_graph_definition(
-                node.definition,
-                selection_node,
-                parent_handle=node_handle,
-            )
-        # use definition if the node as a whole is selected. this includes selecting the entire graph
-        else:
-            definition = node.definition
-        selected_nodes.append((node.name, definition))
-
-        # build dependencies for the node. we do it for both cases because nested graphs can have
-        # inputs and outputs too
-        deps[_dep_key_of(node)] = {}
-        for node_input in node.inputs():
-            if graph.dependency_structure.has_direct_dep(node_input):
-                node_output = graph.dependency_structure.get_direct_dep(node_input)
-                if node_output.node.name in resolved_op_selection_dict:
-                    deps[_dep_key_of(node)][node_input.input_def.name] = DependencyDefinition(
-                        node=node_output.node.name, output=node_output.output_def.name
-                    )
-            elif graph.dependency_structure.has_dynamic_fan_in_dep(node_input):
-                node_output = graph.dependency_structure.get_dynamic_fan_in_dep(node_input)
-                if node_output.node.name in resolved_op_selection_dict:
-                    deps[_dep_key_of(node)][
-                        node_input.input_def.name
-                    ] = DynamicCollectDependencyDefinition(
-                        node_name=node_output.node.name,
-                        output_name=node_output.output_def.name,
-                    )
-            elif graph.dependency_structure.has_fan_in_deps(node_input):
-                outputs = graph.dependency_structure.get_fan_in_deps(node_input)
-                multi_dependencies = [
-                    DependencyDefinition(
-                        node=output_handle.node.name, output=output_handle.output_def.name
-                    )
-                    for output_handle in outputs
-                    if (
-                        isinstance(output_handle, NodeOutput)
-                        and output_handle.node.name in resolved_op_selection_dict
-                    )
-                ]
-                deps[_dep_key_of(node)][node_input.input_def.name] = MultiDependencyDefinition(
-                    cast(
-                        List[Union[DependencyDefinition, Type[MappedInputPlaceholder]]],
-                        multi_dependencies,
-                    )
-                )
-            # else input is unconnected
-
-    # filter out unselected input/output mapping
-    new_input_mappings = list(
-        filter(
-            lambda input_mapping: input_mapping.maps_to.node_name
-            in [name for name, _ in selected_nodes],
-            graph._input_mappings,  # noqa: SLF001
-        )
-    )
-    new_output_mappings = list(
-        filter(
-            lambda output_mapping: output_mapping.maps_from.node_name
-            in [name for name, _ in selected_nodes],
-            graph._output_mappings,  # noqa: SLF001
-        )
-    )
-
-    return SubselectedGraphDefinition(
-        parent_graph_def=graph,
-        dependencies=deps,
-        node_defs=[definition for _, definition in selected_nodes],
-        input_mappings=new_input_mappings,
-        output_mappings=new_output_mappings,
-    )
 
 
 @io_manager(
@@ -1276,7 +1217,7 @@ def _create_run_config_schema(
     # from the original job as ignored to allow execution with
     # run config that is valid for the original
     ignored_nodes: Sequence[Node] = []
-    if job_def.is_subset_job:
+    if job_def.is_subset:
         if isinstance(job_def.graph, SubselectedGraphDefinition):  # op selection provided
             ignored_nodes = job_def.graph.get_top_level_omitted_nodes()
         elif job_def.asset_selection_data:

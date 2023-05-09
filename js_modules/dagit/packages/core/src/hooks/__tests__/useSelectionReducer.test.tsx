@@ -37,17 +37,17 @@ describe('useSelectionReducer', () => {
     );
   };
 
-  it('checks individual items', () => {
+  it('checks individual items', async () => {
     render(<Test ids={['a', 'b', 'c', 'd']} />);
     const checkA = screen.getByRole('checkbox', {name: /checkbox-a/i});
     expect(checkA).not.toBeChecked();
-    userEvent.click(checkA);
+    await userEvent.click(checkA);
     expect(checkA).toBeChecked();
-    userEvent.click(checkA);
+    await userEvent.click(checkA);
     expect(checkA).not.toBeChecked();
   });
 
-  it('checks slices of items', () => {
+  it('checks slices of items', async () => {
     render(<Test ids={['a', 'b', 'c', 'd']} />);
     const checkA = screen.getByRole('checkbox', {name: /checkbox-a/i});
     const checkB = screen.getByRole('checkbox', {name: /checkbox-b/i});
@@ -59,23 +59,26 @@ describe('useSelectionReducer', () => {
     expect(checkC).not.toBeChecked();
     expect(checkD).not.toBeChecked();
 
-    userEvent.click(checkA);
+    const shiftClickUser = userEvent.setup();
+    await shiftClickUser.keyboard('[ShiftLeft>]');
+
+    await userEvent.click(checkA);
     expect(checkA).toBeChecked();
-    userEvent.click(checkC, {shiftKey: true});
+    await shiftClickUser.click(checkC);
 
     expect(checkA).toBeChecked();
     expect(checkB).toBeChecked();
     expect(checkC).toBeChecked();
     expect(checkD).not.toBeChecked();
 
-    userEvent.click(checkB, {shiftKey: true});
+    await shiftClickUser.click(checkB);
     expect(checkA).toBeChecked();
     expect(checkB).not.toBeChecked();
     expect(checkC).not.toBeChecked();
     expect(checkD).not.toBeChecked();
   });
 
-  it('allows toggle-all', () => {
+  it('allows toggle-all', async () => {
     render(<Test ids={['a', 'b', 'c', 'd']} />);
     const checkAll = screen.getByRole('checkbox', {name: /check-all/i});
     const checkA = screen.getByRole('checkbox', {name: /checkbox-a/i});
@@ -88,14 +91,14 @@ describe('useSelectionReducer', () => {
     expect(checkC).not.toBeChecked();
     expect(checkD).not.toBeChecked();
 
-    userEvent.click(checkAll);
+    await userEvent.click(checkAll);
 
     expect(checkA).toBeChecked();
     expect(checkB).toBeChecked();
     expect(checkC).toBeChecked();
     expect(checkD).toBeChecked();
 
-    userEvent.click(checkAll);
+    await userEvent.click(checkAll);
 
     expect(checkA).not.toBeChecked();
     expect(checkB).not.toBeChecked();

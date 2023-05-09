@@ -100,7 +100,7 @@ def test_launch_docker_no_network(aws_env):
                     container.remove(force=True)
 
 
-def test_launch_docker_image_on_pipeline_config(aws_env):
+def test_launch_docker_image_on_job_config(aws_env):
     # Docker image name to use for launch specified as part of the job origin
     # rather than in the run launcher instance config
 

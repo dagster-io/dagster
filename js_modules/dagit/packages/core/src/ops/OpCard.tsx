@@ -57,7 +57,6 @@ export const OpCard: React.FC<OpCardProps> = (props) => {
 
 export const OP_CARD_SOLID_DEFINITION_FRAGMENT = gql`
   fragment OpCardSolidDefinitionFragment on ISolidDefinition {
-    __typename
     name
     description
     metadata {

@@ -1071,10 +1071,12 @@ type LogsCapturedEvent implements MessageEvent {
   solidHandleID: String
   eventType: DagsterEventType
   fileKey: String!
-  logKey: String!
   stepKeys: [String!]
   externalUrl: String
+  externalStdoutUrl: String
+  externalStderrUrl: String
   pid: Int
+  logKey: String!
 }
 
 type AlertStartEvent implements MessageEvent & RunEvent {
@@ -2234,6 +2236,7 @@ type InstigationTick {
   originRunIds: [String!]!
   logKey: [String!]
   logEvents: InstigationEventConnection!
+  dynamicPartitionsRequestResults: [DynamicPartitionsRequestResult!]!
 }
 
 type InstigationEventConnection {
@@ -2246,6 +2249,13 @@ type InstigationEvent {
   message: String!
   timestamp: String!
   level: LogLevel!
+}
+
+type DynamicPartitionsRequestResult {
+  partitionKeys: [String!]
+  partitionsDefName: String!
+  type: DynamicPartitionsRequestType!
+  skippedPartitionKeys: [String!]!
 }
 
 type ScheduleData {
@@ -2515,6 +2525,7 @@ type RunConfigSchema {
   rootConfigType: ConfigType!
   allConfigTypes: [ConfigType!]!
   isRunConfigValid(runConfigData: RunConfigData): PipelineConfigValidationResult!
+  rootDefaultYaml: String!
 }
 
 union RunConfigSchemaOrError =
@@ -2979,7 +2990,12 @@ type AssetNodeDefinitionCollision {
   repositories: [Repository!]!
 }
 
-union PartitionBackfillOrError = PartitionBackfill | PythonError
+union PartitionBackfillOrError = PartitionBackfill | BackfillNotFoundError | PythonError
+
+type BackfillNotFoundError implements Error {
+  message: String!
+  backfillId: String!
+}
 
 union PartitionBackfillsOrError = PartitionBackfills | PythonError
 

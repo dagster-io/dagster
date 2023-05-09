@@ -29,7 +29,6 @@ interface IOpSelectorProps {
 const SOLID_SELECTOR_QUERY = gql`
   query OpSelectorQuery($selector: PipelineSelector!, $requestScopeHandleID: String) {
     pipelineOrError(params: $selector) {
-      __typename
       ... on Pipeline {
         id
         name

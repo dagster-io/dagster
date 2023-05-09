@@ -19,9 +19,7 @@ from dagster._utils.test import get_temp_file_name
 
 
 def _execute_job_with_subset(job_def, run_config, op_selection):
-    return job_def.get_job_def_for_subset_selection(op_selection).execute_in_process(
-        run_config=run_config
-    )
+    return job_def.get_subset(op_selection=op_selection).execute_in_process(run_config=run_config)
 
 
 def define_test_all_scalars_job():

@@ -205,7 +205,6 @@ export const GET_SCHEDULE_QUERY = gql`
     $ticksBefore: Int
   ) {
     scheduleOrError(scheduleSelector: $scheduleSelector) {
-      __typename
       ... on PythonError {
         message
         stack
@@ -358,7 +357,6 @@ const EvaluateScheduleContent: React.FC<{
 export const SCHEDULE_DRY_RUN_MUTATION = gql`
   mutation ScheduleDryRunMutation($selectorData: ScheduleSelector!, $timestamp: Float) {
     scheduleDryRun(selectorData: $selectorData, timestamp: $timestamp) {
-      __typename
       ...PythonErrorFragment
       ... on DryRunInstigationTick {
         timestamp

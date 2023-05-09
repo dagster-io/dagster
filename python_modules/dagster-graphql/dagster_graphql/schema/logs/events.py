@@ -297,12 +297,14 @@ class GrapheneLogsCapturedEvent(graphene.ObjectType):
         name = "LogsCapturedEvent"
 
     fileKey = graphene.NonNull(graphene.String)
+    stepKeys = graphene.List(graphene.NonNull(graphene.String))
+    externalUrl = graphene.String()
+    externalStdoutUrl = graphene.String()
+    externalStderrUrl = graphene.String()
+    pid = graphene.Int()
     # legacy name for compute log file key... required for back-compat reasons, but has been
     # renamed to fileKey for newer versions of dagit
     logKey = graphene.NonNull(graphene.String)
-    stepKeys = graphene.List(graphene.NonNull(graphene.String))
-    externalUrl = graphene.String()
-    pid = graphene.Int()
 
 
 def _construct_asset_event_metadata_params(event, metadata):

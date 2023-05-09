@@ -14743,7 +14743,7 @@ export type DagsterTypeFragment =
   | DagsterTypeFragment_NullableDagsterType_
   | DagsterTypeFragment_RegularDagsterType_;
 
-export type _DagsterTypeFragment_ListDagsterType_ = {
+export type InnerDagsterTypeFragment_ListDagsterType_ = {
   __typename: 'ListDagsterType';
   key: string;
   name: string | null;
@@ -15954,7 +15954,7 @@ export type _DagsterTypeFragment_ListDagsterType_ = {
     | null;
 };
 
-export type _DagsterTypeFragment_NullableDagsterType_ = {
+export type InnerDagsterTypeFragment_NullableDagsterType_ = {
   __typename: 'NullableDagsterType';
   key: string;
   name: string | null;
@@ -17165,7 +17165,7 @@ export type _DagsterTypeFragment_NullableDagsterType_ = {
     | null;
 };
 
-export type _DagsterTypeFragment_RegularDagsterType_ = {
+export type InnerDagsterTypeFragment_RegularDagsterType_ = {
   __typename: 'RegularDagsterType';
   key: string;
   name: string | null;
@@ -18376,7 +18376,7 @@ export type _DagsterTypeFragment_RegularDagsterType_ = {
     | null;
 };
 
-export type _DagsterTypeFragment =
-  | _DagsterTypeFragment_ListDagsterType_
-  | _DagsterTypeFragment_NullableDagsterType_
-  | _DagsterTypeFragment_RegularDagsterType_;
+export type InnerDagsterTypeFragment =
+  | InnerDagsterTypeFragment_ListDagsterType_
+  | InnerDagsterTypeFragment_NullableDagsterType_
+  | InnerDagsterTypeFragment_RegularDagsterType_;

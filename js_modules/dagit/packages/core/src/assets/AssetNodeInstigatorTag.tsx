@@ -34,12 +34,12 @@ export const ASSET_NODE_INSTIGATORS_FRAGMENT = gql`
       name
       schedules {
         id
-        __typename
+
         ...ScheduleSwitchFragment
       }
       sensors {
         id
-        __typename
+
         ...SensorSwitchFragment
       }
     }

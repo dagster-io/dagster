@@ -375,7 +375,7 @@ class DagsterEvent(
         ],
     )
 ):
-    """Events yielded by solid and pipeline execution.
+    """Events yielded by op and job execution.
 
     Users should not instantiate this class.
 
@@ -501,7 +501,7 @@ class DagsterEvent(
         )
 
     @property
-    def solid_name(self) -> str:
+    def node_name(self) -> str:
         check.invariant(self.node_handle is not None)
         node_handle = cast(NodeHandle, self.node_handle)
         return node_handle.name
@@ -760,7 +760,7 @@ class DagsterEvent(
     def step_output_event(
         step_context: StepExecutionContext, step_output_data: StepOutputData
     ) -> "DagsterEvent":
-        output_def = step_context.solid.output_def_named(
+        output_def = step_context.op.output_def_named(
             step_output_data.step_output_handle.output_name
         )
 
@@ -1273,8 +1273,9 @@ class DagsterEvent(
             step_kind_value=step_context.step.kind.value,
             logging_tags=step_context.event_tags,
             message=(
-                'Finished the execution of hook "{hook_name}" triggered for "{solid_name}".'
-            ).format(hook_name=hook_def.name, solid_name=step_context.solid.name),
+                f'Finished the execution of hook "{hook_def.name}" triggered for'
+                f' "{step_context.op.name}".'
+            ),
         )
 
         step_context.log.log_dagster_event(
@@ -1324,7 +1325,7 @@ class DagsterEvent(
             message=(
                 'Skipped the execution of hook "{hook_name}". It did not meet its triggering '
                 'condition during the execution of "{solid_name}".'
-            ).format(hook_name=hook_def.name, solid_name=step_context.solid.name),
+            ).format(hook_name=hook_def.name, solid_name=step_context.op.name),
         )
 
         step_context.log.log_dagster_event(
@@ -1359,7 +1360,11 @@ class DagsterEvent(
             job_context,
             message=f"Started capturing logs in process (pid: {os.getpid()}).",
             event_specific_data=ComputeLogsCaptureData(
-                step_keys=step_keys, file_key=file_key, external_url=log_context.external_url
+                step_keys=step_keys,
+                file_key=file_key,
+                external_stdout_url=log_context.external_stdout_url,
+                external_stderr_url=log_context.external_stderr_url,
+                external_url=log_context.external_url,
             ),
         )
 
@@ -1687,15 +1692,26 @@ class ComputeLogsCaptureData(
             ("file_key", str),  # renamed log_key => file_key to avoid confusion
             ("step_keys", Sequence[str]),
             ("external_url", Optional[str]),
+            ("external_stdout_url", Optional[str]),
+            ("external_stderr_url", Optional[str]),
         ],
     )
 ):
-    def __new__(cls, file_key: str, step_keys: Sequence[str], external_url: Optional[str] = None):
+    def __new__(
+        cls,
+        file_key: str,
+        step_keys: Sequence[str],
+        external_url: Optional[str] = None,
+        external_stdout_url: Optional[str] = None,
+        external_stderr_url: Optional[str] = None,
+    ):
         return super(ComputeLogsCaptureData, cls).__new__(
             cls,
             file_key=check.str_param(file_key, "file_key"),
             step_keys=check.opt_list_param(step_keys, "step_keys", of_type=str),
             external_url=check.opt_str_param(external_url, "external_url"),
+            external_stdout_url=check.opt_str_param(external_stdout_url, "external_stdout_url"),
+            external_stderr_url=check.opt_str_param(external_stderr_url, "external_stderr_url"),
         )
 
 

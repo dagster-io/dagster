@@ -37,6 +37,13 @@ def get_indexes(instance, table_name: str):
     return set(c["name"] for c in inspect(instance.run_storage._engine).get_indexes(table_name))
 
 
+def get_primary_key(instance, table_name: str):
+    constraint = inspect(instance.run_storage._engine).get_pk_constraint(table_name)
+    if not constraint:
+        return None
+    return constraint.get("name")
+
+
 def get_tables(instance):
     return instance.run_storage._engine.table_names()
 
@@ -865,6 +872,7 @@ def test_add_primary_keys(hostname, conn_string):
                     instance.run_storage, KeyValueStoreTable, with_non_null_id=True
                 )
             assert kvs_id_count == kvs_row_count
+            assert get_primary_key(instance, "kvs")
 
             assert "id" in get_columns(instance, "instance_info")
             with instance.run_storage.connect():
@@ -872,6 +880,7 @@ def test_add_primary_keys(hostname, conn_string):
                     instance.run_storage, InstanceInfo, with_non_null_id=True
                 )
             assert instance_info_id_count == instance_info_row_count
+            assert get_primary_key(instance, "instance_info")
 
             assert "id" in get_columns(instance, "daemon_heartbeats")
             with instance.run_storage.connect():
@@ -879,3 +888,4 @@ def test_add_primary_keys(hostname, conn_string):
                     instance.run_storage, DaemonHeartbeatsTable, with_non_null_id=True
                 )
             assert daemon_heartbeats_id_count == daemon_heartbeats_row_count
+            assert get_primary_key(instance, "daemon_heartbeats")

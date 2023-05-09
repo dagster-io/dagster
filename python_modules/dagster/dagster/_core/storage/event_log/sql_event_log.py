@@ -395,6 +395,7 @@ class SqlEventLogStorage(EventLogStorage):
         cursor: Optional[str] = None,
         of_type: Optional[Union[DagsterEventType, Set[DagsterEventType]]] = None,
         limit: Optional[int] = None,
+        ascending: bool = True,
     ) -> EventLogConnection:
         """Get all of the logs corresponding to a run.
 
@@ -419,7 +420,11 @@ class SqlEventLogStorage(EventLogStorage):
         query = (
             db.select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event])
             .where(SqlEventLogStorageTable.c.run_id == run_id)
-            .order_by(SqlEventLogStorageTable.c.id.asc())
+            .order_by(
+                SqlEventLogStorageTable.c.id.asc()
+                if ascending
+                else SqlEventLogStorageTable.c.id.desc()
+            )
         )
         if dagster_event_types:
             query = query.where(
@@ -434,7 +439,10 @@ class SqlEventLogStorage(EventLogStorage):
             if cursor_obj.is_offset_cursor():
                 query = query.offset(cursor_obj.offset())
             elif cursor_obj.is_id_cursor():
-                query = query.where(SqlEventLogStorageTable.c.id > cursor_obj.storage_id())
+                if ascending:
+                    query = query.where(SqlEventLogStorageTable.c.id > cursor_obj.storage_id())
+                else:
+                    query = query.where(SqlEventLogStorageTable.c.id < cursor_obj.storage_id())
 
         if limit:
             query = query.limit(limit)

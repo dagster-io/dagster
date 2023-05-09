@@ -131,12 +131,12 @@ def create_execution_structure(
     This will create:
 
     node_dict = {
-        'giver': <dagster._core.definitions.dependency.Solid object>,
-        'sleeper_1': <dagster._core.definitions.dependency.Solid object>,
-        'sleeper_2': <dagster._core.definitions.dependency.Solid object>,
-        'sleeper_3': <dagster._core.definitions.dependency.Solid object>,
-        'sleeper_4': <dagster._core.definitions.dependency.Solid object>,
-        'total': <dagster._core.definitions.dependency.Solid object>
+        'giver': <dagster._core.definitions.dependency.Node object>,
+        'sleeper_1': <dagster._core.definitions.dependency.Node object>,
+        'sleeper_2': <dagster._core.definitions.dependency.Node object>,
+        'sleeper_3': <dagster._core.definitions.dependency.Node object>,
+        'sleeper_4': <dagster._core.definitions.dependency.Node object>,
+        'total': <dagster._core.definitions.dependency.Node object>
     }
 
     as well as a dagster._core.definitions.dependency.DependencyStructure object.

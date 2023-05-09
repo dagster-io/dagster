@@ -46,9 +46,9 @@ def composite_job_with_config_mapping():
 
 def test_execution_plan_for_graph():
     run_config = {
-        "solids": {
+        "ops": {
             "graph_with_nested_config_graph": {
-                "solids": {
+                "ops": {
                     "node_a": {"config": {"foo": "baz"}},
                     "node_b": {"config": {"bar": 3}},
                 }
@@ -85,7 +85,7 @@ def test_execution_plan_for_graph():
 
 def test_execution_plan_for_graph_with_config_mapping():
     run_config = {
-        "solids": {
+        "ops": {
             "graph_with_nested_config_graph_and_config_mapping": {
                 "config": {"foo": "baz", "bar": 3}
             }

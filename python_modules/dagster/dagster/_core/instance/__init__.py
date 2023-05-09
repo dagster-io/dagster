@@ -6,6 +6,7 @@ import os
 import sys
 import time
 import weakref
+from abc import abstractmethod
 from collections import defaultdict
 from enum import Enum
 from tempfile import TemporaryDirectory
@@ -266,13 +267,13 @@ class MayHaveInstanceWeakref(Generic[T_DagsterInstance]):
 
 @runtime_checkable
 class DynamicPartitionsStore(Protocol):
+    @abstractmethod
     def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
-        return self.get_dynamic_partitions(partitions_def_name=partitions_def_name)
+        ...
 
+    @abstractmethod
     def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
-        return self.has_dynamic_partition(
-            partitions_def_name=partitions_def_name, partition_key=partition_key
-        )
+        ...
 
 
 class DagsterInstance(DynamicPartitionsStore):
@@ -309,12 +310,12 @@ class DagsterInstance(DynamicPartitionsStore):
             pipeline runs. By default, this will be a
             :py:class:`dagster._core.storage.event_log.SqliteEventLogStorage`. Configurable in
             ``dagster.yaml`` using the :py:class:`~dagster.serdes.ConfigurableClass` machinery.
-        compute_log_manager (ComputeLogManager): The compute log manager handles stdout and stderr
-            logging for solid compute functions. By default, this will be a
+        compute_log_manager (Optional[ComputeLogManager]): The compute log manager handles stdout
+            and stderr logging for op compute functions. By default, this will be a
             :py:class:`dagster._core.storage.local_compute_log_manager.LocalComputeLogManager`.
             Configurable in ``dagster.yaml`` using the
             :py:class:`~dagster.serdes.ConfigurableClass` machinery.
-        run_coordinator (RunCoordinator): A runs coordinator may be used to manage the execution
+        run_coordinator (Optional[RunCoordinator]): A runs coordinator may be used to manage the execution
             of pipeline runs.
         run_launcher (Optional[RunLauncher]): Optionally, a run launcher may be used to enable
             a Dagster instance to launch pipeline runs, e.g. on a remote Kubernetes cluster, in
@@ -338,8 +339,8 @@ class DagsterInstance(DynamicPartitionsStore):
         local_artifact_storage: "LocalArtifactStorage",
         run_storage: "RunStorage",
         event_storage: "EventLogStorage",
-        compute_log_manager: "ComputeLogManager",
-        run_coordinator: "RunCoordinator",
+        run_coordinator: Optional["RunCoordinator"],
+        compute_log_manager: Optional["ComputeLogManager"],
         run_launcher: Optional["RunLauncher"],
         scheduler: Optional["Scheduler"] = None,
         schedule_storage: Optional["ScheduleStorage"] = None,
@@ -368,14 +369,23 @@ class DagsterInstance(DynamicPartitionsStore):
         self._run_storage = check.inst_param(run_storage, "run_storage", RunStorage)
         self._run_storage.register_instance(self)
 
-        self._compute_log_manager = check.inst_param(
-            compute_log_manager, "compute_log_manager", ComputeLogManager
-        )
-        if not isinstance(self._compute_log_manager, CapturedLogManager):
-            deprecation_warning(
-                "ComputeLogManager", "1.2.0", "Implement the CapturedLogManager interface instead."
+        if compute_log_manager:
+            self._compute_log_manager = check.inst_param(
+                compute_log_manager, "compute_log_manager", ComputeLogManager
             )
-        self._compute_log_manager.register_instance(self)
+            if not isinstance(self._compute_log_manager, CapturedLogManager):
+                deprecation_warning(
+                    "ComputeLogManager",
+                    "1.2.0",
+                    "Implement the CapturedLogManager interface instead.",
+                )
+            self._compute_log_manager.register_instance(self)
+        else:
+            check.invariant(
+                ref, "Compute log manager must be provided if instance is not from a ref"
+            )
+            self._compute_log_manager = None
+
         self._scheduler = check.opt_inst_param(scheduler, "scheduler", Scheduler)
 
         self._schedule_storage = check.opt_inst_param(
@@ -384,8 +394,14 @@ class DagsterInstance(DynamicPartitionsStore):
         if self._schedule_storage:
             self._schedule_storage.register_instance(self)
 
-        self._run_coordinator = check.inst_param(run_coordinator, "run_coordinator", RunCoordinator)
-        self._run_coordinator.register_instance(self)
+        if run_coordinator:
+            self._run_coordinator = check.inst_param(
+                run_coordinator, "run_coordinator", RunCoordinator
+            )
+            self._run_coordinator.register_instance(self)
+        else:
+            check.invariant(ref, "Run coordinator must be provided if instance is not from a ref")
+            self._run_coordinator = None
 
         if run_launcher:
             self._run_launcher: Optional[RunLauncher] = check.inst_param(
@@ -548,9 +564,9 @@ class DagsterInstance(DynamicPartitionsStore):
             run_storage=run_storage,  # type: ignore  # (possible none)
             event_storage=event_storage,  # type: ignore  # (possible none)
             schedule_storage=schedule_storage,
-            compute_log_manager=instance_ref.compute_log_manager,
+            compute_log_manager=None,  # lazy load
             scheduler=instance_ref.scheduler,
-            run_coordinator=instance_ref.run_coordinator,  # type: ignore  # (possible none)
+            run_coordinator=None,  # lazy load
             run_launcher=None,  # lazy load
             settings=instance_ref.settings,
             secrets_loader=instance_ref.secrets_loader,
@@ -681,6 +697,18 @@ class DagsterInstance(DynamicPartitionsStore):
 
     @property
     def run_coordinator(self) -> "RunCoordinator":
+        from dagster._core.run_coordinator import RunCoordinator
+
+        # Lazily load in case the run coordinator requires dependencies that are not available
+        # everywhere that loads the instance
+        if not self._run_coordinator:
+            check.invariant(
+                self._ref, "Run coordinator not provided, and no instance ref available"
+            )
+            run_coordinator = cast(InstanceRef, self._ref).run_coordinator
+            check.invariant(run_coordinator, "Run coordinator not configured in instance ref")
+            self._run_coordinator = cast(RunCoordinator, run_coordinator)
+            self._run_coordinator.register_instance(self)
         return self._run_coordinator
 
     # run launcher
@@ -703,6 +731,18 @@ class DagsterInstance(DynamicPartitionsStore):
 
     @property
     def compute_log_manager(self) -> "ComputeLogManager":
+        from dagster._core.storage.compute_log_manager import ComputeLogManager
+
+        if not self._compute_log_manager:
+            check.invariant(
+                self._ref, "Compute log manager not provided, and no instance ref available"
+            )
+            compute_log_manager = cast(InstanceRef, self._ref).compute_log_manager
+            check.invariant(
+                compute_log_manager, "Compute log manager not configured in instance ref"
+            )
+            self._compute_log_manager = cast(ComputeLogManager, compute_log_manager)
+            self._compute_log_manager.register_instance(self)
         return self._compute_log_manager
 
     def get_settings(self, settings_key: str) -> Any:
@@ -757,6 +797,10 @@ class DagsterInstance(DynamicPartitionsStore):
     @property
     def run_monitoring_start_timeout_seconds(self) -> int:
         return self.run_monitoring_settings.get("start_timeout_seconds", 180)
+
+    @property
+    def run_monitoring_cancel_timeout_seconds(self) -> int:
+        return self.run_monitoring_settings.get("cancel_timeout_seconds", 180)
 
     @property
     def code_server_settings(self) -> Any:
@@ -860,11 +904,13 @@ class DagsterInstance(DynamicPartitionsStore):
     def dispose(self) -> None:
         self._local_artifact_storage.dispose()
         self._run_storage.dispose()
-        self.run_coordinator.dispose()
+        if self._run_coordinator:
+            self._run_coordinator.dispose()
         if self._run_launcher:
             self._run_launcher.dispose()
         self._event_storage.dispose()
-        self._compute_log_manager.dispose()
+        if self._compute_log_manager:
+            self._compute_log_manager.dispose()
         if self._secrets_loader:
             self._secrets_loader.dispose()
 
@@ -986,7 +1032,7 @@ class DagsterInstance(DynamicPartitionsStore):
         # solids_to_execute never provided
         if asset_selection or solid_selection:
             # for cases when `create_run_for_pipeline` is directly called
-            job_def = job_def.get_job_def_for_subset_selection(
+            job_def = job_def.get_subset(
                 asset_selection=asset_selection,
                 op_selection=solid_selection,
             )
@@ -1646,8 +1692,9 @@ class DagsterInstance(DynamicPartitionsStore):
         cursor: Optional[str] = None,
         of_type: Optional[Union["DagsterEventType", Set["DagsterEventType"]]] = None,
         limit: Optional[int] = None,
+        ascending: bool = True,
     ) -> "EventLogConnection":
-        return self._event_storage.get_records_for_run(run_id, cursor, of_type, limit)
+        return self._event_storage.get_records_for_run(run_id, cursor, of_type, limit, ascending)
 
     def watch_event_logs(self, run_id: str, cursor: Optional[str], cb: "EventHandlerFn") -> None:
         return self._event_storage.watch(run_id, cursor, cb)
@@ -2051,7 +2098,7 @@ class DagsterInstance(DynamicPartitionsStore):
         )
 
         try:
-            submitted_run = self._run_coordinator.submit_run(
+            submitted_run = self.run_coordinator.submit_run(
                 SubmitRunContext(run, workspace=workspace)
             )
         except:

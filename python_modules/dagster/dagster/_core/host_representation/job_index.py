@@ -93,15 +93,15 @@ class JobIndex:
         check.str_param(node_def_name, "node_def_name")
         return self._node_defs_snaps_index[node_def_name]
 
-    def get_dep_structure_index(self, comp_solid_def_name: str) -> DependencyStructureIndex:
-        return self._comp_dep_structures[comp_solid_def_name]
+    def get_dep_structure_index(self, graph_def_name: str) -> DependencyStructureIndex:
+        return self._comp_dep_structures[graph_def_name]
 
     def get_dagster_type_snaps(self) -> Sequence[DagsterTypeSnap]:
         dt_namespace = self.job_snapshot.dagster_type_namespace_snapshot
         return list(dt_namespace.all_dagster_type_snaps_by_key.values())
 
-    def has_solid_invocation(self, solid_name: str) -> bool:
-        return self.dep_structure_index.has_invocation(solid_name)
+    def has_node_invocation(self, node_name: str) -> bool:
+        return self.dep_structure_index.has_invocation(node_name)
 
     def get_default_mode_name(self) -> str:
         return self.job_snapshot.mode_def_snaps[0].name

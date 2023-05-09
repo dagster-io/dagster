@@ -223,7 +223,6 @@ const PIPELINE_EXECUTION_ROOT_QUERY = gql`
         repositoryLocationName: $repositoryLocationName
       }
     ) {
-      __typename
       ... on PipelineNotFoundError {
         message
       }

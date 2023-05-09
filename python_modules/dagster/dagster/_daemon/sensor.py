@@ -41,6 +41,7 @@ from dagster._core.host_representation.external import ExternalJob, ExternalSens
 from dagster._core.host_representation.external_data import ExternalTargetData
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler.instigation import (
+    DynamicPartitionsRequestResult,
     InstigatorState,
     InstigatorStatus,
     InstigatorTick,
@@ -142,6 +143,13 @@ class SensorLaunchContext:
 
     def add_log_info(self, log_key: Sequence[str]) -> None:
         self._tick = self._tick.with_log_key(log_key)
+
+    def add_dynamic_partitions_request_result(
+        self, dynamic_partitions_request_result: DynamicPartitionsRequestResult
+    ) -> None:
+        self._tick = self._tick.with_dynamic_partitions_request_result(
+            dynamic_partitions_request_result
+        )
 
     def set_should_update_cursor_on_failure(self, should_update_cursor_on_failure: bool) -> None:
         self._should_update_cursor_on_failure = should_update_cursor_on_failure
@@ -615,6 +623,15 @@ def _evaluate_sensor(
                         f" '{request.partitions_def_name}' that already exist:"
                         f" {existent_partitions}"
                     )
+
+                context.add_dynamic_partitions_request_result(
+                    DynamicPartitionsRequestResult(
+                        request.partitions_def_name,
+                        added_partitions=nonexistent_partitions,
+                        deleted_partitions=None,
+                        skipped_partitions=existent_partitions,
+                    )
+                )
             elif isinstance(request, DeleteDynamicPartitionsRequest):
                 if existent_partitions:
                     # TODO add a bulk delete method to the instance
@@ -632,6 +649,15 @@ def _evaluate_sensor(
                         f" '{request.partitions_def_name}' that do not exist:"
                         f" {nonexistent_partitions}"
                     )
+
+                context.add_dynamic_partitions_request_result(
+                    DynamicPartitionsRequestResult(
+                        request.partitions_def_name,
+                        added_partitions=None,
+                        deleted_partitions=existent_partitions,
+                        skipped_partitions=nonexistent_partitions,
+                    )
+                )
             else:
                 check.failed(f"Unexpected action {request.action} for dynamic partition request")
     if not sensor_runtime_data.run_requests:

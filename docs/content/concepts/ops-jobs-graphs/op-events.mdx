@@ -111,7 +111,9 @@ some data asset to an external system. The classic example would be writing to a
 table in a database, but really any sort of persisted object that you would want
 to keep track of can be considered an asset.
 
-Generally, you'd want to send this event directly after you persist the asset to your external system. All <PyObject object="AssetMaterialization" /> events must define an `asset_key`, which is a unique identifier to describe the asset you are persisting.
+Generally, you'd want to send this event directly after you persist the asset to your external system. All <PyObject object="AssetMaterialization" /> events must define an `asset_key`, which is a unique identifier to describe the asset you are persisting. They can optionally include a `partition` if they're persisting a particular [partition](/concepts/partitions-schedules-sensors/partitions) of an asset.
+
+If you're using [Software-defined Assets](/concepts/assets/software-defined-assets), you don't need to record these events explicitly – the framework handles it for you.
 
 ```python file=/concepts/ops_jobs_graphs/op_events.py startafter=start_asset_op endbefore=end_asset_op
 from dagster import AssetMaterialization, op

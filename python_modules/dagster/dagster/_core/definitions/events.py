@@ -159,7 +159,7 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
         return {"path": self.path}
 
     @staticmethod
-    def from_coerceable(arg: "CoercibleToAssetKey") -> "AssetKey":
+    def from_coercible(arg: "CoercibleToAssetKey") -> "AssetKey":
         if isinstance(arg, AssetKey):
             return check.inst_param(arg, "arg", AssetKey)
         elif isinstance(arg, str):
@@ -172,6 +172,9 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
             return AssetKey(arg)
         else:
             check.failed(f"Unexpected type for AssetKey: {type(arg)}")
+
+    def has_prefix(self, prefix: Sequence[str]) -> bool:
+        return len(self.path) >= len(prefix) and self.path[: len(prefix)] == prefix
 
 
 class AssetKeyPartitionKey(NamedTuple):
@@ -190,16 +193,21 @@ CoercibleToAssetKeyPrefix = Union[str, Sequence[str]]
 def check_opt_coercible_to_asset_key_prefix_param(
     prefix: Optional[CoercibleToAssetKeyPrefix], param_name: str
 ) -> Optional[Sequence[str]]:
-    if prefix is None:
-        return prefix
-    elif isinstance(prefix, str):
-        return [prefix]
-    elif isinstance(prefix, list):
-        return prefix
-    else:
+    try:
+        return key_prefix_from_coercible(prefix) if prefix is not None else None
+    except check.CheckError:
         raise check.ParameterCheckError(
             f'Param "{param_name}" is not a string or a sequence of strings'
         )
+
+
+def key_prefix_from_coercible(key_prefix: CoercibleToAssetKeyPrefix) -> Sequence[str]:
+    if isinstance(key_prefix, str):
+        return [key_prefix]
+    elif isinstance(key_prefix, list):
+        return key_prefix
+    else:
+        check.failed(f"Unexpected type for key_prefix: {type(key_prefix)}")
 
 
 DynamicAssetKey = Callable[["OutputContext"], Optional[AssetKey]]
@@ -632,7 +640,7 @@ class TypeCheck(
     :py:func:`as_dagster_type`, :py:func:`@usable_as_dagster_type <dagster_type>`, or the underlying
     :py:func:`PythonObjectDagsterType` API.)
 
-    Solid compute functions should generally avoid yielding events of this type to avoid confusion.
+    Op compute functions should generally avoid yielding events of this type to avoid confusion.
 
     Args:
         success (bool): ``True`` if the type check succeeded, ``False`` otherwise.

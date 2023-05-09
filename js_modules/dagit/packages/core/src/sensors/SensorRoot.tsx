@@ -95,7 +95,6 @@ export const SensorRoot: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) 
 const SENSOR_ROOT_QUERY = gql`
   query SensorRootQuery($sensorSelector: SensorSelector!) {
     sensorOrError(sensorSelector: $sensorSelector) {
-      __typename
       ... on Sensor {
         id
         ...SensorFragment

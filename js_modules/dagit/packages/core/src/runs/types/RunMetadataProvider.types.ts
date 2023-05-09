@@ -145,7 +145,8 @@ export type RunMetadataProviderMessageFragment_LogsCapturedEvent_ = {
   fileKey: string;
   stepKeys: Array<string> | null;
   pid: number | null;
-  externalUrl: string | null;
+  externalStdoutUrl: string | null;
+  externalStderrUrl: string | null;
 };
 
 export type RunMetadataProviderMessageFragment_MaterializationEvent_ = {

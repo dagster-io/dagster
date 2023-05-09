@@ -44,7 +44,6 @@ export const RunningBackfillsNotice: React.FC<{partitionSetName: string}> = ({
 export const RUNNING_BACKFILLS_NOTICE_QUERY = gql`
   query RunningBackfillsNoticeQuery {
     partitionBackfillsOrError(status: REQUESTED) {
-      __typename
       ... on PartitionBackfills {
         results {
           id

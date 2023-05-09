@@ -64,7 +64,8 @@ export interface ILogCaptureInfo {
   fileKey: string;
   stepKeys: string[];
   pid?: string;
-  externalUrl?: string;
+  externalStdoutUrl?: string;
+  externalStderrUrl?: string;
 }
 
 export interface IRunMetadataDict {
@@ -253,7 +254,8 @@ export function extractMetadataFromLogs(
         fileKey: log.fileKey,
         stepKeys: log.stepKeys || [],
         pid: String(log.pid),
-        externalUrl: log.externalUrl || undefined,
+        externalStdoutUrl: log.externalStdoutUrl || undefined,
+        externalStderrUrl: log.externalStderrUrl || undefined,
       };
     }
 
@@ -356,7 +358,6 @@ export const RunMetadataProvider: React.FC<IRunMetadataProviderProps> = ({logs, 
 
 export const RUN_METADATA_PROVIDER_MESSAGE_FRAGMENT = gql`
   fragment RunMetadataProviderMessageFragment on DagsterRunEvent {
-    __typename
     ... on MessageEvent {
       message
       timestamp
@@ -378,7 +379,8 @@ export const RUN_METADATA_PROVIDER_MESSAGE_FRAGMENT = gql`
       fileKey
       stepKeys
       pid
-      externalUrl
+      externalStdoutUrl
+      externalStderrUrl
     }
   }
 

@@ -50,9 +50,6 @@ setup(
         "scrapbook>=0.5.0",
         "nbconvert",
         "jupyter-client<8",  # jupyter-client 8 causing test hangs
-        # 8.13+ explicitly does not support python 3.8
-        # Can remove when this resolves https://github.com/ipython/ipython/issues/14053
-        "ipython<=8.12; python_version<='3.8'",
     ],
     extras_require={
         "test": [

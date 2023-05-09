@@ -74,7 +74,9 @@ def create_event(count: int, run_id: str = RUN_ID):
 @contextmanager
 def create_sqlite_run_event_logstorage():
     with tempfile.TemporaryDirectory() as tmpdir_path:
-        yield SqlitePollingEventLogStorage(tmpdir_path)
+        storage = SqlitePollingEventLogStorage(tmpdir_path)
+        yield storage
+        storage.dispose()
 
 
 def test_using_logstorage():
@@ -133,3 +135,6 @@ def test_using_logstorage():
 
         assert [int(evt.message) for evt in watched_1] == [2, 3, 4]
         assert [int(evt.message) for evt in watched_2] == [4, 5]
+
+    # calling end_watch after dispose does not error
+    storage.end_watch(RUN_ID, watch_two)

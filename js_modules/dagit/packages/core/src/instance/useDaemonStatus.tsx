@@ -100,7 +100,6 @@ const INSTANCE_WARNING_QUERY = gql`
       ...InstanceHealthFragment
     }
     partitionBackfillsOrError(status: REQUESTED) {
-      __typename
       ... on PartitionBackfills {
         results {
           id

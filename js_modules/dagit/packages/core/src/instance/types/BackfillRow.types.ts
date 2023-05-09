@@ -9,6 +9,7 @@ export type SingleBackfillCountsQueryVariables = Types.Exact<{
 export type SingleBackfillCountsQuery = {
   __typename: 'DagitQuery';
   partitionBackfillOrError:
+    | {__typename: 'BackfillNotFoundError'}
     | {
         __typename: 'PartitionBackfill';
         id: string;
@@ -28,6 +29,7 @@ export type SingleBackfillQueryVariables = Types.Exact<{
 export type SingleBackfillQuery = {
   __typename: 'DagitQuery';
   partitionBackfillOrError:
+    | {__typename: 'BackfillNotFoundError'}
     | {
         __typename: 'PartitionBackfill';
         id: string;

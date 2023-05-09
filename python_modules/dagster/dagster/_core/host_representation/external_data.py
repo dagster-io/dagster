@@ -18,6 +18,7 @@ from typing import (
     Sequence,
     Set,
     Tuple,
+    Type,
     Union,
     cast,
 )
@@ -1564,6 +1565,11 @@ def _get_nested_resources(
         }
 
 
+def _get_class_name(cls: Type) -> str:
+    """Returns the fully qualified class name of the given class."""
+    return str(cls)[8:-2]
+
+
 def external_resource_data_from_def(
     name: str,
     resource_def: ResourceDefinition,
@@ -1604,7 +1610,17 @@ def external_resource_data_from_def(
     resource_type_def = resource_def
     if isinstance(resource_type_def, ResourceWithKeyMapping):
         resource_type_def = resource_type_def.wrapped_resource
-    resource_type = str(type(resource_type_def))[8:-2]
+
+    resource_type = _get_class_name(type(resource_type_def))
+
+    if isinstance(
+        resource_type_def,
+        (
+            ConfigurableResourceFactoryResourceDefinition,
+            ConfigurableIOManagerFactoryResourceDefinition,
+        ),
+    ):
+        resource_type = _get_class_name(resource_type_def.configurable_resource_cls)
 
     return ExternalResourceData(
         name=name,

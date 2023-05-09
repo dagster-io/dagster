@@ -126,10 +126,8 @@ const SingleRunLogObserver: React.FC<{
 export const ASSET_LIVE_RUN_LOGS_SUBSCRIPTION = gql`
   subscription AssetLiveRunLogsSubscription($runId: ID!) {
     pipelineRunLogs(runId: $runId, cursor: "HEAD") {
-      __typename
       ... on PipelineRunLogsSubscriptionSuccess {
         messages {
-          __typename
           ... on AssetMaterializationPlannedEvent {
             assetKey {
               path

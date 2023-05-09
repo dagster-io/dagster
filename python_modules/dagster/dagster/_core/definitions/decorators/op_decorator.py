@@ -62,13 +62,13 @@ class _Op:
 
         self.description = check.opt_str_param(description, "description")
 
-        # these will be checked within SolidDefinition
+        # these will be checked within OpDefinition
         self.required_resource_keys = required_resource_keys
         self.tags = tags
         self.code_version = code_version
         self.retry_policy = retry_policy
 
-        # config will be checked within SolidDefinition
+        # config will be checked within OpDefinition
         self.config_schema = config_schema
 
         self.ins = check.opt_nullable_mapping_param(ins, "ins", key_type=str, value_type=In)
@@ -123,7 +123,7 @@ class _Op:
         )
         resolved_resource_keys = decorator_resource_keys.union(arg_resource_keys)
 
-        op_def = OpDefinition(
+        op_def = OpDefinition.dagster_internal_init(
             name=self.name,
             ins=self.ins,
             outs=outs,
@@ -134,6 +134,7 @@ class _Op:
             tags=self.tags,
             code_version=self.code_version,
             retry_policy=self.retry_policy,
+            version=None,  # code_version has replaced version
         )
         update_wrapper(op_def, compute_fn.decorated_fn)
         return op_def
@@ -268,7 +269,7 @@ def op(
 
 
 class DecoratedOpFunction(NamedTuple):
-    """Wrapper around the decorated solid function to provide commonly used util methods."""
+    """Wrapper around the decorated op function to provide commonly used util methods."""
 
     decorated_fn: Callable[..., Any]
 
@@ -320,8 +321,8 @@ class DecoratedOpFunction(NamedTuple):
 
 
 class NoContextDecoratedOpFunction(DecoratedOpFunction):
-    """Wrapper around a decorated solid function, when the decorator does not permit a context
-    parameter (such as lambda_solid).
+    """Wrapper around a decorated op function, when the decorator does not permit a context
+    parameter.
     """
 
     @lru_cache(maxsize=1)
@@ -335,7 +336,7 @@ def is_context_provided(params: Sequence[Parameter]) -> bool:
     return params[0].name in get_valid_name_permutations("context")
 
 
-def resolve_checked_solid_fn_inputs(
+def resolve_checked_op_fn_inputs(
     decorator_name: str,
     fn_name: str,
     compute_fn: DecoratedOpFunction,
@@ -346,10 +347,10 @@ def resolve_checked_solid_fn_inputs(
     Returns the resolved set of InputDefinitions.
 
     Args:
-        decorator_name (str): Name of the decorator that is wrapping the op/solid function.
+        decorator_name (str): Name of the decorator that is wrapping the op function.
         fn_name (str): Name of the decorated function.
-        compute_fn (DecoratedSolidFunction): The decorated function, wrapped in the
-            DecoratedSolidFunction wrapper.
+        compute_fn (DecoratedOpFunction): The decorated function, wrapped in the
+            DecoratedOpFunction wrapper.
         explicit_input_defs (List[InputDefinition]): The input definitions that were explicitly
             provided in the decorator.
         exclude_nothing (bool): True if Nothing type inputs should be excluded from compute_fn

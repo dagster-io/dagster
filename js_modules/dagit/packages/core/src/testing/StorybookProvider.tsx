@@ -20,7 +20,7 @@ export const StorybookProvider: React.FC<Props> = (props) => {
 
   return (
     <MemoryRouter {...routerProps}>
-      <ApolloTestProvider {...apolloProps} typeDefs={typeDefs}>
+      <ApolloTestProvider {...apolloProps} typeDefs={typeDefs as any}>
         <CustomAlertProvider />
         <WorkspaceProvider>{props.children}</WorkspaceProvider>
       </ApolloTestProvider>

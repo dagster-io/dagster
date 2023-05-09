@@ -1,11 +1,11 @@
 import {Box} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {SharedToaster} from '../app/DomUtils';
+import {showSharedToaster} from '../app/DomUtils';
 import {useCopyToClipboard} from '../app/browser';
 import {__ASSET_JOB_PREFIX} from '../asset-graph/Utils';
 
-import {DagsterTag, RunTag, TagType} from './RunTag';
+import {DagsterTag, RunTag, TagAction, TagType} from './RunTag';
 import {RunFilterToken} from './RunsFilterInput';
 
 // Sort these tags to the start of the list.
@@ -33,9 +33,9 @@ export const RunTags: React.FC<{
   const copyAction = React.useMemo(
     () => ({
       label: 'Copy tag',
-      onClick: (tag: TagType) => {
+      onClick: async (tag: TagType) => {
         copy(`${tag.key}:${tag.value}`);
-        SharedToaster.show({intent: 'success', message: 'Copied tag!'});
+        await showSharedToaster({intent: 'success', message: 'Copied tag!'});
       },
     }),
     [copy],
@@ -55,7 +55,7 @@ export const RunTags: React.FC<{
   );
 
   const actionsForTag = (tag: TagType) => {
-    const list = [copyAction];
+    const list: TagAction[] = [copyAction];
     if (addToFilterAction && canAddTagToFilter(tag.key)) {
       list.push(addToFilterAction);
     }

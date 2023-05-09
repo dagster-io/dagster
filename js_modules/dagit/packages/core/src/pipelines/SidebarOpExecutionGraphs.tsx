@@ -137,14 +137,11 @@ export const SidebarOpExecutionGraphs: React.FC<{
 const SIDEBAR_OP_GRAPHS_QUERY = gql`
   query SidebarOpGraphsQuery($selector: PipelineSelector!, $handleID: String!) {
     pipelineOrError(params: $selector) {
-      __typename
       ... on Pipeline {
         id
         name
         solidHandle(handleID: $handleID) {
           stepStats(limit: 20) {
-            __typename
-
             ... on SolidStepStatsConnection {
               nodes {
                 runId
@@ -152,9 +149,6 @@ const SIDEBAR_OP_GRAPHS_QUERY = gql`
                 endTime
                 status
               }
-            }
-            ... on SolidStepStatusUnavailableError {
-              __typename
             }
           }
         }

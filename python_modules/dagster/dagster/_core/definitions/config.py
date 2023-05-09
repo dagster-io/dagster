@@ -40,7 +40,7 @@ class ConfigMapping(
 
     Config mappings require the configuration schema to be specified as ``config_schema``, which will
     be exposed as the configuration schema for the graph, as well as a configuration mapping
-    function, ``config_fn``, which maps the config provided to the composite solid to the config
+    function, ``config_fn``, which maps the config provided to the graph to the config
     that will be provided to the child nodes.
 
     Args:

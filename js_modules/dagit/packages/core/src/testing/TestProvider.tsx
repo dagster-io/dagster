@@ -87,7 +87,7 @@ export const TestProvider = (props: Props) => {
         >
           <AnalyticsContext.Provider value={analytics}>
             <MemoryRouter {...routerProps}>
-              <ApolloTestProvider {...apolloProps} typeDefs={typeDefs}>
+              <ApolloTestProvider {...apolloProps} typeDefs={typeDefs as any}>
                 <WorkspaceProvider>{props.children}</WorkspaceProvider>
               </ApolloTestProvider>
             </MemoryRouter>

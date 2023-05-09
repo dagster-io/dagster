@@ -2,17 +2,16 @@
 
 from dagster import (
     AssetMaterialization,
+    Config,
     DagsterEventType,
     ExpectationResult,
     ExecuteInProcessResult,
-    In,
+    OpExecutionContext,
     Output,
     Out,
     op,
-    Config,
     graph,
 )
-from dagster._core.execution.context.compute import OpExecutionContext
 
 
 class AddOneConfig(Config):

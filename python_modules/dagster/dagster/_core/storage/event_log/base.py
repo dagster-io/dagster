@@ -155,6 +155,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         cursor: Optional[Union[str, int]] = None,
         of_type: Optional[Union[DagsterEventType, Set[DagsterEventType]]] = None,
         limit: Optional[int] = None,
+        ascending: bool = True,
     ) -> Sequence["EventLogEntry"]:
         """Get all of the logs corresponding to a run.
 
@@ -167,7 +168,9 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         """
         if isinstance(cursor, int):
             cursor = EventLogCursor.from_offset(cursor + 1).to_string()
-        records = self.get_records_for_run(run_id, cursor, of_type, limit).records
+        records = self.get_records_for_run(
+            run_id, cursor, of_type, limit, ascending=ascending
+        ).records
         return [record.event_log_entry for record in records]
 
     @abstractmethod
@@ -177,6 +180,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         cursor: Optional[str] = None,
         of_type: Optional[Union[DagsterEventType, Set[DagsterEventType]]] = None,
         limit: Optional[int] = None,
+        ascending: bool = True,
     ) -> EventLogConnection:
         """Get all of the event log records corresponding to a run.
 

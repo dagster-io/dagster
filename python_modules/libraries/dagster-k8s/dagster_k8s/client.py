@@ -11,7 +11,7 @@ from dagster import (
     _check as check,
 )
 from dagster._core.storage.dagster_run import DagsterRunStatus
-from kubernetes.client.models import V1JobStatus
+from kubernetes.client.models import V1Job, V1JobStatus
 
 try:
     from kubernetes.client.models import EventsV1Event  # noqa
@@ -748,4 +748,16 @@ class DagsterKubernetesClient:
             + (f"\n\n{specific_warning}" if specific_warning else "")
             + (f"\n\n{log_str}" if log_str else "")
             + f"\n\n{warning_str}"
+        )
+
+    def create_namespaced_job_with_retries(
+        self,
+        body: V1Job,
+        namespace: str,
+        wait_time_between_attempts: float = DEFAULT_WAIT_BETWEEN_ATTEMPTS,
+    ):
+        k8s_api_retry(
+            lambda: self.batch_api.create_namespaced_job(body=body, namespace=namespace),
+            max_retries=3,
+            timeout=wait_time_between_attempts,
         )

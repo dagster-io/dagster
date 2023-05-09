@@ -1,6 +1,6 @@
 """This module contains serializable classes that contain all the meta information
 in our definitions and type systems. The purpose is to be able to represent
-user-defined code artifacts (e.g. Pipelines Solids) in a serializable format
+user-defined code artifacts (e.g. jobs, ops) in a serializable format
 so that they can be persisted and manipulated in remote processes.
 
 This will have a number of uses, but the most immediately germane are:

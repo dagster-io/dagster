@@ -179,10 +179,13 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
         variables: {tagKeys: tagKey ? [tagKey] : []},
       });
       if (data?.runTagsOrError?.__typename === 'RunTags') {
-        return data?.runTagsOrError.tags[0].values.map((tagValue) =>
-          tagSuggestionValueObject(tagKey, tagValue),
+        return (
+          data?.runTagsOrError.tags?.[0]?.values.map((tagValue) =>
+            tagSuggestionValueObject(tagKey, tagValue),
+          ) || []
         );
       }
+
       return [];
     },
     [client],
@@ -486,6 +489,22 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
         icon: 'tag',
         initialSuggestions: tagSuggestions,
 
+        freeformSearchResult: React.useCallback(
+          (
+            query: string,
+            path: {
+              value: string;
+              key?: string | undefined;
+            }[],
+          ) => {
+            return {
+              ...tagSuggestionValueObject(path.length ? path[0].value : '', query),
+              final: !!path.length,
+            };
+          },
+          [],
+        ),
+
         state: React.useMemo(() => {
           return tokens
             .filter(({token, value}) => {
@@ -556,7 +575,6 @@ export const RUN_TAG_KEYS_QUERY = gql`
 export const RUN_TAG_VALUES_QUERY = gql`
   query RunTagValuesNewQuery($tagKeys: [String!]!) {
     runTagsOrError(tagKeys: $tagKeys) {
-      __typename
       ... on RunTags {
         tags {
           key

@@ -82,7 +82,7 @@ class AssetOut(
 
         return super(AssetOut, cls).__new__(
             cls,
-            key=AssetKey.from_coerceable(key) if key is not None else None,
+            key=AssetKey.from_coercible(key) if key is not None else None,
             key_prefix=check.opt_list_param(key_prefix, "key_prefix", of_type=str),
             dagster_type=NoValueSentinel
             if dagster_type is NoValueSentinel

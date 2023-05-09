@@ -1,5 +1,5 @@
 import {Button} from '@dagster-io/ui';
-import {render, screen} from '@testing-library/react';
+import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as React from 'react';
 import {act} from 'react-dom/test-utils';
@@ -23,11 +23,13 @@ describe('CustomConfirmationProvider', () => {
   };
 
   it('must not render a Dialog initially', async () => {
-    render(
-      <CustomConfirmationProvider>
-        <Test />
-      </CustomConfirmationProvider>,
-    );
+    await act(() => {
+      render(
+        <CustomConfirmationProvider>
+          <Test />
+        </CustomConfirmationProvider>,
+      );
+    });
 
     expect(screen.queryByRole('button', {name: /cancel/i})).toBeNull();
   });
@@ -40,7 +42,7 @@ describe('CustomConfirmationProvider', () => {
     );
 
     const button = screen.queryByRole('button', {name: /terminate/i}) as HTMLButtonElement;
-    userEvent.click(button);
+    await userEvent.click(button);
 
     expect(screen.queryByText(/r u sure about this/i)).toBeVisible();
   });
@@ -53,16 +55,14 @@ describe('CustomConfirmationProvider', () => {
     );
 
     const button = screen.queryByRole('button', {name: /terminate/i}) as HTMLButtonElement;
-    userEvent.click(button);
+    await userEvent.click(button);
 
     const confirmationButton = screen.queryByRole('button', {
       name: /confirm/i,
     }) as HTMLButtonElement;
 
     // Resolves the promise.
-    await act(async () => {
-      userEvent.click(confirmationButton);
-    });
+    await userEvent.click(confirmationButton);
 
     expect(screen.queryByText(/confirmed\? true/i)).toBeVisible();
   });
@@ -70,31 +70,39 @@ describe('CustomConfirmationProvider', () => {
   it('must remove the confirmation Dialog from the DOM afterward', async () => {
     jest.useFakeTimers();
 
-    render(
-      <CustomConfirmationProvider>
-        <Test />
-      </CustomConfirmationProvider>,
-    );
+    await act(() => {
+      render(
+        <CustomConfirmationProvider>
+          <Test />
+        </CustomConfirmationProvider>,
+      );
+    });
 
     const button = screen.queryByRole('button', {name: /terminate/i}) as HTMLButtonElement;
-    userEvent.click(button);
+    await act(() => {
+      button.click();
+    });
 
     const confirmationButton = screen.queryByRole('button', {
       name: /confirm/i,
     }) as HTMLButtonElement;
 
     // Resolves the promise.
-    await act(async () => {
-      userEvent.click(confirmationButton);
+    await act(() => {
+      confirmationButton.click();
     });
 
-    expect(screen.queryByText(/confirmed\? true/i)).toBeVisible();
+    await waitFor(() => {
+      expect(screen.queryByText(/confirmed\? true/i)).toBeVisible();
+    });
 
     act(() => {
       jest.advanceTimersByTime(1000);
     });
 
-    const dialogContainers = document.querySelectorAll('.bp4-dialog');
-    expect(dialogContainers).toHaveLength(0);
+    await waitFor(() => {
+      const dialogContainers = document.querySelectorAll('.bp4-dialog');
+      expect(dialogContainers).toHaveLength(0);
+    });
   });
 });

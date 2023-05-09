@@ -846,13 +846,10 @@ class GrapheneAssetNode(graphene.ObjectType):
             ):
                 check.failed("Expected partitions subset for a partitioned asset")
 
-            num_materialized = len(materialized_partition_subset)
-            num_materialized_and_not_failed = num_materialized - len(
-                [
-                    k
-                    for k in failed_partition_subset.get_partition_keys()
-                    if k in materialized_partition_subset
-                ]
+            failed_keys = failed_partition_subset.get_partition_keys()
+
+            num_materialized_and_not_failed = len(materialized_partition_subset) - len(
+                [k for k in failed_keys if k in materialized_partition_subset]
             )
             num_materialized_and_not_failed_or_in_progress = num_materialized_and_not_failed - len(
                 [
@@ -862,12 +859,16 @@ class GrapheneAssetNode(graphene.ObjectType):
                 ]
             )
 
+            num_failed_and_not_in_progress = len(
+                [k for k in failed_keys if k not in in_progress_subset]
+            )
+
             return GraphenePartitionStats(
                 numMaterialized=num_materialized_and_not_failed_or_in_progress,
                 numPartitions=partitions_def_data.get_partitions_definition().get_num_partitions(
                     dynamic_partitions_store=self._dynamic_partitions_loader
                 ),
-                numFailed=len(failed_partition_subset),
+                numFailed=num_failed_and_not_in_progress,
                 numMaterializing=len(in_progress_subset),
             )
         else:

@@ -199,7 +199,7 @@ def test_execute_subset_on_celery_k8s(dagster_docker_image, helm_namespace, dagi
     assert "PIPELINE_SUCCESS" in result, f"no match, result: {result}"
 
 
-def test_execute_on_celery_k8s_retry_pipeline(
+def test_execute_on_celery_k8s_retry_job(
     dagster_docker_image, dagster_instance, helm_namespace, dagit_url
 ):
     run_config = merge_dicts(
@@ -431,7 +431,7 @@ def test_execute_on_celery_k8s_with_hard_failure(
                 job_namespace={"env": "DAGSTER_K8S_PIPELINE_RUN_NAMESPACE"},
             ),
         ),
-        {"solids": {"hard_fail_or_0": {"config": {"fail": True}}}},
+        {"ops": {"hard_fail_or_0": {"config": {"fail": True}}}},
     )
 
     run_id = launch_run_over_graphql(

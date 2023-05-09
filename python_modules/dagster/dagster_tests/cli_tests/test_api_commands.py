@@ -163,7 +163,7 @@ def test_execute_run_with_secrets_loader():
         ), f"no match, result: {result.stdout}"
 
 
-def test_execute_run_fail_pipeline():
+def test_execute_run_fail_job():
     with instance_for_test(
         overrides={
             "compute_logs": {

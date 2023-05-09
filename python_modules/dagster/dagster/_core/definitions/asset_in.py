@@ -68,7 +68,7 @@ class AssetIn(
 
         return super(AssetIn, cls).__new__(
             cls,
-            key=AssetKey.from_coerceable(key) if key is not None else None,
+            key=AssetKey.from_coercible(key) if key is not None else None,
             metadata=check.opt_inst_param(metadata, "metadata", Mapping),
             key_prefix=check.opt_list_param(key_prefix, "key_prefix", of_type=str),
             input_manager_key=check.opt_str_param(input_manager_key, "input_manager_key"),

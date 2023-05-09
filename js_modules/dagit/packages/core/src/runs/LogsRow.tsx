@@ -89,7 +89,6 @@ export class Structured extends React.Component<StructuredProps, StructuredState
 
 export const LOGS_ROW_STRUCTURED_FRAGMENT = gql`
   fragment LogsRowStructuredFragment on DagsterRunEvent {
-    __typename
     ... on MessageEvent {
       message
       eventType
@@ -185,6 +184,8 @@ export const LOGS_ROW_STRUCTURED_FRAGMENT = gql`
       fileKey
       stepKeys
       externalUrl
+      externalStdoutUrl
+      externalStderrUrl
     }
   }
 
@@ -253,7 +254,6 @@ export class Unstructured extends React.Component<UnstructuredProps> {
 
 export const LOGS_ROW_UNSTRUCTURED_FRAGMENT = gql`
   fragment LogsRowUnstructuredFragment on DagsterRunEvent {
-    __typename
     ... on MessageEvent {
       message
       timestamp

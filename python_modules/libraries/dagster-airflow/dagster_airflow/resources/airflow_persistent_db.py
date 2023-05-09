@@ -10,6 +10,7 @@ from dagster import (
     Field,
     InitResourceContext,
     ResourceDefinition,
+    StringSource,
     _check as check,
 )
 
@@ -96,7 +97,7 @@ def make_persistent_airflow_db_resource(
         resource_fn=AirflowPersistentDatabase.from_resource_context,
         config_schema={
             "uri": Field(
-                str,
+                StringSource,
                 default_value=uri,
                 is_required=False,
             ),

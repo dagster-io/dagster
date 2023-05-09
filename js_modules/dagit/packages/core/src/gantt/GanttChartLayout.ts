@@ -56,7 +56,11 @@ export const buildLayout = (params: BuildLayoutParams) => {
       return;
     }
     box.x = x;
-    box.children.forEach((child) => deepen(child, box.x + box.width + BOX_SPACING_X));
+    box.children.forEach((child) => {
+      if (child.key !== box.key) {
+        deepen(child, box.x + box.width + BOX_SPACING_X);
+      }
+    });
   };
   roots.forEach((box) => deepen(box, LEFT_INSET));
 

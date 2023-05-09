@@ -98,7 +98,6 @@ export const AssetPartitionDetailLoader: React.FC<{assetKey: AssetKey; partition
 export const ASSET_PARTITION_DETAIL_QUERY = gql`
   query AssetPartitionDetailQuery($assetKey: AssetKeyInput!, $partitionKey: String!) {
     assetNodeOrError(assetKey: $assetKey) {
-      __typename
       ... on AssetNode {
         id
         latestRunForPartition(partition: $partitionKey) {
@@ -121,7 +120,6 @@ export const ASSET_PARTITION_DETAIL_QUERY = gql`
     }
   }
   fragment AssetPartitionLatestRunFragment on Run {
-    __typename
     id
     status
     endTime

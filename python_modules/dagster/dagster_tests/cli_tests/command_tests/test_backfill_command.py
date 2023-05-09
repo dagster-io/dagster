@@ -109,7 +109,7 @@ def test_backfill_partition_enum(backfill_args_context: BackfillCommandTestConte
 
 
 @pytest.mark.parametrize("backfill_args_context", backfill_command_contexts())
-def test_backfill_tags_pipeline(backfill_args_context: BackfillCommandTestContext):
+def test_backfill_tags_job(backfill_args_context: BackfillCommandTestContext):
     with backfill_args_context as (cli_args, instance):
         args = merge_dicts(
             cli_args,

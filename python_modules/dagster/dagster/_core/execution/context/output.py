@@ -19,6 +19,7 @@ from dagster._core.definitions.events import (
     AssetKey,
     AssetMaterialization,
     AssetObservation,
+    CoercibleToAssetKey,
 )
 from dagster._core.definitions.metadata import (
     ArbitraryMetadataMapping,
@@ -804,7 +805,7 @@ def build_output_context(
     resource_config: Optional[Mapping[str, object]] = None,
     resources: Optional[Mapping[str, object]] = None,
     op_def: Optional["OpDefinition"] = None,
-    asset_key: Optional[Union[AssetKey, str]] = None,
+    asset_key: Optional[CoercibleToAssetKey] = None,
     partition_key: Optional[str] = None,
 ) -> "OutputContext":
     """Builds output context from provided parameters.
@@ -856,7 +857,7 @@ def build_output_context(
     resource_config = check.opt_mapping_param(resource_config, "resource_config", key_type=str)
     resources = check.opt_mapping_param(resources, "resources", key_type=str)
     op_def = check.opt_inst_param(op_def, "op_def", OpDefinition)
-    asset_key = AssetKey.from_coerceable(asset_key) if asset_key else None
+    asset_key = AssetKey.from_coercible(asset_key) if asset_key else None
     partition_key = check.opt_str_param(partition_key, "partition_key")
 
     return OutputContext(
