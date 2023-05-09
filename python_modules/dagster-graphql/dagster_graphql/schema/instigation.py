@@ -383,7 +383,10 @@ class GrapheneTickEvaluation(graphene.ObjectType):
     class Meta:
         name = "TickEvaluation"
 
-    def __init__(self, execution_data):
+    def __init__(
+        self,
+        execution_data: Union[ScheduleExecutionData, SensorExecutionData, SerializableErrorInfo],
+    ):
         check.inst_param(
             execution_data,
             "execution_data",
@@ -405,18 +408,18 @@ class GrapheneTickEvaluation(graphene.ObjectType):
             if not isinstance(execution_data, SerializableErrorInfo)
             else None
         )
-        dynamicPartitionsRequests = None
-        if isinstance(execution_data, SensorExecutionData):
-            dynamicPartitionsRequests = [
-                GrapheneDynamicPartitionsRequest(request)
-                for request in execution_data.dynamic_partitions_requests
-            ]
+
+        self._dynamic_partitions_requests = (
+            execution_data.dynamic_partitions_requests
+            if isinstance(execution_data, SensorExecutionData)
+            else None
+        )
+
         cursor = execution_data.cursor if isinstance(execution_data, SensorExecutionData) else None
         super().__init__(
             skipReason=skip_reason,
             error=error,
             cursor=cursor,
-            dynamicPartitionsRequests=dynamicPartitionsRequests,
         )
 
     def resolve_runRequests(self, _graphene_info: ResolveInfo):
@@ -424,6 +427,15 @@ class GrapheneTickEvaluation(graphene.ObjectType):
             return self._run_requests
 
         return [GrapheneRunRequest(run_request) for run_request in self._run_requests]
+
+    def resolve_dynamicPartitionsRequests(self, _graphene_info: ResolveInfo):
+        if not self._dynamic_partitions_requests:
+            return self._dynamic_partitions_requests
+
+        return [
+            GrapheneDynamicPartitionsRequest(request)
+            for request in self._dynamic_partitions_requests
+        ]
 
 
 class GrapheneRunRequest(graphene.ObjectType):
