@@ -7,8 +7,10 @@ import {AnalyticsContext} from '../../../app/analytics';
 import {
   BulkActionStatus,
   buildAssetBackfillData,
+  buildAssetKey,
   buildAssetPartitionsStatusCounts,
   buildPartitionBackfill,
+  buildUnpartitionedAssetStatus,
 } from '../../../graphql/types';
 import {BackfillPage} from '../BackfillPage';
 import {buildBackfillDetailsQuery} from '../__fixtures__/buildBackfillDetails';
@@ -47,6 +49,9 @@ export const Canceled = () => {
   return <Template mocks={[CanceledResponse]} />;
 };
 
+const assetAKey = buildAssetKey({path: ['assetA']});
+const assetBKey = buildAssetKey({path: ['assetB']});
+
 const CompletedResponse = buildBackfillDetailsQuery(
   '1',
   buildPartitionBackfill({
@@ -55,25 +60,53 @@ const CompletedResponse = buildBackfillDetailsQuery(
     timestamp: Date.now() / 1000 - 10000,
     assetBackfillData: buildAssetBackfillData({
       assetBackfillStatuses: [
+        buildUnpartitionedAssetStatus({
+          assetKey: assetAKey,
+          failed: false,
+          materialized: false,
+          inProgress: false,
+        }),
+        buildUnpartitionedAssetStatus({
+          assetKey: assetBKey,
+          failed: true,
+          materialized: false,
+          inProgress: false,
+        }),
+        buildUnpartitionedAssetStatus({
+          assetKey: assetAKey,
+          failed: false,
+          materialized: true,
+          inProgress: false,
+        }),
+        buildUnpartitionedAssetStatus({
+          assetKey: assetBKey,
+          failed: false,
+          materialized: false,
+          inProgress: true,
+        }),
         buildAssetPartitionsStatusCounts({
+          assetKey: assetAKey,
           numPartitionsMaterialized: 50,
           numPartitionsFailed: 50,
           numPartitionsTargeted: 100,
           numPartitionsInProgress: 0,
         }),
         buildAssetPartitionsStatusCounts({
+          assetKey: assetBKey,
           numPartitionsMaterialized: 10,
           numPartitionsFailed: 90,
           numPartitionsTargeted: 100,
           numPartitionsInProgress: 0,
         }),
         buildAssetPartitionsStatusCounts({
+          assetKey: assetAKey,
           numPartitionsMaterialized: 10,
           numPartitionsFailed: 90,
           numPartitionsTargeted: 100,
           numPartitionsInProgress: 0,
         }),
         buildAssetPartitionsStatusCounts({
+          assetKey: assetBKey,
           numPartitionsMaterialized: 10,
           numPartitionsFailed: 90,
           numPartitionsTargeted: 100,
