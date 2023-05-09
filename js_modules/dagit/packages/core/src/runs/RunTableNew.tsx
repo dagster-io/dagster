@@ -19,6 +19,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {ShortcutHandler} from '../app/ShortcutHandler';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {RunsFilter} from '../graphql/types';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
@@ -43,7 +44,6 @@ import {
 } from './RunUtils';
 import {RunFilterToken} from './RunsFilterInput';
 import {RunTableRunFragment} from './types/RunTable.types';
-import {ShortcutHandler} from '../app/ShortcutHandler';
 
 interface RunTableProps {
   runs: RunTableRunFragment[];

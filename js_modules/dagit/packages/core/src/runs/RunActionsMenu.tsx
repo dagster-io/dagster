@@ -18,6 +18,7 @@ import {
 } from '@dagster-io/ui';
 import * as React from 'react';
 import {useHistory} from 'react-router-dom';
+import styled from 'styled-components/macro';
 
 import {AppContext} from '../app/AppContext';
 import {showSharedToaster} from '../app/DomUtils';
@@ -53,7 +54,6 @@ import {
   LaunchPipelineReexecutionMutationVariables,
 } from './types/RunUtils.types';
 import {useJobAvailabilityErrorForRun} from './useJobAvailabilityErrorForRun';
-import styled from 'styled-components/macro';
 
 export const RunActionsMenu: React.FC<{
   run: RunTableRunFragment;
