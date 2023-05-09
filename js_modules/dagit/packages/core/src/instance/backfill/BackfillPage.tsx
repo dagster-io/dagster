@@ -174,90 +174,83 @@ export const BackfillPage = () => {
             <tr>
               <th style={{width: '50%'}}>Asset name</th>
               <th>
-                <Link to={getRunsUrl('targeted')}>Partitions targeted</a>
+                <Link to={getRunsUrl('targeted')}>Partitions targeted</Link>
               </th>
               <th>
-                <Link to={getRunsUrl('inProgress')}>In progress</a>
+                <Link to={getRunsUrl('inProgress')}>In progress</Link>
               </th>
               <th>
-                <Link to={getRunsUrl('complete')}>Completed</a>
+                <Link to={getRunsUrl('complete')}>Completed</Link>
               </th>
               <th>
-                <Link to={getRunsUrl('failed')}>Failed</a>
+                <Link to={getRunsUrl('failed')}>Failed</Link>
               </th>
             </tr>
           </thead>
           <tbody>
             {backfill.assetBackfillData?.assetBackfillStatuses.map((asset) => {
-              if (
-                ['AssetPartitionsStatusCounts', 'UnpartitionedAssetStatus'].includes(
-                  asset.__typename,
-                )
-              ) {
-                let targeted;
-                let inProgress;
-                let completed;
-                let failed;
-                if (asset.__typename === 'AssetPartitionsStatusCounts') {
-                  targeted = asset.numPartitionsTargeted;
-                  inProgress = asset.numPartitionsInProgress;
-                  completed = asset.numPartitionsMaterialized;
-                  failed = asset.numPartitionsFailed;
-                } else {
-                  targeted = 1;
-                  failed = asset.failed ? 1 : 0;
-                  inProgress = asset.inProgress ? 1 : 0;
-                  completed = asset.materialized ? 1 : 0;
-                }
-                return (
-                  <tr
-                    key={tokenForAssetKey(asset.assetKey)}
-                    data-testid={testId(`backfill-asset-row-${tokenForAssetKey(asset.assetKey)}`)}
-                  >
-                    <td>
-                      <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
-                        <div>
-                          <Link to={assetDetailsPathForKey(asset.assetKey)}>
-                            {asset.assetKey.path.join('/')}
-                          </Link>
-                        </div>
-                        <div>
-                          <StatusBar
-                            targeted={targeted}
-                            inProgress={inProgress}
-                            completed={completed}
-                            failed={failed}
-                          />
-                        </div>
-                      </Box>
-                    </td>
-                    {asset.__typename === 'AssetPartitionsStatusCounts' ? (
-                      <>
-                        <td>{targeted}</td>
-                        <td>{inProgress}</td>
-                        <td>{completed}</td>
-                        <td>{failed}</td>
-                      </>
-                    ) : (
-                      <>
-                        <td>-</td>
-                        <td>
-                          {inProgress ? (
-                            <Tag icon="spinner" intent="primary">
-                              In progress
-                            </Tag>
-                          ) : (
-                            '-'
-                          )}
-                        </td>
-                        <td>{completed ? <Tag intent="success">Completed</Tag> : '-'}</td>
-                        <td>{failed ? <Tag intent="danger">Failed</Tag> : '-'}</td>
-                      </>
-                    )}
-                  </tr>
-                );
+              let targeted;
+              let inProgress;
+              let completed;
+              let failed;
+              if (asset.__typename === 'AssetPartitionsStatusCounts') {
+                targeted = asset.numPartitionsTargeted;
+                inProgress = asset.numPartitionsInProgress;
+                completed = asset.numPartitionsMaterialized;
+                failed = asset.numPartitionsFailed;
+              } else {
+                targeted = 1;
+                failed = asset.failed ? 1 : 0;
+                inProgress = asset.inProgress ? 1 : 0;
+                completed = asset.materialized ? 1 : 0;
               }
-              return null;
+              return (
+                <tr
+                  key={tokenForAssetKey(asset.assetKey)}
+                  data-testid={testId(`backfill-asset-row-${tokenForAssetKey(asset.assetKey)}`)}
+                >
+                  <td>
+                    <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
+                      <div>
+                        <Link to={assetDetailsPathForKey(asset.assetKey)}>
+                          {asset.assetKey.path.join('/')}
+                        </Link>
+                      </div>
+                      <div>
+                        <StatusBar
+                          targeted={targeted}
+                          inProgress={inProgress}
+                          completed={completed}
+                          failed={failed}
+                        />
+                      </div>
+                    </Box>
+                  </td>
+                  {asset.__typename === 'AssetPartitionsStatusCounts' ? (
+                    <>
+                      <td>{targeted}</td>
+                      <td>{inProgress}</td>
+                      <td>{completed}</td>
+                      <td>{failed}</td>
+                    </>
+                  ) : (
+                    <>
+                      <td>-</td>
+                      <td>
+                        {inProgress ? (
+                          <Tag icon="spinner" intent="primary">
+                            In progress
+                          </Tag>
+                        ) : (
+                          '-'
+                        )}
+                      </td>
+                      <td>{completed ? <Tag intent="success">Completed</Tag> : '-'}</td>
+                      <td>{failed ? <Tag intent="danger">Failed</Tag> : '-'}</td>
+                    </>
+                  )}
+                </tr>
+              );
             })}
           </tbody>
         </Table>
