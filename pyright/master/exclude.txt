@@ -8,4 +8,5 @@ examples/project_fully_featured
 examples/assets_dbt_python
 examples/assets_modern_data_stack
 examples/assets_smoke_test
+examples/project_analytics
 examples/tutorial_dbt_dagster/tutorial_template

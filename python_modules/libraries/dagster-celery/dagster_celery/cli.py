@@ -30,7 +30,11 @@ def get_config_value_from_yaml(yaml_path: Optional[str]) -> Mapping[str, Any]:
     parsed_yaml = load_yaml_from_path(yaml_path) or {}
     assert isinstance(parsed_yaml, dict)
     # Would be better not to hardcode this path
-    return parsed_yaml.get("execution", {}).get("celery", {}) or {}
+    return (
+        parsed_yaml.get("execution", {}).get("config", {})
+        or parsed_yaml.get("execution", {}).get("celery", {})  # legacy config
+        or {}
+    )
 
 
 def get_app(config_yaml: Optional[str] = None) -> CeleryExecutor:

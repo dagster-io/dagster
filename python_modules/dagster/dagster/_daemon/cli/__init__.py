@@ -42,9 +42,7 @@ def _get_heartbeat_tolerance():
     help="Set the log level for any code servers spun up by the daemon.",
     show_default=True,
     default="warning",
-    type=click.Choice(
-        ["critical", "error", "warning", "info", "debug", "trace"], case_sensitive=False
-    ),
+    type=click.Choice(["critical", "error", "warning", "info", "debug"], case_sensitive=False),
 )
 @click.option(
     "--instance-ref",

@@ -8,9 +8,7 @@ setup(
         "dagster-wandb",
         "onnxruntime",
         "skl2onnx",
-        # Pin onnx with min version to ensure protobuf 4 compatability
-        # Pin onnx with max version until https://github.com/onnx/onnx/issues/5202 is resolved
-        "onnx>=1.13.0,<1.14.0",
+        "onnx>=1.13.0",  # Ensure a version is installed that is protobuf 4 compatible
         "joblib",
         "torch",
         "torchvision",

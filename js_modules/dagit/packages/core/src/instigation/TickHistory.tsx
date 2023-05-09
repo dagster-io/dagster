@@ -19,7 +19,7 @@ import zoomPlugin from 'chartjs-plugin-zoom';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {SharedToaster} from '../app/DomUtils';
+import {showSharedToaster} from '../app/DomUtils';
 import {useFeatureFlags} from '../app/Flags';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
@@ -221,9 +221,9 @@ export const TicksTable = ({
                           {truncate(tick.cursor || '')}
                         </div>
                         <CopyButton
-                          onClick={() => {
+                          onClick={async () => {
                             copyToClipboard(tick.cursor || '');
-                            SharedToaster.show({
+                            await showSharedToaster({
                               message: <div>Copied value</div>,
                               intent: 'success',
                             });

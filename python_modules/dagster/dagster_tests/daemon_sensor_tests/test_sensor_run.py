@@ -21,9 +21,12 @@ from dagster import (
     Field,
     HourlyPartitionsDefinition,
     JobSelector,
+    MultiPartitionKey,
+    MultiPartitionsDefinition,
     Output,
     RepositorySelector,
     SourceAsset,
+    StaticPartitionsDefinition,
     WeeklyPartitionsDefinition,
     asset,
     build_asset_reconciliation_sensor,
@@ -574,6 +577,62 @@ def error_on_deleted_dynamic_partitions_run_requests_sensor(context):
     )
 
 
+dynamic1 = DynamicPartitionsDefinition(name="dynamic1")
+dynamic2 = DynamicPartitionsDefinition(name="dynamic2")
+
+
+@asset(partitions_def=MultiPartitionsDefinition({"dynamic1": dynamic1, "dynamic2": dynamic2}))
+def multipartitioned_with_two_dynamic_dims():
+    pass
+
+
+@sensor(asset_selection=AssetSelection.keys(multipartitioned_with_two_dynamic_dims.key))
+def success_on_multipartition_run_request_with_two_dynamic_dimensions_sensor(context):
+    return SensorResult(
+        dynamic_partitions_requests=[
+            dynamic1.build_add_request(["1"]),
+            dynamic2.build_add_request(["2"]),
+        ],
+        run_requests=[
+            RunRequest(partition_key=MultiPartitionKey({"dynamic1": "1", "dynamic2": "2"}))
+        ],
+    )
+
+
+@sensor(asset_selection=AssetSelection.keys(multipartitioned_with_two_dynamic_dims.key))
+def error_on_multipartition_run_request_with_two_dynamic_dimensions_sensor(context):
+    return SensorResult(
+        dynamic_partitions_requests=[
+            dynamic1.build_add_request(["1"]),
+            dynamic2.build_add_request(["2"]),
+        ],
+        run_requests=[
+            RunRequest(partition_key=MultiPartitionKey({"dynamic1": "2", "dynamic2": "1"}))
+        ],
+    )
+
+
+@asset(
+    partitions_def=MultiPartitionsDefinition(
+        {
+            "static": StaticPartitionsDefinition(["a", "b", "c"]),
+            "time": DailyPartitionsDefinition("2023-01-01"),
+        }
+    )
+)
+def multipartitioned_asset_with_static_time_dimensions():
+    pass
+
+
+@sensor(asset_selection=AssetSelection.keys(multipartitioned_asset_with_static_time_dimensions.key))
+def multipartitions_with_static_time_dimensions_run_requests_sensor(context):
+    return SensorResult(
+        run_requests=[
+            RunRequest(partition_key=MultiPartitionKey({"static": "b", "time": "2023-01-05"}))
+        ],
+    )
+
+
 daily_partitions_def = DailyPartitionsDefinition(start_date="2022-08-01")
 
 
@@ -650,6 +709,9 @@ def the_repo():
         error_on_deleted_dynamic_partitions_run_requests_sensor,
         partitioned_pipeline_success_sensor,
         daily_partitioned_job,
+        success_on_multipartition_run_request_with_two_dynamic_dimensions_sensor,
+        error_on_multipartition_run_request_with_two_dynamic_dimensions_sensor,
+        multipartitions_with_static_time_dimensions_run_requests_sensor,
     ]
 
 
@@ -3108,6 +3170,89 @@ def test_error_on_deleted_dynamic_partitions_run_request(
         expected_error="Dynamic partition key 2 for partitions def 'quux' is invalid",
     )
     assert set(instance.get_dynamic_partitions("quux")) == set(["2"])
+
+
+@pytest.mark.parametrize(
+    "sensor_name, is_expected_success",
+    [
+        ("success_on_multipartition_run_request_with_two_dynamic_dimensions_sensor", True),
+        ("error_on_multipartition_run_request_with_two_dynamic_dimensions_sensor", False),
+    ],
+)
+def test_multipartitions_with_dynamic_dims_run_request_sensor(
+    sensor_name, is_expected_success, executor, instance, workspace_context, external_repo
+):
+    external_sensor = external_repo.get_external_sensor(sensor_name)
+    instance.add_instigator_state(
+        InstigatorState(
+            external_sensor.get_external_origin(),
+            InstigatorType.SENSOR,
+            InstigatorStatus.RUNNING,
+        )
+    )
+    ticks = instance.get_ticks(
+        external_sensor.get_external_origin_id(), external_sensor.selector_id
+    )
+    assert len(ticks) == 0
+
+    evaluate_sensors(workspace_context, executor)
+
+    ticks = instance.get_ticks(
+        external_sensor.get_external_origin_id(), external_sensor.selector_id
+    )
+    assert len(ticks) == 1
+
+    if is_expected_success:
+        validate_tick(
+            ticks[0],
+            external_sensor,
+            expected_datetime=None,
+            expected_status=TickStatus.SUCCESS,
+            expected_run_ids=None,
+        )
+    else:
+        validate_tick(
+            ticks[0],
+            external_sensor,
+            expected_datetime=None,
+            expected_status=TickStatus.FAILURE,
+            expected_run_ids=None,
+            expected_error="does not exist in the set of valid partition keys",
+        )
+
+
+def test_multipartition_asset_with_static_time_dimensions_run_requests_sensor(
+    executor, instance, workspace_context, external_repo
+):
+    external_sensor = external_repo.get_external_sensor(
+        "multipartitions_with_static_time_dimensions_run_requests_sensor"
+    )
+    instance.add_instigator_state(
+        InstigatorState(
+            external_sensor.get_external_origin(),
+            InstigatorType.SENSOR,
+            InstigatorStatus.RUNNING,
+        )
+    )
+    ticks = instance.get_ticks(
+        external_sensor.get_external_origin_id(), external_sensor.selector_id
+    )
+    assert len(ticks) == 0
+
+    evaluate_sensors(workspace_context, executor)
+
+    ticks = instance.get_ticks(
+        external_sensor.get_external_origin_id(), external_sensor.selector_id
+    )
+    assert len(ticks) == 1
+
+    validate_tick(
+        ticks[0],
+        external_sensor,
+        expected_datetime=None,
+        expected_status=TickStatus.SUCCESS,
+        expected_run_ids=None,
+    )
 
 
 def test_code_location_construction():

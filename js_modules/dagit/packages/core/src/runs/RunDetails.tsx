@@ -20,7 +20,7 @@ import {useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {AppContext} from '../app/AppContext';
-import {SharedToaster} from '../app/DomUtils';
+import {showSharedToaster} from '../app/DomUtils';
 import {useCopyToClipboard} from '../app/browser';
 import {RunStatus} from '../graphql/types';
 import {NO_LAUNCH_PERMISSION_MESSAGE} from '../launchpad/LaunchRootExecutionButton';
@@ -137,9 +137,9 @@ export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({r
   const copy = useCopyToClipboard();
   const history = useHistory();
 
-  const copyConfig = () => {
+  const copyConfig = async () => {
     copy(runConfigYaml);
-    SharedToaster.show({
+    await showSharedToaster({
       intent: 'success',
       icon: 'copy_to_clipboard_done',
       message: 'Copied!',
