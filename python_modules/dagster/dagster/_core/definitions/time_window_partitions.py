@@ -123,7 +123,7 @@ class TimeWindowPartitionsDefinition(
             start_dt = pendulum.instance(datetime.strptime(start, fmt), tz=timezone)
 
         if not end:
-            end_dt = pendulum.instance(datetime.strptime("9999-12-31", "%Y-%m-%d"), tz=timezone)
+            end_dt = None
         elif isinstance(end, datetime):
             end_dt = pendulum.instance(end, tz=timezone)
         else:
