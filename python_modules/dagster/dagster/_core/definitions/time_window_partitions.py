@@ -479,6 +479,9 @@ class TimeWindowPartitionsDefinition(
             else pendulum.now(self.timezone)
         )
 
+        if self.end and self.end < current_time:
+            current_time = self.end
+
         if self.end_offset == 0:
             return next(iter(self._reverse_iterate_time_windows(current_time)))
         else:
