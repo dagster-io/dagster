@@ -128,9 +128,7 @@ DEFAULT_POOL_RECYCLE = 3600  # 1 hr
     help="Set the log level for any code servers spun up by dagit.",
     show_default=True,
     default="info",
-    type=click.Choice(
-        ["critical", "error", "warning", "info", "debug", "trace"], case_sensitive=False
-    ),
+    type=click.Choice(["critical", "error", "warning", "info", "debug"], case_sensitive=False),
 )
 @click.option(
     "--instance-ref",
