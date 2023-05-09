@@ -3,9 +3,9 @@ import os
 
 import pandas as pd
 from dagster import ConfigurableResource, EnvVar
-from dagster_dbt import dbt_cli_resource
-from dagster_duckdb_pandas import duckdb_pandas_io_manager
-from dagster_gcp_pandas import bigquery_pandas_io_manager
+from dagster_dbt import DbtCliClientResource
+from dagster_duckdb_pandas import DuckDBPandasIOManager
+from dagster_gcp_pandas import BigQueryPandasIOManager
 from dagster_hex.resources import hex_resource
 from google.cloud import bigquery
 from pydantic import Field
@@ -18,11 +18,9 @@ HEX_API_KEY = os.getenv("HEX_API_KEY")
 HEX_PROJECT_ID = os.getenv("HEX_PROJECT_ID")
 
 
-duckdb_io_manager = duckdb_pandas_io_manager.configured(
-    {"database": os.path.join(DBT_PROJECT_DIR, "dbt_duckdb.db")}
-)
+duckdb_io_manager = DuckDBPandasIOManager(database=os.path.join(DBT_PROJECT_DIR, "dbt_duckdb.db"))
 
-bigquery_pandas_io_manager = bigquery_pandas_io_manager.configured({"project": "westmarindata"})
+bigquery_pandas_io_manager = BigQueryPandasIOManager(project="westmarindata")
 
 
 class PyPiResource(ConfigurableResource):
@@ -102,17 +100,15 @@ class GithubSteampipeResource(GithubResource):
 resource_def = {
     "LOCAL": {
         "io_manager": duckdb_io_manager,
-        "hex": hex_resource.configured({"api_key": HEX_API_KEY}),
         "github": GithubLocalResource(
             input_file=os.path.join(FILE_PATH, "../data/github_star_count.csv")
         ),
         "pypi": PyPiLocalResource(input_file=os.path.join(FILE_PATH, "../data/pypi_downloads.csv")),
-        "dbt": dbt_cli_resource.configured(
-            {
-                "project_dir": DBT_PROJECT_DIR,
-                "profiles_dir": DBT_PROFILE_DIR,
-                "target": "local",
-            }
+        "hex": hex_resource.configured({"api_key": HEX_API_KEY}),
+        "dbt": DbtCliClientResource(
+            project_dir=DBT_PROJECT_DIR,
+            profiles_dir=DBT_PROFILE_DIR,
+            target="local",
         ),
     },
     "PROD": {
@@ -120,12 +116,10 @@ resource_def = {
         "github": GithubSteampipeResource(streampipe_conn=EnvVar("STEAMPIPE_CONN")),
         "pypi": PyPiBigQueryResource(table="bigquery-public-data.pypi.file_downloads"),
         "hex": hex_resource.configured({"api_key": HEX_API_KEY}),
-        "dbt": dbt_cli_resource.configured(
-            {
-                "project_dir": DBT_PROJECT_DIR,
-                "profiles_dir": DBT_PROFILE_DIR,
-                "target": "prod",
-            }
+        "dbt": DbtCliClientResource(
+            project_dir=DBT_PROJECT_DIR,
+            profiles_dir=DBT_PROFILE_DIR,
+            target="prod",
         ),
     },
 }
