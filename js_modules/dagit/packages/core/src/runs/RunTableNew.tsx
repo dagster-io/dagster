@@ -319,20 +319,22 @@ const RunRow: React.FC<{
             </Box>
           )}
           <Box flex={{direction: 'row', gap: 8, wrap: 'wrap'}}>
-            <Box>
-              <BaseTag
-                fillColor={Colors.Gray100}
-                label={
-                  <ButtonLink
-                    onClick={() => {
-                      setShowRunTags(true);
-                    }}
-                  >
-                    {run.tags.length} tag{run.tags.length === 1 ? '' : 's'}
-                  </ButtonLink>
-                }
-              />
-            </Box>
+            {run.tags.length ? (
+              <Box>
+                <BaseTag
+                  fillColor={Colors.Gray100}
+                  label={
+                    <ButtonLink
+                      onClick={() => {
+                        setShowRunTags(true);
+                      }}
+                    >
+                      {run.tags.length} tag{run.tags.length === 1 ? '' : 's'}
+                    </ButtonLink>
+                  }
+                />
+              </Box>
+            ) : null}
             <RunTagsWrapper>
               <RunTags
                 tags={
