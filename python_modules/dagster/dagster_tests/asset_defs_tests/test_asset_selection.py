@@ -79,18 +79,24 @@ def aliens() -> Tuple[str, str, str]:
     return "zorg", "zapp", "zort"
 
 
+@asset(key_prefix="animals")
+def zebra():
+    return "zebra"
+
+
 _AssetList: TypeAlias = Iterable[Union[AssetsDefinition, SourceAsset]]
 
 
 @pytest.fixture
 def all_assets() -> _AssetList:
-    return [earth, alice, bob, candace, danny, edgar, fiona, george, robots, aliens]
+    return [earth, alice, bob, candace, danny, edgar, fiona, george, robots, aliens, zebra]
 
 
 def _asset_keys_of(assets_defs: _AssetList) -> AbstractSet[AssetKey]:
     return reduce(
         operator.or_,
         [item.keys if isinstance(item, AssetsDefinition) else {item.key} for item in assets_defs],
+        set(),
     )
 
 
@@ -126,6 +132,14 @@ def test_asset_selection_keys(all_assets: _AssetList):
 
     sel = AssetSelection.keys("alice", "bob")
     assert sel.resolve(all_assets) == _asset_keys_of({alice, bob})
+
+
+def test_asset_selection_key_prefixes(all_assets: _AssetList):
+    sel = AssetSelection.key_prefixes("animals")
+    assert sel.resolve(all_assets) == _asset_keys_of({zebra})
+
+    sel = AssetSelection.key_prefixes("plants")
+    assert sel.resolve(all_assets) == _asset_keys_of(set())
 
 
 def test_select_source_asset_keys():
@@ -173,7 +187,7 @@ def test_asset_selection_sinks(all_assets: _AssetList):
     assert sel.resolve(all_assets) == _asset_keys_of({bob})
 
     sel = AssetSelection.all().sinks()
-    assert sel.resolve(all_assets) == _asset_keys_of({edgar, george, robots, aliens})
+    assert sel.resolve(all_assets) == _asset_keys_of({edgar, george, robots, aliens, zebra})
 
     sel = AssetSelection.groups("ladies").sinks()
     # fiona is a sink because it has no downstream dependencies within the "ladies" group
