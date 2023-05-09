@@ -43,7 +43,7 @@
     "webpack-bundle-analyzer": "^4.7.0"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "start": "react-scripts start -p 3001",
     "build": "react-scripts build",
     "lint": "eslint src/ --ext=.tsx,.ts,.js --fix -c .eslintrc.js",
     "test": "react-scripts test",

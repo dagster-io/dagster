@@ -26,6 +26,21 @@ import {LiveDataForNode} from './Utils';
 import {ASSET_NODE_NAME_MAX_LENGTH} from './layout';
 import {AssetNodeFragment} from './types/AssetNode.types';
 
+export enum StatusCase {
+  LOADING = 'LOADING',
+  SOURCE_OBSERVING = 'SOURCE_OBSERVING',
+  SOURCE_OBSERVED = 'SOURCE_OBSERVED',
+  SOURCE_NEVER_OBSERVED = 'SOURCE_NEVER_OBSERVED',
+  SOURCE_NO_STATE = 'SOURCE_NO_STATE',
+  MATERIALIZING = 'MATERIALIZING',
+  LATE_OR_FAILED = 'LATE_OR_FAILED',
+  NEVER_MATERIALIZED = 'NEVER_MATERIALIZED',
+  MATERIALIZED = 'MATERIALIZED',
+  PARTITIONS_FAILED = 'PARTITIONS_FAILED',
+  PARTITIONS_MISSING = 'PARTITIONS_MISSING',
+  PARTITIONS_MATERIALIZED = 'PARTITIONS_MATERIALIZED',
+}
+
 export const AssetNode: React.FC<{
   definition: AssetNodeFragment;
   liveData?: LiveDataForNode;
@@ -142,6 +157,7 @@ export function buildAssetNodeStatusContent({
 }) {
   if (!liveData) {
     return {
+      case: StatusCase.LOADING,
       background: Colors.Gray100,
       border: Colors.Gray300,
       content: (
@@ -166,6 +182,7 @@ export function buildAssetNodeStatusContent({
   if (definition.isSource) {
     if (materializingRunId) {
       return {
+        case: StatusCase.SOURCE_OBSERVING,
         background: Colors.Gray100,
         border: Colors.Gray300,
         content: (
@@ -182,6 +199,7 @@ export function buildAssetNodeStatusContent({
     }
     if (liveData?.lastObservation) {
       return {
+        case: StatusCase.SOURCE_OBSERVED,
         background: Colors.Gray100,
         border: Colors.Gray300,
         content: (
@@ -209,6 +227,7 @@ export function buildAssetNodeStatusContent({
     }
     if (definition.isObservable) {
       return {
+        case: StatusCase.SOURCE_NEVER_OBSERVED,
         background: Colors.Gray100,
         border: Colors.Gray300,
         content: (
@@ -229,6 +248,7 @@ export function buildAssetNodeStatusContent({
     }
 
     return {
+      case: StatusCase.SOURCE_NO_STATE,
       background: Colors.Gray100,
       border: Colors.Gray300,
       content: <span>–</span>,
@@ -240,6 +260,7 @@ export function buildAssetNodeStatusContent({
     const numMaterializing = liveData.partitionStats?.numMaterializing;
 
     return {
+      case: StatusCase.MATERIALIZING,
       background: Colors.Blue50,
       border: Colors.Blue500,
       content: (
@@ -273,8 +294,15 @@ export function buildAssetNodeStatusContent({
         ? AssetPartitionStatus.MISSING
         : AssetPartitionStatus.MATERIALIZED
     ];
+    const statusCase =
+      late || numFailed
+        ? StatusCase.PARTITIONS_FAILED
+        : numMissing
+        ? StatusCase.PARTITIONS_MISSING
+        : StatusCase.PARTITIONS_MATERIALIZED;
 
     return {
+      case: statusCase,
       background,
       border,
       content: (
@@ -315,6 +343,7 @@ export function buildAssetNodeStatusContent({
 
   if (runWhichFailedToMaterialize || late) {
     return {
+      case: StatusCase.LATE_OR_FAILED,
       background: Colors.Red50,
       border: Colors.Red500,
       content: (
@@ -367,6 +396,7 @@ export function buildAssetNodeStatusContent({
 
   if (!lastMaterialization) {
     return {
+      case: StatusCase.NEVER_MATERIALIZED,
       background: Colors.Yellow50,
       border: Colors.Yellow500,
       content: (
@@ -386,6 +416,7 @@ export function buildAssetNodeStatusContent({
   }
 
   return {
+    case: StatusCase.MATERIALIZED,
     background: Colors.Green50,
     border: Colors.Green500,
     content: (

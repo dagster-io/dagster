@@ -64,45 +64,45 @@ export const useRunListTabs = (filter: RunsFilter = {}) => {
 
   const tabs = (
     <JoinedButtons>
-      <Button to={urlForStatus([])} id="all" $active={selectedTab === 'all'}>
+      <ActivatableButton to={urlForStatus([])} id="all" $active={selectedTab === 'all'}>
         All runs
-      </Button>
-      <Button
+      </ActivatableButton>
+      <ActivatableButton
         to={urlForStatus(Array.from(queuedStatuses))}
         id="queued"
         $active={selectedTab === 'queued'}
       >
         Queued ({queuedCount ?? 'indeterminate'})
-      </Button>
-      <Button
+      </ActivatableButton>
+      <ActivatableButton
         to={urlForStatus(Array.from(inProgressStatuses))}
         id="in-progress"
         $active={selectedTab === 'in-progress'}
       >
         In progress ({inProgressCount ?? 'indeterminate'})
-      </Button>
-      <Button
+      </ActivatableButton>
+      <ActivatableButton
         to={urlForStatus(Array.from(doneStatuses))}
         id="done"
         $active={selectedTab === 'done'}
       >
         Done
-      </Button>
-      <Button
+      </ActivatableButton>
+      <ActivatableButton
         title="Scheduled"
         to="/runs/scheduled"
         id="scheduled"
         $active={selectedTab === 'scheduled'}
       >
         Scheduled
-      </Button>
+      </ActivatableButton>
     </JoinedButtons>
   );
 
   return {tabs, queryResult};
 };
 
-const Button = styled(AnchorButton)<{$active: boolean}>`
+export const ActivatableButton = styled(AnchorButton)<{$active: boolean}>`
   ${(props) =>
     props.$active &&
     `

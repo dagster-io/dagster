@@ -4,18 +4,46 @@ import {Redirect, Route, Switch} from 'react-router-dom';
 import {InstanceBackfills} from '../instance/InstanceBackfills';
 import {BackfillPage} from '../instance/backfill/BackfillPage';
 
+import {OverviewActivityRoot} from './OverviewActivityRoot';
 import {OverviewJobsRoot} from './OverviewJobsRoot';
 import {OverviewResourcesRoot} from './OverviewResourcesRoot';
 import {OverviewSchedulesRoot} from './OverviewSchedulesRoot';
 import {OverviewSensorsRoot} from './OverviewSensorsRoot';
 import {OverviewTimelineRoot} from './OverviewTimelineRoot';
+import {PageHeader, Heading, Box} from '@dagster-io/ui';
+import {OverviewTabs} from './OverviewTabs';
+import {useFeatureFlags} from '../app/Flags';
 
 export const OverviewRoot = () => {
+  const {flagOverviewAssetsTab} = useFeatureFlags();
   return (
     <Switch>
-      <Route path="/overview/timeline">
-        <OverviewTimelineRoot />
-      </Route>
+      {flagOverviewAssetsTab ? (
+        <Route path="/overview/activity">
+          <OverviewActivityRoot />
+        </Route>
+      ) : (
+        <Route path="/overview/timeline">
+          <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
+            <OverviewTimelineRoot
+              TabButton={() => null}
+              Header={React.useCallback(
+                ({
+                  refreshState,
+                }: {
+                  refreshState: React.ComponentProps<typeof OverviewTabs>['refreshState'];
+                }) => (
+                  <PageHeader
+                    title={<Heading>Overview</Heading>}
+                    tabs={<OverviewTabs tab="timeline" refreshState={refreshState} />}
+                  />
+                ),
+                [],
+              )}
+            />
+          </Box>
+        </Route>
+      )}
       <Route path="/overview/jobs">
         <OverviewJobsRoot />
       </Route>
@@ -34,7 +62,16 @@ export const OverviewRoot = () => {
       <Route path="/overview/resources">
         <OverviewResourcesRoot />
       </Route>
-      <Route path="*" render={() => <Redirect to="/overview/timeline" />} />
+      <Route
+        path="*"
+        render={() =>
+          flagOverviewAssetsTab ? (
+            <Redirect to="/overview/activity" />
+          ) : (
+            <Redirect to="/overview/timeline" />
+          )
+        }
+      />
     </Switch>
   );
 };

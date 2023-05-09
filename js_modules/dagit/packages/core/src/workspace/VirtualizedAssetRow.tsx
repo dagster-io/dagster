@@ -268,7 +268,7 @@ const LIVE_QUERY_DELAY = 250;
  * as the user scans past rows. (The best way to skip the useLiveDataForAssetKeys work is
  * to pass it an empty array of asset keys.)
  */
-function useLiveDataOrLatestMaterializationDebounced(
+export function useLiveDataOrLatestMaterializationDebounced(
   path: string[],
   type: 'folder' | 'asset' | 'asset_non_sda',
 ) {
