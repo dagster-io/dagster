@@ -5,11 +5,11 @@ description: Learn how to use I/O managers to save your data.
 
 # Tutorial, part 7: Managing your own I/O
 
-In this section, you'll take a step back and learn how to use more of Dagster's versatility without using every feature provided to you. Throughout this tutorial, you've learned multiple Dagster concepts that explain how Dagster can manage functionality on your behalf, ex. I/O managers to read and write from storage.
+In this section, you'll take a step back and learn how to use more of Dagster's versatility without using every available feature. Throughout this tutorial, you've learned multiple Dagster concepts that explain how Dagster can manage functionality on your behalf, e.g. I/O managers to read and write from storage.
 
-When building the dictionary of word counts, the `most_frequent_words` asset currently uses a static list of stop words to decide what words to ignore. You’ll notice that despite the length of the list, many unhelpful words and prepositions are still not filtered out. You’d like to ignore those words. To scale this properly, you’ll use a CSV of stop words found on the internet, use it for `most_frequent_words`, and update it before the refresh to ensure your list of stop words is up-to-date.
+When building the dictionary of word counts, the `most_frequent_words` asset currently uses a static list of stop words to decide what words to ignore. You’ll notice that despite the length of the list, many unhelpful words and prepositions aren't filtered out. You’d like to ignore those words. To scale this properly, you’ll download a CSV of stop words from the internet, include it in `most_frequent_words`, and update it before the refresh to ensure that the stop words list is up-to-date.
 
-You'll create assets to manage reading and writing from storage on your own. This is useful for multiple purposes, such as:
+In this section, you'll create assets to manage reading and writing from storage on your own. This is useful for multiple purposes, such as:
 
 - Your pipeline manages I/O on its own by using other libraries/tools that write to storage.
 - You want to run a SQL query that creates or updates a table on the database.
@@ -20,11 +20,11 @@ By the end of this section, you'll also have assets that depend on other assets 
 
 ---
 
-## Step 1: Creating an asset without an I/O Manager
+## Step 1: Creating an asset without an I/O manager
 
-Many valid situations exist where you would want to avoid using an I/O manager to write an asset back to memory. One of these situations is downloading a file from the internet. Because the file is downloaded directly onto the machine rather than loading into memory and returning it, it is unnecessary to use an I/O manager to write the data back to storage.
+Many valid situations exist where you would want to avoid using an I/O manager to write an asset back to memory. One of these situations is downloading a file from the internet. Because the file is downloaded directly onto the machine rather than loading into memory and returning it, it's unnecessary to use an I/O manager to write the data back to storage.
 
-In your `assets.py`, create a new asset called `stopwords_zip` by copying and pasting the code below:
+In `assets.py`, create a new asset called `stopwords_zip` by copying and pasting the code below:
 
 ```python file=/tutorial/managing_your_own_io/assets.py startafter=start_stopwords_zip endbefore=end_stopwords_zip
 import urllib.request  # Addition: new import at the top of `assets.py`
@@ -47,7 +47,7 @@ This asset downloads a file from the internet, where Dagster stores it on the sa
 
 These are the only two changes required to have an asset not use an I/O manager.
 
-In the Dagster UI, refresh your code location, observe the new asset, and materialize it as you have with the previous assets. Confirm that this works by finding the `stopwords.zip` in the `/data` directory made in the [Saving your data section of the tutorial](/tutorial/saving-your-data).
+In the Dagster UI, refresh your code location, observe the new asset, and materialize it as you have with the previous assets. Confirm that this works by locating the `stopwords.zip` in the `/data` directory made in the [Saving your data section of the tutorial](/tutorial/saving-your-data).
 
 ---
 
@@ -55,11 +55,9 @@ In the Dagster UI, refresh your code location, observe the new asset, and materi
 
 By default, an asset loads its dependencies into memory when it materializes. However, there are situations where you would want to avoid doing this. If you're operating directly on data in storage, such as unzipping a zip file, you don't need to load the data into memory.
 
-To tell an asset not to load a dependency into memory when materializing, you can use the <PyObject object="asset" decorator /> decorator’s `non_argument_deps` parameter to establish the dependency instead of passing it in as an argument of the asset’s function definition.
+To tell an asset not to load a dependency into memory when materializing, you can use the <PyObject object="asset" decorator /> decorator’s `non_argument_deps` parameter to establish the dependency instead of including it as an argument of the asset’s function definition.
 
-To tell an asset not to load a dependency into memory when materializing, you can use the `@asset` decorator’s `non_argument_deps` parameter to establish the dependency instead of passing it in as an argument of the asset’s function definition.
-
-Copy the code below into your `assets.py` to create a new asset called `stopwords_csv`:
+Copy the code below into `assets.py` to create a new asset called `stopwords_csv`:
 
 ```python file=/tutorial/managing_your_own_io/assets.py startafter=start_stopwords_csv endbefore=end_stopwords_csv
 import zipfile  # Note: remember to add imports to the top of the file
@@ -71,17 +69,15 @@ def stopwords_csv() -> None:
         zip_ref.extractall("data")
 ```
 
-In the UI, reload your code location, observe the new `stopwords_csv` asset, and notice how it depends on the `stopwords_zip` asset.
+In the Dagster UI, reload your code location, observe the new `stopwords_csv` asset, and take note of how it depends on the `stopwords_zip` asset.
 
 ---
 
 ## Step 3: Combining assets with and without I/O managers
 
-When defining an asset, you can combine assets that use I/O managers with assets that don’t. Using the following code, update your `most_frequent_words` asset to use `stopwords_csv` instead of a static list of stop words:
-
 Now that you’ve made two assets that don’t use I/O managers, you’ll connect the `stopwords_csv` asset to your `most_frequent_words` asset to use a more comprehensive list of stop words.
 
-When defining an asset, you can combine assets that use I/O managers with assets that don’t. Update your `most_frequent_words` asset by replacing the static list of stopwords. Replace it with `stopwords_csv` by updating your code to match the below:
+When defining an asset, you can combine assets that use I/O managers with assets that don’t. Using the following code, update your `most_frequent_words` asset to use `stopwords_csv` instead of a static list of stop words:
 
 ```python file=/tutorial/managing_your_own_io/assets.py startafter=start_updated_most_frequent_words endbefore=end_updated_most_frequent_words
 import csv  # Note: Remember to add all new imports to the top
@@ -102,3 +98,15 @@ def most_frequent_words(topstories):
 
     # Keep the rest of the function the same
 ```
+
+To validate that this worked, navigate to the Dagster UI and materialize the entire asset graph to see the dependency between `most_frequent_words` and `stopwords_csv`.
+
+---
+
+## Next steps
+
+Congratulations! 🎉 You've written your first pipeline in Dagster!
+
+In this section, you learned how to create assets without an I/O manager and define them as dependencies on other assets. You also learned how to combine assets that use I/O managers with assets that don't.
+
+Now that you've completed the tutorial, find out what else you can do with our [Next steps](/tutorial/next-steps).
