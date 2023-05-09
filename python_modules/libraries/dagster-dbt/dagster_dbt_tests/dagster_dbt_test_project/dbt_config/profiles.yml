@@ -7,3 +7,15 @@ duckdb:
       database: test
       schema: test-schema
       threads: 4
+    target_a:
+      type: duckdb
+      path: "{{ env_var('DUCKDB_DB_PATH', './target-a.duckdb') }}"
+      database: test
+      schema: test-schema
+      threads: 4
+    target_b:
+      type: duckdb
+      path: "{{ env_var('DUCKDB_DB_PATH', './target-b.duckdb') }}"
+      database: test
+      schema: test-schema
+      threads: 4
