@@ -66,7 +66,7 @@ class TimeWindowPartitionsDefinition(
         [
             ("start", PublicAttr[datetime]),
             ("timezone", PublicAttr[str]),
-            ("end", PublicAttr[datetime]),
+            ("end", PublicAttr[Optional[datetime]]),
             ("fmt", PublicAttr[str]),
             ("end_offset", PublicAttr[int]),
             ("cron_schedule", PublicAttr[str]),
