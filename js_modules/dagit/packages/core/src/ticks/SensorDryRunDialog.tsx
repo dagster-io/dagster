@@ -294,7 +294,9 @@ const SensorDryRun: React.FC<Props> = ({repoAddress, name, currentCursor, onClos
               />
             ) : null}
             {dynamicPartitionRequests?.length ? (
-              <DynamicPartitionRequests requests={dynamicPartitionRequests} />
+              <div style={{marginTop: '24px'}}>
+                <DynamicPartitionRequests requests={dynamicPartitionRequests} />
+              </div>
             ) : null}
           </Box>
         </Box>

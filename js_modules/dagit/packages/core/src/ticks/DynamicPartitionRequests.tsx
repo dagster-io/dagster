@@ -6,9 +6,11 @@ import {DynamicPartitionsRequestType} from '../graphql/types';
 import {DynamicPartitionRequestFragment} from './types/SensorDryRunDialog.types';
 
 export function DynamicPartitionRequests({
+  includeTitle = true,
   requests,
 }: {
-  requests: DynamicPartitionRequestFragment[];
+  includeTitle?: boolean;
+  requests: Pick<DynamicPartitionRequestFragment, 'partitionKeys' | 'partitionsDefName' | 'type'>[];
 }) {
   const rows = React.useMemo(() => {
     if (!requests.length) {
@@ -32,11 +34,13 @@ export function DynamicPartitionRequests({
   }
 
   return (
-    <Box flex={{direction: 'column', gap: 12, grow: 1}} margin={{top: 24}}>
-      <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
-        <Icon name="partition" />
-        <Subheading>Dynamic Partition Requests</Subheading>
-      </Box>
+    <Box flex={{direction: 'column', gap: 12, grow: 1}}>
+      {includeTitle ? (
+        <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+          <Icon name="partition" />
+          <Subheading>Dynamic Partition Requests</Subheading>
+        </Box>
+      ) : null}
       <Table style={{borderRight: `1px solid ${Colors.KeylineGray}`}}>
         <thead>
           <tr>

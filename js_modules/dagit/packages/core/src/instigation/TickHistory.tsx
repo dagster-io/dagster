@@ -13,6 +13,10 @@ import {
   FontFamily,
   Icon,
   IconWrapper,
+  ButtonLink,
+  Dialog,
+  Button,
+  DialogFooter,
 } from '@dagster-io/ui';
 import {Chart} from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
@@ -29,6 +33,7 @@ import {InstigationTickStatus, InstigationType} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
+import {DynamicPartitionRequests} from '../ticks/DynamicPartitionRequests';
 import {TickLogDialog} from '../ticks/TickLogDialog';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
@@ -38,6 +43,7 @@ import {RunStatusLink, RUN_STATUS_FRAGMENT} from './InstigationUtils';
 import {LiveTickTimeline} from './LiveTickTimeline';
 import {TickDetailsDialog} from './TickDetailsDialog';
 import {
+  DynamicPartitionsRequestResultFragment,
   HistoryTickFragment,
   TickHistoryQuery,
   TickHistoryQueryVariables,
@@ -199,6 +205,7 @@ export const TicksTable = ({
               ) : null}
               <th style={{width: 180}}>Runs</th>
               {flagSensorScheduleLogging ? <th style={{width: 180}}>Logs</th> : null}
+              <th style={{width: 200}}>Requests</th>
             </tr>
           </thead>
           <tbody>
@@ -253,6 +260,9 @@ export const TicksTable = ({
                     {tick.logKey ? <a onClick={() => setLogTick(tick)}>View logs</a> : <>&mdash;</>}
                   </td>
                 ) : null}
+                <td>
+                  <DynamicPartitionRequestsCell requests={tick.dynamicPartitionsRequestResults} />
+                </td>
               </tr>
             ))}
           </tbody>
@@ -360,6 +370,52 @@ export const TickHistoryTimeline = ({
   );
 };
 
+function DynamicPartitionRequestsCell({
+  requests,
+}: {
+  requests: DynamicPartitionsRequestResultFragment[];
+}) {
+  const [isDialogOpen, setDialogOpen] = React.useState(false);
+  const nonSkipOnlyRequests = requests.filter((request) => request.partitionKeys?.length);
+  if (!nonSkipOnlyRequests.length) {
+    return null;
+  }
+
+  return (
+    <>
+      <ButtonLink
+        onClick={() => {
+          setDialogOpen(true);
+        }}
+      >
+        {nonSkipOnlyRequests.length} dynamic partition change
+        {nonSkipOnlyRequests.length === 1 ? '' : 's'}
+      </ButtonLink>
+      <Dialog
+        isOpen={isDialogOpen}
+        onClose={() => {
+          setDialogOpen(false);
+        }}
+        style={{width: '60%', minWidth: '400px'}}
+        icon="partition"
+        title="Dynamic partition changes"
+      >
+        <DynamicPartitionRequests includeTitle={false} requests={nonSkipOnlyRequests} />
+        <DialogFooter>
+          <Button
+            intent="primary"
+            onClick={() => {
+              setDialogOpen(false);
+            }}
+          >
+            Close
+          </Button>
+        </DialogFooter>
+      </Dialog>
+    </>
+  );
+}
+
 const JOB_TICK_HISTORY_QUERY = gql`
   query TickHistoryQuery(
     $instigationSelector: InstigationSelector!
@@ -406,6 +462,16 @@ const JOB_TICK_HISTORY_QUERY = gql`
     }
     logKey
     ...TickTagFragment
+    dynamicPartitionsRequestResults {
+      ...DynamicPartitionsRequestResultFragment
+    }
+  }
+
+  fragment DynamicPartitionsRequestResultFragment on DynamicPartitionsRequestResult {
+    partitionsDefName
+    partitionKeys
+    skippedPartitionKeys
+    type
   }
 
   ${RUN_STATUS_FRAGMENT}

@@ -40,6 +40,13 @@ export type TickHistoryQuery = {
               error: {__typename: 'PythonError'; message: string; stack: Array<string>};
             }>;
           } | null;
+          dynamicPartitionsRequestResults: Array<{
+            __typename: 'DynamicPartitionsRequestResult';
+            partitionsDefName: string;
+            partitionKeys: Array<string> | null;
+            skippedPartitionKeys: Array<string>;
+            type: Types.DynamicPartitionsRequestType;
+          }>;
         }>;
       }
     | {__typename: 'InstigationStateNotFoundError'}
@@ -82,4 +89,19 @@ export type HistoryTickFragment = {
       error: {__typename: 'PythonError'; message: string; stack: Array<string>};
     }>;
   } | null;
+  dynamicPartitionsRequestResults: Array<{
+    __typename: 'DynamicPartitionsRequestResult';
+    partitionsDefName: string;
+    partitionKeys: Array<string> | null;
+    skippedPartitionKeys: Array<string>;
+    type: Types.DynamicPartitionsRequestType;
+  }>;
+};
+
+export type DynamicPartitionsRequestResultFragment = {
+  __typename: 'DynamicPartitionsRequestResult';
+  partitionsDefName: string;
+  partitionKeys: Array<string> | null;
+  skippedPartitionKeys: Array<string>;
+  type: Types.DynamicPartitionsRequestType;
 };
