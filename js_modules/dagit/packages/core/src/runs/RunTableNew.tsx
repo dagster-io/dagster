@@ -357,7 +357,7 @@ const RunRow: React.FC<{
             </RunTagsWrapper>
           </Box>
         </Box>
-        {isHovered ? (
+        {isHovered && run.tags.length ? (
           <ShortcutHandler
             key="runtabletags"
             onShortcut={() => {
