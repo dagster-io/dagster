@@ -443,3 +443,16 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     def free_concurrency_slots(self, run_id: str, step_key: Optional[str] = None):
         """Frees concurrency slots for a given run/step."""
         raise NotImplementedError()
+
+    @abstractmethod
+    def can_claim_from_pending(self, concurrency_key: str, run_id: str, step_key: str):
+        """Indicates that a given step can now claim a concurrency, given its priority relative to
+        other pending steps
+        .
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def remove_pending_step(self, run_id: str, step_key: Optional[str] = None):
+        """Removes the pending step for a given run, step."""
+        raise NotImplementedError()
