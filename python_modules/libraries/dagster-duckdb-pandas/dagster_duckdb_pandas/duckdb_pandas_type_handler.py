@@ -60,7 +60,7 @@ class DuckDBPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
                     TableSchema(
                         columns=[
                             TableColumn(name=name, type=str(dtype))
-                            for name, dtype in obj.dtypes.iteritems()
+                            for name, dtype in obj.dtypes.items()
                         ]
                     )
                 ),
