@@ -203,8 +203,10 @@ def cancel_partition_backfill(
         assert_permission_for_location(
             graphene_info, Permissions.CANCEL_PARTITION_BACKFILL, location_name
         )
+        graphene_info.context.instance.update_backfill(
+            backfill.with_status(BulkActionStatus.CANCELED)
+        )
 
-    graphene_info.context.instance.update_backfill(backfill.with_status(BulkActionStatus.CANCELED))
     return GrapheneCancelBackfillSuccess(backfill_id=backfill_id)
 
 

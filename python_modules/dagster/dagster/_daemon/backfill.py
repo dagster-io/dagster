@@ -15,14 +15,16 @@ def execute_backfill_iteration(
     debug_crash_flags: Optional[Mapping[str, int]] = None,
 ) -> Iterable[Optional[SerializableErrorInfo]]:
     instance = workspace_process_context.instance
-    backfills = instance.get_backfills(status=BulkActionStatus.REQUESTED)
 
-    if not backfills:
-        logger.debug("No backfill jobs requested.")
+    in_progress_backfills = instance.get_backfills(status=BulkActionStatus.REQUESTED)
+    canceling_backfills = instance.get_backfills(status=BulkActionStatus.CANCELING)
+
+    if not in_progress_backfills and not canceling_backfills:
+        logger.debug("No backfill jobs in progress or canceling.")
         yield None
         return
 
-    for backfill_job in backfills:
+    for backfill_job in [*in_progress_backfills, *canceling_backfills]:
         backfill_id = backfill_job.backfill_id
 
         # refetch, in case the backfill was updated in the meantime

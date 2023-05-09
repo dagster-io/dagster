@@ -457,6 +457,8 @@ export const BackfillStatusTag = ({
         return <Tag intent="primary">In progress</Tag>;
       }
       return <Tag intent="warning">Incomplete</Tag>;
+    case BulkActionStatus.CANCELING:
+      return <Tag>Canceling</Tag>;
   }
 };
 
