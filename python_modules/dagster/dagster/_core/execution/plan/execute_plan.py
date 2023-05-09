@@ -1,5 +1,4 @@
 import sys
-import time
 from contextlib import ExitStack
 from typing import Iterator, Sequence, cast
 
@@ -27,8 +26,6 @@ from dagster._core.execution.plan.objects import (
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.storage.captured_log_manager import CapturedLogManager
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
-
-BLOCKED_SLEEP_INTERVAL = 1
 
 
 def inner_plan_execution_iterator(
@@ -63,7 +60,7 @@ def inner_plan_execution_iterator(
                 step = active_execution.get_next_step(register_steps=register_steps)
 
                 if not step:
-                    time.sleep(BLOCKED_SLEEP_INTERVAL)
+                    active_execution.sleep_til_ready()
                     continue
 
                 step_context = cast(

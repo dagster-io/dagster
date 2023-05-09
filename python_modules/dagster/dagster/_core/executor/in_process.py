@@ -15,13 +15,13 @@ from .base import Executor
 
 
 def in_process_plan_execution_iterator(
-    pipeline_context: PlanExecutionContext, execution_plan: ExecutionPlan
+    job_context: PlanExecutionContext, execution_plan: ExecutionPlan
 ) -> Iterator[DagsterEvent]:
     # utility function that registers steps to iterate through, to enforce op concurrency.  This
     # explicit flag is required because the `inner_plan_execution_iterator` is also used to
     # coordinate the plan execution within the step workers, after the steps have already been
     # registered by the executor.
-    return inner_plan_execution_iterator(pipeline_context, execution_plan, register_steps=True)
+    return inner_plan_execution_iterator(job_context, execution_plan, register_steps=True)
 
 
 class InProcessExecutor(Executor):
