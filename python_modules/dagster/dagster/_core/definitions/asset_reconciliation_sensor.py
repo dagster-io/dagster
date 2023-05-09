@@ -51,8 +51,8 @@ if TYPE_CHECKING:
 
 
 class AutoMaterializeCondition(Enum):
-    """Represents the set of conditions that can trigger auto-materialization for an asset.
-    """
+    """Represents the set of conditions that can trigger auto-materialization for an asset."""
+
     FRESHNESS = "FRESHNESS"
     DOWNSTREAM_FRESHNESS = "DOWNSTREAM_FRESHNESS"
     PARENT_MATERIALIZED = "PARENT_MATERIALIZED"
@@ -67,6 +67,7 @@ class AutoMaterializeReason(NamedTuple):
 
     Should not be instantiated directly by the user.
     """
+
     condition: AutoMaterializeCondition
 
     @staticmethod
@@ -87,9 +88,9 @@ class AutoMaterializeReason(NamedTuple):
 
 
 class AutoMaterializeSkipCondition(Enum):
-    """Represents the set of conditions that can prevent an asset from being auto-materialized.
-    """
-    PARENT_UNRECONCILED = "PARENT_UNRECONCILED"
+    """Represents the set of conditions that can prevent an asset from being auto-materialized."""
+
+    PARENT_OUTDATED = "PARENT_OUTDATED"
 
 
 @whitelist_for_serdes
@@ -101,13 +102,12 @@ class AutoMaterializeSkipReason(NamedTuple):
 
     Should not be instantiated directly by the user.
     """
+
     condition: AutoMaterializeSkipCondition
 
     @staticmethod
-    def parent_unreconciled() -> "AutoMaterializeSkipReason":
-        return AutoMaterializeSkipReason(
-            condition=AutoMaterializeSkipCondition.PARENT_UNRECONCILED
-        )
+    def parent_outdated() -> "AutoMaterializeSkipReason":
+        return AutoMaterializeSkipReason(condition=AutoMaterializeSkipCondition.PARENT_OUTDATED)
 
 
 @whitelist_for_serdes
@@ -783,7 +783,7 @@ def determine_asset_partitions_to_auto_materialize(
                 return True
         else:
             for candidate in candidates_unit:
-                skip_reasons[candidate].add(AutoMaterializeSkipReason.parent_unreconciled())
+                skip_reasons[candidate].add(AutoMaterializeSkipReason.parent_outdated())
         return False
 
     # will update materialize_reasons and skip_reasons
@@ -992,11 +992,7 @@ def reconcile(
     instance: "DagsterInstance",
     cursor: AssetReconciliationCursor,
     run_tags: Optional[Mapping[str, str]],
-) -> Tuple[
-    Sequence[RunRequest],
-    AssetReconciliationCursor,
-    Sequence[AutoMaterializeEvaluation],
-]:
+) -> Tuple[Sequence[RunRequest], AssetReconciliationCursor, Sequence[AutoMaterializeEvaluation],]:
     from dagster._utils.caching_instance_queryer import CachingInstanceQueryer  # expensive import
 
     current_time = pendulum.now("UTC")
@@ -1065,8 +1061,10 @@ def reconcile(
             newly_materialized_root_partitions_by_asset_key=newly_materialized_root_partitions_by_asset_key,
         ),
         build_auto_materialize_evaluations(
-            asset_graph, materialize_reasons, skip_reasons,
-        )
+            asset_graph,
+            materialize_reasons,
+            skip_reasons,
+        ),
     )
 
 
@@ -1111,6 +1109,7 @@ def build_run_requests(
 
     return run_requests
 
+
 def build_auto_materialize_evaluations(
     asset_graph: AssetGraph,
     materialize_reasons: Mapping[AssetKeyPartitionKey, AbstractSet[AutoMaterializeReason]],
@@ -1125,9 +1124,13 @@ def build_auto_materialize_evaluations(
     ] = defaultdict(set)
 
     for asset_partition, reasons in materialize_reasons.items():
-        materialize_reasons_by_asset_key[asset_partition.asset_key].update({(asset_partition, reason) for reason in reasons})
+        materialize_reasons_by_asset_key[asset_partition.asset_key].update(
+            {(asset_partition, reason) for reason in reasons}
+        )
     for asset_partition, reasons in skip_reasons.items():
-        skip_reasons_by_asset_key[asset_partition.asset_key].update({(asset_partition, reason) for reason in reasons})
+        skip_reasons_by_asset_key[asset_partition.asset_key].update(
+            {(asset_partition, reason) for reason in reasons}
+        )
 
     return [
         AutoMaterializeEvaluation.from_reasons(
@@ -1141,6 +1144,7 @@ def build_auto_materialize_evaluations(
             *skip_reasons_by_asset_key.keys(),
         }
     ]
+
 
 @experimental
 def build_asset_reconciliation_sensor(
