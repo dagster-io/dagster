@@ -66,6 +66,7 @@ class TimeWindowPartitionsDefinition(
         [
             ("start", PublicAttr[datetime]),
             ("timezone", PublicAttr[str]),
+            ("end", PublicAttr[Optional[datetime]]),
             ("fmt", PublicAttr[str]),
             ("end_offset", PublicAttr[int]),
             ("cron_schedule", PublicAttr[str]),
@@ -92,6 +93,7 @@ class TimeWindowPartitionsDefinition(
         timezone (Optional[str]): The timezone in which each time should exist.
             Supported strings for timezones are the ones provided by the
             `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
+        end (datetime): The last partition (excluding) in the set.
         fmt (str): The date format to use for partition_keys.
         end_offset (int): Extends the partition set by a number of partitions equal to the value
             passed. If end_offset is 0 (the default), the last partition ends before the current
@@ -103,6 +105,7 @@ class TimeWindowPartitionsDefinition(
         cls,
         start: Union[datetime, str],
         fmt: str,
+        end: Union[datetime, str, None] = None,
         schedule_type: Optional[ScheduleType] = None,
         timezone: Optional[str] = None,
         end_offset: int = 0,
@@ -118,6 +121,13 @@ class TimeWindowPartitionsDefinition(
             start_dt = pendulum.instance(start, tz=timezone)
         else:
             start_dt = pendulum.instance(datetime.strptime(start, fmt), tz=timezone)
+
+        if not end:
+            end_dt = None
+        elif isinstance(end, datetime):
+            end_dt = pendulum.instance(end, tz=timezone)
+        else:
+            end_dt = pendulum.instance(datetime.strptime(end, fmt), tz=timezone)
 
         if cron_schedule is not None:
             check.invariant(
@@ -145,7 +155,7 @@ class TimeWindowPartitionsDefinition(
             )
 
         return super(TimeWindowPartitionsDefinition, cls).__new__(
-            cls, start_dt, timezone, fmt, end_offset, cron_schedule
+            cls, start_dt, timezone, end_dt, fmt, end_offset, cron_schedule
         )
 
     def get_current_timestamp(self, current_time: Optional[datetime] = None) -> float:
@@ -169,6 +179,8 @@ class TimeWindowPartitionsDefinition(
 
         num_partitions = 0
         for time_window in self._iterate_time_windows(self.start):
+            if self.end and time_window.end.timestamp() > self.end.timestamp():
+                break
             if (
                 time_window.end.timestamp() <= current_timestamp
                 or partitions_past_current_time < self.end_offset
@@ -201,6 +213,8 @@ class TimeWindowPartitionsDefinition(
         for idx, time_window in enumerate(self._iterate_time_windows(self.start)):
             if time_window.end.timestamp() >= current_timestamp:
                 reached_end = True
+            if self.end and time_window.end.timestamp() > self.end.timestamp():
+                reached_end = True
             if (
                 time_window.end.timestamp() <= current_timestamp
                 or partitions_past_current_time < self.end_offset
@@ -229,6 +243,8 @@ class TimeWindowPartitionsDefinition(
         partitions_past_current_time = 0
         partition_keys: List[str] = []
         for time_window in self._iterate_time_windows(self.start):
+            if self.end and time_window.end.timestamp() > self.end.timestamp():
+                break
             if (
                 time_window.end.timestamp() <= current_timestamp
                 or partitions_past_current_time < self.end_offset
@@ -462,6 +478,9 @@ class TimeWindowPartitionsDefinition(
             if current_time
             else pendulum.now(self.timezone)
         )
+
+        if self.end and self.end < current_time:
+            current_time = self.end
 
         if self.end_offset == 0:
             return next(iter(self._reverse_iterate_time_windows(current_time)))
@@ -775,6 +794,7 @@ class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):
     def __new__(
         cls,
         start_date: Union[datetime, str],
+        end_date: Union[datetime, str, None] = None,
         minute_offset: int = 0,
         hour_offset: int = 0,
         timezone: Optional[str] = None,
@@ -787,6 +807,7 @@ class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):
             cls,
             schedule_type=ScheduleType.DAILY,
             start=start_date,
+            end=end_date,
             minute_offset=minute_offset,
             hour_offset=hour_offset,
             timezone=timezone,
@@ -933,6 +954,7 @@ class HourlyPartitionsDefinition(TimeWindowPartitionsDefinition):
     def __new__(
         cls,
         start_date: Union[datetime, str],
+        end_date: Union[datetime, str, None] = None,
         minute_offset: int = 0,
         timezone: Optional[str] = None,
         fmt: Optional[str] = None,
@@ -944,6 +966,7 @@ class HourlyPartitionsDefinition(TimeWindowPartitionsDefinition):
             cls,
             schedule_type=ScheduleType.HOURLY,
             start=start_date,
+            end=end_date,
             minute_offset=minute_offset,
             timezone=timezone,
             fmt=_fmt,
@@ -1063,6 +1086,7 @@ class MonthlyPartitionsDefinition(TimeWindowPartitionsDefinition):
     def __new__(
         cls,
         start_date: Union[datetime, str],
+        end_date: Union[datetime, str, None] = None,
         minute_offset: int = 0,
         hour_offset: int = 0,
         day_offset: int = 1,
@@ -1076,6 +1100,7 @@ class MonthlyPartitionsDefinition(TimeWindowPartitionsDefinition):
             cls,
             schedule_type=ScheduleType.MONTHLY,
             start=start_date,
+            end=end_date,
             minute_offset=minute_offset,
             hour_offset=hour_offset,
             day_offset=day_offset,
@@ -1207,6 +1232,7 @@ class WeeklyPartitionsDefinition(TimeWindowPartitionsDefinition):
     def __new__(
         cls,
         start_date: Union[datetime, str],
+        end_date: Union[datetime, str, None] = None,
         minute_offset: int = 0,
         hour_offset: int = 0,
         day_offset: int = 0,
@@ -1220,6 +1246,7 @@ class WeeklyPartitionsDefinition(TimeWindowPartitionsDefinition):
             cls,
             schedule_type=ScheduleType.WEEKLY,
             start=start_date,
+            end=end_date,
             minute_offset=minute_offset,
             hour_offset=hour_offset,
             day_offset=day_offset,

@@ -618,6 +618,7 @@ class ExternalTimeWindowPartitionsDefinitionData(
             ("timezone", Optional[str]),
             ("fmt", str),
             ("end_offset", int),
+            ("end", Optional[float]),
             ("cron_schedule", Optional[str]),
             # superseded by cron_schedule, but kept around for backcompat
             ("schedule_type", Optional[ScheduleType]),
@@ -636,6 +637,7 @@ class ExternalTimeWindowPartitionsDefinitionData(
         timezone: Optional[str],
         fmt: str,
         end_offset: int,
+        end: Optional[float] = None,
         cron_schedule: Optional[str] = None,
         schedule_type: Optional[ScheduleType] = None,
         minute_offset: Optional[int] = None,
@@ -649,6 +651,7 @@ class ExternalTimeWindowPartitionsDefinitionData(
             timezone=check.opt_str_param(timezone, "timezone"),
             fmt=check.str_param(fmt, "fmt"),
             end_offset=check.int_param(end_offset, "end_offset"),
+            end=check.opt_float_param(end, "end"),
             minute_offset=check.opt_int_param(minute_offset, "minute_offset"),
             hour_offset=check.opt_int_param(hour_offset, "hour_offset"),
             day_offset=check.opt_int_param(day_offset, "day_offset"),
@@ -663,6 +666,7 @@ class ExternalTimeWindowPartitionsDefinitionData(
                 timezone=self.timezone,
                 fmt=self.fmt,
                 end_offset=self.end_offset,
+                end=pendulum.from_timestamp(self.end, tz=self.timezone) if self.end else None,
             )
         else:
             # backcompat case
@@ -672,6 +676,7 @@ class ExternalTimeWindowPartitionsDefinitionData(
                 timezone=self.timezone,
                 fmt=self.fmt,
                 end_offset=self.end_offset,
+                end=pendulum.from_timestamp(self.end, tz=self.timezone) if self.end else None,
                 minute_offset=self.minute_offset,
                 hour_offset=self.hour_offset,
                 day_offset=self.day_offset,
@@ -1678,6 +1683,11 @@ def external_time_window_partitions_definition_from_def(
     return ExternalTimeWindowPartitionsDefinitionData(
         cron_schedule=partitions_def.cron_schedule,
         start=pendulum.instance(partitions_def.start, tz=partitions_def.timezone).timestamp(),
+        end=(
+            pendulum.instance(partitions_def.end, tz=partitions_def.timezone).timestamp()
+            if partitions_def.end
+            else None
+        ),
         timezone=partitions_def.timezone,
         fmt=partitions_def.fmt,
         end_offset=partitions_def.end_offset,

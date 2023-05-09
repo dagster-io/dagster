@@ -1123,6 +1123,7 @@ snapshots['test_external_repository_data 1'] = '''{
         "__class__": "ExternalTimeWindowPartitionsDefinitionData",
         "cron_schedule": "15 0 * * *",
         "day_offset": null,
+        "end": null,
         "end_offset": 0,
         "fmt": "%Y-%m-%d",
         "hour_offset": null,
