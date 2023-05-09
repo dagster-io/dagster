@@ -7,10 +7,10 @@ from dagster import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
     MonthlyPartitionsDefinition,
+    TimeWindow,
     TimeWindowPartitionMapping,
     TimeWindowPartitionsDefinition,
     WeeklyPartitionsDefinition,
-    TimeWindow,
 )
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.errors import DagsterInvalidInvocationError
@@ -459,36 +459,43 @@ def test_get_upstream_with_current_time(
             12,
             "%Y-%m-%d",
         ),
-])
+    ],
+)
 def test_partition_with_end_date(
     partitions_def: TimeWindowPartitionsDefinition,
     first_partition_window: Sequence[str],
     last_partition_window: Sequence[str],
     number_of_partitions: int,
-    fmt: str
+    fmt: str,
 ):
     first_partition_window_ = TimeWindow(
         start=pendulum.instance(datetime.strptime(first_partition_window[0], fmt), tz="UTC"),
-        end=pendulum.instance(datetime.strptime(first_partition_window[1], fmt), tz="UTC")
+        end=pendulum.instance(datetime.strptime(first_partition_window[1], fmt), tz="UTC"),
     )
 
     last_partition_window_ = TimeWindow(
         start=pendulum.instance(datetime.strptime(last_partition_window[0], fmt), tz="UTC"),
-        end=pendulum.instance(datetime.strptime(last_partition_window[1], fmt), tz="UTC")
+        end=pendulum.instance(datetime.strptime(last_partition_window[1], fmt), tz="UTC"),
     )
 
     # get_last_partition_window
     assert partitions_def.get_last_partition_window() == last_partition_window_
     # get_next_partition_window
     assert partitions_def.get_next_partition_window(partitions_def.start) == first_partition_window_
-    assert partitions_def.get_next_partition_window(last_partition_window_.start) == last_partition_window_
+    assert (
+        partitions_def.get_next_partition_window(last_partition_window_.start)
+        == last_partition_window_
+    )
     assert not partitions_def.get_next_partition_window(last_partition_window_.end)
     # get_partition_keys
     assert len(partitions_def.get_partition_keys()) == number_of_partitions
     assert partitions_def.get_partition_keys()[0] == first_partition_window[0]
     assert partitions_def.get_partition_keys()[-1] == last_partition_window[0]
     # get_next_partition_key
-    assert partitions_def.get_next_partition_key(first_partition_window[0]) == first_partition_window[1]
+    assert (
+        partitions_def.get_next_partition_key(first_partition_window[0])
+        == first_partition_window[1]
+    )
     assert not partitions_def.get_next_partition_key(last_partition_window[0])
     # get_last_partition_key
     assert partitions_def.get_last_partition_key() == last_partition_window[0]
