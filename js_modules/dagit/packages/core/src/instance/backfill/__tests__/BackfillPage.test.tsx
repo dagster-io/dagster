@@ -155,21 +155,19 @@ describe('BackfillPage', () => {
       ),
     );
 
-    await waitFor(() => {
-      // Check if the loaded content is displayed
-      expect(screen.getByText('Jan 1, 1970, 12:16:40 AM')).toBeVisible();
-      expect(screen.getByText('Duration')).toBeVisible();
-      expect(screen.getByText('Partition Selection')).toBeVisible();
-      expect(screen.getByText('Status')).toBeVisible();
-      expect(screen.getByText('Asset name')).toBeVisible();
-      expect(screen.getByText('Partitions targeted')).toBeVisible();
-      expect(screen.getByText('In progress')).toBeVisible();
-      expect(screen.getByText('Completed')).toBeVisible();
-      expect(screen.getByText('Failed')).toBeVisible();
-    });
+    const detailRow = await waitFor(() => screen.getByTestId('backfill-page-details'));
+    // Check if the loaded content is displayed
+    expect(getByText(detailRow, 'Jan 1, 1970, 12:16:40 AM')).toBeVisible();
+    expect(getByText(detailRow, 'Duration')).toBeVisible();
+    expect(getByText(detailRow, 'Partition Selection')).toBeVisible();
+    expect(getByText(detailRow, 'Status')).toBeVisible();
+    expect(getByText(detailRow, 'Asset name')).toBeVisible();
+    expect(getByText(detailRow, 'Partitions targeted')).toBeVisible();
+    expect(getByText(detailRow, 'In progress')).toBeVisible();
+    expect(getByText(detailRow, 'Completed')).toBeVisible();
+    expect(getByText(detailRow, 'Failed')).toBeVisible();
 
     const assetARow = await waitFor(() => screen.getByTestId('backfill-asset-row-assetA'));
-
     // Check if the correct data is displayed
     expect(getByText(assetARow, 'assetA')).toBeVisible();
     expect(getByText(assetARow, '33')).toBeVisible(); // numPartitionsTargeted
