@@ -136,7 +136,7 @@ export const BackfillPage = () => {
             wrap: 'nowrap',
             alignItems: 'center',
           }}
-          testid={testId('backfill-page-details')}
+          data-testid={testId('backfill-page-details')}
         >
           <Detail
             label="Created"

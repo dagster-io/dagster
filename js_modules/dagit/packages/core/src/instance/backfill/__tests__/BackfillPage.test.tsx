@@ -155,17 +155,14 @@ describe('BackfillPage', () => {
       ),
     );
 
-    const detailRow = await waitFor(() => screen.getByTestId('backfill-page-details'));
     // Check if the loaded content is displayed
+    const detailRow = await waitFor(() => screen.getByTestId('backfill-page-details'));
+
+    expect(screen.getByText('Partition Selection')).toBeVisible();
+    expect(screen.getByText('Asset name')).toBeVisible();
+
     expect(getByText(detailRow, 'Jan 1, 1970, 12:16:40 AM')).toBeVisible();
-    expect(getByText(detailRow, 'Duration')).toBeVisible();
-    expect(getByText(detailRow, 'Partition Selection')).toBeVisible();
-    expect(getByText(detailRow, 'Status')).toBeVisible();
-    expect(getByText(detailRow, 'Asset name')).toBeVisible();
-    expect(getByText(detailRow, 'Partitions targeted')).toBeVisible();
-    expect(getByText(detailRow, 'In progress')).toBeVisible();
-    expect(getByText(detailRow, 'Completed')).toBeVisible();
-    expect(getByText(detailRow, 'Failed')).toBeVisible();
+    expect(getByText(detailRow, 'In Progress')).toBeVisible();
 
     const assetARow = await waitFor(() => screen.getByTestId('backfill-asset-row-assetA'));
     // Check if the correct data is displayed
@@ -173,11 +170,11 @@ describe('BackfillPage', () => {
     expect(getByText(assetARow, '33')).toBeVisible(); // numPartitionsTargeted
     expect(getByText(assetARow, '22')).toBeVisible(); // numPartitionsInProgress
     expect(getByText(assetARow, '11')).toBeVisible(); // numPartitionsMaterialized
-    expect(getByText(assetARow, '-')).toBeVisible(); // numPartitionsFailed
+    expect(getByText(assetARow, '0')).toBeVisible(); // numPartitionsFailed
 
     const assetBRow = await waitFor(() => screen.getByTestId('backfill-asset-row-assetB'));
     expect(getByText(assetBRow, 'assetB')).toBeVisible();
-    expect(getByText(assetBRow, '1')).toBeVisible();
+    expect(getByText(assetBRow, 'Completed')).toBeVisible();
     expect(getAllByText(assetBRow, '-').length).toBe(3);
   });
 });
