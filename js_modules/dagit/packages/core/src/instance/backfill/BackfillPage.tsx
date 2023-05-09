@@ -27,6 +27,7 @@ import {PythonErrorInfo} from '../../app/PythonErrorInfo';
 import {QueryRefreshCountdown, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {useTrackPageView} from '../../app/analytics';
 import {Timestamp} from '../../app/time/Timestamp';
+import {tokenForAssetKey} from '../../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../../assets/assetDetailsPathForKey';
 import {BulkActionStatus, RunStatus} from '../../graphql/types';
 import {useDocumentTitle} from '../../hooks/useDocumentTitle';
@@ -173,16 +174,16 @@ export const BackfillPage = () => {
             <tr>
               <th style={{width: '50%'}}>Asset name</th>
               <th>
-                <a href={getRunsUrl('targeted')}>Partitions targeted</a>
+                <Link to={getRunsUrl('targeted')}>Partitions targeted</a>
               </th>
               <th>
-                <a href={getRunsUrl('inProgress')}>In progress</a>
+                <Link to={getRunsUrl('inProgress')}>In progress</a>
               </th>
               <th>
-                <a href={getRunsUrl('complete')}>Completed</a>
+                <Link to={getRunsUrl('complete')}>Completed</a>
               </th>
               <th>
-                <a href={getRunsUrl('failed')}>Failed</a>
+                <Link to={getRunsUrl('failed')}>Failed</a>
               </th>
             </tr>
           </thead>
@@ -210,15 +211,15 @@ export const BackfillPage = () => {
                 }
                 return (
                   <tr
-                    key={asset.assetKey.path.join('/')}
-                    data-testid={testId(`backfill-asset-row-${asset.assetKey.path.join('/')}`)}
+                    key={tokenForAssetKey(asset.assetKey)}
+                    data-testid={testId(`backfill-asset-row-${tokenForAssetKey(asset.assetKey)}`)}
                   >
                     <td>
                       <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
                         <div>
-                          <a href={assetDetailsPathForKey(asset.assetKey)}>
+                          <Link to={assetDetailsPathForKey(asset.assetKey)}>
                             {asset.assetKey.path.join('/')}
-                          </a>
+                          </Link>
                         </div>
                         <div>
                           <StatusBar
