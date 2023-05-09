@@ -257,25 +257,18 @@ const RunRow: React.FC<{
   const isReexecution = run.tags.some((tag) => tag.key === DagsterTag.ParentRunId);
 
   const [showRunTags, setShowRunTags] = React.useState(false);
-  const [showRunTagsIcon, setShowRunTagsIcon] = React.useState(false);
-
-  const containerRef = React.useRef<HTMLTableRowElement | null>(null);
-  React.useLayoutEffect(() => {
-    const mousemoveListener = (ev: MouseEvent) => {
-      if (!containerRef.current?.contains(ev.target as HTMLElement)) {
-        setShowRunTagsIcon(false);
-      } else {
-        setShowRunTagsIcon(true);
-      }
-    };
-    document.addEventListener('mousemove', mousemoveListener);
-    return () => {
-      document.removeEventListener('mousemove', mousemoveListener);
-    };
-  }, []);
+  const [isHovered, setIsHovered] = React.useState(false);
 
   return (
-    <Row highlighted={!!isHighlighted} ref={containerRef}>
+    <Row
+      highlighted={!!isHighlighted}
+      onMouseEnter={() => {
+        setIsHovered(true);
+      }}
+      onMouseLeave={() => {
+        setIsHovered(false);
+      }}
+    >
       <td>
         {canTerminateOrDelete && onToggleChecked ? (
           <Checkbox checked={!!checked} onChange={onChange} />
@@ -362,7 +355,7 @@ const RunRow: React.FC<{
             </RunTagsWrapper>
           </Box>
         </Box>
-        {showRunTags || showRunTagsIcon ? (
+        {isHovered ? (
           <ShortcutHandler
             key="runtabletags"
             onShortcut={() => {
@@ -390,35 +383,33 @@ const RunRow: React.FC<{
       <td>
         <RunActionsMenu run={run} onAddTag={onAddTag} />
       </td>
-      {showRunTags ? (
-        <Dialog
-          isOpen={showRunTags}
-          title="Tags"
-          canOutsideClickClose
-          canEscapeKeyClose
-          onClose={() => {
-            setShowRunTags(false);
-          }}
-        >
-          <DialogBody>
-            <RunTags
-              tags={run.tags}
-              mode={isJob ? (run.mode !== 'default' ? run.mode : null) : run.mode}
-              onAddTag={onAddTag}
-            />
-          </DialogBody>
-          <DialogFooter topBorder>
-            <Button
-              intent="primary"
-              onClick={() => {
-                setShowRunTags(false);
-              }}
-            >
-              Close
-            </Button>
-          </DialogFooter>
-        </Dialog>
-      ) : null}
+      <Dialog
+        isOpen={showRunTags}
+        title="Tags"
+        canOutsideClickClose
+        canEscapeKeyClose
+        onClose={() => {
+          setShowRunTags(false);
+        }}
+      >
+        <DialogBody>
+          <RunTags
+            tags={run.tags}
+            mode={isJob ? (run.mode !== 'default' ? run.mode : null) : run.mode}
+            onAddTag={onAddTag}
+          />
+        </DialogBody>
+        <DialogFooter topBorder>
+          <Button
+            intent="primary"
+            onClick={() => {
+              setShowRunTags(false);
+            }}
+          >
+            Close
+          </Button>
+        </DialogFooter>
+      </Dialog>
     </Row>
   );
 };

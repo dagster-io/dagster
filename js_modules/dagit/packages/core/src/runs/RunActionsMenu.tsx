@@ -53,7 +53,7 @@ import {
   LaunchPipelineReexecutionMutationVariables,
 } from './types/RunUtils.types';
 import {useJobAvailabilityErrorForRun} from './useJobAvailabilityErrorForRun';
-import styled from 'styled-components';
+import styled from 'styled-components/macro';
 
 export const RunActionsMenu: React.FC<{
   run: RunTableRunFragment;
