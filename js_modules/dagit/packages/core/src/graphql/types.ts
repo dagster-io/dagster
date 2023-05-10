@@ -2305,6 +2305,7 @@ export type PartitionBackfill = {
   __typename: 'PartitionBackfill';
   assetBackfillData: Maybe<AssetBackfillData>;
   assetSelection: Maybe<Array<AssetKey>>;
+  backfillRunStatuses: PartitionStatuses;
   endTimestamp: Maybe<Scalars['Float']>;
   error: Maybe<PythonError>;
   fromFailure: Scalars['Boolean'];
@@ -2313,13 +2314,12 @@ export type PartitionBackfill = {
   id: Scalars['String'];
   isAssetBackfill: Scalars['Boolean'];
   isValidSerialization: Scalars['Boolean'];
-  numCancelable: Scalars['Int'];
+  numCancelablePartitions: Scalars['Int'];
   numPartitions: Maybe<Scalars['Int']>;
   partitionNames: Maybe<Array<Scalars['String']>>;
   partitionSet: Maybe<PartitionSet>;
   partitionSetName: Maybe<Scalars['String']>;
   partitionStatusCounts: Array<PartitionStatusCounts>;
-  partitionStatuses: PartitionStatuses;
   reexecutionSteps: Maybe<Array<Scalars['String']>>;
   runs: Array<Run>;
   status: BulkActionStatus;
@@ -8215,6 +8215,12 @@ export const buildPartitionBackfill = (
         : buildAssetBackfillData({}, relationshipsToOmit),
     assetSelection:
       overrides && overrides.hasOwnProperty('assetSelection') ? overrides.assetSelection! : [],
+    backfillRunStatuses:
+      overrides && overrides.hasOwnProperty('backfillRunStatuses')
+        ? overrides.backfillRunStatuses!
+        : relationshipsToOmit.has('PartitionStatuses')
+        ? ({} as PartitionStatuses)
+        : buildPartitionStatuses({}, relationshipsToOmit),
     endTimestamp:
       overrides && overrides.hasOwnProperty('endTimestamp') ? overrides.endTimestamp! : 0.33,
     error:
@@ -8240,8 +8246,10 @@ export const buildPartitionBackfill = (
       overrides && overrides.hasOwnProperty('isValidSerialization')
         ? overrides.isValidSerialization!
         : false,
-    numCancelable:
-      overrides && overrides.hasOwnProperty('numCancelable') ? overrides.numCancelable! : 53,
+    numCancelablePartitions:
+      overrides && overrides.hasOwnProperty('numCancelablePartitions')
+        ? overrides.numCancelablePartitions!
+        : 3631,
     numPartitions:
       overrides && overrides.hasOwnProperty('numPartitions') ? overrides.numPartitions! : 4165,
     partitionNames:
@@ -8260,12 +8268,6 @@ export const buildPartitionBackfill = (
       overrides && overrides.hasOwnProperty('partitionStatusCounts')
         ? overrides.partitionStatusCounts!
         : [],
-    partitionStatuses:
-      overrides && overrides.hasOwnProperty('partitionStatuses')
-        ? overrides.partitionStatuses!
-        : relationshipsToOmit.has('PartitionStatuses')
-        ? ({} as PartitionStatuses)
-        : buildPartitionStatuses({}, relationshipsToOmit),
     reexecutionSteps:
       overrides && overrides.hasOwnProperty('reexecutionSteps') ? overrides.reexecutionSteps! : [],
     runs: overrides && overrides.hasOwnProperty('runs') ? overrides.runs! : [],

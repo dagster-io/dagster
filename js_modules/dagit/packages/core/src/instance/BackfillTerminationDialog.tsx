@@ -39,7 +39,7 @@ export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props
     if (!backfill || !data || data.partitionBackfillOrError.__typename !== 'PartitionBackfill') {
       return {};
     }
-    const unfinishedPartitions = data.partitionBackfillOrError.partitionStatuses.results.filter(
+    const unfinishedPartitions = data.partitionBackfillOrError.backfillRunStatuses.results.filter(
       (partition) =>
         partition.runStatus && partition.runId && cancelableStatuses.has(partition.runStatus),
     );
@@ -55,7 +55,7 @@ export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props
     return null;
   }
 
-  const numUnscheduled = backfill.numCancelable;
+  const numUnscheduled = backfill.numCancelablePartitions;
   const cancel = async () => {
     setIsSubmitting(true);
     await cancelBackfill({variables: {backfillId: backfill.id}});

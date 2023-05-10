@@ -1,4 +1,4 @@
-import {gql, QueryResult, useLazyQuery} from '@apollo/client';
+import {gql, useLazyQuery} from '@apollo/client';
 import {Box, Button, Colors, Icon, MenuItem, Menu, Popover, Tag, Mono} from '@dagster-io/ui';
 import countBy from 'lodash/countBy';
 import * as React from 'react';
@@ -92,7 +92,7 @@ export const BackfillRow = ({
       );
       return {counts, statuses: null};
     }
-    const statuses = data.partitionBackfillOrError.partitionStatuses.results;
+    const statuses = data.partitionBackfillOrError.backfillRunStatuses.results;
     const counts = countBy(statuses, (k) => k.runStatus);
     return {counts, statuses};
   }, [data]);
@@ -187,13 +187,14 @@ const BackfillMenu = ({
       value: `dagster/backfill=${backfill.id}`,
     },
   ]);
+
   return (
     <Popover
       content={
         <Menu>
           {backfill.hasCancelPermission ? (
             <>
-              {backfill.numCancelable > 0 ? (
+              {backfill.numCancelablePartitions > 0 ? (
                 <MenuItem
                   text="Cancel backfill submission"
                   icon="cancel"
@@ -491,7 +492,7 @@ export const SINGLE_BACKFILL_STATUS_DETAILS_QUERY = gql`
     partitionBackfillOrError(backfillId: $backfillId) {
       ... on PartitionBackfill {
         id
-        partitionStatuses {
+        backfillRunStatuses {
           ...PartitionStatusesForBackfill
         }
       }

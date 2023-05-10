@@ -224,7 +224,7 @@ class PartitionBackfill(
 
             return self.partition_names
 
-    def get_num_cancelable(self, workspace: IWorkspace) -> int:
+    def get_num_cancelable_partitions(self, workspace: IWorkspace) -> int:
         """Returns the number of partitions that are have not yet been requested by the backfill.
 
         For asset backfills, returns back the sum of the number of unrequested partitions of each of
@@ -236,7 +236,7 @@ class PartitionBackfill(
         if self.is_asset_backfill:
             num_cancelable = 0
             for asset_status in self.get_backfill_status_per_asset_key(workspace):
-                # partitions that do not have a status have not been requested yet
+                # Partitions that do not have a status have not been requested yet
                 if isinstance(asset_status, PartitionedAssetBackfillStatus):
                     num_cancelable += asset_status.num_targeted_partitions - sum(
                         asset_status.partitions_counts_by_status.values()

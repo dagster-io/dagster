@@ -41,7 +41,7 @@ export const BackfillTableFragmentRequested2000AssetsPure: BackfillTableFragment
     partitionSetName: null,
     partitionSet: null,
     error: null,
-    numCancelable: 0,
+    numCancelablePartitions: 0,
     partitionNames: buildTimePartitionNames(new Date('2020-01-01'), 2000),
     assetSelection: [
       buildAssetKey({
@@ -105,7 +105,7 @@ export const BackfillTableFragmentCancelledAssetsPartitionSet: BackfillTableFrag
       }),
     }),
     error: null,
-    numCancelable: 0,
+    numCancelablePartitions: 0,
     partitionNames: buildTimePartitionNames(new Date('2020-01-01'), 5000),
     assetSelection: [
       buildAssetKey({
@@ -154,7 +154,7 @@ export const BackfillTableFragmentFailedError: BackfillTableFragment = buildPart
     stack: ['OMITTED FROM MOCKS'],
     errorChain: [],
   }),
-  numCancelable: 0,
+  numCancelablePartitions: 0,
   partitionNames: buildTimePartitionNames(new Date('2020-01-01'), 100),
   assetSelection: [
     buildAssetKey({
@@ -175,7 +175,7 @@ export const BackfillTableFragmentFailedErrorStatus: MockedResponse<SingleBackfi
       __typename: 'DagitQuery',
       partitionBackfillOrError: buildPartitionBackfill({
         id: 'sjqzcfhe',
-        partitionStatuses: buildPartitionStatuses({
+        backfillRunStatuses: buildPartitionStatuses({
           results: BackfillTableFragmentFailedError.partitionNames!.map((n) =>
             buildPartitionStatus({
               id: `__NO_PARTITION_SET__:${n}:ccpbwdbq`,
@@ -213,7 +213,7 @@ export const BackfillTableFragmentCompletedAssetJob: BackfillTableFragment = bui
       }),
     }),
     error: null,
-    numCancelable: 0,
+    numCancelablePartitions: 0,
     partitionNames: [
       'TN|2023-01-24',
       'VA|2023-01-24',
@@ -247,7 +247,7 @@ export const BackfillTableFragmentCompletedAssetJobStatus: MockedResponse<Single
       __typename: 'DagitQuery',
       partitionBackfillOrError: {
         id: 'pwgcpiwc',
-        partitionStatuses: {
+        backfillRunStatuses: {
           results: [
             {
               id: 'asset_job_partition_set:TN|2023-01-24:pwgcpiwc',
@@ -356,7 +356,7 @@ export const BackfillTableFragmentCompletedOpJob: BackfillTableFragment = buildP
     }),
   }),
   error: null,
-  numCancelable: 0,
+  numCancelablePartitions: 0,
   partitionNames: ['2022-07-01', '2022-08-01', '2022-09-01', '2022-10-01'],
   assetSelection: null,
 });
@@ -374,7 +374,7 @@ export const BackfillTableFragmentCompletedOpJobStatus: MockedResponse<SingleBac
       partitionBackfillOrError: buildPartitionBackfill({
         id: 'pqdiepuf',
         isAssetBackfill: true,
-        partitionStatuses: buildPartitionStatuses({
+        backfillRunStatuses: buildPartitionStatuses({
           results: [
             buildPartitionStatus({
               id: 'op_job_partition_set:2022-07-01:pqdiepuf',
@@ -419,7 +419,7 @@ export const BackfillTableFragmentInvalidPartitionSet: BackfillTableFragment = b
     partitionSetName: null,
     partitionSet: null,
     error: null,
-    numCancelable: 0,
+    numCancelablePartitions: 0,
     partitionNames: [],
     isAssetBackfill: true,
     assetSelection: [
@@ -461,7 +461,7 @@ export const BackfillTablePureAssetCountsOnly: BackfillTableFragment = buildPart
       }),
     ],
   }),
-  numCancelable: 0,
+  numCancelablePartitions: 0,
   partitionNames: null,
   assetSelection: [
     buildAssetKey({
@@ -491,7 +491,7 @@ const BackfillTablePureAssetNoCountsOrPartitionNames: BackfillTableFragment = bu
       stack: ['OMITTED FROM MOCKS'],
       errorChain: [],
     }),
-    numCancelable: 0,
+    numCancelablePartitions: 0,
     partitionNames: null,
     assetSelection: [
       buildAssetKey({
