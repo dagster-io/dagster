@@ -183,10 +183,18 @@ def test_repository_snap_definitions_function_style_resources_nested() -> None:
     assert len(foo[0].nested_resources) == 1
     assert "inner" in foo[0].nested_resources
     assert foo[0].nested_resources["inner"] == NestedResource(NestedResourceType.TOP_LEVEL, "inner")
+    assert (
+        foo[0].resource_type
+        == "dagster_tests.core_tests.snap_tests.test_repository_snap.my_outer_resource"
+    )
 
     assert len(inner[0].parent_resources) == 1
     assert "foo" in inner[0].parent_resources
     assert inner[0].parent_resources["foo"] == "inner"
+    assert (
+        inner[0].resource_type
+        == "dagster_tests.core_tests.snap_tests.test_repository_snap.my_inner_resource"
+    )
 
 
 def test_repository_snap_definitions_resources_nested_many() -> None:
