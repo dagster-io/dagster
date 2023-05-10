@@ -25,6 +25,7 @@ from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._core.test_utils import create_run_for_test
 from dagster._core.utils import make_new_backfill_id
 from dagster._seven import get_system_temp_directory
+from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 from dagster_graphql.client.query import LAUNCH_PARTITION_BACKFILL_MUTATION
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
@@ -200,7 +201,9 @@ def _execute_asset_backfill_iteration(
     for result in execute_asset_backfill_iteration_inner(
         backfill_id=backfill_id,
         asset_backfill_data=asset_backfill_data,
-        instance=graphql_context.instance,
+        instance_queryer=CachingInstanceQueryer(
+            graphql_context.instance, asset_backfill_data.backfill_start_time
+        ),
         asset_graph=asset_graph,
         run_tags=backfill.tags,
         backfill_start_time=asset_backfill_data.backfill_start_time,
