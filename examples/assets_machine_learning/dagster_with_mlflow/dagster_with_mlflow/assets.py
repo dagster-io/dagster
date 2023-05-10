@@ -6,7 +6,7 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error
 import mlflow
 import mlflow.xgboost
 import mlflow.pyfunc
-import os 
+import os
 
 @asset(compute_kind='HackerNews API')
 def hackernews_stories():
