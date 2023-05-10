@@ -58,7 +58,7 @@ class DbtManifestAssetSelection(AssetSelection):
     def __init__(
         self,
         manifest_json: Optional[Mapping[str, Any]] = None,
-        select: str = "*",
+        select: str = "fqn:*",
         exclude: str = "",
         resource_types: Optional[Sequence[str]] = None,
         node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = default_asset_key_fn,
