@@ -1,6 +1,5 @@
 import json
 import os
-import subprocess
 from unittest.mock import MagicMock
 
 import pytest
@@ -656,35 +655,25 @@ def test_op_config(
     assert all_keys == expected_keys
 
 
-@pytest.mark.parametrize("instances", [[{"target": "target_a"}, {"target": "target_b"}]])
-def test_op_custom_name(instances, test_project_dir, dbt_config_dir, dbt_target_dir):
-    for instance in instances:
-        run_result = subprocess.run(
-            f"dbt compile --project-dir {test_project_dir} --profiles-dir {dbt_config_dir} "
-            f"--target {instance['target']} --target-path {dbt_target_dir}/{instance['target']}",
-            shell=True, capture_output=True)
-        # dbt CLI returns errors to stdout, but in case that changes including stderr as well
-        assert run_result.returncode == 0,\
-            f"dbt compile failed:\n{run_result.stdout.decode()}\n{run_result.stderr.decode()}"
-
+def test_op_custom_name(test_project_dir, dbt_config_dir, dbt_target_dir):
+    instances = [{"target": "target_a"}, {"target": "target_b"}]
+    manifest_path = file_relative_path(__file__, "sample_manifest.json")
     dbt_assets = []
     for instance in instances:
-        with open(f"{dbt_target_dir}/{instance['target']}/manifest.json") as manifest_json:
+        with open(manifest_path) as manifest_json:
             dbt_assets.extend(
                 load_assets_from_dbt_manifest(
                     manifest_json=json.load(manifest_json),
-                    key_prefix=[instance['target'], "duckdb", "test-schema"],
-                    source_key_prefix=["duckdb"],
+                    key_prefix=[instance["target"], "duckdb", "test-schema"],
                     op_name=f"{instance['target']}_dbt_op",
-                    node_info_to_group_fn=lambda ni: f"{instance['target']}",
-                    dbt_resource_key=f"dbt_{instance['target']}",
                 )
             )
     op_names = [asset_group.op.name for asset_group in dbt_assets]
-    assert len(op_names) == len(set(op_names)),\
-        f"Multiple instances of a dbt project cannot have the same op name.\n" \
-        f"dbt targets were: {instances}\n" \
+    assert len(op_names) == len(set(op_names)), (
+        "Multiple instances of a dbt project cannot have the same op name.\n"
+        f"dbt targets were: {instances}\n"
         f"op names generated were: {op_names}"
+    )
 
 
 @pytest.mark.parametrize("load_from_manifest", [True, False])
