@@ -651,15 +651,6 @@ def execute_plan(
     )
 
 
-def _check_job(job_arg: Union[JobDefinition, IJob]) -> IJob:
-    # backcompat
-    if isinstance(job_arg, JobDefinition):
-        job_arg = InMemoryJob(job_arg)
-
-    check.inst_param(job_arg, "job_arg", IJob)
-    return job_arg
-
-
 def _get_execution_plan_from_run(
     job: IJob,
     dagster_run: DagsterRun,
@@ -706,14 +697,14 @@ def create_execution_plan(
     tags: Optional[Mapping[str, str]] = None,
     repository_load_data: Optional[RepositoryLoadData] = None,
 ) -> ExecutionPlan:
-    job = _check_job(job)
+    if isinstance(job, IJob):
+        # If you have repository_load_data, make sure to use it when building plan
+        if isinstance(job, ReconstructableJob) and repository_load_data is not None:
+            job = job.with_repository_load_data(repository_load_data)
+        job_def = job.get_definition()
+    else:
+        job_def = job
 
-    # If you have repository_load_data, make sure to use it when building plan
-    if isinstance(job, ReconstructableJob) and repository_load_data is not None:
-        job = job.with_repository_load_data(repository_load_data)
-
-    job_def = job.get_definition()
-    check.inst_param(job_def, "job_def", JobDefinition)
     run_config = check.opt_mapping_param(run_config, "run_config", key_type=str)
     check.opt_nullable_sequence_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
     check.opt_inst_param(instance_ref, "instance_ref", InstanceRef)
@@ -731,7 +722,7 @@ def create_execution_plan(
     resolved_run_config = ResolvedRunConfig.build(job_def, run_config)
 
     return ExecutionPlan.build(
-        job,
+        job_def,
         resolved_run_config,
         step_keys_to_execute=step_keys_to_execute,
         known_state=known_state,
@@ -904,9 +895,8 @@ def _check_execute_job_args(
     Optional[AbstractSet[str]],
     Optional[Sequence[str]],
 ]:
-    job_arg = _check_job(job_arg)
-    job_def = job_arg.get_definition()
-    check.inst_param(job_def, "job_def", JobDefinition)
+    ijob = InMemoryJob(job_arg) if isinstance(job_arg, JobDefinition) else job_arg
+    job_def = job_arg if isinstance(job_arg, JobDefinition) else job_arg.get_definition()
 
     run_config = check.opt_mapping_param(run_config, "run_config")
 
@@ -917,13 +907,13 @@ def _check_execute_job_args(
 
     # generate job subset from the given op_selection
     if op_selection:
-        job_arg = job_arg.get_subset(op_selection=op_selection)
+        ijob = ijob.get_subset(op_selection=op_selection)
 
     return (
-        job_arg,
+        ijob,
         run_config,
         tags,
-        job_arg.resolved_op_selection,
+        ijob.resolved_op_selection,
         op_selection,
     )
 

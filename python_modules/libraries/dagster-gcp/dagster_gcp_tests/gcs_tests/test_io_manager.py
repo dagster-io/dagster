@@ -27,9 +27,8 @@ from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.events import DagsterEventType
-from dagster._core.execution.api import execute_plan
+from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.execution.plan.outputs import StepOutputHandle
-from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.storage.dagster_run import (
     DagsterRun as DagsterRun,
 )
@@ -98,7 +97,7 @@ def test_gcs_pickle_io_manager_execution(gcs_bucket):
     run_id = make_new_run_id()
 
     resolved_run_config = ResolvedRunConfig.build(inty_job, run_config=run_config)
-    execution_plan = ExecutionPlan.build(InMemoryJob(inty_job), resolved_run_config)
+    execution_plan = create_execution_plan(inty_job, run_config)
 
     assert execution_plan.get_step_by_key("return_one")
 

@@ -39,7 +39,7 @@ from dagster._core.execution.plan.step import ExecutionStep, IExecutionStep
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.dagster_run import DagsterRun
-from dagster._core.system_config.objects import ResolvedRunConfig, ResourceConfig
+from dagster._core.system_config.objects import ResourceConfig
 from dagster._core.utils import toposort
 from dagster._utils import EventGenerationManager, ensure_gen
 from dagster._utils.error import serializable_error_info_from_exc_info
@@ -359,8 +359,7 @@ def single_resource_event_generator(
 
 def get_required_resource_keys_to_init(
     execution_plan: ExecutionPlan,
-    pipeline_def: JobDefinition,
-    resolved_run_config: ResolvedRunConfig,
+    job_def: JobDefinition,
 ) -> AbstractSet[str]:
     resource_keys: Set[str] = set()
 
@@ -368,17 +367,15 @@ def get_required_resource_keys_to_init(
         if step_handle not in execution_plan.step_handles_to_execute:
             continue
 
-        hook_defs = pipeline_def.get_all_hooks_for_handle(step.node_handle)
+        hook_defs = job_def.get_all_hooks_for_handle(step.node_handle)
         for hook_def in hook_defs:
             resource_keys = resource_keys.union(hook_def.required_resource_keys)
 
         resource_keys = resource_keys.union(
-            get_required_resource_keys_for_step(pipeline_def, step, execution_plan)
+            get_required_resource_keys_for_step(job_def, step, execution_plan)
         )
 
-    return frozenset(
-        get_transitive_required_resource_keys(resource_keys, pipeline_def.resource_defs)
-    )
+    return frozenset(get_transitive_required_resource_keys(resource_keys, job_def.resource_defs))
 
 
 def get_transitive_required_resource_keys(
