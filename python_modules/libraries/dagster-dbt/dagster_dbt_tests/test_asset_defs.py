@@ -655,7 +655,7 @@ def test_op_config(
     assert all_keys == expected_keys
 
 
-def test_op_custom_name(test_project_dir, dbt_config_dir, dbt_target_dir):
+def test_op_custom_name():
     instances = [{"target": "target_a"}, {"target": "target_b"}]
     manifest_path = file_relative_path(__file__, "sample_manifest.json")
     dbt_assets = []
