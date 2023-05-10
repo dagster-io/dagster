@@ -12,7 +12,9 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_reconciliation_sensor import build_auto_materialize_evaluations
+from dagster._core.definitions.asset_reconciliation_sensor import (
+    build_auto_materialize_evaluation_results,
+)
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.time_window_partitions import (
     HourlyPartitionsDefinition,
@@ -49,7 +51,7 @@ def test_reconciliation(scenario):
             for key, reason in (scenario.expected_skip_reasons or {}).items()
         }
         assert (
-            build_auto_materialize_evaluations(
+            build_auto_materialize_evaluation_results(
                 AssetGraph.from_assets(scenario.assets), materialize_reasons, skip_reasons
             )
             == evaluations

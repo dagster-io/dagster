@@ -111,7 +111,20 @@ class AutoMaterializeSkipReason(NamedTuple):
 
 
 @whitelist_for_serdes
-class AutoMaterializeEvaluation(NamedTuple):
+class AutoMaterializeEvaluationResult(NamedTuple):
+    """Represents the results of the auto-materialize logic for a single asset.
+
+    Properties:
+        asset_key (AssetKey): The asset key that was evaluated.
+        materialize_reasons: The reasons that the asset should be materialized. If the asset is
+            partitioned, this will be a list of tuples, where the first element is the reason and
+            the second element is the set of partitions that the reason applies to.
+        skip_reasons: The reasons that the asset should not be materialized. If the asset is
+            partitioned, this will be a list of tuples, where the first element is the reason and
+            the second element is the set of partitions that the reason applies to.
+    """
+
+    asset_key: AssetKey
     materialize_reasons: Union[
         Sequence[AutoMaterializeReason],
         Sequence[Tuple[AutoMaterializeReason, PartitionsSubset]],
@@ -127,10 +140,11 @@ class AutoMaterializeEvaluation(NamedTuple):
         asset_key: AssetKey,
         materialize_reasons: Mapping[AssetKeyPartitionKey, AutoMaterializeReason],
         skip_reasons: Mapping[AssetKeyPartitionKey, AutoMaterializeSkipReason],
-    ) -> "AutoMaterializeEvaluation":
+    ) -> "AutoMaterializeEvaluationResult":
         partitions_def = asset_graph.get_partitions_def(asset_key)
         if partitions_def is None:
-            return AutoMaterializeEvaluation(
+            return AutoMaterializeEvaluationResult(
+                asset_key=asset_key,
                 materialize_reasons=list(materialize_reasons.values()),
                 skip_reasons=list(skip_reasons.values()),
             )
@@ -145,7 +159,8 @@ class AutoMaterializeEvaluation(NamedTuple):
             for asset_partition, reason in skip_reasons.items():
                 subset_by_skip_reason[reason].add(check.not_none(asset_partition.partition_key))
 
-            return AutoMaterializeEvaluation(
+            return AutoMaterializeEvaluationResult(
+                asset_key=asset_key,
                 materialize_reasons=[
                     (reason, partitions_def.empty_subset().with_partition_keys(partition_keys))
                     for reason, partition_keys in subset_by_materialize_reason.items()
@@ -992,7 +1007,11 @@ def reconcile(
     instance: "DagsterInstance",
     cursor: AssetReconciliationCursor,
     run_tags: Optional[Mapping[str, str]],
-) -> Tuple[Sequence[RunRequest], AssetReconciliationCursor, Sequence[AutoMaterializeEvaluation],]:
+) -> Tuple[
+    Sequence[RunRequest],
+    AssetReconciliationCursor,
+    Sequence[AutoMaterializeEvaluationResult],
+]:
     from dagster._utils.caching_instance_queryer import CachingInstanceQueryer  # expensive import
 
     current_time = pendulum.now("UTC")
@@ -1060,7 +1079,7 @@ def reconcile(
             newly_materialized_root_asset_keys=newly_materialized_root_asset_keys,
             newly_materialized_root_partitions_by_asset_key=newly_materialized_root_partitions_by_asset_key,
         ),
-        build_auto_materialize_evaluations(
+        build_auto_materialize_evaluation_results(
             asset_graph,
             materialize_reasons,
             skip_reasons,
@@ -1110,12 +1129,12 @@ def build_run_requests(
     return run_requests
 
 
-def build_auto_materialize_evaluations(
+def build_auto_materialize_evaluation_results(
     asset_graph: AssetGraph,
     materialize_reasons: Mapping[AssetKeyPartitionKey, AbstractSet[AutoMaterializeReason]],
     skip_reasons: Mapping[AssetKeyPartitionKey, AbstractSet[AutoMaterializeSkipReason]],
-) -> Sequence[AutoMaterializeEvaluation]:
-    """Bundles up the materialize and skip reasons into AutoMaterializeEvaluations."""
+) -> Sequence[AutoMaterializeEvaluationResult]:
+    """Bundles up the materialize and skip reasons into AutoMaterializeEvaluationResults."""
     materialize_reasons_by_asset_key: Dict[
         AssetKey, Set[Tuple[AssetKeyPartitionKey, AutoMaterializeReason]]
     ] = defaultdict(set)
@@ -1133,7 +1152,7 @@ def build_auto_materialize_evaluations(
         )
 
     return [
-        AutoMaterializeEvaluation.from_reasons(
+        AutoMaterializeEvaluationResult.from_reasons(
             asset_graph,
             asset_key,
             dict(materialize_reasons_by_asset_key[asset_key]),
