@@ -151,7 +151,7 @@ def pipeline_selector_from_graphql(data: Mapping[str, Any]) -> JobSubsetSelector
         location_name=data["repositoryLocationName"],
         repository_name=data["repositoryName"],
         job_name=data.get("pipelineName") or data.get("jobName"),  # type: ignore
-        solid_selection=data.get("solidSelection"),
+        op_selection=data.get("solidSelection"),
         asset_selection=[AssetKey.from_graphql_input(asset_key) for asset_key in asset_selection]
         if asset_selection
         else None,

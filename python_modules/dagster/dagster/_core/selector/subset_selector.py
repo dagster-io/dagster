@@ -374,14 +374,14 @@ def parse_op_queries(
 
     Args:
         pipeline_def (JobDefinition): the pipeline to execute.
-        solid_selection (List[str]): a list of the solid selection queries (including single solid
+        op_queries (List[str]): a list of the solid selection queries (including single solid
             names) to execute.
 
     Returns:
         FrozenSet[str]: a frozenset of qualified deduplicated solid names, empty if no qualified
             subset selected.
     """
-    check.sequence_param(op_queries, "solid_selection", of_type=str)
+    check.sequence_param(op_queries, "op_queries", of_type=str)
 
     # special case: select all
     if len(op_queries) == 1 and op_queries[0] == "*":

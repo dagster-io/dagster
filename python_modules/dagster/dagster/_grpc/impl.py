@@ -3,7 +3,7 @@
 import os
 import sys
 from contextlib import contextmanager
-from typing import Any, Generator, Iterator, Optional, Sequence, Tuple, Union
+from typing import AbstractSet, Any, Generator, Iterator, Optional, Sequence, Tuple, Union
 
 import pendulum
 
@@ -262,14 +262,14 @@ def start_run_in_subprocess(
 def get_external_pipeline_subset_result(
     repo_def: RepositoryDefinition,
     job_name: str,
-    solid_selection: Optional[Sequence[str]],
-    asset_selection: Optional[Sequence[AssetKey]],
+    op_selection: Optional[Sequence[str]],
+    asset_selection: Optional[AbstractSet[AssetKey]],
 ):
     try:
         definition = repo_def.get_maybe_subset_job_def(
             job_name,
-            op_selection=solid_selection,
-            asset_selection=frozenset(asset_selection) if asset_selection else None,
+            op_selection=op_selection,
+            asset_selection=asset_selection,
         )
         external_job_data = external_job_data_from_def(definition)
         return ExternalJobSubsetResult(success=True, external_job_data=external_job_data)
@@ -491,7 +491,7 @@ def get_external_execution_plan_snapshot(
     try:
         job_def = repo_def.get_maybe_subset_job_def(
             job_name,
-            op_selection=args.solid_selection,
+            op_selection=args.op_selection,
             asset_selection=args.asset_selection,
         )
 

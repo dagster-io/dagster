@@ -552,7 +552,7 @@ class ScheduleDefinition(IHasInternalInit):
         else:
             self._target = RepoRelativeTarget(
                 job_name=check.str_param(job_name, "job_name"),
-                solid_selection=None,
+                op_selection=None,
             )
 
         if name:

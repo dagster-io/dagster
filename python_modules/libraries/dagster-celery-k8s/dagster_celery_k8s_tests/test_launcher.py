@@ -342,7 +342,7 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
             )
             fake_external_job = external_job_from_recon_job(
                 recon_job,
-                solid_selection=None,
+                op_selection=None,
                 repository_handle=repo_handle,
             )
 
@@ -418,7 +418,7 @@ def test_raise_on_error(kubeconfig_file):
             )
             fake_external_job = external_job_from_recon_job(
                 recon_job,
-                solid_selection=None,
+                op_selection=None,
                 repository_handle=repo_handle,
             )
 

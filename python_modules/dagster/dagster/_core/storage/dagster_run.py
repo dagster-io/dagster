@@ -221,6 +221,8 @@ class DagsterRunSerializer(NamedTupleSerializer["DagsterRun"]):
         "job_snapshot_id": "pipeline_snapshot_id",
         "external_job_origin": "external_pipeline_origin",
         "job_code_origin": "pipeline_code_origin",
+        "op_selection": "solid_selection",
+        "resolved_op_selection": "solids_to_execute",
     },
 )
 class DagsterRun(
@@ -231,8 +233,8 @@ class DagsterRun(
             ("run_id", str),
             ("run_config", Mapping[str, object]),
             ("asset_selection", Optional[AbstractSet[AssetKey]]),
-            ("solid_selection", Optional[Sequence[str]]),
-            ("solids_to_execute", Optional[AbstractSet[str]]),
+            ("op_selection", Optional[Sequence[str]]),
+            ("resolved_op_selection", Optional[AbstractSet[str]]),
             ("step_keys_to_execute", Optional[Sequence[str]]),
             ("status", DagsterRunStatus),
             ("tags", Mapping[str, str]),
@@ -256,8 +258,8 @@ class DagsterRun(
         run_id: Optional[str] = None,
         run_config: Optional[Mapping[str, object]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
-        solid_selection: Optional[Sequence[str]] = None,
-        solids_to_execute: Optional[AbstractSet[str]] = None,
+        op_selection: Optional[Sequence[str]] = None,
+        resolved_op_selection: Optional[AbstractSet[str]] = None,
         step_keys_to_execute: Optional[Sequence[str]] = None,
         status: Optional[DagsterRunStatus] = None,
         tags: Optional[Mapping[str, str]] = None,
@@ -277,15 +279,13 @@ class DagsterRun(
                 "belongs to a run group"
             ),
         )
-        # a frozenset which contains the names of the solids to execute
-        solids_to_execute = check.opt_nullable_set_param(
-            solids_to_execute, "solids_to_execute", of_type=str
+        # a set which contains the names of the ops to execute
+        resolved_op_selection = check.opt_nullable_set_param(
+            resolved_op_selection, "resolved_op_selection", of_type=str
         )
-        # a list of solid queries provided by the user
-        # possible to be None when only solids_to_execute is set by the user directly
-        solid_selection = check.opt_nullable_sequence_param(
-            solid_selection, "solid_selection", of_type=str
-        )
+        # a list of op queries provided by the user
+        # possible to be None when resolved_op_selection is set by the user directly
+        op_selection = check.opt_nullable_sequence_param(op_selection, "op_selection", of_type=str)
         check.opt_nullable_sequence_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
 
         asset_selection = check.opt_nullable_set_param(
@@ -312,9 +312,9 @@ class DagsterRun(
             job_name=check.str_param(job_name, "job_name"),
             run_id=check.str_param(run_id, "run_id"),
             run_config=check.opt_mapping_param(run_config, "run_config", key_type=str),
-            solid_selection=solid_selection,
+            op_selection=op_selection,
             asset_selection=asset_selection,
-            solids_to_execute=solids_to_execute,
+            resolved_op_selection=resolved_op_selection,
             step_keys_to_execute=step_keys_to_execute,
             status=check.opt_inst_param(
                 status, "status", DagsterRunStatus, DagsterRunStatus.NOT_STARTED

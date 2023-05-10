@@ -550,7 +550,7 @@ class DagsterApiServer(DagsterApiServicer):
                         job_subset_snapshot_args.job_origin.external_repository_origin
                     ),
                     job_subset_snapshot_args.job_origin.job_name,
-                    job_subset_snapshot_args.solid_selection,
+                    job_subset_snapshot_args.op_selection,
                     job_subset_snapshot_args.asset_selection,
                 )
             )

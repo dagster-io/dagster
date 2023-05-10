@@ -146,7 +146,7 @@ def launch_run_over_graphql(
     job_name: str,
     repository_name: str = "demo_execution_repo",
     code_location_name: str = "user-code-deployment-1",
-    solid_selection: Optional[Sequence[str]] = None,
+    op_selection: Optional[Sequence[str]] = None,
     tags: Optional[Mapping[str, str]] = None,
 ) -> str:
     tags = tags or {}
@@ -157,7 +157,7 @@ def launch_run_over_graphql(
                     "repositoryLocationName": code_location_name,
                     "repositoryName": repository_name,
                     "pipelineName": job_name,
-                    "solidSelection": solid_selection,
+                    "solidSelection": op_selection,
                 },
                 "runConfigData": run_config,
                 "executionMetadata": {

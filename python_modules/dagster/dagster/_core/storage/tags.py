@@ -39,7 +39,7 @@ MEMOIZED_RUN_TAG = f"{SYSTEM_TAG_PREFIX}is_memoized_run"
 
 STEP_SELECTION_TAG = f"{SYSTEM_TAG_PREFIX}step_selection"
 
-SOLID_SELECTION_TAG = f"{SYSTEM_TAG_PREFIX}solid_selection"
+OP_SELECTION_TAG = f"{SYSTEM_TAG_PREFIX}solid_selection"
 
 PRESET_NAME_TAG = f"{SYSTEM_TAG_PREFIX}preset_name"
 

@@ -24,7 +24,7 @@ def sync_get_external_execution_plan_grpc(
     run_config: Mapping[str, Any],
     job_snapshot_id: str,
     asset_selection: Optional[AbstractSet[AssetKey]] = None,
-    solid_selection: Optional[Sequence[str]] = None,
+    op_selection: Optional[Sequence[str]] = None,
     step_keys_to_execute: Optional[Sequence[str]] = None,
     known_state: Optional[KnownExecutionState] = None,
     instance: Optional[DagsterInstance] = None,
@@ -33,7 +33,7 @@ def sync_get_external_execution_plan_grpc(
 
     check.inst_param(api_client, "api_client", DagsterGrpcClient)
     check.inst_param(job_origin, "job_origin", ExternalJobOrigin)
-    solid_selection = check.opt_sequence_param(solid_selection, "solid_selection", of_type=str)
+    op_selection = check.opt_sequence_param(op_selection, "op_selection", of_type=str)
     asset_selection = check.opt_nullable_set_param(
         asset_selection, "asset_selection", of_type=AssetKey
     )
@@ -47,7 +47,7 @@ def sync_get_external_execution_plan_grpc(
         api_client.execution_plan_snapshot(
             execution_plan_snapshot_args=ExecutionPlanSnapshotArgs(
                 job_origin=job_origin,
-                solid_selection=solid_selection,
+                op_selection=op_selection,
                 run_config=run_config,
                 mode=DEFAULT_MODE_NAME,
                 step_keys_to_execute=step_keys_to_execute,

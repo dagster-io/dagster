@@ -54,17 +54,17 @@ class RepresentedJob(ABC):
         return self._job_index.parent_job_snapshot
 
     @property
-    def solid_selection(self) -> Optional[Sequence[str]]:
+    def op_selection(self) -> Optional[Sequence[str]]:
         return (
-            self._job_index.job_snapshot.lineage_snapshot.node_selection
+            self._job_index.job_snapshot.lineage_snapshot.op_selection
             if self._job_index.job_snapshot.lineage_snapshot
             else None
         )
 
     @property
-    def solids_to_execute(self) -> Optional[AbstractSet[str]]:
+    def resolved_op_selection(self) -> Optional[AbstractSet[str]]:
         return (
-            self._job_index.job_snapshot.lineage_snapshot.nodes_to_execute
+            self._job_index.job_snapshot.lineage_snapshot.resolved_op_selection
             if self._job_index.job_snapshot.lineage_snapshot
             else None
         )

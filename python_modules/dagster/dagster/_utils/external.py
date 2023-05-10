@@ -10,7 +10,7 @@ from dagster._core.host_representation.origin import ExternalJobOrigin
 def external_job_from_location(
     code_location: CodeLocation,
     external_job_origin: ExternalJobOrigin,
-    solid_selection: Optional[Sequence[str]],
+    op_selection: Optional[Sequence[str]],
 ) -> ExternalJob:
     check.inst_param(code_location, "code_location", CodeLocation)
     check.inst_param(external_job_origin, "external_pipeline_origin", ExternalJobOrigin)
@@ -28,7 +28,7 @@ def external_job_from_location(
         location_name=code_location.name,
         repository_name=external_repo.name,
         job_name=job_name,
-        solid_selection=solid_selection,
+        op_selection=op_selection,
     )
 
     return code_location.get_external_job(pipeline_selector)

@@ -576,6 +576,22 @@ class FieldSerializer(Serializer):
         ...
 
 
+class SetToSequenceFieldSerializer(FieldSerializer):
+    def unpack(
+        self, sequence_value: Optional[Sequence[Any]], **_kwargs
+    ) -> Optional[AbstractSet[Any]]:
+        return set(sequence_value) if sequence_value is not None else None
+
+    def pack(
+        self, set_value: Optional[AbstractSet[Any]], whitelist_map: WhitelistMap, descent_path: str
+    ) -> Optional[Sequence[Any]]:
+        return (
+            sorted([pack_value(x, whitelist_map, descent_path) for x in set_value], key=str)
+            if set_value is not None
+            else None
+        )
+
+
 ###################################################################################################
 # Serialize / Pack
 ###################################################################################################

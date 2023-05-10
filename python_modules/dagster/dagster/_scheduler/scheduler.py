@@ -631,7 +631,7 @@ def _schedule_runs_at_time(
             location_name=schedule_origin.external_repository_origin.code_location_origin.location_name,
             repository_name=schedule_origin.external_repository_origin.repository_name,
             job_name=external_schedule.job_name,
-            solid_selection=external_schedule.solid_selection,
+            op_selection=external_schedule.op_selection,
             asset_selection=run_request.asset_selection,
         )
         external_job = code_location.get_external_job(job_subset_selector)
@@ -766,9 +766,9 @@ def _create_scheduler_run(
         job_name=external_schedule.job_name,
         run_id=None,
         run_config=run_config,
-        solids_to_execute=external_job.solids_to_execute,
+        resolved_op_selection=external_job.resolved_op_selection,
         step_keys_to_execute=None,
-        solid_selection=external_job.solid_selection,
+        op_selection=external_job.op_selection,
         status=DagsterRunStatus.NOT_STARTED,
         root_run_id=None,
         parent_run_id=None,

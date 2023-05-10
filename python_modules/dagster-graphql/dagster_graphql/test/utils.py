@@ -160,14 +160,14 @@ def infer_repository_selector(graphql_context: WorkspaceRequestContext) -> Selec
 def infer_job_or_pipeline_selector(
     graphql_context: WorkspaceRequestContext,
     pipeline_name: str,
-    solid_selection: Optional[Sequence[str]] = None,
+    op_selection: Optional[Sequence[str]] = None,
     asset_selection: Optional[Sequence[GqlAssetKey]] = None,
 ) -> Selector:
     selector = infer_repository_selector(graphql_context)
     selector.update(
         {
             "pipelineName": pipeline_name,
-            "solidSelection": solid_selection,
+            "solidSelection": op_selection,
             "assetSelection": asset_selection,
         }
     )
@@ -177,13 +177,13 @@ def infer_job_or_pipeline_selector(
 def infer_pipeline_selector(
     graphql_context: WorkspaceRequestContext,
     pipeline_name: str,
-    solid_selection: Optional[Sequence[str]] = None,
+    op_selection: Optional[Sequence[str]] = None,
 ) -> Selector:
     selector = infer_repository_selector(graphql_context)
     selector.update(
         {
             "pipelineName": pipeline_name,
-            "solidSelection": solid_selection,
+            "solidSelection": op_selection,
         }
     )
     return selector

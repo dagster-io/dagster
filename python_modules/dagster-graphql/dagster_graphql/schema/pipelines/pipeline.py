@@ -428,13 +428,13 @@ class GrapheneRun(graphene.ObjectType):
         return self.dagster_run.job_name
 
     def resolve_solidSelection(self, _graphene_info: ResolveInfo):
-        return self.dagster_run.solid_selection
+        return self.dagster_run.op_selection
 
     def resolve_assetSelection(self, _graphene_info: ResolveInfo):
         return self.dagster_run.asset_selection
 
     def resolve_resolvedOpSelection(self, _graphene_info: ResolveInfo):
-        return self.dagster_run.solids_to_execute
+        return self.dagster_run.resolved_op_selection
 
     def resolve_pipelineSnapshotId(self, _graphene_info: ResolveInfo):
         return self.dagster_run.job_snapshot_id
@@ -712,7 +712,7 @@ class GrapheneIPipelineSnapshotMixin:
         return list(iterate_metadata_entries(represented_pipeline.job_snapshot.metadata))
 
     def resolve_solidSelection(self, _graphene_info: ResolveInfo):
-        return self.get_represented_job().solid_selection
+        return self.get_represented_job().op_selection
 
     def resolve_runs(
         self, graphene_info: ResolveInfo, cursor: Optional[str] = None, limit: Optional[int] = None
@@ -817,7 +817,7 @@ class GraphenePipelinePreset(graphene.ObjectType):
         return self._active_preset_data.name
 
     def resolve_solidSelection(self, _graphene_info: ResolveInfo):
-        return self._active_preset_data.solid_selection
+        return self._active_preset_data.op_selection
 
     def resolve_runConfigYaml(self, _graphene_info: ResolveInfo):
         return dump_run_config_yaml(self._active_preset_data.run_config) or ""

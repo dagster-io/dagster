@@ -488,7 +488,7 @@ def submit_run_request(
         repository_name=repo_handle.repository_name,
         job_name=job_name,
         asset_selection=run_request.asset_selection,
-        solid_selection=None,
+        op_selection=None,
     )
 
     selector_id = hash_collection(pipeline_selector)
@@ -518,8 +518,8 @@ def submit_run_request(
         parent_job_snapshot=external_job.parent_job_snapshot,
         job_name=external_job.name,
         run_id=None,
-        solids_to_execute=None,
-        solid_selection=None,
+        resolved_op_selection=None,
+        op_selection=None,
         run_config={},
         step_keys_to_execute=None,
         tags=run_request.tags,

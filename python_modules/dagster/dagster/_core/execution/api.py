@@ -59,7 +59,7 @@ from .job_execution_result import JobExecutionResult
 #
 # Notes on reexecution support:
 # (1) The appropriate bits must be set on the DagsterRun passed to this function. Specifically,
-#     parent_run_id and root_run_id must be set and consistent, and if a solids_to_execute or
+#     parent_run_id and root_run_id must be set and consistent, and if a resolved_op_selection or
 #     step_keys_to_execute are set they must be consistent with the parent and root runs.
 # (2) As for (1), but the ExecutionPlan passed must also agree in all relevant bits.
 
@@ -136,13 +136,13 @@ def execute_run_iterator(
             ),
         )
 
-    if dagster_run.solids_to_execute or dagster_run.asset_selection:
+    if dagster_run.resolved_op_selection or dagster_run.asset_selection:
         # when `execute_run_iterator` is directly called, the sub pipeline hasn't been created
         # note that when we receive the solids to execute via DagsterRun, it won't support
         # solid selection query syntax
         job = job.get_subset(
-            op_selection=list(dagster_run.solids_to_execute)
-            if dagster_run.solids_to_execute
+            op_selection=list(dagster_run.resolved_op_selection)
+            if dagster_run.resolved_op_selection
             else None,
             asset_selection=dagster_run.asset_selection,
         )
@@ -218,13 +218,13 @@ def execute_run(
             dagster_run.job_name, dagster_run.run_id, dagster_run.status
         ),
     )
-    if dagster_run.solids_to_execute or dagster_run.asset_selection:
+    if dagster_run.resolved_op_selection or dagster_run.asset_selection:
         # when `execute_run` is directly called, the sub job hasn't been created
         # note that when we receive the solids to execute via DagsterRun, it won't support
         # solid selection query syntax
         job = job.get_subset(
-            op_selection=list(dagster_run.solids_to_execute)
-            if dagster_run.solids_to_execute
+            op_selection=list(dagster_run.resolved_op_selection)
+            if dagster_run.resolved_op_selection
             else None,
             asset_selection=dagster_run.asset_selection,
         )
@@ -483,7 +483,7 @@ def _logged_execute_job(
         job_arg,
         run_config,
         tags,
-        solids_to_execute,
+        resolved_op_selection,
         op_selection,
     ) = _check_execute_job_args(
         job_arg=job_arg,
@@ -497,8 +497,8 @@ def _logged_execute_job(
     dagster_run = instance.create_run_for_job(
         job_def=job_arg.get_definition(),
         run_config=run_config,
-        solid_selection=op_selection,
-        solids_to_execute=solids_to_execute,
+        op_selection=op_selection,
+        resolved_op_selection=resolved_op_selection,
         tags=tags,
         job_code_origin=(
             job_arg.get_python_origin() if isinstance(job_arg, ReconstructableJob) else None
@@ -567,9 +567,9 @@ def _reexecute_job(
             execution_plan=execution_plan,
             run_config=run_config,
             tags=tags,
-            solid_selection=parent_dagster_run.solid_selection,
+            op_selection=parent_dagster_run.op_selection,
             asset_selection=parent_dagster_run.asset_selection,
-            solids_to_execute=parent_dagster_run.solids_to_execute,
+            resolved_op_selection=parent_dagster_run.resolved_op_selection,
             root_run_id=parent_dagster_run.root_run_id or parent_dagster_run.run_id,
             parent_run_id=parent_dagster_run.run_id,
             job_code_origin=(
@@ -675,7 +675,7 @@ def _get_execution_plan_from_run(
     if (
         execution_plan_snapshot is not None
         and execution_plan_snapshot.can_reconstruct_plan
-        and job.solids_to_execute == dagster_run.solids_to_execute
+        and job.resolved_op_selection == dagster_run.resolved_op_selection
         and job.asset_selection == dagster_run.asset_selection
     ):
         return ExecutionPlan.rebuild_from_snapshot(
@@ -911,11 +911,11 @@ def _check_execute_job_args(
     run_config = check.opt_mapping_param(run_config, "run_config")
 
     tags = check.opt_mapping_param(tags, "tags", key_type=str)
-    check.opt_sequence_param(op_selection, "solid_selection", of_type=str)
+    check.opt_sequence_param(op_selection, "op_selection", of_type=str)
 
     tags = merge_dicts(job_def.tags, tags)
 
-    # generate job subset from the given solid_selection
+    # generate job subset from the given op_selection
     if op_selection:
         job_arg = job_arg.get_subset(op_selection=op_selection)
 
@@ -923,7 +923,7 @@ def _check_execute_job_args(
         job_arg,
         run_config,
         tags,
-        job_arg.solids_to_execute,
+        job_arg.resolved_op_selection,
         op_selection,
     )
 
@@ -935,8 +935,8 @@ def _resolve_reexecute_step_selection(
     parent_dagster_run: DagsterRun,
     step_selection: Sequence[str],
 ) -> ExecutionPlan:
-    if parent_dagster_run.solid_selection:
-        job = job.get_subset(op_selection=parent_dagster_run.solid_selection)
+    if parent_dagster_run.op_selection:
+        job = job.get_subset(op_selection=parent_dagster_run.op_selection)
 
     state = KnownExecutionState.build_for_reexecution(instance, parent_dagster_run)
 

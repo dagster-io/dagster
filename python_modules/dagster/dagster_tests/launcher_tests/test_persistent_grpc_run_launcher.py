@@ -135,7 +135,7 @@ def test_run_from_pending_repository():
                     job_name="my_cool_asset_job",
                     run_id="xyzabc",
                     run_config=None,
-                    solids_to_execute=None,
+                    resolved_op_selection=None,
                     step_keys_to_execute=None,
                     status=None,
                     tags=None,
@@ -147,7 +147,7 @@ def test_run_from_pending_repository():
                     external_job_origin=external_job.get_external_origin(),
                     job_code_origin=external_job.get_python_origin(),
                     asset_selection=None,
-                    solid_selection=None,
+                    op_selection=None,
                 )
 
                 run_id = dagster_run.run_id

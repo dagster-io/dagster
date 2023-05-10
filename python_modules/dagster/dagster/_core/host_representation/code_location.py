@@ -129,7 +129,7 @@ class CodeLocation(AbstractContextManager):
         an op selection is specified, which requires access to the underlying JobDefinition
         to generate the subsetted pipeline snapshot.
         """
-        if not selector.solid_selection and not selector.asset_selection:
+        if not selector.op_selection and not selector.asset_selection:
             return self.get_repository(selector.repository_name).get_full_external_job(
                 selector.job_name
             )
@@ -367,7 +367,7 @@ class InProcessCodeLocation(CodeLocation):
         return get_external_pipeline_subset_result(
             self._get_repo_def(selector.repository_name),
             selector.job_name,
-            selector.solid_selection,
+            selector.op_selection,
             selector.asset_selection,
         )
 
@@ -391,7 +391,7 @@ class InProcessCodeLocation(CodeLocation):
             job=self.get_reconstructable_job(
                 external_job.repository_handle.repository_name, external_job.name
             ).get_subset(
-                op_selection=external_job.solids_to_execute,
+                op_selection=external_job.resolved_op_selection,
                 asset_selection=external_job.asset_selection,
             ),
             run_config=run_config,
@@ -738,7 +738,7 @@ class GrpcServerCodeLocation(CodeLocation):
             run_config=run_config,
             job_snapshot_id=external_job.identifying_job_snapshot_id,
             asset_selection=asset_selection,
-            solid_selection=external_job.solid_selection,
+            op_selection=external_job.op_selection,
             step_keys_to_execute=step_keys_to_execute,
             known_state=known_state,
             instance=instance,
@@ -761,7 +761,7 @@ class GrpcServerCodeLocation(CodeLocation):
         return sync_get_external_job_subset_grpc(
             self.client,
             job_handle.get_external_origin(),
-            selector.solid_selection,
+            selector.op_selection,
             selector.asset_selection,
         )
 
