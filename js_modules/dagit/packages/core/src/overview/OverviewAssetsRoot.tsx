@@ -18,12 +18,11 @@ import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useLiveDataForAssetKeys} from '../asset-graph/useLiveDataForAssetKeys';
-import {ASSET_CATALOG_TABLE_QUERY} from '../assets/AssetsCatalogTable';
+import {ASSET_CATALOG_TABLE_QUERY, AssetGroupSuggest} from '../assets/AssetsCatalogTable';
 import {
   AssetCatalogTableQuery,
   AssetCatalogTableQueryVariables,
 } from '../assets/types/AssetsCatalogTable.types';
-import {RunStatus} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {Container, HeaderCell, Inner, Row, RowCell} from '../ui/VirtualizedTable';
 import {StatusCase, buildAssetNodeStatusContent} from '../asset-graph/AssetNode';
@@ -32,6 +31,8 @@ import {Link} from 'react-router-dom';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepositoryLink, RepositoryName} from '../nav/RepositoryLink';
+import {AssetGroupSelector} from '../graphql/types';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 
 type Props = {
   Header: React.FC<{refreshState: ReturnType<typeof useQueryRefreshAtInterval>}>;
@@ -51,11 +52,12 @@ export const OverviewAssetsRoot = ({Header, TabButton}: Props) => {
   );
   const refreshState = useQueryRefreshAtInterval(query, FIFTEEN_SECONDS);
 
-  const groupedAssets = React.useMemo(() => {
+  const {assets, groupedAssets} = React.useMemo(() => {
     if (query.data?.assetsOrError.__typename === 'AssetConnection') {
-      return groupAssets(query.data?.assetsOrError.nodes);
+      const assets = query.data.assetsOrError.nodes;
+      return {assets, groupedAssets: groupAssets(assets)};
     }
-    return [];
+    return {assets: [], groupedAssets: []};
   }, [query.data?.assetsOrError]);
 
   const parentRef = React.useRef<HTMLDivElement | null>(null);
@@ -94,35 +96,42 @@ export const OverviewAssetsRoot = ({Header, TabButton}: Props) => {
     }
 
     return (
-      <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
+      <Box flex={{direction: 'column'}} style={{overflow: 'hidden'}}>
         <VirtualHeaderRow />
-        <Container>
-          <Inner $totalHeight={totalHeight}>
-            {items.map(({index, key, size, start}) => {
-              const group = groupedAssets[index];
-              return <VirtualRow key={key} start={start} height={size} group={group} />;
-            })}
-          </Inner>
-        </Container>
+        <div style={{overflow: 'hidden'}}>
+          <Container ref={parentRef}>
+            <Inner $totalHeight={totalHeight}>
+              {items.map(({index, key, size, start}) => {
+                const group = groupedAssets[index];
+                return <VirtualRow key={key} start={start} height={size} group={group} />;
+              })}
+            </Inner>
+          </Container>
+        </div>
       </Box>
     );
   }
 
+  const [searchGroup, setSearchGroup] = useQueryPersistedState<AssetGroupSelector | null>({
+    queryKey: 'g',
+    decode: (qs) => (qs.group ? JSON.parse(qs.group) : null),
+    encode: (group) => ({group: group ? JSON.stringify(group) : undefined}),
+  });
+
   return (
-    <div style={{position: 'sticky', top: 0, zIndex: 1}}>
-      <Header refreshState={refreshState} />
-      <Box padding={{horizontal: 24, vertical: 16}} flex={{alignItems: 'center', gap: 12, grow: 0}}>
-        <TabButton selected="assets" />
-        <TextInput
-          icon="search"
-          value={searchValue}
-          onChange={(e) => setSearchValue(e.target.value)}
-          placeholder="Filter by asset group"
-          style={{width: '200px'}}
-        />
-      </Box>
+    <>
+      <div style={{position: 'sticky', top: 0, zIndex: 1}}>
+        <Header refreshState={refreshState} />
+        <Box
+          padding={{horizontal: 24, vertical: 16}}
+          flex={{alignItems: 'center', gap: 12, grow: 0}}
+        >
+          <TabButton selected="assets" />
+          <AssetGroupSuggest assets={assets} value={searchGroup} onChange={setSearchGroup} />
+        </Box>
+      </div>
       {content()}
-    </div>
+    </>
   );
 };
 
@@ -142,8 +151,11 @@ function groupAssets(assets: Assets) {
   > = {};
 
   assets.forEach((asset) => {
-    const groupName = asset.definition?.groupName || 'default';
-    const repositoryName = asset.definition?.repository.name || 'unknown';
+    if (!asset.definition) {
+      return;
+    }
+    const groupName = asset.definition.groupName;
+    const repositoryName = asset.definition.repository.name;
     const key = `${groupName}||${repositoryName}`;
     groups[key] = groups[key] || {
       groupName,
@@ -202,56 +214,62 @@ function VirtualRow({height, start, group}: RowProps) {
       if (!asset.definition) {
         console.warn('Expected a definition for asset with key', key);
       }
-      const status = buildAssetNodeStatusContent({
-        assetKey: JSON.parse(key),
-        definition: asset.definition!,
-        liveData: assetLiveData,
-        expanded: true,
-      });
-      switch (status.case) {
-        case StatusCase.LOADING:
-          statuses.loading++;
-          break;
-        case StatusCase.SOURCE_OBSERVING:
-          statuses.inprogress++;
-          break;
-        case StatusCase.SOURCE_OBSERVED:
-          statuses.successful++;
-          break;
-        case StatusCase.SOURCE_NEVER_OBSERVED:
-          statuses.missing++;
-          break;
-        case StatusCase.SOURCE_NO_STATE:
-          statuses.missing++;
-          break;
-        case StatusCase.MATERIALIZING:
-          statuses.successful++;
-          break;
-        case StatusCase.LATE_OR_FAILED:
-          statuses.failed++;
-          break;
-        case StatusCase.NEVER_MATERIALIZED:
-          statuses.missing++;
-          break;
-        case StatusCase.MATERIALIZED:
-          statuses.successful++;
-          break;
-        case StatusCase.PARTITIONS_FAILED:
-          statuses.failed++;
-          break;
-        case StatusCase.PARTITIONS_MISSING:
-          statuses.missing++;
-          break;
-        case StatusCase.PARTITIONS_MATERIALIZED:
-          statuses.successful++;
-          break;
+      try {
+        const status = buildAssetNodeStatusContent({
+          assetKey: {path: JSON.parse(key)},
+          definition: asset.definition!,
+          liveData: assetLiveData,
+          expanded: true,
+        });
+        switch (status.case) {
+          case StatusCase.LOADING:
+            statuses.loading++;
+            break;
+          case StatusCase.SOURCE_OBSERVING:
+            statuses.inprogress++;
+            break;
+          case StatusCase.SOURCE_OBSERVED:
+            statuses.successful++;
+            break;
+          case StatusCase.SOURCE_NEVER_OBSERVED:
+            statuses.missing++;
+            break;
+          case StatusCase.SOURCE_NO_STATE:
+            statuses.missing++;
+            break;
+          case StatusCase.MATERIALIZING:
+            statuses.successful++;
+            break;
+          case StatusCase.LATE_OR_FAILED:
+            statuses.failed++;
+            break;
+          case StatusCase.NEVER_MATERIALIZED:
+            statuses.missing++;
+            break;
+          case StatusCase.MATERIALIZED:
+            statuses.successful++;
+            break;
+          case StatusCase.PARTITIONS_FAILED:
+            statuses.failed++;
+            break;
+          case StatusCase.PARTITIONS_MISSING:
+            statuses.missing++;
+            break;
+          case StatusCase.PARTITIONS_MATERIALIZED:
+            statuses.successful++;
+            break;
+        }
+      } catch (e) {
+        statuses.loading = 1;
+        debugger;
+        return;
       }
     });
     return statuses;
   }, [liveDataByNode]);
 
-  const repo = group.assets.find((asset) => asset.definition?.repository)?.definition?.repository!;
-  const repoAddress = buildRepoAddress(repo.name, repo.location.name);
+  const repo = group.assets.find((asset) => asset.definition?.repository)?.definition?.repository;
+  const repoAddress = buildRepoAddress(repo?.name || '', repo?.location.name || '');
 
   const {containerProps, viewport} = useViewport();
 
@@ -358,7 +376,7 @@ const Cell = ({children, isLoading}: {children: React.ReactNode; isLoading?: boo
           <Spinner purpose="body-text" />
         </Box>
       ) : (
-        <div>{children}</div>
+        <Box flex={{direction: 'row', alignItems: 'center', grow: 1}}>{children}</Box>
       )}
     </RowCell>
   );
