@@ -177,7 +177,9 @@ class SnowflakeIOManager(ConfigurableIOManagerFactory):
         default=None,
         description=(
             "Raw private key to use. See"
-            " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details."
+            " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details. To avoid"
+            " issues with newlines in the keys, you can base64 encode the key. You can retrieve"
+            " the base64 encoded key with this shell command: cat rsa_key.p8 | base64"
         ),
     )
     private_key_path: Optional[str] = Field(
