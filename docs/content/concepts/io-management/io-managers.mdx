@@ -74,7 +74,7 @@ Consider the following diagram. In this example, a job has two I/O managers, eac
 
 ### Built-in I/O managers
 
-The default I/O manager, <PyObject module="dagster" object="fs_io_manager" />, stores and retrieves values from pickle files in the local filesystem. If a job is invoked via <PyObject object="JobDefinition" method="execute_in_process" />, the default I/O manager is switched to <PyObject module="dagster" object="mem_io_manager"/>, which stores outputs in memory.
+The default I/O manager, <PyObject module="dagster" object="FilesystemIOManager" />, stores and retrieves values from pickle files in the local filesystem. If a job is invoked via <PyObject object="JobDefinition" method="execute_in_process" />, the default I/O manager is switched to <PyObject module="dagster" object="mem_io_manager"/>, which stores outputs in memory.
 
 Dagster provides out-of-the-box I/O managers for popular storage systems: AWS S3 (<PyObject module="dagster_aws.s3" object="s3_pickle_io_manager" />), Azure Blob Storage (<PyObject module="dagster_azure.adls2" object="adls2_pickle_io_manager" />), GCS (<PyObject module="dagster_gcp.gcs" object="gcs_pickle_io_manager" />), and Snowflake (<PyObject module="dagster_snowflake" object="build_snowflake_io_manager" />) - or you can write your own: either from scratch or by extending the `UPathIOManager` if you want to store data in an `fsspec`-supported filesystem. For a full list of Dagster-provided I/O managers, refer to the [built-in I/O managers list](#built-in-io-managers).
 
@@ -84,11 +84,11 @@ I/O managers are provided through the [resources](/concepts/resources) system wh
 
 ---
 
-## Using I/O managers with software-defined assets
+## Using I/O managers with Software-defined Assets
 
 ### Applying I/O managers to assets
 
-By default, materializing an asset named `my_asset` will pickle it to a local file named `my_asset`. The directory that file lives underneath is determined by the rules in <PyObject object="fs_io_manager" />.
+By default, materializing an asset named `my_asset` will pickle it to a local file named `my_asset`. The directory that file lives underneath is determined by the configuration and methods in <PyObject object="FilesystemIOManager" />.
 
 [I/O managers](/concepts/io-management/io-managers) enable fully overriding this behavior and storing asset contents in any way you wish - e.g. writing them as tables in a database or as objects in a cloud object store such as s3. You can use one of Dagster's [built-in I/O managers](#built-in-io-managers), or you can write your own.
 
