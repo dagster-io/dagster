@@ -3,9 +3,7 @@ from contextlib import contextmanager
 from typing import Optional, Sequence, Type, cast
 
 from dagster import IOManagerDefinition, OutputContext, io_manager
-from dagster._config.pythonic_config import (
-    ConfigurableIOManagerFactory,
-)
+from dagster._config.pythonic_config import ConfigurableIOManagerFactory
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.storage.db_io_manager import (
     DbClient,
@@ -203,6 +201,14 @@ class SnowflakeIOManager(ConfigurableIOManagerFactory):
             " set to UTC timezone to avoid a Snowflake bug. Defaults to False."
         ),
     )
+    case_sensitive_names: bool = Field(
+        default=False,
+        description=(
+            "If True, database and schema names in queries will match the case of those provided"
+            " via config or asset key_prefix. If using Pandas DataFrames, the table created will"
+            " always be case-insensitive (ie. uppercase)."
+        ),
+    )
 
     @staticmethod
     @abstractmethod
@@ -278,11 +284,21 @@ class SnowflakeDbClient(DbClient):
 
     @staticmethod
     def ensure_schema_exists(context: OutputContext, table_slice: TableSlice, connection) -> None:
+        case_sensitive_db = (
+            f"'{table_slice.database}'"
+            if context.resource_config and context.resource_config["case_sensitive_names"]
+            else table_slice.database
+        )
         schemas = connection.execute(
-            f"show schemas like '{table_slice.schema}' in database {table_slice.database}"
+            f"show schemas like '{table_slice.schema}' in database {case_sensitive_db}"
         ).fetchall()
         if len(schemas) == 0:
-            connection.execute(f"create schema {table_slice.schema};")
+            case_sensitive_schema = (
+                f"'{table_slice.schema}'"
+                if context.resource_config and context.resource_config["case_sensitive_names"]
+                else table_slice.schema
+            )
+            connection.execute(f"create schema {case_sensitive_schema};")
 
     @staticmethod
     def delete_table_slice(context: OutputContext, table_slice: TableSlice, connection) -> None:
