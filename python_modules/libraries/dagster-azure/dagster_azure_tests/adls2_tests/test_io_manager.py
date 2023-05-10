@@ -29,8 +29,7 @@ from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.events import DagsterEventType
-from dagster._core.execution.api import execute_plan
-from dagster._core.execution.plan.plan import ExecutionPlan
+from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.types.dagster_type import resolve_dagster_type
 from dagster._core.utils import make_new_run_id
@@ -110,7 +109,7 @@ def test_adls2_pickle_io_manager_deletes_recursively(storage_account, file_syste
     run_id = make_new_run_id()
 
     resolved_run_config = ResolvedRunConfig.build(job, run_config=run_config)
-    execution_plan = ExecutionPlan.build(InMemoryJob(job), resolved_run_config)
+    execution_plan = create_execution_plan(job, run_config)
 
     assert execution_plan.get_step_by_key("return_one")
 
@@ -180,7 +179,7 @@ def test_adls2_pickle_io_manager_execution(storage_account, file_system, credent
     run_id = make_new_run_id()
 
     resolved_run_config = ResolvedRunConfig.build(job, run_config=run_config)
-    execution_plan = ExecutionPlan.build(InMemoryJob(job), resolved_run_config)
+    execution_plan = create_execution_plan(job, run_config)
 
     assert execution_plan.get_step_by_key("return_one")
 

@@ -24,7 +24,7 @@ from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
 from dagster._core.events import DagsterEvent
-from dagster._core.execution.api import scoped_job_context
+from dagster._core.execution.api import create_execution_plan, scoped_job_context
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.plan.step import ExecutionStep
@@ -157,11 +157,11 @@ class Manager:
         self.op_def = op_def
         self.job = job
 
-        resolved_run_config = ResolvedRunConfig.build(job_def, run_config)
+        ResolvedRunConfig.build(job_def, run_config)
 
-        execution_plan = ExecutionPlan.build(
+        execution_plan = create_execution_plan(
             self.job,
-            resolved_run_config,
+            run_config,
             step_keys_to_execute=dagster_run.step_keys_to_execute,
         )
 
@@ -182,7 +182,6 @@ class Manager:
                 resource_keys_to_init=get_required_resource_keys_to_init(
                     execution_plan,
                     job_def,
-                    resolved_run_config,
                 ),
                 op_name=op.name,
                 node_handle=node_handle,
@@ -262,10 +261,8 @@ class Manager:
         self.op_def = op_def
         self.job = job_def
 
-        resolved_run_config = ResolvedRunConfig.build(job_def, run_config)
-
         job = InMemoryJob(job_def)
-        execution_plan = ExecutionPlan.build(job, resolved_run_config)
+        execution_plan = create_execution_plan(job, run_config)
 
         with scoped_job_context(
             execution_plan,
@@ -282,7 +279,6 @@ class Manager:
                 resource_keys_to_init=get_required_resource_keys_to_init(
                     execution_plan,
                     job_def,
-                    resolved_run_config,
                 ),
                 op_name=op_def.name,
                 node_handle=NodeHandle(op_def.name, parent=None),
