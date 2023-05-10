@@ -1,15 +1,5 @@
 import {useQuery} from '@apollo/client';
-import {
-  Box,
-  TextInput,
-  Spinner,
-  Colors,
-  ButtonLink,
-  Icon,
-  Button,
-  Tag,
-  useViewport,
-} from '@dagster-io/ui';
+import {Box, Spinner, Colors, Icon, Tag, useViewport, Select, MenuItem} from '@dagster-io/ui';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -26,13 +16,14 @@ import {
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {Container, HeaderCell, Inner, Row, RowCell} from '../ui/VirtualizedTable';
 import {StatusCase, buildAssetNodeStatusContent} from '../asset-graph/AssetNode';
-import {toGraphId} from '../asset-graph/Utils';
+import {displayNameForAssetKey, toGraphId} from '../asset-graph/Utils';
 import {Link} from 'react-router-dom';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepositoryLink, RepositoryName} from '../nav/RepositoryLink';
 import {AssetGroupSelector} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 
 type Props = {
   Header: React.FC<{refreshState: ReturnType<typeof useQueryRefreshAtInterval>}>;
@@ -203,9 +194,16 @@ function VirtualRow({height, start, group}: RowProps) {
   const {liveDataByNode} = useLiveDataForAssetKeys(assetKeys);
 
   const statuses = React.useMemo(() => {
-    const statuses = {successful: 0, failed: 0, inprogress: 0, missing: 0, loading: 0};
+    type assetType = typeof group['assets'][0];
+    const statuses = {
+      successful: [] as assetType[],
+      failed: [] as assetType[],
+      inprogress: [] as assetType[],
+      missing: [] as assetType[],
+      loading: false,
+    };
     if (!Object.keys(liveDataByNode).length) {
-      statuses.loading = 1;
+      statuses.loading = true;
       return statuses;
     }
     Object.keys(liveDataByNode).forEach((key) => {
@@ -222,40 +220,40 @@ function VirtualRow({height, start, group}: RowProps) {
       });
       switch (status.case) {
         case StatusCase.LOADING:
-          statuses.loading++;
+          statuses.loading = true;
           break;
         case StatusCase.SOURCE_OBSERVING:
-          statuses.inprogress++;
+          statuses.inprogress.push(asset);
           break;
         case StatusCase.SOURCE_OBSERVED:
-          statuses.successful++;
+          statuses.successful.push(asset);
           break;
         case StatusCase.SOURCE_NEVER_OBSERVED:
-          statuses.missing++;
+          statuses.missing.push(asset);
           break;
         case StatusCase.SOURCE_NO_STATE:
-          statuses.missing++;
+          statuses.missing.push(asset);
           break;
         case StatusCase.MATERIALIZING:
-          statuses.successful++;
+          statuses.successful.push(asset);
           break;
         case StatusCase.LATE_OR_FAILED:
-          statuses.failed++;
+          statuses.failed.push(asset);
           break;
         case StatusCase.NEVER_MATERIALIZED:
-          statuses.missing++;
+          statuses.missing.push(asset);
           break;
         case StatusCase.MATERIALIZED:
-          statuses.successful++;
+          statuses.successful.push(asset);
           break;
         case StatusCase.PARTITIONS_FAILED:
-          statuses.failed++;
+          statuses.failed.push(asset);
           break;
         case StatusCase.PARTITIONS_MISSING:
-          statuses.missing++;
+          statuses.missing.push(asset);
           break;
         case StatusCase.PARTITIONS_MATERIALIZED:
-          statuses.successful++;
+          statuses.successful.push(asset);
           break;
       }
     });
@@ -289,63 +287,71 @@ function VirtualRow({height, start, group}: RowProps) {
           </Box>
         </Cell>
         <Cell isLoading={!!statuses.loading}>
-          {statuses.missing ? (
-            <Tag intent="none">
-              <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
-                <div
-                  style={{
-                    width: '12px',
-                    height: '12px',
-                    border: `2px solid ${Colors.Gray500}`,
-                    borderRadius: '50%',
-                  }}
-                />
-                {statuses.missing}
-              </Box>
-            </Tag>
+          {statuses.missing.length ? (
+            <SelectOnHover assets={statuses.missing}>
+              <Tag intent="none">
+                <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
+                  <div
+                    style={{
+                      width: '12px',
+                      height: '12px',
+                      border: `2px solid ${Colors.Gray500}`,
+                      borderRadius: '50%',
+                    }}
+                  />
+                  {statuses.missing.length}
+                </Box>
+              </Tag>
+            </SelectOnHover>
           ) : null}
         </Cell>
         <Cell isLoading={!!statuses.loading}>
-          {statuses.failed ? (
-            <Tag intent="danger">
-              <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
-                <div
-                  style={{
-                    width: 0,
-                    height: 0,
-                    borderLeft: '6px solid transparent',
-                    borderRight: '6px solid transparent',
-                    borderBottom: '10px solid red',
-                    display: 'inline-block',
-                  }}
-                />
-                {statuses.failed}
-              </Box>
-            </Tag>
+          {statuses.failed.length ? (
+            <SelectOnHover assets={statuses.failed}>
+              <Tag intent="danger">
+                <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
+                  <div
+                    style={{
+                      width: 0,
+                      height: 0,
+                      borderLeft: '6px solid transparent',
+                      borderRight: '6px solid transparent',
+                      borderBottom: '10px solid red',
+                      display: 'inline-block',
+                    }}
+                  />
+                  {statuses.failed.length}
+                </Box>
+              </Tag>
+            </SelectOnHover>
           ) : null}
         </Cell>
         <Cell isLoading={!!statuses.loading}>
-          {statuses.inprogress ? (
-            <Tag intent="primary" icon="spinner">
-              {statuses.inprogress}
-            </Tag>
+          {statuses.inprogress.length ? (
+            <SelectOnHover assets={statuses.inprogress}>
+              <Tag intent="primary" icon="spinner">
+                {statuses.inprogress.length}
+              </Tag>
+            </SelectOnHover>
           ) : null}
         </Cell>
         <Cell isLoading={!!statuses.loading}>
-          {statuses.successful ? (
-            <Tag intent="success">
-              <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
-                <div
-                  style={{
-                    backgroundColor: Colors.Green500,
-                    width: '10px',
-                    height: '10px',
-                    borderRadius: '50%',
-                  }}
-                />
-                {statuses.successful}
-              </Box>
-            </Tag>
+          {statuses.successful.length ? (
+            <SelectOnHover assets={statuses.successful}>
+              <Tag intent="success">
+                <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
+                  <div
+                    style={{
+                      backgroundColor: Colors.Green500,
+                      width: '10px',
+                      height: '10px',
+                      borderRadius: '50%',
+                    }}
+                  />
+                  {statuses.successful.length}
+                </Box>
+              </Tag>
+            </SelectOnHover>
           ) : null}
         </Cell>
       </RowGrid>
@@ -378,7 +384,42 @@ const Cell = ({children, isLoading}: {children: React.ReactNode; isLoading?: boo
 
 const RepositoryLinkWrapper = styled.div<{maxWidth?: number}>`
   font-size: 12px;
+  pointer-events: none;
   a {
+    color: ${Colors.Gray600};
+    pointer-events: none;
     max-width: ${({maxWidth}) => (maxWidth ? 'unset' : `${maxWidth}px`)};
+  }
+`;
+
+function SelectOnHover({assets, children}: {assets: Assets; children: React.ReactNode}) {
+  return (
+    <SelectWrapper>
+      <Select
+        items={assets}
+        itemPredicate={(query, item) =>
+          displayNameForAssetKey(item.key).toLocaleLowerCase().includes(query.toLocaleLowerCase())
+        }
+        itemRenderer={(item) => (
+          <Link to={assetDetailsPathForKey(item.key)} target="_blank">
+            <MenuItem
+              key={displayNameForAssetKey(item.key)}
+              text={displayNameForAssetKey(item.key)}
+              icon="open_in_new"
+            />
+          </Link>
+        )}
+        onItemSelect={() => {}}
+      >
+        {children}
+      </Select>
+    </SelectWrapper>
+  );
+}
+
+const SelectWrapper = styled.div`
+  cursor: pointer;
+  &:hover {
+    font-weight: 600;
   }
 `;
