@@ -4,6 +4,7 @@ from dagster import (
     AssetSelection,
     SourceAsset,
 )
+from dagster._core.definitions.asset_reconciliation_sensor import AutoMaterializeReason
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._seven.compat.pendulum import create_pendulum_time
 
@@ -199,6 +200,12 @@ freshness_policy_scenarios = {
         evaluation_delta=datetime.timedelta(minutes=35),
         # now that it's been awhile since that run failed, give it another attempt
         expected_run_requests=[run_request(asset_keys=["asset1", "asset2", "asset3", "asset4"])],
+        expected_materialize_reasons={
+            "asset1": {AutoMaterializeReason.downstream_freshness()},
+            "asset2": {AutoMaterializeReason.downstream_freshness()},
+            "asset3": {AutoMaterializeReason.downstream_freshness()},
+            "asset4": {AutoMaterializeReason.freshness()},
+        },
     ),
     "freshness_root_failure": AssetReconciliationScenario(
         assets=diamond_freshness,
@@ -315,6 +322,10 @@ freshness_policy_scenarios = {
         unevaluated_runs=[run([f"asset{i}" for i in range(1, 6)])],
         evaluation_delta=datetime.timedelta(minutes=35),
         expected_run_requests=[run_request(asset_keys=["asset2", "asset5"])],
+        expected_materialize_reasons={
+            "asset2": {AutoMaterializeReason.downstream_freshness()},
+            "asset5": {AutoMaterializeReason.freshness()},
+        },
     ),
     "freshness_complex_subsettable": AssetReconciliationScenario(
         assets=subsettable_multi_asset_complex,
