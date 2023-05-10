@@ -341,11 +341,12 @@ To set up continuous integration using GitHub Actions, you can use your own Dags
 1. In the repository, set the necessary GitHub action secrets:
 
    - `DAGSTER_CLOUD_API_TOKEN` - The Dagster Cloud agent token from the previous section. Refer to the [agent tokens documentation](/dagster-cloud/account/managing-user-agent-tokens#managing-agent-tokens) for more info.
-   - `ORGANIZATION_ID` - The organization ID of your Dagster Cloud organization, found in your account's URL. For example, if your organization is found at `https://dagster.cloud/pied-piper` or `https://pied-piper.dagster.cloud/`, this would be `pied-piper`.
 
    Refer to the [GitHub docs](https://docs.github.com/en/actions/security-guides/encrypted-secrets#creating-encrypted-secrets-for-a-repository) for more info about GitHub Action secrets.
 
-2. In both workflow files, uncomment the step that is relevant to your Docker container registry. For example, if using DockerHub, you'd uncomment the `DockerHub` step in these files.
+2. In `deploy-dagster-cloud.yml`, set the `DAGSTER_CLOUD_ORGANIZATION` environment variable to your dagster.cloud organization name.
+
+3. In `deploy-dagster-cloud.yml`, uncomment the step that is relevant to your Docker container registry. For example, if using DockerHub, you'd uncomment the `DockerHub` step in these files. Ensure you have set up the relevant secrets for building and uploading your Docker images.
 
 When finished setting up the repository, navigate back to Dagster Cloud and move on to the next step.
 
@@ -358,19 +359,45 @@ When finished, [continue to the next step](#step-4-set-up-environment-variables-
 </TabItem>
 <TabItem name="Other CI/CD provider">
 
-For continuous integration using a CI/CD provider other than GitHub, your system should:
+For continuous integration using a CI/CD provider other than GitHub, your system should use the `dagster-cloud ci` subcommand to deploy code locations to Dagster Cloud.
 
-1. Build a Docker image containing your Dagster code.
-2. Push the image to a registry your agent can access.
-3. Deploy the update to Dagster Cloud using the `dagster-cloud` CLI. For example:
+Ensure that you have created a `dagster_cloud.yaml` file as described in [Syncing the workspace](/dagster-cloud/managing-deployments/code-locations#managing-code-locations-using-the-dagster-cloud-cli#syncing-the-workspace). The following steps are typically implemented in the CI/CD workflow:
 
-   ```shell
-   dagster-cloud workspace add-location YOUR_LOCATION_NAME \
-       --image LOCATION_IMAGE \
-       --package-name PACKAGE_NAME \
-   ```
+1. Set the build environment variables:
 
-   Refer to the [Adding a code location guide](/dagster-cloud/managing-deployments/code-locations#managing-code-locations-using-the-dagster-cloud-cli) for more info.
+   - `DAGSTER_CLOUD_ORGANIZATION` - the name of your organization in Dagster Cloud.
+   - `DAGSTER_CLOUD_API_TOKEN` - a token created in Dagster Cloud.
+   - `DAGSTER_BUILD_STATEDIR` - path to a blank or nonexistant temporary directory on the build machine. This directory is used to store local state during the build.
+
+2. Run the configuration check:
+
+       dagster-cloud ci check --project-dir=.
+
+   This is an optional step but useful to validate the contents of your `dagster_cloud.yaml` and connection to Dagster Cloud.
+
+3. Initialize the build session:
+
+       dagster-cloud ci init --project-dir=.
+
+   This reads the `dagster_cloud.yaml` configuration and initializes the `DAGSTER_BUILD_STATEDIR`.
+
+4. Build and upload Docker images for you code locations.
+
+   This step is specific to your Docker container registry and Docker build process. The only requirement is that the registry you upload to must match the registry specified in `dagster_cloud.yaml`. It is a good idea to use a unique image tag for each build.
+
+   You can build one image per code location or a shared image for multiple code locations.
+
+5. Update the build session with the Docker image tag. For each code location you want to deploy, run the following command passing the `IMAGE_TAG` used in the previous step:
+
+       dagster-cloud ci set-build-output --location-name=code-location-a --image-tag=IMAGE_TAG
+
+   This command does not deploy the code location but just updates the local state in `DAGSTER_BUILD_STATEDIR`.
+
+6. Deploy to Dagster Cloud:
+
+       dagster-cloud ci deploy
+
+   This command updates the code locations in Dagster Cloud.
 
 **Note**: Creating Branch Deployments using the CLI requires some additional steps. Refer to the [Branch Deployments with the dagster-cloud CLI guide](/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments) for more info.
 
