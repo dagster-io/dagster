@@ -108,7 +108,7 @@ def create_and_launch_partition_backfill(
         else:
             raise DagsterError(
                 'Backfill requested without specifying either "allPartitions" or "partitionNames" '
-                'arguments'
+                "arguments"
             )
 
         backfill = PartitionBackfill(

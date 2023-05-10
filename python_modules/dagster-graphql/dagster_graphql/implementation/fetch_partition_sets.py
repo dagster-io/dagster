@@ -278,7 +278,6 @@ def partition_statuses_from_run_partition_data(
         if partition_names and name not in partition_names:
             continue
 
-        partition_data = partition_data_by_name[name]
         results.append(
             GraphenePartitionStatus(
                 id=partition_id(name),

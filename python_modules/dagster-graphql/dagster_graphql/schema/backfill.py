@@ -277,10 +277,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         )
 
     def resolve_partitionStatuses(self, graphene_info: ResolveInfo):
-        """
-        For asset backfills, returns only statuses for runs that have been created.
-        """
-
+        """For asset backfills, returns only statuses for runs that have been created."""
         partition_set_origin = self._backfill_job.partition_set_origin
         partition_set_name = (
             partition_set_origin.partition_set_name if partition_set_origin else None

@@ -38,7 +38,7 @@ from dagster._core.host_representation import (
     ExternalJob,
 )
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
-from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter, FINISHED_STATUSES
+from dagster._core.storage.dagster_run import FINISHED_STATUSES, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG
 from dagster._core.workspace.context import (
     BaseWorkspaceRequestContext,
@@ -415,7 +415,7 @@ def execute_asset_backfill_iteration(
     This is a generator so that we can return control to the daemon and let it heartbeat during
     expensive operations.
     """
-    from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+    from dagster._core.execution.backfill import BulkActionStatus
 
     asset_graph = ExternalAssetGraph.from_workspace(
         workspace_process_context.create_request_context()
@@ -428,14 +428,16 @@ def execute_asset_backfill_iteration(
     )
     backfill_start_time = utc_datetime_from_timestamp(backfill.backfill_timestamp)
 
+    instance_queryer = CachingInstanceQueryer(
+        instance=instance, evaluation_time=backfill_start_time
+    )
+
     if backfill.status == BulkActionStatus.REQUESTED:
         result = None
         for result in execute_asset_backfill_iteration_inner(
             backfill_id=backfill.backfill_id,
             asset_backfill_data=asset_backfill_data,
-            instance_queryer=CachingInstanceQueryer(
-                instance=instance, evaluation_time=backfill_start_time
-            ),
+            instance_queryer=instance_queryer,
             asset_graph=asset_graph,
             run_tags=backfill.tags,
             backfill_start_time=backfill_start_time,
@@ -473,39 +475,56 @@ def execute_asset_backfill_iteration(
             )
 
     elif backfill.status == BulkActionStatus.CANCELING:
-        updated_backfill = None
-        for updated_backfill in get_canceling_asset_backfill_iteration_data(
-            backfill, asset_backfill_data, instance, asset_graph, backfill_start_time
+        # The asset backfill is successfully canceled when all requested runs have finished (success,
+        # failure, or cancellation). Since the AssetBackfillData object stores materialization states
+        # per asset partition, the daemon continues to update the backfill data until all runs have
+        # finished in order to display the final partition statuses in the UI.
+
+        # Update the asset backfill data to contain the newly materialized/failed partitions.
+        updated_asset_backfill_data = None
+        for updated_asset_backfill_data in get_canceling_asset_backfill_iteration_data(
+            backfill.backfill_id,
+            asset_backfill_data,
+            instance_queryer,
+            asset_graph,
+            backfill_start_time,
         ):
             yield None
 
-        if not isinstance(updated_backfill, PartitionBackfill):
+        if not isinstance(updated_asset_backfill_data, AssetBackfillData):
             check.failed(
                 "Expected get_canceling_asset_backfill_iteration_data to return a PartitionBackfill"
             )
 
+        updated_backfill = backfill.with_asset_backfill_data(
+            updated_asset_backfill_data, dynamic_partitions_store=instance
+        )
+        # If all runs have concluded, mark the backfill as canceled.
+        if updated_asset_backfill_data.requested_runs_finished(
+            backfill.backfill_id, instance_queryer
+        ):
+            updated_backfill = updated_backfill.with_status(BulkActionStatus.CANCELED)
+
     else:
-        check.failed("Unexpected backfill status: {}".format(backfill.status))
+        check.failed(f"Unexpected backfill status: {backfill.status}")
 
     instance.update_backfill(updated_backfill)
 
 
 def get_canceling_asset_backfill_iteration_data(
-    backfill: "PartitionBackfill",
+    backfill_id: str,
     asset_backfill_data: AssetBackfillData,
-    instance: DagsterInstance,
+    instance_queryer: CachingInstanceQueryer,
     asset_graph: ExternalAssetGraph,
     backfill_start_time: datetime,
-) -> Iterable[Optional["PartitionBackfill"]]:
-    from dagster._core.execution.backfill import BulkActionStatus
-
-    instance_queryer = CachingInstanceQueryer(
-        instance=instance, evaluation_time=backfill_start_time
-    )
-
+) -> Iterable[Optional[AssetBackfillData]]:
+    """
+    For asset backfills in the "canceling" state, fetch the asset backfill data with the updated
+    materialized and failed subsets.
+    """
     updated_materialized_subset = None
     for updated_materialized_subset in get_asset_backfill_iteration_materialized_partitions(
-        backfill.backfill_id, asset_backfill_data, asset_graph, instance_queryer
+        backfill_id, asset_backfill_data, asset_graph, instance_queryer
     ):
         yield None
 
@@ -516,7 +535,7 @@ def get_canceling_asset_backfill_iteration_data(
         )
 
     failed_and_downstream_subset = get_asset_backfill_iteration_failed_and_downstream_partitions(
-        backfill.backfill_id,
+        backfill_id,
         asset_backfill_data,
         asset_graph,
         instance_queryer,
@@ -532,17 +551,7 @@ def get_canceling_asset_backfill_iteration_data(
         backfill_start_time=backfill_start_time,
     )
 
-    updated_backfill = backfill.with_asset_backfill_data(
-        updated_backfill_data, dynamic_partitions_store=instance
-    )
-    if updated_backfill_data.requested_runs_finished(backfill.backfill_id, instance_queryer):
-        # The asset backfill is complete when all runs to be requested have finished (success,
-        # failure, or cancellation). Since the AssetBackfillData object stores materialization states
-        # per asset partition, the daemon continues to update the backfill data until all runs have
-        # finished in order to display the final partition statuses in the UI.
-        updated_backfill = updated_backfill.with_status(BulkActionStatus.CANCELED)
-
-    yield updated_backfill
+    yield updated_backfill_data
 
 
 def submit_run_request(
@@ -641,6 +650,12 @@ def get_asset_backfill_iteration_materialized_partitions(
     asset_graph: ExternalAssetGraph,
     instance_queryer: CachingInstanceQueryer,
 ) -> Iterable[Optional[AssetGraphSubset]]:
+    """
+    Returns the partitions that have been materialized by the backfill.
+
+    This function is a generator so we can return control to the daemon and let it heartbeat
+    during expensive operations.
+    """
     recently_materialized_asset_partitions = AssetGraphSubset(asset_graph)
     for asset_key in asset_backfill_data.target_subset.asset_keys:
         records = instance_queryer.get_materialization_records(
