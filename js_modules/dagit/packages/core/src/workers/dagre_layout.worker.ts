@@ -15,7 +15,7 @@ self.addEventListener('message', (event) => {
   // Before we attempt any imports, manually set the Webpack public path to the static path root.
   // This allows us to import paths when a path-prefix value has been set.
   if (data.staticPathRoot) {
-    (window as any).__webpack_public_path__ = data.staticPathRoot;
+    (self as any).__webpack_public_path__ = data.staticPathRoot;
   }
 
   switch (data.type) {
