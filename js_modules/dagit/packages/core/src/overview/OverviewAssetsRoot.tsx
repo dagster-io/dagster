@@ -214,55 +214,49 @@ function VirtualRow({height, start, group}: RowProps) {
       if (!asset.definition) {
         console.warn('Expected a definition for asset with key', key);
       }
-      try {
-        const status = buildAssetNodeStatusContent({
-          assetKey: {path: JSON.parse(key)},
-          definition: asset.definition!,
-          liveData: assetLiveData,
-          expanded: true,
-        });
-        switch (status.case) {
-          case StatusCase.LOADING:
-            statuses.loading++;
-            break;
-          case StatusCase.SOURCE_OBSERVING:
-            statuses.inprogress++;
-            break;
-          case StatusCase.SOURCE_OBSERVED:
-            statuses.successful++;
-            break;
-          case StatusCase.SOURCE_NEVER_OBSERVED:
-            statuses.missing++;
-            break;
-          case StatusCase.SOURCE_NO_STATE:
-            statuses.missing++;
-            break;
-          case StatusCase.MATERIALIZING:
-            statuses.successful++;
-            break;
-          case StatusCase.LATE_OR_FAILED:
-            statuses.failed++;
-            break;
-          case StatusCase.NEVER_MATERIALIZED:
-            statuses.missing++;
-            break;
-          case StatusCase.MATERIALIZED:
-            statuses.successful++;
-            break;
-          case StatusCase.PARTITIONS_FAILED:
-            statuses.failed++;
-            break;
-          case StatusCase.PARTITIONS_MISSING:
-            statuses.missing++;
-            break;
-          case StatusCase.PARTITIONS_MATERIALIZED:
-            statuses.successful++;
-            break;
-        }
-      } catch (e) {
-        statuses.loading = 1;
-        debugger;
-        return;
+      const status = buildAssetNodeStatusContent({
+        assetKey: {path: JSON.parse(key)},
+        definition: asset.definition!,
+        liveData: assetLiveData,
+        expanded: true,
+      });
+      switch (status.case) {
+        case StatusCase.LOADING:
+          statuses.loading++;
+          break;
+        case StatusCase.SOURCE_OBSERVING:
+          statuses.inprogress++;
+          break;
+        case StatusCase.SOURCE_OBSERVED:
+          statuses.successful++;
+          break;
+        case StatusCase.SOURCE_NEVER_OBSERVED:
+          statuses.missing++;
+          break;
+        case StatusCase.SOURCE_NO_STATE:
+          statuses.missing++;
+          break;
+        case StatusCase.MATERIALIZING:
+          statuses.successful++;
+          break;
+        case StatusCase.LATE_OR_FAILED:
+          statuses.failed++;
+          break;
+        case StatusCase.NEVER_MATERIALIZED:
+          statuses.missing++;
+          break;
+        case StatusCase.MATERIALIZED:
+          statuses.successful++;
+          break;
+        case StatusCase.PARTITIONS_FAILED:
+          statuses.failed++;
+          break;
+        case StatusCase.PARTITIONS_MISSING:
+          statuses.missing++;
+          break;
+        case StatusCase.PARTITIONS_MATERIALIZED:
+          statuses.successful++;
+          break;
       }
     });
     return statuses;
