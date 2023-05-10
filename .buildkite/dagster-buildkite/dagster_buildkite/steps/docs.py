@@ -44,7 +44,6 @@ def build_docs_steps() -> List[BuildkiteStep]:
             # "git diff --ignore-all-space --stat",
             # "git diff --exit-code --ignore-all-space --no-patch",
         )
-        .with_skip(skip_if_no_docs_changes())
         .on_test_image(AvailablePythonVersion.get_default())
         .build(),
         # Verify screenshot integrity.
