@@ -50,12 +50,12 @@ def test_reconciliation(scenario):
             ): reason
             for key, reason in (scenario.expected_skip_reasons or {}).items()
         }
-        assert (
-            sorted(build_auto_materialize_asset_evaluations(
+        assert sorted(
+            build_auto_materialize_asset_evaluations(
                 AssetGraph.from_assets(scenario.assets), materialize_reasons, skip_reasons
-            ), key=lambda x: x.asset_key)
-            == sorted(evaluations, key=lambda x: x.asset_key)
-        )
+            ),
+            key=lambda x: x.asset_key,
+        ) == sorted(evaluations, key=lambda x: x.asset_key)
 
     assert len(run_requests) == len(scenario.expected_run_requests)
 
