@@ -121,7 +121,7 @@ class DagsterGraphQLClient:
         mode: str = "default",
         preset: Optional[str] = None,
         tags: Optional[Mapping[str, str]] = None,
-        solid_selection: Optional[Sequence[str]] = None,
+        op_selection: Optional[Sequence[str]] = None,
         is_using_job_op_graph_apis: Optional[bool] = False,
     ):
         check.opt_str_param(repository_location_name, "repository_location_name")
@@ -170,7 +170,7 @@ class DagsterGraphQLClient:
                     "repositoryLocationName": repository_location_name,
                     "repositoryName": repository_name,
                     "pipelineName": pipeline_name,
-                    "solidSelection": solid_selection,
+                    "solidSelection": op_selection,
                 }
             }
         }
@@ -212,67 +212,6 @@ class DagsterGraphQLClient:
             # a PipelineNotFoundError, a RunConflict, or a PythonError
             raise DagsterGraphQLClientError(query_result_type, query_result["message"])
 
-    def submit_pipeline_execution(
-        self,
-        pipeline_name: str,
-        repository_location_name: Optional[str] = None,
-        repository_name: Optional[str] = None,
-        run_config: Optional[Any] = None,
-        mode: str = "default",
-        preset: Optional[str] = None,
-        tags: Optional[Dict[str, Any]] = None,
-        solid_selection: Optional[Sequence[str]] = None,
-    ) -> str:
-        """Submits a Pipeline with attached configuration for execution.
-
-        Args:
-            pipeline_name (str): The pipeline's name
-            repository_location_name (Optional[str], optional): The name of the repository location where
-                the pipeline is located. If omitted, the client will try to infer the repository location
-                from the available options on the Dagster deployment. Defaults to None.
-            repository_name (Optional[str], optional): The name of the repository where the pipeline is located.
-                If omitted, the client will try to infer the repository from the available options
-                on the Dagster deployment. Defaults to None.
-            run_config (Optional[Any], optional): This is the run config to execute the pipeline with.
-                Note that runConfigData is any-typed in the GraphQL type system. This type is used when passing in
-                an arbitrary object for run config. However, it must conform to the constraints of the config
-                schema for this pipeline. If it does not, the client will throw a DagsterGraphQLClientError with a message of
-                RunConfigValidationInvalid. Defaults to None.
-            mode (Optional[str], optional): The mode to run the pipeline with. If you have not
-                defined any custom modes for your pipeline, the default mode is "default". Defaults to None.
-            preset (Optional[str], optional): The name of a pre-defined preset to use instead of a
-                run config. Defaults to None.
-            tags (Optional[Dict[str, Any]], optional): A set of tags to add to the pipeline execution.
-
-        Raises:
-            DagsterGraphQLClientError("InvalidStepError", invalid_step_key): the pipeline has an invalid step
-            DagsterGraphQLClientError("InvalidOutputError", body=error_object): some solid has an invalid output within the pipeline.
-                The error_object is of type dagster_graphql.InvalidOutputErrorInfo.
-            DagsterGraphQLClientError("ConflictingExecutionParamsError", invalid_step_key): a preset and a run_config & mode are present
-                that conflict with one another
-            DagsterGraphQLClientError("PresetNotFoundError", message): if the provided preset name is not found
-            DagsterGraphQLClientError("RunConflict", message): a `DagsterRunConflict` occured during execution.
-                This indicates that a conflicting pipeline run already exists in run storage.
-            DagsterGraphQLClientError("PipelineConfigurationInvalid", invalid_step_key): the run_config is not in the expected format
-                for the pipeline
-            DagsterGraphQLClientError("PipelineNotFoundError", message): the requested pipeline does not exist
-            DagsterGraphQLClientError("PythonError", message): an internal framework error occurred
-
-        Returns:
-            str: run id of the submitted pipeline run
-        """
-        return self._core_submit_execution(
-            pipeline_name,
-            repository_location_name,
-            repository_name,
-            run_config,
-            mode,
-            preset,
-            tags,
-            solid_selection,
-            is_using_job_op_graph_apis=False,
-        )
-
     @public
     def submit_job_execution(
         self,
@@ -281,7 +220,7 @@ class DagsterGraphQLClient:
         repository_name: Optional[str] = None,
         run_config: Optional[Dict[str, Any]] = None,
         tags: Optional[Dict[str, Any]] = None,
-        op_selection: Optional[List[str]] = None,
+        op_selection: Optional[Sequence[str]] = None,
     ) -> str:
         """Submits a job with attached configuration for execution.
 
@@ -322,7 +261,7 @@ class DagsterGraphQLClient:
             mode="default",
             preset=None,
             tags=tags,
-            solid_selection=op_selection,
+            op_selection=op_selection,
             is_using_job_op_graph_apis=True,
         )
 
