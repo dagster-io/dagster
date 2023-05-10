@@ -681,7 +681,7 @@ def test_op_custom_name():
     "select,exclude,expected_asset_names",
     [
         (
-            "*",
+            "fqn:*",
             None,
             {
                 "sort_by_calories",
