@@ -459,7 +459,7 @@ def load_assets_from_dbt_project(
         target_dir (Optional[str]): The target directory where dbt will place compiled artifacts.
             Defaults to "target" underneath the project_dir.
         select (Optional[str]): A dbt selection string for the models in a project that you want
-            to include. Defaults to "fqn:*".
+            to include. Defaults to `"fqn:*"`.
         exclude (Optional[str]): A dbt selection string for the models in a project that you want
             to exclude. Defaults to "".
         key_prefix (Optional[Union[str, List[str]]]): A prefix to apply to all models in the dbt
@@ -583,7 +583,7 @@ def load_assets_from_dbt_manifest(
         manifest_json (Optional[Mapping[str, Any]]): The contents of a DBT manifest.json, which contains
             a set of models to load into assets.
         select (Optional[str]): A dbt selection string for the models in a project that you want
-            to include. Defaults to "fqn:*".
+            to include. Defaults to `"fqn:*"`.
         exclude (Optional[str]): A dbt selection string for the models in a project that you want
             to exclude. Defaults to "".
         key_prefix (Optional[Union[str, List[str]]]): A prefix to apply to all models in the dbt
