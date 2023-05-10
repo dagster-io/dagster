@@ -330,6 +330,7 @@ def _dbt_nodes_to_assets(
     selected_unique_ids: AbstractSet[str],
     project_id: str,
     dbt_resource_key: str,
+    op_name: Optional[str] = None,
     runtime_metadata_fn: Optional[
         Callable[[OpExecutionContext, Mapping[str, Any]], Mapping[str, RawMetadataValue]]
     ] = None,
@@ -381,7 +382,7 @@ def _dbt_nodes_to_assets(
     )
 
     # prevent op name collisions between multiple dbt multi-assets
-    op_name = f"run_dbt_{project_id}"
+    op_name = op_name or f"run_dbt_{project_id}"
     if select != "*" or exclude:
         op_name += "_" + hashlib.md5(select.encode() + exclude.encode()).hexdigest()[-5:]
 
@@ -424,6 +425,7 @@ def load_assets_from_dbt_project(
     exclude: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    op_name: Optional[str] = None,
     runtime_metadata_fn: Optional[
         Callable[[OpExecutionContext, Mapping[str, Any]], Mapping[str, Any]]
     ] = None,
@@ -465,6 +467,7 @@ def load_assets_from_dbt_project(
         dbt_resource_key (Optional[str]): The resource key that the dbt resource will be specified at. Defaults to "dbt".
         source_key_prefix (Optional[Union[str, List[str]]]): A prefix to apply to all sources in the
             dbt project. Does not apply to models.
+        op_name (Optional[str]): Sets the name of the underlying Op that will generate the dbt assets.
         runtime_metadata_fn: (Optional[Callable[[SolidExecutionContext, Mapping[str, Any]], Mapping[str, Any]]]):
             A function that will be run after any of the assets are materialized and returns
             metadata entries for the asset, to be displayed in the asset catalog for that run.
@@ -525,6 +528,7 @@ def load_assets_from_dbt_project(
         exclude=exclude,
         key_prefix=key_prefix,
         source_key_prefix=source_key_prefix,
+        op_name=op_name,
         runtime_metadata_fn=runtime_metadata_fn,
         io_manager_key=io_manager_key,
         selected_unique_ids=selected_unique_ids,
@@ -547,6 +551,7 @@ def load_assets_from_dbt_manifest(
     exclude: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    op_name: Optional[str] = None,
     runtime_metadata_fn: Optional[
         Callable[[OpExecutionContext, Mapping[str, Any]], Mapping[str, Any]]
     ] = None,
@@ -585,6 +590,7 @@ def load_assets_from_dbt_manifest(
             project. Does not apply to sources.
         source_key_prefix (Optional[Union[str, List[str]]]): A prefix to apply to all sources in the
             dbt project. Does not apply to models.
+        op_name (Optional[str]): Sets the name of the underlying Op that will generate the dbt assets.
         dbt_resource_key (Optional[str]): The resource key that the dbt resource will be specified at. Defaults to "dbt".
         runtime_metadata_fn: (Optional[Callable[[SolidExecutionContext, Mapping[str, Any]], Mapping[str, Any]]]):
             A function that will be run after any of the assets are materialized and returns
@@ -674,6 +680,7 @@ def load_assets_from_dbt_manifest(
         exclude=exclude,
         selected_unique_ids=selected_unique_ids,
         dbt_resource_key=dbt_resource_key,
+        op_name=op_name,
         project_id=manifest_json["metadata"]["project_id"][:5],
         node_info_to_asset_key=node_info_to_asset_key,
         use_build_command=use_build_command,
