@@ -16,8 +16,6 @@ from dagster import (
     WeeklyPartitionsDefinition,
     asset,
 )
-from dagster._utils import utc_datetime_from_timestamp
-from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
@@ -28,11 +26,11 @@ from dagster._core.execution.asset_backfill import (
     execute_asset_backfill_iteration_inner,
     get_canceling_asset_backfill_iteration_data,
 )
-from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.host_representation.external_data import external_asset_graph_from_defs
 from dagster._core.test_utils import instance_for_test
 from dagster._seven.compat.pendulum import create_pendulum_time
 from dagster._utils import Counter, traced_counter
+from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 from dagster_tests.definitions_tests.asset_reconciliation_tests.asset_reconciliation_scenario import (
     do_run,
@@ -769,26 +767,16 @@ def test_asset_backfill_cancellation():
         upstream_hourly_partitioned_asset.key,
         downstream_daily_partitioned_asset.key,
     ]
+    targeted_partitions = ["2023-01-09-00:00"]
 
     asset_backfill_data = AssetBackfillData.from_asset_partitions(
         asset_graph=asset_graph,
-        partition_names=["2023-01-09-00:00"],
+        partition_names=targeted_partitions,
         asset_selection=asset_selection,
         dynamic_partitions_store=MagicMock(),
         all_partitions=False,
         backfill_start_time=backfill_start_time,
     )
-
-    partition_backfill = PartitionBackfill(
-        backfill_id=backfill_id,
-        status=BulkActionStatus.REQUESTED,
-        from_failure=False,
-        tags={},
-        backfill_timestamp=backfill_start_time.timestamp(),
-        asset_selection=asset_selection,
-    ).with_asset_backfill_data(asset_backfill_data, dynamic_partitions_store=MagicMock())
-
-    instance.add_backfill(partition_backfill)
 
     _single_backfill_iteration(
         backfill_id, asset_backfill_data, asset_graph, instance, assets_by_repo_name
@@ -796,12 +784,30 @@ def test_asset_backfill_cancellation():
 
     assert len(instance.get_runs()) == 1
 
-    instance.update_backfill(partition_backfill.with_status(BulkActionStatus.CANCELING))
+    instance_queryer = CachingInstanceQueryer(instance, backfill_start_time)
 
-    canceling_backfill = None
-    for canceling_backfill in get_canceling_asset_backfill_iteration_data(
-        partition_backfill, asset_backfill_data, instance, asset_graph, backfill_start_time
+    canceling_backfill_data = None
+    for canceling_backfill_data in get_canceling_asset_backfill_iteration_data(
+        backfill_id,
+        asset_backfill_data,
+        instance_queryer,
+        asset_graph,
+        backfill_start_time,
     ):
         pass
 
-    assert canceling_backfill.status == BulkActionStatus.CANCELED
+    assert isinstance(canceling_backfill_data, AssetBackfillData)
+
+    assert canceling_backfill_data.requested_runs_finished(backfill_id, instance_queryer) is True
+    assert (
+        canceling_backfill_data.materialized_subset.get_partitions_subset(
+            upstream_hourly_partitioned_asset.key
+        ).get_partition_keys()
+        == targeted_partitions
+    )
+    assert (
+        canceling_backfill_data.materialized_subset.get_partitions_subset(
+            downstream_daily_partitioned_asset.key
+        ).get_partition_keys()
+        == []
+    )
