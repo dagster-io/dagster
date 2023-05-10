@@ -383,7 +383,7 @@ def _dbt_nodes_to_assets(
 
     # prevent op name collisions between multiple dbt multi-assets
     op_name = op_name or f"run_dbt_{project_id}"
-    if select != "*" or exclude:
+    if select != "fqn:*" or exclude:
         op_name += "_" + hashlib.md5(select.encode() + exclude.encode()).hexdigest()[-5:]
 
     dbt_op = _get_dbt_op(
@@ -459,7 +459,7 @@ def load_assets_from_dbt_project(
         target_dir (Optional[str]): The target directory where dbt will place compiled artifacts.
             Defaults to "target" underneath the project_dir.
         select (Optional[str]): A dbt selection string for the models in a project that you want
-            to include. Defaults to "*".
+            to include. Defaults to "fqn:*".
         exclude (Optional[str]): A dbt selection string for the models in a project that you want
             to exclude. Defaults to "".
         key_prefix (Optional[Union[str, List[str]]]): A prefix to apply to all models in the dbt
@@ -513,7 +513,7 @@ def load_assets_from_dbt_project(
         profiles_dir, "profiles_dir", os.path.join(project_dir, "config")
     )
     target_dir = check.opt_str_param(target_dir, "target_dir", os.path.join(project_dir, "target"))
-    select = check.opt_str_param(select, "select", "*")
+    select = check.opt_str_param(select, "select", "fqn:*")
     exclude = check.opt_str_param(exclude, "exclude", "")
 
     manifest_json, cli_output = _load_manifest_for_project(
@@ -583,7 +583,7 @@ def load_assets_from_dbt_manifest(
         manifest_json (Optional[Mapping[str, Any]]): The contents of a DBT manifest.json, which contains
             a set of models to load into assets.
         select (Optional[str]): A dbt selection string for the models in a project that you want
-            to include. Defaults to "*".
+            to include. Defaults to "fqn:*".
         exclude (Optional[str]): A dbt selection string for the models in a project that you want
             to exclude. Defaults to "".
         key_prefix (Optional[Union[str, List[str]]]): A prefix to apply to all models in the dbt
@@ -663,7 +663,7 @@ def load_assets_from_dbt_manifest(
         )
         exclude = "" if exclude is None else exclude
     else:
-        select = select if select is not None else "*"
+        select = select if select is not None else "fqn:*"
         exclude = exclude if exclude is not None else ""
 
         selected_unique_ids = select_unique_ids_from_manifest(
