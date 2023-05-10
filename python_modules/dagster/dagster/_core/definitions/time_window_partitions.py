@@ -770,6 +770,8 @@ class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):
     Args:
         start_date (Union[datetime.datetime, str]): The first date in the set of partitions. Can
             provide in either a datetime or string format.
+        end_date (Union[datetime.datetime, str, None]): The last date(excluding) in the set of partitions.
+            Default is None. Can provide in either a datetime or string format.
         minute_offset (int): Number of minutes past the hour to "split" the partition. Defaults
             to 0.
         hour_offset (int): Number of hours past 00:00 to "split" the partition. Defaults to 0.
@@ -931,6 +933,8 @@ class HourlyPartitionsDefinition(TimeWindowPartitionsDefinition):
     Args:
         start_date (Union[datetime.datetime, str]): The first date in the set of partitions. Can
             provide in either a datetime or string format.
+        end_date (Union[datetime.datetime, str, None]): The last date(excluding) in the set of partitions.
+            Default is None. Can provide in either a datetime or string format.
         minute_offset (int): Number of minutes past the hour to "split" the partition. Defaults
             to 0.
         fmt (Optional[str]): The date format to use. Defaults to `%Y-%m-%d`.
@@ -1061,6 +1065,8 @@ class MonthlyPartitionsDefinition(TimeWindowPartitionsDefinition):
         start_date (Union[datetime.datetime, str]): The first date in the set of partitions will be
             midnight the sonnest first of the month following start_date. Can provide in either a
             datetime or string format.
+        end_date (Union[datetime.datetime, str, None]): The last date(excluding) in the set of partitions.
+            Default is None. Can provide in either a datetime or string format.
         minute_offset (int): Number of minutes past the hour to "split" the partition. Defaults
             to 0.
         hour_offset (int): Number of hours past 00:00 to "split" the partition. Defaults to 0.
@@ -1207,6 +1213,8 @@ class WeeklyPartitionsDefinition(TimeWindowPartitionsDefinition):
         start_date (Union[datetime.datetime, str]): The first date in the set of partitions will
             Sunday at midnight following start_date. Can provide in either a datetime or string
             format.
+        end_date (Union[datetime.datetime, str, None]): The last date(excluding) in the set of partitions.
+            Default is None. Can provide in either a datetime or string format.
         minute_offset (int): Number of minutes past the hour to "split" the partition. Defaults
             to 0.
         hour_offset (int): Number of hours past 00:00 to "split" the partition. Defaults to 0.
