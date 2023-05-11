@@ -1,18 +1,20 @@
 ---
-title: Managing user roles and permissions in Dagster Cloud
+title: Understanding role-based access control in Dagster Cloud | Dagster Docs
 ---
 
-# Managing user roles and permissions in Dagster Cloud
+# Understanding role-based access control in Dagster Cloud
 
 <Note>This guide is applicable to Dagster Cloud.</Note>
 
-In this guide, we'll cover how Dagster Cloud's user role hierarchy works, how to assign roles to users, and the granular permissions for each user role.
+Role-based access control (RBAC) enables you to grant specific permissions to users in your organization, ensuring that the right people have appropriate access to what they require in Dagster Cloud, and no more.
+
+In this guide, we'll cover how RBAC works in Dagster Cloud, how to assign roles to users, and the granular permissions for each user role.
 
 ---
 
-## Understanding Dagster Cloud's user role hierarchy
+## Dagster Cloud user roles
 
-Dagster Cloud supports five user roles for several levels of role-based access control, in order from the most permissive to the least permissive:
+Dagster Cloud uses a hierarchical model for RBAC, meaning that the most permissive roles include permissions from the roles beneath them. The following user roles are currently supported, in order from the **most** permissive to the **least** permissive:
 
 - Organization Admin
 - Admin
@@ -20,87 +22,85 @@ Dagster Cloud supports five user roles for several levels of role-based access c
 - Launcher (Enterprise plans only)
 - Viewer (Enterprise plans only)
 
+For example, the **Admin** user role includes permissions specific to this role and all permissions in the **Editor**, **Launcher**, and **Viewer** user roles. Refer to the [User permissions reference](#user-permissions-reference) for the full list of user permissions in Dagster Cloud.
+
+### User role enforcement
+
+All user roles are enforced both in Dagster Cloud and the [GraphQL API](/concepts/dagit/graphql).
+
+### Teams
+
+Dagster Cloud Enterprise users can create teams of users and assign default permission sets, either in Dagster Cloud or dynamically from an Identity Provider (IdP). Refer to the [Managing user teams in Dagster Cloud](/dagster-cloud/account/managing-users/managing-user-teams) guide for more info.
+
 ---
 
-## Assigning user roles
+## Assigning user and team roles
 
-All user roles are enforced both in Dagster Cloud and the GraphQL API. With the exception of the **Organization Admin** role, user roles are set on a per-deployment basis. Organization Admins have access to the entire organization, including all [full deployments](/dagster-cloud/managing-deployments/managing-deployments), [code locations](/dagster-cloud/managing-deployments/code-locations), and [Branch Deployments](/dagster-cloud/managing-deployments/branch-deployments).
+With the exception of the **Organization Admin** role, user and team roles are set on a per-deployment basis.
 
-### Deployment permissions
+Organization Admins have access to the entire organization, including all [full deployments](/dagster-cloud/managing-deployments/managing-deployments), [code locations](/dagster-cloud/managing-deployments/code-locations), and [Branch Deployments](/dagster-cloud/managing-deployments/branch-deployments).
 
-All Dagster Cloud accounts - Enterprise plan or not - can set permissions at the deployment level. When defined, the selected user role will be used as the default for all code locations contained in the deployment.
+<table>
+  <thead>
+    <tr>
+      <th width="15%; fixed">Level</th>
+      <th width="10%; fixed">Plan</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Deployment</td>
+      <td>All plans</td>
+      <td>
+        Defines the level of access for a given deployment. Roles set at this
+        level will be the default role for the user or team for all code
+        locations in the deployment.
+        <br />
+        <br />
+        <strong>Note</strong>: Granting access to a deployment grants a minimum of{" "}
+        <strong>Viewer</strong> access to all code locations. Preventing access for
+        specific code locations isn't currently supported. Additionally, having access
+        to a deployment doesn't grant access to Branch Deployments - those permissions
+        must be granted separately.
+      </td>
+    </tr>
+    <tr>
+      <td>Code location</td>
+      <td>Enterprise</td>
+      <td>
+        Defines the level of access for a given code location in a deployment.
+        <br />
+        <br />
+        Dagster Cloud Enterprise users can override the default deployment-level
+        role for individual code locations. For example, if the <strong>
+          Deployment
+        </strong> role is <strong>Launcher</strong>, you could override this role
+        with a more permissive role, such as <strong>Editor</strong> or <strong>
+          Admin
+        </strong>.
+        <br />
+        <br />
+        For non-Enterprise users, users will have the same level of access for
+        all code locations in a deployment.
+      </td>
+    </tr>
+    <tr>
+      <td>Branch deployments</td>
+      <td>All plans</td>
+      <td>
+        Defines the level of access for all Branch Deployments in the code
+        locations the user or team has access to.
+      </td>
+    </tr>
+  </tbody>
+</table>
 
-For example, if a user is assigned the **Editor** user role for a deployment, they'll also be an **Editor** for all code locations in the deployment:
+---
 
-<!-- ![Default Editor user role for prod code locations](/images/dagster-cloud/user-token-management/editor-permissions.png) -->
+## Understanding and applying role overrides
 
-<Image
-alt="Default Editor user role for prod code locations"
-src="/images/dagster-cloud/user-token-management/editor-permissions.png"
-width={1798}
-height={354}
-/>
-
-For Dagster Cloud Enterprise users, default user roles can be overridden at the [code location level](#code-location-permissions). For non-Enterprise users, the user will have the same level of access for all code locations in the deployment.
-
-**Note**: Having access to a deployment doesn't automatically grant access to Branch Deployments. [Branch deployment permissions](#branch-deployment-permissions) must be granted separately.
-
-### Code location permissions
-
-<Note>Code location permissions are a Dagster Cloud Enterprise feature.</Note>
-
-Dagster Cloud Enterprise users can override the deployment-level user role by setting permissions at the code location level. Overrides can only be performed if:
-
-- The user is not **Organization Admin**, and
-- The current user role for the deployment is **Viewer** or **Launcher**
-
-For example, if a user is assigned the **Viewer** user role for a deployment, only a more permissive role can be assigned for a code location in the deployment. Specifically, an **Editor** or **Launcher** user role:
-
-<!-- ![Overriding the Viewer user role for a code location](/images/dagster-cloud/user-token-management/code-location-override.png) -->
-
-<Image
-alt="Overriding the Viewer user role for a code location"
-src="/images/dagster-cloud/user-token-management/code-location-override.png"
-width={700}
-height={499}
-/>
-
-If a user is an **Organization Admin** or a deployment-level **Admin** or **Editor**, they already have the most permissive user role possible for the code location. In this case, an override is unnecessary and the **Edit user role** button next to the code location will be disabled:
-
-<!-- ![Override for a code location not allowed](/images/dagster-cloud/user-token-management/not-allowed-code-location-override.png) -->
-
-<Image
-alt="Override for a code location not allowed"
-src="/images/dagster-cloud/user-token-management/not-allowed-code-location-override.png"
-width={2064}
-height={1052}
-/>
-
-To remove an override, click **Edit user role** next to the code location to open the user role selection dialog. Then, click the **Remove override** button:
-
-<!-- ![Removing the override for a code location](/images/dagster-cloud/user-token-management/remove-code-location-override.png) -->
-
-<Image
-alt="Removing the override for a code location"
-src="/images/dagster-cloud/user-token-management/remove-code-location-override.png"
-width={700}
-height={500}
-/>
-
-### Branch deployment permissions
-
-Granting access to Branch Deployments gives users access to all Branch Deployments for all the code locations they have access to. Consider the following example:
-
-<!-- ![User roles for prod, staging, and all Branch Deployments](/images/dagster-cloud/user-token-management/branch-deployment-example.png) -->
-
-<Image
-alt="User roles for prod, staging, and all Branch Deployments"
-src="/images/dagster-cloud/user-token-management/branch-deployment-example.png"
-width={992}
-height={636}
-/>
-
-In this case, the user would have **Editor** access to Branch Deployments for all code locations in the `prod` deployment, but not in `staging`. This is because they're a **Viewer** for the code locations in the `prod` deployment, but they don't have access to the `staging` deployment or any of its code locations.
+TODO: in progress
 
 ---
 
@@ -244,6 +244,14 @@ In this case, the user would have **Editor** access to Branch Deployments for al
         Launch and cancel{" "}
         <a href="/concepts/partitions-schedules-sensors/backfills">backfills</a>
       </td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+    </tr>
+    <tr>
+      <td>Add dynamic partitions</td>
       <td className="bg-red-50">❌</td>
       <td className="bg-red-50">❌</td>
       <td className="bg-green-50">✅</td>
