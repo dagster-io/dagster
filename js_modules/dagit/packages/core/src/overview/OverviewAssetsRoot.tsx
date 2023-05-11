@@ -2,28 +2,28 @@ import {useQuery} from '@apollo/client';
 import {Box, Spinner, Colors, Icon, Tag, useViewport, Select, MenuItem} from '@dagster-io/ui';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
+import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
+import {StatusCase, buildAssetNodeStatusContent} from '../asset-graph/AssetNode';
+import {displayNameForAssetKey, toGraphId} from '../asset-graph/Utils';
 import {useLiveDataForAssetKeys} from '../asset-graph/useLiveDataForAssetKeys';
 import {ASSET_CATALOG_TABLE_QUERY, AssetGroupSuggest} from '../assets/AssetsCatalogTable';
+import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {
   AssetCatalogTableQuery,
   AssetCatalogTableQueryVariables,
 } from '../assets/types/AssetsCatalogTable.types';
-import {useDocumentTitle} from '../hooks/useDocumentTitle';
-import {Container, HeaderCell, Inner, Row, RowCell} from '../ui/VirtualizedTable';
-import {StatusCase, buildAssetNodeStatusContent} from '../asset-graph/AssetNode';
-import {displayNameForAssetKey, toGraphId} from '../asset-graph/Utils';
-import {Link} from 'react-router-dom';
-import {workspacePathFromAddress} from '../workspace/workspacePath';
-import {buildRepoAddress} from '../workspace/buildRepoAddress';
-import {RepositoryLink, RepositoryName} from '../nav/RepositoryLink';
 import {AssetGroupSelector} from '../graphql/types';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
+import {RepositoryLink} from '../nav/RepositoryLink';
+import {Container, HeaderCell, Inner, Row, RowCell} from '../ui/VirtualizedTable';
+import {buildRepoAddress} from '../workspace/buildRepoAddress';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 type Props = {
   Header: React.FC<{refreshState: ReturnType<typeof useQueryRefreshAtInterval>}>;
@@ -32,8 +32,6 @@ type Props = {
 export const OverviewAssetsRoot = ({Header, TabButton}: Props) => {
   useTrackPageView();
   useDocumentTitle('Overview | Timeline');
-
-  const [searchValue, setSearchValue] = React.useState('');
 
   const query = useQuery<AssetCatalogTableQuery, AssetCatalogTableQueryVariables>(
     ASSET_CATALOG_TABLE_QUERY,
@@ -88,17 +86,17 @@ export const OverviewAssetsRoot = ({Header, TabButton}: Props) => {
 
     return (
       <Box flex={{direction: 'column'}} style={{overflow: 'hidden'}}>
-        <VirtualHeaderRow />
-        <div style={{overflow: 'hidden'}}>
-          <Container ref={parentRef}>
-            <Inner $totalHeight={totalHeight}>
-              {items.map(({index, key, size, start}) => {
-                const group = groupedAssets[index];
-                return <VirtualRow key={key} start={start} height={size} group={group} />;
-              })}
-            </Inner>
-          </Container>
-        </div>
+        <Container ref={parentRef}>
+          <div style={{position: 'sticky', top: 0, zIndex: 5, background: Colors.White}}>
+            <VirtualHeaderRow />
+          </div>
+          <Inner $totalHeight={totalHeight}>
+            {items.map(({index, key, size, start}) => {
+              const group = groupedAssets[index];
+              return <VirtualRow key={key} start={start} height={size} group={group} />;
+            })}
+          </Inner>
+        </Container>
       </Box>
     );
   }
@@ -258,7 +256,7 @@ function VirtualRow({height, start, group}: RowProps) {
       }
     });
     return statuses;
-  }, [liveDataByNode]);
+  }, [liveDataByNode, group.assets]);
 
   const repo = group.assets.find((asset) => asset.definition?.repository)?.definition?.repository;
   const repoAddress = buildRepoAddress(repo?.name || '', repo?.location.name || '');
@@ -280,7 +278,7 @@ function VirtualRow({height, start, group}: RowProps) {
               </Link>
             </Box>
             <div {...containerProps}>
-              <RepositoryLinkWrapper maxWidth={viewport.width}>
+              <RepositoryLinkWrapper style={{width: 'inherit'}}>
                 <RepositoryLink repoAddress={repoAddress} showRefresh={false} />
               </RepositoryLinkWrapper>
             </div>
