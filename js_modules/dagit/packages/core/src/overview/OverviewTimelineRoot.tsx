@@ -1,12 +1,4 @@
-import {
-  PageHeader,
-  Heading,
-  Box,
-  TextInput,
-  Button,
-  ButtonGroup,
-  ErrorBoundary,
-} from '@dagster-io/ui';
+import {Box, TextInput, Button, ButtonGroup, ErrorBoundary} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
@@ -19,9 +11,6 @@ import {useHourWindow, HourWindow} from '../runs/useHourWindow';
 import {makeJobKey, useRunsForTimeline} from '../runs/useRunsForTimeline';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
-
-import {OverviewTabs} from './OverviewTabs';
-
 const LOOKAHEAD_HOURS = 1;
 const ONE_HOUR = 60 * 60 * 1000;
 const POLL_INTERVAL = 60 * 1000;
@@ -39,7 +28,11 @@ const hourWindowToOffset = (hourWindow: HourWindow) => {
   }
 };
 
-export const OverviewTimelineRoot = () => {
+type Props = {
+  Header: React.FC<{refreshState: ReturnType<typeof useQueryRefreshAtInterval>}>;
+  TabButton: React.FC<{selected: 'timeline' | 'assets'}>;
+};
+export const OverviewTimelineRoot = ({Header, TabButton}: Props) => {
   useTrackPageView();
   useDocumentTitle('Overview | Timeline');
 
@@ -104,16 +97,14 @@ export const OverviewTimelineRoot = () => {
   ]);
 
   return (
-    <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
-      <PageHeader
-        title={<Heading>Overview</Heading>}
-        tabs={<OverviewTabs tab="timeline" refreshState={refreshState} />}
-      />
+    <>
+      <Header refreshState={refreshState} />
       <Box
         padding={{horizontal: 24, vertical: 16}}
         flex={{alignItems: 'center', justifyContent: 'space-between'}}
       >
         <Box flex={{direction: 'row', alignItems: 'center', gap: 12, grow: 0}}>
+          <TabButton selected="timeline" />
           {allRepos.length > 1 && <RepoFilterButton />}
           <TextInput
             icon="search"
@@ -144,6 +135,6 @@ export const OverviewTimelineRoot = () => {
       <ErrorBoundary region="timeline">
         <RunTimeline loading={initialLoading} range={range} jobs={visibleJobs} />
       </ErrorBoundary>
-    </Box>
+    </>
   );
 };

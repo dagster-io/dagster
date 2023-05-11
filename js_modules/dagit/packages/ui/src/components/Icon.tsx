@@ -61,6 +61,7 @@ import github_pr_closed from '../icon-svgs/github_pr_closed.svg';
 import github_pr_merged from '../icon-svgs/github_pr_merged.svg';
 import github_pr_open from '../icon-svgs/github_pr_open.svg';
 import gitlab from '../icon-svgs/gitlab.svg';
+import graph from '../icon-svgs/graph.svg';
 import graph_downstream from '../icon-svgs/graph_downstream.svg';
 import graph_neighbors from '../icon-svgs/graph_neighbors.svg';
 import graph_upstream from '../icon-svgs/graph_upstream.svg';
@@ -203,6 +204,7 @@ export const Icons = {
   arrow_indent,
   editor_role,
 
+  graph,
   graph_downstream,
   graph_upstream,
   graph_neighbors,
