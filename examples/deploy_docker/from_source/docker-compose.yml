@@ -12,6 +12,10 @@ services:
       POSTGRES_USER: "postgres_user"
       POSTGRES_PASSWORD: "postgres_password"
       POSTGRES_DB: "postgres_db"
+    expose:
+      - "5432"
+    ports:
+      - "5432:5432"
     networks:
       - docker_example_network
 

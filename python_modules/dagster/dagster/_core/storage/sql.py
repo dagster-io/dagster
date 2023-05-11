@@ -181,6 +181,11 @@ def compiles_get_current_timestamp_mysql(_element, _compiler, **_kw) -> str:
     return f"CURRENT_TIMESTAMP({MYSQL_DATE_PRECISION})"
 
 
+@compiles(get_current_timestamp, "postgresql")
+def compiles_get_current_timestamp_postgres(_element, _compiler, **_kw) -> str:
+    return "TIMEZONE('utc', CURRENT_TIMESTAMP)"
+
+
 @compiles(get_current_timestamp)
 def compiles_get_current_timestamp_default(_element, _compiler, **_kw) -> str:
     return "CURRENT_TIMESTAMP"
