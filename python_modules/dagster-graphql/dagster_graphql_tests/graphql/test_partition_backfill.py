@@ -72,7 +72,6 @@ BACKFILL_STATUS_BY_ASSET = """
     partitionBackfillOrError(backfillId: $backfillId) {
       __typename
       ... on PartitionBackfill {
-        numCancelablePartitions
         backfillRunStatuses {
           results {
             partitionName
@@ -697,7 +696,6 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
             BACKFILL_STATUS_BY_ASSET,
             variables={"backfillId": backfill_id},
         )
-        assert result.data["partitionBackfillOrError"]["numCancelablePartitions"] == 6
 
         run_statuses = result.data["partitionBackfillOrError"]["backfillRunStatuses"]["results"]
         assert len(run_statuses) == 6
@@ -732,7 +730,6 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
 
         assert not result.errors
         assert result.data
-        assert result.data["partitionBackfillOrError"]["numCancelablePartitions"] == 0
 
         run_statuses = result.data["partitionBackfillOrError"]["backfillRunStatuses"]["results"]
         assert len(run_statuses) == 6
