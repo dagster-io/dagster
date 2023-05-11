@@ -443,6 +443,18 @@
             "path": "/dagster-cloud/account/authentication",
             "children": [
               {
+                "title": "Managing users",
+                "path": "/dagster-cloud/account/managing-users"
+              },
+              {
+                "title": "Managing teams",
+                "path": "/dagster-cloud/account/managing-users/managing-user-teams"
+              },
+              {
+                "title": "User roles and permissions",
+                "path": "/dagster-cloud/account/managing-users/managing-user-roles-permissions"
+              },
+              {
                 "title": "Setting up SSO",
                 "children": [
                   {
@@ -466,10 +478,6 @@
                     "path": "dagster-cloud/account/authentication/setting-up-pingone-saml-sso"
                   }
                 ]
-              },
-              {
-                "title": "Managing users",
-                "path": "/dagster-cloud/account/managing-users"
               }
             ]
           },
