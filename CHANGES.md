@@ -1,5 +1,55 @@
 # Changelog
 
+# 1.3.4 (core) / 0.19.4 (libraries)
+
+### New
+
+- Run monitoring will now detect runs that are stuck in a CANCELING state due to an error during termination and move them into CANCELED. See the [docs](https://docs.dagster.io/deployment/run-monitoring#run-cancelation-timeouts) for more information.
+- `TimeWindowPartitionMapping` objects are now current-time aware. Subsequently, only upstream/downstream partitions existent at the current time are returned.
+- `ExecuteJobResult` was renamed to `JobExecutionResult` (`ExecuteJobResult` remains a deprecated alias)
+- New `AssetSelection.key_prefixes` method allows matching asset keys starting with a provided prefix.
+- [dagster-airflow] persistent database URI can now be passed via environment variable
+- [dagster-azure] New `ConfigurablePickledObjectADLS2IOManager` that uses pythonic config
+- [dagster-fivetran] Fivetran connectors that are broken or incomplete are now ignored
+- [dagster-gcp] New `DataProcResource` follows the Pythonic resource system. The existing `dataproc_resource`  remains supported.
+- [dagster-k8s] The K8sRunLauncher and k8s_job_executor will now retry the api call to create a Kubernetes Job when it gets a transient error code (500, 503, 504, or 401).
+- [dagster-snowflake] The `SnowflakeIOManager` now supports `private_key`s that have been `base64` encoded to avoid issues with newlines in the private key. Non-base64 encoded keys are still supported. See the `SnowflakeIOManager` documentation for more information on `base64` encoded private keys.
+- [ui] Unpartitioned assets show up on the backfill page
+- [ui] On the experimental runs page you can open the “view all tags” dialog of a row by pressing the hotkey ‘t’ while hovering that row.
+- [ui] The “scroll-to-pan” feature flag has been removed, and scroll-to-pan is now default functionality.
+
+### Bugfixes
+
+- The server side polling for events during a live run has had its rate adjusted and no longer uses a fixed interval.
+- [dagster-postgres] Fixed an issue where primary key constraints were not being created for the `kvs`, `instance_info`, and `daemon_hearbeats` table for existing Postgres storage instances that were migrating from before `1.2.2`.  This should unblock users relying on the existence of a primary key constraint for replication.
+- Fixed a bug that could cause incorrect counts to be shown for missing asset partitions when partitions are in progress
+- Fixed an issue within `SensorResult` evaluation where multipartitioned run requests containing a dynamic partition added in a dynamic partitions request object would raise an invalid partition key error.
+- [ui] When trying to terminate a queued or in-progress run from a Run page, forcing termination was incorrectly given as the only option. This has been fixed, and these runs can now be terminated normally.
+- [ui] Fixed an issue on the asset job partitions page where an infinite recursion error would be thrown when using `TimeWindowPartitionMapping`.
+- [dagster-databricks] Polling for the status of skipped Databricks runs now properly terminates.
+
+### Deprecations
+
+- `ExecuteJobResult` is now a deprecated alias for the new name, `JobExecutionResult`.
+
+### Community Contributions
+
+- [dagster-airbyte] When supplying an `airbyte_resource` to `load_assets_from_connections` , you may now provide an instance of the `AirbyteResource` class, rather than just `airbyte_resource.configured(...)`  (thanks **[@joel-olazagasti](https://github.com/joel-olazagasti)!)**
+- [dagster-airbyte] Fixed an issue connecting to destinations that support normalization (thanks [@nina-j](https://github.com/nina-j)!)
+- Fix an error in the docs code snippets for IO managers (thanks [out-running-27](https://github.com/out-running-27)!)
+- Added [an example](https://github.com/dagster-io/dagster/tree/master/examples/project_analytics) to show how to build the Dagster's Software-Defined Assets for an analytics workflow with different deployments for a local and prod environment. (thanks [@PedramNavid](https://github.com/PedramNavid)!)
+- [dagster-celery] Fixed an issue where the `dagster-celery` CLI accepted an inconsistent configuration format - it now matches the same format as the `celery_executor`. Thanks [@boenshao](https://github.com/boenshao)!
+
+### Documentation
+
+- New “Managing your own I/O” tutorial section and other minor tutorial improvements.
+
+### Dagster Cloud
+
+- The ECS agent will now display task logs and other debug information when a code location fails to start up.
+- You can now set `ecs_timeout` in your ECS user code launcher config to extend how long the ECS agent polls for new code servers to start. Extending this timeout is useful if your code server takes an unusually long time to start up - for example, because it uses a very large image.
+- Added support for running the Dagster Cloud Kubernetes agent in a cluster using istio.
+
 # 1.3.3 (core) / 0.19.3 (libraries)
 
 ### New

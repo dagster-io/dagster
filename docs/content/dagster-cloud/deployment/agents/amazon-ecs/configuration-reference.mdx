@@ -99,7 +99,9 @@ instance_class:
 
 dagster_cloud_api:
   agent_token: <Agent Token String>
-  deployment: <Deployment Name>
+  deployments:
+    - <Deployment Name>
+    - <Optional Additional Deployment Name>
   branch_deployments: <true|false>
 
 user_code_launcher:
@@ -132,8 +134,8 @@ user_code_launcher:
   <ReferenceTableItem propertyName="dagster_cloud_api.agent_token">
     An agent token for the agent to use for authentication.
   </ReferenceTableItem>
-  <ReferenceTableItem propertyName="dagster_cloud_api.deployment">
-    The name of a full deployment for the agent to serve.
+  <ReferenceTableItem propertyName="dagster_cloud_api.deployments">
+    The names of full deployments for the agent to serve.
   </ReferenceTableItem>
   <ReferenceTableItem propertyName="dagster_cloud_api.branch_deployments">
     Whether the agent should serve all branch deployments.

@@ -12,6 +12,7 @@ export const FeatureFlag = {
   flagSensorScheduleLogging: 'flagSensorScheduleLogging' as const,
   flagSidebarResources: 'flagSidebarResources' as const,
   flagRunsTableFiltering: 'flagRunsTableFiltering' as const,
+  flagOverviewAssetsTab: 'flagOverviewAssetsTab' as const,
 };
 export type FeatureFlagType = keyof typeof FeatureFlag;
 

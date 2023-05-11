@@ -17,7 +17,7 @@ from .scenarios import ASSET_RECONCILIATION_SCENARIOS
 def test_reconcile_with_external_asset_graph(scenario_item):
     scenario_name, scenario = scenario_item
     instance = DagsterInstance.ephemeral()
-    run_requests, _ = scenario.do_sensor_scenario(
+    run_requests, _, _ = scenario.do_sensor_scenario(
         instance, scenario_name=scenario_name, with_external_asset_graph=True
     )
 

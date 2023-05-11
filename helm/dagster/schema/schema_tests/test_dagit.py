@@ -1,8 +1,9 @@
 import pytest
+import yaml
 from dagster_k8s.models import k8s_model_from_dict, k8s_snake_case_dict
 from kubernetes import client as k8s_client
 from kubernetes.client import models
-from schema.charts.dagster.subschema.dagit import Dagit, Workspace
+from schema.charts.dagster.subschema.dagit import Dagit, Server, Workspace
 from schema.charts.dagster.values import DagsterHelmValues
 from schema.charts.utils import kubernetes
 from schema.utils.helm_template import HelmTemplate
@@ -34,6 +35,16 @@ def configmap_helm_template() -> HelmTemplate:
         helm_dir_path="helm/dagster",
         subchart_paths=["charts/dagster-user-deployments"],
         output="templates/configmap-env-dagit.yaml",
+        model=models.V1ConfigMap,
+    )
+
+
+@pytest.fixture(name="workspace_configmap_template")
+def workspace_configmap_helm_template() -> HelmTemplate:
+    return HelmTemplate(
+        helm_dir_path="helm/dagster",
+        subchart_paths=["charts/dagster-user-deployments"],
+        output="templates/configmap-workspace.yaml",
         model=models.V1ConfigMap,
     )
 
@@ -322,6 +333,72 @@ def test_dagit_workspace_external_configmap(deployment_template: HelmTemplate):
     assert (
         dagit_deployment.spec.template.spec.volumes[1].config_map.name == "test-external-workspace"
     )
+
+
+def test_dagit_workspace_servers(workspace_configmap_template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(
+        dagit=Dagit.construct(
+            workspace=Workspace(
+                enabled=True,
+                servers=[
+                    Server(
+                        host="example.com",
+                        port=443,
+                        name="Example",
+                    )
+                ],
+                externalConfigmap=None,
+            )
+        ),
+    )
+
+    expected = {
+        "load_from": [
+            {"grpc_server": {"host": "example.com", "port": 443, "location_name": "Example"}}
+        ]
+    }
+
+    [dagit_workspace_configmap] = workspace_configmap_template.render(helm_values)
+    actual = yaml.safe_load(dagit_workspace_configmap.data["workspace.yaml"])
+
+    assert actual == expected
+
+
+def test_dagit_workspace_servers_ssl(workspace_configmap_template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(
+        dagit=Dagit.construct(
+            workspace=Workspace(
+                enabled=True,
+                servers=[
+                    Server(
+                        host="example.com",
+                        port=443,
+                        name="Example",
+                        ssl=True,
+                    )
+                ],
+                externalConfigmap=None,
+            )
+        ),
+    )
+
+    expected = {
+        "load_from": [
+            {
+                "grpc_server": {
+                    "host": "example.com",
+                    "port": 443,
+                    "location_name": "Example",
+                    "ssl": True,
+                }
+            }
+        ]
+    }
+
+    [dagit_workspace_configmap] = workspace_configmap_template.render(helm_values)
+    actual = yaml.safe_load(dagit_workspace_configmap.data["workspace.yaml"])
+
+    assert actual == expected
 
 
 def test_dagit_scheduler_name_override(deployment_template: HelmTemplate):

@@ -190,6 +190,17 @@
                             "type": "null"
                         }
                     ]
+                },
+                "ssl": {
+                    "title": "Ssl",
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [

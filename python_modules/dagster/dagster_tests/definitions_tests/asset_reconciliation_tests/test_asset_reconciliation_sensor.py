@@ -11,6 +11,11 @@ from dagster import (
     repository,
 )
 from dagster._check import CheckError
+from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_reconciliation_sensor import (
+    build_auto_materialize_asset_evaluations,
+)
+from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.time_window_partitions import (
     HourlyPartitionsDefinition,
 )
@@ -26,7 +31,31 @@ from .scenarios import ASSET_RECONCILIATION_SCENARIOS
 )
 def test_reconciliation(scenario):
     instance = DagsterInstance.ephemeral()
-    run_requests, _ = scenario.do_sensor_scenario(instance)
+    run_requests, _, evaluations = scenario.do_sensor_scenario(instance)
+
+    if scenario.expected_materialize_reasons or scenario.expected_skip_reasons:
+        materialize_reasons = {
+            (
+                AssetKeyPartitionKey(AssetKey.from_coercible(key[0]), key[1])
+                if isinstance(key, tuple)
+                else AssetKeyPartitionKey(AssetKey.from_coercible(key))
+            ): reason
+            for key, reason in (scenario.expected_materialize_reasons or {}).items()
+        }
+        skip_reasons = {
+            (
+                AssetKeyPartitionKey(AssetKey.from_coercible(key[0]), key[1])
+                if isinstance(key, tuple)
+                else AssetKeyPartitionKey(AssetKey.from_coercible(key))
+            ): reason
+            for key, reason in (scenario.expected_skip_reasons or {}).items()
+        }
+        assert sorted(
+            build_auto_materialize_asset_evaluations(
+                AssetGraph.from_assets(scenario.assets), materialize_reasons, skip_reasons
+            ),
+            key=lambda x: x.asset_key,
+        ) == sorted(evaluations, key=lambda x: x.asset_key)
 
     assert len(run_requests) == len(scenario.expected_run_requests)
 
@@ -53,7 +82,7 @@ def test_reconciliation_no_tags(scenario):
     # simulates an environment where asset_event_tags cannot be added
     instance = DagsterInstance.ephemeral()
 
-    run_requests, _ = scenario.do_sensor_scenario(instance)
+    run_requests, _, _ = scenario.do_sensor_scenario(instance)
 
     assert len(run_requests) == len(scenario.expected_run_requests)
 
@@ -121,7 +150,7 @@ def test_bad_partition_key():
     scenario = AssetReconciliationScenario(
         assets=assets, unevaluated_runs=[], asset_selection=AssetSelection.keys("hourly2")
     )
-    run_requests, _ = scenario.do_sensor_scenario(instance)
+    run_requests, _, _ = scenario.do_sensor_scenario(instance)
     assert len(run_requests) == 0
 
 
