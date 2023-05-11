@@ -189,6 +189,8 @@ export const TagSelector = ({
       }}
       content={<div ref={dropdownContainer}>{dropdown}</div>}
       targetTagName="div"
+      onOpening={rowVirtualizer.measure}
+      onOpened={rowVirtualizer.measure}
     >
       <Container
         onClick={() => {
