@@ -429,7 +429,8 @@ class CachingDataTimeResolver:
             return current_data_time
 
         run_failure_time = datetime.datetime.utcfromtimestamp(
-            latest_run_record.end_time or latest_run_record.create_timestamp.timestamp()
+            latest_run_record.end_time
+            or latest_run_record.create_timestamp.replace(tzinfo=datetime.timezone.utc).timestamp()
         ).replace(tzinfo=datetime.timezone.utc)
         return self._get_in_progress_data_time_in_run(
             run_id=run_id, asset_key=asset_key, current_time=run_failure_time
