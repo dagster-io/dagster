@@ -33,7 +33,7 @@ export type SingleBackfillQuery = {
     | {
         __typename: 'PartitionBackfill';
         id: string;
-        partitionStatuses: {
+        backfillRunStatuses: {
           __typename: 'PartitionStatuses';
           results: Array<{
             __typename: 'PartitionStatus';

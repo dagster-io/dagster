@@ -153,7 +153,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         limit=graphene.Int(),
     )
     error = graphene.Field(GraphenePythonError)
-    partitionStatuses = graphene.NonNull(
+    backfillRunStatuses = graphene.NonNull(
         "dagster_graphql.schema.partition_sets.GraphenePartitionStatuses"
     )
     partitionStatusCounts = non_null_list(
@@ -275,17 +275,23 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             external_partition_set=partition_set,
         )
 
-    def resolve_partitionStatuses(self, graphene_info: ResolveInfo):
+    def resolve_backfillRunStatuses(self, graphene_info: ResolveInfo):
+        """For asset backfills, returns only statuses for runs that have been created."""
+        partition_run_data = self._get_partition_run_data(graphene_info)
         partition_set_origin = self._backfill_job.partition_set_origin
         partition_set_name = (
             partition_set_origin.partition_set_name if partition_set_origin else None
         )
-        partition_run_data = self._get_partition_run_data(graphene_info)
+        partition_names = self._backfill_job.get_partition_names(graphene_info.context)
+
+        if not self._backfill_job.is_asset_backfill:
+            check.not_none(partition_names, "partition_names")
+
         return partition_statuses_from_run_partition_data(
-            partition_set_name,
             partition_run_data,
-            check.not_none(self._backfill_job.get_partition_names(graphene_info.context)),
-            backfill_id=self._backfill_job.backfill_id,
+            partition_set_name,
+            partition_names,
+            self._backfill_job.backfill_id,
         )
 
     def resolve_partitionStatusCounts(
