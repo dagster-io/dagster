@@ -34,6 +34,7 @@ class AutoMaterializeCondition(Enum):
     PARENT_OUTDATED = ("PARENT_OUTDATED", AutoMaterializeResult.SKIP)
 
     # Discard Reasons
+    MAX_MATERIALIZATIONS_EXCEEDED = ("MAX_MATERIALIZATIONS_EXCEEDED", AutoMaterializeResult.DISCARD)
 
 
 class AutoMaterializeConditionReason(NamedTuple):
@@ -73,3 +74,9 @@ class AutoMaterializeConditionReason(NamedTuple):
     @staticmethod
     def parent_outdated() -> "AutoMaterializeConditionReason":
         return AutoMaterializeConditionReason(condition=AutoMaterializeCondition.PARENT_OUTDATED)
+
+    @staticmethod
+    def max_materializations_exceeded() -> "AutoMaterializeConditionReason":
+        return AutoMaterializeConditionReason(
+            condition=AutoMaterializeCondition.MAX_MATERIALIZATIONS_EXCEEDED
+        )

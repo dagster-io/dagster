@@ -108,6 +108,7 @@ def get_implicit_auto_materialize_policy(
             ),
             for_freshness=True,
             time_window_partition_scope_minutes=24 * 60,
+            max_materializations_per_minute=None,
         )
     return auto_materialize_policy
 
@@ -571,6 +572,7 @@ def determine_asset_partitions_to_auto_materialize(
     Mapping[AssetKey, AbstractSet[str]],
     Optional[int],
 ]:
+    materialization_counts_by_asset_key: Dict[AssetKey, int] = defaultdict(int)
     evaluation_time = instance_queryer.evaluation_time
 
     (
@@ -703,17 +705,38 @@ def determine_asset_partitions_to_auto_materialize(
             return False
 
         if all(parents_will_be_reconciled(asset_graph, candidate) for candidate in candidates_unit):
-            unit_materialize_reason = next(
+            unit_reason = next(
                 filter(
                     None,
                     (reason_for_candidate(candidate) for candidate in candidates_unit),
                 ),
                 None,
             )
-            if unit_materialize_reason:
+            if unit_reason:
                 for candidate in candidates_unit:
-                    reasons[candidate].add(unit_materialize_reason)
-                return unit_materialize_reason.result == AutoMaterializeResult.MATERIALIZE
+                    reasons[candidate].add(unit_reason)
+                if unit_reason.result == AutoMaterializeResult.MATERIALIZE:
+                    max_materializations_exceeded = False
+                    for candidate in candidates_unit:
+                        materialization_counts_by_asset_key[candidate.asset_key] += 1
+                        auto_materialize_policy = get_implicit_auto_materialize_policy(
+                            asset_graph=asset_graph, asset_key=candidate.asset_key
+                        )
+                        if (
+                            auto_materialize_policy
+                            and auto_materialize_policy.max_materializations_per_minute
+                            and materialization_counts_by_asset_key[candidate.asset_key]
+                            > auto_materialize_policy.max_materializations_per_minute
+                        ):
+                            max_materializations_exceeded = True
+                            break
+                    if max_materializations_exceeded:
+                        for candidate in candidates_unit:
+                            reasons[candidate].add(
+                                AutoMaterializeConditionReason.max_materializations_exceeded()
+                            )
+                        return False
+                    return True
         else:
             for candidate in candidates_unit:
                 reasons[candidate].add(AutoMaterializeConditionReason.parent_outdated())

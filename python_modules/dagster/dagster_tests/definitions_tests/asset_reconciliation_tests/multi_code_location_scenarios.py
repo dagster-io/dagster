@@ -136,6 +136,7 @@ multi_code_location_scenarios = {
                     on_missing=False,
                     on_new_parent_data=False,
                     time_window_partition_scope_minutes=0,
+                    max_materializations_per_minute=None,
                 ),
             ),
             "bar": with_auto_materialize_policy(
@@ -145,6 +146,7 @@ multi_code_location_scenarios = {
                     on_missing=False,
                     on_new_parent_data=False,
                     time_window_partition_scope_minutes=0,
+                    max_materializations_per_minute=None,
                 ),
             ),
         },
@@ -161,6 +163,7 @@ multi_code_location_scenarios = {
                     on_missing=False,
                     on_new_parent_data=False,
                     time_window_partition_scope_minutes=0,
+                    max_materializations_per_minute=None,
                 ),
             ),
             "bar": with_auto_materialize_policy(
@@ -170,6 +173,7 @@ multi_code_location_scenarios = {
                     on_missing=False,
                     on_new_parent_data=False,
                     time_window_partition_scope_minutes=0,
+                    max_materializations_per_minute=None,
                 ),
             ),
         },
