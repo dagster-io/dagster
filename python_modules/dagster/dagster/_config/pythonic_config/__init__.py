@@ -965,34 +965,7 @@ class ConfigurableResourceFactory(
         # This utility is used to create a copy of this resource, without adjusting
         # any values in this case
 
-        print("*************")
-        print(f"resource_context.resource_config: {resource_context.resource_config}")
-        print("*************")
-
-        # # Specifically this is failing on unprocessed enums
-        # from_resource_config = process_config(
-        #     self._schema.config_type, resource_context.resource_config
-        # )
-        # if not post_processed_config.success:
-        #     raise DagsterInvalidConfigError(
-        #         f"Error while processing {config_obj_name} config ",
-        #         post_processed_config.errors,
-        #         data,
-        #     )
-        # from_resource_config = _process_config_values(
-        #     self._schema, resource_context.resource_config, self.__class__.__name__
-        # )
-
-        # print("*************")
-        # print(f"from_resource_config: {from_resource_config}")
-        # print("*************")
-
-        # import code
-
-        # code.interact(local=locals())
-
         copy = self._with_updated_values({})
-        # copy = self._with_updated_values(resource_context.resource_config)
         copy._state__internal__ = copy._state__internal__._replace(  # noqa: SLF001
             resource_context=resource_context
         )
@@ -1152,12 +1125,6 @@ class ConfigurableResource(ConfigurableResourceFactory[TResValue]):
         the actual ConfigurableResource object to user code.
         """
         return cast(TResValue, self)
-
-        # resource_cls = self.__class__
-        # # This ordering means that the resource_config clobbers the original data
-        # kwargs = {**self._state__internal__.original_data, **context.resource_config}
-        # instantiated = resource_cls(**kwargs)
-        # return cast(TResValue, instantiated)
 
 
 def _is_fully_configured(resource: CoercibleToResource) -> bool:

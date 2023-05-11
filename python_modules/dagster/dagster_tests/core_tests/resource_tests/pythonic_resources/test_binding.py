@@ -485,7 +485,8 @@ def test_override_default_value_in_ctor() -> None:
         return my_resource.str_field
 
     defs = Definitions(
-        [my_asset], resources={"my_resource": MyResourceWithDefault(str_field="value_set_in_ctor")}
+        [my_asset],
+        resources={"my_resource": MyResourceWithDefault(str_field="value_set_in_ctor")},
     )
 
     assert (
