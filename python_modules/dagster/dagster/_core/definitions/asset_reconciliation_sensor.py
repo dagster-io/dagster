@@ -857,13 +857,19 @@ def determine_asset_partitions_to_auto_materialize_for_freshness(
             current_data_time = data_time_resolver.get_current_data_time(key, current_time)
 
             # figure out the expected data time of this asset if it were to be executed on this tick
-            expected_data_time = min(
-                (
-                    cast(datetime.datetime, expected_data_time_by_key[k])
-                    for k in parents
-                    if k in expected_data_time_by_key and expected_data_time_by_key[k] is not None
-                ),
-                default=current_time,
+            # for root assets, this would just be the current time
+            expected_data_time = (
+                min(
+                    (
+                        cast(datetime.datetime, expected_data_time_by_key[k])
+                        for k in parents
+                        if k in expected_data_time_by_key
+                        and expected_data_time_by_key[k] is not None
+                    ),
+                    default=None,
+                )
+                if asset_graph.has_non_source_parents(key)
+                else current_time
             )
 
             if key in target_asset_keys:
