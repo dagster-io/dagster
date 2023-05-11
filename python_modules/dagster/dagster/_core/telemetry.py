@@ -566,16 +566,15 @@ def get_resource_stats(external_resources: Sequence["ExternalResource"]) -> Mapp
     used_dagster_io_managers = []
     used_custom_resources = False
 
-
     for resource in external_resources:
         resource_type = resource.resource_type
+        split_resource_type = resource_type.split(".")
+        module_name = split_resource_type[0]
+        class_name = split_resource_type[-1]
+
         if resource_type in dagster_resources:
-            module_name = resource_type[0]
-            class_name = resource_type[-1]
             used_dagster_resources.append({"module_name": module_name, "class_name": class_name})
         elif resource_type in dagster_io_managers:
-            module_name = resource_type[0]
-            class_name = resource_type[-1]
             used_dagster_io_managers.append({"module_name": module_name, "class_name": class_name})
         else:
             used_custom_resources = True
@@ -586,7 +585,7 @@ def get_resource_stats(external_resources: Sequence["ExternalResource"]) -> Mapp
         "has_custom_resources": str(used_custom_resources),
     }
 
-    return d  # TOOD - directly return the dictionary. keeping it this way for now for debugging
+    return d  # TODO - directly return the dictionary. keeping it this way for now for debugging
 
 
 def log_external_repo_stats(
