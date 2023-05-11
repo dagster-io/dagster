@@ -72,13 +72,13 @@ Organization Admins have access to the entire organization, including all [full 
         Defines the level of access for a given code location in a deployment.
         <br />
         <br />
-        Dagster Cloud Enterprise users can override the default deployment-level
-        role for individual code locations. For example, if the <strong>
-          Deployment
-        </strong> role is <strong>Launcher</strong>, you could override this role
-        with a more permissive role, such as <strong>Editor</strong> or <strong>
-          Admin
-        </strong>.
+        Dagster Cloud Enterprise users can <a href="#code-locations">
+          override the default deployment-level role for individual code
+          locations
+        </a>. For example, if the <strong>Deployment</strong> role is <strong>
+          Launcher
+        </strong>, you could override this role with a more permissive role, such
+        as <strong>Editor</strong> or <strong>Admin</strong>.
         <br />
         <br />
         For non-Enterprise users, users will have the same level of access for
@@ -96,83 +96,77 @@ Organization Admins have access to the entire organization, including all [full 
   </tbody>
 </table>
 
----
+### Applying role overrides
 
-## Understanding and applying role overrides
+<Note>This section is applicable to Dagster Cloud Enterprise.</Note>
 
-TODO: in progress
+As previously mentioned, you can define default user roles for users in your organization. Dagster Cloud also supports applying overrides to specific code locations in a deployment or individual team members (if using [teams](/dagster-cloud/account/managing-users/managing-user-teams)).
+
+Overrides may be used to apply a **more permissive** role. If, for example, the default role is **Admin** or **Organization Admin**, overrides will be disabled as these are the most permissive roles.
+
+#### Code locations
+
+To override a code location role for an individual user:
+
+1. Locate the user in the list of users.
+2. Click **Edit**.
+3. Click the toggle to the left of the deployment to open a list of code locations.
+4. Next to a code location, click **Edit user role**.
+5. Select the user role for the code location: <Image
+   alt="Overriding the Viewer user role for a code location"
+   src="/images/dagster-cloud/user-token-management/code-location-override.png"
+   width={700}
+   height={499}
+   />
+6. Click **Save**.
+
+#### Team members
+
+Users in your organization can belong to one or more [teams](/dagster-cloud/account/managing-users/managing-user-teams). When determining a user's level of access, Dagster Cloud will use the **most permissive** role assigned to the user between all of their team memberships and any individual role grants.
+
+For example, let's look at a user with the following roles for our `dev` deployment:
+
+- **Team 1**: Launcher
+- **Team 2**: Viewer
+- **Individual**: Viewer
+
+In this example, the user would have **Launcher** access to the `prod` deployment. This is because the Launcher role is more permissive than Viewer.
+
+The above also applies to code locations and Branch Deployment roles.
+
+#### Viewing overrides
+
+To view deployment-level overrides for a specific user, locate the user on the **Users** page and hover over a deployment:
+
+<Image
+alt="Deployment overrides popup in Dagster Cloud"
+src="/images/dagster-cloud/user-token-management/user-overrides-popup.png"
+width={1010}
+height={265}
+/>
+
+If there are code location-level overrides, a small **N override(s)** link will display beneath the user's deployment role. Hover over it to display the list of overrides:
+
+<Image
+alt="Code location overrides popup in Dagster Cloud"
+src="/images/dagster-cloud/user-token-management/code-location-override-popup.png"
+width={1976}
+height={554}
+/>
+
+#### Removing overrides
+
+1. Locate the user in the list of users.
+2. Click **Edit**.
+3. To remove an override:
+   - **For a deployment**, click **Edit user role** next to the deployment.
+   - **For a code location**, click the toggle next to the deployment to display a list of code locations. Click **Edit user role** next to the code location.
+4. Click the **Remove override** button.
+5. Click **Save**.
 
 ---
 
 ## User permissions reference
-
-<table>
-  <thead>
-    <tr>
-      <th width="25%; fixed">Permission group</th>
-      <th>UI location</th>
-      <th width="50%; fixed">Description</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>
-        <a href="#general">General</a>
-      </td>
-      <td>Varies</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>
-        <a href="#deployments">Deployments</a>
-      </td>
-      <td>Cloud Settings > Deployments</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>
-        <a href="#code-locations">Code locations</a>
-      </td>
-      <td>Deployment > Code locations</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>
-        <a href="#agent-tokens">Agent tokens</a>
-      </td>
-      <td>Cloud settings > Tokens</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>
-        <a href="#user-tokens">User tokens</a>
-      </td>
-      <td>Cloud settings > Tokens</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>
-        <a href="#users">Users</a>
-      </td>
-      <td>Cloud settings > Users</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>
-        <a href="#teams">Teams</a>
-      </td>
-      <td>Cloud settings > Teams</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>
-        <a href="#workspace-administration">Workspace administration</a>
-      </td>
-      <td>Varies</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
 
 ### General
 
@@ -262,6 +256,8 @@ TODO: in progress
 </table>
 
 ### Deployments
+
+Deployment settings are accessed in the UI by navigating to **user menu (your icon) > Cloud Settings > Deployments**.
 
 <table>
   <thead>
@@ -363,6 +359,8 @@ TODO: in progress
 
 ### Code locations
 
+Code locations are accessed in the UI by navigating to **Deployment > Code locations**.
+
 <table>
   <thead>
     <tr>
@@ -423,6 +421,8 @@ TODO: in progress
 
 ### Agent tokens
 
+Agent tokens are accessed in the UI by navigating to **user menu (your icon) > Cloud Settings > Tokens**.
+
 <table>
   <thead>
     <tr>
@@ -480,6 +480,8 @@ TODO: in progress
 
 ### User tokens
 
+User tokens are accessed in the UI by navigating to **user menu (your icon) > Cloud Settings > Tokens**.
+
 <table>
   <thead>
     <tr>
@@ -528,6 +530,8 @@ TODO: in progress
 </table>
 
 ### Users
+
+User management is accessed in the UI by navigating to **user menu (your icon) > Cloud Settings > Users**.
 
 <table>
   <thead>
@@ -582,6 +586,8 @@ TODO: in progress
 </table>
 
 ### Teams
+
+Team management is accessed in the UI by navigating to **user menu (your icon) > Cloud Settings > Teams**.
 
 **Note**: Admin users can modify teams only in deployments where they're an Admin.
 
@@ -723,6 +729,8 @@ TODO: in progress
 </table>
 
 ---
+
+## Related
 
 <ArticleList>
   <ArticleListItem
