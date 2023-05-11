@@ -2433,7 +2433,7 @@ type PartitionBackfill {
   runs(limit: Int): [Run!]!
   unfinishedRuns(limit: Int): [Run!]!
   error: PythonError
-  partitionStatuses: PartitionStatuses!
+  partitionStatuses: PartitionStatuses
   partitionStatusCounts: [PartitionStatusCounts!]!
   isAssetBackfill: Boolean!
   assetBackfillData: AssetBackfillData

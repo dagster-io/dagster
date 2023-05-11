@@ -291,14 +291,9 @@ def test_launch_asset_backfill():
             )
             assert not single_backfill_result.errors
             assert single_backfill_result.data
-            partition_status_results = single_backfill_result.data["partitionBackfillOrError"][
-                "partitionStatuses"
-            ]["results"]
-            assert len(partition_status_results) == 2
-            assert {
-                partition_status_result["partitionName"]
-                for partition_status_result in partition_status_results
-            } == {"a", "b"}
+            assert (
+                single_backfill_result.data["partitionBackfillOrError"]["partitionStatuses"] is None
+            )
 
 
 def test_remove_partitions_defs_after_backfill():
@@ -346,14 +341,9 @@ def test_remove_partitions_defs_after_backfill():
             )
             assert not single_backfill_result.errors
             assert single_backfill_result.data
-            partition_status_results = single_backfill_result.data["partitionBackfillOrError"][
-                "partitionStatuses"
-            ]["results"]
-            assert len(partition_status_results) == 0
-            assert {
-                partition_status_result["partitionName"]
-                for partition_status_result in partition_status_results
-            } == set()
+            assert (
+                single_backfill_result.data["partitionBackfillOrError"]["partitionStatuses"] is None
+            )
 
 
 def test_launch_asset_backfill_with_non_partitioned_asset():

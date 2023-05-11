@@ -2382,7 +2382,7 @@ export type PartitionBackfill = {
   partitionSet: Maybe<PartitionSet>;
   partitionSetName: Maybe<Scalars['String']>;
   partitionStatusCounts: Array<PartitionStatusCounts>;
-  partitionStatuses: PartitionStatuses;
+  partitionStatuses: Maybe<PartitionStatuses>;
   reexecutionSteps: Maybe<Array<Scalars['String']>>;
   runs: Array<Run>;
   status: BulkActionStatus;
