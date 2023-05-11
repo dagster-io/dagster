@@ -113,8 +113,7 @@ def test_runtime_config_env_var() -> None:
             # )
             .execute_in_process(
                 {"resources": {"writer": {"config": {"prefix": {"env": "MY_PREFIX_FOR_TEST"}}}}}
-            )
-            .success
+            ).success
         )
         assert out_txt == ["greeting: hello, world!"]
     finally:
