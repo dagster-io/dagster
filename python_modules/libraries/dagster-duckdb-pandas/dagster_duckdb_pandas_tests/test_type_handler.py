@@ -544,3 +544,21 @@ def test_self_dependent_asset(tmp_path, io_managers):
         # drop table so we start with an empty db for the next io manager
         duckdb_conn.execute("DELETE FROM my_schema.self_dependent_asset")
         duckdb_conn.close()
+
+
+def test_empty_dataframe(tmp_path, io_managers):
+    @asset(key_prefix=["my_schema"])
+    def empty_df() -> pd.DataFrame:
+        return pd.DataFrame()
+
+    @asset(key_prefix=["my_schema"])
+    def check_empty_df(empty_df: pd.DataFrame) -> None:
+        assert empty_df.empty
+
+    for io_manager in io_managers:
+        resource_defs = {"io_manager": io_manager}
+
+        # materialize asset twice to ensure that tables get properly deleted
+        for _ in range(2):
+            res = materialize([empty_df, check_empty_df], resources=resource_defs)
+            assert res.success
