@@ -24,32 +24,41 @@ class FreshnessAutoMaterializeReason(NamedTuple):
     """Indicates that this asset should be materialized because it requires newer data in order to
     align with its freshness policy.
     """
+
     result_type: AutoMaterializeResultType = AutoMaterializeResultType.MATERIALIZE
+
 
 @whitelist_for_serdes
 class DownstreamFreshnessAutoMaterializeReason(NamedTuple):
     """Indicates that this asset should be materialized because one of its downstream assets
     requires newer data in order to align with its freshness policy.
     """
+
     result_type: AutoMaterializeResultType = AutoMaterializeResultType.MATERIALIZE
+
 
 @whitelist_for_serdes
 class ParentMaterializedAutoMaterializeReason(NamedTuple):
     """Indicates that this asset should be materialized because one of its parents was materialized.
     """
+
     result_type: AutoMaterializeResultType = AutoMaterializeResultType.MATERIALIZE
+
 
 @whitelist_for_serdes
 class MissingAutoMaterializeReason(NamedTuple):
-    """Indicates that this asset should be materialized because it is missing.
-    """
+    """Indicates that this asset should be materialized because it is missing."""
+
     result_type: AutoMaterializeResultType = AutoMaterializeResultType.MATERIALIZE
+
 
 @whitelist_for_serdes
 class ParentOutdatedAutoMaterializeReason(NamedTuple):
     """Indicates that this asset should be skipped because one or more of its parents are outdated.
     """
+
     result_type: AutoMaterializeResultType = AutoMaterializeResultType.SKIP
+
 
 AutoMaterializeReason = Union[
     FreshnessAutoMaterializeReason,
