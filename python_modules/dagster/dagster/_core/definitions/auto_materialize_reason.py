@@ -2,7 +2,7 @@ from enum import Enum
 from typing import NamedTuple
 
 
-class AutoMaterializeResult(Enum):
+class AutoMaterializeResultType(Enum):
     """Represents the set of results of the auto-materialize logic.
 
     MATERIALIZE: The asset should be materialized by a run kicked off on this tick
@@ -20,26 +20,27 @@ class AutoMaterializeResult(Enum):
 class AutoMaterializeCondition(Enum):
     """Represents the set of conditions that can impact auto-materialization for an asset."""
 
-    def __init__(self, id: str, result: AutoMaterializeResult):
+    def __init__(self, id: str, result_type: AutoMaterializeResultType):
         self.id = id
-        self.result = result
+        self.result_type = result_type
 
-    # Materialization Reasons
-    FRESHNESS = ("FRESHNESS", AutoMaterializeResult.MATERIALIZE)
-    DOWNSTREAM_FRESHNESS = ("DOWNSTREAM_FRESHNESS", AutoMaterializeResult.MATERIALIZE)
-    PARENT_MATERIALIZED = ("PARENT_MATERIALIZED", AutoMaterializeResult.MATERIALIZE)
-    MISSING = ("MISSING", AutoMaterializeResult.MATERIALIZE)
+    # Materialization Conditions
+    FRESHNESS = ("FRESHNESS", AutoMaterializeResultType.MATERIALIZE)
+    DOWNSTREAM_FRESHNESS = ("DOWNSTREAM_FRESHNESS", AutoMaterializeResultType.MATERIALIZE)
+    PARENT_MATERIALIZED = ("PARENT_MATERIALIZED", AutoMaterializeResultType.MATERIALIZE)
+    MISSING = ("MISSING", AutoMaterializeResultType.MATERIALIZE)
 
-    # Skip Reasons
-    PARENT_OUTDATED = ("PARENT_OUTDATED", AutoMaterializeResult.SKIP)
+    # Skip Conditions
+    PARENT_OUTDATED = ("PARENT_OUTDATED", AutoMaterializeResultType.SKIP)
 
-    # Discard Reasons
+    # Discard Conditions
 
 
 class AutoMaterializeConditionReason(NamedTuple):
-    """Denotes the reason that the auto-materialize logic decided that an asset should be materialized.
+    """A tuple which may contain specific information about why an asset was determined to meet a
+    given auto-materialization condition.
 
-    In the future, may be extended to support additional details attached to raw condition.
+    Currently, no additional information is provided for any condition.
 
     Should not be instantiated directly by the user.
     """
@@ -47,8 +48,8 @@ class AutoMaterializeConditionReason(NamedTuple):
     condition: AutoMaterializeCondition
 
     @property
-    def result(self) -> AutoMaterializeResult:
-        return self.condition.result
+    def result_type(self) -> AutoMaterializeResultType:
+        return self.condition.result_type
 
     @staticmethod
     def freshness() -> "AutoMaterializeConditionReason":

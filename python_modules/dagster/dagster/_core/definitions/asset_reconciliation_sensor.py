@@ -38,7 +38,7 @@ from dagster._utils.backcompat import deprecation_warning
 from dagster._utils.schedules import cron_string_iterator
 
 from .asset_selection import AssetGraph, AssetSelection
-from .auto_materialize_reason import AutoMaterializeConditionReason, AutoMaterializeResult
+from .auto_materialize_reason import AutoMaterializeConditionReason, AutoMaterializeResultType
 from .decorators.sensor_decorator import sensor
 from .partition import PartitionsDefinition, PartitionsSubset
 from .run_request import RunRequest
@@ -648,7 +648,7 @@ def determine_asset_partitions_to_auto_materialize(
             if not (
                 (
                     parent in reasons
-                    and all(r.result == AutoMaterializeResult.MATERIALIZE for r in reasons[parent])
+                    and all(r.result_type == AutoMaterializeResultType.MATERIALIZE for r in reasons[parent])
                 )
                 # if they don't have the same partitioning, then we can't launch a run that
                 # targets both, so we need to wait until the parent is reconciled before
@@ -713,7 +713,7 @@ def determine_asset_partitions_to_auto_materialize(
             if unit_materialize_reason:
                 for candidate in candidates_unit:
                     reasons[candidate].add(unit_materialize_reason)
-                return unit_materialize_reason.result == AutoMaterializeResult.MATERIALIZE
+                return unit_materialize_reason.result_type == AutoMaterializeResultType.MATERIALIZE
         else:
             for candidate in candidates_unit:
                 reasons[candidate].add(AutoMaterializeConditionReason.parent_outdated())
@@ -904,7 +904,7 @@ def determine_asset_partitions_to_auto_materialize_for_freshness(
             # neighbor was selected to be updated
             asset_partition = AssetKeyPartitionKey(key, None)
             if asset_partition in reasons and all(
-                r.result == AutoMaterializeResult.MATERIALIZE for r in reasons[asset_partition]
+                r.result_type == AutoMaterializeResultType.MATERIALIZE for r in reasons[asset_partition]
             ):
                 expected_data_time_by_key[key] = expected_data_time
             elif (
@@ -912,7 +912,7 @@ def determine_asset_partitions_to_auto_materialize_for_freshness(
                 and execution_period.start <= current_time
                 and expected_data_time is not None
                 and expected_data_time >= execution_period.start
-                and all(r.result == AutoMaterializeResult.MATERIALIZE for r in execution_reasons)
+                and all(r.result_type == AutoMaterializeResultType.MATERIALIZE for r in execution_reasons)
             ):
                 expected_data_time_by_key[key] = expected_data_time
                 reasons[asset_partition].update(execution_reasons)
@@ -987,7 +987,7 @@ def reconcile(
         asset_partitions={
             asset_partition
             for asset_partition, rs in reasons.items()
-            if all(r.result == AutoMaterializeResult.MATERIALIZE for r in rs)
+            if all(r.result_type == AutoMaterializeResultType.MATERIALIZE for r in rs)
         },
         asset_graph=asset_graph,
         run_tags=run_tags,
