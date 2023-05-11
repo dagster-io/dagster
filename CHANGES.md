@@ -48,6 +48,7 @@
 
 - The ECS agent will now display task logs and other debug information when a code location fails to start up.
 - You can now set `ecs_timeout` in your ECS user code launcher config to extend how long the ECS agent polls for new code servers to start. Extending this timeout is useful if your code server takes an unusually long time to start up - for example, because it uses a very large image.
+- Added support for running the Dagster Cloud Kubernetes agent in a cluster using istio.
 
 # 1.3.3 (core) / 0.19.3 (libraries)
 
