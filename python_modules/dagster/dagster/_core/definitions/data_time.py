@@ -19,7 +19,7 @@ from dagster._core.definitions.time_window_partitions import (
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import EventLogRecord
 from dagster._core.storage.dagster_run import FINISHED_STATUSES, DagsterRunStatus, RunsFilter
-from dagster._utils import make_hashable
+from dagster._utils import datetime_as_float, make_hashable
 from dagster._utils.cached_method import cached_method
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
@@ -429,7 +429,7 @@ class CachingDataTimeResolver:
             return current_data_time
 
         run_failure_time = datetime.datetime.utcfromtimestamp(
-            latest_run_record.end_time or latest_run_record.create_timestamp.timestamp()
+            latest_run_record.end_time or datetime_as_float(latest_run_record.create_timestamp)
         ).replace(tzinfo=datetime.timezone.utc)
         return self._get_in_progress_data_time_in_run(
             run_id=run_id, asset_key=asset_key, current_time=run_failure_time
