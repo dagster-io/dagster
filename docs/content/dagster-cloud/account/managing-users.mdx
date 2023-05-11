@@ -6,7 +6,7 @@ title: Managing users in Dagster Cloud | Dagster Docs
 
 <Note>This guide is applicable to Dagster Cloud.</Note>
 
-Users in Dagster Cloud can be granted specific permissions for what they can and cannot do in your organization. Granularly assigning permissions to users ensures that the right people have appropriate access to what they require in Dagster Cloud, and no more.
+Role-based access control (RBAC) enables you to grant specific permissions to users in your organization, ensuring that the right people have appropriate access to what they require in Dagster Cloud, and no more.
 
 In this guide, we'll cover how to add and remove users in your organization.
 
@@ -54,7 +54,7 @@ height={1474}
 
 ### Adding users to teams
 
-<Note>This is a Dagster Cloud Enterprise feature.</Note>
+<Note>User teams are a Dagster Cloud Enterprise feature.</Note>
 
 Using the **Teams** field, you can add users to one or more teams. This is useful for centralizing permission sets for different types of users. Refer to the [Managing user teams](/dagster-cloud/account/managing-users/managing-user-teams) guide for more info about creating and managing teams.
 
@@ -65,7 +65,7 @@ width={1742}
 height={376}
 />
 
-**Note**: When determining a user's final level of access, team user roles and individual user roles are taken into account. Dagster Cloud will use the most permissive role for the deployment or code location when determining the level of access. Refer to the [Managing user roles and permissions](/dagster-cloud/account/managing-users/managing-user-roles-permissions) guide for more info.
+**Note**: When determining a user's final level of access, team user roles and individual user roles are taken into account. Dagster Cloud will use the most permissive role for the deployment or code location when determining the level of access. Refer to the [Managing user roles and permissions](/dagster-cloud/account/managing-users/managing-user-roles-permissions#understanding-and-applying-role-overrides) guide for more info.
 
 ### Assigning user roles
 
