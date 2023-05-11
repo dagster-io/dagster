@@ -303,7 +303,9 @@ function VirtualRow({height, start, group}: RowProps) {
                 </Box>
               </Tag>
             </SelectOnHover>
-          ) : null}
+          ) : (
+            0
+          )}
         </Cell>
         <Cell isLoading={!!statuses.loading}>
           {statuses.failed.length ? (
@@ -324,7 +326,9 @@ function VirtualRow({height, start, group}: RowProps) {
                 </Box>
               </Tag>
             </SelectOnHover>
-          ) : null}
+          ) : (
+            0
+          )}
         </Cell>
         <Cell isLoading={!!statuses.loading}>
           {statuses.inprogress.length ? (
@@ -333,7 +337,9 @@ function VirtualRow({height, start, group}: RowProps) {
                 {statuses.inprogress.length}
               </Tag>
             </SelectOnHover>
-          ) : null}
+          ) : (
+            0
+          )}
         </Cell>
         <Cell isLoading={!!statuses.loading}>
           {statuses.successful.length ? (
@@ -352,7 +358,9 @@ function VirtualRow({height, start, group}: RowProps) {
                 </Box>
               </Tag>
             </SelectOnHover>
-          ) : null}
+          ) : (
+            0
+          )}
         </Cell>
       </RowGrid>
     </Row>
