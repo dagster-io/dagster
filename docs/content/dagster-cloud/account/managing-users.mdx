@@ -12,12 +12,6 @@ In this guide, we'll cover how to add and remove users in your organization.
 
 ---
 
-## User roles and permissions
-
-todo: user roles and permissions [gotolink](/dagster-cloud/account/managing-users/managing-user-roles-permissions)
-
----
-
 ## Adding users
 
 <Note>
@@ -34,23 +28,63 @@ Before you start, note that:
 1. Sign in to your Dagster Cloud account.
 2. Click the **user menu (your icon) > Cloud Settings**.
 3. Click the **Users** tab.
-4. In the **Enter an email...** field, enter the user's email address.
-5. Click **Add user**. The user will be added to the list of users.
-6. In the window that displays, select the appropriate [user role](/dagster-cloud/account/managing-users/managing-user-roles-permissions) for each deployment. **Note**: For Admins, you can only set permissions for deployments where you're an Admin:
-   1. Next to a deployment, click **Edit user role**.
-   2. Select the user role for the deployment. This [user role](/dagster-cloud/account/managing-users/managing-user-roles-permissions) will be used as the default for all code locations in the deployment.
-   3. Click **Save**.
-   4. **Enterprise only**: To set permissions for individual [code locations](/dagster-cloud/account/managing-users/managing-user-roles-permissions#code-location-permissions) in a deployment:
-      1. Click the toggle to the left of the deployment to open a list of code locations.
-      2. Next to a code location, click **Edit user role**.
-      3. Select the user role for the code location.
-      4. Click **Save**.
-7. Repeat step 6 for each deployment.
-8. **Optional**: To change the user's permissions for branch deployments:
+4. Click **Add new user.**
+5. In the **User email** field, enter the user's email address.
+6. Click **Add user**. The user will be added to the list of users.
+
+After the user is created, you can [add the user to teams and assign user roles for each deployment](#managing-users).
+
+---
+
+## Managing users
+
+<Note>
+  <strong>Organization Admin</strong> permissions are required to manage users
+  in Dagster Cloud.
+</Note>
+
+After a user is created, the **Manage user permissions** window will automatically display. You can also access this window by clicking **Edit** next to a user in the users table.
+
+<Image
+alt="Managing user teams and roles for a user in Dagster Cloud"
+src="/images/dagster-cloud/user-token-management/manage-new-user-permissions.png"
+width={1792}
+height={1474}
+/>
+
+### Adding users to teams
+
+<Note>This is a Dagster Cloud Enterprise feature.</Note>
+
+Using the **Teams** field, you can add users to one or more teams. This is useful for centralizing permission sets for different types of users. Refer to the [Managing user teams](/dagster-cloud/account/managing-users/managing-user-teams) guide for more info about creating and managing teams.
+
+<Image
+alt="Adding a user to a team in the Dagster Cloud UI"
+src="/images/dagster-cloud/user-token-management/add-user-to-teams.png"
+width={1742}
+height={376}
+/>
+
+**Note**: When determining a user's final level of access, team user roles and individual user roles are taken into account. Dagster Cloud will use the most permissive role for the deployment or code location when determining the level of access. Refer to the [Managing user roles and permissions](/dagster-cloud/account/managing-users/managing-user-roles-permissions) guide for more info.
+
+### Assigning user roles
+
+In the **Roles** section, you can assign the select the appropriate [user role](/dagster-cloud/account/managing-users/managing-user-roles-permissions) for each deployment.
+
+1. Next to a deployment, click **Edit user role**.
+2. Select the user role for the deployment. This [user role](/dagster-cloud/account/managing-users/managing-user-roles-permissions) will be used as the default for all code locations in the deployment.
+3. Click **Save**.
+4. **Enterprise only**: To set permissions for individual [code locations](/dagster-cloud/account/managing-users/managing-user-roles-permissions#code-location-permissions) in a deployment:
+   1. Click the toggle to the left of the deployment to open a list of code locations.
+   2. Next to a code location, click **Edit user role**.
+   3. Select the user role for the code location.
+   4. Click **Save**.
+5. Repeat step 2 for each deployment.
+6. **Optional**: To change the user's permissions for branch deployments:
    1. Next to **All branch deployments**, click **Edit user role**.
    2. Select the user role to use for all branch deployments.
    3. Click **Save**.
-9. Click **Done**.
+7. Click **Done**.
 
 ---
 
