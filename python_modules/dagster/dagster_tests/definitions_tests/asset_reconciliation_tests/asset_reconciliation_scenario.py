@@ -177,7 +177,7 @@ class AssetReconciliationScenario(NamedTuple):
                 (
                     run_requests,
                     cursor,
-                    evaluations,
+                    _,
                 ) = self.cursor_from.do_sensor_scenario(
                     instance,
                     scenario_name=scenario_name,

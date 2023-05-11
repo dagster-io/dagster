@@ -22,6 +22,7 @@ class AutoMaterializePolicy(
             ("on_new_parent_data", bool),
             ("for_freshness", bool),
             ("time_window_partition_scope_minutes", Optional[float]),
+            ("max_materializations_per_minute", Optional[int]),
         ],
     )
 ):
@@ -61,6 +62,7 @@ class AutoMaterializePolicy(
         on_new_parent_data: bool,
         for_freshness: bool,
         time_window_partition_scope_minutes: Optional[float],
+        max_materializations_per_minute: Optional[int],
     ):
         check.invariant(
             on_new_parent_data or for_freshness,
@@ -73,6 +75,7 @@ class AutoMaterializePolicy(
             on_new_parent_data=on_new_parent_data,
             for_freshness=for_freshness,
             time_window_partition_scope_minutes=time_window_partition_scope_minutes,
+            max_materializations_per_minute=max_materializations_per_minute,
         )
 
     @property
@@ -89,6 +92,7 @@ class AutoMaterializePolicy(
             on_new_parent_data=True,
             for_freshness=True,
             time_window_partition_scope_minutes=datetime.timedelta.resolution.total_seconds() / 60,
+            max_materializations_per_minute=1,
         )
 
     @public
@@ -99,6 +103,7 @@ class AutoMaterializePolicy(
             on_new_parent_data=False,
             for_freshness=True,
             time_window_partition_scope_minutes=datetime.timedelta.resolution.total_seconds() / 60,
+            max_materializations_per_minute=1,
         )
 
     @property

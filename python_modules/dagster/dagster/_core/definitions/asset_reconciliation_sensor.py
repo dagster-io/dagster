@@ -91,6 +91,7 @@ class AutoMaterializeSkipCondition(Enum):
     """Represents the set of conditions that can prevent an asset from being auto-materialized."""
 
     PARENT_OUTDATED = "PARENT_OUTDATED"
+    MAX_MATERIALIZATIONS_EXCEEDED = "MAX_MATERIALIZATIONS_EXCEEDED"
 
 
 @whitelist_for_serdes
@@ -108,6 +109,12 @@ class AutoMaterializeSkipReason(NamedTuple):
     @staticmethod
     def parent_outdated() -> "AutoMaterializeSkipReason":
         return AutoMaterializeSkipReason(condition=AutoMaterializeSkipCondition.PARENT_OUTDATED)
+
+    @staticmethod
+    def max_materializations_exceeded() -> "AutoMaterializeSkipReason":
+        return AutoMaterializeSkipReason(
+            condition=AutoMaterializeSkipCondition.MAX_MATERIALIZATIONS_EXCEEDED
+        )
 
 
 @whitelist_for_serdes
@@ -185,6 +192,7 @@ def get_implicit_auto_materialize_policy(
             ),
             for_freshness=True,
             time_window_partition_scope_minutes=24 * 60,
+            max_materializations_per_minute=None,
         )
     return auto_materialize_policy
 
@@ -640,7 +648,6 @@ def determine_asset_partitions_to_auto_materialize(
     target_asset_keys: AbstractSet[AssetKey],
     target_asset_keys_and_parents: AbstractSet[AssetKey],
     asset_graph: AssetGraph,
-    current_time: datetime.datetime,
     materialize_reasons_for_freshness: Mapping[AssetKeyPartitionKey, Set[AutoMaterializeReason]],
 ) -> Tuple[
     Mapping[AssetKeyPartitionKey, AbstractSet[AutoMaterializeReason]],
@@ -649,6 +656,7 @@ def determine_asset_partitions_to_auto_materialize(
     Mapping[AssetKey, AbstractSet[str]],
     Optional[int],
 ]:
+    materialization_counts_by_asset_key: Dict[AssetKey, int] = defaultdict(int)
     evaluation_time = instance_queryer.evaluation_time
 
     (
@@ -795,6 +803,20 @@ def determine_asset_partitions_to_auto_materialize(
             if auto_materialize_reason:
                 for candidate in candidates_unit:
                     materialize_reasons[candidate].add(auto_materialize_reason)
+                    materialization_counts_by_asset_key[candidate.asset_key] += 1
+                    auto_materialize_policy = get_implicit_auto_materialize_policy(
+                        asset_graph=asset_graph, asset_key=candidate.asset_key
+                    )
+                    if (
+                        auto_materialize_policy
+                        and auto_materialize_policy.max_materializations_per_minute is not None
+                        and materialization_counts_by_asset_key[candidate.asset_key]
+                        > auto_materialize_policy.max_materializations_per_minute
+                    ):
+                        skip_reasons[candidate].add(
+                            AutoMaterializeSkipReason.max_materializations_exceeded()
+                        )
+                        return False
                 return True
         else:
             for candidate in candidates_unit:
@@ -809,6 +831,7 @@ def determine_asset_partitions_to_auto_materialize(
         ),
         set(itertools.chain(never_materialized_or_requested_roots, stale_candidates)),
         evaluation_time,
+        time_partition_descending=True,
     )
 
     return (
@@ -1056,7 +1079,6 @@ def reconcile(
         cursor=cursor,
         target_asset_keys=target_asset_keys,
         target_asset_keys_and_parents=target_asset_keys_and_parents,
-        current_time=current_time,
         materialize_reasons_for_freshness=materialize_reasons_for_freshness,
     )
 

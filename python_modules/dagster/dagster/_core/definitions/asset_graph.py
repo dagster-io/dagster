@@ -19,6 +19,7 @@ from typing import (
     cast,
 )
 
+import pendulum
 import toposort
 
 import dagster._check as check
@@ -509,6 +510,7 @@ class AssetGraph:
         ],
         initial_asset_partitions: Iterable[AssetKeyPartitionKey],
         evaluation_time: datetime,
+        time_partition_descending: bool = False,
     ) -> AbstractSet[AssetKeyPartitionKey]:
         """Returns asset partitions within the graph that satisfy supplied criteria.
 
@@ -524,7 +526,7 @@ class AssetGraph:
         all_nodes = set(initial_asset_partitions)
 
         # invariant: we never consider an asset partition before considering its ancestors
-        queue = ToposortedPriorityQueue(self, all_nodes)
+        queue = ToposortedPriorityQueue(self, all_nodes, time_partition_descending)
 
         result: Set[AssetKeyPartitionKey] = set()
 
@@ -626,8 +628,14 @@ class ToposortedPriorityQueue:
                 )
             raise TypeError()
 
-    def __init__(self, asset_graph: AssetGraph, items: Iterable[AssetKeyPartitionKey]):
+    def __init__(
+        self,
+        asset_graph: AssetGraph,
+        items: Iterable[AssetKeyPartitionKey],
+        time_partition_descending: bool,
+    ):
         self._asset_graph = asset_graph
+        self._time_partition_desceding = time_partition_descending
         toposorted_asset_keys = asset_graph.toposort_asset_keys()
         self._toposort_level_by_asset_key = {
             asset_key: i
@@ -655,8 +663,8 @@ class ToposortedPriorityQueue:
             self._toposort_level_by_asset_key[required_asset_key]
             for required_asset_key in required_multi_asset_keys
         )
+        partitions_def = self._asset_graph.get_partitions_def(asset_key)
         if self._asset_graph.has_self_dependency(asset_key):
-            partitions_def = self._asset_graph.get_partitions_def(asset_key)
             if partitions_def is not None and isinstance(
                 partitions_def, TimeWindowPartitionsDefinition
             ):
@@ -668,6 +676,14 @@ class ToposortedPriorityQueue:
                     "Assets with self-dependencies must have time-window partitions, but"
                     f" {asset_key} does not."
                 )
+        elif isinstance(partitions_def, TimeWindowPartitionsDefinition):
+            partition_sort_key = pendulum.instance(
+                datetime.strptime(cast(str, asset_partition.partition_key), partitions_def.fmt),
+                tz=partitions_def.timezone,
+            ).timestamp()
+            if self._time_partition_desceding:
+                partition_sort_key *= -1
+
         else:
             partition_sort_key = None
 
