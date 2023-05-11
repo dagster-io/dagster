@@ -5,13 +5,12 @@ from dagster._core.definitions.selector import RepositorySelector, ResourceSelec
 from dagster._core.host_representation.code_location import CodeLocation
 from graphene import ResolveInfo
 
-from .utils import UserFacingGraphQLError, capture_error
+from .utils import UserFacingGraphQLError
 
 if TYPE_CHECKING:
     from ..schema.resources import GrapheneResourceDetails, GrapheneResourceDetailsList
 
 
-@capture_error
 def get_top_level_resources_or_error(
     graphene_info: "ResolveInfo", repository_selector: RepositorySelector
 ) -> "GrapheneResourceDetailsList":
@@ -39,7 +38,6 @@ def get_top_level_resources_or_error(
     return GrapheneResourceDetailsList(results=results)
 
 
-@capture_error
 def get_resource_or_error(
     graphene_info: "ResolveInfo", resource_selector: ResourceSelector
 ) -> "GrapheneResourceDetails":

@@ -8,6 +8,7 @@ from dagster._core.host_representation.external_data import DEFAULT_MODE_NAME
 from dagster._core.snap.snap_to_yaml import default_values_yaml_from_type_snap
 
 from ..implementation.run_config_schema import resolve_is_run_config_valid
+from ..implementation.utils import capture_error
 from .config_types import GrapheneConfigType, to_config_type
 from .errors import (
     GrapheneInvalidSubsetError,
@@ -84,6 +85,7 @@ class GrapheneRunConfigSchema(graphene.ObjectType):
             ).root_config_key,
         )
 
+    @capture_error
     def resolve_isRunConfigValid(
         self,
         graphene_info: ResolveInfo,

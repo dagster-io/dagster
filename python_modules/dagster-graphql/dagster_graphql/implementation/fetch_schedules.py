@@ -18,7 +18,6 @@ from .utils import (
     UserFacingGraphQLError,
     assert_permission,
     assert_permission_for_location,
-    capture_error,
 )
 
 if TYPE_CHECKING:
@@ -31,7 +30,6 @@ if TYPE_CHECKING:
     )
 
 
-@capture_error
 def start_schedule(
     graphene_info: ResolveInfo, schedule_selector: ScheduleSelector
 ) -> "GrapheneScheduleStateResult":
@@ -48,7 +46,6 @@ def start_schedule(
     return GrapheneScheduleStateResult(GrapheneInstigationState(schedule_state))
 
 
-@capture_error
 def stop_schedule(
     graphene_info: ResolveInfo, schedule_origin_id: str, schedule_selector_id: str
 ) -> "GrapheneScheduleStateResult":
@@ -84,7 +81,6 @@ def stop_schedule(
     return GrapheneScheduleStateResult(GrapheneInstigationState(schedule_state))
 
 
-@capture_error
 def get_scheduler_or_error(graphene_info: ResolveInfo) -> "GrapheneScheduler":
     from ..schema.errors import GrapheneSchedulerNotDefinedError
     from ..schema.schedules import GrapheneScheduler
@@ -97,7 +93,6 @@ def get_scheduler_or_error(graphene_info: ResolveInfo) -> "GrapheneScheduler":
     return GrapheneScheduler(scheduler_class=instance.scheduler.__class__.__name__)
 
 
-@capture_error
 def get_schedules_or_error(
     graphene_info: ResolveInfo,
     repository_selector: RepositorySelector,
@@ -164,7 +159,6 @@ def get_schedules_for_pipeline(
     return results
 
 
-@capture_error
 def get_schedule_or_error(
     graphene_info: ResolveInfo, schedule_selector: ScheduleSelector
 ) -> "GrapheneSchedule":
