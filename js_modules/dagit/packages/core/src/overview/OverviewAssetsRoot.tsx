@@ -31,7 +31,7 @@ type Props = {
 };
 export const OverviewAssetsRoot = ({Header, TabButton}: Props) => {
   useTrackPageView();
-  useDocumentTitle('Overview | Timeline');
+  useDocumentTitle('Overview | Assets');
 
   const query = useQuery<AssetCatalogTableQuery, AssetCatalogTableQueryVariables>(
     ASSET_CATALOG_TABLE_QUERY,
@@ -168,14 +168,14 @@ function VirtualHeaderRow() {
         color: Colors.Gray600,
         position: 'sticky',
         top: 0,
-        zIndex: 5,
+        zIndex: 1,
         background: Colors.White,
       }}
     >
       <HeaderCell>Group name</HeaderCell>
       <HeaderCell>Missing</HeaderCell>
       <HeaderCell>Failed/Overdue</HeaderCell>
-      <HeaderCell>In Progress</HeaderCell>
+      <HeaderCell>In progress</HeaderCell>
       <HeaderCell>Materialized</HeaderCell>
     </Box>
   );
@@ -280,7 +280,7 @@ function VirtualRow({height, start, group}: RowProps) {
               </Link>
             </Box>
             <div {...containerProps}>
-              <RepositoryLinkWrapper style={{width: 'inherit'}}>
+              <RepositoryLinkWrapper maxWidth={viewport.width}>
                 <RepositoryLink repoAddress={repoAddress} showRefresh={false} />
               </RepositoryLinkWrapper>
             </div>
