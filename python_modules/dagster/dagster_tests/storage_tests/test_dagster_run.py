@@ -4,11 +4,14 @@ import dagster._check as check
 import pytest
 from dagster._check import CheckError
 from dagster._core.code_pointer import ModuleCodePointer
+from dagster._core.definitions.decorators.op_decorator import op
+from dagster._core.events import DagsterEventType
 from dagster._core.host_representation.origin import (
     ExternalJobOrigin,
     ExternalRepositoryOrigin,
     InProcessCodeLocationOrigin,
 )
+from dagster._core.instance_for_test import instance_for_test
 from dagster._core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
     JobPythonOrigin,
@@ -23,6 +26,7 @@ from dagster._core.storage.dagster_run import (
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._serdes import deserialize_value, serialize_value
+from dagster._utils.test import wrap_op_in_graph_and_execute
 
 
 def test_queued_job_origin_check():
@@ -85,3 +89,18 @@ def test_runs_filter_supports_nonempty_run_ids():
 
 def test_serialize_runs_filter():
     deserialize_value(serialize_value(RunsFilter()), RunsFilter)
+
+
+def test_dagster_run_events():
+    @op
+    def foo():
+        return 1
+
+    with instance_for_test() as instance:
+        result = wrap_op_in_graph_and_execute(foo, instance=instance)
+        events = result.dagster_run.get_event_records(instance)
+        assert any(
+            event.event_log_entry.get_dagster_event().event_type
+            == DagsterEventType.PIPELINE_SUCCESS
+            for event in events
+        )

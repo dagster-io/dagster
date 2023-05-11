@@ -795,9 +795,11 @@ class SqlEventLogStorage(EventLogStorage):
         asset_details: Optional[AssetDetails] = None,
         apply_cursor_filters: bool = True,
     ) -> SqlAlchemyQuery:
-        query = query.where(
-            SqlEventLogStorageTable.c.dagster_event_type == event_records_filter.event_type.value
-        )
+        if event_records_filter.event_type:
+            query = query.where(
+                SqlEventLogStorageTable.c.dagster_event_type
+                == event_records_filter.event_type.value
+            )
 
         if event_records_filter.asset_key:
             query = query.where(
@@ -873,6 +875,9 @@ class SqlEventLogStorage(EventLogStorage):
                     for key, value in event_records_filter.tags.items()
                 ]
                 query = query.where(SqlEventLogStorageTable.c.id.in_(db.intersect(*intersections)))
+
+        if event_records_filter.run_id:
+            query = query.where(SqlEventLogStorageTable.c.run_id == event_records_filter.run_id)
 
         return query
 

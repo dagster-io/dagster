@@ -73,7 +73,7 @@ class EventRecordsFilter(
     NamedTuple(
         "_EventRecordsFilter",
         [
-            ("event_type", DagsterEventType),
+            ("event_type", Optional[DagsterEventType]),
             ("asset_key", Optional[AssetKey]),
             ("asset_partitions", Optional[Sequence[str]]),
             ("after_cursor", Optional[Union[int, RunShardedEventsCursor]]),
@@ -82,13 +82,15 @@ class EventRecordsFilter(
             ("before_timestamp", Optional[float]),
             ("storage_ids", Optional[Sequence[int]]),
             ("tags", Optional[Mapping[str, Union[str, Sequence[str]]]]),
+            ("run_id", Optional[str]),
         ],
     )
 ):
     """Defines a set of filter fields for fetching a set of event log entries or event log records.
 
     Args:
-        event_type (DagsterEventType): Filter argument for dagster event type
+        event_type (Optional[DagsterEventType]): Filter argument for dagster event type. A filter
+            must set either this or `run_id`.
         asset_key (Optional[AssetKey]): Asset key for which to get asset materialization event
             entries / records.
         asset_partitions (Optional[List[str]]): Filter parameter such that only asset
@@ -106,11 +108,13 @@ class EventRecordsFilter(
             events with timestamp greater than the provided value are returned.
         before_timestamp (Optional[float]): Filter parameter such that only event records for
             events with timestamp less than the provided value are returned.
+        run_id (Optional[str]): Filter parameter such that only event records associated with the
+            specified run are returned. A filter must set either this or `event_type`.
     """
 
     def __new__(
         cls,
-        event_type: DagsterEventType,
+        event_type: Optional[DagsterEventType] = None,
         asset_key: Optional[AssetKey] = None,
         asset_partitions: Optional[Sequence[str]] = None,
         after_cursor: Optional[Union[int, RunShardedEventsCursor]] = None,
@@ -119,9 +123,14 @@ class EventRecordsFilter(
         before_timestamp: Optional[float] = None,
         storage_ids: Optional[Sequence[int]] = None,
         tags: Optional[Mapping[str, Union[str, Sequence[str]]]] = None,
+        run_id: Optional[str] = None,
     ):
+        check.invariant(
+            event_type or run_id, "EventRecordsFilter must set either event_type or run_id"
+        )
+
         check.opt_sequence_param(asset_partitions, "asset_partitions", of_type=str)
-        check.inst_param(event_type, "event_type", DagsterEventType)
+        check.opt_inst_param(event_type, "event_type", DagsterEventType)
 
         tags = check.opt_mapping_param(tags, "tags", key_type=str)
         if tags and event_type is not DagsterEventType.ASSET_MATERIALIZATION:
@@ -145,4 +154,5 @@ class EventRecordsFilter(
             before_timestamp=check.opt_float_param(before_timestamp, "before_timestamp"),
             storage_ids=check.opt_nullable_sequence_param(storage_ids, "storage_ids", of_type=int),
             tags=check.opt_mapping_param(tags, "tags", key_type=str),
+            run_id=check.opt_str_param(run_id, "run_id"),
         )

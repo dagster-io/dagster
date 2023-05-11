@@ -1300,6 +1300,19 @@ class TestEventLogStorage:
             assert len(all_success_events) == 3
             min_success_record_id = all_success_events[-1].storage_id
 
+            run_1_success_event = storage.get_event_records(
+                EventRecordsFilter(event_type=DagsterEventType.RUN_SUCCESS, run_id=run_id_1)
+            )
+            assert len(run_1_success_event) == 1
+
+            run_1_all_events = storage.get_event_records(EventRecordsFilter(run_id=run_id_1))
+            for event_type in [DagsterEventType.PIPELINE_START, DagsterEventType.PIPELINE_SUCCESS]:
+                assert any(
+                    e.event_log_entry.is_dagster_event
+                    and e.event_log_entry.get_dagster_event().event_type == event_type
+                    for e in run_1_all_events
+                )
+
             # after cursor
             def _build_cursor(record_id_cursor, run_cursor_dt):
                 if not run_cursor_dt:

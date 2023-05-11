@@ -35,8 +35,10 @@ from .tags import (
 )
 
 if TYPE_CHECKING:
+    from dagster._core.event_api import EventLogRecord
     from dagster._core.host_representation.external import ExternalSchedule, ExternalSensor
     from dagster._core.host_representation.origin import ExternalJobOrigin
+    from dagster._core.instance import DagsterInstance
 
 
 @whitelist_for_serdes(storage_name="PipelineRunStatus")
@@ -428,6 +430,18 @@ class DagsterRun(
     @staticmethod
     def tags_for_backfill_id(backfill_id: str) -> Mapping[str, str]:
         return {BACKFILL_ID_TAG: backfill_id}
+
+    @public
+    def get_event_records(self, instance: "DagsterInstance") -> Sequence["EventLogRecord"]:
+        """Get the events for this run from the event log.
+
+        Args:
+            instance (DagsterInstance): The instance where the event logs are stored.
+
+        Returns:
+            Sequence[DagsterEvent]: The events for this run.
+        """
+        return instance.get_records_for_run(self.run_id).records
 
 
 class RunsFilterSerializer(NamedTupleSerializer["RunsFilter"]):
