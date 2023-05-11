@@ -97,7 +97,7 @@ subsettable_multi_asset_complex = [
 
 daily_to_unpartitioned = [
     asset_def("daily", partitions_def=DailyPartitionsDefinition(start_date="2020-01-01")),
-    asset_def("unpartitioned", ["daily"], freshness_policy=freshness_30m)
+    asset_def("unpartitioned", ["daily"], freshness_policy=freshness_30m),
 ]
 
 freshness_policy_scenarios = {
@@ -105,6 +105,18 @@ freshness_policy_scenarios = {
         assets=diamond_freshness,
         unevaluated_runs=[],
         expected_run_requests=[run_request(asset_keys=["asset1", "asset2", "asset3", "asset4"])],
+    ),
+    "freshness_blank_slate_root_unselected": AssetReconciliationScenario(
+        assets=diamond_freshness,
+        asset_selection=AssetSelection.all()-AssetSelection.keys("asset1"),
+        unevaluated_runs=[],
+        expected_run_requests=[],
+    ),
+    "freshness_blank_slate_root_unselected_and_materialized": AssetReconciliationScenario(
+        assets=diamond_freshness,
+        asset_selection=AssetSelection.all()-AssetSelection.keys("asset1"),
+        unevaluated_runs=[run(["asset1"])],
+        expected_run_requests=[run_request(asset_keys=["asset2", "asset3", "asset4"])],
     ),
     "freshness_all_fresh": AssetReconciliationScenario(
         assets=diamond_freshness,
@@ -378,5 +390,5 @@ freshness_policy_scenarios = {
         current_time=create_pendulum_time(year=2020, month=1, day=2, hour=6, tz="UTC"),
         unevaluated_runs=[run(["daily"], partition_key="2020-01-01")],
         expected_run_requests=[run_request(["unpartitioned"])],
-    )
+    ),
 }
