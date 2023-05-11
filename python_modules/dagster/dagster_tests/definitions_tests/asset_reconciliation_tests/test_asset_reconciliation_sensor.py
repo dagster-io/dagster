@@ -33,26 +33,18 @@ def test_reconciliation(scenario):
     instance = DagsterInstance.ephemeral()
     run_requests, _, evaluations = scenario.do_sensor_scenario(instance)
 
-    if scenario.expected_materialize_reasons or scenario.expected_skip_reasons:
-        materialize_reasons = {
+    if scenario.expected_reasons:
+        reasons = {
             (
                 AssetKeyPartitionKey(AssetKey.from_coercible(key[0]), key[1])
                 if isinstance(key, tuple)
                 else AssetKeyPartitionKey(AssetKey.from_coercible(key))
-            ): reason
-            for key, reason in (scenario.expected_materialize_reasons or {}).items()
-        }
-        skip_reasons = {
-            (
-                AssetKeyPartitionKey(AssetKey.from_coercible(key[0]), key[1])
-                if isinstance(key, tuple)
-                else AssetKeyPartitionKey(AssetKey.from_coercible(key))
-            ): reason
-            for key, reason in (scenario.expected_skip_reasons or {}).items()
+            ): rs
+            for key, rs in (scenario.expected_reasons or {}).items()
         }
         assert sorted(
             build_auto_materialize_asset_evaluations(
-                AssetGraph.from_assets(scenario.assets), materialize_reasons, skip_reasons
+                AssetGraph.from_assets(scenario.assets), reasons
             ),
             key=lambda x: x.asset_key,
         ) == sorted(evaluations, key=lambda x: x.asset_key)
