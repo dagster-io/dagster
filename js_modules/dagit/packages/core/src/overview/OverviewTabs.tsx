@@ -2,9 +2,9 @@ import {QueryResult} from '@apollo/client';
 import {Box, Tabs} from '@dagster-io/ui';
 import * as React from 'react';
 
+import {useFeatureFlags} from '../app/Flags';
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
 import {TabLink} from '../ui/TabLink';
-import {useFeatureFlags} from '../app/Flags';
 
 interface Props<TData> {
   refreshState?: QueryRefreshState;
