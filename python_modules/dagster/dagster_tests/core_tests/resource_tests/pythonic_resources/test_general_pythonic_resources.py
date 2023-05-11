@@ -928,7 +928,7 @@ def test_nested_config_class() -> None:
     assert executed["yes"]
 
 
-def test_using_enum() -> None:
+def test_using_enum_simple() -> None:
     executed = {}
 
     class MyEnum(enum.Enum):

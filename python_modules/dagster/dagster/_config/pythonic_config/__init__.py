@@ -891,17 +891,24 @@ class ConfigurableResourceFactory(
         )
         return out
 
-    def _resolve_and_update_env_vars(self) -> "ConfigurableResourceFactory[TResValue]":
+    def _resolve_and_update_env_vars(self, context) -> "ConfigurableResourceFactory[TResValue]":
         """Processes the config dictionary to resolve any EnvVar values. This is called at runtime
         when the resource is initialized, so the user is only shown the error if they attempt to
         kick off a run relying on this resource.
 
         Returns a new instance of the resource.
         """
+        # This is the configuration passed via run_config (e.g. launchpad or Python API)
+        incoming_resource_config = process_config(self._schema.config_type, context.resource_config)
+
+        # this is the data that was passed to the resource instance
         post_processed_data = _process_config_values(
             self._schema, self._resolved_config_dict, self.__class__.__name__
         )
-        return self._with_updated_values(post_processed_data)
+
+        return self._with_updated_values(
+            {**post_processed_data, **(incoming_resource_config.value or {})}
+        )
 
     @contextlib.contextmanager
     def _resolve_and_update_nested_resources(
@@ -952,7 +959,35 @@ class ConfigurableResourceFactory(
         """Returns a new instance of the resource with the given resource init context bound."""
         # This utility is used to create a copy of this resource, without adjusting
         # any values in this case
+
+        print("*************")
+        print(f"resource_context.resource_config: {resource_context.resource_config}")
+        print("*************")
+
+        # # Specifically this is failing on unprocessed enums
+        # from_resource_config = process_config(
+        #     self._schema.config_type, resource_context.resource_config
+        # )
+        # if not post_processed_config.success:
+        #     raise DagsterInvalidConfigError(
+        #         f"Error while processing {config_obj_name} config ",
+        #         post_processed_config.errors,
+        #         data,
+        #     )
+        # from_resource_config = _process_config_values(
+        #     self._schema, resource_context.resource_config, self.__class__.__name__
+        # )
+
+        # print("*************")
+        # print(f"from_resource_config: {from_resource_config}")
+        # print("*************")
+
+        # import code
+
+        # code.interact(local=locals())
+
         copy = self._with_updated_values({})
+        # copy = self._with_updated_values(resource_context.resource_config)
         copy._state__internal__ = copy._state__internal__._replace(  # noqa: SLF001
             resource_context=resource_context
         )
@@ -962,7 +997,7 @@ class ConfigurableResourceFactory(
         with self._resolve_and_update_nested_resources(context) as has_nested_resource:
             updated_resource = has_nested_resource.with_resource_context(  # noqa: SLF001
                 context
-            )._resolve_and_update_env_vars()
+            )._resolve_and_update_env_vars(context)
 
             updated_resource.setup_for_execution(context)
             return updated_resource.create_resource(context)
@@ -974,7 +1009,7 @@ class ConfigurableResourceFactory(
         with self._resolve_and_update_nested_resources(context) as has_nested_resource:
             updated_resource = has_nested_resource.with_resource_context(  # noqa: SLF001
                 context
-            )._resolve_and_update_env_vars()
+            )._resolve_and_update_env_vars(context)
 
             with updated_resource.yield_for_execution(context) as value:
                 yield value
@@ -1112,6 +1147,12 @@ class ConfigurableResource(ConfigurableResourceFactory[TResValue]):
         the actual ConfigurableResource object to user code.
         """
         return cast(TResValue, self)
+
+        # resource_cls = self.__class__
+        # # This ordering means that the resource_config clobbers the original data
+        # kwargs = {**self._state__internal__.original_data, **context.resource_config}
+        # instantiated = resource_cls(**kwargs)
+        # return cast(TResValue, instantiated)
 
 
 def _is_fully_configured(resource: CoercibleToResource) -> bool:
