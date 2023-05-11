@@ -2,7 +2,7 @@ import {Colors} from '@dagster-io/ui';
 import styled from 'styled-components/macro';
 
 interface Props {
-  $top: number;
+  $top?: number;
 }
 
 /**
@@ -14,7 +14,7 @@ interface Props {
 export const StickyTableContainer = styled.div<Props>`
   thead tr {
     position: sticky;
-    top: ${({$top}) => $top}px;
+    top: ${({$top = 0}) => $top}px;
     background-color: ${Colors.White};
     z-index: 1;
   }

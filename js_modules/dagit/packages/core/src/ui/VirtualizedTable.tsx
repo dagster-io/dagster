@@ -12,11 +12,17 @@ export const HeaderCell = ({children}: {children?: React.ReactNode}) => (
   </CellBox>
 );
 
-export const RowCell = ({children}: {children?: React.ReactNode}) => (
+export const RowCell = ({
+  children,
+  style,
+}: {
+  children?: React.ReactNode;
+  style?: React.CSSProperties;
+}) => (
   <CellBox
     padding={12}
     flex={{direction: 'column', justifyContent: 'flex-start'}}
-    style={{color: Colors.Gray500, overflow: 'hidden'}}
+    style={{color: Colors.Gray500, overflow: 'hidden', ...(style || {})}}
     border={{side: 'right', width: 1, color: Colors.KeylineGray}}
   >
     {children}
