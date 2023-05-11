@@ -98,7 +98,7 @@ export const BackfillRow = ({
       );
       return {counts, statuses: null};
     }
-    const statuses = data.partitionBackfillOrError.partitionStatuses.results;
+    const statuses = data.partitionBackfillOrError.backfillRunStatuses.results;
     const counts = countBy(statuses, (k) => k.runStatus);
     return {counts, statuses};
   }, [data]);
@@ -498,7 +498,7 @@ export const SINGLE_BACKFILL_STATUS_DETAILS_QUERY = gql`
     partitionBackfillOrError(backfillId: $backfillId) {
       ... on PartitionBackfill {
         id
-        partitionStatuses {
+        backfillRunStatuses {
           ...PartitionStatusesForBackfill
         }
       }

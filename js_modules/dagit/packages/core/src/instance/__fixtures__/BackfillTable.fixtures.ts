@@ -175,7 +175,7 @@ export const BackfillTableFragmentFailedErrorStatus: MockedResponse<SingleBackfi
       __typename: 'DagitQuery',
       partitionBackfillOrError: buildPartitionBackfill({
         id: 'sjqzcfhe',
-        partitionStatuses: buildPartitionStatuses({
+        backfillRunStatuses: buildPartitionStatuses({
           results: BackfillTableFragmentFailedError.partitionNames!.map((n) =>
             buildPartitionStatus({
               id: `__NO_PARTITION_SET__:${n}:ccpbwdbq`,
@@ -247,7 +247,7 @@ export const BackfillTableFragmentCompletedAssetJobStatus: MockedResponse<Single
       __typename: 'DagitQuery',
       partitionBackfillOrError: {
         id: 'pwgcpiwc',
-        partitionStatuses: {
+        backfillRunStatuses: {
           results: [
             {
               id: 'asset_job_partition_set:TN|2023-01-24:pwgcpiwc',
@@ -374,7 +374,7 @@ export const BackfillTableFragmentCompletedOpJobStatus: MockedResponse<SingleBac
       partitionBackfillOrError: buildPartitionBackfill({
         id: 'pqdiepuf',
         isAssetBackfill: true,
-        partitionStatuses: buildPartitionStatuses({
+        backfillRunStatuses: buildPartitionStatuses({
           results: [
             buildPartitionStatus({
               id: 'op_job_partition_set:2022-07-01:pqdiepuf',

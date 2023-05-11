@@ -54,7 +54,7 @@ SINGLE_BACKFILL_QUERY = """
   query SingleBackfillQuery($backfillId: String!) {
     partitionBackfillOrError(backfillId: $backfillId) {
       ... on PartitionBackfill {
-        partitionStatuses {
+        backfillRunStatuses {
           results {
             id
             partitionName
@@ -292,7 +292,7 @@ def test_launch_asset_backfill():
             assert not single_backfill_result.errors
             assert single_backfill_result.data
             partition_status_results = single_backfill_result.data["partitionBackfillOrError"][
-                "partitionStatuses"
+                "backfillRunStatuses"
             ]["results"]
             assert len(partition_status_results) == 2
             assert {
@@ -347,7 +347,7 @@ def test_remove_partitions_defs_after_backfill():
             assert not single_backfill_result.errors
             assert single_backfill_result.data
             partition_status_results = single_backfill_result.data["partitionBackfillOrError"][
-                "partitionStatuses"
+                "backfillRunStatuses"
             ]["results"]
             assert len(partition_status_results) == 0
             assert {
