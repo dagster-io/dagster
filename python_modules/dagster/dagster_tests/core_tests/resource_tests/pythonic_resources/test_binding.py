@@ -10,6 +10,7 @@ from dagster import (
     JobDefinition,
     RunRequest,
     ScheduleDefinition,
+    asset,
     job,
     op,
     repository,
@@ -444,3 +445,103 @@ def test_bind_top_level_resource_sensor_multi_job() -> None:
             "foo": FooResource(my_str="foo"),
         },
     )
+
+
+def test_override_default_value_in_asset_config() -> None:
+    class MyAssetConfig(Config):
+        str_field: str = "a_default_value"
+
+    executed = {}
+
+    @asset
+    def my_asset(config: MyAssetConfig):
+        executed["yes"] = True
+        return config.str_field
+
+    defs = Definitions([my_asset])
+
+    assert (
+        defs.get_implicit_global_asset_job_def().execute_in_process().output_for_node("my_asset")
+        == "a_default_value"
+    )
+
+    assert (
+        defs.get_implicit_global_asset_job_def()
+        .execute_in_process(run_config={"ops": {"my_asset": {"config": {"str_field": "override"}}}})
+        .output_for_node("my_asset")
+        == "override"
+    )
+
+
+def test_override_default_value_in_ctor() -> None:
+    class MyResourceWithDefault(ConfigurableResource):
+        str_field: str
+
+    executed = {}
+
+    @asset
+    def my_asset(context, my_resource: MyResourceWithDefault):
+        executed["yes"] = True
+        return my_resource.str_field
+
+    defs = Definitions(
+        [my_asset], resources={"my_resource": MyResourceWithDefault(str_field="value_set_in_ctor")}
+    )
+
+    assert (
+        defs.get_implicit_global_asset_job_def().execute_in_process().output_for_node("my_asset")
+        == "value_set_in_ctor"
+    )
+
+    assert executed["yes"]
+
+    executed.clear()
+
+    assert "yes" not in executed
+
+    assert (
+        defs.get_implicit_global_asset_job_def()
+        .execute_in_process(
+            run_config={"resources": {"my_resource": {"config": {"str_field": "overriden"}}}}
+        )
+        .output_for_node("my_asset")
+        == "overriden"
+    )
+
+    assert executed["yes"]
+
+
+def test_override_default_field_value_in_resources() -> None:
+    class MyResourceWithDefault(ConfigurableResource):
+        str_field: str = "value_set_in_default_field_decl"
+
+    executed = {}
+
+    @asset
+    def my_asset(context, my_resource: MyResourceWithDefault):
+        executed["yes"] = True
+        return my_resource.str_field
+
+    defs = Definitions([my_asset], resources={"my_resource": MyResourceWithDefault()})
+
+    assert (
+        defs.get_implicit_global_asset_job_def().execute_in_process().output_for_node("my_asset")
+        == "value_set_in_default_field_decl"
+    )
+
+    assert executed["yes"]
+
+    executed.clear()
+
+    assert "yes" not in executed
+
+    assert (
+        defs.get_implicit_global_asset_job_def()
+        .execute_in_process(
+            run_config={"resources": {"my_resource": {"config": {"str_field": "overriden"}}}}
+        )
+        .output_for_node("my_asset")
+        == "overriden"
+    )
+
+    assert executed["yes"]
