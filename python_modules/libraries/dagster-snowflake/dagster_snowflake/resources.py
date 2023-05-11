@@ -112,7 +112,9 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
         description=(
             "Raw private key to use. See"
             " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details. Alternately,"
-            " set private_key_path and private_key_password."
+            " set private_key_path and private_key_password. To avoid issues with newlines in the"
+            " keys, you can base64 encode the key. You can retrieve the base64 encoded key with"
+            " this shell command: cat rsa_key.p8 | base64"
         ),
     )
 
@@ -121,9 +123,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
         description=(
             "Raw private key password to use. See"
             " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details. Required for"
-            " both private_key and private_key_path. To avoid issues with newlines in the keys, you"
-            " can base64 encode the key. You can retrieve the base64 encoded key with this shell"
-            " command: cat rsa_key.p8 | base64"
+            " both private_key and private_key_path if the private key is encrypted. "
         ),
     )
 
@@ -366,6 +366,8 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
         kwargs = {}
         if config.get("private_key_password", None) is not None:
             kwargs["password"] = config["private_key_password"].encode()
+        else:
+            kwargs["password"] = None
 
         try:
             p_key = serialization.load_pem_private_key(

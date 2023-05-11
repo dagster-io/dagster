@@ -193,7 +193,8 @@ class SnowflakeIOManager(ConfigurableIOManagerFactory):
         default=None,
         description=(
             "The password of the private key. See"
-            " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details."
+            " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details. Required for"
+            " both private_key and private_key_path if the private key is encrypted."
         ),
     )
     store_timestamps_as_strings: bool = Field(
