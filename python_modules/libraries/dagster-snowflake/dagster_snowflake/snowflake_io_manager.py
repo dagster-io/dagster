@@ -194,7 +194,8 @@ class SnowflakeIOManager(ConfigurableIOManagerFactory):
         description=(
             "The password of the private key. See"
             " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details. Required for"
-            " both private_key and private_key_path if the private key is encrypted."
+            " both private_key and private_key_path if the private key is encrypted. For"
+            " unencrypted keys, this config can be omitted or set to None."
         ),
     )
     store_timestamps_as_strings: bool = Field(

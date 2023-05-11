@@ -123,7 +123,8 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
         description=(
             "Raw private key password to use. See"
             " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details. Required for"
-            " both private_key and private_key_path if the private key is encrypted. "
+            " both private_key and private_key_path if the private key is encrypted. For"
+            " unencrypted keys, this config can be omitted or set to None."
         ),
     )
 
