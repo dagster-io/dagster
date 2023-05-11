@@ -133,7 +133,7 @@ export const BACKFILL_TABLE_FRAGMENT = gql`
     isAssetBackfill
     hasCancelPermission
     hasResumePermission
-    numCancelable
+    numCancelablePartitions
     partitionNames
     isValidSerialization
     numPartitions

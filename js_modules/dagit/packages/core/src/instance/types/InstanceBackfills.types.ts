@@ -56,7 +56,7 @@ export type InstanceBackfillsQuery = {
           isAssetBackfill: boolean;
           hasCancelPermission: boolean;
           hasResumePermission: boolean;
-          numCancelable: number;
+          numCancelablePartitions: number;
           partitionNames: Array<string> | null;
           partitionSet: {
             __typename: 'PartitionSet';

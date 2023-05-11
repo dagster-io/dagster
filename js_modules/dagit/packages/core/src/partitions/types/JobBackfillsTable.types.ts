@@ -23,7 +23,7 @@ export type JobBackfillsQuery = {
           isAssetBackfill: boolean;
           hasCancelPermission: boolean;
           hasResumePermission: boolean;
-          numCancelable: number;
+          numCancelablePartitions: number;
           partitionNames: Array<string> | null;
           isValidSerialization: boolean;
           numPartitions: number | null;

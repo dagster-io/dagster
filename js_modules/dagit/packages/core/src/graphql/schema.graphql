@@ -2419,7 +2419,7 @@ type PartitionBackfill {
   partitionNames: [String!]
   isValidSerialization: Boolean!
   numPartitions: Int
-  numCancelable: Int!
+  numCancelablePartitions: Int!
   fromFailure: Boolean!
   reexecutionSteps: [String!]
   assetSelection: [AssetKey!]

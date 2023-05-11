@@ -200,7 +200,7 @@ const BackfillMenu = ({
         <Menu>
           {backfill.hasCancelPermission ? (
             <>
-              {backfill.numCancelable > 0 ? (
+              {backfill.numCancelablePartitions > 0 ? (
                 <MenuItem
                   text="Cancel backfill submission"
                   icon="cancel"

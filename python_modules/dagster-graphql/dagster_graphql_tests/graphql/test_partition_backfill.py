@@ -44,7 +44,7 @@ PARTITION_PROGRESS_QUERY = """
         __typename
         id
         status
-        numCancelable
+        numCancelablePartitions
         partitionNames
         numPartitions
         fromFailure
@@ -72,6 +72,7 @@ BACKFILL_STATUS_BY_ASSET = """
     partitionBackfillOrError(backfillId: $backfillId) {
       __typename
       ... on PartitionBackfill {
+        numCancelablePartitions
         assetBackfillData {
             assetBackfillStatuses {
                 ... on AssetPartitionsStatusCounts {
@@ -372,7 +373,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         assert result.data
         assert result.data["partitionBackfillOrError"]["__typename"] == "PartitionBackfill"
         assert result.data["partitionBackfillOrError"]["status"] == "REQUESTED"
-        assert result.data["partitionBackfillOrError"]["numCancelable"] == 2
+        assert result.data["partitionBackfillOrError"]["numCancelablePartitions"] == 2
         assert result.data["partitionBackfillOrError"]["hasCancelPermission"] is True
         assert result.data["partitionBackfillOrError"]["hasResumePermission"] is True
 
@@ -446,7 +447,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         assert result.data
         assert result.data["partitionBackfillOrError"]["__typename"] == "PartitionBackfill"
         assert result.data["partitionBackfillOrError"]["status"] == "REQUESTED"
-        assert result.data["partitionBackfillOrError"]["numCancelable"] == 2
+        assert result.data["partitionBackfillOrError"]["numCancelablePartitions"] == 2
         assert len(result.data["partitionBackfillOrError"]["partitionNames"]) == 2
         assert result.data["partitionBackfillOrError"]["reexecutionSteps"] == ["after_failure"]
 
@@ -481,7 +482,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         assert result.data
         assert result.data["partitionBackfillOrError"]["__typename"] == "PartitionBackfill"
         assert result.data["partitionBackfillOrError"]["status"] == "REQUESTED"
-        assert result.data["partitionBackfillOrError"]["numCancelable"] == 2
+        assert result.data["partitionBackfillOrError"]["numCancelablePartitions"] == 2
         assert len(result.data["partitionBackfillOrError"]["partitionNames"]) == 2
 
         result = execute_dagster_graphql(
@@ -533,7 +534,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         assert result.data
         assert result.data["partitionBackfillOrError"]["__typename"] == "PartitionBackfill"
         assert result.data["partitionBackfillOrError"]["status"] == "REQUESTED"
-        assert result.data["partitionBackfillOrError"]["numCancelable"] == 2
+        assert result.data["partitionBackfillOrError"]["numCancelablePartitions"] == 2
         assert len(result.data["partitionBackfillOrError"]["partitionNames"]) == 2
 
         # manually mark as failed
@@ -685,6 +686,14 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         assert result.data["launchPartitionBackfill"]["__typename"] == "LaunchBackfillSuccess"
         backfill_id = result.data["launchPartitionBackfill"]["backfillId"]
 
+        result = execute_dagster_graphql(
+            graphql_context,
+            BACKFILL_STATUS_BY_ASSET,
+            variables={"backfillId": backfill_id},
+        )
+        assert result.data
+        assert result.data["partitionBackfillOrError"]["numCancelablePartitions"] == 6
+
         code_location = graphql_context.get_code_location("test")
         repository = code_location.get_repository("test_repo")
         asset_graph = ExternalAssetGraph.from_external_repository(repository)
@@ -712,8 +721,9 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
 
         assert not result.errors
         assert result.data
-        backfill_data = result.data["partitionBackfillOrError"]["assetBackfillData"]
+        assert result.data["partitionBackfillOrError"]["numCancelablePartitions"] == 0
 
+        backfill_data = result.data["partitionBackfillOrError"]["assetBackfillData"]
         assert backfill_data["rootAssetTargetedRanges"] is None
         assert set(backfill_data["rootAssetTargetedPartitions"]) == set(partitions)
 
@@ -1014,7 +1024,7 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
         assert result.data
         assert result.data["partitionBackfillOrError"]["__typename"] == "PartitionBackfill"
         assert result.data["partitionBackfillOrError"]["status"] == "REQUESTED"
-        assert result.data["partitionBackfillOrError"]["numCancelable"] == 2
+        assert result.data["partitionBackfillOrError"]["numCancelablePartitions"] == 2
         assert len(result.data["partitionBackfillOrError"]["partitionNames"]) == 2
         assert result.data["partitionBackfillOrError"]["fromFailure"]
 
@@ -1050,5 +1060,5 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
         assert result.data
         assert result.data["partitionBackfillOrError"]["__typename"] == "PartitionBackfill"
         assert result.data["partitionBackfillOrError"]["status"] == "REQUESTED"
-        assert result.data["partitionBackfillOrError"]["numCancelable"] == 10
+        assert result.data["partitionBackfillOrError"]["numCancelablePartitions"] == 10
         assert len(result.data["partitionBackfillOrError"]["partitionNames"]) == 10
