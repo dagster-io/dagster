@@ -108,6 +108,7 @@ def test_runtime_config_env_var() -> None:
     try:
         assert (
             defs.get_implicit_global_asset_job_def()
+            # I do not think this should work. Worth discussing in PR.
             # .execute_in_process(
             #     {"resources": {"writer": {"config": {"prefix": EnvVar("MY_PREFIX_FOR_TEST")}}}}
             # )
