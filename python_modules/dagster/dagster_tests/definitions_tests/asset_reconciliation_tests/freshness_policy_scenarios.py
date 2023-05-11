@@ -1,9 +1,6 @@
 import datetime
 
-from dagster import (
-    AssetSelection,
-    SourceAsset,
-)
+from dagster import AssetSelection, DailyPartitionsDefinition, SourceAsset
 from dagster._core.definitions.asset_reconciliation_sensor import AutoMaterializeReason
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._seven.compat.pendulum import create_pendulum_time
@@ -96,6 +93,11 @@ subsettable_multi_asset_complex = [
     asset_def("company_perf", ["company_stats"]),
     asset_def("top_users", ["orders_augmented", "company_perf"]),
     asset_def("avg_order", ["company_perf"], freshness_policy=freshness_30m),
+]
+
+daily_to_unpartitioned = [
+    asset_def("daily", partitions_def=DailyPartitionsDefinition(start_date="2020-01-01")),
+    asset_def("unpartitioned", ["daily"], freshness_policy=freshness_30m)
 ]
 
 freshness_policy_scenarios = {
@@ -363,4 +365,18 @@ freshness_policy_scenarios = {
         ],
         expected_run_requests=[],
     ),
+    "freshness_partitioned_to_unpartitioned_empty": AssetReconciliationScenario(
+        assets=daily_to_unpartitioned,
+        asset_selection=AssetSelection.keys("unpartitioned"),
+        current_time=create_pendulum_time(year=2020, month=1, day=2, hour=6, tz="UTC"),
+        unevaluated_runs=[],
+        expected_run_requests=[],
+    ),
+    "freshness_partitioned_to_unpartitioned_nonempty": AssetReconciliationScenario(
+        assets=daily_to_unpartitioned,
+        asset_selection=AssetSelection.keys("unpartitioned"),
+        current_time=create_pendulum_time(year=2020, month=1, day=2, hour=6, tz="UTC"),
+        unevaluated_runs=[run(["daily"], partition_key="2020-01-01")],
+        expected_run_requests=[run_request(["unpartitioned"])],
+    )
 }
