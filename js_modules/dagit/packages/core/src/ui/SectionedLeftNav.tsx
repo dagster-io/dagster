@@ -76,7 +76,8 @@ export const SectionedLeftNav = () => {
       return {
         repo,
         repoAddress,
-        key: repoAddressAsHumanString(repoAddress),
+        key: repoAddressAsURLString(repoAddress),
+        label: repoAddressAsHumanString(repoAddress),
         jobItems: getJobItemsForOption(repo),
         assetGroupItems: getAssetGroupItemsForOption(repo),
         resourceItems: flagSidebarResources ? getTopLevelResourceDetailsItemsForOption(repo) : [],
@@ -101,7 +102,7 @@ export const SectionedLeftNav = () => {
   // Sort repositories alphabetically, then move empty repos to the bottom.
   const sortedRepos = React.useMemo(() => {
     const alphaSorted = [...visibleReposAndKeys].sort((a, b) =>
-      a.key.toLocaleLowerCase().localeCompare(b.key.toLocaleLowerCase()),
+      a.label.toLocaleLowerCase().localeCompare(b.label.toLocaleLowerCase()),
     );
     const reposWithJobs = [];
     const reposWithoutJobs = [];
