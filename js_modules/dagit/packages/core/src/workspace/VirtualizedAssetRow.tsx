@@ -212,6 +212,7 @@ export const VirtualizedAssetCatalogHeader: React.FC<{
 }> = ({headerCheckbox, view}) => {
   return (
     <Box
+      background={Colors.White}
       border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
       style={{
         display: 'grid',
@@ -219,6 +220,9 @@ export const VirtualizedAssetCatalogHeader: React.FC<{
         height: '32px',
         fontSize: '12px',
         color: Colors.Gray600,
+        position: 'sticky',
+        top: 0,
+        zIndex: 1,
       }}
     >
       <HeaderCell>{headerCheckbox}</HeaderCell>
