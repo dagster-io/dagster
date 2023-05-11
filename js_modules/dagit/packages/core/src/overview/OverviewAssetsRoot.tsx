@@ -87,9 +87,7 @@ export const OverviewAssetsRoot = ({Header, TabButton}: Props) => {
     return (
       <Box flex={{direction: 'column'}} style={{overflow: 'hidden'}}>
         <Container ref={parentRef}>
-          <div style={{position: 'sticky', top: 0, zIndex: 5, background: Colors.White}}>
-            <VirtualHeaderRow />
-          </div>
+          <VirtualHeaderRow />
           <Inner $totalHeight={totalHeight}>
             {items.map(({index, key, size, start}) => {
               const group = groupedAssets[index];
@@ -168,6 +166,10 @@ function VirtualHeaderRow() {
         height: '32px',
         fontSize: '12px',
         color: Colors.Gray600,
+        position: 'sticky',
+        top: 0,
+        zIndex: 5,
+        background: Colors.White,
       }}
     >
       <HeaderCell>Group name</HeaderCell>
