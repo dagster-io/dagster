@@ -39,13 +39,13 @@ from dagster._utils.schedules import cron_string_iterator
 
 from .asset_selection import AssetGraph, AssetSelection
 from .auto_materialize_reason import (
-    AutoMaterializeReason,
-    AutoMaterializeResultType,
-    DownstreamFreshnessAutoMaterializeReason,
-    FreshnessAutoMaterializeReason,
-    MissingAutoMaterializeReason,
-    ParentMaterializedAutoMaterializeReason,
-    ParentOutdatedAutoMaterializeReason,
+    AutoMaterializeCondition,
+    AutoMaterializeDecisionType,
+    DownstreamFreshnessAutoMaterializeCondition,
+    FreshnessAutoMaterializeCondition,
+    MissingAutoMaterializeCondition,
+    ParentMaterializedAutoMaterializeCondition,
+    ParentOutdatedAutoMaterializeCondition,
 )
 from .decorators.sensor_decorator import sensor
 from .partition import PartitionsDefinition, PartitionsSubset
@@ -71,15 +71,15 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
 
     asset_key: AssetKey
     reasons: Union[
-        Sequence[AutoMaterializeReason],
-        Sequence[Tuple[AutoMaterializeReason, PartitionsSubset]],
+        Sequence[AutoMaterializeCondition],
+        Sequence[Tuple[AutoMaterializeCondition, PartitionsSubset]],
     ]
 
     @staticmethod
     def from_reasons(
         asset_graph: AssetGraph,
         asset_key: AssetKey,
-        reasons: Mapping[AssetKeyPartitionKey, AbstractSet[AutoMaterializeReason]],
+        reasons: Mapping[AssetKeyPartitionKey, AbstractSet[AutoMaterializeCondition]],
     ) -> "AutoMaterializeAssetEvaluation":
         partitions_def = asset_graph.get_partitions_def(asset_key)
         if partitions_def is None:
@@ -572,9 +572,9 @@ def determine_asset_partitions_to_auto_materialize(
     target_asset_keys_and_parents: AbstractSet[AssetKey],
     asset_graph: AssetGraph,
     current_time: datetime.datetime,
-    reasons_for_freshness: Mapping[AssetKeyPartitionKey, Set[AutoMaterializeReason]],
+    reasons_for_freshness: Mapping[AssetKeyPartitionKey, Set[AutoMaterializeCondition]],
 ) -> Tuple[
-    Mapping[AssetKeyPartitionKey, AbstractSet[AutoMaterializeReason]],
+    Mapping[AssetKeyPartitionKey, AbstractSet[AutoMaterializeCondition]],
     AbstractSet[AssetKey],
     Mapping[AssetKey, AbstractSet[str]],
     Optional[int],
@@ -657,7 +657,7 @@ def determine_asset_partitions_to_auto_materialize(
                 (
                     parent in reasons
                     and all(
-                        r.result_type == AutoMaterializeResultType.MATERIALIZE
+                        r.decision_type == AutoMaterializeDecisionType.MATERIALIZE
                         for r in reasons[parent]
                     )
                 )
@@ -681,7 +681,7 @@ def determine_asset_partitions_to_auto_materialize(
 
     def reason_for_candidate(
         candidate: AssetKeyPartitionKey,
-    ) -> Optional[AutoMaterializeReason]:
+    ) -> Optional[AutoMaterializeCondition]:
         auto_materialize_policy = get_implicit_auto_materialize_policy(
             asset_graph=asset_graph, asset_key=candidate.asset_key
         )
@@ -690,11 +690,11 @@ def determine_asset_partitions_to_auto_materialize(
         elif auto_materialize_policy.on_missing and not instance_queryer.materialization_exists(
             asset_partition=candidate
         ):
-            return MissingAutoMaterializeReason()
+            return MissingAutoMaterializeCondition()
         elif auto_materialize_policy.on_new_parent_data and not instance_queryer.is_reconciled(
             asset_partition=candidate, asset_graph=asset_graph
         ):
-            return ParentMaterializedAutoMaterializeReason()
+            return ParentMaterializedAutoMaterializeCondition()
         return None
 
     def should_reconcile(
@@ -724,10 +724,12 @@ def determine_asset_partitions_to_auto_materialize(
             if unit_materialize_reason:
                 for candidate in candidates_unit:
                     reasons[candidate].add(unit_materialize_reason)
-                return unit_materialize_reason.result_type == AutoMaterializeResultType.MATERIALIZE
+                return (
+                    unit_materialize_reason.decision_type == AutoMaterializeDecisionType.MATERIALIZE
+                )
         else:
             for candidate in candidates_unit:
-                reasons[candidate].add(ParentOutdatedAutoMaterializeReason())
+                reasons[candidate].add(ParentOutdatedAutoMaterializeCondition())
         return False
 
     # will update materialize_reasons and skip_reasons
@@ -784,7 +786,7 @@ def get_execution_period_and_reasons_for_policies(
     policies: AbstractSet[FreshnessPolicy],
     effective_data_time: Optional[datetime.datetime],
     current_time: datetime.datetime,
-) -> Tuple[Optional[pendulum.Period], AbstractSet[AutoMaterializeReason]]:
+) -> Tuple[Optional[pendulum.Period], AbstractSet[AutoMaterializeCondition]]:
     """Determines a range of times for which you can kick off an execution of this asset to solve
     the most pressing constraint, alongside a maximum number of additional constraints.
     """
@@ -809,9 +811,9 @@ def get_execution_period_and_reasons_for_policies(
             break
 
         if policy == local_policy:
-            reasons.add(FreshnessAutoMaterializeReason())
+            reasons.add(FreshnessAutoMaterializeCondition())
         else:
-            reasons.add(DownstreamFreshnessAutoMaterializeReason())
+            reasons.add(DownstreamFreshnessAutoMaterializeCondition())
 
     return merged_period, reasons
 
@@ -822,7 +824,7 @@ def determine_asset_partitions_to_auto_materialize_for_freshness(
     target_asset_keys: AbstractSet[AssetKey],
     target_asset_keys_and_parents: AbstractSet[AssetKey],
     current_time: datetime.datetime,
-) -> Mapping[AssetKeyPartitionKey, Set[AutoMaterializeReason]]:
+) -> Mapping[AssetKeyPartitionKey, Set[AutoMaterializeCondition]]:
     """Returns a set of AssetKeyPartitionKeys to materialize in order to abide by the given
     FreshnessPolicies, as well as a set of AssetKeyPartitionKeys which will be materialized at
     some point within the plan window.
@@ -832,7 +834,7 @@ def determine_asset_partitions_to_auto_materialize_for_freshness(
     from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 
     # now we have a full set of constraints, we can find solutions for them as we move down
-    reasons: Mapping[AssetKeyPartitionKey, Set[AutoMaterializeReason]] = defaultdict(set)
+    reasons: Mapping[AssetKeyPartitionKey, Set[AutoMaterializeCondition]] = defaultdict(set)
     waiting_to_materialize: Set[AssetKey] = set()
     expected_data_time_by_key: Dict[AssetKey, Optional[datetime.datetime]] = {}
 
@@ -915,7 +917,7 @@ def determine_asset_partitions_to_auto_materialize_for_freshness(
             # neighbor was selected to be updated
             asset_partition = AssetKeyPartitionKey(key, None)
             if asset_partition in reasons and all(
-                r.result_type == AutoMaterializeResultType.MATERIALIZE
+                r.decision_type == AutoMaterializeDecisionType.MATERIALIZE
                 for r in reasons[asset_partition]
             ):
                 expected_data_time_by_key[key] = expected_data_time
@@ -925,7 +927,7 @@ def determine_asset_partitions_to_auto_materialize_for_freshness(
                 and expected_data_time is not None
                 and expected_data_time >= execution_period.start
                 and all(
-                    r.result_type == AutoMaterializeResultType.MATERIALIZE
+                    r.decision_type == AutoMaterializeDecisionType.MATERIALIZE
                     for r in execution_reasons
                 )
             ):
@@ -1002,7 +1004,7 @@ def reconcile(
         asset_partitions={
             asset_partition
             for asset_partition, rs in reasons.items()
-            if all(r.result_type == AutoMaterializeResultType.MATERIALIZE for r in rs)
+            if all(r.decision_type == AutoMaterializeDecisionType.MATERIALIZE for r in rs)
         },
         asset_graph=asset_graph,
         run_tags=run_tags,
@@ -1065,11 +1067,11 @@ def build_run_requests(
 
 def build_auto_materialize_asset_evaluations(
     asset_graph: AssetGraph,
-    reasons: Mapping[AssetKeyPartitionKey, AbstractSet[AutoMaterializeReason]],
+    reasons: Mapping[AssetKeyPartitionKey, AbstractSet[AutoMaterializeCondition]],
 ) -> Sequence[AutoMaterializeAssetEvaluation]:
     """Bundles up the materialize and skip reasons into AutoMaterializeAssetEvaluations."""
     reasons_by_asset_key: Dict[
-        AssetKey, Dict[AssetKeyPartitionKey, AbstractSet[AutoMaterializeReason]]
+        AssetKey, Dict[AssetKeyPartitionKey, AbstractSet[AutoMaterializeCondition]]
     ] = defaultdict(dict)
 
     # split into sub-dictionaries that hold only the reasons specific to each asset

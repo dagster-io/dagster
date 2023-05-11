@@ -4,7 +4,7 @@ from typing import NamedTuple, Union
 from dagster._serdes import whitelist_for_serdes
 
 
-class AutoMaterializeResultType(Enum):
+class AutoMaterializeDecisionType(Enum):
     """Represents the set of results of the auto-materialize logic.
 
     MATERIALIZE: The asset should be materialized by a run kicked off on this tick
@@ -20,50 +20,50 @@ class AutoMaterializeResultType(Enum):
 
 
 @whitelist_for_serdes
-class FreshnessAutoMaterializeReason(NamedTuple):
+class FreshnessAutoMaterializeCondition(NamedTuple):
     """Indicates that this asset should be materialized because it requires newer data in order to
     align with its freshness policy.
     """
 
-    result_type: AutoMaterializeResultType = AutoMaterializeResultType.MATERIALIZE
+    decision_type: AutoMaterializeDecisionType = AutoMaterializeDecisionType.MATERIALIZE
 
 
 @whitelist_for_serdes
-class DownstreamFreshnessAutoMaterializeReason(NamedTuple):
+class DownstreamFreshnessAutoMaterializeCondition(NamedTuple):
     """Indicates that this asset should be materialized because one of its downstream assets
     requires newer data in order to align with its freshness policy.
     """
 
-    result_type: AutoMaterializeResultType = AutoMaterializeResultType.MATERIALIZE
+    decision_type: AutoMaterializeDecisionType = AutoMaterializeDecisionType.MATERIALIZE
 
 
 @whitelist_for_serdes
-class ParentMaterializedAutoMaterializeReason(NamedTuple):
+class ParentMaterializedAutoMaterializeCondition(NamedTuple):
     """Indicates that this asset should be materialized because one of its parents was materialized.
     """
 
-    result_type: AutoMaterializeResultType = AutoMaterializeResultType.MATERIALIZE
+    decision_type: AutoMaterializeDecisionType = AutoMaterializeDecisionType.MATERIALIZE
 
 
 @whitelist_for_serdes
-class MissingAutoMaterializeReason(NamedTuple):
+class MissingAutoMaterializeCondition(NamedTuple):
     """Indicates that this asset should be materialized because it is missing."""
 
-    result_type: AutoMaterializeResultType = AutoMaterializeResultType.MATERIALIZE
+    decision_type: AutoMaterializeDecisionType = AutoMaterializeDecisionType.MATERIALIZE
 
 
 @whitelist_for_serdes
-class ParentOutdatedAutoMaterializeReason(NamedTuple):
+class ParentOutdatedAutoMaterializeCondition(NamedTuple):
     """Indicates that this asset should be skipped because one or more of its parents are outdated.
     """
 
-    result_type: AutoMaterializeResultType = AutoMaterializeResultType.SKIP
+    decision_type: AutoMaterializeDecisionType = AutoMaterializeDecisionType.SKIP
 
 
-AutoMaterializeReason = Union[
-    FreshnessAutoMaterializeReason,
-    DownstreamFreshnessAutoMaterializeReason,
-    ParentMaterializedAutoMaterializeReason,
-    MissingAutoMaterializeReason,
-    ParentOutdatedAutoMaterializeReason,
+AutoMaterializeCondition = Union[
+    FreshnessAutoMaterializeCondition,
+    DownstreamFreshnessAutoMaterializeCondition,
+    ParentMaterializedAutoMaterializeCondition,
+    MissingAutoMaterializeCondition,
+    ParentOutdatedAutoMaterializeCondition,
 ]

@@ -1,6 +1,6 @@
 from dagster._core.definitions.asset_reconciliation_sensor import (
-    MissingAutoMaterializeReason,
-    ParentMaterializedAutoMaterializeReason,
+    MissingAutoMaterializeCondition,
+    ParentMaterializedAutoMaterializeCondition,
 )
 
 from .asset_reconciliation_scenario import (
@@ -72,15 +72,15 @@ basic_scenarios = {
         assets=one_asset,
         unevaluated_runs=[],
         expected_run_requests=[run_request(asset_keys=["asset1"])],
-        expected_reasons={"asset1": {MissingAutoMaterializeReason()}},
+        expected_reasons={"asset1": {MissingAutoMaterializeCondition()}},
     ),
     "two_assets_in_sequence_never_materialized": AssetReconciliationScenario(
         assets=two_assets_in_sequence,
         unevaluated_runs=[],
         expected_run_requests=[run_request(asset_keys=["asset1", "asset2"])],
         expected_reasons={
-            "asset1": {MissingAutoMaterializeReason()},
-            "asset2": {MissingAutoMaterializeReason()},
+            "asset1": {MissingAutoMaterializeCondition()},
+            "asset2": {MissingAutoMaterializeCondition()},
         },
     ),
     "one_asset_already_launched": AssetReconciliationScenario(
@@ -97,7 +97,7 @@ basic_scenarios = {
         unevaluated_runs=[single_asset_run(asset_key="asset1")],
         expected_run_requests=[run_request(asset_keys=["asset2"])],
         expected_reasons={
-            "asset2": {MissingAutoMaterializeReason()},
+            "asset2": {MissingAutoMaterializeCondition()},
         },
     ),
     "parent_materialized_launch_two_children": AssetReconciliationScenario(
@@ -105,8 +105,8 @@ basic_scenarios = {
         unevaluated_runs=[single_asset_run(asset_key="asset1")],
         expected_run_requests=[run_request(asset_keys=["asset2", "asset3"])],
         expected_reasons={
-            "asset2": {MissingAutoMaterializeReason()},
-            "asset3": {MissingAutoMaterializeReason()},
+            "asset2": {MissingAutoMaterializeCondition()},
+            "asset3": {MissingAutoMaterializeCondition()},
         },
     ),
     "parent_materialized_with_source_asset_launch_child": AssetReconciliationScenario(
@@ -121,7 +121,7 @@ basic_scenarios = {
         ),
         unevaluated_runs=[single_asset_run(asset_key="asset1")],
         expected_run_requests=[run_request(asset_keys=["asset2"])],
-        expected_reasons={"asset2": {ParentMaterializedAutoMaterializeReason()}},
+        expected_reasons={"asset2": {ParentMaterializedAutoMaterializeCondition()}},
     ),
     "parent_rematerialized": AssetReconciliationScenario(
         assets=two_assets_in_sequence,
@@ -136,8 +136,8 @@ basic_scenarios = {
         unevaluated_runs=[single_asset_run(asset_key="parent1")],
         expected_run_requests=[run_request(asset_keys=["parent2", "child"])],
         expected_reasons={
-            "parent2": {MissingAutoMaterializeReason()},
-            "child": {MissingAutoMaterializeReason()},
+            "parent2": {MissingAutoMaterializeCondition()},
+            "child": {MissingAutoMaterializeCondition()},
         },
     ),
     "one_parent_materialized_others_materialized_before": AssetReconciliationScenario(
@@ -148,7 +148,7 @@ basic_scenarios = {
             unevaluated_runs=[run(["parent1", "parent2", "child"])],
         ),
         expected_run_requests=[run_request(asset_keys=["child"])],
-        expected_reasons={"child": {ParentMaterializedAutoMaterializeReason()}},
+        expected_reasons={"child": {ParentMaterializedAutoMaterializeCondition()}},
     ),
     "diamond_never_materialized": AssetReconciliationScenario(
         assets=diamond,
@@ -169,9 +169,9 @@ basic_scenarios = {
         ),
         expected_run_requests=[run_request(asset_keys=["asset2", "asset3", "asset4"])],
         expected_reasons={
-            "asset2": {ParentMaterializedAutoMaterializeReason()},
-            "asset3": {ParentMaterializedAutoMaterializeReason()},
-            "asset4": {ParentMaterializedAutoMaterializeReason()},
+            "asset2": {ParentMaterializedAutoMaterializeCondition()},
+            "asset3": {ParentMaterializedAutoMaterializeCondition()},
+            "asset4": {ParentMaterializedAutoMaterializeCondition()},
         },
     ),
     "diamond_root_and_one_in_middle_rematerialized": AssetReconciliationScenario(
