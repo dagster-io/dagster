@@ -891,10 +891,15 @@ class ConfigurableResourceFactory(
         )
         return out
 
-    def _resolve_and_update_env_vars(self, context) -> "ConfigurableResourceFactory[TResValue]":
-        """Processes the config dictionary to resolve any EnvVar values. This is called at runtime
-        when the resource is initialized, so the user is only shown the error if they attempt to
-        kick off a run relying on this resource.
+    def _resolve_and_update_configuration_values(
+        self, context: InitResourceContext
+    ) -> "ConfigurableResourceFactory[TResValue]":
+        """Processes the config dictionary attached to the resource to resolve any EnvVar values. As well
+        as overrides any values passed in via run_config (attached to the InitResourceContext).
+
+        This is called at runtime when the resource is initialized, so the user is only shown
+        the errors involving environment variable resolution if they attempt to kick off a
+        run relying on this resource.
 
         Returns a new instance of the resource.
         """
@@ -997,7 +1002,7 @@ class ConfigurableResourceFactory(
         with self._resolve_and_update_nested_resources(context) as has_nested_resource:
             updated_resource = has_nested_resource.with_resource_context(  # noqa: SLF001
                 context
-            )._resolve_and_update_env_vars(context)
+            )._resolve_and_update_configuration_values(context)
 
             updated_resource.setup_for_execution(context)
             return updated_resource.create_resource(context)
@@ -1009,7 +1014,7 @@ class ConfigurableResourceFactory(
         with self._resolve_and_update_nested_resources(context) as has_nested_resource:
             updated_resource = has_nested_resource.with_resource_context(  # noqa: SLF001
                 context
-            )._resolve_and_update_env_vars(context)
+            )._resolve_and_update_configuration_values(context)
 
             with updated_resource.yield_for_execution(context) as value:
                 yield value

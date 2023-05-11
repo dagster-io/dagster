@@ -545,3 +545,41 @@ def test_override_default_field_value_in_resources() -> None:
     )
 
     assert executed["yes"]
+
+
+def test_override_default_field_value_in_resources_using_configure_at_launch() -> None:
+    class MyResourceWithDefault(ConfigurableResource):
+        str_field: str = "value_set_in_default_field_decl"
+
+    executed = {}
+
+    @asset
+    def my_asset(context, my_resource: MyResourceWithDefault):
+        executed["yes"] = True
+        return my_resource.str_field
+
+    defs = Definitions(
+        [my_asset], resources={"my_resource": MyResourceWithDefault.configure_at_launch()}
+    )
+
+    assert (
+        defs.get_implicit_global_asset_job_def().execute_in_process().output_for_node("my_asset")
+        == "value_set_in_default_field_decl"
+    )
+
+    assert executed["yes"]
+
+    executed.clear()
+
+    assert "yes" not in executed
+
+    assert (
+        defs.get_implicit_global_asset_job_def()
+        .execute_in_process(
+            run_config={"resources": {"my_resource": {"config": {"str_field": "overriden"}}}}
+        )
+        .output_for_node("my_asset")
+        == "overriden"
+    )
+
+    assert executed["yes"]
