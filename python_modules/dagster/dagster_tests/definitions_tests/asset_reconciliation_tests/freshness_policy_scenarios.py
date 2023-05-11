@@ -108,13 +108,13 @@ freshness_policy_scenarios = {
     ),
     "freshness_blank_slate_root_unselected": AssetReconciliationScenario(
         assets=diamond_freshness,
-        asset_selection=AssetSelection.all()-AssetSelection.keys("asset1"),
+        asset_selection=AssetSelection.all() - AssetSelection.keys("asset1"),
         unevaluated_runs=[],
         expected_run_requests=[],
     ),
     "freshness_blank_slate_root_unselected_and_materialized": AssetReconciliationScenario(
         assets=diamond_freshness,
-        asset_selection=AssetSelection.all()-AssetSelection.keys("asset1"),
+        asset_selection=AssetSelection.all() - AssetSelection.keys("asset1"),
         unevaluated_runs=[run(["asset1"])],
         expected_run_requests=[run_request(asset_keys=["asset2", "asset3", "asset4"])],
     ),
