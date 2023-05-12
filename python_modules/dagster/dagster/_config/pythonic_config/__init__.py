@@ -904,7 +904,24 @@ class ConfigurableResourceFactory(
         Returns a new instance of the resource.
         """
         # This is the configuration passed via run_config (e.g. launchpad or Python API)
-        incoming_resource_config = process_config(self._schema.config_type, context.resource_config)
+
+        # Note right now we do not validate config, and that is a real problem. I added
+        # a test case in this PR to demonstrate in test_env_var_alongside_enum
+        #
+        # The problem is with enumerations. Process config converts dagster config enumerations
+        # to their underlying value. This in turn gets passed back to ConfigurableResourceFactory.__init__
+        # which in turn validates config again, and it fails because on the inbound Dagster config enums
+        # expect the NAME, not the VALUE.
+        #
+        # Effectively right now this codepath relies on the fact that you can passed validated
+        # and processed config back into ConfigurableResourceFactory.__init__ idempotently and
+        # enums break # that assumption. (Environment variable resolution for example works
+        # fine because the initial evaluation resolves the env var to its value, and subsequent
+        # evaluations are idempotent)
+
+        incoming_resource_config_evr = process_config(
+            self._schema.config_type, context.resource_config
+        )
 
         # this is the data that was passed to the resource instance
         post_processed_data = _process_config_values(
@@ -912,7 +929,7 @@ class ConfigurableResourceFactory(
         )
 
         return self._with_updated_values(
-            {**post_processed_data, **(incoming_resource_config.value or {})}
+            {**post_processed_data, **(incoming_resource_config_evr.value or {})}
         )
 
     @contextlib.contextmanager

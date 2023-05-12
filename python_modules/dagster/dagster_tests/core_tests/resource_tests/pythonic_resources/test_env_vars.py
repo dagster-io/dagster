@@ -1,3 +1,4 @@
+import enum
 import os
 from typing import List, Mapping
 
@@ -231,4 +232,66 @@ def test_env_var_nested_config() -> None:
         }
     ):
         assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+        assert executed["yes"]
+
+
+def test_env_var_alongside_enum() -> None:
+    class MyEnum(enum.Enum):
+        FOO = "foo"
+        BAR = "bar"
+
+    class ResourceWithStringAndEnum(ConfigurableResource):
+        a_str: str
+        my_enum: MyEnum
+
+    executed = {}
+
+    @asset
+    def an_asset(a_resource: ResourceWithStringAndEnum):
+        assert a_resource.a_str == "SOME_VALUE"
+        executed["yes"] = True
+        return a_resource.my_enum.name
+
+    defs = Definitions(
+        assets=[an_asset],
+        resources={
+            "a_resource": ResourceWithStringAndEnum(
+                a_str=EnvVar("ENV_VARIABLE_FOR_TEST"),
+                my_enum=MyEnum.FOO,
+            )
+        },
+    )
+
+    with environ(
+        {
+            "ENV_VARIABLE_FOR_TEST": "SOME_VALUE",
+        }
+    ):
+        result = defs.get_implicit_global_asset_job_def().execute_in_process()
+        assert result.output_for_node("an_asset") == "FOO"
+        assert executed["yes"]
+
+    executed.clear()
+
+    with environ(
+        {
+            "ENV_VARIABLE_FOR_TEST": "SOME_VALUE",
+        }
+    ):
+        result = defs.get_implicit_global_asset_job_def().execute_in_process(
+            run_config={
+                "resources": {
+                    "a_resource": {
+                        "config": {"a_str": EnvVar("ENV_VARIABLE_FOR_TEST"), "my_enum": "BAR"}
+                    }
+                }
+            }
+        )
+
+        # This is incorrect right now. In _resolve_and_update_configuration_values
+        # the process step fails against passed in config, so the original value passed
+        # in the definitinos constructor is used.
+
+        assert result.success
+        assert result.output_for_node("an_asset") == "BAR"
         assert executed["yes"]
