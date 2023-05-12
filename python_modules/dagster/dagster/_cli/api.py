@@ -550,15 +550,6 @@ def _execute_step_command_body(
     envvar="DAGSTER_EMPTY_WORKING_DIRECTORY",
 )
 @click.option(
-    "--ipc-output-file",
-    type=click.Path(),
-    help=(
-        "[INTERNAL] This option should generally not be used by users. Internal param used by"
-        " dagster when it automatically spawns gRPC servers to communicate the success or failure"
-        " of the server launching."
-    ),
-)
-@click.option(
     "--fixed-server-id",
     type=click.STRING,
     required=False,
@@ -630,7 +621,6 @@ def grpc_command(
     heartbeat=False,
     heartbeat_timeout=30,
     lazy_load_user_code=False,
-    ipc_output_file=None,
     fixed_server_id=None,
     override_system_timezone=None,
     log_level="INFO",
@@ -698,7 +688,6 @@ def grpc_command(
             heartbeat=heartbeat,
             heartbeat_timeout=heartbeat_timeout,
             lazy_load_user_code=lazy_load_user_code,
-            ipc_output_file=ipc_output_file,
             fixed_server_id=fixed_server_id,
             entry_point=(
                 get_python_environment_entry_point(sys.executable)
