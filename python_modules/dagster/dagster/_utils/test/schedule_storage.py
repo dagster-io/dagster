@@ -57,6 +57,9 @@ class TestScheduleStorage:
     def can_purge(self):
         return True
 
+    def can_store_auto_materialize_asset_evaluations(self):
+        return True
+
     @staticmethod
     def fake_repo_target():
         return ExternalRepositoryOrigin(
@@ -676,6 +679,9 @@ class TestScheduleStorage:
         assert ticks_by_origin["sensor_two"][0].tick_id == d.tick_id
 
     def test_auto_materialize_asset_evaluations(self, storage):
+        if not self.can_store_auto_materialize_asset_evaluations():
+            pytest.skip("Storage cannot store auto materialize asset evaluations")
+
         storage.add_auto_materialize_asset_evaluations(
             evaluation_id=10,
             asset_evaluations=[
