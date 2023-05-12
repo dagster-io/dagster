@@ -460,7 +460,9 @@ class SqlScheduleStorage(ScheduleStorage):
         evaluation_id: int,
         asset_evaluations: Sequence[AutoMaterializeAssetEvaluation],
     ):
-        check.invariant(len(asset_evaluations) > 0)
+        if not asset_evaluations:
+            return
+
         with self.connect() as conn:
             bulk_insert = AssetPolicyEvaluationsTable.insert().values(
                 [
@@ -478,7 +480,7 @@ class SqlScheduleStorage(ScheduleStorage):
             conn.execute(bulk_insert)
 
     def get_auto_materialize_asset_evaluations(
-        self, asset_key: AssetKey, limit: Optional[int] = None, cursor: Optional[int] = None
+        self, asset_key: AssetKey, limit: int, cursor: Optional[int] = None
     ) -> Sequence[AutoMaterializeAssetEvaluationRecord]:
         with self.connect() as conn:
             query = (
@@ -490,11 +492,11 @@ class SqlScheduleStorage(ScheduleStorage):
                 )
                 .where(AssetPolicyEvaluationsTable.c.asset_key == asset_key.to_string())
                 .order_by(AssetPolicyEvaluationsTable.c.evaluation_id.desc())
-            )
-            if limit:
-                query = query.limit(limit)
+            ).limit(limit)
+
             if cursor:
                 query = query.where(AssetPolicyEvaluationsTable.c.evaluation_id < cursor)
+
             rows = conn.execute(query)
             return [
                 AutoMaterializeAssetEvaluationRecord(

@@ -6,9 +6,8 @@ import pytest
 
 from dagster._core.definitions.asset_reconciliation_sensor import (
     AutoMaterializeAssetEvaluation,
-    AutoMaterializeCondition,
-    AutoMaterializeReason,
 )
+from dagster._core.definitions.auto_materialize_reason import MissingAutoMaterializeCondition
 from dagster._core.definitions.events import AssetKey
 from dagster._core.host_representation import (
     ExternalRepositoryOrigin,
@@ -682,16 +681,14 @@ class TestScheduleStorage:
             asset_evaluations=[
                 AutoMaterializeAssetEvaluation(
                     asset_key=AssetKey("asset_one"),
-                    materialize_reasons=[],
-                    skip_reasons=[],
+                    conditions=[],
                     num_requested=0,
                     num_skipped=0,
                     num_discarded=0,
                 ),
                 AutoMaterializeAssetEvaluation(
                     asset_key=AssetKey("asset_two"),
-                    materialize_reasons=[AutoMaterializeReason(AutoMaterializeCondition.FRESHNESS)],
-                    skip_reasons=[],
+                    conditions=[MissingAutoMaterializeCondition()],
                     num_requested=1,
                     num_skipped=0,
                     num_discarded=0,
@@ -699,13 +696,17 @@ class TestScheduleStorage:
             ],
         )
 
-        res = storage.get_auto_materialize_asset_evaluations(asset_key=AssetKey("asset_one"))
+        res = storage.get_auto_materialize_asset_evaluations(
+            asset_key=AssetKey("asset_one"), limit=100
+        )
         assert len(res) == 1
         assert res[0].evaluation.asset_key == AssetKey("asset_one")
         assert res[0].evaluation_id == 10
         assert res[0].evaluation.num_requested == 0
 
-        res = storage.get_auto_materialize_asset_evaluations(asset_key=AssetKey("asset_two"))
+        res = storage.get_auto_materialize_asset_evaluations(
+            asset_key=AssetKey("asset_two"), limit=100
+        )
         assert len(res) == 1
         assert res[0].evaluation.asset_key == AssetKey("asset_two")
         assert res[0].evaluation_id == 10
@@ -716,8 +717,7 @@ class TestScheduleStorage:
             asset_evaluations=[
                 AutoMaterializeAssetEvaluation(
                     asset_key=AssetKey("asset_one"),
-                    materialize_reasons=[],
-                    skip_reasons=[],
+                    conditions=[],
                     num_requested=0,
                     num_skipped=0,
                     num_discarded=0,
@@ -725,7 +725,9 @@ class TestScheduleStorage:
             ],
         )
 
-        res = storage.get_auto_materialize_asset_evaluations(asset_key=AssetKey("asset_one"))
+        res = storage.get_auto_materialize_asset_evaluations(
+            asset_key=AssetKey("asset_one"), limit=100
+        )
         assert len(res) == 2
         assert res[0].evaluation_id == 11
         assert res[1].evaluation_id == 10

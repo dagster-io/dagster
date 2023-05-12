@@ -147,7 +147,7 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
 
     @abc.abstractmethod
     def get_auto_materialize_asset_evaluations(
-        self, asset_key: AssetKey, limit: Optional[int] = None, cursor: Optional[int] = None
+        self, asset_key: AssetKey, limit: int, cursor: Optional[int] = None
     ) -> Sequence[AutoMaterializeAssetEvaluationRecord]:
         """Get the policy evaluations for a given asset.
 

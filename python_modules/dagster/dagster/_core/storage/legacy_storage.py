@@ -661,7 +661,7 @@ class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
         )
 
     def get_auto_materialize_asset_evaluations(
-        self, asset_key: "AssetKey", limit: Optional[int] = None, cursor: Optional[int] = None
+        self, asset_key: "AssetKey", limit: int, cursor: Optional[int] = None
     ) -> Sequence["AutoMaterializeAssetEvaluationRecord"]:
         return self._storage.schedule_storage.get_auto_materialize_asset_evaluations(
             asset_key, limit, cursor
