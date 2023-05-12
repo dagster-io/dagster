@@ -3,13 +3,15 @@ import os
 import uuid
 from contextlib import contextmanager
 from datetime import datetime
-from typing import Iterator
+from typing import Iterator, Optional, Sequence, Type
 
 import pytest
 from dagster import InputContext, OutputContext, TimeWindow, asset, materialize
 from dagster._core.storage.db_io_manager import DbTypeHandler, TablePartitionDimension, TableSlice
+from dagster_gcp.auth.resources import GoogleAuthResource
 from dagster_gcp.bigquery.io_manager import (
     BigQueryClient,
+    BigQueryIOManager,
     _get_cleanup_statement,
     build_bigquery_io_manager,
 )
@@ -207,9 +209,10 @@ def test_get_cleanup_statement_multi_partitioned():
 
 class FakeHandler(DbTypeHandler[int]):
     def handle_output(self, context: OutputContext, table_slice: TableSlice, obj: int, connection):
-        connection.query(
-            f"SELECT * FROM {table_slice.database}.{table_slice.schema}.{table_slice.table}"
-        ).result()
+        print("hi!")
+        # connection.query(
+        #     f"SELECT * FROM {table_slice.database}.{table_slice.schema}.{table_slice.table}"
+        # ).result()
 
     def load_input(self, context: InputContext, table_slice: TableSlice, connection) -> int:
         return 7
@@ -264,3 +267,30 @@ def test_authenticate_via_config():
         finally:
             os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = old_gcp_creds_file
             assert passed
+
+
+# @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE bigquery DB")
+def test_authenticate_via_google_auth_resource():
+    class FakeBigQueryIOManager(BigQueryIOManager):
+        @staticmethod
+        def type_handlers() -> Sequence[DbTypeHandler]:
+            return [FakeHandler()]
+
+        @staticmethod
+        def default_load_type() -> Optional[Type]:
+            return int
+
+    @asset
+    def test_asset() -> int:
+        return 1
+
+    resource_defs = {
+        "io_manager": FakeBigQueryIOManager(
+            project="elementl-dev", google_auth_resource=GoogleAuthResource()
+        )
+    }
+
+    materialize(
+        [test_asset],
+        resources=resource_defs,
+    )

@@ -2,7 +2,7 @@ from abc import abstractmethod
 from contextlib import contextmanager
 from typing import Generator, Optional, Sequence, Type, cast
 
-from dagster import IOManagerDefinition, OutputContext, io_manager
+from dagster import IOManagerDefinition, OutputContext, ResourceDependency, io_manager
 from dagster._annotations import experimental
 from dagster._config.pythonic_config import (
     ConfigurableIOManagerFactory,
@@ -20,6 +20,7 @@ from google.api_core.exceptions import NotFound
 from google.cloud import bigquery
 from pydantic import Field
 
+from ..auth.resources import GoogleAuthResource
 from .utils import setup_gcp_creds
 
 BIGQUERY_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
@@ -217,6 +218,7 @@ class BigQueryIOManager(ConfigurableIOManagerFactory):
             " your SparkSession configuration."
         ),
     )
+    google_auth_resource: ResourceDependency[GoogleAuthResource]
     gcp_credentials: Optional[str] = Field(
         default=None,
         description=(
@@ -293,9 +295,8 @@ class BigQueryClient(DbClient):
     def ensure_schema_exists(context: OutputContext, table_slice: TableSlice, connection) -> None:
         connection.query(f"CREATE SCHEMA IF NOT EXISTS {table_slice.schema}").result()
 
-    @staticmethod
     @contextmanager
-    def connect(context, _):
+    def connect(self, context, _):
         conn = bigquery.Client(
             project=context.resource_config.get("project"),
             location=context.resource_config.get("location"),

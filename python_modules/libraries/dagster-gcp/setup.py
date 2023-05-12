@@ -41,6 +41,7 @@ setup(
         "google-cloud-bigquery",
         "google-cloud-storage",
         "oauth2client",
+        "google-auth",
     ],
     # we need `pyarrow` for testing read/write parquet files.
     extras_require={"pyarrow": ["pyarrow"]},

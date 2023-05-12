@@ -1,5 +1,6 @@
 from dagster._core.libraries import DagsterLibraryRegistry
 
+from .auth.resources import GoogleAuthResource as GoogleAuthResource
 from .bigquery.io_manager import (
     BigQueryIOManager as BigQueryIOManager,
     build_bigquery_io_manager as build_bigquery_io_manager,
