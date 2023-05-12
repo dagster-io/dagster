@@ -64,9 +64,10 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
 
     Properties:
         asset_key (AssetKey): The asset key that was evaluated.
-        conditions: The conditions that the asset should be materialized. If the asset is
-            partitioned, this will be a list of tuples, where the first element is the reason and
-            the second element is the set of partitions that the reason applies to.
+        conditions: The conditions that impact if the asset should be materialized, skipped, or
+            discarded. If the asset is partitioned, this will be a list of tuples, where the first
+            element is the condition and the second element is the set of partitions that the
+            condition applies to.
     """
 
     asset_key: AssetKey
