@@ -70,7 +70,7 @@ def a_job():
 
 # in this case PandasIOManager is an existing IO Manager
 class MyNumpyLoader(PandasIOManager):
-    def load_input(self, context):
+    def load_input(self, context) -> np.ndarray:
         file_path = "path/to/dataframe"
         array = np.genfromtxt(file_path, delimiter=",", dtype=None)
         return array
@@ -114,7 +114,7 @@ class BetterPandasIOManager(ConfigurableIOManager):
 
 # write a subclass that uses _get_path for your custom loading logic
 class MyBetterNumpyLoader(BetterPandasIOManager):
-    def load_input(self, context):
+    def load_input(self, context) -> np.ndarray:
         file_path = self._get_path(context.upstream_output)
         array = np.genfromtxt(file_path, delimiter=",", dtype=None)
         return array
