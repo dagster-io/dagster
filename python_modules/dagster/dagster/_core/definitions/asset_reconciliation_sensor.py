@@ -75,6 +75,9 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
         Sequence[AutoMaterializeCondition],
         Sequence[Tuple[AutoMaterializeCondition, PartitionsSubset]],
     ]
+    num_requested: int
+    num_skipped: int
+    num_discarded: int
 
     @staticmethod
     def from_conditions(
@@ -84,11 +87,28 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
             AssetKeyPartitionKey, AbstractSet[AutoMaterializeCondition]
         ],
     ) -> "AutoMaterializeAssetEvaluation":
+        num_requested = 0
+        num_skipped = 0
+        num_discarded = 0
+
+        for conditions in conditions_by_asset_partition.values():
+            decision_types = {condition.decision_type for condition in conditions}
+            if AutoMaterializeDecisionType.DISCARD in decision_types:
+                num_discarded += 1
+            elif AutoMaterializeDecisionType.SKIP in decision_types:
+                num_skipped += 1
+            else:
+                check.invariant(AutoMaterializeDecisionType.MATERIALIZE in decision_types)
+                num_requested += 1
+
         partitions_def = asset_graph.get_partitions_def(asset_key)
         if partitions_def is None:
             return AutoMaterializeAssetEvaluation(
                 asset_key=asset_key,
                 conditions=list(set().union(*conditions_by_asset_partition.values())),
+                num_requested=num_requested,
+                num_skipped=num_skipped,
+                num_discarded=num_discarded,
             )
         else:
             partition_keys_by_condition = defaultdict(set)
@@ -105,6 +125,9 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
                     (condition, partitions_def.empty_subset().with_partition_keys(partition_keys))
                     for condition, partition_keys in partition_keys_by_condition.items()
                 ],
+                num_requested=num_requested,
+                num_skipped=num_skipped,
+                num_discarded=num_discarded,
             )
 
 
