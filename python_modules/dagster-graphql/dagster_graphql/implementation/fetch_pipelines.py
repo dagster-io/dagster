@@ -7,7 +7,7 @@ from dagster._core.storage.dagster_run import DagsterRun
 from dagster_graphql.schema.util import ResolveInfo
 
 from .external import get_external_job_or_raise, get_full_external_job_or_raise
-from .utils import JobSubsetSelector, UserFacingGraphQLError, capture_error
+from .utils import JobSubsetSelector, UserFacingGraphQLError
 
 if TYPE_CHECKING:
     from ..schema.pipelines.pipeline import GraphenePipeline
@@ -15,7 +15,6 @@ if TYPE_CHECKING:
     from ..schema.pipelines.snapshot import GraphenePipelineSnapshot
 
 
-@capture_error
 def get_job_snapshot_or_error_from_job_selector(
     graphene_info: ResolveInfo, job_selector: JobSubsetSelector
 ) -> "GraphenePipelineSnapshot":
@@ -25,7 +24,6 @@ def get_job_snapshot_or_error_from_job_selector(
     return GraphenePipelineSnapshot(get_full_external_job_or_raise(graphene_info, job_selector))
 
 
-@capture_error
 def get_job_snapshot_or_error_from_snapshot_id(
     graphene_info: ResolveInfo, snapshot_id: str
 ) -> "GraphenePipelineSnapshot":
@@ -52,7 +50,6 @@ def _get_job_snapshot_from_instance(
     return GraphenePipelineSnapshot(historical_pipeline)
 
 
-@capture_error
 def get_job_or_error(graphene_info: ResolveInfo, selector: JobSubsetSelector) -> "GraphenePipeline":
     """Returns a PipelineOrError."""
     return get_job_from_selector(graphene_info, selector)
