@@ -158,7 +158,7 @@ export const RunsRoot = () => {
     <Page>
       <PageHeader
         title={<Heading>Runs</Heading>}
-        right={<QueryRefreshCountdown refreshState={refreshState} />}
+        right={<QueryRefreshCountdown refreshState={combinedRefreshState} />}
       />
       {filtersPortal}
       {currentTab === 'queued' && canSeeConfig ? (
