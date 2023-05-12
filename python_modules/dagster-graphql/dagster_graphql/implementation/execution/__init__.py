@@ -23,7 +23,6 @@ if TYPE_CHECKING:
 from ..utils import (
     assert_permission,
     assert_permission_for_location,
-    capture_error,
 )
 from .backfill import (
     cancel_partition_backfill as cancel_partition_backfill,
@@ -145,7 +144,6 @@ def terminate_pipeline_execution(
     )
 
 
-@capture_error
 def delete_pipeline_run(
     graphene_info: "ResolveInfo", run_id: str
 ) -> Union["GrapheneDeletePipelineRunSuccess", "GrapheneRunNotFoundError"]:
@@ -321,7 +319,6 @@ async def gen_captured_log_data(
         subscription.dispose()
 
 
-@capture_error
 def wipe_assets(
     graphene_info: "ResolveInfo", asset_keys: Sequence[AssetKey]
 ) -> "GrapheneAssetWipeSuccess":

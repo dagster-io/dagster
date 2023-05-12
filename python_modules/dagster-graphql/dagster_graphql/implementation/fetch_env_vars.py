@@ -9,10 +9,7 @@ from dagster_graphql.schema.env_vars import (
     GrapheneEnvVarWithConsumersListOrError,
 )
 
-from .utils import capture_error
 
-
-@capture_error
 def get_utilized_env_vars_or_error(
     graphene_info, repository_selector
 ) -> GrapheneEnvVarWithConsumersListOrError:

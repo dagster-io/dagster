@@ -249,8 +249,6 @@ class GrapheneTerminateRunResult(graphene.Union):
 
 
 def create_execution_params_and_launch_pipeline_exec(graphene_info, execution_params_dict):
-    # refactored into a helper function here in order to wrap with @capture_error,
-    # because create_execution_params may raise
     execution_params = create_execution_params(graphene_info, execution_params_dict)
     assert_permission_for_location(
         graphene_info,
@@ -360,10 +358,7 @@ class GrapheneAddDynamicPartitionMutation(graphene.Mutation):
         )
 
 
-@capture_error
 def create_execution_params_and_launch_pipeline_reexec(graphene_info, execution_params_dict):
-    # refactored into a helper function here in order to wrap with @capture_error,
-    # because create_execution_params may raise
     execution_params = create_execution_params(graphene_info, execution_params_dict)
     assert_permission_for_location(
         graphene_info,
