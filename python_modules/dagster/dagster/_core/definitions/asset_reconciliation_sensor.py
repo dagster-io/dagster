@@ -38,7 +38,7 @@ from dagster._utils.backcompat import deprecation_warning
 from dagster._utils.schedules import cron_string_iterator
 
 from .asset_selection import AssetGraph, AssetSelection
-from .auto_materialize_reason import (
+from .auto_materialize_condition import (
     AutoMaterializeCondition,
     AutoMaterializeDecisionType,
     DownstreamFreshnessAutoMaterializeCondition,

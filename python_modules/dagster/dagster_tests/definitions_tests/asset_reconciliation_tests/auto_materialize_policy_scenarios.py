@@ -5,11 +5,11 @@ from dagster import (
     AssetsDefinition,
     PartitionKeyRange,
 )
-from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
-from dagster._core.definitions.auto_materialize_reason import (
+from dagster._core.definitions.auto_materialize_condition import (
     MaxMaterializationsExceededAutoMaterializeCondition,
     MissingAutoMaterializeCondition,
 )
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._seven.compat.pendulum import create_pendulum_time
 
 from .asset_reconciliation_scenario import (

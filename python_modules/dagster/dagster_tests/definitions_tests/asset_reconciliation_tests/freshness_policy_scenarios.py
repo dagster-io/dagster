@@ -5,7 +5,7 @@ from dagster import (
     DailyPartitionsDefinition,
     SourceAsset,
 )
-from dagster._core.definitions.asset_reconciliation_sensor import (
+from dagster._core.definitions.auto_materialize_condition import (
     DownstreamFreshnessAutoMaterializeCondition,
     FreshnessAutoMaterializeCondition,
 )
