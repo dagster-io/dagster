@@ -22,7 +22,7 @@ import {
   buildExpectedLaunchSingleRunMutation,
   buildLaunchAssetLoaderMock,
   LaunchAssetCheckUpstreamWeeklyRootMock,
-  LaunchAssetChoosePartitionsMock,
+  LaunchAssetWarningsMock,
   LaunchAssetLoaderResourceJob7Mock,
   LaunchAssetLoaderResourceJob8Mock,
   LaunchAssetLoaderResourceMyAssetJobMock,
@@ -356,7 +356,7 @@ async function renderButton({
   const assetKeys = ('all' in scope ? scope.all : scope.selected).map((s) => s.assetKey);
 
   const mocks: MockedResponse<Record<string, any>>[] = [
-    LaunchAssetChoosePartitionsMock,
+    LaunchAssetWarningsMock,
     LaunchAssetLoaderResourceJob7Mock,
     LaunchAssetLoaderResourceJob8Mock,
     LaunchAssetLoaderResourceMyAssetJobMock,
