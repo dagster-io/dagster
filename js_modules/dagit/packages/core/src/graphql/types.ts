@@ -112,6 +112,18 @@ export type AssetBackfillData = {
   rootAssetTargetedRanges: Maybe<Array<PartitionKeyRange>>;
 };
 
+export type AssetBackfillRunStatus = {
+  __typename: 'AssetBackfillRunStatus';
+  partitionName: Maybe<Scalars['String']>;
+  runId: Maybe<Scalars['String']>;
+  runStatus: Maybe<RunStatus>;
+};
+
+export type AssetBackfillRunStatuses = {
+  __typename: 'AssetBackfillRunStatuses';
+  results: Array<AssetBackfillRunStatus>;
+};
+
 export type AssetBackfillStatus = AssetPartitionsStatusCounts | UnpartitionedAssetStatus;
 
 export type AssetConnection = {
@@ -1467,6 +1479,8 @@ export type GraphSelector = {
   repositoryName: Scalars['String'];
 };
 
+export type GrapheneBackfillRunStatuses = AssetBackfillRunStatuses | PartitionStatuses;
+
 export type HandledOutputEvent = DisplayableEvent &
   MessageEvent &
   StepEvent & {
@@ -2305,7 +2319,7 @@ export type PartitionBackfill = {
   __typename: 'PartitionBackfill';
   assetBackfillData: Maybe<AssetBackfillData>;
   assetSelection: Maybe<Array<AssetKey>>;
-  backfillRunStatuses: PartitionStatuses;
+  backfillRunStatuses: GrapheneBackfillRunStatuses;
   endTimestamp: Maybe<Scalars['Float']>;
   error: Maybe<PythonError>;
   fromFailure: Scalars['Boolean'];
@@ -4138,6 +4152,38 @@ export const buildAssetBackfillData = (
       overrides && overrides.hasOwnProperty('rootAssetTargetedRanges')
         ? overrides.rootAssetTargetedRanges!
         : [],
+  };
+};
+
+export const buildAssetBackfillRunStatus = (
+  overrides?: Partial<AssetBackfillRunStatus>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetBackfillRunStatus'} & AssetBackfillRunStatus => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetBackfillRunStatus');
+  return {
+    __typename: 'AssetBackfillRunStatus',
+    partitionName:
+      overrides && overrides.hasOwnProperty('partitionName')
+        ? overrides.partitionName!
+        : 'quisquam',
+    runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'sit',
+    runStatus:
+      overrides && overrides.hasOwnProperty('runStatus')
+        ? overrides.runStatus!
+        : RunStatus.CANCELED,
+  };
+};
+
+export const buildAssetBackfillRunStatuses = (
+  overrides?: Partial<AssetBackfillRunStatuses>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetBackfillRunStatuses'} & AssetBackfillRunStatuses => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetBackfillRunStatuses');
+  return {
+    __typename: 'AssetBackfillRunStatuses',
+    results: overrides && overrides.hasOwnProperty('results') ? overrides.results! : [],
   };
 };
 
@@ -8218,9 +8264,9 @@ export const buildPartitionBackfill = (
     backfillRunStatuses:
       overrides && overrides.hasOwnProperty('backfillRunStatuses')
         ? overrides.backfillRunStatuses!
-        : relationshipsToOmit.has('PartitionStatuses')
-        ? ({} as PartitionStatuses)
-        : buildPartitionStatuses({}, relationshipsToOmit),
+        : relationshipsToOmit.has('AssetBackfillRunStatuses')
+        ? ({} as AssetBackfillRunStatuses)
+        : buildAssetBackfillRunStatuses({}, relationshipsToOmit),
     endTimestamp:
       overrides && overrides.hasOwnProperty('endTimestamp') ? overrides.endTimestamp! : 0.33,
     error:

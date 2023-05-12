@@ -9,7 +9,7 @@ import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {RunStatus, BulkActionStatus} from '../graphql/types';
+import {RunStatus, BulkActionStatus, AssetBackfillRunStatus} from '../graphql/types';
 import {PartitionStatus, PartitionStatusHealthSourceOps} from '../partitions/PartitionStatus';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {AssetKeyTagCollection} from '../runs/AssetKeyTagCollection';
@@ -25,12 +25,20 @@ import {workspacePathFromAddress, workspacePipelinePath} from '../workspace/work
 
 import {
   PartitionStatusesForBackfillFragment,
+  AssetBackfillRunStatusesFragment,
   SingleBackfillCountsQuery,
   SingleBackfillCountsQueryVariables,
   SingleBackfillQuery,
   SingleBackfillQueryVariables,
 } from './types/BackfillRow.types';
 import {BackfillTableFragment} from './types/BackfillTable.types';
+
+export type BackfillRunStatus = {
+  jobBackfillRunPartitionName?: string;
+  assetBackfillRunPartitionName?: string;
+  runStatus: RunStatus | null;
+  runId: string | null;
+};
 
 export const BackfillRow = ({
   backfill,
@@ -92,8 +100,9 @@ export const BackfillRow = ({
       );
       return {counts, statuses: null};
     }
+
     const statuses = data.partitionBackfillOrError.backfillRunStatuses.results;
-    const counts = countBy(statuses, (k) => k.runStatus);
+    const counts = countBy(statuses, (k) => (k as BackfillRunStatus).runStatus);
     return {counts, statuses};
   }, [data]);
 
@@ -250,7 +259,10 @@ const BackfillRunStatus = ({
   counts,
 }: {
   backfill: BackfillTableFragment;
-  statuses: PartitionStatusesForBackfillFragment['results'] | null;
+  statuses:
+    | PartitionStatusesForBackfillFragment['results']
+    | AssetBackfillRunStatusesFragment['results']
+    | null;
   counts: {[status: string]: number};
 }) => {
   const history = useHistory();
@@ -262,7 +274,9 @@ const BackfillRunStatus = ({
   const health: PartitionStatusHealthSourceOps = React.useMemo(
     () => ({
       runStatusForPartitionKey: (key: string) =>
-        statuses?.filter((s) => s.partitionName === key)[0]?.runStatus || RunStatus.NOT_STARTED,
+        (statuses as BackfillRunStatus[])?.filter(
+          (s) => s.jobBackfillRunPartitionName === key || s.assetBackfillRunPartitionName === key,
+        )[0]?.runStatus || RunStatus.NOT_STARTED,
     }),
     [statuses],
   );
@@ -273,7 +287,11 @@ const BackfillRunStatus = ({
       health={health}
       splitPartitions
       onClick={(partitionName) => {
-        const entry = statuses.find((r) => r.partitionName === partitionName);
+        const entry = (statuses as BackfillRunStatus[]).find(
+          (r) =>
+            r.jobBackfillRunPartitionName === partitionName ||
+            r.assetBackfillRunPartitionName === partitionName,
+        );
         if (entry?.runId) {
           history.push(`/runs/${entry.runId}`);
         }
@@ -494,6 +512,7 @@ export const SINGLE_BACKFILL_STATUS_DETAILS_QUERY = gql`
         id
         backfillRunStatuses {
           ...PartitionStatusesForBackfill
+          ...AssetBackfillRunStatuses
         }
       }
     }
@@ -502,7 +521,15 @@ export const SINGLE_BACKFILL_STATUS_DETAILS_QUERY = gql`
   fragment PartitionStatusesForBackfill on PartitionStatuses {
     results {
       id
-      partitionName
+      jobBackfillRunPartitionName: partitionName
+      runId
+      runStatus
+    }
+  }
+
+  fragment AssetBackfillRunStatuses on AssetBackfillRunStatuses {
+    results {
+      assetBackfillRunPartitionName: partitionName
       runId
       runStatus
     }

@@ -63,9 +63,9 @@ from ..dagster_run import (
     DagsterRun,
     DagsterRunStatus,
     JobBucket,
-    RunPartitionData,
     RunRecord,
     RunsFilter,
+    RunStatusData,
     TagBucket,
 )
 from .base import RunGroupInfo, RunStorage
@@ -888,7 +888,7 @@ class SqlRunStorage(RunStorage):
 
         return defensively_unpack_execution_plan_snapshot_query(logging, row) if row else None  # type: ignore
 
-    def get_run_partition_data(self, runs_filter: RunsFilter) -> Sequence[RunPartitionData]:
+    def get_runs_status_data(self, runs_filter: RunsFilter) -> Sequence[RunStatusData]:
         if self.has_built_index(RUN_PARTITIONS) and self.has_run_stats_index_cols():
             query = self._runs_query(
                 filters=runs_filter,
@@ -896,40 +896,36 @@ class SqlRunStorage(RunStorage):
             )
             rows = self.fetchall(query)
 
-            # dedup by partition
-            _partition_data_by_partition = {}
-            for row in rows:
-                if not row["partition"] or row["partition"] in _partition_data_by_partition:
-                    continue
-
-                _partition_data_by_partition[row["partition"]] = RunPartitionData(
+            return [
+                RunStatusData(
                     run_id=row["run_id"],
                     partition=row["partition"],
                     status=DagsterRunStatus[row["status"]],
                     start_time=row["start_time"],
                     end_time=row["end_time"],
                 )
-
-            return list(_partition_data_by_partition.values())
+                for row in rows
+            ]
         else:
             query = self._runs_query(filters=runs_filter)
             rows = self.fetchall(query)
-            _partition_data_by_partition = {}
+
+            runs_status_data = []
             for row in rows:
                 run = self._row_to_run(row)
                 partition = run.tags.get(PARTITION_NAME_TAG)
-                if not partition or partition in _partition_data_by_partition:
-                    continue
 
-                _partition_data_by_partition[partition] = RunPartitionData(
-                    run_id=run.run_id,
-                    partition=partition,
-                    status=run.status,
-                    start_time=None,
-                    end_time=None,
+                runs_status_data.append(
+                    RunStatusData(
+                        run_id=run.run_id,
+                        partition=partition,
+                        status=run.status,
+                        start_time=None,
+                        end_time=None,
+                    )
                 )
 
-            return list(_partition_data_by_partition.values())
+            return runs_status_data
 
     def _get_partition_runs(
         self, partition_set_name: str, partition_name: str

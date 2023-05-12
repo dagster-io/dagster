@@ -2430,7 +2430,7 @@ type PartitionBackfill {
   runs(limit: Int): [Run!]!
   unfinishedRuns(limit: Int): [Run!]!
   error: PythonError
-  backfillRunStatuses: PartitionStatuses!
+  backfillRunStatuses: GrapheneBackfillRunStatuses!
   partitionStatusCounts: [PartitionStatusCounts!]!
   isAssetBackfill: Boolean!
   assetBackfillData: AssetBackfillData
@@ -2444,6 +2444,18 @@ enum BulkActionStatus {
   COMPLETED
   FAILED
   CANCELED
+}
+
+union GrapheneBackfillRunStatuses = PartitionStatuses | AssetBackfillRunStatuses
+
+type AssetBackfillRunStatuses {
+  results: [AssetBackfillRunStatus!]!
+}
+
+type AssetBackfillRunStatus {
+  partitionName: String
+  runId: String
+  runStatus: RunStatus
 }
 
 type AssetBackfillData {

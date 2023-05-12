@@ -569,12 +569,12 @@ class RunRecord(
 
 
 @whitelist_for_serdes
-class RunPartitionData(
+class RunStatusData(
     NamedTuple(
-        "_RunPartitionData",
+        "_RunStatusData",
         [
             ("run_id", str),
-            ("partition", str),
+            ("partition", Optional[str]),
             ("status", DagsterRunStatus),
             ("start_time", Optional[float]),
             ("end_time", Optional[float]),
@@ -584,15 +584,15 @@ class RunPartitionData(
     def __new__(
         cls,
         run_id: str,
-        partition: str,
+        partition: Optional[str],
         status: DagsterRunStatus,
         start_time: Optional[float],
         end_time: Optional[float],
     ):
-        return super(RunPartitionData, cls).__new__(
+        return super(RunStatusData, cls).__new__(
             cls,
             run_id=check.str_param(run_id, "run_id"),
-            partition=check.str_param(partition, "partition"),
+            partition=check.opt_str_param(partition, "partition"),
             status=check.inst_param(status, "status", DagsterRunStatus),
             start_time=check.opt_inst(start_time, float),
             end_time=check.opt_inst(end_time, float),

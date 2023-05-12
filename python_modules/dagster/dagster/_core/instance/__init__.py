@@ -50,9 +50,9 @@ from dagster._core.storage.dagster_run import (
     DagsterRunStatsSnapshot,
     DagsterRunStatus,
     JobBucket,
-    RunPartitionData,
     RunRecord,
     RunsFilter,
+    RunStatusData,
     TagBucket,
 )
 from dagster._core.storage.tags import (
@@ -1646,9 +1646,9 @@ class DagsterInstance(DynamicPartitionsStore):
         return self._run_storage.supports_bucket_queries
 
     @traced
-    def get_run_partition_data(self, runs_filter: RunsFilter) -> Sequence[RunPartitionData]:
-        """Get run partition data for a given partitioned job."""
-        return self._run_storage.get_run_partition_data(runs_filter)
+    def get_runs_status_data(self, runs_filter: RunsFilter) -> Sequence[RunStatusData]:
+        """Fetch runs matching a runs filter and return run status data for each run."""
+        return self._run_storage.get_runs_status_data(runs_filter)
 
     def wipe(self) -> None:
         self._run_storage.wipe()

@@ -7,7 +7,7 @@ import {BulkActionStatus} from '../graphql/types';
 import {cancelableStatuses} from '../runs/RunStatuses';
 import {TerminationDialog} from '../runs/TerminationDialog';
 
-import {SINGLE_BACKFILL_STATUS_DETAILS_QUERY} from './BackfillRow';
+import {SINGLE_BACKFILL_STATUS_DETAILS_QUERY, BackfillRunStatus} from './BackfillRow';
 import {SingleBackfillQuery, SingleBackfillQueryVariables} from './types/BackfillRow.types';
 import {BackfillTableFragment} from './types/BackfillTable.types';
 import {
@@ -39,7 +39,9 @@ export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props
     if (!backfill || !data || data.partitionBackfillOrError.__typename !== 'PartitionBackfill') {
       return {};
     }
-    const unfinishedPartitions = data.partitionBackfillOrError.backfillRunStatuses.results.filter(
+
+    const unfinishedPartitions = (data.partitionBackfillOrError.backfillRunStatuses
+      .results as BackfillRunStatus[]).filter(
       (partition) =>
         partition.runStatus && partition.runId && cancelableStatuses.has(partition.runStatus),
     );

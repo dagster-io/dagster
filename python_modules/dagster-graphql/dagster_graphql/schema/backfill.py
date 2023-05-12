@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional, Sequence
+from typing import TYPE_CHECKING, Optional, Sequence, Union
 
 import dagster._check as check
 import graphene
@@ -15,11 +15,12 @@ from dagster._core.execution.backfill import (
     PartitionBackfill,
 )
 from dagster._core.host_representation.external import ExternalPartitionSet
-from dagster._core.storage.dagster_run import RunPartitionData, RunRecord, RunsFilter
+from dagster._core.storage.dagster_run import RunRecord, RunsFilter, RunStatusData
 from dagster._core.storage.tags import BACKFILL_ID_TAG
 from dagster._core.workspace.permissions import Permissions
 
 from ..implementation.fetch_partition_sets import (
+    asset_backfill_run_statuses_from_runs_data,
     partition_status_counts_from_run_partition_data,
     partition_statuses_from_run_partition_data,
 )
@@ -45,7 +46,9 @@ if TYPE_CHECKING:
     )
 
     from ..schema.partition_sets import (
+        GrapheneAssetBackfillRunStatuses,
         GraphenePartitionSet,
+        GraphenePartitionStatuses,
     )
     from .pipelines.pipeline import GrapheneRun
 
@@ -154,7 +157,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     )
     error = graphene.Field(GraphenePythonError)
     backfillRunStatuses = graphene.NonNull(
-        "dagster_graphql.schema.partition_sets.GraphenePartitionStatuses"
+        "dagster_graphql.schema.partition_sets.GrapheneBackfillRunStatuses"
     )
     partitionStatusCounts = non_null_list(
         "dagster_graphql.schema.partition_sets.GraphenePartitionStatusCounts"
@@ -170,7 +173,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         self._backfill_job = check.inst_param(backfill_job, "backfill_job", PartitionBackfill)
 
         self._records = None
-        self._partition_run_data = None
+        self._backfill_runs_status_data = None
 
         super().__init__(
             id=backfill_job.backfill_id,
@@ -215,10 +218,10 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             )
         return self._records
 
-    def _get_partition_run_data(self, graphene_info: ResolveInfo) -> Sequence[RunPartitionData]:
-        if self._partition_run_data is None:
-            self._partition_run_data = (
-                graphene_info.context.instance.run_storage.get_run_partition_data(
+    def _get_backfill_runs_status_data(self, graphene_info: ResolveInfo) -> Sequence[RunStatusData]:
+        if self._backfill_runs_status_data is None:
+            self._backfill_runs_status_data = (
+                graphene_info.context.instance.run_storage.get_runs_status_data(
                     runs_filter=RunsFilter(
                         tags={
                             BACKFILL_ID_TAG: self._backfill_job.backfill_id,
@@ -226,7 +229,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
                     )
                 )
             )
-        return self._partition_run_data
+        return self._backfill_runs_status_data
 
     def resolve_unfinishedRuns(self, graphene_info: ResolveInfo) -> Sequence["GrapheneRun"]:
         from .pipelines.pipeline import GrapheneRun
@@ -275,29 +278,30 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             external_partition_set=partition_set,
         )
 
-    def resolve_backfillRunStatuses(self, graphene_info: ResolveInfo):
+    def resolve_backfillRunStatuses(
+        self, graphene_info: ResolveInfo
+    ) -> Union["GrapheneAssetBackfillRunStatuses", "GraphenePartitionStatuses"]:
         """For asset backfills, returns only statuses for runs that have been created."""
-        partition_run_data = self._get_partition_run_data(graphene_info)
-        partition_set_origin = self._backfill_job.partition_set_origin
-        partition_set_name = (
-            partition_set_origin.partition_set_name if partition_set_origin else None
-        )
-        partition_names = self._backfill_job.get_partition_names(graphene_info.context)
+        runs_status_data = self._get_backfill_runs_status_data(graphene_info)
 
-        if not self._backfill_job.is_asset_backfill:
-            check.not_none(partition_names, "partition_names")
-
-        return partition_statuses_from_run_partition_data(
-            partition_run_data,
-            partition_set_name,
-            partition_names,
-            self._backfill_job.backfill_id,
-        )
+        if self._backfill_job.is_asset_backfill:
+            return asset_backfill_run_statuses_from_runs_data(runs_status_data)
+        else:
+            partition_set_origin = self._backfill_job.partition_set_origin
+            partition_set_name = (
+                partition_set_origin.partition_set_name if partition_set_origin else None
+            )
+            return partition_statuses_from_run_partition_data(
+                runs_status_data,
+                partition_set_name,
+                check.not_none(self._backfill_job.get_partition_names(graphene_info.context)),
+                backfill_id=self._backfill_job.backfill_id,
+            )
 
     def resolve_partitionStatusCounts(
         self, graphene_info: ResolveInfo
     ) -> Sequence["GraphenePartitionStatusCounts"]:
-        partition_run_data = self._get_partition_run_data(graphene_info)
+        partition_run_data = self._get_backfill_runs_status_data(graphene_info)
         return partition_status_counts_from_run_partition_data(
             partition_run_data,
             check.not_none(self._backfill_job.get_partition_names(graphene_info.context)),

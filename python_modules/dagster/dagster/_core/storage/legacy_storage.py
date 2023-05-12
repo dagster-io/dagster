@@ -52,9 +52,9 @@ if TYPE_CHECKING:
         DagsterRun,
         DagsterRunStatsSnapshot,
         JobBucket,
-        RunPartitionData,
         RunRecord,
         RunsFilter,
+        RunStatusData,
         TagBucket,
     )
     from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
@@ -328,8 +328,8 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
     def update_backfill(self, partition_backfill: "PartitionBackfill") -> None:
         return self._storage.run_storage.update_backfill(partition_backfill)
 
-    def get_run_partition_data(self, runs_filter: "RunsFilter") -> Sequence["RunPartitionData"]:
-        return self._storage.run_storage.get_run_partition_data(runs_filter)
+    def get_runs_status_data(self, runs_filter: "RunsFilter") -> Sequence["RunStatusData"]:
+        return self._storage.run_storage.get_runs_status_data(runs_filter)
 
     def get_cursor_values(self, keys: Set[str]) -> Mapping[str, str]:
         return self._storage.run_storage.get_cursor_values(keys)

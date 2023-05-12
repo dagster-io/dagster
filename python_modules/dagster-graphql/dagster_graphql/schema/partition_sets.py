@@ -82,6 +82,22 @@ class GraphenePartitionRunConfigOrError(graphene.Union):
         name = "PartitionRunConfigOrError"
 
 
+class GrapheneAssetBackfillRunStatus(graphene.ObjectType):
+    partitionName = graphene.Field(graphene.String())
+    runId = graphene.Field(graphene.String)
+    runStatus = graphene.Field(GrapheneRunStatus)
+
+    class Meta:
+        name = "AssetBackfillRunStatus"
+
+
+class GrapheneAssetBackfillRunStatuses(graphene.ObjectType):
+    results = non_null_list(GrapheneAssetBackfillRunStatus)
+
+    class Meta:
+        name = "AssetBackfillRunStatuses"
+
+
 class GraphenePartitionStatus(graphene.ObjectType):
     id = graphene.NonNull(graphene.String)
     partitionName = graphene.NonNull(graphene.String)
@@ -115,6 +131,12 @@ class GraphenePartitionStatuses(graphene.ObjectType):
 
     class Meta:
         name = "PartitionStatuses"
+
+
+class GrapheneBackfillRunStatuses(graphene.Union):
+    class Meta:
+        types = (GraphenePartitionStatuses, GrapheneAssetBackfillRunStatuses)
+        name = "GrapheneBackfillRunStatuses"
 
 
 class GraphenePartitionStatusesOrError(graphene.Union):

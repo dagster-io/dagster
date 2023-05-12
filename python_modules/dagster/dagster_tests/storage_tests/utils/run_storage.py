@@ -1196,7 +1196,7 @@ class TestRunStorage:
             },
         )
         storage.add_run(three)
-        partition_data = storage.get_run_partition_data(
+        partition_data = storage.get_runs_status_data(
             runs_filter=RunsFilter(
                 job_name="foo_job",
                 tags={PARTITION_SET_TAG: "foo_set"},

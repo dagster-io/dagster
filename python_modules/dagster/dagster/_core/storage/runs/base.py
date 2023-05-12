@@ -10,9 +10,9 @@ from dagster._core.snap import ExecutionPlanSnapshot, JobSnapshot
 from dagster._core.storage.dagster_run import (
     DagsterRun,
     JobBucket,
-    RunPartitionData,
     RunRecord,
     RunsFilter,
+    RunStatusData,
     TagBucket,
 )
 from dagster._core.storage.sql import AlembicVersion
@@ -339,8 +339,8 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
         return True
 
     @abstractmethod
-    def get_run_partition_data(self, runs_filter: RunsFilter) -> Sequence[RunPartitionData]:
-        """Get run partition data for a given partitioned job."""
+    def get_runs_status_data(self, runs_filter: RunsFilter) -> Sequence[RunStatusData]:
+        """Fetch runs via a runs filter and return run status data for each run."""
 
     def migrate(self, print_fn: Optional[PrintFn] = None, force_rebuild_all: bool = False) -> None:
         """Call this method to run any required data migrations."""

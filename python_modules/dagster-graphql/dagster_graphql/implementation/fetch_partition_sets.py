@@ -12,7 +12,7 @@ from dagster._core.host_representation.external_data import (
     ExternalPartitionExecutionErrorData,
     ExternalPartitionNamesData,
 )
-from dagster._core.storage.dagster_run import RunPartitionData, RunsFilter
+from dagster._core.storage.dagster_run import RunsFilter, RunStatusData
 from dagster._core.storage.tags import (
     PARTITION_NAME_TAG,
     PARTITION_SET_TAG,
@@ -228,7 +228,7 @@ def get_partition_set_partition_statuses(
     repository_handle = external_partition_set.repository_handle
     partition_set_name = external_partition_set.name
 
-    run_partition_data = graphene_info.context.instance.run_storage.get_run_partition_data(
+    run_partition_data = graphene_info.context.instance.run_storage.get_runs_status_data(
         runs_filter=RunsFilter(
             tags={
                 PARTITION_SET_TAG: partition_set_name,
@@ -248,31 +248,47 @@ def get_partition_set_partition_statuses(
     )
 
 
-def _get_partition_id(
-    partition_name: str,
-    backfill_id: Optional[str] = None,
-    partition_set_name: Optional[str] = None,
-):
-    suffix = f":{backfill_id}" if backfill_id else ""
-    return f'{partition_set_name or "__NO_PARTITION_SET__"}:{partition_name}{suffix}'
+def asset_backfill_run_statuses_from_runs_data(runs_data: Sequence[RunStatusData]):
+    from ..schema.partition_sets import (
+        GrapheneAssetBackfillRunStatus,
+        GrapheneAssetBackfillRunStatuses,
+    )
+
+    return GrapheneAssetBackfillRunStatuses(
+        results=[
+            GrapheneAssetBackfillRunStatus(
+                partitionName=run_data.partition,
+                runId=run_data.run_id,
+                runStatus=run_data.status.value,
+            )
+            for run_data in runs_data
+        ]
+    )
 
 
 def partition_statuses_from_run_partition_data(
-    run_partition_data: Sequence[RunPartitionData],
+    runs_status_data: Sequence[RunStatusData],
     partition_set_name: Optional[str] = None,
     partition_names: Optional[Sequence[str]] = None,
     backfill_id: Optional[str] = None,
 ) -> "GraphenePartitionStatuses":
     from ..schema.partition_sets import GraphenePartitionStatus, GraphenePartitionStatuses
 
-    partition_data_by_name = {
-        partition_data.partition: partition_data for partition_data in run_partition_data
-    }
+    suffix = f":{backfill_id}" if backfill_id else ""
+    get_partition_id = (
+        lambda partition_name: f'{partition_set_name or "__NO_PARTITION_SET__"}:{partition_name}{suffix}'
+    )
 
+    # Dedupe by partition key
     status_by_partition = {}
-    for name, partition_data in partition_data_by_name.items():
+    for partition_data in runs_status_data:
+        name = partition_data.partition
+
+        if not name or name not in partition_names or name in status_by_partition:
+            continue
+
         status_by_partition[name] = GraphenePartitionStatus(
-            id=_get_partition_id(name, backfill_id, partition_set_name),
+            id=get_partition_id(name),
             partitionName=name,
             runId=partition_data.run_id,
             runStatus=partition_data.status.value,
@@ -287,7 +303,7 @@ def partition_statuses_from_run_partition_data(
             if name not in status_by_partition:
                 results.append(
                     GraphenePartitionStatus(
-                        id=_get_partition_id(name, backfill_id, partition_set_name),
+                        id=get_partition_id(name),
                         partitionName=name,
                     )
                 )
@@ -299,7 +315,7 @@ def partition_statuses_from_run_partition_data(
 
 
 def partition_status_counts_from_run_partition_data(
-    run_partition_data: Sequence[RunPartitionData], partition_names: Sequence[str]
+    run_partition_data: Sequence[RunStatusData], partition_names: Sequence[str]
 ) -> Sequence["GraphenePartitionStatusCounts"]:
     from ..schema.partition_sets import GraphenePartitionStatusCounts
 
