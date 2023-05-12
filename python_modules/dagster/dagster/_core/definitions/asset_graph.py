@@ -656,27 +656,33 @@ class ToposortedPriorityQueue:
             self._toposort_level_by_asset_key[required_asset_key]
             for required_asset_key in required_multi_asset_keys
         )
+
+        def _sort_key_for_time_window_partition(
+            partition_key: str, partitions_def: TimeWindowPartitionsDefinition
+        ) -> float:
+            # A sort key such that time window partitions are sorted from oldest to newest
+            return pendulum.instance(
+                datetime.strptime(cast(str, asset_partition.partition_key), partitions_def.fmt),
+                tz=partitions_def.timezone,
+            ).timestamp()
+
         partitions_def = self._asset_graph.get_partitions_def(asset_key)
         if self._asset_graph.has_self_dependency(asset_key):
             if partitions_def is not None and isinstance(
                 partitions_def, TimeWindowPartitionsDefinition
             ):
-                partition_sort_key = pendulum.instance(
-                    datetime.strptime(cast(str, asset_partition.partition_key), partitions_def.fmt),
-                    tz=partitions_def.timezone,
-                ).timestamp()
+                partition_sort_key = _sort_key_for_time_window_partition(
+                    cast(str, asset_partition.partition_key), partitions_def
+                )
             else:
                 check.failed(
                     "Assets with self-dependencies must have time-window partitions, but"
                     f" {asset_key} does not."
                 )
         elif isinstance(partitions_def, TimeWindowPartitionsDefinition):
-            partition_sort_key = (
-                pendulum.instance(
-                    datetime.strptime(cast(str, asset_partition.partition_key), partitions_def.fmt),
-                    tz=partitions_def.timezone,
-                ).timestamp()
-                * -1
+            # sort non-self dependencies from newest to oldest
+            partition_sort_key = -1 * _sort_key_for_time_window_partition(
+                cast(str, asset_partition.partition_key), partitions_def
             )
         else:
             partition_sort_key = None
