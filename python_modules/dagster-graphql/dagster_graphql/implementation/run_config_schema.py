@@ -9,7 +9,7 @@ from dagster_graphql.schema.errors import GrapheneModeNotFoundError
 from dagster_graphql.schema.util import ResolveInfo
 
 from .external import get_external_job_or_raise
-from .utils import JobSubsetSelector, UserFacingGraphQLError, capture_error
+from .utils import JobSubsetSelector, UserFacingGraphQLError
 
 if TYPE_CHECKING:
     from ..schema.pipelines.config import (
@@ -18,7 +18,6 @@ if TYPE_CHECKING:
     from ..schema.run_config import GrapheneRunConfigSchema
 
 
-@capture_error
 def resolve_run_config_schema_or_error(
     graphene_info: ResolveInfo, selector: JobSubsetSelector, mode: Optional[str] = None
 ) -> "GrapheneRunConfigSchema":
@@ -40,7 +39,6 @@ def resolve_run_config_schema_or_error(
     )
 
 
-@capture_error
 def resolve_is_run_config_valid(
     graphene_info: ResolveInfo,
     represented_pipeline: RepresentedJob,

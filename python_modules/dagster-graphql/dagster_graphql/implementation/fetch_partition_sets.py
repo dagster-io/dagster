@@ -24,8 +24,6 @@ from dagster._utils.yaml_utils import dump_run_config_yaml
 
 from dagster_graphql.schema.util import ResolveInfo
 
-from .utils import capture_error
-
 if TYPE_CHECKING:
     from dagster_graphql.schema.errors import GraphenePartitionSetNotFoundError
     from dagster_graphql.schema.partition_sets import (
@@ -41,7 +39,6 @@ if TYPE_CHECKING:
     )
 
 
-@capture_error
 def get_partition_sets_or_error(
     graphene_info: ResolveInfo, repository_selector: RepositorySelector, pipeline_name: str
 ) -> "GraphenePartitionSets":
@@ -75,7 +72,6 @@ def get_partition_sets_or_error(
     )
 
 
-@capture_error
 def get_partition_set(
     graphene_info: ResolveInfo, repository_selector: RepositorySelector, partition_set_name: str
 ) -> Union["GraphenePartitionSet", "GraphenePartitionSetNotFoundError"]:
@@ -96,7 +92,6 @@ def get_partition_set(
     return GraphenePartitionSetNotFoundError(partition_set_name)
 
 
-@capture_error
 def get_partition_by_name(
     graphene_info: ResolveInfo,
     repository_handle: RepositoryHandle,
@@ -115,7 +110,6 @@ def get_partition_by_name(
     )
 
 
-@capture_error
 def get_partition_config(
     graphene_info: ResolveInfo,
     repository_handle: RepositoryHandle,
@@ -141,7 +135,6 @@ def get_partition_config(
     return GraphenePartitionRunConfig(yaml=dump_run_config_yaml(result.run_config))
 
 
-@capture_error
 def get_partition_tags(
     graphene_info: ResolveInfo,
     repository_handle: RepositoryHandle,
@@ -171,7 +164,6 @@ def get_partition_tags(
     )
 
 
-@capture_error
 def get_partitions(
     graphene_info: ResolveInfo,
     repository_handle: RepositoryHandle,
@@ -227,7 +219,6 @@ def _apply_cursor_limit_reverse(
     return items[max(start, 0) : end]
 
 
-@capture_error
 def get_partition_set_partition_statuses(
     graphene_info: ResolveInfo, external_partition_set: ExternalPartitionSet
 ) -> Sequence["GraphenePartitionStatus"]:

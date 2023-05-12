@@ -25,7 +25,6 @@ from dagster._core.storage.dagster_run import DagsterRunStatus, RunRecord, RunsF
 from dagster._core.storage.tags import TagType, get_tag_type
 
 from .external import ensure_valid_config, get_external_job_or_raise
-from .utils import capture_error
 
 if TYPE_CHECKING:
     from ..schema.asset_graph import GrapheneAssetLatestInfo, GrapheneAssetNode
@@ -53,7 +52,6 @@ def get_run_by_id(
         return GrapheneRun(record)
 
 
-@capture_error
 def get_run_tag_keys(graphene_info: "ResolveInfo") -> "GrapheneRunTagKeys":
     from ..schema.runs import GrapheneRunTagKeys
 
@@ -66,7 +64,6 @@ def get_run_tag_keys(graphene_info: "ResolveInfo") -> "GrapheneRunTagKeys":
     )
 
 
-@capture_error
 def get_run_tags(
     graphene_info: "ResolveInfo",
     tag_keys: Optional[List[str]] = None,
@@ -88,7 +85,6 @@ def get_run_tags(
     )
 
 
-@capture_error
 def get_run_group(graphene_info: "ResolveInfo", run_id: str) -> "GrapheneRunGroup":
     from ..schema.errors import GrapheneRunGroupNotFoundError
     from ..schema.pipelines.pipeline import GrapheneRun
@@ -330,7 +326,6 @@ def get_run_groups(
     ]
 
 
-@capture_error
 def validate_pipeline_config(
     graphene_info: "ResolveInfo",
     selector: JobSubsetSelector,
@@ -345,7 +340,6 @@ def validate_pipeline_config(
     return GraphenePipelineConfigValidationValid(pipeline_name=external_job.name)
 
 
-@capture_error
 def get_execution_plan(
     graphene_info: "ResolveInfo",
     selector: JobSubsetSelector,
@@ -367,7 +361,6 @@ def get_execution_plan(
     )
 
 
-@capture_error
 def get_stats(graphene_info: "ResolveInfo", run_id: str) -> "GrapheneRunStatsSnapshot":
     from ..schema.pipelines.pipeline_run_stats import GrapheneRunStatsSnapshot
 
@@ -385,7 +378,6 @@ def get_step_stats(
     return [GrapheneRunStepStats(stats) for stats in step_stats]
 
 
-@capture_error
 def get_logs_for_run(
     graphene_info: "ResolveInfo",
     run_id: str,

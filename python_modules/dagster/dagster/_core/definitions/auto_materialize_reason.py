@@ -1,8 +1,10 @@
 from enum import Enum
-from typing import NamedTuple
+from typing import NamedTuple, Union
+
+from dagster._serdes import whitelist_for_serdes
 
 
-class AutoMaterializeResult(Enum):
+class AutoMaterializeDecisionType(Enum):
     """Represents the set of results of the auto-materialize logic.
 
     MATERIALIZE: The asset should be materialized by a run kicked off on this tick
@@ -17,66 +19,61 @@ class AutoMaterializeResult(Enum):
     DISCARD = "DISCARD"
 
 
-class AutoMaterializeCondition(Enum):
-    """Represents the set of conditions that can impact auto-materialization for an asset."""
-
-    def __init__(self, id: str, result: AutoMaterializeResult):
-        self.id = id
-        self.result = result
-
-    # Materialization Reasons
-    FRESHNESS = ("FRESHNESS", AutoMaterializeResult.MATERIALIZE)
-    DOWNSTREAM_FRESHNESS = ("DOWNSTREAM_FRESHNESS", AutoMaterializeResult.MATERIALIZE)
-    PARENT_MATERIALIZED = ("PARENT_MATERIALIZED", AutoMaterializeResult.MATERIALIZE)
-    MISSING = ("MISSING", AutoMaterializeResult.MATERIALIZE)
-
-    # Skip Reasons
-    PARENT_OUTDATED = ("PARENT_OUTDATED", AutoMaterializeResult.SKIP)
-
-    # Discard Reasons
-    MAX_MATERIALIZATIONS_EXCEEDED = ("MAX_MATERIALIZATIONS_EXCEEDED", AutoMaterializeResult.DISCARD)
-
-
-class AutoMaterializeConditionReason(NamedTuple):
-    """Denotes the reason that the auto-materialize logic decided that an asset should be materialized.
-
-    In the future, may be extended to support additional details attached to raw condition.
-
-    Should not be instantiated directly by the user.
+@whitelist_for_serdes
+class FreshnessAutoMaterializeCondition(NamedTuple):
+    """Indicates that this asset should be materialized because it requires newer data in order to
+    align with its freshness policy.
     """
 
-    condition: AutoMaterializeCondition
+    decision_type: AutoMaterializeDecisionType = AutoMaterializeDecisionType.MATERIALIZE
 
-    @property
-    def result(self) -> AutoMaterializeResult:
-        return self.condition.result
 
-    @staticmethod
-    def freshness() -> "AutoMaterializeConditionReason":
-        return AutoMaterializeConditionReason(condition=AutoMaterializeCondition.FRESHNESS)
+@whitelist_for_serdes
+class DownstreamFreshnessAutoMaterializeCondition(NamedTuple):
+    """Indicates that this asset should be materialized because one of its downstream assets
+    requires newer data in order to align with its freshness policy.
+    """
 
-    @staticmethod
-    def downstream_freshness() -> "AutoMaterializeConditionReason":
-        return AutoMaterializeConditionReason(
-            condition=AutoMaterializeCondition.DOWNSTREAM_FRESHNESS
-        )
+    decision_type: AutoMaterializeDecisionType = AutoMaterializeDecisionType.MATERIALIZE
 
-    @staticmethod
-    def parent_materialized() -> "AutoMaterializeConditionReason":
-        return AutoMaterializeConditionReason(
-            condition=AutoMaterializeCondition.PARENT_MATERIALIZED
-        )
 
-    @staticmethod
-    def missing() -> "AutoMaterializeConditionReason":
-        return AutoMaterializeConditionReason(condition=AutoMaterializeCondition.MISSING)
+@whitelist_for_serdes
+class ParentMaterializedAutoMaterializeCondition(NamedTuple):
+    """Indicates that this asset should be materialized because one of its parents was materialized.
+    """
 
-    @staticmethod
-    def parent_outdated() -> "AutoMaterializeConditionReason":
-        return AutoMaterializeConditionReason(condition=AutoMaterializeCondition.PARENT_OUTDATED)
+    decision_type: AutoMaterializeDecisionType = AutoMaterializeDecisionType.MATERIALIZE
 
-    @staticmethod
-    def max_materializations_exceeded() -> "AutoMaterializeConditionReason":
-        return AutoMaterializeConditionReason(
-            condition=AutoMaterializeCondition.MAX_MATERIALIZATIONS_EXCEEDED
-        )
+
+@whitelist_for_serdes
+class MissingAutoMaterializeCondition(NamedTuple):
+    """Indicates that this asset should be materialized because it is missing."""
+
+    decision_type: AutoMaterializeDecisionType = AutoMaterializeDecisionType.MATERIALIZE
+
+
+@whitelist_for_serdes
+class ParentOutdatedAutoMaterializeCondition(NamedTuple):
+    """Indicates that this asset should be skipped because one or more of its parents are outdated.
+    """
+
+    decision_type: AutoMaterializeDecisionType = AutoMaterializeDecisionType.SKIP
+
+
+@whitelist_for_serdes
+class MaxMaterializationsExceededAutoMaterializeCondition(NamedTuple):
+    """Indicates that this asset should be discarded because materializing it would exceed the
+    maximum number of materializations per minute.
+    """
+
+    decision_type: AutoMaterializeDecisionType = AutoMaterializeDecisionType.DISCARD
+
+
+AutoMaterializeCondition = Union[
+    FreshnessAutoMaterializeCondition,
+    DownstreamFreshnessAutoMaterializeCondition,
+    ParentMaterializedAutoMaterializeCondition,
+    MissingAutoMaterializeCondition,
+    ParentOutdatedAutoMaterializeCondition,
+    MaxMaterializationsExceededAutoMaterializeCondition,
+]

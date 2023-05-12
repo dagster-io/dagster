@@ -2,9 +2,13 @@ import datetime
 
 from dagster import (
     AssetSelection,
+    DailyPartitionsDefinition,
     SourceAsset,
 )
-from dagster._core.definitions.asset_reconciliation_sensor import AutoMaterializeConditionReason
+from dagster._core.definitions.asset_reconciliation_sensor import (
+    DownstreamFreshnessAutoMaterializeCondition,
+    FreshnessAutoMaterializeCondition,
+)
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._seven.compat.pendulum import create_pendulum_time
 
@@ -98,11 +102,28 @@ subsettable_multi_asset_complex = [
     asset_def("avg_order", ["company_perf"], freshness_policy=freshness_30m),
 ]
 
+daily_to_unpartitioned = [
+    asset_def("daily", partitions_def=DailyPartitionsDefinition(start_date="2020-01-01")),
+    asset_def("unpartitioned", ["daily"], freshness_policy=freshness_30m),
+]
+
 freshness_policy_scenarios = {
     "freshness_blank_slate": AssetReconciliationScenario(
         assets=diamond_freshness,
         unevaluated_runs=[],
         expected_run_requests=[run_request(asset_keys=["asset1", "asset2", "asset3", "asset4"])],
+    ),
+    "freshness_blank_slate_root_unselected": AssetReconciliationScenario(
+        assets=diamond_freshness,
+        asset_selection=AssetSelection.all() - AssetSelection.keys("asset1"),
+        unevaluated_runs=[],
+        expected_run_requests=[],
+    ),
+    "freshness_blank_slate_root_unselected_and_materialized": AssetReconciliationScenario(
+        assets=diamond_freshness,
+        asset_selection=AssetSelection.all() - AssetSelection.keys("asset1"),
+        unevaluated_runs=[run(["asset1"])],
+        expected_run_requests=[run_request(asset_keys=["asset2", "asset3", "asset4"])],
     ),
     "freshness_all_fresh": AssetReconciliationScenario(
         assets=diamond_freshness,
@@ -200,11 +221,11 @@ freshness_policy_scenarios = {
         evaluation_delta=datetime.timedelta(minutes=35),
         # now that it's been awhile since that run failed, give it another attempt
         expected_run_requests=[run_request(asset_keys=["asset1", "asset2", "asset3", "asset4"])],
-        expected_reasons={
-            "asset1": {AutoMaterializeConditionReason.downstream_freshness()},
-            "asset2": {AutoMaterializeConditionReason.downstream_freshness()},
-            "asset3": {AutoMaterializeConditionReason.downstream_freshness()},
-            "asset4": {AutoMaterializeConditionReason.freshness()},
+        expected_conditions={
+            "asset1": {DownstreamFreshnessAutoMaterializeCondition()},
+            "asset2": {DownstreamFreshnessAutoMaterializeCondition()},
+            "asset3": {DownstreamFreshnessAutoMaterializeCondition()},
+            "asset4": {FreshnessAutoMaterializeCondition()},
         },
     ),
     "freshness_root_failure": AssetReconciliationScenario(
@@ -322,9 +343,9 @@ freshness_policy_scenarios = {
         unevaluated_runs=[run([f"asset{i}" for i in range(1, 6)])],
         evaluation_delta=datetime.timedelta(minutes=35),
         expected_run_requests=[run_request(asset_keys=["asset2", "asset5"])],
-        expected_reasons={
-            "asset2": {AutoMaterializeConditionReason.downstream_freshness()},
-            "asset5": {AutoMaterializeConditionReason.freshness()},
+        expected_conditions={
+            "asset2": {DownstreamFreshnessAutoMaterializeCondition()},
+            "asset5": {FreshnessAutoMaterializeCondition()},
         },
     ),
     "freshness_complex_subsettable": AssetReconciliationScenario(
@@ -362,5 +383,19 @@ freshness_policy_scenarios = {
             ),
         ],
         expected_run_requests=[],
+    ),
+    "freshness_partitioned_to_unpartitioned_empty": AssetReconciliationScenario(
+        assets=daily_to_unpartitioned,
+        asset_selection=AssetSelection.keys("unpartitioned"),
+        current_time=create_pendulum_time(year=2020, month=1, day=2, hour=6, tz="UTC"),
+        unevaluated_runs=[],
+        expected_run_requests=[],
+    ),
+    "freshness_partitioned_to_unpartitioned_nonempty": AssetReconciliationScenario(
+        assets=daily_to_unpartitioned,
+        asset_selection=AssetSelection.keys("unpartitioned"),
+        current_time=create_pendulum_time(year=2020, month=1, day=2, hour=6, tz="UTC"),
+        unevaluated_runs=[run(["daily"], partition_key="2020-01-01")],
+        expected_run_requests=[run_request(["unpartitioned"])],
     ),
 }

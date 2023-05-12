@@ -36,15 +36,15 @@ class AutoMaterializePolicy(
     For eager reconciliation, an asset / partition will be (re)materialized when:
 
     - it is missing
-    - it or any of its children have a FreshnessPolicy that require more up-to-date data than it
-      currently has
+    - it has a freshness policy that requires more up-to-date data
+    - any of its descendants have a freshness policy that require more up-to-date data
     - any of its parent assets / partitions have been updated more recently than it has
 
     For lazy reconciliation, an asset / partition will be (re)materialized when:
 
     - it is missing
-    - it or any of its children have a FreshnessPolicy that require more up-to-date data than it
-      currently has
+    - it has a freshness policy that requires more up-to-date data
+    - any of its descendants have a freshness policy that require more up-to-date data
 
     In essence, an asset with eager reconciliation will always incorporate the most up-to-date
     version of its parents, while an asset with lazy reconciliation will only update when necessary

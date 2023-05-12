@@ -18,7 +18,8 @@ export const automaterializePolicyDescription = (policy: {
     This asset is automatically re-materialized when:
     <ul style={{paddingLeft: 20, marginBottom: 0}}>
       <li>it is missing</li>
-      <li>it or any of its children have a freshness policy that require more up-to-date data</li>
+      <li>it has a freshness policy that requires more up-to-date data</li>
+      <li>any of its descendants have a freshness policy that require more up-to-date data</li>
       {policy.policyType === AutoMaterializePolicyType.EAGER && (
         <li>any of its parent assets / partitions have been updated more recently than it has</li>
       )}

@@ -33,14 +33,14 @@ def test_reconciliation(scenario):
     instance = DagsterInstance.ephemeral()
     run_requests, _, evaluations = scenario.do_sensor_scenario(instance)
 
-    if scenario.expected_reasons:
+    if scenario.expected_conditions:
         reasons = {
             (
                 AssetKeyPartitionKey(AssetKey.from_coercible(key[0]), key[1])
                 if isinstance(key, tuple)
                 else AssetKeyPartitionKey(AssetKey.from_coercible(key))
             ): rs
-            for key, rs in (scenario.expected_reasons or {}).items()
+            for key, rs in (scenario.expected_conditions or {}).items()
         }
         assert sorted(
             build_auto_materialize_asset_evaluations(

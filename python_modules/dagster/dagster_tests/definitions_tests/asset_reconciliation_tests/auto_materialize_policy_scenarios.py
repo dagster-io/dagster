@@ -6,7 +6,10 @@ from dagster import (
     PartitionKeyRange,
 )
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
-from dagster._core.definitions.auto_materialize_reason import AutoMaterializeConditionReason
+from dagster._core.definitions.auto_materialize_reason import (
+    MaxMaterializationsExceededAutoMaterializeCondition,
+    MissingAutoMaterializeCondition,
+)
 from dagster._seven.compat.pendulum import create_pendulum_time
 
 from .asset_reconciliation_scenario import (
@@ -152,23 +155,23 @@ auto_materialize_policy_scenarios = {
         expected_run_requests=[
             run_request(["hourly"], partition_key="2013-01-05-04:00"),
         ],
-        expected_reasons={
-            ("hourly", "2013-01-05-04:00"): {AutoMaterializeConditionReason.missing()},
+        expected_conditions={
+            ("hourly", "2013-01-05-04:00"): {MissingAutoMaterializeCondition()},
             ("hourly", "2013-01-05-03:00"): {
-                AutoMaterializeConditionReason.missing(),
-                AutoMaterializeConditionReason.max_materializations_exceeded(),
+                MissingAutoMaterializeCondition(),
+                MaxMaterializationsExceededAutoMaterializeCondition(),
             },
             ("hourly", "2013-01-05-02:00"): {
-                AutoMaterializeConditionReason.missing(),
-                AutoMaterializeConditionReason.max_materializations_exceeded(),
+                MissingAutoMaterializeCondition(),
+                MaxMaterializationsExceededAutoMaterializeCondition(),
             },
             ("hourly", "2013-01-05-01:00"): {
-                AutoMaterializeConditionReason.missing(),
-                AutoMaterializeConditionReason.max_materializations_exceeded(),
+                MissingAutoMaterializeCondition(),
+                MaxMaterializationsExceededAutoMaterializeCondition(),
             },
             ("hourly", "2013-01-05-00:00"): {
-                AutoMaterializeConditionReason.missing(),
-                AutoMaterializeConditionReason.max_materializations_exceeded(),
+                MissingAutoMaterializeCondition(),
+                MaxMaterializationsExceededAutoMaterializeCondition(),
             },
         },
     ),
@@ -192,12 +195,12 @@ auto_materialize_policy_scenarios = {
             run_request(["hourly"], partition_key="2013-01-05-01:00"),
             run_request(["hourly"], partition_key="2013-01-05-00:00"),
         ],
-        expected_reasons={
-            ("hourly", "2013-01-05-04:00"): {AutoMaterializeConditionReason.missing()},
-            ("hourly", "2013-01-05-03:00"): {AutoMaterializeConditionReason.missing()},
-            ("hourly", "2013-01-05-02:00"): {AutoMaterializeConditionReason.missing()},
-            ("hourly", "2013-01-05-01:00"): {AutoMaterializeConditionReason.missing()},
-            ("hourly", "2013-01-05-00:00"): {AutoMaterializeConditionReason.missing()},
+        expected_conditions={
+            ("hourly", "2013-01-05-04:00"): {MissingAutoMaterializeCondition()},
+            ("hourly", "2013-01-05-03:00"): {MissingAutoMaterializeCondition()},
+            ("hourly", "2013-01-05-02:00"): {MissingAutoMaterializeCondition()},
+            ("hourly", "2013-01-05-01:00"): {MissingAutoMaterializeCondition()},
+            ("hourly", "2013-01-05-00:00"): {MissingAutoMaterializeCondition()},
         },
     ),
 }

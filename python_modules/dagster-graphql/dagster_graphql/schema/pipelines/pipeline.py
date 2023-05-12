@@ -1,4 +1,3 @@
-import datetime
 from typing import List, Optional, Sequence
 
 import dagster._check as check
@@ -449,6 +448,7 @@ class GrapheneRun(graphene.ObjectType):
                 return snapshot.lineage_snapshot.parent_snapshot_id
         return None
 
+    @capture_error
     def resolve_stats(self, graphene_info: ResolveInfo):
         return get_stats(graphene_info, self.run_id)
 
@@ -571,8 +571,7 @@ class GrapheneRun(graphene.ObjectType):
 
     def resolve_updateTime(self, graphene_info: ResolveInfo):
         run_record = self._get_run_record(graphene_info.context.instance)
-        updated = run_record.update_timestamp.timestamp()
-        return datetime_as_float(datetime.datetime.utcfromtimestamp(updated))
+        return datetime_as_float(run_record.update_timestamp)
 
 
 class GrapheneIPipelineSnapshotMixin:
