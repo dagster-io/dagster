@@ -43,8 +43,7 @@ from dagster import (
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.asset_reconciliation_sensor import (
     AssetReconciliationCursor,
-    AutoMaterializeReason,
-    AutoMaterializeSkipReason,
+    AutoMaterializeCondition,
     reconcile,
 )
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
@@ -88,16 +87,10 @@ class AssetReconciliationScenario(NamedTuple):
     event_log_entries: Optional[Sequence[EventLogEntry]] = None
     expected_run_requests: Optional[Sequence[RunRequest]] = None
     code_locations: Optional[Mapping[str, Sequence[Union[SourceAsset, AssetsDefinition]]]] = None
-    expected_materialize_reasons: Optional[
+    expected_reasons: Optional[
         Mapping[
             Union[CoercibleToAssetKey, Tuple[CoercibleToAssetKey, str]],
-            AbstractSet[AutoMaterializeReason],
-        ]
-    ] = None
-    expected_skip_reasons: Optional[
-        Mapping[
-            Union[CoercibleToAssetKey, Tuple[CoercibleToAssetKey, str]],
-            AbstractSet[AutoMaterializeSkipReason],
+            AbstractSet[AutoMaterializeCondition],
         ]
     ] = None
 
