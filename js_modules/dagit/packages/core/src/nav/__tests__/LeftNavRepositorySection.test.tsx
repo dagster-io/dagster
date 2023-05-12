@@ -1,4 +1,4 @@
-import {act, render, RenderResult, screen, waitFor} from '@testing-library/react';
+import {act, render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as React from 'react';
 
@@ -120,18 +120,16 @@ describe('Repository options', () => {
     };
 
     it('initializes with first repo option, if one option and no localStorage', async () => {
-      await act(async () => {
-        render(
-          <TestProvider
-            apolloProps={{mocks: [defaultMocks, mocksWithOne]}}
-            routerProps={{initialEntries: ['/runs']}}
-          >
-            <LeftNavRepositorySection />
-          </TestProvider>,
-        );
-      });
+      render(
+        <TestProvider
+          apolloProps={{mocks: [defaultMocks, mocksWithOne]}}
+          routerProps={{initialEntries: ['/runs']}}
+        >
+          <LeftNavRepositorySection />
+        </TestProvider>,
+      );
 
-      const repoHeader = screen.getByRole('button', {name: /lorem/i});
+      const repoHeader = await screen.findByRole('button', {name: /lorem/i});
       await userEvent.click(repoHeader);
 
       await waitFor(() => {
@@ -142,18 +140,16 @@ describe('Repository options', () => {
 
     it(`initializes with one repo if it's the only one, even though it's hidden`, async () => {
       window.localStorage.setItem(HIDDEN_REPO_KEYS, `["${repoOne}:${locationOne}"]`);
-      await act(async () => {
-        render(
-          <TestProvider
-            apolloProps={{mocks: [defaultMocks, mocksWithOne]}}
-            routerProps={{initialEntries: ['/runs']}}
-          >
-            <LeftNavRepositorySection />
-          </TestProvider>,
-        );
-      });
+      render(
+        <TestProvider
+          apolloProps={{mocks: [defaultMocks, mocksWithOne]}}
+          routerProps={{initialEntries: ['/runs']}}
+        >
+          <LeftNavRepositorySection />
+        </TestProvider>,
+      );
 
-      const repoHeader = screen.getByRole('button', {name: /lorem/i});
+      const repoHeader = await screen.findByRole('button', {name: /lorem/i});
       await userEvent.click(repoHeader);
 
       await waitFor(() => {
@@ -163,18 +159,16 @@ describe('Repository options', () => {
     });
 
     it('initializes with all repos visible, if multiple options and no localStorage', async () => {
-      await act(async () => {
-        render(
-          <TestProvider
-            apolloProps={{mocks: [defaultMocks, mocksWithThree]}}
-            routerProps={{initialEntries: ['/runs']}}
-          >
-            <LeftNavRepositorySection />
-          </TestProvider>,
-        );
-      });
+      render(
+        <TestProvider
+          apolloProps={{mocks: [defaultMocks, mocksWithThree]}}
+          routerProps={{initialEntries: ['/runs']}}
+        >
+          <LeftNavRepositorySection />
+        </TestProvider>,
+      );
 
-      const loremHeader = screen.getByRole('button', {name: /lorem/i});
+      const loremHeader = await screen.findByRole('button', {name: /lorem/i});
       expect(loremHeader).toBeVisible();
       const fooHeader = screen.getByRole('button', {name: /foo/i});
       expect(fooHeader).toBeVisible();
@@ -196,18 +190,17 @@ describe('Repository options', () => {
         HIDDEN_REPO_KEYS,
         `["lorem:ipsum","${DUNDER_REPO_NAME}:abc_location"]`,
       );
-      await act(async () => {
-        render(
-          <TestProvider
-            apolloProps={{mocks: [defaultMocks, mocksWithThree]}}
-            routerProps={{initialEntries: ['/runs']}}
-          >
-            <LeftNavRepositorySection />
-          </TestProvider>,
-        );
-      });
 
-      const fooHeader = screen.getByRole('button', {name: /foo/i});
+      render(
+        <TestProvider
+          apolloProps={{mocks: [defaultMocks, mocksWithThree]}}
+          routerProps={{initialEntries: ['/runs']}}
+        >
+          <LeftNavRepositorySection />
+        </TestProvider>,
+      );
+
+      const fooHeader = await screen.findByRole('button', {name: /foo/i});
       await userEvent.click(fooHeader);
 
       // `foo@bar` is visible, and has four jobs. Plus one for repo link at bottom.
@@ -218,19 +211,21 @@ describe('Repository options', () => {
 
     it('initializes with all repo options, no matching `HIDDEN_REPO_KEYS` localStorage', async () => {
       window.localStorage.setItem(HIDDEN_REPO_KEYS, '["hello:world"]');
-      await act(async () => {
-        render(
-          <TestProvider
-            apolloProps={{mocks: [defaultMocks, mocksWithThree]}}
-            routerProps={{initialEntries: ['/runs']}}
-          >
-            <LeftNavRepositorySection />
-          </TestProvider>,
-        );
+
+      render(
+        <TestProvider
+          apolloProps={{mocks: [defaultMocks, mocksWithThree]}}
+          routerProps={{initialEntries: ['/runs']}}
+        >
+          <LeftNavRepositorySection />
+        </TestProvider>,
+      );
+
+      const loremHeader = await screen.findByRole('button', {name: /lorem/i});
+      await waitFor(() => {
+        expect(loremHeader).toBeVisible();
       });
 
-      const loremHeader = screen.getByRole('button', {name: /lorem/i});
-      expect(loremHeader).toBeVisible();
       const fooHeader = screen.getByRole('button', {name: /foo/i});
       expect(fooHeader).toBeVisible();
       const dunderHeader = screen.getByRole('button', {name: /abc_location/i});
@@ -251,6 +246,7 @@ describe('Repository options', () => {
         HIDDEN_REPO_KEYS,
         `["lorem:ipsum", "foo:bar", "${DUNDER_REPO_NAME}:abc_location"]`,
       );
+
       await act(async () => {
         render(
           <TestProvider
@@ -281,36 +277,32 @@ describe('Repository options', () => {
         }),
       };
 
-      let rerender: RenderResult['rerender'];
-
-      await act(async () => {
-        const result = render(
-          <TestProvider
-            apolloProps={{mocks: [defaultMocks, initialMocks]}}
-            routerProps={{initialEntries: ['/runs']}}
-          >
-            <LeftNavRepositorySection />
-          </TestProvider>,
-        );
-        rerender = result.rerender;
-      });
+      const {rerender} = render(
+        <TestProvider
+          apolloProps={{mocks: [defaultMocks, initialMocks]}}
+          routerProps={{initialEntries: ['/runs']}}
+        >
+          <LeftNavRepositorySection />
+        </TestProvider>,
+      );
 
       // Zero repositories, so zero pipelines.
       expect(screen.queryAllByRole('link')).toHaveLength(0);
 
-      await act(async () => {
-        rerender(
-          <TestProvider
-            apolloProps={{mocks: [defaultMocks, mocksWithThree]}}
-            routerProps={{initialEntries: ['/runs']}}
-          >
-            <LeftNavRepositorySection />
-          </TestProvider>,
-        );
+      rerender(
+        <TestProvider
+          apolloProps={{mocks: [defaultMocks, mocksWithThree]}}
+          routerProps={{initialEntries: ['/runs']}}
+        >
+          <LeftNavRepositorySection />
+        </TestProvider>,
+      );
+
+      const loremHeader = await screen.findByRole('button', {name: /lorem/i});
+      await waitFor(() => {
+        expect(loremHeader).toBeVisible();
       });
 
-      const loremHeader = screen.getByRole('button', {name: /lorem/i});
-      expect(loremHeader).toBeVisible();
       const fooHeader = screen.getByRole('button', {name: /foo/i});
       expect(fooHeader).toBeVisible();
       const dunderHeader = screen.getByRole('button', {name: /abc_location/i});
@@ -334,40 +326,35 @@ describe('Repository options', () => {
         }),
       };
 
-      let rerender: RenderResult['rerender'];
+      const {rerender} = render(
+        <TestProvider
+          apolloProps={{mocks: [defaultMocks, mocksWithOne]}}
+          routerProps={{initialEntries: ['/runs']}}
+        >
+          <LeftNavRepositorySection />
+        </TestProvider>,
+      );
 
-      await act(async () => {
-        const result = render(
-          <TestProvider
-            apolloProps={{mocks: [defaultMocks, mocksWithOne]}}
-            routerProps={{initialEntries: ['/runs']}}
-          >
-            <LeftNavRepositorySection />
-          </TestProvider>,
-        );
-        rerender = result.rerender;
-      });
-
-      const loremHeader = screen.getByRole('button', {name: /lorem/i});
+      const loremHeader = await screen.findByRole('button', {name: /lorem/i});
       expect(loremHeader).toBeVisible();
       await userEvent.click(loremHeader);
 
       // Three links: two jobs, one repo link at bottom.
       expect(screen.queryAllByRole('link')).toHaveLength(3);
 
-      await act(async () => {
-        rerender(
-          <TestProvider
-            apolloProps={{mocks: [defaultMocks, mocksAfterRemoval]}}
-            routerProps={{initialEntries: ['/runs']}}
-          >
-            <LeftNavRepositorySection />
-          </TestProvider>,
-        );
-      });
+      rerender(
+        <TestProvider
+          apolloProps={{mocks: [defaultMocks, mocksAfterRemoval]}}
+          routerProps={{initialEntries: ['/runs']}}
+        >
+          <LeftNavRepositorySection />
+        </TestProvider>,
+      );
 
-      // After repositories are removed, there are none displayed.
-      expect(screen.queryAllByRole('link')).toHaveLength(0);
+      await waitFor(() => {
+        // After repositories are removed, there are none displayed.
+        expect(screen.queryAllByRole('link')).toHaveLength(0);
+      });
     });
   });
 
@@ -399,18 +386,16 @@ describe('Repository options', () => {
     };
 
     it('renders asset groups alongside jobs', async () => {
-      await act(async () => {
-        render(
-          <TestProvider
-            apolloProps={{mocks: [defaultMocks, mocks]}}
-            routerProps={{initialEntries: ['/locations/foo@bar/etc']}}
-          >
-            <LeftNavRepositorySection />
-          </TestProvider>,
-        );
-      });
+      render(
+        <TestProvider
+          apolloProps={{mocks: [defaultMocks, mocks]}}
+          routerProps={{initialEntries: ['/locations/foo@bar/etc']}}
+        >
+          <LeftNavRepositorySection />
+        </TestProvider>,
+      );
 
-      const repoHeader = screen.getByRole('button', {name: /lorem/i});
+      const repoHeader = await screen.findByRole('button', {name: /lorem/i});
       await userEvent.click(repoHeader);
 
       await waitFor(() => {
