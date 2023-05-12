@@ -163,13 +163,20 @@ export const RunTable = (props: RunTableProps) => {
     <>
       <ActionBar
         top={
-          <>
+          <Box
+            flex={{
+              direction: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              grow: 1,
+            }}
+          >
             {actionBarComponents}
             <RunBulkActionsMenu
               selected={selectedFragments}
               clearSelection={() => onToggleAll(false)}
             />
-          </>
+          </Box>
         }
         bottom={belowActionBarComponents}
       />
@@ -372,7 +379,7 @@ const RunRow: React.FC<{
       </td>
       {hideCreatedBy ? null : (
         <td>
-          <RunCreatedByCell run={run} />
+          <RunCreatedByCell run={run} onAddTag={onAddTag} />
         </td>
       )}
       <td>
