@@ -39,6 +39,7 @@ from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
+from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.events import (
     AssetMaterializationPlannedData,
     DagsterEvent,
@@ -73,7 +74,7 @@ from dagster._legacy import build_assets_job
 from dagster._loggers import colored_console_logger
 from dagster._serdes.serdes import deserialize_value
 from dagster._utils import datetime_as_float
-from dagster._utils.concurrency import ConcurrencyState
+from dagster._utils.concurrency import ConcurrencySlotStatus
 
 TEST_TIMEOUT = 5
 
@@ -3361,118 +3362,133 @@ class TestEventLogStorage:
         run_id_three = make_new_run_id()
 
         def claim(key, run_id, step_key, priority=0):
-            return storage.claim_concurrency_slot(key, run_id, step_key, priority)
+            claim_status = storage.claim_concurrency_slot(key, run_id, step_key, priority)
+            return claim_status.slot_status
 
         # initially there are no concurrency limited keys
-        assert storage.get_concurrency_limited_keys() == set()
+        assert storage.get_concurrency_keys() == set()
 
         # fill concurrency slots
-        storage.allocate_concurrency_slots("foo", 3)
-        storage.allocate_concurrency_slots("bar", 1)
+        storage.set_concurrency_slots("foo", 3)
+        storage.set_concurrency_slots("bar", 1)
 
         # now there are two concurrency limited keys
-        assert storage.get_concurrency_limited_keys() == {"foo", "bar"}
+        assert storage.get_concurrency_keys() == {"foo", "bar"}
 
-        assert claim("foo", run_id_one, "step_1") == ConcurrencyState.CLAIMED
-        assert claim("foo", run_id_two, "step_2") == ConcurrencyState.CLAIMED
-        assert claim("foo", run_id_one, "step_3") == ConcurrencyState.CLAIMED
-        assert claim("bar", run_id_two, "step_4") == ConcurrencyState.CLAIMED
+        assert claim("foo", run_id_one, "step_1") == ConcurrencySlotStatus.CLAIMED
+        assert claim("foo", run_id_two, "step_2") == ConcurrencySlotStatus.CLAIMED
+        assert claim("foo", run_id_one, "step_3") == ConcurrencySlotStatus.CLAIMED
+        assert claim("bar", run_id_two, "step_4") == ConcurrencySlotStatus.CLAIMED
 
         # next claim should be blocked
-        assert claim("foo", run_id_three, "step_5") == ConcurrencyState.BLOCKED
-        assert claim("bar", run_id_three, "step_6") == ConcurrencyState.BLOCKED
+        assert claim("foo", run_id_three, "step_5") == ConcurrencySlotStatus.BLOCKED
+        assert claim("bar", run_id_three, "step_6") == ConcurrencySlotStatus.BLOCKED
 
         # free single slot, one in each concurrency key: foo, bar
-        storage.free_concurrency_slots(run_id_two)
+        storage.free_concurrency_slots_for_run(run_id_two)
         # try to claim again
-        assert claim("foo", run_id_three, "step_5") == ConcurrencyState.CLAIMED
-        assert claim("bar", run_id_three, "step_6") == ConcurrencyState.CLAIMED
+        assert claim("foo", run_id_three, "step_5") == ConcurrencySlotStatus.CLAIMED
+        assert claim("bar", run_id_three, "step_6") == ConcurrencySlotStatus.CLAIMED
         # new claims should be blocked
-        assert claim("foo", run_id_three, "step_7") == ConcurrencyState.BLOCKED
-        assert claim("foo", run_id_three, "step_8") == ConcurrencyState.BLOCKED
+        assert claim("foo", run_id_three, "step_7") == ConcurrencySlotStatus.BLOCKED
+        assert claim("foo", run_id_three, "step_8") == ConcurrencySlotStatus.BLOCKED
 
     def test_concurrency_priority(self, storage):
         run_id = make_new_run_id()
 
         def claim(key, run_id, step_key, priority=0):
-            return storage.claim_concurrency_slot(key, run_id, step_key, priority)
+            claim_status = storage.claim_concurrency_slot(key, run_id, step_key, priority)
+            return claim_status.slot_status
 
-        storage.allocate_concurrency_slots("foo", 5)
-        storage.allocate_concurrency_slots("bar", 1)
+        storage.set_concurrency_slots("foo", 5)
+        storage.set_concurrency_slots("bar", 1)
 
         # fill all the slots
-        assert claim("foo", run_id, "step_1") == ConcurrencyState.CLAIMED
-        assert claim("foo", run_id, "step_2") == ConcurrencyState.CLAIMED
-        assert claim("foo", run_id, "step_3") == ConcurrencyState.CLAIMED
-        assert claim("foo", run_id, "step_4") == ConcurrencyState.CLAIMED
-        assert claim("foo", run_id, "step_5") == ConcurrencyState.CLAIMED
+        assert claim("foo", run_id, "step_1") == ConcurrencySlotStatus.CLAIMED
+        assert claim("foo", run_id, "step_2") == ConcurrencySlotStatus.CLAIMED
+        assert claim("foo", run_id, "step_3") == ConcurrencySlotStatus.CLAIMED
+        assert claim("foo", run_id, "step_4") == ConcurrencySlotStatus.CLAIMED
+        assert claim("foo", run_id, "step_5") == ConcurrencySlotStatus.CLAIMED
 
         # next claims should be blocked
-        assert claim("foo", run_id, "a", 0) == ConcurrencyState.BLOCKED
-        assert claim("foo", run_id, "b", 2) == ConcurrencyState.BLOCKED
-        assert claim("foo", run_id, "c", 0) == ConcurrencyState.BLOCKED
+        assert claim("foo", run_id, "a", 0) == ConcurrencySlotStatus.BLOCKED
+        assert claim("foo", run_id, "b", 2) == ConcurrencySlotStatus.BLOCKED
+        assert claim("foo", run_id, "c", 0) == ConcurrencySlotStatus.BLOCKED
 
         # free up a slot
-        storage.free_concurrency_slots(run_id, "step_1")
+        storage.free_concurrency_slot_for_step(run_id, "step_1")
 
         # a new step trying to claim foo should also be blocked
-        assert claim("foo", run_id, "d", 0) == ConcurrencyState.BLOCKED
+        assert claim("foo", run_id, "d", 0) == ConcurrencySlotStatus.BLOCKED
 
         # the claim calls for all the previously blocked steps should all remain blocked, except for
         # the highest priority one
-        assert claim("foo", run_id, "a", 0) == ConcurrencyState.BLOCKED
-        assert claim("foo", run_id, "c", 0) == ConcurrencyState.BLOCKED
-        assert claim("foo", run_id, "d", 0) == ConcurrencyState.BLOCKED
-        assert claim("foo", run_id, "b", 2) == ConcurrencyState.CLAIMED
+        assert claim("foo", run_id, "a", 0) == ConcurrencySlotStatus.BLOCKED
+        assert claim("foo", run_id, "c", 0) == ConcurrencySlotStatus.BLOCKED
+        assert claim("foo", run_id, "d", 0) == ConcurrencySlotStatus.BLOCKED
+        assert claim("foo", run_id, "b", 2) == ConcurrencySlotStatus.CLAIMED
 
         # free up another slot
-        storage.free_concurrency_slots(run_id, "step_2")
+        storage.free_concurrency_slot_for_step(run_id, "step_2")
 
         # the claim calls for all the previously blocked steps should all remain blocked, except for
         # the oldest of the zero priority pending steps
-        assert claim("foo", run_id, "c", 0) == ConcurrencyState.BLOCKED
-        assert claim("foo", run_id, "d", 0) == ConcurrencyState.BLOCKED
-        assert claim("foo", run_id, "a", 0) == ConcurrencyState.CLAIMED
+        assert claim("foo", run_id, "c", 0) == ConcurrencySlotStatus.BLOCKED
+        assert claim("foo", run_id, "d", 0) == ConcurrencySlotStatus.BLOCKED
+        assert claim("foo", run_id, "a", 0) == ConcurrencySlotStatus.CLAIMED
 
         # b, c remain of the previous set of pending steps
         # freeing up 3 slots means that trying to claim a new slot should go through, even though
         # b and c have not claimed a slot yet (whilst being assigned)
-        storage.free_concurrency_slots(run_id, "step_3")
-        storage.free_concurrency_slots(run_id, "step_4")
-        storage.free_concurrency_slots(run_id, "step_5")
+        storage.free_concurrency_slot_for_step(run_id, "step_3")
+        storage.free_concurrency_slot_for_step(run_id, "step_4")
+        storage.free_concurrency_slot_for_step(run_id, "step_5")
 
-        assert claim("foo", run_id, "e") == ConcurrencyState.CLAIMED
+        assert claim("foo", run_id, "e") == ConcurrencySlotStatus.CLAIMED
 
     def test_concurrency_allocate_from_pending(self, storage):
         run_id = make_new_run_id()
 
         def claim(key, run_id, step_key, priority=0):
-            return storage.claim_concurrency_slot(key, run_id, step_key, priority)
+            claim_status = storage.claim_concurrency_slot(key, run_id, step_key, priority)
+            return claim_status.slot_status
 
-        storage.allocate_concurrency_slots("foo", 1)
+        storage.set_concurrency_slots("foo", 1)
 
         # fill
-        assert claim("foo", run_id, "a") == ConcurrencyState.CLAIMED
-        assert claim("foo", run_id, "b") == ConcurrencyState.BLOCKED
-        assert claim("foo", run_id, "c") == ConcurrencyState.BLOCKED
-        assert claim("foo", run_id, "d") == ConcurrencyState.BLOCKED
-        assert claim("foo", run_id, "e") == ConcurrencyState.BLOCKED
+        assert claim("foo", run_id, "a") == ConcurrencySlotStatus.CLAIMED
+        assert claim("foo", run_id, "b") == ConcurrencySlotStatus.BLOCKED
+        assert claim("foo", run_id, "c") == ConcurrencySlotStatus.BLOCKED
+        assert claim("foo", run_id, "d") == ConcurrencySlotStatus.BLOCKED
+        assert claim("foo", run_id, "e") == ConcurrencySlotStatus.BLOCKED
 
         # there is only one claimed slot, the rest are pending
-        assert storage.get_concurrency_info("foo") == {run_id: 1}
+        foo_info = storage.get_concurrency_info("foo")
+        assert foo_info.active_slot_count == 1
+        assert foo_info.active_run_ids == {run_id}
 
         # all the pending slots should not be assigned
-        assert not storage.can_claim_from_pending("foo", run_id, "b")
-        assert not storage.can_claim_from_pending("foo", run_id, "c")
-        assert not storage.can_claim_from_pending("foo", run_id, "d")
-        assert not storage.can_claim_from_pending("foo", run_id, "e")
+        assert storage.check_concurrency_claim("foo", run_id, "b").assigned_timestamp is None
+        assert storage.check_concurrency_claim("foo", run_id, "c").assigned_timestamp is None
+        assert storage.check_concurrency_claim("foo", run_id, "d").assigned_timestamp is None
+        assert storage.check_concurrency_claim("foo", run_id, "e").assigned_timestamp is None
 
         # now, allocate enough slots for all the pending rows
-        storage.allocate_concurrency_slots("foo", 5)
+        storage.set_concurrency_slots("foo", 5)
 
         # there is still only one claimed slot, the rest are pending (but now assigned)
-        assert storage.get_concurrency_info("foo") == {None: 4, run_id: 1}
-        assert storage.can_claim_from_pending("foo", run_id, "b")
-        assert storage.can_claim_from_pending("foo", run_id, "c")
-        assert storage.can_claim_from_pending("foo", run_id, "d")
-        assert storage.can_claim_from_pending("foo", run_id, "e")
+        foo_info = storage.get_concurrency_info("foo")
+        assert foo_info.active_slot_count == 1
+        assert foo_info.active_run_ids == {run_id}
+
+        assert storage.check_concurrency_claim("foo", run_id, "b").assigned_timestamp is not None
+        assert storage.check_concurrency_claim("foo", run_id, "c").assigned_timestamp is not None
+        assert storage.check_concurrency_claim("foo", run_id, "d").assigned_timestamp is not None
+        assert storage.check_concurrency_claim("foo", run_id, "e").assigned_timestamp is not None
+
+    def test_invalid_concurrency_limit(self, storage):
+        with pytest.raises(DagsterInvalidInvocationError):
+            storage.set_concurrency_slots("foo", -1)
+
+        with pytest.raises(DagsterInvalidInvocationError):
+            storage.set_concurrency_slots("foo", 1001)

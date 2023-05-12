@@ -1,7 +1,7 @@
 """add in progress step table
 
 Revision ID: 5771160a95ad
-Revises: 701913684cb4
+Revises: d3a4c9e87af3
 Create Date: 2023-04-10 19:26:23.232433
 
 """
@@ -13,7 +13,7 @@ from sqlalchemy.dialects import sqlite
 
 # revision identifiers, used by Alembic.
 revision = "5771160a95ad"
-down_revision = "701913684cb4"
+down_revision = "d3a4c9e87af3"
 branch_labels = None
 depends_on = None
 

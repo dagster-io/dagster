@@ -28,6 +28,7 @@ from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
 from dagster._core.storage.sql import AlembicVersion
 from dagster._seven import json
 from dagster._utils import PrintFn
+from dagster._utils.concurrency import ConcurrencyClaimStatus, ConcurrencyKeyInfo
 
 if TYPE_CHECKING:
     from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
@@ -418,41 +419,40 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         return False
 
     @abstractmethod
-    def allocate_concurrency_slots(self, concurrency_key: str, num_int: int) -> None:
+    def set_concurrency_slots(self, concurrency_key: str, num: int) -> None:
         """Allocate concurrency slots for the given concurrency key."""
         raise NotImplementedError()
 
     @abstractmethod
-    def get_concurrency_limited_keys(self) -> Set[str]:
+    def get_concurrency_keys(self) -> Set[str]:
         """Get the set of concurrency limited keys."""
         raise NotImplementedError()
 
     @abstractmethod
-    def get_concurrency_info(self, concurrency_key: str, include_deleted: bool = False):
+    def get_concurrency_info(self, concurrency_key: str) -> ConcurrencyKeyInfo:
         """Get concurrency info for key."""
         raise NotImplementedError()
 
     @abstractmethod
     def claim_concurrency_slot(
         self, concurrency_key: str, run_id: str, step_key: str, priority: Optional[int] = None
-    ):
+    ) -> ConcurrencyClaimStatus:
         """Claim concurrency slots for step."""
         raise NotImplementedError()
 
     @abstractmethod
-    def free_concurrency_slots(self, run_id: str, step_key: Optional[str] = None):
+    def check_concurrency_claim(
+        self, concurrency_key: str, run_id: str, step_key: str
+    ) -> ConcurrencyClaimStatus:
+        """Claim concurrency slots for step."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def free_concurrency_slots_for_run(self, run_id: str) -> None:
+        """Frees concurrency slots for a given run."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def free_concurrency_slot_for_step(self, run_id: str, step_key: str) -> None:
         """Frees concurrency slots for a given run/step."""
-        raise NotImplementedError()
-
-    @abstractmethod
-    def can_claim_from_pending(self, concurrency_key: str, run_id: str, step_key: str):
-        """Indicates that a given step can now claim a concurrency, given its priority relative to
-        other pending steps
-        .
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
-    def remove_pending_step(self, run_id: str, step_key: Optional[str] = None):
-        """Removes the pending step for a given run, step."""
         raise NotImplementedError()
