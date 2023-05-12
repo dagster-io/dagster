@@ -174,7 +174,8 @@ class TimeWindowPartitionMapping(
                 "Can't use the start_offset or end_offset parameters of"
                 " TimeWindowPartitionMapping when the cron schedule of the upstream"
                 " PartitionsDefinition is different than the cron schedule of the downstream"
-                " one."
+                f" one. Attempted to map from cron schedule '{from_partitions_def.cron_schedule}' "
+                f"to cron schedule '{to_partitions_def.cron_schedule}'."
             )
 
         if to_partitions_def.timezone != from_partitions_def.timezone:
