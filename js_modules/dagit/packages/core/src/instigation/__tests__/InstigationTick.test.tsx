@@ -6,7 +6,7 @@ import {InstigationTickStatus} from '../../graphql/types';
 import {TickTag} from '../InstigationTick';
 import {TickTagFragment} from '../types/InstigationTick.types';
 
-describe('TickTag', () => {
+describe('InstigationTick', () => {
   const tick: TickTagFragment = {
     __typename: 'InstigationTick',
     id: 'foobar',
@@ -27,7 +27,7 @@ describe('TickTag', () => {
       const tag = screen.queryByText(/skipped/i);
       expect(tag).toBeVisible();
 
-      await userEvent.hover(tag as HTMLElement);
+      userEvent.hover(tag as HTMLElement);
       await waitFor(() => {
         expect(screen.queryByText('lol skipped')).toBeVisible();
       });
@@ -41,7 +41,7 @@ describe('TickTag', () => {
       const tag = screen.queryByText(/skipped/i);
       expect(tag).toBeVisible();
 
-      await userEvent.hover(tag as HTMLElement);
+      userEvent.hover(tag as HTMLElement);
       await waitFor(() => {
         expect(screen.queryByText(/2 runs requested, but skipped/i)).toBeVisible();
       });

@@ -1,4 +1,4 @@
-import {act, render, screen} from '@testing-library/react';
+import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as React from 'react';
 
@@ -49,45 +49,45 @@ describe('RunActionsMenu', () => {
 
   describe('Permissions', () => {
     it('renders menu when open', async () => {
-      await act(async () => {
-        render(<Test run={runFragment} />);
-      });
+      render(<Test run={runFragment} />);
 
       const button = screen.queryByRole('button') as HTMLButtonElement;
       expect(button).toBeVisible();
 
-      await userEvent.click(button);
+      userEvent.click(button);
 
-      expect(screen.queryByRole('menuitem', {name: /view configuration/i})).toBeVisible();
-      expect(screen.queryByRole('link', {name: /open in launchpad/i})).toBeVisible();
-      expect(screen.queryByRole('menuitem', {name: /re\-execute/i})).toBeVisible();
-      expect(screen.queryByRole('menuitem', {name: /download debug file/i})).toBeVisible();
-      expect(screen.queryByRole('menuitem', {name: /delete/i})).toBeVisible();
+      await waitFor(() => {
+        expect(screen.queryByRole('menuitem', {name: /view configuration/i})).toBeVisible();
+        expect(screen.queryByRole('link', {name: /open in launchpad/i})).toBeVisible();
+        expect(screen.queryByRole('menuitem', {name: /re\-execute/i})).toBeVisible();
+        expect(screen.queryByRole('menuitem', {name: /download debug file/i})).toBeVisible();
+        expect(screen.queryByRole('menuitem', {name: /delete/i})).toBeVisible();
+      });
     });
 
     it('disables re-execution if no permission', async () => {
-      await act(async () => {
-        render(
-          <Test
-            run={runFragment}
-            permissionOverrides={{
-              launch_pipeline_reexecution: {enabled: false, disabledReason: 'lol nope'},
-            }}
-          />,
-        );
-      });
+      render(
+        <Test
+          run={runFragment}
+          permissionOverrides={{
+            launch_pipeline_reexecution: {enabled: false, disabledReason: 'lol nope'},
+          }}
+        />,
+      );
 
       const button = screen.queryByRole('button') as HTMLButtonElement;
       expect(button).toBeVisible();
 
-      await userEvent.click(button);
+      userEvent.click(button);
 
-      const reExecutionButton = screen.queryByRole('menuitem', {
-        name: /re\-execute/i,
-      }) as HTMLButtonElement;
+      await waitFor(() => {
+        const reExecutionButton = screen.queryByRole('menuitem', {
+          name: /re\-execute/i,
+        }) as HTMLButtonElement;
 
-      // Blueprint doesn't actually set `disabled` on the button element.
-      expect(reExecutionButton.classList.contains('bp4-disabled')).toBe(true);
+        // Blueprint doesn't actually set `disabled` on the button element.
+        expect(reExecutionButton.classList.contains('bp4-disabled')).toBe(true);
+      });
     });
   });
 });

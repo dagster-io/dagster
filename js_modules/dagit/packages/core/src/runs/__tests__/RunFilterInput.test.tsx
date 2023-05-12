@@ -140,7 +140,7 @@ function TestRunsFilterInput({
 describe('<RunFilterInput  />', () => {
   // b. Test rendering with all enabledFilters
   // (Include tests for rendering with different combinations of enabledFilters)
-  it('should call onChange with updated tokens when created DATE filter is updated', () => {
+  it('should call onChange with updated tokens when created DATE filter is updated', async () => {
     const onChange = jest.fn();
     const tokens: RunFilterToken[] = [
       {token: 'created_date_before', value: '1609459200'}, // 1/1/2021
@@ -161,6 +161,7 @@ describe('<RunFilterInput  />', () => {
     fireEvent.click(getByText('Filter'));
     fireEvent.click(getByText('Created date'));
     fireEvent.click(getByText('Today'));
+    await waitFor(() => expect(getByText(/Timestamp is/)).toBeVisible());
 
     expect(onChange).toHaveBeenCalledWith([
       {
@@ -179,6 +180,11 @@ describe('<RunFilterInput  />', () => {
         onChange={onChange}
         enabledFilters={['job']}
         mocks={[
+          runTagKeysMock,
+          buildRunTagValuesQueryMockedResponse(DagsterTag.Partition, ['partition1', 'partition2']),
+          buildRunTagValuesQueryMockedResponse(DagsterTag.User, []),
+          buildRunTagValuesQueryMockedResponse(DagsterTag.SensorName, []),
+          buildRunTagValuesQueryMockedResponse(DagsterTag.ScheduleName, []),
           buildWorkspaceContextMockedResponse(
             buildWorkspace({
               locationEntries: [
@@ -204,17 +210,20 @@ describe('<RunFilterInput  />', () => {
         ]}
       />,
     );
-
     onChange.mockClear();
 
     fireEvent.click(getByText('Filter'));
+    await waitFor(() => expect(getByText('Job')).toBeVisible());
+
     fireEvent.click(getByText('Job'));
+    await waitFor(() => expect(getByText('some_job')).toBeVisible());
+
+    fireEvent.click(getByText('some_job'));
+    await waitFor(() => expect(getByText(/Job is/)).toBeVisible());
 
     await waitFor(() => {
-      fireEvent.click(getByText('some_job'));
+      expect(onChange).toHaveBeenCalledWith([{token: 'job', value: 'some_job'}]);
     });
-
-    expect(onChange).toHaveBeenCalledWith([{token: 'job', value: 'some_job'}]);
   });
 
   it('should call onChange with updated tokens when BACKFILL filter is updated', async () => {
@@ -251,6 +260,9 @@ describe('<RunFilterInput  />', () => {
         mocks={[
           runTagKeysMock,
           buildRunTagValuesQueryMockedResponse(DagsterTag.Partition, ['partition1', 'partition2']),
+          buildRunTagValuesQueryMockedResponse(DagsterTag.User, []),
+          buildRunTagValuesQueryMockedResponse(DagsterTag.ScheduleName, []),
+          buildRunTagValuesQueryMockedResponse(DagsterTag.SensorName, []),
         ]}
       />,
     );

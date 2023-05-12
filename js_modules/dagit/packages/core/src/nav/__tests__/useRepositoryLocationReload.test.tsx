@@ -7,7 +7,7 @@ import {
   useRepositoryLocationReload,
 } from '../useRepositoryLocationReload';
 
-describe('useRepositoryReloadLocation', () => {
+describe('useRepositoryLocationReload', () => {
   jest.useFakeTimers();
 
   const LOCATION = 'bar';
@@ -42,20 +42,20 @@ describe('useRepositoryReloadLocation', () => {
   };
 
   it('reloads successfully if there are no errors', async () => {
-    await act(() => {
+    await act(() =>
       render(
         <TestProvider apolloProps={{mocks: [defaultMocks]}}>
           <Test />
         </TestProvider>,
-      );
-    });
+      ),
+    );
 
     await waitFor(() => {
       expect(screen.queryByText(/Reloading: false/)).toBeVisible();
       expect(screen.queryByText(/Has error: false/)).toBeVisible();
     });
 
-    fireEvent.click(screen.getByText(/Try/));
+    await act(async () => await fireEvent.click(screen.getByText(/Try/)));
 
     await waitFor(() => {
       expect(screen.queryByText(/Reloading: true/)).toBeVisible();
@@ -78,10 +78,12 @@ describe('useRepositoryReloadLocation', () => {
       }),
     };
 
-    render(
-      <TestProvider apolloProps={{mocks: [defaultMocks, mocks]}}>
-        <Test />
-      </TestProvider>,
+    await act(async () =>
+      render(
+        <TestProvider apolloProps={{mocks: [defaultMocks, mocks]}}>
+          <Test />
+        </TestProvider>,
+      ),
     );
 
     await waitFor(() => {
@@ -112,10 +114,12 @@ describe('useRepositoryReloadLocation', () => {
       }),
     };
 
-    render(
-      <TestProvider apolloProps={{mocks: [defaultMocks, mocks]}}>
-        <Test />
-      </TestProvider>,
+    await act(() =>
+      render(
+        <TestProvider apolloProps={{mocks: [defaultMocks, mocks]}}>
+          <Test />
+        </TestProvider>,
+      ),
     );
 
     await waitFor(() => {
@@ -147,10 +151,12 @@ describe('useRepositoryReloadLocation', () => {
       }),
     };
 
-    const {rerender} = render(
-      <TestProvider apolloProps={{mocks: [defaultMocks, mocks]}}>
-        <Test />
-      </TestProvider>,
+    const {rerender} = await act(() =>
+      render(
+        <TestProvider apolloProps={{mocks: [defaultMocks, mocks]}}>
+          <Test />
+        </TestProvider>,
+      ),
     );
 
     fireEvent.click(screen.getByText(/Try/));
@@ -171,15 +177,13 @@ describe('useRepositoryReloadLocation', () => {
     });
 
     // Set the location entry to `LOADED`, which should terminate polling.
-    rerender(
-      <TestProvider apolloProps={{mocks: defaultMocks}}>
-        <Test />
-      </TestProvider>,
-    );
-
-    jest.runAllTicks();
-
     await waitFor(() => {
+      rerender(
+        <TestProvider apolloProps={{mocks: defaultMocks}}>
+          <Test />
+        </TestProvider>,
+      );
+      jest.runAllTicks();
       expect(screen.queryByText(/Reloading: false/)).toBeVisible();
       expect(screen.queryByText(/Has error: false/)).toBeVisible();
     });
@@ -194,10 +198,12 @@ describe('useRepositoryReloadLocation', () => {
       }),
     };
 
-    const {rerender} = render(
-      <TestProvider apolloProps={{mocks: [defaultMocks, mocks]}}>
-        <Test />
-      </TestProvider>,
+    const {rerender} = await act(() =>
+      render(
+        <TestProvider apolloProps={{mocks: [defaultMocks, mocks]}}>
+          <Test />
+        </TestProvider>,
+      ),
     );
 
     fireEvent.click(screen.getByText(/Try/));

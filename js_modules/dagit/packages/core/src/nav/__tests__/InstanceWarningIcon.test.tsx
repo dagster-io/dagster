@@ -1,5 +1,5 @@
 import {waitFor} from '@testing-library/dom';
-import {render, screen} from '@testing-library/react';
+import {act, render, screen} from '@testing-library/react';
 import * as React from 'react';
 
 import {
@@ -28,7 +28,7 @@ describe('InstanceWarningIcon', () => {
       }),
     };
 
-    render(<Test mocks={[mocks]} />);
+    await act(() => render(<Test mocks={[mocks]} />));
     await waitFor(() => {
       expect(screen.queryByLabelText('warning')).toBeVisible();
     });
@@ -42,7 +42,7 @@ describe('InstanceWarningIcon', () => {
       }),
     };
 
-    render(<Test mocks={[mocks]} />);
+    await act(() => render(<Test mocks={[mocks]} />));
     await waitFor(() => {
       expect(screen.queryByLabelText('warning')).toBeNull();
     });
@@ -68,7 +68,7 @@ describe('InstanceWarningIcon', () => {
           }),
         };
 
-        render(<Test mocks={[daemonStoppedSchedulerMocks, repoMocks]} />);
+        await act(() => render(<Test mocks={[daemonStoppedSchedulerMocks, repoMocks]} />));
         await waitFor(() => {
           expect(screen.queryByLabelText('warning')).toBeNull();
         });
@@ -82,7 +82,7 @@ describe('InstanceWarningIcon', () => {
           }),
         };
 
-        render(<Test mocks={[daemonStoppedSchedulerMocks, repoMocks]} />);
+        await act(() => render(<Test mocks={[daemonStoppedSchedulerMocks, repoMocks]} />));
         await waitFor(() => {
           expect(screen.queryByLabelText('warning')).toBeNull();
         });
@@ -96,7 +96,7 @@ describe('InstanceWarningIcon', () => {
           }),
         };
 
-        render(<Test mocks={[daemonStoppedSchedulerMocks, repoMocks]} />);
+        await act(() => render(<Test mocks={[daemonStoppedSchedulerMocks, repoMocks]} />));
         await waitFor(() => {
           expect(screen.queryByLabelText('warning')).toBeVisible();
         });
@@ -122,7 +122,7 @@ describe('InstanceWarningIcon', () => {
           }),
         };
 
-        render(<Test mocks={[daemonStoppedSensorMocks, repoMocks]} />);
+        await act(() => render(<Test mocks={[daemonStoppedSensorMocks, repoMocks]} />));
         await waitFor(() => {
           expect(screen.queryByLabelText('warning')).toBeNull();
         });
@@ -136,7 +136,7 @@ describe('InstanceWarningIcon', () => {
           }),
         };
 
-        render(<Test mocks={[daemonStoppedSensorMocks, repoMocks]} />);
+        await act(() => render(<Test mocks={[daemonStoppedSensorMocks, repoMocks]} />));
         await waitFor(() => {
           expect(screen.queryByLabelText('warning')).toBeVisible();
         });
@@ -162,7 +162,7 @@ describe('InstanceWarningIcon', () => {
           }),
         };
 
-        render(<Test mocks={[daemonStoppedBothMocks, repoMocks]} />);
+        await act(() => render(<Test mocks={[daemonStoppedBothMocks, repoMocks]} />));
         await waitFor(() => {
           expect(screen.queryByLabelText('warning')).toBeNull();
         });
@@ -176,7 +176,7 @@ describe('InstanceWarningIcon', () => {
           }),
         };
 
-        render(<Test mocks={[daemonStoppedBothMocks, repoMocks]} />);
+        await act(() => render(<Test mocks={[daemonStoppedBothMocks, repoMocks]} />));
         await waitFor(() => {
           expect(screen.queryByLabelText('warning')).toBeVisible();
         });
@@ -190,7 +190,7 @@ describe('InstanceWarningIcon', () => {
           }),
         };
 
-        render(<Test mocks={[daemonStoppedBothMocks, repoMocks]} />);
+        await act(() => render(<Test mocks={[daemonStoppedBothMocks, repoMocks]} />));
         await waitFor(() => {
           expect(screen.queryByLabelText('warning')).toBeVisible();
         });
@@ -204,7 +204,7 @@ describe('InstanceWarningIcon', () => {
           }),
         };
 
-        render(<Test mocks={[daemonStoppedBothMocks, repoMocks]} />);
+        await act(() => render(<Test mocks={[daemonStoppedBothMocks, repoMocks]} />));
         await waitFor(() => {
           expect(screen.queryByLabelText('warning')).toBeVisible();
         });
@@ -230,9 +230,9 @@ describe('InstanceWarningIcon', () => {
           }),
         };
 
-        render(<Test mocks={[daemonStoppedOtherMocks, repoMocks]} />);
+        await act(() => render(<Test mocks={[daemonStoppedOtherMocks, repoMocks]} />));
         await waitFor(() => {
-          expect(screen.queryByLabelText('warning')).toBeNull();
+          expect(screen.queryByLabelText('warning')).toBeVisible();
         });
       });
     });

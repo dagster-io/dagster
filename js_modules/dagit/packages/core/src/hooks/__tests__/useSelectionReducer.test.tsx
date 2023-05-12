@@ -1,4 +1,4 @@
-import {render, screen} from '@testing-library/react';
+import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as React from 'react';
 
@@ -41,10 +41,14 @@ describe('useSelectionReducer', () => {
     render(<Test ids={['a', 'b', 'c', 'd']} />);
     const checkA = screen.getByRole('checkbox', {name: /checkbox-a/i});
     expect(checkA).not.toBeChecked();
-    await userEvent.click(checkA);
-    expect(checkA).toBeChecked();
-    await userEvent.click(checkA);
-    expect(checkA).not.toBeChecked();
+    userEvent.click(checkA);
+    await waitFor(async () => {
+      expect(checkA).toBeChecked();
+    });
+    userEvent.click(checkA);
+    await waitFor(async () => {
+      expect(checkA).not.toBeChecked();
+    });
   });
 
   it('checks slices of items', async () => {
@@ -60,22 +64,28 @@ describe('useSelectionReducer', () => {
     expect(checkD).not.toBeChecked();
 
     const shiftClickUser = userEvent.setup();
-    await shiftClickUser.keyboard('[ShiftLeft>]');
+    shiftClickUser.keyboard('[ShiftLeft>]');
 
-    await userEvent.click(checkA);
-    expect(checkA).toBeChecked();
-    await shiftClickUser.click(checkC);
+    userEvent.click(checkA);
+    await waitFor(async () => {
+      expect(checkA).toBeChecked();
+    });
 
-    expect(checkA).toBeChecked();
-    expect(checkB).toBeChecked();
-    expect(checkC).toBeChecked();
-    expect(checkD).not.toBeChecked();
+    shiftClickUser.click(checkC);
+    await waitFor(async () => {
+      expect(checkA).toBeChecked();
+      expect(checkB).toBeChecked();
+      expect(checkC).toBeChecked();
+      expect(checkD).not.toBeChecked();
+    });
 
-    await shiftClickUser.click(checkB);
-    expect(checkA).toBeChecked();
-    expect(checkB).not.toBeChecked();
-    expect(checkC).not.toBeChecked();
-    expect(checkD).not.toBeChecked();
+    shiftClickUser.click(checkB);
+    await waitFor(async () => {
+      expect(checkA).toBeChecked();
+      expect(checkB).not.toBeChecked();
+      expect(checkC).not.toBeChecked();
+      expect(checkD).not.toBeChecked();
+    });
   });
 
   it('allows toggle-all', async () => {
@@ -91,18 +101,20 @@ describe('useSelectionReducer', () => {
     expect(checkC).not.toBeChecked();
     expect(checkD).not.toBeChecked();
 
-    await userEvent.click(checkAll);
+    userEvent.click(checkAll);
+    await waitFor(async () => {
+      expect(checkA).toBeChecked();
+      expect(checkB).toBeChecked();
+      expect(checkC).toBeChecked();
+      expect(checkD).toBeChecked();
+    });
 
-    expect(checkA).toBeChecked();
-    expect(checkB).toBeChecked();
-    expect(checkC).toBeChecked();
-    expect(checkD).toBeChecked();
-
-    await userEvent.click(checkAll);
-
-    expect(checkA).not.toBeChecked();
-    expect(checkB).not.toBeChecked();
-    expect(checkC).not.toBeChecked();
-    expect(checkD).not.toBeChecked();
+    userEvent.click(checkAll);
+    await waitFor(async () => {
+      expect(checkA).not.toBeChecked();
+      expect(checkB).not.toBeChecked();
+      expect(checkC).not.toBeChecked();
+      expect(checkD).not.toBeChecked();
+    });
   });
 });

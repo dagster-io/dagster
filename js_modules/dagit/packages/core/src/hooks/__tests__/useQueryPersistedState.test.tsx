@@ -1,4 +1,4 @@
-import {act, render, screen, waitFor} from '@testing-library/react';
+import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as React from 'react';
 import {MemoryRouter, Route} from 'react-router-dom';
@@ -12,69 +12,60 @@ const Test: React.FC<{options: Parameters<typeof useQueryPersistedState>[0]}> = 
 
 describe('useQueryPersistedState', () => {
   it('populates state from the query string', async () => {
-    await act(() => {
-      render(
-        <MemoryRouter initialEntries={['/page?q=c']}>
-          <Test options={{queryKey: 'q', defaults: {q: 'a'}}} />
-        </MemoryRouter>,
-      );
-    });
+    render(
+      <MemoryRouter initialEntries={['/page?q=c']}>
+        <Test options={{queryKey: 'q', defaults: {q: 'a'}}} />
+      </MemoryRouter>,
+    );
     expect(screen.getByText(`[c]`)).toBeVisible();
   });
 
   it('populates from defaults if query params are not present', async () => {
-    await act(() => {
-      render(
-        <MemoryRouter initialEntries={['/page']}>
-          <Test options={{queryKey: 'q', defaults: {q: 'a'}}} />
-        </MemoryRouter>,
-      );
-    });
+    render(
+      <MemoryRouter initialEntries={['/page']}>
+        <Test options={{queryKey: 'q', defaults: {q: 'a'}}} />
+      </MemoryRouter>,
+    );
     expect(screen.getByText(`[a]`)).toBeVisible();
   });
 
   it('populates with undefined values if defaults are not provided and query params are not present', async () => {
-    await act(() => {
-      render(
-        <MemoryRouter initialEntries={['/page']}>
-          <Test options={{queryKey: 'q'}} />
-        </MemoryRouter>,
-      );
-    });
+    render(
+      <MemoryRouter initialEntries={['/page']}>
+        <Test options={{queryKey: 'q'}} />
+      </MemoryRouter>,
+    );
     expect(screen.getByText(`[undefined]`)).toBeVisible();
   });
 
   it('updates the URL query string when its exposed setter is called', async () => {
     // from https://reactrouter.com/web/guides/testing/checking-location-in-tests
-    let querySearch;
+    let querySearch = '';
 
-    await act(() => {
-      render(
-        <MemoryRouter initialEntries={['/page?q=B']}>
-          <Test options={{queryKey: 'q'}} />;
-          <Route path="*" render={({location}) => (querySearch = location.search) && <span />} />
-        </MemoryRouter>,
-      );
-    });
+    render(
+      <MemoryRouter initialEntries={['/page?q=B']}>
+        <Test options={{queryKey: 'q'}} />;
+        <Route path="*" render={({location}) => (querySearch = location.search) && <span />} />
+      </MemoryRouter>,
+    );
     expect(querySearch).toEqual('?q=B');
 
-    await userEvent.click(screen.getByText(`[B]`));
-
-    expect(screen.getByText(`[Navigated]`)).toBeVisible();
-    expect(querySearch).toEqual('?q=Navigated');
+    userEvent.click(screen.getByText(`[B]`));
+    await waitFor(() => {
+      expect(screen.getByText(`[Navigated]`)).toBeVisible();
+      expect(querySearch).toEqual('?q=Navigated');
+    });
   });
 
   it('ignores and preserves other params present in the query string', async () => {
     // from https://reactrouter.com/web/guides/testing/checking-location-in-tests
     let querySearch: any;
-    await act(() => {
-      render(
-        <MemoryRouter initialEntries={['/page?q=B&cursor=basdasd&limit=100']}>
-          <Test options={{queryKey: 'q'}} />;
-          <Route path="*" render={({location}) => (querySearch = location.search) && <span />} />
-        </MemoryRouter>,
-      );
-    });
+    render(
+      <MemoryRouter initialEntries={['/page?q=B&cursor=basdasd&limit=100']}>
+        <Test options={{queryKey: 'q'}} />;
+        <Route path="*" render={({location}) => (querySearch = location.search) && <span />} />
+      </MemoryRouter>,
+    );
     userEvent.click(screen.getByText(`[B]`));
     await waitFor(() => {
       expect(querySearch).toEqual('?q=Navigated&cursor=basdasd&limit=100');
@@ -85,14 +76,12 @@ describe('useQueryPersistedState', () => {
     // from https://reactrouter.com/web/guides/testing/checking-location-in-tests
     let querySearch: any;
 
-    await act(() => {
-      render(
-        <MemoryRouter initialEntries={['/page?q=B&cursor=basdasd&limit=100']}>
-          <Test options={{queryKey: 'q', defaults: {q: 'Navigated'}}} />
-          <Route path="*" render={({location}) => (querySearch = location.search) && <span />} />
-        </MemoryRouter>,
-      );
-    });
+    render(
+      <MemoryRouter initialEntries={['/page?q=B&cursor=basdasd&limit=100']}>
+        <Test options={{queryKey: 'q', defaults: {q: 'Navigated'}}} />
+        <Route path="*" render={({location}) => (querySearch = location.search) && <span />} />
+      </MemoryRouter>,
+    );
     userEvent.click(screen.getByText(`[B]`));
     await waitFor(() => {
       expect(querySearch).toEqual('?cursor=basdasd&limit=100');
@@ -102,15 +91,13 @@ describe('useQueryPersistedState', () => {
   it('can coexist with other instances of the same hook', async () => {
     let querySearch: any;
 
-    await act(() => {
-      render(
-        <MemoryRouter initialEntries={['/page?param1=A1&param2=A2']}>
-          <Test options={{queryKey: 'param1'}} />
-          <Test options={{queryKey: 'param2'}} />
-          <Route path="*" render={({location}) => (querySearch = location.search) && <span />} />
-        </MemoryRouter>,
-      );
-    });
+    render(
+      <MemoryRouter initialEntries={['/page?param1=A1&param2=A2']}>
+        <Test options={{queryKey: 'param1'}} />
+        <Test options={{queryKey: 'param2'}} />
+        <Route path="*" render={({location}) => (querySearch = location.search) && <span />} />
+      </MemoryRouter>,
+    );
 
     expect(querySearch).toEqual('?param1=A1&param2=A2');
     userEvent.click(screen.getByText(`[A1]`));
@@ -137,15 +124,13 @@ describe('useQueryPersistedState', () => {
 
     let querySearch: any;
 
-    await act(() => {
-      render(
-        <MemoryRouter initialEntries={['/page?word=hello&param1=A']}>
-          <Test options={{queryKey: 'param1'}} />
-          <TestWithBug />
-          <Route path="*" render={({location}) => (querySearch = location.search) && <span />} />
-        </MemoryRouter>,
-      );
-    });
+    render(
+      <MemoryRouter initialEntries={['/page?word=hello&param1=A']}>
+        <Test options={{queryKey: 'param1'}} />
+        <TestWithBug />
+        <Route path="*" render={({location}) => (querySearch = location.search) && <span />} />
+      </MemoryRouter>,
+    );
 
     userEvent.click(screen.getByText(`[A]`));
     await waitFor(() => {
@@ -171,14 +156,12 @@ describe('useQueryPersistedState', () => {
       );
     };
     let querySearch: any;
-    await act(() => {
-      render(
-        <MemoryRouter initialEntries={['/page']}>
-          <TestEncoding />
-          <Route path="*" render={({location}) => (querySearch = location.search) && <span />} />
-        </MemoryRouter>,
-      );
-    });
+    render(
+      <MemoryRouter initialEntries={['/page']}>
+        <TestEncoding />
+        <Route path="*" render={({location}) => (querySearch = location.search) && <span />} />
+      </MemoryRouter>,
+    );
 
     userEvent.click(screen.getByText(`[]`));
     await waitFor(() => {
@@ -209,14 +192,12 @@ describe('useQueryPersistedState', () => {
       );
     };
     let querySearch;
-    await act(() => {
-      render(
-        <MemoryRouter initialEntries={['/page']}>
-          <TestWithObject />
-          <Route path="*" render={({location}) => (querySearch = location.search) && <span />} />
-        </MemoryRouter>,
-      );
-    });
+    render(
+      <MemoryRouter initialEntries={['/page']}>
+        <TestWithObject />
+        <Route path="*" render={({location}) => (querySearch = location.search) && <span />} />
+      </MemoryRouter>,
+    );
 
     userEvent.click(screen.getByText(`{"view":"grid"}`));
     await waitFor(() => {
@@ -240,14 +221,12 @@ describe('useQueryPersistedState', () => {
       );
     };
     let querySearch: any;
-    await act(() => {
-      render(
-        <MemoryRouter initialEntries={['/page']}>
-          <TestWithObject />
-          <Route path="*" render={({location}) => (querySearch = location.search) && <span />} />
-        </MemoryRouter>,
-      );
-    });
+    render(
+      <MemoryRouter initialEntries={['/page']}>
+        <TestWithObject />
+        <Route path="*" render={({location}) => (querySearch = location.search) && <span />} />
+      </MemoryRouter>,
+    );
 
     userEvent.click(screen.getByText(`{"enableA":true,"enableB":false}`));
     await waitFor(() => {
@@ -284,13 +263,11 @@ describe('useQueryPersistedState', () => {
       );
     };
 
-    await act(() => {
-      render(
-        <MemoryRouter initialEntries={['/page']}>
-          <TestWithObject />
-        </MemoryRouter>,
-      );
-    });
+    render(
+      <MemoryRouter initialEntries={['/page']}>
+        <TestWithObject />
+      </MemoryRouter>,
+    );
 
     userEvent.click(screen.getByText(`Functions Same: true`));
     expect(screen.getByText(`Functions Same: true`)).toBeVisible();
@@ -309,14 +286,12 @@ describe('useQueryPersistedState', () => {
     };
 
     let querySearch: any;
-    await act(() => {
-      render(
-        <MemoryRouter initialEntries={['/page']}>
-          <TestArray />
-          <Route path="*" render={({location}) => (querySearch = location.search) && <span />} />
-        </MemoryRouter>,
-      );
-    });
+    render(
+      <MemoryRouter initialEntries={['/page']}>
+        <TestArray />
+        <Route path="*" render={({location}) => (querySearch = location.search) && <span />} />
+      </MemoryRouter>,
+    );
 
     userEvent.click(screen.getByText(`[]`));
     await waitFor(() => {
@@ -349,14 +324,12 @@ describe('useQueryPersistedState', () => {
 
     let querySearch: any;
 
-    await act(() => {
-      render(
-        <MemoryRouter initialEntries={['/page']}>
-          <TestArray />
-          <Route path="*" render={({location}) => (querySearch = location.search) && <span />} />
-        </MemoryRouter>,
-      );
-    });
+    render(
+      <MemoryRouter initialEntries={['/page']}>
+        <TestArray />
+        <Route path="*" render={({location}) => (querySearch = location.search) && <span />} />
+      </MemoryRouter>,
+    );
 
     userEvent.click(screen.getByText(`{"hello":false,"items":[]}`));
 

@@ -1,5 +1,5 @@
 import {waitFor} from '@testing-library/dom';
-import {render, screen} from '@testing-library/react';
+import {act, render, screen} from '@testing-library/react';
 import * as React from 'react';
 
 import {
@@ -21,7 +21,7 @@ describe('WorkspaceStatus', () => {
   };
 
   it('does not display if no errors', async () => {
-    render(<Test />);
+    await act(async () => render(<Test />));
     await waitFor(() => {
       expect(screen.queryByLabelText('warning')).toBeNull();
     });
@@ -34,7 +34,7 @@ describe('WorkspaceStatus', () => {
         message: () => 'Failure',
       }),
     };
-    render(<Test mocks={mocks} />);
+    await act(async () => render(<Test mocks={mocks} />));
     await waitFor(() => {
       expect(screen.queryByLabelText('warning')).toBeVisible();
     });

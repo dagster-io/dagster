@@ -53,8 +53,11 @@ describe('CreatePartitionDialog', () => {
       render(<Test mocks={[createFixture]} />);
     });
     const partitionInput = screen.getByTestId('partition-input');
-    await userEvent.type(partitionInput, 'testPartitionName');
-    await userEvent.click(screen.getByTestId('save-partition-button'));
+    userEvent.type(partitionInput, 'testPartitionName');
+    await waitFor(() => {
+      expect(partitionInput).toHaveValue('testPartitionName');
+    });
+    userEvent.click(screen.getByTestId('save-partition-button'));
     await waitFor(() => {
       expect(onCloseMock).toHaveBeenCalled();
       expect(onCreatedMock).toHaveBeenCalledWith('testPartitionName');
@@ -63,17 +66,27 @@ describe('CreatePartitionDialog', () => {
   });
 
   it('Shows error state', async () => {
-    await act(async () => {
-      render(<Test mocks={[]} />);
+    render(<Test mocks={[]} />);
+
+    const partitionInput = await screen.findByTestId('partition-input');
+    expect(screen.queryByTestId('warning-icon')).toBeNull();
+    userEvent.clear(partitionInput);
+    userEvent.type(partitionInput, 'invalidname\n\r\t');
+    await waitFor(() => {
+      expect(screen.getByTestId('warning-icon')).toBeVisible();
     });
-    const partitionInput = screen.getByTestId('partition-input');
-    expect(screen.queryByTestId('warning-icon')).toBeNull();
-    await userEvent.type(partitionInput, 'invalidname\n\r\t');
-    expect(screen.getByTestId('warning-icon')).toBeVisible();
-    await userEvent.clear(partitionInput);
-    expect(screen.queryByTestId('warning-icon')).toBeNull();
-    await userEvent.type(partitionInput, 'validname');
-    expect(screen.queryByTestId('warning-icon')).toBeNull();
+    await act(async () => {
+      userEvent.clear(partitionInput);
+    });
+    await waitFor(() => {
+      expect(screen.queryByTestId('warning-icon')).toBeNull();
+    });
+    await act(async () => {
+      await userEvent.type(partitionInput, 'validname');
+    });
+    await waitFor(() => {
+      expect(screen.queryByTestId('warning-icon')).toBeNull();
+    });
   });
 
   it('Shows error state when mutation fails', async () => {
@@ -90,12 +103,19 @@ describe('CreatePartitionDialog', () => {
         message: 'test message 123',
       }),
     });
-    await act(async () => {
-      render(<Test mocks={[createFixture]} />);
+    render(<Test mocks={[createFixture]} />);
+
+    const partitionInput = await screen.findByTestId('partition-input');
+    userEvent.clear(partitionInput);
+    await waitFor(() => {
+      expect(partitionInput).toHaveValue('');
     });
-    const partitionInput = screen.getByTestId('partition-input');
-    await userEvent.type(partitionInput, 'testPartitionName');
-    await userEvent.click(screen.getByTestId('save-partition-button'));
+    userEvent.type(partitionInput, 'testPartitionName');
+    await waitFor(() => {
+      expect(partitionInput).toHaveValue('testPartitionName');
+    });
+
+    userEvent.click(screen.getByTestId('save-partition-button'));
     await waitFor(() => {
       expect(createFixture.result).toHaveBeenCalled();
       expect(showCustomAlertSpy).toHaveBeenCalledWith({

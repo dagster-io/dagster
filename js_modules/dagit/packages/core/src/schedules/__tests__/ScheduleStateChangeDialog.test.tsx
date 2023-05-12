@@ -116,7 +116,7 @@ describe('ScheduleStateChangeDialog', () => {
       );
 
       const confirmButton = screen.getByRole('button', {name: /start/i});
-      await userEvent.click(confirmButton);
+      userEvent.click(confirmButton);
 
       await waitFor(() => {
         const button = screen.getByRole('button', {name: /starting/i});
@@ -144,7 +144,7 @@ describe('ScheduleStateChangeDialog', () => {
       );
 
       const confirmButton = screen.getByRole('button', {name: /start/i});
-      await userEvent.click(confirmButton);
+      userEvent.click(confirmButton);
 
       await waitFor(() => {
         const button = screen.getByRole('button', {name: /starting/i});
@@ -180,7 +180,7 @@ describe('ScheduleStateChangeDialog', () => {
       );
 
       const confirmButton = screen.getByRole('button', {name: /stop/i});
-      await userEvent.click(confirmButton);
+      userEvent.click(confirmButton);
 
       await waitFor(() => {
         const button = screen.getByRole('button', {name: /stopping/i});
@@ -208,7 +208,7 @@ describe('ScheduleStateChangeDialog', () => {
       );
 
       const confirmButton = screen.getByRole('button', {name: /stop/i});
-      await userEvent.click(confirmButton);
+      userEvent.click(confirmButton);
 
       await waitFor(() => {
         const button = screen.getByRole('button', {name: /stopping/i});

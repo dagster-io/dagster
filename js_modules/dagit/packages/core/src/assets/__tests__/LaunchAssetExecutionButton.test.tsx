@@ -1,6 +1,6 @@
 /* eslint-disable jest/expect-expect */
 import {MockedProvider, MockedResponse} from '@apollo/client/testing';
-import {act, render, screen, waitFor} from '@testing-library/react';
+import {render, screen, waitFor} from '@testing-library/react';
 import React from 'react';
 
 import {CustomAlertProvider} from '../../app/CustomAlertProvider';
@@ -31,6 +31,7 @@ import {
   UNPARTITIONED_ASSET_OTHER_REPO,
   UNPARTITIONED_ASSET_WITH_REQUIRED_CONFIG,
 } from '../__fixtures__/LaunchAssetExecutionButton.fixtures';
+import {NoRunningBackfills} from '../__fixtures__/RunningBackfillsNoticeQuery.fixture';
 
 // This file must be mocked because Jest can't handle `import.meta.url`.
 jest.mock('../../graph/asyncGraphLayout', () => ({}));
@@ -38,45 +39,45 @@ jest.mock('../../graph/asyncGraphLayout', () => ({}));
 describe('LaunchAssetExecutionButton', () => {
   describe('labeling', () => {
     it('should say "Materialize all" for an `all` scope', async () => {
-      await renderButton({scope: {all: [UNPARTITIONED_ASSET, UNPARTITIONED_ASSET_OTHER_REPO]}});
+      renderButton({scope: {all: [UNPARTITIONED_ASSET, UNPARTITIONED_ASSET_OTHER_REPO]}});
       expect((await screen.findByTestId('materialize-button')).textContent).toEqual(
         'Materialize all',
       );
     });
 
     it('should say "Materialize all…" for an `all` scope if assets are partitioned', async () => {
-      await renderButton({scope: {all: [UNPARTITIONED_ASSET, ASSET_DAILY]}});
+      renderButton({scope: {all: [UNPARTITIONED_ASSET, ASSET_DAILY]}});
       expect((await screen.findByTestId('materialize-button')).textContent).toEqual(
         'Materialize all…',
       );
     });
 
     it('should say "Materialize" for an `all` scope if skipAllTerm is passed', async () => {
-      await renderButton({scope: {all: [UNPARTITIONED_ASSET], skipAllTerm: true}});
+      renderButton({scope: {all: [UNPARTITIONED_ASSET], skipAllTerm: true}});
       expect((await screen.findByTestId('materialize-button')).textContent).toEqual('Materialize');
     });
 
     it('should say "Materialize…" for an `all` scope if assets are partitioned and skipAllTerm is passed', async () => {
-      await renderButton({scope: {all: [UNPARTITIONED_ASSET, ASSET_DAILY], skipAllTerm: true}});
+      renderButton({scope: {all: [UNPARTITIONED_ASSET, ASSET_DAILY], skipAllTerm: true}});
       expect((await screen.findByTestId('materialize-button')).textContent).toEqual('Materialize…');
     });
 
     it('should say "Materialize selected" for an `selected` scope', async () => {
-      await renderButton({scope: {selected: [UNPARTITIONED_ASSET]}});
+      renderButton({scope: {selected: [UNPARTITIONED_ASSET]}});
       expect((await screen.findByTestId('materialize-button')).textContent).toEqual(
         'Materialize selected',
       );
     });
 
     it('should say "Materialize selected…" for an `selected` scope with a partitioned asset', async () => {
-      await renderButton({scope: {selected: [ASSET_DAILY]}});
+      renderButton({scope: {selected: [ASSET_DAILY]}});
       expect((await screen.findByTestId('materialize-button')).textContent).toEqual(
         'Materialize selected…',
       );
     });
 
     it('should say "Materialize selected (2)…" for an `selected` scope with two items', async () => {
-      await renderButton({scope: {selected: [UNPARTITIONED_ASSET, ASSET_DAILY]}});
+      renderButton({scope: {selected: [UNPARTITIONED_ASSET, ASSET_DAILY]}});
       expect((await screen.findByTestId('materialize-button')).textContent).toEqual(
         'Materialize selected (2)…',
       );
@@ -98,7 +99,7 @@ describe('LaunchAssetExecutionButton', () => {
           assetSelection: [{path: ['unpartitioned_asset']}],
         },
       });
-      await renderButton({
+      renderButton({
         scope: {all: [UNPARTITIONED_ASSET]},
         preferredJobName: 'my_asset_job',
         launchMock,
@@ -121,7 +122,7 @@ describe('LaunchAssetExecutionButton', () => {
           assetSelection: [{path: ['unpartitioned_asset']}],
         },
       });
-      await renderButton({
+      renderButton({
         scope: {all: [UNPARTITIONED_ASSET]},
         preferredJobName: undefined,
         launchMock,
@@ -131,7 +132,7 @@ describe('LaunchAssetExecutionButton', () => {
     });
 
     it('should show the launchpad if an asset or resource requires config', async () => {
-      await renderButton({
+      renderButton({
         scope: {all: [UNPARTITIONED_ASSET_WITH_REQUIRED_CONFIG]},
         preferredJobName: undefined,
       });
@@ -140,7 +141,7 @@ describe('LaunchAssetExecutionButton', () => {
     });
 
     it('should show an error if the assets do not share a code location', async () => {
-      await renderButton({
+      renderButton({
         scope: {all: [UNPARTITIONED_ASSET, UNPARTITIONED_ASSET_OTHER_REPO]},
         preferredJobName: undefined,
       });
@@ -151,7 +152,7 @@ describe('LaunchAssetExecutionButton', () => {
 
   describe('partitioned assets', () => {
     it('should show the partition dialog', async () => {
-      await renderButton({scope: {all: [ASSET_DAILY]}});
+      renderButton({scope: {all: [ASSET_DAILY]}});
       await clickMaterializeButton();
       await waitFor(() => screen.findByTestId('choose-partitions-dialog'));
     });
@@ -173,14 +174,15 @@ describe('LaunchAssetExecutionButton', () => {
           repositoryName: 'repo',
         },
       });
-      await renderButton({
+      renderButton({
         scope: {all: [ASSET_DAILY]},
         preferredJobName: 'my_asset_job',
         launchMock,
       });
       await clickMaterializeButton();
       await waitFor(() => screen.findByTestId('choose-partitions-dialog'));
-      await (await screen.findByTestId('latest-partition-button')).click();
+
+      await waitFor(() => screen.getByTestId('latest-partition-button').click());
 
       await expectLaunchExecutesMutationAndCloses('Launch 1 run', launchMock);
     });
@@ -196,7 +198,7 @@ describe('LaunchAssetExecutionButton', () => {
         fromFailure: false,
         tags: [],
       });
-      await renderButton({
+      renderButton({
         scope: {all: [ASSET_DAILY]},
         preferredJobName: 'my_asset_job',
         launchMock,
@@ -207,10 +209,14 @@ describe('LaunchAssetExecutionButton', () => {
       const launchButton = await screen.findByTestId('launch-button');
 
       // verify that the missing only checkbox updates the number of runs
-      expect(launchButton.textContent).toEqual('Launch 1148-run backfill');
-      await (await screen.getByTestId('missing-only-checkbox')).click();
-      expect(launchButton.textContent).toEqual('Launch 1046-run backfill');
-      await (await screen.getByTestId('missing-only-checkbox')).click();
+      await waitFor(() => {
+        expect(launchButton.textContent).toEqual('Launch 1148-run backfill');
+        screen.getByTestId('missing-only-checkbox').click();
+      });
+      await waitFor(() => {
+        expect(launchButton.textContent).toEqual('Launch 1046-run backfill');
+        screen.getByTestId('missing-only-checkbox').click();
+      });
 
       // verify that the executed mutation is correct
       await expectLaunchExecutesMutationAndCloses('Launch 1148-run backfill', launchMock);
@@ -233,14 +239,18 @@ describe('LaunchAssetExecutionButton', () => {
           repositoryName: 'repo',
         },
       });
-      await renderButton({
+      renderButton({
         scope: {all: [ASSET_DAILY]},
         preferredJobName: undefined,
         launchMock,
       });
       await clickMaterializeButton();
-      await waitFor(() => screen.findByTestId('choose-partitions-dialog'));
-      await (await screen.findByTestId('latest-partition-button')).click();
+      await waitFor(async () => {
+        screen.findByTestId('choose-partitions-dialog');
+        const latest = await screen.findByTestId('latest-partition-button');
+        latest.click();
+      });
+
       await expectLaunchExecutesMutationAndCloses('Launch 1 run', launchMock);
     });
 
@@ -252,7 +262,7 @@ describe('LaunchAssetExecutionButton', () => {
         fromFailure: false,
         tags: [],
       });
-      await renderButton({
+      renderButton({
         scope: {all: [ASSET_DAILY]},
         preferredJobName: undefined,
         launchMock,
@@ -287,7 +297,7 @@ describe('LaunchAssetExecutionButton', () => {
           assetSelection: [{path: ['asset_daily']}],
         },
       });
-      await renderButton({
+      renderButton({
         scope: {all: [ASSET_DAILY]},
         preferredJobName: 'my_asset_job',
         launchMock,
@@ -295,9 +305,11 @@ describe('LaunchAssetExecutionButton', () => {
       await clickMaterializeButton();
       await waitFor(() => screen.findByTestId('choose-partitions-dialog'));
 
-      const rangesAsTags = await screen.getByTestId('ranges-as-tags-true-radio');
-      await waitFor(async () => expect(rangesAsTags).toBeEnabled());
-      await rangesAsTags.click();
+      await waitFor(async () => {
+        const rangesAsTags = await screen.getByTestId('ranges-as-tags-true-radio');
+        expect(rangesAsTags).toBeEnabled();
+        rangesAsTags.click();
+      });
       await expectLaunchExecutesMutationAndCloses('Launch 1 run', launchMock);
     });
   });
@@ -312,7 +324,7 @@ describe('LaunchAssetExecutionButton', () => {
         tags: [],
       });
 
-      await renderButton({
+      renderButton({
         scope: {all: [ASSET_DAILY, ASSET_WEEKLY]},
         launchMock: LaunchMutationMock,
       });
@@ -333,7 +345,7 @@ describe('LaunchAssetExecutionButton', () => {
     });
 
     it('should show an error if two roots have different partition defintions', async () => {
-      await renderButton({
+      renderButton({
         scope: {all: [ASSET_DAILY, ASSET_WEEKLY, ASSET_WEEKLY_ROOT]},
       });
       await clickMaterializeButton();
@@ -344,7 +356,7 @@ describe('LaunchAssetExecutionButton', () => {
 
 // Helpers to make tests more concise
 
-async function renderButton({
+function renderButton({
   scope,
   launchMock,
   preferredJobName,
@@ -357,6 +369,7 @@ async function renderButton({
 
   const mocks: MockedResponse<Record<string, any>>[] = [
     LaunchAssetChoosePartitionsMock,
+    NoRunningBackfills,
     LaunchAssetLoaderResourceJob7Mock,
     LaunchAssetLoaderResourceJob8Mock,
     LaunchAssetLoaderResourceMyAssetJobMock,
@@ -369,22 +382,22 @@ async function renderButton({
     ...(launchMock ? [launchMock] : []),
   ];
 
-  await act(async () => {
-    render(
-      <TestProvider>
-        <CustomAlertProvider />
-        <MockedProvider mocks={mocks}>
-          <LaunchAssetExecutionButton scope={scope} preferredJobName={preferredJobName} />
-        </MockedProvider>
-      </TestProvider>,
-    );
-  });
+  render(
+    <TestProvider>
+      <CustomAlertProvider />
+      <MockedProvider mocks={mocks}>
+        <LaunchAssetExecutionButton scope={scope} preferredJobName={preferredJobName} />
+      </MockedProvider>
+    </TestProvider>,
+  );
 }
 
 async function clickMaterializeButton() {
-  const materializeButton = await screen.findByTestId('materialize-button');
-  expect(materializeButton).toBeVisible();
-  materializeButton.click();
+  await waitFor(async () => {
+    const materializeButton = await screen.findByTestId('materialize-button');
+    expect(materializeButton).toBeVisible();
+    materializeButton.click();
+  });
 }
 
 async function expectErrorShown(msg: string) {
@@ -401,9 +414,11 @@ async function expectLaunchExecutesMutationAndCloses(
     | MockedResponse<LaunchPartitionBackfillMutation>
     | MockedResponse<LaunchPipelineExecutionMutation>,
 ) {
-  const launchButton = await screen.findByTestId('launch-button');
-  expect(launchButton.textContent).toEqual(label);
-  await launchButton.click();
+  await waitFor(async () => {
+    const launchButton = await screen.findByTestId('launch-button');
+    expect(launchButton.textContent).toEqual(label);
+    launchButton.click();
+  });
 
   // expect that it triggers the mutation (variables checked by mock matching)
   await waitFor(() => expect(mutation.result).toHaveBeenCalled());

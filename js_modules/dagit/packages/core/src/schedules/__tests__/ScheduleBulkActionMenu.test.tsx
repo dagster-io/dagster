@@ -1,4 +1,4 @@
-import {render, screen} from '@testing-library/react';
+import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as React from 'react';
 
@@ -35,12 +35,14 @@ describe('ScheduleBulkActionMenu', () => {
     expect(button).toBeVisible();
     expect(button).toBeEnabled();
 
-    await userEvent.click(button);
+    userEvent.click(button);
 
-    const startItem = screen.getByRole('menuitem', {name: /start 2 schedules/i});
-    expectAriaEnabled(startItem);
-    const stopItem = screen.getByRole('menuitem', {name: /stop 2 schedules/i});
-    expectAriaDisabled(stopItem);
+    await waitFor(async () => {
+      const startItem = screen.getByRole('menuitem', {name: /start 2 schedules/i});
+      expectAriaEnabled(startItem);
+      const stopItem = screen.getByRole('menuitem', {name: /stop 2 schedules/i});
+      expectAriaDisabled(stopItem);
+    });
   });
 
   it('renders button and menu items for running schedules', async () => {
@@ -55,12 +57,14 @@ describe('ScheduleBulkActionMenu', () => {
     expect(button).toBeVisible();
     expect(button).toBeEnabled();
 
-    await userEvent.click(button);
+    userEvent.click(button);
 
-    const startItem = screen.getByRole('menuitem', {name: /start 2 schedules/i});
-    expectAriaDisabled(startItem);
-    const stopItem = screen.getByRole('menuitem', {name: /stop 2 schedules/i});
-    expectAriaEnabled(stopItem);
+    await waitFor(async () => {
+      const startItem = screen.getByRole('menuitem', {name: /start 2 schedules/i});
+      expectAriaDisabled(startItem);
+      const stopItem = screen.getByRole('menuitem', {name: /stop 2 schedules/i});
+      expectAriaEnabled(stopItem);
+    });
   });
 
   it('renders button and menu items for mixture of statuses', async () => {
@@ -80,12 +84,14 @@ describe('ScheduleBulkActionMenu', () => {
     expect(button).toBeVisible();
     expect(button).toBeEnabled();
 
-    await userEvent.click(button);
+    userEvent.click(button);
 
     // Both options enabled
-    const startItem = screen.getByRole('menuitem', {name: /start 4 schedules/i});
-    expectAriaEnabled(startItem);
-    const stopItem = screen.getByRole('menuitem', {name: /stop 4 schedules/i});
-    expectAriaEnabled(stopItem);
+    await waitFor(async () => {
+      const startItem = screen.getByRole('menuitem', {name: /start 4 schedules/i});
+      expectAriaEnabled(startItem);
+      const stopItem = screen.getByRole('menuitem', {name: /stop 4 schedules/i});
+      expectAriaEnabled(stopItem);
+    });
   });
 });

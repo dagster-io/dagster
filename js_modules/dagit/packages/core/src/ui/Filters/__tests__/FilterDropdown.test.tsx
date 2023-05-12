@@ -47,7 +47,7 @@ describe('FilterDropdown', () => {
         setPortaledElements={jest.fn()}
       />,
     );
-    expect(screen.getByText(/Type/g)).toBeInTheDocument();
+    expect(screen.getByText(/Type/)).toBeInTheDocument();
     expect(screen.getByText('Status')).toBeInTheDocument();
   });
 
@@ -85,26 +85,26 @@ describe('FilterDropdownButton', () => {
   test('opens and closes the dropdown on click', async () => {
     render(<FilterDropdownButton filters={mockFilters} />);
     const button = screen.getByRole('button');
-    await userEvent.click(button);
+    userEvent.click(button);
     await waitFor(() => {
-      expect(screen.getByText(/Type/g)).toBeInTheDocument();
+      expect(screen.getByText(/Type/)).toBeInTheDocument();
     });
-    await userEvent.click(button);
+    userEvent.click(button);
     await waitFor(() => {
-      expect(screen.queryByText(/Type/g)).not.toBeInTheDocument();
+      expect(screen.queryByText(/Type/)).not.toBeInTheDocument();
     });
   });
 
   test('closes the dropdown when clicking outside', async () => {
     render(<FilterDropdownButton filters={mockFilters} />);
     const button = screen.getByRole('button');
-    await userEvent.click(button);
+    userEvent.click(button);
     await waitFor(() => {
-      expect(screen.getByText(/Type/g)).toBeInTheDocument();
+      expect(screen.getByText(/Type/)).toBeInTheDocument();
     });
-    await userEvent.click(document.body);
+    userEvent.click(document.body);
     await waitFor(() => {
-      expect(screen.queryByText(/Type/g)).not.toBeInTheDocument();
+      expect(screen.queryByText(/Type/)).not.toBeInTheDocument();
     });
   });
 });
@@ -113,8 +113,10 @@ describe('FilterDropdown Accessibility', () => {
   const testKeyboardNavigation = async (nextKey: any, prevKey: any, enterKey: any) => {
     render(<FilterDropdownButton filters={mockFilters} />);
 
-    await userEvent.click(screen.getByRole('button'));
-    expect(screen.getByRole('menu')).toBeInTheDocument();
+    userEvent.click(screen.getByRole('button'));
+    await waitFor(() => {
+      expect(screen.getByRole('menu')).toBeInTheDocument();
+    });
 
     const input = screen.getByLabelText('Search filters');
     expect(input).toHaveFocus();
@@ -190,9 +192,10 @@ describe('FilterDropdown Accessibility', () => {
   test('escape key behavior', async () => {
     render(<FilterDropdownButton filters={mockFilters} />);
 
-    await userEvent.click(screen.getByRole('button'));
-    expect(screen.getByRole('menu')).toBeVisible();
-
+    userEvent.click(screen.getByRole('button'));
+    await waitFor(() => {
+      expect(screen.getByRole('menu')).toBeVisible();
+    });
     const input = screen.getByLabelText('Search filters');
     expect(input).toHaveFocus();
 

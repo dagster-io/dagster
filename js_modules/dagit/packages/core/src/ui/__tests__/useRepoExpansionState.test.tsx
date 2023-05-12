@@ -1,4 +1,4 @@
-import {act, render, screen} from '@testing-library/react';
+import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as React from 'react';
 
@@ -44,9 +44,7 @@ describe('useRepoExpansionState', () => {
 
   it('provides a list of expanded keys for the stored state', async () => {
     window.localStorage.setItem(buildStorageKey('', COLLAPSED_STORAGE_KEY), JSON.stringify([]));
-    await act(async () => {
-      render(<Test />);
-    });
+    render(<Test />);
 
     // Expect all keys to be expanded
     expect(screen.getByText('ipsum:lorem expanded')).toBeVisible();
@@ -59,9 +57,7 @@ describe('useRepoExpansionState', () => {
       buildStorageKey('', COLLAPSED_STORAGE_KEY),
       JSON.stringify(['ipsum:lorem']),
     );
-    await act(async () => {
-      render(<Test />);
-    });
+    render(<Test />);
 
     // Expect keys to have appropriate state. One collapsed!
     expect(screen.getByText('ipsum:lorem collapsed')).toBeVisible();
@@ -72,62 +68,61 @@ describe('useRepoExpansionState', () => {
   it('toggles a key to expanded', async () => {
     const fullCollapsedKey = buildStorageKey('', COLLAPSED_STORAGE_KEY);
     window.localStorage.setItem(fullCollapsedKey, JSON.stringify(['ipsum:lorem']));
-    await act(async () => {
-      render(<Test />);
-    });
+    render(<Test />);
 
     const button = screen.getByRole('button', {name: 'toggle ipsum:lorem'});
-    await userEvent.click(button);
-
-    expect(screen.getByText('ipsum:lorem expanded')).toBeVisible();
-    expect(window.localStorage.getItem(fullCollapsedKey)).toEqual('[]');
+    userEvent.click(button);
+    await waitFor(async () => {
+      expect(screen.getByText('ipsum:lorem expanded')).toBeVisible();
+      expect(window.localStorage.getItem(fullCollapsedKey)).toEqual('[]');
+    });
   });
 
   it('toggles a key to collapsed', async () => {
     const fullCollapsedKey = buildStorageKey('', COLLAPSED_STORAGE_KEY);
     window.localStorage.setItem(fullCollapsedKey, JSON.stringify([]));
-    await act(async () => {
-      render(<Test />);
-    });
+    render(<Test />);
 
     const button = screen.getByRole('button', {name: 'toggle ipsum:lorem'});
-    await userEvent.click(button);
+    userEvent.click(button);
 
-    expect(screen.getByText('ipsum:lorem collapsed')).toBeVisible();
-    expect(window.localStorage.getItem(fullCollapsedKey)).toEqual(JSON.stringify(['ipsum:lorem']));
+    await waitFor(async () => {
+      expect(screen.getByText('ipsum:lorem collapsed')).toBeVisible();
+      expect(window.localStorage.getItem(fullCollapsedKey)).toEqual(
+        JSON.stringify(['ipsum:lorem']),
+      );
+    });
   });
 
   it('toggles all to expanded', async () => {
     const fullCollapsedKey = buildStorageKey('', COLLAPSED_STORAGE_KEY);
     window.localStorage.setItem(fullCollapsedKey, JSON.stringify(['ipsum:lorem', 'amet:dolorsit']));
-    await act(async () => {
-      render(<Test />);
-    });
+    render(<Test />);
 
     const button = screen.getByRole('button', {name: 'expand all'});
-    await userEvent.click(button);
+    userEvent.click(button);
 
     // Everything expanded!
-    expect(screen.getByText('ipsum:lorem expanded')).toBeVisible();
-    expect(screen.getByText('amet:dolorsit expanded')).toBeVisible();
-    expect(screen.getByText('adipiscing:consectetur expanded')).toBeVisible();
+    await waitFor(async () => {
+      expect(screen.getByText('ipsum:lorem expanded')).toBeVisible();
+      expect(screen.getByText('amet:dolorsit expanded')).toBeVisible();
+      expect(screen.getByText('adipiscing:consectetur expanded')).toBeVisible();
+    });
   });
 
   it('toggles all to collapsed', async () => {
     const fullCollapsedKey = buildStorageKey('', COLLAPSED_STORAGE_KEY);
     window.localStorage.setItem(fullCollapsedKey, JSON.stringify(['ipsum:lorem']));
-    await act(async () => {
-      render(<Test />);
-    });
+    render(<Test />);
 
     const button = screen.getByRole('button', {name: 'collapse all'});
-    await act(async () => {
-      await userEvent.click(button);
-    });
+    userEvent.click(button);
 
     // Everything collapsed!
-    expect(screen.getByText('ipsum:lorem collapsed')).toBeVisible();
-    expect(screen.getByText('amet:dolorsit collapsed')).toBeVisible();
-    expect(screen.getByText('adipiscing:consectetur collapsed')).toBeVisible();
+    await waitFor(async () => {
+      expect(screen.getByText('ipsum:lorem collapsed')).toBeVisible();
+      expect(screen.getByText('amet:dolorsit collapsed')).toBeVisible();
+      expect(screen.getByText('adipiscing:consectetur collapsed')).toBeVisible();
+    });
   });
 });
