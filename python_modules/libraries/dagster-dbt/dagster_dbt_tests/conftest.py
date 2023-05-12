@@ -8,7 +8,7 @@ from dagster_dbt import DbtCliClientResource, dbt_cli_resource
 # ======= CONFIG ========
 DBT_EXECUTABLE = "dbt"
 TEST_PROJECT_DIR = file_relative_path(__file__, "dagster_dbt_test_project")
-DBT_CONFIG_DIR = os.path.join(TEST_PROJECT_DIR, "dbt_config")
+DBT_CONFIG_DIR = TEST_PROJECT_DIR
 TEST_DBT_TARGET_DIR = os.path.join(TEST_PROJECT_DIR, "target_test")
 
 TEST_PYTHON_PROJECT_DIR = file_relative_path(__file__, "dagster_dbt_python_test_project")
