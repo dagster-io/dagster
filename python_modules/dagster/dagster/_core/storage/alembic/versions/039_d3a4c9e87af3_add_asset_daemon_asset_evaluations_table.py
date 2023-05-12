@@ -1,4 +1,4 @@
-"""Add asset policy evaluations table
+"""Add asset daemon asset evaluations table
 
 Revision ID: d3a4c9e87af3
 Revises: 701913684cb4
@@ -20,9 +20,9 @@ depends_on = None
 
 
 def upgrade():
-    if not has_table("asset_daemon_evaluations"):
+    if not has_table("asset_daemon_asset_evaluations"):
         op.create_table(
-            "asset_daemon_evaluations",
+            "asset_daemon_asset_evaluations",
             db.Column(
                 "id",
                 db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
@@ -42,8 +42,8 @@ def upgrade():
             db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
         )
         op.create_index(
-            "idx_asset_daemon_evaluations_asset_key_evaluation_id",
-            "asset_daemon_evaluations",
+            "idx_asset_daemon_asset_evaluations_asset_key_evaluation_id",
+            "asset_daemon_asset_evaluations",
             ["asset_key", "evaluation_id"],
             mysql_length={"asset_key": 64},
             unique=True,
@@ -52,10 +52,12 @@ def upgrade():
 
 def downgrade():
     if has_index(
-        "asset_daemon_evaluations", "idx_asset_daemon_evaluations_asset_key_evaluation_id"
+        "asset_daemon_asset_evaluations",
+        "idx_asset_daemon_asset_evaluations_asset_key_evaluation_id",
     ):
         op.drop_index(
-            "idx_asset_daemon_evaluations_asset_key_evaluation_id", "asset_daemon_evaluations"
+            "idx_asset_daemon_asset_evaluations_asset_key_evaluation_id",
+            "asset_daemon_asset_evaluations",
         )
-    if has_table("asset_daemon_evaluations"):
-        op.drop_table("asset_daemon_evaluations")
+    if has_table("asset_daemon_asset_evaluations"):
+        op.drop_table("asset_daemon_asset_evaluations")
