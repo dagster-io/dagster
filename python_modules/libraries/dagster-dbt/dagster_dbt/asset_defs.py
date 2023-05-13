@@ -70,6 +70,7 @@ def _load_manifest_for_project(
     target_dir: str,
     select: str,
     exclude: str,
+    target: str,
 ) -> Tuple[Mapping[str, Any], DbtCliOutput]:
     # running "dbt ls" regenerates the manifest.json, which includes a superset of the actual
     # "dbt ls" output
@@ -82,6 +83,7 @@ def _load_manifest_for_project(
             "profiles-dir": profiles_dir,
             "select": select,
             "exclude": exclude,
+            "target": target,
             "output": "json",
         },
         warn_error=False,
@@ -423,6 +425,7 @@ def load_assets_from_dbt_project(
     target_dir: Optional[str] = None,
     select: Optional[str] = None,
     exclude: Optional[str] = None,
+    target: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     op_name: Optional[str] = None,
@@ -462,6 +465,9 @@ def load_assets_from_dbt_project(
             to include. Defaults to `"fqn:*"`.
         exclude (Optional[str]): A dbt selection string for the models in a project that you want
             to exclude. Defaults to "".
+        target (Optional[str]): A dbt selection string for the target environment. Must be a valid
+            option for the specified profile. Defaults to the default target for the specified
+            profile.
         key_prefix (Optional[Union[str, List[str]]]): A prefix to apply to all models in the dbt
             project. Does not apply to sources.
         dbt_resource_key (Optional[str]): The resource key that the dbt resource will be specified at. Defaults to "dbt".
@@ -515,9 +521,10 @@ def load_assets_from_dbt_project(
     target_dir = check.opt_str_param(target_dir, "target_dir", os.path.join(project_dir, "target"))
     select = check.opt_str_param(select, "select", "fqn:*")
     exclude = check.opt_str_param(exclude, "exclude", "")
+    target = check.opt_str_param(exclude, "target", "")
 
     manifest_json, cli_output = _load_manifest_for_project(
-        project_dir, profiles_dir, target_dir, select, exclude
+        project_dir, profiles_dir, target_dir, select, exclude, target
     )
     selected_unique_ids: Set[str] = set(
         filter(None, (line.get("unique_id") for line in cli_output.logs))
