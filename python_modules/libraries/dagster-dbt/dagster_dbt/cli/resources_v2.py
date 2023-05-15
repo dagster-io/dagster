@@ -3,13 +3,17 @@ import os
 import subprocess
 from dataclasses import dataclass
 from functools import cached_property
-from typing import Any, Dict, Iterator, List, Mapping, Sequence
+from typing import Any, Dict, Iterator, List, Mapping, Sequence, Union
 
 from dagster import (
     AssetKey,
+    AssetObservation,
     ConfigurableResource,
+    Output,
     get_dagster_logger,
 )
+from dbt.contracts.results import NodeStatus
+from dbt.node_types import NodeType
 from pydantic import Field
 
 from ..asset_utils import default_asset_key_fn, output_name_fn
@@ -89,6 +93,54 @@ class DbtCliEventV2:
 
     def __str__(self) -> str:
         return self.event["info"]["msg"]
+
+    def to_default_asset_events(
+        self, manifest: DbtManifest
+    ) -> Iterator[Union[Output, AssetObservation]]:
+        """Convert a dbt CLI event to a set of corresponding Dagster events.
+
+        Args:
+            manifest (DbtManifest): The dbt manifest wrapper.
+
+        Returns:
+            Iterator[Union[Output, AssetObservation]]: A set of corresponding Dagster events.
+                - AssetMaterializations for refables (e.g. models, seeds, snapshots.)
+                - AssetObservations for test results.
+        """
+        event_node_info: Dict[str, Any] = self.event["data"].get("node_info")
+        if not event_node_info:
+            return
+
+        unique_id: str = event_node_info["unique_id"]
+        node_resource_type: str = event_node_info["resource_type"]
+        node_status: str = event_node_info["node_status"]
+
+        is_node_successful = node_status == NodeStatus.Success
+        is_node_finished = bool(event_node_info.get("node_finished_at"))
+        if node_resource_type in NodeType.refable() and is_node_successful:
+            yield Output(
+                value=None,
+                output_name=output_name_fn(event_node_info),
+                metadata={
+                    "unique_id": unique_id,
+                },
+            )
+        elif node_resource_type == NodeType.Test and is_node_finished:
+            upstream_unique_ids: List[str] = manifest.raw_manifest["parent_map"][unique_id]
+
+            for upstream_unique_id in upstream_unique_ids:
+                upstream_node_info: Dict[str, Any] = manifest.raw_manifest["nodes"].get(
+                    upstream_unique_id
+                ) or manifest.raw_manifest["sources"].get(upstream_unique_id)
+                upstream_asset_key = manifest.node_info_to_asset_key(upstream_node_info)
+
+                yield AssetObservation(
+                    asset_key=upstream_asset_key,
+                    metadata={
+                        "unique_id": unique_id,
+                        "status": node_status,
+                    },
+                )
 
 
 class DbtCliTask:
