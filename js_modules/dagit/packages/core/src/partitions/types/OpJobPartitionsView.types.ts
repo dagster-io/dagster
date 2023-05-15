@@ -20,8 +20,8 @@ export type PartitionsStatusQuery = {
           | {__typename: 'PythonError'};
         partitionStatusesOrError:
           | {
-              __typename: 'PartitionStatuses';
-              results: Array<{
+              __typename: 'PartitionsDefinitionRunStatuses';
+              partitionStatuses: Array<{
                 __typename: 'PartitionStatus';
                 id: string;
                 partitionName: string;
@@ -54,8 +54,8 @@ export type OpJobPartitionSetFragment = {
     | {__typename: 'PythonError'};
   partitionStatusesOrError:
     | {
-        __typename: 'PartitionStatuses';
-        results: Array<{
+        __typename: 'PartitionsDefinitionRunStatuses';
+        partitionStatuses: Array<{
           __typename: 'PartitionStatus';
           id: string;
           partitionName: string;

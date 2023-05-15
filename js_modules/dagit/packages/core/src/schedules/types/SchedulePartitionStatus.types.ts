@@ -21,8 +21,8 @@ export type SchedulePartitionStatusQuery = {
           name: string;
           partitionStatusesOrError:
             | {
-                __typename: 'PartitionStatuses';
-                results: Array<{
+                __typename: 'PartitionsDefinitionRunStatuses';
+                partitionStatuses: Array<{
                   __typename: 'PartitionStatus';
                   id: string;
                   partitionName: string;
@@ -46,8 +46,8 @@ export type SchedulePartitionStatusFragment = {
     name: string;
     partitionStatusesOrError:
       | {
-          __typename: 'PartitionStatuses';
-          results: Array<{
+          __typename: 'PartitionsDefinitionRunStatuses';
+          partitionStatuses: Array<{
             __typename: 'PartitionStatus';
             id: string;
             partitionName: string;

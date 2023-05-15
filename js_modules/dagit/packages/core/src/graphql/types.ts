@@ -121,7 +121,7 @@ export type AssetBackfillRunStatus = {
 
 export type AssetBackfillRunStatuses = {
   __typename: 'AssetBackfillRunStatuses';
-  results: Array<AssetBackfillRunStatus>;
+  runStatuses: Array<AssetBackfillRunStatus>;
 };
 
 export type AssetBackfillStatus = AssetPartitionsStatusCounts | UnpartitionedAssetStatus;
@@ -329,6 +329,8 @@ export type BackfillNotFoundError = Error & {
   backfillId: Scalars['String'];
   message: Scalars['String'];
 };
+
+export type BackfillRunStatuses = AssetBackfillRunStatuses | PartitionsDefinitionRunStatuses;
 
 export type BoolMetadataEntry = MetadataEntry & {
   __typename: 'BoolMetadataEntry';
@@ -1479,8 +1481,6 @@ export type GraphSelector = {
   repositoryName: Scalars['String'];
 };
 
-export type GrapheneBackfillRunStatuses = AssetBackfillRunStatuses | PartitionStatuses;
-
 export type HandledOutputEvent = DisplayableEvent &
   MessageEvent &
   StepEvent & {
@@ -2319,7 +2319,7 @@ export type PartitionBackfill = {
   __typename: 'PartitionBackfill';
   assetBackfillData: Maybe<AssetBackfillData>;
   assetSelection: Maybe<Array<AssetKey>>;
-  backfillRunStatuses: GrapheneBackfillRunStatuses;
+  backfillRunStatuses: BackfillRunStatuses;
   endTimestamp: Maybe<Scalars['Float']>;
   error: Maybe<PythonError>;
   fromFailure: Scalars['Boolean'];
@@ -2475,12 +2475,7 @@ export type PartitionStatusCounts = {
   runStatus: RunStatus;
 };
 
-export type PartitionStatuses = {
-  __typename: 'PartitionStatuses';
-  results: Array<PartitionStatus>;
-};
-
-export type PartitionStatusesOrError = PartitionStatuses | PythonError;
+export type PartitionStatusesOrError = PartitionsDefinitionRunStatuses | PythonError;
 
 export type PartitionTags = {
   __typename: 'PartitionTags';
@@ -2492,6 +2487,11 @@ export type PartitionTagsOrError = PartitionTags | PythonError;
 export type Partitions = {
   __typename: 'Partitions';
   results: Array<Partition>;
+};
+
+export type PartitionsDefinitionRunStatuses = {
+  __typename: 'PartitionsDefinitionRunStatuses';
+  partitionStatuses: Array<PartitionStatus>;
 };
 
 export type PartitionsOrError = Partitions | PythonError;
@@ -4183,7 +4183,7 @@ export const buildAssetBackfillRunStatuses = (
   relationshipsToOmit.add('AssetBackfillRunStatuses');
   return {
     __typename: 'AssetBackfillRunStatuses',
-    results: overrides && overrides.hasOwnProperty('results') ? overrides.results! : [],
+    runStatuses: overrides && overrides.hasOwnProperty('runStatuses') ? overrides.runStatuses! : [],
   };
 };
 
@@ -8429,9 +8429,9 @@ export const buildPartitionSet = (
     partitionStatusesOrError:
       overrides && overrides.hasOwnProperty('partitionStatusesOrError')
         ? overrides.partitionStatusesOrError!
-        : relationshipsToOmit.has('PartitionStatuses')
-        ? ({} as PartitionStatuses)
-        : buildPartitionStatuses({}, relationshipsToOmit),
+        : relationshipsToOmit.has('PartitionsDefinitionRunStatuses')
+        ? ({} as PartitionsDefinitionRunStatuses)
+        : buildPartitionsDefinitionRunStatuses({}, relationshipsToOmit),
     partitionsOrError:
       overrides && overrides.hasOwnProperty('partitionsOrError')
         ? overrides.partitionsOrError!
@@ -8558,18 +8558,6 @@ export const buildPartitionStatusCounts = (
   };
 };
 
-export const buildPartitionStatuses = (
-  overrides?: Partial<PartitionStatuses>,
-  _relationshipsToOmit: Set<string> = new Set(),
-): {__typename: 'PartitionStatuses'} & PartitionStatuses => {
-  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
-  relationshipsToOmit.add('PartitionStatuses');
-  return {
-    __typename: 'PartitionStatuses',
-    results: overrides && overrides.hasOwnProperty('results') ? overrides.results! : [],
-  };
-};
-
 export const buildPartitionTags = (
   overrides?: Partial<PartitionTags>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -8591,6 +8579,21 @@ export const buildPartitions = (
   return {
     __typename: 'Partitions',
     results: overrides && overrides.hasOwnProperty('results') ? overrides.results! : [],
+  };
+};
+
+export const buildPartitionsDefinitionRunStatuses = (
+  overrides?: Partial<PartitionsDefinitionRunStatuses>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'PartitionsDefinitionRunStatuses'} & PartitionsDefinitionRunStatuses => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PartitionsDefinitionRunStatuses');
+  return {
+    __typename: 'PartitionsDefinitionRunStatuses',
+    partitionStatuses:
+      overrides && overrides.hasOwnProperty('partitionStatuses')
+        ? overrides.partitionStatuses!
+        : [],
   };
 };
 

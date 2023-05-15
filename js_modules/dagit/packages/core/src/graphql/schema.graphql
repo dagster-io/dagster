@@ -2430,7 +2430,7 @@ type PartitionBackfill {
   runs(limit: Int): [Run!]!
   unfinishedRuns(limit: Int): [Run!]!
   error: PythonError
-  backfillRunStatuses: GrapheneBackfillRunStatuses!
+  backfillRunStatuses: BackfillRunStatuses!
   partitionStatusCounts: [PartitionStatusCounts!]!
   isAssetBackfill: Boolean!
   assetBackfillData: AssetBackfillData
@@ -2446,10 +2446,10 @@ enum BulkActionStatus {
   CANCELED
 }
 
-union GrapheneBackfillRunStatuses = PartitionStatuses | AssetBackfillRunStatuses
+union BackfillRunStatuses = PartitionsDefinitionRunStatuses | AssetBackfillRunStatuses
 
 type AssetBackfillRunStatuses {
-  results: [AssetBackfillRunStatus!]!
+  runStatuses: [AssetBackfillRunStatus!]!
 }
 
 type AssetBackfillRunStatus {
@@ -2509,11 +2509,11 @@ type PartitionStatusCounts {
   count: Int!
 }
 
-type PartitionStatuses {
-  results: [PartitionStatus!]!
+type PartitionsDefinitionRunStatuses {
+  partitionStatuses: [PartitionStatus!]!
 }
 
-union PartitionStatusesOrError = PartitionStatuses | PythonError
+union PartitionStatusesOrError = PartitionsDefinitionRunStatuses | PythonError
 
 type PartitionTags {
   results: [PipelineTag!]!

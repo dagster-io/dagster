@@ -34,8 +34,7 @@ import {
 import {BackfillTableFragment} from './types/BackfillTable.types';
 
 export type BackfillRunStatus = {
-  jobBackfillRunPartitionName?: string;
-  assetBackfillRunPartitionName?: string;
+  partitionName: string | null;
   runStatus: RunStatus | null;
   runId: string | null;
 };
@@ -101,7 +100,10 @@ export const BackfillRow = ({
       return {counts, statuses: null};
     }
 
-    const statuses = data.partitionBackfillOrError.backfillRunStatuses.results;
+    const statuses =
+      data.partitionBackfillOrError.backfillRunStatuses.__typename === 'AssetBackfillRunStatuses'
+        ? data.partitionBackfillOrError.backfillRunStatuses.runStatuses
+        : data.partitionBackfillOrError.backfillRunStatuses.partitionStatuses;
     const counts = countBy(statuses, (k) => (k as BackfillRunStatus).runStatus);
     return {counts, statuses};
   }, [data]);
@@ -260,8 +262,8 @@ const BackfillRunStatus = ({
 }: {
   backfill: BackfillTableFragment;
   statuses:
-    | PartitionStatusesForBackfillFragment['results']
-    | AssetBackfillRunStatusesFragment['results']
+    | PartitionStatusesForBackfillFragment['partitionStatuses']
+    | AssetBackfillRunStatusesFragment['runStatuses']
     | null;
   counts: {[status: string]: number};
 }) => {
@@ -274,9 +276,8 @@ const BackfillRunStatus = ({
   const health: PartitionStatusHealthSourceOps = React.useMemo(
     () => ({
       runStatusForPartitionKey: (key: string) =>
-        (statuses as BackfillRunStatus[])?.filter(
-          (s) => s.jobBackfillRunPartitionName === key || s.assetBackfillRunPartitionName === key,
-        )[0]?.runStatus || RunStatus.NOT_STARTED,
+        (statuses as BackfillRunStatus[])?.filter((s) => s.partitionName === key)[0]?.runStatus ||
+        RunStatus.NOT_STARTED,
     }),
     [statuses],
   );
@@ -288,9 +289,7 @@ const BackfillRunStatus = ({
       splitPartitions
       onClick={(partitionName) => {
         const entry = (statuses as BackfillRunStatus[]).find(
-          (r) =>
-            r.jobBackfillRunPartitionName === partitionName ||
-            r.assetBackfillRunPartitionName === partitionName,
+          (r) => r.partitionName === partitionName,
         );
         if (entry?.runId) {
           history.push(`/runs/${entry.runId}`);
@@ -518,18 +517,18 @@ export const SINGLE_BACKFILL_STATUS_DETAILS_QUERY = gql`
     }
   }
 
-  fragment PartitionStatusesForBackfill on PartitionStatuses {
-    results {
+  fragment PartitionStatusesForBackfill on PartitionsDefinitionRunStatuses {
+    partitionStatuses {
       id
-      jobBackfillRunPartitionName: partitionName
+      partitionName
       runId
       runStatus
     }
   }
 
   fragment AssetBackfillRunStatuses on AssetBackfillRunStatuses {
-    results {
-      assetBackfillRunPartitionName: partitionName
+    runStatuses {
+      partitionName
       runId
       runStatus
     }

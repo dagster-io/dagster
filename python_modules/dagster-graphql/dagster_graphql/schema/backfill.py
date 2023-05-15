@@ -47,8 +47,8 @@ if TYPE_CHECKING:
 
     from ..schema.partition_sets import (
         GrapheneAssetBackfillRunStatuses,
+        GraphenePartitionsDefinitionRunStatuses,
         GraphenePartitionSet,
-        GraphenePartitionStatuses,
     )
     from .pipelines.pipeline import GrapheneRun
 
@@ -280,22 +280,45 @@ class GraphenePartitionBackfill(graphene.ObjectType):
 
     def resolve_backfillRunStatuses(
         self, graphene_info: ResolveInfo
-    ) -> Union["GrapheneAssetBackfillRunStatuses", "GraphenePartitionStatuses"]:
-        """For asset backfills, returns only statuses for runs that have been created."""
+    ) -> Union["GrapheneAssetBackfillRunStatuses", "GraphenePartitionsDefinitionRunStatuses"]:
+        """If the backfill targets a single partitions definition, returns back a PartitionStatus
+        object per partition containing the data from the latest run per partition. If a run
+        does not exist, returns a PartitionStatus object with no run data.
+
+        If the backfill is an asset backfill which targets multiple partitions definitions
+        (including unpartitioned assets), returns a RunStatus object for each existent run.
+        Does not dedupe by partition, since an asset backfill can contain multiple runs per
+        partition key i.e. a daily asset and a weekly asset both target the 2023-04-30 partition.
+        """
         runs_status_data = self._get_backfill_runs_status_data(graphene_info)
+        partition_names = self._backfill_job.get_partition_names(graphene_info.context)
 
         if self._backfill_job.is_asset_backfill:
-            return asset_backfill_run_statuses_from_runs_data(runs_status_data)
+            if partition_names is not None:
+                return partition_statuses_from_run_partition_data(
+                    partition_set_name=None,
+                    runs_status_data=runs_status_data,
+                    partition_names=partition_names,
+                    backfill_id=self._backfill_job.backfill_id,
+                )
+            else:
+                # Different partitions targeted in each asset
+                return asset_backfill_run_statuses_from_runs_data(runs_status_data)
         else:
+            if partition_names is None:
+                check.failed(
+                    "Partition names must exist to build partitions definition run statuses"
+                )
+
             partition_set_origin = self._backfill_job.partition_set_origin
             partition_set_name = (
                 partition_set_origin.partition_set_name if partition_set_origin else None
             )
             return partition_statuses_from_run_partition_data(
-                runs_status_data,
                 partition_set_name,
-                check.not_none(self._backfill_job.get_partition_names(graphene_info.context)),
-                backfill_id=self._backfill_job.backfill_id,
+                runs_status_data,
+                partition_names,
+                self._backfill_job.backfill_id,
             )
 
     def resolve_partitionStatusCounts(

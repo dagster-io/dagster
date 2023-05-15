@@ -9,7 +9,7 @@ import {
   buildPartitionSet,
   buildPartitionStatus,
   buildPartitionStatusCounts,
-  buildPartitionStatuses,
+  buildPartitionsDefinitionRunStatuses,
   buildPythonError,
   buildRepositoryOrigin,
 } from '../../graphql/types';
@@ -175,8 +175,8 @@ export const BackfillTableFragmentFailedErrorStatus: MockedResponse<SingleBackfi
       __typename: 'DagitQuery',
       partitionBackfillOrError: buildPartitionBackfill({
         id: 'sjqzcfhe',
-        backfillRunStatuses: buildPartitionStatuses({
-          results: BackfillTableFragmentFailedError.partitionNames!.map((n) =>
+        backfillRunStatuses: buildPartitionsDefinitionRunStatuses({
+          partitionStatuses: BackfillTableFragmentFailedError.partitionNames!.map((n) =>
             buildPartitionStatus({
               id: `__NO_PARTITION_SET__:${n}:ccpbwdbq`,
               partitionName: n,
@@ -248,7 +248,7 @@ export const BackfillTableFragmentCompletedAssetJobStatus: MockedResponse<Single
       partitionBackfillOrError: {
         id: 'pwgcpiwc',
         backfillRunStatuses: {
-          results: [
+          partitionStatuses: [
             {
               id: 'asset_job_partition_set:TN|2023-01-24:pwgcpiwc',
               partitionName: 'TN|2023-01-24',
@@ -327,7 +327,7 @@ export const BackfillTableFragmentCompletedAssetJobStatus: MockedResponse<Single
               __typename: 'PartitionStatus',
             },
           ],
-          __typename: 'PartitionStatuses',
+          __typename: 'PartitionsDefinitionRunStatuses',
         },
         __typename: 'PartitionBackfill',
       },
@@ -374,8 +374,8 @@ export const BackfillTableFragmentCompletedOpJobStatus: MockedResponse<SingleBac
       partitionBackfillOrError: buildPartitionBackfill({
         id: 'pqdiepuf',
         isAssetBackfill: true,
-        backfillRunStatuses: buildPartitionStatuses({
-          results: [
+        backfillRunStatuses: buildPartitionsDefinitionRunStatuses({
+          partitionStatuses: [
             buildPartitionStatus({
               id: 'op_job_partition_set:2022-07-01:pqdiepuf',
               partitionName: '2022-07-01',

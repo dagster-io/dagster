@@ -1155,7 +1155,7 @@ class TestRunStorage:
         assert first_root_run.run_id in run_groups
         assert second_root_run.run_id not in run_groups
 
-    def test_partition_status(self, storage: RunStorage):
+    def test_get_run_status_data(self, storage: RunStorage):
         one = TestRunStorage.build_run(
             run_id=make_new_run_id(),
             job_name="foo_job",
@@ -1196,15 +1196,32 @@ class TestRunStorage:
             },
         )
         storage.add_run(three)
+        four = TestRunStorage.build_run(
+            run_id=make_new_run_id(),
+            job_name="foo_job",
+            status=DagsterRunStatus.SUCCESS,
+            tags={
+                PARTITION_SET_TAG: "foo_set",
+            },
+        )
+        storage.add_run(four)
         partition_data = storage.get_runs_status_data(
             runs_filter=RunsFilter(
                 job_name="foo_job",
                 tags={PARTITION_SET_TAG: "foo_set"},
             )
         )
-        assert len(partition_data) == 3
-        assert {_.partition for _ in partition_data} == {"one", "two", "three"}
-        assert {_.run_id for _ in partition_data} == {one.run_id, two_retried.run_id, three.run_id}
+        assert len(partition_data) == 5
+
+        # assert that runs are ordered from most recent to least recent
+        assert [_.partition for _ in partition_data] == [None, "three", "two", "two", "one"]
+        assert [_.run_id for _ in partition_data] == [
+            four.run_id,
+            three.run_id,
+            two_retried.run_id,
+            two.run_id,
+            one.run_id,
+        ]
 
     def _skip_in_memory(self, storage):
         from dagster._core.storage.runs import InMemoryRunStorage

@@ -117,7 +117,7 @@ export const defaultMocks = {
     __typename: 'PartitionTags',
   }),
   PartitionStatusesOrError: () => ({
-    __typename: 'PartitionStatuses',
+    __typename: 'PartitionsDefinitionRunStatuses',
   }),
   RepositoryOrError: () => ({
     __typename: 'Repository',

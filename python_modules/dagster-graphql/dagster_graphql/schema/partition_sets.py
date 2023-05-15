@@ -92,7 +92,7 @@ class GrapheneAssetBackfillRunStatus(graphene.ObjectType):
 
 
 class GrapheneAssetBackfillRunStatuses(graphene.ObjectType):
-    results = non_null_list(GrapheneAssetBackfillRunStatus)
+    runStatuses = non_null_list(GrapheneAssetBackfillRunStatus)
 
     class Meta:
         name = "AssetBackfillRunStatuses"
@@ -126,22 +126,22 @@ class GraphenePartitionStatusCounts(graphene.ObjectType):
         name = "PartitionStatusCounts"
 
 
-class GraphenePartitionStatuses(graphene.ObjectType):
-    results = non_null_list(GraphenePartitionStatus)
+class GraphenePartitionsDefinitionRunStatuses(graphene.ObjectType):
+    partitionStatuses = non_null_list(GraphenePartitionStatus)
 
     class Meta:
-        name = "PartitionStatuses"
+        name = "PartitionsDefinitionRunStatuses"
 
 
 class GrapheneBackfillRunStatuses(graphene.Union):
     class Meta:
-        types = (GraphenePartitionStatuses, GrapheneAssetBackfillRunStatuses)
-        name = "GrapheneBackfillRunStatuses"
+        types = (GraphenePartitionsDefinitionRunStatuses, GrapheneAssetBackfillRunStatuses)
+        name = "BackfillRunStatuses"
 
 
 class GraphenePartitionStatusesOrError(graphene.Union):
     class Meta:
-        types = (GraphenePartitionStatuses, GraphenePythonError)
+        types = (GraphenePartitionsDefinitionRunStatuses, GraphenePythonError)
         name = "PartitionStatusesOrError"
 
 
@@ -519,7 +519,7 @@ types = [
     GraphenePartitionsOrError,
     GraphenePartitionStatus,
     GraphenePartitionStatusCounts,
-    GraphenePartitionStatuses,
+    GraphenePartitionsDefinitionRunStatuses,
     GraphenePartitionStatusesOrError,
     GraphenePartitionTags,
     GraphenePartitionTagsOrError,

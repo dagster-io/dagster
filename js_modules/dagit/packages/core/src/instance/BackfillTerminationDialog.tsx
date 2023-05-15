@@ -40,8 +40,11 @@ export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props
       return {};
     }
 
-    const unfinishedPartitions = (data.partitionBackfillOrError.backfillRunStatuses
-      .results as BackfillRunStatus[]).filter(
+    const unfinishedPartitions = (data.partitionBackfillOrError.backfillRunStatuses.__typename ===
+    'AssetBackfillRunStatuses'
+      ? (data.partitionBackfillOrError.backfillRunStatuses.runStatuses as BackfillRunStatus[])
+      : (data.partitionBackfillOrError.backfillRunStatuses.partitionStatuses as BackfillRunStatus[])
+    ).filter(
       (partition) =>
         partition.runStatus && partition.runId && cancelableStatuses.has(partition.runStatus),
     );

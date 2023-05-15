@@ -31,11 +31,11 @@ if TYPE_CHECKING:
         GraphenePartitionRun,
         GraphenePartitionRunConfig,
         GraphenePartitions,
+        GraphenePartitionsDefinitionRunStatuses,
         GraphenePartitionSet,
         GraphenePartitionSets,
         GraphenePartitionStatus,
         GraphenePartitionStatusCounts,
-        GraphenePartitionStatuses,
         GraphenePartitionTags,
     )
 
@@ -244,7 +244,7 @@ def get_partition_set_partition_statuses(
         raise DagsterUserCodeProcessError.from_error_info(names_result.error)
 
     return partition_statuses_from_run_partition_data(
-        run_partition_data, partition_set_name, names_result.partition_names
+        partition_set_name, run_partition_data, names_result.partition_names
     )
 
 
@@ -255,7 +255,7 @@ def asset_backfill_run_statuses_from_runs_data(runs_data: Sequence[RunStatusData
     )
 
     return GrapheneAssetBackfillRunStatuses(
-        results=[
+        runStatuses=[
             GrapheneAssetBackfillRunStatus(
                 partitionName=run_data.partition,
                 runId=run_data.run_id,
@@ -267,51 +267,53 @@ def asset_backfill_run_statuses_from_runs_data(runs_data: Sequence[RunStatusData
 
 
 def partition_statuses_from_run_partition_data(
+    partition_set_name: Optional[str],
     runs_status_data: Sequence[RunStatusData],
-    partition_set_name: Optional[str] = None,
-    partition_names: Optional[Sequence[str]] = None,
+    partition_names: Sequence[str],
     backfill_id: Optional[str] = None,
-) -> "GraphenePartitionStatuses":
-    from ..schema.partition_sets import GraphenePartitionStatus, GraphenePartitionStatuses
-
-    suffix = f":{backfill_id}" if backfill_id else ""
-    get_partition_id = (
-        lambda partition_name: f'{partition_set_name or "__NO_PARTITION_SET__"}:{partition_name}{suffix}'
+) -> "GraphenePartitionsDefinitionRunStatuses":
+    from ..schema.partition_sets import (
+        GraphenePartitionsDefinitionRunStatuses,
+        GraphenePartitionStatus,
     )
 
-    # Dedupe by partition key
+    # Dedupe to fetch the run status data for the most recent run per partition
     status_by_partition = {}
-    for partition_data in runs_status_data:
-        name = partition_data.partition
+    for run_status_data in runs_status_data:
+        name = run_status_data.partition
 
-        if not name or name not in partition_names or name in status_by_partition:
+        if not name or name in status_by_partition:
             continue
 
-        status_by_partition[name] = GraphenePartitionStatus(
-            id=get_partition_id(name),
-            partitionName=name,
-            runId=partition_data.run_id,
-            runStatus=partition_data.status.value,
-            runDuration=partition_data.end_time - partition_data.start_time
-            if partition_data.end_time and partition_data.start_time
-            else None,
+        status_by_partition[name] = run_status_data
+
+    suffix = f":{backfill_id}" if backfill_id else ""
+
+    results = []
+    for name in partition_names:
+        partition_id = f'{partition_set_name or "__NO_PARTITION_SET__"}:{name}{suffix}'
+        if not status_by_partition.get(name):
+            results.append(
+                GraphenePartitionStatus(
+                    id=partition_id,
+                    partitionName=name,
+                )
+            )
+            continue
+        partition_data = status_by_partition[name]
+        results.append(
+            GraphenePartitionStatus(
+                id=partition_id,
+                partitionName=name,
+                runId=partition_data.run_id,
+                runStatus=partition_data.status.value,
+                runDuration=partition_data.end_time - partition_data.start_time
+                if partition_data.end_time and partition_data.start_time
+                else None,
+            )
         )
 
-    if partition_names:
-        results = []
-        for name in partition_names:
-            if name not in status_by_partition:
-                results.append(
-                    GraphenePartitionStatus(
-                        id=get_partition_id(name),
-                        partitionName=name,
-                    )
-                )
-            else:
-                results.append(status_by_partition[name])
-        return GraphenePartitionStatuses(results=results)
-    else:
-        return GraphenePartitionStatuses(results=status_by_partition.values())
+    return GraphenePartitionsDefinitionRunStatuses(partitionStatuses=results)
 
 
 def partition_status_counts_from_run_partition_data(

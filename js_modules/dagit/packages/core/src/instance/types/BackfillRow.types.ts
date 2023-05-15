@@ -36,21 +36,21 @@ export type SingleBackfillQuery = {
         backfillRunStatuses:
           | {
               __typename: 'AssetBackfillRunStatuses';
-              results: Array<{
+              runStatuses: Array<{
                 __typename: 'AssetBackfillRunStatus';
+                partitionName: string | null;
                 runId: string | null;
                 runStatus: Types.RunStatus | null;
-                assetBackfillRunPartitionName: string | null;
               }>;
             }
           | {
-              __typename: 'PartitionStatuses';
-              results: Array<{
+              __typename: 'PartitionsDefinitionRunStatuses';
+              partitionStatuses: Array<{
                 __typename: 'PartitionStatus';
                 id: string;
+                partitionName: string;
                 runId: string | null;
                 runStatus: Types.RunStatus | null;
-                jobBackfillRunPartitionName: string;
               }>;
             };
       }
@@ -58,22 +58,22 @@ export type SingleBackfillQuery = {
 };
 
 export type PartitionStatusesForBackfillFragment = {
-  __typename: 'PartitionStatuses';
-  results: Array<{
+  __typename: 'PartitionsDefinitionRunStatuses';
+  partitionStatuses: Array<{
     __typename: 'PartitionStatus';
     id: string;
+    partitionName: string;
     runId: string | null;
     runStatus: Types.RunStatus | null;
-    jobBackfillRunPartitionName: string;
   }>;
 };
 
 export type AssetBackfillRunStatusesFragment = {
   __typename: 'AssetBackfillRunStatuses';
-  results: Array<{
+  runStatuses: Array<{
     __typename: 'AssetBackfillRunStatus';
+    partitionName: string | null;
     runId: string | null;
     runStatus: Types.RunStatus | null;
-    assetBackfillRunPartitionName: string | null;
   }>;
 };

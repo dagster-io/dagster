@@ -121,11 +121,14 @@ const RetrievedSchedulePartitionStatus: React.FC<{
 }> = ({schedule, partitionURL}) => {
   const {partitionSet} = schedule;
 
-  if (!partitionSet || partitionSet.partitionStatusesOrError.__typename !== 'PartitionStatuses') {
+  if (
+    !partitionSet ||
+    partitionSet.partitionStatusesOrError.__typename !== 'PartitionsDefinitionRunStatuses'
+  ) {
     return <span style={{color: Colors.Gray300}}>None</span>;
   }
 
-  const partitions = partitionSet.partitionStatusesOrError.results;
+  const partitions = partitionSet.partitionStatusesOrError.partitionStatuses;
   const partitionsByType = {};
   partitions.forEach((partition) => {
     const displayStatus = calculateDisplayStatus(partition);
@@ -183,8 +186,8 @@ const SCHEDULE_PARTITION_STATUS_QUERY = gql`
       id
       name
       partitionStatusesOrError {
-        ... on PartitionStatuses {
-          results {
+        ... on PartitionsDefinitionRunStatuses {
+          partitionStatuses {
             id
             ...SchedulePartitionStatusResult
           }

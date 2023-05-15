@@ -246,10 +246,13 @@ class AssetBackfillData(NamedTuple):
         return [_get_status_for_asset_key(asset_key) for asset_key in topological_order]
 
     def get_partition_names(self) -> Optional[Sequence[str]]:
-        """Only valid when the same number of partitions are targeted in every asset.
+        """Only valid when the same partitions are targeted in every asset.
 
         When not valid, returns None.
         """
+        if self.target_subset.non_partitioned_asset_keys:
+            return None
+
         subsets = self.target_subset.partitions_subsets_by_asset_key.values()
         if len(subsets) == 0:
             return []

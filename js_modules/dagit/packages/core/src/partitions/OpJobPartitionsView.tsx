@@ -148,8 +148,8 @@ const OpJobPartitionsViewContent: React.FC<{
     const runStatusData: {[name: string]: RunStatus} = {};
     const runDurationData: {[name: string]: number | undefined} = {};
 
-    (partitionSet.partitionStatusesOrError.__typename === 'PartitionStatuses'
-      ? partitionSet.partitionStatusesOrError.results
+    (partitionSet.partitionStatusesOrError.__typename === 'PartitionsDefinitionRunStatuses'
+      ? partitionSet.partitionStatusesOrError.partitionStatuses
       : []
     ).forEach((p) => {
       runStatusData[p.partitionName] = p.runStatus || RunStatus.NOT_STARTED;
@@ -363,8 +363,8 @@ const PARTITIONS_STATUS_QUERY = gql`
       }
     }
     partitionStatusesOrError {
-      ... on PartitionStatuses {
-        results {
+      ... on PartitionsDefinitionRunStatuses {
+        partitionStatuses {
           id
           ...OpJobPartitionStatus
         }
