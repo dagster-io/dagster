@@ -195,11 +195,12 @@ function VirtualRow({height, start, group}: RowProps) {
 
   const statuses = React.useMemo(() => {
     type assetType = typeof group['assets'][0];
+    type StatusesType = {asset: assetType; status: ReturnType<typeof buildAssetNodeStatusContent>};
     const statuses = {
-      successful: [] as assetType[],
-      failed: [] as assetType[],
-      inprogress: [] as assetType[],
-      missing: [] as assetType[],
+      successful: [] as StatusesType[],
+      failed: [] as StatusesType[],
+      inprogress: [] as StatusesType[],
+      missing: [] as StatusesType[],
       loading: false,
     };
     if (!Object.keys(liveDataByNode).length) {
@@ -223,37 +224,37 @@ function VirtualRow({height, start, group}: RowProps) {
           statuses.loading = true;
           break;
         case StatusCase.SOURCE_OBSERVING:
-          statuses.inprogress.push(asset);
+          statuses.inprogress.push({asset, status});
           break;
         case StatusCase.SOURCE_OBSERVED:
-          statuses.successful.push(asset);
+          statuses.successful.push({asset, status});
           break;
         case StatusCase.SOURCE_NEVER_OBSERVED:
-          statuses.missing.push(asset);
+          statuses.missing.push({asset, status});
           break;
         case StatusCase.SOURCE_NO_STATE:
-          statuses.missing.push(asset);
+          statuses.missing.push({asset, status});
           break;
         case StatusCase.MATERIALIZING:
-          statuses.inprogress.push(asset);
+          statuses.inprogress.push({asset, status});
           break;
         case StatusCase.LATE_OR_FAILED:
-          statuses.failed.push(asset);
+          statuses.failed.push({asset, status});
           break;
         case StatusCase.NEVER_MATERIALIZED:
-          statuses.missing.push(asset);
+          statuses.missing.push({asset, status});
           break;
         case StatusCase.MATERIALIZED:
-          statuses.successful.push(asset);
+          statuses.successful.push({asset, status});
           break;
         case StatusCase.PARTITIONS_FAILED:
-          statuses.failed.push(asset);
+          statuses.failed.push({asset, status});
           break;
         case StatusCase.PARTITIONS_MISSING:
-          statuses.missing.push(asset);
+          statuses.missing.push({asset, status});
           break;
         case StatusCase.PARTITIONS_MATERIALIZED:
-          statuses.successful.push(asset);
+          statuses.successful.push({asset, status});
           break;
       }
     });
@@ -288,7 +289,16 @@ function VirtualRow({height, start, group}: RowProps) {
         </Cell>
         <Cell isLoading={!!statuses.loading}>
           {statuses.missing.length ? (
-            <SelectOnHover assets={statuses.missing}>
+            <SelectOnHover
+              assets={statuses.missing}
+              getCount={({status}) => {
+                if (status.case === StatusCase.PARTITIONS_MISSING) {
+                  return status.numMissing || 0;
+                }
+                return 0;
+              }}
+              adjective="missing"
+            >
               <Tag intent="none">
                 <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
                   <div
@@ -309,7 +319,16 @@ function VirtualRow({height, start, group}: RowProps) {
         </Cell>
         <Cell isLoading={!!statuses.loading}>
           {statuses.failed.length ? (
-            <SelectOnHover assets={statuses.failed}>
+            <SelectOnHover
+              assets={statuses.failed}
+              getCount={({status}) => {
+                if (status.case === StatusCase.PARTITIONS_FAILED) {
+                  return status.numFailed || 0;
+                }
+                return 0;
+              }}
+              adjective="failed"
+            >
               <Tag intent="danger">
                 <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
                   <div
@@ -332,7 +351,16 @@ function VirtualRow({height, start, group}: RowProps) {
         </Cell>
         <Cell isLoading={!!statuses.loading}>
           {statuses.inprogress.length ? (
-            <SelectOnHover assets={statuses.inprogress}>
+            <SelectOnHover
+              assets={statuses.inprogress}
+              getCount={({status}) => {
+                if (status.case === StatusCase.MATERIALIZING) {
+                  return status.numMaterializing || 0;
+                }
+                return 0;
+              }}
+              adjective="materializing"
+            >
               <Tag intent="primary" icon="spinner">
                 {statuses.inprogress.length}
               </Tag>
@@ -343,7 +371,16 @@ function VirtualRow({height, start, group}: RowProps) {
         </Cell>
         <Cell isLoading={!!statuses.loading}>
           {statuses.successful.length ? (
-            <SelectOnHover assets={statuses.successful}>
+            <SelectOnHover
+              assets={statuses.successful}
+              getCount={({status}) => {
+                if (status.case === StatusCase.PARTITIONS_MATERIALIZED) {
+                  return status.numMaterialized || 0;
+                }
+                return 0;
+              }}
+              adjective="materialize"
+            >
               <Tag intent="success">
                 <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
                   <div
@@ -400,23 +437,57 @@ const RepositoryLinkWrapper = styled.div<{maxWidth?: number}>`
   }
 `;
 
-function SelectOnHover({assets, children}: {assets: Assets; children: React.ReactNode}) {
+type AssetWithStatusType = {
+  asset: Assets[0];
+  status: ReturnType<typeof buildAssetNodeStatusContent>;
+};
+function SelectOnHover({
+  assets,
+  children,
+  getCount,
+  adjective,
+}: {
+  assets: AssetWithStatusType[];
+  children: React.ReactNode;
+  getCount: (asset: AssetWithStatusType) => number;
+  adjective: string;
+}) {
   return (
     <SelectWrapper>
       <Select
         items={assets}
         itemPredicate={(query, item) =>
-          displayNameForAssetKey(item.key).toLocaleLowerCase().includes(query.toLocaleLowerCase())
+          displayNameForAssetKey(item.asset.key)
+            .toLocaleLowerCase()
+            .includes(query.toLocaleLowerCase())
         }
-        itemRenderer={(item) => (
-          <Link to={assetDetailsPathForKey(item.key)} target="_blank">
-            <MenuItem
-              key={displayNameForAssetKey(item.key)}
-              text={displayNameForAssetKey(item.key)}
-              icon="open_in_new"
-            />
-          </Link>
-        )}
+        itemRenderer={(item) => {
+          const count = getCount(item);
+          return (
+            <Link to={assetDetailsPathForKey(item.asset.key)} target="_blank">
+              <MenuItem
+                key={displayNameForAssetKey(item.asset.key)}
+                text={
+                  <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+                    <div style={{paddingLeft: '4px'}}>
+                      <Icon name="open_in_new" />
+                    </div>
+                    <div
+                      style={{overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis'}}
+                    >
+                      {displayNameForAssetKey(item.asset.key)}
+                    </div>
+                    {count && count > 0 ? (
+                      <div>
+                        ({count} partition{count === 1 ? '' : 's'} {adjective})
+                      </div>
+                    ) : null}
+                  </Box>
+                }
+              />
+            </Link>
+          );
+        }}
         onItemSelect={() => {}}
       >
         {children}

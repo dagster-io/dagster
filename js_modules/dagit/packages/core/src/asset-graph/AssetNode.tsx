@@ -263,6 +263,7 @@ export function buildAssetNodeStatusContent({
       case: StatusCase.MATERIALIZING,
       background: Colors.Blue50,
       border: Colors.Blue500,
+      numMaterializing,
       content: (
         <>
           <div style={{marginLeft: -1, marginRight: -1}}>
@@ -305,6 +306,10 @@ export function buildAssetNodeStatusContent({
       case: statusCase,
       background,
       border,
+      numPartitions,
+      numMissing,
+      numFailed,
+      numMaterialized,
       content: (
         <Link
           to={assetDetailsPathForKey(assetKey, {view: 'partitions'})}
