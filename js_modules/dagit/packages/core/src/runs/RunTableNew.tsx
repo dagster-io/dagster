@@ -33,7 +33,7 @@ import {AssetKeyTagCollection} from './AssetKeyTagCollection';
 import {RunActionsMenu, RunBulkActionsMenu} from './RunActionsMenu';
 import {RunCreatedByCell} from './RunCreatedByCell';
 import {RunStatusTagWithStats} from './RunStatusTag';
-import {DagsterTag, TagType} from './RunTag';
+import {DagsterTag} from './RunTag';
 import {RunTags} from './RunTags';
 import {
   assetKeysForRun,
