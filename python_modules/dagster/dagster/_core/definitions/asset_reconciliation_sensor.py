@@ -691,23 +691,34 @@ def determine_asset_partitions_to_auto_materialize(
 
         return True
 
-    def condition_for_candidate(
+    def conditions_for_candidate(
         candidate: AssetKeyPartitionKey,
-    ) -> Optional[AutoMaterializeCondition]:
+    ) -> AbstractSet[AutoMaterializeCondition]:
         auto_materialize_policy = get_implicit_auto_materialize_policy(
             asset_graph=asset_graph, asset_key=candidate.asset_key
         )
+        conditions = set()
         if auto_materialize_policy is None:
-            return None
+            return conditions
         elif auto_materialize_policy.on_missing and not instance_queryer.materialization_exists(
             asset_partition=candidate
         ):
-            return MissingAutoMaterializeCondition()
+            conditions.add(MissingAutoMaterializeCondition())
         elif auto_materialize_policy.on_new_parent_data and not instance_queryer.is_reconciled(
             asset_partition=candidate, asset_graph=asset_graph
         ):
-            return ParentMaterializedAutoMaterializeCondition()
-        return None
+            conditions.add(ParentMaterializedAutoMaterializeCondition())
+
+        # if there are any conditions that would cause us to materialize this candidate unit, we
+        # need to ensure they would not cause us to exceed the rate limit
+        if conditions:
+            if auto_materialize_policy.max_materializations_per_minute and materialization_counts_by_asset_key[candidate.asset_key] >= auto_materialize_policy.max_materializations_per_minute:
+                conditions.add(MaxMaterializationsExceededAutoMaterializeCondition())
+            else:
+                materialization_counts_by_asset_key[candidate.asset_key] += 1
+
+
+        return conditions
 
     def should_reconcile(
         asset_graph: AssetGraph,
@@ -726,42 +737,14 @@ def determine_asset_partitions_to_auto_materialize(
             return False
 
         if all(parents_will_be_reconciled(asset_graph, candidate) for candidate in candidates_unit):
-            unit_condition = next(
-                filter(
-                    None,
-                    (condition_for_candidate(candidate) for candidate in candidates_unit),
-                ),
-                None,
-            )
-            if unit_condition:
+            unit_conditions = set().union(*(conditions_for_candidate(candidate) for candidate in candidates_unit))
+            # all candidates in the unit share the same conditions
+            if unit_conditions:
                 for candidate in candidates_unit:
-                    conditions_by_asset_partition[candidate].add(unit_condition)
-                # if the condition indicates we're meant to materialize this candidate unit, we
-                # must first check if the rate limit has been exceeded
-                if unit_condition.decision_type == AutoMaterializeDecisionType.MATERIALIZE:
-                    # if any candidate in the unit exceeds its limit...
-                    max_materializations_exceeded = False
-                    for candidate in candidates_unit:
-                        materialization_counts_by_asset_key[candidate.asset_key] += 1
-                        auto_materialize_policy = get_implicit_auto_materialize_policy(
-                            asset_graph=asset_graph, asset_key=candidate.asset_key
-                        )
-                        if (
-                            auto_materialize_policy
-                            and auto_materialize_policy.max_materializations_per_minute
-                            and materialization_counts_by_asset_key[candidate.asset_key]
-                            > auto_materialize_policy.max_materializations_per_minute
-                        ):
-                            max_materializations_exceeded = True
-                            break
-                    # ... then all assets in the unit should have the limit exceeded condition
-                    if max_materializations_exceeded:
-                        for candidate in candidates_unit:
-                            conditions_by_asset_partition[candidate].add(
-                                MaxMaterializationsExceededAutoMaterializeCondition()
-                            )
-                        return False
-                    return True
+                    conditions_by_asset_partition[candidate].update(unit_conditions)
+                # all conditions be of type MATERIALIZE for an asset partition to be materialized
+                return all(condition.decision_type == AutoMaterializeDecisionType.MATERIALIZE for condition in unit_conditions)
+            return False
         else:
             for candidate in candidates_unit:
                 conditions_by_asset_partition[candidate].add(

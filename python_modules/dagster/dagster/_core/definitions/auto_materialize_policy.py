@@ -54,6 +54,17 @@ class AutoMaterializePolicy(
 
     Constructing an AutoMaterializePolicy directly is not recommended as the API is subject to change.
     AutoMaterializePolicy.eager() and AutoMaterializePolicy.lazy() are the recommended API.
+
+    Args:
+        on_missing (bool): Whether to materialize an asset / partition when it is missing.
+        on_new_parent_data (bool): Whether to materialize an asset / partition when any of its
+        parents have been updated more recently than it has.
+        for_freshness (bool): Whether to materialize an asset / partition when it, or any of its
+            downstream assets require more up-to-date data to satisfy their freshness policies.
+        time_window_partition_scope_minutes (Optional[float]): [DEPRECATED] The maximum age of
+            a time-window partition to consider materializing.
+        max_materializations_per_minute (Optional[int]): The maximum number of materializations
+            of this asset that may be auto-materialized per minute. If None, no limit is applied.
     """
 
     def __new__(
