@@ -1,5 +1,15 @@
 import {useQuery} from '@apollo/client';
-import {Box, Spinner, Colors, Icon, Tag, useViewport, Select, MenuItem} from '@dagster-io/ui';
+import {
+  Box,
+  Spinner,
+  Colors,
+  Icon,
+  Tag,
+  useViewport,
+  Select,
+  MenuItem,
+  Caption,
+} from '@dagster-io/ui';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -464,13 +474,13 @@ function SelectOnHover({
         itemRenderer={(item) => {
           const count = getCount(item);
           return (
-            <Link to={assetDetailsPathForKey(item.asset.key)} target="_blank">
+            <LinkWithNoUnderline to={assetDetailsPathForKey(item.asset.key)} target="_blank">
               <MenuItem
                 key={displayNameForAssetKey(item.asset.key)}
                 text={
                   <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
                     <div style={{paddingLeft: '4px'}}>
-                      <Icon name="open_in_new" />
+                      <Icon name="asset" />
                     </div>
                     <div
                       style={{overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis'}}
@@ -478,14 +488,14 @@ function SelectOnHover({
                       {displayNameForAssetKey(item.asset.key)}
                     </div>
                     {count && count > 0 ? (
-                      <div>
+                      <Caption style={{color: Colors.Gray700}}>
                         ({count} partition{count === 1 ? '' : 's'} {adjective})
-                      </div>
+                      </Caption>
                     ) : null}
                   </Box>
                 }
               />
-            </Link>
+            </LinkWithNoUnderline>
           );
         }}
         onItemSelect={() => {}}
@@ -500,5 +510,11 @@ const SelectWrapper = styled.div`
   cursor: pointer;
   &:hover {
     font-weight: 600;
+  }
+`;
+
+const LinkWithNoUnderline = styled(Link)`
+  &:hover {
+    text-decoration: none;
   }
 `;
