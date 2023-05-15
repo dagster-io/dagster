@@ -5,8 +5,10 @@ import {
   ButtonLink,
   Colors,
   CursorHistoryControls,
+  Heading,
   NonIdealState,
   Page,
+  PageHeader,
   tokenToString,
 } from '@dagster-io/ui';
 import partition from 'lodash/partition';
@@ -145,20 +147,19 @@ export const RunsRoot = () => {
 
   function actionBar() {
     return (
-      <Box
-        flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between', grow: 1}}
-      >
-        <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
-          {tabs}
-          {filtersSlot}
-        </Box>
-        <QueryRefreshCountdown refreshState={combinedRefreshState} />
+      <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+        {tabs}
+        {filtersSlot}
       </Box>
     );
   }
 
   return (
     <Page>
+      <PageHeader
+        title={<Heading>Runs</Heading>}
+        right={<QueryRefreshCountdown refreshState={combinedRefreshState} />}
+      />
       {filtersPortal}
       {currentTab === 'queued' && canSeeConfig ? (
         <Box

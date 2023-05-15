@@ -33,7 +33,7 @@ import {AssetKeyTagCollection} from './AssetKeyTagCollection';
 import {RunActionsMenu, RunBulkActionsMenu} from './RunActionsMenu';
 import {RunCreatedByCell} from './RunCreatedByCell';
 import {RunStatusTagWithStats} from './RunStatusTag';
-import {DagsterTag, TagType} from './RunTag';
+import {DagsterTag} from './RunTag';
 import {RunTags} from './RunTags';
 import {
   assetKeysForRun,
@@ -163,13 +163,20 @@ export const RunTable = (props: RunTableProps) => {
     <>
       <ActionBar
         top={
-          <>
+          <Box
+            flex={{
+              direction: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              grow: 1,
+            }}
+          >
             {actionBarComponents}
             <RunBulkActionsMenu
               selected={selectedFragments}
               clearSelection={() => onToggleAll(false)}
             />
-          </>
+          </Box>
         }
         bottom={belowActionBarComponents}
       />
@@ -259,6 +266,8 @@ const RunRow: React.FC<{
   const [showRunTags, setShowRunTags] = React.useState(false);
   const [isHovered, setIsHovered] = React.useState(false);
 
+  const partition = run.tags.find((tag) => tag.key === DagsterTag.Partition);
+
   return (
     <Row
       highlighted={!!isHighlighted}
@@ -336,24 +345,27 @@ const RunRow: React.FC<{
               </Box>
             ) : null}
             <RunTagsWrapper>
-              <RunTags
-                tags={
-                  [
-                    run.pipelineSnapshotId
-                      ? {
-                          key: DagsterTag.SnapshotID,
-                          value: run.pipelineSnapshotId?.slice(0, 8) || '',
-                          link: run.pipelineSnapshotId
-                            ? getPipelineSnapshotLink(run.pipelineName, run.pipelineSnapshotId)
-                            : undefined,
-                        }
-                      : null,
-                    run.tags.find((tag) => tag.key === DagsterTag.Partition),
-                  ].filter((x) => x) as TagType[]
-                }
-                mode={isJob ? (run.mode !== 'default' ? run.mode : null) : run.mode}
-                onAddTag={onAddTag}
-              />
+              {partition ? (
+                <RunTags
+                  tags={[partition]}
+                  mode={isJob ? (run.mode !== 'default' ? run.mode : null) : run.mode}
+                  onAddTag={onAddTag}
+                />
+              ) : null}
+              {run.pipelineSnapshotId ? (
+                <RunTags
+                  tags={[
+                    {
+                      key: DagsterTag.SnapshotID,
+                      value: run.pipelineSnapshotId?.slice(0, 8) || '',
+                      link: run.pipelineSnapshotId
+                        ? getPipelineSnapshotLink(run.pipelineName, run.pipelineSnapshotId)
+                        : undefined,
+                    },
+                  ]}
+                  mode={isJob ? (run.mode !== 'default' ? run.mode : null) : run.mode}
+                />
+              ) : null}
             </RunTagsWrapper>
           </Box>
         </Box>
@@ -372,7 +384,7 @@ const RunRow: React.FC<{
       </td>
       {hideCreatedBy ? null : (
         <td>
-          <RunCreatedByCell run={run} />
+          <RunCreatedByCell run={run} onAddTag={onAddTag} />
         </td>
       )}
       <td>
