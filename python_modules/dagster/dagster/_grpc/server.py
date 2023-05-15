@@ -901,27 +901,13 @@ def server_termination_target(termination_event, server):
 class DagsterGrpcServer:
     def __init__(
         self,
+        server_termination_event: threading.Event,
+        dagster_api_servicer: DagsterApiServicer,
         host="localhost",
-        port=None,
-        socket=None,
-        max_workers=None,
-        loadable_target_origin=None,
-        heartbeat=False,
-        heartbeat_timeout=30,
-        lazy_load_user_code=False,
-        fixed_server_id=None,
-        entry_point=None,
-        container_image=None,
-        container_context=None,
-        inject_env_vars_from_instance=False,
-        instance_ref=None,
-        location_name=None,
+        port: Optional[int] = None,
+        socket: Optional[str] = None,
+        max_workers: Optional[int] = None,
     ):
-        check.opt_str_param(host, "host")
-        check.opt_int_param(port, "port")
-        check.opt_str_param(socket, "socket")
-        check.opt_int_param(max_workers, "max_workers")
-        check.opt_inst_param(loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin)
         check.invariant(
             port is not None if seven.IS_WINDOWS else True,
             "You must pass a valid `port` on Windows: `socket` not supported.",
@@ -934,22 +920,6 @@ class DagsterGrpcServer:
             host is not None if port else True,
             "Must provide a host when serving on a port",
         )
-        check.bool_param(heartbeat, "heartbeat")
-        check.int_param(heartbeat_timeout, "heartbeat_timeout")
-        check.opt_str_param(fixed_server_id, "fixed_server_id")
-
-        check.invariant(heartbeat_timeout > 0, "heartbeat_timeout must be greater than 0")
-        check.invariant(
-            max_workers is None or max_workers > 1 if heartbeat else True,
-            (
-                "max_workers must be greater than 1 or set to None if heartbeat is True. "
-                "If set to None, the server will use the gRPC default."
-            ),
-        )
-
-        check.opt_bool_param(inject_env_vars_from_instance, "inject_env_vars_from_instance")
-        check.opt_inst_param(instance_ref, "instance_ref", InstanceRef)
-        check.opt_str_param(location_name, "location_name")
 
         self.server = grpc.server(
             ThreadPoolExecutor(
@@ -962,21 +932,8 @@ class DagsterGrpcServer:
                 ("grpc.max_receive_message_length", max_rx_bytes()),
             ],
         )
-        self._server_termination_event = threading.Event()
-        self._api_servicer = DagsterApiServer(
-            server_termination_event=self._server_termination_event,
-            loadable_target_origin=loadable_target_origin,
-            heartbeat=heartbeat,
-            heartbeat_timeout=heartbeat_timeout,
-            lazy_load_user_code=lazy_load_user_code,
-            fixed_server_id=fixed_server_id,
-            entry_point=entry_point,
-            container_image=container_image,
-            container_context=container_context,
-            inject_env_vars_from_instance=inject_env_vars_from_instance,
-            instance_ref=instance_ref,
-            location_name=location_name,
-        )
+        self._server_termination_event = server_termination_event
+        self._api_servicer = dagster_api_servicer
 
         # Create a health check servicer
         self._health_servicer = health.HealthServicer()
@@ -987,7 +944,7 @@ class DagsterGrpcServer:
         if port:
             server_address = host + ":" + str(port)
         else:
-            server_address = "unix:" + os.path.abspath(socket)
+            server_address = "unix:" + os.path.abspath(check.not_none(socket))
 
         # grpc.Server.add_insecure_port returns:
         # - 0 on failure
