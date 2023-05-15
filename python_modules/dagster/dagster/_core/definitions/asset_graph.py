@@ -671,6 +671,8 @@ class ToposortedPriorityQueue:
             if partitions_def is not None and isinstance(
                 partitions_def, TimeWindowPartitionsDefinition
             ):
+                # sort self dependencies from oldest to newest, as older partitions must exist before
+                # new ones can execute
                 partition_sort_key = _sort_key_for_time_window_partition(
                     cast(str, asset_partition.partition_key), partitions_def
                 )
@@ -680,7 +682,8 @@ class ToposortedPriorityQueue:
                     f" {asset_key} does not."
                 )
         elif isinstance(partitions_def, TimeWindowPartitionsDefinition):
-            # sort non-self dependencies from newest to oldest
+            # sort non-self dependencies from newest to oldest, as newer partitions are more relevant
+            # than older ones
             partition_sort_key = -1 * _sort_key_for_time_window_partition(
                 cast(str, asset_partition.partition_key), partitions_def
             )
