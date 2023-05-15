@@ -26,8 +26,8 @@ def test_get_concurrency(instance_runner):
     assert result.exit_code == 0
     assert "No concurrency limits set." in result.output
 
-    instance.event_log_storage.allocate_concurrency_slots("foo", 1)
-    instance.event_log_storage.allocate_concurrency_slots("bar", 1)
+    instance.event_log_storage.set_concurrency_slots("foo", 1)
+    instance.event_log_storage.set_concurrency_slots("bar", 1)
 
     result = runner.invoke(get_concurrency, ["foo"])
     assert result.exit_code == 0
@@ -42,7 +42,7 @@ def test_get_concurrency(instance_runner):
 
 def test_set_concurrency(instance_runner):
     instance, runner = instance_runner
-    assert instance.event_log_storage.get_concurrency_info("foo") == {}
+    assert instance.event_log_storage.get_concurrency_info("foo").slot_count == 0
     result = runner.invoke(set_concurrency, ["foo", "1"])
     assert result.exit_code == 0
     assert "Set concurrency limit for foo to 1" in result.output

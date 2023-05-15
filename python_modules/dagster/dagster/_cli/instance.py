@@ -3,6 +3,7 @@ import os
 import click
 
 import dagster._check as check
+from dagster._core.instance import DagsterInstance
 
 from .utils import get_instance_for_cli
 
@@ -84,10 +85,10 @@ def concurrency_cli():
     help="Get info on all instance op concurrency limits",
 )
 @click.argument("key", required=False)
-def get_concurrency(**kwargs):
+def get_concurrency(key, **kwargs):
     with DagsterInstance.get() as instance:
         if kwargs.get("all"):
-            keys = instance.event_log_storage.get_concurrency_limited_keys()
+            keys = instance.event_log_storage.get_concurrency_keys()
             if not keys:
                 click.echo(
                     "No concurrency limits set. Run `dagster instance concurrency set <key>"
@@ -97,8 +98,8 @@ def get_concurrency(**kwargs):
                 click.echo("Concurrency limits:")
                 for key in keys:
                     concurrency_print_key(instance, key)
-        elif kwargs.get("key"):
-            concurrency_print_key(instance, kwargs.get("key"))
+        elif key:
+            concurrency_print_key(instance, key)
         else:
             raise click.ClickException(
                 "Must either specify a key argument or the `--all` option. Run `dagster instance "
@@ -107,10 +108,8 @@ def get_concurrency(**kwargs):
 
 
 def concurrency_print_key(instance: DagsterInstance, key: str):
-    slots_by_run_id = instance.event_log_storage.get_concurrency_info(key)
-    total_count = sum(slots_by_run_id.values())
-    claimed_count = sum([count for key, count in slots_by_run_id.items() if key is not None])
-    click.echo(f'"{key}": {claimed_count} / {total_count} slots occupied')
+    key_info = instance.event_log_storage.get_concurrency_info(key)
+    click.echo(f'"{key}": {key_info.active_slot_count} / {key_info.slot_count} slots occupied')
 
 
 @concurrency_cli.command(name="set", help="Set op concurrency limits")
@@ -118,5 +117,5 @@ def concurrency_print_key(instance: DagsterInstance, key: str):
 @click.argument("limit", required=True, type=click.INT)
 def set_concurrency(key, limit):
     with DagsterInstance.get() as instance:
-        instance.event_log_storage.allocate_concurrency_slots(key, limit)
+        instance.event_log_storage.set_concurrency_slots(key, limit)
         click.echo(f"Set concurrency limit for {key} to {limit}.")
