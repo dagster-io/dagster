@@ -379,7 +379,7 @@ function VirtualRow({height, start, group}: RowProps) {
                 }
                 return 0;
               }}
-              adjective="materialize"
+              adjective="materialized"
             >
               <Tag intent="success">
                 <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
