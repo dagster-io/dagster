@@ -211,7 +211,10 @@ pluralize
 ### Rules of auto-materialization
 
 - Assets will not be auto-materialized if any of their ancestors are currently being auto-materialized.
+- Assets will not be auto-materialized if any of their ancestors have not yet incorporated the newest materialization of their upstream assets.
 - If the run to auto-materialize an asset fails, it can be retried if [run retries](/deployment/run-retries) are configured. Otherwise, Dagster won't try to auto-materialize that asset again until it would auto-materialize it if the failed run had succeeded. I.e., if an asset has a daily freshness policy, and it fails, Dagster won't auto-materialize it again until the next day.
+- By default, no more than one materialization of a given asset will be kicked off per mintue. Further materialization requests will be discarded, and will require manual backfilling to complete. This can be configured using the `max_materializations_per_minute` arugment to `AutoMaterializePolicy.eager()` and `AutoMaterializePolicy.lazy()`.
+
 
 ### Run tags
 

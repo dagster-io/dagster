@@ -55,16 +55,6 @@ class AutoMaterializePolicy(
     Constructing an AutoMaterializePolicy directly is not recommended as the API is subject to change.
     AutoMaterializePolicy.eager() and AutoMaterializePolicy.lazy() are the recommended API.
 
-    Args:
-        on_missing (bool): Whether to materialize an asset / partition when it is missing.
-        on_new_parent_data (bool): Whether to materialize an asset / partition when any of its
-        parents have been updated more recently than it has.
-        for_freshness (bool): Whether to materialize an asset / partition when it, or any of its
-            downstream assets require more up-to-date data to satisfy their freshness policies.
-        time_window_partition_scope_minutes (Optional[float]): [DEPRECATED] The maximum age of
-            a time-window partition to consider materializing.
-        max_materializations_per_minute (Optional[int]): The maximum number of materializations
-            of this asset that may be auto-materialized per minute. If None, no limit is applied.
     """
 
     def __new__(
@@ -97,24 +87,40 @@ class AutoMaterializePolicy(
 
     @public
     @staticmethod
-    def eager() -> "AutoMaterializePolicy":
+    def eager(max_materializations_per_minute: Optional[int] = 1) -> "AutoMaterializePolicy":
+        """Args:
+        max_materializations_per_minute (Optional[int]): The maximum number of auto-materializations
+            for this asset that may be initiated per minute. If this limit is exceeded, the partitions
+            which would have been materialized will be discarded, and will require manual
+            materialization in order to be updated. Defaults to 1.
+        """
         return AutoMaterializePolicy(
             on_missing=True,
             on_new_parent_data=True,
             for_freshness=True,
             time_window_partition_scope_minutes=datetime.timedelta.resolution.total_seconds() / 60,
-            max_materializations_per_minute=1,
+            max_materializations_per_minute=check.opt_int_param(
+                max_materializations_per_minute, "max_materializations_per_minute"
+            ),
         )
 
     @public
     @staticmethod
-    def lazy() -> "AutoMaterializePolicy":
+    def lazy(max_materializations_per_minute: Optional[int] = 1) -> "AutoMaterializePolicy":
+        """Args:
+        max_materializations_per_minute (Optional[int]): The maximum number of auto-materializations
+            for this asset that may be initiated per minute. If this limit is exceeded, the partitions
+            which would have been materialized will be discarded, and will require manual
+            materialization in order to be updated. Defaults to 1.
+        """
         return AutoMaterializePolicy(
             on_missing=True,
             on_new_parent_data=False,
             for_freshness=True,
             time_window_partition_scope_minutes=datetime.timedelta.resolution.total_seconds() / 60,
-            max_materializations_per_minute=1,
+            max_materializations_per_minute=check.opt_int_param(
+                max_materializations_per_minute, "max_materializations_per_minute"
+            ),
         )
 
     @property
