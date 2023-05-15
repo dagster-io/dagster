@@ -235,7 +235,7 @@ function VirtualRow({height, start, group}: RowProps) {
           statuses.missing.push(asset);
           break;
         case StatusCase.MATERIALIZING:
-          statuses.successful.push(asset);
+          statuses.inprogress.push(asset);
           break;
         case StatusCase.LATE_OR_FAILED:
           statuses.failed.push(asset);
