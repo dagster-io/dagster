@@ -4,6 +4,7 @@ from typing import NamedTuple, Union
 from dagster._serdes import whitelist_for_serdes
 
 
+@whitelist_for_serdes
 class AutoMaterializeDecisionType(Enum):
     """Represents the set of results of the auto-materialize logic.
 

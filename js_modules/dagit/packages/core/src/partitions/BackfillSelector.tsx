@@ -40,7 +40,7 @@ import {
   showBackfillErrorToast,
   showBackfillSuccessToast,
   UsingDefaultLauncherAlert,
-  USING_DEFAULT_LAUNCH_ERALERT_INSTANCE_FRAGMENT,
+  USING_DEFAULT_LAUNCHER_ALERT_INSTANCE_FRAGMENT,
 } from './BackfillMessaging';
 import {DimensionRangeWizard} from './DimensionRangeWizard';
 import {countsByState, PartitionRunStatusCheckboxes} from './PartitionRunStatusCheckboxes';
@@ -466,7 +466,7 @@ const BACKFILL_SELECTOR_QUERY = gql`
 
   ${GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT}
   ${DAEMON_NOT_RUNNING_ALERT_INSTANCE_FRAGMENT}
-  ${USING_DEFAULT_LAUNCH_ERALERT_INSTANCE_FRAGMENT}
+  ${USING_DEFAULT_LAUNCHER_ALERT_INSTANCE_FRAGMENT}
 `;
 
 const Section = ({

@@ -4,6 +4,7 @@ from typing import List, NamedTuple, Optional, Sequence, Union
 from typing_extensions import TypeAlias
 
 import dagster._check as check
+from dagster._core.definitions.asset_reconciliation_sensor import AutoMaterializeAssetEvaluation
 
 # re-export
 from dagster._core.definitions.run_request import (
@@ -588,3 +589,8 @@ def _validate_tick_args(
             status == TickStatus.SKIPPED,
             "Tick status was not SKIPPED but skip_reason was provided",
         )
+
+
+class AutoMaterializeAssetEvaluationRecord(NamedTuple):
+    evaluation: AutoMaterializeAssetEvaluation
+    evaluation_id: int

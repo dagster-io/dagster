@@ -116,20 +116,36 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
   onWheel(viewport: SVGViewport, event: WheelEvent) {
     const cursorPosition = viewport.getOffsetXY(event);
 
-    // convert wheel event units to a better scroll speed
-    const speed = 0.7;
+    // convert wheel event units to a better scroll speed. This is a bit subjective
+    // but the defaults feel a bit too fast.
+    const panSpeed = 0.7;
 
     if (!cursorPosition) {
       return;
     }
-    if (event.metaKey) {
-      const targetScale = viewport.state.scale * (1 - event.deltaY * 0.0025);
+
+    // On trackpads, the browser converts "pinch to zoom" into a vertical scroll with the ctrl
+    // key modifier set. In apps like Figma, the Cmd (meta) + scroll wheel zooms, and we want
+    // that behavior as well.
+    //
+    // We scale the raw event delta for these two cases differently so that one full-trackpad
+    // pinch-to-zoom will go from min to ~1.0 zoom, and so that the mouse wheel "ticks" are each
+    // a small step.
+    //
+    if (event.metaKey || event.ctrlKey) {
+      const zoomSpeed =
+        event.deltaMode === WheelEvent.DOM_DELTA_LINE
+          ? 0.05 // Firefox cmd+wheel, numbers are in lines and not px
+          : Math.abs(event.deltaY) > 30
+          ? 0.002 // Chrome, Edge, Safari cmd+wheel, numbers get very large
+          : 0.01; // trackpad;
+      const targetScale = viewport.state.scale * (1 - event.deltaY * zoomSpeed);
       const scale = Math.max(viewport.getMinZoom(), Math.min(viewport.getMaxZoom(), targetScale));
       viewport.adjustZoomRelativeToScreenPoint(scale, cursorPosition);
     } else if (event.shiftKey) {
-      viewport.shiftXY(event.deltaX * speed, event.deltaY * speed);
+      viewport.shiftXY(event.deltaX * panSpeed, event.deltaY * panSpeed);
     } else {
-      viewport.shiftXY(-event.deltaX * speed, -event.deltaY * speed);
+      viewport.shiftXY(-event.deltaX * panSpeed, -event.deltaY * panSpeed);
     }
   },
 

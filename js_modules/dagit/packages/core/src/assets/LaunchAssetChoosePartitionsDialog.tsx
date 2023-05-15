@@ -50,7 +50,7 @@ import {
   showBackfillErrorToast,
   showBackfillSuccessToast,
   UsingDefaultLauncherAlert,
-  USING_DEFAULT_LAUNCH_ERALERT_INSTANCE_FRAGMENT,
+  USING_DEFAULT_LAUNCHER_ALERT_INSTANCE_FRAGMENT,
 } from '../partitions/BackfillMessaging';
 import {DimensionRangeWizard} from '../partitions/DimensionRangeWizard';
 import {assembleIntoSpans, stringForSpan} from '../partitions/SpanRepresentation';
@@ -71,8 +71,8 @@ import {
 import {PartitionHealthSummary} from './PartitionHealthSummary';
 import {RunningBackfillsNotice} from './RunningBackfillsNotice';
 import {
-  LaunchAssetChoosePartitionsQuery,
-  LaunchAssetChoosePartitionsQueryVariables,
+  LaunchAssetWarningsQuery,
+  LaunchAssetWarningsQueryVariables,
 } from './types/LaunchAssetChoosePartitionsDialog.types';
 import {PartitionDefinitionForLaunchAssetFragment} from './types/LaunchAssetExecutionButton.types';
 import {usePartitionDimensionSelections} from './usePartitionDimensionSelections';
@@ -419,6 +419,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
     <>
       <div data-testid={testId('choose-partitions-dialog')}>
         <Warnings
+          displayedPartitionDefinition={displayedPartitionDefinition}
           launchAsBackfill={launchAsBackfill}
           upstreamAssetKeys={upstreamAssetKeys}
           selections={selections}
@@ -656,6 +657,7 @@ const UpstreamUnavailableWarning: React.FC<{
   upstreamAssetKeys: AssetKey[];
   selections: PartitionDimensionSelection[];
   setSelections: (next: PartitionDimensionSelection[]) => void;
+  displayedPartitionDefinition?: PartitionDefinitionForLaunchAssetFragment;
 }> = ({upstreamAssetKeys, selections, setSelections}) => {
   // We want to warn if an immediately upstream asset 1) has the same partitioning and
   // 2) is missing materializations for keys in `allSelected`. We only offer this feature
@@ -717,8 +719,22 @@ const UpstreamUnavailableWarning: React.FC<{
   );
 };
 
-export const LAUNCH_ASSET_CHOOSE_PARTITIONS_QUERY = gql`
-  query LaunchAssetChoosePartitionsQuery {
+export const LAUNCH_ASSET_WARNINGS_QUERY = gql`
+  query LaunchAssetWarningsQuery($upstreamAssetKeys: [AssetKeyInput!]!) {
+    assetNodes(assetKeys: $upstreamAssetKeys) {
+      id
+      assetKey {
+        path
+      }
+      partitionDefinition {
+        description
+        dimensionTypes {
+          __typename
+          name
+          dynamicPartitionsDefinitionName
+        }
+      }
+    }
     instance {
       id
       ...DaemonNotRunningAlertInstanceFragment
@@ -727,29 +743,45 @@ export const LAUNCH_ASSET_CHOOSE_PARTITIONS_QUERY = gql`
   }
 
   ${DAEMON_NOT_RUNNING_ALERT_INSTANCE_FRAGMENT}
-  ${USING_DEFAULT_LAUNCH_ERALERT_INSTANCE_FRAGMENT}
+  ${USING_DEFAULT_LAUNCHER_ALERT_INSTANCE_FRAGMENT}
 `;
 
-const Warnings = ({
-  launchAsBackfill,
-  upstreamAssetKeys,
-  selections,
-  setSelections,
-}: {
+const Warnings: React.FC<{
   launchAsBackfill: boolean;
   upstreamAssetKeys: AssetKey[];
   selections: PartitionDimensionSelection[];
   setSelections: (next: PartitionDimensionSelection[]) => void;
+  displayedPartitionDefinition?: PartitionDefinitionForLaunchAssetFragment | null;
+}> = ({
+  launchAsBackfill,
+  upstreamAssetKeys,
+  selections,
+  setSelections,
+  displayedPartitionDefinition,
 }) => {
-  const instanceResult = useQuery<
-    LaunchAssetChoosePartitionsQuery,
-    LaunchAssetChoosePartitionsQueryVariables
-  >(LAUNCH_ASSET_CHOOSE_PARTITIONS_QUERY);
-  const instance = instanceResult.data?.instance;
+  const warningsResult = useQuery<LaunchAssetWarningsQuery, LaunchAssetWarningsQueryVariables>(
+    LAUNCH_ASSET_WARNINGS_QUERY,
+    {variables: {upstreamAssetKeys}},
+  );
+
+  const instance = warningsResult.data?.instance;
+  const upstreamAssets = warningsResult.data?.assetNodes;
+  const upstreamAssetKeysSamePartitioning = React.useMemo(
+    () =>
+      (upstreamAssets || [])
+        .filter(
+          (a) =>
+            a.partitionDefinition &&
+            displayedPartitionDefinition &&
+            partitionDefinitionsEqual(a.partitionDefinition, displayedPartitionDefinition),
+        )
+        .map((a) => a.assetKey),
+    [upstreamAssets, displayedPartitionDefinition],
+  );
 
   const alerts = [
     UpstreamUnavailableWarning({
-      upstreamAssetKeys,
+      upstreamAssetKeys: upstreamAssetKeysSamePartitioning,
       selections,
       setSelections,
     }),
@@ -776,7 +808,7 @@ const Warnings = ({
             <Icon name="warning" color={Colors.Yellow700} />
             <Subheading>Warnings</Subheading>
           </Box>
-          <span>{alerts.length} warnings</span>{' '}
+          <span>{alerts.length > 1 ? `${alerts.length} warnings` : `1 warning`}</span>
         </Box>
       }
     >
