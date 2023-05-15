@@ -63,7 +63,7 @@ class AutoMaterializePolicy(
         on_new_parent_data: bool,
         for_freshness: bool,
         time_window_partition_scope_minutes: Optional[float],
-        max_materializations_per_minute: Optional[int],
+        max_materializations_per_minute: Optional[int] = 1,
     ):
         check.invariant(
             on_new_parent_data or for_freshness,

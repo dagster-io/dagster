@@ -444,17 +444,26 @@ def find_parent_materialized_asset_partitions(
 
     for asset_key in target_asset_keys_and_parents:
         if asset_graph.is_source(asset_key):
-            if asset_graph.is_observable(asset_key) and instance_queryer.new_version_exists(
-                observable_source_asset_key=asset_key, after_cursor=latest_storage_id
-            ):
-                for child in asset_graph.get_children_partitions(
-                    dynamic_partitions_store=instance_queryer,
-                    current_time=instance_queryer.evaluation_time,
-                    asset_key=asset_key,
-                    partition_key=None,
-                ):
-                    if child.asset_key in target_asset_keys:
-                        result_asset_partitions.add(child)
+            if asset_graph.is_observable(asset_key):
+                # for observable sources, find the storage id of the latest version record that differs
+                # from the previous version (if any)
+                new_version_storage_id = instance_queryer.new_version_storage_id(
+                    observable_source_asset_key=asset_key, after_cursor=latest_storage_id
+                )
+                if new_version_storage_id is not None:
+                    if (
+                        result_latest_storage_id is None
+                        or new_version_storage_id > result_latest_storage_id
+                    ):
+                        result_latest_storage_id = new_version_storage_id
+                    for child in asset_graph.get_children_partitions(
+                        dynamic_partitions_store=instance_queryer,
+                        current_time=instance_queryer.evaluation_time,
+                        asset_key=asset_key,
+                        partition_key=None,
+                    ):
+                        if child.asset_key in target_asset_keys:
+                            result_asset_partitions.add(child)
 
             continue
 
