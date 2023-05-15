@@ -21,6 +21,7 @@ import {useTrackPageView} from '../app/analytics';
 import {StatusCase, buildAssetNodeStatusContent} from '../asset-graph/AssetNode';
 import {displayNameForAssetKey, toGraphId} from '../asset-graph/Utils';
 import {useLiveDataForAssetKeys} from '../asset-graph/useLiveDataForAssetKeys';
+import {partitionCountString} from '../assets/AssetNodePartitionCounts';
 import {ASSET_CATALOG_TABLE_QUERY, AssetGroupSuggest} from '../assets/AssetsCatalogTable';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {
@@ -489,7 +490,7 @@ function SelectOnHover({
                     </div>
                     {count && count > 0 ? (
                       <Caption style={{color: Colors.Gray700}}>
-                        ({count} partition{count === 1 ? '' : 's'} {adjective})
+                        {partitionCountString(count)} {adjective}
                       </Caption>
                     ) : null}
                   </Box>
