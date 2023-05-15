@@ -91,10 +91,10 @@ class AutoMaterializePolicy(
         """Constructs an eager AutoMaterializePolicy.
 
         Args:
-        max_materializations_per_minute (Optional[int]): The maximum number of auto-materializations
-            for this asset that may be initiated per minute. If this limit is exceeded, the partitions
-            which would have been materialized will be discarded, and will require manual
-            materialization in order to be updated. Defaults to 1.
+            max_materializations_per_minute (Optional[int]): The maximum number of
+                auto-materializations for this asset that may be initiated per minute. If this limit
+                is exceeded, the partitions which would have been materialized will be discarded,
+                and will require manual materialization in order to be updated. Defaults to 1.
         """
         return AutoMaterializePolicy(
             on_missing=True,
@@ -112,10 +112,10 @@ class AutoMaterializePolicy(
         """Constructs a lazy AutoMaterializePolicy.
 
         Args:
-        max_materializations_per_minute (Optional[int]): The maximum number of auto-materializations
-            for this asset that may be initiated per minute. If this limit is exceeded, the partitions
-            which would have been materialized will be discarded, and will require manual
-            materialization in order to be updated. Defaults to 1.
+            max_materializations_per_minute (Optional[int]): The maximum number of
+                auto-materializations for this asset that may be initiated per minute. If this limit
+                is exceeded, the partitions which would have been materialized will be discarded,
+                and will require manual materialization in order to be updated. Defaults to 1.
         """
         return AutoMaterializePolicy(
             on_missing=True,
