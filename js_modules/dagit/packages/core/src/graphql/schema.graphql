@@ -2134,15 +2134,18 @@ type Instance {
   hasInfo: Boolean!
   hasCapturedLogManager: Boolean!
   autoMaterializePaused: Boolean!
-  concurrencyLimits: [ConcurrencyLimit!]!
+  concurrencyLimits: [ConcurrencyKeyInfo!]!
 }
 
-type ConcurrencyLimit {
-  id: String!
+type ConcurrencyKeyInfo {
   concurrencyKey: String!
-  limit: Int!
-  numActive: Int!
+  slotCount: Int!
+  activeSlotCount: Int!
   activeRunIds: [String!]!
+  pendingStepCount: Int!
+  pendingStepRunIds: [String!]!
+  assignedStepCount: Int!
+  assignedStepRunIds: [String!]!
 }
 
 type RunLauncher {
