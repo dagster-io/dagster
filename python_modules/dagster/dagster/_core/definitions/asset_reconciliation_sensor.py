@@ -938,7 +938,8 @@ def determine_asset_partitions_to_auto_materialize_for_freshness(
                 else current_time
             )
 
-            if key in target_asset_keys:
+            # currently, freshness logic has no effect on partitioned assets
+            if key in target_asset_keys and not asset_graph.is_partitioned(key):
                 # calculate the data times you would expect after all currently-executing runs
                 # were to successfully complete
                 in_progress_data_time = data_time_resolver.get_in_progress_data_time(

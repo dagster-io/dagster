@@ -18,7 +18,7 @@ from .asset_reconciliation_scenario import (
     run_request,
     single_asset_run,
 )
-from .freshness_policy_scenarios import overlapping_freshness_inf
+from .freshness_policy_scenarios import daily_to_unpartitioned, overlapping_freshness_inf
 from .partition_scenarios import (
     hourly_partitions_def,
     hourly_to_daily_partitions,
@@ -202,5 +202,14 @@ auto_materialize_policy_scenarios = {
             ("hourly", "2013-01-05-01:00"): {MissingAutoMaterializeCondition()},
             ("hourly", "2013-01-05-00:00"): {MissingAutoMaterializeCondition()},
         },
+    ),
+    "auto_materialize_policy_daily_to_unpartitioned_freshness": AssetReconciliationScenario(
+        assets=with_auto_materialize_policy(
+            daily_to_unpartitioned,
+            AutoMaterializePolicy.eager(),
+        ),
+        unevaluated_runs=[],
+        current_time=create_pendulum_time(year=2020, month=2, day=7, hour=4),
+        expected_run_requests=[run_request(asset_keys=["daily"], partition_key="2020-02-06")],
     ),
 }
