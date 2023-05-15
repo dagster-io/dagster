@@ -5,6 +5,10 @@ from dagster import (
     AssetsDefinition,
     PartitionKeyRange,
 )
+from dagster._core.definitions.auto_materialize_condition import (
+    MaxMaterializationsExceededAutoMaterializeCondition,
+    MissingAutoMaterializeCondition,
+)
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._seven.compat.pendulum import create_pendulum_time
 
@@ -91,6 +95,7 @@ auto_materialize_policy_scenarios = {
                 for_freshness=True,
                 on_new_parent_data=True,
                 time_window_partition_scope_minutes=24 * 2 * 60,
+                max_materializations_per_minute=None,
             ),
         ),
         unevaluated_runs=[],
@@ -110,6 +115,7 @@ auto_materialize_policy_scenarios = {
                 for_freshness=True,
                 on_new_parent_data=False,
                 time_window_partition_scope_minutes=24 * 2 * 60,
+                max_materializations_per_minute=None,
             ),
         ),
         unevaluated_runs=[],
@@ -132,6 +138,70 @@ auto_materialize_policy_scenarios = {
         ],
         # no need to rematerialize as this is a lazy policy
         expected_run_requests=[],
+    ),
+    "auto_materialize_policy_max_materializations_exceeded": AssetReconciliationScenario(
+        assets=with_auto_materialize_policy(
+            hourly_to_daily_partitions,
+            AutoMaterializePolicy(
+                on_missing=True,
+                on_new_parent_data=True,
+                for_freshness=False,
+                time_window_partition_scope_minutes=None,
+                max_materializations_per_minute=1,
+            ),
+        ),
+        unevaluated_runs=[],
+        current_time=create_pendulum_time(year=2013, month=1, day=5, hour=5),
+        expected_run_requests=[
+            run_request(["hourly"], partition_key="2013-01-05-04:00"),
+        ],
+        expected_conditions={
+            ("hourly", "2013-01-05-04:00"): {MissingAutoMaterializeCondition()},
+            ("hourly", "2013-01-05-03:00"): {
+                MissingAutoMaterializeCondition(),
+                MaxMaterializationsExceededAutoMaterializeCondition(),
+            },
+            ("hourly", "2013-01-05-02:00"): {
+                MissingAutoMaterializeCondition(),
+                MaxMaterializationsExceededAutoMaterializeCondition(),
+            },
+            ("hourly", "2013-01-05-01:00"): {
+                MissingAutoMaterializeCondition(),
+                MaxMaterializationsExceededAutoMaterializeCondition(),
+            },
+            ("hourly", "2013-01-05-00:00"): {
+                MissingAutoMaterializeCondition(),
+                MaxMaterializationsExceededAutoMaterializeCondition(),
+            },
+        },
+    ),
+    "auto_materialize_policy_max_materializations_not_exceeded": AssetReconciliationScenario(
+        assets=with_auto_materialize_policy(
+            hourly_to_daily_partitions,
+            AutoMaterializePolicy(
+                on_missing=True,
+                on_new_parent_data=True,
+                for_freshness=False,
+                time_window_partition_scope_minutes=None,
+                max_materializations_per_minute=5,
+            ),
+        ),
+        unevaluated_runs=[],
+        current_time=create_pendulum_time(year=2013, month=1, day=5, hour=5),
+        expected_run_requests=[
+            run_request(["hourly"], partition_key="2013-01-05-04:00"),
+            run_request(["hourly"], partition_key="2013-01-05-03:00"),
+            run_request(["hourly"], partition_key="2013-01-05-02:00"),
+            run_request(["hourly"], partition_key="2013-01-05-01:00"),
+            run_request(["hourly"], partition_key="2013-01-05-00:00"),
+        ],
+        expected_conditions={
+            ("hourly", "2013-01-05-04:00"): {MissingAutoMaterializeCondition()},
+            ("hourly", "2013-01-05-03:00"): {MissingAutoMaterializeCondition()},
+            ("hourly", "2013-01-05-02:00"): {MissingAutoMaterializeCondition()},
+            ("hourly", "2013-01-05-01:00"): {MissingAutoMaterializeCondition()},
+            ("hourly", "2013-01-05-00:00"): {MissingAutoMaterializeCondition()},
+        },
     ),
     "auto_materialize_policy_daily_to_unpartitioned_freshness": AssetReconciliationScenario(
         assets=with_auto_materialize_policy(

@@ -87,7 +87,7 @@ class AssetReconciliationScenario(NamedTuple):
     event_log_entries: Optional[Sequence[EventLogEntry]] = None
     expected_run_requests: Optional[Sequence[RunRequest]] = None
     code_locations: Optional[Mapping[str, Sequence[Union[SourceAsset, AssetsDefinition]]]] = None
-    expected_reasons: Optional[
+    expected_conditions: Optional[
         Mapping[
             Union[CoercibleToAssetKey, Tuple[CoercibleToAssetKey, str]],
             AbstractSet[AutoMaterializeCondition],

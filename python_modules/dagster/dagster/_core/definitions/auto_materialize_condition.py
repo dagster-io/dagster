@@ -61,10 +61,20 @@ class ParentOutdatedAutoMaterializeCondition(NamedTuple):
     decision_type: AutoMaterializeDecisionType = AutoMaterializeDecisionType.SKIP
 
 
+@whitelist_for_serdes
+class MaxMaterializationsExceededAutoMaterializeCondition(NamedTuple):
+    """Indicates that this asset should be discarded because materializing it would exceed the
+    maximum number of materializations per minute.
+    """
+
+    decision_type: AutoMaterializeDecisionType = AutoMaterializeDecisionType.DISCARD
+
+
 AutoMaterializeCondition = Union[
     FreshnessAutoMaterializeCondition,
     DownstreamFreshnessAutoMaterializeCondition,
     ParentMaterializedAutoMaterializeCondition,
     MissingAutoMaterializeCondition,
     ParentOutdatedAutoMaterializeCondition,
+    MaxMaterializationsExceededAutoMaterializeCondition,
 ]
