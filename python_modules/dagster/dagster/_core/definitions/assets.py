@@ -789,6 +789,8 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         auto_materialize_policy: Optional[
             Union[AutoMaterializePolicy, Mapping[AssetKey, AutoMaterializePolicy]]
         ] = None,
+        partition_defs=None,
+        can_subset=None,
     ) -> "AssetsDefinition":
         output_asset_key_replacements = check.opt_mapping_param(
             output_asset_key_replacements,
@@ -891,7 +893,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 for output_name, key in self._keys_by_output_name.items()
             },
             node_def=self.node_def,
-            partitions_def=self.partitions_def,
+            partitions_def=partition_defs or self.partitions_def,
             partition_mappings={
                 input_asset_key_replacements.get(key, key): partition_mapping
                 for key, partition_mapping in self._partition_mappings.items()
@@ -907,7 +909,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 }
                 for key, value in self.asset_deps.items()
             },
-            can_subset=self.can_subset,
+            can_subset=can_subset or self.can_subset,
             selected_asset_keys={
                 output_asset_key_replacements.get(key, key) for key in self._selected_asset_keys
             },
