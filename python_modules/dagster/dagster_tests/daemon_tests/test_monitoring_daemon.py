@@ -426,12 +426,17 @@ def test_global_concurrency_release(
     instance: DagsterInstance,
     logger: Logger,
 ):
-    instance.event_log_storage.allocate_concurrency_slots("foo", 1)
+    instance.event_log_storage.set_concurrency_slots("foo", 1)
     run = create_run_for_test(instance, job_name="my_job", status=DagsterRunStatus.STARTING)
     instance.event_log_storage.claim_concurrency_slot("foo", run.run_id, "my_step")
-    assert instance.event_log_storage.get_concurrency_info("foo") == {run.run_id: 1}
+    key_info = instance.event_log_storage.get_concurrency_info("foo")
+    assert key_info.slot_count == 1
+    assert key_info.active_slot_count == 1
     instance.report_run_canceled(run)
     run_record = instance.get_run_record_by_id(run.run_id)
     assert run_record is not None
     monitor_canceled_run(instance, run_record, logger)
-    assert instance.event_log_storage.get_concurrency_info("foo") == {None: 1}
+
+    key_info = instance.event_log_storage.get_concurrency_info("foo")
+    assert key_info.slot_count == 1
+    assert key_info.active_slot_count == 0
