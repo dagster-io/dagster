@@ -1,7 +1,7 @@
 from dagster import AssetKey, StaticPartitionsDefinition, asset
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_reconciliation_sensor import AutoMaterializeAssetEvaluation
-from dagster._core.definitions.auto_materialize_reason import (
+from dagster._core.definitions.auto_materialize_condition import (
     MissingAutoMaterializeCondition,
     ParentOutdatedAutoMaterializeCondition,
 )

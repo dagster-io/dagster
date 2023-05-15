@@ -5,7 +5,7 @@ from dagster import (
     DailyPartitionsDefinition,
     SourceAsset,
 )
-from dagster._core.definitions.asset_reconciliation_sensor import (
+from dagster._core.definitions.auto_materialize_condition import (
     DownstreamFreshnessAutoMaterializeCondition,
     FreshnessAutoMaterializeCondition,
 )
@@ -221,7 +221,7 @@ freshness_policy_scenarios = {
         evaluation_delta=datetime.timedelta(minutes=35),
         # now that it's been awhile since that run failed, give it another attempt
         expected_run_requests=[run_request(asset_keys=["asset1", "asset2", "asset3", "asset4"])],
-        expected_reasons={
+        expected_conditions={
             "asset1": {DownstreamFreshnessAutoMaterializeCondition()},
             "asset2": {DownstreamFreshnessAutoMaterializeCondition()},
             "asset3": {DownstreamFreshnessAutoMaterializeCondition()},
@@ -343,7 +343,7 @@ freshness_policy_scenarios = {
         unevaluated_runs=[run([f"asset{i}" for i in range(1, 6)])],
         evaluation_delta=datetime.timedelta(minutes=35),
         expected_run_requests=[run_request(asset_keys=["asset2", "asset5"])],
-        expected_reasons={
+        expected_conditions={
             "asset2": {DownstreamFreshnessAutoMaterializeCondition()},
             "asset5": {FreshnessAutoMaterializeCondition()},
         },

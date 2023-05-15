@@ -38,11 +38,12 @@ from dagster._utils.backcompat import deprecation_warning
 from dagster._utils.schedules import cron_string_iterator
 
 from .asset_selection import AssetGraph, AssetSelection
-from .auto_materialize_reason import (
+from .auto_materialize_condition import (
     AutoMaterializeCondition,
     AutoMaterializeDecisionType,
     DownstreamFreshnessAutoMaterializeCondition,
     FreshnessAutoMaterializeCondition,
+    MaxMaterializationsExceededAutoMaterializeCondition,
     MissingAutoMaterializeCondition,
     ParentMaterializedAutoMaterializeCondition,
     ParentOutdatedAutoMaterializeCondition,
@@ -144,6 +145,7 @@ def get_implicit_auto_materialize_policy(
             ),
             for_freshness=True,
             time_window_partition_scope_minutes=24 * 60,
+            max_materializations_per_minute=None,
         )
     return auto_materialize_policy
 
@@ -609,6 +611,7 @@ def determine_asset_partitions_to_auto_materialize(
     Mapping[AssetKey, AbstractSet[str]],
     Optional[int],
 ]:
+    materialization_counts_by_asset_key: Dict[AssetKey, int] = defaultdict(int)
     evaluation_time = instance_queryer.evaluation_time
 
     (
@@ -711,23 +714,37 @@ def determine_asset_partitions_to_auto_materialize(
 
         return True
 
-    def reason_for_candidate(
+    def conditions_for_candidate(
         candidate: AssetKeyPartitionKey,
-    ) -> Optional[AutoMaterializeCondition]:
+    ) -> AbstractSet[AutoMaterializeCondition]:
         auto_materialize_policy = get_implicit_auto_materialize_policy(
             asset_graph=asset_graph, asset_key=candidate.asset_key
         )
+        conditions = set()
         if auto_materialize_policy is None:
-            return None
+            return conditions
         elif auto_materialize_policy.on_missing and not instance_queryer.materialization_exists(
             asset_partition=candidate
         ):
-            return MissingAutoMaterializeCondition()
+            conditions.add(MissingAutoMaterializeCondition())
         elif auto_materialize_policy.on_new_parent_data and not instance_queryer.is_reconciled(
             asset_partition=candidate, asset_graph=asset_graph
         ):
-            return ParentMaterializedAutoMaterializeCondition()
-        return None
+            conditions.add(ParentMaterializedAutoMaterializeCondition())
+
+        # if there are any conditions that would cause us to materialize this candidate unit, we
+        # need to ensure they would not cause us to exceed the rate limit
+        if conditions:
+            if (
+                auto_materialize_policy.max_materializations_per_minute is not None
+                and materialization_counts_by_asset_key[candidate.asset_key]
+                >= auto_materialize_policy.max_materializations_per_minute
+            ):
+                conditions.add(MaxMaterializationsExceededAutoMaterializeCondition())
+            else:
+                materialization_counts_by_asset_key[candidate.asset_key] += 1
+
+        return conditions
 
     def should_reconcile(
         asset_graph: AssetGraph,
@@ -746,19 +763,19 @@ def determine_asset_partitions_to_auto_materialize(
             return False
 
         if all(parents_will_be_reconciled(asset_graph, candidate) for candidate in candidates_unit):
-            unit_materialize_reason = next(
-                filter(
-                    None,
-                    (reason_for_candidate(candidate) for candidate in candidates_unit),
-                ),
-                None,
+            unit_conditions = set().union(
+                *(conditions_for_candidate(candidate) for candidate in candidates_unit)
             )
-            if unit_materialize_reason:
+            # all candidates in the unit share the same conditions
+            if unit_conditions:
                 for candidate in candidates_unit:
-                    conditions_by_asset_partition[candidate].add(unit_materialize_reason)
-                return (
-                    unit_materialize_reason.decision_type == AutoMaterializeDecisionType.MATERIALIZE
+                    conditions_by_asset_partition[candidate].update(unit_conditions)
+                # all conditions be of type MATERIALIZE for an asset partition to be materialized
+                return all(
+                    condition.decision_type == AutoMaterializeDecisionType.MATERIALIZE
+                    for condition in unit_conditions
                 )
+            return False
         else:
             for candidate in candidates_unit:
                 conditions_by_asset_partition[candidate].add(
@@ -967,8 +984,8 @@ def determine_asset_partitions_to_auto_materialize_for_freshness(
                 and expected_data_time is not None
                 and expected_data_time >= execution_period.start
                 and all(
-                    r.decision_type == AutoMaterializeDecisionType.MATERIALIZE
-                    for r in execution_conditions
+                    condition.decision_type == AutoMaterializeDecisionType.MATERIALIZE
+                    for condition in execution_conditions
                 )
             ):
                 expected_data_time_by_key[key] = expected_data_time
