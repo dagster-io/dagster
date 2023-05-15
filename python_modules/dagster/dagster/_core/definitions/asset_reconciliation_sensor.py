@@ -712,11 +712,14 @@ def determine_asset_partitions_to_auto_materialize(
         # if there are any conditions that would cause us to materialize this candidate unit, we
         # need to ensure they would not cause us to exceed the rate limit
         if conditions:
-            if auto_materialize_policy.max_materializations_per_minute and materialization_counts_by_asset_key[candidate.asset_key] >= auto_materialize_policy.max_materializations_per_minute:
+            if (
+                auto_materialize_policy.max_materializations_per_minute
+                and materialization_counts_by_asset_key[candidate.asset_key]
+                >= auto_materialize_policy.max_materializations_per_minute
+            ):
                 conditions.add(MaxMaterializationsExceededAutoMaterializeCondition())
             else:
                 materialization_counts_by_asset_key[candidate.asset_key] += 1
-
 
         return conditions
 
@@ -737,13 +740,18 @@ def determine_asset_partitions_to_auto_materialize(
             return False
 
         if all(parents_will_be_reconciled(asset_graph, candidate) for candidate in candidates_unit):
-            unit_conditions = set().union(*(conditions_for_candidate(candidate) for candidate in candidates_unit))
+            unit_conditions = set().union(
+                *(conditions_for_candidate(candidate) for candidate in candidates_unit)
+            )
             # all candidates in the unit share the same conditions
             if unit_conditions:
                 for candidate in candidates_unit:
                     conditions_by_asset_partition[candidate].update(unit_conditions)
                 # all conditions be of type MATERIALIZE for an asset partition to be materialized
-                return all(condition.decision_type == AutoMaterializeDecisionType.MATERIALIZE for condition in unit_conditions)
+                return all(
+                    condition.decision_type == AutoMaterializeDecisionType.MATERIALIZE
+                    for condition in unit_conditions
+                )
             return False
         else:
             for candidate in candidates_unit:
