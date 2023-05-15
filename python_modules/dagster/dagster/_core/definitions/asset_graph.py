@@ -657,9 +657,7 @@ class ToposortedPriorityQueue:
             for required_asset_key in required_multi_asset_keys
         )
 
-        def _sort_key_for_time_window_partition(
-            partition_key: str, partitions_def: TimeWindowPartitionsDefinition
-        ) -> float:
+        def _sort_key_for_time_window_partition( partitions_def: TimeWindowPartitionsDefinition) -> float:
             # A sort key such that time window partitions are sorted from oldest to newest
             return pendulum.instance(
                 datetime.strptime(cast(str, asset_partition.partition_key), partitions_def.fmt),
@@ -673,9 +671,7 @@ class ToposortedPriorityQueue:
             ):
                 # sort self dependencies from oldest to newest, as older partitions must exist before
                 # new ones can execute
-                partition_sort_key = _sort_key_for_time_window_partition(
-                    cast(str, asset_partition.partition_key), partitions_def
-                )
+                partition_sort_key = _sort_key_for_time_window_partition( partitions_def)
             else:
                 check.failed(
                     "Assets with self-dependencies must have time-window partitions, but"
@@ -684,9 +680,7 @@ class ToposortedPriorityQueue:
         elif isinstance(partitions_def, TimeWindowPartitionsDefinition):
             # sort non-self dependencies from newest to oldest, as newer partitions are more relevant
             # than older ones
-            partition_sort_key = -1 * _sort_key_for_time_window_partition(
-                cast(str, asset_partition.partition_key), partitions_def
-            )
+            partition_sort_key = -1 * _sort_key_for_time_window_partition( partitions_def)
         else:
             partition_sort_key = None
 
