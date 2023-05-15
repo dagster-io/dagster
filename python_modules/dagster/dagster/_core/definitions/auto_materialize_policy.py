@@ -88,7 +88,9 @@ class AutoMaterializePolicy(
     @public
     @staticmethod
     def eager(max_materializations_per_minute: Optional[int] = 1) -> "AutoMaterializePolicy":
-        """Args:
+        """Constructs an eager AutoMaterializePolicy.
+
+        Args:
         max_materializations_per_minute (Optional[int]): The maximum number of auto-materializations
             for this asset that may be initiated per minute. If this limit is exceeded, the partitions
             which would have been materialized will be discarded, and will require manual
@@ -107,7 +109,9 @@ class AutoMaterializePolicy(
     @public
     @staticmethod
     def lazy(max_materializations_per_minute: Optional[int] = 1) -> "AutoMaterializePolicy":
-        """Args:
+        """Constructs a lazy AutoMaterializePolicy.
+
+        Args:
         max_materializations_per_minute (Optional[int]): The maximum number of auto-materializations
             for this asset that may be initiated per minute. If this limit is exceeded, the partitions
             which would have been materialized will be discarded, and will require manual
