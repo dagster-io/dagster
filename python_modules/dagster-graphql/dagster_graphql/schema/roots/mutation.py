@@ -724,7 +724,7 @@ class GrapheneSetConcurrencyLimitMutation(graphene.Mutation):
     @capture_error
     @check_permission(Permissions.EDIT_CONCURRENCY_LIMIT)
     def mutate(self, graphene_info, concurrencyKey: str, limit: int):
-        graphene_info.context.instance.event_log_storage.allocate_concurrency_slots(
+        graphene_info.context.instance.event_log_storage.set_concurrency_slots(
             concurrencyKey, limit
         )
         return True

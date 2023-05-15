@@ -18,9 +18,9 @@ query InstanceConcurrencyLimitsQuery {
     instance {
         concurrencyLimits {
             concurrencyKey
-            limit
+            slotCount
+            activeSlotCount
             activeRunIds
-            numActive
         }
     }
 }
@@ -81,24 +81,34 @@ class TestInstanceSettings(BaseTestSuite):
         # set a limit
         _set_limits("foo", 10)
         assert _fetch_limits("foo") == [
-            {"concurrencyKey": "foo", "limit": 10, "activeRunIds": [], "numActive": 0}
+            {"concurrencyKey": "foo", "slotCount": 10, "activeRunIds": [], "activeSlotCount": 0}
         ]
 
         # claim a slot
         run_id = "fake_run_id"
         instance.event_log_storage.claim_concurrency_slot("foo", run_id, "fake_step_key")
         assert _fetch_limits("foo") == [
-            {"concurrencyKey": "foo", "limit": 10, "activeRunIds": [run_id], "numActive": 1}
+            {
+                "concurrencyKey": "foo",
+                "slotCount": 10,
+                "activeRunIds": [run_id],
+                "activeSlotCount": 1,
+            }
         ]
 
         # set a new limit
         _set_limits("foo", 5)
         assert _fetch_limits("foo") == [
-            {"concurrencyKey": "foo", "limit": 5, "activeRunIds": [run_id], "numActive": 1}
+            {
+                "concurrencyKey": "foo",
+                "slotCount": 5,
+                "activeRunIds": [run_id],
+                "activeSlotCount": 1,
+            }
         ]
 
         # free a slot
-        instance.event_log_storage.free_concurrency_slots(run_id)
+        instance.event_log_storage.free_concurrency_slots_for_run(run_id)
         assert _fetch_limits("foo") == [
-            {"concurrencyKey": "foo", "limit": 5, "activeRunIds": [], "numActive": 0}
+            {"concurrencyKey": "foo", "slotCount": 5, "activeRunIds": [], "activeSlotCount": 0}
         ]

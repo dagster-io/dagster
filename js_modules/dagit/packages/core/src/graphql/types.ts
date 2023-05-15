@@ -463,13 +463,16 @@ export type ComputeLogs = {
   stepKey: Scalars['String'];
 };
 
-export type ConcurrencyLimit = {
-  __typename: 'ConcurrencyLimit';
+export type ConcurrencyKeyInfo = {
+  __typename: 'ConcurrencyKeyInfo';
   activeRunIds: Array<Scalars['String']>;
+  activeSlotCount: Scalars['Int'];
+  assignedStepCount: Scalars['Int'];
+  assignedStepRunIds: Array<Scalars['String']>;
   concurrencyKey: Scalars['String'];
-  id: Scalars['String'];
-  limit: Scalars['Int'];
-  numActive: Scalars['Int'];
+  pendingStepCount: Scalars['Int'];
+  pendingStepRunIds: Array<Scalars['String']>;
+  slotCount: Scalars['Int'];
 };
 
 export type ConfigType = {
@@ -1683,7 +1686,7 @@ export type InputTag = {
 export type Instance = {
   __typename: 'Instance';
   autoMaterializePaused: Scalars['Boolean'];
-  concurrencyLimits: Array<ConcurrencyLimit>;
+  concurrencyLimits: Array<ConcurrencyKeyInfo>;
   daemonHealth: DaemonHealth;
   executablePath: Scalars['String'];
   hasCapturedLogManager: Scalars['Boolean'];
@@ -4988,23 +4991,35 @@ export const buildComputeLogs = (
   };
 };
 
-export const buildConcurrencyLimit = (
-  overrides?: Partial<ConcurrencyLimit>,
+export const buildConcurrencyKeyInfo = (
+  overrides?: Partial<ConcurrencyKeyInfo>,
   _relationshipsToOmit: Set<string> = new Set(),
-): {__typename: 'ConcurrencyLimit'} & ConcurrencyLimit => {
+): {__typename: 'ConcurrencyKeyInfo'} & ConcurrencyKeyInfo => {
   const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
-  relationshipsToOmit.add('ConcurrencyLimit');
+  relationshipsToOmit.add('ConcurrencyKeyInfo');
   return {
-    __typename: 'ConcurrencyLimit',
+    __typename: 'ConcurrencyKeyInfo',
     activeRunIds:
       overrides && overrides.hasOwnProperty('activeRunIds') ? overrides.activeRunIds! : [],
+    activeSlotCount:
+      overrides && overrides.hasOwnProperty('activeSlotCount') ? overrides.activeSlotCount! : 1206,
+    assignedStepCount:
+      overrides && overrides.hasOwnProperty('assignedStepCount')
+        ? overrides.assignedStepCount!
+        : 3480,
+    assignedStepRunIds:
+      overrides && overrides.hasOwnProperty('assignedStepRunIds')
+        ? overrides.assignedStepRunIds!
+        : [],
     concurrencyKey:
-      overrides && overrides.hasOwnProperty('concurrencyKey')
-        ? overrides.concurrencyKey!
-        : 'dolorem',
-    id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : 'rem',
-    limit: overrides && overrides.hasOwnProperty('limit') ? overrides.limit! : 7538,
-    numActive: overrides && overrides.hasOwnProperty('numActive') ? overrides.numActive! : 8060,
+      overrides && overrides.hasOwnProperty('concurrencyKey') ? overrides.concurrencyKey! : 'quasi',
+    pendingStepCount:
+      overrides && overrides.hasOwnProperty('pendingStepCount') ? overrides.pendingStepCount! : 370,
+    pendingStepRunIds:
+      overrides && overrides.hasOwnProperty('pendingStepRunIds')
+        ? overrides.pendingStepRunIds!
+        : [],
+    slotCount: overrides && overrides.hasOwnProperty('slotCount') ? overrides.slotCount! : 455,
   };
 };
 
