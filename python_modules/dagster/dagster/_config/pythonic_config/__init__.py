@@ -880,7 +880,7 @@ class ConfigurableResourceFactory(
         Returns a new instance of the resource.
         """
         config_dict = config_dictionary_from_values(
-            context.resource_config, self._schema
+            context.resource_config or {}, self._schema
         )  # Converts any EnvVars to their proper config representation (this is not handled when passing EnvVar to a raw run config dictionary)
         # Perform post-processing step which also resolves any environment variables
         pydantic_values = translate_to_pydantic(self._schema.config_type, config_dict)
