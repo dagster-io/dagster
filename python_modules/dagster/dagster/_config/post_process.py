@@ -20,6 +20,7 @@ def post_process_config(config_type: ConfigType, config_value: Any) -> EvaluateV
     )
     return _recursively_process_config(ctx, config_value)
 
+
 def translate_to_pydantic(config_type: ConfigType, config_value: Any) -> EvaluateValueResult[Any]:
     """Converts a processed run config dictionary into values processable by a pydantic model. In practice, this means converting symbolic enums into their constituent values, and converting environment variables into their constituent values.
     """

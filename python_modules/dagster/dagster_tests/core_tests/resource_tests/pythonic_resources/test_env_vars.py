@@ -111,7 +111,8 @@ def test_runtime_config_env_var() -> None:
             defs.get_implicit_global_asset_job_def()
             .execute_in_process(
                 {"resources": {"writer": {"config": {"prefix": EnvVar("MY_PREFIX_FOR_TEST")}}}}
-            ).success
+            )
+            .success
         )
         assert out_txt == ["greeting: hello, world!"]
     finally:
@@ -229,6 +230,7 @@ def test_env_var_nested_config() -> None:
     ):
         assert defs.get_implicit_global_asset_job_def().execute_in_process().success
         assert executed["yes"]
+
 
 def test_env_var_alongside_enum() -> None:
     class MyEnum(enum.Enum):

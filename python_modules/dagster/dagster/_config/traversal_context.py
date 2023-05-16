@@ -154,7 +154,10 @@ class TraversalContext(ContextData):
 
     @property
     def do_post_process(self) -> bool:
-        return self.traversal_type == TraversalType.RESOLVE_DEFAULTS_AND_POSTPROCESS or self.traversal_type == TraversalType.TRANSLATE_TO_PYDANTIC
+        return (
+            self.traversal_type == TraversalType.RESOLVE_DEFAULTS_AND_POSTPROCESS
+            or self.traversal_type == TraversalType.TRANSLATE_TO_PYDANTIC
+        )
 
     def for_array(self, index: int) -> "TraversalContext":
         check.int_param(index, "index")

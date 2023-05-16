@@ -677,6 +677,7 @@ def test_nested_resources_runtime_config_complex():
     )
     assert completed["yes"]
 
+
 def test_enum_nested_resource_no_run_config() -> None:
     class MyEnum(enum.Enum):
         A = "a_value"
@@ -707,6 +708,7 @@ def test_enum_nested_resource_no_run_config() -> None:
     assert result.success
     assert result.output_for_node("asset_with_outer_resource") == "a_value"
 
+
 def test_enum_nested_resource_run_config_override():
     class MyEnum(enum.Enum):
         A = "a_value"
@@ -723,18 +725,28 @@ def test_enum_nested_resource_run_config_override():
         return outer_resource.resource_with_enum.my_enum.value
 
     resource_with_enum = ResourceWithEnum.configure_at_launch()
-    Definitions(
+    defs = Definitions(
         assets=[asset_with_outer_resource],
         resources={
             "resource_with_enum": resource_with_enum,
             "outer_resource": OuterResourceWithResourceWithEnum(
                 resource_with_enum=resource_with_enum
-            )
+            ),
         },
     )
 
+    a_job = defs.get_implicit_global_asset_job_def()
+
+    # Case: I'm re-specifying the nested enum at runtime - expect the runtime config to override the resource config
+    result = a_job.execute_in_process(
+        run_config={"resources": {"resource_with_enum": {"config": {"my_enum": "B"}}}}
+    )
+    assert result.success
+    assert result.output_for_node("asset_with_outer_resource") == "b_value"
+
+
 def test_basic_enum_override_with_resource_instance() -> None:
-    class MyEnum(Enum):
+    class MyEnum(enum.Enum):
         A = "a_value"
         B = "b_value"
 
@@ -772,22 +784,6 @@ def test_basic_enum_override_with_resource_instance() -> None:
     assert result_two.output_for_node("asset_with_resource") == "b_value"
     assert setup_executed["yes"]
 
-    a_job = defs.get_implicit_global_asset_job_def()
-
-    # Case: I'm re-specifying the nested enum at runtime - expect the runtime config to override the resource config
-    result = a_job.execute_in_process(
-        run_config={
-            "resources": {
-                "resource_with_enum": {
-                    "config": {
-                        "my_enum": "B"
-                    }
-                }
-            }
-        }
-    )
-    assert result.success
-    assert result.output_for_node("asset_with_outer_resource") == "b_value"
 
 def test_basic_enum_override_with_resource_configured_at_launch() -> None:
     class MyEnum(enum.Enum):
@@ -818,6 +814,7 @@ def test_basic_enum_override_with_resource_configured_at_launch() -> None:
 
     assert result_two.success
     assert result_two.output_for_node("asset_with_resource") == "b_value"
+
 
 def test_resources_which_return():
     class StringResource(ConfigurableResourceFactory[str]):

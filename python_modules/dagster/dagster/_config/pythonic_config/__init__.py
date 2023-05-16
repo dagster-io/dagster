@@ -879,7 +879,9 @@ class ConfigurableResourceFactory(
         """Takes the processed run config dictionary and translates it to be able to be passed to the constructor of the pydantic resource. This converts any enums from symbols to their actual values, and converts env vars encapsulated in the EnvVar symbol to the appropriate string representation.
         Returns a new instance of the resource.
         """
-        config_dict = config_dictionary_from_values(context.resource_config, self._schema) # Converts any EnvVars to their proper config representation (this is not handled when passing EnvVar to a raw run config dictionary)
+        config_dict = config_dictionary_from_values(
+            context.resource_config, self._schema
+        )  # Converts any EnvVars to their proper config representation (this is not handled when passing EnvVar to a raw run config dictionary)
         # Perform post-processing step which also resolves any environment variables
         pydantic_values = translate_to_pydantic(self._schema.config_type, config_dict)
         if not pydantic_values.success:
