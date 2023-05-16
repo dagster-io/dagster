@@ -1,4 +1,5 @@
 import time
+from collections import defaultdict
 from types import TracebackType
 from typing import (
     Any,
@@ -47,7 +48,7 @@ def _default_sort_key(step: ExecutionStep) -> float:
     return int(step.tags.get(PRIORITY_TAG, 0)) * -1
 
 
-BLOCKED_INTERVAL = 1
+CONCURRENCY_CLAIM_BLOCKED_INTERVAL = 1
 
 
 class ActiveExecution:
@@ -69,6 +70,7 @@ class ActiveExecution:
         )
         self._retry_mode = check.inst_param(retry_mode, "retry_mode", RetryMode)
         self._retry_state = self._plan.known_state.get_retry_state()
+        self._concurrency_context = None
 
         self._sort_key_fn: Callable[[ExecutionStep], float] = (
             check.opt_callable_param(
@@ -109,7 +111,6 @@ class ActiveExecution:
         self._pending_retry: List[str] = []
         self._pending_abandon: List[str] = []
         self._waiting_to_retry: Dict[str, float] = {}
-        self._waiting_to_claim: Dict[str, float] = {}
 
         # then are considered _in_flight when vended via get_steps_to_*
         self._in_flight: Set[str] = set()
@@ -137,6 +138,9 @@ class ActiveExecution:
 
     def __enter__(self) -> Self:
         self._context_guard = True
+        if self._run_id and self._instance.event_log_storage.supports_global_concurrency_limits:
+            self._concurrency_context = GlobalConcurrencyContext(self._instance, self._run_id)
+            self._concurrency_context.__enter__()
         return self
 
     def __exit__(
@@ -149,34 +153,15 @@ class ActiveExecution:
             return
 
         if not self.is_complete:
-            pending_action = (
-                self._executable + self._pending_abandon + self._pending_retry + self._pending_skip
-            )
-            state_str = "{pending_str}{in_flight_str}{action_str}{retry_str}{claim_str}".format(
-                in_flight_str=f"\nSteps still in flight: {self._in_flight}"
-                if self._in_flight
-                else "",
-                pending_str=f"\nSteps pending processing: {self._pending.keys()}"
-                if self._pending
-                else "",
-                action_str=f"\nSteps pending action: {pending_action}" if pending_action else "",
-                retry_str=f"\nSteps waiting to retry: {self._waiting_to_retry.keys()}"
-                if self._waiting_to_retry
-                else "",
-                claim_str=f"\nSteps waiting to claim: {self._waiting_to_claim.keys()}"
-                if self._waiting_to_claim
-                else "",
-            )
+            # generate the state string before exiting the concurrency context
+            state_str = self._pending_state_str()
+        else:
+            state_str = ""
 
-            if self._waiting_to_claim and self._run_id:
-                # we want to free all the pending steps that we've registered, but not necessarily
-                # all the claimed slots, since any step workers might still be running after this
-                # plan has exited
-                for step_key in self._waiting_to_claim.keys():
-                    self._instance.event_log_storage.free_concurrency_slot_for_step(
-                        self._run_id, step_key
-                    )
+        if self._concurrency_context:
+            self._concurrency_context.__exit__(exc_type, exc_value, traceback)
 
+        if not self.is_complete:
             if self._interrupted:
                 raise DagsterExecutionInterruptedError(
                     f"Execution was interrupted before completing the execution plan. {state_str}"
@@ -200,6 +185,25 @@ class ActiveExecution:
                     " process.\nThis was likely caused by losing communication with the process"
                     " performing step execution.".format(step_list=self._unknown_state)
                 )
+
+    def _pending_state_str(self) -> str:
+        assert not self.is_complete
+        pending_action = (
+            self._executable + self._pending_abandon + self._pending_retry + self._pending_skip
+        )
+        return "{pending_str}{in_flight_str}{action_str}{retry_str}{claim_str}".format(
+            in_flight_str=f"\nSteps still in flight: {self._in_flight}" if self._in_flight else "",
+            pending_str=f"\nSteps pending processing: {self._pending.keys()}"
+            if self._pending
+            else "",
+            action_str=f"\nSteps pending action: {pending_action}" if pending_action else "",
+            retry_str=f"\nSteps waiting to retry: {self._waiting_to_retry.keys()}"
+            if self._waiting_to_retry
+            else "",
+            claim_str=f"\nSteps waiting to claim: {self._concurrency_context.pending_claim_steps()}"
+            if self._concurrency_context and self._concurrency_context.has_pending_claims()
+            else "",
+        )
 
     def _update(self) -> None:
         """Moves steps from _pending to _executable / _pending_skip / _pending_retry
@@ -277,38 +281,33 @@ class ActiveExecution:
             self._executable.append(key)
             del self._waiting_to_retry[key]
 
-        ready_to_claim = []
-        for key in self._waiting_to_claim.keys():
-            if tick_time >= self._waiting_to_claim[key]:
-                ready_to_claim.append(key)
-
-        for key in ready_to_claim:
-            del self._waiting_to_claim[key]
-
     def sleep_til_ready(self) -> None:
         now = time.time()
-        ready_at_times = []
+        intervals = []
         if self._waiting_to_retry:
-            ready_at_times.extend(self._waiting_to_retry.values())
-        if self._waiting_to_claim:
-            ready_at_times.extend(self._waiting_to_claim.values())
-        sleep_amt = min([ready_at - now for ready_at in ready_at_times])
-        if sleep_amt > 0:
-            time.sleep(sleep_amt)
+            for t in self._waiting_to_retry.values():
+                intervals.append(t - now)
+        if self._concurrency_context and self._concurrency_context.has_pending_claims():
+            intervals.append(self._concurrency_context.interval_to_next_pending_claim_check())
+        if intervals:
+            sleep_amt = min(intervals)
+            if sleep_amt > 0:
+                time.sleep(sleep_amt)
 
-    def get_next_step(self, register_steps: bool = False) -> Optional[ExecutionStep]:
+    def get_next_step(self) -> Optional[ExecutionStep]:
         check.invariant(not self.is_complete, "Can not call get_next_step when is_complete is True")
 
-        steps = self.get_steps_to_execute(limit=1, register_steps=register_steps)
+        steps = self.get_steps_to_execute(limit=1)
         step = None
 
         if steps:
             step = steps[0]
-        elif self._waiting_to_retry or self._waiting_to_claim:
+        elif self._waiting_to_retry or (
+            self._concurrency_context and self._concurrency_context.has_pending_claims()
+        ):
             self.sleep_til_ready()
-            step = self.get_next_step(register_steps)
+            step = self.get_next_step()
 
-        check.invariant(step is not None or register_steps, "Unexpected ActiveExecution state")
         return step
 
     def get_step_by_key(self, step_key: str) -> ExecutionStep:
@@ -318,7 +317,6 @@ class ActiveExecution:
     def get_steps_to_execute(
         self,
         limit: Optional[int] = None,
-        register_steps: bool = False,
     ) -> Sequence[ExecutionStep]:
         check.invariant(
             self._context_guard,
@@ -361,22 +359,13 @@ class ActiveExecution:
                 run_scoped_concurrency_limits_counter.update_counters_with_launched_item(step)
 
             step_concurrency_key = step.tags.get(GLOBAL_CONCURRENCY_TAG)
-            try:
-                priority = int(step.tags.get(PRIORITY_TAG, 0))
-            except ValueError:
-                priority = 0
-            if (
-                register_steps
-                and step_concurrency_key
-                and step_concurrency_key in self._global_concurrency_keys
-                and self._run_id
-                and self._waiting_to_claim.get(step.key) is None
-            ):
-                claim_status = self._instance.event_log_storage.claim_concurrency_slot(
-                    step_concurrency_key, self._run_id, step.key, priority
-                )
-                if not claim_status.is_claimed:
-                    self._waiting_to_claim[step.key] = time.time() + BLOCKED_INTERVAL
+            if step_concurrency_key and self._concurrency_context:
+                try:
+                    priority = int(step.tags.get(PRIORITY_TAG, 0))
+                except ValueError:
+                    priority = 0
+
+                if not self._concurrency_context.claim(step_concurrency_key, step.key, priority):
                     continue
 
             batch.append(step)
@@ -593,7 +582,9 @@ class ActiveExecution:
             and len(self._pending_retry) == 0
             and len(self._pending_abandon) == 0
             and len(self._waiting_to_retry) == 0
-            and len(self._waiting_to_claim) == 0
+            and (
+                not self._concurrency_context or not self._concurrency_context.has_pending_claims()
+            )
         )
 
     @property
@@ -651,3 +642,61 @@ class ActiveExecution:
             self.get_steps_to_execute()
 
         return [self.get_step_by_key(step_key) for step_key in self._in_flight]
+
+
+class GlobalConcurrencyContext:
+    def __init__(self, instance: DagsterInstance, run_id: str):
+        self._instance = instance
+        self._run_id = run_id
+        self._global_concurrency_keys = instance.event_log_storage.get_concurrency_keys()
+        self._pending_claims = defaultdict(float)
+
+    def __enter__(self) -> Self:
+        self._context_guard = True
+        return self
+
+    def __exit__(
+        self, exc_type: Type[Exception], exc_value: Exception, traceback: TracebackType
+    ) -> None:
+        to_clear = []
+        for step_key in self._pending_claims.keys():
+            self._instance.event_log_storage.free_concurrency_slot_for_step(self._run_id, step_key)
+            to_clear.append(step_key)
+
+        for step_key in to_clear:
+            del self._pending_claims[step_key]
+
+        self._context_guard = False
+
+    def claim(self, concurrency_key: str, step_key: str, priority: int):
+        if concurrency_key not in self._global_concurrency_keys:
+            return True
+
+        if step_key in self._pending_claims:
+            if time.time() < self._pending_claims[step_key]:
+                del self._pending_claims[step_key]
+            else:
+                return False
+
+        claim_status = self._instance.event_log_storage.claim_concurrency_slot(
+            concurrency_key, self._run_id, step_key, priority
+        )
+
+        if not claim_status.is_claimed:
+            self._pending_claims[step_key] = time.time() + CONCURRENCY_CLAIM_BLOCKED_INTERVAL
+            return False
+
+        return True
+
+    def interval_to_next_pending_claim_check(self) -> float:
+        if not self._pending_claims:
+            return 0.0
+
+        now = time.time()
+        return min([ready_at - now for ready_at in self._pending_claims.values()])
+
+    def pending_claim_steps(self) -> List[str]:
+        return list(self._pending_claims.keys())
+
+    def has_pending_claims(self) -> bool:
+        return len(self._pending_claims) > 0

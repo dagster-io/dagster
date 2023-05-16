@@ -31,7 +31,6 @@ from dagster._utils.error import SerializableErrorInfo, serializable_error_info_
 def inner_plan_execution_iterator(
     job_context: PlanExecutionContext,
     execution_plan: ExecutionPlan,
-    register_steps: bool = False,
 ) -> Iterator[DagsterEvent]:
     check.inst_param(job_context, "pipeline_context", PlanExecutionContext)
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
@@ -57,7 +56,7 @@ def inner_plan_execution_iterator(
             # garbage collect results that are no longer needed by any steps
             # https://github.com/dagster-io/dagster/issues/811
             while not active_execution.is_complete:
-                step = active_execution.get_next_step(register_steps=register_steps)
+                step = active_execution.get_next_step()
 
                 if not step:
                     active_execution.sleep_til_ready()
