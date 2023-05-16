@@ -34,11 +34,11 @@ export const EmptyDAGNotice: React.FC<{isGraph: boolean; nodeType: 'asset' | 'op
     <CenteredContainer>
       <NonIdealState
         icon="no-results"
-        title={isGraph ? 'Empty graph' : 'Empty pipeline'}
+        title={isGraph ? 'Empty graph' : 'Empty job'}
         description={
           <div>
-            This {isGraph ? 'graph' : 'pipeline'} is empty. {capitalize(nodeType)}s will appear here
-            when they are added to your definitions.
+            This {isGraph ? 'graph' : 'job'} is empty. {capitalize(nodeType)}s will appear here when
+            they are added to your definitions.
           </div>
         }
       />

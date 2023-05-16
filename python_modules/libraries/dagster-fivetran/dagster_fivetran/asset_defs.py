@@ -357,6 +357,11 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
                 connector_id = connector["id"]
 
                 connector_name = connector["schema"]
+
+                setup_state = connector.get("status", {}).get("setup_state")
+                if setup_state and setup_state in ("incomplete", "broken"):
+                    continue
+
                 connector_url = get_fivetran_connector_url(connector)
 
                 schemas = self._fivetran_instance.make_request(

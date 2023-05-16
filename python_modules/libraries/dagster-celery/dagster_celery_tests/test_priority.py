@@ -12,7 +12,7 @@ from dagster_celery.tags import DAGSTER_CELERY_RUN_PRIORITY_TAG
 from .utils import execute_eagerly_on_celery, execute_on_thread, start_celery_worker
 
 
-def test_eager_priority_pipeline():
+def test_eager_priority_job():
     with execute_eagerly_on_celery("simple_priority_job") as result:
         assert result.success
         step_events_in_order = [event for event in result.all_events if event.is_step_event]
@@ -31,7 +31,7 @@ def test_eager_priority_pipeline():
         ]
 
 
-def test_run_priority_pipeline(rabbitmq):
+def test_run_priority_job(rabbitmq):
     with tempfile.TemporaryDirectory() as tempdir:
         with instance_for_test(temp_dir=tempdir) as instance:
             low_done = threading.Event()

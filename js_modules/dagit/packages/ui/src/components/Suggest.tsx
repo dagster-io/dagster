@@ -4,12 +4,15 @@ import {InputGroupProps2, IPopoverProps} from '@blueprintjs/core';
 import {isCreateNewItem, Suggest as BlueprintSuggest, SuggestProps} from '@blueprintjs/select';
 import deepmerge from 'deepmerge';
 import * as React from 'react';
-import {List} from 'react-virtualized';
+import {List as _List} from 'react-virtualized';
 import {createGlobalStyle} from 'styled-components/macro';
 
 import {Colors} from './Colors';
 import {IconWrapper} from './Icon';
 import {TextInputContainerStyles, TextInputStyles} from './TextInput';
+
+// todo: react-virtualized needs updated types to work with React 18. For now lets any type.
+const List: any = _List;
 
 export const GlobalSuggestStyle = createGlobalStyle`
   .dagit-suggest-input.bp4-input-group {
@@ -84,7 +87,7 @@ export const Suggest = <T,>(props: Props<T>) => {
               : undefined
           }
           rowHeight={itemHeight}
-          rowRenderer={(a) => (
+          rowRenderer={(a: any) => (
             <div key={a.index} style={a.style}>
               {props.renderItem(props.filteredItems[a.index] as T, a.index)}
             </div>

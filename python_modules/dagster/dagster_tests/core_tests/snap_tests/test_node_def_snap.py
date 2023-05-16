@@ -82,7 +82,7 @@ def test_op_definition_kitchen_sink():
     )
 
 
-def test_noop_comp_solid_definition():
+def test_noop_graph_definition():
     @op
     def noop_op(_):
         pass
@@ -97,7 +97,7 @@ def test_noop_comp_solid_definition():
     assert deserialize_value(serialize_value(comp_solid_meta), GraphDefSnap) == comp_solid_meta
 
 
-def test_basic_comp_solid_definition():
+def test_basic_graph_definition():
     @op
     def return_one(_):
         return 1
@@ -122,7 +122,7 @@ def test_basic_comp_solid_definition():
     assert index.get_upstream_output("take_one", "one").output_name == "result"
 
 
-def test_complex_comp_solid_definition():
+def test_complex_graph_definition():
     @op
     def return_one(_):
         return 1

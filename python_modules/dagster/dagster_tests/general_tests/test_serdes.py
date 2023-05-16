@@ -2,7 +2,7 @@ import re
 import string
 from collections import namedtuple
 from enum import Enum
-from typing import Any, Dict, Mapping, NamedTuple, Optional, Sequence
+from typing import AbstractSet, Any, Dict, Mapping, NamedTuple, Optional, Sequence
 
 import pytest
 from dagster._check import ParameterCheckError, inst_param, set_param
@@ -11,6 +11,7 @@ from dagster._serdes.serdes import (
     EnumSerializer,
     FieldSerializer,
     NamedTupleSerializer,
+    SetToSequenceFieldSerializer,
     UnpackContext,
     WhitelistMap,
     _whitelist_for_serdes,
@@ -531,6 +532,20 @@ def test_named_tuple_field_serializers() -> None:
     val = Foo({"a": "b", "c": "d"})
     serialized = serialize_value(val, whitelist_map=test_env)
     assert serialized == '{"__class__": "Foo", "entries": [["a", "b"], ["c", "d"]]}'
+    deserialized = deserialize_value(serialized, whitelist_map=test_env)
+    assert deserialized == val
+
+
+def test_set_to_sequence_field_serializer() -> None:
+    test_env = WhitelistMap.create()
+
+    @_whitelist_for_serdes(test_env, field_serializers={"colors": SetToSequenceFieldSerializer})
+    class Foo(NamedTuple):
+        colors: AbstractSet[str]
+
+    val = Foo({"red", "green"})
+    serialized = serialize_value(val, whitelist_map=test_env)
+    assert serialized == '{"__class__": "Foo", "colors": ["green", "red"]}'
     deserialized = deserialize_value(serialized, whitelist_map=test_env)
     assert deserialized == val
 

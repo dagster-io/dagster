@@ -7,7 +7,7 @@ from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
-snapshots['test_external_pipeline_data 1'] = '''{
+snapshots['test_external_job_data 1'] = '''{
   "__class__": "ExternalPipelineData",
   "active_presets": [],
   "is_job": true,
@@ -487,59 +487,6 @@ snapshots['test_external_pipeline_data 1'] = '''{
           "scalar_kind": null,
           "type_param_keys": null
         },
-        "Shape.07cb4c25af1ee77ffdc2d3d5b312fd61d8dc3989": {
-          "__class__": "ConfigTypeSnap",
-          "description": null,
-          "enum_values": null,
-          "field_aliases": {
-            "ops": "solids"
-          },
-          "fields": [
-            {
-              "__class__": "ConfigFieldSnap",
-              "default_provided": true,
-              "default_value_as_json_str": "{\\"config\\": {\\"multiprocess\\": {\\"max_concurrent\\": 0, \\"retries\\": {\\"enabled\\": {}}}}}",
-              "description": "Configure how steps are executed within a run.",
-              "is_required": false,
-              "name": "execution",
-              "type_key": "Shape.f74882eed6db21825b8461f675d1a11e200f2f1b"
-            },
-            {
-              "__class__": "ConfigFieldSnap",
-              "default_provided": true,
-              "default_value_as_json_str": "{}",
-              "description": "Configure how loggers emit messages within a run.",
-              "is_required": false,
-              "name": "loggers",
-              "type_key": "Shape.e895d95ee6d0eff1b884c76f44a2ab7089f0c49b"
-            },
-            {
-              "__class__": "ConfigFieldSnap",
-              "default_provided": true,
-              "default_value_as_json_str": "{\\"foo_op\\": {}}",
-              "description": "Configure runtime parameters for ops or assets.",
-              "is_required": false,
-              "name": "ops",
-              "type_key": "Shape.15ab078f25ca130d0e38ab95bfced4126bcbf277"
-            },
-            {
-              "__class__": "ConfigFieldSnap",
-              "default_provided": true,
-              "default_value_as_json_str": "{\\"io_manager\\": {}}",
-              "description": "Configure how shared resources are implemented within a run.",
-              "is_required": false,
-              "name": "resources",
-              "type_key": "Shape.1578133c1c71e8e3c9cf3ad46c216eb51b48c778"
-            }
-          ],
-          "given_name": null,
-          "key": "Shape.07cb4c25af1ee77ffdc2d3d5b312fd61d8dc3989",
-          "kind": {
-            "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-          },
-          "scalar_kind": null,
-          "type_param_keys": null
-        },
         "Shape.081354663b9d4b8fbfd1cb8e358763912953913f": {
           "__class__": "ConfigTypeSnap",
           "description": null,
@@ -659,32 +606,6 @@ snapshots['test_external_pipeline_data 1'] = '''{
           "scalar_kind": null,
           "type_param_keys": null
         },
-        "Shape.15ab078f25ca130d0e38ab95bfced4126bcbf277": {
-          "__class__": "ConfigTypeSnap",
-          "description": null,
-          "enum_values": null,
-          "field_aliases": {
-            "ops": "solids"
-          },
-          "fields": [
-            {
-              "__class__": "ConfigFieldSnap",
-              "default_provided": true,
-              "default_value_as_json_str": "{}",
-              "description": null,
-              "is_required": false,
-              "name": "foo_op",
-              "type_key": "Shape.36f967aeb3f6dab9d3a24674eef563a75d431b7f"
-            }
-          ],
-          "given_name": null,
-          "key": "Shape.15ab078f25ca130d0e38ab95bfced4126bcbf277",
-          "kind": {
-            "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-          },
-          "scalar_kind": null,
-          "type_param_keys": null
-        },
         "Shape.24ddf8da2b4484ca9c900e229e17286c1e1f6e85": {
           "__class__": "ConfigTypeSnap",
           "description": null,
@@ -702,32 +623,6 @@ snapshots['test_external_pipeline_data 1'] = '''{
           ],
           "given_name": null,
           "key": "Shape.24ddf8da2b4484ca9c900e229e17286c1e1f6e85",
-          "kind": {
-            "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-          },
-          "scalar_kind": null,
-          "type_param_keys": null
-        },
-        "Shape.36f967aeb3f6dab9d3a24674eef563a75d431b7f": {
-          "__class__": "ConfigTypeSnap",
-          "description": null,
-          "enum_values": null,
-          "field_aliases": {
-            "ops": "solids"
-          },
-          "fields": [
-            {
-              "__class__": "ConfigFieldSnap",
-              "default_provided": false,
-              "default_value_as_json_str": null,
-              "description": null,
-              "is_required": false,
-              "name": "config",
-              "type_key": "Any"
-            }
-          ],
-          "given_name": null,
-          "key": "Shape.36f967aeb3f6dab9d3a24674eef563a75d431b7f",
           "kind": {
             "__enum__": "ConfigTypeKind.STRICT_SHAPE"
           },
@@ -862,6 +757,29 @@ snapshots['test_external_pipeline_data 1'] = '''{
           "scalar_kind": null,
           "type_param_keys": null
         },
+        "Shape.60df2c49e5b0539ee28b520840462e1318fb3af1": {
+          "__class__": "ConfigTypeSnap",
+          "description": null,
+          "enum_values": null,
+          "fields": [
+            {
+              "__class__": "ConfigFieldSnap",
+              "default_provided": true,
+              "default_value_as_json_str": "{}",
+              "description": null,
+              "is_required": false,
+              "name": "foo_op",
+              "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
+            }
+          ],
+          "given_name": null,
+          "key": "Shape.60df2c49e5b0539ee28b520840462e1318fb3af1",
+          "kind": {
+            "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+          },
+          "scalar_kind": null,
+          "type_param_keys": null
+        },
         "Shape.743e47901855cb245064dd633e217bfcb49a11a7": {
           "__class__": "ConfigTypeSnap",
           "description": null,
@@ -879,6 +797,56 @@ snapshots['test_external_pipeline_data 1'] = '''{
           ],
           "given_name": null,
           "key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7",
+          "kind": {
+            "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+          },
+          "scalar_kind": null,
+          "type_param_keys": null
+        },
+        "Shape.c316d36ab5bb3060e272fa4bc6858cd6aad80613": {
+          "__class__": "ConfigTypeSnap",
+          "description": null,
+          "enum_values": null,
+          "fields": [
+            {
+              "__class__": "ConfigFieldSnap",
+              "default_provided": true,
+              "default_value_as_json_str": "{\\"config\\": {\\"multiprocess\\": {\\"max_concurrent\\": 0, \\"retries\\": {\\"enabled\\": {}}}}}",
+              "description": "Configure how steps are executed within a run.",
+              "is_required": false,
+              "name": "execution",
+              "type_key": "Shape.f74882eed6db21825b8461f675d1a11e200f2f1b"
+            },
+            {
+              "__class__": "ConfigFieldSnap",
+              "default_provided": true,
+              "default_value_as_json_str": "{}",
+              "description": "Configure how loggers emit messages within a run.",
+              "is_required": false,
+              "name": "loggers",
+              "type_key": "Shape.e895d95ee6d0eff1b884c76f44a2ab7089f0c49b"
+            },
+            {
+              "__class__": "ConfigFieldSnap",
+              "default_provided": true,
+              "default_value_as_json_str": "{\\"foo_op\\": {}}",
+              "description": "Configure runtime parameters for ops or assets.",
+              "is_required": false,
+              "name": "ops",
+              "type_key": "Shape.60df2c49e5b0539ee28b520840462e1318fb3af1"
+            },
+            {
+              "__class__": "ConfigFieldSnap",
+              "default_provided": true,
+              "default_value_as_json_str": "{\\"io_manager\\": {}}",
+              "description": "Configure how shared resources are implemented within a run.",
+              "is_required": false,
+              "name": "resources",
+              "type_key": "Shape.1578133c1c71e8e3c9cf3ad46c216eb51b48c778"
+            }
+          ],
+          "given_name": null,
+          "key": "Shape.c316d36ab5bb3060e272fa4bc6858cd6aad80613",
           "kind": {
             "__enum__": "ConfigTypeKind.STRICT_SHAPE"
           },
@@ -1103,7 +1071,7 @@ snapshots['test_external_pipeline_data 1'] = '''{
             "name": "io_manager"
           }
         ],
-        "root_config_key": "Shape.07cb4c25af1ee77ffdc2d3d5b312fd61d8dc3989"
+        "root_config_key": "Shape.c316d36ab5bb3060e272fa4bc6858cd6aad80613"
       }
     ],
     "name": "foo_job",
@@ -1155,6 +1123,7 @@ snapshots['test_external_repository_data 1'] = '''{
         "__class__": "ExternalTimeWindowPartitionsDefinitionData",
         "cron_schedule": "15 0 * * *",
         "day_offset": null,
+        "end": null,
         "end_offset": 0,
         "fmt": "%Y-%m-%d",
         "hour_offset": null,
@@ -1650,59 +1619,6 @@ snapshots['test_external_repository_data 1'] = '''{
               "scalar_kind": null,
               "type_param_keys": null
             },
-            "Shape.07cb4c25af1ee77ffdc2d3d5b312fd61d8dc3989": {
-              "__class__": "ConfigTypeSnap",
-              "description": null,
-              "enum_values": null,
-              "field_aliases": {
-                "ops": "solids"
-              },
-              "fields": [
-                {
-                  "__class__": "ConfigFieldSnap",
-                  "default_provided": true,
-                  "default_value_as_json_str": "{\\"config\\": {\\"multiprocess\\": {\\"max_concurrent\\": 0, \\"retries\\": {\\"enabled\\": {}}}}}",
-                  "description": "Configure how steps are executed within a run.",
-                  "is_required": false,
-                  "name": "execution",
-                  "type_key": "Shape.f74882eed6db21825b8461f675d1a11e200f2f1b"
-                },
-                {
-                  "__class__": "ConfigFieldSnap",
-                  "default_provided": true,
-                  "default_value_as_json_str": "{}",
-                  "description": "Configure how loggers emit messages within a run.",
-                  "is_required": false,
-                  "name": "loggers",
-                  "type_key": "Shape.e895d95ee6d0eff1b884c76f44a2ab7089f0c49b"
-                },
-                {
-                  "__class__": "ConfigFieldSnap",
-                  "default_provided": true,
-                  "default_value_as_json_str": "{\\"foo_op\\": {}}",
-                  "description": "Configure runtime parameters for ops or assets.",
-                  "is_required": false,
-                  "name": "ops",
-                  "type_key": "Shape.15ab078f25ca130d0e38ab95bfced4126bcbf277"
-                },
-                {
-                  "__class__": "ConfigFieldSnap",
-                  "default_provided": true,
-                  "default_value_as_json_str": "{\\"io_manager\\": {}}",
-                  "description": "Configure how shared resources are implemented within a run.",
-                  "is_required": false,
-                  "name": "resources",
-                  "type_key": "Shape.1578133c1c71e8e3c9cf3ad46c216eb51b48c778"
-                }
-              ],
-              "given_name": null,
-              "key": "Shape.07cb4c25af1ee77ffdc2d3d5b312fd61d8dc3989",
-              "kind": {
-                "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-              },
-              "scalar_kind": null,
-              "type_param_keys": null
-            },
             "Shape.081354663b9d4b8fbfd1cb8e358763912953913f": {
               "__class__": "ConfigTypeSnap",
               "description": null,
@@ -1822,32 +1738,6 @@ snapshots['test_external_repository_data 1'] = '''{
               "scalar_kind": null,
               "type_param_keys": null
             },
-            "Shape.15ab078f25ca130d0e38ab95bfced4126bcbf277": {
-              "__class__": "ConfigTypeSnap",
-              "description": null,
-              "enum_values": null,
-              "field_aliases": {
-                "ops": "solids"
-              },
-              "fields": [
-                {
-                  "__class__": "ConfigFieldSnap",
-                  "default_provided": true,
-                  "default_value_as_json_str": "{}",
-                  "description": null,
-                  "is_required": false,
-                  "name": "foo_op",
-                  "type_key": "Shape.36f967aeb3f6dab9d3a24674eef563a75d431b7f"
-                }
-              ],
-              "given_name": null,
-              "key": "Shape.15ab078f25ca130d0e38ab95bfced4126bcbf277",
-              "kind": {
-                "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-              },
-              "scalar_kind": null,
-              "type_param_keys": null
-            },
             "Shape.24ddf8da2b4484ca9c900e229e17286c1e1f6e85": {
               "__class__": "ConfigTypeSnap",
               "description": null,
@@ -1865,32 +1755,6 @@ snapshots['test_external_repository_data 1'] = '''{
               ],
               "given_name": null,
               "key": "Shape.24ddf8da2b4484ca9c900e229e17286c1e1f6e85",
-              "kind": {
-                "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-              },
-              "scalar_kind": null,
-              "type_param_keys": null
-            },
-            "Shape.36f967aeb3f6dab9d3a24674eef563a75d431b7f": {
-              "__class__": "ConfigTypeSnap",
-              "description": null,
-              "enum_values": null,
-              "field_aliases": {
-                "ops": "solids"
-              },
-              "fields": [
-                {
-                  "__class__": "ConfigFieldSnap",
-                  "default_provided": false,
-                  "default_value_as_json_str": null,
-                  "description": null,
-                  "is_required": false,
-                  "name": "config",
-                  "type_key": "Any"
-                }
-              ],
-              "given_name": null,
-              "key": "Shape.36f967aeb3f6dab9d3a24674eef563a75d431b7f",
               "kind": {
                 "__enum__": "ConfigTypeKind.STRICT_SHAPE"
               },
@@ -2025,6 +1889,29 @@ snapshots['test_external_repository_data 1'] = '''{
               "scalar_kind": null,
               "type_param_keys": null
             },
+            "Shape.60df2c49e5b0539ee28b520840462e1318fb3af1": {
+              "__class__": "ConfigTypeSnap",
+              "description": null,
+              "enum_values": null,
+              "fields": [
+                {
+                  "__class__": "ConfigFieldSnap",
+                  "default_provided": true,
+                  "default_value_as_json_str": "{}",
+                  "description": null,
+                  "is_required": false,
+                  "name": "foo_op",
+                  "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
+                }
+              ],
+              "given_name": null,
+              "key": "Shape.60df2c49e5b0539ee28b520840462e1318fb3af1",
+              "kind": {
+                "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+              },
+              "scalar_kind": null,
+              "type_param_keys": null
+            },
             "Shape.743e47901855cb245064dd633e217bfcb49a11a7": {
               "__class__": "ConfigTypeSnap",
               "description": null,
@@ -2042,6 +1929,56 @@ snapshots['test_external_repository_data 1'] = '''{
               ],
               "given_name": null,
               "key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7",
+              "kind": {
+                "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+              },
+              "scalar_kind": null,
+              "type_param_keys": null
+            },
+            "Shape.c316d36ab5bb3060e272fa4bc6858cd6aad80613": {
+              "__class__": "ConfigTypeSnap",
+              "description": null,
+              "enum_values": null,
+              "fields": [
+                {
+                  "__class__": "ConfigFieldSnap",
+                  "default_provided": true,
+                  "default_value_as_json_str": "{\\"config\\": {\\"multiprocess\\": {\\"max_concurrent\\": 0, \\"retries\\": {\\"enabled\\": {}}}}}",
+                  "description": "Configure how steps are executed within a run.",
+                  "is_required": false,
+                  "name": "execution",
+                  "type_key": "Shape.f74882eed6db21825b8461f675d1a11e200f2f1b"
+                },
+                {
+                  "__class__": "ConfigFieldSnap",
+                  "default_provided": true,
+                  "default_value_as_json_str": "{}",
+                  "description": "Configure how loggers emit messages within a run.",
+                  "is_required": false,
+                  "name": "loggers",
+                  "type_key": "Shape.e895d95ee6d0eff1b884c76f44a2ab7089f0c49b"
+                },
+                {
+                  "__class__": "ConfigFieldSnap",
+                  "default_provided": true,
+                  "default_value_as_json_str": "{\\"foo_op\\": {}}",
+                  "description": "Configure runtime parameters for ops or assets.",
+                  "is_required": false,
+                  "name": "ops",
+                  "type_key": "Shape.60df2c49e5b0539ee28b520840462e1318fb3af1"
+                },
+                {
+                  "__class__": "ConfigFieldSnap",
+                  "default_provided": true,
+                  "default_value_as_json_str": "{\\"io_manager\\": {}}",
+                  "description": "Configure how shared resources are implemented within a run.",
+                  "is_required": false,
+                  "name": "resources",
+                  "type_key": "Shape.1578133c1c71e8e3c9cf3ad46c216eb51b48c778"
+                }
+              ],
+              "given_name": null,
+              "key": "Shape.c316d36ab5bb3060e272fa4bc6858cd6aad80613",
               "kind": {
                 "__enum__": "ConfigTypeKind.STRICT_SHAPE"
               },
@@ -2266,7 +2203,7 @@ snapshots['test_external_repository_data 1'] = '''{
                 "name": "io_manager"
               }
             ],
-            "root_config_key": "Shape.07cb4c25af1ee77ffdc2d3d5b312fd61d8dc3989"
+            "root_config_key": "Shape.c316d36ab5bb3060e272fa4bc6858cd6aad80613"
           }
         ],
         "name": "foo_job",

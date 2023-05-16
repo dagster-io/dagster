@@ -93,14 +93,16 @@ def test_get_children_partitions_unpartitioned_parent_partitioned_child():
         ...
 
     with instance_for_test() as instance:
+        current_time = pendulum.now("UTC")
+
         internal_asset_graph = AssetGraph.from_assets([parent, child])
         external_asset_graph = to_external_asset_graph([parent, child])
-        assert internal_asset_graph.get_children_partitions(instance, parent.key) == set(
-            [AssetKeyPartitionKey(child.key, "a"), AssetKeyPartitionKey(child.key, "b")]
-        )
-        assert external_asset_graph.get_children_partitions(instance, parent.key) == set(
-            [AssetKeyPartitionKey(child.key, "a"), AssetKeyPartitionKey(child.key, "b")]
-        )
+        assert internal_asset_graph.get_children_partitions(
+            instance, current_time, parent.key
+        ) == set([AssetKeyPartitionKey(child.key, "a"), AssetKeyPartitionKey(child.key, "b")])
+        assert external_asset_graph.get_children_partitions(
+            instance, current_time, parent.key
+        ) == set([AssetKeyPartitionKey(child.key, "a"), AssetKeyPartitionKey(child.key, "b")])
 
 
 def test_get_parent_partitions_unpartitioned_child_partitioned_parent():
@@ -116,12 +118,14 @@ def test_get_parent_partitions_unpartitioned_child_partitioned_parent():
     external_asset_graph = to_external_asset_graph([parent, child])
 
     with instance_for_test() as instance:
-        assert internal_asset_graph.get_parents_partitions(instance, child.key) == set(
-            [AssetKeyPartitionKey(parent.key, "a"), AssetKeyPartitionKey(parent.key, "b")]
-        )
-        assert external_asset_graph.get_parents_partitions(instance, child.key) == set(
-            [AssetKeyPartitionKey(parent.key, "a"), AssetKeyPartitionKey(parent.key, "b")]
-        )
+        current_time = pendulum.now("UTC")
+
+        assert internal_asset_graph.get_parents_partitions(
+            instance, current_time, child.key
+        ) == set([AssetKeyPartitionKey(parent.key, "a"), AssetKeyPartitionKey(parent.key, "b")])
+        assert external_asset_graph.get_parents_partitions(
+            instance, current_time, child.key
+        ) == set([AssetKeyPartitionKey(parent.key, "a"), AssetKeyPartitionKey(parent.key, "b")])
 
 
 def test_get_children_partitions_fan_out():
@@ -136,8 +140,10 @@ def test_get_children_partitions_fan_out():
     internal_asset_graph = AssetGraph.from_assets([parent, child])
     external_asset_graph = to_external_asset_graph([parent, child])
     with instance_for_test() as instance:
+        current_time = pendulum.now("UTC")
+
         assert internal_asset_graph.get_children_partitions(
-            instance, parent.key, "2022-01-03"
+            instance, current_time, parent.key, "2022-01-03"
         ) == set(
             [
                 AssetKeyPartitionKey(child.key, f"2022-01-03-{str(hour).zfill(2)}:00")
@@ -146,7 +152,7 @@ def test_get_children_partitions_fan_out():
         )
 
         assert external_asset_graph.get_children_partitions(
-            instance, parent.key, "2022-01-03"
+            instance, current_time, parent.key, "2022-01-03"
         ) == set(
             [
                 AssetKeyPartitionKey(child.key, f"2022-01-03-{str(hour).zfill(2)}:00")
@@ -167,8 +173,10 @@ def test_get_parent_partitions_fan_in():
     internal_asset_graph = AssetGraph.from_assets([parent, child])
     external_asset_graph = to_external_asset_graph([parent, child])
     with instance_for_test() as instance:
+        current_time = pendulum.now("UTC")
+
         assert internal_asset_graph.get_parents_partitions(
-            instance, child.key, "2022-01-03"
+            instance, current_time, child.key, "2022-01-03"
         ) == set(
             [
                 AssetKeyPartitionKey(parent.key, f"2022-01-03-{str(hour).zfill(2)}:00")
@@ -176,7 +184,7 @@ def test_get_parent_partitions_fan_in():
             ]
         )
         assert external_asset_graph.get_parents_partitions(
-            instance, child.key, "2022-01-03"
+            instance, current_time, child.key, "2022-01-03"
         ) == set(
             [
                 AssetKeyPartitionKey(parent.key, f"2022-01-03-{str(hour).zfill(2)}:00")
@@ -199,12 +207,14 @@ def test_get_parent_partitions_non_default_partition_mapping():
 
     with pendulum.test(create_pendulum_time(year=2022, month=1, day=3, hour=4)):
         with instance_for_test() as instance:
-            assert internal_asset_graph.get_parents_partitions(instance, child.key) == {
-                AssetKeyPartitionKey(parent.key, "2022-01-02")
-            }
-            assert external_asset_graph.get_parents_partitions(instance, child.key) == {
-                AssetKeyPartitionKey(parent.key, "2022-01-02")
-            }
+            current_time = pendulum.now("UTC")
+
+            assert internal_asset_graph.get_parents_partitions(
+                instance, current_time, child.key
+            ) == {AssetKeyPartitionKey(parent.key, "2022-01-02")}
+            assert external_asset_graph.get_parents_partitions(
+                instance, current_time, child.key
+            ) == {AssetKeyPartitionKey(parent.key, "2022-01-02")}
 
 
 def test_custom_unsupported_partition_mapping():
@@ -248,14 +258,18 @@ def test_custom_unsupported_partition_mapping():
     external_asset_graph = to_external_asset_graph([parent, child])
 
     with instance_for_test() as instance:
-        assert internal_asset_graph.get_parents_partitions(instance, child.key, "2") == {
+        current_time = pendulum.now("UTC")
+
+        assert internal_asset_graph.get_parents_partitions(
+            instance, current_time, child.key, "2"
+        ) == {
             AssetKeyPartitionKey(parent.key, "1"),
             AssetKeyPartitionKey(parent.key, "2"),
         }
         # external falls back to default PartitionMapping
-        assert external_asset_graph.get_parents_partitions(instance, child.key, "2") == {
-            AssetKeyPartitionKey(parent.key, "2")
-        }
+        assert external_asset_graph.get_parents_partitions(
+            instance, current_time, child.key, "2"
+        ) == {AssetKeyPartitionKey(parent.key, "2")}
 
 
 def test_required_multi_asset_sets_non_subsettable_multi_asset():
@@ -407,6 +421,7 @@ def test_bfs_filter_asset_subsets():
             dynamic_partitions_store=MagicMock(),
             initial_subset=initial_asset1_subset,
             condition_fn=include_all,
+            current_time=pendulum.now("UTC"),
         )
         == initial_asset1_subset | corresponding_asset3_subset
     )
@@ -418,6 +433,7 @@ def test_bfs_filter_asset_subsets():
         dynamic_partitions_store=MagicMock(),
         initial_subset=initial_asset1_subset,
         condition_fn=include_none,
+        current_time=pendulum.now("UTC"),
     ) == AssetGraphSubset(asset_graph)
 
     def exclude_asset3(asset_key, partitions_subset):
@@ -428,6 +444,7 @@ def test_bfs_filter_asset_subsets():
             dynamic_partitions_store=MagicMock(),
             initial_subset=initial_asset1_subset,
             condition_fn=exclude_asset3,
+            current_time=pendulum.now("UTC"),
         )
         == initial_asset1_subset
     )
@@ -443,6 +460,7 @@ def test_bfs_filter_asset_subsets():
             dynamic_partitions_store=MagicMock(),
             initial_subset=initial_asset0_subset,
             condition_fn=exclude_asset2,
+            current_time=pendulum.now("UTC"),
         )
         == initial_asset0_subset | initial_asset1_subset | corresponding_asset3_subset
     )
@@ -504,6 +522,7 @@ def test_bfs_filter_asset_subsets_different_mappings():
                 partitions_subsets_by_asset_key={asset0.key: initial_subset},
             ),
             condition_fn=include_all,
+            current_time=pendulum.now("UTC"),
         )
         == expected_asset_graph_subset
     )

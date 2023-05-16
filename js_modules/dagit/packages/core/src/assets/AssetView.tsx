@@ -426,7 +426,6 @@ export const ASSET_VIEW_DEFINITION_QUERY = gql`
     id
     groupName
     partitionDefinition {
-      __typename
       description
     }
     partitionKeysByDimension {

@@ -12,7 +12,6 @@ Versioning
 .. currentmodule:: dagster
 
 .. autoclass:: VersionStrategy
-    :members:
 
 .. autoclass:: SourceHashVersionStrategy
 
@@ -25,7 +24,6 @@ Memoization
 .. currentmodule:: dagster
 
 .. autoclass:: MemoizableIOManager
-    :members:
 
 See also: :py:class:`dagster.IOManager`.
 

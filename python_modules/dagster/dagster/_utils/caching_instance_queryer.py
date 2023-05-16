@@ -1,4 +1,5 @@
 from collections import defaultdict
+from datetime import datetime
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -11,7 +12,8 @@ from typing import (
     cast,
 )
 
-import dagster._check as check
+import pendulum
+
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.data_version import (
     DataVersion,
@@ -41,7 +43,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         instance (DagsterInstance): The instance to query.
     """
 
-    def __init__(self, instance: DagsterInstance):
+    def __init__(self, instance: DagsterInstance, evaluation_time: Optional[datetime] = None):
         self._instance = instance
 
         self._asset_record_cache: Dict[AssetKey, Optional[AssetRecord]] = {}
@@ -54,6 +56,8 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         ] = defaultdict(dict)
 
         self._dynamic_partitions_cache: Dict[str, Sequence[str]] = {}
+
+        self._evaluation_time = evaluation_time if evaluation_time else pendulum.now("UTC")
 
     @property
     def instance(self) -> DagsterInstance:
@@ -334,24 +338,29 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         # no records found with a new data version
         return None
 
-    def new_version_exists(
+    def new_version_storage_id(
         self,
         observable_source_asset_key: AssetKey,
         after_cursor: Optional[int] = None,
-    ) -> bool:
-        """Returns True if there is an asset observation of the given observable source asset key
-        after the specified cursor.
+    ) -> Optional[int]:
+        """Returns the storage id of the latest asset observation of the given observable source
+        asset key after the specified cursor, or None if no such observation exists.
 
         Args:
             observable_source_asset_key (AssetKeyPartitionKey): The observable source asset to query.
             after_cursor (Optional[int]): Filter parameter such that only records with a storage_id
                 greater than this value will be considered.
         """
-        previous_version_record = self.get_observation_record(
-            asset_key=observable_source_asset_key,
-            # we're looking for if a new version exists after `after_cursor`, so we need to know
-            # what the version was before `after_cursor`
-            before_cursor=after_cursor,
+        previous_version_record = (
+            self.get_observation_record(
+                asset_key=observable_source_asset_key,
+                # we're looking for if a new version exists after `after_cursor`, so we need to know
+                # what the version was before `after_cursor`
+                before_cursor=after_cursor,
+            )
+            # if the after_cursor is None, then no previous version can exist
+            if after_cursor is not None
+            else None
         )
         previous_version = (
             extract_data_version_from_entry(previous_version_record.event_log_entry)
@@ -364,7 +373,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             after_cursor=after_cursor,
             data_version=previous_version,
         )
-        return next_version_record is not None
+        return next_version_record.storage_id if next_version_record else None
 
     def _new_version_of_source_exists_after_asset_partition(
         self,
@@ -450,7 +459,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         """Returns True if the asset is planned to be materialized by the run."""
         run = self._get_run_by_id(run_id=run_id)
         if not run:
-            check.failed("")
+            return False
 
         if isinstance(asset, AssetKeyPartitionKey):
             asset_key = asset.asset_key
@@ -573,6 +582,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
 
         for parent in asset_graph.get_parents_partitions(
             self,
+            self._evaluation_time,
             asset_partition.asset_key,
             asset_partition.partition_key,
         ):
@@ -592,3 +602,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                 return False
 
         return True
+
+    @property
+    def evaluation_time(self) -> datetime:
+        return self._evaluation_time

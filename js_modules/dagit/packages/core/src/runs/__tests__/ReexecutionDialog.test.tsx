@@ -101,7 +101,7 @@ describe('ReexecutionDialog', () => {
     });
 
     const button = screen.getByText(/re\-execute 3 runs/i);
-    userEvent.click(button);
+    await userEvent.click(button);
 
     await waitFor(() => {
       expect(
@@ -121,9 +121,9 @@ describe('ReexecutionDialog', () => {
       />,
     );
 
-    await waitFor(() => {
+    await waitFor(async () => {
       const button = screen.getByText(/re\-execute 3 runs/i);
-      userEvent.click(button);
+      await userEvent.click(button);
     });
 
     await waitFor(() => {
@@ -143,9 +143,9 @@ describe('ReexecutionDialog', () => {
       />,
     );
 
-    await waitFor(() => {
+    await waitFor(async () => {
       const button = screen.getByText(/re\-execute 3 runs/i);
-      userEvent.click(button);
+      await userEvent.click(button);
     });
 
     await waitFor(() => {

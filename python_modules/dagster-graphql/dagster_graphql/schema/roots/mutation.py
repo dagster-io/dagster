@@ -94,7 +94,7 @@ def create_execution_params(graphene_info, graphql_execution_params):
                 GrapheneConflictingExecutionParamsError(conflicting_param="mode")
             )
 
-        if selector.solid_selection:
+        if selector.op_selection:
             raise UserFacingGraphQLError(
                 GrapheneConflictingExecutionParamsError(
                     conflicting_param="selector.solid_selection"
@@ -114,7 +114,7 @@ def create_execution_params(graphene_info, graphql_execution_params):
         preset = external_pipeline.get_preset(preset_name)
 
         return ExecutionParams(
-            selector=selector.with_solid_selection(preset.solid_selection),
+            selector=selector.with_op_selection(preset.op_selection),
             run_config=preset.run_config,
             mode=preset.mode,
             execution_metadata=create_execution_metadata(
@@ -249,8 +249,6 @@ class GrapheneTerminateRunResult(graphene.Union):
 
 
 def create_execution_params_and_launch_pipeline_exec(graphene_info, execution_params_dict):
-    # refactored into a helper function here in order to wrap with @capture_error,
-    # because create_execution_params may raise
     execution_params = create_execution_params(graphene_info, execution_params_dict)
     assert_permission_for_location(
         graphene_info,
@@ -360,10 +358,7 @@ class GrapheneAddDynamicPartitionMutation(graphene.Mutation):
         )
 
 
-@capture_error
 def create_execution_params_and_launch_pipeline_reexec(graphene_info, execution_params_dict):
-    # refactored into a helper function here in order to wrap with @capture_error,
-    # because create_execution_params may raise
     execution_params = create_execution_params(graphene_info, execution_params_dict)
     assert_permission_for_location(
         graphene_info,

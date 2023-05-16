@@ -12,13 +12,13 @@ from dagster._utils.error import serializable_error_info_from_exc_info
 from .utils import get_bar_repo_code_location
 
 
-def _test_job_subset_grpc(job_handle, api_client, solid_selection=None):
+def _test_job_subset_grpc(job_handle, api_client, op_selection=None):
     return sync_get_external_job_subset_grpc(
-        api_client, job_handle.get_external_origin(), solid_selection=solid_selection
+        api_client, job_handle.get_external_origin(), op_selection=op_selection
     )
 
 
-def test_pipeline_snapshot_api_grpc(instance):
+def test_job_snapshot_api_grpc(instance):
     with get_bar_repo_code_location(instance) as code_location:
         job_handle = JobHandle("foo", code_location.get_repository("bar_repo").handle)
         api_client = code_location.client
@@ -29,7 +29,7 @@ def test_pipeline_snapshot_api_grpc(instance):
         assert external_job_subset_result.external_job_data.name == "foo"
 
 
-def test_pipeline_snapshot_deserialize_error(instance):
+def test_job_snapshot_deserialize_error(instance):
     with get_bar_repo_code_location(instance) as code_location:
         job_handle = JobHandle("foo", code_location.get_repository("bar_repo").handle)
         api_client = code_location.client
@@ -38,7 +38,7 @@ def test_pipeline_snapshot_deserialize_error(instance):
             api_client.external_pipeline_subset(
                 pipeline_subset_snapshot_args=JobSubsetSnapshotArgs(
                     job_origin=job_handle.get_external_origin(),
-                    solid_selection=None,
+                    op_selection=None,
                     asset_selection=None,
                 )._replace(job_origin="INVALID"),
             )
@@ -48,7 +48,7 @@ def test_pipeline_snapshot_deserialize_error(instance):
         assert external_pipeline_subset_result.error
 
 
-def test_pipeline_with_valid_subset_snapshot_api_grpc(instance):
+def test_job_with_valid_subset_snapshot_api_grpc(instance):
     with get_bar_repo_code_location(instance) as code_location:
         job_handle = JobHandle("foo", code_location.get_repository("bar_repo").handle)
         api_client = code_location.client
@@ -59,7 +59,7 @@ def test_pipeline_with_valid_subset_snapshot_api_grpc(instance):
         assert external_job_subset_result.external_job_data.name == "foo"
 
 
-def test_pipeline_with_invalid_subset_snapshot_api_grpc(instance):
+def test_job_with_invalid_subset_snapshot_api_grpc(instance):
     with get_bar_repo_code_location(instance) as code_location:
         job_handle = JobHandle("foo", code_location.get_repository("bar_repo").handle)
         api_client = code_location.client
@@ -71,7 +71,7 @@ def test_pipeline_with_invalid_subset_snapshot_api_grpc(instance):
             _test_job_subset_grpc(job_handle, api_client, ["invalid_op"])
 
 
-def test_pipeline_with_invalid_definition_snapshot_api_grpc(instance):
+def test_job_with_invalid_definition_snapshot_api_grpc(instance):
     with get_bar_repo_code_location(instance) as code_location:
         job_handle = JobHandle("bar", code_location.get_repository("bar_repo").handle)
         api_client = code_location.client

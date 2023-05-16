@@ -195,11 +195,9 @@ def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) ->
         )
 
     fields["ops"] = nodes_field
-    field_aliases = {"ops": "solids"}
 
     return Shape(
         fields=remove_none_entries(fields),
-        field_aliases=field_aliases,
     )
 
 
@@ -372,12 +370,11 @@ def get_output_manager_output_field(
 
 
 def node_config_field(fields: Mapping[str, Optional[Field]], ignored: bool) -> Optional[Field]:
-    field_aliases = {"ops": "solids"}
     trimmed_fields = remove_none_entries(fields)
     if trimmed_fields:
         if ignored:
             return Field(
-                Shape(trimmed_fields, field_aliases=field_aliases),
+                Shape(trimmed_fields),
                 is_required=False,
                 description=(
                     "This op is not present in the current op selection, "
@@ -385,7 +382,7 @@ def node_config_field(fields: Mapping[str, Optional[Field]], ignored: bool) -> O
                 ),
             )
         else:
-            return Field(Shape(trimmed_fields, field_aliases=field_aliases))
+            return Field(Shape(trimmed_fields))
     else:
         return None
 
@@ -554,7 +551,7 @@ def define_node_shape(
         if node_field:
             fields[node.name] = node_field
 
-    return Shape(fields, field_aliases={"ops": "solids"})
+    return Shape(fields)
 
 
 def iterate_node_def_config_types(node_def: NodeDefinition) -> Iterator[ConfigType]:
@@ -630,7 +627,7 @@ def _convert_config_classes(configs: Dict[str, Any]) -> Dict[str, Any]:
 
 
 class RunConfig:
-    """Container for all the configuration that can be passed to a pipeline run. Accepts Pythonic definitions
+    """Container for all the configuration that can be passed to a run. Accepts Pythonic definitions
     for op and asset config and resources and converts them under the hood to the appropriate config dictionaries.
 
     Example usage:

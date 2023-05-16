@@ -20,26 +20,3 @@ def test_op_execution_context():
         ctx_op()
 
     assert foo.execute_in_process().success
-
-
-def test_solid_execution_context():
-    @op
-    def ctx_op(context: OpExecutionContext):
-        check.inst(context.run, DagsterRun)
-        assert context.job_name == "foo"
-
-        check.inst(context.job_def, JobDefinition)
-
-        assert context.op_config is None
-
-        check.inst(context.op_def, OpDefinition)
-
-        check.inst(context.run, DagsterRun)
-        assert context.job_name == "foo"
-        assert context.op_config is None
-
-    @job
-    def foo():
-        ctx_op()
-
-    assert foo.execute_in_process().success

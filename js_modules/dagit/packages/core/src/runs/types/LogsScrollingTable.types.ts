@@ -993,6 +993,8 @@ export type LogsScrollingTableMessageFragment_LogsCapturedEvent_ = {
   fileKey: string;
   stepKeys: Array<string> | null;
   externalUrl: string | null;
+  externalStdoutUrl: string | null;
+  externalStderrUrl: string | null;
 };
 
 export type LogsScrollingTableMessageFragment_MaterializationEvent_ = {

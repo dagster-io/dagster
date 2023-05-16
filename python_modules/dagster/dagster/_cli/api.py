@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import sys
+import threading
 import zlib
 from contextlib import ExitStack
 from typing import Any, Callable, Optional, cast
@@ -32,6 +33,7 @@ from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import coerce_valid_log_level
 from dagster._grpc import DagsterGrpcClient, DagsterGrpcServer
 from dagster._grpc.impl import core_execute_run
+from dagster._grpc.server import DagsterApiServer
 from dagster._grpc.types import ExecuteRunArgs, ExecuteStepArgs, ResumeRunArgs
 from dagster._serdes import deserialize_value, serialize_value
 from dagster._utils.error import serializable_error_info_from_exc_info
@@ -202,12 +204,12 @@ def _resume_run_command_body(
         cancellation_thread, cancellation_thread_shutdown_event = None, None
     dagster_run = check.not_none(
         instance.get_run_by_id(run_id),  # type: ignore
-        f"Pipeline run with id '{run_id}' not found for run execution.",
+        f"Run with id '{run_id}' not found for run execution.",
     )
     check.inst(
         dagster_run.job_code_origin,
         JobPythonOrigin,
-        f"Pipeline run with id '{run_id}' does not include an origin.",
+        f"Run with id '{run_id}' does not include an origin.",
     )
 
     recon_job = recon_job_from_origin(cast(JobPythonOrigin, dagster_run.job_code_origin))
@@ -419,8 +421,9 @@ def _execute_step_command_body(
         recon_job = (
             recon_job_from_origin(cast(JobPythonOrigin, dagster_run.job_code_origin))
             .with_repository_load_data(repository_load_data)
-            .subset_for_execution_from_existing_job(
-                dagster_run.solids_to_execute, dagster_run.asset_selection
+            .get_subset(
+                op_selection=dagster_run.resolved_op_selection,
+                asset_selection=dagster_run.asset_selection,
             )
         )
 
@@ -549,15 +552,6 @@ def _execute_step_command_body(
     envvar="DAGSTER_EMPTY_WORKING_DIRECTORY",
 )
 @click.option(
-    "--ipc-output-file",
-    type=click.Path(),
-    help=(
-        "[INTERNAL] This option should generally not be used by users. Internal param used by"
-        " dagster when it automatically spawns gRPC servers to communicate the success or failure"
-        " of the server launching."
-    ),
-)
-@click.option(
     "--fixed-server-id",
     type=click.STRING,
     required=False,
@@ -629,7 +623,6 @@ def grpc_command(
     heartbeat=False,
     heartbeat_timeout=30,
     lazy_load_user_code=False,
-    ipc_output_file=None,
     fixed_server_id=None,
     override_system_timezone=None,
     log_level="INFO",
@@ -642,6 +635,16 @@ def grpc_command(
     **kwargs,
 ):
     from dagster._core.test_utils import mock_system_timezone
+
+    check.invariant(heartbeat_timeout > 0, "heartbeat_timeout must be greater than 0")
+
+    check.invariant(
+        max_workers is None or max_workers > 1 if heartbeat else True,
+        (
+            "max_workers must be greater than 1 or set to None if heartbeat is True. "
+            "If set to None, the server will use the gRPC default."
+        ),
+    )
 
     if seven.IS_WINDOWS and port is None:
         raise click.UsageError(
@@ -688,16 +691,13 @@ def grpc_command(
         if override_system_timezone:
             exit_stack.enter_context(mock_system_timezone(override_system_timezone))
 
-        server = DagsterGrpcServer(
-            port=port,
-            socket=socket,
-            host=host,
+        server_termination_event = threading.Event()
+        api_servicer = DagsterApiServer(
+            server_termination_event=server_termination_event,
             loadable_target_origin=loadable_target_origin,
-            max_workers=max_workers,
             heartbeat=heartbeat,
             heartbeat_timeout=heartbeat_timeout,
             lazy_load_user_code=lazy_load_user_code,
-            ipc_output_file=ipc_output_file,
             fixed_server_id=fixed_server_id,
             entry_point=(
                 get_python_environment_entry_point(sys.executable)
@@ -705,12 +705,21 @@ def grpc_command(
                 else DEFAULT_DAGSTER_ENTRY_POINT
             ),
             container_image=container_image,
-            container_context=json.loads(container_context)
-            if container_context is not None
-            else None,
+            container_context=(
+                json.loads(container_context) if container_context is not None else None
+            ),
             inject_env_vars_from_instance=inject_env_vars_from_instance,
             instance_ref=deserialize_value(instance_ref, InstanceRef) if instance_ref else None,
             location_name=location_name,
+        )
+
+        server = DagsterGrpcServer(
+            server_termination_event=server_termination_event,
+            dagster_api_servicer=api_servicer,
+            port=port,
+            socket=socket,
+            host=host,
+            max_workers=max_workers,
         )
 
         code_desc = " "

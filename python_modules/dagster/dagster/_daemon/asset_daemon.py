@@ -70,7 +70,7 @@ class AssetDaemon(IntervalDaemon):
             else AssetReconciliationCursor.empty()
         )
 
-        run_requests, new_cursor = reconcile(
+        run_requests, new_cursor, _ = reconcile(
             asset_graph=asset_graph,
             target_asset_keys=target_asset_keys,
             instance=instance,
@@ -100,7 +100,7 @@ class AssetDaemon(IntervalDaemon):
                     location_name=location_name,
                     repository_name=repository_name,
                     job_name=job_name,
-                    solid_selection=None,
+                    op_selection=None,
                     asset_selection=asset_keys,
                 )
             )
@@ -124,10 +124,10 @@ class AssetDaemon(IntervalDaemon):
                 job_name=external_job.name,
                 run_id=None,
                 run_config=None,
-                solids_to_execute=None,
+                resolved_op_selection=None,
                 step_keys_to_execute=None,
                 status=DagsterRunStatus.NOT_STARTED,
-                solid_selection=None,
+                op_selection=None,
                 root_run_id=None,
                 parent_run_id=None,
                 tags=tags,

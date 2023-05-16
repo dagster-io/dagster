@@ -93,7 +93,7 @@ def _launch_run_and_wait_for_resume(
     run_config,
     instance,
     namespace,
-    pipeline_name="slow_job_k8s",
+    job_name="slow_job_k8s",
 ):
     run_id = None
 
@@ -101,7 +101,7 @@ def _launch_run_and_wait_for_resume(
         run_id = launch_run_over_graphql(
             dagit_url_for_k8s_run_launcher,
             run_config=run_config,
-            job_name=pipeline_name,
+            job_name=job_name,
         )
 
         start_time = time.time()

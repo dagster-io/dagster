@@ -17,15 +17,15 @@ export const getVisibleFeatureFlagRows = () => [
     flagType: FeatureFlag.flagSidebarResources,
   },
   {
-    key: 'Pan graph visualizations when scrolling',
-    flagType: FeatureFlag.flagDAGPanWithScrollWheel,
-  },
-  {
     key: 'Experimental schedule/sensor logging view',
     flagType: FeatureFlag.flagSensorScheduleLogging,
   },
   {
-    key: 'Experimental Runs table view with filtering',
+    key: 'Experimental runs table view with filtering',
     flagType: FeatureFlag.flagRunsTableFiltering,
+  },
+  {
+    key: 'Experimental overview assets tab',
+    flagType: FeatureFlag.flagOverviewAssetsTab,
   },
 ];

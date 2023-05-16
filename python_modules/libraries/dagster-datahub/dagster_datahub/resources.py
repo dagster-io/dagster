@@ -71,7 +71,7 @@ def datahub_rest_emitter(init_context: InitResourceContext) -> DatahubRestEmitte
                 ),
             }
         ),
-        "topic": Field(str, default_value=DEFAULT_MCE_KAFKA_TOPIC, is_required=False),
+        "topic": Field(str, is_required=False),
         "topic_routes": Field(
             Map(str, str),
             default_value={

@@ -6,6 +6,7 @@ from typing import IO, Callable, Generator, Iterator, NamedTuple, Optional, Sequ
 
 from typing_extensions import Final, Self
 
+import dagster._check as check
 from dagster._core.storage.compute_log_manager import ComputeIOType
 
 MAX_BYTES_CHUNK_READ: Final = 4194304  # 4 MB
@@ -17,6 +18,8 @@ class CapturedLogContext(
         [
             ("log_key", Sequence[str]),
             ("external_url", Optional[str]),
+            ("external_stdout_url", Optional[str]),
+            ("external_stderr_url", Optional[str]),
         ],
     )
 ):
@@ -25,8 +28,26 @@ class CapturedLogContext(
     Dagster-managed location.
     """
 
-    def __new__(cls, log_key: Sequence[str], external_url: Optional[str] = None):
-        return super(CapturedLogContext, cls).__new__(cls, log_key, external_url=external_url)
+    def __new__(
+        cls,
+        log_key: Sequence[str],
+        external_stdout_url: Optional[str] = None,
+        external_stderr_url: Optional[str] = None,
+        external_url: Optional[str] = None,
+    ):
+        if external_url and (external_stdout_url or external_stderr_url):
+            check.failed(
+                "Cannot specify both `external_url` and one of"
+                " `external_stdout_url`/`external_stderr_url`"
+            )
+
+        return super(CapturedLogContext, cls).__new__(
+            cls,
+            log_key,
+            external_stdout_url=external_stdout_url,
+            external_stderr_url=external_stderr_url,
+            external_url=external_url,
+        )
 
 
 class CapturedLogData(

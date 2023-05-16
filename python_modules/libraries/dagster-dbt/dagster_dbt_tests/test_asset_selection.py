@@ -24,7 +24,7 @@ def get_previous_state_path():
     "select,exclude,expected_asset_names",
     [
         (
-            "*",
+            "fqn:*",
             None,
             {
                 "sort_by_calories",
@@ -95,7 +95,7 @@ def test_dbt_asset_selection(select, exclude, expected_asset_names):
     dbt_assets = load_assets_from_dbt_manifest(manifest_json=manifest_json)
     asset_graph = AssetGraph.from_assets(dbt_assets)
     actual_keys = DbtManifestAssetSelection(
-        manifest_json=manifest_json, select=select or "*", exclude=exclude or ""
+        manifest_json=manifest_json, select=select or "fqn:*", exclude=exclude or ""
     ).resolve_inner(asset_graph)
 
     assert expected_keys == actual_keys

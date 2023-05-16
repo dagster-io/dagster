@@ -1,7 +1,7 @@
 from dagster import job, op, resource
 
 
-def test_configured_solids_and_resources():
+def test_configured_ops_and_resources():
     # idiomatic usage
     @op(config_schema={"greeting": str}, required_resource_keys={"animal", "plant"})
     def emit_greet_creature(context):

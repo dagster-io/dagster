@@ -120,7 +120,7 @@ class RepositoryData(ABC):
         """Return all schedules in the repository as a list.
 
         Returns:
-            List[ScheduleDefinition]: All pipelines in the repository.
+            List[ScheduleDefinition]: All jobs in the repository.
         """
         return []
 
@@ -466,7 +466,7 @@ class CachingRepositoryData(RepositoryData):
                     node_defs[node_def.name] = node_def
                     node_to_job[node_def.name] = job_def.name
 
-                if node_defs[node_def.name] is not node_def:
+                if node_defs[node_def.name] != node_def:
                     first_name, second_name = sorted([node_to_job[node_def.name], job_def.name])
                     raise DagsterInvalidDefinitionError(
                         f"Conflicting definitions found in repository with name '{node_def.name}'."

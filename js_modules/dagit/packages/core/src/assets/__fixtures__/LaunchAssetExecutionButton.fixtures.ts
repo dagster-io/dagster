@@ -22,13 +22,13 @@ import {
   LaunchPipelineExecutionMutation,
   LaunchPipelineExecutionMutationVariables,
 } from '../../runs/types/RunUtils.types';
-import {LAUNCH_ASSET_CHOOSE_PARTITIONS_QUERY} from '../LaunchAssetChoosePartitionsDialog';
+import {LAUNCH_ASSET_WARNINGS_QUERY} from '../LaunchAssetChoosePartitionsDialog';
 import {
   LAUNCH_ASSET_CHECK_UPSTREAM_QUERY,
   LAUNCH_ASSET_LOADER_QUERY,
   LAUNCH_ASSET_LOADER_RESOURCE_QUERY,
 } from '../LaunchAssetExecutionButton';
-import {LaunchAssetChoosePartitionsQuery} from '../types/LaunchAssetChoosePartitionsDialog.types';
+import {LaunchAssetWarningsQuery} from '../types/LaunchAssetChoosePartitionsDialog.types';
 import {
   LaunchAssetCheckUpstreamQuery,
   LaunchAssetLoaderQuery,
@@ -190,14 +190,15 @@ export const ASSET_WEEKLY_ROOT: AssetNodeForGraphQueryFragment = {
   },
 };
 
-export const LaunchAssetChoosePartitionsMock: MockedResponse<LaunchAssetChoosePartitionsQuery> = {
+export const LaunchAssetWarningsMock: MockedResponse<LaunchAssetWarningsQuery> = {
   request: {
-    query: LAUNCH_ASSET_CHOOSE_PARTITIONS_QUERY,
+    query: LAUNCH_ASSET_WARNINGS_QUERY,
     variables: {},
   },
   result: {
     data: {
       __typename: 'DagitQuery',
+      assetNodes: [],
       instance: buildInstance({
         daemonHealth: buildDaemonHealth({
           id: 'daemonHealth',

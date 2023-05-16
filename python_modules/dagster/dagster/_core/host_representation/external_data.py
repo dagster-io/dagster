@@ -3,6 +3,7 @@ host processes and user processes. They should contain no
 business logic or clever indexing. Use the classes in external.py
 for that.
 """
+import inspect
 import json
 from abc import ABC, abstractmethod
 from collections import defaultdict
@@ -18,6 +19,7 @@ from typing import (
     Sequence,
     Set,
     Tuple,
+    Type,
     Union,
     cast,
 )
@@ -88,6 +90,7 @@ from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.snap import JobSnapshot
 from dagster._core.snap.mode import ResourceDefSnap, build_resource_def_snap
+from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
 
@@ -349,14 +352,14 @@ class ExternalJobRef(
         )
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_field_names={"op_selection": "solid_selection"})
 class ExternalPresetData(
     NamedTuple(
         "_ExternalPresetData",
         [
             ("name", str),
             ("run_config", Mapping[str, object]),
-            ("solid_selection", Optional[Sequence[str]]),
+            ("op_selection", Optional[Sequence[str]]),
             ("mode", str),
             ("tags", Mapping[str, str]),
         ],
@@ -366,7 +369,7 @@ class ExternalPresetData(
         cls,
         name: str,
         run_config: Optional[Mapping[str, object]],
-        solid_selection: Optional[Sequence[str]],
+        op_selection: Optional[Sequence[str]],
         mode: str,
         tags: Mapping[str, str],
     ):
@@ -374,8 +377,8 @@ class ExternalPresetData(
             cls,
             name=check.str_param(name, "name"),
             run_config=check.opt_mapping_param(run_config, "run_config", key_type=str),
-            solid_selection=check.opt_nullable_sequence_param(
-                solid_selection, "solid_selection", of_type=str
+            op_selection=check.opt_nullable_sequence_param(
+                op_selection, "op_selection", of_type=str
             ),
             mode=check.str_param(mode, "mode"),
             tags=check.opt_mapping_param(tags, "tags", key_type=str, value_type=str),
@@ -383,7 +386,8 @@ class ExternalPresetData(
 
 
 @whitelist_for_serdes(
-    storage_field_names={"job_name": "pipeline_name"}, skip_when_empty_fields={"default_status"}
+    storage_field_names={"job_name": "pipeline_name", "op_selection": "solid_selection"},
+    skip_when_empty_fields={"default_status"},
 )
 class ExternalScheduleData(
     NamedTuple(
@@ -392,7 +396,7 @@ class ExternalScheduleData(
             ("name", str),
             ("cron_schedule", Union[str, Sequence[str]]),
             ("job_name", str),
-            ("solid_selection", Optional[Sequence[str]]),
+            ("op_selection", Optional[Sequence[str]]),
             ("mode", Optional[str]),
             ("environment_vars", Optional[Mapping[str, str]]),
             ("partition_set_name", Optional[str]),
@@ -407,7 +411,7 @@ class ExternalScheduleData(
         name,
         cron_schedule,
         job_name,
-        solid_selection,
+        op_selection,
         mode,
         environment_vars,
         partition_set_name,
@@ -424,7 +428,7 @@ class ExternalScheduleData(
             name=check.str_param(name, "name"),
             cron_schedule=cron_schedule,
             job_name=check.str_param(job_name, "job_name"),
-            solid_selection=check.opt_nullable_list_param(solid_selection, "solid_selection", str),
+            op_selection=check.opt_nullable_list_param(op_selection, "op_selection", str),
             mode=check.opt_str_param(mode, "mode"),
             environment_vars=check.opt_dict_param(environment_vars, "environment_vars"),
             partition_set_name=check.opt_str_param(partition_set_name, "partition_set_name"),
@@ -448,21 +452,21 @@ class ExternalScheduleExecutionErrorData(
         )
 
 
-@whitelist_for_serdes(storage_field_names={"job_name": "pipeline_name"})
+@whitelist_for_serdes(
+    storage_field_names={"job_name": "pipeline_name", "op_selection": "solid_selection"}
+)
 class ExternalTargetData(
     NamedTuple(
         "_ExternalTargetData",
-        [("job_name", str), ("mode", str), ("solid_selection", Optional[Sequence[str]])],
+        [("job_name", str), ("mode", str), ("op_selection", Optional[Sequence[str]])],
     )
 ):
-    def __new__(cls, job_name: str, mode: str, solid_selection: Optional[Sequence[str]]):
+    def __new__(cls, job_name: str, mode: str, op_selection: Optional[Sequence[str]]):
         return super(ExternalTargetData, cls).__new__(
             cls,
             job_name=check.str_param(job_name, "job_name"),
             mode=mode,
-            solid_selection=check.opt_nullable_sequence_param(
-                solid_selection, "solid_selection", str
-            ),
+            op_selection=check.opt_nullable_sequence_param(op_selection, "op_selection", str),
         )
 
 
@@ -482,7 +486,7 @@ class ExternalSensorMetadata(
 
 
 @whitelist_for_serdes(
-    storage_field_names={"job_name": "pipeline_name"},
+    storage_field_names={"job_name": "pipeline_name", "op_selection": "solid_selection"},
     skip_when_empty_fields={"default_status", "sensor_type"},
 )
 class ExternalSensorData(
@@ -491,7 +495,7 @@ class ExternalSensorData(
         [
             ("name", str),
             ("job_name", Optional[str]),
-            ("solid_selection", Optional[Sequence[str]]),
+            ("op_selection", Optional[Sequence[str]]),
             ("mode", Optional[str]),
             ("min_interval", Optional[int]),
             ("description", Optional[str]),
@@ -506,7 +510,7 @@ class ExternalSensorData(
         cls,
         name: str,
         job_name: Optional[str] = None,
-        solid_selection: Optional[Sequence[str]] = None,
+        op_selection: Optional[Sequence[str]] = None,
         mode: Optional[str] = None,
         min_interval: Optional[int] = None,
         description: Optional[str] = None,
@@ -522,8 +526,8 @@ class ExternalSensorData(
                 job_name: ExternalTargetData(
                     job_name=check.str_param(job_name, "job_name"),
                     mode=check.opt_str_param(mode, "mode", DEFAULT_MODE_NAME),
-                    solid_selection=check.opt_nullable_sequence_param(
-                        solid_selection, "solid_selection", str
+                    op_selection=check.opt_nullable_sequence_param(
+                        op_selection, "op_selection", str
                     ),
                 )
             }
@@ -532,8 +536,8 @@ class ExternalSensorData(
             cls,
             name=check.str_param(name, "name"),
             job_name=check.opt_str_param(job_name, "job_name"),  # keep legacy field populated
-            solid_selection=check.opt_nullable_sequence_param(
-                solid_selection, "solid_selection", str
+            op_selection=check.opt_nullable_sequence_param(
+                op_selection, "op_selection", str
             ),  # keep legacy field populated
             mode=check.opt_str_param(mode, "mode"),  # keep legacy field populated
             min_interval=check.opt_int_param(min_interval, "min_interval"),
@@ -617,6 +621,7 @@ class ExternalTimeWindowPartitionsDefinitionData(
             ("timezone", Optional[str]),
             ("fmt", str),
             ("end_offset", int),
+            ("end", Optional[float]),
             ("cron_schedule", Optional[str]),
             # superseded by cron_schedule, but kept around for backcompat
             ("schedule_type", Optional[ScheduleType]),
@@ -635,6 +640,7 @@ class ExternalTimeWindowPartitionsDefinitionData(
         timezone: Optional[str],
         fmt: str,
         end_offset: int,
+        end: Optional[float] = None,
         cron_schedule: Optional[str] = None,
         schedule_type: Optional[ScheduleType] = None,
         minute_offset: Optional[int] = None,
@@ -648,6 +654,7 @@ class ExternalTimeWindowPartitionsDefinitionData(
             timezone=check.opt_str_param(timezone, "timezone"),
             fmt=check.str_param(fmt, "fmt"),
             end_offset=check.int_param(end_offset, "end_offset"),
+            end=check.opt_float_param(end, "end"),
             minute_offset=check.opt_int_param(minute_offset, "minute_offset"),
             hour_offset=check.opt_int_param(hour_offset, "hour_offset"),
             day_offset=check.opt_int_param(day_offset, "day_offset"),
@@ -662,6 +669,7 @@ class ExternalTimeWindowPartitionsDefinitionData(
                 timezone=self.timezone,
                 fmt=self.fmt,
                 end_offset=self.end_offset,
+                end=pendulum.from_timestamp(self.end, tz=self.timezone) if self.end else None,
             )
         else:
             # backcompat case
@@ -671,6 +679,7 @@ class ExternalTimeWindowPartitionsDefinitionData(
                 timezone=self.timezone,
                 fmt=self.fmt,
                 end_offset=self.end_offset,
+                end=pendulum.from_timestamp(self.end, tz=self.timezone) if self.end else None,
                 minute_offset=self.minute_offset,
                 hour_offset=self.hour_offset,
                 day_offset=self.day_offset,
@@ -748,14 +757,16 @@ class ExternalDynamicPartitionsDefinitionData(
         return DynamicPartitionsDefinition(name=self.name)
 
 
-@whitelist_for_serdes(storage_field_names={"job_name": "pipeline_name"})
+@whitelist_for_serdes(
+    storage_field_names={"job_name": "pipeline_name", "op_selection": "solid_selection"}
+)
 class ExternalPartitionSetData(
     NamedTuple(
         "_ExternalPartitionSetData",
         [
             ("name", str),
             ("job_name", str),
-            ("solid_selection", Optional[Sequence[str]]),
+            ("op_selection", Optional[Sequence[str]]),
             ("mode", Optional[str]),
             ("external_partitions_data", Optional[ExternalPartitionsDefinitionData]),
         ],
@@ -765,7 +776,7 @@ class ExternalPartitionSetData(
         cls,
         name: str,
         job_name: str,
-        solid_selection: Optional[Sequence[str]],
+        op_selection: Optional[Sequence[str]],
         mode: Optional[str],
         external_partitions_data: Optional[ExternalPartitionsDefinitionData] = None,
     ):
@@ -773,9 +784,7 @@ class ExternalPartitionSetData(
             cls,
             name=check.str_param(name, "name"),
             job_name=check.str_param(job_name, "job_name"),
-            solid_selection=check.opt_nullable_sequence_param(
-                solid_selection, "solid_selection", str
-            ),
+            op_selection=check.opt_nullable_sequence_param(op_selection, "op_selection", str),
             mode=check.opt_str_param(mode, "mode"),
             external_partitions_data=check.opt_inst_param(
                 external_partitions_data,
@@ -1392,8 +1401,16 @@ def external_asset_graph_from_defs(
                     job_def.name
                     for job_def in job_defs
                     if source_asset.key in job_def.asset_layer.source_assets_by_key
-                    and source_asset.partitions_def is None
-                    or source_asset.partitions_def == job_def.partitions_def
+                    and (
+                        # explicit source-asset observation job
+                        not job_def.asset_layer.has_assets_defs
+                        # "base asset job" will have both source and materializable assets
+                        or is_base_asset_job_name(job_def.name)
+                        and (
+                            source_asset.partitions_def is None
+                            or source_asset.partitions_def == job_def.partitions_def
+                        )
+                    )
                 ]
                 if source_asset.node_def is not None
                 else []
@@ -1556,6 +1573,11 @@ def _get_nested_resources(
         }
 
 
+def _get_class_name(cls: Type) -> str:
+    """Returns the fully qualified class name of the given class."""
+    return str(cls)[8:-2]
+
+
 def external_resource_data_from_def(
     name: str,
     resource_def: ResourceDefinition,
@@ -1596,7 +1618,23 @@ def external_resource_data_from_def(
     resource_type_def = resource_def
     if isinstance(resource_type_def, ResourceWithKeyMapping):
         resource_type_def = resource_type_def.wrapped_resource
-    resource_type = str(type(resource_type_def))[8:-2]
+
+    # use the resource function name as the resource type if it's a function resource
+    # (ie direct instantiation of ResourceDefinition or IOManagerDefinition)
+    if type(resource_type_def) in (ResourceDefinition, IOManagerDefinition):
+        module_name = check.not_none(inspect.getmodule(resource_type_def.resource_fn)).__name__
+        resource_type = f"{module_name}.{resource_type_def.resource_fn.__name__}"
+    # if it's a Pythonic resource, get the underlying Pythonic class name
+    elif isinstance(
+        resource_type_def,
+        (
+            ConfigurableResourceFactoryResourceDefinition,
+            ConfigurableIOManagerFactoryResourceDefinition,
+        ),
+    ):
+        resource_type = _get_class_name(resource_type_def.configurable_resource_cls)
+    else:
+        resource_type = _get_class_name(type(resource_type_def))
 
     return ExternalResourceData(
         name=name,
@@ -1619,7 +1657,7 @@ def external_schedule_data_from_def(schedule_def: ScheduleDefinition) -> Externa
         name=schedule_def.name,
         cron_schedule=schedule_def.cron_schedule,
         job_name=schedule_def.job_name,
-        solid_selection=schedule_def._target.solid_selection,  # noqa: SLF001
+        op_selection=schedule_def._target.op_selection,  # noqa: SLF001
         mode=DEFAULT_MODE_NAME,
         environment_vars=schedule_def.environment_vars,
         partition_set_name=None,
@@ -1654,6 +1692,11 @@ def external_time_window_partitions_definition_from_def(
     return ExternalTimeWindowPartitionsDefinitionData(
         cron_schedule=partitions_def.cron_schedule,
         start=pendulum.instance(partitions_def.start, tz=partitions_def.timezone).timestamp(),
+        end=(
+            pendulum.instance(partitions_def.end, tz=partitions_def.timezone).timestamp()
+            if partitions_def.end
+            else None
+        ),
         timezone=partitions_def.timezone,
         fmt=partitions_def.fmt,
         end_offset=partitions_def.end_offset,
@@ -1722,7 +1765,7 @@ def external_partition_set_data_from_def(
     return ExternalPartitionSetData(
         name=external_partition_set_name_for_job_name(job_def.name),
         job_name=job_def.name,
-        solid_selection=None,
+        op_selection=None,
         mode=DEFAULT_MODE_NAME,
         external_partitions_data=partitions_def_data,
     )
@@ -1752,7 +1795,7 @@ def external_sensor_data_from_def(
     if sensor_def.asset_selection is not None:
         target_dict = {
             base_asset_job_name: ExternalTargetData(
-                job_name=base_asset_job_name, mode=DEFAULT_MODE_NAME, solid_selection=None
+                job_name=base_asset_job_name, mode=DEFAULT_MODE_NAME, op_selection=None
             )
             for base_asset_job_name in repository_def.get_implicit_asset_job_names()
         }
@@ -1761,7 +1804,7 @@ def external_sensor_data_from_def(
             target.job_name: ExternalTargetData(
                 job_name=target.job_name,
                 mode=DEFAULT_MODE_NAME,
-                solid_selection=target.solid_selection,
+                op_selection=target.op_selection,
             )
             for target in sensor_def.targets
         }
@@ -1770,7 +1813,7 @@ def external_sensor_data_from_def(
         name=sensor_def.name,
         job_name=first_target.job_name if first_target else None,
         mode=None,
-        solid_selection=first_target.solid_selection if first_target else None,
+        op_selection=first_target.op_selection if first_target else None,
         target_dict=target_dict,
         min_interval=sensor_def.minimum_interval_seconds,
         description=sensor_def.description,
@@ -1789,7 +1832,7 @@ def active_presets_from_job_def(job_def: JobDefinition) -> Sequence[ExternalPres
             ExternalPresetData(
                 name=DEFAULT_PRESET_NAME,
                 run_config=job_def.run_config,
-                solid_selection=None,
+                op_selection=None,
                 mode=DEFAULT_MODE_NAME,
                 tags={},
             )

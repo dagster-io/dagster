@@ -1,21 +1,22 @@
 import {Box, Tag} from '@dagster-io/ui';
 import React from 'react';
-import {Link} from 'react-router-dom';
+import styled from 'styled-components/macro';
 
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 
 import {DagsterTag} from './RunTag';
+import {RunTags} from './RunTags';
 import {runsPathWithFilters} from './RunsFilterInput';
+import {RunFilterToken} from './RunsFilterInputNew';
 import {RunTableRunFragment} from './types/RunTable.types';
 
 type Props = {
   run: RunTableRunFragment;
+  onAddTag?: (tag: RunFilterToken) => void;
 };
 
 export function RunCreatedByCell(props: Props) {
   const tags = props.run.tags || [];
-
-  const isReexecution = tags.some((tag) => tag.key === DagsterTag.ParentRunId);
 
   const backfillTag = tags.find((tag) => tag.key === DagsterTag.Backfill);
   const scheduleTag = tags.find((tag) => tag.key === DagsterTag.ScheduleName);
@@ -34,18 +35,8 @@ export function RunCreatedByCell(props: Props) {
 
   let creator;
 
-  if (isReexecution || user) {
-    /**
-     * If this is a re-executed run then it was created by a user manually.
-     * It will still have the original sensor/backfill/schedule tags because
-     * they're copied over from the original but we don't show them because
-     * they're only responsible for the original run
-     */
-    if (user) {
-      creator = <UserDisplay email={user.value} />;
-    } else {
-      creator = <Tag icon="account_circle">Launchpad</Tag>;
-    }
+  if (user) {
+    creator = <UserDisplay email={user.value} />;
   } else if (backfillTag) {
     const link = props.run.assetSelection?.length
       ? `/overview/backfills/${backfillTag.value}`
@@ -56,9 +47,19 @@ export function RunCreatedByCell(props: Props) {
           },
         ]);
     creator = (
-      <div key="backfill">
-        Backfill: <Link to={link}>{backfillTag.value}</Link>
-      </div>
+      <RunTagsWrapper>
+        <RunTags
+          tags={[
+            {
+              key: DagsterTag.Backfill,
+              value: backfillTag.value,
+              link,
+            },
+          ]}
+          mode={null}
+          onAddTag={props.onAddTag}
+        />
+      </RunTagsWrapper>
     );
   } else if (scheduleTag) {
     creator = (
@@ -78,9 +79,17 @@ export function RunCreatedByCell(props: Props) {
         Auto-materialize policy
       </Tag>
     );
+  } else {
+    creator = <Tag icon="account_circle">Launchpad</Tag>;
   }
 
   return (
     <Box flex={{direction: 'column', alignItems: 'flex-start'}}>{creator || createdBy?.value}</Box>
   );
 }
+const RunTagsWrapper = styled.div`
+  display: contents;
+  > * {
+    display: contents;
+  }
+`;

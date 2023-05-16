@@ -84,7 +84,7 @@ export const SidebarAssetInfo: React.FC<{
       {(asset.description || OpMetadataPlugin?.SidebarComponent || !hasAssetMetadata) && (
         <SidebarSection title="Description">
           <Box padding={{vertical: 16, horizontal: 24}}>
-            <Description description={asset.description || 'No description provided.'} />
+            <Description description={asset.description || 'No description provided'} />
           </Box>
           {asset.op && OpMetadataPlugin?.SidebarComponent && (
             <Box padding={{bottom: 16, horizontal: 24}}>
@@ -270,7 +270,6 @@ const SIDEBAR_ASSET_FRAGMENT = gql`
 export const SIDEBAR_ASSET_QUERY = gql`
   query SidebarAssetQuery($assetKey: AssetKeyInput!) {
     assetNodeOrError(assetKey: $assetKey) {
-      __typename
       ... on AssetNode {
         id
         ...SidebarAssetFragment

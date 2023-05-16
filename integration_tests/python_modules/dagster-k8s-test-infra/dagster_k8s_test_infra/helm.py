@@ -840,7 +840,7 @@ def _deployment_config(docker_image):
             "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
             "dagsterApiGrpcArgs": [
                 "-m",
-                "dagster_test.test_project.test_pipelines.repo",
+                "dagster_test.test_project.test_jobs.repo",
                 "-a",
                 "define_demo_execution_repo",
             ],

@@ -2,10 +2,13 @@ from typing import Any, Optional
 
 import dagster._check as check
 import graphene
+from dagster._config.snap import ConfigSchemaSnapshot
 from dagster._core.host_representation import RepresentedJob
 from dagster._core.host_representation.external_data import DEFAULT_MODE_NAME
+from dagster._core.snap.snap_to_yaml import default_values_yaml_from_type_snap
 
 from ..implementation.run_config_schema import resolve_is_run_config_valid
+from ..implementation.utils import capture_error
 from .config_types import GrapheneConfigType, to_config_type
 from .errors import (
     GrapheneInvalidSubsetError,
@@ -43,6 +46,13 @@ class GrapheneRunConfigSchema(graphene.ObjectType):
         so that can be rendered for the user""",
     )
 
+    rootDefaultYaml = graphene.Field(
+        graphene.NonNull(graphene.String),
+        description="""The default configuration for this run in yaml. This is
+        so that the client does not have to parse JSON client side and assemble
+        it into a single yaml document.""",
+    )
+
     class Meta:
         description = """The run config schema represents the all the config type
         information given a certain execution selection and mode of execution of that
@@ -75,6 +85,7 @@ class GrapheneRunConfigSchema(graphene.ObjectType):
             ).root_config_key,
         )
 
+    @capture_error
     def resolve_isRunConfigValid(
         self,
         graphene_info: ResolveInfo,
@@ -86,6 +97,17 @@ class GrapheneRunConfigSchema(graphene.ObjectType):
             self._mode,
             parse_run_config_input(runConfigData or {}, raise_on_error=False),  # type: ignore
         )
+
+    def resolve_rootDefaultYaml(self, _graphene_info) -> str:
+        config_schema_snapshot: ConfigSchemaSnapshot = self._represented_job.config_schema_snapshot
+
+        root_key = check.not_none(
+            self._represented_job.get_mode_def_snap(self._mode).root_config_key
+        )
+
+        root_type = config_schema_snapshot.get_config_snap(root_key)
+
+        return default_values_yaml_from_type_snap(config_schema_snapshot, root_type)
 
 
 class GrapheneRunConfigSchemaOrError(graphene.Union):

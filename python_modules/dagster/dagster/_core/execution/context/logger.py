@@ -16,13 +16,6 @@ class InitLoggerContext:
     `InitLoggerContext` for testing purposes, use :py:func:`dagster.
     build_init_logger_context`.
 
-    Attributes:
-        logger_config (Any): The configuration data provided by the run config. The
-            schema for this data is defined by ``config_schema`` on the :py:class:`LoggerDefinition`
-        pipeline_def (Optional[JobDefinition]): The pipeline/job definition currently being executed.
-        logger_def (Optional[LoggerDefinition]): The logger definition for the logger being constructed.
-        run_id (str): The ID for this run of the pipeline.
-
     Example:
         .. code-block:: python
 
@@ -49,20 +42,26 @@ class InitLoggerContext:
     @public
     @property
     def logger_config(self) -> Any:
+        """The configuration data provided by the run config. The
+        schema for this data is defined by ``config_schema`` on the :py:class:`LoggerDefinition`.
+        """
         return self._logger_config
 
     @property
     def job_def(self) -> Optional[JobDefinition]:
+        """The job definition currently being executed."""
         return self._job_def
 
     @public
     @property
     def logger_def(self) -> Optional[LoggerDefinition]:
+        """The logger definition for the logger being constructed."""
         return self._logger_def
 
     @public
     @property
     def run_id(self) -> Optional[str]:
+        """The ID for this run of the job."""
         return self._run_id
 
 

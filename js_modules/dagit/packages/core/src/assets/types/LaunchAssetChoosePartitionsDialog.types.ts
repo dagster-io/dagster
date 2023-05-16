@@ -2,10 +2,26 @@
 
 import * as Types from '../../graphql/types';
 
-export type LaunchAssetChoosePartitionsQueryVariables = Types.Exact<{[key: string]: never}>;
+export type LaunchAssetWarningsQueryVariables = Types.Exact<{
+  upstreamAssetKeys: Array<Types.AssetKeyInput> | Types.AssetKeyInput;
+}>;
 
-export type LaunchAssetChoosePartitionsQuery = {
+export type LaunchAssetWarningsQuery = {
   __typename: 'DagitQuery';
+  assetNodes: Array<{
+    __typename: 'AssetNode';
+    id: string;
+    assetKey: {__typename: 'AssetKey'; path: Array<string>};
+    partitionDefinition: {
+      __typename: 'PartitionDefinition';
+      description: string;
+      dimensionTypes: Array<{
+        __typename: 'DimensionDefinitionType';
+        name: string;
+        dynamicPartitionsDefinitionName: string | null;
+      }>;
+    } | null;
+  }>;
   instance: {
     __typename: 'Instance';
     id: string;

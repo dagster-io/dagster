@@ -56,7 +56,7 @@ from dagster import EnvVar
 
 dbt_cloud_instance = DbtCloudClientResource(
     auth_token=EnvVar("DBT_CLOUD_API_TOKEN"),
-    account_id=EnvVar("DBT_CLOUD_ACCOUNT_ID"),
+    account_id=EnvVar.int("DBT_CLOUD_ACCOUNT_ID"),
 )
 ```
 

@@ -725,7 +725,7 @@ class PendingNodeInvocation(Generic[T_NodeDefinition]):
     ) -> "JobDefinition":
         if not isinstance(self.node_def, GraphDefinition):
             raise DagsterInvalidInvocationError(
-                "Attemped to call `execute_in_process` on a composite solid.  Only graphs "
+                "Attemped to call `to_job` on a non-graph.  Only graphs "
                 "constructed using the `@graph` decorator support this method."
             )
 
@@ -763,7 +763,7 @@ class PendingNodeInvocation(Generic[T_NodeDefinition]):
     ) -> "ExecuteInProcessResult":
         if not isinstance(self.node_def, GraphDefinition):
             raise DagsterInvalidInvocationError(
-                "Attemped to call `execute_in_process` on a composite solid.  Only graphs "
+                "Attemped to call `execute_in_process` on a non-graph.  Only graphs "
                 "constructed using the `@graph` decorator support this method."
             )
 
@@ -1022,16 +1022,16 @@ def do_composition(
         provided_output_defs(List[OutputDefinition]): List of output definitions
             explicitly provided to the decorator by the user.
         config_mapping (Any): Config mapping provided to decorator by user. In
-            pipeline/composite_solid case, this would have been constructed from a user-provided
+            job/graph case, this would have been constructed from a user-provided
             config_schema and config_fn.
         ignore_output_from_composite_fn(Bool): Because of backwards compatibility
-            issues, pipelines ignore the return value out of the mapping if
+            issues, jobs ignore the return value out of the mapping if
             the user has not explicitly provided the output definitions.
             This should be removed in 0.11.0.
     """
     from .decorators.op_decorator import (
         NoContextDecoratedOpFunction,
-        resolve_checked_solid_fn_inputs,
+        resolve_checked_op_fn_inputs,
     )
 
     actual_output_defs: Sequence[OutputDefinition]
@@ -1047,7 +1047,7 @@ def do_composition(
 
     compute_fn = NoContextDecoratedOpFunction(fn)
 
-    actual_input_defs = resolve_checked_solid_fn_inputs(
+    actual_input_defs = resolve_checked_op_fn_inputs(
         decorator_name=decorator_name,
         fn_name=graph_name,
         compute_fn=compute_fn,

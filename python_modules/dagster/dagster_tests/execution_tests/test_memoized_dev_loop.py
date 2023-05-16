@@ -267,7 +267,7 @@ def test_version_strategy_depends_from_context():
             resource_arg = context.resource_config["arg"]
             return version[resource_arg]
 
-    run_config = {"solids": {"my_op": {"config": {"arg": "foo"}}}}
+    run_config = {"ops": {"my_op": {"config": {"arg": "foo"}}}}
 
     @op
     def my_op():

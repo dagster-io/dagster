@@ -70,9 +70,7 @@ def inner_plan_execution_iterator(
                     (
                         "Expected step context for solid {solid_name} to have all required"
                         " resources, but missing {missing_resources}."
-                    ).format(
-                        solid_name=step_context.solid.name, missing_resources=missing_resources
-                    ),
+                    ).format(solid_name=step_context.op.name, missing_resources=missing_resources),
                 )
 
                 with ExitStack() as step_stack:
@@ -242,7 +240,7 @@ def dagster_event_sequence_for_step(
     The "raised_dagster_errors" context manager can be used to force these errors to be
     re-raised and surfaced to the user. This is mostly to get sensible errors in test and
     ad-hoc contexts, rather than forcing the user to wade through the
-    PipelineExecutionResult API in order to find the step that failed.
+    JobExecutionResult API in order to find the step that failed.
 
     For tools, however, this option should be false, and a sensible error message
     signaled to the user within that tool.

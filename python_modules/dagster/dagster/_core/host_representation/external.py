@@ -346,7 +346,7 @@ class ExternalJob(RepresentedJob):
         return self._job_index.job_snapshot.description
 
     @property
-    def solid_names_in_topological_order(self):
+    def node_names_in_topological_order(self):
         return self._job_index.job_snapshot.node_names_in_topological_order
 
     @property
@@ -364,17 +364,17 @@ class ExternalJob(RepresentedJob):
         return self._repository_handle
 
     @property
-    def solid_selection(self) -> Optional[Sequence[str]]:
+    def op_selection(self) -> Optional[Sequence[str]]:
         return (
-            self._job_index.job_snapshot.lineage_snapshot.node_selection
+            self._job_index.job_snapshot.lineage_snapshot.op_selection
             if self._job_index.job_snapshot.lineage_snapshot
             else None
         )
 
     @property
-    def solids_to_execute(self) -> Optional[AbstractSet[str]]:
+    def resolved_op_selection(self) -> Optional[AbstractSet[str]]:
         return (
-            self._job_index.job_snapshot.lineage_snapshot.nodes_to_execute
+            self._job_index.job_snapshot.lineage_snapshot.resolved_op_selection
             if self._job_index.job_snapshot.lineage_snapshot
             else None
         )
@@ -392,12 +392,12 @@ class ExternalJob(RepresentedJob):
         return list(self._active_preset_dict.values())
 
     @property
-    def solid_names(self) -> Sequence[str]:
+    def node_names(self) -> Sequence[str]:
         return self._job_index.job_snapshot.node_names
 
-    def has_solid_invocation(self, solid_name: str):
-        check.str_param(solid_name, "solid_name")
-        return self._job_index.has_solid_invocation(solid_name)
+    def has_node_invocation(self, node_name: str):
+        check.str_param(node_name, "node_name")
+        return self._job_index.has_node_invocation(node_name)
 
     def has_preset(self, preset_name: str) -> bool:
         check.str_param(preset_name, "preset_name")
@@ -608,8 +608,8 @@ class ExternalSchedule:
         return self._external_schedule_data.execution_timezone
 
     @property
-    def solid_selection(self) -> Optional[Sequence[str]]:
-        return self._external_schedule_data.solid_selection
+    def op_selection(self) -> Optional[Sequence[str]]:
+        return self._external_schedule_data.op_selection
 
     @property
     def job_name(self) -> str:
@@ -739,9 +739,9 @@ class ExternalSensor:
         return target.mode if target else None
 
     @property
-    def solid_selection(self) -> Optional[Sequence[str]]:
+    def op_selection(self) -> Optional[Sequence[str]]:
         target = self._get_single_target()
-        return target.solid_selection if target else None
+        return target.op_selection if target else None
 
     def _get_single_target(self) -> Optional[ExternalTargetData]:
         if self._external_sensor_data.target_dict:
@@ -864,8 +864,8 @@ class ExternalPartitionSet:
         return self._external_partition_set_data.name
 
     @property
-    def solid_selection(self) -> Optional[Sequence[str]]:
-        return self._external_partition_set_data.solid_selection
+    def op_selection(self) -> Optional[Sequence[str]]:
+        return self._external_partition_set_data.op_selection
 
     @property
     def mode(self) -> Optional[str]:

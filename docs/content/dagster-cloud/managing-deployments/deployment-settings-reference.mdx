@@ -27,6 +27,7 @@ run_queue:
 
 run_monitoring:
   start_timeout_seconds: 1200
+  cancel_timeout_seconds: 1200
 
 run_retries:
   max_retries: 0
@@ -119,11 +120,12 @@ run_queue:
 
 ### Run monitoring (run_monitoring)
 
-The `run_monitoring` settings allow you to define how long Dagster Cloud should wait for runs to start before failing them in the deployment.
+The `run_monitoring` settings allow you to define how long Dagster Cloud should wait for runs to start before making them as failed, or to terminate before marking them as canceled.
 
 ```yaml
 run_monitoring:
   start_timeout_seconds: 1200
+  cancel_timeout_seconds: 1200
 ```
 
 <ReferenceTable>

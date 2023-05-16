@@ -514,8 +514,10 @@ class AirbyteResource(BaseAirbyteResource):
 
     def does_dest_support_normalization(
         self, destination_definition_id: str, workspace_id: str
-    ) -> Dict[str, Any]:
-        return cast(
+    ) -> bool:
+        # Airbyte API changed source of truth for normalization in PR
+        # https://github.com/airbytehq/airbyte/pull/21005
+        norm_dest_def_spec: bool = cast(
             Dict[str, Any],
             check.not_none(
                 self.make_request_cached(
@@ -527,6 +529,24 @@ class AirbyteResource(BaseAirbyteResource):
                 )
             ),
         ).get("supportsNormalization", False)
+
+        norm_dest_def: bool = (
+            cast(
+                Dict[str, Any],
+                check.not_none(
+                    self.make_request_cached(
+                        endpoint="/destination_definitions/get",
+                        data={
+                            "destinationDefinitionId": destination_definition_id,
+                        },
+                    )
+                ),
+            )
+            .get("normalizationConfig", {})
+            .get("supported", False)
+        )
+
+        return any([norm_dest_def_spec, norm_dest_def])
 
     def get_job_status(self, connection_id: str, job_id: int) -> Mapping[str, object]:
         if self.forward_logs:

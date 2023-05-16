@@ -2,6 +2,7 @@ import os
 import pickle
 import shutil
 import tempfile
+from datetime import datetime
 from typing import Optional, Tuple
 
 import pytest
@@ -293,6 +294,7 @@ def test_fs_io_manager_partitioned_no_partitions():
                 self,
                 downstream_partitions_subset: Optional[PartitionsSubset],
                 upstream_partitions_def: PartitionsDefinition,
+                current_time: Optional[datetime] = None,
                 dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
             ) -> PartitionsSubset:
                 return upstream_partitions_def.empty_subset()
@@ -301,6 +303,7 @@ def test_fs_io_manager_partitioned_no_partitions():
                 self,
                 upstream_partitions_subset,
                 downstream_partitions_def,
+                current_time: Optional[datetime] = None,
                 dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
             ):
                 raise NotImplementedError()

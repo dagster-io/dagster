@@ -71,7 +71,8 @@ def dbt_seed(dbt_executable, dbt_config_dir):
 def dbt_seed_python(dbt_executable, dbt_python_config_dir):
     with pushd(TEST_PYTHON_PROJECT_DIR):
         subprocess.run(
-            [dbt_executable, "seed", "--profiles-dir", dbt_python_config_dir], check=True
+            [dbt_executable, "seed", "--threads", "1", "--profiles-dir", dbt_python_config_dir],
+            check=True,
         )
 
 

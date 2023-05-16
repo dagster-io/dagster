@@ -144,7 +144,7 @@ def step_context_to_step_run_ref(
                     repository_load_data=step_context.plan_data.execution_plan.repository_load_data,
                 ),
                 job_name=recon_job.job_name,
-                solids_to_execute=recon_job.solids_to_execute,
+                op_selection=recon_job.op_selection,
             )
 
     return StepRunRef(
@@ -186,10 +186,10 @@ def step_run_ref_to_step_context(
 
     job = step_run_ref.recon_job
 
-    solids_to_execute = step_run_ref.dagster_run.solids_to_execute
-    if solids_to_execute or step_run_ref.dagster_run.asset_selection:
-        job = step_run_ref.recon_job.subset_for_execution_from_existing_job(
-            frozenset(solids_to_execute) if solids_to_execute else None,
+    resolved_op_selection = step_run_ref.dagster_run.resolved_op_selection
+    if resolved_op_selection or step_run_ref.dagster_run.asset_selection:
+        job = step_run_ref.recon_job.get_subset(
+            op_selection=resolved_op_selection,
             asset_selection=step_run_ref.dagster_run.asset_selection,
         )
 

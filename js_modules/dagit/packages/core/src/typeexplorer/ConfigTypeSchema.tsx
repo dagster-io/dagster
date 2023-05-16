@@ -2,7 +2,6 @@ import {gql} from '@apollo/client';
 
 export const CONFIG_TYPE_SCHEMA_FRAGMENT = gql`
   fragment ConfigTypeSchemaFragment on ConfigType {
-    __typename
     ... on EnumConfigType {
       givenName
       values {

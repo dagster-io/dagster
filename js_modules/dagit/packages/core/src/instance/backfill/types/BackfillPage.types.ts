@@ -9,6 +9,7 @@ export type BackfillStatusesByAssetQueryVariables = Types.Exact<{
 export type BackfillStatusesByAssetQuery = {
   __typename: 'DagitQuery';
   partitionBackfillOrError:
+    | {__typename: 'BackfillNotFoundError'; message: string}
     | {
         __typename: 'PartitionBackfill';
         id: string;
@@ -43,7 +44,13 @@ export type BackfillStatusesByAssetQuery = {
                 numPartitionsFailed: number;
                 assetKey: {__typename: 'AssetKey'; path: Array<string>};
               }
-            | {__typename: 'UnpartitionedAssetStatus'}
+            | {
+                __typename: 'UnpartitionedAssetStatus';
+                inProgress: boolean;
+                materialized: boolean;
+                failed: boolean;
+                assetKey: {__typename: 'AssetKey'; path: Array<string>};
+              }
           >;
         } | null;
       }
@@ -93,7 +100,13 @@ export type PartitionBackfillFragment = {
           numPartitionsFailed: number;
           assetKey: {__typename: 'AssetKey'; path: Array<string>};
         }
-      | {__typename: 'UnpartitionedAssetStatus'}
+      | {
+          __typename: 'UnpartitionedAssetStatus';
+          inProgress: boolean;
+          materialized: boolean;
+          failed: boolean;
+          assetKey: {__typename: 'AssetKey'; path: Array<string>};
+        }
     >;
   } | null;
 };

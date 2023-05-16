@@ -26,7 +26,7 @@ from .models import k8s_model_from_dict, k8s_snake_case_dict
 from .utils import sanitize_k8s_label
 
 # To retry step worker, users should raise RetryRequested() so that the dagster system is aware of the
-# retry. As an example, see retry_pipeline in dagster_test.test_project.test_pipelines.repo
+# retry. As an example, see retry_job in dagster_test.test_project.test_jobs.repo
 # To override this config, user can specify UserDefinedDagsterK8sConfig.
 DEFAULT_K8S_JOB_BACKOFF_LIMIT = 0
 

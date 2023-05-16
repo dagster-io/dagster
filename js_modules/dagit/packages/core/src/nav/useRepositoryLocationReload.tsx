@@ -3,7 +3,7 @@ import {ApolloClient, gql, useApolloClient, useQuery} from '@apollo/client';
 import {Intent} from '@blueprintjs/core';
 import * as React from 'react';
 
-import {SharedToaster} from '../app/DomUtils';
+import {showSharedToaster} from '../app/DomUtils';
 import {useInvalidateConfigsForRepo} from '../app/ExecutionSessionStorage';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {UNAUTHORIZED_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
@@ -107,92 +107,95 @@ export const useRepositoryLocationReload = ({
     // https://github.com/apollographql/apollo-client/issues/5531
     notifyOnNetworkStatusChange: true,
     onCompleted: (data: RepositoryLocationStatusQuery) => {
-      const workspace = data.workspaceOrError;
+      // SetTimeout to avoid infinite loop in test
+      setTimeout(async () => {
+        const workspace = data.workspaceOrError;
 
-      if (workspace.__typename === 'PythonError') {
-        dispatch({type: 'error', error: workspace, errorLocationId: null});
-        stopPolling();
-        return;
-      }
-      if (state.pollLocationIds === null) {
-        stopPolling();
-        return;
-      }
+        if (workspace.__typename === 'PythonError') {
+          dispatch({type: 'error', error: workspace, errorLocationId: null});
+          stopPolling();
+          return;
+        }
+        if (state.pollLocationIds === null) {
+          stopPolling();
+          return;
+        }
 
-      const locationMap = Object.fromEntries(workspace.locationEntries.map((e) => [e.id, e]));
-      const matches = state.pollLocationIds.map((id) => locationMap[id]).filter(Boolean);
-      const missingId = state.pollLocationIds.find((id) => !locationMap[id]);
+        const locationMap = Object.fromEntries(workspace.locationEntries.map((e) => [e.id, e]));
+        const matches = state.pollLocationIds.map((id) => locationMap[id]).filter(Boolean);
+        const missingId = state.pollLocationIds.find((id) => !locationMap[id]);
 
-      if (missingId) {
-        dispatch({
-          type: 'error',
-          error: {message: `Location ${missingId} not found in workspace.`},
-          errorLocationId: missingId,
-        });
-        stopPolling();
-        return;
-      }
-
-      // If we're still loading, there's nothing to do yet. Continue polling unless
-      // we have hit our timeout threshold.
-      if (matches.some((l) => l.loadStatus === RepositoryLocationLoadStatus.LOADING)) {
-        if (Date.now() - Number(state.pollStartTime) > THREE_MINUTES) {
-          const message = `Timed out waiting for the ${
-            matches.length > 1 ? 'locations' : 'location'
-          } to reload.`;
+        if (missingId) {
           dispatch({
             type: 'error',
-            error: {message},
-            errorLocationId: null,
+            error: {message: `Location ${missingId} not found in workspace.`},
+            errorLocationId: missingId,
           });
           stopPolling();
+          return;
         }
-        return;
-      }
 
-      // If we're done loading and an error persists, show it.
-      const errorLocation = matches.find(
-        (m) => m.locationOrLoadError?.__typename === 'PythonError',
-      );
+        // If we're still loading, there's nothing to do yet. Continue polling unless
+        // we have hit our timeout threshold.
+        if (matches.some((l) => l.loadStatus === RepositoryLocationLoadStatus.LOADING)) {
+          if (Date.now() - Number(state.pollStartTime) > THREE_MINUTES) {
+            const message = `Timed out waiting for the ${
+              matches.length > 1 ? 'locations' : 'location'
+            } to reload.`;
+            dispatch({
+              type: 'error',
+              error: {message},
+              errorLocationId: null,
+            });
+            stopPolling();
+          }
+          return;
+        }
 
-      if (errorLocation && errorLocation.locationOrLoadError?.__typename === 'PythonError') {
-        dispatch({
-          type: 'error',
-          error: errorLocation.locationOrLoadError,
-          errorLocationId: errorLocation.id,
-        });
+        // If we're done loading and an error persists, show it.
+        const errorLocation = matches.find(
+          (m) => m.locationOrLoadError?.__typename === 'PythonError',
+        );
+
+        if (errorLocation && errorLocation.locationOrLoadError?.__typename === 'PythonError') {
+          dispatch({
+            type: 'error',
+            error: errorLocation.locationOrLoadError,
+            errorLocationId: errorLocation.id,
+          });
+          stopPolling();
+          return;
+        }
+
+        // Otherwise, we have no errors left.
+        dispatch({type: 'finish-polling'});
         stopPolling();
-        return;
-      }
 
-      // Otherwise, we have no errors left.
-      dispatch({type: 'finish-polling'});
-      stopPolling();
+        // On success, show the successful toast, hide the dialog (if open), and reset Apollo.
+        await showSharedToaster({
+          message: `${scope === 'location' ? 'Code location' : 'Definitions'} reloaded!`,
+          timeout: 3000,
+          icon: 'check_circle',
+          intent: Intent.SUCCESS,
+        });
+        dispatch({type: 'success'});
 
-      // On success, show the successful toast, hide the dialog (if open), and reset Apollo.
-      SharedToaster.show({
-        message: `${scope === 'location' ? 'Code location' : 'Definitions'} reloaded!`,
-        timeout: 3000,
-        icon: 'check_circle',
-        intent: Intent.SUCCESS,
-      });
-      dispatch({type: 'success'});
+        // Update run config localStorage, which may now be out of date.
+        const repositories = matches.flatMap((location) =>
+          location?.__typename === 'WorkspaceLocationEntry' &&
+          location.locationOrLoadError?.__typename === 'RepositoryLocation'
+            ? location.locationOrLoadError.repositories.map((repo) => ({
+                ...repo,
+                locationName: location.id,
+              }))
+            : [],
+        );
 
-      // Update run config localStorage, which may now be out of date.
-      const repositories = matches.flatMap((location) =>
-        location?.__typename === 'WorkspaceLocationEntry' &&
-        location.locationOrLoadError?.__typename === 'RepositoryLocation'
-          ? location.locationOrLoadError.repositories.map((repo) => ({
-              ...repo,
-              locationName: location.id,
-            }))
-          : [],
-      );
+        invalidateConfigs(repositories);
 
-      invalidateConfigs(repositories);
-
-      // Refetch all the queries bound to the UI.
-      apollo.refetchQueries({include: 'active'});
+        // Refetch all the queries bound to the UI.
+        apollo.refetchQueries({include: 'active'});
+      }, 0);
     },
   });
 
@@ -220,11 +223,9 @@ export const useRepositoryLocationReload = ({
 const REPOSITORY_LOCATION_STATUS_QUERY = gql`
   query RepositoryLocationStatusQuery {
     workspaceOrError {
-      __typename
       ... on Workspace {
         id
         locationEntries {
-          __typename
           id
           loadStatus
           locationOrLoadError {

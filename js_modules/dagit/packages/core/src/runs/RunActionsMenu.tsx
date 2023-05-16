@@ -13,12 +13,15 @@ import {
   StyledReadOnlyCodeMirror,
   JoinedButtons,
   DialogBody,
+  Box,
+  Colors,
 } from '@dagster-io/ui';
 import * as React from 'react';
 import {useHistory} from 'react-router-dom';
+import styled from 'styled-components/macro';
 
 import {AppContext} from '../app/AppContext';
-import {SharedToaster} from '../app/DomUtils';
+import {showSharedToaster} from '../app/DomUtils';
 import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
 import {useCopyToClipboard} from '../app/browser';
 import {ReexecutionStrategy} from '../graphql/types';
@@ -132,7 +135,21 @@ export const RunActionsMenu: React.FC<{
               />
               <MenuItem
                 tagName="button"
-                text="View all tags"
+                text={
+                  <div style={{display: 'contents'}}>
+                    View all tags
+                    <Box
+                      flex={{
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        display: 'inline-flex',
+                      }}
+                      padding={{vertical: 4, horizontal: 8}}
+                    >
+                      <SlashShortcut>t</SlashShortcut>
+                    </Box>
+                  </div>
+                }
                 icon="tag"
                 onClick={() => setVisibleDialog('tags')}
               />
@@ -282,9 +299,9 @@ export const RunActionsMenu: React.FC<{
         <DialogFooter topBorder>
           <Button
             intent="none"
-            onClick={() => {
+            onClick={async () => {
               copyConfig(runConfigYaml || '');
-              SharedToaster.show({
+              await showSharedToaster({
                 intent: 'success',
                 icon: 'copy_to_clipboard_done',
                 message: 'Copied!',
@@ -483,4 +500,11 @@ const PIPELINE_ENVIRONMENT_QUERY = gql`
       }
     }
   }
+`;
+
+const SlashShortcut = styled.div`
+  border-radius: 4px;
+  padding: 0px 6px;
+  background: ${Colors.Gray100};
+  color: ${Colors.Gray500};
 `;

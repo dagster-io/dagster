@@ -77,7 +77,6 @@ export const TypeListContainer: React.FC<ITypeListContainerProps> = ({
 const TYPE_LIST_CONTAINER_QUERY = gql`
   query TypeListContainerQuery($pipelineSelector: PipelineSelector!) {
     pipelineOrError(params: $pipelineSelector) {
-      __typename
       ... on Pipeline {
         id
         isJob

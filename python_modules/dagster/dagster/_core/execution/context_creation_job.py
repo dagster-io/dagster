@@ -113,9 +113,7 @@ def create_context_creation_data(
         dagster_run=dagster_run,
         executor_def=executor_def,
         instance=instance,
-        resource_keys_to_init=get_required_resource_keys_to_init(
-            execution_plan, job_def, resolved_run_config
-        ),
+        resource_keys_to_init=get_required_resource_keys_to_init(execution_plan, job_def),
         execution_plan=execution_plan,
     )
 
@@ -411,7 +409,7 @@ def scoped_job_context(
     discarding them.  It yields the resulting `pipeline_context`.
 
     Should only be used where we need to reconstruct the pipeline context, ignoring any yielded
-    events (e.g. PipelineExecutionResult, dagstermill, unit tests, etc)
+    events (e.g. JobExecutionResult, dagstermill, unit tests, etc)
     """
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
     check.inst_param(job, "job", IJob)

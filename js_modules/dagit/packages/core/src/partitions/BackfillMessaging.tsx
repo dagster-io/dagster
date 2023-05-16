@@ -4,7 +4,7 @@ import {History} from 'history';
 import * as React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {SharedToaster} from '../app/DomUtils';
+import {showSharedToaster} from '../app/DomUtils';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {LaunchPartitionBackfillMutation} from '../instance/types/BackfillUtils.types';
 import {runsPathWithFilters} from '../runs/RunsFilterInput';
@@ -56,20 +56,22 @@ function messageForLaunchBackfillError(data: LaunchPartitionBackfillMutation | n
   );
 }
 
-export function showBackfillErrorToast(data: LaunchPartitionBackfillMutation | null | undefined) {
-  SharedToaster.show({
+export async function showBackfillErrorToast(
+  data: LaunchPartitionBackfillMutation | null | undefined,
+) {
+  await showSharedToaster({
     message: messageForLaunchBackfillError(data),
     icon: 'error',
     intent: 'danger',
   });
 }
 
-export function showBackfillSuccessToast(
+export async function showBackfillSuccessToast(
   history: History<unknown>,
   backfillId: string,
   isAssetBackfill: boolean,
 ) {
-  SharedToaster.show({
+  await showSharedToaster({
     intent: 'success',
     message: (
       <div>
@@ -128,7 +130,7 @@ export const DaemonNotRunningAlertBody = () => (
   />
 );
 
-export const USING_DEFAULT_LAUNCH_ERALERT_INSTANCE_FRAGMENT = gql`
+export const USING_DEFAULT_LAUNCHER_ALERT_INSTANCE_FRAGMENT = gql`
   fragment UsingDefaultLauncherAlertInstanceFragment on Instance {
     id
     runQueuingSupported

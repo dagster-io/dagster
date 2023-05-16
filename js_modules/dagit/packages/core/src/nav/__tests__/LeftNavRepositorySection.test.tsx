@@ -63,7 +63,7 @@ describe('Repository options', () => {
     });
 
     const repoHeader = screen.getByRole('button', {name: /foo/i});
-    userEvent.click(repoHeader);
+    await userEvent.click(repoHeader);
 
     await waitFor(() => {
       expect(
@@ -132,7 +132,7 @@ describe('Repository options', () => {
       });
 
       const repoHeader = screen.getByRole('button', {name: /lorem/i});
-      userEvent.click(repoHeader);
+      await userEvent.click(repoHeader);
 
       await waitFor(() => {
         // Three links. Two jobs, one repo name at the bottom.
@@ -154,7 +154,7 @@ describe('Repository options', () => {
       });
 
       const repoHeader = screen.getByRole('button', {name: /lorem/i});
-      userEvent.click(repoHeader);
+      await userEvent.click(repoHeader);
 
       await waitFor(() => {
         // Three links. Two jobs, one repo name at the bottom.
@@ -181,9 +181,9 @@ describe('Repository options', () => {
       const dunderHeader = screen.getByRole('button', {name: /abc_location/i});
       expect(dunderHeader).toBeVisible();
 
-      userEvent.click(loremHeader);
-      userEvent.click(fooHeader);
-      userEvent.click(dunderHeader);
+      await userEvent.click(loremHeader);
+      await userEvent.click(fooHeader);
+      await userEvent.click(dunderHeader);
 
       await waitFor(() => {
         // Twelve jobs total. No repo name link since multiple repos are visible.
@@ -208,7 +208,7 @@ describe('Repository options', () => {
       });
 
       const fooHeader = screen.getByRole('button', {name: /foo/i});
-      userEvent.click(fooHeader);
+      await userEvent.click(fooHeader);
 
       // `foo@bar` is visible, and has four jobs. Plus one for repo link at bottom.
       await waitFor(() => {
@@ -236,9 +236,9 @@ describe('Repository options', () => {
       const dunderHeader = screen.getByRole('button', {name: /abc_location/i});
       expect(dunderHeader).toBeVisible();
 
-      userEvent.click(loremHeader);
-      userEvent.click(fooHeader);
-      userEvent.click(dunderHeader);
+      await userEvent.click(loremHeader);
+      await userEvent.click(fooHeader);
+      await userEvent.click(dunderHeader);
 
       await waitFor(() => {
         // Twelve jobs total. No repo name link since multiple repos are visible.
@@ -316,9 +316,9 @@ describe('Repository options', () => {
       const dunderHeader = screen.getByRole('button', {name: /abc_location/i});
       expect(dunderHeader).toBeVisible();
 
-      userEvent.click(loremHeader);
-      userEvent.click(fooHeader);
-      userEvent.click(dunderHeader);
+      await userEvent.click(loremHeader);
+      await userEvent.click(fooHeader);
+      await userEvent.click(dunderHeader);
 
       // After repositories are added and expanded, all become visible.
       await waitFor(() => {
@@ -350,7 +350,7 @@ describe('Repository options', () => {
 
       const loremHeader = screen.getByRole('button', {name: /lorem/i});
       expect(loremHeader).toBeVisible();
-      userEvent.click(loremHeader);
+      await userEvent.click(loremHeader);
 
       // Three links: two jobs, one repo link at bottom.
       expect(screen.queryAllByRole('link')).toHaveLength(3);
@@ -411,7 +411,7 @@ describe('Repository options', () => {
       });
 
       const repoHeader = screen.getByRole('button', {name: /lorem/i});
-      userEvent.click(repoHeader);
+      await userEvent.click(repoHeader);
 
       await waitFor(() => {
         expect(

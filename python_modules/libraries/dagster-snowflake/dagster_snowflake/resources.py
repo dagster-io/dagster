@@ -1,3 +1,4 @@
+import base64
 import sys
 import warnings
 from contextlib import closing, contextmanager
@@ -111,7 +112,9 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
         description=(
             "Raw private key to use. See"
             " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details. Alternately,"
-            " set private_key_path and private_key_password."
+            " set private_key_path and private_key_password. To avoid issues with newlines in the"
+            " keys, you can base64 encode the key. You can retrieve the base64 encoded key with"
+            " this shell command: cat rsa_key.p8 | base64"
         ),
     )
 
@@ -120,7 +123,8 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
         description=(
             "Raw private key password to use. See"
             " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details. Required for"
-            " both private_key and private_key_path."
+            " both private_key and private_key_path if the private key is encrypted. For"
+            " unencrypted keys, this config can be omitted or set to None."
         ),
     )
 
@@ -352,18 +356,36 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
         return sqlalchemy_engine_args
 
     def _snowflake_private_key(self, config) -> bytes:
-        private_key = config.get("private_key", None)
         # If the user has defined a path to a private key, we will use that.
         if config.get("private_key_path", None) is not None:
             # read the file from the path.
             with open(config.get("private_key_path"), "rb") as key:
                 private_key = key.read()
+        else:
+            private_key = config.get("private_key", None)
 
         kwargs = {}
         if config.get("private_key_password", None) is not None:
             kwargs["password"] = config["private_key_password"].encode()
+        else:
+            kwargs["password"] = None
 
-        p_key = serialization.load_pem_private_key(private_key, backend=default_backend(), **kwargs)
+        try:
+            p_key = serialization.load_pem_private_key(
+                private_key, backend=default_backend(), **kwargs
+            )
+        except TypeError:
+            try:
+                private_key = base64.b64decode(private_key)
+                p_key = serialization.load_pem_private_key(
+                    private_key, backend=default_backend(), **kwargs
+                )
+            except ValueError:
+                raise ValueError(
+                    "Unable to load private key. You may need to base64 encode your private key."
+                    " You can retrieve the base64 encoded key with this shell command: cat"
+                    " rsa_key.p8 | base64"
+                )
 
         pkb = p_key.private_bytes(
             encoding=serialization.Encoding.DER,

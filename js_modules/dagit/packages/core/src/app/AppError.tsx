@@ -3,6 +3,7 @@ import {ServerError} from '@apollo/client/link/utils';
 import {Observable} from '@apollo/client/utilities';
 import {FontFamily, Toaster} from '@dagster-io/ui';
 import {GraphQLError} from 'graphql';
+import memoize from 'lodash/memoize';
 import * as React from 'react';
 
 import {showCustomAlert} from './CustomAlertProvider';
@@ -15,24 +16,27 @@ interface DagsterSerializableErrorInfo {
   context: DagsterSerializableErrorInfo | null;
 }
 
-interface DagsterGraphQLError extends GraphQLError {
+type DagsterGraphQLError = GraphQLError & {
   extensions:
     | {
         errorInfo?: DagsterSerializableErrorInfo;
       }
     | undefined;
-}
+};
 
-const ErrorToaster = Toaster.create({position: 'top-right'});
+const getErrorToaster = memoize(async () => {
+  return await Toaster.asyncCreate({position: 'top-right'}, document.body);
+});
 
-const showGraphQLError = (error: DagsterGraphQLError, operationName?: string) => {
+const showGraphQLError = async (error: DagsterGraphQLError, operationName?: string) => {
   const message = (
     <div>
       Unexpected GraphQL error
       <AppStackTraceLink error={error} operationName={operationName} />
     </div>
   );
-  ErrorToaster.show({message, intent: 'danger'});
+  const toaster = await getErrorToaster();
+  toaster.show({message, intent: 'danger'});
   console.error('[GraphQL error]', error);
 };
 
@@ -170,8 +174,9 @@ export const setupErrorToasts = () => {
         // If the console.error happens during render, then our ErrorToaster.show call
         // will trigger the "Can't re-render component during render" console error
         // which would send us in an infinite loop. So we use setTimeout to avoid this.
-        setTimeout(() => {
-          ErrorToaster.show({
+        setTimeout(async () => {
+          const toaster = await getErrorToaster();
+          toaster.show({
             intent: 'danger',
             message: (
               <div
@@ -184,8 +189,8 @@ export const setupErrorToasts = () => {
     },
   });
 
-  window.addEventListener('unhandledrejection', (event) => {
-    ErrorToaster.show({
+  window.addEventListener('unhandledrejection', async (event) => {
+    (await getErrorToaster()).show({
       intent: 'danger',
       message: (
         <div

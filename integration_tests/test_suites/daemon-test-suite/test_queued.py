@@ -9,14 +9,12 @@ from dagster._utils.merger import merge_dicts
 from utils import start_daemon
 
 
-def create_run(
-    instance: DagsterInstance, external_pipeline: ExternalJob, **kwargs: Any
-) -> DagsterRun:
+def create_run(instance: DagsterInstance, external_job: ExternalJob, **kwargs: Any) -> DagsterRun:
     job_args = merge_dicts(
         {
             "job_name": "foo_job",
-            "external_job_origin": external_pipeline.get_external_origin(),
-            "job_code_origin": external_pipeline.get_python_origin(),
+            "external_job_origin": external_job.get_external_origin(),
+            "job_code_origin": external_job.get_python_origin(),
         },
         kwargs,
     )

@@ -4,7 +4,7 @@ import * as React from 'react';
 import {useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {SharedToaster} from '../app/DomUtils';
+import {showSharedToaster} from '../app/DomUtils';
 import {useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {RepositoryLocationLoadStatus} from '../graphql/types';
 import {StatusAndMessage} from '../instance/DeploymentStatusType';
@@ -59,7 +59,7 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
     const showViewButton = !alreadyViewingCodeLocations();
 
     if (anyErrors) {
-      SharedToaster.show({
+      await showSharedToaster({
         intent: 'warning',
         message: (
           <Box flex={{direction: 'row', justifyContent: 'space-between', gap: 24, grow: 1}}>
@@ -70,7 +70,7 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
         icon: 'check_circle',
       });
     } else {
-      SharedToaster.show({
+      await showSharedToaster({
         intent: 'success',
         message: (
           <Box flex={{direction: 'row', justifyContent: 'space-between', gap: 24, grow: 1}}>
@@ -83,7 +83,7 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
     }
   }, [onClickViewButton, refetch]);
 
-  const onLocationUpdate = (data: CodeLocationStatusQuery) => {
+  const onLocationUpdate = async (data: CodeLocationStatusQuery) => {
     const isFreshPageload = previousEntriesById === null;
 
     // Given the previous and current code locations, determine whether to show a) a loading spinner
@@ -169,7 +169,7 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
         return <span>{addedEntries.length} code locations added</span>;
       };
 
-      SharedToaster.show({
+      await showSharedToaster({
         intent: 'primary',
         message: (
           <Box flex={{direction: 'row', justifyContent: 'space-between', gap: 24, grow: 1}}>
@@ -193,7 +193,7 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
     if (!anyPreviouslyLoading && anyCurrentlyLoading) {
       setShowSpinner(true);
 
-      SharedToaster.show({
+      await showSharedToaster({
         intent: 'primary',
         message: (
           <Box flex={{direction: 'row', justifyContent: 'space-between', gap: 24, grow: 1}}>
@@ -279,7 +279,6 @@ const ViewButton = styled(ButtonLink)`
 const CODE_LOCATION_STATUS_QUERY = gql`
   query CodeLocationStatusQuery {
     locationStatusesOrError {
-      __typename
       ... on WorkspaceLocationStatusEntries {
         entries {
           id

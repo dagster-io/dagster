@@ -9,7 +9,7 @@ import {RunStatus, RunsFilter} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {AnchorButton} from '../ui/AnchorButton';
 
-import {doneStatuses, inProgressStatuses, queuedStatuses} from './RunStatuses';
+import {failedStatuses, inProgressStatuses, queuedStatuses} from './RunStatuses';
 import {runsPathWithFilters, useQueryPersistedRunFilters} from './RunsFilterInput';
 import {RunTabsCountQuery, RunTabsCountQueryVariables} from './types/RunListTabs.types';
 
@@ -17,8 +17,8 @@ const getDocumentTitle = (selected: ReturnType<typeof useSelectedRunsTab>) => {
   switch (selected) {
     case 'all':
       return 'Runs | All runs';
-    case 'done':
-      return 'Runs | Done';
+    case 'failed':
+      return 'Runs | Failed';
     case 'in-progress':
       return 'Runs | In progress';
     case 'queued':
@@ -64,45 +64,45 @@ export const useRunListTabs = (filter: RunsFilter = {}) => {
 
   const tabs = (
     <JoinedButtons>
-      <Button to={urlForStatus([])} id="all" $active={selectedTab === 'all'}>
+      <ActivatableButton to={urlForStatus([])} id="all" $active={selectedTab === 'all'}>
         All runs
-      </Button>
-      <Button
+      </ActivatableButton>
+      <ActivatableButton
         to={urlForStatus(Array.from(queuedStatuses))}
         id="queued"
         $active={selectedTab === 'queued'}
       >
         Queued ({queuedCount ?? 'indeterminate'})
-      </Button>
-      <Button
+      </ActivatableButton>
+      <ActivatableButton
         to={urlForStatus(Array.from(inProgressStatuses))}
         id="in-progress"
         $active={selectedTab === 'in-progress'}
       >
         In progress ({inProgressCount ?? 'indeterminate'})
-      </Button>
-      <Button
-        to={urlForStatus(Array.from(doneStatuses))}
-        id="done"
-        $active={selectedTab === 'done'}
+      </ActivatableButton>
+      <ActivatableButton
+        to={urlForStatus(Array.from(failedStatuses))}
+        id="failed"
+        $active={selectedTab === 'failed'}
       >
-        Done
-      </Button>
-      <Button
+        Failed
+      </ActivatableButton>
+      <ActivatableButton
         title="Scheduled"
         to="/runs/scheduled"
         id="scheduled"
         $active={selectedTab === 'scheduled'}
       >
         Scheduled
-      </Button>
+      </ActivatableButton>
     </JoinedButtons>
   );
 
   return {tabs, queryResult};
 };
 
-const Button = styled(AnchorButton)<{$active: boolean}>`
+export const ActivatableButton = styled(AnchorButton)<{$active: boolean}>`
   ${(props) =>
     props.$active &&
     `
@@ -131,8 +131,8 @@ export const useSelectedRunsTab = (filterTokens: TokenizingFieldValue[]) => {
   if (isEqual(inProgressStatuses, statusTokens)) {
     return 'in-progress';
   }
-  if (isEqual(doneStatuses, statusTokens)) {
-    return 'done';
+  if (isEqual(failedStatuses, statusTokens)) {
+    return 'failed';
   }
   return 'all';
 };

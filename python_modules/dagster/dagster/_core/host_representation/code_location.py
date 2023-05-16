@@ -77,7 +77,7 @@ if TYPE_CHECKING:
 class CodeLocation(AbstractContextManager):
     """A CodeLocation represents a target containing user code which has a set of Dagster
     definition objects. A given location will contain some number of uniquely named
-    RepositoryDefinitions, which therein contains Pipeline, Solid, and other definitions.
+    RepositoryDefinitions, which therein contains job, op, and other definitions.
 
     Dagster tools are typically "host" processes, meaning they load a CodeLocation and
     communicate with it over an IPC/RPC layer. Currently this IPC layer is implemented by
@@ -126,10 +126,10 @@ class CodeLocation(AbstractContextManager):
     def get_external_job(self, selector: JobSubsetSelector) -> ExternalJob:
         """Return the ExternalPipeline for a specific pipeline. Subclasses only
         need to implement get_subset_external_pipeline_result to handle the case where
-        a solid selection is specified, which requires access to the underlying JobDefinition
+        an op selection is specified, which requires access to the underlying JobDefinition
         to generate the subsetted pipeline snapshot.
         """
-        if not selector.solid_selection and not selector.asset_selection:
+        if not selector.op_selection and not selector.asset_selection:
             return self.get_repository(selector.repository_name).get_full_external_job(
                 selector.job_name
             )
@@ -150,7 +150,7 @@ class CodeLocation(AbstractContextManager):
     def get_subset_external_job_result(
         self, selector: JobSubsetSelector
     ) -> ExternalJobSubsetResult:
-        """Returns a snapshot about an ExternalPipeline with a solid selection, which requires
+        """Returns a snapshot about an ExternalPipeline with an op selection, which requires
         access to the underlying JobDefinition. Callsites should likely use
         `get_external_pipeline` instead.
         """
@@ -367,7 +367,7 @@ class InProcessCodeLocation(CodeLocation):
         return get_external_pipeline_subset_result(
             self._get_repo_def(selector.repository_name),
             selector.job_name,
-            selector.solid_selection,
+            selector.op_selection,
             selector.asset_selection,
         )
 
@@ -390,9 +390,9 @@ class InProcessCodeLocation(CodeLocation):
         execution_plan = create_execution_plan(
             job=self.get_reconstructable_job(
                 external_job.repository_handle.repository_name, external_job.name
-            ).subset_for_execution_from_existing_job(
-                external_job.solids_to_execute,
-                external_job.asset_selection,
+            ).get_subset(
+                op_selection=external_job.resolved_op_selection,
+                asset_selection=external_job.asset_selection,
             ),
             run_config=run_config,
             step_keys_to_execute=step_keys_to_execute,
@@ -738,7 +738,7 @@ class GrpcServerCodeLocation(CodeLocation):
             run_config=run_config,
             job_snapshot_id=external_job.identifying_job_snapshot_id,
             asset_selection=asset_selection,
-            solid_selection=external_job.solid_selection,
+            op_selection=external_job.op_selection,
             step_keys_to_execute=step_keys_to_execute,
             known_state=known_state,
             instance=instance,
@@ -761,7 +761,7 @@ class GrpcServerCodeLocation(CodeLocation):
         return sync_get_external_job_subset_grpc(
             self.client,
             job_handle.get_external_origin(),
-            selector.solid_selection,
+            selector.op_selection,
             selector.asset_selection,
         )
 

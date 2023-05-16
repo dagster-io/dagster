@@ -229,6 +229,7 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
   const [hoveredTime, setHoveredTime] = React.useState<number | null>(null);
   const [nowMs, setNowMs] = React.useState<number>(() => props.overrideNowTime || Date.now());
   const {options, metadata, selection} = props;
+  const animationRequest = React.useRef<number | null>(null);
 
   const {rootServerURI} = React.useContext(AppContext);
 
@@ -249,32 +250,34 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
     Math.log(minScale) + ((Math.log(MAX_SCALE) - Math.log(minScale)) / 100) * options.zoom,
   );
 
-  // When the pipeline is running we want the graph to be steadily moving, even if logs
-  // aren't arriving. To achieve this we determine an update interval based on the scale
-  // and advance a "now" value that is used as the currnet time when adjusting the layout
-  // to account for run metadata below.
+  const animate = React.useCallback(() => {
+    setNowMs(Date.now());
+    animationRequest.current = requestAnimationFrame(animate);
+  }, []);
 
-  // Because renders can happen "out of band" of our update interval, we set a timer for
-  // "time until the next interval after the current nowMs".
+  const exitedAt = metadata?.exitedAt;
+
+  // When the run is complete, stop the animation. We also do this when the WebSocket is lost,
+  // since we would just be animating endlessly with no new logs.
   React.useEffect(() => {
-    if (scale === 0 || lostWebsocket) {
-      return;
+    if (scale === 0 || lostWebsocket || exitedAt) {
+      animationRequest.current && cancelAnimationFrame(animationRequest.current);
     }
 
-    if (metadata?.exitedAt) {
-      if (nowMs !== metadata.exitedAt) {
-        setNowMs(metadata.exitedAt);
-      }
-      return;
+    // Set the final timestamp.
+    if (exitedAt) {
+      setNowMs(exitedAt);
     }
+  }, [scale, lostWebsocket, exitedAt]);
 
-    const renderInterval = Math.max(CSS_DURATION, 2 / scale);
-    const now = Date.now();
-
-    const timeUntilIntervalElasped = renderInterval - (now - nowMs);
-    const timeout = setTimeout(() => setNowMs(now), timeUntilIntervalElasped);
-    return () => clearTimeout(timeout);
-  }, [scale, nowMs, lostWebsocket, metadata]);
+  // Kick off the Gantt animation. This will continue until the effect above determines that
+  // the run is complete or that the connection is lost.
+  React.useEffect(() => {
+    animationRequest.current = requestAnimationFrame(animate);
+    return () => {
+      animationRequest.current && cancelAnimationFrame(animationRequest.current);
+    };
+  }, [animate]);
 
   // Listen for events specifying hover time (eg: a marker at a particular timestamp)
   // and sync them to our React state for display.

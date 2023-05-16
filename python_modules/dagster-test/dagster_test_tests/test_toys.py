@@ -115,7 +115,7 @@ def test_branch_job_failed(executor_def):
         )
 
 
-def test_spew_pipeline(executor_def):
+def test_spew_job(executor_def):
     assert log_spew.to_job(executor_def=executor_def).execute_in_process().success
 
 
@@ -142,7 +142,7 @@ def test_resource_job_with_config(executor_def):
 def test_pyspark_assets_job(executor_def):
     with get_temp_dir() as temp_dir:
         run_config = {
-            "solids": {
+            "ops": {
                 "get_max_temp_per_station": {
                     "config": {
                         "temperature_file": "temperature.csv",
@@ -247,7 +247,7 @@ def test_error_monster_type_error(executor_def):
 
 def test_composition_job():
     result = composition_job.execute_in_process(
-        run_config={"solids": {"add_four": {"inputs": {"num": {"value": 3}}}}},
+        run_config={"ops": {"add_four": {"inputs": {"num": {"value": 3}}}}},
     )
 
     assert result.success

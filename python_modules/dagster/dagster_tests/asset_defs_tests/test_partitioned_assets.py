@@ -31,32 +31,21 @@ from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import TimeWindow
+from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
 )
 from dagster._core.test_utils import assert_namedtuple_lists_equal
+from dagster._seven.compat.pendulum import create_pendulum_time
 
 
 @pytest.fixture(autouse=True)
-def check_experimental_warnings():
-    with warnings.catch_warnings(record=True) as record:
-        # turn off any outer warnings filters
-        warnings.resetwarnings()
+def error_on_warning():
+    # turn off any outer warnings filters, e.g. ignores that are set in pyproject.toml
+    warnings.resetwarnings()
 
-        yield
-
-        for w in record:
-            if (
-                "resource_defs" in w.message.args[0]
-                or "io_manager_def" in w.message.args[0]
-                or "build_assets_job" in w.message.args[0]
-                or "MultiPartitionsDefinition" in w.message.args[0]
-                or "SQLALCHEMY" in w.message.args[0]  # from sqlalchemy <2
-                or "Implicitly cleaning up <TemporaryDirectory" in w.message.args[0]
-            ):
-                continue
-            assert False, f"Unexpected warning: {w.message.args[0]}"
+    warnings.filterwarnings("error")
 
 
 def get_upstream_partitions_for_partition_range(
@@ -554,7 +543,7 @@ def test_job_config_with_asset_partitions():
 
     assert the_job.execute_in_process(partition_key="2020-01-01").success
     assert (
-        the_job.get_job_def_for_subset_selection(asset_selection={AssetKey("asset1")})
+        the_job.get_subset(asset_selection={AssetKey("asset1")})
         .execute_in_process(partition_key="2020-01-01")
         .success
     )
@@ -682,3 +671,20 @@ def test_multipartition_range_single_run():
         MultiPartitionKey({"date": "2020-01-02", "abc": "a"}),
         MultiPartitionKey({"date": "2020-01-03", "abc": "a"}),
     }
+
+
+def test_error_on_nonexistent_upstream_partition():
+    @asset(partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"))
+    def upstream_asset(context):
+        return 1
+
+    @asset(partitions_def=HourlyPartitionsDefinition(start_date="2020-01-01-00:00"))
+    def downstream_asset(context, upstream_asset):
+        return upstream_asset + 1
+
+    with pendulum.test(create_pendulum_time(2020, 1, 2, 10, 0)):
+        with pytest.raises(DagsterInvalidInvocationError, match="invalid time windows"):
+            materialize(
+                [downstream_asset, upstream_asset.to_source_asset()],
+                partition_key="2020-01-02-05:00",
+            )

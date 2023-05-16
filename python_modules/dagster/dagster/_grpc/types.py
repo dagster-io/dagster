@@ -16,6 +16,7 @@ from dagster._core.host_representation.origin import (
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.origin import JobPythonOrigin, get_python_environment_entry_point
 from dagster._serdes import serialize_value, whitelist_for_serdes
+from dagster._serdes.serdes import SetToSequenceFieldSerializer
 from dagster._utils.error import SerializableErrorInfo
 
 
@@ -23,6 +24,7 @@ from dagster._utils.error import SerializableErrorInfo
     storage_field_names={
         "job_origin": "pipeline_origin",
         "job_snapshot_id": "pipeline_snapshot_id",
+        "op_selection": "solid_selection",
     }
 )
 class ExecutionPlanSnapshotArgs(
@@ -30,7 +32,7 @@ class ExecutionPlanSnapshotArgs(
         "_ExecutionPlanSnapshotArgs",
         [
             ("job_origin", ExternalJobOrigin),
-            ("solid_selection", Sequence[str]),
+            ("op_selection", Sequence[str]),
             ("run_config", Mapping[str, object]),
             ("step_keys_to_execute", Optional[Sequence[str]]),
             ("job_snapshot_id", str),
@@ -44,7 +46,7 @@ class ExecutionPlanSnapshotArgs(
     def __new__(
         cls,
         job_origin: ExternalJobOrigin,
-        solid_selection: Sequence[str],
+        op_selection: Sequence[str],
         run_config: Mapping[str, object],
         step_keys_to_execute: Optional[Sequence[str]],
         job_snapshot_id: str,
@@ -56,9 +58,7 @@ class ExecutionPlanSnapshotArgs(
         return super(ExecutionPlanSnapshotArgs, cls).__new__(
             cls,
             job_origin=check.inst_param(job_origin, "job_origin", ExternalJobOrigin),
-            solid_selection=check.opt_sequence_param(
-                solid_selection, "solid_selection", of_type=str
-            ),
+            op_selection=check.opt_sequence_param(op_selection, "op_selection", of_type=str),
             run_config=check.mapping_param(run_config, "run_config", key_type=str),
             mode=check.str_param(mode, "mode"),
             step_keys_to_execute=check.opt_nullable_sequence_param(
@@ -468,33 +468,34 @@ class PartitionSetExecutionParamArgs(
     storage_name="PipelineSubsetSnapshotArgs",
     storage_field_names={
         "job_origin": "pipeline_origin",
+        "op_selection": "solid_selection",
     },
+    # asset_selection previously was erroneously represented as a sequence
+    field_serializers={"asset_selection": SetToSequenceFieldSerializer},
 )
 class JobSubsetSnapshotArgs(
     NamedTuple(
         "_JobSubsetSnapshotArgs",
         [
             ("job_origin", ExternalJobOrigin),
-            ("solid_selection", Optional[Sequence[str]]),
-            ("asset_selection", Optional[Sequence[AssetKey]]),
+            ("op_selection", Optional[Sequence[str]]),
+            ("asset_selection", Optional[AbstractSet[AssetKey]]),
         ],
     )
 ):
     def __new__(
         cls,
         job_origin: ExternalJobOrigin,
-        solid_selection: Sequence[str],
-        asset_selection: Optional[Sequence[AssetKey]] = None,
+        op_selection: Optional[Sequence[str]],
+        asset_selection: Optional[AbstractSet[AssetKey]] = None,
     ):
         return super(JobSubsetSnapshotArgs, cls).__new__(
             cls,
             job_origin=check.inst_param(job_origin, "job_origin", ExternalJobOrigin),
-            solid_selection=check.sequence_param(solid_selection, "solid_selection", of_type=str)
-            if solid_selection
-            else None,
-            asset_selection=check.opt_sequence_param(
-                asset_selection, "asset_selection", of_type=AssetKey
+            op_selection=check.opt_nullable_sequence_param(
+                op_selection, "op_selection", of_type=str
             ),
+            asset_selection=check.opt_nullable_set_param(asset_selection, "asset_selection"),
         )
 
 

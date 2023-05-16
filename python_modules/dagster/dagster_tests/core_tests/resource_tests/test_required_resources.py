@@ -552,7 +552,7 @@ def test_root_input_manager():
         end(start())
 
     with pytest.raises(DagsterInvalidSubsetError):
-        _invalid = _valid.get_job_def_for_subset_selection(["wraps_b_error"])
+        _invalid = _valid.get_subset(op_selection=["wraps_b_error"])
 
 
 def test_root_input_manager_missing_fails():

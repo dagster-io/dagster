@@ -1,4 +1,3 @@
-import datetime
 from typing import List, Optional, Sequence
 
 import dagster._check as check
@@ -428,13 +427,13 @@ class GrapheneRun(graphene.ObjectType):
         return self.dagster_run.job_name
 
     def resolve_solidSelection(self, _graphene_info: ResolveInfo):
-        return self.dagster_run.solid_selection
+        return self.dagster_run.op_selection
 
     def resolve_assetSelection(self, _graphene_info: ResolveInfo):
         return self.dagster_run.asset_selection
 
     def resolve_resolvedOpSelection(self, _graphene_info: ResolveInfo):
-        return self.dagster_run.solids_to_execute
+        return self.dagster_run.resolved_op_selection
 
     def resolve_pipelineSnapshotId(self, _graphene_info: ResolveInfo):
         return self.dagster_run.job_snapshot_id
@@ -449,6 +448,7 @@ class GrapheneRun(graphene.ObjectType):
                 return snapshot.lineage_snapshot.parent_snapshot_id
         return None
 
+    @capture_error
     def resolve_stats(self, graphene_info: ResolveInfo):
         return get_stats(graphene_info, self.run_id)
 
@@ -571,8 +571,7 @@ class GrapheneRun(graphene.ObjectType):
 
     def resolve_updateTime(self, graphene_info: ResolveInfo):
         run_record = self._get_run_record(graphene_info.context.instance)
-        updated = run_record.update_timestamp.timestamp()
-        return datetime_as_float(datetime.datetime.utcfromtimestamp(updated))
+        return datetime_as_float(run_record.update_timestamp)
 
 
 class GrapheneIPipelineSnapshotMixin:
@@ -712,7 +711,7 @@ class GrapheneIPipelineSnapshotMixin:
         return list(iterate_metadata_entries(represented_pipeline.job_snapshot.metadata))
 
     def resolve_solidSelection(self, _graphene_info: ResolveInfo):
-        return self.get_represented_job().solid_selection
+        return self.get_represented_job().op_selection
 
     def resolve_runs(
         self, graphene_info: ResolveInfo, cursor: Optional[str] = None, limit: Optional[int] = None
@@ -817,7 +816,7 @@ class GraphenePipelinePreset(graphene.ObjectType):
         return self._active_preset_data.name
 
     def resolve_solidSelection(self, _graphene_info: ResolveInfo):
-        return self._active_preset_data.solid_selection
+        return self._active_preset_data.op_selection
 
     def resolve_runConfigYaml(self, _graphene_info: ResolveInfo):
         return dump_run_config_yaml(self._active_preset_data.run_config) or ""

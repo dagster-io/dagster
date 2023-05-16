@@ -270,13 +270,11 @@ class RepositoryDefinition:
     def get_maybe_subset_job_def(
         self,
         job_name: str,
-        op_selection: Optional[Sequence[str]] = None,
+        op_selection: Optional[Iterable[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
-        solids_to_execute: Optional[AbstractSet[str]] = None,
     ):
-        # named job forward expecting pipeline distinction to be removed soon
         defn = self.get_job(job_name)
-        return defn.get_job_def_for_subset_selection(op_selection, asset_selection)
+        return defn.get_subset(op_selection=op_selection, asset_selection=asset_selection)
 
     @public
     def load_asset_value(

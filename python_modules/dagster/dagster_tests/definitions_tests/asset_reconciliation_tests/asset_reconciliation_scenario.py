@@ -4,7 +4,18 @@ import itertools
 import os
 import random
 import sys
-from typing import Iterable, List, Mapping, NamedTuple, Optional, Sequence, Set, Union
+from typing import (
+    AbstractSet,
+    Iterable,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+)
 
 import mock
 import pendulum
@@ -32,9 +43,11 @@ from dagster import (
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.asset_reconciliation_sensor import (
     AssetReconciliationCursor,
+    AutoMaterializeCondition,
     reconcile,
 )
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.events import CoercibleToAssetKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.observe import observe
@@ -74,6 +87,12 @@ class AssetReconciliationScenario(NamedTuple):
     event_log_entries: Optional[Sequence[EventLogEntry]] = None
     expected_run_requests: Optional[Sequence[RunRequest]] = None
     code_locations: Optional[Mapping[str, Sequence[Union[SourceAsset, AssetsDefinition]]]] = None
+    expected_conditions: Optional[
+        Mapping[
+            Union[CoercibleToAssetKey, Tuple[CoercibleToAssetKey, str]],
+            AbstractSet[AutoMaterializeCondition],
+        ]
+    ] = None
 
     def _get_code_location_origin(
         self, scenario_name, location_name=None
@@ -95,7 +114,7 @@ class AssetReconciliationScenario(NamedTuple):
 
         test_time = self.current_time or pendulum.now()
 
-        with pendulum.test(test_time) if self.current_time else contextlib.nullcontext():
+        with pendulum.test(test_time):
 
             @repository
             def repo():
@@ -128,6 +147,7 @@ class AssetReconciliationScenario(NamedTuple):
                     materialized_subset=empty_subset,
                     requested_subset=empty_subset,
                     failed_and_downstream_subset=empty_subset,
+                    backfill_start_time=test_time,
                 )
                 backfill = PartitionBackfill(
                     backfill_id=f"backfill{i}",
@@ -147,7 +167,11 @@ class AssetReconciliationScenario(NamedTuple):
                 def prior_repo():
                     return self.cursor_from.assets
 
-                run_requests, cursor = self.cursor_from.do_sensor_scenario(
+                (
+                    run_requests,
+                    cursor,
+                    evaluations,
+                ) = self.cursor_from.do_sensor_scenario(
                     instance,
                     scenario_name=scenario_name,
                     with_external_asset_graph=with_external_asset_graph,
@@ -221,7 +245,7 @@ class AssetReconciliationScenario(NamedTuple):
                 else asset_graph.non_source_asset_keys
             )
 
-            run_requests, cursor = reconcile(
+            run_requests, cursor, evaluations = reconcile(
                 asset_graph=asset_graph,
                 target_asset_keys=target_asset_keys,
                 instance=instance,
@@ -233,7 +257,7 @@ class AssetReconciliationScenario(NamedTuple):
             base_job = repo.get_implicit_job_def_for_assets(run_request.asset_selection)
             assert base_job is not None
 
-        return run_requests, cursor
+        return run_requests, cursor, evaluations
 
     def do_daemon_scenario(self, instance, scenario_name):
         assert bool(self.assets) != bool(
@@ -351,7 +375,7 @@ def do_run(
 
 
 def single_asset_run(asset_key: str, partition_key: Optional[str] = None) -> RunSpec:
-    return RunSpec(asset_keys=[AssetKey.from_coerceable(asset_key)], partition_key=partition_key)
+    return RunSpec(asset_keys=[AssetKey.from_coercible(asset_key)], partition_key=partition_key)
 
 
 def run(
@@ -362,9 +386,9 @@ def run(
 ):
     return RunSpec(
         asset_keys=list(
-            map(AssetKey.from_coerceable, itertools.chain(asset_keys, failed_asset_keys or []))
+            map(AssetKey.from_coercible, itertools.chain(asset_keys, failed_asset_keys or []))
         ),
-        failed_asset_keys=list(map(AssetKey.from_coerceable, failed_asset_keys or [])),
+        failed_asset_keys=list(map(AssetKey.from_coercible, failed_asset_keys or [])),
         partition_key=partition_key,
         is_observation=is_observation,
     )

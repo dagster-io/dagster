@@ -38,6 +38,7 @@ const config = {
 };
 
 const appCache = createAppCache();
+const container = document.getElementById('root');
 
 ReactDOM.render(
   <AppProvider appCache={appCache} config={config}>
@@ -49,5 +50,5 @@ ReactDOM.render(
       <CommunityNux />
     </App>
   </AppProvider>,
-  document.getElementById('root'),
+  container,
 );

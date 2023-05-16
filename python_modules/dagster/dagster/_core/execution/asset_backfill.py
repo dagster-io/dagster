@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
@@ -43,7 +44,7 @@ from dagster._core.workspace.context import (
     BaseWorkspaceRequestContext,
     IWorkspaceProcessContext,
 )
-from dagster._utils import hash_collection
+from dagster._utils import hash_collection, utc_datetime_from_timestamp
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 if TYPE_CHECKING:
@@ -112,6 +113,7 @@ class AssetBackfillData(NamedTuple):
     materialized_subset: AssetGraphSubset
     requested_subset: AssetGraphSubset
     failed_and_downstream_subset: AssetGraphSubset
+    backfill_start_time: datetime
 
     def is_complete(self) -> bool:
         """The asset backfill is complete when all runs to be requested have finished (success,
@@ -259,7 +261,9 @@ class AssetBackfillData(NamedTuple):
         return list(first_subset.get_partition_keys())
 
     @classmethod
-    def empty(cls, target_subset: AssetGraphSubset) -> "AssetBackfillData":
+    def empty(
+        cls, target_subset: AssetGraphSubset, backfill_start_time: datetime
+    ) -> "AssetBackfillData":
         asset_graph = target_subset.asset_graph
         return cls(
             target_subset=target_subset,
@@ -268,6 +272,7 @@ class AssetBackfillData(NamedTuple):
             materialized_subset=AssetGraphSubset(asset_graph),
             failed_and_downstream_subset=AssetGraphSubset(asset_graph),
             latest_storage_id=None,
+            backfill_start_time=backfill_start_time,
         )
 
     @classmethod
@@ -278,7 +283,9 @@ class AssetBackfillData(NamedTuple):
         )
 
     @classmethod
-    def from_serialized(cls, serialized: str, asset_graph: AssetGraph) -> "AssetBackfillData":
+    def from_serialized(
+        cls, serialized: str, asset_graph: AssetGraph, backfill_start_timestamp: float
+    ) -> "AssetBackfillData":
         storage_dict = json.loads(serialized)
 
         return cls(
@@ -296,6 +303,7 @@ class AssetBackfillData(NamedTuple):
                 storage_dict["serialized_failed_subset"], asset_graph
             ),
             latest_storage_id=storage_dict["latest_storage_id"],
+            backfill_start_time=utc_datetime_from_timestamp(backfill_start_timestamp),
         )
 
     @classmethod
@@ -305,6 +313,7 @@ class AssetBackfillData(NamedTuple):
         partition_names: Optional[Sequence[str]],
         asset_selection: Sequence[AssetKey],
         dynamic_partitions_store: DynamicPartitionsStore,
+        backfill_start_time: datetime,
         all_partitions: bool,
     ) -> "AssetBackfillData":
         check.invariant(
@@ -356,11 +365,12 @@ class AssetBackfillData(NamedTuple):
                         asset_graph,
                         partitions_subsets_by_asset_key={root_asset_key: root_partitions_subset},
                     ),
+                    current_time=backfill_start_time,
                 )
         else:
             check.failed("Either partition_names must not be None or all_partitions must be True")
 
-        return cls.empty(target_subset)
+        return cls.empty(target_subset, backfill_start_time)
 
     def serialize(self, dynamic_partitions_store: DynamicPartitionsStore) -> str:
         storage_dict = {
@@ -402,7 +412,7 @@ def execute_asset_backfill_iteration(
         check.failed("Asset backfill missing serialized_asset_backfill_data")
 
     asset_backfill_data = AssetBackfillData.from_serialized(
-        backfill.serialized_asset_backfill_data, asset_graph
+        backfill.serialized_asset_backfill_data, asset_graph, backfill.backfill_timestamp
     )
 
     result = None
@@ -412,6 +422,7 @@ def execute_asset_backfill_iteration(
         instance=instance,
         asset_graph=asset_graph,
         run_tags=backfill.tags,
+        backfill_start_time=utc_datetime_from_timestamp(backfill.backfill_timestamp),
     ):
         yield None
 
@@ -477,7 +488,7 @@ def submit_run_request(
         repository_name=repo_handle.repository_name,
         job_name=job_name,
         asset_selection=run_request.asset_selection,
-        solid_selection=None,
+        op_selection=None,
     )
 
     selector_id = hash_collection(pipeline_selector)
@@ -507,8 +518,8 @@ def submit_run_request(
         parent_job_snapshot=external_job.parent_job_snapshot,
         job_name=external_job.name,
         run_id=None,
-        solids_to_execute=None,
-        solid_selection=None,
+        resolved_op_selection=None,
+        op_selection=None,
         run_config={},
         step_keys_to_execute=None,
         tags=run_request.tags,
@@ -544,6 +555,7 @@ def execute_asset_backfill_iteration_inner(
     asset_graph: ExternalAssetGraph,
     instance: DagsterInstance,
     run_tags: Mapping[str, str],
+    backfill_start_time: datetime,
 ) -> Iterable[Optional[AssetBackfillIterationResult]]:
     """Core logic of a backfill iteration. Has no side effects.
 
@@ -553,7 +565,9 @@ def execute_asset_backfill_iteration_inner(
     This is a generator so that we can return control to the daemon and let it heartbeat during
     expensive operations.
     """
-    instance_queryer = CachingInstanceQueryer(instance=instance)
+    instance_queryer = CachingInstanceQueryer(
+        instance=instance, evaluation_time=backfill_start_time
+    )
 
     initial_candidates: Set[AssetKeyPartitionKey] = set()
     request_roots = not asset_backfill_data.requested_runs_for_target_roots
@@ -619,6 +633,7 @@ def execute_asset_backfill_iteration_inner(
                     for asset_partition in asset_partitions
                 ),
                 _get_failed_asset_partitions(instance_queryer, backfill_id),
+                evaluation_time=backfill_start_time,
             ),
             asset_graph,
         )
@@ -635,8 +650,10 @@ def execute_asset_backfill_iteration_inner(
             target_subset=asset_backfill_data.target_subset,
             failed_and_downstream_subset=failed_and_downstream_subset,
             dynamic_partitions_store=instance_queryer,
+            current_time=backfill_start_time,
         ),
         initial_asset_partitions=initial_candidates,
+        evaluation_time=backfill_start_time,
     )
 
     run_requests = build_run_requests(
@@ -657,6 +674,7 @@ def execute_asset_backfill_iteration_inner(
         materialized_subset=updated_materialized_subset,
         failed_and_downstream_subset=failed_and_downstream_subset,
         requested_subset=asset_backfill_data.requested_subset | asset_partitions_to_request,
+        backfill_start_time=backfill_start_time,
     )
     yield AssetBackfillIterationResult(run_requests, updated_asset_backfill_data)
 
@@ -669,6 +687,7 @@ def should_backfill_atomic_asset_partitions_unit(
     materialized_subset: AssetGraphSubset,
     failed_and_downstream_subset: AssetGraphSubset,
     dynamic_partitions_store: DynamicPartitionsStore,
+    current_time: datetime,
 ) -> bool:
     """Args:
     candidates_unit: A set of asset partitions that must all be materialized if any is
@@ -682,7 +701,9 @@ def should_backfill_atomic_asset_partitions_unit(
         ):
             return False
 
-        for parent in asset_graph.get_parents_partitions(dynamic_partitions_store, *candidate):
+        for parent in asset_graph.get_parents_partitions(
+            dynamic_partitions_store, current_time, *candidate
+        ):
             can_run_with_parent = (
                 parent in asset_partitions_to_request
                 and asset_graph.have_same_partitioning(parent.asset_key, candidate.asset_key)

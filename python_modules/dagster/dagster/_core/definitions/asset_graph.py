@@ -1,5 +1,6 @@
 import functools
 from collections import deque
+from datetime import datetime
 from heapq import heapify, heappop, heappush
 from typing import (
     TYPE_CHECKING,
@@ -18,6 +19,7 @@ from typing import (
     cast,
 )
 
+import pendulum
 import toposort
 
 import dagster._check as check
@@ -198,6 +200,7 @@ class AssetGraph:
     def get_children_partitions(
         self,
         dynamic_partitions_store: DynamicPartitionsStore,
+        current_time: datetime,
         asset_key: AssetKey,
         partition_key: Optional[str] = None,
     ) -> AbstractSet[AssetKeyPartitionKey]:
@@ -208,7 +211,11 @@ class AssetGraph:
         for child_asset_key in self.get_children(asset_key):
             if self.is_partitioned(child_asset_key):
                 for child_partition_key in self.get_child_partition_keys_of_parent(
-                    dynamic_partitions_store, partition_key, asset_key, child_asset_key
+                    dynamic_partitions_store,
+                    partition_key,
+                    asset_key,
+                    child_asset_key,
+                    current_time,
                 ):
                     result.add(AssetKeyPartitionKey(child_asset_key, child_partition_key))
             else:
@@ -221,6 +228,7 @@ class AssetGraph:
         parent_partition_key: Optional[str],
         parent_asset_key: AssetKey,
         child_asset_key: AssetKey,
+        current_time: datetime,
     ) -> Sequence[str]:
         """Converts a partition key from one asset to the corresponding partition keys in a downstream
         asset. Uses the existing partition mapping between the child asset and the parent asset.
@@ -259,6 +267,7 @@ class AssetGraph:
             parent_partitions_def.empty_subset().with_partition_keys([parent_partition_key]),
             downstream_partitions_def=child_partitions_def,
             dynamic_partitions_store=dynamic_partitions_store,
+            current_time=current_time,
         )
 
         return list(child_partitions_subset.get_partition_keys())
@@ -266,6 +275,7 @@ class AssetGraph:
     def get_parents_partitions(
         self,
         dynamic_partitions_store: DynamicPartitionsStore,
+        current_time: datetime,
         asset_key: AssetKey,
         partition_key: Optional[str] = None,
     ) -> AbstractSet[AssetKeyPartitionKey]:
@@ -280,6 +290,7 @@ class AssetGraph:
                     parent_asset_key,
                     asset_key,
                     dynamic_partitions_store=dynamic_partitions_store,
+                    current_time=current_time,
                 ):
                     result.add(AssetKeyPartitionKey(parent_asset_key, parent_partition_key))
             else:
@@ -291,7 +302,8 @@ class AssetGraph:
         partition_key: Optional[str],
         parent_asset_key: AssetKey,
         child_asset_key: AssetKey,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+        dynamic_partitions_store: DynamicPartitionsStore,
+        current_time: datetime,
     ) -> Sequence[str]:
         """Converts a partition key from one asset to the corresponding partition keys in one of its
         parent assets. Uses the existing partition mapping between the child asset and the parent
@@ -327,6 +339,7 @@ class AssetGraph:
             else None,
             upstream_partitions_def=parent_partitions_def,
             dynamic_partitions_store=dynamic_partitions_store,
+            current_time=current_time,
         )
         return list(parent_partition_key_subset.get_partition_keys())
 
@@ -416,6 +429,7 @@ class AssetGraph:
         dynamic_partitions_store: DynamicPartitionsStore,
         condition_fn: Callable[[AssetKey, Optional[PartitionsSubset]], bool],
         initial_subset: "AssetGraphSubset",
+        current_time: datetime,
     ) -> "AssetGraphSubset":
         """Returns asset partitions within the graph that satisfy supplied criteria.
 
@@ -470,6 +484,7 @@ class AssetGraph:
                                     partitions_subset,
                                     downstream_partitions_def=child_partitions_def,
                                     dynamic_partitions_store=dynamic_partitions_store,
+                                    current_time=current_time,
                                 )
                             )
                             prior_child_partitions_subset = queued_subsets_by_asset_key.get(child)
@@ -494,6 +509,7 @@ class AssetGraph:
             [Iterable[AssetKeyPartitionKey], AbstractSet[AssetKeyPartitionKey]], bool
         ],
         initial_asset_partitions: Iterable[AssetKeyPartitionKey],
+        evaluation_time: datetime,
     ) -> AbstractSet[AssetKeyPartitionKey]:
         """Returns asset partitions within the graph that satisfy supplied criteria.
 
@@ -521,7 +537,10 @@ class AssetGraph:
 
                 for candidate in candidates_unit:
                     for child in self.get_children_partitions(
-                        dynamic_partitions_store, candidate.asset_key, candidate.partition_key
+                        dynamic_partitions_store,
+                        evaluation_time,
+                        candidate.asset_key,
+                        candidate.partition_key,
                     ):
                         if child not in all_nodes:
                             queue.enqueue(child)
@@ -637,19 +656,33 @@ class ToposortedPriorityQueue:
             self._toposort_level_by_asset_key[required_asset_key]
             for required_asset_key in required_multi_asset_keys
         )
+
+        def _sort_key_for_time_window_partition(
+            partitions_def: TimeWindowPartitionsDefinition,
+        ) -> float:
+            # A sort key such that time window partitions are sorted from oldest to newest
+            return pendulum.instance(
+                datetime.strptime(cast(str, asset_partition.partition_key), partitions_def.fmt),
+                tz=partitions_def.timezone,
+            ).timestamp()
+
+        partitions_def = self._asset_graph.get_partitions_def(asset_key)
         if self._asset_graph.has_self_dependency(asset_key):
-            partitions_def = self._asset_graph.get_partitions_def(asset_key)
             if partitions_def is not None and isinstance(
                 partitions_def, TimeWindowPartitionsDefinition
             ):
-                partition_sort_key = partitions_def.time_window_for_partition_key(
-                    cast(str, asset_partition.partition_key)
-                ).start.timestamp()
+                # sort self dependencies from oldest to newest, as older partitions must exist before
+                # new ones can execute
+                partition_sort_key = _sort_key_for_time_window_partition(partitions_def)
             else:
                 check.failed(
                     "Assets with self-dependencies must have time-window partitions, but"
                     f" {asset_key} does not."
                 )
+        elif isinstance(partitions_def, TimeWindowPartitionsDefinition):
+            # sort non-self dependencies from newest to oldest, as newer partitions are more relevant
+            # than older ones
+            partition_sort_key = -1 * _sort_key_for_time_window_partition(partitions_def)
         else:
             partition_sort_key = None
 

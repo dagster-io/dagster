@@ -133,6 +133,7 @@ export type PipelineExecutionConfigSchemaQuery = {
     | {__typename: 'PythonError'}
     | {
         __typename: 'RunConfigSchema';
+        rootDefaultYaml: string;
         rootConfigType:
           | {__typename: 'ArrayConfigType'; key: string}
           | {__typename: 'CompositeConfigType'; key: string}
@@ -230,6 +231,7 @@ export type LaunchpadSessionRunConfigSchemaFragment_PythonError_ = {__typename: 
 
 export type LaunchpadSessionRunConfigSchemaFragment_RunConfigSchema_ = {
   __typename: 'RunConfigSchema';
+  rootDefaultYaml: string;
   rootConfigType:
     | {__typename: 'ArrayConfigType'; key: string}
     | {__typename: 'CompositeConfigType'; key: string}

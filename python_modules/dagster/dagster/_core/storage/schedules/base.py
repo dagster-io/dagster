@@ -1,9 +1,12 @@
 import abc
 from typing import Mapping, Optional, Sequence, Set
 
+from dagster import AssetKey
+from dagster._core.definitions.asset_reconciliation_sensor import AutoMaterializeAssetEvaluation
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
 from dagster._core.scheduler.instigation import (
+    AutoMaterializeAssetEvaluationRecord,
     InstigatorState,
     InstigatorStatus,
     InstigatorTick,
@@ -132,6 +135,26 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
             selector_id (str): The logical instigator identifier
             before (datetime): All ticks before this datetime will get purged
             tick_statuses (Optional[List[TickStatus]]): The tick statuses to wipe
+        """
+
+    @abc.abstractmethod
+    def add_auto_materialize_asset_evaluations(
+        self,
+        evaluation_id: int,
+        asset_evaluations: Sequence[AutoMaterializeAssetEvaluation],
+    ) -> None:
+        """Add asset policy evaluations to storage."""
+
+    @abc.abstractmethod
+    def get_auto_materialize_asset_evaluations(
+        self, asset_key: AssetKey, limit: int, cursor: Optional[int] = None
+    ) -> Sequence[AutoMaterializeAssetEvaluationRecord]:
+        """Get the policy evaluations for a given asset.
+
+        Args:
+            asset_key (AssetKey): The asset key to query
+            limit (Optional[int]): The maximum number of evaluations to return
+            cursor (Optional[int]): The cursor to paginate from
         """
 
     @abc.abstractmethod

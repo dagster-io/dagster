@@ -33,16 +33,17 @@ def _test_launch_sensor_runs_in_subprocess(instance_ref, execution_datetime, deb
             ) as workspace_context:
                 logger = get_default_daemon_logger("SensorDaemon")
                 futures = {}
-                list(
-                    execute_sensor_iteration(
-                        workspace_context,
-                        logger,
-                        threadpool_executor=SingleThreadPoolExecutor(),
-                        debug_crash_flags=debug_crash_flags,
-                        sensor_tick_futures=futures,
+                with SingleThreadPoolExecutor() as executor:
+                    list(
+                        execute_sensor_iteration(
+                            workspace_context,
+                            logger,
+                            threadpool_executor=executor,
+                            debug_crash_flags=debug_crash_flags,
+                            sensor_tick_futures=futures,
+                        )
                     )
-                )
-                wait_for_futures(futures)
+                    wait_for_futures(futures)
         finally:
             cleanup_test_instance(instance)
 

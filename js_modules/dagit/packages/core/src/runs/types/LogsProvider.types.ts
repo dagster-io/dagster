@@ -1145,8 +1145,10 @@ export type PipelineRunLogsSubscription = {
               fileKey: string;
               stepKeys: Array<string> | null;
               pid: number | null;
-              externalUrl: string | null;
+              externalStdoutUrl: string | null;
+              externalStderrUrl: string | null;
               eventType: Types.DagsterEventType | null;
+              externalUrl: string | null;
             }
           | {
               __typename: 'MaterializationEvent';
@@ -3575,8 +3577,10 @@ export type RunLogsSubscriptionSuccessFragment = {
         fileKey: string;
         stepKeys: Array<string> | null;
         pid: number | null;
-        externalUrl: string | null;
+        externalStdoutUrl: string | null;
+        externalStderrUrl: string | null;
         eventType: Types.DagsterEventType | null;
+        externalUrl: string | null;
       }
     | {
         __typename: 'MaterializationEvent';
@@ -6011,8 +6015,10 @@ export type RunLogsQuery = {
               fileKey: string;
               stepKeys: Array<string> | null;
               pid: number | null;
-              externalUrl: string | null;
+              externalStdoutUrl: string | null;
+              externalStderrUrl: string | null;
               eventType: Types.DagsterEventType | null;
+              externalUrl: string | null;
             }
           | {
               __typename: 'MaterializationEvent';

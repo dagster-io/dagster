@@ -167,7 +167,7 @@ class TestRunStorage:
         storage_id_again = storage.get_run_storage_id()
         assert storage_id == storage_id_again
 
-    def test_fetch_by_pipeline(self, storage):
+    def test_fetch_by_job(self, storage):
         assert storage
         one = make_new_run_id()
         two = make_new_run_id()
@@ -1290,7 +1290,7 @@ class TestRunStorage:
         for name in REQUIRED_DATA_MIGRATIONS.keys():
             assert storage.has_built_index(name)
 
-    def test_handle_run_event_pipeline_success_test(self, storage):
+    def test_handle_run_event_job_success_test(self, storage):
         run_id = make_new_run_id()
         run_to_add = TestRunStorage.build_run(job_name="pipeline_name", run_id=run_id)
         storage.add_run(run_to_add)

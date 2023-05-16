@@ -1,10 +1,11 @@
 // eslint-disable-next-line no-restricted-imports
-import {Toaster as BlueprintToaster, IToasterProps, IToaster, IToastProps} from '@blueprintjs/core';
+import {IToasterProps, ToasterInstance, ToastProps} from '@blueprintjs/core';
 import React from 'react';
 import {createGlobalStyle} from 'styled-components/macro';
 
 import {Colors} from './Colors';
 import {IconName, Icon} from './Icon';
+import {createToaster} from './createToaster';
 
 export const GlobalToasterStyle = createGlobalStyle`
   .dagster-toaster {
@@ -52,30 +53,32 @@ export const GlobalToasterStyle = createGlobalStyle`
 `;
 
 // Patch the Blueprint Toaster to take a Dagster iconName instead of a Blueprint iconName
-type DToasterShowFn = (
-  props: Omit<IToastProps, 'icon'> & {icon?: IconName},
-  key?: string,
-) => string;
-type DToaster = Omit<IToaster, 'show'> & {show: DToasterShowFn};
+export type DToasterShowProps = Omit<ToastProps, 'icon'> & {icon?: IconName};
+export type DToasterShowFn = (props: DToasterShowProps, key?: string) => string;
+export type DToaster = Omit<ToasterInstance, 'show'> & {show: DToasterShowFn};
 
-export const Toaster: {
-  create: (props?: IToasterProps, container?: HTMLElement) => DToaster;
-} = {
-  create: (props, container) => {
-    const instance = BlueprintToaster.create({...props, className: 'dagster-toaster'}, container);
-    const show = instance.show;
-    const showWithDagsterIcon: DToasterShowFn = ({icon, ...rest}, key) => {
-      if (icon && typeof icon === 'string') {
-        rest.message = (
-          <>
-            <Icon name={icon} color={Colors.White} />
-            {rest.message}
-          </>
-        );
-      }
-      return show.apply(instance, [rest, key]);
-    };
+const setup = (instance: ToasterInstance): DToaster => {
+  const show = instance.show;
+  const showWithDagsterIcon: DToasterShowFn = ({icon, ...rest}, key) => {
+    if (icon && typeof icon === 'string') {
+      rest.message = (
+        <>
+          <Icon name={icon} color={Colors.White} />
+          {rest.message}
+        </>
+      );
+    }
+    return show.apply(instance, [rest, key]);
+  };
 
-    return Object.assign(instance, {show: showWithDagsterIcon}) as DToaster;
-  },
+  return Object.assign(instance, {show: showWithDagsterIcon}) as DToaster;
+};
+
+const asyncCreate = async (props?: IToasterProps, container?: HTMLElement): Promise<DToaster> => {
+  const instance = await createToaster({...props, className: 'dagster-toaster'}, container);
+  return setup(instance);
+};
+
+export const Toaster = {
+  asyncCreate,
 };

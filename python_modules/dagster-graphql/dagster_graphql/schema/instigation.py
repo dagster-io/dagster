@@ -14,6 +14,7 @@ from dagster._core.definitions.schedule_definition import ScheduleExecutionData
 from dagster._core.definitions.selector import ScheduleSelector, SensorSelector
 from dagster._core.definitions.sensor_definition import SensorExecutionData
 from dagster._core.scheduler.instigation import (
+    DynamicPartitionsRequestResult,
     InstigatorState,
     InstigatorTick,
     InstigatorType,
@@ -139,11 +140,40 @@ class GrapheneDynamicPartitionsRequestType(graphene.Enum):
         name = "DynamicPartitionsRequestType"
 
 
-class GrapheneDynamicPartitionsRequest(graphene.ObjectType):
+class DynamicPartitionsRequestMixin:
+    # Mixin this class to implement DynamicPartitionsRequest
+    #
+    # Graphene has some strange properties that make it so that you cannot
+    # implement ABCs nor use properties in an overridable way. So the way
+    # the mixin works is that the target classes have to have a method
+    # get_dynamic_partitions_request()
     partitionKeys = graphene.List(graphene.NonNull(graphene.String))
     partitionsDefName = graphene.NonNull(graphene.String)
     type = graphene.NonNull(GrapheneDynamicPartitionsRequestType)
 
+    class Meta:
+        name = "DynamicPartitionRequestMixin"
+
+    def get_dynamic_partitions_request(
+        self,
+    ) -> Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest,]:
+        raise NotImplementedError()
+
+    def resolve_partitionKeys(self, _graphene_info: ResolveInfo):
+        return self.get_dynamic_partitions_request().partition_keys
+
+    def resolve_partitionsDefName(self, _graphene_info: ResolveInfo):
+        return self.get_dynamic_partitions_request().partitions_def_name
+
+    def resolve_type(self, _graphene_info: ResolveInfo):
+        return (
+            GrapheneDynamicPartitionsRequestType.ADD_PARTITIONS
+            if isinstance(self.get_dynamic_partitions_request(), AddDynamicPartitionsRequest)
+            else GrapheneDynamicPartitionsRequestType.DELETE_PARTITIONS
+        )
+
+
+class GrapheneDynamicPartitionsRequest(DynamicPartitionsRequestMixin, graphene.ObjectType):
     class Meta:
         name = "DynamicPartitionRequest"
 
@@ -153,13 +183,46 @@ class GrapheneDynamicPartitionsRequest(graphene.ObjectType):
             AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest
         ],
     ):
-        super().__init__(
-            type=GrapheneDynamicPartitionsRequestType.ADD_PARTITIONS
-            if isinstance(dynamic_partition_request, AddDynamicPartitionsRequest)
-            else GrapheneDynamicPartitionsRequestType.DELETE_PARTITIONS,
-            partitionKeys=dynamic_partition_request.partition_keys,
-            partitionsDefName=dynamic_partition_request.partitions_def_name,
-        )
+        super().__init__()
+        self._dynamic_partitions_request = dynamic_partition_request
+
+    def get_dynamic_partitions_request(
+        self,
+    ) -> Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest,]:
+        return self._dynamic_partitions_request
+
+
+class GrapheneDynamicPartitionsRequestResult(DynamicPartitionsRequestMixin, graphene.ObjectType):
+    class Meta:
+        name = "DynamicPartitionsRequestResult"
+
+    skippedPartitionKeys = non_null_list(graphene.String)
+
+    def __init__(self, dynamic_partitions_request_result: DynamicPartitionsRequestResult):
+        super().__init__()
+        self._dynamic_partitions_request_result = dynamic_partitions_request_result
+
+    def get_dynamic_partitions_request(
+        self,
+    ) -> Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]:
+        if self._dynamic_partitions_request_result.added_partitions is not None:
+            return AddDynamicPartitionsRequest(
+                partition_keys=self._dynamic_partitions_request_result.added_partitions,
+                partitions_def_name=self._dynamic_partitions_request_result.partitions_def_name,
+            )
+        elif self._dynamic_partitions_request_result.deleted_partitions is not None:
+            return DeleteDynamicPartitionsRequest(
+                partition_keys=self._dynamic_partitions_request_result.deleted_partitions,
+                partitions_def_name=self._dynamic_partitions_request_result.partitions_def_name,
+            )
+        else:
+            check.failed(
+                "Unexpected dynamic_partitions_request_result"
+                f" {self._dynamic_partitions_request_result}"
+            )
+
+    def resolve_skippedPartitionKeys(self, _graphene_info: ResolveInfo):
+        return self._dynamic_partitions_request_result.skipped_partitions
 
 
 class GrapheneInstigationTick(graphene.ObjectType):
@@ -175,6 +238,7 @@ class GrapheneInstigationTick(graphene.ObjectType):
     originRunIds = non_null_list(graphene.String)
     logKey = graphene.List(graphene.NonNull(graphene.String))
     logEvents = graphene.Field(graphene.NonNull(GrapheneInstigationEventConnection))
+    dynamicPartitionsRequestResults = non_null_list(GrapheneDynamicPartitionsRequestResult)
 
     class Meta:
         name = "InstigationTick"
@@ -214,6 +278,12 @@ class GrapheneInstigationTick(graphene.ObjectType):
 
     def resolve_logEvents(self, graphene_info: ResolveInfo):
         return get_tick_log_events(graphene_info, self._tick)
+
+    def resolve_dynamicPartitionsRequestResults(self, _):
+        return [
+            GrapheneDynamicPartitionsRequestResult(request_result)
+            for request_result in self._tick.dynamic_partitions_request_results
+        ]
 
 
 class GrapheneDryRunInstigationTick(graphene.ObjectType):
@@ -313,7 +383,10 @@ class GrapheneTickEvaluation(graphene.ObjectType):
     class Meta:
         name = "TickEvaluation"
 
-    def __init__(self, execution_data):
+    def __init__(
+        self,
+        execution_data: Union[ScheduleExecutionData, SensorExecutionData, SerializableErrorInfo],
+    ):
         check.inst_param(
             execution_data,
             "execution_data",
@@ -335,18 +408,18 @@ class GrapheneTickEvaluation(graphene.ObjectType):
             if not isinstance(execution_data, SerializableErrorInfo)
             else None
         )
-        dynamicPartitionsRequests = None
-        if isinstance(execution_data, SensorExecutionData):
-            dynamicPartitionsRequests = [
-                GrapheneDynamicPartitionsRequest(request)
-                for request in execution_data.dynamic_partitions_requests
-            ]
+
+        self._dynamic_partitions_requests = (
+            execution_data.dynamic_partitions_requests
+            if isinstance(execution_data, SensorExecutionData)
+            else None
+        )
+
         cursor = execution_data.cursor if isinstance(execution_data, SensorExecutionData) else None
         super().__init__(
             skipReason=skip_reason,
             error=error,
             cursor=cursor,
-            dynamicPartitionsRequests=dynamicPartitionsRequests,
         )
 
     def resolve_runRequests(self, _graphene_info: ResolveInfo):
@@ -354,6 +427,15 @@ class GrapheneTickEvaluation(graphene.ObjectType):
             return self._run_requests
 
         return [GrapheneRunRequest(run_request) for run_request in self._run_requests]
+
+    def resolve_dynamicPartitionsRequests(self, _graphene_info: ResolveInfo):
+        if not self._dynamic_partitions_requests:
+            return self._dynamic_partitions_requests
+
+        return [
+            GrapheneDynamicPartitionsRequest(request)
+            for request in self._dynamic_partitions_requests
+        ]
 
 
 class GrapheneRunRequest(graphene.ObjectType):

@@ -165,7 +165,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         return PostgresEventLogStorage(conn_string, should_autocreate_tables)
 
     def store_event(self, event: EventLogEntry) -> None:
-        """Store an event corresponding to a pipeline run.
+        """Store an event corresponding to a run.
 
         Args:
             event (EventLogEntry): The event to store.
@@ -186,7 +186,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 f"""NOTIFY {CHANNEL_NAME}, %s; """,
                 (res[0] + "_" + str(res[1]),),  # type: ignore
             )
-            event_id = res[1]  # type: ignore
+            event_id = int(res[1])  # type: ignore
 
         if (
             event.is_dagster_event
@@ -209,7 +209,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         # We switched to storing the entire event record of the last materialization instead of just
         # the AssetMaterialization object, so that we have access to metadata like timestamp,
-        # pipeline, run_id, etc.
+        # job, run_id, etc.
         #
         # This should make certain asset queries way more performant, without having to do extra
         # queries against the event log.

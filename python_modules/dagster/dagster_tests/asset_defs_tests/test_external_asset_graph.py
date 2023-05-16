@@ -72,6 +72,7 @@ partitioned_source = SourceAsset(
         for_freshness=True,
         on_new_parent_data=True,
         time_window_partition_scope_minutes=(24 + 7) * 60,
+        max_materializations_per_minute=75,
     ),
 )
 def downstream_of_partitioned_source():
@@ -266,6 +267,7 @@ def test_auto_materialize_policy():
         for_freshness=True,
         on_new_parent_data=True,
         time_window_partition_scope_minutes=(24 + 7) * 60,
+        max_materializations_per_minute=75,
     )
 
 

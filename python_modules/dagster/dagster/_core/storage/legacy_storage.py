@@ -9,8 +9,11 @@ from typing import (
     Union,
 )
 
-from dagster import _check as check
+from dagster import (
+    _check as check,
+)
 from dagster._config.config_schema import UserConfigSchema
+from dagster._core.definitions.asset_reconciliation_sensor import AutoMaterializeAssetEvaluation
 from dagster._core.event_api import EventHandlerFn
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils import PrintFn
@@ -36,6 +39,7 @@ if TYPE_CHECKING:
     from dagster._core.host_representation.origin import ExternalJobOrigin
     from dagster._core.instance import DagsterInstance
     from dagster._core.scheduler.instigation import (
+        AutoMaterializeAssetEvaluationRecord,
         InstigatorState,
         InstigatorStatus,
         InstigatorTick,
@@ -382,8 +386,11 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         cursor: Optional[Union[str, int]] = None,
         of_type: Optional[Union["DagsterEventType", Set["DagsterEventType"]]] = None,
         limit: Optional[int] = None,
+        ascending: bool = True,
     ) -> Iterable["EventLogEntry"]:
-        return self._storage.event_log_storage.get_logs_for_run(run_id, cursor, of_type, limit)
+        return self._storage.event_log_storage.get_logs_for_run(
+            run_id, cursor, of_type, limit, ascending
+        )
 
     def get_stats_for_run(self, run_id: str) -> "DagsterRunStatsSnapshot":
         return self._storage.event_log_storage.get_stats_for_run(run_id)
@@ -532,8 +539,11 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         cursor: Optional[str] = None,
         of_type: Optional[Union["DagsterEventType", Set["DagsterEventType"]]] = None,
         limit: Optional[int] = None,
+        ascending: bool = True,
     ) -> EventLogConnection:
-        return self._storage.event_log_storage.get_records_for_run(run_id, cursor, of_type, limit)
+        return self._storage.event_log_storage.get_records_for_run(
+            run_id, cursor, of_type, limit, ascending
+        )
 
 
 class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
@@ -639,6 +649,22 @@ class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
     ) -> None:
         return self._storage.schedule_storage.purge_ticks(
             origin_id, selector_id, before, tick_statuses
+        )
+
+    def add_auto_materialize_asset_evaluations(
+        self,
+        evaluation_id: int,
+        asset_evaluations: Sequence[AutoMaterializeAssetEvaluation],
+    ) -> None:
+        return self._storage.schedule_storage.add_auto_materialize_asset_evaluations(
+            evaluation_id, asset_evaluations
+        )
+
+    def get_auto_materialize_asset_evaluations(
+        self, asset_key: "AssetKey", limit: int, cursor: Optional[int] = None
+    ) -> Sequence["AutoMaterializeAssetEvaluationRecord"]:
+        return self._storage.schedule_storage.get_auto_materialize_asset_evaluations(
+            asset_key, limit, cursor
         )
 
     def upgrade(self) -> None:

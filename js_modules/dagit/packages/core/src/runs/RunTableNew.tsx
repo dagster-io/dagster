@@ -1,9 +1,25 @@
 import {gql} from '@apollo/client';
-import {Box, Checkbox, Colors, Icon, NonIdealState, Table, Mono, Tag} from '@dagster-io/ui';
+import {
+  Box,
+  Checkbox,
+  Colors,
+  Icon,
+  NonIdealState,
+  Table,
+  Mono,
+  Tag,
+  Button,
+  Dialog,
+  DialogBody,
+  DialogFooter,
+  BaseTag,
+  ButtonLink,
+} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {ShortcutHandler} from '../app/ShortcutHandler';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {RunsFilter} from '../graphql/types';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
@@ -17,7 +33,7 @@ import {AssetKeyTagCollection} from './AssetKeyTagCollection';
 import {RunActionsMenu, RunBulkActionsMenu} from './RunActionsMenu';
 import {RunCreatedByCell} from './RunCreatedByCell';
 import {RunStatusTagWithStats} from './RunStatusTag';
-import {DagsterTag, TagType} from './RunTag';
+import {DagsterTag} from './RunTag';
 import {RunTags} from './RunTags';
 import {
   assetKeysForRun,
@@ -147,13 +163,20 @@ export const RunTable = (props: RunTableProps) => {
     <>
       <ActionBar
         top={
-          <>
+          <Box
+            flex={{
+              direction: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              grow: 1,
+            }}
+          >
             {actionBarComponents}
             <RunBulkActionsMenu
               selected={selectedFragments}
               clearSelection={() => onToggleAll(false)}
             />
-          </>
+          </Box>
         }
         bottom={belowActionBarComponents}
       />
@@ -240,8 +263,21 @@ const RunRow: React.FC<{
 
   const isReexecution = run.tags.some((tag) => tag.key === DagsterTag.ParentRunId);
 
+  const [showRunTags, setShowRunTags] = React.useState(false);
+  const [isHovered, setIsHovered] = React.useState(false);
+
+  const partition = run.tags.find((tag) => tag.key === DagsterTag.Partition);
+
   return (
-    <Row highlighted={!!isHighlighted}>
+    <Row
+      highlighted={!!isHighlighted}
+      onMouseEnter={() => {
+        setIsHovered(true);
+      }}
+      onMouseLeave={() => {
+        setIsHovered(false);
+      }}
+    >
       <td>
         {canTerminateOrDelete && onToggleChecked ? (
           <Checkbox checked={!!checked} onChange={onChange} />
@@ -262,7 +298,7 @@ const RunRow: React.FC<{
           ) : null}
         </Box>
       </td>
-      <td>
+      <td style={{position: 'relative'}}>
         <Box flex={{direction: 'column', gap: 5}}>
           {isHiddenAssetGroupJob(run.pipelineName) ? (
             <AssetKeyTagCollection assetKeys={assetKeysForRun(run)} />
@@ -291,29 +327,64 @@ const RunRow: React.FC<{
               </Link>
             </Box>
           )}
-          <RunTags
-            tags={
-              [
-                run.pipelineSnapshotId
-                  ? {
+          <Box flex={{direction: 'row', gap: 8, wrap: 'wrap'}}>
+            {run.tags.length ? (
+              <Box>
+                <BaseTag
+                  fillColor={Colors.Gray100}
+                  label={
+                    <ButtonLink
+                      onClick={() => {
+                        setShowRunTags(true);
+                      }}
+                    >
+                      {run.tags.length} tag{run.tags.length === 1 ? '' : 's'}
+                    </ButtonLink>
+                  }
+                />
+              </Box>
+            ) : null}
+            <RunTagsWrapper>
+              {partition ? (
+                <RunTags
+                  tags={[partition]}
+                  mode={isJob ? (run.mode !== 'default' ? run.mode : null) : run.mode}
+                  onAddTag={onAddTag}
+                />
+              ) : null}
+              {run.pipelineSnapshotId ? (
+                <RunTags
+                  tags={[
+                    {
                       key: DagsterTag.SnapshotID,
                       value: run.pipelineSnapshotId?.slice(0, 8) || '',
                       link: run.pipelineSnapshotId
                         ? getPipelineSnapshotLink(run.pipelineName, run.pipelineSnapshotId)
                         : undefined,
-                    }
-                  : null,
-                run.tags.find((tag) => tag.key === DagsterTag.Partition),
-              ].filter((x) => x) as TagType[]
-            }
-            mode={isJob ? (run.mode !== 'default' ? run.mode : null) : run.mode}
-            onAddTag={onAddTag}
-          />
+                    },
+                  ]}
+                  mode={isJob ? (run.mode !== 'default' ? run.mode : null) : run.mode}
+                />
+              ) : null}
+            </RunTagsWrapper>
+          </Box>
         </Box>
+        {isHovered && run.tags.length ? (
+          <ShortcutHandler
+            key="runtabletags"
+            onShortcut={() => {
+              setShowRunTags((showRunTags) => !showRunTags);
+            }}
+            shortcutLabel="t"
+            shortcutFilter={(e) => e.code === 'KeyT'}
+          >
+            {null}
+          </ShortcutHandler>
+        ) : null}
       </td>
       {hideCreatedBy ? null : (
         <td>
-          <RunCreatedByCell run={run} />
+          <RunCreatedByCell run={run} onAddTag={onAddTag} />
         </td>
       )}
       <td>
@@ -326,6 +397,33 @@ const RunRow: React.FC<{
       <td>
         <RunActionsMenu run={run} onAddTag={onAddTag} />
       </td>
+      <Dialog
+        isOpen={showRunTags}
+        title="Tags"
+        canOutsideClickClose
+        canEscapeKeyClose
+        onClose={() => {
+          setShowRunTags(false);
+        }}
+      >
+        <DialogBody>
+          <RunTags
+            tags={run.tags}
+            mode={isJob ? (run.mode !== 'default' ? run.mode : null) : run.mode}
+            onAddTag={onAddTag}
+          />
+        </DialogBody>
+        <DialogFooter topBorder>
+          <Button
+            intent="primary"
+            onClick={() => {
+              setShowRunTags(false);
+            }}
+          >
+            Close
+          </Button>
+        </DialogFooter>
+      </Dialog>
     </Row>
   );
 };
@@ -354,3 +452,10 @@ function ActionBar({top, bottom}: {top: React.ReactNode; bottom?: React.ReactNod
     </Box>
   );
 }
+
+const RunTagsWrapper = styled.div`
+  display: contents;
+  > * {
+    display: contents;
+  }
+`;

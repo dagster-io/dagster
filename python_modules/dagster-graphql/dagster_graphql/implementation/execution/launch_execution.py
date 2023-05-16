@@ -12,7 +12,6 @@ from ..utils import (
     ExecutionMetadata,
     ExecutionParams,
     assert_permission_for_location,
-    capture_error,
 )
 from .run_lifecycle import create_valid_pipeline_run
 
@@ -21,14 +20,12 @@ if TYPE_CHECKING:
     from dagster_graphql.schema.util import ResolveInfo
 
 
-@capture_error
 def launch_pipeline_reexecution(
     graphene_info: "ResolveInfo", execution_params: ExecutionParams
 ) -> "GrapheneLaunchRunSuccess":
     return _launch_pipeline_execution(graphene_info, execution_params, is_reexecuted=True)
 
 
-@capture_error
 def launch_pipeline_execution(
     graphene_info: "ResolveInfo", execution_params: ExecutionParams
 ) -> "GrapheneLaunchRunSuccess":
@@ -72,7 +69,6 @@ def _launch_pipeline_execution(
     return GrapheneLaunchRunSuccess(run=GrapheneRun(records[0]))
 
 
-@capture_error
 def launch_reexecution_from_parent_run(
     graphene_info: "ResolveInfo", parent_run_id: str, strategy: str
 ) -> "GrapheneLaunchRunSuccess":
@@ -91,7 +87,7 @@ def launch_reexecution_from_parent_run(
         location_name=origin.external_repository_origin.code_location_origin.location_name,
         repository_name=origin.external_repository_origin.repository_name,
         job_name=parent_run.job_name,
-        solid_selection=None,
+        op_selection=None,
     )
 
     assert_permission_for_location(

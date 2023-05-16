@@ -5,7 +5,7 @@ import * as React from 'react';
 
 import {Mono} from '../../../ui/src';
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {SharedToaster} from '../app/DomUtils';
+import {showSharedToaster} from '../app/DomUtils';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {Timestamp} from '../app/time/Timestamp';
@@ -62,7 +62,7 @@ export function useDidLaunchEvent(cb: () => void, delay = 1500) {
 
 export type LaunchBehavior = 'open' | 'open-in-new-tab' | 'toast';
 
-export function handleLaunchResult(
+export async function handleLaunchResult(
   pipelineName: string,
   result: void | null | LaunchPipelineExecutionMutation['launchPipelineExecution'],
   history: History<unknown>,
@@ -84,7 +84,7 @@ export function handleLaunchResult(
     } else if (options.behavior === 'open') {
       openInSameTab();
     } else {
-      SharedToaster.show({
+      await showSharedToaster({
         intent: 'success',
         message: (
           <div>
@@ -200,7 +200,6 @@ export function getReexecutionVariables(input: {
 export const LAUNCH_PIPELINE_EXECUTION_MUTATION = gql`
   mutation LaunchPipelineExecution($executionParams: ExecutionParams!) {
     launchPipelineExecution(executionParams: $executionParams) {
-      __typename
       ... on LaunchRunSuccess {
         run {
           id
@@ -228,7 +227,6 @@ export const LAUNCH_PIPELINE_EXECUTION_MUTATION = gql`
 export const DELETE_MUTATION = gql`
   mutation Delete($runId: String!) {
     deletePipelineRun(runId: $runId) {
-      __typename
       ... on UnauthorizedError {
         message
       }
@@ -245,7 +243,6 @@ export const DELETE_MUTATION = gql`
 export const TERMINATE_MUTATION = gql`
   mutation Terminate($runId: String!, $terminatePolicy: TerminateRunPolicy) {
     terminatePipelineExecution(runId: $runId, terminatePolicy: $terminatePolicy) {
-      __typename
       ... on TerminateRunFailure {
         message
       }
@@ -277,7 +274,6 @@ export const LAUNCH_PIPELINE_REEXECUTION_MUTATION = gql`
       executionParams: $executionParams
       reexecutionParams: $reexecutionParams
     ) {
-      __typename
       ... on LaunchRunSuccess {
         run {
           id

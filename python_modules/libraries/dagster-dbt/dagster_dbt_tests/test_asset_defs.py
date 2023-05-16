@@ -655,12 +655,33 @@ def test_op_config(
     assert all_keys == expected_keys
 
 
+def test_op_custom_name():
+    instances = [{"target": "target_a"}, {"target": "target_b"}]
+    manifest_path = file_relative_path(__file__, "sample_manifest.json")
+    dbt_assets = []
+    for instance in instances:
+        with open(manifest_path) as manifest_json:
+            dbt_assets.extend(
+                load_assets_from_dbt_manifest(
+                    manifest_json=json.load(manifest_json),
+                    key_prefix=[instance["target"], "duckdb", "test-schema"],
+                    op_name=f"{instance['target']}_dbt_op",
+                )
+            )
+    op_names = [asset_group.op.name for asset_group in dbt_assets]
+    assert len(op_names) == len(set(op_names)), (
+        "Multiple instances of a dbt project cannot have the same op name.\n"
+        f"dbt targets were: {instances}\n"
+        f"op names generated were: {op_names}"
+    )
+
+
 @pytest.mark.parametrize("load_from_manifest", [True, False])
 @pytest.mark.parametrize(
     "select,exclude,expected_asset_names",
     [
         (
-            "*",
+            "fqn:*",
             None,
             {
                 "sort_by_calories",

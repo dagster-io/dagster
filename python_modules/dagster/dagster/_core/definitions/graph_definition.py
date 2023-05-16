@@ -137,7 +137,7 @@ class GraphDefinition(NodeDefinition):
     Args:
         name (str): The name of the graph. Must be unique within any :py:class:`GraphDefinition`
             or :py:class:`JobDefinition` containing the graph.
-        description (Optional[str]): A human-readable description of the pipeline.
+        description (Optional[str]): A human-readable description of the job.
         node_defs (Optional[Sequence[NodeDefinition]]): The set of ops / graphs used in this graph.
         dependencies (Optional[Dict[Union[str, NodeInvocation], Dict[str, DependencyDefinition]]]):
             A structure that declares the dependencies of each op's inputs on the outputs of other
@@ -628,7 +628,7 @@ class GraphDefinition(NodeDefinition):
 
         wrapped_resource_defs = wrap_resources_for_execution(resource_defs)
 
-        return JobDefinition(
+        return JobDefinition.dagster_internal_init(
             name=name,
             description=description or self.description,
             graph_def=self,
@@ -645,7 +645,8 @@ class GraphDefinition(NodeDefinition):
             asset_layer=asset_layer,
             input_values=input_values,
             _subset_selection_data=_asset_selection_data,
-        ).get_job_def_for_subset_selection(op_selection)
+            _was_explicitly_provided_resources=None,  # None means this is determined by whether resource_defs contains any explicitly provided resources
+        ).get_subset(op_selection=op_selection)
 
     def coerce_to_job(self) -> "JobDefinition":
         # attempt to coerce a Graph in to a Job, raising a useful error if it doesn't work
@@ -713,7 +714,7 @@ class GraphDefinition(NodeDefinition):
             executor_def=execute_in_process_executor,
             resource_defs=resource_defs,
             input_values=input_values,
-        ).get_job_def_for_subset_selection(op_selection)
+        ).get_subset(op_selection=op_selection)
 
         run_config = run_config if run_config is not None else {}
         op_selection = check.opt_sequence_param(op_selection, "op_selection", str)

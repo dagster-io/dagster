@@ -18,7 +18,7 @@ SNOWFLAKE_JARS = "net.snowflake:snowflake-jdbc:3.8.0,net.snowflake:spark-snowfla
 
 @asset
 def iris_dataset() -> DataFrame:
-    spark = SparkSession.builder.config(
+    spark = SparkSession.builder.config(  # type: ignore
         key="spark.jars.packages",
         value=SNOWFLAKE_JARS,
     ).getOrCreate()

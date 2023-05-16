@@ -47,7 +47,7 @@ from dagster._core.errors import (
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
 from dagster._serdes import whitelist_for_serdes
-from dagster._utils import normalize_to_repository
+from dagster._utils import IHasInternalInit, normalize_to_repository
 
 from ..decorator_utils import (
     get_function_params,
@@ -442,7 +442,7 @@ def _check_dynamic_partitions_requests(
             check.failed(f"Unexpected dynamic partition request type: {req}")
 
 
-class SensorDefinition:
+class SensorDefinition(IHasInternalInit):
     """Define a sensor that initiates a set of runs based on some external state.
 
     Args:
@@ -471,11 +471,12 @@ class SensorDefinition:
             job (ExecutableDefinition): The job that should execute when this
                 schedule runs.
         """
-        return SensorDefinition(
+        return SensorDefinition.dagster_internal_init(
             name=self.name,
             evaluation_fn=self._evaluation_fn,
             minimum_interval_seconds=self.minimum_interval_seconds,
             description=self.description,
+            job_name=None,  # if original init was passed job name, was resolved to a job
             jobs=new_jobs if len(new_jobs) > 1 else None,
             job=new_jobs[0] if len(new_jobs) == 1 else None,
             default_status=self.default_status,
@@ -534,7 +535,7 @@ class SensorDefinition:
             targets = [
                 RepoRelativeTarget(
                     job_name=check.str_param(job_name, "job_name"),
-                    solid_selection=None,
+                    op_selection=None,
                 )
             ]
         elif job:
@@ -585,6 +586,33 @@ class SensorDefinition:
         self._required_resource_keys = (
             check.opt_set_param(required_resource_keys, "required_resource_keys", of_type=str)
             or resource_arg_names
+        )
+
+    @staticmethod
+    def dagster_internal_init(
+        *,
+        name: Optional[str],
+        evaluation_fn: Optional[RawSensorEvaluationFunction],
+        job_name: Optional[str],
+        minimum_interval_seconds: Optional[int],
+        description: Optional[str],
+        job: Optional[ExecutableDefinition],
+        jobs: Optional[Sequence[ExecutableDefinition]],
+        default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
+        asset_selection: Optional[AssetSelection],
+        required_resource_keys: Optional[Set[str]],
+    ) -> "SensorDefinition":
+        return SensorDefinition(
+            name=name,
+            evaluation_fn=evaluation_fn,
+            job_name=job_name,
+            minimum_interval_seconds=minimum_interval_seconds,
+            description=description,
+            job=job,
+            jobs=jobs,
+            default_status=default_status,
+            asset_selection=asset_selection,
+            required_resource_keys=required_resource_keys,
         )
 
     def __call__(self, *args, **kwargs) -> RawSensorEvaluationFunctionReturn:
@@ -726,8 +754,8 @@ class SensorDefinition:
                     )
                 elif len(dagster_run_reactions) > 0:
                     check.failed(
-                        "Expected a single SkipReason or one or more PipelineRunReaction: "
-                        "received both PipelineRunReaction and SkipReason"
+                        "Expected a single SkipReason or one or more DagsterRunReaction: "
+                        "received both DagsterRunReaction and SkipReason"
                     )
                 else:
                     check.failed("Expected a single SkipReason: received multiple SkipReasons")

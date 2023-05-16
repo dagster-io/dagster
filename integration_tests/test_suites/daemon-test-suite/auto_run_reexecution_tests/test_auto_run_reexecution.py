@@ -285,7 +285,7 @@ def test_subset_run(instance: DagsterInstance, workspace_context):
         instance,
         status=DagsterRunStatus.STARTED,
         tags={MAX_RETRIES_TAG: "2"},
-        solid_selection=["do_something"],
+        op_selection=["do_something"],
         step_keys_to_execute=["do_something"],
     )
 
@@ -313,7 +313,7 @@ def test_subset_run(instance: DagsterInstance, workspace_context):
     )
     assert len(run_coordinator.queue()) == 1
     auto_run = run_coordinator.queue()[0]
-    assert auto_run.solid_selection == ["do_something"]
+    assert auto_run.op_selection == ["do_something"]
     assert instance.get_execution_plan_snapshot(
         auto_run.execution_plan_snapshot_id
     ).step_keys_to_execute == ["do_something"]

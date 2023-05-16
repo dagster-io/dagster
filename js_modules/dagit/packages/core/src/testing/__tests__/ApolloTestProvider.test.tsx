@@ -27,7 +27,7 @@ describe('ApolloTestProvider', () => {
 
   it('successfully mocks values', async () => {
     render(
-      <ApolloTestProvider typeDefs={typeDefs}>
+      <ApolloTestProvider typeDefs={typeDefs as any}>
         <Thing />
       </ApolloTestProvider>,
     );
@@ -43,7 +43,7 @@ describe('ApolloTestProvider', () => {
     };
 
     render(
-      <ApolloTestProvider mocks={mocks} typeDefs={typeDefs}>
+      <ApolloTestProvider mocks={mocks} typeDefs={typeDefs as any}>
         <Thing />
       </ApolloTestProvider>,
     );
@@ -59,7 +59,7 @@ describe('ApolloTestProvider', () => {
     };
 
     render(
-      <ApolloTestProvider mocks={mocks} typeDefs={typeDefs}>
+      <ApolloTestProvider mocks={mocks} typeDefs={typeDefs as any}>
         <Thing />
       </ApolloTestProvider>,
     );

@@ -19,6 +19,7 @@ from dagster._core.definitions.events import (
     AssetKey,
     AssetMaterialization,
     AssetObservation,
+    CoercibleToAssetKey,
 )
 from dagster._core.definitions.metadata import (
     ArbitraryMetadataMapping,
@@ -51,25 +52,6 @@ class OutputContext:
     Users should not instantiate this object directly. To construct an
     `OutputContext` for testing an IO Manager's `handle_output` method, use
     :py:func:`dagster.build_output_context`.
-
-    Attributes:
-        step_key (Optional[str]): The step_key for the compute step that produced the output.
-        name (Optional[str]): The name of the output that produced the output.
-        run_id (Optional[str]): The id of the run that produced the output.
-        metadata (Optional[Mapping[str, RawMetadataValue]]): A dict of the metadata that is assigned to the
-            OutputDefinition that produced the output.
-        mapping_key (Optional[str]): The key that identifies a unique mapped output. None for regular outputs.
-        config (Optional[Any]): The configuration for the output.
-        dagster_type (Optional[DagsterType]): The type of this output.
-        log (Optional[DagsterLogManager]): The log manager to use for this output.
-        version (Optional[str]): (Experimental) The version of the output.
-        resource_config (Optional[Mapping[str, Any]]): The config associated with the resource that
-            initializes the RootInputManager.
-        resources (Optional[Resources]): The resources required by the output manager, specified by the
-            `required_resource_keys` parameter.
-        op_def (Optional[OpDefinition]): The definition of the op that produced the output.
-        asset_info: Optional[AssetOutputInfo]: (Experimental) Asset info corresponding to the
-            output.
 
     Example:
     .. code-block:: python
@@ -184,6 +166,7 @@ class OutputContext:
     @public
     @property
     def step_key(self) -> str:
+        """The step_key for the compute step that produced the output."""
         if self._step_key is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access step_key, "
@@ -195,6 +178,7 @@ class OutputContext:
     @public
     @property
     def name(self) -> str:
+        """The name of the output that produced the output."""
         if self._name is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access name, "
@@ -216,6 +200,7 @@ class OutputContext:
     @public
     @property
     def run_id(self) -> str:
+        """The id of the run that produced the output."""
         if self._run_id is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access run_id, "
@@ -227,21 +212,27 @@ class OutputContext:
     @public
     @property
     def metadata(self) -> Optional[ArbitraryMetadataMapping]:
+        """A dict of the metadata that is assigned to the OutputDefinition that produced
+        the output.
+        """
         return self._metadata
 
     @public
     @property
     def mapping_key(self) -> Optional[str]:
+        """The key that identifies a unique mapped output. None for regular outputs."""
         return self._mapping_key
 
     @public
     @property
     def config(self) -> Any:
+        """The configuration for the output."""
         return self._config
 
     @public
     @property
     def op_def(self) -> "OpDefinition":
+        """The definition of the op that produced the output."""
         from dagster._core.definitions import OpDefinition
 
         if self._op_def is None:
@@ -255,6 +246,7 @@ class OutputContext:
     @public
     @property
     def dagster_type(self) -> "DagsterType":
+        """The type of this output."""
         if self._dagster_type is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access dagster_type, "
@@ -266,6 +258,7 @@ class OutputContext:
     @public
     @property
     def log(self) -> "DagsterLogManager":
+        """The log manager to use for this output."""
         if self._log is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access log, "
@@ -277,16 +270,21 @@ class OutputContext:
     @public
     @property
     def version(self) -> Optional[str]:
+        """(Experimental) The version of the output."""
         return self._version
 
     @public
     @property
     def resource_config(self) -> Optional[Mapping[str, object]]:
+        """The config associated with the resource that initializes the RootInputManager."""
         return self._resource_config
 
     @public
     @property
     def resources(self) -> Any:
+        """The resources required by the output manager, specified by the `required_resource_keys`
+        parameter.
+        """
         if self._resources is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access resources, "
@@ -303,6 +301,7 @@ class OutputContext:
 
     @property
     def asset_info(self) -> Optional[AssetOutputInfo]:
+        """(Experimental) Asset info corresponding to the output."""
         return self._asset_info
 
     @public
@@ -806,7 +805,7 @@ def build_output_context(
     resource_config: Optional[Mapping[str, object]] = None,
     resources: Optional[Mapping[str, object]] = None,
     op_def: Optional["OpDefinition"] = None,
-    asset_key: Optional[Union[AssetKey, str]] = None,
+    asset_key: Optional[CoercibleToAssetKey] = None,
     partition_key: Optional[str] = None,
 ) -> "OutputContext":
     """Builds output context from provided parameters.
@@ -858,7 +857,7 @@ def build_output_context(
     resource_config = check.opt_mapping_param(resource_config, "resource_config", key_type=str)
     resources = check.opt_mapping_param(resources, "resources", key_type=str)
     op_def = check.opt_inst_param(op_def, "op_def", OpDefinition)
-    asset_key = AssetKey.from_coerceable(asset_key) if asset_key else None
+    asset_key = AssetKey.from_coercible(asset_key) if asset_key else None
     partition_key = check.opt_str_param(partition_key, "partition_key")
 
     return OutputContext(

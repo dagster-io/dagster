@@ -339,9 +339,9 @@ def test_success_hook_event():
     assert len(hook_events) == 2
     for event in hook_events:
         if event.event_type == DagsterEventType.HOOK_COMPLETED:
-            assert event.solid_name == "a_op"
+            assert event.node_name == "a_op"
         if event.event_type == DagsterEventType.HOOK_SKIPPED:
-            assert event.solid_name == "failed_op"
+            assert event.node_name == "failed_op"
 
 
 def test_failure_hook_event():
@@ -374,9 +374,9 @@ def test_failure_hook_event():
     assert len(hook_events) == 2
     for event in hook_events:
         if event.event_type == DagsterEventType.HOOK_COMPLETED:
-            assert event.solid_name == "failed_op"
+            assert event.node_name == "failed_op"
         if event.event_type == DagsterEventType.HOOK_SKIPPED:
-            assert event.solid_name == "a_op"
+            assert event.node_name == "a_op"
 
 
 @op

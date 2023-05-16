@@ -6,6 +6,7 @@ import os
 import sys
 import time
 import weakref
+from abc import abstractmethod
 from collections import defaultdict
 from enum import Enum
 from tempfile import TemporaryDirectory
@@ -34,7 +35,6 @@ from typing_extensions import Protocol, Self, TypeAlias, TypeVar, runtime_checka
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.errors import (
     DagsterHomeNotSetError,
     DagsterInvalidInvocationError,
@@ -266,13 +266,13 @@ class MayHaveInstanceWeakref(Generic[T_DagsterInstance]):
 
 @runtime_checkable
 class DynamicPartitionsStore(Protocol):
+    @abstractmethod
     def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
-        return self.get_dynamic_partitions(partitions_def_name=partitions_def_name)
+        ...
 
+    @abstractmethod
     def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
-        return self.has_dynamic_partition(
-            partitions_def_name=partitions_def_name, partition_key=partition_key
-        )
+        ...
 
 
 class DagsterInstance(DynamicPartitionsStore):
@@ -309,12 +309,12 @@ class DagsterInstance(DynamicPartitionsStore):
             pipeline runs. By default, this will be a
             :py:class:`dagster._core.storage.event_log.SqliteEventLogStorage`. Configurable in
             ``dagster.yaml`` using the :py:class:`~dagster.serdes.ConfigurableClass` machinery.
-        compute_log_manager (ComputeLogManager): The compute log manager handles stdout and stderr
-            logging for solid compute functions. By default, this will be a
+        compute_log_manager (Optional[ComputeLogManager]): The compute log manager handles stdout
+            and stderr logging for op compute functions. By default, this will be a
             :py:class:`dagster._core.storage.local_compute_log_manager.LocalComputeLogManager`.
             Configurable in ``dagster.yaml`` using the
             :py:class:`~dagster.serdes.ConfigurableClass` machinery.
-        run_coordinator (RunCoordinator): A runs coordinator may be used to manage the execution
+        run_coordinator (Optional[RunCoordinator]): A runs coordinator may be used to manage the execution
             of pipeline runs.
         run_launcher (Optional[RunLauncher]): Optionally, a run launcher may be used to enable
             a Dagster instance to launch pipeline runs, e.g. on a remote Kubernetes cluster, in
@@ -338,8 +338,8 @@ class DagsterInstance(DynamicPartitionsStore):
         local_artifact_storage: "LocalArtifactStorage",
         run_storage: "RunStorage",
         event_storage: "EventLogStorage",
-        compute_log_manager: "ComputeLogManager",
-        run_coordinator: "RunCoordinator",
+        run_coordinator: Optional["RunCoordinator"],
+        compute_log_manager: Optional["ComputeLogManager"],
         run_launcher: Optional["RunLauncher"],
         scheduler: Optional["Scheduler"] = None,
         schedule_storage: Optional["ScheduleStorage"] = None,
@@ -368,14 +368,23 @@ class DagsterInstance(DynamicPartitionsStore):
         self._run_storage = check.inst_param(run_storage, "run_storage", RunStorage)
         self._run_storage.register_instance(self)
 
-        self._compute_log_manager = check.inst_param(
-            compute_log_manager, "compute_log_manager", ComputeLogManager
-        )
-        if not isinstance(self._compute_log_manager, CapturedLogManager):
-            deprecation_warning(
-                "ComputeLogManager", "1.2.0", "Implement the CapturedLogManager interface instead."
+        if compute_log_manager:
+            self._compute_log_manager = check.inst_param(
+                compute_log_manager, "compute_log_manager", ComputeLogManager
             )
-        self._compute_log_manager.register_instance(self)
+            if not isinstance(self._compute_log_manager, CapturedLogManager):
+                deprecation_warning(
+                    "ComputeLogManager",
+                    "1.2.0",
+                    "Implement the CapturedLogManager interface instead.",
+                )
+            self._compute_log_manager.register_instance(self)
+        else:
+            check.invariant(
+                ref, "Compute log manager must be provided if instance is not from a ref"
+            )
+            self._compute_log_manager = None
+
         self._scheduler = check.opt_inst_param(scheduler, "scheduler", Scheduler)
 
         self._schedule_storage = check.opt_inst_param(
@@ -384,8 +393,14 @@ class DagsterInstance(DynamicPartitionsStore):
         if self._schedule_storage:
             self._schedule_storage.register_instance(self)
 
-        self._run_coordinator = check.inst_param(run_coordinator, "run_coordinator", RunCoordinator)
-        self._run_coordinator.register_instance(self)
+        if run_coordinator:
+            self._run_coordinator = check.inst_param(
+                run_coordinator, "run_coordinator", RunCoordinator
+            )
+            self._run_coordinator.register_instance(self)
+        else:
+            check.invariant(ref, "Run coordinator must be provided if instance is not from a ref")
+            self._run_coordinator = None
 
         if run_launcher:
             self._run_launcher: Optional[RunLauncher] = check.inst_param(
@@ -548,9 +563,9 @@ class DagsterInstance(DynamicPartitionsStore):
             run_storage=run_storage,  # type: ignore  # (possible none)
             event_storage=event_storage,  # type: ignore  # (possible none)
             schedule_storage=schedule_storage,
-            compute_log_manager=instance_ref.compute_log_manager,
+            compute_log_manager=None,  # lazy load
             scheduler=instance_ref.scheduler,
-            run_coordinator=instance_ref.run_coordinator,  # type: ignore  # (possible none)
+            run_coordinator=None,  # lazy load
             run_launcher=None,  # lazy load
             settings=instance_ref.settings,
             secrets_loader=instance_ref.secrets_loader,
@@ -681,6 +696,18 @@ class DagsterInstance(DynamicPartitionsStore):
 
     @property
     def run_coordinator(self) -> "RunCoordinator":
+        from dagster._core.run_coordinator import RunCoordinator
+
+        # Lazily load in case the run coordinator requires dependencies that are not available
+        # everywhere that loads the instance
+        if not self._run_coordinator:
+            check.invariant(
+                self._ref, "Run coordinator not provided, and no instance ref available"
+            )
+            run_coordinator = cast(InstanceRef, self._ref).run_coordinator
+            check.invariant(run_coordinator, "Run coordinator not configured in instance ref")
+            self._run_coordinator = cast(RunCoordinator, run_coordinator)
+            self._run_coordinator.register_instance(self)
         return self._run_coordinator
 
     # run launcher
@@ -703,6 +730,18 @@ class DagsterInstance(DynamicPartitionsStore):
 
     @property
     def compute_log_manager(self) -> "ComputeLogManager":
+        from dagster._core.storage.compute_log_manager import ComputeLogManager
+
+        if not self._compute_log_manager:
+            check.invariant(
+                self._ref, "Compute log manager not provided, and no instance ref available"
+            )
+            compute_log_manager = cast(InstanceRef, self._ref).compute_log_manager
+            check.invariant(
+                compute_log_manager, "Compute log manager not configured in instance ref"
+            )
+            self._compute_log_manager = cast(ComputeLogManager, compute_log_manager)
+            self._compute_log_manager.register_instance(self)
         return self._compute_log_manager
 
     def get_settings(self, settings_key: str) -> Any:
@@ -757,6 +796,10 @@ class DagsterInstance(DynamicPartitionsStore):
     @property
     def run_monitoring_start_timeout_seconds(self) -> int:
         return self.run_monitoring_settings.get("start_timeout_seconds", 180)
+
+    @property
+    def run_monitoring_cancel_timeout_seconds(self) -> int:
+        return self.run_monitoring_settings.get("cancel_timeout_seconds", 180)
 
     @property
     def code_server_settings(self) -> Any:
@@ -860,11 +903,13 @@ class DagsterInstance(DynamicPartitionsStore):
     def dispose(self) -> None:
         self._local_artifact_storage.dispose()
         self._run_storage.dispose()
-        self.run_coordinator.dispose()
+        if self._run_coordinator:
+            self._run_coordinator.dispose()
         if self._run_launcher:
             self._run_launcher.dispose()
         self._event_storage.dispose()
-        self._compute_log_manager.dispose()
+        if self._compute_log_manager:
+            self._compute_log_manager.dispose()
         if self._secrets_loader:
             self._secrets_loader.dispose()
 
@@ -955,12 +1000,12 @@ class DagsterInstance(DynamicPartitionsStore):
         execution_plan: Optional["ExecutionPlan"] = None,
         run_id: Optional[str] = None,
         run_config: Optional[Mapping[str, object]] = None,
-        solids_to_execute: Optional[AbstractSet[str]] = None,
+        resolved_op_selection: Optional[AbstractSet[str]] = None,
         status: Optional[Union[DagsterRunStatus, str]] = None,
         tags: Optional[Mapping[str, str]] = None,
         root_run_id: Optional[str] = None,
         parent_run_id: Optional[str] = None,
-        solid_selection: Optional[Sequence[str]] = None,
+        op_selection: Optional[Sequence[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
         external_job_origin: Optional["ExternalJobOrigin"] = None,
         job_code_origin: Optional[JobPythonOrigin] = None,
@@ -974,21 +1019,21 @@ class DagsterInstance(DynamicPartitionsStore):
         check.inst_param(job_def, "pipeline_def", JobDefinition)
         check.opt_inst_param(execution_plan, "execution_plan", ExecutionPlan)
 
-        # note that solids_to_execute is required to execute the solid subset, which is the
+        # note that op_selection is required to execute the solid subset, which is the
         # frozenset version of the previous solid_subset.
-        # solid_selection is not required and will not be converted to solids_to_execute here.
+        # op_selection is not required and will not be converted to op_selection here.
         # i.e. this function doesn't handle solid queries.
-        # solid_selection is only used to pass the user queries further down.
-        check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
-        check.opt_list_param(solid_selection, "solid_selection", of_type=str)
+        # op_selection is only used to pass the user queries further down.
+        check.opt_set_param(resolved_op_selection, "resolved_op_selection", of_type=str)
+        check.opt_list_param(op_selection, "op_selection", of_type=str)
         check.opt_set_param(asset_selection, "asset_selection", of_type=AssetKey)
 
-        # solids_to_execute never provided
-        if asset_selection or solid_selection:
+        # op_selection never provided
+        if asset_selection or op_selection:
             # for cases when `create_run_for_pipeline` is directly called
-            job_def = job_def.get_job_def_for_subset_selection(
+            job_def = job_def.get_subset(
                 asset_selection=asset_selection,
-                op_selection=solid_selection,
+                op_selection=op_selection,
             )
         step_keys_to_execute = None
 
@@ -997,7 +1042,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
         else:
             execution_plan = create_execution_plan(
-                job=InMemoryJob(job_def),
+                job=job_def,
                 run_config=run_config,
                 instance_ref=self.get_ref() if self.is_persistent else None,
                 tags=tags,
@@ -1008,9 +1053,9 @@ class DagsterInstance(DynamicPartitionsStore):
             job_name=job_def.name,
             run_id=run_id,
             run_config=run_config,
-            solid_selection=solid_selection,
+            op_selection=op_selection,
             asset_selection=asset_selection,
-            solids_to_execute=solids_to_execute,
+            resolved_op_selection=resolved_op_selection,
             step_keys_to_execute=step_keys_to_execute,
             status=DagsterRunStatus(status) if status else None,
             tags=tags,
@@ -1031,7 +1076,7 @@ class DagsterInstance(DynamicPartitionsStore):
         job_name: str,
         run_id: str,
         run_config: Optional[Mapping[str, object]],
-        solids_to_execute: Optional[AbstractSet[str]],
+        resolved_op_selection: Optional[AbstractSet[str]],
         step_keys_to_execute: Optional[Sequence[str]],
         status: Optional[DagsterRunStatus],
         tags: Mapping[str, str],
@@ -1041,7 +1086,7 @@ class DagsterInstance(DynamicPartitionsStore):
         execution_plan_snapshot: Optional[ExecutionPlanSnapshot],
         parent_job_snapshot: Optional[JobSnapshot],
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
-        solid_selection: Optional[Sequence[str]] = None,
+        op_selection: Optional[Sequence[str]] = None,
         external_job_origin: Optional["ExternalJobOrigin"] = None,
         job_code_origin: Optional[JobPythonOrigin] = None,
     ) -> DagsterRun:
@@ -1081,8 +1126,8 @@ class DagsterInstance(DynamicPartitionsStore):
             run_id=run_id,
             run_config=run_config,
             asset_selection=asset_selection,
-            solid_selection=solid_selection,
-            solids_to_execute=solids_to_execute,
+            op_selection=op_selection,
+            resolved_op_selection=resolved_op_selection,
             step_keys_to_execute=step_keys_to_execute,
             status=status,
             tags=tags,
@@ -1239,8 +1284,8 @@ class DagsterInstance(DynamicPartitionsStore):
         job_snapshot: Optional[JobSnapshot],
         parent_job_snapshot: Optional[JobSnapshot],
         asset_selection: Optional[AbstractSet[AssetKey]],
-        solids_to_execute: Optional[AbstractSet[str]],
-        solid_selection: Optional[Sequence[str]],
+        resolved_op_selection: Optional[AbstractSet[str]],
+        op_selection: Optional[Sequence[str]],
         external_job_origin: Optional["ExternalJobOrigin"],
         job_code_origin: Optional[JobPythonOrigin],
     ) -> DagsterRun:
@@ -1292,40 +1337,40 @@ class DagsterInstance(DynamicPartitionsStore):
                 "If parent_job_snapshot is set, job_snapshot should also be.",
             )
 
-        # solid_selection is a sequence of selection queries assigned by the user.
-        # *Most* callers expand the solid_selection into an explicit set of
-        # solids_to_execute via accessing external_job.solids_to_execute
+        # op_selection is a sequence of selection queries assigned by the user.
+        # *Most* callers expand the op_selection into an explicit set of
+        # resolved_op_selection via accessing external_job.resolved_op_selection
         # but not all do. Some (launch execution mutation in graphql and backfill run
         # creation, for example) actually pass the solid *selection* into the
-        # solids_to_execute parameter, but just as a frozen set, rather than
+        # resolved_op_selection parameter, but just as a frozen set, rather than
         # fully resolving the selection, as the daemon launchers do. Given the
         # state of callers we just check to ensure that the arguments are well-formed.
         #
-        # asset_selection adds another dimension to this lovely dance. solid_selection
+        # asset_selection adds another dimension to this lovely dance. op_selection
         # and asset_selection are mutually exclusive and should never both be set.
         # This is invariant is checked in a sporadic fashion around
         # the codebase, but is never enforced in a typed fashion.
         #
         # Additionally, the way that callsites currently behave *if* asset selection
-        # is set (i.e., not None) then *neither* solid_selection *nor*
-        # solids_to_execute is passed. In the asset selection case resolving
-        # the set of assets into the canonical solids_to_execute is done in
+        # is set (i.e., not None) then *neither* op_selection *nor*
+        # resolved_op_selection is passed. In the asset selection case resolving
+        # the set of assets into the canonical resolved_op_selection is done in
         # the user process, and the exact resolution is never persisted in the run.
         # We are asserting that invariant here to maintain that behavior.
 
-        check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
-        check.opt_sequence_param(solid_selection, "solid_selection", of_type=str)
+        check.opt_set_param(resolved_op_selection, "resolved_op_selection", of_type=str)
+        check.opt_sequence_param(op_selection, "op_selection", of_type=str)
         check.opt_set_param(asset_selection, "asset_selection", of_type=AssetKey)
 
         if asset_selection is not None:
             check.invariant(
-                solid_selection is None,
-                "Cannot pass both asset_selection and solid_selection",
+                op_selection is None,
+                "Cannot pass both asset_selection and op_selection",
             )
 
             check.invariant(
-                solids_to_execute is None,
-                "Cannot pass both asset_selection and solids_to_execute",
+                resolved_op_selection is None,
+                "Cannot pass both asset_selection and resolved_op_selection",
             )
 
         # The "python origin" arguments exist so a job can be reconstructed in memory
@@ -1345,8 +1390,8 @@ class DagsterInstance(DynamicPartitionsStore):
             run_id=run_id,  # type: ignore  # (possible none)
             run_config=run_config,
             asset_selection=asset_selection,
-            solid_selection=solid_selection,
-            solids_to_execute=solids_to_execute,
+            op_selection=op_selection,
+            resolved_op_selection=resolved_op_selection,
             step_keys_to_execute=step_keys_to_execute,
             status=status,
             tags=validated_tags,
@@ -1440,7 +1485,7 @@ class DagsterInstance(DynamicPartitionsStore):
             job_name=parent_run.job_name,
             run_id=None,
             run_config=run_config,
-            solids_to_execute=parent_run.solids_to_execute,
+            resolved_op_selection=parent_run.resolved_op_selection,
             step_keys_to_execute=step_keys_to_execute,
             status=DagsterRunStatus.NOT_STARTED,
             tags=tags,
@@ -1449,7 +1494,7 @@ class DagsterInstance(DynamicPartitionsStore):
             job_snapshot=external_job.job_snapshot,
             execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
             parent_job_snapshot=external_job.parent_job_snapshot,
-            solid_selection=parent_run.solid_selection,
+            op_selection=parent_run.op_selection,
             asset_selection=parent_run.asset_selection,
             external_job_origin=external_job.get_external_origin(),
             job_code_origin=external_job.get_python_origin(),
@@ -1460,7 +1505,7 @@ class DagsterInstance(DynamicPartitionsStore):
         job_name: str,
         run_id: str,
         run_config: Optional[Mapping[str, object]],
-        solids_to_execute: Optional[AbstractSet[str]],
+        resolved_op_selection: Optional[AbstractSet[str]],
         step_keys_to_execute: Optional[Sequence[str]],
         tags: Mapping[str, str],
         root_run_id: Optional[str],
@@ -1468,7 +1513,7 @@ class DagsterInstance(DynamicPartitionsStore):
         job_snapshot: Optional[JobSnapshot],
         execution_plan_snapshot: Optional[ExecutionPlanSnapshot],
         parent_job_snapshot: Optional[JobSnapshot],
-        solid_selection: Optional[Sequence[str]] = None,
+        op_selection: Optional[Sequence[str]] = None,
         job_code_origin: Optional[JobPythonOrigin] = None,
     ) -> DagsterRun:
         # The usage of this method is limited to dagster-airflow, specifically in Dagster
@@ -1486,8 +1531,8 @@ class DagsterInstance(DynamicPartitionsStore):
             job_name=job_name,
             run_id=run_id,
             run_config=run_config,
-            solid_selection=solid_selection,
-            solids_to_execute=solids_to_execute,
+            op_selection=op_selection,
+            resolved_op_selection=resolved_op_selection,
             step_keys_to_execute=step_keys_to_execute,
             status=DagsterRunStatus.MANAGED,
             tags=tags,
@@ -1646,8 +1691,9 @@ class DagsterInstance(DynamicPartitionsStore):
         cursor: Optional[str] = None,
         of_type: Optional[Union["DagsterEventType", Set["DagsterEventType"]]] = None,
         limit: Optional[int] = None,
+        ascending: bool = True,
     ) -> "EventLogConnection":
-        return self._event_storage.get_records_for_run(run_id, cursor, of_type, limit)
+        return self._event_storage.get_records_for_run(run_id, cursor, of_type, limit, ascending)
 
     def watch_event_logs(self, run_id: str, cursor: Optional[str], cb: "EventHandlerFn") -> None:
         return self._event_storage.watch(run_id, cursor, cb)
@@ -2051,7 +2097,7 @@ class DagsterInstance(DynamicPartitionsStore):
         )
 
         try:
-            submitted_run = self._run_coordinator.submit_run(
+            submitted_run = self.run_coordinator.submit_run(
                 SubmitRunContext(run, workspace=workspace)
             )
         except:

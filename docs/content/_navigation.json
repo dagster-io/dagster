@@ -1,6 +1,6 @@
 [
   {
-    "title": "Getting Started",
+    "title": "Getting started",
     "icon": "Flag",
     "path": "/getting-started",
     "isDefaultOpen": true,
@@ -33,28 +33,32 @@
     "path": "/tutorial",
     "children": [
       {
-        "title": "Intro to Dagster and assets",
+        "title": "Part 1: Intro to Dagster and assets",
         "path": "/tutorial/introduction"
       },
       {
-        "title": "Setup",
+        "title": "Part 2: Setup",
         "path": "/tutorial/setup"
       },
       {
-        "title": "Your first asset",
+        "title": "Part 3: Your first asset",
         "path": "/tutorial/writing-your-first-asset"
       },
       {
-        "title": "Building an asset graph",
+        "title": "Part 4: Building an asset graph",
         "path": "/tutorial/building-an-asset-graph"
       },
       {
-        "title": "Scheduling your pipeline",
+        "title": "Part 5: Scheduling your pipeline",
         "path": "/tutorial/scheduling-your-pipeline"
       },
       {
-        "title": "Saving your data",
+        "title": "Part 6: Saving your data",
         "path": "/tutorial/saving-your-data"
+      },
+      {
+        "title": "Part 7: Managing your own I/O",
+        "path": "/tutorial/managing-your-own-io"
       },
       {
         "title": "Next steps",
@@ -72,31 +76,27 @@
         "path": "/concepts/assets/software-defined-assets",
         "children": [
           {
-            "title": "Software-Defined Assets",
+            "title": "Software-defined Assets",
             "path": "/concepts/assets/software-defined-assets"
           },
           {
-            "title": "Asset Materializations",
-            "path": "/concepts/assets/asset-materializations"
-          },
-          {
-            "title": "Asset Observations",
+            "title": "Asset observations",
             "path": "/concepts/assets/asset-observations"
           },
           {
-            "title": "Graph-Backed Assets",
+            "title": "Graph-backed Assets",
             "path": "/concepts/assets/graph-backed-assets"
           },
           {
-            "title": "Multi-Assets",
+            "title": "Multi-assets",
             "path": "/concepts/assets/multi-assets"
           },
           {
-            "title": "Asset Selection Syntax",
+            "title": "Asset selection syntax",
             "path": "/concepts/assets/asset-selection-syntax"
           },
           {
-            "title": "Auto-Materializing Assets",
+            "title": "Auto-materializing assets",
             "path": "/concepts/assets/asset-auto-execution"
           }
         ]
@@ -110,15 +110,15 @@
             "path": "/concepts/ops-jobs-graphs/ops"
           },
           {
-            "title": "Op Events",
+            "title": "Op events",
             "path": "/concepts/ops-jobs-graphs/op-events"
           },
           {
-            "title": "Op Hooks",
+            "title": "Op hooks",
             "path": "/concepts/ops-jobs-graphs/op-hooks"
           },
           {
-            "title": "Op Retries",
+            "title": "Op retries",
             "path": "/concepts/ops-jobs-graphs/op-retries"
           }
         ]
@@ -150,11 +150,11 @@
             "path": "/concepts/ops-jobs-graphs/jobs"
           },
           {
-            "title": "Job Execution",
+            "title": "Job execution",
             "path": "/concepts/ops-jobs-graphs/job-execution"
           },
           {
-            "title": "Metadata & Tags",
+            "title": "Metadata & tags",
             "path": "/concepts/ops-jobs-graphs/metadata-tags"
           }
         ]
@@ -192,15 +192,15 @@
         ]
       },
       {
-        "title": "IO Management",
+        "title": "I/O management",
         "path": "/concepts/io-management/io-managers",
         "children": [
           {
-            "title": "IO Managers",
+            "title": "I/O managers",
             "path": "/concepts/io-management/io-managers"
           },
           {
-            "title": "Unconnected Inputs",
+            "title": "Unconnected inputs",
             "path": "/concepts/io-management/unconnected-inputs"
           }
         ]
@@ -210,11 +210,11 @@
         "path": "/concepts/configuration/config-schema",
         "children": [
           {
-            "title": "Run Configuration",
+            "title": "Run configuration",
             "path": "/concepts/configuration/config-schema"
           },
           {
-            "title": "Advanced Config Types",
+            "title": "Advanced config types",
             "path": "/concepts/configuration/advanced-config-types"
           }
         ]
@@ -228,7 +228,7 @@
         "path": "/concepts/code-locations",
         "children": [
           {
-            "title": "Code locations",
+            "title": "Code locations (Definitions)",
             "path": "/concepts/code-locations"
           },
           {
@@ -249,7 +249,7 @@
             "path": "/concepts/dagit/graphql"
           },
           {
-            "title": "GraphQL Python Client",
+            "title": "GraphQL Python client",
             "path": "/concepts/dagit/graphql-client"
           }
         ]
@@ -266,7 +266,7 @@
             "path": "/concepts/logging/loggers"
           },
           {
-            "title": "Python Logging",
+            "title": "Python logging",
             "path": "/concepts/logging/python-logging"
           }
         ]
@@ -572,7 +572,7 @@
             "path": "/integrations/airflow/from-airflow-to-dagster"
           },
           {
-            "title": "Airflow Migration Guide",
+            "title": "Migrating from Airflow",
             "path": "/integrations/airflow/migrating-to-dagster"
           },
           {
@@ -594,19 +594,19 @@
             "path": "/integrations/dbt/using-dbt-with-dagster",
             "children": [
               {
-                "title": "Set up dbt project",
+                "title": "Part 1: Set up dbt project",
                 "path": "/integrations/dbt/using-dbt-with-dagster/part-one"
               },
               {
-                "title": "Load dbt models as assets",
+                "title": "Part 2: Load dbt models as assets",
                 "path": "/integrations/dbt/using-dbt-with-dagster/part-two"
               },
               {
-                "title": "Create and materialize upstream assets",
+                "title": "Part 3: Create & materialize upstream assets",
                 "path": "/integrations/dbt/using-dbt-with-dagster/part-three"
               },
               {
-                "title": "Create and materialize downstream asset",
+                "title": "Part 4: Create & materialize a downstream asset",
                 "path": "/integrations/dbt/using-dbt-with-dagster/part-four"
               }
             ]
@@ -856,7 +856,7 @@
         "title": "Core",
         "children": [
           {
-            "title": "Software-Defined Assets",
+            "title": "Software-defined Assets",
             "path": "/_apidocs/assets"
           },
           {
@@ -916,15 +916,15 @@
             "path": "/_apidocs/hooks"
           },
           {
-            "title": "IO Managers",
+            "title": "I/O Managers",
             "path": "/_apidocs/io-managers"
           },
           {
-            "title": "Dynamic Mapping & Collect",
+            "title": "Dynamic mapping & collect",
             "path": "/_apidocs/dynamic"
           },
           {
-            "title": "Job Versioning & Memoization (Deprecated)",
+            "title": "Job versioning & memoization (Deprecated)",
             "path": "/_apidocs/memoization"
           },
           {
@@ -953,12 +953,8 @@
             "path": "/_apidocs/libraries/dagster-airflow"
           },
           {
-            "title": "AWS (dagster-aws)",
+            "title": "Amazon Web Services (AWS) (dagster-aws)",
             "path": "/_apidocs/libraries/dagster-aws"
-          },
-          {
-            "title": "Azure (dagster-azure)",
-            "path": "/_apidocs/libraries/dagster-azure"
           },
           {
             "title": "Celery (dagster-celery)",
@@ -1021,7 +1017,7 @@
             "path": "/_apidocs/libraries/dagster-fivetran"
           },
           {
-            "title": "GCP (dagster-gcp)",
+            "title": "Google Cloud Platform (GCP) (dagster-gcp)",
             "path": "/_apidocs/libraries/dagster-gcp"
           },
           {
@@ -1037,7 +1033,7 @@
             "path": "/_apidocs/libraries/dagster-ge"
           },
           {
-            "title": "Github (dagster-github)",
+            "title": "GitHub (dagster-github)",
             "path": "/_apidocs/libraries/dagster-github"
           },
           {
@@ -1051,6 +1047,10 @@
           {
             "title": "MLflow (dagster-mlflow)",
             "path": "/_apidocs/libraries/dagster-mlflow"
+          },
+          {
+            "title": "Microsoft Azure (dagster-azure)",
+            "path": "/_apidocs/libraries/dagster-azure"
           },
           {
             "title": "Microsoft Teams (dagster-msteams)",
@@ -1081,7 +1081,7 @@
             "path": "/_apidocs/libraries/dagster-prometheus"
           },
           {
-            "title": "Pyspark (dagster-pyspark)",
+            "title": "PySpark (dagster-pyspark)",
             "path": "/_apidocs/libraries/dagster-pyspark"
           },
           {
@@ -1125,37 +1125,36 @@
     ]
   },
   {
-    "title": "Community",
-    "icon": "Community",
-    "path": "/community",
-    "children": [
-      {
-        "title": "Code of conduct",
-        "path": "/community/code-of-conduct"
-      },
-      {
-        "title": "Contributing",
-        "path": "/community/contributing"
-      },
-      {
-        "title": "Slack",
-        "path": "https://dagster.io/slack",
-        "isExternalLink": true
-      },
-      {
-        "title": "GitHub",
-        "path": "https://github.com/dagster-io/dagster",
-        "isExternalLink": true
-      }
-    ]
-  },
-  {
     "title": "About",
     "icon": "About",
     "isUnversioned": true,
     "children": [
       {
-        "title": "Releases and changes",
+        "title": "Community",
+        "path": "/community",
+        "children": [
+          {
+            "title": "Code of conduct",
+            "path": "/community/code-of-conduct"
+          },
+          {
+            "title": "Contributing",
+            "path": "/community/contributing"
+          },
+          {
+            "title": "Slack",
+            "path": "https://dagster.io/slack",
+            "isExternalLink": true
+          },
+          {
+            "title": "GitHub",
+            "path": "https://github.com/dagster-io/dagster",
+            "isExternalLink": true
+          }
+        ]
+      },
+      {
+        "title": "Releases",
         "path": "/getting-started/releases"
       },
       {

@@ -29,7 +29,7 @@ if TYPE_CHECKING:
     from .output import OutputDefinition
 
 
-# base class for SolidDefinition and GraphDefinition
+# base class for OpDefinition and GraphDefinition
 # represents that this is embedable within a graph
 class NodeDefinition(NamedConfigurableDefinition):
     _name: str

@@ -48,9 +48,9 @@ from dagster._core.events import (
 )
 from dagster._core.events.log import EventLogEntry, construct_event_logger
 from dagster._core.execution.api import execute_run
+from dagster._core.execution.job_execution_result import JobExecutionResult
 from dagster._core.execution.plan.handle import StepHandle
 from dagster._core.execution.plan.objects import StepFailureData, StepSuccessData
-from dagster._core.execution.results import PipelineExecutionResult
 from dagster._core.execution.stats import StepEventStatus
 from dagster._core.host_representation.origin import (
     ExternalJobOrigin,
@@ -229,7 +229,7 @@ def _default_loggers(event_callback):
 # This exists to create synthetic events to test the store
 def _synthesize_events(
     ops_fn, run_id=None, check_success=True, instance=None, run_config=None
-) -> Tuple[List[EventLogEntry], PipelineExecutionResult]:
+) -> Tuple[List[EventLogEntry], JobExecutionResult]:
     events = []
 
     def _append_event(event):
@@ -488,6 +488,27 @@ class TestEventLogStorage:
         storage.store_event(create_test_event_log_record(str(2), test_run_id))
         storage.store_event(create_test_event_log_record(str(3), test_run_id))
         storage.store_event(create_test_event_log_record(str(4), test_run_id))
+
+        first_two_records = storage.get_records_for_run(test_run_id, limit=2)
+        assert len(first_two_records.records) == 2
+
+        last_two_records = storage.get_records_for_run(test_run_id, limit=2, ascending=False)
+        assert len(last_two_records.records) == 2
+
+        assert storage.get_logs_for_run(test_run_id, limit=2, ascending=True) == [
+            r.event_log_entry for r in first_two_records.records
+        ]
+
+        assert storage.get_logs_for_run(test_run_id, limit=2, ascending=False) == [
+            r.event_log_entry for r in last_two_records.records
+        ]
+
+        assert storage.get_records_for_run(
+            test_run_id, limit=2, cursor=first_two_records.cursor
+        ).records == list(reversed(last_two_records.records))
+        assert storage.get_records_for_run(
+            test_run_id, limit=2, cursor=last_two_records.cursor, ascending=False
+        ).records == list(reversed(first_two_records.records))
 
         attempts = 10
         while len(watched) < 3 and attempts > 0:

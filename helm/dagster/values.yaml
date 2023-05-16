@@ -293,11 +293,11 @@ dagster-user-deployments:
         pullPolicy: Always
 
       # Arguments to `dagster api grpc`.
-      # Ex: "dagster api grpc -m dagster_test.test_project.test_pipelines.repo -a define_demo_execution_repo"
+      # Ex: "dagster api grpc -m dagster_test.test_project.test_jobs.repo -a define_demo_execution_repo"
       # would translate to:
       # dagsterApiGrpcArgs:
       #   - "-m"
-      #   - "dagster_test.test_project.test_pipelines.repo"
+      #   - "dagster_test.test_project.test_jobs.repo"
       #   - "-a"
       #   - "define_demo_execution_repo"
       dagsterApiGrpcArgs:
@@ -1093,6 +1093,8 @@ dagsterDaemon:
     enabled: true
     # Timeout for runs to start (avoids runs hanging in STARTED)
     startTimeoutSeconds: 300
+    # Timeout for runs to cancel (avoids runs hanging in CANCELING)
+    # cancelTimeoutSeconds: 300
     # How often to check on in progress runs
     pollIntervalSeconds: 120
     # [Experimental] Max number of times to attempt to resume a run with a new run worker instead

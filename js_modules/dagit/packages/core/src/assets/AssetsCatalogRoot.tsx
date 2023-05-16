@@ -89,7 +89,6 @@ export default AssetsCatalogRoot;
 const ASSETS_CATALOG_ROOT_QUERY = gql`
   query AssetsCatalogRootQuery($assetKey: AssetKeyInput!) {
     assetOrError(assetKey: $assetKey) {
-      __typename
       ... on Asset {
         id
         key {

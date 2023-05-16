@@ -3,7 +3,6 @@ import os
 import re
 import subprocess
 import sys
-import uuid
 
 import pytest
 from dagster import _seven
@@ -33,14 +32,9 @@ from dagster._grpc.server import (
 from dagster._grpc.types import ListRepositoriesResponse, SensorExecutionArgs, StartRunResult
 from dagster._serdes import serialize_value
 from dagster._serdes.serdes import deserialize_value
-from dagster._seven import get_system_temp_directory
 from dagster._utils import file_relative_path, find_free_port
 from dagster._utils.error import SerializableErrorInfo
 from dagster.version import __version__ as dagster_version
-
-
-def _get_ipc_output_file():
-    return os.path.join(get_system_temp_directory(), f"grpc-server-startup-{uuid.uuid4().hex}")
 
 
 def test_load_grpc_server(capfd):

@@ -1,4 +1,4 @@
-import {Box, Icon, Table, Tag} from '@dagster-io/ui';
+import {Box, Colors, Icon, Table, Tag} from '@dagster-io/ui';
 import qs from 'qs';
 import React from 'react';
 
@@ -80,7 +80,7 @@ export const RunRequestTable: React.FC<Props> = ({
   );
   return (
     <div>
-      <Table>
+      <Table style={{borderRight: `1px solid ${Colors.KeylineGray}`}}>
         <thead>
           <tr>
             <th>{isJob ? 'Job' : 'Pipeline'} name</th>

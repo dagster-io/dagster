@@ -19,7 +19,7 @@ from dagster._core.definitions.time_window_partitions import (
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import EventLogRecord
 from dagster._core.storage.dagster_run import FINISHED_STATUSES, DagsterRunStatus, RunsFilter
-from dagster._utils import make_hashable
+from dagster._utils import datetime_as_float, make_hashable
 from dagster._utils.cached_method import cached_method
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
@@ -212,7 +212,7 @@ class CachingDataTimeResolver:
             else:
                 return {}
 
-        data_time_by_key = {}
+        data_time_by_key: Dict[AssetKey, Optional[datetime.datetime]] = {}
         for parent_key, parent_record in upstream_records_by_key.items():
             # recurse to find the data times of this parent
             for upstream_key, data_time in self._calculate_data_time_by_key(
@@ -235,8 +235,9 @@ class CachingDataTimeResolver:
                 if data_time is None:
                     data_time_by_key[upstream_key] = None
                 else:
-                    data_time_by_key[upstream_key] = min(
-                        data_time_by_key.get(upstream_key, data_time), data_time
+                    cur_data_time = data_time_by_key.get(upstream_key, data_time)
+                    data_time_by_key[upstream_key] = (
+                        min(cur_data_time, data_time) if cur_data_time is not None else None
                     )
 
         return data_time_by_key
@@ -428,7 +429,7 @@ class CachingDataTimeResolver:
             return current_data_time
 
         run_failure_time = datetime.datetime.utcfromtimestamp(
-            latest_run_record.end_time or latest_run_record.create_timestamp.timestamp()
+            latest_run_record.end_time or datetime_as_float(latest_run_record.create_timestamp)
         ).replace(tzinfo=datetime.timezone.utc)
         return self._get_in_progress_data_time_in_run(
             run_id=run_id, asset_key=asset_key, current_time=run_failure_time

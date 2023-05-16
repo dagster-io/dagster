@@ -41,6 +41,7 @@ from dagster._core.host_representation.external import ExternalJob, ExternalSens
 from dagster._core.host_representation.external_data import ExternalTargetData
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler.instigation import (
+    DynamicPartitionsRequestResult,
     InstigatorState,
     InstigatorStatus,
     InstigatorTick,
@@ -142,6 +143,13 @@ class SensorLaunchContext:
 
     def add_log_info(self, log_key: Sequence[str]) -> None:
         self._tick = self._tick.with_log_key(log_key)
+
+    def add_dynamic_partitions_request_result(
+        self, dynamic_partitions_request_result: DynamicPartitionsRequestResult
+    ) -> None:
+        self._tick = self._tick.with_dynamic_partitions_request_result(
+            dynamic_partitions_request_result
+        )
 
     def set_should_update_cursor_on_failure(self, should_update_cursor_on_failure: bool) -> None:
         self._should_update_cursor_on_failure = should_update_cursor_on_failure
@@ -590,59 +598,101 @@ def _evaluate_sensor(
 
     if sensor_runtime_data.dynamic_partitions_requests:
         for request in sensor_runtime_data.dynamic_partitions_requests:
+            existent_partitions = []
+            nonexistent_partitions = []
+            for partition_key in request.partition_keys:
+                if instance.has_dynamic_partition(request.partitions_def_name, partition_key):
+                    existent_partitions.append(partition_key)
+                else:
+                    nonexistent_partitions.append(partition_key)
+
             if isinstance(request, AddDynamicPartitionsRequest):
-                instance.add_dynamic_partitions(
-                    request.partitions_def_name,
-                    request.partition_keys,
-                )
-                context.logger.info(
-                    "Added partition keys to dynamic partitions definition"
-                    f" '{request.partitions_def_name}': {request.partition_keys}"
+                if nonexistent_partitions:
+                    instance.add_dynamic_partitions(
+                        request.partitions_def_name,
+                        nonexistent_partitions,
+                    )
+                    context.logger.info(
+                        "Added partition keys to dynamic partitions definition"
+                        f" '{request.partitions_def_name}': {nonexistent_partitions}"
+                    )
+
+                if existent_partitions:
+                    context.logger.info(
+                        "Skipping addition of partition keys for dynamic partitions definition"
+                        f" '{request.partitions_def_name}' that already exist:"
+                        f" {existent_partitions}"
+                    )
+
+                context.add_dynamic_partitions_request_result(
+                    DynamicPartitionsRequestResult(
+                        request.partitions_def_name,
+                        added_partitions=nonexistent_partitions,
+                        deleted_partitions=None,
+                        skipped_partitions=existent_partitions,
+                    )
                 )
             elif isinstance(request, DeleteDynamicPartitionsRequest):
-                # TODO add a bulk delete method to the instance
-                for partition in request.partition_keys:
-                    instance.delete_dynamic_partition(request.partitions_def_name, partition)
+                if existent_partitions:
+                    # TODO add a bulk delete method to the instance
+                    for partition in existent_partitions:
+                        instance.delete_dynamic_partition(request.partitions_def_name, partition)
 
-                context.logger.info(
-                    "Deleted partition keys from dynamic partitions definition"
-                    f" '{request.partitions_def_name}': {request.partition_keys}"
+                    context.logger.info(
+                        "Deleted partition keys from dynamic partitions definition"
+                        f" '{request.partitions_def_name}': {existent_partitions}"
+                    )
+
+                if nonexistent_partitions:
+                    context.logger.info(
+                        "Skipping deletion of partition keys for dynamic partitions definition"
+                        f" '{request.partitions_def_name}' that do not exist:"
+                        f" {nonexistent_partitions}"
+                    )
+
+                context.add_dynamic_partitions_request_result(
+                    DynamicPartitionsRequestResult(
+                        request.partitions_def_name,
+                        added_partitions=None,
+                        deleted_partitions=existent_partitions,
+                        skipped_partitions=nonexistent_partitions,
+                    )
                 )
             else:
                 check.failed(f"Unexpected action {request.action} for dynamic partition request")
     if not sensor_runtime_data.run_requests:
         if sensor_runtime_data.dagster_run_reactions:
-            for pipeline_run_reaction in sensor_runtime_data.dagster_run_reactions:
-                origin_run_id = check.not_none(pipeline_run_reaction.dagster_run).run_id
-                if pipeline_run_reaction.error:
+            for run_reaction in sensor_runtime_data.dagster_run_reactions:
+                origin_run_id = check.not_none(run_reaction.dagster_run).run_id
+                if run_reaction.error:
                     context.logger.error(
                         f"Got a reaction request for run {origin_run_id} but execution errorred:"
-                        f" {pipeline_run_reaction.error}"
+                        f" {run_reaction.error}"
                     )
                     context.update_state(
                         TickStatus.FAILURE,
                         cursor=sensor_runtime_data.cursor,
-                        error=pipeline_run_reaction.error,
+                        error=run_reaction.error,
                     )
                     # Since run status sensors have side effects that we don't want to repeat,
                     # we still want to update the cursor, even though the tick failed
                     context.set_should_update_cursor_on_failure(True)
                 else:
-                    # Use status from the PipelineRunReaction object if it is from a new enough
-                    # version (0.14.4) to be set (the status on the PipelineRun object itself
+                    # Use status from the DagsterRunReaction object if it is from a new enough
+                    # version (0.14.4) to be set (the status on the DagsterRun object itself
                     # may have since changed)
                     status = (
-                        pipeline_run_reaction.run_status.value
-                        if pipeline_run_reaction.run_status
-                        else check.not_none(pipeline_run_reaction.dagster_run).status.value
+                        run_reaction.run_status.value
+                        if run_reaction.run_status
+                        else check.not_none(run_reaction.dagster_run).status.value
                     )
-                    # log to the original pipeline run
+                    # log to the original dagster run
                     message = (
                         f'Sensor "{external_sensor.name}" acted on run status '
                         f"{status} of run {origin_run_id}."
                     )
                     instance.report_engine_event(
-                        message=message, dagster_run=pipeline_run_reaction.dagster_run
+                        message=message, dagster_run=run_reaction.dagster_run
                     )
                     context.logger.info(
                         f"Completed a reaction request for run {origin_run_id}: {message}"
@@ -690,14 +740,14 @@ def _evaluate_sensor(
             external_sensor.get_target_data(run_request.job_name)
         )
 
-        pipeline_selector = JobSubsetSelector(
+        job_subset_selector = JobSubsetSelector(
             location_name=code_location.name,
             repository_name=sensor_origin.external_repository_origin.repository_name,
             job_name=target_data.job_name,
-            solid_selection=target_data.solid_selection,
+            op_selection=target_data.op_selection,
             asset_selection=run_request.asset_selection,
         )
-        external_job = code_location.get_external_job(pipeline_selector)
+        external_job = code_location.get_external_job(job_subset_selector)
         run = _get_or_create_sensor_run(
             context,
             instance,
@@ -817,14 +867,14 @@ def _get_or_create_sensor_run(
     instance: DagsterInstance,
     code_location: CodeLocation,
     external_sensor: ExternalSensor,
-    external_pipeline: ExternalJob,
+    external_job: ExternalJob,
     run_request: RunRequest,
     target_data: ExternalTargetData,
     existing_runs_by_key: Mapping[str, DagsterRun],
 ) -> Union[DagsterRun, SkippedSensorRun]:
     if not run_request.run_key:
         return _create_sensor_run(
-            instance, code_location, external_sensor, external_pipeline, run_request, target_data
+            instance, code_location, external_sensor, external_job, run_request, target_data
         )
 
     run = existing_runs_by_key.get(run_request.run_key)
@@ -844,7 +894,7 @@ def _get_or_create_sensor_run(
     context.logger.info(f"Creating new run for {external_sensor.name}")
 
     return _create_sensor_run(
-        instance, code_location, external_sensor, external_pipeline, run_request, target_data
+        instance, code_location, external_sensor, external_job, run_request, target_data
     )
 
 
@@ -852,14 +902,14 @@ def _create_sensor_run(
     instance: DagsterInstance,
     code_location: CodeLocation,
     external_sensor: ExternalSensor,
-    external_pipeline: ExternalJob,
+    external_job: ExternalJob,
     run_request: RunRequest,
     target_data: ExternalTargetData,
 ) -> DagsterRun:
     from dagster._daemon.daemon import get_telemetry_daemon_session_id
 
     external_execution_plan = code_location.get_external_execution_plan(
-        external_pipeline,
+        external_job,
         run_request.run_config,
         step_keys_to_execute=None,
         known_state=None,
@@ -867,7 +917,7 @@ def _create_sensor_run(
     )
     execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
 
-    job_tags = validate_tags(external_pipeline.tags or {}, allow_reserved_tags=False)
+    job_tags = validate_tags(external_job.tags or {}, allow_reserved_tags=False)
     tags = merge_dicts(
         merge_dicts(job_tags, run_request.tags),
         DagsterRun.tags_for_sensor(external_sensor),
@@ -881,7 +931,7 @@ def _create_sensor_run(
         metadata={
             "DAEMON_SESSION_ID": get_telemetry_daemon_session_id(),
             "SENSOR_NAME_HASH": hash_name(external_sensor.name),
-            "pipeline_name_hash": hash_name(external_pipeline.name),
+            "pipeline_name_hash": hash_name(external_job.name),
             "repo_hash": hash_name(code_location.name),
         },
     )
@@ -890,18 +940,18 @@ def _create_sensor_run(
         job_name=target_data.job_name,
         run_id=None,
         run_config=run_request.run_config,
-        solids_to_execute=external_pipeline.solids_to_execute,
+        resolved_op_selection=external_job.resolved_op_selection,
         step_keys_to_execute=None,
         status=DagsterRunStatus.NOT_STARTED,
-        solid_selection=target_data.solid_selection,
+        op_selection=target_data.op_selection,
         root_run_id=None,
         parent_run_id=None,
         tags=tags,
-        job_snapshot=external_pipeline.job_snapshot,
+        job_snapshot=external_job.job_snapshot,
         execution_plan_snapshot=execution_plan_snapshot,
-        parent_job_snapshot=external_pipeline.parent_job_snapshot,
-        external_job_origin=external_pipeline.get_external_origin(),
-        job_code_origin=external_pipeline.get_python_origin(),
+        parent_job_snapshot=external_job.parent_job_snapshot,
+        external_job_origin=external_job.get_external_origin(),
+        job_code_origin=external_job.get_python_origin(),
         asset_selection=frozenset(run_request.asset_selection)
         if run_request.asset_selection
         else None,

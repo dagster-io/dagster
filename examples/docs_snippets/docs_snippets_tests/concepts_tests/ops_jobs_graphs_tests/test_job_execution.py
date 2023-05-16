@@ -13,7 +13,7 @@ def test_execute_my_job():
     assert result.success
 
 
-def test_solid_selection():
+def test_op_selection():
     execute_subset()
 
 

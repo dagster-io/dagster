@@ -12,6 +12,7 @@ import {
   DialogFooter,
   ButtonLink,
   DialogBody,
+  NonIdealState,
 } from '@dagster-io/ui';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
@@ -26,6 +27,7 @@ import {PythonErrorInfo} from '../../app/PythonErrorInfo';
 import {QueryRefreshCountdown, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {useTrackPageView} from '../../app/analytics';
 import {Timestamp} from '../../app/time/Timestamp';
+import {tokenForAssetKey} from '../../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../../assets/assetDetailsPathForKey';
 import {BulkActionStatus, RunStatus} from '../../graphql/types';
 import {useDocumentTitle} from '../../hooks/useDocumentTitle';
@@ -57,6 +59,7 @@ export const BackfillPage = () => {
   const {data} = queryResult;
 
   const backfill = data?.partitionBackfillOrError;
+
   let isInProgress = true;
   if (backfill && backfill.__typename === 'PartitionBackfill') {
     // for asset backfills, all of the requested runs have concluded in order for the status to be BulkActionStatus.COMPLETED
@@ -75,8 +78,11 @@ export const BackfillPage = () => {
     if (backfill.__typename === 'PythonError') {
       return <PythonErrorInfo error={backfill} />;
     }
+    if (backfill.__typename === 'BackfillNotFoundError') {
+      return <NonIdealState icon="no-results" title={backfill.message} />;
+    }
 
-    function getRunsUrl(status: 'requested' | 'complete' | 'failed' | 'targeted') {
+    function getRunsUrl(status: 'inProgress' | 'complete' | 'failed' | 'targeted') {
       const filters: RunFilterToken[] = [
         {
           token: 'tag',
@@ -84,7 +90,7 @@ export const BackfillPage = () => {
         },
       ];
       switch (status) {
-        case 'requested':
+        case 'inProgress':
           filters.push(
             {
               token: 'status',
@@ -130,6 +136,7 @@ export const BackfillPage = () => {
             wrap: 'nowrap',
             alignItems: 'center',
           }}
+          data-testid={testId('backfill-page-details')}
         >
           <Detail
             label="Created"
@@ -168,46 +175,83 @@ export const BackfillPage = () => {
             <tr>
               <th style={{width: '50%'}}>Asset name</th>
               <th>
-                <a href={getRunsUrl('targeted')}>Partitions targeted</a>
+                <Link to={getRunsUrl('targeted')}>Partitions targeted</Link>
               </th>
               <th>
-                <a href={getRunsUrl('requested')}>Requested</a>
+                <Link to={getRunsUrl('inProgress')}>In progress</Link>
               </th>
               <th>
-                <a href={getRunsUrl('complete')}>Completed</a>
+                <Link to={getRunsUrl('complete')}>Completed</Link>
               </th>
               <th>
-                <a href={getRunsUrl('failed')}>Failed</a>
+                <Link to={getRunsUrl('failed')}>Failed</Link>
               </th>
             </tr>
           </thead>
           <tbody>
             {backfill.assetBackfillData?.assetBackfillStatuses.map((asset) => {
-              return asset.__typename === 'AssetPartitionsStatusCounts' ? (
-                <tr key={asset.assetKey.path.join('/')}>
+              let targeted;
+              let inProgress;
+              let completed;
+              let failed;
+              if (asset.__typename === 'AssetPartitionsStatusCounts') {
+                targeted = asset.numPartitionsTargeted;
+                inProgress = asset.numPartitionsInProgress;
+                completed = asset.numPartitionsMaterialized;
+                failed = asset.numPartitionsFailed;
+              } else {
+                targeted = 1;
+                failed = asset.failed ? 1 : 0;
+                inProgress = asset.inProgress ? 1 : 0;
+                completed = asset.materialized ? 1 : 0;
+              }
+              return (
+                <tr
+                  key={tokenForAssetKey(asset.assetKey)}
+                  data-testid={testId(`backfill-asset-row-${tokenForAssetKey(asset.assetKey)}`)}
+                >
                   <td>
                     <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
                       <div>
-                        <a href={assetDetailsPathForKey(asset.assetKey)}>
+                        <Link to={assetDetailsPathForKey(asset.assetKey)}>
                           {asset.assetKey.path.join('/')}
-                        </a>
+                        </Link>
                       </div>
                       <div>
                         <StatusBar
-                          targeted={asset.numPartitionsTargeted}
-                          requested={asset.numPartitionsInProgress}
-                          completed={asset.numPartitionsMaterialized}
-                          failed={asset.numPartitionsFailed}
+                          targeted={targeted}
+                          inProgress={inProgress}
+                          completed={completed}
+                          failed={failed}
                         />
                       </div>
                     </Box>
                   </td>
-                  <td>{asset.numPartitionsTargeted}</td>
-                  <td>{asset.numPartitionsInProgress}</td>
-                  <td>{asset.numPartitionsMaterialized}</td>
-                  <td>{asset.numPartitionsFailed}</td>
+                  {asset.__typename === 'AssetPartitionsStatusCounts' ? (
+                    <>
+                      <td>{targeted}</td>
+                      <td>{inProgress}</td>
+                      <td>{completed}</td>
+                      <td>{failed}</td>
+                    </>
+                  ) : (
+                    <>
+                      <td>-</td>
+                      <td>
+                        {inProgress ? (
+                          <Tag icon="spinner" intent="primary">
+                            In progress
+                          </Tag>
+                        ) : (
+                          '-'
+                        )}
+                      </td>
+                      <td>{completed ? <Tag intent="success">Completed</Tag> : '-'}</td>
+                      <td>{failed ? <Tag intent="danger">Failed</Tag> : '-'}</td>
+                    </>
+                  )}
                 </tr>
-              ) : null;
+              );
             })}
           </tbody>
         </Table>
@@ -270,12 +314,12 @@ const StatusLabel = ({backfill}: {backfill: PartitionBackfillFragment}) => {
 
 function StatusBar({
   targeted,
-  requested,
+  inProgress,
   completed,
   failed,
 }: {
   targeted: number;
-  requested: number;
+  inProgress: number;
   completed: number;
   failed: number;
 }) {
@@ -286,7 +330,7 @@ function StatusBar({
         backgroundColor: Colors.Gray100,
         display: 'grid',
         gridTemplateColumns: `${(100 * completed) / targeted}% ${(100 * failed) / targeted}% ${
-          (100 * requested) / targeted
+          (100 * inProgress) / targeted
         }%`,
         gridTemplateRows: '100%',
         height: '12px',
@@ -327,6 +371,9 @@ export const BACKFILL_DETAILS_QUERY = gql`
     partitionBackfillOrError(backfillId: $backfillId) {
       ...PartitionBackfillFragment
       ...PythonErrorFragment
+      ... on BackfillNotFoundError {
+        message
+      }
     }
   }
 
@@ -354,6 +401,14 @@ export const BACKFILL_DETAILS_QUERY = gql`
           numPartitionsInProgress
           numPartitionsMaterialized
           numPartitionsFailed
+        }
+        ... on UnpartitionedAssetStatus {
+          assetKey {
+            path
+          }
+          inProgress
+          materialized
+          failed
         }
       }
     }

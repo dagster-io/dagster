@@ -75,7 +75,7 @@ def test_external_repository_data(snapshot):
     snapshot.assert_match(serialize_pp(external_repo_data))
 
 
-def test_external_pipeline_data(snapshot):
+def test_external_job_data(snapshot):
     snapshot.assert_match(serialize_pp(external_job_data_from_def(foo_job)))
 
 

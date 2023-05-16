@@ -67,9 +67,9 @@ defs = Definitions(
 
 With this configuration, if you materialized an asset called `iris_data`, the BigQuery I/O manager would store the data in the `IRIS.IRIS_DATA` table in the `my-gcp-project` project. The BigQuery instance would be located in `us-east5`.
 
-Finally, in the <PyObject object="Definitions" /> object, we assign the <PyObject module="dagster_gcp_pandas" object="bigquery_pandas_io_manager" /> to the `io_manager` key. `io_manager` is a reserved key to set the default I/O manager for your assets.
+Finally, in the <PyObject object="Definitions" /> object, we assign the <PyObject module="dagster_gcp_pandas" object="BigQueryPandasIOManager" /> to the `io_manager` key. `io_manager` is a reserved key to set the default I/O manager for your assets.
 
-For more info about each of the configuration values, refer to the <PyObject module="dagster_gcp_pandas" object="bigquery_pandas_io_manager" /> API documentation.
+For more info about each of the configuration values, refer to the <PyObject module="dagster_gcp_pandas" object="BigQueryPandasIOManager" /> API documentation.
 
 ---
 
@@ -145,7 +145,7 @@ from dagster import asset
 
 
 @asset
-def iris_cleaned(iris_data: pd.DataFrame):
+def iris_cleaned(iris_data: pd.DataFrame) -> pd.DataFrame:
     return iris_data.dropna().drop_duplicates()
 ```
 
@@ -153,7 +153,7 @@ In this example, we want to provide the `iris_data` asset from the [Store a Dags
 
 In `iris_cleaned`, the `iris_data` parameter tells Dagster that the value for the `iris_data` asset should be provided as input to `iris_cleaned`. If this feels too magical for you, refer to the [docs for explicitly specifying dependencies](/concepts/assets/software-defined-assets#defining-explicit-dependencies).
 
-When materializing these assets, Dagster will use the `bigquery_pandas_io_manager` to fetch the `IRIS.IRIS_DATA` as a Pandas DataFrame and pass this DataFrame as the `iris_data` parameter to `iris_cleaned`. When `iris_cleaned` returns a Pandas DataFrame, Dagster will use the `bigquery_pandas_io_manager` to store the DataFrame as the `IRIS.IRIS_CLEANED` table in BigQuery.
+When materializing these assets, Dagster will use the `BigQueryPandasIOManager` to fetch the `IRIS.IRIS_DATA` as a Pandas DataFrame and pass this DataFrame as the `iris_data` parameter to `iris_cleaned`. When `iris_cleaned` returns a Pandas DataFrame, Dagster will use the `BigQueryPandasIOManager` to store the DataFrame as the `IRIS.IRIS_CLEANED` table in BigQuery.
 
 ---
 
@@ -185,7 +185,7 @@ def iris_data() -> pd.DataFrame:
 
 
 @asset
-def iris_cleaned(iris_data: pd.DataFrame):
+def iris_cleaned(iris_data: pd.DataFrame) -> pd.DataFrame:
     return iris_data.dropna().drop_duplicates()
 
 
