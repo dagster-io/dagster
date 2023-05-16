@@ -18,6 +18,7 @@ from dagster._core.storage.db_io_manager import (
 from dagster._core.storage.io_manager import dagster_maintained_io_manager
 from google.api_core.exceptions import NotFound
 from google.cloud import bigquery
+import google_crc32c
 from pydantic import Field
 
 from ..auth.resources import GoogleAuthResource
@@ -253,23 +254,28 @@ class BigQueryIOManager(ConfigurableIOManagerFactory):
     def default_load_type() -> Optional[Type]:
         return None
 
-    def create_io_manager(self, context) -> Generator:
-        mgr = DbIOManager(
-            db_client=BigQueryClient(),
-            io_manager_name="BigQueryIOManager",
-            database=self.project,
-            schema=self.dataset,
-            type_handlers=self.type_handlers(),
-            default_load_type=self.default_load_type(),
-        )
-        if self.gcp_credentials:
-            with setup_gcp_creds(self.gcp_credentials):
-                yield mgr
+    def create_io_manager(self, context) -> DbIOManager:
+        if self.google_auth_resource is None:
+            if self.gcp_credentials is not None:
+                auth_resource = GoogleAuthResource(service_account_info=self.gcp_credentials)
+            else:
+                auth_resource = GoogleAuthResource()
         else:
-            yield mgr
+            auth_resource = self.google_auth_resource
 
+        return DbIOManager(
+                db_client=BigQueryClient(auth_resource=auth_resource),
+                io_manager_name="BigQueryIOManager",
+                database=self.project,
+                schema=self.dataset,
+                type_handlers=self.type_handlers(),
+                default_load_type=self.default_load_type(),
+            )
 
 class BigQueryClient(DbClient):
+    def __init__(self, auth_resource: GoogleAuthResource):
+        self.auth_resource = auth_resource
+
     @staticmethod
     def delete_table_slice(context: OutputContext, table_slice: TableSlice, connection) -> None:
         try:
@@ -300,6 +306,7 @@ class BigQueryClient(DbClient):
         conn = bigquery.Client(
             project=context.resource_config.get("project"),
             location=context.resource_config.get("location"),
+            credentials=self.auth_resource.get_credentials()
         )
 
         yield conn
