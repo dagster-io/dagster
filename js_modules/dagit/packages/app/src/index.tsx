@@ -11,7 +11,7 @@ import {UserSettingsButton} from '@dagster-io/dagit-core/app/UserSettingsButton'
 import {logLink, timeStartLink} from '@dagster-io/dagit-core/app/apolloLinks';
 import {DeploymentStatusType} from '@dagster-io/dagit-core/instance/DeploymentStatusProvider';
 import * as React from 'react';
-import ReactDOM from 'react-dom';
+import {createRoot} from 'react-dom/client';
 
 import {CommunityNux} from './NUX/CommunityNux';
 import {extractInitializationData} from './extractInitializationData';
@@ -39,8 +39,9 @@ const config = {
 
 const appCache = createAppCache();
 const container = document.getElementById('root');
+const root = createRoot(container!);
 
-ReactDOM.render(
+root.render(
   <AppProvider appCache={appCache} config={config}>
     <AppTopNav searchPlaceholder="Search…">
       <UserSettingsButton />
@@ -50,5 +51,4 @@ ReactDOM.render(
       <CommunityNux />
     </App>
   </AppProvider>,
-  container,
 );
