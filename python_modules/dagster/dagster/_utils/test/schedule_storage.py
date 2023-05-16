@@ -4,7 +4,6 @@ import time
 import pendulum
 import pytest
 
-from dagster import StaticPartitionsDefinition
 from dagster._core.definitions.asset_reconciliation_sensor import (
     AutoMaterializeAssetEvaluation,
 )
@@ -750,34 +749,3 @@ class TestScheduleStorage:
         )
         assert len(res) == 1
         assert res[0].evaluation_id == 10
-
-    def test_auto_materialize_asset_evaluations_with_partitions(self, storage):
-        if not self.can_store_auto_materialize_asset_evaluations():
-            pytest.skip("Storage cannot store auto materialize asset evaluations")
-
-        partitions_def = StaticPartitionsDefinition(["a", "b"])
-        subset = partitions_def.empty_subset().with_partition_keys(["a"])
-
-        storage.add_auto_materialize_asset_evaluations(
-            evaluation_id=10,
-            asset_evaluations=[
-                AutoMaterializeAssetEvaluation(
-                    asset_key=AssetKey("asset_two"),
-                    conditions=[(MissingAutoMaterializeCondition(), subset.serialize())],
-                    num_requested=1,
-                    num_skipped=0,
-                    num_discarded=0,
-                ),
-            ],
-        )
-
-        res = storage.get_auto_materialize_asset_evaluations(
-            asset_key=AssetKey("asset_two"), limit=100
-        )
-        assert len(res) == 1
-        assert res[0].evaluation.asset_key == AssetKey("asset_two")
-        assert res[0].evaluation_id == 10
-        assert res[0].evaluation.num_requested == 1
-
-        assert res[0].evaluation.conditions[0][0] == MissingAutoMaterializeCondition()
-        assert partitions_def.deserialize_subset(res[0].evaluation.conditions[0][1]) == subset

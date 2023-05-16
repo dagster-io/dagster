@@ -67,14 +67,14 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
         asset_key (AssetKey): The asset key that was evaluated.
         conditions: The conditions that impact if the asset should be materialized, skipped, or
             discarded. If the asset is partitioned, this will be a list of tuples, where the first
-            element is the condition and the second element is the serialized subset of partitions that the
+            element is the condition and the second element is the set of partitions that the
             condition applies to.
     """
 
     asset_key: AssetKey
     conditions: Union[
         Sequence[AutoMaterializeCondition],
-        Sequence[Tuple[AutoMaterializeCondition, str]],
+        Sequence[Tuple[AutoMaterializeCondition, PartitionsSubset]],
     ]
     num_requested: int
     num_skipped: int
@@ -123,12 +123,7 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
             return AutoMaterializeAssetEvaluation(
                 asset_key=asset_key,
                 conditions=[
-                    (
-                        condition,
-                        partitions_def.empty_subset()
-                        .with_partition_keys(partition_keys)
-                        .serialize(),
-                    )
+                    (condition, partitions_def.empty_subset().with_partition_keys(partition_keys))
                     for condition, partition_keys in partition_keys_by_condition.items()
                 ],
                 num_requested=num_requested,
