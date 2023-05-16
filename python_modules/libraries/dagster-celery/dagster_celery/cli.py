@@ -191,7 +191,7 @@ def worker_start_command(
         existing_pythonpath = env.get("PYTHONPATH", "")
         if existing_pythonpath and not existing_pythonpath.endswith(os.pathsep):
             existing_pythonpath += os.pathsep
-        env["PYTHONPATH"] = "{}{}{}".format(existing_pythonpath, pythonpath, os.pathsep)
+        env["PYTHONPATH"] = f"{existing_pythonpath}{pythonpath}{os.pathsep}"
     if background:
         launch_background_worker(subprocess_args, env=env)
     else:
