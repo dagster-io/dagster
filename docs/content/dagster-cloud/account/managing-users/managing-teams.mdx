@@ -6,7 +6,7 @@ title: Managing teams in Dagster Cloud | Dagster Docs
 
 <Note>This guide is applicable to Dagster Cloud Enterprise.</Note>
 
-As part of our role-based access control (RBAC) feature, Dagster Cloud supports the ability to assign users to teams. A team is a group of users with a set of default deployment, code location, and Branch Deployment user roles.
+As part of our [role-based access control (RBAC) feature](/dagster-cloud/account/managing-users/managing-user-roles-permissions), Dagster Cloud supports the ability to assign users to teams. A team is a group of users with a set of default deployment, code location, and Branch Deployment user roles.
 
 In this guide, we'll cover how to add, manage, and remove teams in Dagster Cloud.
 
@@ -33,18 +33,11 @@ To use this feature, you'll need a **Dagster Cloud Enterprise plan.**
 4. In the window that displays, enter a name in the **Team name** field.
 5. Click **Create team**.
 
-After the team is created, you can [add users and assign user roles to deployments](#managing-teams).
+After the team is created, you can [add users and assign user roles to deployments](#managing-team-members-and-roles).
 
 ---
 
-## Managing teams
-
-<Note>
-  <a href="/dagster-cloud/account/managing-users/managing-user-roles-permissions#teams">
-    Organization Admin permissions
-  </a>{" "}
-  are required to manage teams.
-</Note>
+## Managing team members and roles
 
 In the **Cloud Settings > Teams** tab:
 
@@ -55,7 +48,12 @@ From here, you can [manage team members](#managing-team-members) and [the team's
 
 ### Managing team members
 
-**Note**: Organization Admin permissions are required to add or remove team members.
+<Note>
+  <a href="/dagster-cloud/account/managing-users/managing-user-roles-permissions#teams">
+    Organization Admin permissions
+  </a>{" "}
+  are required to add and remove team members.
+</Note>
 
 #### Adding team members
 
@@ -72,7 +70,13 @@ From here, you can [manage team members](#managing-team-members) and [the team's
 
 ### Managing team roles
 
-**Note**: Admin users can only modify team roles in deployments where they are an Admin.
+<Note>
+  <a href="/dagster-cloud/account/managing-users/managing-user-roles-permissions#teams">
+    Organization Admin or Admin permissions
+  </a>{" "}
+  are required to manage team roles. Additionally, Admins can only manage teams
+  for deployments where they are an Admin.
+</Note>
 
 1. In the **Roles** tab, click the **Edit team role** button next to the deployment where you want to modify the team's role.
 2. In the window that diplays, select the team role for the deployment. This [role](/dagster-cloud/account/managing-users/managing-user-roles-permissions) will be used as the default for this team for all code locations in the deployment.
