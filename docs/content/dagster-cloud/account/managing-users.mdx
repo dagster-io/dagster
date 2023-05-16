@@ -6,9 +6,7 @@ title: Managing users in Dagster Cloud | Dagster Docs
 
 <Note>This guide is applicable to Dagster Cloud.</Note>
 
-Role-based access control (RBAC) enables you to grant specific permissions to users in your organization, ensuring that the right people have appropriate access to what they require in Dagster Cloud, and no more.
-
-In this guide, we'll cover how to add and remove users in your organization.
+In this guide, we'll cover how to add and remove users in your Dagster Cloud organization.
 
 ---
 
@@ -23,7 +21,9 @@ Before you start, note that:
 
 - **If using Google for SSO**, users must be added in Dagster Cloud before they can log in.
 
-- **If using a SAML-based solution like Okta**, users must be assigned to the Dagster app in the SSO portal to log in. By default, users will be granted Viewer permissions on each deployment. The default role can be adjusted by modifying the [`sso_default_role` deployment setting](/dagster-cloud/managing-deployments/deployment-settings-reference#sso-default-role).
+- **If using a SAML-based solution like Okta**, users must be assigned to the Dagster app in the Identity Provider (IdP) to be able to log in to Dagster Cloud. Refer to the [SSO setup guides](/dagster-cloud/account/authentication) for setup instructions for each of our supported IdP solutions.
+
+  By default, users will be granted Viewer permissions on each deployment. The default role can be adjusted by modifying the [`sso_default_role` deployment setting](/dagster-cloud/managing-deployments/deployment-settings-reference#sso-default-role).
 
 1. Sign in to your Dagster Cloud account.
 2. Click the **user menu (your icon) > Cloud Settings**.
@@ -32,11 +32,11 @@ Before you start, note that:
 5. In the **User email** field, enter the user's email address.
 6. Click **Add user**. The user will be added to the list of users.
 
-After the user is created, you can [add the user to teams and assign user roles for each deployment](#managing-users).
+After the user is created, you can [add the user to teams and assign user roles for each deployment](#managing-user-permissions).
 
 ---
 
-## Managing users
+## Managing user permissions
 
 <Note>
   <strong>Organization Admin</strong> permissions are required to manage users
@@ -65,7 +65,7 @@ width={1742}
 height={376}
 />
 
-**Note**: When determining a user's level of access, Dagster Cloud will use the **most permissive** role assigned to the user between all of their team memberships and any individual role grants. Refer to the [Managing user roles and permissions](/dagster-cloud/account/managing-users/managing-user-roles-permissions#applying-role-overrides) guide for more info.
+**Note**: When determining a user's level of access, Dagster Cloud will use the **most permissive** role assigned to the user between all of their team memberships and any individual role grants, whether at the deployment or code location level. Refer to the [Managing user roles and permissions](/dagster-cloud/account/managing-users/managing-user-roles-permissions#applying-role-overrides) guide for more info.
 
 ### Assigning user roles
 
@@ -79,7 +79,7 @@ In the **Roles** section, you can assign the select the appropriate [user role](
    2. Next to a code location, click **Edit user role**.
    3. Select the user role for the code location.
    4. Click **Save**.
-5. Repeat step 2 for each deployment.
+5. Repeat the previous steps for each deployment.
 6. **Optional**: To change the user's permissions for branch deployments:
    1. Next to **All branch deployments**, click **Edit user role**.
    2. Select the user role to use for all branch deployments.
