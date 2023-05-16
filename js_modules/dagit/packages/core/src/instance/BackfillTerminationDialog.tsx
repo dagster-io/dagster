@@ -55,7 +55,7 @@ export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props
     return null;
   }
 
-  const numUnscheduled = backfill.numCancelablePartitions;
+  const numUnscheduled = backfill.numCancelable;
   const cancel = async () => {
     setIsSubmitting(true);
     await cancelBackfill({variables: {backfillId: backfill.id}});

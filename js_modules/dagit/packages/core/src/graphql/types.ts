@@ -2313,7 +2313,7 @@ export type PartitionBackfill = {
   id: Scalars['String'];
   isAssetBackfill: Scalars['Boolean'];
   isValidSerialization: Scalars['Boolean'];
-  numCancelablePartitions: Scalars['Int'];
+  numCancelable: Scalars['Int'];
   numPartitions: Maybe<Scalars['Int']>;
   partitionNames: Maybe<Array<Scalars['String']>>;
   partitionSet: Maybe<PartitionSet>;
@@ -8240,10 +8240,8 @@ export const buildPartitionBackfill = (
       overrides && overrides.hasOwnProperty('isValidSerialization')
         ? overrides.isValidSerialization!
         : false,
-    numCancelablePartitions:
-      overrides && overrides.hasOwnProperty('numCancelablePartitions')
-        ? overrides.numCancelablePartitions!
-        : 3631,
+    numCancelable:
+      overrides && overrides.hasOwnProperty('numCancelable') ? overrides.numCancelable! : 53,
     numPartitions:
       overrides && overrides.hasOwnProperty('numPartitions') ? overrides.numPartitions! : 4165,
     partitionNames:

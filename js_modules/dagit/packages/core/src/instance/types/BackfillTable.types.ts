@@ -9,7 +9,7 @@ export type BackfillTableFragment = {
   isAssetBackfill: boolean;
   hasCancelPermission: boolean;
   hasResumePermission: boolean;
-  numCancelablePartitions: number;
+  numCancelable: number;
   partitionNames: Array<string> | null;
   isValidSerialization: boolean;
   numPartitions: number | null;

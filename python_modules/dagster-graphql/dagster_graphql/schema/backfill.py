@@ -136,7 +136,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     partitionNames = graphene.List(graphene.NonNull(graphene.String))
     isValidSerialization = graphene.NonNull(graphene.Boolean)
     numPartitions = graphene.Field(graphene.Int)
-    numCancelablePartitions = graphene.NonNull(graphene.Int)
+    numCancelable = graphene.NonNull(graphene.Int)
     fromFailure = graphene.NonNull(graphene.Boolean)
     reexecutionSteps = graphene.List(graphene.NonNull(graphene.String))
     assetSelection = graphene.List(graphene.NonNull(GrapheneAssetKey))
@@ -259,8 +259,8 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     def resolve_numPartitions(self, _graphene_info: ResolveInfo) -> Optional[int]:
         return self._backfill_job.get_num_partitions(_graphene_info.context)
 
-    def resolve_numCancelablePartitions(self, _graphene_info: ResolveInfo) -> int:
-        return self._backfill_job.get_num_cancelable_partitions(_graphene_info.context)
+    def resolve_numCancelable(self, _graphene_info: ResolveInfo) -> int:
+        return self._backfill_job.get_num_cancelable(_graphene_info.context)
 
     def resolve_partitionSet(self, graphene_info: ResolveInfo) -> Optional["GraphenePartitionSet"]:
         from ..schema.partition_sets import GraphenePartitionSet
