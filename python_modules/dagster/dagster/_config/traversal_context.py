@@ -12,6 +12,7 @@ class TraversalType(Enum):
     VALIDATE = "VALIDATE"
     RESOLVE_DEFAULTS = "RESOLVE_DEFAULTS"
     RESOLVE_DEFAULTS_AND_POSTPROCESS = "RESOLVE_DEFAULTS_AND_POSTPROCESS"
+    TRANSLATE_TO_PYDANTIC = "TRANSLATE_TO_PYDANTIC"
 
 
 class ContextData:
@@ -153,7 +154,7 @@ class TraversalContext(ContextData):
 
     @property
     def do_post_process(self) -> bool:
-        return self.traversal_type == TraversalType.RESOLVE_DEFAULTS_AND_POSTPROCESS
+        return self.traversal_type == TraversalType.RESOLVE_DEFAULTS_AND_POSTPROCESS or self.traversal_type == TraversalType.TRANSLATE_TO_PYDANTIC
 
     def for_array(self, index: int) -> "TraversalContext":
         check.int_param(index, "index")

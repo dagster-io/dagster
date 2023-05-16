@@ -97,7 +97,7 @@ class ConfigType:
         """
         return value
 
-    def post_process_translate_enum(self, value):
+    def translate_enum_value(self, value):
         return self.post_process(value)
 
     def get_snapshot(self) -> "ConfigTypeSnap":
@@ -170,7 +170,7 @@ class Float(BuiltinConfigScalar):
     def post_process(self, value):
         return float(value)
 
-    def post_process_translate_enum(self, value):
+    def translate_enum_value(self, value):
         return self.post_process(value)
 
 
@@ -327,7 +327,7 @@ class Enum(ConfigType):
             ).format(config_value=value)
         )
 
-    def post_process_translate_enum(self, value):
+    def translate_enum_value(self, value):
         """Pass through enum value as is (treats config processing as idempotent)."""
         for ev in self.enum_values:
             if ev.python_value == value:

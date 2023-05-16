@@ -35,7 +35,7 @@ from dagster._config.config_type import (
     Noneable,
 )
 from dagster._config.field_utils import config_dictionary_from_values
-from dagster._config.post_process import resolve_defaults, translate_enums
+from dagster._config.post_process import resolve_defaults, translate_to_pydantic
 from dagster._config.pythonic_config.typing_utils import (
     TypecheckAllowPartialResourceInitParams,
 )
@@ -873,30 +873,24 @@ class ConfigurableResourceFactory(
         )
         return out
 
-    def _resolve_and_update_env_vars(
+    def _translate_processed_run_config_to_pydantic(
         self, context: "InitResourceContext"
     ) -> "ConfigurableResourceFactory[TResValue]":
-        """Processes the config dictionary to resolve any EnvVar values. This is called at runtime
-        when the resource is initialized, so the user is only shown the error if they attempt to
-        kick off a run relying on this resource.
-
+        """Takes the processed run config dictionary and translates it to be able to be passed to the constructor of the pydantic resource. This converts any enums from symbols to their actual values, and converts env vars encapsulated in the EnvVar symbol to the appropriate string representation.
         Returns a new instance of the resource.
         """
-        config_dict = config_dictionary_from_values(
-            context.resource_config, self._schema
-        )  # Converts EnvVars to requisite config types
-
+        config_dict = config_dictionary_from_values(context.resource_config, self._schema) # Converts any EnvVars to their proper config representation (this is not handled when passing EnvVar to a raw run config dictionary)
         # Perform post-processing step which also resolves any environment variables
-        enum_translation = translate_enums(self._schema.config_type, config_dict)
-        if not enum_translation.success:
+        pydantic_values = translate_to_pydantic(self._schema.config_type, config_dict)
+        if not pydantic_values.success:
             raise DagsterInvalidConfigError(
                 f"Error while processing {self.__class__.__name__} config ",
-                enum_translation.errors,
+                pydantic_values.errors,
                 context.resource_config,
             )
-        check.not_none(enum_translation.value)
-
-        return self._with_updated_values(enum_translation.value)  # type: ignore (must be a dict)
+        check.not_none(pydantic_values.value)
+        check.is_dict(pydantic_values.value)
+        return self._with_updated_values(cast(dict, pydantic_values.value))
 
     @contextlib.contextmanager
     def _resolve_and_update_nested_resources(
@@ -957,7 +951,7 @@ class ConfigurableResourceFactory(
         with self._resolve_and_update_nested_resources(context) as has_nested_resource:
             updated_resource = has_nested_resource.with_resource_context(  # noqa: SLF001
                 context
-            )._resolve_and_update_env_vars(context)
+            )._translate_processed_run_config_to_pydantic(context)
 
             updated_resource.setup_for_execution(context)
             return updated_resource.create_resource(context)
@@ -969,7 +963,7 @@ class ConfigurableResourceFactory(
         with self._resolve_and_update_nested_resources(context) as has_nested_resource:
             updated_resource = has_nested_resource.with_resource_context(  # noqa: SLF001
                 context
-            )._resolve_and_update_env_vars(context)
+            )._translate_processed_run_config_to_pydantic(context)
 
             with updated_resource.yield_for_execution(context) as value:
                 yield value

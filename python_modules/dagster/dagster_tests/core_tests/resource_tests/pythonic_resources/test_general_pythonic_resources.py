@@ -26,6 +26,7 @@ from dagster import (
     build_init_resource_context,
     io_manager,
     job,
+    materialize,
     op,
     resource,
 )
@@ -676,6 +677,147 @@ def test_nested_resources_runtime_config_complex():
     )
     assert completed["yes"]
 
+def test_enum_nested_resource_no_run_config() -> None:
+    class MyEnum(enum.Enum):
+        A = "a_value"
+        B = "b_value"
+
+    class ResourceWithEnum(ConfigurableResource):
+        my_enum: MyEnum
+
+    class OuterResourceWithResourceWithEnum(ConfigurableResource):
+        resource_with_enum: ResourceWithEnum
+
+    @asset
+    def asset_with_outer_resource(outer_resource: OuterResourceWithResourceWithEnum):
+        return outer_resource.resource_with_enum.my_enum.value
+
+    defs = Definitions(
+        assets=[asset_with_outer_resource],
+        resources={
+            "outer_resource": OuterResourceWithResourceWithEnum(
+                resource_with_enum=ResourceWithEnum(my_enum=MyEnum.A)
+            )
+        },
+    )
+
+    a_job = defs.get_implicit_global_asset_job_def()
+
+    result = a_job.execute_in_process()
+    assert result.success
+    assert result.output_for_node("asset_with_outer_resource") == "a_value"
+
+def test_enum_nested_resource_run_config_override():
+    class MyEnum(enum.Enum):
+        A = "a_value"
+        B = "b_value"
+
+    class ResourceWithEnum(ConfigurableResource):
+        my_enum: MyEnum
+
+    class OuterResourceWithResourceWithEnum(ConfigurableResource):
+        resource_with_enum: ResourceWithEnum
+
+    @asset
+    def asset_with_outer_resource(outer_resource: OuterResourceWithResourceWithEnum):
+        return outer_resource.resource_with_enum.my_enum.value
+
+    resource_with_enum = ResourceWithEnum.configure_at_launch()
+    Definitions(
+        assets=[asset_with_outer_resource],
+        resources={
+            "resource_with_enum": resource_with_enum,
+            "outer_resource": OuterResourceWithResourceWithEnum(
+                resource_with_enum=resource_with_enum
+            )
+        },
+    )
+
+def test_basic_enum_override_with_resource_instance() -> None:
+    class MyEnum(Enum):
+        A = "a_value"
+        B = "b_value"
+
+    setup_executed = {}
+
+    class MyResource(ConfigurableResource):
+        my_enum: MyEnum
+
+        def setup_for_execution(self, context: InitResourceContext) -> None:
+            setup_executed["yes"] = True
+            # confirm existing behavior of config system
+            assert context.resource_config["my_enum"] in ["a_value", "b_value"]
+
+    @asset
+    def asset_with_resource(context, my_resource: MyResource):
+        return my_resource.my_enum.value
+
+    result_one = materialize(
+        [asset_with_resource],
+        resources={"my_resource": MyResource(my_enum=MyEnum.A)},
+    )
+    assert result_one.success
+    assert result_one.output_for_node("asset_with_resource") == "a_value"
+    assert setup_executed["yes"]
+
+    setup_executed.clear()
+
+    result_two = materialize(
+        [asset_with_resource],
+        resources={"my_resource": MyResource(my_enum=MyEnum.A)},
+        run_config={"resources": {"my_resource": {"config": {"my_enum": "B"}}}},
+    )
+
+    assert result_two.success
+    assert result_two.output_for_node("asset_with_resource") == "b_value"
+    assert setup_executed["yes"]
+
+    a_job = defs.get_implicit_global_asset_job_def()
+
+    # Case: I'm re-specifying the nested enum at runtime - expect the runtime config to override the resource config
+    result = a_job.execute_in_process(
+        run_config={
+            "resources": {
+                "resource_with_enum": {
+                    "config": {
+                        "my_enum": "B"
+                    }
+                }
+            }
+        }
+    )
+    assert result.success
+    assert result.output_for_node("asset_with_outer_resource") == "b_value"
+
+def test_basic_enum_override_with_resource_configured_at_launch() -> None:
+    class MyEnum(enum.Enum):
+        A = "a_value"
+        B = "b_value"
+
+    class MyResource(ConfigurableResource):
+        my_enum: MyEnum
+
+    @asset
+    def asset_with_resource(context, my_resource: MyResource):
+        return my_resource.my_enum.value
+
+    result_one = materialize(
+        [asset_with_resource],
+        resources={"my_resource": MyResource.configure_at_launch()},
+        run_config={"resources": {"my_resource": {"config": {"my_enum": "B"}}}},
+    )
+
+    assert result_one.success
+    assert result_one.output_for_node("asset_with_resource") == "b_value"
+
+    result_two = materialize(
+        [asset_with_resource],
+        resources={"my_resource": MyResource.configure_at_launch(my_enum=MyEnum.A)},
+        run_config={"resources": {"my_resource": {"config": {"my_enum": "B"}}}},
+    )
+
+    assert result_two.success
+    assert result_two.output_for_node("asset_with_resource") == "b_value"
 
 def test_resources_which_return():
     class StringResource(ConfigurableResourceFactory[str]):
