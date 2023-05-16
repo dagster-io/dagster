@@ -285,6 +285,10 @@ class SqlScheduleStorage(ScheduleStorage):
         table_names = db.inspect(conn).get_table_names()
         return "instigators" in table_names
 
+    def _has_asset_daemon_asset_evaluations_table(self, conn: Connection) -> bool:
+        table_names = db.inspect(conn).get_table_names()
+        return "asset_daemon_asset_evaluations" in table_names
+
     def get_batch_ticks(
         self,
         selector_ids: Sequence[str],
@@ -516,6 +520,8 @@ class SqlScheduleStorage(ScheduleStorage):
             conn.execute(JobTickTable.delete())
             if self._has_instigators_table(conn):
                 conn.execute(InstigatorsTable.delete())
+            if self._has_asset_daemon_asset_evaluations_table(conn):
+                conn.execute(AssetPolicyEvaluationsTable.delete())
 
     # MIGRATIONS
 
