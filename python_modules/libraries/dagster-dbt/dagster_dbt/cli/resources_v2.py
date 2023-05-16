@@ -2,12 +2,13 @@ import json
 import os
 import subprocess
 from dataclasses import dataclass
-from typing import Any, Dict, Iterator, List, Mapping, Sequence, Union
+from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence, Union
 
 from dagster import (
     AssetKey,
     AssetObservation,
     ConfigurableResource,
+    OpExecutionContext,
     Output,
     get_dagster_logger,
 )
@@ -88,6 +89,67 @@ class DbtManifest:
     def get_node_info_by_asset_key(self, asset_key: AssetKey) -> Mapping[str, Any]:
         """Get a dbt node's dictionary representation in the manifest by its Dagster output name."""
         return self.node_info_by_asset_key[asset_key]
+
+    def get_subset_selection_for_context(
+        self,
+        context: OpExecutionContext,
+        select: Optional[str] = None,
+        exclude: Optional[str] = None,
+    ) -> List[str]:
+        """Generate a dbt selection string to materialize the selected resources in a subsetted execution context.
+
+        See https://docs.getdbt.com/reference/node-selection/syntax#how-does-selection-work.
+
+        Args:
+            context (OpExecutionContext): The execution context for the current execution step.
+            select (Optional[str]): A dbt selection string to select resources to materialize.
+            exclude (Optional[str]): A dbt selection string to exclude resources from materializing.
+
+        Returns:
+            List[str]: dbt CLI arguments to materialize the selected resources in a
+                subsetted execution context.
+
+                If the current execution context is not performing a subsetted execution,
+                return CLI arguments composed of the inputed selection and exclusion arguments.
+        """
+        default_dbt_selection = []
+        if select:
+            default_dbt_selection += ["--select", select]
+        if exclude:
+            default_dbt_selection += ["--exclude", exclude]
+
+        # TODO: this should be a property on the context if this is a permanent indicator for
+        # determining whether the current execution context is performing a subsetted execution.
+        is_subsetted_execution = len(context.selected_output_names) != len(
+            context.assets_def.node_keys_by_output_name
+        )
+        if not is_subsetted_execution:
+            logger.info(
+                "A dbt subsetted execution is not being performed. Using the default dbt selection"
+                f" arguments `{default_dbt_selection}`."
+            )
+            return default_dbt_selection
+
+        selected_dbt_resources = []
+        for output_name in context.selected_output_names:
+            node_info = self.get_node_info_by_output_name(output_name)
+
+            # Explicitly select a dbt resource by its fully qualified name (FQN).
+            # https://docs.getdbt.com/reference/node-selection/methods#the-file-or-fqn-method
+            fqn_selector = f"fqn:{'.'.join(node_info['fqn'])}"
+
+            selected_dbt_resources.append(fqn_selector)
+
+        # Take the union of all the selected resources.
+        # https://docs.getdbt.com/reference/node-selection/set-operators#unions
+        union_selected_dbt_resources = ["--select"] + [" ".join(selected_dbt_resources)]
+
+        logger.info(
+            "A dbt subsetted execution is being performed. Overriding default dbt selection"
+            f" arguments `{default_dbt_selection}` with arguments: `{union_selected_dbt_resources}`"
+        )
+
+        return union_selected_dbt_resources
 
 
 @dataclass
@@ -226,12 +288,14 @@ class DbtCli(ConfigurableResource):
         args: List[str],
         *,
         manifest: DbtManifest,
+        context: Optional[OpExecutionContext] = None,
     ) -> DbtCliTask:
         """Execute a dbt command.
 
         Args:
             args (List[str]): The dbt CLI command to execute.
             manifest (DbtManifest): The dbt manifest wrapper.
+            context (Optional[OpExecutionContext]): The execution context.
 
         Returns:
             DbtCliTask: A task that can be used to retrieve the output of the dbt CLI command.
@@ -256,7 +320,22 @@ class DbtCli(ConfigurableResource):
         # environment variable to ensure that the dbt CLI outputs structured logs.
         env["DBT_LOG_FORMAT"] = "json"
 
-        args = ["dbt"] + self.global_config + args
+        # TODO: verify that args does not have any selection flags if the context and manifest
+        # are passed to this function.
+        selection_args: List[str] = []
+        if context and manifest:
+            logger.info(
+                "A context and manifest were provided to the dbt CLI client. Selection arguments to"
+                " dbt will automatically be interpreted from the execution environment."
+            )
+
+            selection_args = manifest.get_subset_selection_for_context(
+                context=context,
+                select=context.op.tags.get("dagster-dbt/select"),
+                exclude=context.op.tags.get("dagster-dbt/exclude"),
+            )
+
+        args = ["dbt"] + self.global_config + args + selection_args
         logger.info(f"Running dbt command: `{' '.join(args)}`.")
 
         # Create a subprocess that runs the dbt CLI command.

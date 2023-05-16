@@ -110,3 +110,7 @@ def test_selections(
 
     expected_asset_keys = {AssetKey(key.split("/")) for key in expected_asset_names}
     assert my_dbt_assets.keys == expected_asset_keys
+
+    expected_select_tag = "fqn:*" if select is None else select
+    assert my_dbt_assets.op.tags.get("dagster-dbt/select") == expected_select_tag
+    assert my_dbt_assets.op.tags.get("dagster-dbt/exclude") == exclude
