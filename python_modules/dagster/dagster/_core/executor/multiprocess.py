@@ -218,7 +218,6 @@ class MultiprocessExecutor(Executor):
                     while not stopping:
                         steps = active_execution.get_steps_to_execute(
                             limit=(limit - len(active_iters)),
-                            register_steps=True,
                         )
 
                         if not steps:

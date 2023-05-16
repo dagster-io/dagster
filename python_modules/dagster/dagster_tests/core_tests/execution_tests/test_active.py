@@ -6,7 +6,9 @@ from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.plan.objects import StepSuccessData
 from dagster._core.execution.plan.outputs import StepOutputData, StepOutputHandle
 from dagster._core.execution.retries import RetryMode
+from dagster._core.storage.tags import GLOBAL_CONCURRENCY_TAG
 from dagster._core.test_utils import instance_for_test
+from dagster._core.utils import make_new_run_id
 
 
 def define_foo_job():
@@ -156,3 +158,59 @@ def test_recover_in_between_steps():
                     step_key="bar_op",
                 )
             )
+
+
+def define_concurrency_job():
+    @op(tags={GLOBAL_CONCURRENCY_TAG: "foo"})
+    def foo_op():
+        pass
+
+    @op(tags={GLOBAL_CONCURRENCY_TAG: "foo"})
+    def bar_op():
+        pass
+
+    @job
+    def foo_job():
+        foo_op()
+        bar_op()
+
+    return foo_job
+
+
+def test_active_concurrency():
+    foo_job = define_concurrency_job()
+    run_id = make_new_run_id()
+
+    with instance_for_test() as instance:
+        instance.event_log_storage.set_concurrency_slots("foo", 1)
+
+        with pytest.raises(
+            DagsterInvariantViolationError,
+            match="Execution finished without completing the execution plan",
+        ):
+            with create_execution_plan(foo_job).start(
+                instance, RetryMode.DISABLED, run_id=run_id
+            ) as active_execution:
+                steps = active_execution.get_steps_to_execute()
+                assert len(steps) == 1
+                step_1 = steps[0]
+
+                foo_info = instance.event_log_storage.get_concurrency_info("foo")
+                assert foo_info.active_slot_count == 1
+                assert foo_info.active_run_ids == {run_id}
+                assert foo_info.pending_step_count == 1
+                assert foo_info.assigned_step_count == 1
+
+                active_execution.handle_event(
+                    DagsterEvent(
+                        DagsterEventType.STEP_START.value,
+                        job_name=foo_job.name,
+                        step_key=step_1.key,
+                    )
+                )
+
+        foo_info = instance.event_log_storage.get_concurrency_info("foo")
+        assert foo_info.active_slot_count == 1
+        assert foo_info.active_run_ids == {run_id}
+        assert foo_info.pending_step_count == 0
+        assert foo_info.assigned_step_count == 1
