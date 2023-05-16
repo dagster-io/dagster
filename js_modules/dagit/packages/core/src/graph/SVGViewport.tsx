@@ -1,4 +1,4 @@
-import {Box, Colors, Icon, IconWrapper, Slider, Tag} from '@dagster-io/ui';
+import {Box, Colors, FontFamily, Icon, IconWrapper, Slider} from '@dagster-io/ui';
 import animate from 'amator';
 import * as React from 'react';
 import ReactDOM from 'react-dom';
@@ -114,15 +114,24 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
   },
 
   onWheel(viewport: SVGViewport, event: WheelEvent) {
-    const cursorPosition = viewport.getOffsetXY(event);
+    const viewportEl = viewport.element.current;
+    if (!viewportEl) {
+      return;
+    }
+
+    const inZoomControl =
+      event.target instanceof HTMLElement && event.target.closest('[data-zoom-control]');
+
+    const cursorPosition = !inZoomControl
+      ? viewport.getOffsetXY(event)
+      : {x: viewportEl.clientWidth / 2, y: viewportEl.clientHeight / 2};
+    if (!cursorPosition) {
+      return;
+    }
 
     // convert wheel event units to a better scroll speed. This is a bit subjective
     // but the defaults feel a bit too fast.
     const panSpeed = 0.7;
-
-    if (!cursorPosition) {
-      return;
-    }
 
     // On trackpads, the browser converts "pinch to zoom" into a vertical scroll with the ctrl
     // key modifier set. In apps like Figma, the Cmd (meta) + scroll wheel zooms, and we want
@@ -132,7 +141,7 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
     // pinch-to-zoom will go from min to ~1.0 zoom, and so that the mouse wheel "ticks" are each
     // a small step.
     //
-    if (event.metaKey || event.ctrlKey) {
+    if (event.metaKey || event.ctrlKey || inZoomControl) {
       const zoomSpeed =
         event.deltaMode === WheelEvent.DOM_DELTA_LINE
           ? 0.05 // Firefox cmd+wheel, numbers are in lines and not px
@@ -141,6 +150,7 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
           : 0.01; // trackpad;
       const targetScale = viewport.state.scale * (1 - event.deltaY * zoomSpeed);
       const scale = Math.max(viewport.getMinZoom(), Math.min(viewport.getMaxZoom(), targetScale));
+
       viewport.adjustZoomRelativeToScreenPoint(scale, cursorPosition);
     } else if (event.shiftKey) {
       viewport.shiftXY(event.deltaX * panSpeed, event.deltaY * panSpeed);
@@ -153,7 +163,7 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
     return (
       <ZoomSliderContainer id="zoom-slider-container">
         <WheelInstructionTooltip />
-        <Box margin={{bottom: 8}}>
+        <Box flex={{direction: 'column', alignItems: 'center'}}>
           <IconButton
             onClick={() => {
               const x = viewport.element.current!.clientWidth / 2;
@@ -166,23 +176,30 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
               viewport.adjustZoomRelativeToScreenPoint(adjusted, {x, y});
             }}
           >
-            <Icon size={24} name="zoom_in" color={Colors.Gray300} />
+            <Icon size={24} name="zoom_in" />
           </IconButton>
-        </Box>
-        <Slider
-          vertical
-          min={viewport.getMinZoom()}
-          max={viewport.getMaxZoom()}
-          stepSize={0.001}
-          value={viewport.state.scale}
-          labelRenderer={false}
-          onChange={(scale: number) => {
-            const x = viewport.element.current!.clientWidth / 2;
-            const y = viewport.element.current!.clientHeight / 2;
-            viewport.adjustZoomRelativeToScreenPoint(scale, {x, y});
-          }}
-        />
-        <Box margin={{top: 8}}>
+          <Box
+            style={{width: 34}}
+            padding={{vertical: 12}}
+            background={Colors.White}
+            data-zoom-control={true}
+            flex={{alignItems: 'center', direction: 'column'}}
+            border={{side: 'vertical', color: Colors.Gray300, width: 1}}
+          >
+            <Slider
+              vertical
+              min={viewport.getMinZoom()}
+              max={viewport.getMaxZoom()}
+              stepSize={0.001}
+              value={viewport.state.scale}
+              labelRenderer={false}
+              onChange={(scale: number) => {
+                const x = viewport.element.current!.clientWidth / 2;
+                const y = viewport.element.current!.clientHeight / 2;
+                viewport.adjustZoomRelativeToScreenPoint(scale, {x, y});
+              }}
+            />
+          </Box>
           <IconButton
             onClick={() => {
               const x = viewport.element.current!.clientWidth / 2;
@@ -194,16 +211,12 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
               viewport.adjustZoomRelativeToScreenPoint(scale, {x, y});
             }}
           >
-            <Icon size={24} name="zoom_out" color={Colors.Gray300} />
+            <Icon size={24} name="zoom_out" />
           </IconButton>
         </Box>
-        <Box margin={{top: 8}}>
-          <IconButton
-            onClick={() => {
-              viewport.onExportToSVG();
-            }}
-          >
-            <Icon size={24} name="download_for_offline" color={Colors.Gray300} />
+        <Box flex={{direction: 'column', alignItems: 'center'}}>
+          <IconButton onClick={() => viewport.onExportToSVG()} style={{marginTop: 8}}>
+            <Icon size={24} name="download_for_offline" />
           </IconButton>
         </Box>
       </ZoomSliderContainer>
@@ -212,12 +225,11 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
 };
 
 const IconButton = styled.button`
-  background: none;
-  border: none;
+  background: ${Colors.White};
+  border: 1px solid ${Colors.Gray300};
   cursor: pointer;
-  padding: 0;
+  padding: 4px;
   position: relative;
-  left: -4px;
 
   :focus {
     outline: none;
@@ -226,9 +238,16 @@ const IconButton = styled.button`
   ${IconWrapper} {
     transition: background 100ms;
   }
-
-  :focus ${IconWrapper}, :hover ${IconWrapper}, :active ${IconWrapper} {
-    background-color: ${Colors.Blue500};
+  &:first-child {
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+  }
+  &:last-child {
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+  }
+  :active {
+    background-color: ${Colors.Gray100};
   }
 `;
 
@@ -590,15 +609,13 @@ const SVGViewportStyles: React.CSSProperties = {
 
 const ZoomSliderContainer = styled.div`
   position: absolute;
-  bottom: 0;
-  right: 0;
+  bottom: 12px;
+  right: 12px;
   width: 30px;
-  padding: 10px 8px;
-  padding-bottom: 0;
   background: rgba(245, 248, 250, 0.4);
 `;
 
-const WheelInstructionTooltip: React.FC = () => {
+const WheelInstructionTooltip = () => {
   const [usedMeta, setUsedMeta] = React.useState(false);
   const [wheeling, setWheeling] = React.useState(false);
   const timeout = React.useRef<NodeJS.Timeout>();
@@ -606,6 +623,9 @@ const WheelInstructionTooltip: React.FC = () => {
   React.useEffect(() => {
     const listener = (e: WheelEvent) => {
       clearTimeout(timeout.current);
+
+      // Once the user tries any modifier keys while zooming, we set usedMeta to dismiss
+      // the instructions and avoid showing them again. (they know what they're doing)
       if (e.metaKey || e.shiftKey || e.ctrlKey) {
         setUsedMeta(true);
         setWheeling(false);
@@ -614,7 +634,7 @@ const WheelInstructionTooltip: React.FC = () => {
       setWheeling(true);
       timeout.current = setTimeout(() => {
         setWheeling(false);
-      }, 3000);
+      }, 2000);
     };
     document.addEventListener('wheel', listener);
     return () => {
@@ -628,15 +648,22 @@ const WheelInstructionTooltip: React.FC = () => {
 
   return (
     <WheelInstructionTooltipContainer style={{opacity: visible ? 1 : 0}}>
-      <Tag>{`Hold ${zoomKey} to Zoom`}</Tag>
+      {`Hold ${zoomKey} to zoom`}
     </WheelInstructionTooltipContainer>
   );
 };
 
 const WheelInstructionTooltipContainer = styled.div`
   position: absolute;
-  bottom: 40px;
-  right: 32px;
+  bottom: 42px;
+  right: 40px;
   white-space: nowrap;
   transition: opacity 300ms ease-in-out;
+  font-family: ${FontFamily.default};
+  font-size: 12px;
+  line-height: 16px;
+  border-radius: 2px;
+  background: ${Colors.Gray900};
+  color: ${Colors.Gray50};
+  padding: 8px 16px;
 `;
