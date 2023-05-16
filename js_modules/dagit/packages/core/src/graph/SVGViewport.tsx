@@ -1,4 +1,4 @@
-import {Box, Colors, Icon, IconWrapper, Slider} from '@dagster-io/ui';
+import {Box, Colors, Icon, IconWrapper, Slider, Tag} from '@dagster-io/ui';
 import animate from 'amator';
 import * as React from 'react';
 import ReactDOM from 'react-dom';
@@ -152,6 +152,7 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
   render(viewport: SVGViewport) {
     return (
       <ZoomSliderContainer id="zoom-slider-container">
+        <WheelInstructionTooltip />
         <Box margin={{bottom: 8}}>
           <IconButton
             onClick={() => {
@@ -595,4 +596,47 @@ const ZoomSliderContainer = styled.div`
   padding: 10px 8px;
   padding-bottom: 0;
   background: rgba(245, 248, 250, 0.4);
+`;
+
+const WheelInstructionTooltip: React.FC = () => {
+  const [usedMeta, setUsedMeta] = React.useState(false);
+  const [wheeling, setWheeling] = React.useState(false);
+  const timeout = React.useRef<NodeJS.Timeout>();
+
+  React.useEffect(() => {
+    const listener = (e: WheelEvent) => {
+      clearTimeout(timeout.current);
+      if (e.metaKey || e.shiftKey || e.ctrlKey) {
+        setUsedMeta(true);
+        setWheeling(false);
+        return;
+      }
+      setWheeling(true);
+      timeout.current = setTimeout(() => {
+        setWheeling(false);
+      }, 3000);
+    };
+    document.addEventListener('wheel', listener);
+    return () => {
+      document.removeEventListener('wheel', listener);
+      clearTimeout(timeout.current);
+    };
+  }, []);
+
+  const zoomKey = navigator.userAgent.includes('Mac') ? '⌘' : 'Ctrl';
+  const visible = wheeling && !usedMeta;
+
+  return (
+    <WheelInstructionTooltipContainer style={{opacity: visible ? 1 : 0}}>
+      <Tag>{`Hold ${zoomKey} to Zoom`}</Tag>
+    </WheelInstructionTooltipContainer>
+  );
+};
+
+const WheelInstructionTooltipContainer = styled.div`
+  position: absolute;
+  bottom: 40px;
+  right: 32px;
+  white-space: nowrap;
+  transition: opacity 300ms ease-in-out;
 `;
