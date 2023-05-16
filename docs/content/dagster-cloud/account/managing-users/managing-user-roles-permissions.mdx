@@ -30,7 +30,7 @@ All user roles are enforced both in Dagster Cloud and the [GraphQL API](/concept
 
 ### Teams
 
-Dagster Cloud Enterprise users can create teams of users and assign default permission sets, either in Dagster Cloud or dynamically from an Identity Provider (IdP). Refer to the [Managing user teams in Dagster Cloud](/dagster-cloud/account/managing-users/managing-user-teams) guide for more info.
+Dagster Cloud Enterprise users can create teams of users and assign default permission sets. Refer to the [Managing teams in Dagster Cloud](/dagster-cloud/account/managing-users/managing-teams) guide for more info.
 
 ---
 
@@ -100,7 +100,7 @@ Organization Admins have access to the entire organization, including all [full 
 
 <Note>This section is applicable to Dagster Cloud Enterprise.</Note>
 
-As previously mentioned, you can define default user roles for users in your organization. Dagster Cloud also supports applying overrides to specific code locations in a deployment or individual team members (if using [teams](/dagster-cloud/account/managing-users/managing-user-teams)).
+As previously mentioned, you can define default user roles for users in your organization. Dagster Cloud also supports applying overrides to specific code locations in a deployment or individual team members (if using [teams](/dagster-cloud/account/managing-users/managing-teams)).
 
 Overrides may be used to apply a **more permissive** role. If, for example, the default role is **Admin** or **Organization Admin**, overrides will be disabled as these are the most permissive roles.
 
@@ -122,7 +122,7 @@ To override a code location role for an individual user:
 
 #### Team members
 
-Users in your organization can belong to one or more [teams](/dagster-cloud/account/managing-users/managing-user-teams). When determining a user's level of access, Dagster Cloud will use the **most permissive** role assigned to the user between all of their team memberships and any individual role grants.
+Users in your organization can belong to one or more [teams](/dagster-cloud/account/managing-users/managing-teams). When determining a user's level of access, Dagster Cloud will use the **most permissive** role assigned to the user between all of their team memberships and any individual role grants, whether at the deployment or code location level.
 
 For example, let's look at a user with the following roles for our `dev` deployment:
 
