@@ -1,5 +1,5 @@
+import {ServerError} from '@apollo/client';
 import {ErrorResponse, onError} from '@apollo/client/link/error';
-import {ServerError} from '@apollo/client/link/utils';
 import {Observable} from '@apollo/client/utilities';
 import {FontFamily, Toaster} from '@dagster-io/ui';
 import {GraphQLError} from 'graphql';
@@ -7,6 +7,7 @@ import memoize from 'lodash/memoize';
 import * as React from 'react';
 
 import {showCustomAlert} from './CustomAlertProvider';
+import {ERROR_CODES_TO_SURFACE, errorCodeToMessage} from './HTTPErrorCodes';
 
 interface DagsterSerializableErrorInfo {
   message: string;
@@ -40,6 +41,14 @@ const showGraphQLError = async (error: DagsterGraphQLError, operationName?: stri
   console.error('[GraphQL error]', error);
 };
 
+const showNetworkError = async (statusCode: number) => {
+  if (ERROR_CODES_TO_SURFACE.has(statusCode)) {
+    const message = errorCodeToMessage(statusCode);
+    const toaster = await getErrorToaster();
+    toaster.show({message, intent: 'warning'});
+  }
+};
+
 export const errorLink = onError((response: ErrorResponse) => {
   if (response.graphQLErrors) {
     const {graphQLErrors, operation} = response;
@@ -55,7 +64,10 @@ export const errorLink = onError((response: ErrorResponse) => {
       // to flow the error payload to the product
       return Observable.from([serverError.result]);
     }
-    // otherwise just log it
+
+    if (response.networkError && 'statusCode' in response.networkError) {
+      showNetworkError(response.networkError.statusCode);
+    }
     console.error('[Network error]', response.networkError);
   }
   return;

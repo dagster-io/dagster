@@ -2,6 +2,8 @@ import {ApolloError, QueryResult} from '@apollo/client';
 import {Box, NonIdealState, Spinner} from '@dagster-io/ui';
 import * as React from 'react';
 
+import {ERROR_CODES_TO_SURFACE, errorCodeToMessage} from '../app/HTTPErrorCodes';
+
 interface ILoadingProps<TData> {
   queryResult: QueryResult<TData, any>;
   children: (data: TData) => React.ReactNode;
@@ -41,10 +43,25 @@ export const Loading = <TData extends Record<string, any>>(props: ILoadingProps<
     if (renderError) {
       return <>{renderError(error)}</>;
     }
-    if (!error.networkError) {
+
+    const {networkError} = error;
+    if (!networkError) {
       return (
         <Box padding={64} flex={{justifyContent: 'center'}}>
           <NonIdealState icon="error" title="GraphQL Error - see console for details" />
+        </Box>
+      );
+    }
+
+    if ('statusCode' in networkError && ERROR_CODES_TO_SURFACE.has(networkError.statusCode)) {
+      const statusCode = networkError.statusCode;
+      return (
+        <Box padding={64} flex={{justifyContent: 'center'}}>
+          <NonIdealState
+            icon="error"
+            title="Network error"
+            description={errorCodeToMessage(statusCode)}
+          />
         </Box>
       );
     }
