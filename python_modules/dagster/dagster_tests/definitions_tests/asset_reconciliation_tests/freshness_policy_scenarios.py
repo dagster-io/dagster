@@ -1,7 +1,14 @@
 import datetime
 
-from dagster import AssetSelection, DailyPartitionsDefinition, SourceAsset
-from dagster._core.definitions.asset_reconciliation_sensor import AutoMaterializeReason
+from dagster import (
+    AssetSelection,
+    DailyPartitionsDefinition,
+    SourceAsset,
+)
+from dagster._core.definitions.auto_materialize_condition import (
+    DownstreamFreshnessAutoMaterializeCondition,
+    FreshnessAutoMaterializeCondition,
+)
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._seven.compat.pendulum import create_pendulum_time
 
@@ -214,11 +221,11 @@ freshness_policy_scenarios = {
         evaluation_delta=datetime.timedelta(minutes=35),
         # now that it's been awhile since that run failed, give it another attempt
         expected_run_requests=[run_request(asset_keys=["asset1", "asset2", "asset3", "asset4"])],
-        expected_materialize_reasons={
-            "asset1": {AutoMaterializeReason.downstream_freshness()},
-            "asset2": {AutoMaterializeReason.downstream_freshness()},
-            "asset3": {AutoMaterializeReason.downstream_freshness()},
-            "asset4": {AutoMaterializeReason.freshness()},
+        expected_conditions={
+            "asset1": {DownstreamFreshnessAutoMaterializeCondition()},
+            "asset2": {DownstreamFreshnessAutoMaterializeCondition()},
+            "asset3": {DownstreamFreshnessAutoMaterializeCondition()},
+            "asset4": {FreshnessAutoMaterializeCondition()},
         },
     ),
     "freshness_root_failure": AssetReconciliationScenario(
@@ -336,9 +343,9 @@ freshness_policy_scenarios = {
         unevaluated_runs=[run([f"asset{i}" for i in range(1, 6)])],
         evaluation_delta=datetime.timedelta(minutes=35),
         expected_run_requests=[run_request(asset_keys=["asset2", "asset5"])],
-        expected_materialize_reasons={
-            "asset2": {AutoMaterializeReason.downstream_freshness()},
-            "asset5": {AutoMaterializeReason.freshness()},
+        expected_conditions={
+            "asset2": {DownstreamFreshnessAutoMaterializeCondition()},
+            "asset5": {FreshnessAutoMaterializeCondition()},
         },
     ),
     "freshness_complex_subsettable": AssetReconciliationScenario(

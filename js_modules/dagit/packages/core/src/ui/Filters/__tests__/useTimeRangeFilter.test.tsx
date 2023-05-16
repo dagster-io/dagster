@@ -180,7 +180,7 @@ describe('ActiveFilterState', () => {
       />,
     );
 
-    expect(getByText(/Last 7 days/gi)).toBeInTheDocument();
+    expect(getByText(/Last 7 days/i)).toBeInTheDocument();
   });
 
   it('should render Within last 30 days filter state', () => {
@@ -193,7 +193,7 @@ describe('ActiveFilterState', () => {
       />,
     );
 
-    expect(getByText(/Last 30 days/gi)).toBeInTheDocument();
+    expect(getByText(/Last 30 days/i)).toBeInTheDocument();
   });
 
   it('should render custom filter state with lower boundary', () => {

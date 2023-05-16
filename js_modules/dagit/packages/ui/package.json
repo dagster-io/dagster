@@ -61,8 +61,8 @@
     "@storybook/addon-mdx-gfm": "^7.0.8",
     "@storybook/react": "^7.0.8",
     "@storybook/react-webpack5": "^7.0.8",
-    "@testing-library/dom": "^8.11.1",
-    "@testing-library/jest-dom": "^5.16.1",
+    "@testing-library/dom": "^9.3.0",
+    "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^14.0.0",
     "@testing-library/user-event": "^14.4.3",
     "@types/babel__core": "^7",
@@ -83,8 +83,8 @@
     "core-js": "^3.21.1",
     "eslint": "^8.6.0",
     "eslint-plugin-storybook": "^0.6.12",
-    "jest": "^29.4",
-    "jest-environment-jsdom": "^29.4",
+    "jest": "^29.5.0",
+    "jest-environment-jsdom": "^29.5.0",
     "nearest-color": "^0.4.4",
     "prettier": "2.2.1",
     "react": "^18.2.0",
@@ -100,6 +100,7 @@
     "webpack": "^5.0.0"
   },
   "resolutions": {
+    "@testing-library/dom": "^9.3.0",
     "@testing-library/user-event": "^14.4.3"
   },
   "browserslist": {

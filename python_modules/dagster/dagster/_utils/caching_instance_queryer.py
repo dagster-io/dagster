@@ -338,24 +338,29 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         # no records found with a new data version
         return None
 
-    def new_version_exists(
+    def new_version_storage_id(
         self,
         observable_source_asset_key: AssetKey,
         after_cursor: Optional[int] = None,
-    ) -> bool:
-        """Returns True if there is an asset observation of the given observable source asset key
-        after the specified cursor.
+    ) -> Optional[int]:
+        """Returns the storage id of the latest asset observation of the given observable source
+        asset key after the specified cursor, or None if no such observation exists.
 
         Args:
             observable_source_asset_key (AssetKeyPartitionKey): The observable source asset to query.
             after_cursor (Optional[int]): Filter parameter such that only records with a storage_id
                 greater than this value will be considered.
         """
-        previous_version_record = self.get_observation_record(
-            asset_key=observable_source_asset_key,
-            # we're looking for if a new version exists after `after_cursor`, so we need to know
-            # what the version was before `after_cursor`
-            before_cursor=after_cursor,
+        previous_version_record = (
+            self.get_observation_record(
+                asset_key=observable_source_asset_key,
+                # we're looking for if a new version exists after `after_cursor`, so we need to know
+                # what the version was before `after_cursor`
+                before_cursor=after_cursor,
+            )
+            # if the after_cursor is None, then no previous version can exist
+            if after_cursor is not None
+            else None
         )
         previous_version = (
             extract_data_version_from_entry(previous_version_record.event_log_entry)
@@ -368,7 +373,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             after_cursor=after_cursor,
             data_version=previous_version,
         )
-        return next_version_record is not None
+        return next_version_record.storage_id if next_version_record else None
 
     def _new_version_of_source_exists_after_asset_partition(
         self,

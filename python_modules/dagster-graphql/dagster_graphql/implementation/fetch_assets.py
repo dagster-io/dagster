@@ -60,8 +60,6 @@ from dagster_graphql.implementation.loader import (
     StaleStatusLoader,
 )
 
-from .utils import capture_error
-
 if TYPE_CHECKING:
     from ..schema.asset_graph import GrapheneAssetNode, GrapheneAssetNodeDefinitionCollision
     from ..schema.errors import GrapheneAssetNotFoundError
@@ -90,7 +88,6 @@ def _normalize_asset_cursor_str(cursor_string: Optional[str]) -> Optional[str]:
         return cursor_string
 
 
-@capture_error
 def get_assets(
     graphene_info: "ResolveInfo",
     prefix: Optional[Sequence[str]] = None,

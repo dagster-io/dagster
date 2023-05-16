@@ -2,6 +2,18 @@
 
 import * as Types from '../../graphql/types';
 
+export type PartitionDefinitionForLaunchAssetFragment = {
+  __typename: 'PartitionDefinition';
+  description: string;
+  type: Types.PartitionDefinitionType;
+  name: string | null;
+  dimensionTypes: Array<{
+    __typename: 'DimensionDefinitionType';
+    name: string;
+    dynamicPartitionsDefinitionName: string | null;
+  }>;
+};
+
 export type LaunchAssetExecutionAssetNodeFragment = {
   __typename: 'AssetNode';
   id: string;
@@ -583,18 +595,6 @@ export type LaunchAssetExecutionAssetNodeFragment = {
           >;
         };
   } | null;
-};
-
-export type PartitionDefinitionForLaunchAssetFragment = {
-  __typename: 'PartitionDefinition';
-  description: string;
-  type: Types.PartitionDefinitionType;
-  name: string | null;
-  dimensionTypes: Array<{
-    __typename: 'DimensionDefinitionType';
-    name: string;
-    dynamicPartitionsDefinitionName: string | null;
-  }>;
 };
 
 export type LaunchAssetLoaderQueryVariables = Types.Exact<{

@@ -24,6 +24,7 @@ from dagster_graphql.implementation.fetch_partition_sets import (
     get_partitions,
 )
 from dagster_graphql.implementation.fetch_runs import get_runs
+from dagster_graphql.implementation.utils import capture_error
 
 from .asset_key import GrapheneAssetKey
 from .backfill import GraphenePartitionBackfill
@@ -202,6 +203,7 @@ class GraphenePartition(graphene.ObjectType):
             mode=external_partition_set.mode,
         )
 
+    @capture_error
     def resolve_runConfigOrError(self, graphene_info: ResolveInfo):
         return get_partition_config(
             graphene_info,
@@ -210,6 +212,7 @@ class GraphenePartition(graphene.ObjectType):
             self._partition_name,
         )
 
+    @capture_error
     def resolve_tagsOrError(self, graphene_info: ResolveInfo):
         return get_partition_tags(
             graphene_info,
@@ -303,6 +306,7 @@ class GraphenePartitionSet(graphene.ObjectType):
     def resolve_id(self, _graphene_info: ResolveInfo):
         return self._external_partition_set.get_external_origin_id()
 
+    @capture_error
     def resolve_partitionsOrError(
         self,
         graphene_info: ResolveInfo,
@@ -330,6 +334,7 @@ class GraphenePartitionSet(graphene.ObjectType):
     def resolve_partitionRuns(self, graphene_info: ResolveInfo):
         return get_partition_set_partition_runs(graphene_info, self._external_partition_set)
 
+    @capture_error
     def resolve_partitionStatusesOrError(self, graphene_info: ResolveInfo):
         return get_partition_set_partition_statuses(
             graphene_info,

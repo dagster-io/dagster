@@ -609,6 +609,18 @@ export function buildAssetCollisionsAlert(data: LaunchAssetLoaderQuery) {
   };
 }
 
+const PARTITION_DEFINITION_FOR_LAUNCH_ASSET_FRAGMENT = gql`
+  fragment PartitionDefinitionForLaunchAssetFragment on PartitionDefinition {
+    description
+    type
+    name
+    dimensionTypes {
+      name
+      dynamicPartitionsDefinitionName
+    }
+  }
+`;
+
 const LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT = gql`
   fragment LaunchAssetExecutionAssetNodeFragment on AssetNode {
     id
@@ -617,7 +629,7 @@ const LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT = gql`
     graphName
     hasMaterializePermission
     partitionDefinition {
-      ...PartitionDefinitionForLaunchAsset
+      ...PartitionDefinitionForLaunchAssetFragment
     }
     isObservable
     isSource
@@ -641,17 +653,8 @@ const LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT = gql`
     ...AssetNodeConfigFragment
   }
 
-  fragment PartitionDefinitionForLaunchAsset on PartitionDefinition {
-    description
-    type
-    name
-    dimensionTypes {
-      name
-      dynamicPartitionsDefinitionName
-    }
-  }
-
   ${ASSET_NODE_CONFIG_FRAGMENT}
+  ${PARTITION_DEFINITION_FOR_LAUNCH_ASSET_FRAGMENT}
 `;
 
 export const LAUNCH_ASSET_LOADER_QUERY = gql`

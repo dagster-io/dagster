@@ -20,9 +20,12 @@ import sqlalchemy.exc as db_exc
 from sqlalchemy.engine import Connection
 
 import dagster._check as check
+from dagster._core.definitions.asset_reconciliation_sensor import AutoMaterializeAssetEvaluation
+from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.scheduler.instigation import (
+    AutoMaterializeAssetEvaluationRecord,
     InstigatorState,
     InstigatorStatus,
     InstigatorTick,
@@ -41,7 +44,13 @@ from .migration import (
     SCHEDULE_JOBS_SELECTOR_ID,
     SCHEDULE_TICKS_SELECTOR_ID,
 )
-from .schema import InstigatorsTable, JobTable, JobTickTable, SecondaryIndexMigrationTable
+from .schema import (
+    AssetPolicyEvaluationsTable,
+    InstigatorsTable,
+    JobTable,
+    JobTickTable,
+    SecondaryIndexMigrationTable,
+)
 
 T_NamedTuple = TypeVar("T_NamedTuple", bound=NamedTuple)
 
@@ -445,6 +454,59 @@ class SqlScheduleStorage(ScheduleStorage):
 
         with self.connect() as conn:
             conn.execute(query)
+
+    def add_auto_materialize_asset_evaluations(
+        self,
+        evaluation_id: int,
+        asset_evaluations: Sequence[AutoMaterializeAssetEvaluation],
+    ):
+        if not asset_evaluations:
+            return
+
+        with self.connect() as conn:
+            bulk_insert = AssetPolicyEvaluationsTable.insert().values(
+                [
+                    {
+                        "evaluation_id": evaluation_id,
+                        "asset_key": evaluation.asset_key.to_string(),
+                        "asset_evaluation_body": serialize_value(evaluation),
+                        "num_requested": evaluation.num_requested,
+                        "num_skipped": evaluation.num_skipped,
+                        "num_discarded": evaluation.num_discarded,
+                    }
+                    for evaluation in asset_evaluations
+                ]
+            )
+            conn.execute(bulk_insert)
+
+    def get_auto_materialize_asset_evaluations(
+        self, asset_key: AssetKey, limit: int, cursor: Optional[int] = None
+    ) -> Sequence[AutoMaterializeAssetEvaluationRecord]:
+        with self.connect() as conn:
+            query = (
+                db.select(
+                    [
+                        AssetPolicyEvaluationsTable.c.asset_evaluation_body,
+                        AssetPolicyEvaluationsTable.c.evaluation_id,
+                    ]
+                )
+                .where(AssetPolicyEvaluationsTable.c.asset_key == asset_key.to_string())
+                .order_by(AssetPolicyEvaluationsTable.c.evaluation_id.desc())
+            ).limit(limit)
+
+            if cursor:
+                query = query.where(AssetPolicyEvaluationsTable.c.evaluation_id < cursor)
+
+            rows = conn.execute(query)
+            return [
+                AutoMaterializeAssetEvaluationRecord(
+                    evaluation=deserialize_value(
+                        row["asset_evaluation_body"], AutoMaterializeAssetEvaluation
+                    ),
+                    evaluation_id=row["evaluation_id"],
+                )
+                for row in rows
+            ]
 
     def wipe(self) -> None:
         """Clears the schedule storage."""

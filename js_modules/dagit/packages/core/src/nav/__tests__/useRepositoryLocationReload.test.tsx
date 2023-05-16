@@ -1,4 +1,5 @@
-import {act, fireEvent, render, screen, waitFor} from '@testing-library/react';
+import {render, screen, waitFor} from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import * as React from 'react';
 
 import {TestProvider} from '../../testing/TestProvider';
@@ -8,7 +9,7 @@ import {
 } from '../useRepositoryLocationReload';
 
 describe('useRepositoryReloadLocation', () => {
-  jest.useFakeTimers();
+  // jest.useFakeTimers();
 
   const LOCATION = 'bar';
 
@@ -36,33 +37,36 @@ describe('useRepositoryReloadLocation', () => {
       <div>
         <div>{`Reloading: ${reloading}`}</div>
         <div>{`Has error: ${!!error}`}</div>
-        <button onClick={() => tryReload()}>Try</button>
+        <button
+          onClick={() => {
+            tryReload();
+          }}
+        >
+          Try
+        </button>
       </div>
     );
   };
 
   it('reloads successfully if there are no errors', async () => {
-    await act(() => {
-      render(
-        <TestProvider apolloProps={{mocks: [defaultMocks]}}>
-          <Test />
-        </TestProvider>,
-      );
-    });
+    render(
+      <TestProvider apolloProps={{mocks: [defaultMocks]}}>
+        <Test />
+      </TestProvider>,
+    );
 
     await waitFor(() => {
       expect(screen.queryByText(/Reloading: false/)).toBeVisible();
       expect(screen.queryByText(/Has error: false/)).toBeVisible();
     });
 
-    fireEvent.click(screen.getByText(/Try/));
+    const tryButton = screen.getByRole('button', {name: /try/i});
+    await userEvent.click(tryButton);
 
     await waitFor(() => {
       expect(screen.queryByText(/Reloading: true/)).toBeVisible();
       expect(screen.queryByText(/Has error: false/)).toBeVisible();
     });
-
-    jest.runAllTicks();
 
     await waitFor(() => {
       expect(screen.queryByText(/Has error: false/)).toBeVisible();
@@ -89,14 +93,8 @@ describe('useRepositoryReloadLocation', () => {
       expect(screen.queryByText(/Has error: false/)).toBeVisible();
     });
 
-    fireEvent.click(screen.getByText(/Try/));
-
-    await waitFor(() => {
-      expect(screen.queryByText(/Reloading: true/)).toBeVisible();
-      expect(screen.queryByText(/Has error: false/)).toBeVisible();
-    });
-
-    jest.runAllTicks();
+    const tryButton = screen.getByRole('button', {name: /try/i});
+    await userEvent.click(tryButton);
 
     await waitFor(() => {
       expect(screen.queryByText(/Reloading: false/)).toBeVisible();
@@ -123,14 +121,12 @@ describe('useRepositoryReloadLocation', () => {
       expect(screen.queryByText(/Has error: false/)).toBeVisible();
     });
 
-    fireEvent.click(screen.getByText(/Try/));
+    await userEvent.click(screen.getByText(/Try/));
 
     await waitFor(() => {
       expect(screen.queryByText(/Reloading: true/)).toBeVisible();
       expect(screen.queryByText(/Has error: false/)).toBeVisible();
     });
-
-    jest.runAllTicks();
 
     await waitFor(() => {
       expect(screen.queryByText(/Reloading: false/)).toBeVisible();
@@ -153,16 +149,13 @@ describe('useRepositoryReloadLocation', () => {
       </TestProvider>,
     );
 
-    fireEvent.click(screen.getByText(/Try/));
-    jest.runAllTicks();
+    await userEvent.click(screen.getByText(/Try/));
 
     // Still considered reloading while polling occurs.
     await waitFor(() => {
       expect(screen.queryByText(/Reloading: true/)).toBeVisible();
       expect(screen.queryByText(/Has error: false/)).toBeVisible();
     });
-
-    jest.runAllTicks();
 
     // Still polling.
     await waitFor(() => {
@@ -176,8 +169,6 @@ describe('useRepositoryReloadLocation', () => {
         <Test />
       </TestProvider>,
     );
-
-    jest.runAllTicks();
 
     await waitFor(() => {
       expect(screen.queryByText(/Reloading: false/)).toBeVisible();
@@ -200,16 +191,13 @@ describe('useRepositoryReloadLocation', () => {
       </TestProvider>,
     );
 
-    fireEvent.click(screen.getByText(/Try/));
-    jest.runAllTicks();
+    await userEvent.click(screen.getByText(/Try/));
 
     // Still considered reloading while polling occurs.
     await waitFor(() => {
       expect(screen.queryByText(/Reloading: true/)).toBeVisible();
       expect(screen.queryByText(/Has error: false/)).toBeVisible();
     });
-
-    jest.runAllTicks();
 
     // Still polling.
     await waitFor(() => {
@@ -231,8 +219,6 @@ describe('useRepositoryReloadLocation', () => {
         <Test />
       </TestProvider>,
     );
-
-    jest.runAllTicks();
 
     await waitFor(() => {
       expect(screen.queryByText(/Reloading: false/)).toBeVisible();

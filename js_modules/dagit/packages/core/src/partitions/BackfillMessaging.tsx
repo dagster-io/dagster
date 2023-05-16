@@ -130,7 +130,7 @@ export const DaemonNotRunningAlertBody = () => (
   />
 );
 
-export const USING_DEFAULT_LAUNCH_ERALERT_INSTANCE_FRAGMENT = gql`
+export const USING_DEFAULT_LAUNCHER_ALERT_INSTANCE_FRAGMENT = gql`
   fragment UsingDefaultLauncherAlertInstanceFragment on Instance {
     id
     runQueuingSupported
