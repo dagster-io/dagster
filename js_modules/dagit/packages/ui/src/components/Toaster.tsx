@@ -10,7 +10,7 @@ import {createToaster} from './createToaster';
 export const GlobalToasterStyle = createGlobalStyle`
   .dagster-toaster {
     .bp4-toast {
-      padding: 6px;
+      padding: 8px 12px;
       border-radius: 8px;
       font-size: 14px;
       line-height: 22px;
@@ -40,14 +40,17 @@ export const GlobalToasterStyle = createGlobalStyle`
     }
 
     .bp4-toast.bp4-intent-warning,
-    .bp4-toast.bp4-intent-warning .bp4-button,
+    .bp4-toast.bp4-intent-warning .bp4-button {
+      background-color: ${Colors.Gray700} !important;
+
+      .bp4-icon-cross {
+        color: ${Colors.Gray300} !important;
+      }
+    }
+
     .bp4-toast.bp4-intent-danger,
     .bp4-toast.bp4-intent-danger .bp4-button {
       background-color: ${Colors.Red500} !important;
-    }
-
-    .bp4-toast .bp4-icon-cross {
-      color: ${Colors.Gray100};
     }
   }
 `;

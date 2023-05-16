@@ -1,4 +1,4 @@
-import {Box, Colors, ExternalAnchorButton, NonIdealState, Spinner} from '@dagster-io/ui';
+import {Box, Colors, Spinner} from '@dagster-io/ui';
 import * as React from 'react';
 import {Redirect, Route, Switch} from 'react-router-dom';
 
@@ -79,26 +79,7 @@ const FinalRedirectOrLoadingRoot = () => {
     return <Redirect to="/overview" />;
   }
 
-  const repoWithNoJob = allRepos[0];
-
-  return (
-    <Box padding={{vertical: 64}}>
-      <NonIdealState
-        icon="no-results"
-        title={repoWithNoJob ? 'No jobs' : 'No definitions'}
-        description={
-          repoWithNoJob
-            ? 'Your definitions are loaded, but no jobs were found.'
-            : 'Add a job to get started.'
-        }
-        action={
-          <ExternalAnchorButton href="https://docs.dagster.io/getting-started">
-            View documentation
-          </ExternalAnchorButton>
-        }
-      />
-    </Box>
-  );
+  return <Redirect to="/locations" />;
 };
 
 // Imported via React.lazy, which requires a default export.
