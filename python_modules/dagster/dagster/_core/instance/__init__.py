@@ -813,10 +813,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
     @property
     def run_monitoring_max_resume_run_attempts(self) -> int:
-        default_max_resume_run_attempts = 3 if self.run_launcher.supports_resume_run else 0
-        return self.run_monitoring_settings.get(
-            "max_resume_run_attempts", default_max_resume_run_attempts
-        )
+        return self.run_monitoring_settings.get("max_resume_run_attempts", 0)
 
     @property
     def run_monitoring_poll_interval_seconds(self) -> int:

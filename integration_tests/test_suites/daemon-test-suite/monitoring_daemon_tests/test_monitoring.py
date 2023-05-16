@@ -57,7 +57,11 @@ def test_monitoring():
     # with setup_instance() as instance:
     with instance_for_test(
         {
-            "run_monitoring": {"enabled": True, "poll_interval_seconds": 5},
+            "run_monitoring": {
+                "enabled": True,
+                "poll_interval_seconds": 5,
+                "max_resume_run_attempts": 3,
+            },
             "run_launcher": {
                 "class": "DockerRunLauncher",
                 "module": "dagster_docker",
@@ -104,7 +108,7 @@ def test_docker_monitoring():
 
     with docker_postgres_instance(
         {
-            "run_monitoring": {"enabled": True},
+            "run_monitoring": {"enabled": True, "max_resume_run_attempts": 3},
             "run_launcher": {
                 "class": "DockerRunLauncher",
                 "module": "dagster_docker",

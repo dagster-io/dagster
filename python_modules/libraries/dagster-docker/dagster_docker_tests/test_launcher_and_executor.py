@@ -218,7 +218,7 @@ def test_recovery(aws_env):
                 "module": "dagster_docker",
                 "config": launcher_config,
             },
-            "run_monitoring": {"enabled": True},
+            "run_monitoring": {"enabled": True, "max_resume_run_attempts": 3},
         }
     ) as instance:
         recon_job = get_test_project_recon_job("demo_slow_job_docker", docker_image)

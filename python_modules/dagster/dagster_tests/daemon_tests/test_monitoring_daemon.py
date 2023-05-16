@@ -97,7 +97,7 @@ def instance():
                 "module": "dagster_tests.daemon_tests.test_monitoring_daemon",
                 "class": "TestRunLauncher",
             },
-            "run_monitoring": {"enabled": True},
+            "run_monitoring": {"enabled": True, "max_resume_run_attempts": 3},
         },
     ) as instance:
         yield instance
