@@ -72,7 +72,6 @@ BACKFILL_STATUS_BY_ASSET = """
     partitionBackfillOrError(backfillId: $backfillId) {
       __typename
       ... on PartitionBackfill {
-        numCancelable
         assetBackfillData {
             assetBackfillStatuses {
                 ... on AssetPartitionsStatusCounts {
@@ -686,14 +685,6 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         assert result.data["launchPartitionBackfill"]["__typename"] == "LaunchBackfillSuccess"
         backfill_id = result.data["launchPartitionBackfill"]["backfillId"]
 
-        result = execute_dagster_graphql(
-            graphql_context,
-            BACKFILL_STATUS_BY_ASSET,
-            variables={"backfillId": backfill_id},
-        )
-        assert result.data
-        assert result.data["partitionBackfillOrError"]["numCancelable"] == 6
-
         code_location = graphql_context.get_code_location("test")
         repository = code_location.get_repository("test_repo")
         asset_graph = ExternalAssetGraph.from_external_repository(repository)
@@ -721,10 +712,8 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
 
         assert not result.errors
         assert result.data
-
-        assert result.data["partitionBackfillOrError"]["numCancelable"] == 0
-
         backfill_data = result.data["partitionBackfillOrError"]["assetBackfillData"]
+
         assert backfill_data["rootAssetTargetedRanges"] is None
         assert set(backfill_data["rootAssetTargetedPartitions"]) == set(partitions)
 

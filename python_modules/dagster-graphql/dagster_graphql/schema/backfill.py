@@ -260,7 +260,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         return self._backfill_job.get_num_partitions(_graphene_info.context)
 
     def resolve_numCancelable(self, _graphene_info: ResolveInfo) -> int:
-        return self._backfill_job.get_num_cancelable(_graphene_info.context)
+        return self._backfill_job.get_num_cancelable()
 
     def resolve_partitionSet(self, graphene_info: ResolveInfo) -> Optional["GraphenePartitionSet"]:
         from ..schema.partition_sets import GraphenePartitionSet
