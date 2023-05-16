@@ -1,6 +1,7 @@
 import sys
 import tempfile
 import time
+import unittest
 from datetime import datetime, timedelta
 
 import pendulum
@@ -1036,8 +1037,9 @@ class TestRunStorage:
 
         assert len(run_group_two[1]) == 7
 
-        assert run_group_one[0] == run_group_two[0]
-        assert run_group_one[1] == run_group_two[1]
+        # The order of runs in each run run group is not deterministic
+        unittest.TestCase().assertCountEqual(run_group_one[0], run_group_two[0])
+        unittest.TestCase().assertCountEqual(run_group_one[1], run_group_two[1])
 
     def test_fetch_run_group_not_found(self, storage: RunStorage):
         assert storage
