@@ -301,9 +301,7 @@ class StepDelegatingExecutor(Executor):
                 else:
                     max_steps_to_run = None  # disables limit
 
-                for step in active_execution.get_steps_to_execute(
-                    max_steps_to_run, register_steps=True
-                ):
+                for step in active_execution.get_steps_to_execute(max_steps_to_run):
                     running_steps[step.key] = step
                     list(
                         self._step_handler.launch_step(
