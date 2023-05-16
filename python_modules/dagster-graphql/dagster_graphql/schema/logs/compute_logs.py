@@ -1,3 +1,4 @@
+import chardet
 import dagster._check as check
 import graphene
 from dagster._core.storage.captured_log_manager import CapturedLogData
@@ -62,10 +63,15 @@ class GrapheneComputeLogs(graphene.ObjectType):
 
 
 def from_captured_log_data(log_data: CapturedLogData):
+    # on windows, log is not always be utf-8 encoded, so we need to detect the encoding
+    out_encoding = chardet.detect(log_data.stdout)['encoding'] # type: ignore
+    out_encoding = out_encoding if out_encoding is not None else "utf-8"
+    err_encoding = chardet.detect(log_data.stderr)['encoding'] # type: ignore
+    err_encoding = err_encoding if err_encoding is not None else "utf-8"
     return GrapheneCapturedLogs(
         logKey=log_data.log_key,
-        stdout=log_data.stdout.decode("utf-8") if log_data.stdout else None,
-        stderr=log_data.stderr.decode("utf-8") if log_data.stderr else None,
+        stdout=log_data.stdout.decode(out_encoding) if log_data.stdout else None,
+        stderr=log_data.stderr.decode(err_encoding) if log_data.stderr else None,
         cursor=log_data.cursor,
     )
 
