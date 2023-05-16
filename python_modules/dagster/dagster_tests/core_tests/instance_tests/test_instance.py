@@ -463,7 +463,7 @@ def test_run_monitoring(capsys):
     ) as instance:
         assert instance.run_monitoring_enabled
         assert instance.run_monitoring_settings == settings
-        assert instance.run_monitoring_max_resume_run_attempts == 3
+        assert instance.run_monitoring_max_resume_run_attempts == 0
 
     settings = {"enabled": True, "max_resume_run_attempts": 5}
     with instance_for_test(
