@@ -188,10 +188,10 @@ def worker_start_command(
 
     env = os.environ.copy()
     if pythonpath is not None:
-        env["PYTHONPATH"] = "{existing_pythonpath}:{pythonpath}:".format(
-            existing_pythonpath=env.get("PYTHONPATH", ""), pythonpath=pythonpath
-        )
-
+        existing_pythonpath = env.get("PYTHONPATH", "")
+        if existing_pythonpath and not existing_pythonpath.endswith(os.pathsep):
+            existing_pythonpath += os.pathsep
+        env["PYTHONPATH"] = f"{existing_pythonpath}{pythonpath}{os.pathsep}"
     if background:
         launch_background_worker(subprocess_args, env=env)
     else:
