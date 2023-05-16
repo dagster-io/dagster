@@ -46,7 +46,7 @@ JobTickTable = db.Table(
     db.Column("update_timestamp", db.DateTime, server_default=get_current_timestamp()),
 )
 
-AssetPolicyEvaluationsTable = db.Table(
+AssetDaemonAssetEvaluationsTable = db.Table(
     "asset_daemon_asset_evaluations",
     ScheduleStorageSqlMetadata,
     db.Column(
@@ -89,7 +89,7 @@ db.Index("idx_tick_selector_timestamp", JobTickTable.c.selector_id, JobTickTable
 
 db.Index(
     "idx_asset_daemon_asset_evaluations_asset_key_evaluation_id",
-    AssetPolicyEvaluationsTable.c.asset_key,
-    AssetPolicyEvaluationsTable.c.evaluation_id,
+    AssetDaemonAssetEvaluationsTable.c.asset_key,
+    AssetDaemonAssetEvaluationsTable.c.evaluation_id,
     unique=True,
 )

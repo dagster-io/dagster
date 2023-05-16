@@ -45,7 +45,7 @@ from .migration import (
     SCHEDULE_TICKS_SELECTOR_ID,
 )
 from .schema import (
-    AssetPolicyEvaluationsTable,
+    AssetDaemonAssetEvaluationsTable,
     InstigatorsTable,
     JobTable,
     JobTickTable,
@@ -468,7 +468,7 @@ class SqlScheduleStorage(ScheduleStorage):
             return
 
         with self.connect() as conn:
-            bulk_insert = AssetPolicyEvaluationsTable.insert().values(
+            bulk_insert = AssetDaemonAssetEvaluationsTable.insert().values(
                 [
                     {
                         "evaluation_id": evaluation_id,
@@ -490,16 +490,16 @@ class SqlScheduleStorage(ScheduleStorage):
             query = (
                 db.select(
                     [
-                        AssetPolicyEvaluationsTable.c.asset_evaluation_body,
-                        AssetPolicyEvaluationsTable.c.evaluation_id,
+                        AssetDaemonAssetEvaluationsTable.c.asset_evaluation_body,
+                        AssetDaemonAssetEvaluationsTable.c.evaluation_id,
                     ]
                 )
-                .where(AssetPolicyEvaluationsTable.c.asset_key == asset_key.to_string())
-                .order_by(AssetPolicyEvaluationsTable.c.evaluation_id.desc())
+                .where(AssetDaemonAssetEvaluationsTable.c.asset_key == asset_key.to_string())
+                .order_by(AssetDaemonAssetEvaluationsTable.c.evaluation_id.desc())
             ).limit(limit)
 
             if cursor:
-                query = query.where(AssetPolicyEvaluationsTable.c.evaluation_id < cursor)
+                query = query.where(AssetDaemonAssetEvaluationsTable.c.evaluation_id < cursor)
 
             rows = conn.execute(query)
             return [
@@ -521,7 +521,7 @@ class SqlScheduleStorage(ScheduleStorage):
             if self._has_instigators_table(conn):
                 conn.execute(InstigatorsTable.delete())
             if self._has_asset_daemon_asset_evaluations_table(conn):
-                conn.execute(AssetPolicyEvaluationsTable.delete())
+                conn.execute(AssetDaemonAssetEvaluationsTable.delete())
 
     # MIGRATIONS
 
