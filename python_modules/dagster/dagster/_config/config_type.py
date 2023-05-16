@@ -97,6 +97,9 @@ class ConfigType:
         """
         return value
 
+    def post_process_translate_enum(self, value):
+        return self.post_process(value)
+
     def get_snapshot(self) -> "ConfigTypeSnap":
         from .snap import snap_from_config_type
 
@@ -166,6 +169,9 @@ class Float(BuiltinConfigScalar):
 
     def post_process(self, value):
         return float(value)
+
+    def post_process_translate_enum(self, value):
+        return self.post_process(value)
 
 
 class Any(ConfigType):
@@ -320,6 +326,15 @@ class Enum(ConfigType):
                 "Should never reach this. config_value should be pre-validated. Got {config_value}"
             ).format(config_value=value)
         )
+
+    def post_process_translate_enum(self, value):
+        """Translates an enum from a python value back to its config value.
+        """
+        if isinstance(value, str):
+            for ev in self.enum_values:
+                if ev.python_value == value:
+                    return ev.config_value
+        return self.post_process(value)
 
     @classmethod
     def from_python_enum(cls, enum, name=None):

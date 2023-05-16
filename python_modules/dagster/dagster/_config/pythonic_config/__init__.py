@@ -35,12 +35,12 @@ from dagster._config.config_type import (
     Noneable,
 )
 from dagster._config.field_utils import config_dictionary_from_values
-from dagster._config.post_process import resolve_defaults
+from dagster._config.post_process import resolve_defaults, translate_enums
 from dagster._config.pythonic_config.typing_utils import (
     TypecheckAllowPartialResourceInitParams,
 )
 from dagster._config.source import BoolSource, IntSource, StringSource
-from dagster._config.validate import process_config, validate_config
+from dagster._config.validate import validate_config
 from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.definition_config_schema import (
     CoercableToConfigSchema,
@@ -416,24 +416,6 @@ def copy_with_default(old_field: Field, new_config_value: Any) -> Field:
         is_required=False,
         description=old_field.description,
     )
-
-
-def _process_config_values(
-    schema_field: Field, data: Mapping[str, Any], config_obj_name: str
-) -> Mapping[str, Any]:
-    post_processed_config = process_config(
-        schema_field.config_type, config_dictionary_from_values(data, schema_field)
-    )
-
-    if not post_processed_config.success:
-        raise DagsterInvalidConfigError(
-            f"Error while processing {config_obj_name} config ",
-            post_processed_config.errors,
-            data,
-        )
-    assert post_processed_config.value is not None
-
-    return post_processed_config.value or {}
 
 
 def _curry_config_schema(schema_field: Field, data: Any) -> DefinitionConfigSchema:
@@ -891,46 +873,24 @@ class ConfigurableResourceFactory(
         )
         return out
 
-    def _resolve_and_update_configuration_values(
-        self, context: InitResourceContext
-    ) -> "ConfigurableResourceFactory[TResValue]":
-        """Processes the config dictionary attached to the resource to resolve any EnvVar values. As well
-        as overrides any values passed in via run_config (attached to the InitResourceContext).
-
-        This is called at runtime when the resource is initialized, so the user is only shown
-        the errors involving environment variable resolution if they attempt to kick off a
-        run relying on this resource.
+    def _resolve_and_update_env_vars(self, context: "InitResourceContext") -> "ConfigurableResourceFactory[TResValue]":
+        """Processes the config dictionary to resolve any EnvVar values. This is called at runtime
+        when the resource is initialized, so the user is only shown the error if they attempt to
+        kick off a run relying on this resource.
 
         Returns a new instance of the resource.
         """
-        # This is the configuration passed via run_config (e.g. launchpad or Python API)
+        enum_translation = translate_enums(self._schema.config_type, context.resource_config)
+        if not enum_translation.success:
+            raise DagsterInvalidConfigError(
+                f"Error while processing {self.__class__.__name__} config ",
+                enum_translation.errors,
+                context.resource_config,
+            )
+        check.not_none(enum_translation.value)
 
-        # Note right now we do not validate config, and that is a real problem. I added
-        # a test case in this PR to demonstrate in test_env_var_alongside_enum
-        #
-        # The problem is with enumerations. Process config converts dagster config enumerations
-        # to their underlying value. This in turn gets passed back to ConfigurableResourceFactory.__init__
-        # which in turn validates config again, and it fails because on the inbound Dagster config enums
-        # expect the NAME, not the VALUE.
-        #
-        # Effectively right now this codepath relies on the fact that you can passed validated
-        # and processed config back into ConfigurableResourceFactory.__init__ idempotently and
-        # enums break # that assumption. (Environment variable resolution for example works
-        # fine because the initial evaluation resolves the env var to its value, and subsequent
-        # evaluations are idempotent)
 
-        incoming_resource_config_evr = process_config(
-            self._schema.config_type, context.resource_config
-        )
-
-        # this is the data that was passed to the resource instance
-        post_processed_data = _process_config_values(
-            self._schema, self._resolved_config_dict, self.__class__.__name__
-        )
-
-        return self._with_updated_values(
-            {**post_processed_data, **(incoming_resource_config_evr.value or {})}
-        )
+        return self._with_updated_values(context.resource_config) # type: ignore (must be a dict)
 
     @contextlib.contextmanager
     def _resolve_and_update_nested_resources(
@@ -981,7 +941,6 @@ class ConfigurableResourceFactory(
         """Returns a new instance of the resource with the given resource init context bound."""
         # This utility is used to create a copy of this resource, without adjusting
         # any values in this case
-
         copy = self._with_updated_values({})
         copy._state__internal__ = copy._state__internal__._replace(  # noqa: SLF001
             resource_context=resource_context
@@ -992,7 +951,7 @@ class ConfigurableResourceFactory(
         with self._resolve_and_update_nested_resources(context) as has_nested_resource:
             updated_resource = has_nested_resource.with_resource_context(  # noqa: SLF001
                 context
-            )._resolve_and_update_configuration_values(context)
+            )._resolve_and_update_env_vars(context)
 
             updated_resource.setup_for_execution(context)
             return updated_resource.create_resource(context)
@@ -1004,7 +963,7 @@ class ConfigurableResourceFactory(
         with self._resolve_and_update_nested_resources(context) as has_nested_resource:
             updated_resource = has_nested_resource.with_resource_context(  # noqa: SLF001
                 context
-            )._resolve_and_update_configuration_values(context)
+            )._resolve_and_update_env_vars(context)
 
             with updated_resource.yield_for_execution(context) as value:
                 yield value
