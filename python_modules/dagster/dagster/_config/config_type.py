@@ -328,13 +328,9 @@ class Enum(ConfigType):
         )
 
     def post_process_translate_enum(self, value):
-        """Translates an enum from a python value back to its config value.
+        """Pass through enum value as is (assumes that config processing has already occurred once).
         """
-        if isinstance(value, str):
-            for ev in self.enum_values:
-                if ev.python_value == value:
-                    return ev.config_value
-        return self.post_process(value)
+        return value
 
     @classmethod
     def from_python_enum(cls, enum, name=None):

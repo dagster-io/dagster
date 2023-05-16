@@ -245,6 +245,7 @@ def _recurse_in_to_map(context: TraversalContext, config_value: Any) -> Evaluate
 
     return EvaluateValueResult.for_value({key: result.value for key, result in results.items()})
 
+
 def _recursively_translate_enums(
     context: TraversalContext, config_value: Any
 ) -> EvaluateValueResult[Any]:
@@ -256,6 +257,7 @@ def _recursively_translate_enums(
         return _post_process_enum_translation(context, evr.value)
     else:
         return evr
+
 
 def _recurse_in_to_selector_translate_enums(
     context: TraversalContext, config_value: Mapping[str, Any]
@@ -346,7 +348,9 @@ def _recurse_in_to_shape_translate_enums(
     )
 
 
-def _recurse_in_to_array_translate_enums(context: TraversalContext, config_value: Any) -> EvaluateValueResult[Any]:
+def _recurse_in_to_array_translate_enums(
+    context: TraversalContext, config_value: Any
+) -> EvaluateValueResult[Any]:
     check.invariant(context.config_type.kind == ConfigTypeKind.ARRAY, "Unexpected non array type")
 
     if not config_value:
@@ -372,7 +376,9 @@ def _recurse_in_to_array_translate_enums(context: TraversalContext, config_value
     return EvaluateValueResult.for_value([result.value for result in results])
 
 
-def _recurse_in_to_map_translate_enums(context: TraversalContext, config_value: Any) -> EvaluateValueResult[Any]:
+def _recurse_in_to_map_translate_enums(
+    context: TraversalContext, config_value: Any
+) -> EvaluateValueResult[Any]:
     check.invariant(
         context.config_type.kind == ConfigTypeKind.MAP,
         "Unexpected non map type",
@@ -404,6 +410,7 @@ def _recurse_in_to_map_translate_enums(context: TraversalContext, config_value: 
 
     return EvaluateValueResult.for_value({key: result.value for key, result in results.items()})
 
+
 def _recurse_in_to_scalar_union_translate_enums(
     context: TraversalContext, config_value: Any
 ) -> EvaluateValueResult[Any]:
@@ -415,6 +422,7 @@ def _recurse_in_to_scalar_union_translate_enums(
         return _recursively_translate_enums(
             context.for_new_config_type(context.config_type.scalar_type), config_value  # type: ignore
         )
+
 
 def _recursively_resolve_defaults_enum_translation(
     context: TraversalContext, config_value: Any
@@ -446,7 +454,9 @@ def _recursively_resolve_defaults_enum_translation(
         check.failed(f"Unsupported type {context.config_type.key}")
 
 
-def _post_process_enum_translation(context: TraversalContext, config_value: Any) -> EvaluateValueResult[Any]:
+def _post_process_enum_translation(
+    context: TraversalContext, config_value: Any
+) -> EvaluateValueResult[Any]:
     try:
         new_value = context.config_type.post_process_translate_enum(config_value)
         return EvaluateValueResult.for_value(new_value)
@@ -455,6 +465,7 @@ def _post_process_enum_translation(context: TraversalContext, config_value: Any)
         return EvaluateValueResult.for_error(
             create_failed_post_processing_error(context, config_value, error_data)
         )
+
 
 def translate_enums(config_type: ConfigType, config_value: Any) -> EvaluateValueResult[Any]:
     """Translate a config value from a string to an enum value."""

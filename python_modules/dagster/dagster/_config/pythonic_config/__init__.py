@@ -873,14 +873,19 @@ class ConfigurableResourceFactory(
         )
         return out
 
-    def _resolve_and_update_env_vars(self, context: "InitResourceContext") -> "ConfigurableResourceFactory[TResValue]":
+    def _resolve_and_update_env_vars(
+        self, context: "InitResourceContext"
+    ) -> "ConfigurableResourceFactory[TResValue]":
         """Processes the config dictionary to resolve any EnvVar values. This is called at runtime
         when the resource is initialized, so the user is only shown the error if they attempt to
         kick off a run relying on this resource.
 
         Returns a new instance of the resource.
         """
-        enum_translation = translate_enums(self._schema.config_type, context.resource_config)
+        config_dict = config_dictionary_from_values(context.resource_config, self._schema) # Converts EnvVars to requisite config types
+
+        # Perform post-processing step which also resolves any environment variables
+        enum_translation = translate_enums(self._schema.config_type, config_dict)
         if not enum_translation.success:
             raise DagsterInvalidConfigError(
                 f"Error while processing {self.__class__.__name__} config ",
@@ -889,8 +894,7 @@ class ConfigurableResourceFactory(
             )
         check.not_none(enum_translation.value)
 
-
-        return self._with_updated_values(context.resource_config) # type: ignore (must be a dict)
+        return self._with_updated_values(enum_translation.value)  # type: ignore (must be a dict)
 
     @contextlib.contextmanager
     def _resolve_and_update_nested_resources(

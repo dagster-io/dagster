@@ -54,6 +54,27 @@ def test_env_var_alongside_enum() -> None:
 
     executed.clear()
 
+    # Case: I'm re-specifying the same env var value at runtime for the env var
+    with environ(
+        {
+            "ENV_VARIABLE_FOR_TEST": "SOME_VALUE",
+        }
+    ):
+        result = defs.get_implicit_global_asset_job_def().execute_in_process(
+            run_config={
+                "resources": {
+                    "a_resource": {
+                        "config": {"a_str": EnvVar("ENV_VARIABLE_FOR_TEST"), "my_enum": "BAR"}
+                    }
+                }
+            }
+        )
+
+        # Fails with output being `ENV_VARIABLE_FOR_TEST` instead of `SOME_VALUE`
+        assert result.success
+        assert result.output_for_node("an_asset") == ("BAR", "SOME_VALUE")
+        assert executed["yes"]
+
     # Case: I'm using a new value specified at runtime for the enum, and then using a new env var specified at instantiation time for the string.
     with environ(
         {
@@ -70,24 +91,16 @@ def test_env_var_alongside_enum() -> None:
             }
         )
 
-        # This is incorrect right now. In _resolve_and_update_configuration_values
-        # the process step fails against passed in config, so the original value passed
-        # in the definitinos constructor is used.
-
+        # Fails with output being `OTHER_ENV_VARIABLE_FOR_TEST` instead of `SOME_VALUE`
         assert result.success
         assert result.output_for_node("an_asset") == ("BAR", "OTHER_VALUE")
         assert executed["yes"]
 
     # Case: I'm using the default value provided by resource instantiation to the enum, and then using a value specified at runtime for the string.
     result = defs.get_implicit_global_asset_job_def().execute_in_process(
-        run_config={
-            "resources": {
-                "a_resource": {
-                    "config": {"a_str": "foo", "my_enum": "BAR"}
-                }
-            }
-        }
+        run_config={"resources": {"a_resource": {"config": {"a_str": "foo", "my_enum": "BAR"}}}}
     )
+
 
 def test_env_var() -> None:
     with environ(
