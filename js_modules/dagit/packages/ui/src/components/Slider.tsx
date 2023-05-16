@@ -41,6 +41,10 @@ export const SliderStyles = css<{$fillColor: string}>`
       height: 8px;
     }
   }
+  &.bp4-vertical {
+    width: 20px;
+    min-width: 20px;
+  }
   &.bp4-vertical .bp4-slider-track,
   &.bp4-vertical .bp4-slider-track .bp4-slider-progress {
     height: initial;
