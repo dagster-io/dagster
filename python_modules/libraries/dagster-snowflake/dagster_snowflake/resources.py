@@ -45,7 +45,8 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
 
             @op
             def get_one(snowflake_resource: SnowflakeResource):
-                snowflake_resource.get_client().execute_query('SELECT 1')
+                with snowflake_resource.get_connection() as conn:
+                    conn.cursor().execute("SELECT 1")
 
             @job
             def my_snowflake_job():
