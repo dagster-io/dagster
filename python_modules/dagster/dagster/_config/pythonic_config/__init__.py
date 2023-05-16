@@ -882,7 +882,9 @@ class ConfigurableResourceFactory(
 
         Returns a new instance of the resource.
         """
-        config_dict = config_dictionary_from_values(context.resource_config, self._schema) # Converts EnvVars to requisite config types
+        config_dict = config_dictionary_from_values(
+            context.resource_config, self._schema
+        )  # Converts EnvVars to requisite config types
 
         # Perform post-processing step which also resolves any environment variables
         enum_translation = translate_enums(self._schema.config_type, config_dict)
@@ -1144,7 +1146,9 @@ class PartialResource(Generic[TResValue], AllowDelayedDependencies, MakeConfigCa
         MakeConfigCacheable.__init__(self, data=data, resource_cls=resource_cls)  # type: ignore  # extends BaseModel, takes kwargs
 
         def resource_fn(context: InitResourceContext):
-            instantiated = resource_cls(**context.resource_config, **data)
+            instantiated = resource_cls(
+                **{**data, **context.resource_config}
+            )  # So that collisions are resolved in favor of the latest provided run config
             return instantiated._get_initialize_and_run_fn()(context)  # noqa: SLF001
 
         self._state__internal__ = PartialResourceState(

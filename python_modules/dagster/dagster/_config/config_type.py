@@ -328,9 +328,11 @@ class Enum(ConfigType):
         )
 
     def post_process_translate_enum(self, value):
-        """Pass through enum value as is (assumes that config processing has already occurred once).
-        """
-        return value
+        """Pass through enum value as is (treats config processing as idempotent)."""
+        for ev in self.enum_values:
+            if ev.python_value == value:
+                return ev.python_value
+        return self.post_process(value)
 
     @classmethod
     def from_python_enum(cls, enum, name=None):
