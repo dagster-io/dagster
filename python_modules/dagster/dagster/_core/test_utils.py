@@ -302,6 +302,20 @@ def today_at_midnight(timezone_name="UTC") -> "DateTime":
     return create_pendulum_time(now.year, now.month, now.day, tz=now.timezone.name)
 
 
+from dagster._core.storage.runs import SqliteRunStorage
+
+
+class ExplodeOnInitRunStorage(SqliteRunStorage):
+    def __init__(self, inst_data: Optional[ConfigurableClassData] = None):
+        raise NotImplementedError("Init was called")
+
+    @classmethod
+    def from_config_value(
+        cls, inst_data: Optional[ConfigurableClassData], config_value
+    ) -> "SqliteRunStorage":
+        raise NotImplementedError("from_config_value was called")
+
+
 class ExplodingRunLauncher(RunLauncher, ConfigurableClass):
     def __init__(self, inst_data: Optional[ConfigurableClassData] = None):
         self._inst_data = inst_data

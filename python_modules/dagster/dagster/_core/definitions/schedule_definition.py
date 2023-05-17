@@ -378,6 +378,7 @@ def build_schedule_context(
     scheduled_execution_time: Optional[datetime] = None,
     resources: Optional[Mapping[str, object]] = None,
     repository_def: Optional["RepositoryDefinition"] = None,
+    instance_ref: Optional["InstanceRef"] = None,
 ) -> ScheduleEvaluationContext:
     """Builds schedule execution context using the provided parameters.
 
@@ -401,7 +402,11 @@ def build_schedule_context(
     check.opt_inst_param(instance, "instance", DagsterInstance)
 
     return ScheduleEvaluationContext(
-        instance_ref=instance.get_ref() if instance and instance.is_persistent else None,
+        instance_ref=instance_ref
+        if instance_ref
+        else instance.get_ref()
+        if instance and instance.is_persistent
+        else None,
         scheduled_execution_time=check.opt_inst_param(
             scheduled_execution_time, "scheduled_execution_time", datetime
         ),

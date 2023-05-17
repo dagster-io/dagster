@@ -1000,6 +1000,7 @@ def build_sensor_context(
     sensor_name: Optional[str] = None,
     resources: Optional[Mapping[str, object]] = None,
     definitions: Optional["Definitions"] = None,
+    instance_ref: Optional["InstanceRef"] = None,
 ) -> SensorEvaluationContext:
     """Builds sensor execution context using the provided parameters.
 
@@ -1042,7 +1043,7 @@ def build_sensor_context(
     )
 
     return SensorEvaluationContext(
-        instance_ref=None,
+        instance_ref=instance_ref,
         last_completion_time=None,
         last_run_key=None,
         cursor=cursor,
