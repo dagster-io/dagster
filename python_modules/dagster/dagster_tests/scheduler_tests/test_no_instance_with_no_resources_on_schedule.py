@@ -7,6 +7,7 @@ from dagster._core.instance.ref import InstanceRef
 
 # these tests confirm the existing behavior where user code servers
 # do not load the instance to run sensors that do not require resources
+# Tracking at https://github.com/dagster-io/dagster/issues/14345
 def test_schedule_instance_does_init_with_resource() -> None:
     class MyResource(ConfigurableResource):
         foo: str

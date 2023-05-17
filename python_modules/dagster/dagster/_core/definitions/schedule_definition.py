@@ -248,6 +248,8 @@ class ScheduleEvaluationContext:
             # that do not require instance access. In this case, if they do not use
             # resources on schedules they do not require the instance, so we do not
             # instantiate it
+            #
+            # Tracking at https://github.com/dagster-io/dagster/issues/14345
             if not self._resource_defs:
                 self._resources = ScopedResourcesBuilder.build_empty()
                 return self._resources
