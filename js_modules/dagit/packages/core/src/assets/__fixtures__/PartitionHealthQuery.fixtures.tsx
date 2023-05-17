@@ -3,7 +3,7 @@ import {MockedResponse} from '@apollo/client/testing';
 import {
   PartitionDefinitionType,
   buildAssetNode,
-  buildDefaultPartitions,
+  buildDefaultPartitionStatuses,
   buildDimensionPartitionKeys,
 } from '../../graphql/types';
 import {PartitionHealthQuery} from '../types/usePartitionHealthData.types';
@@ -33,7 +33,7 @@ export const buildPartitionHealthMock = (
             type: PartitionDefinitionType.DYNAMIC,
           }),
         ],
-        assetPartitionStatuses: buildDefaultPartitions({
+        assetPartitionStatuses: buildDefaultPartitionStatuses({
           materializedPartitions: ['test1'],
           failedPartitions: [],
         }),
