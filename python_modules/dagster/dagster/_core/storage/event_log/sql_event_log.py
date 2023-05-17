@@ -820,7 +820,7 @@ class SqlEventLogStorage(EventLogStorage):
                 > datetime.utcfromtimestamp(event_records_filter.after_timestamp)
             )
 
-        if event_records_filter.storage_ids:
+        if event_records_filter.storage_ids is not None:
             query = query.where(SqlEventLogStorageTable.c.id.in_(event_records_filter.storage_ids))
 
         if event_records_filter.tags and self.has_table(AssetEventTagsTable.name):
