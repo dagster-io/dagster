@@ -108,7 +108,7 @@ PendingStepsTable = db.Table(
     db.Column("concurrency_key", db.Text, nullable=False),
     db.Column("run_id", db.Text),
     db.Column("step_key", db.Text),
-    db.Column("priority", db.Text),
+    db.Column("priority", db.Integer),
     db.Column("assigned_timestamp", db.DateTime),
     db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
 )
