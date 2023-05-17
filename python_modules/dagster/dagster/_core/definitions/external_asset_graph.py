@@ -215,7 +215,7 @@ class ExternalAssetGraph(AssetGraph):
         """Returns asset keys that are targeted for materialization in the given job."""
         return [
             k
-            for k in self.non_source_asset_keys
+            for k in self.materializable_asset_keys
             if job_name in self.get_materialization_job_names(k)
         ]
 

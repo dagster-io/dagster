@@ -84,7 +84,7 @@ class AssetDaemon(IntervalDaemon):
         asset_graph = ExternalAssetGraph.from_workspace(workspace)
         target_asset_keys = {
             target_key
-            for target_key in asset_graph.non_source_asset_keys
+            for target_key in asset_graph.materializable_asset_keys
             if asset_graph.get_auto_materialize_policy(target_key) is not None
         }
 

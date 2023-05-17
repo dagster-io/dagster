@@ -243,7 +243,7 @@ class AssetReconciliationScenario(NamedTuple):
             target_asset_keys = (
                 self.asset_selection.resolve(asset_graph)
                 if self.asset_selection
-                else asset_graph.non_source_asset_keys
+                else asset_graph.materializable_asset_keys
             )
 
             run_requests, cursor, evaluations = reconcile(
