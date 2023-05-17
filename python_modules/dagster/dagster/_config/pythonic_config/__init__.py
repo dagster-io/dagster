@@ -1535,7 +1535,7 @@ def _config_type_for_type_on_pydantic_field(
         return IntSource
 
     if safe_is_subclass(potential_dagster_type, Enum):
-        return DagsterEnum.from_python_enum(potential_dagster_type)
+        return DagsterEnum.from_python_enum_direct_values(potential_dagster_type)
 
     # special case raw python literals to their source equivalents
     if potential_dagster_type is str:

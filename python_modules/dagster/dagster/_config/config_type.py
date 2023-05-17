@@ -343,7 +343,37 @@ class Enum(ConfigType):
                 config_schema={"color": Field(Enum.from_python_enum(Color))}
             )
             def select_color(context):
-                # ...
+                assert context.op_config["color"] == Color.RED
+        """
+        if name is None:
+            name = enum.__name__
+        return cls(name, [EnumValue(v.name, python_value=v) for v in enum])
+
+    @classmethod
+    def from_python_enum_direct_values(cls, enum, name=None):
+        """Create a Dagster enum corresponding to an existing Python enum, where the direct values are passed instead of symbolic values (IE, enum.symbol.value as opposed to enum.symbol).
+
+        This is necessary for internal usage, as the symbolic values are not serializable.
+
+        Args:
+            enum (enum.EnumMeta):
+                The class representing the enum.
+            name (Optional[str]):
+                The name for the enum. If not present, `enum.__name__` will be used.
+
+        Example:
+        .. code-block:: python
+
+            class Color(enum.Enum):
+                RED = enum.auto()
+                GREEN = enum.auto()
+                BLUE = enum.auto()
+
+            @op(
+                config_schema={"color": Field(Enum.from_python_enum(Color))}
+            )
+            def select_color(context):
+                assert context.op_config["color"] == Color.RED.value
         """
         if name is None:
             name = enum.__name__
