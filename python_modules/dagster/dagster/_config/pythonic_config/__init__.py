@@ -1755,6 +1755,10 @@ def _call_resource_fn_with_default(
         value = cast(Dict[str, Any], obj.config_schema.resolve_config({}).value)
         context = context.replace_config(value["config"])
     elif obj.config_schema.default_provided:
+        # To explain why we need to process config here;
+        # - The resource available on the init context (context.resource_config) has already been processed
+        # - The nested resource's config has also already been processed, but is only available in the broader run config dictionary.
+        # - The only information we have access to here is the unprocessed default value, so we need to process it a second time.
         unprocessed_config = obj.config_schema.default_value
         evr = process_config(
             {"config": obj.config_schema.config_type}, {"config": unprocessed_config}
