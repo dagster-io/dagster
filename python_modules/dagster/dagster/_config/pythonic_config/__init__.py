@@ -1765,7 +1765,7 @@ def _call_resource_fn_with_default(
                 evr.errors,
                 unprocessed_config,
             )
-        context = context.replace_config(evr.value["config"])  # type: ignore (should never be None)
+        context = context.replace_config(cast(dict, evr.value)["config"])
 
     is_fn_generator = inspect.isgenerator(obj.resource_fn) or isinstance(
         obj.resource_fn, contextlib.ContextDecorator
