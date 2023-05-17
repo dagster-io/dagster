@@ -226,8 +226,7 @@ class PartitionBackfill(
             return self.partition_names
 
     def get_num_cancelable(self) -> int:
-        """
-        This method is only valid for job backfills. It eturns the number of partitions that are have
+        """This method is only valid for job backfills. It eturns the number of partitions that are have
         not yet been requested by the backfill.
 
         For asset backfills, returns 0.
