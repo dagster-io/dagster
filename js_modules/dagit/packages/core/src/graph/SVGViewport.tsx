@@ -152,8 +152,8 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
       const scale = Math.max(viewport.getMinZoom(), Math.min(viewport.getMaxZoom(), targetScale));
 
       viewport.adjustZoomRelativeToScreenPoint(scale, cursorPosition);
-    } else if (event.shiftKey) {
-      viewport.shiftXY(event.deltaX * panSpeed, event.deltaY * panSpeed);
+    } else if (event.shiftKey && !event.deltaX) {
+      viewport.shiftXY(event.deltaY * panSpeed, 0);
     } else {
       viewport.shiftXY(-event.deltaX * panSpeed, -event.deltaY * panSpeed);
     }
