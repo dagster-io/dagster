@@ -27,7 +27,7 @@ import dagster._check as check
 from dagster._annotations import deprecated, public
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.definitions.resource_annotation import get_resource_args
-from dagster._core.definitions.scoped_resources_builder import Resources
+from dagster._core.definitions.scoped_resources_builder import Resources, ScopedResourcesBuilder
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils import IHasInternalInit, ensure_gen
 from dagster._utils.backcompat import deprecation_warning
@@ -242,9 +242,17 @@ class ScheduleEvaluationContext:
         from dagster._core.execution.build_resources import build_resources
 
         if not self._resources:
+            # Early exit if no resources are defined. This skips unnecessary initialization
+            # entirely. This also fixes an issue where a user had a deployment that depended
+            # on not setting environment variables necessary to access the instance, and then
+            # an upgrade broke them.
+            if not self._resource_defs:
+                self._resources = ScopedResourcesBuilder.build_empty()
+                return self._resources
+
             instance = self.instance if self._instance or self._instance_ref else None
 
-            resources_cm = build_resources(resources=self._resource_defs or {}, instance=instance)
+            resources_cm = build_resources(resources=self._resource_defs, instance=instance)
             self._resources = self._exit_stack.enter_context(resources_cm)
 
             if isinstance(self._resources, IContainsGenerator) and not self._cm_scope_entered:

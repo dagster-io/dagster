@@ -38,6 +38,7 @@ from dagster._core.definitions.resource_annotation import (
 from dagster._core.definitions.resource_definition import (
     Resources,
 )
+from dagster._core.definitions.scoped_resources_builder import ScopedResourcesBuilder
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -242,6 +243,14 @@ class SensorEvaluationContext:
             with build_sensor_context(resources={"my_resource": my_cm_resource}) as context:
                 my_sensor(context)
             """
+
+            # Early exit if no resources are defined. This skips unnecessary initialization
+            # entirely. This also fixes an issue where a user had a deployment that depended
+            # on not setting environment variables necessary to access the instance, and then
+            # an upgrade broke them.
+            if not self._resource_defs:
+                self._resources = ScopedResourcesBuilder.build_empty()
+                return self._resources
 
             instance = self.instance if self._instance or self._instance_ref else None
 
