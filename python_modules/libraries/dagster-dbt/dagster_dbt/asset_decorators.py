@@ -1,13 +1,14 @@
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
-from dagster import AssetsDefinition, multi_asset
+from dagster import AssetsDefinition, PartitionsDefinition, multi_asset
+from typing_extensions import TypedDict, Unpack
 
 from .asset_utils import get_dbt_multi_asset_args, get_deps
 from .cli.resources_v2 import DbtManifest
 from .utils import ASSET_RESOURCE_TYPES, select_unique_ids_from_manifest
 
 
-def dbt_multi_asset(
+def _dbt_multi_asset(
     *,
     manifest: DbtManifest,
     select: str = "fqn:*",
@@ -42,7 +43,7 @@ def dbt_multi_asset(
         outs,
         internal_asset_deps,
     ) = get_dbt_multi_asset_args(
-        dbt_nodes=manifest.node_info_by_dbt_unique_id,
+        manifest=manifest,
         deps=deps,
     )
 
@@ -59,6 +60,46 @@ def dbt_multi_asset(
             },
         )(fn)
 
+        asset_definition = asset_definition.with_attributes(
+            output_asset_key_replacements=manifest.output_asset_key_replacements,
+        )
+
         return asset_definition
 
     return inner
+
+
+class DbtMultiAssetWithAttributesParams(TypedDict, total=False):
+    partition_defs: PartitionsDefinition
+
+
+class dbt_multi_asset:
+    def __init__(
+        self,
+        *,
+        manifest: DbtManifest,
+        select: str = "fqn:*",
+        exclude: Optional[str] = None,
+    ):
+        self.manifest = manifest
+        self.select = select
+        self.exclude = exclude
+
+    def __call__(self, fn: Callable[..., Any]) -> AssetsDefinition:
+        assets_definition = _dbt_multi_asset(
+            manifest=self.manifest, select=self.select, exclude=self.exclude
+        )(fn)
+
+        # Apply any explicit Dagster metadata that the user has supplied.
+        # This is useful in the case where the framework cannot infer certain
+        # metadata, such as partition definitions.
+        assets_definition.with_attributes(**self._with_attributes_kwargs)
+
+        return assets_definition
+
+    def with_attributes(
+        self, **kwargs: Unpack[DbtMultiAssetWithAttributesParams]
+    ) -> "dbt_multi_asset":
+        self._with_attributes_kwargs = kwargs
+
+        return self

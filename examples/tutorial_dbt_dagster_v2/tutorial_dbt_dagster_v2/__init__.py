@@ -2,7 +2,7 @@ from dagster import Definitions
 from dagster_dbt.cli.resources_v2 import DbtClientV2
 
 from tutorial_dbt_dagster_v2.assets import DBT_PROJECT_DIR
-from tutorial_dbt_dagster_v2.assets.dbt_subsetting import dbt_assets
+from tutorial_dbt_dagster_v2.assets.dbt_customize_asset_metadata import dbt_assets
 
 defs = Definitions(
     assets=[dbt_assets],

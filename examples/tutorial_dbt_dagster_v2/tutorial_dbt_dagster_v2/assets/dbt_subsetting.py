@@ -19,6 +19,3 @@ def dbt_assets(context: OpExecutionContext, dbt: DbtClientV2):
     for dbt_command in dbt_commands:
         for event in dbt.cli(dbt_command, context=context, manifest=manifest).stream():
             yield from event.to_default_asset_events(manifest=manifest)
-
-
-dbt_assets = dbt_assets.with_attributes(can_subset=True)

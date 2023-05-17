@@ -30,8 +30,3 @@ manifest = CustomizedDbtManifest(raw_manifest=raw_manifest)
 def dbt_assets(dbt: DbtClientV2):
     for event in dbt.cli(["build"]).stream():
         yield from event.to_default_asset_events(manifest=manifest)
-
-
-dbt_assets = dbt_assets.with_attributes(
-    output_asset_key_replacements=manifest.output_asset_key_replacements,
-)

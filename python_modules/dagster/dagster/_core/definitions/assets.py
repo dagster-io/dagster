@@ -789,8 +789,8 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         auto_materialize_policy: Optional[
             Union[AutoMaterializePolicy, Mapping[AssetKey, AutoMaterializePolicy]]
         ] = None,
-        partition_defs=None,
-        can_subset=None,
+        partition_defs: Optional[PartitionsDefinition] = None,
+        can_subset: Optional[bool] = None,
     ) -> "AssetsDefinition":
         output_asset_key_replacements = check.opt_mapping_param(
             output_asset_key_replacements,

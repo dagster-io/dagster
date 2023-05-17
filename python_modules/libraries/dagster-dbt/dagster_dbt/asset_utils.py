@@ -16,6 +16,8 @@ from dagster import (
 )
 from dagster._utils.merger import merge_dicts
 
+from dagster_dbt.cli.resources_v2 import DbtManifest
+
 from .utils import input_name_fn, output_name_fn
 
 ###################
@@ -174,13 +176,14 @@ def get_deps(
 
 
 def get_dbt_multi_asset_args(
-    dbt_nodes: Mapping[str, Any],
+    manifest: DbtManifest,
     deps: Mapping[str, FrozenSet[str]],
 ) -> Tuple[Set[AssetKey], Dict[str, AssetOut], Dict[str, Set[AssetKey]],]:
     """Use the standard defaults for dbt to construct the arguments for a dbt multi asset."""
     non_argument_deps: Set[AssetKey] = set()
     outs: Dict[str, AssetOut] = {}
     internal_asset_deps: Dict[str, Set[AssetKey]] = {}
+    dbt_nodes = manifest.node_info_by_dbt_unique_id
 
     for unique_id, parent_unique_ids in deps.items():
         node_info = dbt_nodes[unique_id]

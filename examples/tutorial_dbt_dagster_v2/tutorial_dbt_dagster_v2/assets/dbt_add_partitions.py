@@ -20,15 +20,12 @@ def dbt_seed_assets(context: OpExecutionContext, dbt: DbtClientV2):
         yield from event.to_default_asset_events(manifest=manifest)
 
 
-@dbt_multi_asset(manifest=manifest, exclude=DBT_SELECT_SEED)
+@dbt_multi_asset(manifest=manifest, exclude=DBT_SELECT_SEED).with_attributes(
+    partition_defs=DailyPartitionsDefinition(start_date="2023-05-01")
+)
 def dbt_daily_assets(context: OpExecutionContext, dbt: DbtClientV2):
     dbt_vars = {"date": context.partition_key}
     dbt_args = ["run", "--vars", json.dumps(dbt_vars)]
 
     for event in dbt.cli(dbt_args, context=context, manifest=manifest).stream():
         yield from event.to_default_asset_events(manifest=manifest)
-
-
-dbt_daily_assets = dbt_daily_assets.with_attributes(
-    partition_defs=DailyPartitionsDefinition(start_date="2023-05-01")
-)
