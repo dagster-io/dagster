@@ -243,9 +243,11 @@ class ScheduleEvaluationContext:
 
         if not self._resources:
             # Early exit if no resources are defined. This skips unnecessary initialization
-            # entirely. This also fixes an issue where a user had a deployment that depended
-            # on not setting environment variables necessary to access the instance, and then
-            # an upgrade broke them.
+            # entirely. This allows users to run user code servers in cases where they
+            # do not have access to the instance if they use a subset of features do
+            # that do not require instance access. In this case, if they do not use
+            # resources on schedules they do not require the instance, so we do not
+            # instantiate it
             if not self._resource_defs:
                 self._resources = ScopedResourcesBuilder.build_empty()
                 return self._resources
