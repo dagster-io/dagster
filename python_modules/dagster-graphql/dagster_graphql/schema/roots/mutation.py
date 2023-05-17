@@ -3,6 +3,7 @@ from typing import Optional, Sequence, Union
 import dagster._check as check
 import graphene
 from dagster._core.definitions.events import AssetKey
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.nux import get_has_seen_nux, set_nux_seen
 from dagster._core.workspace.permissions import Permissions
 from dagster._daemon.asset_daemon import set_auto_materialize_paused
@@ -393,10 +394,10 @@ class GrapheneLaunchRunReexecutionMutation(graphene.Mutation):
         executionParams: Optional[GrapheneExecutionParams] = None,
         reexecutionParams: Optional[GrapheneReexecutionParams] = None,
     ):
-        check.invariant(
-            bool(executionParams) != bool(reexecutionParams),
-            "Must only provide one of either executionParams or reexecutionParams",
-        )
+        if bool(executionParams) == bool(reexecutionParams):
+            raise DagsterInvariantViolationError(
+                "Must only provide one of either executionParams or reexecutionParams"
+            )
 
         if executionParams:
             return create_execution_params_and_launch_pipeline_reexec(
