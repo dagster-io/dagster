@@ -1749,11 +1749,23 @@ def separate_resource_params(data: Dict[str, Any]) -> SeparatedResourceParams:
 def _call_resource_fn_with_default(
     stack: contextlib.ExitStack, obj: ResourceDefinition, context: InitResourceContext
 ) -> Any:
+    from dagster._config.validate import process_config
+
     if isinstance(obj.config_schema, ConfiguredDefinitionConfigSchema):
         value = cast(Dict[str, Any], obj.config_schema.resolve_config({}).value)
         context = context.replace_config(value["config"])
     elif obj.config_schema.default_provided:
-        context = context.replace_config(obj.config_schema.default_value)
+        unprocessed_config = obj.config_schema.default_value
+        evr = process_config(
+            {"config": obj.config_schema.config_type}, {"config": unprocessed_config}
+        )
+        if not evr.success:
+            raise DagsterInvalidConfigError(
+                "Error in config for nested resource ",
+                evr.errors,
+                unprocessed_config,
+            )
+        context = context.replace_config(evr.value["config"])  # type: ignore (should never be None)
 
     is_fn_generator = inspect.isgenerator(obj.resource_fn) or isinstance(
         obj.resource_fn, contextlib.ContextDecorator

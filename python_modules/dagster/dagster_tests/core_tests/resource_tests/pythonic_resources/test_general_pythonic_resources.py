@@ -709,13 +709,13 @@ def test_enum_nested_resource_no_run_config() -> None:
     assert result.output_for_node("asset_with_outer_resource") == "a_value"
 
 
-def test_enum_nested_resource_run_config_override():
-    class MyEnum(enum.Enum):
+def test_enum_nested_resource_run_config_override() -> None:
+    class SomeEnum(enum.Enum):
         A = "a_value"
         B = "b_value"
 
     class ResourceWithEnum(ConfigurableResource):
-        my_enum: MyEnum
+        my_enum: SomeEnum
 
     class OuterResourceWithResourceWithEnum(ConfigurableResource):
         resource_with_enum: ResourceWithEnum
@@ -746,19 +746,18 @@ def test_enum_nested_resource_run_config_override():
 
 
 def test_basic_enum_override_with_resource_instance() -> None:
-    class MyEnum(enum.Enum):
+    class BasicEnum(enum.Enum):
         A = "a_value"
         B = "b_value"
 
     setup_executed = {}
 
     class MyResource(ConfigurableResource):
-        my_enum: MyEnum
+        my_enum: BasicEnum
 
         def setup_for_execution(self, context: InitResourceContext) -> None:
             setup_executed["yes"] = True
-            # confirm existing behavior of config system
-            assert context.resource_config["my_enum"] in ["a_value", "b_value"]
+            assert context.resource_config["my_enum"] in [BasicEnum.A, BasicEnum.B]
 
     @asset
     def asset_with_resource(context, my_resource: MyResource):
@@ -766,7 +765,7 @@ def test_basic_enum_override_with_resource_instance() -> None:
 
     result_one = materialize(
         [asset_with_resource],
-        resources={"my_resource": MyResource(my_enum=MyEnum.A)},
+        resources={"my_resource": MyResource(my_enum=BasicEnum.A)},
     )
     assert result_one.success
     assert result_one.output_for_node("asset_with_resource") == "a_value"
@@ -776,7 +775,7 @@ def test_basic_enum_override_with_resource_instance() -> None:
 
     result_two = materialize(
         [asset_with_resource],
-        resources={"my_resource": MyResource(my_enum=MyEnum.A)},
+        resources={"my_resource": MyResource(my_enum=BasicEnum.A)},
         run_config={"resources": {"my_resource": {"config": {"my_enum": "B"}}}},
     )
 
@@ -786,12 +785,12 @@ def test_basic_enum_override_with_resource_instance() -> None:
 
 
 def test_basic_enum_override_with_resource_configured_at_launch() -> None:
-    class MyEnum(enum.Enum):
+    class AnotherEnum(enum.Enum):
         A = "a_value"
         B = "b_value"
 
     class MyResource(ConfigurableResource):
-        my_enum: MyEnum
+        my_enum: AnotherEnum
 
     @asset
     def asset_with_resource(context, my_resource: MyResource):
@@ -808,7 +807,7 @@ def test_basic_enum_override_with_resource_configured_at_launch() -> None:
 
     result_two = materialize(
         [asset_with_resource],
-        resources={"my_resource": MyResource.configure_at_launch(my_enum=MyEnum.A)},
+        resources={"my_resource": MyResource.configure_at_launch(my_enum=AnotherEnum.A)},
         run_config={"resources": {"my_resource": {"config": {"my_enum": "B"}}}},
     )
 

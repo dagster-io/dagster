@@ -82,6 +82,7 @@ def validate_config_from_snap(
 
 def _validate_config(context: ValidationContext, config_value: object) -> EvaluateValueResult[Any]:
     from dagster._config.field_utils import EnvVar, IntEnvVar
+
     check.inst_param(context, "context", ValidationContext)
 
     kind = context.config_type_snap.kind
@@ -103,8 +104,12 @@ def _validate_config(context: ValidationContext, config_value: object) -> Evalua
         if not is_config_scalar_valid(context.config_type_snap, config_value):
             return EvaluateValueResult.for_error(create_scalar_error(context, config_value))
         # If user passes an EnvVar or IntEnvVar to a non-structured run config dictionary, throw explicit error
-        if context.config_type_snap.scalar_kind == ConfigScalarKind.STRING and isinstance(config_value, (EnvVar, IntEnvVar)):
-            return EvaluateValueResult.for_error(create_pydantic_env_var_error(context, config_value))
+        if context.config_type_snap.scalar_kind == ConfigScalarKind.STRING and isinstance(
+            config_value, (EnvVar, IntEnvVar)
+        ):
+            return EvaluateValueResult.for_error(
+                create_pydantic_env_var_error(context, config_value)
+            )
         return EvaluateValueResult.for_value(config_value)
     elif kind == ConfigTypeKind.SELECTOR:
         return validate_selector_config(context, config_value)

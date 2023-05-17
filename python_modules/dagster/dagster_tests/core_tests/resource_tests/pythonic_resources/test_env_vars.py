@@ -113,8 +113,8 @@ def test_runtime_config_env_var() -> None:
 
         # Ensure fully unstructured run config option works
         result = defs.get_implicit_global_asset_job_def().execute_in_process(
-                    {"resources": {"writer": {"config": {"prefix": {"env": "MY_PREFIX_FOR_TEST"}}}}}
-                )
+            {"resources": {"writer": {"config": {"prefix": {"env": "MY_PREFIX_FOR_TEST"}}}}}
+        )
         assert result.success
         assert out_txt[0] == "greeting: hello, world!"
 
@@ -154,9 +154,7 @@ def test_env_var_err() -> None:
     )
     with pytest.raises(
         DagsterInvalidConfigError,
-        match=(
-            "Invalid use of environment variable wrapper."
-        ),
+        match="Invalid use of environment variable wrapper.",
     ):
         defs.get_implicit_global_asset_job_def().execute_in_process(
             {"resources": {"a_resource": {"config": {"a_str": EnvVar("UNSET_ENV_VAR_RUNTIME")}}}}
@@ -268,46 +266,6 @@ def test_env_var_alongside_enum() -> None:
         assert executed["yes"]
 
     executed.clear()
-
-    # Case: I'm re-specifying the same env var value at runtime
-    with environ(
-        {
-            "ENV_VARIABLE_FOR_TEST": "SOME_VALUE",
-        }
-    ):
-        result = defs.get_implicit_global_asset_job_def().execute_in_process(
-            run_config={
-                "resources": {
-                    "a_resource": {
-                        "config": {"a_str": EnvVar("ENV_VARIABLE_FOR_TEST"), "my_enum": "BAR"}
-                    }
-                }
-            }
-        )
-
-        assert result.success
-        assert result.output_for_node("an_asset") == ("BAR", "SOME_VALUE")
-        assert executed["yes"]
-
-    # Case: I'm using a new value specified at runtime for the enum, and then using a new env var specified at instantiation time for the string.
-    with environ(
-        {
-            "OTHER_ENV_VARIABLE_FOR_TEST": "OTHER_VALUE",
-        }
-    ):
-        result = defs.get_implicit_global_asset_job_def().execute_in_process(
-            run_config={
-                "resources": {
-                    "a_resource": {
-                        "config": {"a_str": EnvVar("OTHER_ENV_VARIABLE_FOR_TEST"), "my_enum": "BAR"}
-                    }
-                }
-            }
-        )
-
-        assert result.success
-        assert result.output_for_node("an_asset") == ("BAR", "OTHER_VALUE")
-        assert executed["yes"]
 
     # Case: I'm using the default value provided by resource instantiation to the enum, and then using a value specified at runtime for the string.
     result = defs.get_implicit_global_asset_job_def().execute_in_process(
