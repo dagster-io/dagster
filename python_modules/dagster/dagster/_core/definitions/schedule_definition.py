@@ -27,7 +27,7 @@ import dagster._check as check
 from dagster._annotations import deprecated, public
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.definitions.resource_annotation import get_resource_args
-from dagster._core.definitions.scoped_resources_builder import Resources
+from dagster._core.definitions.scoped_resources_builder import Resources, ScopedResourcesBuilder
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils import IHasInternalInit, ensure_gen
 from dagster._utils.backcompat import deprecation_warning
@@ -242,9 +242,21 @@ class ScheduleEvaluationContext:
         from dagster._core.execution.build_resources import build_resources
 
         if not self._resources:
+            # Early exit if no resources are defined. This skips unnecessary initialization
+            # entirely. This allows users to run user code servers in cases where they
+            # do not have access to the instance if they use a subset of features do
+            # that do not require instance access. In this case, if they do not use
+            # resources on schedules they do not require the instance, so we do not
+            # instantiate it
+            #
+            # Tracking at https://github.com/dagster-io/dagster/issues/14345
+            if not self._resource_defs:
+                self._resources = ScopedResourcesBuilder.build_empty()
+                return self._resources
+
             instance = self.instance if self._instance or self._instance_ref else None
 
-            resources_cm = build_resources(resources=self._resource_defs or {}, instance=instance)
+            resources_cm = build_resources(resources=self._resource_defs, instance=instance)
             self._resources = self._exit_stack.enter_context(resources_cm)
 
             if isinstance(self._resources, IContainsGenerator) and not self._cm_scope_entered:
@@ -370,6 +382,7 @@ def build_schedule_context(
     scheduled_execution_time: Optional[datetime] = None,
     resources: Optional[Mapping[str, object]] = None,
     repository_def: Optional["RepositoryDefinition"] = None,
+    instance_ref: Optional["InstanceRef"] = None,
 ) -> ScheduleEvaluationContext:
     """Builds schedule execution context using the provided parameters.
 
@@ -393,7 +406,11 @@ def build_schedule_context(
     check.opt_inst_param(instance, "instance", DagsterInstance)
 
     return ScheduleEvaluationContext(
-        instance_ref=instance.get_ref() if instance and instance.is_persistent else None,
+        instance_ref=instance_ref
+        if instance_ref
+        else instance.get_ref()
+        if instance and instance.is_persistent
+        else None,
         scheduled_execution_time=check.opt_inst_param(
             scheduled_execution_time, "scheduled_execution_time", datetime
         ),
