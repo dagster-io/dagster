@@ -73,12 +73,12 @@ from .freshness_policy import GrapheneAssetFreshnessInfo, GrapheneFreshnessPolic
 from .logs.events import GrapheneMaterializationEvent, GrapheneObservationEvent
 from .pipelines.pipeline import (
     GrapheneAssetPartitionStatuses,
-    GrapheneDefaultPartitions,
-    GrapheneMultiPartitions,
+    GrapheneDefaultPartitionStatuses,
+    GrapheneMultiPartitionStatuses,
     GraphenePartitionStats,
     GraphenePipeline,
     GrapheneRun,
-    GrapheneTimePartitions,
+    GrapheneTimePartitionStatuses,
 )
 from .util import ResolveInfo, non_null_list
 
@@ -790,7 +790,11 @@ class GrapheneAssetNode(graphene.ObjectType):
 
     def resolve_assetPartitionStatuses(
         self, graphene_info: ResolveInfo
-    ) -> Union["GrapheneTimePartitions", "GrapheneDefaultPartitions", "GrapheneMultiPartitions"]:
+    ) -> Union[
+        "GrapheneTimePartitionStatuses",
+        "GrapheneDefaultPartitionStatuses",
+        "GrapheneMultiPartitionStatuses",
+    ]:
         asset_key = self._external_asset_node.asset_key
 
         if not self._dynamic_partitions_loader:
