@@ -104,7 +104,7 @@ def test_native_enum_dagster_enum_from_classmethod():
 
     @op(config_schema=dagster_enum)
     def dagster_enum_me(context):
-        assert context.op_config == NativeEnum.BAR
+        assert context.op_config == NativeEnum.BAR.value
         called["yup"] = True
 
     job_def = GraphDefinition(name="native_enum_dagster_job", node_defs=[dagster_enum_me]).to_job()
@@ -138,7 +138,7 @@ def test_list_enum_with_default_value():
 
     @op(config_schema=Field([dagster_enum], is_required=False, default_value=["BAR"]))
     def enum_list(context):
-        assert context.op_config == [NativeEnum.BAR]
+        assert context.op_config == [NativeEnum.BAR.value]
         called["yup"] = True
 
     @job
@@ -158,7 +158,7 @@ def test_dict_enum_with_default():
 
     @op(config_schema={"enum": Field(dagster_enum, is_required=False, default_value="BAR")})
     def enum_dict(context):
-        assert context.op_config["enum"] == NativeEnum.BAR
+        assert context.op_config["enum"] == NativeEnum.BAR.value
         called["yup"] = True
 
     @job
@@ -212,4 +212,4 @@ def test_dict_enum_with_bad_default():
 def test_native_enum_classmethod_creates_all_values():
     dagster_enum = Enum.from_python_enum(NativeEnum)
     for enum_value in NativeEnum:
-        assert enum_value is dagster_enum.post_process(enum_value.name)
+        assert enum_value.value is dagster_enum.post_process(enum_value.name)

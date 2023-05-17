@@ -679,12 +679,12 @@ def test_nested_resources_runtime_config_complex():
 
 
 def test_enum_nested_resource_no_run_config() -> None:
-    class NestedEnum(enum.Enum):
+    class MyEnum(enum.Enum):
         A = "a_value"
         B = "b_value"
 
     class ResourceWithEnum(ConfigurableResource):
-        my_enum: NestedEnum
+        my_enum: MyEnum
 
     class OuterResourceWithResourceWithEnum(ConfigurableResource):
         resource_with_enum: ResourceWithEnum
@@ -697,7 +697,7 @@ def test_enum_nested_resource_no_run_config() -> None:
         assets=[asset_with_outer_resource],
         resources={
             "outer_resource": OuterResourceWithResourceWithEnum(
-                resource_with_enum=ResourceWithEnum(my_enum=NestedEnum.A)
+                resource_with_enum=ResourceWithEnum(my_enum=MyEnum.A)
             )
         },
     )
@@ -710,12 +710,12 @@ def test_enum_nested_resource_no_run_config() -> None:
 
 
 def test_enum_nested_resource_run_config_override() -> None:
-    class SomeEnum(enum.Enum):
+    class MyEnum(enum.Enum):
         A = "a_value"
         B = "b_value"
 
     class ResourceWithEnum(ConfigurableResource):
-        my_enum: SomeEnum
+        my_enum: MyEnum
 
     class OuterResourceWithResourceWithEnum(ConfigurableResource):
         resource_with_enum: ResourceWithEnum
@@ -757,7 +757,7 @@ def test_basic_enum_override_with_resource_instance() -> None:
 
         def setup_for_execution(self, context: InitResourceContext) -> None:
             setup_executed["yes"] = True
-            assert context.resource_config["my_enum"] in [BasicEnum.A, BasicEnum.B]
+            assert context.resource_config["my_enum"] in [BasicEnum.A.value, BasicEnum.B.value]
 
     @asset
     def asset_with_resource(context, my_resource: MyResource):

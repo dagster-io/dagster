@@ -101,19 +101,19 @@ def test_config_mapping_config_schema_errs() -> None:
 
 
 def test_config_mapping_enum() -> None:
-    class DiffEnum(Enum):
+    class MyEnum(Enum):
         FOO = "foo"
         BAR = "bar"
 
     class DoSomethingConfig(Config):
-        config_param: DiffEnum
+        config_param: MyEnum
 
     @op
-    def do_something(config: DoSomethingConfig) -> DiffEnum:
+    def do_something(config: DoSomethingConfig) -> MyEnum:
         return config.config_param
 
     class ConfigMappingConfig(Config):
-        simplified_param: DiffEnum
+        simplified_param: MyEnum
 
     @config_mapping
     def simplified_config(config_in: ConfigMappingConfig) -> Dict[str, Any]:
@@ -129,7 +129,7 @@ def test_config_mapping_enum() -> None:
         run_config={"simplified_param": "FOO"}
     )
     assert result.success
-    assert result.output_for_node("do_something") == DiffEnum.FOO
+    assert result.output_for_node("do_something") == MyEnum.FOO
 
 
 def test_config_mapping_return_run_config_nested() -> None:

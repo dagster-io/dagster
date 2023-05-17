@@ -347,7 +347,7 @@ class Enum(ConfigType):
         """
         if name is None:
             name = enum.__name__
-        return cls(name, [EnumValue(v.name, python_value=v) for v in enum])
+        return cls(name, [EnumValue(v.name, python_value=v.value) for v in enum])
 
 
 class ScalarUnion(ConfigType):

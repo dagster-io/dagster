@@ -81,7 +81,7 @@ def test_receive_processed_config_values():
 
     processed_result = my_graph.to_job(config=processed_config_mapping).execute_in_process()
     assert processed_result.success
-    assert processed_result.output_for_node("my_op") == TestEnum.BAR
+    assert processed_result.output_for_node("my_op") == TestEnum.BAR.value
 
     @config_mapping(config_schema=enum_conf_schema, receive_processed_config_values=False)
     def unprocessed_config_mapping(outer_config):
