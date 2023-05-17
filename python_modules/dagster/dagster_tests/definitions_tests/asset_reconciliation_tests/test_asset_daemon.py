@@ -1,5 +1,6 @@
 import pytest
 from dagster import DagsterInstance
+from dagster._core.instance_for_test import instance_for_test
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._daemon.asset_daemon import set_auto_materialize_paused
@@ -41,9 +42,16 @@ daemon_scenarios = {**auto_materialize_policy_scenarios, **multi_code_location_s
 
 @pytest.fixture
 def daemon_not_paused_instance():
-    instance = DagsterInstance.ephemeral()
-    set_auto_materialize_paused(instance, False)
-    yield instance
+    with instance_for_test(
+        overrides={
+            "run_launcher": {
+                "module": "dagster._core.launcher.sync_in_memory_run_launcher",
+                "class": "SyncInMemoryRunLauncher",
+            }
+        }
+    ) as instance:
+        set_auto_materialize_paused(instance, False)
+        yield instance
 
 
 @pytest.mark.parametrize(
@@ -86,62 +94,76 @@ def test_daemon_run_tags():
     scenario_name = "auto_materialize_policy_eager_with_freshness_policies"
     scenario = auto_materialize_policy_scenarios[scenario_name]
 
-    instance = DagsterInstance.ephemeral(
-        settings={"auto_materialize": {"run_tags": {"foo": "bar"}}}
-    )
-    set_auto_materialize_paused(instance, False)
-    scenario.do_daemon_scenario(instance, scenario_name=scenario_name)
+    with instance_for_test(
+        overrides={
+            "run_launcher": {
+                "module": "dagster._core.launcher.sync_in_memory_run_launcher",
+                "class": "SyncInMemoryRunLauncher",
+            },
+            "auto_materialize": {"run_tags": {"foo": "bar"}},
+        }
+    ) as instance:
+        set_auto_materialize_paused(instance, False)
 
-    runs = instance.get_runs()
+        scenario.do_daemon_scenario(instance, scenario_name=scenario_name)
 
-    assert len(runs) == len(
-        scenario.expected_run_requests
-        + scenario.unevaluated_runs
-        + (scenario.cursor_from.unevaluated_runs if scenario.cursor_from else [])
-    )
+        runs = instance.get_runs()
 
-    for run in runs:
-        assert run.status == DagsterRunStatus.SUCCESS
+        assert len(runs) == len(
+            scenario.expected_run_requests
+            + scenario.unevaluated_runs
+            + (scenario.cursor_from.unevaluated_runs if scenario.cursor_from else [])
+        )
 
-    def sort_run_request_key_fn(run_request):
-        return (min(run_request.asset_selection), run_request.partition_key)
+        for run in runs:
+            assert run.status == DagsterRunStatus.SUCCESS
 
-    def sort_run_key_fn(run):
-        return (min(run.asset_selection), run.tags.get(PARTITION_NAME_TAG))
+        def sort_run_request_key_fn(run_request):
+            return (min(run_request.asset_selection), run_request.partition_key)
 
-    sorted_runs = sorted(runs[: len(scenario.expected_run_requests)], key=sort_run_key_fn)
-    sorted_expected_run_requests = sorted(
-        scenario.expected_run_requests, key=sort_run_request_key_fn
-    )
-    for run, expected_run_request in zip(sorted_runs, sorted_expected_run_requests):
-        assert run.asset_selection is not None
-        assert set(run.asset_selection) == set(expected_run_request.asset_selection)
-        assert run.tags.get(PARTITION_NAME_TAG) == expected_run_request.partition_key
-        assert run.tags["foo"] == "bar"
+        def sort_run_key_fn(run):
+            return (min(run.asset_selection), run.tags.get(PARTITION_NAME_TAG))
+
+        sorted_runs = sorted(runs[: len(scenario.expected_run_requests)], key=sort_run_key_fn)
+        sorted_expected_run_requests = sorted(
+            scenario.expected_run_requests, key=sort_run_request_key_fn
+        )
+        for run, expected_run_request in zip(sorted_runs, sorted_expected_run_requests):
+            assert run.asset_selection is not None
+            assert set(run.asset_selection) == set(expected_run_request.asset_selection)
+            assert run.tags.get(PARTITION_NAME_TAG) == expected_run_request.partition_key
+            assert run.tags["foo"] == "bar"
 
 
 def test_daemon_paused():
     scenario_name = "auto_materialize_policy_eager_with_freshness_policies"
     scenario = auto_materialize_policy_scenarios[scenario_name]
 
-    instance = DagsterInstance.ephemeral()
-    scenario.do_daemon_scenario(instance, scenario_name=scenario_name)
+    with instance_for_test(
+        overrides={
+            "run_launcher": {
+                "module": "dagster._core.launcher.sync_in_memory_run_launcher",
+                "class": "SyncInMemoryRunLauncher",
+            },
+        }
+    ) as instance:
+        scenario.do_daemon_scenario(instance, scenario_name=scenario_name)
 
-    runs = instance.get_runs()
+        runs = instance.get_runs()
 
-    # daemon is paused by default , so no new runs should have been created
-    assert len(runs) == len(
-        scenario.unevaluated_runs
-        + (scenario.cursor_from.unevaluated_runs if scenario.cursor_from else [])
-    )
+        # daemon is paused by default , so no new runs should have been created
+        assert len(runs) == len(
+            scenario.unevaluated_runs
+            + (scenario.cursor_from.unevaluated_runs if scenario.cursor_from else [])
+        )
 
-    instance.wipe()
-    set_auto_materialize_paused(instance, False)
-    scenario.do_daemon_scenario(instance, scenario_name=scenario_name)
-    runs = instance.get_runs()
+        instance.wipe()
+        set_auto_materialize_paused(instance, False)
+        scenario.do_daemon_scenario(instance, scenario_name=scenario_name)
+        runs = instance.get_runs()
 
-    assert len(runs) == len(
-        scenario.expected_run_requests
-        + scenario.unevaluated_runs
-        + (scenario.cursor_from.unevaluated_runs if scenario.cursor_from else [])
-    )
+        assert len(runs) == len(
+            scenario.expected_run_requests
+            + scenario.unevaluated_runs
+            + (scenario.cursor_from.unevaluated_runs if scenario.cursor_from else [])
+        )
