@@ -228,6 +228,7 @@ class AssetReconciliationCursor(NamedTuple):
     latest_storage_id: Optional[int]
     materialized_or_requested_root_asset_keys: AbstractSet[AssetKey]
     materialized_or_requested_root_partitions_by_asset_key: Mapping[AssetKey, PartitionsSubset]
+    evaluation_id: Optional[int]
 
     def was_previously_materialized_or_requested(self, asset_key: AssetKey) -> bool:
         return asset_key in self.materialized_or_requested_root_asset_keys
@@ -276,6 +277,7 @@ class AssetReconciliationCursor(NamedTuple):
         run_requests: Sequence[RunRequest],
         newly_materialized_root_asset_keys: AbstractSet[AssetKey],
         newly_materialized_root_partitions_by_asset_key: Mapping[AssetKey, AbstractSet[str]],
+        evaluation_id: Optional[int],
         asset_graph: AssetGraph,
     ) -> "AssetReconciliationCursor":
         """Returns a cursor that represents this cursor plus the updates that have happened within the
@@ -333,6 +335,7 @@ class AssetReconciliationCursor(NamedTuple):
             latest_storage_id=latest_storage_id or self.latest_storage_id,
             materialized_or_requested_root_asset_keys=result_materialized_or_requested_root_asset_keys,
             materialized_or_requested_root_partitions_by_asset_key=result_materialized_or_requested_root_partitions_by_asset_key,
+            evaluation_id=evaluation_id,
         )
 
     @classmethod
@@ -341,15 +344,22 @@ class AssetReconciliationCursor(NamedTuple):
             latest_storage_id=None,
             materialized_or_requested_root_partitions_by_asset_key={},
             materialized_or_requested_root_asset_keys=set(),
+            evaluation_id=0,
         )
 
     @classmethod
     def from_serialized(cls, cursor: str, asset_graph: AssetGraph) -> "AssetReconciliationCursor":
+        data = json.loads(cursor)
+        check.invariant(len(data) in [3, 4], "Invalid serialized cursor")
+
         (
             latest_storage_id,
             serialized_materialized_or_requested_root_asset_keys,
             serialized_materialized_or_requested_root_partitions_by_asset_key,
-        ) = json.loads(cursor)
+        ) = data[:3]
+
+        evaluation_id = data[3] if len(data) == 4 else None
+
         materialized_or_requested_root_partitions_by_asset_key = {}
         for (
             key_str,
@@ -380,6 +390,7 @@ class AssetReconciliationCursor(NamedTuple):
                 for key_str in serialized_materialized_or_requested_root_asset_keys
             },
             materialized_or_requested_root_partitions_by_asset_key=materialized_or_requested_root_partitions_by_asset_key,
+            evaluation_id=evaluation_id,
         )
 
     def serialize(self) -> str:
@@ -392,6 +403,7 @@ class AssetReconciliationCursor(NamedTuple):
                 self.latest_storage_id,
                 [key.to_user_string() for key in self.materialized_or_requested_root_asset_keys],
                 serializable_materialized_or_requested_root_partitions_by_asset_key,
+                self.evaluation_id,
             )
         )
         return serialized
@@ -1096,6 +1108,7 @@ def reconcile(
             asset_graph=asset_graph,
             newly_materialized_root_asset_keys=newly_materialized_root_asset_keys,
             newly_materialized_root_partitions_by_asset_key=newly_materialized_root_partitions_by_asset_key,
+            evaluation_id=cursor.evaluation_id + 1 if cursor.evaluation_id is not None else 0,
         ),
         build_auto_materialize_asset_evaluations(asset_graph, conditions_by_asset_partition),
     )
