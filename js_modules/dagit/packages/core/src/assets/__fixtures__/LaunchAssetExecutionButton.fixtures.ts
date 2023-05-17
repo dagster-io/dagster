@@ -279,7 +279,7 @@ export const PartitionHealthAssetDailyMock: MockedResponse<PartitionHealthQuery>
               __typename: 'TimePartitionRange',
             },
           ],
-          __typename: 'TimePartitions',
+          __typename: 'TimePartitionStatuses',
         },
         __typename: 'AssetNode',
       },
@@ -315,7 +315,7 @@ export const PartitionHealthAssetWeeklyMock: MockedResponse<PartitionHealthQuery
         ],
         assetPartitionStatuses: {
           ranges: [],
-          __typename: 'TimePartitions',
+          __typename: 'TimePartitionStatuses',
         },
         __typename: 'AssetNode',
       },
@@ -351,7 +351,7 @@ export const PartitionHealthAssetWeeklyRootMock: MockedResponse<PartitionHealthQ
         ],
         assetPartitionStatuses: {
           ranges: [],
-          __typename: 'TimePartitions',
+          __typename: 'TimePartitionStatuses',
         },
         __typename: 'AssetNode',
       },

@@ -311,7 +311,7 @@ GET_1D_ASSET_PARTITIONS = """
         assetNodes(pipeline: $pipelineSelector) {
             id
             assetPartitionStatuses {
-                ... on TimePartitions {
+                ... on TimePartitionStatuses {
                     ranges {
                         startTime
                         endTime
@@ -342,14 +342,14 @@ GET_2D_ASSET_PARTITIONS = """
         assetNodes(pipeline: $pipelineSelector) {
             id
             assetPartitionStatuses {
-                ... on MultiPartitions {
+                ... on MultiPartitionStatuses {
                     ranges {
                         primaryDimStartKey
                         primaryDimEndKey
                         primaryDimStartTime
                         primaryDimEndTime
                         secondaryDim {
-                            ... on TimePartitions {
+                            ... on TimePartitionStatuses {
                                 ranges {
                                     startTime
                                     endTime

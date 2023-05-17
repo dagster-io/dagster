@@ -35,7 +35,7 @@ const NO_DIMENSIONAL_ASSET: PartitionHealthQuery = {
     id: '1234',
     partitionKeysByDimension: [],
     assetPartitionStatuses: {
-      __typename: 'DefaultPartitions',
+      __typename: DefaultPartitionStatuses,
       materializedPartitions: [],
       materializingPartitions: [],
       failedPartitions: [],
@@ -57,7 +57,7 @@ const ONE_DIMENSIONAL_ASSET: PartitionHealthQuery = {
       },
     ],
     assetPartitionStatuses: {
-      __typename: 'TimePartitions',
+      __typename: 'TimePartitionStatuses',
       ranges: [
         {
           __typename: 'TimePartitionRange',
@@ -100,56 +100,56 @@ const TWO_DIMENSIONAL_ASSET: PartitionHealthQuery = {
       },
     ],
     assetPartitionStatuses: {
-      __typename: 'MultiPartitions',
+      __typename: 'MultiPartitionStatuses',
       primaryDimensionName: 'time',
       ranges: [
         {
-          __typename: 'MaterializedPartitionRange2D',
+          __typename: 'MaterializedPartitionRangeStatuses2D',
           primaryDimStartKey: '2022-01-01',
           primaryDimStartTime: new Date('2022-01-01').getTime(),
           primaryDimEndKey: '2022-01-01',
           primaryDimEndTime: new Date('2022-01-01').getTime(),
           secondaryDim: {
-            __typename: 'DefaultPartitions',
+            __typename: DefaultPartitionStatuses,
             materializedPartitions: ['NY', 'MN'],
             materializingPartitions: [],
             failedPartitions: [],
           },
         },
         {
-          __typename: 'MaterializedPartitionRange2D',
+          __typename: 'MaterializedPartitionRangeStatuses2D',
           primaryDimStartKey: '2022-01-02',
           primaryDimStartTime: new Date('2022-01-02').getTime(),
           primaryDimEndKey: '2022-01-03',
           primaryDimEndTime: new Date('2022-01-03').getTime(),
           secondaryDim: {
-            __typename: 'DefaultPartitions',
+            __typename: DefaultPartitionStatuses,
             materializedPartitions: ['MN'],
             materializingPartitions: [],
             failedPartitions: [],
           },
         },
         {
-          __typename: 'MaterializedPartitionRange2D',
+          __typename: 'MaterializedPartitionRangeStatuses2D',
           primaryDimStartKey: '2022-01-04',
           primaryDimStartTime: new Date('2022-01-04').getTime(),
           primaryDimEndKey: '2022-01-04',
           primaryDimEndTime: new Date('2022-01-04').getTime(),
           secondaryDim: {
-            __typename: 'DefaultPartitions',
+            __typename: DefaultPartitionStatuses,
             materializedPartitions: ['TN', 'CA', 'VA', 'NY', 'MN'],
             materializingPartitions: [],
             failedPartitions: [],
           },
         },
         {
-          __typename: 'MaterializedPartitionRange2D',
+          __typename: 'MaterializedPartitionRangeStatuses2D',
           primaryDimStartKey: '2022-01-05',
           primaryDimStartTime: new Date('2022-01-05').getTime(),
           primaryDimEndKey: '2022-01-06',
           primaryDimEndTime: new Date('2022-01-06').getTime(),
           secondaryDim: {
-            __typename: 'DefaultPartitions',
+            __typename: DefaultPartitionStatuses,
             materializedPartitions: ['MN'],
             materializingPartitions: [],
             failedPartitions: ['NY', 'VA'],
@@ -180,30 +180,30 @@ const TWO_DIMENSIONAL_ASSET_BOTH_STATIC: PartitionHealthQuery = {
       },
     ],
     assetPartitionStatuses: {
-      __typename: 'MultiPartitions',
+      __typename: 'MultiPartitionStatuses',
       primaryDimensionName: 'state1',
       ranges: [
         {
-          __typename: 'MaterializedPartitionRange2D',
+          __typename: 'MaterializedPartitionRangeStatuses2D',
           primaryDimStartKey: 'TN',
           primaryDimEndKey: 'CA',
           primaryDimEndTime: null,
           primaryDimStartTime: null,
           secondaryDim: {
-            __typename: 'DefaultPartitions',
+            __typename: DefaultPartitionStatuses,
             materializedPartitions: ['TN', 'CA', 'VA'],
             materializingPartitions: [],
             failedPartitions: ['MN'],
           },
         },
         {
-          __typename: 'MaterializedPartitionRange2D',
+          __typename: 'MaterializedPartitionRangeStatuses2D',
           primaryDimStartKey: 'VA',
           primaryDimEndKey: 'MN',
           primaryDimEndTime: null,
           primaryDimStartTime: null,
           secondaryDim: {
-            __typename: 'DefaultPartitions',
+            __typename: DefaultPartitionStatuses,
             materializedPartitions: ['CA', 'MN'],
             materializingPartitions: [],
             failedPartitions: [],
@@ -234,7 +234,7 @@ const TWO_DIMENSIONAL_ASSET_EMPTY: PartitionHealthQuery = {
       },
     ],
     assetPartitionStatuses: {
-      __typename: 'MultiPartitions',
+      __typename: 'MultiPartitionStatuses',
       primaryDimensionName: 'time',
       ranges: [],
     },

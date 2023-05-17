@@ -98,9 +98,8 @@ class GrapheneTimePartitionRange(graphene.ObjectType):
         name = "TimePartitionRange"
 
 
-class GrapheneTimePartitionRangeStatus(graphene.ObjectType):
+class GrapheneTimePartitionRangeStatus(GrapheneTimePartitionRange):
     status = graphene.NonNull(GraphenePartitionRangeStatus)
-    partitionRange = graphene.NonNull(GrapheneTimePartitionRange)
 
     class Meta:
         name = "TimePartitionRangeStatus"

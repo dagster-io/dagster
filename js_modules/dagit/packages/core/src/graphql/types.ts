@@ -278,7 +278,10 @@ export type AssetNotFoundError = Error & {
 
 export type AssetOrError = Asset | AssetNotFoundError;
 
-export type AssetPartitionStatuses = DefaultPartitions | MultiPartitions | TimePartitions;
+export type AssetPartitionStatuses =
+  | DefaultPartitionStatuses
+  | MultiPartitionStatuses
+  | TimePartitionStatuses;
 
 export type AssetPartitionsStatusCounts = {
   __typename: 'AssetPartitionsStatusCounts';
@@ -996,8 +999,8 @@ export type DagsterTypeOrError =
   | PythonError
   | RegularDagsterType;
 
-export type DefaultPartitions = {
-  __typename: 'DefaultPartitions';
+export type DefaultPartitionStatuses = {
+  __typename: 'DefaultPartitionStatuses';
   failedPartitions: Array<Scalars['String']>;
   materializedPartitions: Array<Scalars['String']>;
   materializingPartitions: Array<Scalars['String']>;
@@ -2071,8 +2074,8 @@ export type MaterializationUpstreamDataVersion = {
   timestamp: Scalars['String'];
 };
 
-export type MaterializedPartitionRange2D = {
-  __typename: 'MaterializedPartitionRange2D';
+export type MaterializedPartitionRangeStatuses2D = {
+  __typename: 'MaterializedPartitionRangeStatuses2D';
   primaryDimEndKey: Scalars['String'];
   primaryDimEndTime: Maybe<Scalars['Float']>;
   primaryDimStartKey: Scalars['String'];
@@ -2139,10 +2142,10 @@ export type ModeNotFoundError = Error & {
   mode: Scalars['String'];
 };
 
-export type MultiPartitions = {
-  __typename: 'MultiPartitions';
+export type MultiPartitionStatuses = {
+  __typename: 'MultiPartitionStatuses';
   primaryDimensionName: Scalars['String'];
-  ranges: Array<MaterializedPartitionRange2D>;
+  ranges: Array<MaterializedPartitionRangeStatuses2D>;
 };
 
 export type NestedResourceEntry = {
@@ -2453,7 +2456,7 @@ export type PartitionStatus = {
   runStatus: Maybe<RunStatus>;
 };
 
-export type PartitionStatus1D = DefaultPartitions | TimePartitions;
+export type PartitionStatus1D = DefaultPartitionStatuses | TimePartitionStatuses;
 
 export type PartitionStatusCounts = {
   __typename: 'PartitionStatusCounts';
@@ -3872,8 +3875,8 @@ export type TickEvaluation = {
   skipReason: Maybe<Scalars['String']>;
 };
 
-export type TimePartitionRange = {
-  __typename: 'TimePartitionRange';
+export type TimePartitionRangeStatus = {
+  __typename: 'TimePartitionRangeStatus';
   endKey: Scalars['String'];
   endTime: Scalars['Float'];
   startKey: Scalars['String'];
@@ -3881,9 +3884,9 @@ export type TimePartitionRange = {
   status: PartitionRangeStatus;
 };
 
-export type TimePartitions = {
-  __typename: 'TimePartitions';
-  ranges: Array<TimePartitionRange>;
+export type TimePartitionStatuses = {
+  __typename: 'TimePartitionStatuses';
+  ranges: Array<TimePartitionRangeStatus>;
 };
 
 export type TypeCheck = DisplayableEvent & {
@@ -4381,9 +4384,9 @@ export const buildAssetNode = (
     assetPartitionStatuses:
       overrides && overrides.hasOwnProperty('assetPartitionStatuses')
         ? overrides.assetPartitionStatuses!
-        : relationshipsToOmit.has('DefaultPartitions')
-        ? ({} as DefaultPartitions)
-        : buildDefaultPartitions({}, relationshipsToOmit),
+        : relationshipsToOmit.has('DefaultPartitionStatuses')
+        ? ({} as DefaultPartitionStatuses)
+        : buildDefaultPartitionStatuses({}, relationshipsToOmit),
     autoMaterializePolicy:
       overrides && overrides.hasOwnProperty('autoMaterializePolicy')
         ? overrides.autoMaterializePolicy!
@@ -5452,14 +5455,14 @@ export const buildDagsterTypeNotFoundError = (
   };
 };
 
-export const buildDefaultPartitions = (
-  overrides?: Partial<DefaultPartitions>,
+export const buildDefaultPartitionStatuses = (
+  overrides?: Partial<DefaultPartitionStatuses>,
   _relationshipsToOmit: Set<string> = new Set(),
-): {__typename: 'DefaultPartitions'} & DefaultPartitions => {
+): {__typename: 'DefaultPartitionStatuses'} & DefaultPartitionStatuses => {
   const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
-  relationshipsToOmit.add('DefaultPartitions');
+  relationshipsToOmit.add('DefaultPartitionStatuses');
   return {
-    __typename: 'DefaultPartitions',
+    __typename: 'DefaultPartitionStatuses',
     failedPartitions:
       overrides && overrides.hasOwnProperty('failedPartitions') ? overrides.failedPartitions! : [],
     materializedPartitions:
@@ -7635,36 +7638,36 @@ export const buildMaterializationUpstreamDataVersion = (
   };
 };
 
-export const buildMaterializedPartitionRange2D = (
-  overrides?: Partial<MaterializedPartitionRange2D>,
+export const buildMaterializedPartitionRangeStatuses2D = (
+  overrides?: Partial<MaterializedPartitionRangeStatuses2D>,
   _relationshipsToOmit: Set<string> = new Set(),
-): {__typename: 'MaterializedPartitionRange2D'} & MaterializedPartitionRange2D => {
+): {__typename: 'MaterializedPartitionRangeStatuses2D'} & MaterializedPartitionRangeStatuses2D => {
   const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
-  relationshipsToOmit.add('MaterializedPartitionRange2D');
+  relationshipsToOmit.add('MaterializedPartitionRangeStatuses2D');
   return {
-    __typename: 'MaterializedPartitionRange2D',
+    __typename: 'MaterializedPartitionRangeStatuses2D',
     primaryDimEndKey:
       overrides && overrides.hasOwnProperty('primaryDimEndKey')
         ? overrides.primaryDimEndKey!
-        : 'et',
+        : 'illo',
     primaryDimEndTime:
       overrides && overrides.hasOwnProperty('primaryDimEndTime')
         ? overrides.primaryDimEndTime!
-        : 9.29,
+        : 5.77,
     primaryDimStartKey:
       overrides && overrides.hasOwnProperty('primaryDimStartKey')
         ? overrides.primaryDimStartKey!
-        : 'repudiandae',
+        : 'voluptatem',
     primaryDimStartTime:
       overrides && overrides.hasOwnProperty('primaryDimStartTime')
         ? overrides.primaryDimStartTime!
-        : 9.31,
+        : 3.18,
     secondaryDim:
       overrides && overrides.hasOwnProperty('secondaryDim')
         ? overrides.secondaryDim!
-        : relationshipsToOmit.has('DefaultPartitions')
-        ? ({} as DefaultPartitions)
-        : buildDefaultPartitions({}, relationshipsToOmit),
+        : relationshipsToOmit.has('DefaultPartitionStatuses')
+        ? ({} as DefaultPartitionStatuses)
+        : buildDefaultPartitionStatuses({}, relationshipsToOmit),
   };
 };
 
@@ -7815,18 +7818,18 @@ export const buildModeNotFoundError = (
   };
 };
 
-export const buildMultiPartitions = (
-  overrides?: Partial<MultiPartitions>,
+export const buildMultiPartitionStatuses = (
+  overrides?: Partial<MultiPartitionStatuses>,
   _relationshipsToOmit: Set<string> = new Set(),
-): {__typename: 'MultiPartitions'} & MultiPartitions => {
+): {__typename: 'MultiPartitionStatuses'} & MultiPartitionStatuses => {
   const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
-  relationshipsToOmit.add('MultiPartitions');
+  relationshipsToOmit.add('MultiPartitionStatuses');
   return {
-    __typename: 'MultiPartitions',
+    __typename: 'MultiPartitionStatuses',
     primaryDimensionName:
       overrides && overrides.hasOwnProperty('primaryDimensionName')
         ? overrides.primaryDimensionName!
-        : 'consequatur',
+        : 'ea',
     ranges: overrides && overrides.hasOwnProperty('ranges') ? overrides.ranges! : [],
   };
 };
@@ -11393,18 +11396,18 @@ export const buildTickEvaluation = (
   };
 };
 
-export const buildTimePartitionRange = (
-  overrides?: Partial<TimePartitionRange>,
+export const buildTimePartitionRangeStatus = (
+  overrides?: Partial<TimePartitionRangeStatus>,
   _relationshipsToOmit: Set<string> = new Set(),
-): {__typename: 'TimePartitionRange'} & TimePartitionRange => {
+): {__typename: 'TimePartitionRangeStatus'} & TimePartitionRangeStatus => {
   const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
-  relationshipsToOmit.add('TimePartitionRange');
+  relationshipsToOmit.add('TimePartitionRangeStatus');
   return {
-    __typename: 'TimePartitionRange',
-    endKey: overrides && overrides.hasOwnProperty('endKey') ? overrides.endKey! : 'dolorum',
-    endTime: overrides && overrides.hasOwnProperty('endTime') ? overrides.endTime! : 8.87,
-    startKey: overrides && overrides.hasOwnProperty('startKey') ? overrides.startKey! : 'sint',
-    startTime: overrides && overrides.hasOwnProperty('startTime') ? overrides.startTime! : 1.83,
+    __typename: 'TimePartitionRangeStatus',
+    endKey: overrides && overrides.hasOwnProperty('endKey') ? overrides.endKey! : 'vero',
+    endTime: overrides && overrides.hasOwnProperty('endTime') ? overrides.endTime! : 9.24,
+    startKey: overrides && overrides.hasOwnProperty('startKey') ? overrides.startKey! : 'totam',
+    startTime: overrides && overrides.hasOwnProperty('startTime') ? overrides.startTime! : 0.57,
     status:
       overrides && overrides.hasOwnProperty('status')
         ? overrides.status!
@@ -11412,14 +11415,14 @@ export const buildTimePartitionRange = (
   };
 };
 
-export const buildTimePartitions = (
-  overrides?: Partial<TimePartitions>,
+export const buildTimePartitionStatuses = (
+  overrides?: Partial<TimePartitionStatuses>,
   _relationshipsToOmit: Set<string> = new Set(),
-): {__typename: 'TimePartitions'} & TimePartitions => {
+): {__typename: 'TimePartitionStatuses'} & TimePartitionStatuses => {
   const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
-  relationshipsToOmit.add('TimePartitions');
+  relationshipsToOmit.add('TimePartitionStatuses');
   return {
-    __typename: 'TimePartitions',
+    __typename: 'TimePartitionStatuses',
     ranges: overrides && overrides.hasOwnProperty('ranges') ? overrides.ranges! : [],
   };
 };
