@@ -21,17 +21,6 @@ def post_process_config(config_type: ConfigType, config_value: Any) -> EvaluateV
     return _recursively_process_config(ctx, config_value)
 
 
-def translate_to_pydantic(config_type: ConfigType, config_value: Any) -> EvaluateValueResult[Any]:
-    """Converts a processed run config dictionary into values processable by a pydantic model. In practice, this means converting symbolic enums into their constituent values, and converting environment variables into their constituent values.
-    """
-    ctx = TraversalContext.from_config_type(
-        config_type=check.inst_param(config_type, "config_type", ConfigType),
-        stack=EvaluationStack(entries=[]),
-        traversal_type=TraversalType.TRANSLATE_TO_PYDANTIC,
-    )
-    return _recursively_process_config(ctx, config_value)
-
-
 def resolve_defaults(config_type: ConfigType, config_value: Any) -> EvaluateValueResult[Any]:
     ctx = TraversalContext.from_config_type(
         config_type=check.inst_param(config_type, "config_type", ConfigType),
@@ -87,10 +76,7 @@ def _recursively_resolve_defaults(
 
 def _post_process(context: TraversalContext, config_value: Any) -> EvaluateValueResult[Any]:
     try:
-        if context.traversal_type == TraversalType.TRANSLATE_TO_PYDANTIC:
-            new_value = context.config_type.translate_enum_value(config_value)
-        else:
-            new_value = context.config_type.post_process(config_value)
+        new_value = context.config_type.post_process(config_value)
         return EvaluateValueResult.for_value(new_value)
     except PostProcessingError:
         error_data = serializable_error_info_from_exc_info(sys.exc_info())

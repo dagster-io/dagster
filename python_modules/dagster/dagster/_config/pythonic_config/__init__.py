@@ -9,7 +9,6 @@ from typing import (
     Dict,
     Generator,
     Generic,
-    Iterable,
     Mapping,
     NamedTuple,
     Optional,
@@ -31,11 +30,10 @@ from dagster._config.config_type import (
     Array,
     ConfigFloatInstance,
     ConfigType,
-    EnumValue,
     Noneable,
 )
 from dagster._config.field_utils import config_dictionary_from_values
-from dagster._config.post_process import resolve_defaults, translate_to_pydantic
+from dagster._config.post_process import resolve_defaults
 from dagster._config.pythonic_config.typing_utils import (
     TypecheckAllowPartialResourceInitParams,
 )
@@ -859,11 +857,12 @@ class ConfigurableResourceFactory(
         return PartialResource(cls, data=kwargs)
 
     def _with_updated_values(
-        self, values: Mapping[str, Any]
+        self, values: Optional[Mapping[str, Any]]
     ) -> "ConfigurableResourceFactory[TResValue]":
         """Returns a new instance of the resource with the given values.
         Used when initializing a resource at runtime.
         """
+        values = check.opt_mapping_param(values, "values", key_type=str)
         # Since Resource extends BaseModel and is a dataclass, we know that the
         # signature of any __init__ method will always consist of the fields
         # of this class. We can therefore safely pass in the values as kwargs.
@@ -872,27 +871,6 @@ class ConfigurableResourceFactory(
             resource_context=self._state__internal__.resource_context
         )
         return out
-
-    def _translate_processed_run_config_to_pydantic(
-        self, context: "InitResourceContext"
-    ) -> "ConfigurableResourceFactory[TResValue]":
-        """Takes the processed run config dictionary and translates it to be able to be passed to the constructor of the pydantic resource. This converts any enums from symbols to their actual values, and converts env vars encapsulated in the EnvVar symbol to the appropriate string representation.
-        Returns a new instance of the resource.
-        """
-        config_dict = config_dictionary_from_values(
-            context.resource_config or {}, self._schema
-        )  # Converts any EnvVars to their proper config representation (this is not handled when passing EnvVar to a raw run config dictionary)
-        # Perform post-processing step which also resolves any environment variables
-        pydantic_values = translate_to_pydantic(self._schema.config_type, config_dict)
-        if not pydantic_values.success:
-            raise DagsterInvalidConfigError(
-                f"Error while processing {self.__class__.__name__} config ",
-                pydantic_values.errors,
-                context.resource_config,
-            )
-        check.not_none(pydantic_values.value)
-        check.is_dict(pydantic_values.value)
-        return self._with_updated_values(cast(dict, pydantic_values.value))
 
     @contextlib.contextmanager
     def _resolve_and_update_nested_resources(
@@ -953,7 +931,7 @@ class ConfigurableResourceFactory(
         with self._resolve_and_update_nested_resources(context) as has_nested_resource:
             updated_resource = has_nested_resource.with_resource_context(  # noqa: SLF001
                 context
-            )._translate_processed_run_config_to_pydantic(context)
+            )._with_updated_values(context.resource_config)
 
             updated_resource.setup_for_execution(context)
             return updated_resource.create_resource(context)
@@ -965,7 +943,7 @@ class ConfigurableResourceFactory(
         with self._resolve_and_update_nested_resources(context) as has_nested_resource:
             updated_resource = has_nested_resource.with_resource_context(  # noqa: SLF001
                 context
-            )._translate_processed_run_config_to_pydantic(context)
+            )._with_updated_values(context.resource_config)
 
             with updated_resource.yield_for_execution(context) as value:
                 yield value
@@ -1557,13 +1535,7 @@ def _config_type_for_type_on_pydantic_field(
         return IntSource
 
     if safe_is_subclass(potential_dagster_type, Enum):
-        return DagsterEnum(
-            potential_dagster_type.__name__,
-            [
-                EnumValue(v.name, python_value=v.value)
-                for v in cast(Iterable[Enum], potential_dagster_type)
-            ],
-        )
+        return DagsterEnum.from_python_enum(potential_dagster_type)
 
     # special case raw python literals to their source equivalents
     if potential_dagster_type is str:

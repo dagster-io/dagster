@@ -105,18 +105,18 @@ def test_runtime_config_env_var() -> None:
         resources={"writer": WriterResource.configure_at_launch()},
     )
 
-    os.environ["MY_PREFIX_FOR_TEST"] = "greeting: "
-    try:
-        assert (
-            defs.get_implicit_global_asset_job_def()
-            .execute_in_process(
+    with environ({"MY_PREFIX_FOR_TEST": "greeting: "}):
+        with pytest.raises(DagsterInvalidConfigError):
+            defs.get_implicit_global_asset_job_def().execute_in_process(
                 {"resources": {"writer": {"config": {"prefix": EnvVar("MY_PREFIX_FOR_TEST")}}}}
             )
-            .success
-        )
-        assert out_txt == ["greeting: hello, world!"]
-    finally:
-        del os.environ["MY_PREFIX_FOR_TEST"]
+
+        # Ensure fully unstructured run config option works
+        result = defs.get_implicit_global_asset_job_def().execute_in_process(
+                    {"resources": {"writer": {"config": {"prefix": {"env": "MY_PREFIX_FOR_TEST"}}}}}
+                )
+        assert result.success
+        assert out_txt[0] == "greeting: hello, world!"
 
 
 def test_env_var_err() -> None:
@@ -155,8 +155,7 @@ def test_env_var_err() -> None:
     with pytest.raises(
         DagsterInvalidConfigError,
         match=(
-            'You have attempted to fetch the environment variable "UNSET_ENV_VAR_RUNTIME" which is'
-            " not set."
+            "Invalid use of environment variable wrapper."
         ),
     ):
         defs.get_implicit_global_asset_job_def().execute_in_process(

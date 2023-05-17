@@ -377,6 +377,16 @@ def create_scalar_error(context: ContextData, config_value: object) -> Evaluatio
         error_data=RuntimeMismatchErrorData(context.config_type_snap, repr(config_value)),
     )
 
+def create_pydantic_env_var_error(context: ContextData, config_value: object) -> EvaluationError:
+    correct_env_var = str({"env": config_value})
+    return EvaluationError(
+        stack=context.stack,
+        reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
+        message=(
+            f'Invalid use of environment variable wrapper. Value "{config_value}" is wrapped with EnvVar(), which is reserved for passing to structured pydantic config objects only. To provide an environment variable to a run config dictionary, replace EnvVar("{config_value}") with {correct_env_var}, or pass a structured RunConfig object.'
+        ),
+        error_data=RuntimeMismatchErrorData(context.config_type_snap, repr(config_value)),
+    )
 
 def create_selector_multiple_fields_error(
     context: ContextData, config_value: Mapping[str, object]
