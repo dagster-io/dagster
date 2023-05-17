@@ -71,9 +71,8 @@ def test_create_execution_plan_with_bad_inputs():
 
 def test_active_execution_plan():
     plan = create_execution_plan(define_diamond_job())
-    instance = DagsterInstance.ephemeral()
 
-    with plan.start(instance, retry_mode=(RetryMode.DISABLED)) as active_execution:
+    with plan.start(retry_mode=(RetryMode.DISABLED)) as active_execution:
         steps = active_execution.get_steps_to_execute()
         assert len(steps) == 1
         step_1 = steps[0]
@@ -123,9 +122,8 @@ def test_active_execution_plan():
 def test_failing_execution_plan():
     job_def = define_diamond_job()
     plan = create_execution_plan(job_def)
-    instance = DagsterInstance.ephemeral()
 
-    with plan.start(instance, retry_mode=(RetryMode.DISABLED)) as active_execution:
+    with plan.start(retry_mode=(RetryMode.DISABLED)) as active_execution:
         steps = active_execution.get_steps_to_execute()
         assert len(steps) == 1
         step_1 = steps[0]
@@ -176,9 +174,8 @@ def test_failing_execution_plan():
 def test_retries_active_execution():
     job_def = define_diamond_job()
     plan = create_execution_plan(job_def)
-    instance = DagsterInstance.ephemeral()
 
-    with plan.start(instance, retry_mode=(RetryMode.ENABLED)) as active_execution:
+    with plan.start(retry_mode=(RetryMode.ENABLED)) as active_execution:
         steps = active_execution.get_steps_to_execute()
         assert len(steps) == 1
         step_1 = steps[0]
@@ -240,10 +237,9 @@ def test_retries_active_execution():
 def test_retries_disabled_active_execution():
     job_def = define_diamond_job()
     plan = create_execution_plan(job_def)
-    instance = DagsterInstance.ephemeral()
 
     with pytest.raises(check.CheckError):
-        with plan.start(instance, retry_mode=(RetryMode.DISABLED)) as active_execution:
+        with plan.start(retry_mode=(RetryMode.DISABLED)) as active_execution:
             steps = active_execution.get_steps_to_execute()
             assert len(steps) == 1
             step_1 = steps[0]
@@ -259,9 +255,8 @@ def test_retries_disabled_active_execution():
 def test_retries_deferred_active_execution():
     job_def = define_diamond_job()
     plan = create_execution_plan(job_def)
-    instance = DagsterInstance.ephemeral()
 
-    with plan.start(instance, retry_mode=(RetryMode.DEFERRED)) as active_execution:
+    with plan.start(retry_mode=(RetryMode.DEFERRED)) as active_execution:
         steps = active_execution.get_steps_to_execute()
         assert len(steps) == 1
         step_1 = steps[0]
@@ -329,8 +324,7 @@ def test_priorities():
     sort_key_fn = lambda step: int(step.tags.get("priority", 0)) * -1
 
     plan = create_execution_plan(priorities)
-    instance = DagsterInstance.ephemeral()
-    with plan.start(instance, RetryMode.DISABLED, sort_key_fn) as active_execution:
+    with plan.start(RetryMode.DISABLED, sort_key_fn) as active_execution:
         steps = active_execution.get_steps_to_execute()
         assert steps[0].key == "pri_5"
         assert steps[1].key == "pri_4"
@@ -376,7 +370,6 @@ def test_tag_concurrency_limits():
         pri_none()
 
     plan = create_execution_plan(tag_concurrency_limits_job)
-    instance = DagsterInstance.ephemeral()
 
     tag_concurrency_limits = [
         {"key": "database", "value": "tiny", "limit": 1},
@@ -384,7 +377,7 @@ def test_tag_concurrency_limits():
     ]
 
     with plan.start(
-        instance, RetryMode.DISABLED, tag_concurrency_limits=tag_concurrency_limits
+        RetryMode.DISABLED, tag_concurrency_limits=tag_concurrency_limits
     ) as active_execution:
         steps = active_execution.get_steps_to_execute()
 
@@ -427,13 +420,12 @@ def test_executor_not_created_for_execute_plan():
 
 def test_incomplete_execution_plan():
     plan = create_execution_plan(define_diamond_job())
-    instance = DagsterInstance.ephemeral()
 
     with pytest.raises(
         DagsterInvariantViolationError,
         match="Execution finished without completing the execution plan.",
     ):
-        with plan.start(instance, retry_mode=(RetryMode.DISABLED)) as active_execution:
+        with plan.start(retry_mode=(RetryMode.DISABLED)) as active_execution:
             steps = active_execution.get_steps_to_execute()
             assert len(steps) == 1
             step_1 = steps[0]
@@ -444,11 +436,10 @@ def test_incomplete_execution_plan():
 
 def test_lost_steps():
     plan = create_execution_plan(define_diamond_job())
-    instance = DagsterInstance.ephemeral()
 
     # run to completion - but step was in unknown state so exception thrown
     with pytest.raises(DagsterUnknownStepStateError):
-        with plan.start(instance, retry_mode=(RetryMode.DISABLED)) as active_execution:
+        with plan.start(retry_mode=(RetryMode.DISABLED)) as active_execution:
             steps = active_execution.get_steps_to_execute()
             assert len(steps) == 1
             step_1 = steps[0]
