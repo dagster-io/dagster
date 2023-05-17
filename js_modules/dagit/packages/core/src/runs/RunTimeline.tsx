@@ -9,6 +9,7 @@ import {
   Icon,
   Spinner,
   MiddleTruncate,
+  useViewport,
 } from '@dagster-io/ui';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
@@ -73,8 +74,11 @@ interface Props {
 
 export const RunTimeline = (props: Props) => {
   const {loading = false, jobs, range} = props;
-  const [width, setWidth] = React.useState<number | null>(null);
   const parentRef = React.useRef<HTMLDivElement | null>(null);
+  const {
+    viewport: {width},
+    containerProps: {ref: containerRef},
+  } = useViewport();
 
   const now = Date.now();
   const [_, end] = range;
@@ -123,20 +127,6 @@ export const RunTimeline = (props: Props) => {
   const totalHeight = rowVirtualizer.getTotalSize();
   const items = rowVirtualizer.getVirtualItems();
 
-  const observer = React.useRef<ResizeObserver | null>(null);
-
-  const containerRef = React.useCallback((node: HTMLDivElement | null) => {
-    if (node) {
-      observer.current = new ResizeObserver((entries) => {
-        const entry = entries[0];
-        setWidth(entry.contentRect.width);
-      });
-      observer.current.observe(node);
-    } else {
-      observer.current?.disconnect();
-    }
-  }, []);
-
   if (!width) {
     return (
       <Timeline $height={DATE_TIME_HEIGHT + EMPTY_STATE_HEIGHT} ref={containerRef}>
@@ -172,7 +162,7 @@ export const RunTimeline = (props: Props) => {
         <TimeDividers interval={ONE_HOUR_MSEC} range={range} height={anyJobs ? height : 0} />
       </div>
       {repoOrder.length ? (
-        <div style={{overflow: 'hidden', position: 'relative'}}>
+        <div style={{overflow: 'hidden', position: 'relative'}} ref={containerRef}>
           <Container ref={parentRef}>
             <Inner $totalHeight={totalHeight}>
               {items.map(({index, key, size, start}) => {
