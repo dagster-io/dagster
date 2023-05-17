@@ -3,6 +3,7 @@ from dagster import job, op
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.execution.api import create_execution_plan
+from dagster._core.execution.plan.global_concurrency_context import GlobalConcurrencyContext
 from dagster._core.execution.plan.objects import StepSuccessData
 from dagster._core.execution.plan.outputs import StepOutputData, StepOutputHandle
 from dagster._core.execution.retries import RetryMode
@@ -26,14 +27,12 @@ def define_foo_job():
 def test_recover_with_step_in_flight():
     foo_job = define_foo_job()
 
-    with instance_for_test() as instance:
+    with instance_for_test():
         with pytest.raises(
             DagsterInvariantViolationError,
             match="Execution finished without completing the execution plan",
         ):
-            with create_execution_plan(foo_job).start(
-                instance, RetryMode.DISABLED
-            ) as active_execution:
+            with create_execution_plan(foo_job).start(RetryMode.DISABLED) as active_execution:
                 steps = active_execution.get_steps_to_execute()
                 assert len(steps) == 1
                 step_1 = steps[0]
@@ -49,7 +48,7 @@ def test_recover_with_step_in_flight():
 
         # CRASH!- we've closed the active execution. Now we recover, spinning up a new one
 
-        with create_execution_plan(foo_job).start(instance, RetryMode.DISABLED) as active_execution:
+        with create_execution_plan(foo_job).start(RetryMode.DISABLED) as active_execution:
             possibly_in_flight_steps = active_execution.rebuild_from_events(
                 [
                     DagsterEvent(
@@ -114,14 +113,12 @@ def test_recover_in_between_steps():
         ),
     ]
 
-    with instance_for_test() as instance:
+    with instance_for_test():
         with pytest.raises(
             DagsterInvariantViolationError,
             match="Execution finished without completing the execution plan",
         ):
-            with create_execution_plan(two_op_job).start(
-                instance, RetryMode.DISABLED
-            ) as active_execution:
+            with create_execution_plan(two_op_job).start(RetryMode.DISABLED) as active_execution:
                 steps = active_execution.get_steps_to_execute()
                 assert len(steps) == 1
                 step_1 = steps[0]
@@ -133,9 +130,7 @@ def test_recover_in_between_steps():
 
         # CRASH!- we've closed the active execution. Now we recover, spinning up a new one
 
-        with create_execution_plan(two_op_job).start(
-            instance, RetryMode.DISABLED
-        ) as active_execution:
+        with create_execution_plan(two_op_job).start(RetryMode.DISABLED) as active_execution:
             possibly_in_flight_steps = active_execution.rebuild_from_events(events)
             assert len(possibly_in_flight_steps) == 1
             step_2 = possibly_in_flight_steps[0]
@@ -188,26 +183,28 @@ def test_active_concurrency():
             DagsterInvariantViolationError,
             match="Execution finished without completing the execution plan",
         ):
-            with create_execution_plan(foo_job).start(
-                instance, RetryMode.DISABLED, run_id=run_id
-            ) as active_execution:
-                steps = active_execution.get_steps_to_execute()
-                assert len(steps) == 1
-                step_1 = steps[0]
+            with GlobalConcurrencyContext(instance, run_id) as global_concurrency_context:
+                with create_execution_plan(foo_job).start(
+                    RetryMode.DISABLED,
+                    global_concurrency_context=global_concurrency_context,
+                ) as active_execution:
+                    steps = active_execution.get_steps_to_execute()
+                    assert len(steps) == 1
+                    step_1 = steps[0]
 
-                foo_info = instance.event_log_storage.get_concurrency_info("foo")
-                assert foo_info.active_slot_count == 1
-                assert foo_info.active_run_ids == {run_id}
-                assert foo_info.pending_step_count == 1
-                assert foo_info.assigned_step_count == 1
+                    foo_info = instance.event_log_storage.get_concurrency_info("foo")
+                    assert foo_info.active_slot_count == 1
+                    assert foo_info.active_run_ids == {run_id}
+                    assert foo_info.pending_step_count == 1
+                    assert foo_info.assigned_step_count == 1
 
-                active_execution.handle_event(
-                    DagsterEvent(
-                        DagsterEventType.STEP_START.value,
-                        job_name=foo_job.name,
-                        step_key=step_1.key,
+                    active_execution.handle_event(
+                        DagsterEvent(
+                            DagsterEventType.STEP_START.value,
+                            job_name=foo_job.name,
+                            step_key=step_1.key,
+                        )
                     )
-                )
 
         foo_info = instance.event_log_storage.get_concurrency_info("foo")
         assert foo_info.active_slot_count == 1
