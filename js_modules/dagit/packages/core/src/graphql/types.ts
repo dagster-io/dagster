@@ -12,7 +12,6 @@ export type Scalars = {
   Boolean: boolean;
   Int: number;
   Float: number;
-  BigInt: any;
   Cursor: any;
   GenericScalar: any;
   RunConfigData: any;
@@ -309,7 +308,7 @@ export type AssetsOrError = AssetConnection | PythonError;
 export type AutoMaterializeAssetEvaluationRecord = {
   __typename: 'AutoMaterializeAssetEvaluationRecord';
   conditions: Array<AutoMaterializeCondition>;
-  evaluationId: Scalars['BigInt'];
+  evaluationId: Scalars['Int'];
   id: Scalars['ID'];
   numDiscarded: Scalars['Int'];
   numRequested: Scalars['Int'];
@@ -741,7 +740,7 @@ export type DagitQueryAssetsOrErrorArgs = {
 
 export type DagitQueryAutoMaterializeAssetEvaluationsArgs = {
   assetKey?: InputMaybe<AssetKeyInput>;
-  cursor?: InputMaybe<Scalars['BigInt']>;
+  cursor?: InputMaybe<Scalars['String']>;
   limit: Scalars['Int'];
 };
 
@@ -4654,7 +4653,7 @@ export const buildAutoMaterializeAssetEvaluationRecord = (
     __typename: 'AutoMaterializeAssetEvaluationRecord',
     conditions: overrides && overrides.hasOwnProperty('conditions') ? overrides.conditions! : [],
     evaluationId:
-      overrides && overrides.hasOwnProperty('evaluationId') ? overrides.evaluationId! : 'molestiae',
+      overrides && overrides.hasOwnProperty('evaluationId') ? overrides.evaluationId! : 9286,
     id:
       overrides && overrides.hasOwnProperty('id')
         ? overrides.id!

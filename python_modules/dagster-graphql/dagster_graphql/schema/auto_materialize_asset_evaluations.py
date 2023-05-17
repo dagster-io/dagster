@@ -86,7 +86,7 @@ def create_graphene_auto_materialize_condition(condition: AutoMaterializeConditi
 
 class GrapheneAutoMaterializeAssetEvaluationRecord(graphene.ObjectType):
     id = graphene.NonNull(graphene.ID)
-    evaluationId = graphene.NonNull(graphene.BigInt)
+    evaluationId = graphene.NonNull(graphene.Int)
     numRequested = graphene.NonNull(graphene.Int)
     numSkipped = graphene.NonNull(graphene.Int)
     numDiscarded = graphene.NonNull(graphene.Int)

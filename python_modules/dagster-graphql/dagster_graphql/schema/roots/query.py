@@ -473,7 +473,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
         non_null_list(GrapheneAutoMaterializeAssetEvaluationRecord),
         assetKey=graphene.Argument(GrapheneAssetKeyInput),
         limit=graphene.Argument(graphene.NonNull(graphene.Int)),
-        cursor=graphene.Argument(graphene.BigInt),
+        cursor=graphene.Argument(graphene.String),
         description="Retrieve the auto materialization evaluation records for all assets.",
     )
 
@@ -992,7 +992,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
         graphene_info: ResolveInfo,
         assetKey: GrapheneAssetKeyInput,
         limit: int,
-        cursor: Optional[int],
+        cursor: Optional[str],
     ):
         return fetch_auto_materialize_asset_evaluations(
             instance=graphene_info.context.instance, asset_key=assetKey, cursor=cursor, limit=limit

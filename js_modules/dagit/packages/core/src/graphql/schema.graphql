@@ -2901,7 +2901,7 @@ type DagitQuery {
   autoMaterializeAssetEvaluations(
     assetKey: AssetKeyInput
     limit: Int!
-    cursor: BigInt
+    cursor: String
   ): [AutoMaterializeAssetEvaluationRecord!]!
 }
 
@@ -3034,14 +3034,12 @@ type TestFields {
 
 type AutoMaterializeAssetEvaluationRecord {
   id: ID!
-  evaluationId: BigInt!
+  evaluationId: Int!
   numRequested: Int!
   numSkipped: Int!
   numDiscarded: Int!
   conditions: [AutoMaterializeCondition!]!
 }
-
-scalar BigInt
 
 union AutoMaterializeCondition =
     FreshnessAutoMaterializeCondition

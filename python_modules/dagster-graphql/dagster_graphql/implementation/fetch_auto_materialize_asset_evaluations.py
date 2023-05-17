@@ -12,12 +12,14 @@ def fetch_auto_materialize_asset_evaluations(
     instance: DagsterInstance,
     asset_key: GrapheneAssetKeyInput,
     limit: int,
-    cursor: Optional[int],
+    cursor: Optional[str],
 ) -> Sequence[GrapheneAutoMaterializeAssetEvaluationRecord]:
     """Fetch asset policy evaluations from storage."""
     return [
         GrapheneAutoMaterializeAssetEvaluationRecord(record)
         for record in instance.schedule_storage.get_auto_materialize_asset_evaluations(
-            AssetKey.from_graphql_input(asset_key), limit, cursor
+            asset_key=AssetKey.from_graphql_input(asset_key),
+            limit=limit,
+            cursor=int(cursor) if cursor else None,
         )
     ]
