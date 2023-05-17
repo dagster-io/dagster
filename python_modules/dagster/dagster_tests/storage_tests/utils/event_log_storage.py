@@ -1,8 +1,10 @@
 import datetime
 import logging  # noqa: F401; used by mock in string form
+import random
 import re
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack, contextmanager
 from typing import List, Optional, Sequence, Tuple, cast
 
@@ -3357,6 +3359,9 @@ class TestEventLogStorage:
     def test_concurrency(self, storage):
         assert storage
 
+        if self.can_wipe():
+            storage.wipe()
+
         run_id_one = make_new_run_id()
         run_id_two = make_new_run_id()
         run_id_three = make_new_run_id()
@@ -3399,6 +3404,9 @@ class TestEventLogStorage:
         def claim(key, run_id, step_key, priority=0):
             claim_status = storage.claim_concurrency_slot(key, run_id, step_key, priority)
             return claim_status.slot_status
+
+        if self.can_wipe():
+            storage.wipe()
 
         storage.set_concurrency_slots("foo", 5)
         storage.set_concurrency_slots("bar", 1)
@@ -3447,6 +3455,9 @@ class TestEventLogStorage:
         assert claim("foo", run_id, "e") == ConcurrencySlotStatus.CLAIMED
 
     def test_concurrency_allocate_from_pending(self, storage):
+        if self.can_wipe():
+            storage.wipe()
+
         run_id = make_new_run_id()
 
         def claim(key, run_id, step_key, priority=0):
@@ -3492,3 +3503,114 @@ class TestEventLogStorage:
 
         with pytest.raises(DagsterInvalidInvocationError):
             storage.set_concurrency_slots("foo", 1001)
+
+    def test_slot_downsize(self, storage):
+        if self.can_wipe():
+            storage.wipe()
+
+        run_id = make_new_run_id()
+
+        def claim(key, run_id, step_key, priority=0):
+            claim_status = storage.claim_concurrency_slot(key, run_id, step_key, priority)
+            return claim_status.slot_status
+
+        # set concurrency slots
+        storage.set_concurrency_slots("foo", 5)
+
+        # fill em partially up
+        assert claim("foo", run_id, "a") == ConcurrencySlotStatus.CLAIMED
+        assert claim("foo", run_id, "b") == ConcurrencySlotStatus.CLAIMED
+        assert claim("foo", run_id, "c") == ConcurrencySlotStatus.CLAIMED
+
+        storage.set_concurrency_slots("foo", 1)
+
+        assert storage.check_concurrency_claim("foo", run_id, "a").is_claimed
+        assert storage.check_concurrency_claim("foo", run_id, "b").is_claimed
+        assert storage.check_concurrency_claim("foo", run_id, "c").is_claimed
+        foo_info = storage.get_concurrency_info("foo")
+
+        # the slot count is 1, but the active slot count is 3 and will remain so until the slots
+        # are freed
+        assert foo_info.slot_count == 1
+        assert foo_info.active_slot_count == 3
+
+    def test_slot_upsize(self, storage):
+        if self.can_wipe():
+            storage.wipe()
+
+        run_id = make_new_run_id()
+
+        def claim(key, run_id, step_key, priority=0):
+            claim_status = storage.claim_concurrency_slot(key, run_id, step_key, priority)
+            return claim_status.slot_status
+
+        # set concurrency slots
+        storage.set_concurrency_slots("foo", 1)
+
+        # fill em partially up
+        assert claim("foo", run_id, "a") == ConcurrencySlotStatus.CLAIMED
+        assert claim("foo", run_id, "b") == ConcurrencySlotStatus.BLOCKED
+        assert claim("foo", run_id, "c") == ConcurrencySlotStatus.BLOCKED
+        assert claim("foo", run_id, "d") == ConcurrencySlotStatus.BLOCKED
+        assert claim("foo", run_id, "e") == ConcurrencySlotStatus.BLOCKED
+
+        assert storage.check_concurrency_claim("foo", run_id, "a").is_claimed
+        assert not storage.check_concurrency_claim("foo", run_id, "b").is_assigned
+        assert not storage.check_concurrency_claim("foo", run_id, "c").is_assigned
+        assert not storage.check_concurrency_claim("foo", run_id, "d").is_assigned
+        assert not storage.check_concurrency_claim("foo", run_id, "e").is_assigned
+
+        foo_info = storage.get_concurrency_info("foo")
+        assert foo_info.slot_count == 1
+        assert foo_info.active_slot_count == 1
+        assert foo_info.pending_step_count == 4
+        assert foo_info.assigned_step_count == 1  # the claimed step is assigned
+
+        storage.set_concurrency_slots("foo", 4)
+
+        assert storage.check_concurrency_claim("foo", run_id, "a").is_claimed
+        assert storage.check_concurrency_claim("foo", run_id, "b").is_assigned
+        assert storage.check_concurrency_claim("foo", run_id, "c").is_assigned
+        assert storage.check_concurrency_claim("foo", run_id, "d").is_assigned
+        assert not storage.check_concurrency_claim("foo", run_id, "e").is_assigned
+
+        foo_info = storage.get_concurrency_info("foo")
+        assert foo_info.slot_count == 4
+        assert foo_info.active_slot_count == 1
+        assert foo_info.pending_step_count == 1
+        assert foo_info.assigned_step_count == 4
+
+    def test_threaded_concurrency(self, storage):
+        run_id = make_new_run_id()
+        if self.can_wipe():
+            storage.wipe()
+
+        TOTAL_TIMEOUT_TIME = 30
+
+        storage.set_concurrency_slots("foo", 5)
+
+        def _occupy_slot(key: str):
+            start = time.time()
+            claim_status = storage.claim_concurrency_slot("foo", run_id, key)
+            while time.time() < start + TOTAL_TIMEOUT_TIME:
+                if claim_status.slot_status == ConcurrencySlotStatus.CLAIMED:
+                    time.sleep(random.random() * 0.1)
+                    break
+                else:
+                    claim_status = storage.claim_concurrency_slot("foo", run_id, key)
+                    time.sleep(0.05)
+            storage.free_concurrency_slot_for_step(run_id, key)
+
+        start = time.time()
+        with ThreadPoolExecutor() as executor:
+            futures = [executor.submit(_occupy_slot, str(i)) for i in range(100)]
+            while not all(f.done() for f in futures) and time.time() < start + TOTAL_TIMEOUT_TIME:
+                time.sleep(0.1)
+
+            foo_info = storage.get_concurrency_info("foo")
+            assert foo_info.slot_count == 5
+            assert foo_info.active_slot_count == 0
+            assert foo_info.pending_step_count == 0
+            assert foo_info.assigned_step_count == 0
+
+            assert all(f.done() for f in futures)
