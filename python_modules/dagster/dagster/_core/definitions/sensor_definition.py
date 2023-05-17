@@ -38,6 +38,7 @@ from dagster._core.definitions.resource_annotation import (
 from dagster._core.definitions.resource_definition import (
     Resources,
 )
+from dagster._core.definitions.scoped_resources_builder import ScopedResourcesBuilder
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -242,6 +243,18 @@ class SensorEvaluationContext:
             with build_sensor_context(resources={"my_resource": my_cm_resource}) as context:
                 my_sensor(context)
             """
+
+            # Early exit if no resources are defined. This skips unnecessary initialization
+            # entirely. This allows users to run user code servers in cases where they
+            # do not have access to the instance if they use a subset of features do
+            # that do not require instance access. In this case, if they do not use
+            # resources on sensors they do not require the instance, so we do not
+            # instantiate it
+            #
+            # Tracking at https://github.com/dagster-io/dagster/issues/14345
+            if not self._resource_defs:
+                self._resources = ScopedResourcesBuilder.build_empty()
+                return self._resources
 
             instance = self.instance if self._instance or self._instance_ref else None
 
@@ -991,6 +1004,7 @@ def build_sensor_context(
     sensor_name: Optional[str] = None,
     resources: Optional[Mapping[str, object]] = None,
     definitions: Optional["Definitions"] = None,
+    instance_ref: Optional["InstanceRef"] = None,
 ) -> SensorEvaluationContext:
     """Builds sensor execution context using the provided parameters.
 
@@ -1033,7 +1047,7 @@ def build_sensor_context(
     )
 
     return SensorEvaluationContext(
-        instance_ref=None,
+        instance_ref=instance_ref,
         last_completion_time=None,
         last_run_key=None,
         cursor=cursor,
