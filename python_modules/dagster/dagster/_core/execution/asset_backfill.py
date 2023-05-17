@@ -38,7 +38,11 @@ from dagster._core.host_representation import (
     ExternalJob,
 )
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
-from dagster._core.storage.dagster_run import FINISHED_STATUSES, DagsterRunStatus, RunsFilter
+from dagster._core.storage.dagster_run import (
+    CANCELABLE_RUN_STATUSES,
+    DagsterRunStatus,
+    RunsFilter,
+)
 from dagster._core.storage.tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG
 from dagster._core.workspace.context import (
     BaseWorkspaceRequestContext,
@@ -128,17 +132,15 @@ class AssetBackfillData(NamedTuple):
             == self.target_subset.num_partitions_and_non_partitioned_assets
         )
 
-    def requested_runs_finished(self, backfill_id: str, instance_queryer: CachingInstanceQueryer):
-        runs = instance_queryer.instance.get_runs(
-            filters=RunsFilter(
-                tags={BACKFILL_ID_TAG: backfill_id},
-            )
-        )
+    def have_all_requested_runs_finished(self) -> bool:
+        for partition in self.requested_subset.iterate_asset_partitions():
+            if (
+                partition not in self.materialized_subset
+                and partition not in self.failed_and_downstream_subset
+            ):
+                return False
 
-        if all(run.status in FINISHED_STATUSES for run in runs):
-            return True
-
-        return False
+        return True
 
     def get_target_root_asset_partitions(self) -> Iterable[AssetKeyPartitionKey]:
         root_asset_keys = (
@@ -404,6 +406,17 @@ class AssetBackfillData(NamedTuple):
         return json.dumps(storage_dict)
 
 
+def fetch_cancelable_run_ids_for_asset_backfill(instance: DagsterInstance, backfill_id: str):
+    backfill_runs = instance.run_storage.get_runs(
+        filters=RunsFilter(
+            tags={
+                BACKFILL_ID_TAG: backfill_id,
+            }
+        )
+    )
+    return [run.run_id for run in backfill_runs if run.status in CANCELABLE_RUN_STATUSES]
+
+
 def execute_asset_backfill_iteration(
     backfill: "PartitionBackfill",
     workspace_process_context: IWorkspaceProcessContext,
@@ -475,17 +488,15 @@ def execute_asset_backfill_iteration(
             )
 
     elif backfill.status == BulkActionStatus.CANCELING:
-        # The asset backfill is successfully canceled when all requested runs have finished (success,
-        # failure, or cancellation). Since the AssetBackfillData object stores materialization states
-        # per asset partition, the daemon continues to update the backfill data until all runs have
-        # finished in order to display the final partition statuses in the UI.
-
-        # We check if the all runs are finished before updating the asset backfill data.
-        # If we did this the other way around, a race condition would occur where runs finish
-        # between the asset backfill data update and the backfill cancellation.
-        mark_backfill_as_canceled = asset_backfill_data.requested_runs_finished(
-            backfill.backfill_id, instance_queryer
+        # Find all cancellable runs and mark them as canceled
+        cancelable_run_ids = fetch_cancelable_run_ids_for_asset_backfill(
+            instance, backfill.backfill_id
         )
+        if cancelable_run_ids:
+            if not instance.run_coordinator:
+                check.failed("The instance must have a run coordinator in order to cancel runs")
+            for run_id in cancelable_run_ids:
+                instance.run_coordinator.cancel_run(run_id)
 
         # Update the asset backfill data to contain the newly materialized/failed partitions.
         updated_asset_backfill_data = None
@@ -506,7 +517,11 @@ def execute_asset_backfill_iteration(
         updated_backfill = backfill.with_asset_backfill_data(
             updated_asset_backfill_data, dynamic_partitions_store=instance
         )
-        if mark_backfill_as_canceled:
+        # The asset backfill is successfully canceled when all requested runs have finished (success,
+        # failure, or cancellation). Since the AssetBackfillData object stores materialization states
+        # per asset partition, the daemon continues to update the backfill data until all runs have
+        # finished in order to display the final partition statuses in the UI.
+        if updated_asset_backfill_data.have_all_requested_runs_finished():
             updated_backfill = updated_backfill.with_status(BulkActionStatus.CANCELED)
 
     else:
@@ -537,7 +552,7 @@ def get_canceling_asset_backfill_iteration_data(
             " AssetGraphSubset"
         )
 
-    failed_and_downstream_subset = get_asset_backfill_iteration_failed_and_downstream_partitions(
+    failed_and_downstream_subset = _get_failed_and_downstream_asset_partitions(
         backfill_id,
         asset_backfill_data,
         asset_graph,
@@ -683,13 +698,13 @@ def get_asset_backfill_iteration_materialized_partitions(
     yield updated_materialized_subset
 
 
-def get_asset_backfill_iteration_failed_and_downstream_partitions(
+def _get_failed_and_downstream_asset_partitions(
     backfill_id: str,
     asset_backfill_data: AssetBackfillData,
     asset_graph: ExternalAssetGraph,
     instance_queryer: CachingInstanceQueryer,
     backfill_start_time: datetime,
-):
+) -> AssetGraphSubset:
     failed_and_downstream_subset = AssetGraphSubset.from_asset_partition_set(
         asset_graph.bfs_filter_asset_partitions(
             instance_queryer,
@@ -766,10 +781,8 @@ def execute_asset_backfill_iteration_inner(
                 " AssetGraphSubset"
             )
 
-        failed_and_downstream_subset = (
-            get_asset_backfill_iteration_failed_and_downstream_partitions(
-                backfill_id, asset_backfill_data, asset_graph, instance_queryer, backfill_start_time
-            )
+        failed_and_downstream_subset = _get_failed_and_downstream_asset_partitions(
+            backfill_id, asset_backfill_data, asset_graph, instance_queryer, backfill_start_time
         )
 
         yield None

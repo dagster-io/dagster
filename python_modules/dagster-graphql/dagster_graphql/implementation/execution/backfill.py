@@ -196,6 +196,7 @@ def cancel_partition_backfill(
         graphene_info.context.instance.update_backfill(
             backfill.with_status(BulkActionStatus.CANCELING)
         )
+
     else:
         partition_set_origin = check.not_none(backfill.partition_set_origin)
         location_name = partition_set_origin.selector.location_name
