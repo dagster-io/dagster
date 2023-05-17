@@ -679,12 +679,12 @@ def test_nested_resources_runtime_config_complex():
 
 
 def test_enum_nested_resource_no_run_config() -> None:
-    class MyEnum(enum.Enum):
+    class NestedEnum(enum.Enum):
         A = "a_value"
         B = "b_value"
 
     class ResourceWithEnum(ConfigurableResource):
-        my_enum: MyEnum
+        my_enum: NestedEnum
 
     class OuterResourceWithResourceWithEnum(ConfigurableResource):
         resource_with_enum: ResourceWithEnum
@@ -697,7 +697,7 @@ def test_enum_nested_resource_no_run_config() -> None:
         assets=[asset_with_outer_resource],
         resources={
             "outer_resource": OuterResourceWithResourceWithEnum(
-                resource_with_enum=ResourceWithEnum(my_enum=MyEnum.A)
+                resource_with_enum=ResourceWithEnum(my_enum=NestedEnum.A)
             )
         },
     )
@@ -1069,23 +1069,23 @@ def test_nested_config_class() -> None:
 def test_using_enum_simple() -> None:
     executed = {}
 
-    class MyEnum(enum.Enum):
+    class SimpleEnum(enum.Enum):
         FOO = "foo"
         BAR = "bar"
 
     class MyResource(ConfigurableResource):
-        an_enum: MyEnum
+        an_enum: SimpleEnum
 
     @asset
     def an_asset(my_resource: MyResource):
-        assert my_resource.an_enum == MyEnum.FOO
+        assert my_resource.an_enum == SimpleEnum.FOO
         executed["yes"] = True
 
     defs = Definitions(
         assets=[an_asset],
         resources={
             "my_resource": MyResource(
-                an_enum=MyEnum.FOO,
+                an_enum=SimpleEnum.FOO,
             )
         },
     )
@@ -1104,7 +1104,7 @@ def test_using_enum_simple() -> None:
     assert (
         defs.get_implicit_global_asset_job_def()
         .execute_in_process(
-            {"resources": {"my_resource": {"config": {"an_enum": MyEnum.FOO.name}}}}
+            {"resources": {"my_resource": {"config": {"an_enum": SimpleEnum.FOO.name}}}}
         )
         .success
     )
