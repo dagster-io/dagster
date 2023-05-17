@@ -1,3 +1,5 @@
+from typing import cast
+
 import dagster._check as check
 import graphene
 from dagster._core.definitions.auto_materialize_condition import (
@@ -99,7 +101,7 @@ class GrapheneAutoMaterializeAssetEvaluationRecord(graphene.ObjectType):
         conditions = [
             # NOTE: Hacky check for if this is partitioned or not! Python doesn't support isinstance with Unions,
             # so instead we check against __args__ which is the list of types that the Union is composed of
-            i if isinstance(i, AutoMaterializeCondition.__args__) else i[0]  # type: ignore
+            cast(AutoMaterializeCondition, i if isinstance(i, AutoMaterializeCondition.__args__) else i[0])  # type: ignore
             for i in record.evaluation.conditions
         ]
         super().__init__(

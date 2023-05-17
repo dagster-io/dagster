@@ -12,7 +12,7 @@ from dagster_graphql_tests.graphql.graphql_context_test_suite import (
 )
 
 QUERY = """
-query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: BigInt) {
+query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: String) {
     autoMaterializeAssetEvaluations(assetKey: $assetKey, limit: $limit, cursor: $cursor) {
         numRequested
         numSkipped
