@@ -459,6 +459,11 @@ class SqlScheduleStorage(ScheduleStorage):
         with self.connect() as conn:
             conn.execute(query)
 
+    @property
+    def supports_auto_materialize_asset_evaluations(self) -> bool:
+        with self.connect() as conn:
+            return self._has_asset_daemon_asset_evaluations_table(conn)
+
     def add_auto_materialize_asset_evaluations(
         self,
         evaluation_id: int,

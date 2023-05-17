@@ -42,9 +42,6 @@ daemon_scenarios = {**auto_materialize_policy_scenarios, **multi_code_location_s
 
 @pytest.fixture
 def daemon_not_paused_instance():
-    # instance = DagsterInstance.ephemeral()
-    # set_auto_materialize_paused(instance, False)
-    # yield instance
     with instance_for_test(
         overrides={
             "run_launcher": {

@@ -53,6 +53,12 @@ class AssetDaemon(IntervalDaemon):
             "Auto materialization requires schedule storage to be configured",
         )
 
+        if not schedule_storage.supports_auto_materialize_asset_evaluations:
+            self._logger.warning(
+                "Auto materialize evaluations are not getting logged. Run `dagster instance"
+                " migrate` to enable."
+            )
+
         workspace = workspace_process_context.create_request_context()
         asset_graph = ExternalAssetGraph.from_workspace(workspace)
         target_asset_keys = {
@@ -83,9 +89,10 @@ class AssetDaemon(IntervalDaemon):
             run_tags=None,
         )
 
-        schedule_storage.add_auto_materialize_asset_evaluations(
-            check.not_none(new_cursor.evaluation_id), evaluations
-        )
+        if schedule_storage.supports_auto_materialize_asset_evaluations:
+            schedule_storage.add_auto_materialize_asset_evaluations(
+                check.not_none(new_cursor.evaluation_id), evaluations
+            )
 
         for run_request in run_requests:
             yield

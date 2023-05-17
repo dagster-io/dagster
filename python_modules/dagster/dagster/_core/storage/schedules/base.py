@@ -137,6 +137,10 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
             tick_statuses (Optional[List[TickStatus]]): The tick statuses to wipe
         """
 
+    @property
+    def supports_auto_materialize_asset_evaluations(self) -> bool:
+        return True
+
     @abc.abstractmethod
     def add_auto_materialize_asset_evaluations(
         self,
