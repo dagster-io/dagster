@@ -403,13 +403,22 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
 
         if not tasks:
             failures = response["failures"]
-            exceptions = []
+            failure_messages = []
             for failure in failures:
                 arn = failure.get("arn")
                 reason = failure.get("reason")
                 detail = failure.get("detail")
-                exceptions.append(Exception(f"Task {arn} failed because {reason}: {detail}"))
-            raise Exception(exceptions)
+
+                failure_message = (
+                    "Task"
+                    + (f" {arn}" if arn else "")
+                    + " failed."
+                    + (f" Failure reason: {reason}" if reason else "")
+                    + (f" Failure details: {detail}" if detail else "")
+                )
+                failure_messages.append(failure_message)
+
+            raise Exception("\n".join(failure_messages) if failure_messages else "Task failed.")
 
         arn = tasks[0]["taskArn"]
         cluster_arn = tasks[0]["clusterArn"]
