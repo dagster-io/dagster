@@ -51,18 +51,16 @@ describe('Repository options', () => {
       }),
     };
 
-    await act(async () => {
-      render(
-        <TestProvider
-          apolloProps={{mocks: [defaultMocks, mocks]}}
-          routerProps={{initialEntries: ['/locations/foo@bar/etc']}}
-        >
-          <LeftNavRepositorySection />
-        </TestProvider>,
-      );
-    });
+    render(
+      <TestProvider
+        apolloProps={{mocks: [defaultMocks, mocks]}}
+        routerProps={{initialEntries: ['/locations/foo@bar/etc']}}
+      >
+        <LeftNavRepositorySection />
+      </TestProvider>,
+    );
 
-    const repoHeader = screen.getByRole('button', {name: /foo/i});
+    const repoHeader = await screen.findByRole('button', {name: /foo/i});
     await userEvent.click(repoHeader);
 
     await waitFor(() => {
@@ -247,7 +245,8 @@ describe('Repository options', () => {
         `["lorem:ipsum", "foo:bar", "${DUNDER_REPO_NAME}:abc_location"]`,
       );
 
-      await act(async () => {
+      // `act` immediately because we are asserting null renders
+      act(() => {
         render(
           <TestProvider
             apolloProps={{mocks: [defaultMocks, mocksWithThree]}}

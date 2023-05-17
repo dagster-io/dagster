@@ -23,13 +23,11 @@ describe('CustomConfirmationProvider', () => {
   };
 
   it('must not render a Dialog initially', async () => {
-    await act(() => {
-      render(
-        <CustomConfirmationProvider>
-          <Test />
-        </CustomConfirmationProvider>,
-      );
-    });
+    render(
+      <CustomConfirmationProvider>
+        <Test />
+      </CustomConfirmationProvider>,
+    );
 
     expect(screen.queryByRole('button', {name: /cancel/i})).toBeNull();
   });
@@ -68,33 +66,26 @@ describe('CustomConfirmationProvider', () => {
   });
 
   it('must remove the confirmation Dialog from the DOM afterward', async () => {
+    const user = userEvent.setup({advanceTimers: jest.advanceTimersByTime});
     jest.useFakeTimers();
 
-    await act(() => {
-      render(
-        <CustomConfirmationProvider>
-          <Test />
-        </CustomConfirmationProvider>,
-      );
-    });
+    render(
+      <CustomConfirmationProvider>
+        <Test />
+      </CustomConfirmationProvider>,
+    );
 
     const button = screen.queryByRole('button', {name: /terminate/i}) as HTMLButtonElement;
-    await act(() => {
-      button.click();
-    });
+    await user.click(button);
 
     const confirmationButton = screen.queryByRole('button', {
       name: /confirm/i,
     }) as HTMLButtonElement;
 
     // Resolves the promise.
-    await act(() => {
-      confirmationButton.click();
-    });
+    await user.click(confirmationButton);
 
-    await waitFor(() => {
-      expect(screen.queryByText(/confirmed\? true/i)).toBeVisible();
-    });
+    await screen.findByText(/confirmed\? true/i);
 
     act(() => {
       jest.advanceTimersByTime(1000);

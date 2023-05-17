@@ -1,4 +1,4 @@
-import {act, render, screen, waitFor, within} from '@testing-library/react';
+import {act, render, screen, within} from '@testing-library/react';
 import * as React from 'react';
 
 import {InstigationStatus} from '../../graphql/types';
@@ -75,17 +75,16 @@ describe('AppTopNav', () => {
       </TestProvider>,
     );
 
-    await waitFor(() => {
-      const runsLink = screen.getByRole('link', {name: /runs/i});
-      expect(runsLink.closest('a')).toHaveAttribute('href', '/runs');
-      expect(screen.getByText('Assets').closest('a')).toHaveAttribute('href', '/assets');
-      expect(screen.getByText('Deployment').closest('a')).toHaveAttribute('href', '/locations');
-      expect(screen.getByText('RightOfSearchBar')).toBeVisible();
-    });
+    const runsLink = await screen.findByRole('link', {name: /runs/i});
+    expect(runsLink.closest('a')).toHaveAttribute('href', '/runs');
+    expect(screen.getByText('Assets').closest('a')).toHaveAttribute('href', '/assets');
+    expect(screen.getByText('Deployment').closest('a')).toHaveAttribute('href', '/locations');
+    expect(screen.getByText('RightOfSearchBar')).toBeVisible();
   });
 
   describe('Repo location errors', () => {
     it('does not show warning icon when no errors', async () => {
+      // Act immediately since we're asserting a post-query null state.
       await act(async () => {
         render(
           <TestProvider apolloProps={{mocks: [defaultMocks]}}>
@@ -110,21 +109,15 @@ describe('AppTopNav', () => {
         }),
       };
 
-      await act(async () => {
-        render(
-          <TestProvider apolloProps={{mocks: [defaultMocks, mocks]}}>
-            <Test>
-              <AppTopNav searchPlaceholder="Test..." />
-            </Test>
-          </TestProvider>,
-        );
-      });
+      render(
+        <TestProvider apolloProps={{mocks: [defaultMocks, mocks]}}>
+          <Test>
+            <AppTopNav searchPlaceholder="Test..." />
+          </Test>
+        </TestProvider>,
+      );
 
-      expect(
-        screen.getByRole('img', {
-          name: /warning/i,
-        }),
-      ).toBeVisible();
+      expect(await screen.findByRole('img', {name: /warning/i})).toBeVisible();
     });
   });
 
@@ -157,36 +150,30 @@ describe('AppTopNav', () => {
         }),
       };
 
-      await act(async () => {
-        render(
-          <TestProvider
-            apolloProps={{mocks: [defaultMocks, mocksWithDaemonError, mocksWithoutSensor]}}
-          >
-            <Test>
-              <AppTopNav searchPlaceholder="Test..." />
-            </Test>
-          </TestProvider>,
-        );
-      });
+      render(
+        <TestProvider
+          apolloProps={{mocks: [defaultMocks, mocksWithDaemonError, mocksWithoutSensor]}}
+        >
+          <Test>
+            <AppTopNav searchPlaceholder="Test..." />
+          </Test>
+        </TestProvider>,
+      );
 
-      const link = screen.getByRole('link', {name: /deployment/i});
+      const link = await screen.findByRole('link', {name: /deployment/i});
       expect(within(link).queryByText(/warning/i)).toBeNull();
     });
 
     it('shows deployment warning icon by default, if there are errors', async () => {
-      await act(async () => {
-        render(
-          <TestProvider
-            apolloProps={{mocks: [defaultMocks, mocksWithDaemonError, mocksWithSensor]}}
-          >
-            <Test>
-              <AppTopNav searchPlaceholder="Test..." />
-            </Test>
-          </TestProvider>,
-        );
-      });
+      render(
+        <TestProvider apolloProps={{mocks: [defaultMocks, mocksWithDaemonError, mocksWithSensor]}}>
+          <Test>
+            <AppTopNav searchPlaceholder="Test..." />
+          </Test>
+        </TestProvider>,
+      );
 
-      const link = screen.getByRole('link', {
+      const link = await screen.findByRole('link', {
         name: /deployment warning/i,
       });
 
@@ -194,19 +181,15 @@ describe('AppTopNav', () => {
     });
 
     it('does not show deployment warning icon if `statusPolling` does not include `daemons`, even with errors', async () => {
-      await act(async () => {
-        render(
-          <TestProvider
-            apolloProps={{mocks: [defaultMocks, mocksWithDaemonError, mocksWithSensor]}}
-          >
-            <Test statusPolling={new Set(['code-locations'])}>
-              <AppTopNav searchPlaceholder="Test..." />
-            </Test>
-          </TestProvider>,
-        );
-      });
+      render(
+        <TestProvider apolloProps={{mocks: [defaultMocks, mocksWithDaemonError, mocksWithSensor]}}>
+          <Test statusPolling={new Set(['code-locations'])}>
+            <AppTopNav searchPlaceholder="Test..." />
+          </Test>
+        </TestProvider>,
+      );
 
-      const link = screen.getByRole('link', {name: /deployment/i});
+      const link = await screen.findByRole('link', {name: /deployment/i});
       expect(within(link).queryByText(/warning/i)).toBeNull();
     });
   });

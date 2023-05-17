@@ -1,4 +1,4 @@
-import {act, render, screen} from '@testing-library/react';
+import {render, screen} from '@testing-library/react';
 import * as React from 'react';
 import {BrowserRouter} from 'react-router-dom';
 
@@ -27,9 +27,7 @@ function TestComponent() {
 
 describe('RunRequestTableTest', () => {
   it('renders results', async () => {
-    await act(async () => {
-      await render(<TestComponent />);
-    });
+    render(<TestComponent />);
 
     runRequests.forEach((req) => {
       req.tags.forEach(({key, value}) => {

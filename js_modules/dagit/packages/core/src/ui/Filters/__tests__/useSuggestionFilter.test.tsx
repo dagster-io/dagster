@@ -1,3 +1,4 @@
+import {waitFor} from '@testing-library/dom';
 import {renderHook, act} from '@testing-library/react-hooks';
 import React from 'react';
 
@@ -75,15 +76,15 @@ describe('useSuggestionFilter', () => {
 
     expect(result.current.state).toEqual([]);
 
-    await act(async () => {
-      await result.current.onSelect({value: {final: true, value: 'apple'}} as any);
+    act(() => {
+      result.current.onSelect({value: {final: true, value: 'apple'}} as any);
     });
     rerender();
 
     expect(result.current.state).toEqual(['apple']);
 
-    await act(async () => {
-      await result.current.onSelect({value: {final: true, value: 'apple'}} as any);
+    act(() => {
+      result.current.onSelect({value: {final: true, value: 'apple'}} as any);
     });
     rerender();
 
@@ -101,7 +102,7 @@ describe('useSuggestionFilter', () => {
     expect(result.current.getResults('p')).toEqual([]);
 
     const clearSearchFn = jest.fn();
-    await act(async () => {
+    act(() => {
       result.current.onSelect({
         value: {final: false, value: 'p'},
         clearSearch: clearSearchFn,
@@ -109,7 +110,10 @@ describe('useSuggestionFilter', () => {
         close: () => {},
       });
     });
-    expect(clearSearchFn).toHaveBeenCalled();
+
+    await waitFor(() => {
+      expect(clearSearchFn).toHaveBeenCalled();
+    });
 
     const expectedResult = asyncSuggestions.filter(({value}) => isMatch(value, 'p'));
 

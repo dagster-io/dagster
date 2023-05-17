@@ -1,4 +1,4 @@
-import {act, render, screen} from '@testing-library/react';
+import {render, screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as React from 'react';
 
@@ -49,11 +49,9 @@ describe('RunActionsMenu', () => {
 
   describe('Permissions', () => {
     it('renders menu when open', async () => {
-      await act(async () => {
-        render(<Test run={runFragment} />);
-      });
+      render(<Test run={runFragment} />);
 
-      const button = screen.queryByRole('button') as HTMLButtonElement;
+      const button = await screen.findByRole('button');
       expect(button).toBeVisible();
 
       await userEvent.click(button);
@@ -66,25 +64,23 @@ describe('RunActionsMenu', () => {
     });
 
     it('disables re-execution if no permission', async () => {
-      await act(async () => {
-        render(
-          <Test
-            run={runFragment}
-            permissionOverrides={{
-              launch_pipeline_reexecution: {enabled: false, disabledReason: 'lol nope'},
-            }}
-          />,
-        );
-      });
+      render(
+        <Test
+          run={runFragment}
+          permissionOverrides={{
+            launch_pipeline_reexecution: {enabled: false, disabledReason: 'lol nope'},
+          }}
+        />,
+      );
 
-      const button = screen.queryByRole('button') as HTMLButtonElement;
+      const button = await screen.findByRole('button');
       expect(button).toBeVisible();
 
       await userEvent.click(button);
 
-      const reExecutionButton = screen.queryByRole('menuitem', {
+      const reExecutionButton = await screen.findByRole('menuitem', {
         name: /re\-execute/i,
-      }) as HTMLButtonElement;
+      });
 
       // Blueprint doesn't actually set `disabled` on the button element.
       expect(reExecutionButton.classList.contains('bp4-disabled')).toBe(true);
