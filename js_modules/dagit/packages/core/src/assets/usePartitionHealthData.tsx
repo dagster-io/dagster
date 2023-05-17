@@ -77,7 +77,7 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
 
   const assetPartitionStatuses = (data.assetNodeOrError.__typename === 'AssetNode' &&
     data.assetNodeOrError.assetPartitionStatuses) || {
-    __typename: 'DefaultPartitions',
+    __typename: 'DefaultPartitionStatuses',
     unmaterializedPartitions: [],
     materializedPartitions: [],
     materializingPartitions: [],
@@ -91,7 +91,7 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
   // everything in this function to match the range data.
   const isRangeDataInverted =
     __dims.length === 2 &&
-    assetPartitionStatuses.__typename === 'MultiPartitions' &&
+    assetPartitionStatuses.__typename === 'MultiPartitionStatuses' &&
     assetPartitionStatuses.primaryDimensionName !== __dims[0].name;
 
   const dimensions = isRangeDataInverted ? [__dims[1], __dims[0]] : __dims;
@@ -397,7 +397,7 @@ function addKeyIndexesToMaterializedRanges(
   if (dimensions.length === 0) {
     return result;
   }
-  if (partitions.__typename === 'DefaultPartitions') {
+  if (partitions.__typename === 'DefaultPartitionStatuses') {
     const dim = dimensions[0];
     const spans = assembleIntoSpans(dim.partitionKeys, (key) =>
       partitions.materializedPartitions.includes(key)
@@ -419,13 +419,13 @@ function addKeyIndexesToMaterializedRanges(
   }
 
   for (const range of partitions.ranges) {
-    if (range.__typename === 'TimePartitionRange') {
+    if (range.__typename === 'TimePartitionRangeStatus') {
       result.push({
         start: {key: range.startKey, idx: dimensions[0].partitionKeys.indexOf(range.startKey)},
         end: {key: range.endKey, idx: dimensions[0].partitionKeys.indexOf(range.endKey)},
         value: [rangeStatusToState(range.status)],
       });
-    } else if (range.__typename === 'MaterializedPartitionRange2D') {
+    } else if (range.__typename === 'MaterializedPartitionRangeStatuses2D') {
       if (dimensions.length !== 2) {
         warnUnlessTest('[addKeyIndexesToMaterializedRanges] Found 2D health data for 1D asset');
         return result;
@@ -581,7 +581,7 @@ export const PARTITION_HEALTH_QUERY = gql`
           partitionKeys
         }
         assetPartitionStatuses {
-          ... on TimePartitions {
+          ... on TimePartitionStatuses {
             ranges {
               status
               startTime
@@ -590,12 +590,12 @@ export const PARTITION_HEALTH_QUERY = gql`
               endKey
             }
           }
-          ... on DefaultPartitions {
+          ... on DefaultPartitionStatuses {
             materializedPartitions
             materializingPartitions
             failedPartitions
           }
-          ... on MultiPartitions {
+          ... on MultiPartitionStatuses {
             primaryDimensionName
             ranges {
               primaryDimStartKey
@@ -603,7 +603,7 @@ export const PARTITION_HEALTH_QUERY = gql`
               primaryDimStartTime
               primaryDimEndTime
               secondaryDim {
-                ... on TimePartitions {
+                ... on TimePartitionStatuses {
                   ranges {
                     status
                     startTime
@@ -612,7 +612,7 @@ export const PARTITION_HEALTH_QUERY = gql`
                     endKey
                   }
                 }
-                ... on DefaultPartitions {
+                ... on DefaultPartitionStatuses {
                   materializedPartitions
                   materializingPartitions
                   failedPartitions

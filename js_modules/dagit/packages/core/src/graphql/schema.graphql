@@ -720,21 +720,24 @@ enum AutoMaterializePolicyType {
   LAZY
 }
 
-union AssetPartitionStatuses = DefaultPartitions | MultiPartitions | TimePartitions
+union AssetPartitionStatuses =
+    DefaultPartitionStatuses
+  | MultiPartitionStatuses
+  | TimePartitionStatuses
 
-type DefaultPartitions {
+type DefaultPartitionStatuses {
   materializedPartitions: [String!]!
   failedPartitions: [String!]!
   unmaterializedPartitions: [String!]!
   materializingPartitions: [String!]!
 }
 
-type MultiPartitions {
-  ranges: [MaterializedPartitionRange2D!]!
+type MultiPartitionStatuses {
+  ranges: [MaterializedPartitionRangeStatuses2D!]!
   primaryDimensionName: String!
 }
 
-type MaterializedPartitionRange2D {
+type MaterializedPartitionRangeStatuses2D {
   primaryDimStartKey: String!
   primaryDimEndKey: String!
   primaryDimStartTime: Float
@@ -742,18 +745,18 @@ type MaterializedPartitionRange2D {
   secondaryDim: PartitionStatus1D!
 }
 
-union PartitionStatus1D = TimePartitions | DefaultPartitions
+union PartitionStatus1D = TimePartitionStatuses | DefaultPartitionStatuses
 
-type TimePartitions {
-  ranges: [TimePartitionRange!]!
+type TimePartitionStatuses {
+  ranges: [TimePartitionRangeStatus!]!
 }
 
-type TimePartitionRange {
-  status: PartitionRangeStatus!
+type TimePartitionRangeStatus {
   startTime: Float!
   endTime: Float!
   startKey: String!
   endKey: String!
+  status: PartitionRangeStatus!
 }
 
 enum PartitionRangeStatus {

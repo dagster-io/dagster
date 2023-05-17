@@ -244,7 +244,7 @@ export const PartitionHealthAssetDailyMock: MockedResponse<PartitionHealthQuery>
               endTime: 1663027200.0,
               startKey: '2022-09-12',
               endKey: '2022-09-12',
-              __typename: 'TimePartitionRange',
+              __typename: 'TimePartitionRangeStatus',
             },
             {
               status: PartitionRangeStatus.MATERIALIZED,
@@ -252,7 +252,7 @@ export const PartitionHealthAssetDailyMock: MockedResponse<PartitionHealthQuery>
               endTime: 1667088000.0,
               startKey: '2022-09-13',
               endKey: '2022-10-29',
-              __typename: 'TimePartitionRange',
+              __typename: 'TimePartitionRangeStatus',
             },
             {
               status: PartitionRangeStatus.MATERIALIZED,
@@ -260,7 +260,7 @@ export const PartitionHealthAssetDailyMock: MockedResponse<PartitionHealthQuery>
               endTime: 1670803200.0,
               startKey: '2022-11-19',
               endKey: '2022-12-11',
-              __typename: 'TimePartitionRange',
+              __typename: 'TimePartitionRangeStatus',
             },
             {
               status: PartitionRangeStatus.MATERIALIZED,
@@ -268,7 +268,7 @@ export const PartitionHealthAssetDailyMock: MockedResponse<PartitionHealthQuery>
               endTime: 1674086400.0,
               startKey: '2022-12-20',
               endKey: '2023-01-18',
-              __typename: 'TimePartitionRange',
+              __typename: 'TimePartitionRangeStatus',
             },
             {
               status: PartitionRangeStatus.MATERIALIZED,
@@ -276,10 +276,10 @@ export const PartitionHealthAssetDailyMock: MockedResponse<PartitionHealthQuery>
               endTime: 1676937600.0,
               startKey: '2023-02-20',
               endKey: '2023-02-20',
-              __typename: 'TimePartitionRange',
+              __typename: 'TimePartitionRangeStatus',
             },
           ],
-          __typename: 'TimePartitions',
+          __typename: 'TimePartitionStatuses',
         },
         __typename: 'AssetNode',
       },
@@ -315,7 +315,7 @@ export const PartitionHealthAssetWeeklyMock: MockedResponse<PartitionHealthQuery
         ],
         assetPartitionStatuses: {
           ranges: [],
-          __typename: 'TimePartitions',
+          __typename: 'TimePartitionStatuses',
         },
         __typename: 'AssetNode',
       },
@@ -351,7 +351,7 @@ export const PartitionHealthAssetWeeklyRootMock: MockedResponse<PartitionHealthQ
         ],
         assetPartitionStatuses: {
           ranges: [],
-          __typename: 'TimePartitions',
+          __typename: 'TimePartitionStatuses',
         },
         __typename: 'AssetNode',
       },

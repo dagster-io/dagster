@@ -20,31 +20,31 @@ export type PartitionHealthQuery = {
         }>;
         assetPartitionStatuses:
           | {
-              __typename: 'DefaultPartitions';
+              __typename: 'DefaultPartitionStatuses';
               materializedPartitions: Array<string>;
               materializingPartitions: Array<string>;
               failedPartitions: Array<string>;
             }
           | {
-              __typename: 'MultiPartitions';
+              __typename: 'MultiPartitionStatuses';
               primaryDimensionName: string;
               ranges: Array<{
-                __typename: 'MaterializedPartitionRange2D';
+                __typename: 'MaterializedPartitionRangeStatuses2D';
                 primaryDimStartKey: string;
                 primaryDimEndKey: string;
                 primaryDimStartTime: number | null;
                 primaryDimEndTime: number | null;
                 secondaryDim:
                   | {
-                      __typename: 'DefaultPartitions';
+                      __typename: 'DefaultPartitionStatuses';
                       materializedPartitions: Array<string>;
                       materializingPartitions: Array<string>;
                       failedPartitions: Array<string>;
                     }
                   | {
-                      __typename: 'TimePartitions';
+                      __typename: 'TimePartitionStatuses';
                       ranges: Array<{
-                        __typename: 'TimePartitionRange';
+                        __typename: 'TimePartitionRangeStatus';
                         status: Types.PartitionRangeStatus;
                         startTime: number;
                         endTime: number;
@@ -55,9 +55,9 @@ export type PartitionHealthQuery = {
               }>;
             }
           | {
-              __typename: 'TimePartitions';
+              __typename: 'TimePartitionStatuses';
               ranges: Array<{
-                __typename: 'TimePartitionRange';
+                __typename: 'TimePartitionRangeStatus';
                 status: Types.PartitionRangeStatus;
                 startTime: number;
                 endTime: number;

@@ -89,7 +89,6 @@ GraphenePartitionRangeStatus = graphene.Enum.from_enum(PartitionRangeStatus)
 
 
 class GrapheneTimePartitionRange(graphene.ObjectType):
-    status = graphene.NonNull(GraphenePartitionRangeStatus)
     startTime = graphene.NonNull(graphene.Float)
     endTime = graphene.NonNull(graphene.Float)
     startKey = graphene.NonNull(graphene.String)
@@ -99,30 +98,37 @@ class GrapheneTimePartitionRange(graphene.ObjectType):
         name = "TimePartitionRange"
 
 
-class GrapheneTimePartitions(graphene.ObjectType):
-    ranges = non_null_list(GrapheneTimePartitionRange)
+class GrapheneTimePartitionRangeStatus(GrapheneTimePartitionRange):
+    status = graphene.NonNull(GraphenePartitionRangeStatus)
 
     class Meta:
-        name = "TimePartitions"
+        name = "TimePartitionRangeStatus"
 
 
-class GrapheneDefaultPartitions(graphene.ObjectType):
+class GrapheneTimePartitionStatuses(graphene.ObjectType):
+    ranges = non_null_list(GrapheneTimePartitionRangeStatus)
+
+    class Meta:
+        name = "TimePartitionStatuses"
+
+
+class GrapheneDefaultPartitionStatuses(graphene.ObjectType):
     materializedPartitions = non_null_list(graphene.String)
     failedPartitions = non_null_list(graphene.String)
     unmaterializedPartitions = non_null_list(graphene.String)
     materializingPartitions = non_null_list(graphene.String)
 
     class Meta:
-        name = "DefaultPartitions"
+        name = "DefaultPartitionStatuses"
 
 
 class GraphenePartitionStatus1D(graphene.Union):
     class Meta:
-        types = (GrapheneTimePartitions, GrapheneDefaultPartitions)
+        types = (GrapheneTimePartitionStatuses, GrapheneDefaultPartitionStatuses)
         name = "PartitionStatus1D"
 
 
-class GrapheneMultiPartitionRange(graphene.ObjectType):
+class GrapheneMultiPartitionRangeStatuses(graphene.ObjectType):
     """The primary dimension of a multipartitioned asset is the time-partitioned dimension.
     If both dimensions of the asset are static or time-partitioned, the primary dimension is
     the first defined dimension.
@@ -135,20 +141,24 @@ class GrapheneMultiPartitionRange(graphene.ObjectType):
     secondaryDim = graphene.NonNull(GraphenePartitionStatus1D)
 
     class Meta:
-        name = "MaterializedPartitionRange2D"
+        name = "MaterializedPartitionRangeStatuses2D"
 
 
-class GrapheneMultiPartitions(graphene.ObjectType):
-    ranges = non_null_list(GrapheneMultiPartitionRange)
+class GrapheneMultiPartitionStatuses(graphene.ObjectType):
+    ranges = non_null_list(GrapheneMultiPartitionRangeStatuses)
     primaryDimensionName = graphene.NonNull(graphene.String)
 
     class Meta:
-        name = "MultiPartitions"
+        name = "MultiPartitionStatuses"
 
 
 class GrapheneAssetPartitionStatuses(graphene.Union):
     class Meta:
-        types = (GrapheneDefaultPartitions, GrapheneMultiPartitions, GrapheneTimePartitions)
+        types = (
+            GrapheneDefaultPartitionStatuses,
+            GrapheneMultiPartitionStatuses,
+            GrapheneTimePartitionStatuses,
+        )
         name = "AssetPartitionStatuses"
 
 
