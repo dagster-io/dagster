@@ -412,7 +412,7 @@ def build_partition_statuses(
 ]:
     from ..schema.pipelines.pipeline import (
         GrapheneDefaultPartitionStatuses,
-        GrapheneTimePartitionRange,
+        GrapheneTimePartitionRangeStatus,
         GrapheneTimePartitionStatuses,
     )
 
@@ -459,7 +459,7 @@ def build_partition_statuses(
                 TimeWindowPartitionsDefinition, materialized_partitions_subset.partitions_def
             ).get_partition_key_range_for_time_window(r.time_window)
             graphene_ranges.append(
-                GrapheneTimePartitionRange(
+                GrapheneTimePartitionRangeStatus(
                     startTime=r.time_window.start.timestamp(),
                     endTime=r.time_window.end.timestamp(),
                     startKey=partition_key_range.start,

@@ -320,7 +320,7 @@ GET_1D_ASSET_PARTITIONS = """
                         status
                     }
                 }
-                ... on DefaultPartitions {
+                ... on DefaultPartitionStatuses {
                     materializedPartitions
                     failedPartitions
                     unmaterializedPartitions
@@ -358,7 +358,7 @@ GET_2D_ASSET_PARTITIONS = """
                                     status
                                 }
                             }
-                            ... on DefaultPartitions {
+                            ... on DefaultPartitionStatuses {
                                 materializedPartitions
                                 failedPartitions
                                 unmaterializedPartitions
