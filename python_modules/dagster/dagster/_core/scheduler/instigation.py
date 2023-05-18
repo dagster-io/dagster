@@ -18,7 +18,7 @@ from dagster._serdes.serdes import (
     deserialize_value,
     whitelist_for_serdes,
 )
-from dagster._utils import xor
+from dagster._utils import datetime_as_float, xor
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.merger import merge_dicts
 
@@ -596,6 +596,7 @@ class AutoMaterializeAssetEvaluationRecord(NamedTuple):
     id: int
     evaluation: AutoMaterializeAssetEvaluation
     evaluation_id: int
+    timestamp: float
 
     @classmethod
     def from_db_row(cls, row):
@@ -605,4 +606,5 @@ class AutoMaterializeAssetEvaluationRecord(NamedTuple):
                 row["asset_evaluation_body"], AutoMaterializeAssetEvaluation
             ),
             evaluation_id=row["evaluation_id"],
+            timestamp=datetime_as_float(row["create_timestamp"]),
         )

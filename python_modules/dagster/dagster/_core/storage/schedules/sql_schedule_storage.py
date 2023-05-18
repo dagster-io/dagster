@@ -498,6 +498,7 @@ class SqlScheduleStorage(ScheduleStorage):
                         AssetDaemonAssetEvaluationsTable.c.id,
                         AssetDaemonAssetEvaluationsTable.c.asset_evaluation_body,
                         AssetDaemonAssetEvaluationsTable.c.evaluation_id,
+                        AssetDaemonAssetEvaluationsTable.c.create_timestamp,
                     ]
                 )
                 .where(AssetDaemonAssetEvaluationsTable.c.asset_key == asset_key.to_string())
