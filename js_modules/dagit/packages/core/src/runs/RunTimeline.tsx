@@ -77,7 +77,7 @@ export const RunTimeline = (props: Props) => {
   const parentRef = React.useRef<HTMLDivElement | null>(null);
   const {
     viewport: {width},
-    containerProps: {ref: containerRef},
+    containerProps: {ref: measureRef},
   } = useViewport();
 
   const now = Date.now();
@@ -128,11 +128,7 @@ export const RunTimeline = (props: Props) => {
   const items = rowVirtualizer.getVirtualItems();
 
   if (!width) {
-    return (
-      <Timeline $height={DATE_TIME_HEIGHT + EMPTY_STATE_HEIGHT} ref={containerRef}>
-        <div />
-      </Timeline>
-    );
+    return <div style={{height: DATE_TIME_HEIGHT + EMPTY_STATE_HEIGHT}} ref={measureRef} />;
   }
 
   const repoOrder = Object.keys(buckets).sort((a, b) => a.localeCompare(b));
@@ -150,6 +146,7 @@ export const RunTimeline = (props: Props) => {
 
   return (
     <>
+      <div ref={measureRef} />
       <Box
         padding={{left: 24}}
         flex={{direction: 'column', justifyContent: 'center'}}
@@ -162,7 +159,7 @@ export const RunTimeline = (props: Props) => {
         <TimeDividers interval={ONE_HOUR_MSEC} range={range} height={anyJobs ? height : 0} />
       </div>
       {repoOrder.length ? (
-        <div style={{overflow: 'hidden', position: 'relative'}} ref={containerRef}>
+        <div style={{overflow: 'hidden', position: 'relative'}}>
           <Container ref={parentRef}>
             <Inner $totalHeight={totalHeight}>
               {items.map(({index, key, size, start}) => {
@@ -650,11 +647,6 @@ const RunsEmptyOrLoading = (props: {loading: boolean; includesTicks: boolean}) =
     </Box>
   );
 };
-
-const Timeline = styled.div<{$height: number}>`
-  ${({$height}) => `height: ${$height}px;`}
-  position: relative;
-`;
 
 type RowProps = {$height: number; $start: number};
 
