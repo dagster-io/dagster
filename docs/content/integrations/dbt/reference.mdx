@@ -185,7 +185,7 @@ dbt_assets = load_assets_from_dbt_project(
 )
 ```
 
-**Note**: The `key_prefix` argument only applies to models. If you want to apply a prefix to the source keys that Dagster generates, pass in a `source_key_prefix` argument:
+**Note**: The `key_prefix` argument only applies to assets loaded from this command. If you want to apply a prefix to the input keys that Dagster generates, pass in a `source_key_prefix` argument:
 
 ```python startafter=start_source_key_prefix endbefore=end_source_key_prefix file=/integrations/dbt/dbt.py dedent=4
 dbt_assets = load_assets_from_dbt_project(
