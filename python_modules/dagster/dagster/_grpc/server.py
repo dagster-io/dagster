@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import math
 import multiprocessing
 import os
@@ -198,6 +199,7 @@ class DagsterApiServer(DagsterApiServicer):
     def __init__(
         self,
         server_termination_event: ThreadingEventType,
+        logger: logging.Logger,
         loadable_target_origin: Optional[LoadableTargetOrigin] = None,
         heartbeat: bool = False,
         heartbeat_timeout: int = 30,
@@ -222,6 +224,7 @@ class DagsterApiServer(DagsterApiServicer):
         self._loadable_target_origin = check.opt_inst_param(
             loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin
         )
+        self._logger = logger
 
         self._mp_ctx = multiprocessing.get_context("spawn")
 
@@ -278,6 +281,7 @@ class DagsterApiServer(DagsterApiServicer):
                 raise
             self._loaded_repositories = None
             self._serializable_load_error = serializable_error_info_from_exc_info(sys.exc_info())
+            self._logger.exception("Error while importing code")
 
         self.__last_heartbeat_time = time.time()
         if heartbeat:
@@ -299,6 +303,8 @@ class DagsterApiServer(DagsterApiServicer):
         self.__cleanup_thread.start()
 
     def cleanup(self) -> None:
+        # In case ShutdownServer was not called
+        self._shutdown_once_executions_finish_event.set()
         if self.__heartbeat_thread:
             self.__heartbeat_thread.join()
         self.__cleanup_thread.join()
@@ -701,6 +707,7 @@ class DagsterApiServer(DagsterApiServicer):
                 )
             )
         except:
+            self._logger.exception("Failed to shut down server")
             return api_pb2.ShutdownServerReply(
                 serialized_shutdown_server_result=serialize_value(
                     ShutdownServerResult(
@@ -993,14 +1000,13 @@ class DagsterGrpcServer:
         )
 
         server_termination_thread.daemon = True
-
         server_termination_thread.start()
 
-        self.server.wait_for_termination()
-
-        server_termination_thread.join()
-
-        self._api_servicer.cleanup()
+        try:
+            self.server.wait_for_termination()
+        finally:
+            self._api_servicer.cleanup()
+            server_termination_thread.join()
 
 
 class CouldNotStartServerProcess(Exception):
@@ -1052,7 +1058,6 @@ def open_server_process(
     cwd: Optional[str] = None,
     log_level: str = "INFO",
     env: Optional[Dict[str, str]] = None,
-    lazy_load_user_code: bool = True,
     inject_env_vars_from_instance: bool = True,
     container_image: Optional[str] = None,
     container_context: Optional[dict[str, Any]] = None,
@@ -1070,7 +1075,7 @@ def open_server_process(
     subprocess_args = [
         *get_python_environment_entry_point(executable_path or sys.executable),
         *["api", "grpc"],
-        *(["--lazy-load-user-code"] if lazy_load_user_code else []),
+        *["--lazy-load-user-code"],
         *(["--port", str(port)] if port else []),
         *(["--socket", socket] if socket else []),
         *(["-n", str(max_workers)] if max_workers else []),
@@ -1084,8 +1089,8 @@ def open_server_process(
         *(["--inject-env-vars-from-instance"] if inject_env_vars_from_instance else []),
         *(["--instance-ref", serialize_value(instance_ref)] if instance_ref else []),
         *(["--location-name", location_name] if location_name else []),
-        *(["--container_image", container_image] if container_image else []),
-        *(["--container_context", json.dumps(container_context)] if container_context else []),
+        *(["--container-image", container_image] if container_image else []),
+        *(["--container-context", json.dumps(container_context)] if container_context else []),
     ]
 
     if loadable_target_origin:
@@ -1147,7 +1152,6 @@ class GrpcServerProcess:
         log_level: str = "INFO",
         env: Optional[Dict[str, str]] = None,
         wait_on_exit=False,
-        lazy_load_user_code: bool = True,
         inject_env_vars_from_instance: bool = True,
         container_image: Optional[str] = None,
         container_context: Optional[Dict[str, Any]] = None,
@@ -1191,7 +1195,6 @@ class GrpcServerProcess:
                 cwd=cwd,
                 log_level=log_level,
                 env=env,
-                lazy_load_user_code=lazy_load_user_code,
                 inject_env_vars_from_instance=inject_env_vars_from_instance,
                 container_image=container_image,
                 container_context=container_context,
@@ -1213,7 +1216,6 @@ class GrpcServerProcess:
                 cwd=cwd,
                 log_level=log_level,
                 env=env,
-                lazy_load_user_code=lazy_load_user_code,
                 inject_env_vars_from_instance=inject_env_vars_from_instance,
                 container_image=container_image,
                 container_context=container_context,

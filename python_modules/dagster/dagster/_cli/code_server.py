@@ -13,7 +13,10 @@ from dagster._cli.workspace.cli_target import (
     get_working_directory_from_kwargs,
     python_origin_target_argument,
 )
+from dagster._core.instance import InstanceRef
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._serdes import deserialize_value
+from dagster._utils.interrupts import setup_interrupt_handlers
 from dagster._utils.log import configure_loggers
 
 
@@ -58,17 +61,6 @@ def code_server_cli():
     required=False,
     default=None,
     help="Maximum number of (threaded) workers to use in the code server",
-)
-@click.option(
-    "--lazy-load-user-code",
-    is_flag=True,
-    required=False,
-    default=True,
-    help=(
-        "Surface errors in the Dagster UI when there's an error while importing the code, instead "
-        "of exiting the process on startup wit han error code."
-    ),
-    envvar="DAGSTER_LAZY_LOAD_USER_CODE",
 )
 @python_origin_target_argument
 @click.option(
@@ -142,12 +134,18 @@ def code_server_cli():
     help="How long to wait for code to load or reload before timing out. Defaults to no timeout.",
     envvar="DAGSTER_CODE_SERVER_STARTUP_TIMEOUT",
 )
+@click.option(
+    "--instance-ref",
+    type=click.STRING,
+    required=False,
+    help="[INTERNAL] Serialized InstanceRef to use for accessing the instance",
+    envvar="DAGSTER_INSTANCE_REF",
+)
 def start_command(
     port: Optional[int] = None,
     socket: Optional[str] = None,
     host: str = "localhost",
     max_workers: Optional[int] = None,
-    lazy_load_user_code: bool = True,
     fixed_server_id: Optional[str] = None,
     log_level: str = "INFO",
     use_python_environment_entry_point: bool = False,
@@ -156,6 +154,7 @@ def start_command(
     location_name: Optional[str] = None,
     inject_env_vars_from_instance: bool = False,
     startup_timeout: int = 0,
+    instance_ref=None,
     **kwargs,
 ):
     from dagster._grpc import DagsterGrpcServer
@@ -167,6 +166,8 @@ def start_command(
         )
     if not (port or socket and not (port and socket)):
         raise click.UsageError("You must pass one and only one of --port/-p or --socket/-s.")
+
+    setup_interrupt_handlers()
 
     configure_loggers(log_level=log_level.upper())
     logger = logging.getLogger("dagster.code_server")
@@ -187,9 +188,8 @@ def start_command(
     )
     server_termination_event = threading.Event()
 
-    with DagsterProxyApiServer(
+    api_servicer = DagsterProxyApiServer(
         loadable_target_origin=loadable_target_origin,
-        lazy_load_user_code=lazy_load_user_code,
         fixed_server_id=fixed_server_id,
         container_image=container_image,
         container_context=(
@@ -199,36 +199,39 @@ def start_command(
         location_name=location_name,
         log_level=log_level,
         startup_timeout=startup_timeout,
-    ) as api_servicer:
-        server = DagsterGrpcServer(
-            server_termination_event=server_termination_event,
-            dagster_api_servicer=api_servicer,
-            port=port,
-            socket=socket,
-            host=host,
-            max_workers=max_workers,
-        )
+        instance_ref=deserialize_value(instance_ref, InstanceRef) if instance_ref else None,
+        server_termination_event=server_termination_event,
+        logger=logger,
+    )
+    server = DagsterGrpcServer(
+        server_termination_event=server_termination_event,
+        dagster_api_servicer=api_servicer,
+        port=port,
+        socket=socket,
+        host=host,
+        max_workers=max_workers,
+    )
 
-        code_desc = " "
-        if loadable_target_origin.python_file:
-            code_desc = f" for file {loadable_target_origin.python_file} "
-        elif loadable_target_origin.package_name:
-            code_desc = f" for package {loadable_target_origin.package_name} "
-        elif loadable_target_origin.module_name:
-            code_desc = f" for module {loadable_target_origin.module_name} "
+    code_desc = " "
+    if loadable_target_origin.python_file:
+        code_desc = f" for file {loadable_target_origin.python_file} "
+    elif loadable_target_origin.package_name:
+        code_desc = f" for package {loadable_target_origin.package_name} "
+    elif loadable_target_origin.module_name:
+        code_desc = f" for module {loadable_target_origin.module_name} "
 
-        server_desc = (
-            f"Dagster code proxy server{code_desc}on port {port} in process {os.getpid()}"
-            if port
-            else f"Dagster code proxy server{code_desc}in process {os.getpid()}"
-        )
+    server_desc = (
+        f"Dagster code proxy server{code_desc}on port {port} in process {os.getpid()}"
+        if port
+        else f"Dagster code proxy server{code_desc}in process {os.getpid()}"
+    )
 
-        logger.info("Started %s", server_desc)
+    logger.info("Started %s", server_desc)
 
-        try:
-            server.serve()
-        except KeyboardInterrupt:
-            # Terminate cleanly on interrupt
-            logger.info("Code proxy server was interrupted")
-        finally:
-            logger.info("Shutting down %s", server_desc)
+    try:
+        server.serve()
+    except KeyboardInterrupt:
+        # Terminate cleanly on interrupt
+        logger.info("Code proxy server was interrupted")
+    finally:
+        logger.info("Shutting down %s", server_desc)

@@ -23,7 +23,15 @@ from dagster._core.workspace.load_target import (
     PythonFileTarget,
     WorkspaceFileTarget,
 )
-from dagster._grpc.server import GrpcServerProcess
+from dagster._grpc.client import DagsterGrpcClient
+from dagster._grpc.server import (
+    GrpcServerProcess,
+    wait_for_grpc_server,
+)
+from dagster._serdes.ipc import open_ipc_subprocess
+from dagster._utils import (
+    safe_tempfile_path,
+)
 from dagster._utils.merger import merge_dicts
 from dagster._utils.test import FilesystemTestScheduler
 from dagster._utils.test.postgres_instance import TestPostgresInstance
@@ -327,6 +335,44 @@ class EnvironmentManagers:
         return MarkedManager(_mgr_fn, [Marks.deployed_grpc_env])
 
     @staticmethod
+    def code_server_cli_grpc(target=None, location_name="test"):
+        @contextmanager
+        def _mgr_fn(instance, read_only):
+            loadable_target_origin = target or get_main_loadable_target_origin()
+            with safe_tempfile_path() as socket:
+                subprocess_args = [
+                    "dagster",
+                    "code-server",
+                    "start",
+                    "--socket",
+                    socket,
+                ] + loadable_target_origin.get_cli_args()
+
+                server_process = open_ipc_subprocess(subprocess_args)
+
+                client = DagsterGrpcClient(port=None, socket=socket, host="localhost")
+
+                try:
+                    wait_for_grpc_server(server_process, client, subprocess_args)
+                    with WorkspaceProcessContext(
+                        instance,
+                        GrpcServerTarget(
+                            port=None,
+                            socket=socket,
+                            host="localhost",
+                            location_name=location_name,
+                        ),
+                        version="",
+                        read_only=read_only,
+                    ) as workspace:
+                        yield workspace
+                finally:
+                    client.shutdown_server()
+                    server_process.wait(timeout=30)
+
+        return MarkedManager(_mgr_fn, [Marks.code_server_cli_grpc_env])
+
+    @staticmethod
     def multi_location():
         @contextmanager
         def _mgr_fn(instance, read_only):
@@ -377,6 +423,8 @@ class Marks:
     multi_location = pytest.mark.multi_location
     managed_grpc_env = pytest.mark.managed_grpc_env
     deployed_grpc_env = pytest.mark.deployed_grpc_env
+    code_server_cli_grpc_env = pytest.mark.code_server_cli_grpc_env
+
     lazy_repository = pytest.mark.lazy_repository
 
     # Asset-aware sqlite variants
@@ -494,6 +542,14 @@ class GraphQLContextVariant:
         )
 
     @staticmethod
+    def sqlite_with_default_run_launcher_code_server_cli_env(target=None, location_name="test"):
+        return GraphQLContextVariant(
+            InstanceManagers.sqlite_instance_with_default_run_launcher(),
+            EnvironmentManagers.code_server_cli_grpc(target, location_name),
+            test_id="sqlite_with_default_run_launcher_code_server_cli_env",
+        )
+
+    @staticmethod
     def postgres_with_default_run_launcher_managed_grpc_env(target=None, location_name="test"):
         return GraphQLContextVariant(
             InstanceManagers.postgres_instance_with_default_run_launcher(),
@@ -583,6 +639,7 @@ class GraphQLContextVariant:
             GraphQLContextVariant.sqlite_with_default_run_launcher_managed_grpc_env(),
             GraphQLContextVariant.sqlite_read_only_with_default_run_launcher_managed_grpc_env(),
             GraphQLContextVariant.sqlite_with_default_run_launcher_deployed_grpc_env(),
+            GraphQLContextVariant.sqlite_with_default_run_launcher_code_server_cli_env(),
             GraphQLContextVariant.sqlite_with_queued_run_coordinator_managed_grpc_env(),
             GraphQLContextVariant.postgres_with_default_run_launcher_managed_grpc_env(),
             GraphQLContextVariant.postgres_with_default_run_launcher_deployed_grpc_env(),
@@ -603,6 +660,9 @@ class GraphQLContextVariant:
                 target, location_name
             ),
             GraphQLContextVariant.sqlite_with_default_run_launcher_deployed_grpc_env(
+                target, location_name
+            ),
+            GraphQLContextVariant.sqlite_with_default_run_launcher_code_server_cli_env(
                 target, location_name
             ),
             GraphQLContextVariant.postgres_with_default_run_launcher_managed_grpc_env(
