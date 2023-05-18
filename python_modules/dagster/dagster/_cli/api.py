@@ -37,7 +37,7 @@ from dagster._grpc.types import ExecuteRunArgs, ExecuteStepArgs, ResumeRunArgs
 from dagster._serdes import deserialize_value, serialize_value
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.hosted_user_process import recon_job_from_origin
-from dagster._utils.interrupts import capture_interrupts
+from dagster._utils.interrupts import capture_interrupts, setup_interrupt_handlers
 from dagster._utils.log import configure_loggers
 
 
@@ -653,6 +653,8 @@ def grpc_command(
     if not (port or socket and not (port and socket)):
         raise click.UsageError("You must pass one and only one of --port/-p or --socket/-s.")
 
+    setup_interrupt_handlers()
+
     configure_loggers(log_level=log_level.upper())
     logger = logging.getLogger("dagster.code_server")
 
@@ -694,6 +696,7 @@ def grpc_command(
         server_termination_event = threading.Event()
         api_servicer = DagsterApiServer(
             server_termination_event=server_termination_event,
+            logger=logger,
             loadable_target_origin=loadable_target_origin,
             heartbeat=heartbeat,
             heartbeat_timeout=heartbeat_timeout,

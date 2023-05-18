@@ -380,6 +380,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "sqlite_instance_multi_location",
             "sqlite_instance_managed_grpc_env",
             "sqlite_instance_deployed_grpc_env",
+            "sqlite_instance_code_server_cli_grpc_env",
             "graphql_python_client",
             "postgres-graphql_context_variants",
             "postgres-instance_multi_location",
@@ -396,6 +397,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
                         # due to https://github.com/grpc/grpc/issues/31885
                         "sqlite_instance_managed_grpc_env",
                         "sqlite_instance_deployed_grpc_env",
+                        "sqlite_instance_code_server_cli_grpc_env",
                         "sqlite_instance_multi_location",
                         "postgres-instance_multi_location",
                         "postgres-instance_managed_grpc_env",

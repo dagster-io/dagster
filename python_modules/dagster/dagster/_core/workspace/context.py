@@ -1,3 +1,4 @@
+import logging
 import sys
 import threading
 import time
@@ -194,12 +195,6 @@ class BaseWorkspaceRequestContext(IWorkspace):
     def is_shutdown_supported(self, name: str) -> bool:
         entry = self.get_location_entry(name)
         return entry.origin.is_shutdown_supported if entry else False
-
-    def refresh_code_location(self, name: str) -> "BaseWorkspaceRequestContext":
-        # This method reloads Dagit's copy of the code from the remote gRPC server without
-        # restarting it, and returns a new request context created from the updated process context
-        self.process_context.refresh_code_location(name)
-        return self.process_context.create_request_context()
 
     def reload_code_location(self, name: str) -> "BaseWorkspaceRequestContext":
         # This method signals to the remote gRPC server that it should reload its
@@ -403,10 +398,6 @@ class IWorkspaceProcessContext(ABC):
     @property
     @abstractmethod
     def version(self) -> str:
-        pass
-
-    @abstractmethod
-    def refresh_code_location(self, name: str) -> None:
         pass
 
     @abstractmethod
@@ -648,13 +639,6 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
                 and self._location_entry_dict[location_name].load_error is not None
             )
 
-    def refresh_code_location(self, name: str) -> None:
-        new = self._load_location(self._location_entry_dict[name].origin, reload=False)
-        with self._lock:
-            # Relying on GC to clean up the old location once nothing else
-            # is referencing it
-            self._location_entry_dict[name] = new
-
     def reload_code_location(self, name: str) -> None:
         new = self._load_location(self._location_entry_dict[name].origin, reload=True)
         with self._lock:
@@ -722,8 +706,19 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
             # re-attach a subscriber
             # In case of a location error, just reload the handle in order to update the workspace
             # with the correct error messages
-
+            logging.getLogger("dagit").info(
+                f"Received {event.event_type} event for location {event.location_name}, refreshing"
+            )
             self.refresh_code_location(event.location_name)
+
+    def refresh_code_location(self, name: str) -> None:
+        # This method reloads Dagit's copy of the code from the remote gRPC server without
+        # restarting it, and returns a new request context created from the updated process context
+        new = self._load_location(self._location_entry_dict[name].origin, reload=False)
+        with self._lock:
+            # Relying on GC to clean up the old location once nothing else
+            # is referencing it
+            self._location_entry_dict[name] = new
 
     def __enter__(self):
         return self

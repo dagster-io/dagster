@@ -19,7 +19,7 @@ import pendulum
 from typing_extensions import TypeGuard
 
 import dagster._check as check
-from dagster._core.errors import DagsterUserCodeProcessError
+from dagster._core.errors import DagsterUserCodeProcessError, DagsterUserCodeUnreachableError
 from dagster._core.host_representation.origin import (
     CodeLocationOrigin,
     ManagedGrpcPythonEnvCodeLocationOrigin,
@@ -92,7 +92,6 @@ class GrpcServerRegistry(AbstractContextManager):
         startup_timeout: int,
         wait_for_processes_on_shutdown: bool,
         log_level: str = "INFO",
-        lazy_load_user_code: bool = True,
         inject_env_vars_from_instance: bool = True,
         container_image: Optional[str] = None,
         container_context: Optional[Dict[str, Any]] = None,
@@ -124,7 +123,6 @@ class GrpcServerRegistry(AbstractContextManager):
         self._cleanup_thread: Optional[threading.Thread] = None
 
         self._log_level = check.str_param(log_level, "log_level")
-        self._lazy_load_user_code = lazy_load_user_code
         self._inject_env_vars_from_instance = inject_env_vars_from_instance
         self._container_image = container_image
         self._container_context = container_context
@@ -211,7 +209,6 @@ class GrpcServerRegistry(AbstractContextManager):
                     fixed_server_id=new_server_id,
                     startup_timeout=self._startup_timeout,
                     log_level=self._log_level,
-                    lazy_load_user_code=self._lazy_load_user_code,
                     inject_env_vars_from_instance=self._inject_env_vars_from_instance,
                     container_image=self._container_image,
                     container_context=self._container_context,
@@ -284,11 +281,23 @@ class GrpcServerRegistry(AbstractContextManager):
             cast(threading.Event, self._cleanup_thread_shutdown_event).set()
             self._cleanup_thread.join()
 
-        for process in self._all_processes:
-            process.shutdown_server()
+        self.shutdown_all_processes()
 
         if self._wait_for_processes_on_shutdown:
             self.wait_for_processes()
+
+    def shutdown_all_processes(self):
+        for process in self._all_processes:
+            process.shutdown_server()
+
+    def have_all_servers_shut_down(self) -> bool:
+        for process in self._all_processes:
+            try:
+                process.create_client().ping("")
+                return False
+            except DagsterUserCodeUnreachableError:
+                pass
+        return True
 
     def wait_for_processes(self) -> None:
         # Wait for any processes created by this registry. Generally not needed outside
