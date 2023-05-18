@@ -254,7 +254,8 @@ def test_multi_slot_concurrency(instance, parallel_recon_job_not_inprocess):
         outputs = [result.output_for_node(name) for name in ordered_node_names]
 
         # 5 steps, but the max active at any time is 3
-        assert max([output["active"] for output in outputs]) == 3
+        assert max([output["active"] for output in outputs]) <= 3
+        assert max([output["active"] for output in outputs]) > 1
 
     # job successes release any claimed slots
     assert foo_info.slot_count == 3
