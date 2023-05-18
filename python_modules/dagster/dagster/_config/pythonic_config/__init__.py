@@ -9,7 +9,6 @@ from typing import (
     Dict,
     Generator,
     Generic,
-    Iterable,
     Mapping,
     NamedTuple,
     Optional,
@@ -31,7 +30,6 @@ from dagster._config.config_type import (
     Array,
     ConfigFloatInstance,
     ConfigType,
-    EnumValue,
     Noneable,
 )
 from dagster._config.field_utils import config_dictionary_from_values
@@ -40,7 +38,7 @@ from dagster._config.pythonic_config.typing_utils import (
     TypecheckAllowPartialResourceInitParams,
 )
 from dagster._config.source import BoolSource, IntSource, StringSource
-from dagster._config.validate import process_config, validate_config
+from dagster._config.validate import validate_config
 from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.definition_config_schema import (
     CoercableToConfigSchema,
@@ -416,24 +414,6 @@ def copy_with_default(old_field: Field, new_config_value: Any) -> Field:
         is_required=False,
         description=old_field.description,
     )
-
-
-def _process_config_values(
-    schema_field: Field, data: Mapping[str, Any], config_obj_name: str
-) -> Mapping[str, Any]:
-    post_processed_config = process_config(
-        schema_field.config_type, config_dictionary_from_values(data, schema_field)
-    )
-
-    if not post_processed_config.success:
-        raise DagsterInvalidConfigError(
-            f"Error while processing {config_obj_name} config ",
-            post_processed_config.errors,
-            data,
-        )
-    assert post_processed_config.value is not None
-
-    return post_processed_config.value or {}
 
 
 def _curry_config_schema(schema_field: Field, data: Any) -> DefinitionConfigSchema:
@@ -877,11 +857,12 @@ class ConfigurableResourceFactory(
         return PartialResource(cls, data=kwargs)
 
     def _with_updated_values(
-        self, values: Mapping[str, Any]
+        self, values: Optional[Mapping[str, Any]]
     ) -> "ConfigurableResourceFactory[TResValue]":
         """Returns a new instance of the resource with the given values.
         Used when initializing a resource at runtime.
         """
+        values = check.opt_mapping_param(values, "values", key_type=str)
         # Since Resource extends BaseModel and is a dataclass, we know that the
         # signature of any __init__ method will always consist of the fields
         # of this class. We can therefore safely pass in the values as kwargs.
@@ -890,18 +871,6 @@ class ConfigurableResourceFactory(
             resource_context=self._state__internal__.resource_context
         )
         return out
-
-    def _resolve_and_update_env_vars(self) -> "ConfigurableResourceFactory[TResValue]":
-        """Processes the config dictionary to resolve any EnvVar values. This is called at runtime
-        when the resource is initialized, so the user is only shown the error if they attempt to
-        kick off a run relying on this resource.
-
-        Returns a new instance of the resource.
-        """
-        post_processed_data = _process_config_values(
-            self._schema, self._resolved_config_dict, self.__class__.__name__
-        )
-        return self._with_updated_values(post_processed_data)
 
     @contextlib.contextmanager
     def _resolve_and_update_nested_resources(
@@ -962,7 +931,7 @@ class ConfigurableResourceFactory(
         with self._resolve_and_update_nested_resources(context) as has_nested_resource:
             updated_resource = has_nested_resource.with_resource_context(  # noqa: SLF001
                 context
-            )._resolve_and_update_env_vars()
+            )._with_updated_values(context.resource_config)
 
             updated_resource.setup_for_execution(context)
             return updated_resource.create_resource(context)
@@ -974,7 +943,7 @@ class ConfigurableResourceFactory(
         with self._resolve_and_update_nested_resources(context) as has_nested_resource:
             updated_resource = has_nested_resource.with_resource_context(  # noqa: SLF001
                 context
-            )._resolve_and_update_env_vars()
+            )._with_updated_values(context.resource_config)
 
             with updated_resource.yield_for_execution(context) as value:
                 yield value
@@ -1151,7 +1120,9 @@ class PartialResource(Generic[TResValue], AllowDelayedDependencies, MakeConfigCa
         MakeConfigCacheable.__init__(self, data=data, resource_cls=resource_cls)  # type: ignore  # extends BaseModel, takes kwargs
 
         def resource_fn(context: InitResourceContext):
-            instantiated = resource_cls(**context.resource_config, **data)
+            instantiated = resource_cls(
+                **{**data, **context.resource_config}
+            )  # So that collisions are resolved in favor of the latest provided run config
             return instantiated._get_initialize_and_run_fn()(context)  # noqa: SLF001
 
         self._state__internal__ = PartialResourceState(
@@ -1564,13 +1535,7 @@ def _config_type_for_type_on_pydantic_field(
         return IntSource
 
     if safe_is_subclass(potential_dagster_type, Enum):
-        return DagsterEnum(
-            potential_dagster_type.__name__,
-            [
-                EnumValue(v.name, python_value=v.value)
-                for v in cast(Iterable[Enum], potential_dagster_type)
-            ],
-        )
+        return DagsterEnum.from_python_enum_direct_values(potential_dagster_type)
 
     # special case raw python literals to their source equivalents
     if potential_dagster_type is str:
@@ -1784,11 +1749,27 @@ def separate_resource_params(data: Dict[str, Any]) -> SeparatedResourceParams:
 def _call_resource_fn_with_default(
     stack: contextlib.ExitStack, obj: ResourceDefinition, context: InitResourceContext
 ) -> Any:
+    from dagster._config.validate import process_config
+
     if isinstance(obj.config_schema, ConfiguredDefinitionConfigSchema):
         value = cast(Dict[str, Any], obj.config_schema.resolve_config({}).value)
         context = context.replace_config(value["config"])
     elif obj.config_schema.default_provided:
-        context = context.replace_config(obj.config_schema.default_value)
+        # To explain why we need to process config here;
+        # - The resource available on the init context (context.resource_config) has already been processed
+        # - The nested resource's config has also already been processed, but is only available in the broader run config dictionary.
+        # - The only information we have access to here is the unprocessed default value, so we need to process it a second time.
+        unprocessed_config = obj.config_schema.default_value
+        evr = process_config(
+            {"config": obj.config_schema.config_type}, {"config": unprocessed_config}
+        )
+        if not evr.success:
+            raise DagsterInvalidConfigError(
+                "Error in config for nested resource ",
+                evr.errors,
+                unprocessed_config,
+            )
+        context = context.replace_config(cast(dict, evr.value)["config"])
 
     is_fn_generator = inspect.isgenerator(obj.resource_fn) or isinstance(
         obj.resource_fn, contextlib.ContextDecorator
