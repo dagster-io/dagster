@@ -305,6 +305,33 @@ export type AssetWipeSuccess = {
 
 export type AssetsOrError = AssetConnection | PythonError;
 
+export type AutoMaterializeAssetEvaluationRecord = {
+  __typename: 'AutoMaterializeAssetEvaluationRecord';
+  conditions: Array<AutoMaterializeCondition>;
+  evaluationId: Scalars['Int'];
+  id: Scalars['ID'];
+  numDiscarded: Scalars['Int'];
+  numRequested: Scalars['Int'];
+  numSkipped: Scalars['Int'];
+};
+
+export type AutoMaterializeCondition =
+  | DownstreamFreshnessAutoMaterializeCondition
+  | FreshnessAutoMaterializeCondition
+  | MissingAutoMaterializeCondition
+  | ParentMaterializedAutoMaterializeCondition
+  | ParentOutdatedAutoMaterializeCondition;
+
+export type AutoMaterializeConditionWithDecisionType = {
+  decisionType: AutoMaterializeDecisionType;
+};
+
+export enum AutoMaterializeDecisionType {
+  DISCARD = 'DISCARD',
+  MATERIALIZE = 'MATERIALIZE',
+  SKIP = 'SKIP',
+}
+
 export type AutoMaterializePolicy = {
   __typename: 'AutoMaterializePolicy';
   policyType: AutoMaterializePolicyType;
@@ -636,6 +663,7 @@ export type DagitQuery = {
   assetOrError: AssetOrError;
   assetsLatestInfo: Array<AssetLatestInfo>;
   assetsOrError: AssetsOrError;
+  autoMaterializeAssetEvaluations: Array<AutoMaterializeAssetEvaluationRecord>;
   capturedLogs: CapturedLogs;
   capturedLogsMetadata: CapturedLogsMetadata;
   executionPlanOrError: ExecutionPlanOrError;
@@ -708,6 +736,12 @@ export type DagitQueryAssetsOrErrorArgs = {
   cursor?: InputMaybe<Scalars['String']>;
   limit?: InputMaybe<Scalars['Int']>;
   prefix?: InputMaybe<Array<Scalars['String']>>;
+};
+
+export type DagitQueryAutoMaterializeAssetEvaluationsArgs = {
+  assetKey?: InputMaybe<AssetKeyInput>;
+  cursor?: InputMaybe<Scalars['String']>;
+  limit: Scalars['Int'];
 };
 
 export type DagitQueryCapturedLogsArgs = {
@@ -1043,6 +1077,11 @@ export type DisplayableEvent = {
   description: Maybe<Scalars['String']>;
   label: Maybe<Scalars['String']>;
   metadataEntries: Array<MetadataEntry>;
+};
+
+export type DownstreamFreshnessAutoMaterializeCondition = AutoMaterializeConditionWithDecisionType & {
+  __typename: 'DownstreamFreshnessAutoMaterializeCondition';
+  decisionType: AutoMaterializeDecisionType;
 };
 
 export type DryRunInstigationTick = {
@@ -1426,6 +1465,11 @@ export type FloatMetadataEntry = MetadataEntry & {
   description: Maybe<Scalars['String']>;
   floatValue: Maybe<Scalars['Float']>;
   label: Scalars['String'];
+};
+
+export type FreshnessAutoMaterializeCondition = AutoMaterializeConditionWithDecisionType & {
+  __typename: 'FreshnessAutoMaterializeCondition';
+  decisionType: AutoMaterializeDecisionType;
 };
 
 export type FreshnessPolicy = {
@@ -2104,6 +2148,11 @@ export type MetadataItemDefinition = {
   value: Scalars['String'];
 };
 
+export type MissingAutoMaterializeCondition = AutoMaterializeConditionWithDecisionType & {
+  __typename: 'MissingAutoMaterializeCondition';
+  decisionType: AutoMaterializeDecisionType;
+};
+
 export type MissingFieldConfigError = PipelineConfigValidationError & {
   __typename: 'MissingFieldConfigError';
   field: ConfigTypeField;
@@ -2284,6 +2333,16 @@ export type OutputMapping = {
   __typename: 'OutputMapping';
   definition: OutputDefinition;
   mappedOutput: Output;
+};
+
+export type ParentMaterializedAutoMaterializeCondition = AutoMaterializeConditionWithDecisionType & {
+  __typename: 'ParentMaterializedAutoMaterializeCondition';
+  decisionType: AutoMaterializeDecisionType;
+};
+
+export type ParentOutdatedAutoMaterializeCondition = AutoMaterializeConditionWithDecisionType & {
+  __typename: 'ParentOutdatedAutoMaterializeCondition';
+  decisionType: AutoMaterializeDecisionType;
 };
 
 export type Partition = {
@@ -4584,6 +4643,46 @@ export const buildAssetWipeSuccess = (
   };
 };
 
+export const buildAutoMaterializeAssetEvaluationRecord = (
+  overrides?: Partial<AutoMaterializeAssetEvaluationRecord>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AutoMaterializeAssetEvaluationRecord'} & AutoMaterializeAssetEvaluationRecord => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AutoMaterializeAssetEvaluationRecord');
+  return {
+    __typename: 'AutoMaterializeAssetEvaluationRecord',
+    conditions: overrides && overrides.hasOwnProperty('conditions') ? overrides.conditions! : [],
+    evaluationId:
+      overrides && overrides.hasOwnProperty('evaluationId') ? overrides.evaluationId! : 9286,
+    id:
+      overrides && overrides.hasOwnProperty('id')
+        ? overrides.id!
+        : 'f99fc708-761e-4261-a57a-393de7f89855',
+    numDiscarded:
+      overrides && overrides.hasOwnProperty('numDiscarded') ? overrides.numDiscarded! : 8280,
+    numRequested:
+      overrides && overrides.hasOwnProperty('numRequested') ? overrides.numRequested! : 2522,
+    numSkipped: overrides && overrides.hasOwnProperty('numSkipped') ? overrides.numSkipped! : 6444,
+  };
+};
+
+export const buildAutoMaterializeConditionWithDecisionType = (
+  overrides?: Partial<AutoMaterializeConditionWithDecisionType>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {
+  __typename: 'AutoMaterializeConditionWithDecisionType';
+} & AutoMaterializeConditionWithDecisionType => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AutoMaterializeConditionWithDecisionType');
+  return {
+    __typename: 'AutoMaterializeConditionWithDecisionType',
+    decisionType:
+      overrides && overrides.hasOwnProperty('decisionType')
+        ? overrides.decisionType!
+        : AutoMaterializeDecisionType.DISCARD,
+  };
+};
+
 export const buildAutoMaterializePolicy = (
   overrides?: Partial<AutoMaterializePolicy>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -5132,6 +5231,10 @@ export const buildDagitQuery = (
         : relationshipsToOmit.has('AssetConnection')
         ? ({} as AssetConnection)
         : buildAssetConnection({}, relationshipsToOmit),
+    autoMaterializeAssetEvaluations:
+      overrides && overrides.hasOwnProperty('autoMaterializeAssetEvaluations')
+        ? overrides.autoMaterializeAssetEvaluations!
+        : [],
     capturedLogs:
       overrides && overrides.hasOwnProperty('capturedLogs')
         ? overrides.capturedLogs!
@@ -5566,6 +5669,23 @@ export const buildDisplayableEvent = (
     label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'ipsa',
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
+  };
+};
+
+export const buildDownstreamFreshnessAutoMaterializeCondition = (
+  overrides?: Partial<DownstreamFreshnessAutoMaterializeCondition>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {
+  __typename: 'DownstreamFreshnessAutoMaterializeCondition';
+} & DownstreamFreshnessAutoMaterializeCondition => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('DownstreamFreshnessAutoMaterializeCondition');
+  return {
+    __typename: 'DownstreamFreshnessAutoMaterializeCondition',
+    decisionType:
+      overrides && overrides.hasOwnProperty('decisionType')
+        ? overrides.decisionType!
+        : AutoMaterializeDecisionType.DISCARD,
   };
 };
 
@@ -6358,6 +6478,21 @@ export const buildFloatMetadataEntry = (
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'iusto',
     floatValue: overrides && overrides.hasOwnProperty('floatValue') ? overrides.floatValue! : 5.68,
     label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'velit',
+  };
+};
+
+export const buildFreshnessAutoMaterializeCondition = (
+  overrides?: Partial<FreshnessAutoMaterializeCondition>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'FreshnessAutoMaterializeCondition'} & FreshnessAutoMaterializeCondition => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('FreshnessAutoMaterializeCondition');
+  return {
+    __typename: 'FreshnessAutoMaterializeCondition',
+    decisionType:
+      overrides && overrides.hasOwnProperty('decisionType')
+        ? overrides.decisionType!
+        : AutoMaterializeDecisionType.DISCARD,
   };
 };
 
@@ -7722,6 +7857,21 @@ export const buildMetadataItemDefinition = (
   };
 };
 
+export const buildMissingAutoMaterializeCondition = (
+  overrides?: Partial<MissingAutoMaterializeCondition>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'MissingAutoMaterializeCondition'} & MissingAutoMaterializeCondition => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('MissingAutoMaterializeCondition');
+  return {
+    __typename: 'MissingAutoMaterializeCondition',
+    decisionType:
+      overrides && overrides.hasOwnProperty('decisionType')
+        ? overrides.decisionType!
+        : AutoMaterializeDecisionType.DISCARD,
+  };
+};
+
 export const buildMissingFieldConfigError = (
   overrides?: Partial<MissingFieldConfigError>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -8165,6 +8315,40 @@ export const buildOutputMapping = (
         : relationshipsToOmit.has('Output')
         ? ({} as Output)
         : buildOutput({}, relationshipsToOmit),
+  };
+};
+
+export const buildParentMaterializedAutoMaterializeCondition = (
+  overrides?: Partial<ParentMaterializedAutoMaterializeCondition>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {
+  __typename: 'ParentMaterializedAutoMaterializeCondition';
+} & ParentMaterializedAutoMaterializeCondition => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ParentMaterializedAutoMaterializeCondition');
+  return {
+    __typename: 'ParentMaterializedAutoMaterializeCondition',
+    decisionType:
+      overrides && overrides.hasOwnProperty('decisionType')
+        ? overrides.decisionType!
+        : AutoMaterializeDecisionType.DISCARD,
+  };
+};
+
+export const buildParentOutdatedAutoMaterializeCondition = (
+  overrides?: Partial<ParentOutdatedAutoMaterializeCondition>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {
+  __typename: 'ParentOutdatedAutoMaterializeCondition';
+} & ParentOutdatedAutoMaterializeCondition => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ParentOutdatedAutoMaterializeCondition');
+  return {
+    __typename: 'ParentOutdatedAutoMaterializeCondition',
+    decisionType:
+      overrides && overrides.hasOwnProperty('decisionType')
+        ? overrides.decisionType!
+        : AutoMaterializeDecisionType.DISCARD,
   };
 };
 

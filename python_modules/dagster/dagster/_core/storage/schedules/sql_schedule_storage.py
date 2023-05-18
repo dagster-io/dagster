@@ -495,6 +495,7 @@ class SqlScheduleStorage(ScheduleStorage):
             query = (
                 db.select(
                     [
+                        AssetDaemonAssetEvaluationsTable.c.id,
                         AssetDaemonAssetEvaluationsTable.c.asset_evaluation_body,
                         AssetDaemonAssetEvaluationsTable.c.evaluation_id,
                     ]
@@ -507,15 +508,7 @@ class SqlScheduleStorage(ScheduleStorage):
                 query = query.where(AssetDaemonAssetEvaluationsTable.c.evaluation_id < cursor)
 
             rows = conn.execute(query)
-            return [
-                AutoMaterializeAssetEvaluationRecord(
-                    evaluation=deserialize_value(
-                        row["asset_evaluation_body"], AutoMaterializeAssetEvaluation
-                    ),
-                    evaluation_id=row["evaluation_id"],
-                )
-                for row in rows
-            ]
+            return [AutoMaterializeAssetEvaluationRecord.from_db_row(row) for row in rows]
 
     def wipe(self) -> None:
         """Clears the schedule storage."""

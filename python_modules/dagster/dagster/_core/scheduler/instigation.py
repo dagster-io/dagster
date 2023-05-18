@@ -15,6 +15,7 @@ from dagster._core.definitions.selector import InstigatorSelector, RepositorySel
 from dagster._core.host_representation.origin import ExternalInstigatorOrigin
 from dagster._serdes import create_snapshot_id
 from dagster._serdes.serdes import (
+    deserialize_value,
     whitelist_for_serdes,
 )
 from dagster._utils import xor
@@ -592,5 +593,16 @@ def _validate_tick_args(
 
 
 class AutoMaterializeAssetEvaluationRecord(NamedTuple):
+    id: int
     evaluation: AutoMaterializeAssetEvaluation
     evaluation_id: int
+
+    @classmethod
+    def from_db_row(cls, row):
+        return cls(
+            id=row["id"],
+            evaluation=deserialize_value(
+                row["asset_evaluation_body"], AutoMaterializeAssetEvaluation
+            ),
+            evaluation_id=row["evaluation_id"],
+        )
