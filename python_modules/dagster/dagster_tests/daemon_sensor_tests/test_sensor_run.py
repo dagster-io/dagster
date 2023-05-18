@@ -393,6 +393,16 @@ def large_sensor(_context):
         yield RunRequest(run_key=None, run_config=config, tags=tags_garbage)
 
 
+@sensor(job_name="config_job")
+def many_request_sensor(_context):
+    # create a gRPC response payload larger than the limit (4194304)
+    REQUEST_COUNT = 15
+
+    for _ in range(REQUEST_COUNT):
+        config = {"ops": {"config_op": {"config": {"foo": "bar"}}}}
+        yield RunRequest(run_key=None, run_config=config)
+
+
 @sensor(job=asset_job)
 def run_request_asset_selection_sensor(_context):
     yield RunRequest(run_key=None, asset_selection=[AssetKey("a"), AssetKey("b")])
@@ -660,6 +670,7 @@ def the_repo():
         config_job,
         foo_job,
         large_sensor,
+        many_request_sensor,
         simple_sensor,
         error_sensor,
         wrong_config_sensor,
@@ -918,7 +929,7 @@ def asset_sensor_repo():
     ]
 
 
-def evaluate_sensors(workspace_context, executor, timeout=75):
+def evaluate_sensors(workspace_context, executor, enqueue_executor=None, timeout=75):
     logger = get_default_daemon_logger("SensorDaemon")
     futures = {}
     list(
@@ -927,6 +938,7 @@ def evaluate_sensors(workspace_context, executor, timeout=75):
             logger,
             threadpool_executor=executor,
             sensor_tick_futures=futures,
+            enqueue_threadpool_executor=enqueue_executor,
         )
     )
 
@@ -1752,6 +1764,29 @@ def test_large_sensor(executor, instance, workspace_context, external_repo):
         external_sensor = external_repo.get_external_sensor("large_sensor")
         instance.start_sensor(external_sensor)
         evaluate_sensors(workspace_context, executor, timeout=300)
+        ticks = instance.get_ticks(
+            external_sensor.get_external_origin_id(), external_sensor.selector_id
+        )
+        assert len(ticks) == 1
+        validate_tick(
+            ticks[0],
+            external_sensor,
+            freeze_datetime,
+            TickStatus.SUCCESS,
+        )
+
+
+def test_many_request_sensor(
+    executor, enqueue_executor, instance, workspace_context, external_repo
+):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
+        "US/Central",
+    )
+    with pendulum.test(freeze_datetime):
+        external_sensor = external_repo.get_external_sensor("many_request_sensor")
+        instance.start_sensor(external_sensor)
+        evaluate_sensors(workspace_context, executor, enqueue_executor=enqueue_executor)
         ticks = instance.get_ticks(
             external_sensor.get_external_origin_id(), external_sensor.selector_id
         )

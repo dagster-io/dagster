@@ -251,6 +251,7 @@ def sensors_daemon_config() -> Field:
         {
             "use_threads": Field(Bool, is_required=False, default_value=False),
             "num_workers": Field(int, is_required=False),
+            "num_enqueue_workers": Field(int, is_required=False),
         },
         is_required=False,
     )
