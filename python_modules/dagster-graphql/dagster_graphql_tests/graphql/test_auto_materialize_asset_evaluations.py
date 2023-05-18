@@ -44,14 +44,14 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
             asset_evaluations=[
                 AutoMaterializeAssetEvaluation(
                     asset_key=AssetKey("asset_one"),
-                    conditions=[],
+                    partition_subsets_by_condition=[],
                     num_requested=0,
                     num_skipped=0,
                     num_discarded=0,
                 ),
                 AutoMaterializeAssetEvaluation(
                     asset_key=AssetKey("asset_two"),
-                    conditions=[MissingAutoMaterializeCondition()],
+                    partition_subsets_by_condition=[(MissingAutoMaterializeCondition(), None)],
                     num_requested=1,
                     num_skipped=0,
                     num_discarded=0,
@@ -106,7 +106,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
             asset_evaluations=[
                 AutoMaterializeAssetEvaluation(
                     asset_key=AssetKey("asset_two"),
-                    conditions=[
+                    partition_subsets_by_condition=[
                         (
                             MissingAutoMaterializeCondition(),
                             StaticPartitionsDefinition(["a", "b"])
