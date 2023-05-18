@@ -651,6 +651,12 @@ class SqlEventLogStorage(EventLogStorage):
             if self.has_table("dynamic_partitions"):
                 conn.execute(DynamicPartitionsTable.delete())
 
+            if self.has_table("concurrency_slots"):
+                conn.execute(ConcurrencySlotsTable.delete())
+
+            if self.has_table("pending_steps"):
+                conn.execute(PendingStepsTable.delete())
+
     def delete_events(self, run_id: str) -> None:
         with self.run_connection(run_id) as conn:
             self.delete_events_for_run(conn, run_id)
