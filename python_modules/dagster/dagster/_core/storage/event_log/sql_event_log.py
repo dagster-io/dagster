@@ -1922,7 +1922,7 @@ class SqlEventLogStorage(EventLogStorage):
 
             if existing > num:
                 # need to delete some slots, favoring ones where the slot is unallocated
-                subquery = (
+                rows = conn.execute(
                     db.select([ConcurrencySlotsTable.c.id])
                     .select_from(ConcurrencySlotsTable)
                     .where(
@@ -1936,14 +1936,15 @@ class SqlEventLogStorage(EventLogStorage):
                         ConcurrencySlotsTable.c.id.desc(),
                     )
                     .limit(existing - num)
-                )
+                ).fetchall()
 
-                # mark rows as deleted
-                conn.execute(
-                    ConcurrencySlotsTable.update()
-                    .values(deleted=True)
-                    .where(ConcurrencySlotsTable.c.id.in_(subquery))
-                )
+                if rows:
+                    # mark rows as deleted
+                    conn.execute(
+                        ConcurrencySlotsTable.update()
+                        .values(deleted=True)
+                        .where(ConcurrencySlotsTable.c.id.in_([row[0] for row in rows]))
+                    )
 
                 # actually delete rows that are marked as deleted and are not claimed... the rest
                 # will be deleted when the slots are released by the free_concurrency_slots
