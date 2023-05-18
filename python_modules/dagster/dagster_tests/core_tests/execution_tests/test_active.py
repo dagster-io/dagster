@@ -1,3 +1,5 @@
+import tempfile
+
 import pytest
 from dagster import job, op
 from dagster._core.errors import DagsterInvariantViolationError
@@ -176,38 +178,49 @@ def test_active_concurrency():
     foo_job = define_concurrency_job()
     run_id = make_new_run_id()
 
-    with instance_for_test() as instance:
-        instance.event_log_storage.set_concurrency_slots("foo", 1)
+    with tempfile.TemporaryDirectory() as temp_dir:
+        with instance_for_test(
+            overrides={
+                "event_log_storage": {
+                    "module": "dagster.utils.test",
+                    "class": "ConcurrencyEnabledSqliteTestEventLogStorage",
+                    "config": {"base_dir": temp_dir},
+                },
+            }
+        ) as instance:
+            assert instance.event_log_storage.supports_global_concurrency_limits
 
-        with pytest.raises(
-            DagsterInvariantViolationError,
-            match="Execution finished without completing the execution plan",
-        ):
-            with GlobalConcurrencyContext(instance, run_id) as global_concurrency_context:
-                with create_execution_plan(foo_job).start(
-                    RetryMode.DISABLED,
-                    global_concurrency_context=global_concurrency_context,
-                ) as active_execution:
-                    steps = active_execution.get_steps_to_execute()
-                    assert len(steps) == 1
-                    step_1 = steps[0]
+            instance.event_log_storage.set_concurrency_slots("foo", 1)
 
-                    foo_info = instance.event_log_storage.get_concurrency_info("foo")
-                    assert foo_info.active_slot_count == 1
-                    assert foo_info.active_run_ids == {run_id}
-                    assert foo_info.pending_step_count == 1
-                    assert foo_info.assigned_step_count == 1
+            with pytest.raises(
+                DagsterInvariantViolationError,
+                match="Execution finished without completing the execution plan",
+            ):
+                with GlobalConcurrencyContext(instance, run_id) as global_concurrency_context:
+                    with create_execution_plan(foo_job).start(
+                        RetryMode.DISABLED,
+                        global_concurrency_context=global_concurrency_context,
+                    ) as active_execution:
+                        steps = active_execution.get_steps_to_execute()
+                        assert len(steps) == 1
+                        step_1 = steps[0]
 
-                    active_execution.handle_event(
-                        DagsterEvent(
-                            DagsterEventType.STEP_START.value,
-                            job_name=foo_job.name,
-                            step_key=step_1.key,
+                        foo_info = instance.event_log_storage.get_concurrency_info("foo")
+                        assert foo_info.active_slot_count == 1
+                        assert foo_info.active_run_ids == {run_id}
+                        assert foo_info.pending_step_count == 1
+                        assert foo_info.assigned_step_count == 1
+
+                        active_execution.handle_event(
+                            DagsterEvent(
+                                DagsterEventType.STEP_START.value,
+                                job_name=foo_job.name,
+                                step_key=step_1.key,
+                            )
                         )
-                    )
 
-        foo_info = instance.event_log_storage.get_concurrency_info("foo")
-        assert foo_info.active_slot_count == 1
-        assert foo_info.active_run_ids == {run_id}
-        assert foo_info.pending_step_count == 0
-        assert foo_info.assigned_step_count == 1
+            foo_info = instance.event_log_storage.get_concurrency_info("foo")
+            assert foo_info.active_slot_count == 1
+            assert foo_info.active_run_ids == {run_id}
+            assert foo_info.pending_step_count == 0
+            assert foo_info.assigned_step_count == 1

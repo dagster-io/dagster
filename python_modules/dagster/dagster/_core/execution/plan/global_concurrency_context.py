@@ -19,7 +19,8 @@ class GlobalConcurrencyContext:
         self._instance = instance
         self._run_id = run_id
         self._global_concurrency_keys = None
-        self._pending_claims = defaultdict(float)
+        self._pending_timeouts = defaultdict(float)
+        self._pending_claims = set()
         self._claims = set()
 
     def __enter__(self) -> Self:
@@ -30,12 +31,13 @@ class GlobalConcurrencyContext:
         self, exc_type: Type[Exception], exc_value: Exception, traceback: TracebackType
     ) -> None:
         to_clear = []
-        for step_key in self._pending_claims.keys():
+        for step_key in self._pending_claims:
             self._instance.event_log_storage.free_concurrency_slot_for_step(self._run_id, step_key)
             to_clear.append(step_key)
 
         for step_key in to_clear:
-            del self._pending_claims[step_key]
+            del self._pending_timeouts[step_key]
+            self._pending_claims.remove(step_key)
 
         self._context_guard = False
 
@@ -58,18 +60,23 @@ class GlobalConcurrencyContext:
             return True
 
         if step_key in self._pending_claims:
-            if time.time() > self._pending_claims[step_key]:
-                del self._pending_claims[step_key]
+            if time.time() > self._pending_timeouts[step_key]:
+                del self._pending_timeouts[step_key]
             else:
                 return False
+        else:
+            self._pending_claims.add(step_key)
 
         claim_status = self._instance.event_log_storage.claim_concurrency_slot(
             concurrency_key, self._run_id, step_key, priority
         )
 
         if not claim_status.is_claimed:
-            self._pending_claims[step_key] = time.time() + CONCURRENCY_CLAIM_BLOCKED_INTERVAL
+            self._pending_timeouts[step_key] = time.time() + CONCURRENCY_CLAIM_BLOCKED_INTERVAL
             return False
+
+        if step_key in self._pending_claims:
+            self._pending_claims.remove(step_key)
 
         self._claims.add(step_key)
         return True
@@ -79,10 +86,10 @@ class GlobalConcurrencyContext:
             return 0.0
 
         now = time.time()
-        return min([ready_at - now for ready_at in self._pending_claims.values()])
+        return min([0, *[ready_at - now for ready_at in self._pending_timeouts.values()]])
 
     def pending_claim_steps(self) -> List[str]:
-        return list(self._pending_claims.keys())
+        return list(self._pending_claims)
 
     def has_pending_claims(self) -> bool:
         return len(self._pending_claims) > 0
