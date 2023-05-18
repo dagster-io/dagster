@@ -1,3 +1,5 @@
+import tempfile
+
 import pytest
 from dagster import file_relative_path
 from dagster._core.test_utils import instance_for_test
@@ -21,5 +23,14 @@ def workspace(instance):
 
 @pytest.fixture(scope="module")
 def instance():
-    with instance_for_test() as _instance:
-        yield _instance
+    with tempfile.TemporaryDirectory() as temp_dir:
+        with instance_for_test(
+            overrides={
+                "event_log_storage": {
+                    "module": "dagster.utils.test",
+                    "class": "ConcurrencyEnabledSqliteTestEventLogStorage",
+                    "config": {"base_dir": temp_dir},
+                },
+            }
+        ) as _instance:
+            yield _instance
