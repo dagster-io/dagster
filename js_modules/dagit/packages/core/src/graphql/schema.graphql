@@ -2898,6 +2898,11 @@ type DagitQuery {
   capturedLogs(logKey: [String!]!, cursor: String, limit: Int): CapturedLogs!
   shouldShowNux: Boolean!
   test: TestFields
+  autoMaterializeAssetEvaluations(
+    assetKey: AssetKeyInput
+    limit: Int!
+    cursor: String
+  ): [AutoMaterializeAssetEvaluationRecord!]!
 }
 
 union WorkspaceOrError = Workspace | PythonError
@@ -3025,6 +3030,52 @@ type CapturedLogsMetadata {
 
 type TestFields {
   alwaysException: String
+}
+
+type AutoMaterializeAssetEvaluationRecord {
+  id: ID!
+  evaluationId: Int!
+  numRequested: Int!
+  numSkipped: Int!
+  numDiscarded: Int!
+  conditions: [AutoMaterializeCondition!]!
+}
+
+union AutoMaterializeCondition =
+    FreshnessAutoMaterializeCondition
+  | DownstreamFreshnessAutoMaterializeCondition
+  | ParentMaterializedAutoMaterializeCondition
+  | MissingAutoMaterializeCondition
+  | ParentOutdatedAutoMaterializeCondition
+
+type FreshnessAutoMaterializeCondition implements AutoMaterializeConditionWithDecisionType {
+  decisionType: AutoMaterializeDecisionType!
+}
+
+interface AutoMaterializeConditionWithDecisionType {
+  decisionType: AutoMaterializeDecisionType!
+}
+
+enum AutoMaterializeDecisionType {
+  MATERIALIZE
+  SKIP
+  DISCARD
+}
+
+type DownstreamFreshnessAutoMaterializeCondition implements AutoMaterializeConditionWithDecisionType {
+  decisionType: AutoMaterializeDecisionType!
+}
+
+type ParentMaterializedAutoMaterializeCondition implements AutoMaterializeConditionWithDecisionType {
+  decisionType: AutoMaterializeDecisionType!
+}
+
+type MissingAutoMaterializeCondition implements AutoMaterializeConditionWithDecisionType {
+  decisionType: AutoMaterializeDecisionType!
+}
+
+type ParentOutdatedAutoMaterializeCondition implements AutoMaterializeConditionWithDecisionType {
+  decisionType: AutoMaterializeDecisionType!
 }
 
 type DagitMutation {
