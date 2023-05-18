@@ -424,6 +424,10 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def is_run_sharded(self) -> bool:
         return True
 
+    @property
+    def supports_global_concurrency_limits(self) -> bool:
+        return False
+
 
 class SqliteEventLogStorageWatchdog(PatternMatchingEventHandler):
     def __init__(
