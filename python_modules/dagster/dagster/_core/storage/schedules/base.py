@@ -162,6 +162,12 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         """
 
     @abc.abstractmethod
+    def get_auto_materialize_asset_evaluation_by_evaluation_id(
+        self, asset_key: AssetKey, evaluation_id: int
+    ) -> Optional[AutoMaterializeAssetEvaluationRecord]:
+        """Get the evaluation for a given asset and evaluation id."""
+
+    @abc.abstractmethod
     def upgrade(self) -> None:
         """Perform any needed migrations."""
 

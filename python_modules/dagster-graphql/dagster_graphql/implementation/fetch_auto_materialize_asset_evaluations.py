@@ -9,6 +9,25 @@ from dagster_graphql.schema.auto_materialize_asset_evaluations import (
 from dagster_graphql.schema.inputs import GrapheneAssetKeyInput
 
 
+def fetch_auto_materialize_asset_evaluation(
+    instance: DagsterInstance, asset_key: GrapheneAssetKeyInput, evaluation_id: int
+) -> Optional[GrapheneAutoMaterializeAssetEvaluationRecord]:
+    if instance.schedule_storage is None:
+        raise DagsterError(
+            "Instance does not have schedule storage configured, cannot fetch evaluations."
+        )
+    if not instance.schedule_storage.supports_auto_materialize_asset_evaluations:
+        raise DagsterError(
+            "Auto materialize evaluations are not getting logged. Run `dagster instance"
+            " migrate` to enable."
+        )
+
+    record = instance.schedule_storage.get_auto_materialize_asset_evaluation_by_evaluation_id(
+        asset_key=AssetKey.from_graphql_input(asset_key), evaluation_id=evaluation_id
+    )
+    return GrapheneAutoMaterializeAssetEvaluationRecord(record) if record else None
+
+
 def fetch_auto_materialize_asset_evaluations(
     instance: DagsterInstance,
     asset_key: GrapheneAssetKeyInput,

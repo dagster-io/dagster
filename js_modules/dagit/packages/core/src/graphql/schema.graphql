@@ -2898,6 +2898,10 @@ type DagitQuery {
   capturedLogs(logKey: [String!]!, cursor: String, limit: Int): CapturedLogs!
   shouldShowNux: Boolean!
   test: TestFields
+  autoMaterializeAssetEvaluation(
+    assetKey: AssetKeyInput
+    evaluationId: Int!
+  ): AutoMaterializeAssetEvaluationRecord
   autoMaterializeAssetEvaluations(
     assetKey: AssetKeyInput
     limit: Int!

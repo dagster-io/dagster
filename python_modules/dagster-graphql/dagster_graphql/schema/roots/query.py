@@ -17,6 +17,7 @@ from dagster._core.nux import get_has_seen_nux
 from dagster._core.scheduler.instigation import InstigatorStatus, InstigatorType
 
 from dagster_graphql.implementation.fetch_auto_materialize_asset_evaluations import (
+    fetch_auto_materialize_asset_evaluation,
     fetch_auto_materialize_asset_evaluations,
 )
 from dagster_graphql.implementation.fetch_env_vars import get_utilized_env_vars_or_error
@@ -467,6 +468,15 @@ class GrapheneDagitQuery(graphene.ObjectType):
     test = graphene.Field(
         GrapheneTestFields,
         description="Provides fields for testing behavior",
+    )
+
+    autoMaterializeAssetEvaluation = graphene.Field(
+        GrapheneAutoMaterializeAssetEvaluationRecord,
+        assetKey=graphene.Argument(GrapheneAssetKeyInput),
+        evaluationId=graphene.Argument(graphene.NonNull(graphene.Int)),
+        description=(
+            "Retrieve the auto materialization evaluation for a given asset key and evalutation id."
+        ),
     )
 
     autoMaterializeAssetEvaluations = graphene.Field(
@@ -986,6 +996,16 @@ class GrapheneDagitQuery(graphene.ObjectType):
 
     def resolve_test(self, _):
         return GrapheneTestFields()
+
+    def resolve_autoMaterializeAssetEvaluation(
+        self,
+        graphene_info: ResolveInfo,
+        assetKey: GrapheneAssetKeyInput,
+        evaluationId: int,
+    ):
+        return fetch_auto_materialize_asset_evaluation(
+            instance=graphene_info.context.instance, asset_key=assetKey, evaluation_id=evaluationId
+        )
 
     def resolve_autoMaterializeAssetEvaluations(
         self,

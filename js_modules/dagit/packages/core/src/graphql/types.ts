@@ -664,6 +664,7 @@ export type DagitQuery = {
   assetOrError: AssetOrError;
   assetsLatestInfo: Array<AssetLatestInfo>;
   assetsOrError: AssetsOrError;
+  autoMaterializeAssetEvaluation: Maybe<AutoMaterializeAssetEvaluationRecord>;
   autoMaterializeAssetEvaluations: Array<AutoMaterializeAssetEvaluationRecord>;
   capturedLogs: CapturedLogs;
   capturedLogsMetadata: CapturedLogsMetadata;
@@ -737,6 +738,11 @@ export type DagitQueryAssetsOrErrorArgs = {
   cursor?: InputMaybe<Scalars['String']>;
   limit?: InputMaybe<Scalars['Int']>;
   prefix?: InputMaybe<Array<Scalars['String']>>;
+};
+
+export type DagitQueryAutoMaterializeAssetEvaluationArgs = {
+  assetKey?: InputMaybe<AssetKeyInput>;
+  evaluationId: Scalars['Int'];
 };
 
 export type DagitQueryAutoMaterializeAssetEvaluationsArgs = {
@@ -5233,6 +5239,12 @@ export const buildDagitQuery = (
         : relationshipsToOmit.has('AssetConnection')
         ? ({} as AssetConnection)
         : buildAssetConnection({}, relationshipsToOmit),
+    autoMaterializeAssetEvaluation:
+      overrides && overrides.hasOwnProperty('autoMaterializeAssetEvaluation')
+        ? overrides.autoMaterializeAssetEvaluation!
+        : relationshipsToOmit.has('AutoMaterializeAssetEvaluationRecord')
+        ? ({} as AutoMaterializeAssetEvaluationRecord)
+        : buildAutoMaterializeAssetEvaluationRecord({}, relationshipsToOmit),
     autoMaterializeAssetEvaluations:
       overrides && overrides.hasOwnProperty('autoMaterializeAssetEvaluations')
         ? overrides.autoMaterializeAssetEvaluations!

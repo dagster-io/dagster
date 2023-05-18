@@ -511,6 +511,27 @@ class SqlScheduleStorage(ScheduleStorage):
             rows = conn.execute(query)
             return [AutoMaterializeAssetEvaluationRecord.from_db_row(row) for row in rows]
 
+    def get_auto_materialize_asset_evaluation_by_evaluation_id(
+        self, asset_key: AssetKey, evaluation_id: int
+    ) -> Optional[AutoMaterializeAssetEvaluationRecord]:
+        with self.connect() as conn:
+            query = (
+                db.select(
+                    [
+                        AssetDaemonAssetEvaluationsTable.c.id,
+                        AssetDaemonAssetEvaluationsTable.c.asset_evaluation_body,
+                        AssetDaemonAssetEvaluationsTable.c.evaluation_id,
+                        AssetDaemonAssetEvaluationsTable.c.create_timestamp,
+                    ]
+                )
+                .where(AssetDaemonAssetEvaluationsTable.c.asset_key == asset_key.to_string())
+                .where(AssetDaemonAssetEvaluationsTable.c.evaluation_id == evaluation_id)
+            )
+
+            rows = conn.execute(query)
+            row = rows.fetchone()
+            return AutoMaterializeAssetEvaluationRecord.from_db_row(row) if row else None
+
     def wipe(self) -> None:
         """Clears the schedule storage."""
         with self.connect() as conn:

@@ -11,7 +11,23 @@ from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
 )
 
-QUERY = """
+SINGLE_QUERY = """
+query GetEvaluationQuery($assetKey: AssetKeyInput!, $evaluationId: Int!) {
+    autoMaterializeAssetEvaluation(assetKey: $assetKey, evaluationId: $evaluationId) {
+        numRequested
+        numSkipped
+        numDiscarded
+        conditions {
+            __typename
+            ... on AutoMaterializeConditionWithDecisionType {
+                decisionType
+            }
+        }
+    }
+}
+"""
+
+BATCH_QUERY = """
 query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: String) {
     autoMaterializeAssetEvaluations(assetKey: $assetKey, limit: $limit, cursor: $cursor) {
         numRequested
@@ -32,7 +48,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
     def test_get_evaluations(self, graphql_context: WorkspaceRequestContext):
         results = execute_dagster_graphql(
             graphql_context,
-            QUERY,
+            BATCH_QUERY,
             variables={"assetKey": {"path": ["foo"]}, "limit": 10, "cursor": None},
         )
         assert results.data == {"autoMaterializeAssetEvaluations": []}
@@ -61,7 +77,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
 
         results = execute_dagster_graphql(
             graphql_context,
-            QUERY,
+            BATCH_QUERY,
             variables={"assetKey": {"path": ["asset_one"]}, "limit": 10, "cursor": None},
         )
         assert results.data == {
@@ -72,7 +88,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
 
         results = execute_dagster_graphql(
             graphql_context,
-            QUERY,
+            BATCH_QUERY,
             variables={"assetKey": {"path": ["asset_two"]}, "limit": 10, "cursor": None},
         )
         assert results.data == {
@@ -91,10 +107,36 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
             ]
         }
 
+        results = execute_dagster_graphql(
+            graphql_context,
+            SINGLE_QUERY,
+            variables={"assetKey": {"path": ["asset_two"]}, "evaluationId": 10},
+        )
+        assert results.data == {
+            "autoMaterializeAssetEvaluation": {
+                "numRequested": 1,
+                "numSkipped": 0,
+                "numDiscarded": 0,
+                "conditions": [
+                    {
+                        "__typename": "MissingAutoMaterializeCondition",
+                        "decisionType": "MATERIALIZE",
+                    }
+                ],
+            }
+        }
+
+        results = execute_dagster_graphql(
+            graphql_context,
+            SINGLE_QUERY,
+            variables={"assetKey": {"path": ["asset_two"]}, "evaluationId": 100},
+        )
+        assert results.data == {"autoMaterializeAssetEvaluation": None}
+
     def test_get_evaluations_with_partitions(self, graphql_context: WorkspaceRequestContext):
         results = execute_dagster_graphql(
             graphql_context,
-            QUERY,
+            BATCH_QUERY,
             variables={"assetKey": {"path": ["foo"]}, "limit": 10, "cursor": None},
         )
         assert results.data == {"autoMaterializeAssetEvaluations": []}
@@ -124,7 +166,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
 
         results = execute_dagster_graphql(
             graphql_context,
-            QUERY,
+            BATCH_QUERY,
             variables={"assetKey": {"path": ["asset_two"]}, "limit": 10, "cursor": None},
         )
         assert results.data == {

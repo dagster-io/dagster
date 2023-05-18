@@ -751,6 +751,19 @@ class TestScheduleStorage:
         assert len(res) == 1
         assert res[0].evaluation_id == 10
 
+        res = storage.get_auto_materialize_asset_evaluation_by_evaluation_id(
+            asset_key=AssetKey("asset_one"), evaluation_id=10
+        )
+        assert res.evaluation_id == 10
+        assert res.evaluation.asset_key == AssetKey("asset_one")
+
+        assert (
+            storage.get_auto_materialize_asset_evaluation_by_evaluation_id(
+                asset_key=AssetKey("asset_one"), evaluation_id=100
+            )
+            is None
+        )
+
     def test_auto_materialize_asset_evaluations_with_partitions(self, storage):
         if not self.can_store_auto_materialize_asset_evaluations():
             pytest.skip("Storage cannot store auto materialize asset evaluations")

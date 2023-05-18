@@ -667,6 +667,15 @@ class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
             asset_key, limit, cursor
         )
 
+    def get_auto_materialize_asset_evaluation_by_evaluation_id(
+        self, asset_key: "AssetKey", evaluation_id: int
+    ) -> Optional["AutoMaterializeAssetEvaluationRecord"]:
+        return (
+            self._storage.schedule_storage.get_auto_materialize_asset_evaluation_by_evaluation_id(
+                asset_key, evaluation_id
+            )
+        )
+
     def upgrade(self) -> None:
         return self._storage.schedule_storage.upgrade()
 
