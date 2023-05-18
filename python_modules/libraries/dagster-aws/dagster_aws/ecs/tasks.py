@@ -193,6 +193,7 @@ def get_task_definition_dict_from_current_task(
     ephemeral_storage=None,
     mount_points=None,
     volumes=None,
+    additional_sidecars=None,
 ):
     current_container_name = current_ecs_container_name()
 
@@ -257,6 +258,9 @@ def get_task_definition_dict_from_current_task(
         container_definitions.append(new_container_definition)
     else:
         container_definitions = [new_container_definition]
+
+    if additional_sidecars:
+        container_definitions = [*container_definitions, *additional_sidecars]
 
     task_definition = {
         **task_definition,

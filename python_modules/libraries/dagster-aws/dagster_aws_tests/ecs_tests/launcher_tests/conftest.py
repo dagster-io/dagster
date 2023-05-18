@@ -450,6 +450,21 @@ def container_context_config(configured_secret: Secret) -> Mapping[str, Any]:
                     },
                 }
             ],
+            "server_sidecar_containers": [
+                {
+                    "name": "DatadogAgent",
+                    "image": "public.ecr.aws/datadog/agent:latest",
+                    "environment": [
+                        {"name": "ECS_FARGATE", "value": "true"},
+                    ],
+                }
+            ],
+            "run_sidecar_containers": [
+                {
+                    "name": "busyrun",
+                    "image": "busybox:latest",
+                }
+            ],
         },
     }
 
@@ -491,6 +506,18 @@ def other_container_context_config(other_configured_secret):
                         "fileSystemId": "fs-5678",
                         "rootDirectory": "/path/to/my/other/data",
                     },
+                }
+            ],
+            "server_sidecar_containers": [
+                {
+                    "name": "OtherServerAgent",
+                    "image": "public.ecr.aws/other/agent:latest",
+                }
+            ],
+            "run_sidecar_containers": [
+                {
+                    "name": "OtherRunAgent",
+                    "image": "otherrun:latest",
                 }
             ],
         },
