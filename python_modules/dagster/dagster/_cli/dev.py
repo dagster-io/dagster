@@ -44,6 +44,10 @@ def dev_command_options(f):
         "Start a local deployment of Dagster, including dagit running on localhost and the"
         " dagster-daemon running in the background"
     ),
+    context_settings=dict(
+        max_content_width=120,
+        help_option_names=["--help"],  # Don't show '-h' since that's the dagit host
+    ),
 )
 @dev_command_options
 @click.option(
