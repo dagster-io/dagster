@@ -1,3 +1,4 @@
+import enum
 import os
 from typing import List, Mapping
 
@@ -104,18 +105,18 @@ def test_runtime_config_env_var() -> None:
         resources={"writer": WriterResource.configure_at_launch()},
     )
 
-    os.environ["MY_PREFIX_FOR_TEST"] = "greeting: "
-    try:
-        assert (
-            defs.get_implicit_global_asset_job_def()
-            .execute_in_process(
+    with environ({"MY_PREFIX_FOR_TEST": "greeting: "}):
+        with pytest.raises(DagsterInvalidConfigError):
+            defs.get_implicit_global_asset_job_def().execute_in_process(
                 {"resources": {"writer": {"config": {"prefix": EnvVar("MY_PREFIX_FOR_TEST")}}}}
             )
-            .success
+
+        # Ensure fully unstructured run config option works
+        result = defs.get_implicit_global_asset_job_def().execute_in_process(
+            {"resources": {"writer": {"config": {"prefix": {"env": "MY_PREFIX_FOR_TEST"}}}}}
         )
-        assert out_txt == ["greeting: hello, world!"]
-    finally:
-        del os.environ["MY_PREFIX_FOR_TEST"]
+        assert result.success
+        assert out_txt[0] == "greeting: hello, world!"
 
 
 def test_env_var_err() -> None:
@@ -153,10 +154,7 @@ def test_env_var_err() -> None:
     )
     with pytest.raises(
         DagsterInvalidConfigError,
-        match=(
-            'You have attempted to fetch the environment variable "UNSET_ENV_VAR_RUNTIME" which is'
-            " not set."
-        ),
+        match="Invalid use of environment variable wrapper.",
     ):
         defs.get_implicit_global_asset_job_def().execute_in_process(
             {"resources": {"a_resource": {"config": {"a_str": EnvVar("UNSET_ENV_VAR_RUNTIME")}}}}
@@ -229,3 +227,51 @@ def test_env_var_nested_config() -> None:
     ):
         assert defs.get_implicit_global_asset_job_def().execute_in_process().success
         assert executed["yes"]
+
+
+def test_env_var_alongside_enum() -> None:
+    class MyEnum(enum.Enum):
+        FOO = "foofoo"
+        BAR = "barbar"
+
+    class ResourceWithStringAndEnum(ConfigurableResource):
+        a_str: str
+        my_enum: MyEnum
+
+    executed = {}
+
+    @asset
+    def an_asset(a_resource: ResourceWithStringAndEnum):
+        executed["yes"] = True
+        return a_resource.my_enum.name, a_resource.a_str
+
+    defs = Definitions(
+        assets=[an_asset],
+        resources={
+            "a_resource": ResourceWithStringAndEnum(
+                a_str=EnvVar("ENV_VARIABLE_FOR_TEST"),
+                my_enum=MyEnum.FOO,
+            )
+        },
+    )
+
+    # Case: I'm using the default value provided by resource instantiation for the enum, and then using the env var specified at instantiation time for the string.
+    with environ(
+        {
+            "ENV_VARIABLE_FOR_TEST": "SOME_VALUE",
+        }
+    ):
+        result = defs.get_implicit_global_asset_job_def().execute_in_process()
+        assert result.output_for_node("an_asset") == ("FOO", "SOME_VALUE")
+        assert executed["yes"]
+
+    executed.clear()
+
+    # Case: I'm using the default value provided by resource instantiation to the enum, and then using a value specified at runtime for the string.
+    result = defs.get_implicit_global_asset_job_def().execute_in_process(
+        run_config={"resources": {"a_resource": {"config": {"a_str": "foo", "my_enum": "BAR"}}}}
+    )
+
+    assert result.success
+    assert result.output_for_node("an_asset") == ("BAR", "foo")
+    assert executed["yes"]
