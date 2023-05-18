@@ -3039,6 +3039,7 @@ type AutoMaterializeAssetEvaluationRecord {
   numSkipped: Int!
   numDiscarded: Int!
   conditions: [AutoMaterializeCondition!]!
+  timestamp: Float!
 }
 
 union AutoMaterializeCondition =

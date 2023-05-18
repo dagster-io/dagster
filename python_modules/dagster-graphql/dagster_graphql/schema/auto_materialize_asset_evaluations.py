@@ -93,6 +93,7 @@ class GrapheneAutoMaterializeAssetEvaluationRecord(graphene.ObjectType):
     numSkipped = graphene.NonNull(graphene.Int)
     numDiscarded = graphene.NonNull(graphene.Int)
     conditions = non_null_list(GrapheneAutoMaterializeCondition)
+    timestamp = graphene.NonNull(graphene.Float)
 
     class Meta:
         name = "AutoMaterializeAssetEvaluationRecord"
@@ -111,4 +112,5 @@ class GrapheneAutoMaterializeAssetEvaluationRecord(graphene.ObjectType):
             numSkipped=record.evaluation.num_skipped,
             numDiscarded=record.evaluation.num_discarded,
             conditions=[create_graphene_auto_materialize_condition(c) for c in conditions],
+            timestamp=record.timestamp,
         )
