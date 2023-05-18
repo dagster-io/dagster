@@ -1,5 +1,37 @@
 # Changelog
 
+# 1.3.5 (core) / 0.19.5 (libraries)
+
+### New
+
+- A new `max_materializations_per_minute` parameter (with a default of 1) to `AutoMaterializationPolicy.eager()` and `AutoMaterializationPolicy.lazy()` allows you to set bounds on the volume of work that may be automatically kicked off for each asset. To restore the previous behavior, you can explicitly set this limit to `None`.
+- `DailyPartitionsDefinition`, `HourlyPartitionsDefinition`, `WeeklyPartitionsDefinition`, and `MonthlyPartitionsDefinition` now support and `end_date` attribute.
+- [ui] When GraphQL requests time out with 504 errors, a toaster message is now shown indicating the error, instead of failing silently.
+- [dagster-snowflake] The Snowflake I/O managers now support authentication via unencrypted private key.
+
+### Bugfixes
+
+- When using `AutoMaterializePolicy`s or `build_asset_reconciliation_sensor`, a single new data version from an observable source asset could trigger multiple runs of the downstream assets. This has been fixed.
+- Fixed a bug with pythonic resources where raw run config provided to a resource would be ignored.
+- We previously erroneously allowed the use of `EnvVar` and `IntEnvVar` within raw run config - although they just returned the name of the env var rather than retrieve its value. This has been fixed to error directly.
+- [ui] Fixed an issue in the left navigation where code locations with names with URI-encodable characters (e.g. whitespace) could not be expanded.
+- [ui] Fixed an issue where the time shown on the Runs page when a run was starting was shown in an incorrect timezone.
+- [dagster-dbt] Fixed an issue where selecting models by `*` was being interpreted as glob pattern, rather than as a dbt selector argument. We now explicitly set the default selection pattern as `fqn:*`.
+- [dagster-cloud cli] Fixed and issue where `dagster-cloud serverless deploy` did not create a unique image tag if the `--image` tag was not specified.
+
+### Community Contributions
+
+- Added an option to specify `op_name` on `load_assets_from_dbt_project` and `load_assets_from_dbt_manifest` (thanks @wkeifenheim!)
+- [Helm] Added support for connecting to code servers over SSL (thanks @jrouly!)
+
+### Documentation
+
+- New tutorial section on how to manage your own I/O and control over dependencies
+
+### Dagster Cloud
+
+- Added the ability to assign users to teams. A team is a group of users with a shared set of permissions. See [the docs](https://docs.dagster.io/dagster-cloud/account/managing-users/managing-teams) for more information.
+
 # 1.3.4 (core) / 0.19.4 (libraries)
 
 ### New
