@@ -302,6 +302,9 @@ def _location_origin_from_location_config(
     elif "grpc_server" in location_config:
         return _location_origin_from_grpc_server_config(location_config["grpc_server"], yaml_path)
 
+    elif "code_server" in location_config:
+        return _location_origin_from_grpc_server_config(location_config["code_server"], yaml_path)
+
     else:
         check.not_implemented(f"Unsupported location config: {location_config}")
 

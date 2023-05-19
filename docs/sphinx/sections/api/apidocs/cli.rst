@@ -7,6 +7,10 @@ Dagster CLI
    :prog: dagster asset
    :nested:
 
+.. click:: dagster._cli.code_server:code_server_cli
+   :prog: dagster code-server
+   :nested:
+
 .. click:: dagster._cli.debug:debug_cli
    :prog: dagster debug
    :nested:

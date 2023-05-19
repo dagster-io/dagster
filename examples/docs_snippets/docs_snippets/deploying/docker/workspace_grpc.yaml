@@ -1,6 +1,6 @@
 load_from:
-  # Each entry here corresponds to a container that exposes a gRPC server.
-  - grpc_server:
+  # Each entry here corresponds to a container that exposes a code server.
+  - code_server:
       host: docker_example_user_code
       port: 4000
       location_name: "example_user_code"

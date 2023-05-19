@@ -31,7 +31,7 @@ data:
     load_from:
       {{- range $deployment := $deployments }}
       {{- $deploymentHost := ternary $deployment.host $deployment.name $dagitWorkspace.enabled }}
-      - grpc_server:
+      - code_server:
           host: {{ $deploymentHost }}
           port: {{ $deployment.port }}
           {{- if $deployment.ssl }}

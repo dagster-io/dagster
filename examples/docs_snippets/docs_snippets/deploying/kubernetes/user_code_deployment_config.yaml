@@ -6,7 +6,7 @@ dagster-user-deployments:
         repository: "docker.io/dagster/user-code-example"
         tag: latest
         pullPolicy: Always
-      dagsterApiGrpcArgs:
+      codeServerArgs:
         - "--python-file"
         - "/example_project/example_repo/repo.py"
       port: 3030

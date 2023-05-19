@@ -354,7 +354,7 @@ def test_dagit_workspace_servers(workspace_configmap_template: HelmTemplate):
 
     expected = {
         "load_from": [
-            {"grpc_server": {"host": "example.com", "port": 443, "location_name": "Example"}}
+            {"code_server": {"host": "example.com", "port": 443, "location_name": "Example"}}
         ]
     }
 

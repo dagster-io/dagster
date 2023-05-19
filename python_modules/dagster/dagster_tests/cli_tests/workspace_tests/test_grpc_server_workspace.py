@@ -32,10 +32,10 @@ def test_grpc_socket_workspace(instance):
             second_socket = second_server.socket
             workspace_yaml = """
 load_from:
-- grpc_server:
+- code_server:
     host: localhost
     socket: {socket_one}
-- grpc_server:
+- code_server:
     socket: {socket_two}
     location_name: 'local_port_default_host'
                 """.format(
@@ -83,13 +83,13 @@ def test_grpc_server_env_vars():
     ):
         valid_yaml = """
     load_from:
-        - grpc_server:
+        - code_server:
             host:
               env: FOO_HOST
             port:
               env: FOO_PORT
             location_name: 'my_grpc_server_port'
-        - grpc_server:
+        - code_server:
             host:
               env: FOO_HOST
             socket:
@@ -127,7 +127,7 @@ def test_ssl_grpc_server_workspace(instance):
         port = server_process.port
         ssl_yaml = f"""
 load_from:
-- grpc_server:
+- code_server:
     host: localhost
     port: {port}
     ssl: true
@@ -162,10 +162,10 @@ def test_grpc_server_workspace(instance):
             second_port = second_server.port
             workspace_yaml = """
 load_from:
-- grpc_server:
+- code_server:
     host: localhost
     port: {port_one}
-- grpc_server:
+- code_server:
     port: {port_two}
     location_name: 'local_port_default_host'
                 """.format(
@@ -206,7 +206,7 @@ load_from:
 def test_cannot_set_socket_and_port():
     workspace_yaml = """
 load_from:
-  - grpc_server:
+  - code_server:
       socket: myname
       port: 5678
     """

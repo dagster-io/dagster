@@ -87,15 +87,15 @@ Dagit servers expose a health check endpoint at `/dagit_info`, which returns a J
 
 More advanced Dagster deployments will require deploying more than one container. For example, if you are using the [Dagster daemon](/deployment/dagster-daemon) to run schedules and sensors or manage a queue of runs, you'll likely want a separate container running the `dagster-daemon` service.
 
-This service must have access to your `dagster.yaml` and `workspace.yaml` files, just like the Dagit container. You can also configure your code location server (gRPC server) so that your code can be updated and deployed separately in its own container, without needing to redeploy the other Dagster services. To enable this setup, include a container exposing a gRPC server at a port and add that port in your `workspace.yaml` file.
+This service must have access to your `dagster.yaml` and `workspace.yaml` files, just like the Dagit container. You can also configure your code server so that your code can be updated and deployed separately in its own container, without needing to redeploy the other Dagster services. To enable this setup, include a container exposing a code server at a port and add that port to your `workspace.yaml` file.
 
 For example, your user code container might have the following Dockerfile:
 
 ```dockerfile file=/deploying/docker/Dockerfile_user_code
 FROM python:3.7-slim
 
-# Checkout and install dagster libraries needed to run the gRPC server
-# exposing your repository to dagit and dagster-daemon, and to load
+# Checkout and install dagster libraries needed to run a code server
+# exposing your code to dagit and dagster-daemon, and to load
 # the DagsterInstance
 
 RUN pip install \
@@ -117,21 +117,21 @@ WORKDIR /opt/dagster/app
 
 COPY repo.py /opt/dagster/app
 
-# Run dagster gRPC server on port 4000
+# Run dagster code server on port 4000
 
 EXPOSE 4000
 
 # Using CMD rather than ENTRYPOINT allows the command to be overridden in
 # run launchers or executors to run other commands using this image
-CMD ["dagster", "api", "grpc", "-h", "0.0.0.0", "-p", "4000", "-f", "repo.py"]
+CMD ["dagster", "code-server", "start", "-h", "0.0.0.0", "-p", "4000", "-f", "repo.py"]
 ```
 
 And your code location server might look like:
 
 ```yaml file=/deploying/docker/workspace_grpc.yaml
 load_from:
-  # Each entry here corresponds to a container that exposes a gRPC server.
-  - grpc_server:
+  # Each entry here corresponds to a container that exposes a code server.
+  - code_server:
       host: docker_example_user_code
       port: 4000
       location_name: "example_user_code"

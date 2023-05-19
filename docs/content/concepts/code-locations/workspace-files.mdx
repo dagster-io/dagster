@@ -113,22 +113,22 @@ This is required because when you start a schedule or a sensor, a serialized rep
 
 ---
 
-## Running your own gRPC server
+## Running your own code server
 
-By default, Dagster tools automatically create a process on your local machine for each of your code locations. However, it's also possible to run your own gRPC server that's responsible for serving information about your code locations. This can be useful in more complex system architectures that deploy user code separately from Dagit.
+By default, Dagster tools automatically create a process on your local machine for each of your code locations. However, it's also possible to run your own code server that's responsible for serving information about your code locations. This can be useful in more complex system architectures that deploy user code separately from Dagit.
 
 - [Initializing the server](#initializing-the-server)
 - [Specifying a Docker image](#specifying-a-docker-image)
 
 ### Initializing the server
 
-To initialize the Dagster gRPC server, run the `dagster api grpc` command and include:
+To initialize the Dagster code server, run the `dagster code-server start` command and include:
 
 - A target file or module. Similar to a workspace file, the target can either be a Python file or module.
 - Host address
 - Port or socket
 
-The following tabs demonstrate some common ways to initialize a gRPC server:
+The following tabs demonstrate some common ways to initialize a code server:
 
 <TabGroup>
 <TabItem name="Using a Python file">
@@ -136,13 +136,13 @@ The following tabs demonstrate some common ways to initialize a gRPC server:
 Running on a port, using a Python file:
 
 ```shell
-dagster api grpc --python-file /path/to/file.py --host 0.0.0.0 --port 4266
+dagster code-server start --python-file /path/to/file.py --host 0.0.0.0 --port 4266
 ```
 
 Running on a socket, using a Python file:
 
 ```shell
-dagster api grpc --python-file /path/to/file.py --host 0.0.0.0 --socket /path/to/socket
+dagster code-server start --python-file /path/to/file.py --host 0.0.0.0 --socket /path/to/socket
 ```
 
 ---
@@ -153,7 +153,7 @@ dagster api grpc --python-file /path/to/file.py --host 0.0.0.0 --socket /path/to
 Using a Python module:
 
 ```shell
-dagster api grpc --module-name my_module_name --host 0.0.0.0 --port 4266
+dagster code-server start --module-name my_module_name --host 0.0.0.0 --port 4266
 ```
 
 ---
@@ -169,7 +169,7 @@ dagster api grpc --module-name my_module_name --host 0.0.0.0 --port 4266
 Specifying an attribute within the target to load a specific repository. When run, the server will automatically find and load the specified repositories:
 
 ```shell
-dagster api grpc --python-file /path/to/file.py --attribute my_repository --host 0.0.0.0 --port 4266
+dagster code-server start --python-file /path/to/file.py --attribute my_repository --host 0.0.0.0 --port 4266
 ```
 
 ---
@@ -180,7 +180,7 @@ dagster api grpc --python-file /path/to/file.py --attribute my_repository --host
 Specify a working directory to use as the base folder for local imports:
 
 ```shell
-dagster api grpc --python-file /path/to/file.py --working-directory /var/my_working_dir --host 0.0.0.0 --port 4266
+dagster code-server start --python-file /path/to/file.py --working-directory /var/my_working_dir --host 0.0.0.0 --port 4266
 ```
 
 ---
@@ -188,29 +188,29 @@ dagster api grpc --python-file /path/to/file.py --working-directory /var/my_work
 </TabItem>
 </TabGroup>
 
-Refer to the [API docs](/\_apidocs/cli#dagster-api-grpc) for the full list of options that can be set when running a new gRPC server.
+Refer to the [API docs](/\_apidocs/cli#dagster-code-server-start) for the full list of options that can be set when running a code server.
 
-Then, in your workspace file, configure a new gRPC server code location to load:
+Then, in your workspace file, configure a new code server code location to load:
 
 ```yaml file=/concepts/repositories_workspaces/workspace_grpc.yaml
 # workspace.yaml
 
 load_from:
-  - grpc_server:
+  - code_server:
       host: localhost
       port: 4266
-      location_name: "my_grpc_server"
+      location_name: "my_code_server"
 ```
 
 ### Specifying a Docker image
 
-When running your own gRPC server within a container, you can tell Dagit that any runs launched from a code location should be launched in a container with that same image.
+When running your own code server within a container, you can tell Dagit that any runs launched from a code location should be launched in a container with that same image.
 
 To do this, set the `DAGSTER_CURRENT_IMAGE` environment variable to the name of the image before starting the server. After setting this environment variable for your server, the image should be listed alongside the code location on the **Status** page in Dagit.
 
 This image will only be used by [run launchers](/deployment/run-launcher) and [executors](/deployment/executors) that expect to use Docker images (like the <PyObject module="dagster_docker" object="DockerRunLauncher" />, <PyObject module="dagster_k8s" object="K8sRunLauncher" />, <PyObject module="dagster_docker" object="docker_executor" />, or <PyObject module="dagster_k8s" object="k8s_job_executor" />).
 
-If you're using the built-in [Helm chart](/deployment/guides/kubernetes/deploying-with-helm), this environment variable is automatically set on each of your gRPC servers.
+If you're using the built-in [Helm chart](/deployment/guides/kubernetes/deploying-with-helm), this environment variable is automatically set on each of your code servers.
 
 ---
 

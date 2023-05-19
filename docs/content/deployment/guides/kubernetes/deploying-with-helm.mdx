@@ -135,7 +135,7 @@ In the following tutorial, we install the most recent version of the Dagster Hel
 </TabItem>
 <TabItem name="Code location server">
 
-A [code location server](/concepts/code-locations) runs a gRPC server and responds to Dagit's requests for information, such as:
+A [code server](/concepts/code-locations) runs a server that responds to Dagit's requests for information, such as:
 
 - List all of the jobs in each code location, or
 - What is the dependency structure of job X?
@@ -227,7 +227,7 @@ kubectl config use-context dagster
 
 In this step, you'll build a Docker image containing your Dagster definitions and any dependencies needed to execute the business logic in your code. For reference, here is an example [Dockerfile](https://github.com/dagster-io/dagster/blob/master/python_modules/automation/automation/docker/images/k8s-example/Dockerfile) and the corresponding [user code directory](https://github.com/dagster-io/dagster/tree/master/examples/deploy_k8s/example_project).
 
-Here, we install all the Dagster-related dependencies in the Dockerfile and then copy the directory with the implementation of the Dagster repository into the root folder. We'll need to remember the path of this repository in a [later step](/deployment/guides/kubernetes/deploying-with-helm#step-6-configure-your-user-deployment) to setup the gRPC server as a deployment.
+Here, we install all the Dagster-related dependencies in the Dockerfile and then copy the directory with the implementation of the Dagster repository into the root folder. We'll need to remember the path of this repository in a [later step](/deployment/guides/kubernetes/deploying-with-helm#step-6-configure-your-user-deployment) to set up the code server as a deployment.
 
 The example user code repository includes:
 
@@ -318,7 +318,7 @@ helm repo add dagster https://dagster-io.github.io/helm
 
 In this step, you'll update the `dagster-user-deployments.deployments` section of the Dagster chart's `values.yaml` to include your deployment.
 
-Here, we can specify the configuration of the Kubernetes deployment that creates the gRPC server for Dagit and the daemon to access the user code. The gRPC server is created through the arguments passed to `dagsterApiGrpcArgs`, which expects a list of arguments for [`dagster api grpc`](/concepts/code-locations/workspace-files#running-your-own-grpc-server).
+Here, we can specify the configuration of the Kubernetes deployment that creates the code server for Dagit and the daemon to access user code. The code server is created through the arguments passed to `codeServerArgs`, which expects a list of arguments for [`dagster code-server start`](/concepts/code-locations/workspace-files#running-your-own-code-server).
 
 To get access to the Dagster `values.yaml`, run:
 
@@ -326,7 +326,7 @@ To get access to the Dagster `values.yaml`, run:
 helm show values dagster/dagster > values.yaml
 ```
 
-The following snippet works for Dagster's example user code image. Since our Dockerfile contains the code location definition in a path, we specify arguments for the gRPC server to find this path under `dagsterApiGrpcArgs`.
+The following snippet works for Dagster's example user code image. Since our Dockerfile contains the code location definition in a path, we specify arguments for the code server to find this path under `codeServerArgs`.
 
 **Note**: If you haven't set up an S3 endpoint, you can only run the job called `single_pod_job`.
 
@@ -339,13 +339,13 @@ dagster-user-deployments:
         repository: "docker.io/dagster/user-code-example"
         tag: latest
         pullPolicy: Always
-      dagsterApiGrpcArgs:
+      codeServerArgs:
         - "--python-file"
         - "/example_project/example_repo/repo.py"
       port: 3030
 ```
 
-`dagsterApiGrpcArgs` also supports loading code location definitions from a module name. Refer to the [code location documentation](/concepts/code-locations/workspace-files#running-your-own-grpc-server) for a list of arguments.
+`codeServerArgs` also supports loading code location definitions from a module name. Refer to the [code location documentation](/concepts/code-locations/workspace-files#running-your-own-code-server) for a list of arguments.
 
 You can also specify configuration like configmaps, secrets, volumes, resource limits, and labels for individual user code deployments:
 
@@ -358,7 +358,7 @@ dagster-user-deployments:
         repository: "docker.io/dagster/user-code-example"
         tag: latest
         pullPolicy: Always
-      dagsterApiGrpcArgs:
+      codeServerArgs:
         - "--python-file"
         - "/example_project/example_repo/repo.py"
       port: 3030
@@ -403,7 +403,7 @@ dagster-user-deployments:
         repository: "docker.io/dagster/user-code-example"
         tag: latest
         pullPolicy: Always
-      dagsterApiGrpcArgs:
+      codeServerArgs:
         - "--python-file"
         - "/example_project/example_repo/repo.py"
       port: 3030

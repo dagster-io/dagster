@@ -90,6 +90,13 @@ WORKSPACE_CONFIG_SCHEMA = {
                             "location_name": Field(StringSource, is_required=False),
                             "ssl": Field(bool, is_required=False),
                         },
+                        "code_server": {
+                            "host": Field(StringSource, is_required=False),
+                            "socket": Field(StringSource, is_required=False),
+                            "port": Field(IntSource, is_required=False),
+                            "location_name": Field(StringSource, is_required=False),
+                            "ssl": Field(bool, is_required=False),
+                        },
                     },
                 )
             )

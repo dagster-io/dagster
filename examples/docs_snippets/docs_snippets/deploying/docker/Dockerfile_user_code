@@ -1,7 +1,7 @@
 FROM python:3.7-slim
 
-# Checkout and install dagster libraries needed to run the gRPC server
-# exposing your repository to dagit and dagster-daemon, and to load
+# Checkout and install dagster libraries needed to run a code server
+# exposing your code to dagit and dagster-daemon, and to load
 # the DagsterInstance
 
 RUN pip install \
@@ -23,10 +23,10 @@ WORKDIR /opt/dagster/app
 
 COPY repo.py /opt/dagster/app
 
-# Run dagster gRPC server on port 4000
+# Run dagster code server on port 4000
 
 EXPOSE 4000
 
 # Using CMD rather than ENTRYPOINT allows the command to be overridden in
 # run launchers or executors to run other commands using this image
-CMD ["dagster", "api", "grpc", "-h", "0.0.0.0", "-p", "4000", "-f", "repo.py"]
+CMD ["dagster", "code-server", "start", "-h", "0.0.0.0", "-p", "4000", "-f", "repo.py"]

@@ -222,7 +222,47 @@ def test_load_from_grpc_server():
         assert validation_result.success
 
 
-def test_load_from_grpc_server_env():
+def test_load_from_code_server():
+    with environ({"TEST_EXECUTABLE_PATH": "executable/path/bin/python"}):
+        valid_yaml = """
+    load_from:
+        - code_server:
+            host: remotehost
+            port: 4266
+            location_name: 'my_grpc_server'
+    """
+
+        validation_result = _validate_yaml_contents(valid_yaml)
+
+        assert validation_result.success
+        valid_yaml = """
+    load_from:
+        - code_server:
+            host: remotehost
+            port: 4266
+            location_name: 'my_grpc_server'
+            ssl: true
+    """
+
+        validation_result = _validate_yaml_contents(valid_yaml)
+
+        assert validation_result.success
+
+        valid_yaml = """
+    load_from:
+        - code_server:
+            host: remotehost
+            port: 4266
+            location_name: 'my_grpc_server'
+            ssl: false
+    """
+
+        validation_result = _validate_yaml_contents(valid_yaml)
+
+        assert validation_result.success
+
+
+def test_load_from_code_server_env():
     with environ(
         {
             "TEST_EXECUTABLE_PATH": "executable/path/bin/python",
@@ -233,7 +273,7 @@ def test_load_from_grpc_server_env():
     ):
         valid_yaml = """
     load_from:
-        - grpc_server:
+        - code_server:
             host:
               env: FOO_HOST
             port:
@@ -245,7 +285,7 @@ def test_load_from_grpc_server_env():
 
         valid_socket_yaml = """
     load_from:
-        - grpc_server:
+        - code_server:
             host:
               env: FOO_HOST
             socket:
