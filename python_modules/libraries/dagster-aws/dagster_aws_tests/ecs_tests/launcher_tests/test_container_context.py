@@ -122,6 +122,30 @@ def test_merge(
         },
     ]
 
+    assert merged.server_sidecar_containers == [
+        {
+            "name": "OtherServerAgent",
+            "image": "public.ecr.aws/other/agent:latest",
+        },
+        {
+            "name": "DatadogAgent",
+            "image": "public.ecr.aws/datadog/agent:latest",
+            "environment": [
+                {"name": "ECS_FARGATE", "value": "true"},
+            ],
+        },
+    ]
+    assert merged.run_sidecar_containers == [
+        {
+            "name": "OtherRunAgent",
+            "image": "otherrun:latest",
+        },
+        {
+            "name": "busyrun",
+            "image": "busybox:latest",
+        },
+    ]
+
     with pytest.raises(
         Exception, match="Tried to load environment variable OTHER_FOO_ENV_VAR, but it was not set"
     ):

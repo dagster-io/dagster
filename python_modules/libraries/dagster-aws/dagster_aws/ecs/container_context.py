@@ -170,6 +170,16 @@ ECS_CONTAINER_CONTEXT_SCHEMA = {
             }
         )
     ),
+    "server_sidecar_containers": Field(
+        Array(Permissive({})),
+        is_required=False,
+        description="Additional sidecar containers to include in code server task definitions.",
+    ),
+    "run_sidecar_containers": Field(
+        Array(Permissive({})),
+        is_required=False,
+        description="Additional sidecar containers to include in run task definitions.",
+    ),
     **SHARED_TASK_DEFINITION_FIELDS,
     **SHARED_ECS_SCHEMA,
 }
@@ -191,6 +201,8 @@ class EcsContainerContext(
             ("runtime_platform", Mapping[str, Any]),
             ("mount_points", Sequence[Mapping[str, Any]]),
             ("volumes", Sequence[Mapping[str, Any]]),
+            ("server_sidecar_containers", Sequence[Mapping[str, Any]]),
+            ("run_sidecar_containers", Sequence[Mapping[str, Any]]),
         ],
     )
 ):
@@ -210,6 +222,8 @@ class EcsContainerContext(
         runtime_platform: Optional[Mapping[str, Any]] = None,
         mount_points: Optional[Sequence[Mapping[str, Any]]] = None,
         volumes: Optional[Sequence[Mapping[str, Any]]] = None,
+        server_sidecar_containers: Optional[Sequence[Mapping[str, Any]]] = None,
+        run_sidecar_containers: Optional[Sequence[Mapping[str, Any]]] = None,
     ):
         return super(EcsContainerContext, cls).__new__(
             cls,
@@ -227,6 +241,12 @@ class EcsContainerContext(
             ),
             mount_points=check.opt_sequence_param(mount_points, "mount_points"),
             volumes=check.opt_sequence_param(volumes, "volumes"),
+            server_sidecar_containers=check.opt_sequence_param(
+                server_sidecar_containers, "server_sidecar_containers"
+            ),
+            run_sidecar_containers=check.opt_sequence_param(
+                run_sidecar_containers, "run_sidecar_containers"
+            ),
         )
 
     def merge(self, other: "EcsContainerContext") -> "EcsContainerContext":
@@ -243,6 +263,11 @@ class EcsContainerContext(
             runtime_platform=other.runtime_platform or self.runtime_platform,
             mount_points=[*other.mount_points, *self.mount_points],
             volumes=[*other.volumes, *self.volumes],
+            server_sidecar_containers=[
+                *other.server_sidecar_containers,
+                *self.server_sidecar_containers,
+            ],
+            run_sidecar_containers=[*other.run_sidecar_containers, *self.run_sidecar_containers],
         )
 
     def get_secrets_dict(self, secrets_manager) -> Mapping[str, str]:
@@ -271,6 +296,7 @@ class EcsContainerContext(
                     runtime_platform=run_launcher.runtime_platform,
                     mount_points=run_launcher.mount_points,
                     volumes=run_launcher.volumes,
+                    run_sidecar_containers=run_launcher.run_sidecar_containers,
                 )
             )
 
@@ -328,5 +354,7 @@ class EcsContainerContext(
                 runtime_platform=processed_context_value.get("runtime_platform"),
                 mount_points=processed_context_value.get("mount_points"),
                 volumes=processed_context_value.get("volumes"),
+                server_sidecar_containers=processed_context_value.get("server_sidecar_containers"),
+                run_sidecar_containers=processed_context_value.get("run_sidecar_containers"),
             )
         )

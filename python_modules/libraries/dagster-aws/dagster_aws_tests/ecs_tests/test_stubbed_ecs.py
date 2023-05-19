@@ -18,7 +18,7 @@ def test_describe_task_definition(ecs):
     )
     dagster2 = ecs.register_task_definition(
         family="dagster",
-        containerDefinitions=[{"image": "hello_world:latest"}],
+        containerDefinitions=[{"image": "hello_world:latest"}, {"image": "busybox"}],
         memory="512",
         cpu="256",
     )

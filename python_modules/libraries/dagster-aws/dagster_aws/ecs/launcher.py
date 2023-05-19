@@ -207,6 +207,12 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
             return None
         return self.task_definition_dict.get("volumes")
 
+    @property
+    def run_sidecar_containers(self) -> Optional[Sequence[Mapping[str, Any]]]:
+        if not self.task_definition_dict:
+            return None
+        return self.task_definition_dict.get("sidecar_containers")
+
     @classmethod
     def config_type(cls):
         return {
@@ -572,7 +578,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                     environment=environment,
                     execution_role_arn=container_context.execution_role_arn,
                     task_role_arn=container_context.task_role_arn,
-                    sidecars=self.task_definition_dict.get("sidecar_containers"),
+                    sidecars=container_context.run_sidecar_containers,
                     requires_compatibilities=self.task_definition_dict.get(
                         "requires_compatibilities", []
                     ),
@@ -604,6 +610,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                     ephemeral_storage=container_context.run_resources.get("ephemeral_storage"),
                     volumes=container_context.volumes,
                     mount_points=container_context.mount_points,
+                    additional_sidecars=container_context.run_sidecar_containers,
                 )
 
                 task_definition_config = DagsterEcsTaskDefinitionConfig.from_task_definition_dict(
