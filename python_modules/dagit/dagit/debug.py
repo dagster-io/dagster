@@ -22,6 +22,11 @@ from .version import __version__
 
 
 class DagitDebugWorkspaceProcessContext(IWorkspaceProcessContext):
+    """IWorkspaceProcessContext that works with an ephemeral instance, which is needed
+    for dagit-debug to work (a regular WorkspaceProcessContext will fail when it tries
+    to call .get_ref() on the instance when spinning up a code server).
+    """
+
     def __init__(
         self,
         instance: DagsterInstance,

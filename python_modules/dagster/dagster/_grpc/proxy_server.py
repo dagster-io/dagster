@@ -30,7 +30,12 @@ from .types import (
 CLEANUP_TICK = 1
 
 
-class DagsterProxyApiServer(DagsterApiServicer):
+class DagsterProxyApiServicer(DagsterApiServicer):
+    """Service that implements the dagster gRPC API by opening up a "dagster api grpc" subprocess, and proxying
+    all gRPC calls to the server running in that subprocess. This allows us to reload code by
+    restarting the subprocess without needing to restart the parent process.
+    """
+
     def __init__(
         self,
         loadable_target_origin: LoadableTargetOrigin,
@@ -45,7 +50,7 @@ class DagsterProxyApiServer(DagsterApiServicer):
         instance_ref: Optional[InstanceRef],
         logger: logging.Logger,
     ):
-        super(DagsterProxyApiServer, self).__init__()
+        super(DagsterProxyApiServicer, self).__init__()
 
         self._loadable_target_origin = loadable_target_origin
         self._fixed_server_id = fixed_server_id
@@ -169,16 +174,20 @@ class DagsterProxyApiServer(DagsterApiServicer):
                 break
 
             if self._shutdown_once_executions_finish_event.is_set():
-                if self._grpc_server_registry.have_all_servers_shut_down():
+                if self._grpc_server_registry.are_all_servers_shut_down():
                     self._server_termination_event.set()
 
     def _get_grpc_client(self):
         return self._client
 
     def _query(self, api_name: str, request, _context):
+        if not self._client:
+            raise Exception("No available client to code serer")
         return check.not_none(self._client)._get_response(api_name, request)  # noqa
 
     def _streaming_query(self, api_name: str, request, _context):
+        if not self._client:
+            raise Exception("No available client to code serer")
         return check.not_none(self._client)._get_streaming_response(api_name, request)  # noqa
 
     def ExecutionPlanSnapshot(self, request, context):
@@ -192,7 +201,8 @@ class DagsterProxyApiServer(DagsterApiServicer):
         return self._query("ListRepositories", request, context)
 
     def Ping(self, request, context):
-        return self._query("Ping", request, context)
+        echo = request.echo
+        return api_pb2.PingReply(echo=echo)
 
     def GetServerId(self, request, context):
         return self._fixed_server_id or self._query("GetServerId", request, context)
