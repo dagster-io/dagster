@@ -291,19 +291,19 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
             return
 
         for asset_key in self._monitored_asset_keys:
-            event_records = self.instance.get_event_records(
-                EventRecordsFilter(
-                    event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                    storage_ids=list(
-                        self._get_cursor(
-                            asset_key
-                        ).trailing_unconsumed_partitioned_event_ids.values()
-                    ),
+            unconsumed_event_ids = list(
+                self._get_cursor(asset_key).trailing_unconsumed_partitioned_event_ids.values()
+            )
+            if unconsumed_event_ids:
+                event_records = self.instance.get_event_records(
+                    EventRecordsFilter(
+                        event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                        storage_ids=unconsumed_event_ids,
+                    )
                 )
-            )
-            self._initial_unconsumed_events_by_id.update(
-                {event_record.storage_id: event_record for event_record in event_records}
-            )
+                self._initial_unconsumed_events_by_id.update(
+                    {event_record.storage_id: event_record for event_record in event_records}
+                )
 
         self._fetched_initial_unconsumed_events = True
 
@@ -369,6 +369,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
             self._cursor = new_cursor
             self._unpacked_cursor = MultiAssetSensorContextCursor(new_cursor, self)
             self._cursor_advance_state_mutation = MultiAssetSensorCursorAdvances()
+            self._fetched_initial_unconsumed_events = False
 
     @public
     def latest_materialization_records_by_key(
