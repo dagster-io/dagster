@@ -115,6 +115,9 @@ data:
       {{- if $sensors.numWorkers }}
       num_workers: {{ $sensors.numWorkers }}
       {{- end }}
+      {{- if $sensors.numSubmitWorkers }}
+      num_submit_workers: {{ $sensors.numSubmitWorkers }}
+      {{- end }}
     {{- end }}
 
     {{- $schedules := .Values.dagsterDaemon.schedules }}
@@ -123,6 +126,9 @@ data:
       use_threads: {{ $schedules.useThreads }}
       {{- if $schedules.numWorkers }}
       num_workers: {{ $schedules.numWorkers }}
+      {{- end }}
+      {{- if $schedules.numSubmitWorkers }}
+      num_submit_workers: {{ $schedules.numSubmitWorkers }}
       {{- end }}
     {{- end }}
 

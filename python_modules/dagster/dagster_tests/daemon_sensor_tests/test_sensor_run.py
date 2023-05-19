@@ -929,7 +929,7 @@ def asset_sensor_repo():
     ]
 
 
-def evaluate_sensors(workspace_context, executor, enqueue_executor=None, timeout=75):
+def evaluate_sensors(workspace_context, executor, submit_executor=None, timeout=75):
     logger = get_default_daemon_logger("SensorDaemon")
     futures = {}
     list(
@@ -938,7 +938,7 @@ def evaluate_sensors(workspace_context, executor, enqueue_executor=None, timeout
             logger,
             threadpool_executor=executor,
             sensor_tick_futures=futures,
-            enqueue_threadpool_executor=enqueue_executor,
+            submit_threadpool_executor=submit_executor,
         )
     )
 
@@ -1776,9 +1776,7 @@ def test_large_sensor(executor, instance, workspace_context, external_repo):
         )
 
 
-def test_many_request_sensor(
-    executor, enqueue_executor, instance, workspace_context, external_repo
-):
+def test_many_request_sensor(executor, submit_executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
         "US/Central",
@@ -1786,7 +1784,7 @@ def test_many_request_sensor(
     with pendulum.test(freeze_datetime):
         external_sensor = external_repo.get_external_sensor("many_request_sensor")
         instance.start_sensor(external_sensor)
-        evaluate_sensors(workspace_context, executor, enqueue_executor=enqueue_executor)
+        evaluate_sensors(workspace_context, executor, submit_executor=submit_executor)
         ticks = instance.get_ticks(
             external_sensor.get_external_origin_id(), external_sensor.selector_id
         )

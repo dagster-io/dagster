@@ -25,7 +25,7 @@ def executor(request):
 
 
 @pytest.fixture(params=["synchronous", "threadpool"])
-def enqueue_executor(request):
+def submit_executor(request):
     if request.param == "synchronous":
         yield None
     elif request.param == "threadpool":

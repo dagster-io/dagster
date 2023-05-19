@@ -255,7 +255,7 @@ def execute_sensor_iteration_loop(
     """
     sensor_state_lock = threading.Lock()
     sensor_tick_futures: Dict[str, Future] = {}
-    enqueue_threadpool_executor = None
+    submit_threadpool_executor = None
     threadpool_executor = None
     with ExitStack() as stack:
         settings = workspace_process_context.instance.get_settings("sensors")
@@ -266,12 +266,12 @@ def execute_sensor_iteration_loop(
                     thread_name_prefix="sensor_daemon_worker",
                 )
             )
-            num_enqueue_workers = settings.get("num_enqueue_workers")
-            if num_enqueue_workers:
-                enqueue_threadpool_executor = stack.enter_context(
+            num_submit_workers = settings.get("num_submit_workers")
+            if num_submit_workers:
+                submit_threadpool_executor = stack.enter_context(
                     ThreadPoolExecutor(
-                        max_workers=settings.get("num_enqueue_workers"),
-                        thread_name_prefix="sensor_daemon_worker",
+                        max_workers=settings.get("num_submit_workers"),
+                        thread_name_prefix="sensor_submit_worker",
                     )
                 )
 
@@ -290,7 +290,7 @@ def execute_sensor_iteration_loop(
                 workspace_process_context,
                 logger,
                 threadpool_executor=threadpool_executor,
-                enqueue_threadpool_executor=enqueue_threadpool_executor,
+                submit_threadpool_executor=submit_threadpool_executor,
                 sensor_tick_futures=sensor_tick_futures,
                 sensor_state_lock=sensor_state_lock,
                 log_verbose_checks=verbose_logs_iteration,
@@ -315,7 +315,7 @@ def execute_sensor_iteration(
     workspace_process_context: IWorkspaceProcessContext,
     logger: logging.Logger,
     threadpool_executor: Optional[ThreadPoolExecutor] = None,
-    enqueue_threadpool_executor: Optional[ThreadPoolExecutor] = None,
+    submit_threadpool_executor: Optional[ThreadPoolExecutor] = None,
     sensor_tick_futures: Optional[Dict[str, Future]] = None,
     sensor_state_lock: Optional[threading.Lock] = None,
     log_verbose_checks: bool = True,
@@ -440,7 +440,7 @@ def execute_sensor_iteration(
                 sensor_state_lock,
                 sensor_debug_crash_flags,
                 tick_retention_settings,
-                enqueue_threadpool_executor,
+                submit_threadpool_executor,
             )
             sensor_tick_futures[external_sensor.selector_id] = future
             yield
@@ -456,7 +456,7 @@ def execute_sensor_iteration(
                 sensor_state_lock,
                 sensor_debug_crash_flags,
                 tick_retention_settings,
-                enqueue_threadpool_executor=None,
+                submit_threadpool_executor=None,
             )
 
 
@@ -468,7 +468,7 @@ def _process_tick(
     sensor_state_lock: threading.Lock,
     sensor_debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags],
     tick_retention_settings,
-    enqueue_threadpool_executor: Optional[ThreadPoolExecutor],
+    submit_threadpool_executor: Optional[ThreadPoolExecutor],
 ):
     # evaluate the tick immediately, but from within a thread.  The main thread should be able to
     # heartbeat to keep the daemon alive
@@ -481,7 +481,7 @@ def _process_tick(
             sensor_state_lock,
             sensor_debug_crash_flags,
             tick_retention_settings,
-            enqueue_threadpool_executor,
+            submit_threadpool_executor,
         )
     )
 
@@ -494,7 +494,7 @@ def _process_tick_generator(
     sensor_state_lock: threading.Lock,
     sensor_debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags],
     tick_retention_settings,
-    enqueue_threadpool_executor: Optional[ThreadPoolExecutor],
+    submit_threadpool_executor: Optional[ThreadPoolExecutor],
 ):
     instance = workspace_process_context.instance
     error_info = None
@@ -537,7 +537,7 @@ def _process_tick_generator(
                 tick_context,
                 external_sensor,
                 sensor_state,
-                enqueue_threadpool_executor,
+                submit_threadpool_executor,
                 sensor_debug_crash_flags,
             )
 
@@ -648,7 +648,7 @@ def _evaluate_sensor(
     context: SensorLaunchContext,
     external_sensor: ExternalSensor,
     state: InstigatorState,
-    enqueue_threadpool_executor: Optional[ThreadPoolExecutor],
+    submit_threadpool_executor: Optional[ThreadPoolExecutor],
     sensor_debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags] = None,
 ):
     instance = workspace_process_context.instance
@@ -832,8 +832,8 @@ def _evaluate_sensor(
         sensor_debug_crash_flags,
     )
 
-    if enqueue_threadpool_executor:
-        gen_run_request_results = enqueue_threadpool_executor.map(submit_run_request, run_requests)
+    if submit_threadpool_executor:
+        gen_run_request_results = submit_threadpool_executor.map(submit_run_request, run_requests)
     else:
         gen_run_request_results = map(submit_run_request, run_requests)
 

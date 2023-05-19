@@ -2608,6 +2608,17 @@
                             "type": "null"
                         }
                     ]
+                },
+                "numSubmitWorkers": {
+                    "title": "Numsubmitworkers",
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
@@ -2624,6 +2635,17 @@
                 },
                 "numWorkers": {
                     "title": "Numworkers",
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "numSubmitWorkers": {
+                    "title": "Numsubmitworkers",
                     "anyOf": [
                         {
                             "type": "integer"
