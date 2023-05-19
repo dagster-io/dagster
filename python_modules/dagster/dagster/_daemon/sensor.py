@@ -255,6 +255,8 @@ def execute_sensor_iteration_loop(
     """
     sensor_state_lock = threading.Lock()
     sensor_tick_futures: Dict[str, Future] = {}
+    submit_threadpool_executor = None
+    threadpool_executor = None
     with ExitStack() as stack:
         settings = workspace_process_context.instance.get_settings("sensors")
         if settings.get("use_threads"):
@@ -264,8 +266,14 @@ def execute_sensor_iteration_loop(
                     thread_name_prefix="sensor_daemon_worker",
                 )
             )
-        else:
-            threadpool_executor = None
+            num_submit_workers = settings.get("num_submit_workers")
+            if num_submit_workers:
+                submit_threadpool_executor = stack.enter_context(
+                    ThreadPoolExecutor(
+                        max_workers=settings.get("num_submit_workers"),
+                        thread_name_prefix="sensor_submit_worker",
+                    )
+                )
 
         last_verbose_time = None
         while True:
@@ -282,6 +290,7 @@ def execute_sensor_iteration_loop(
                 workspace_process_context,
                 logger,
                 threadpool_executor=threadpool_executor,
+                submit_threadpool_executor=submit_threadpool_executor,
                 sensor_tick_futures=sensor_tick_futures,
                 sensor_state_lock=sensor_state_lock,
                 log_verbose_checks=verbose_logs_iteration,
@@ -306,6 +315,7 @@ def execute_sensor_iteration(
     workspace_process_context: IWorkspaceProcessContext,
     logger: logging.Logger,
     threadpool_executor: Optional[ThreadPoolExecutor] = None,
+    submit_threadpool_executor: Optional[ThreadPoolExecutor] = None,
     sensor_tick_futures: Optional[Dict[str, Future]] = None,
     sensor_state_lock: Optional[threading.Lock] = None,
     log_verbose_checks: bool = True,
@@ -430,6 +440,7 @@ def execute_sensor_iteration(
                 sensor_state_lock,
                 sensor_debug_crash_flags,
                 tick_retention_settings,
+                submit_threadpool_executor,
             )
             sensor_tick_futures[external_sensor.selector_id] = future
             yield
@@ -445,6 +456,7 @@ def execute_sensor_iteration(
                 sensor_state_lock,
                 sensor_debug_crash_flags,
                 tick_retention_settings,
+                submit_threadpool_executor=None,
             )
 
 
@@ -456,10 +468,11 @@ def _process_tick(
     sensor_state_lock: threading.Lock,
     sensor_debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags],
     tick_retention_settings,
+    submit_threadpool_executor: Optional[ThreadPoolExecutor],
 ):
     # evaluate the tick immediately, but from within a thread.  The main thread should be able to
     # heartbeat to keep the daemon alive
-    list(
+    return list(
         _process_tick_generator(
             workspace_process_context,
             logger,
@@ -468,6 +481,7 @@ def _process_tick(
             sensor_state_lock,
             sensor_debug_crash_flags,
             tick_retention_settings,
+            submit_threadpool_executor,
         )
     )
 
@@ -480,6 +494,7 @@ def _process_tick_generator(
     sensor_state_lock: threading.Lock,
     sensor_debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags],
     tick_retention_settings,
+    submit_threadpool_executor: Optional[ThreadPoolExecutor],
 ):
     instance = workspace_process_context.instance
     error_info = None
@@ -522,6 +537,7 @@ def _process_tick_generator(
                 tick_context,
                 external_sensor,
                 sensor_state,
+                submit_threadpool_executor,
                 sensor_debug_crash_flags,
             )
 
@@ -562,11 +578,77 @@ def _mark_sensor_state_for_tick(
     )
 
 
+class SubmitRunRequestResult(NamedTuple):
+    run_key: Optional[str]
+    error_info: Optional[SerializableErrorInfo]
+    run: Union[SkippedSensorRun, DagsterRun]
+
+
+def _submit_run_request(
+    run_request: RunRequest,
+    workspace_process_context: IWorkspaceProcessContext,
+    external_sensor: ExternalSensor,
+    code_location: CodeLocation,
+    existing_runs_by_key,
+    logger,
+    sensor_debug_crash_flags,
+) -> SubmitRunRequestResult:
+    instance = workspace_process_context.instance
+    sensor_origin = external_sensor.get_external_origin()
+
+    target_data: ExternalTargetData = check.not_none(
+        external_sensor.get_target_data(run_request.job_name)
+    )
+
+    job_subset_selector = JobSubsetSelector(
+        location_name=code_location.name,
+        repository_name=sensor_origin.external_repository_origin.repository_name,
+        job_name=target_data.job_name,
+        op_selection=target_data.op_selection,
+        asset_selection=run_request.asset_selection,
+    )
+    external_job = code_location.get_external_job(job_subset_selector)
+    run = _get_or_create_sensor_run(
+        logger,
+        instance,
+        code_location,
+        external_sensor,
+        external_job,
+        run_request,
+        target_data,
+        existing_runs_by_key,
+    )
+
+    if isinstance(run, SkippedSensorRun):
+        return SubmitRunRequestResult(run_key=run_request.run_key, error_info=None, run=run)
+
+    _check_for_debug_crash(sensor_debug_crash_flags, "RUN_CREATED")
+
+    error_info = None
+    try:
+        logger.info(f"Launching run for {external_sensor.name}")
+        instance.submit_run(run.run_id, workspace_process_context.create_request_context())
+        logger.info(
+            "Completed launch of run {run_id} for {sensor_name}".format(
+                run_id=run.run_id, sensor_name=external_sensor.name
+            )
+        )
+    except Exception:
+        error_info = serializable_error_info_from_exc_info(sys.exc_info())
+        logger.error(
+            f"Run {run.run_id} created successfully but failed to launch: {str(error_info)}"
+        )
+
+    _check_for_debug_crash(sensor_debug_crash_flags, "RUN_LAUNCHED")
+    return SubmitRunRequestResult(run_key=run_request.run_key, error_info=error_info, run=run)
+
+
 def _evaluate_sensor(
     workspace_process_context: IWorkspaceProcessContext,
     context: SensorLaunchContext,
     external_sensor: ExternalSensor,
     state: InstigatorState,
+    submit_threadpool_executor: Optional[ThreadPoolExecutor],
     sensor_debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags] = None,
 ):
     instance = workspace_process_context.instance
@@ -723,6 +805,8 @@ def _evaluate_sensor(
         instance, external_sensor, sensor_runtime_data.run_requests
     )
 
+    run_requests = []
+
     for raw_run_request in sensor_runtime_data.run_requests:
         if raw_run_request.stale_assets_only:
             stale_assets = resolve_stale_or_missing_assets(workspace_process_context, raw_run_request, external_sensor)  # type: ignore
@@ -736,56 +820,33 @@ def _evaluate_sensor(
         else:
             run_request = raw_run_request
 
-        target_data: ExternalTargetData = check.not_none(
-            external_sensor.get_target_data(run_request.job_name)
-        )
+        run_requests.append(run_request)
 
-        job_subset_selector = JobSubsetSelector(
-            location_name=code_location.name,
-            repository_name=sensor_origin.external_repository_origin.repository_name,
-            job_name=target_data.job_name,
-            op_selection=target_data.op_selection,
-            asset_selection=run_request.asset_selection,
-        )
-        external_job = code_location.get_external_job(job_subset_selector)
-        run = _get_or_create_sensor_run(
-            context,
-            instance,
-            code_location,
-            external_sensor,
-            external_job,
-            run_request,
-            target_data,
-            existing_runs_by_key,
-        )
+    submit_run_request = lambda run_request: _submit_run_request(
+        run_request,
+        workspace_process_context,
+        external_sensor,
+        code_location,
+        existing_runs_by_key,
+        context.logger,
+        sensor_debug_crash_flags,
+    )
+
+    if submit_threadpool_executor:
+        gen_run_request_results = submit_threadpool_executor.map(submit_run_request, run_requests)
+    else:
+        gen_run_request_results = map(submit_run_request, run_requests)
+
+    for run_request_result in gen_run_request_results:
+        yield run_request_result.error_info
+
+        run = run_request_result.run
 
         if isinstance(run, SkippedSensorRun):
             skipped_runs.append(run)
-            context.add_run_info(run_id=None, run_key=run_request.run_key)
-            yield
-            continue
-
-        _check_for_debug_crash(sensor_debug_crash_flags, "RUN_CREATED")
-
-        error_info = None
-        try:
-            context.logger.info(f"Launching run for {external_sensor.name}")
-            instance.submit_run(run.run_id, workspace_process_context.create_request_context())
-            context.logger.info(
-                "Completed launch of run {run_id} for {sensor_name}".format(
-                    run_id=run.run_id, sensor_name=external_sensor.name
-                )
-            )
-        except Exception:
-            error_info = serializable_error_info_from_exc_info(sys.exc_info())
-            context.logger.error(
-                f"Run {run.run_id} created successfully but failed to launch: {str(error_info)}"
-            )
-        yield error_info
-
-        _check_for_debug_crash(sensor_debug_crash_flags, "RUN_LAUNCHED")
-
-        context.add_run_info(run_id=run.run_id, run_key=run_request.run_key)
+            context.add_run_info(run_id=None, run_key=run_request_result.run_key)
+        else:
+            context.add_run_info(run_id=run.run_id, run_key=run_request_result.run_key)
 
     if skipped_runs:
         run_keys = [skipped.run_key for skipped in skipped_runs]
@@ -863,7 +924,7 @@ def _fetch_existing_runs(
 
 
 def _get_or_create_sensor_run(
-    context: SensorLaunchContext,
+    logger: logging.Logger,
     instance: DagsterInstance,
     code_location: CodeLocation,
     external_sensor: ExternalSensor,
@@ -885,13 +946,13 @@ def _get_or_create_sensor_run(
             # crashed before the tick could be updated
             return SkippedSensorRun(run_key=run_request.run_key, existing_run=run)
         else:
-            context.logger.info(
+            logger.info(
                 f"Run {run.run_id} already created with the run key "
                 f"`{run_request.run_key}` for {external_sensor.name}"
             )
             return run
 
-    context.logger.info(f"Creating new run for {external_sensor.name}")
+    logger.info(f"Creating new run for {external_sensor.name}")
 
     return _create_sensor_run(
         instance, code_location, external_sensor, external_job, run_request, target_data

@@ -765,7 +765,7 @@ The `purge_after_days` key accepts either:
 
 ### Sensor evaluation
 
-The `sensors` key allows you to configure how sensors are evaluated. To asynchronously evaluate sensors, set the `use_threads` and `num_workers` keys:
+The `sensors` key allows you to configure how sensors are evaluated. To evaluate multiple sensors in parallel simultaneously, set the `use_threads` and `num_workers` keys:
 
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_sensors endbefore=end_marker_sensors
 sensors:
@@ -773,17 +773,21 @@ sensors:
   num_workers: 8
 ```
 
+You can also set the optional `num_submit_workers` key to evaluate multiple run requests from the same sensor tick in parallel, which can help decrease latency when a single sensor tick returns many run requests.
+
 ### Schedule evaluation
 
-The `schedules` key allows you to configure how schedules are evaluated. By default, Dagster evaluates schedules synchronously.
+The `schedules` key allows you to configure how schedules are evaluated. By default, Dagster evaluates schedules one at a time.
 
-To asynchronously evaluate schedules, set the `use_threads` and `num_workers` keys:
+To evaluate multiple schedules in parallel simultaneously, set the `use_threads` and `num_workers` keys:
 
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_schedules endbefore=end_marker_schedules
 schedules:
   use_threads: true
   num_workers: 8
 ```
+
+You can also set the optional `num_submit_workers` key to evaluate multiple run requests from the same schedule tick in parallel, which can help decrease latency when a single schedule tick returns many run requests.
 
 ### Auto-materialize
 

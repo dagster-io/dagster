@@ -250,7 +250,22 @@ def sensors_daemon_config() -> Field:
     return Field(
         {
             "use_threads": Field(Bool, is_required=False, default_value=False),
-            "num_workers": Field(int, is_required=False),
+            "num_workers": Field(
+                int,
+                is_required=False,
+                description=(
+                    "How many threads to use to process ticks from multiple sensors in parallel"
+                ),
+            ),
+            "num_submit_workers": Field(
+                int,
+                is_required=False,
+                description=(
+                    "How many threads to use to submit runs from sensor ticks. Can be used to"
+                    " decrease latency when a sensor emits multiple run requests within a single"
+                    " tick."
+                ),
+            ),
         },
         is_required=False,
     )
@@ -260,7 +275,22 @@ def schedules_daemon_config() -> Field:
     return Field(
         {
             "use_threads": Field(Bool, is_required=False, default_value=False),
-            "num_workers": Field(int, is_required=False),
+            "num_workers": Field(
+                int,
+                is_required=False,
+                description=(
+                    "How many threads to use to process ticks from multiple schedules in parallel"
+                ),
+            ),
+            "num_submit_workers": Field(
+                int,
+                is_required=False,
+                description=(
+                    "How many threads to use to submit runs from schedule ticks. Can be used to"
+                    " decrease latency when a schedule emits multiple run requests within a single"
+                    " tick."
+                ),
+            ),
         },
         is_required=False,
     )

@@ -469,9 +469,28 @@ def test_sensor_threading(instance_template: HelmTemplate):
     assert len(configmaps) == 1
     instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
     sensors_config = instance["sensors"]
+    assert instance["sensors"]["use_threads"] is True
+    assert instance["sensors"]["num_workers"] == 4
+    assert "num_submit_workers" not in instance["sensors"]
+
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(
+            sensors=Sensors.construct(
+                useThreads=True,
+                numWorkers=4,
+                numSubmitWorkers=8,
+            )
+        )
+    )
+
+    configmaps = instance_template.render(helm_values)
+    assert len(configmaps) == 1
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    sensors_config = instance["sensors"]
     assert sensors_config.keys() == sensors_daemon_config().config_type.fields.keys()
     assert instance["sensors"]["use_threads"] is True
     assert instance["sensors"]["num_workers"] == 4
+    assert instance["sensors"]["num_submit_workers"] == 8
 
 
 def test_scheduler_threading(instance_template: HelmTemplate):
@@ -488,9 +507,24 @@ def test_scheduler_threading(instance_template: HelmTemplate):
     assert len(configmaps) == 1
     instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
     schedules_config = instance["schedules"]
+    assert instance["schedules"]["use_threads"] is True
+    assert instance["schedules"]["num_workers"] == 4
+    assert "num_submit_workers" not in instance["schedules"]
+
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(
+            schedules=Schedules.construct(useThreads=True, numWorkers=4, numSubmitWorkers=8)
+        )
+    )
+
+    configmaps = instance_template.render(helm_values)
+    assert len(configmaps) == 1
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    schedules_config = instance["schedules"]
     assert schedules_config.keys() == schedules_daemon_config().config_type.fields.keys()
     assert instance["schedules"]["use_threads"] is True
     assert instance["schedules"]["num_workers"] == 4
+    assert instance["schedules"]["num_submit_workers"] == 8
 
 
 def test_scheduler_name(template: HelmTemplate):
