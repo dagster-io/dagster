@@ -278,7 +278,7 @@ class EnvironmentManagers:
     def managed_grpc(target=None, location_name="test"):
         @contextmanager
         def _mgr_fn(instance, read_only):
-            """Goes out of process via grpc."""
+            """Relies on Dagit to load the code location in a subprocess and manage its lifecyle."""
             loadable_target_origin = (
                 target if target is not None else get_main_loadable_target_origin()
             )
@@ -308,6 +308,8 @@ class EnvironmentManagers:
 
     @staticmethod
     def deployed_grpc(target=None, location_name="test"):
+        """Launches a code server in a "dagster api grpc" subprocess."""
+
         @contextmanager
         def _mgr_fn(instance, read_only):
             with GrpcServerProcess(
@@ -336,6 +338,10 @@ class EnvironmentManagers:
 
     @staticmethod
     def code_server_cli_grpc(target=None, location_name="test"):
+        """Launches a code server in a "dagster code-server start" subprocess (which will
+        in turn open up a `dagster api grpc` subprocess that actually loads the code location).
+        """
+
         @contextmanager
         def _mgr_fn(instance, read_only):
             loadable_target_origin = target or get_main_loadable_target_origin()
@@ -419,7 +425,7 @@ class Marks:
     queued_run_coordinator = pytest.mark.queued_run_coordinator
     non_launchable = pytest.mark.non_launchable
 
-    # Repository Location marks
+    # Code location marks
     multi_location = pytest.mark.multi_location
     managed_grpc_env = pytest.mark.managed_grpc_env
     deployed_grpc_env = pytest.mark.deployed_grpc_env

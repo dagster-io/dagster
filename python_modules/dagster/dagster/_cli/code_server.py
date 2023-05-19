@@ -158,7 +158,7 @@ def start_command(
     **kwargs,
 ):
     from dagster._grpc import DagsterGrpcServer
-    from dagster._grpc.proxy_server import DagsterProxyApiServer
+    from dagster._grpc.proxy_server import DagsterProxyApiServicer
 
     if seven.IS_WINDOWS and port is None:
         raise click.UsageError(
@@ -188,7 +188,7 @@ def start_command(
     )
     server_termination_event = threading.Event()
 
-    api_servicer = DagsterProxyApiServer(
+    api_servicer = DagsterProxyApiServicer(
         loadable_target_origin=loadable_target_origin,
         fixed_server_id=fixed_server_id,
         container_image=container_image,

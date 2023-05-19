@@ -512,6 +512,41 @@ def test_load_timeout():
     assert "StatusCode.UNAVAILABLE" in str(timeout_exception)
 
 
+def test_load_timeout_code_server_cli():
+    port = find_free_port()
+    python_file = file_relative_path(__file__, "grpc_repo_that_times_out.py")
+
+    subprocess_args = [
+        "dagster",
+        "code-server",
+        "start",
+        "--port",
+        str(port),
+        "--python-file",
+        python_file,
+        "--startup-timeout",
+        "1",
+    ]
+
+    process = subprocess.Popen(subprocess_args, stdout=subprocess.PIPE)
+
+    try:
+        wait_for_grpc_server(
+            process,
+            DagsterGrpcClient(port=port, host="localhost"),
+            subprocess_args,
+        )
+        list_repositories_response = deserialize_value(
+            DagsterGrpcClient(port=port).list_repositories(), SerializableErrorInfo
+        )
+        assert "Timed out waiting for gRPC server to start" in list_repositories_response.message
+        assert "Most recent connection error: " in list_repositories_response.message
+        assert "StatusCode.UNAVAILABLE" in list_repositories_response.message
+    finally:
+        process.terminate()
+        process.wait()
+
+
 def test_lazy_load_with_error():
     port = find_free_port()
     python_file = file_relative_path(__file__, "grpc_repo_with_error.py")

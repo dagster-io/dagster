@@ -290,7 +290,7 @@ class GrpcServerRegistry(AbstractContextManager):
         for process in self._all_processes:
             process.shutdown_server()
 
-    def have_all_servers_shut_down(self) -> bool:
+    def are_all_servers_shut_down(self) -> bool:
         for process in self._all_processes:
             try:
                 process.create_client().ping("")
