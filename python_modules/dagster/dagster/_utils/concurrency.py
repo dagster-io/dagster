@@ -19,6 +19,7 @@ class ConcurrencyClaimStatus(
             ("priority", Optional[int]),
             ("assigned_timestamp", Optional[datetime]),
             ("enqueued_timestamp", Optional[datetime]),
+            ("sleep_interval", Optional[float]),
         ],
     )
 ):
@@ -29,6 +30,7 @@ class ConcurrencyClaimStatus(
         priority: Optional[int] = None,
         assigned_timestamp: Optional[datetime] = None,
         enqueued_timestamp: Optional[datetime] = None,
+        sleep_interval: Optional[float] = None,
     ):
         return super(ConcurrencyClaimStatus, cls).__new__(
             cls,
@@ -37,6 +39,7 @@ class ConcurrencyClaimStatus(
             check.opt_int_param(priority, "priority"),
             check.opt_inst_param(assigned_timestamp, "assigned_timestamp", datetime),
             check.opt_inst_param(enqueued_timestamp, "enqueued_timestamp", datetime),
+            check.opt_float_param(sleep_interval, "sleep_interval"),
         )
 
     @property
@@ -54,6 +57,17 @@ class ConcurrencyClaimStatus(
             priority=self.priority,
             assigned_timestamp=self.assigned_timestamp,
             enqueued_timestamp=self.enqueued_timestamp,
+            sleep_interval=self.sleep_interval,
+        )
+
+    def with_sleep_interval(self, interval: float):
+        return ConcurrencyClaimStatus(
+            concurrency_key=self.concurrency_key,
+            slot_status=self.slot_status,
+            priority=self.priority,
+            assigned_timestamp=self.assigned_timestamp,
+            enqueued_timestamp=self.enqueued_timestamp,
+            sleep_interval=interval,
         )
 
 
