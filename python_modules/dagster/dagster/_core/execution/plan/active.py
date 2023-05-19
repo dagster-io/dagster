@@ -267,7 +267,7 @@ class ActiveExecution:
             self._executable.append(key)
             del self._waiting_to_retry[key]
 
-    def sleep_til_ready(self) -> None:
+    def sleep_interval(self):
         now = time.time()
         intervals = []
         if self._waiting_to_retry:
@@ -281,9 +281,14 @@ class ActiveExecution:
                 self._global_concurrency_context.interval_to_next_pending_claim_check()
             )
         if intervals:
-            sleep_amt = min(intervals)
-            if sleep_amt > 0:
-                time.sleep(sleep_amt)
+            return min(intervals)
+
+        return 0
+
+    def sleep_til_ready(self) -> None:
+        sleep_amt = self.sleep_interval()
+        if sleep_amt > 0:
+            time.sleep(sleep_amt)
 
     def get_next_step(self) -> Optional[ExecutionStep]:
         check.invariant(not self.is_complete, "Can not call get_next_step when is_complete is True")
