@@ -24,6 +24,15 @@ def executor(request):
             yield executor
 
 
+@pytest.fixture(params=["synchronous", "threadpool"])
+def submit_executor(request):
+    if request.param == "synchronous":
+        yield None
+    elif request.param == "threadpool":
+        with SingleThreadPoolExecutor() as executor:
+            yield executor
+
+
 @pytest.fixture(name="instance_module_scoped", scope="module")
 def instance_module_scoped_fixture() -> Iterator[DagsterInstance]:
     with instance_for_test(

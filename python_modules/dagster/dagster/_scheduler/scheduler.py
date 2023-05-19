@@ -7,7 +7,7 @@ import time
 from collections import defaultdict
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import ExitStack
-from typing import TYPE_CHECKING, Dict, List, Mapping, Optional, cast
+from typing import TYPE_CHECKING, Dict, List, Mapping, NamedTuple, Optional, cast
 
 import pendulum
 
@@ -38,7 +38,7 @@ from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._scheduler.stale import resolve_stale_or_missing_assets
 from dagster._seven.compat.pendulum import to_timezone
 from dagster._utils import DebugCrashFlags, SingleInstigatorDebugCrashFlags
-from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster._utils.log import default_date_format_string
 from dagster._utils.merger import merge_dicts
 
@@ -125,6 +125,9 @@ def execute_scheduler_iteration_loop(
     schedule_state_lock = threading.Lock()
     scheduler_run_futures: Dict[str, Future] = {}
 
+    submit_threadpool_executor = None
+    threadpool_executor = None
+
     with ExitStack() as stack:
         settings = workspace_process_context.instance.get_settings("schedules")
         if settings.get("use_threads"):
@@ -134,8 +137,14 @@ def execute_scheduler_iteration_loop(
                     thread_name_prefix="schedule_daemon_worker",
                 )
             )
-        else:
-            threadpool_executor = None
+            num_submit_workers = settings.get("num_submit_workers")
+            if num_submit_workers:
+                submit_threadpool_executor = stack.enter_context(
+                    ThreadPoolExecutor(
+                        max_workers=settings.get("num_submit_workers"),
+                        thread_name_prefix="schedule_submit_worker",
+                    )
+                )
 
         last_verbose_time = None
         while True:
@@ -151,6 +160,7 @@ def execute_scheduler_iteration_loop(
                 logger,
                 end_datetime_utc=end_datetime_utc,
                 threadpool_executor=threadpool_executor,
+                submit_threadpool_executor=submit_threadpool_executor,
                 scheduler_run_futures=scheduler_run_futures,
                 schedule_state_lock=schedule_state_lock,
                 max_catchup_runs=max_catchup_runs,
@@ -177,6 +187,7 @@ def launch_scheduled_runs(
     logger: logging.Logger,
     end_datetime_utc: "DateTime",
     threadpool_executor: Optional[ThreadPoolExecutor] = None,
+    submit_threadpool_executor: Optional[ThreadPoolExecutor] = None,
     scheduler_run_futures: Optional[Dict[str, Future]] = None,
     schedule_state_lock: Optional[threading.Lock] = None,
     max_catchup_runs: int = DEFAULT_MAX_CATCHUP_RUNS,
@@ -340,6 +351,7 @@ def launch_scheduled_runs(
                     tick_retention_settings,
                     schedule_debug_crash_flags,
                     log_verbose_checks=log_verbose_checks,
+                    submit_threadpool_executor=submit_threadpool_executor,
                 )
                 scheduler_run_futures[external_schedule.selector_id] = future
                 yield
@@ -359,6 +371,7 @@ def launch_scheduled_runs(
                     tick_retention_settings,
                     schedule_debug_crash_flags,
                     log_verbose_checks=log_verbose_checks,
+                    submit_threadpool_executor=None,
                 )
         except Exception:
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
@@ -378,6 +391,7 @@ def launch_scheduled_runs_for_schedule(
     tick_retention_settings: Mapping[TickStatus, int],
     schedule_debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags],
     log_verbose_checks: bool,
+    submit_threadpool_executor: Optional[ThreadPoolExecutor],
 ) -> None:
     # evaluate the tick immediately, but from within a thread.  The main thread should be able to
     # heartbeat to keep the daemon alive
@@ -394,6 +408,7 @@ def launch_scheduled_runs_for_schedule(
             tick_retention_settings,
             schedule_debug_crash_flags,
             log_verbose_checks,
+            submit_threadpool_executor=submit_threadpool_executor,
         )
     )
 
@@ -410,6 +425,7 @@ def launch_scheduled_runs_for_schedule_iterator(
     tick_retention_settings: Mapping[TickStatus, int],
     schedule_debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags],
     log_verbose_checks: bool,
+    submit_threadpool_executor: Optional[ThreadPoolExecutor],
 ) -> "DaemonIterator":
     schedule_state = check.inst_param(schedule_state, "schedule_state", InstigatorState)
     end_datetime_utc = check.inst_param(end_datetime_utc, "end_datetime_utc", datetime.datetime)
@@ -519,6 +535,7 @@ def launch_scheduled_runs_for_schedule_iterator(
                     external_schedule,
                     schedule_time,
                     tick_context,
+                    submit_threadpool_executor,
                     schedule_debug_crash_flags,
                 )
             except Exception as e:
@@ -572,15 +589,91 @@ def _check_for_debug_crash(
     raise Exception("Process didn't terminate after sending crash signal")
 
 
+class SubmitRunRequestResult(NamedTuple):
+    run_key: Optional[str]
+    error_info: Optional[SerializableErrorInfo]
+    existing_run: Optional[DagsterRun]
+    submitted_run: Optional[DagsterRun]
+
+
+def _submit_run_request(
+    run_request: RunRequest,
+    workspace_process_context: IWorkspaceProcessContext,
+    external_schedule: ExternalSchedule,
+    schedule_time: datetime.datetime,
+    code_location: CodeLocation,
+    logger,
+    debug_crash_flags,
+) -> SubmitRunRequestResult:
+    instance = workspace_process_context.instance
+    schedule_origin = external_schedule.get_external_origin()
+
+    run = _get_existing_run_for_request(instance, external_schedule, schedule_time, run_request)
+    if run:
+        if run.status != DagsterRunStatus.NOT_STARTED:
+            # A run already exists and was launched for this time period,
+            # but the scheduler must have crashed or errored before the tick could be put
+            # into a SUCCESS state
+            logger.info(
+                f"Run {run.run_id} already completed for this execution of {external_schedule.name}"
+            )
+            return SubmitRunRequestResult(
+                run_key=run_request.run_key, error_info=None, existing_run=run, submitted_run=None
+            )
+        else:
+            logger.info(
+                f"Run {run.run_id} already created for this execution of {external_schedule.name}"
+            )
+    else:
+        job_subset_selector = JobSubsetSelector(
+            location_name=schedule_origin.external_repository_origin.code_location_origin.location_name,
+            repository_name=schedule_origin.external_repository_origin.repository_name,
+            job_name=external_schedule.job_name,
+            op_selection=external_schedule.op_selection,
+            asset_selection=run_request.asset_selection,
+        )
+        external_job = code_location.get_external_job(job_subset_selector)
+
+        run = _create_scheduler_run(
+            instance,
+            schedule_time,
+            code_location,
+            external_schedule,
+            external_job,
+            run_request,
+        )
+
+    _check_for_debug_crash(debug_crash_flags, "RUN_CREATED")
+
+    error_info = None
+
+    if run.status != DagsterRunStatus.FAILURE:
+        try:
+            instance.submit_run(run.run_id, workspace_process_context.create_request_context())
+            logger.info(
+                f"Completed scheduled launch of run {run.run_id} for {external_schedule.name}"
+            )
+        except Exception:
+            error_info = serializable_error_info_from_exc_info(sys.exc_info())
+            logger.exception(f"Run {run.run_id} created successfully but failed to launch")
+
+    return SubmitRunRequestResult(
+        run_key=run_request.run_key,
+        error_info=error_info,
+        existing_run=None,
+        submitted_run=run,
+    )
+
+
 def _schedule_runs_at_time(
     workspace_process_context: IWorkspaceProcessContext,
     logger: logging.Logger,
     external_schedule: ExternalSchedule,
     schedule_time: datetime.datetime,
     tick_context: _ScheduleLaunchContext,
+    submit_threadpool_executor: Optional[ThreadPoolExecutor],
     debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags] = None,
 ) -> "DaemonIterator":
-    schedule_name = external_schedule.name
     instance = workspace_process_context.instance
     schedule_origin = external_schedule.get_external_origin()
     repository_handle = external_schedule.handle.repository_handle
@@ -614,6 +707,8 @@ def _schedule_runs_at_time(
         )
         return
 
+    run_requests = []
+
     for raw_run_request in schedule_execution_data.run_requests:
         if raw_run_request.stale_assets_only:
             stale_assets = resolve_stale_or_missing_assets(workspace_process_context, raw_run_request, external_schedule)  # type: ignore
@@ -627,59 +722,35 @@ def _schedule_runs_at_time(
         else:
             run_request = raw_run_request
 
-        job_subset_selector = JobSubsetSelector(
-            location_name=schedule_origin.external_repository_origin.code_location_origin.location_name,
-            repository_name=schedule_origin.external_repository_origin.repository_name,
-            job_name=external_schedule.job_name,
-            op_selection=external_schedule.op_selection,
-            asset_selection=run_request.asset_selection,
-        )
-        external_job = code_location.get_external_job(job_subset_selector)
+        run_requests.append(run_request)
 
-        run = _get_existing_run_for_request(instance, external_schedule, schedule_time, run_request)
-        if run:
-            if run.status != DagsterRunStatus.NOT_STARTED:
-                # A run already exists and was launched for this time period,
-                # but the scheduler must have crashed or errored before the tick could be put
-                # into a SUCCESS state
+    submit_run_request = lambda run_request: _submit_run_request(
+        run_request,
+        workspace_process_context,
+        external_schedule,
+        schedule_time,
+        code_location,
+        logger,
+        debug_crash_flags,
+    )
 
-                logger.info(
-                    f"Run {run.run_id} already completed for this execution of"
-                    f" {external_schedule.name}"
-                )
-                tick_context.add_run_info(run_id=run.run_id, run_key=run_request.run_key)
-                yield None
-                continue
-            else:
-                logger.info(
-                    f"Run {run.run_id} already created for this execution of"
-                    f" {external_schedule.name}"
-                )
-        else:
-            run = _create_scheduler_run(
-                instance,
-                schedule_time,
-                code_location,
-                external_schedule,
-                external_job,
-                run_request,
+    if submit_threadpool_executor:
+        gen_run_request_results = submit_threadpool_executor.map(submit_run_request, run_requests)
+    else:
+        gen_run_request_results = map(submit_run_request, run_requests)
+
+    for run_request_result in gen_run_request_results:
+        yield run_request_result.error_info
+
+        if run_request_result.existing_run:
+            tick_context.add_run_info(
+                run_id=run_request_result.existing_run.run_id, run_key=run_request_result.run_key
             )
-
-        _check_for_debug_crash(debug_crash_flags, "RUN_CREATED")
-
-        if run.status != DagsterRunStatus.FAILURE:
-            try:
-                instance.submit_run(run.run_id, workspace_process_context.create_request_context())
-                logger.info(f"Completed scheduled launch of run {run.run_id} for {schedule_name}")
-            except Exception:
-                error_info = serializable_error_info_from_exc_info(sys.exc_info())
-                logger.exception(f"Run {run.run_id} created successfully but failed to launch")
-                yield error_info
-
-        _check_for_debug_crash(debug_crash_flags, "RUN_LAUNCHED")
-        tick_context.add_run_info(run_id=run.run_id, run_key=run_request.run_key)
-        _check_for_debug_crash(debug_crash_flags, "RUN_ADDED")
-        yield
+        else:
+            run = check.not_none(run_request_result.submitted_run)
+            _check_for_debug_crash(debug_crash_flags, "RUN_LAUNCHED")
+            tick_context.add_run_info(run_id=run.run_id, run_key=run_request_result.run_key)
+            _check_for_debug_crash(debug_crash_flags, "RUN_ADDED")
 
     _check_for_debug_crash(debug_crash_flags, "TICK_SUCCESS")
     tick_context.update_state(TickStatus.SUCCESS)

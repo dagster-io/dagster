@@ -108,6 +108,7 @@ def evaluate_schedules(
     max_catchup_runs: int = DEFAULT_MAX_CATCHUP_RUNS,
     debug_crash_flags: Optional[DebugCrashFlags] = None,
     timeout: int = 75,
+    submit_executor: Optional[ThreadPoolExecutor] = None,
 ):
     logger = get_default_daemon_logger("SchedulerDaemon")
     futures = {}
@@ -121,6 +122,7 @@ def evaluate_schedules(
             max_tick_retries=max_tick_retries,
             max_catchup_runs=max_catchup_runs,
             debug_crash_flags=debug_crash_flags,
+            submit_threadpool_executor=submit_executor,
         )
     )
 
@@ -291,6 +293,20 @@ def wrong_config_schedule(context):
 )
 def empty_schedule(_date):
     return []
+
+
+@schedule(
+    job_name="the_job",
+    cron_schedule="0 0 * * *",
+    execution_timezone="UTC",
+)
+def many_requests_schedule(context):
+    REQUEST_COUNT = 15
+
+    return [
+        RunRequest(run_key=str(i), run_config=_op_config(context.scheduled_execution_time))
+        for i in range(REQUEST_COUNT)
+    ]
 
 
 def define_multi_run_schedule():
@@ -490,6 +506,7 @@ def the_repo():
         two_step_job,
         default_config_schedule,
         empty_schedule,
+        many_requests_schedule,
         [asset1, asset2, source_asset],
         asset_selection_schedule,
         stale_asset_selection_schedule,
@@ -1959,6 +1976,40 @@ def test_skip_reason_schedule(
             TickStatus.SKIPPED,
             [],
             expected_skip_reason="Schedule function returned an empty result",
+        )
+
+
+@pytest.mark.parametrize("executor", get_schedule_executors())
+def test_many_requests_schedule(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    external_repo: ExternalRepository,
+    executor: ThreadPoolExecutor,
+    submit_executor: Optional[ThreadPoolExecutor],
+):
+    freeze_datetime = feb_27_2019_start_of_day()
+    with pendulum.test(freeze_datetime):
+        external_schedule = external_repo.get_external_schedule("many_requests_schedule")
+
+        schedule_origin = external_schedule.get_external_origin()
+
+        instance.start_schedule(external_schedule)
+
+        evaluate_schedules(
+            workspace_context, executor, pendulum.now("UTC"), submit_executor=submit_executor
+        )
+
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        assert len(ticks) == 1
+
+        runs = instance.get_runs()
+        assert len(runs) == 15
+        validate_tick(
+            ticks[0],
+            external_schedule,
+            freeze_datetime,
+            TickStatus.SUCCESS,
+            [run.run_id for run in runs],
         )
 
 
