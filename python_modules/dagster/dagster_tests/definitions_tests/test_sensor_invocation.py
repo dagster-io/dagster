@@ -1168,7 +1168,10 @@ def test_multi_asset_sensor_update_cursor_no_overwrite():
 def test_multi_asset_sensor_no_unconsumed_events():
     @multi_asset_sensor(monitored_assets=[july_asset.key, july_asset_2.key])
     def my_sensor(context):
+        # This call reads unconsumed event IDs from the cursor, fetches them via get_event_records,
+        # and caches them in memory
         context.latest_materialization_records_by_partition_and_asset()
+        # Assert that when no unconsumed events exist in the cursor, no events are cached
         assert context._initial_unconsumed_events_by_id == {}  # noqa: SLF001
 
     with instance_for_test() as instance:

@@ -2407,6 +2407,7 @@ class TestEventLogStorage:
             assert len(records) == 1
             assert records[0].storage_id == storage_id
 
+            # Assert that not providing storage IDs to filter on will still fetch events
             assert (
                 len(
                     storage.get_event_records(
@@ -2415,7 +2416,7 @@ class TestEventLogStorage:
                         )
                     )
                 )
-                > 0
+                == 1
             )
 
     def test_get_asset_records(self, storage, instance):
