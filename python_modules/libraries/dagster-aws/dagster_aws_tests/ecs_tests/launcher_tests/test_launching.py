@@ -956,6 +956,10 @@ def test_launch_run_with_container_context(
 
     assert container_definition["mountPoints"] == container_context_config["ecs"]["mount_points"]
 
+    sidecar_container = task_definition["containerDefinitions"][1]
+    assert sidecar_container["name"] == "busyrun"
+    assert sidecar_container["image"] == "busybox:latest"
+
 
 def test_memory_and_cpu(ecs, instance, workspace, run, task_definition):
     # By default
