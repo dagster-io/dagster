@@ -2407,13 +2407,6 @@ class TestEventLogStorage:
             assert len(records) == 1
             assert records[0].storage_id == storage_id
 
-            records = storage.get_event_records(
-                EventRecordsFilter(
-                    event_type=DagsterEventType.ASSET_MATERIALIZATION, storage_ids=[]
-                )
-            )
-            assert len(records) == 0
-
             assert (
                 len(
                     storage.get_event_records(

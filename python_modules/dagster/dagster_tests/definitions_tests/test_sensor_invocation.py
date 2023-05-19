@@ -1165,6 +1165,22 @@ def test_multi_asset_sensor_update_cursor_no_overwrite():
         after_cursor_partitions_asset_sensor(ctx)
 
 
+def test_multi_asset_sensor_no_unconsumed_events():
+    @multi_asset_sensor(monitored_assets=[july_asset.key, july_asset_2.key])
+    def my_sensor(context):
+        context.latest_materialization_records_by_partition_and_asset()
+        assert context._initial_unconsumed_events_by_id == {}  # noqa: SLF001
+
+    with instance_for_test() as instance:
+        materialize([july_asset], partition_key="2022-08-04", instance=instance)
+        ctx = build_multi_asset_sensor_context(
+            monitored_assets=[july_asset.key, july_asset_2.key],
+            instance=instance,
+            repository_def=my_repo,
+        )
+        my_sensor(ctx)
+
+
 def test_multi_asset_sensor_latest_materialization_records_by_partition_and_asset():
     @multi_asset_sensor(monitored_assets=[july_asset.key, july_asset_2.key])
     def my_sensor(context):
