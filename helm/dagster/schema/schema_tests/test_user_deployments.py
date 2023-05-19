@@ -74,8 +74,8 @@ def assert_user_deployment_template(
         assert not template.spec.template.spec.containers[0].command
         assert template.spec.template.spec.containers[0].args[:5] == [
             "dagster",
-            "api",
-            "grpc",
+            "code-server",
+            "start",
             "-h",
             "0.0.0.0",
         ]
@@ -548,12 +548,12 @@ def test_user_deployment_tag_can_be_numeric(template: HelmTemplate, tag: Union[s
 def _assert_no_container_context(user_deployment):
     # No container context set by default
     env_names = [env.name for env in user_deployment.spec.template.spec.containers[0].env]
-    assert "DAGSTER_CLI_API_GRPC_CONTAINER_CONTEXT" not in env_names
+    assert "DAGSTER_CONTAINER_CONTEXT" not in env_names
 
 
 def _assert_has_container_context(user_deployment):
     env_names = [env.name for env in user_deployment.spec.template.spec.containers[0].env]
-    assert "DAGSTER_CLI_API_GRPC_CONTAINER_CONTEXT" in env_names
+    assert "DAGSTER_CONTAINER_CONTEXT" in env_names
 
 
 def test_user_deployment_image(template: HelmTemplate):
@@ -598,7 +598,7 @@ def test_user_deployment_include_config_in_launched_runs(template: HelmTemplate)
 
     # Setting to true results in container context being set
     container_context = user_deployments[0].spec.template.spec.containers[0].env[2]
-    assert container_context.name == "DAGSTER_CLI_API_GRPC_CONTAINER_CONTEXT"
+    assert container_context.name == "DAGSTER_CONTAINER_CONTEXT"
     assert json.loads(container_context.value) == {
         "k8s": {
             "image_pull_policy": "Always",
@@ -611,7 +611,7 @@ def test_user_deployment_include_config_in_launched_runs(template: HelmTemplate)
     # Setting to None also results in container context being set
     assert (
         user_deployments[1].spec.template.spec.containers[0].env[2].name
-        == "DAGSTER_CLI_API_GRPC_CONTAINER_CONTEXT"
+        == "DAGSTER_CONTAINER_CONTEXT"
     )
 
     # setting to false means no container context
@@ -638,7 +638,7 @@ def test_user_deployment_volumes(template: HelmTemplate, include_config_in_launc
     deployment = UserDeployment.construct(
         name=name,
         image=kubernetes.Image(repository=f"repo/{name}", tag="tag1", pullPolicy="Always"),
-        dagsterApiGrpcArgs=["-m", name],
+        codeServerArgs=["-m", name],
         port=3030,
         volumes=[kubernetes.Volume.construct(None, **volume) for volume in volumes],
         volumeMounts=[
@@ -686,7 +686,7 @@ def test_user_deployment_volumes(template: HelmTemplate, include_config_in_launc
 
     if include_config_in_launched_runs:
         container_context = user_deployments[0].spec.template.spec.containers[0].env[2]
-        assert container_context.name == "DAGSTER_CLI_API_GRPC_CONTAINER_CONTEXT"
+        assert container_context.name == "DAGSTER_CONTAINER_CONTEXT"
         assert json.loads(container_context.value) == {
             "k8s": {
                 "env_config_maps": [
@@ -716,7 +716,7 @@ def test_user_deployment_secrets_and_configmaps(
     deployment = UserDeployment.construct(
         name=name,
         image=kubernetes.Image(repository=f"repo/{name}", tag="tag1", pullPolicy="Always"),
-        dagsterApiGrpcArgs=["-m", name],
+        codeServerArgs=["-m", name],
         port=3030,
         envConfigMaps=[
             kubernetes.ConfigMapEnvSource.construct(None, **configmap) for configmap in configmaps
@@ -741,7 +741,7 @@ def test_user_deployment_secrets_and_configmaps(
 
     if include_config_in_launched_runs:
         container_context = user_deployments[0].spec.template.spec.containers[0].env[2]
-        assert container_context.name == "DAGSTER_CLI_API_GRPC_CONTAINER_CONTEXT"
+        assert container_context.name == "DAGSTER_CONTAINER_CONTEXT"
         assert json.loads(container_context.value) == {
             "k8s": {
                 "image_pull_policy": "Always",
@@ -768,7 +768,7 @@ def test_user_deployment_labels(template: HelmTemplate, include_config_in_launch
     deployment = UserDeployment.construct(
         name=name,
         image=kubernetes.Image(repository=f"repo/{name}", tag="tag1", pullPolicy="Always"),
-        dagsterApiGrpcArgs=["-m", name],
+        codeServerArgs=["-m", name],
         port=3030,
         labels=labels,
         includeConfigInLaunchedRuns=UserDeploymentIncludeConfigInLaunchedRuns(
@@ -790,7 +790,7 @@ def test_user_deployment_labels(template: HelmTemplate, include_config_in_launch
 
     if include_config_in_launched_runs:
         container_context = user_deployments[0].spec.template.spec.containers[0].env[2]
-        assert container_context.name == "DAGSTER_CLI_API_GRPC_CONTAINER_CONTEXT"
+        assert container_context.name == "DAGSTER_CONTAINER_CONTEXT"
         assert json.loads(container_context.value) == {
             "k8s": {
                 "image_pull_policy": "Always",
@@ -818,7 +818,7 @@ def test_user_deployment_resources(template: HelmTemplate, include_config_in_lau
     deployment = UserDeployment.construct(
         name=name,
         image={"repository": f"repo/{name}", "tag": "tag1", "pullPolicy": "Always"},
-        dagsterApiGrpcArgs=["-m", name],
+        codeServerArgs=["-m", name],
         port=3030,
         resources=resources,
         includeConfigInLaunchedRuns={"enabled": include_config_in_launched_runs},
@@ -838,7 +838,7 @@ def test_user_deployment_resources(template: HelmTemplate, include_config_in_lau
 
     if include_config_in_launched_runs:
         container_context = user_deployments[0].spec.template.spec.containers[0].env[2]
-        assert container_context.name == "DAGSTER_CLI_API_GRPC_CONTAINER_CONTEXT"
+        assert container_context.name == "DAGSTER_CONTAINER_CONTEXT"
         assert json.loads(container_context.value) == {
             "k8s": {
                 "image_pull_policy": "Always",
@@ -879,7 +879,7 @@ def test_subchart_image_pull_secrets(
 
     if include_config_in_launched_runs:
         container_context = deployment_template.spec.template.spec.containers[0].env[2]
-        assert container_context.name == "DAGSTER_CLI_API_GRPC_CONTAINER_CONTEXT"
+        assert container_context.name == "DAGSTER_CONTAINER_CONTEXT"
         assert json.loads(container_context.value) == {
             "k8s": {
                 "env_config_maps": [
@@ -958,7 +958,7 @@ def test_subchart_tag_can_be_numeric(subchart_template: HelmTemplate, tag: Union
                     tag=tag,
                     pullPolicy="Always",
                 ),
-                dagsterApiGrpcArgs=[],
+                codeServerArgs=[],
                 port=0,
             )
         ]
@@ -978,7 +978,7 @@ def test_scheduler_name(template: HelmTemplate):
     deployment = UserDeployment.construct(
         name="foo",
         image=kubernetes.Image(repository="repo/foo", tag="tag1", pullPolicy="Always"),
-        dagsterApiGrpcArgs=["-m", "foo"],
+        codeServerArgs=["-m", "foo"],
         port=3030,
         includeConfigInLaunchedRuns=None,
         schedulerName="myscheduler",
@@ -999,7 +999,7 @@ def test_env(template: HelmTemplate, user_deployment_configmap_template):
     deployment = UserDeployment.construct(
         name="foo",
         image=kubernetes.Image(repository="repo/foo", tag="tag1", pullPolicy="Always"),
-        dagsterApiGrpcArgs=["-m", "foo"],
+        codeServerArgs=["-m", "foo"],
         port=3030,
         includeConfigInLaunchedRuns=None,
         env=[{"name": "test_env", "value": "test_value"}],
@@ -1022,7 +1022,7 @@ def test_env_container_context(template: HelmTemplate, user_deployment_configmap
     deployment = UserDeployment.construct(
         name="foo",
         image=kubernetes.Image(repository="repo/foo", tag="tag1", pullPolicy="Always"),
-        dagsterApiGrpcArgs=["-m", "foo"],
+        codeServerArgs=["-m", "foo"],
         port=3030,
         includeConfigInLaunchedRuns=UserDeploymentIncludeConfigInLaunchedRuns(enabled=True),
         env=[{"name": "test_env", "value": "test_value"}],
@@ -1040,7 +1040,7 @@ def test_env_container_context(template: HelmTemplate, user_deployment_configmap
     assert dagster_user_deployment.spec.template.spec.containers[0].env[3].value == "test_value"
 
     container_context = dagster_user_deployment.spec.template.spec.containers[0].env[2]
-    assert container_context.name == "DAGSTER_CLI_API_GRPC_CONTAINER_CONTEXT"
+    assert container_context.name == "DAGSTER_CONTAINER_CONTEXT"
     assert json.loads(container_context.value) == {
         "k8s": {
             "image_pull_policy": "Always",
@@ -1057,7 +1057,7 @@ def test_old_env(template: HelmTemplate, user_deployment_configmap_template):
     deployment = UserDeployment.construct(
         name="foo",
         image=kubernetes.Image(repository="repo/foo", tag="tag1", pullPolicy="Always"),
-        dagsterApiGrpcArgs=["-m", "foo"],
+        codeServerArgs=["-m", "foo"],
         port=3030,
         includeConfigInLaunchedRuns=None,
         env={"test_env": "test_value"},

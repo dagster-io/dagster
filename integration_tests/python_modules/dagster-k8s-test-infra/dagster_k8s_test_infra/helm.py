@@ -838,7 +838,7 @@ def _deployment_config(docker_image):
         {
             "name": "user-code-deployment-1",
             "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
-            "dagsterApiGrpcArgs": [
+            "codeServerArgs": [
                 "-m",
                 "dagster_test.test_project.test_jobs.repo",
                 "-a",

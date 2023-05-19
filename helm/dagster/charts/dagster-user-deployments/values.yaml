@@ -31,15 +31,13 @@ deployments:
       # image pull policy to anything other than "Always" will use a cached/stale image, which is
       # almost certainly not what you want.
       pullPolicy: Always
-    # Arguments to `dagster api grpc`.
-    # Ex: "dagster api grpc -m dagster_test.test_project.test_jobs.repo -a define_demo_execution_repo"
+    # Arguments to `dagster code-server start`.
+    # Ex: "dagster code-server start -m dagster_test.test_project.test_jobs.repo"
     # would translate to:
-    # dagsterApiGrpcArgs:
+    # codeServerArgs:
     #   - "-m"
     #   - "dagster_test.test_project.test_jobs.repo"
-    #   - "-a"
-    #   - "define_demo_execution_repo"
-    dagsterApiGrpcArgs:
+    codeServerArgs:
       - "-f"
       - "/example_project/example_repo/repo.py"
     port: 3030

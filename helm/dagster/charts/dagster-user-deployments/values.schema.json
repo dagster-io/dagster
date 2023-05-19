@@ -216,6 +216,13 @@
                         "type": "string"
                     }
                 },
+                "codeServerArgs": {
+                    "title": "Codeserverargs",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "includeConfigInLaunchedRuns": {
                     "$ref": "#/definitions/UserDeploymentIncludeConfigInLaunchedRuns"
                 },
@@ -313,7 +320,6 @@
             "required": [
                 "name",
                 "image",
-                "dagsterApiGrpcArgs",
                 "port"
             ]
         },

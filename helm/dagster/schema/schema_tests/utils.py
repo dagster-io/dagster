@@ -13,7 +13,7 @@ def create_simple_user_deployment(
     return UserDeployment(
         name=name,
         image=kubernetes.Image(repository=f"repo/{name}", tag="tag1", pullPolicy="Always"),
-        dagsterApiGrpcArgs=["-m", name],
+        codeServerArgs=["-m", name],
         port=3030,
         includeConfigInLaunchedRuns=(
             UserDeploymentIncludeConfigInLaunchedRuns(enabled=include_config_in_launched_runs)
@@ -29,7 +29,7 @@ def create_complex_user_deployment(
     return UserDeployment(
         name=name,
         image=kubernetes.Image(repository=f"repo/{name}", tag="tag1", pullPolicy="Always"),
-        dagsterApiGrpcArgs=["-m", name],
+        codeServerArgs=["-m", name],
         port=3030,
         annotations=kubernetes.Annotations.parse_obj(
             {"annotation_1": "an_annotation_1", "annotation_2": "an_annotation_2"}
