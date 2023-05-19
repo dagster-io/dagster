@@ -462,11 +462,10 @@ def load_assets_from_dbt_project(
             to include. Defaults to `"fqn:*"`.
         exclude (Optional[str]): A dbt selection string for the models in a project that you want
             to exclude. Defaults to "".
-        key_prefix (Optional[Union[str, List[str]]]): A prefix to apply to all models in the dbt
-            project. Does not apply to sources.
-        dbt_resource_key (Optional[str]): The resource key that the dbt resource will be specified at. Defaults to "dbt".
-        source_key_prefix (Optional[Union[str, List[str]]]): A prefix to apply to all sources in the
-            dbt project. Does not apply to models.
+        key_prefix (Optional[Union[str, List[str]]]): A key prefix to apply to all assets loaded
+            from the dbt project. Does not apply to input assets.
+        source_key_prefix (Optional[Union[str, List[str]]]): A key prefix to apply to all input
+            assets for the set of assets loaded from the dbt project.
         op_name (Optional[str]): Sets the name of the underlying Op that will generate the dbt assets.
         runtime_metadata_fn: (Optional[Callable[[SolidExecutionContext, Mapping[str, Any]], Mapping[str, Any]]]):
             A function that will be run after any of the assets are materialized and returns
@@ -507,6 +506,7 @@ def load_assets_from_dbt_project(
         display_raw_sql (Optional[bool]): [Experimental] A flag to indicate if the raw sql associated
             with each model should be included in the asset description. For large projects, setting
             this flag to False is advised to reduce the size of the resulting snapshot.
+        dbt_resource_key (Optional[str]): The resource key that the dbt resource will be specified at. Defaults to "dbt".
     """
     project_dir = check.str_param(project_dir, "project_dir")
     profiles_dir = check.opt_str_param(
@@ -586,10 +586,10 @@ def load_assets_from_dbt_manifest(
             to include. Defaults to `"fqn:*"`.
         exclude (Optional[str]): A dbt selection string for the models in a project that you want
             to exclude. Defaults to "".
-        key_prefix (Optional[Union[str, List[str]]]): A prefix to apply to all models in the dbt
-            project. Does not apply to sources.
-        source_key_prefix (Optional[Union[str, List[str]]]): A prefix to apply to all sources in the
-            dbt project. Does not apply to models.
+        key_prefix (Optional[Union[str, List[str]]]): A key prefix to apply to all assets loaded
+            from the dbt project. Does not apply to input assets.
+        source_key_prefix (Optional[Union[str, List[str]]]): A key prefix to apply to all input
+            assets for the set of assets loaded from the dbt project.
         op_name (Optional[str]): Sets the name of the underlying Op that will generate the dbt assets.
         dbt_resource_key (Optional[str]): The resource key that the dbt resource will be specified at. Defaults to "dbt".
         runtime_metadata_fn: (Optional[Callable[[SolidExecutionContext, Mapping[str, Any]], Mapping[str, Any]]]):
