@@ -2372,6 +2372,53 @@ class TestEventLogStorage:
 
                     assert [key] == storage.all_asset_keys()
 
+    def test_filter_on_storage_ids(self, storage, instance, test_run_id):
+        a = AssetKey(["key_a"])
+
+        @op
+        def gen_op():
+            yield AssetMaterialization(asset_key=a, metadata={"foo": "bar"})
+            yield Output(1)
+
+        with instance_for_test() as instance:
+            if not storage.has_instance:
+                storage.register_instance(instance)
+
+            events_one, _ = _synthesize_events(
+                lambda: gen_op(), instance=instance, run_id=test_run_id
+            )
+            for event in events_one:
+                storage.store_event(event)
+
+            records = storage.get_event_records(
+                EventRecordsFilter(
+                    event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                    asset_key=a,
+                )
+            )
+            assert len(records) == 1
+            storage_id = records[0].storage_id
+
+            records = storage.get_event_records(
+                EventRecordsFilter(
+                    event_type=DagsterEventType.ASSET_MATERIALIZATION, storage_ids=[storage_id]
+                )
+            )
+            assert len(records) == 1
+            assert records[0].storage_id == storage_id
+
+            # Assert that not providing storage IDs to filter on will still fetch events
+            assert (
+                len(
+                    storage.get_event_records(
+                        EventRecordsFilter(
+                            event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                        )
+                    )
+                )
+                == 1
+            )
+
     def test_get_asset_records(self, storage, instance):
         @asset
         def my_asset():
