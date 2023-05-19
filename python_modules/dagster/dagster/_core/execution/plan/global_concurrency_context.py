@@ -11,7 +11,7 @@ from typing_extensions import Self
 
 from dagster._core.instance import DagsterInstance
 
-CONCURRENCY_CLAIM_BLOCKED_INTERVAL = 1
+DEFAULT_CONCURRENCY_CLAIM_BLOCKED_INTERVAL = 1
 
 
 class GlobalConcurrencyContext:
@@ -72,7 +72,12 @@ class GlobalConcurrencyContext:
         )
 
         if not claim_status.is_claimed:
-            self._pending_timeouts[step_key] = time.time() + CONCURRENCY_CLAIM_BLOCKED_INTERVAL
+            interval = (
+                claim_status.sleep_interval
+                if claim_status.sleep_interval
+                else DEFAULT_CONCURRENCY_CLAIM_BLOCKED_INTERVAL
+            )
+            self._pending_timeouts[step_key] = time.time() + interval
             return False
 
         if step_key in self._pending_claims:
