@@ -41,7 +41,11 @@ spec:
           securityContext: {{ $deployment.securityContext | toYaml | nindent 12 }}
           imagePullPolicy: {{ $deployment.image.pullPolicy }}
           image: {{ include "dagster.dagsterImage.name" (list $ $deployment.image) | quote }}
+          {{- if $deployment.dagsterApiGrpcArgs }}
           args: ["dagster", "api", "grpc", "-h", "0.0.0.0", "-p", "{{ $deployment.port }}", "{{- join "\",\"" $deployment.dagsterApiGrpcArgs }}"]
+          {{- else if $deployment.codeServerArgs }}
+          args: ["dagster", "code-server", "start", "-h", "0.0.0.0", "-p", "{{ $deployment.port }}", "{{- join "\",\"" $deployment.codeServerArgs }}"]
+          {{- end }}
           env:
             - name: DAGSTER_CURRENT_IMAGE
               value: {{ include "dagster.dagsterImage.name" (list $ $deployment.image) | quote }}
@@ -52,10 +56,15 @@ spec:
                   key: postgresql-password
             {{- $includeConfigInLaunchedRuns := $deployment.includeConfigInLaunchedRuns | default (dict "enabled" true) }}
             {{- if $includeConfigInLaunchedRuns.enabled }}
+            {{- if $deployment.dagsterApiGrpcArgs }}
             # uses the auto_envvar_prefix of the dagster cli to set the --container-context arg
             # on 'dagster api grpc'
             - name: DAGSTER_CLI_API_GRPC_CONTAINER_CONTEXT
               value: {{ include "dagsterUserDeployments.k8sContainerContext" (list $ $deployment) | fromYaml | toJson | quote }}
+            {{- else }}
+            - name: DAGSTER_CONTAINER_CONTEXT
+              value: {{ include "dagsterUserDeployments.k8sContainerContext" (list $ $deployment) | fromYaml | toJson | quote }}
+            {{- end }}
             {{- end }}
             # If this is a map, we write it to a configmap. If it's a list, we include it here (can use more k8s spec like valueFrom).
             {{- if and ($deployment.env) (kindIs "slice" $deployment.env) }}
