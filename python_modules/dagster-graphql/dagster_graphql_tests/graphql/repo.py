@@ -11,6 +11,7 @@ from copy import deepcopy
 from typing import Iterator, List, Mapping, Optional, Sequence, Tuple, TypeVar
 
 from dagster import (
+    with_resources,
     Any,
     AssetKey,
     AssetMaterialization,
@@ -135,6 +136,20 @@ def define_test_out_of_process_context(
 
 def create_main_recon_repo():
     return ReconstructableRepository.for_file(__file__, main_repo_name())
+
+
+@contextmanager
+def get_workspace_process_context(instance: DagsterInstance) -> Iterator[WorkspaceProcessContext]:
+    with WorkspaceProcessContext(
+        instance,
+        PythonFileTarget(
+            python_file=file_relative_path(__file__, "repo.py"),
+            attribute=main_repo_name(),
+            working_directory=None,
+            location_name=main_repo_location_name(),
+        ),
+    ) as workspace_process_context:
+        yield workspace_process_context
 
 
 @contextmanager
@@ -1384,15 +1399,15 @@ def downstream_static_partitioned_asset(
     assert middle_static_partitioned_asset_2
 
 
-static_partitioned_assets_job = build_assets_job(
-    "static_partitioned_assets_job",
-    assets=[
-        upstream_static_partitioned_asset,
-        middle_static_partitioned_asset_1,
-        middle_static_partitioned_asset_2,
-        downstream_static_partitioned_asset,
-    ],
-)
+# static_partitioned_assets_job = build_assets_job(
+#     "static_partitioned_assets_job",
+#     assets=[
+#         upstream_static_partitioned_asset,
+#         middle_static_partitioned_asset_1,
+#         middle_static_partitioned_asset_2,
+#         downstream_static_partitioned_asset,
+#     ],
+# )
 
 
 @asset(partitions_def=DynamicPartitionsDefinition(name="foo"))
@@ -1818,7 +1833,7 @@ def define_jobs():
         hanging_job,
         two_ins_job,
         two_assets_job,
-        static_partitioned_assets_job,
+        # static_partitioned_assets_job,
         dynamic_partitioned_assets_job,
         time_partitioned_assets_job,
         partition_materialization_job,
@@ -1882,12 +1897,27 @@ def define_asset_jobs():
         upstream_daily_partitioned_asset,
         downstream_weekly_partitioned_asset,
         unpartitioned_upstream_of_partitioned,
+        upstream_static_partitioned_asset,
+        middle_static_partitioned_asset_1,
+        middle_static_partitioned_asset_2,
+        downstream_static_partitioned_asset,
+        define_asset_job(
+            "static_partitioned_assets_job",
+            AssetSelection.assets(upstream_static_partitioned_asset).downstream(),
+        ),
+        with_resources(
+            [hanging_partition_asset],
+            {
+                "io_manager": IOManagerDefinition.hardcoded_io_manager(DummyIOManager()),
+                "hanging_asset_resource": hanging_asset_resource,
+            },
+        ),
     ]
 
 
 @repository
 def test_repo():
-    return [*define_jobs(), *define_schedules(), *define_sensors(), *define_asset_jobs()]
+    return [*define_jobs(), *define_sensors(), *define_asset_jobs()]
 
 
 defs = Definitions()
@@ -1897,6 +1927,6 @@ defs = Definitions()
 def test_dict_repo():
     return {
         "jobs": {job.name: job for job in define_jobs()},
-        "schedules": {schedule.name: schedule for schedule in define_schedules()},
+        # "schedules": {schedule.name: schedule for schedule in define_schedules()},
         "sensors": {sensor.name: sensor for sensor in define_sensors()},
     }

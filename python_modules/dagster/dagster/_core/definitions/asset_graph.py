@@ -331,6 +331,7 @@ class AssetGraph:
             )
 
         partition_mapping = self.get_partition_mapping(child_asset_key, parent_asset_key)
+        # here
         parent_partition_key_subset = partition_mapping.get_upstream_partitions_for_partitions(
             cast(PartitionsDefinition, child_partitions_def)
             .empty_subset()

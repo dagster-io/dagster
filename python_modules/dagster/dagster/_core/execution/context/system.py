@@ -628,6 +628,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         asset_key = self.job_def.asset_layer.asset_key_for_input(
             node_handle=self.node_handle, input_name=name
         )
+        print("finding")
+        print(self.asset_partition_key_range)
         asset_partitions_subset = (
             self.asset_partitions_subset_for_input(name)
             if self.has_asset_partitions_for_input(name)
@@ -964,6 +966,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                     partitions_def,
                     upstream_asset_partitions_def,
                 )
+                # here
                 return partition_mapping.get_upstream_partitions_for_partitions(
                     partitions_subset,
                     upstream_asset_partitions_def,

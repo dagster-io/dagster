@@ -133,6 +133,8 @@ class AssetBackfillData(NamedTuple):
         )
 
     def have_all_requested_runs_finished(self) -> bool:
+        # print(self.materialized_subset)
+        # print(self.)
         for partition in self.requested_subset.iterate_asset_partitions():
             if (
                 partition not in self.materialized_subset
@@ -496,6 +498,7 @@ def execute_asset_backfill_iteration(
             if not instance.run_coordinator:
                 check.failed("The instance must have a run coordinator in order to cancel runs")
             for run_id in cancelable_run_ids:
+                print("cancled run", run_id)
                 instance.run_coordinator.cancel_run(run_id)
 
         # Update the asset backfill data to contain the newly materialized/failed partitions.
@@ -514,6 +517,8 @@ def execute_asset_backfill_iteration(
                 "Expected get_canceling_asset_backfill_iteration_data to return a PartitionBackfill"
             )
 
+        print("updated_data", updated_asset_backfill_data)
+
         updated_backfill = backfill.with_asset_backfill_data(
             updated_asset_backfill_data, dynamic_partitions_store=instance
         )
@@ -527,6 +532,7 @@ def execute_asset_backfill_iteration(
     else:
         check.failed(f"Unexpected backfill status: {backfill.status}")
 
+    print(updated_backfill)
     instance.update_backfill(updated_backfill)
 
 
@@ -884,6 +890,7 @@ def _get_failed_asset_partitions(
             statuses=[DagsterRunStatus.CANCELED, DagsterRunStatus.FAILURE],
         )
     )
+    print(runs)
 
     result: List[AssetKeyPartitionKey] = []
 
@@ -892,6 +899,7 @@ def _get_failed_asset_partitions(
         planned_asset_keys = instance_queryer.get_planned_materializations_for_run(
             run_id=run.run_id
         )
+        print("planned", planned_asset_keys)
         completed_asset_keys = instance_queryer.get_current_materializations_for_run(
             run_id=run.run_id
         )
