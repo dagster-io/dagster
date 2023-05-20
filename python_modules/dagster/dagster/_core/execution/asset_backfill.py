@@ -523,7 +523,6 @@ def execute_asset_backfill_iteration(
         # finished in order to display the final partition statuses in the UI.
         if updated_asset_backfill_data.have_all_requested_runs_finished():
             updated_backfill = updated_backfill.with_status(BulkActionStatus.CANCELED)
-
     else:
         check.failed(f"Unexpected backfill status: {backfill.status}")
 
