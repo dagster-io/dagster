@@ -9,6 +9,7 @@ import {
   Select,
   MenuItem,
   Caption,
+  TextInput,
 } from '@dagster-io/ui';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
@@ -52,13 +53,31 @@ export const OverviewAssetsRoot = ({Header, TabButton}: Props) => {
   );
   const refreshState = useQueryRefreshAtInterval(query, FIFTEEN_SECONDS);
 
-  const {assets, groupedAssets} = React.useMemo(() => {
+  const groupedAssetsUnfiltered = React.useMemo(() => {
     if (query.data?.assetsOrError.__typename === 'AssetConnection') {
       const assets = query.data.assetsOrError.nodes;
-      return {assets, groupedAssets: groupAssets(assets)};
+      return groupAssets(assets);
     }
-    return {assets: [], groupedAssets: []};
+    return [];
   }, [query.data?.assetsOrError]);
+
+  const [searchValue, setSearchValue] = useQueryPersistedState<string>({
+    queryKey: 'q',
+    decode: (qs) => (qs.searchQuery ? JSON.parse(qs.searchQuery) : ''),
+    encode: (searchQuery) => ({searchQuery: searchQuery ? JSON.stringify(searchQuery) : undefined}),
+  });
+
+  const groupedAssets = React.useMemo(() => {
+    if (searchValue === '') {
+      return groupedAssetsUnfiltered;
+    }
+    return groupedAssetsUnfiltered.filter((group) => {
+      return (
+        group.groupName.toLowerCase().includes(searchValue.toLowerCase()) ||
+        group.repositoryName.toLowerCase().includes(searchValue.toLowerCase())
+      );
+    });
+  }, [groupedAssetsUnfiltered, searchValue]);
 
   const parentRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -110,12 +129,6 @@ export const OverviewAssetsRoot = ({Header, TabButton}: Props) => {
     );
   }
 
-  const [searchGroup, setSearchGroup] = useQueryPersistedState<AssetGroupSelector | null>({
-    queryKey: 'g',
-    decode: (qs) => (qs.group ? JSON.parse(qs.group) : null),
-    encode: (group) => ({group: group ? JSON.stringify(group) : undefined}),
-  });
-
   return (
     <>
       <div style={{position: 'sticky', top: 0, zIndex: 1}}>
@@ -125,7 +138,13 @@ export const OverviewAssetsRoot = ({Header, TabButton}: Props) => {
           flex={{alignItems: 'center', gap: 12, grow: 0}}
         >
           <TabButton selected="assets" />
-          <AssetGroupSuggest assets={assets} value={searchGroup} onChange={setSearchGroup} />
+          <TextInput
+            value={searchValue}
+            onChange={(e) => {
+              setSearchValue(e.target.value);
+            }}
+            placeholder="Filter asset groups…"
+          />
         </Box>
       </div>
       {content()}
