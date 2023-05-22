@@ -550,6 +550,7 @@ export type DagitMutation = {
   cancelPartitionBackfill: CancelBackfillResult;
   deletePipelineRun: DeletePipelineRunResult;
   deleteRun: DeletePipelineRunResult;
+  freeConcurrencySlotsForRun: Scalars['Boolean'];
   launchPartitionBackfill: LaunchBackfillResult;
   launchPipelineExecution: LaunchRunResult;
   launchPipelineReexecution: LaunchRunReexecutionResult;
@@ -590,6 +591,10 @@ export type DagitMutationDeletePipelineRunArgs = {
 };
 
 export type DagitMutationDeleteRunArgs = {
+  runId: Scalars['String'];
+};
+
+export type DagitMutationFreeConcurrencySlotsForRunArgs = {
   runId: Scalars['String'];
 };
 
@@ -5171,6 +5176,10 @@ export const buildDagitMutation = (
         : relationshipsToOmit.has('DeletePipelineRunSuccess')
         ? ({} as DeletePipelineRunSuccess)
         : buildDeletePipelineRunSuccess({}, relationshipsToOmit),
+    freeConcurrencySlotsForRun:
+      overrides && overrides.hasOwnProperty('freeConcurrencySlotsForRun')
+        ? overrides.freeConcurrencySlotsForRun!
+        : false,
     launchPartitionBackfill:
       overrides && overrides.hasOwnProperty('launchPartitionBackfill')
         ? overrides.launchPartitionBackfill!
