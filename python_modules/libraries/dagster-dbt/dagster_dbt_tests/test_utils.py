@@ -6,13 +6,10 @@ from dagster_dbt.utils import generate_materializations
 from .sample_results import (
     DBT_18_RUN_RESULTS_SAMPLE,
     DBT_CLI_V1_RUN_RESULTS_SAMPLE,
-    DBT_RPC_RESPONSE_SAMPLE,
 )
 
 
-@pytest.mark.parametrize(
-    "sample", [DBT_18_RUN_RESULTS_SAMPLE, DBT_CLI_V1_RUN_RESULTS_SAMPLE, DBT_RPC_RESPONSE_SAMPLE]
-)
+@pytest.mark.parametrize("sample", [DBT_18_RUN_RESULTS_SAMPLE, DBT_CLI_V1_RUN_RESULTS_SAMPLE])
 def test_generate_materializations(sample):
     out = DbtOutput(result=sample)
     materializations = [mat for mat in generate_materializations(out)]

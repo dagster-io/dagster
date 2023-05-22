@@ -51,20 +51,7 @@ if TYPE_CHECKING:
     #     Foo as Foo,
     # )
 
-    ##### Deprecating dbt-rpc
-    from .errors import (
-        DagsterDbtRpcUnexpectedPollOutputError as DagsterDbtRpcUnexpectedPollOutputError,
-    )
-    from .rpc import (
-        DbtRpcResource as DbtRpcResource,
-        DbtRpcSyncResource as DbtRpcSyncResource,
-        dbt_rpc_resource as dbt_rpc_resource,
-        dbt_rpc_sync_resource as dbt_rpc_sync_resource,
-        local_dbt_rpc_resource as local_dbt_rpc_resource,
-    )
-
     ##### Deprecating dbt ops
-    # isort: split
     from .ops import (
         dbt_build_op as dbt_build_op,
         dbt_compile_op as dbt_compile_op,
@@ -83,23 +70,6 @@ _DEPRECATED: Final[Mapping[str, Tuple[str, str, str]]] = {
     #     "1.1.0",  # breaking version
     #     "Use Bar instead.",
     # ),
-    ##### Deprecating dbt-rpc
-    **{
-        value: (
-            module,
-            "1.4.0",
-            "dbt-rpc is deprecated: https://github.com/dbt-labs/dbt-rpc.",
-        )
-        for value, module in [
-            ("DbtRpcOutput", "dagster_dbt.rpc"),
-            ("DbtRpcResource", "dagster_dbt.rpc"),
-            ("DbtRpcSyncResource", "dagster_dbt.rpc"),
-            ("dbt_rpc_resource", "dagster_dbt.rpc"),
-            ("dbt_rpc_sync_resource", "dagster_dbt.rpc"),
-            ("local_dbt_rpc_resource", "dagster_dbt.rpc"),
-            ("DagsterDbtRpcUnexpectedPollOutputError", "dagster_dbt.errors"),
-        ]
-    },
     **{
         value: (
             module,

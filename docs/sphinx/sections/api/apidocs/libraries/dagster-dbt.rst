@@ -33,8 +33,8 @@ Ops (dbt Core)
 
 If you're using asset-based dbt APIs like `load_assets_from_dbt_project`, you usually will not also use the below op-based APIs.
 
-``dagster_dbt`` provides a set of pre-built ops that work with either the CLI or RPC interfaces. For
-more advanced use cases, we suggest building your own ops which directly interact with these resources.
+``dagster_dbt`` provides a set of pre-built ops that work with the CLI. For more advanced use cases,
+we suggest building your own ops which directly interact with these resources.
 
 .. autoconfigurable:: dbt_run_op
 
@@ -61,24 +61,6 @@ CLI Resources
 .. autoclass:: DbtCliOutput
 
 .. autoconfigurable:: dbt_cli_resource
-    :annotation: ResourceDefinition
-
-RPC Resources
--------------
-
-.. autoclass:: DbtRpcResource
-
-.. autoclass:: DbtRpcSyncResource
-
-.. autoclass:: DbtRpcOutput
-
-.. autodata:: local_dbt_rpc_resource
-    :annotation: ResourceDefinition
-
-.. autoconfigurable:: dbt_rpc_resource
-    :annotation: ResourceDefinition
-
-.. autoconfigurable:: dbt_rpc_sync_resource
     :annotation: ResourceDefinition
 
 *********
@@ -128,8 +110,6 @@ Errors
 .. autoexception:: DagsterDbtCliOutputsNotFoundError
 
 .. autoexception:: DagsterDbtCliUnexpectedOutputError
-
-.. autoexception:: DagsterDbtRpcUnexpectedPollOutputError
 
 *****
 Utils
