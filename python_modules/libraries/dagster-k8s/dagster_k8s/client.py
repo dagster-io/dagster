@@ -133,6 +133,61 @@ def k8s_api_retry(
     check.failed("Unreachable.")
 
 
+def k8s_api_retry_creation_mutation(
+    fn: Callable[..., None],
+    max_retries: int,
+    timeout: float,
+    msg_fn=lambda: "Unexpected error encountered in Kubernetes API Client.",
+) -> None:
+    """Like k8s_api_retry, but ensures idempotence by allowing a 409 error after
+    a failure, which indicates that the desired mutation actually went through.
+    Also has an empty return type since we can't guarantee on being able to
+    return anything as a result of this case.
+    """
+    check.callable_param(fn, "fn")
+    check.int_param(max_retries, "max_retries")
+    check.numeric_param(timeout, "timeout")
+
+    remaining_attempts = 1 + max_retries
+    retry_count = 0
+    while remaining_attempts > 0:
+        remaining_attempts -= 1
+
+        try:
+            fn()
+            return
+        except kubernetes.client.rest.ApiException as e:
+            retry_count = retry_count + 1
+            # Only catch whitelisted ApiExceptions
+            status = e.status
+
+            # 409 (Conflict) here indicates that hte object actually was created
+            # during a previous attempt, despite logging a failure
+            if retry_count > 1 and status == 409:
+                return
+
+            # Check if the status code is generally whitelisted
+            whitelisted = status in WHITELISTED_TRANSIENT_K8S_STATUS_CODES
+
+            # If there are remaining attempts, swallow the error
+            if whitelisted and remaining_attempts > 0:
+                time.sleep(timeout)
+            elif whitelisted and remaining_attempts == 0:
+                raise DagsterK8sAPIRetryLimitExceeded(
+                    msg_fn(),
+                    k8s_api_exception=e,
+                    max_retries=max_retries,
+                    original_exc_info=sys.exc_info(),
+                ) from e
+            else:
+                raise DagsterK8sUnrecoverableAPIError(
+                    msg_fn(),
+                    k8s_api_exception=e,
+                    original_exc_info=sys.exc_info(),
+                ) from e
+    check.failed("Unreachable.")
+
+
 class KubernetesWaitingReasons:
     PodInitializing = "PodInitializing"
     ContainerCreating = "ContainerCreating"
@@ -755,8 +810,8 @@ class DagsterKubernetesClient:
         body: V1Job,
         namespace: str,
         wait_time_between_attempts: float = DEFAULT_WAIT_BETWEEN_ATTEMPTS,
-    ):
-        k8s_api_retry(
+    ) -> None:
+        k8s_api_retry_creation_mutation(
             lambda: self.batch_api.create_namespaced_job(body=body, namespace=namespace),
             max_retries=3,
             timeout=wait_time_between_attempts,
