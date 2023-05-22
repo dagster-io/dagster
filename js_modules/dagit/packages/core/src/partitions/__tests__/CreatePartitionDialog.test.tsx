@@ -1,5 +1,5 @@
 import {MockedProvider, MockedResponse} from '@apollo/client/testing';
-import {act, render, screen, waitFor} from '@testing-library/react';
+import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as React from 'react';
 
@@ -49,10 +49,8 @@ describe('CreatePartitionDialog', () => {
       partitionsDefName: 'testPartitionDef',
       partitionKey: 'testPartitionName',
     });
-    await act(async () => {
-      render(<Test mocks={[createFixture]} />);
-    });
-    const partitionInput = screen.getByTestId('partition-input');
+    render(<Test mocks={[createFixture]} />);
+    const partitionInput = await screen.findByTestId('partition-input');
     await userEvent.type(partitionInput, 'testPartitionName');
     await userEvent.click(screen.getByTestId('save-partition-button'));
     await waitFor(() => {
@@ -63,10 +61,8 @@ describe('CreatePartitionDialog', () => {
   });
 
   it('Shows error state', async () => {
-    await act(async () => {
-      render(<Test mocks={[]} />);
-    });
-    const partitionInput = screen.getByTestId('partition-input');
+    render(<Test mocks={[]} />);
+    const partitionInput = await screen.findByTestId('partition-input');
     expect(screen.queryByTestId('warning-icon')).toBeNull();
     await userEvent.type(partitionInput, 'invalidname\n\r\t');
     expect(screen.getByTestId('warning-icon')).toBeVisible();
@@ -90,10 +86,8 @@ describe('CreatePartitionDialog', () => {
         message: 'test message 123',
       }),
     });
-    await act(async () => {
-      render(<Test mocks={[createFixture]} />);
-    });
-    const partitionInput = screen.getByTestId('partition-input');
+    render(<Test mocks={[createFixture]} />);
+    const partitionInput = await screen.findByTestId('partition-input');
     await userEvent.type(partitionInput, 'testPartitionName');
     await userEvent.click(screen.getByTestId('save-partition-button'));
     await waitFor(() => {

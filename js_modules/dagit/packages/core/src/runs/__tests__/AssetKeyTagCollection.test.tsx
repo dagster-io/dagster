@@ -13,21 +13,20 @@ describe('AssetKeyTagCollection', () => {
   };
 
   it('renders individual tags if <= 3', async () => {
-    await act(async () => {
-      render(
-        <MemoryRouter>
-          <AssetKeyTagCollection assetKeys={makeKeys(3)} clickableTags />
-        </MemoryRouter>,
-      );
-    });
+    render(
+      <MemoryRouter>
+        <AssetKeyTagCollection assetKeys={makeKeys(3)} clickableTags />
+      </MemoryRouter>,
+    );
 
-    const links = screen.queryAllByRole('link');
+    const links = await screen.findAllByRole('link');
     expect(links).toHaveLength(3);
 
     expect(screen.queryByRole('button')).toBeNull();
   });
 
   it('renders single tag if > 3', async () => {
+    // `act` because we're asserting a null state
     await act(async () => {
       render(
         <MemoryRouter>

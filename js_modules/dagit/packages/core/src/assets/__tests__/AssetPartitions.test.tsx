@@ -1,5 +1,5 @@
 import {MockedProvider, MockedResponse} from '@apollo/client/testing';
-import {act, getByTestId, render, screen, waitFor} from '@testing-library/react';
+import {getByTestId, render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
 import {MemoryRouter, Route} from 'react-router-dom';
@@ -14,8 +14,6 @@ import {
   SingleDimensionTimePartitionHealthQuery,
   MultiDimensionTimeFirstPartitionHealthQuery,
 } from '../__fixtures__/PartitionHealthSummary.fixtures';
-
-jest.setTimeout(20000);
 
 // This file must be mocked because useVirtualizer tries to create a ResizeObserver,
 // and the component tree fails to mount. We still want to test whether certain partitions
@@ -70,9 +68,7 @@ const SingleDimensionAssetPartitions: React.FC<{
 
 describe('AssetPartitions', () => {
   it('should support filtering a time-partitioned asset to a time range using the top bar', async () => {
-    await act(async () => {
-      render(<SingleDimensionAssetPartitions assetKey={{path: ['single_dimension_time']}} />);
-    });
+    render(<SingleDimensionAssetPartitions assetKey={{path: ['single_dimension_time']}} />);
 
     await waitFor(() => {
       expect(screen.getByTestId('partitions-selected')).toHaveTextContent('6,000 Partitions');
@@ -87,21 +83,17 @@ describe('AssetPartitions', () => {
       // Verify that the counts update to reflect the subrange
       expect(screen.getByTestId('partitions-selected')).toHaveTextContent('150 Partitions');
     });
-    await waitFor(() => {
-      expect(screen.getByText('Missing (135)')).toBeVisible();
-      expect(screen.getByText('Materialized (15)')).toBeVisible();
-    });
-    await waitFor(() => {
-      // Verify that the items shown on the left update to reflect the subrange
-      expect(screen.queryByText('2022-06-01-01:00')).toBeNull();
-      expect(screen.queryByText('2022-11-28-20:00')).toBeVisible();
-    });
+
+    expect(screen.getByText('Missing (135)')).toBeVisible();
+    expect(screen.getByText('Materialized (15)')).toBeVisible();
+
+    // Verify that the items shown on the left update to reflect the subrange
+    expect(screen.queryByText('2022-06-01-01:00')).toBeNull();
+    expect(screen.queryByText('2022-11-28-20:00')).toBeVisible();
   });
 
   it('should sync time range selection to the URL', async () => {
-    await act(async () => {
-      render(<SingleDimensionAssetPartitions assetKey={{path: ['single_dimension_time']}} />);
-    });
+    render(<SingleDimensionAssetPartitions assetKey={{path: ['single_dimension_time']}} />);
 
     const partitionInput = await waitFor(async () => {
       return screen.getByTestId('dimension-range-input');
@@ -110,17 +102,13 @@ describe('AssetPartitions', () => {
     await userEvent.type(partitionInput, '{[}2022-11-28-20:00...2022-12-05-01:00{]}');
     await userEvent.tab();
 
-    await waitFor(() => {
-      expect(screen.getByTestId('router-search')).toHaveTextContent(
-        'default_range=%5B2022-11-28-20%3A00...2022-12-05-01%3A00%5D',
-      );
-    });
+    expect(screen.getByTestId('router-search')).toHaveTextContent(
+      'default_range=%5B2022-11-28-20%3A00...2022-12-05-01%3A00%5D',
+    );
   });
 
   it('should support filtering by partition status and sync state to the URL', async () => {
-    await act(async () => {
-      render(<SingleDimensionAssetPartitions assetKey={{path: ['single_dimension_time']}} />);
-    });
+    render(<SingleDimensionAssetPartitions assetKey={{path: ['single_dimension_time']}} />);
     await waitFor(() => {
       expect(screen.getByTestId('partitions-selected')).toHaveTextContent('6,000 Partitions');
     });
@@ -171,9 +159,8 @@ describe('AssetPartitions', () => {
         </MemoryRouter>
       );
     };
-    await act(async () => {
-      render(<Component />);
-    });
+
+    render(<Component />);
 
     await waitFor(() => {
       expect(screen.getByTestId('partitions-date')).toBeVisible();
@@ -215,25 +202,19 @@ describe('AssetPartitions', () => {
   });
 
   it('should set the focused partition when you click a list element', async () => {
-    await act(async () => {
-      render(<SingleDimensionAssetPartitions assetKey={{path: ['single_dimension_static']}} />);
-    });
+    render(<SingleDimensionAssetPartitions assetKey={{path: ['single_dimension_static']}} />);
+    const listItem = await screen.findByText(/nc/i);
+    await userEvent.click(listItem);
     await waitFor(async () => {
-      const listItem = screen.getByText('NC');
-      await userEvent.click(listItem);
-    });
-    await waitFor(async () => {
-      expect(screen.getByTestId('focused-partition')).toHaveTextContent('NC');
+      expect(screen.getByTestId('focused-partition')).toHaveTextContent(/nc/i);
     });
   });
 
   it('should not render a top bar with a partition input for statically partitioned assets', async () => {
-    await act(async () => {
-      render(<SingleDimensionAssetPartitions assetKey={{path: ['single_dimension_static']}} />);
-    });
+    render(<SingleDimensionAssetPartitions assetKey={{path: ['single_dimension_static']}} />);
     await waitFor(() => {
       expect(screen.getByTestId('partitions-selected')).toHaveTextContent('11 Partitions Selected');
-      expect(screen.queryByTestId('dimension-range-input')).toBeNull();
     });
+    expect(screen.queryByTestId('dimension-range-input')).toBeNull();
   });
 });

@@ -1,7 +1,6 @@
 import {screen} from '@testing-library/dom';
 import {render} from '@testing-library/react';
 import * as React from 'react';
-import {act} from 'react-dom/test-utils';
 
 import {TestProvider} from '../../testing/TestProvider';
 import {VersionNumber} from '../VersionNumber';
@@ -14,14 +13,12 @@ describe('VersionNumber', () => {
       }),
     };
 
-    await act(async () => {
-      render(
-        <TestProvider apolloProps={{mocks}}>
-          <VersionNumber />
-        </TestProvider>,
-      );
-    });
+    render(
+      <TestProvider apolloProps={{mocks}}>
+        <VersionNumber />
+      </TestProvider>,
+    );
 
-    expect(screen.getByText(/1\.2\.34/)).toBeVisible();
+    expect(await screen.findByText(/1\.2\.34/)).toBeVisible();
   });
 });
