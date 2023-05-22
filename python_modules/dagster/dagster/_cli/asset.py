@@ -20,7 +20,7 @@ from dagster._utils.hosted_user_process import (
 )
 from dagster._utils.interrupts import capture_interrupts
 
-from .utils import get_instance_for_service
+from .utils import get_instance_for_cli, get_possibly_ephemeral_instance_for_cli
 
 
 @click.group(name="asset")
@@ -34,7 +34,9 @@ def asset_cli():
 @click.option("--partition", help="Asset partition to target", required=False)
 def asset_materialize_command(**kwargs):
     with capture_interrupts():
-        with get_instance_for_service("``dagster asset materialize``") as instance:
+        with get_possibly_ephemeral_instance_for_cli(
+            "``dagster asset materialize``",
+        ) as instance:
             execute_materialize_command(instance, kwargs)
 
 
@@ -133,7 +135,7 @@ def asset_wipe_command(key, **cli_args):
 
     noprompt = cli_args.get("noprompt")
 
-    with DagsterInstance.get() as instance:
+    with get_instance_for_cli() as instance:
         if len(key) > 0:
             asset_keys = [AssetKey.from_db_string(key_string) for key_string in key]
             prompt = (
@@ -185,7 +187,7 @@ def asset_wipe_cache_command(key, **cli_args):
 
     noprompt = cli_args.get("noprompt")
 
-    with DagsterInstance.get() as instance:
+    with get_instance_for_cli() as instance:
         if instance.can_cache_asset_status_data() is False:
             raise click.UsageError(
                 "Error, the instance does not support caching asset status. Wiping the cache is not"

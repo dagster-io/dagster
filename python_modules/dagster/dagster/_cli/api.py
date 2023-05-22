@@ -40,6 +40,8 @@ from dagster._utils.hosted_user_process import recon_job_from_origin
 from dagster._utils.interrupts import capture_interrupts, setup_interrupt_handlers
 from dagster._utils.log import configure_loggers
 
+from .utils import get_instance_for_cli
+
 
 @click.group(name="api", hidden=True)
 def api_cli():
@@ -60,11 +62,7 @@ def execute_run_command(input_json):
     with capture_interrupts():
         args = deserialize_value(input_json, ExecuteRunArgs)
 
-        with (
-            DagsterInstance.from_ref(args.instance_ref)
-            if args.instance_ref
-            else DagsterInstance.get()
-        ) as instance:
+        with get_instance_for_cli(instance_ref=args.instance_ref) as instance:
             buffer = []
 
             def send_to_buffer(event):
@@ -165,11 +163,7 @@ def resume_run_command(input_json):
     with capture_interrupts():
         args = deserialize_value(input_json, ResumeRunArgs)
 
-        with (
-            DagsterInstance.from_ref(args.instance_ref)
-            if args.instance_ref
-            else DagsterInstance.get()
-        ) as instance:
+        with get_instance_for_cli(instance_ref=args.instance_ref) as instance:
             buffer = []
 
             def send_to_buffer(event):
@@ -341,11 +335,7 @@ def execute_step_command(input_json, compressed_input_json):
 
         args = deserialize_value(input_json, ExecuteStepArgs)
 
-        with (
-            DagsterInstance.from_ref(args.instance_ref)
-            if args.instance_ref
-            else DagsterInstance.get()
-        ) as instance:
+        with get_instance_for_cli(instance_ref=args.instance_ref) as instance:
             dagster_run = instance.get_run_by_id(args.run_id)
 
             buff = []

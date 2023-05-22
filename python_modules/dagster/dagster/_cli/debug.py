@@ -4,10 +4,11 @@ from typing import List, Tuple
 import click
 from tqdm import tqdm
 
-from dagster import DagsterInstance
 from dagster._core.debug import DebugRunPayload
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
 from dagster._serdes import deserialize_value
+
+from .utils import get_instance_for_cli
 
 
 def _recent_failed_runs_text(instance):
@@ -49,7 +50,7 @@ def debug_cli():
 @click.argument("run_id", type=str)
 @click.argument("output_file", type=click.Path())
 def export_command(run_id, output_file):
-    with DagsterInstance.get() as instance:
+    with get_instance_for_cli() as instance:
         run = instance.get_run_by_id(run_id)
         if run is None:
             raise click.UsageError(
@@ -73,7 +74,7 @@ def import_command(input_files: Tuple[str, ...]):
             debug_payload = deserialize_value(blob, DebugRunPayload)
             debug_payloads.append(debug_payload)
 
-    with DagsterInstance.get() as instance:
+    with get_instance_for_cli() as instance:
         for debug_payload in debug_payloads:
             run = debug_payload.dagster_run
             click.echo(f"Importing run {run.run_id} (Dagster: {debug_payload.version})")

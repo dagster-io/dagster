@@ -264,11 +264,11 @@ class DagsterApiServer(DagsterApiServicer):
 
         try:
             if inject_env_vars_from_instance:
+                from dagster._cli.utils import get_instance_for_cli
+
                 # If arguments indicate it wants to load env vars, use the passed-in instance
                 # ref (or the dagster.yaml on the filesystem if no instance ref is provided)
-                with DagsterInstance.from_ref(
-                    instance_ref
-                ) if instance_ref else DagsterInstance.get() as instance:
+                with get_instance_for_cli(instance_ref=instance_ref) as instance:
                     instance.inject_env_vars(location_name)
 
             self._loaded_repositories: Optional[LoadedRepositories] = LoadedRepositories(
