@@ -1,6 +1,5 @@
 import {Box, Tag, Tooltip} from '@dagster-io/ui';
 import React from 'react';
-import styled from 'styled-components/macro';
 
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 
