@@ -1,4 +1,4 @@
-import {Meta} from '@storybook/react';
+import {Meta} from '@storybook/react/types-6-0';
 import * as React from 'react';
 
 import {MenuItem} from '../Menu';

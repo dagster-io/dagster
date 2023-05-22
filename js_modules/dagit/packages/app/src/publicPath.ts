@@ -10,7 +10,7 @@ const extracted = extractInitializationData();
 // Set the webpack path prefix based on DOM value. This will be used
 // for dynamically loaded bundles.
 if (typeof extracted.pathPrefix === 'string') {
-  (window as any).__webpack_public_path__ = `${extracted.pathPrefix}/`;
+  __webpack_public_path__ = `${extracted.pathPrefix}/`;
 }
 
 export {};

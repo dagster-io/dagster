@@ -1,11 +1,17 @@
-import path from 'path';
+const path = require('path');
 
-const config = {
-  stories: ['../src/**/*.stories.mdx', '../src/**/*.stories.@(js|jsx|ts|tsx)'],
-  addons: ['@storybook/addon-links', '@storybook/addon-essentials', '@storybook/addon-mdx-gfm'],
-  framework: {
-    name: '@storybook/react-webpack5',
-    options: {},
+module.exports = {
+  stories: [
+    "../src/**/*.stories.mdx",
+    "../src/**/*.stories.@(js|jsx|ts|tsx)"
+  ],
+  addons: [
+    "@storybook/addon-links",
+    "@storybook/addon-essentials"
+  ],
+  framework: "@storybook/react",
+  core: {
+    builder: "webpack5",
   },
   // https://storybook.js.org/docs/react/configure/webpack#bundle-splitting
   features: {
@@ -30,20 +36,12 @@ const config = {
       },
       module: {
         ...config.module,
-        rules: [
-          ...config.module.rules,
-          {
-            test: /\.mjs$/,
-            include: /node_modules/,
-            type: 'javascript/auto',
-          },
-        ],
+        rules: [...config.module.rules, {
+          test: /\.mjs$/,
+          include: /node_modules/,
+          type: "javascript/auto",
+        }],
       },
     };
   },
-  docs: {
-    autodocs: true,
-  },
-};
-
-export default config;
+}

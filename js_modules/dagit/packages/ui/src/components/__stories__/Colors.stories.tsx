@@ -1,6 +1,6 @@
 // eslint-disable-next-line no-restricted-imports
 import {Colors as BlueprintColors} from '@blueprintjs/core';
-import {Meta} from '@storybook/react';
+import {Meta} from '@storybook/react/types-6-0';
 import nearestColor from 'nearest-color';
 import * as React from 'react';
 import rgbHex from 'rgb-hex';

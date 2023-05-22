@@ -1,5 +1,5 @@
 import {Box, MetadataTable} from '@dagster-io/ui';
-import {Meta} from '@storybook/react';
+import {Meta} from '@storybook/react/types-6-0';
 import * as React from 'react';
 
 import {RunStatus} from '../../graphql/types';

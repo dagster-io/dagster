@@ -1,4 +1,4 @@
-import {Story, Meta} from '@storybook/react';
+import {Story, Meta} from '@storybook/react/types-6-0';
 import * as React from 'react';
 
 import {TimeElapsed, Props} from '../TimeElapsed';

@@ -1,4 +1,4 @@
-import {Meta} from '@storybook/react';
+import {Meta} from '@storybook/react/types-6-0';
 import faker from 'faker';
 import * as React from 'react';
 

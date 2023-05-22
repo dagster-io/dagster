@@ -1,6 +1,6 @@
 import {MockedProvider} from '@apollo/client/testing';
 import {Button} from '@dagster-io/ui';
-import {Meta} from '@storybook/react';
+import {Meta} from '@storybook/react/types-6-0';
 import * as React from 'react';
 
 import {OpenWithIntent} from '../../instigation/useInstigationStateReducer';

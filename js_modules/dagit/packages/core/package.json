@@ -14,8 +14,8 @@
     "ts": "tsc -p .",
     "generate-graphql": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generateGraphQLTypes.ts",
     "generate-perms": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generatePermissions.ts",
-    "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "storybook": "start-storybook -p 6006",
+    "build-storybook": "build-storybook"
   },
   "peerDependencies": {
     "@apollo/client": "3.7.13",
@@ -96,13 +96,13 @@
     "@graphql-tools/mock": "^8.5.0",
     "@graphql-tools/schema": "^8.3.1",
     "@mdx-js/react": "^1.6.22",
-    "@storybook/addon-actions": "^7.0.8",
-    "@storybook/addon-docs": "^7.0.8",
-    "@storybook/addon-essentials": "^7.0.8",
-    "@storybook/addon-links": "^7.0.8",
-    "@storybook/addon-mdx-gfm": "^7.0.8",
-    "@storybook/react": "^7.0.8",
-    "@storybook/react-webpack5": "^7.0.8",
+    "@storybook/addon-actions": "^6.5.16",
+    "@storybook/addon-docs": "^6.5.16",
+    "@storybook/addon-essentials": "^6.5.16",
+    "@storybook/addon-links": "^6.5.16",
+    "@storybook/builder-webpack5": "^6.5.16",
+    "@storybook/manager-webpack5": "^6.5.16",
+    "@storybook/react": "^6.5.16",
     "@testing-library/dom": "^9.3.0",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^14.0.0",
@@ -152,16 +152,11 @@
     "react-router-dom-v5-compat": "^6.3.0",
     "resize-observer-polyfill": "^1.5.1",
     "rgb-hex": "^4.0.0",
-    "storybook": "^7.0.8",
     "styled-components": "^5.3.3",
     "ts-node": "9.1.1",
     "ts-prune": "0.10.3",
     "typescript": "5.0.2",
     "webpack": "^5.0.0"
-  },
-  "resolutions": {
-    "@testing-library/dom": "^9.3.0",
-    "@testing-library/user-event": "^14.4.3"
   },
   "babelMacros": {},
   "browserslist": [
