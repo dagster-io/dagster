@@ -1,4 +1,4 @@
-from typing import cast
+from typing import Optional, Tuple
 
 import dagster._check as check
 import graphene
@@ -67,7 +67,10 @@ class GrapheneAutoMaterializeCondition(graphene.Union):
         )
 
 
-def create_graphene_auto_materialize_condition(condition: AutoMaterializeCondition):
+def create_graphene_auto_materialize_condition(
+    condition_tuple: Tuple[AutoMaterializeCondition, Optional[str]]
+):
+    condition, _ = condition_tuple
     if isinstance(condition, FreshnessAutoMaterializeCondition):
         return GrapheneFreshnessAutoMaterializeCondition(decisionType=condition.decision_type)
     elif isinstance(condition, DownstreamFreshnessAutoMaterializeCondition):
@@ -99,18 +102,15 @@ class GrapheneAutoMaterializeAssetEvaluationRecord(graphene.ObjectType):
         name = "AutoMaterializeAssetEvaluationRecord"
 
     def __init__(self, record: AutoMaterializeAssetEvaluationRecord):
-        conditions = [
-            # NOTE: Hacky check for if this is partitioned or not! Python doesn't support isinstance with Unions,
-            # so instead we check against __args__ which is the list of types that the Union is composed of
-            cast(AutoMaterializeCondition, i if isinstance(i, AutoMaterializeCondition.__args__) else i[0])  # type: ignore
-            for i in record.evaluation.conditions
-        ]
         super().__init__(
             id=record.id,
             evaluationId=record.evaluation_id,
             numRequested=record.evaluation.num_requested,
             numSkipped=record.evaluation.num_skipped,
             numDiscarded=record.evaluation.num_discarded,
-            conditions=[create_graphene_auto_materialize_condition(c) for c in conditions],
+            conditions=[
+                create_graphene_auto_materialize_condition(c)
+                for c in record.evaluation.partition_subsets_by_condition
+            ],
             timestamp=record.timestamp,
         )

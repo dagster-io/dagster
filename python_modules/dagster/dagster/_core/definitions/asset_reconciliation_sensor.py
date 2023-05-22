@@ -65,17 +65,14 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
 
     Properties:
         asset_key (AssetKey): The asset key that was evaluated.
-        conditions: The conditions that impact if the asset should be materialized, skipped, or
+        partition_subsets_by_condition: The conditions that impact if the asset should be materialized, skipped, or
             discarded. If the asset is partitioned, this will be a list of tuples, where the first
             element is the condition and the second element is the serialized subset of partitions that the
-            condition applies to.
+            condition applies to. If it's not partitioned, the second element will be None.
     """
 
     asset_key: AssetKey
-    conditions: Union[
-        Sequence[AutoMaterializeCondition],
-        Sequence[Tuple[AutoMaterializeCondition, str]],
-    ]
+    partition_subsets_by_condition: Sequence[Tuple[AutoMaterializeCondition, Optional[str]]]
     num_requested: int
     num_skipped: int
     num_discarded: int
@@ -106,7 +103,10 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
         if partitions_def is None:
             return AutoMaterializeAssetEvaluation(
                 asset_key=asset_key,
-                conditions=list(set().union(*conditions_by_asset_partition.values())),
+                partition_subsets_by_condition=[
+                    (condition, None)
+                    for condition in set().union(*conditions_by_asset_partition.values())
+                ],
                 num_requested=num_requested,
                 num_skipped=num_skipped,
                 num_discarded=num_discarded,
@@ -122,7 +122,7 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
 
             return AutoMaterializeAssetEvaluation(
                 asset_key=asset_key,
-                conditions=[
+                partition_subsets_by_condition=[
                     (
                         condition,
                         partitions_def.empty_subset()
