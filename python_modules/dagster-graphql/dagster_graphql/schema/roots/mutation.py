@@ -730,6 +730,24 @@ class GrapheneSetConcurrencyLimitMutation(graphene.Mutation):
         return True
 
 
+class GrapheneFreeConcurrencySlotsForRunMutation(graphene.Mutation):
+    """Frees the concurrency slots occupied by a specific run."""
+
+    Output = graphene.NonNull(graphene.Boolean)
+
+    class Meta:
+        name = "FreeConcurrencySlotsForRunMutation"
+
+    class Arguments:
+        runId = graphene.Argument(graphene.NonNull(graphene.String))
+
+    @capture_error
+    @check_permission(Permissions.EDIT_CONCURRENCY_LIMIT)
+    def mutate(self, graphene_info, runId: str):
+        graphene_info.context.instance.event_log_storage.free_concurrency_slots_for_run(runId)
+        return True
+
+
 class GrapheneDagitMutation(graphene.ObjectType):
     """The root for all mutations to modify data in your Dagster instance."""
 
@@ -763,3 +781,4 @@ class GrapheneDagitMutation(graphene.ObjectType):
     add_dynamic_partition = GrapheneAddDynamicPartitionMutation.Field()
     setAutoMaterializePaused = GrapheneSetAutoMaterializePausedMutation.Field()
     setConcurrencyLimit = GrapheneSetConcurrencyLimitMutation.Field()
+    freeConcurrencySlotsForRun = GrapheneFreeConcurrencySlotsForRunMutation.Field()
