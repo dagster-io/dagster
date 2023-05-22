@@ -23,13 +23,12 @@ import {StatusCase, buildAssetNodeStatusContent} from '../asset-graph/AssetNode'
 import {displayNameForAssetKey, toGraphId} from '../asset-graph/Utils';
 import {useLiveDataForAssetKeys} from '../asset-graph/useLiveDataForAssetKeys';
 import {partitionCountString} from '../assets/AssetNodePartitionCounts';
-import {ASSET_CATALOG_TABLE_QUERY, AssetGroupSuggest} from '../assets/AssetsCatalogTable';
+import {ASSET_CATALOG_TABLE_QUERY} from '../assets/AssetsCatalogTable';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {
   AssetCatalogTableQuery,
   AssetCatalogTableQueryVariables,
 } from '../assets/types/AssetsCatalogTable.types';
-import {AssetGroupSelector} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepositoryLink} from '../nav/RepositoryLink';
