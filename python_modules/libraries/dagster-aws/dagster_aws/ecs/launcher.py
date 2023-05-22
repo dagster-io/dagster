@@ -42,6 +42,12 @@ from .tasks import (
 )
 from .utils import get_task_logs, sanitize_family, task_definitions_match
 
+# Imports for retry run
+from dagster._core.workspace.context import IWorkspaceProcessContext
+from dagster._core.definitions.selector import PipelineSelector
+from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
+from dagster._core.definitions.metadata import MetadataValue
+
 Tags = namedtuple("Tags", ["arn", "cluster", "cpu", "memory"])
 
 RUNNING_STATUSES = [
@@ -59,6 +65,9 @@ DEFAULT_WINDOWS_RESOURCES = {"cpu": "1024", "memory": "2048"}
 
 DEFAULT_LINUX_RESOURCES = {"cpu": "256", "memory": "512"}
 
+class SpotInstanceException(Exception):
+    def __init__(self, message='No spot instance available'):
+        super(SpotInstanceException, self).__init__(message)
 
 class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
     """RunLauncher that starts a task in ECS for each Dagster job run."""
@@ -335,6 +344,83 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
 
         return Tags(arn, cluster, cpu, memory)
 
+    def retry_run(
+        failed_run: DagsterRun,
+        workspace_context: IWorkspaceProcessContext,
+    ) -> None:
+        """Submit a retry as a re-execute from failure."""
+        instance = workspace_context.instance
+        workspace = workspace_context.create_request_context()
+        if not failed_run.external_pipeline_origin:
+            instance.report_engine_event(
+                "Run does not have an external pipeline origin, unable to retry the run.",
+                failed_run,
+            )
+            return
+
+        origin = failed_run.external_pipeline_origin.external_repository_origin
+        code_location = workspace.get_code_location(origin.code_location_origin.location_name)
+        repo_name = origin.repository_name
+
+        if not code_location.has_repository(repo_name):
+            instance.report_engine_event(
+                (
+                    f"Could not find repository {repo_name} in location {code_location.name}, unable to"
+                    " retry the run. It was likely renamed or deleted."
+                ),
+                failed_run,
+            )
+            return
+
+        external_repo = code_location.get_repository(repo_name)
+
+        if not external_repo.has_external_job(failed_run.pipeline_name):
+            instance.report_engine_event(
+                (
+                    f"Could not find job {failed_run.pipeline_name} in repository {repo_name}, unable"
+                    " to retry the run. It was likely renamed or deleted."
+                ),
+                failed_run,
+            )
+            return
+
+        external_pipeline = code_location.get_external_pipeline(
+            PipelineSelector(
+                location_name=origin.code_location_origin.location_name,
+                repository_name=repo_name,
+                pipeline_name=failed_run.pipeline_name,
+                solid_selection=failed_run.solid_selection,
+                asset_selection=None
+                if failed_run.asset_selection is None
+                else list(failed_run.asset_selection),
+            )
+        )
+
+        strategy = ReexecutionStrategy.ALL_STEPS
+
+        new_run = instance.create_reexecuted_run(
+            parent_run=failed_run,
+            code_location=code_location,
+            external_pipeline=external_pipeline,
+            strategy=strategy,
+            use_parent_run_tags=True,
+        )
+
+        instance.report_engine_event(
+            "Retrying the run",
+            failed_run,
+            engine_event_data=EngineEventData({"new run": MetadataValue.dagster_run(new_run.run_id)}),
+        )
+        instance.report_engine_event(
+            "Launched as an automatic retry",
+            new_run,
+            engine_event_data=EngineEventData(
+                {"failed run": MetadataValue.dagster_run(failed_run.run_id)}
+            ),
+        )
+
+        instance.submit_run(new_run.run_id, workspace)
+
     def launch_run(self, context: LaunchRunContext) -> None:
         """Launch a run in an ECS task."""
         run = context.dagster_run
@@ -398,20 +484,64 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         if "launchType" in run_task_kwargs and run_task_kwargs.get("capacityProviderStrategy"):
             del run_task_kwargs["launchType"]
 
-        # Run a task using the same network configuration as this processes's task.
-        response = self.ecs.run_task(**run_task_kwargs)
+        # FARGATE_SPOT safety feature 
+        # -> Set capacityProviderStrategy to FARGATE if no spot instances available and spot_only is not True
+        # -> Requeue job if no spot instances available and spot_only is True
+        if run_task_kwargs.get("capacityProviderStrategy") == [{'capacityProvider': 'FARGATE_SPOT'}]:
+            try:
+                response = self.ecs.run_task(**run_task_kwargs)
+                tasks = response["tasks"]
+                if not tasks:
+                    failures = response["failures"]
+                    exceptions = []
+                    for failure in failures:
+                        reason = failure.get("reason")
+                        exceptions.append(f"Failure reason: {reason}")
+                        if reason == "Capacity is unavailable at this time. Please try again later or in a different availability zone":
+                            raise SpotInstanceException()
+                    # Raise regular error if error not due to spot integration
+                    raise Exception(exceptions)
+            except SpotInstanceException:
+                spot_only = run.tags.get(
+                    "ecs/spot_only", container_context.run_resources.get("spot_only")
+                )
+                if spot_only == True:
+                    # Re-enqueue job
+                    try:
+                        # TODO: verify if works!
+                        self.retry_run(run, IWorkspaceProcessContext)
+                    except Exception as e:
+                        raise e
 
-        tasks = response["tasks"]
+                else:
+                    # Set capacityProviderStrategy to FARGATE
+                    run_task_kwargs["capacityProviderStrategy"] = [{'capacityProvider': 'FARGATE'}]
+                    response = self.ecs.run_task(**run_task_kwargs)
+                    tasks = response["tasks"]
 
-        if not tasks:
-            failures = response["failures"]
-            exceptions = []
-            for failure in failures:
-                arn = failure.get("arn")
-                reason = failure.get("reason")
-                detail = failure.get("detail")
-                exceptions.append(Exception(f"Task {arn} failed because {reason}: {detail}"))
-            raise Exception(exceptions)
+                    if not tasks:
+                        failures = response["failures"]
+                        exceptions = []
+                        for failure in failures:
+                            arn = failure.get("arn")
+                            reason = failure.get("reason")
+                            detail = failure.get("detail")
+                            exceptions.append(Exception(f"Task {arn} failed because {reason}: {detail}"))
+                        raise Exception(exceptions)                    
+        else:
+            # if capacityProviderStrategy is not FARGATE_SPOT, business as usual
+            response = self.ecs.run_task(**run_task_kwargs)
+            tasks = response["tasks"]
+
+            if not tasks:
+                failures = response["failures"]
+                exceptions = []
+                for failure in failures:
+                    arn = failure.get("arn")
+                    reason = failure.get("reason")
+                    detail = failure.get("detail")
+                    exceptions.append(Exception(f"Task {arn} failed because {reason}: {detail}"))
+                raise Exception(exceptions)
 
         arn = tasks[0]["taskArn"]
         cluster_arn = tasks[0]["clusterArn"]
