@@ -5,8 +5,6 @@ import styled from 'styled-components/macro';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 
 import {DagsterTag} from './RunTag';
-import {RunTags} from './RunTags';
-import {runsPathWithFilters} from './RunsFilterInput';
 import {RunFilterToken} from './RunsFilterInputNew';
 import {RunTableRunFragment} from './types/RunTable.types';
 
@@ -18,7 +16,6 @@ type Props = {
 export function RunCreatedByCell(props: Props) {
   const tags = props.run.tags || [];
 
-  const backfillTag = tags.find((tag) => tag.key === DagsterTag.Backfill);
   const scheduleTag = tags.find((tag) => tag.key === DagsterTag.ScheduleName);
   const sensorTag = tags.find((tag) => tag.key === DagsterTag.SensorName);
   const user = tags.find((tag) => tag.key === DagsterTag.User);
@@ -67,9 +64,3 @@ export function RunCreatedByCell(props: Props) {
     <Box flex={{direction: 'column', alignItems: 'flex-start'}}>{creator || createdBy?.value}</Box>
   );
 }
-const RunTagsWrapper = styled.div`
-  display: contents;
-  > * {
-    display: contents;
-  }
-`;
