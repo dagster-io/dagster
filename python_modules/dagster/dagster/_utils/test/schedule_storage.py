@@ -688,14 +688,14 @@ class TestScheduleStorage:
             asset_evaluations=[
                 AutoMaterializeAssetEvaluation(
                     asset_key=AssetKey("asset_one"),
-                    conditions=[],
+                    partition_subsets_by_condition=[],
                     num_requested=0,
                     num_skipped=0,
                     num_discarded=0,
                 ),
                 AutoMaterializeAssetEvaluation(
                     asset_key=AssetKey("asset_two"),
-                    conditions=[MissingAutoMaterializeCondition()],
+                    partition_subsets_by_condition=[(MissingAutoMaterializeCondition(), None)],
                     num_requested=1,
                     num_skipped=0,
                     num_discarded=0,
@@ -724,7 +724,7 @@ class TestScheduleStorage:
             asset_evaluations=[
                 AutoMaterializeAssetEvaluation(
                     asset_key=AssetKey("asset_one"),
-                    conditions=[],
+                    partition_subsets_by_condition=[],
                     num_requested=0,
                     num_skipped=0,
                     num_discarded=0,
@@ -763,7 +763,9 @@ class TestScheduleStorage:
             asset_evaluations=[
                 AutoMaterializeAssetEvaluation(
                     asset_key=AssetKey("asset_two"),
-                    conditions=[(MissingAutoMaterializeCondition(), subset.serialize())],
+                    partition_subsets_by_condition=[
+                        (MissingAutoMaterializeCondition(), subset.serialize())
+                    ],
                     num_requested=1,
                     num_skipped=0,
                     num_discarded=0,
@@ -779,5 +781,13 @@ class TestScheduleStorage:
         assert res[0].evaluation_id == 10
         assert res[0].evaluation.num_requested == 1
 
-        assert res[0].evaluation.conditions[0][0] == MissingAutoMaterializeCondition()
-        assert partitions_def.deserialize_subset(res[0].evaluation.conditions[0][1]) == subset
+        assert (
+            res[0].evaluation.partition_subsets_by_condition[0][0]
+            == MissingAutoMaterializeCondition()
+        )
+        assert (
+            partitions_def.deserialize_subset(
+                res[0].evaluation.partition_subsets_by_condition[0][1]
+            )
+            == subset
+        )
