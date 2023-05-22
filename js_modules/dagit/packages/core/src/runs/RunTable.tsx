@@ -44,6 +44,7 @@ interface RunTableProps {
   hideCreatedBy?: boolean;
   additionalColumnHeaders?: React.ReactNode[];
   additionalColumnsForRow?: (run: RunTableRunFragment) => React.ReactNode[];
+  additionalActionsForRow?: (run: RunTableRunFragment) => React.ReactNode[];
 }
 export const RunTable = (props: RunTableProps) => {
   const {flagRunsTableFiltering} = useFeatureFlags();
@@ -164,6 +165,7 @@ const RunTableImpl = (props: RunTableProps) => {
               onAddTag={onAddTag}
               checked={checkedIds.has(run.id)}
               additionalColumns={props.additionalColumnsForRow?.(run)}
+              additionalActions={props.additionalActionsForRow?.(run)}
               onToggleChecked={onToggleFactory(run.id)}
               isHighlighted={highlightedIds && highlightedIds.includes(run.id)}
             />
@@ -217,6 +219,7 @@ const RunRow: React.FC<{
   checked?: boolean;
   onToggleChecked?: (values: {checked: boolean; shiftKey: boolean}) => void;
   additionalColumns?: React.ReactNode[];
+  additionalActions?: React.ReactNode[];
   isHighlighted?: boolean;
 }> = ({
   run,
@@ -225,6 +228,7 @@ const RunRow: React.FC<{
   checked,
   onToggleChecked,
   additionalColumns,
+  additionalActions,
   isHighlighted,
 }) => {
   const {pipelineName} = run;
@@ -312,7 +316,7 @@ const RunRow: React.FC<{
       </td>
       {additionalColumns}
       <td>
-        <RunActionsMenu run={run} />
+        <RunActionsMenu run={run} additionalActions={additionalActions} />
       </td>
     </Row>
   );
