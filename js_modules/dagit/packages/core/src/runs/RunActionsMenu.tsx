@@ -17,7 +17,7 @@ import {
   Colors,
 } from '@dagster-io/ui';
 import * as React from 'react';
-import {useHistory} from 'react-router-dom';
+import {Link, useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {AppContext} from '../app/AppContext';
@@ -26,6 +26,7 @@ import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
 import {useCopyToClipboard} from '../app/browser';
 import {ReexecutionStrategy} from '../graphql/types';
 import {NO_LAUNCH_PERMISSION_MESSAGE} from '../launchpad/LaunchRootExecutionButton';
+import {getPipelineSnapshotLink} from '../pipelines/PipelinePathUtils';
 import {AnchorButton} from '../ui/AnchorButton';
 import {MenuLink} from '../ui/MenuLink';
 import {isThisThingAJob} from '../workspace/WorkspaceContext';
@@ -144,7 +145,7 @@ export const RunActionsMenu: React.FC<{
                         alignItems: 'center',
                         display: 'inline-flex',
                       }}
-                      padding={{vertical: 4, horizontal: 8}}
+                      padding={{horizontal: 8}}
                     >
                       <SlashShortcut>t</SlashShortcut>
                     </Box>
@@ -153,6 +154,19 @@ export const RunActionsMenu: React.FC<{
                 icon="tag"
                 onClick={() => setVisibleDialog('tags')}
               />
+
+              {run.pipelineSnapshotId ? (
+                <LinkNoUnderline
+                  to={getPipelineSnapshotLink(run.pipelineName, run.pipelineSnapshotId)}
+                >
+                  <MenuItem
+                    tagName="button"
+                    icon="job"
+                    text="View snapshot"
+                    onClick={() => setVisibleDialog('tags')}
+                  />
+                </LinkNoUnderline>
+              ) : null}
               <MenuDivider />
               <>
                 <Tooltip
@@ -507,4 +521,8 @@ const SlashShortcut = styled.div`
   padding: 0px 6px;
   background: ${Colors.Gray100};
   color: ${Colors.Gray500};
+`;
+
+const LinkNoUnderline = styled(Link)`
+  text-decoration: none !important;
 `;
