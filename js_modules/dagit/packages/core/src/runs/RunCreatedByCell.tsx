@@ -57,7 +57,7 @@ export function RunCreatedByCell(props: Props) {
     );
   } else {
     creator = (
-      <Tooltip content="No 'user' tag specified. You can add one by specifying the `dagster/user` tag">
+      <Tooltip content="No user specified. Add a `dagster/user` tag to specify one">
         <Tag icon="account_circle">Manually launched</Tag>
       </Tooltip>
     );
