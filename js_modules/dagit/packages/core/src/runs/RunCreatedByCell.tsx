@@ -1,12 +1,9 @@
-import {Box, Tag} from '@dagster-io/ui';
+import {Box, Tag, Tooltip} from '@dagster-io/ui';
 import React from 'react';
-import styled from 'styled-components/macro';
 
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 
 import {DagsterTag} from './RunTag';
-import {RunTags} from './RunTags';
-import {runsPathWithFilters} from './RunsFilterInput';
 import {RunFilterToken} from './RunsFilterInputNew';
 import {RunTableRunFragment} from './types/RunTable.types';
 
@@ -18,7 +15,6 @@ type Props = {
 export function RunCreatedByCell(props: Props) {
   const tags = props.run.tags || [];
 
-  const backfillTag = tags.find((tag) => tag.key === DagsterTag.Backfill);
   const scheduleTag = tags.find((tag) => tag.key === DagsterTag.ScheduleName);
   const sensorTag = tags.find((tag) => tag.key === DagsterTag.SensorName);
   const user = tags.find((tag) => tag.key === DagsterTag.User);
@@ -37,30 +33,6 @@ export function RunCreatedByCell(props: Props) {
 
   if (user) {
     creator = <UserDisplay email={user.value} />;
-  } else if (backfillTag) {
-    const link = props.run.assetSelection?.length
-      ? `/overview/backfills/${backfillTag.value}`
-      : runsPathWithFilters([
-          {
-            token: 'tag',
-            value: `dagster/backfill=${backfillTag.value}`,
-          },
-        ]);
-    creator = (
-      <RunTagsWrapper>
-        <RunTags
-          tags={[
-            {
-              key: DagsterTag.Backfill,
-              value: backfillTag.value,
-              link,
-            },
-          ]}
-          mode={null}
-          onAddTag={props.onAddTag}
-        />
-      </RunTagsWrapper>
-    );
   } else if (scheduleTag) {
     creator = (
       <Tag icon="schedule" key="schedule">
@@ -80,16 +52,14 @@ export function RunCreatedByCell(props: Props) {
       </Tag>
     );
   } else {
-    creator = <Tag icon="account_circle">Launchpad</Tag>;
+    creator = (
+      <Tooltip content="No user specified. Add a `dagster/user` tag to specify one">
+        <Tag icon="account_circle">Manually launched</Tag>
+      </Tooltip>
+    );
   }
 
   return (
     <Box flex={{direction: 'column', alignItems: 'flex-start'}}>{creator || createdBy?.value}</Box>
   );
 }
-const RunTagsWrapper = styled.div`
-  display: contents;
-  > * {
-    display: contents;
-  }
-`;
