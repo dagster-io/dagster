@@ -1,4 +1,4 @@
-import {Box, Tag} from '@dagster-io/ui';
+import {Box, Tag, Tooltip} from '@dagster-io/ui';
 import React from 'react';
 import styled from 'styled-components/macro';
 
@@ -37,30 +37,6 @@ export function RunCreatedByCell(props: Props) {
 
   if (user) {
     creator = <UserDisplay email={user.value} />;
-  } else if (backfillTag) {
-    const link = props.run.assetSelection?.length
-      ? `/overview/backfills/${backfillTag.value}`
-      : runsPathWithFilters([
-          {
-            token: 'tag',
-            value: `dagster/backfill=${backfillTag.value}`,
-          },
-        ]);
-    creator = (
-      <RunTagsWrapper>
-        <RunTags
-          tags={[
-            {
-              key: DagsterTag.Backfill,
-              value: backfillTag.value,
-              link,
-            },
-          ]}
-          mode={null}
-          onAddTag={props.onAddTag}
-        />
-      </RunTagsWrapper>
-    );
   } else if (scheduleTag) {
     creator = (
       <Tag icon="schedule" key="schedule">
@@ -80,7 +56,11 @@ export function RunCreatedByCell(props: Props) {
       </Tag>
     );
   } else {
-    creator = <Tag icon="account_circle">Launchpad</Tag>;
+    creator = (
+      <Tooltip content="No 'user' tag specified. You can add one by specifying the `dagster/user` tag">
+        <Tag icon="account_circle">Manually launched</Tag>
+      </Tooltip>
+    );
   }
 
   return (
