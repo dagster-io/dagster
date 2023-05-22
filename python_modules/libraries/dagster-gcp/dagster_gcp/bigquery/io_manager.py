@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from contextlib import contextmanager
-from typing import Generator, Optional, Sequence, Type, cast
+from typing import Optional, Sequence, Type, cast
 
 from dagster import IOManagerDefinition, OutputContext, ResourceDependency, io_manager
 from dagster._annotations import experimental
@@ -18,7 +18,6 @@ from dagster._core.storage.db_io_manager import (
 from dagster._core.storage.io_manager import dagster_maintained_io_manager
 from google.api_core.exceptions import NotFound
 from google.cloud import bigquery
-import google_crc32c
 from pydantic import Field
 
 from ..auth.resources import GoogleAuthResource
@@ -219,7 +218,7 @@ class BigQueryIOManager(ConfigurableIOManagerFactory):
             " your SparkSession configuration."
         ),
     )
-    google_auth_resource: ResourceDependency[GoogleAuthResource]
+    google_auth_resource: ResourceDependency[Optional[GoogleAuthResource]]
     gcp_credentials: Optional[str] = Field(
         default=None,
         description=(
@@ -264,13 +263,14 @@ class BigQueryIOManager(ConfigurableIOManagerFactory):
             auth_resource = self.google_auth_resource
 
         return DbIOManager(
-                db_client=BigQueryClient(auth_resource=auth_resource),
-                io_manager_name="BigQueryIOManager",
-                database=self.project,
-                schema=self.dataset,
-                type_handlers=self.type_handlers(),
-                default_load_type=self.default_load_type(),
-            )
+            db_client=BigQueryClient(auth_resource=auth_resource),
+            io_manager_name="BigQueryIOManager",
+            database=self.project,
+            schema=self.dataset,
+            type_handlers=self.type_handlers(),
+            default_load_type=self.default_load_type(),
+        )
+
 
 class BigQueryClient(DbClient):
     def __init__(self, auth_resource: GoogleAuthResource):
@@ -306,7 +306,7 @@ class BigQueryClient(DbClient):
         conn = bigquery.Client(
             project=context.resource_config.get("project"),
             location=context.resource_config.get("location"),
-            credentials=self.auth_resource.get_credentials()
+            credentials=self.auth_resource.get_credentials(),
         )
 
         yield conn

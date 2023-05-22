@@ -209,10 +209,9 @@ def test_get_cleanup_statement_multi_partitioned():
 
 class FakeHandler(DbTypeHandler[int]):
     def handle_output(self, context: OutputContext, table_slice: TableSlice, obj: int, connection):
-        print("hi!")
-        # connection.query(
-        #     f"SELECT * FROM {table_slice.database}.{table_slice.schema}.{table_slice.table}"
-        # ).result()
+        connection.query(
+            f"SELECT * FROM {table_slice.database}.{table_slice.schema}.{table_slice.table}"
+        ).result()
 
     def load_input(self, context: InputContext, table_slice: TableSlice, connection) -> int:
         return 7
@@ -269,7 +268,7 @@ def test_authenticate_via_config():
             assert passed
 
 
-# @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE bigquery DB")
+@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE bigquery DB")
 def test_authenticate_via_google_auth_resource():
     class FakeBigQueryIOManager(BigQueryIOManager):
         @staticmethod

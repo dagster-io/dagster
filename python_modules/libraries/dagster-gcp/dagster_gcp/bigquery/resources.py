@@ -1,12 +1,18 @@
 from contextlib import contextmanager
 from typing import Any, Iterator, Optional
 
-from dagster import ConfigurableResource, IAttachDifferentObjectToOpContext, resource
+from dagster import (
+    ConfigurableResource,
+    IAttachDifferentObjectToOpContext,
+    ResourceDependency,
+    resource,
+)
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
+
 from google.cloud import bigquery
 from pydantic import Field
 
-from .utils import setup_gcp_creds
+from ..auth.resources import GoogleAuthResource
 
 
 class BigQueryResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
@@ -45,6 +51,8 @@ class BigQueryResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
         description="Default location for jobs / datasets / tables.",
     )
 
+    google_auth_resource: ResourceDependency[Optional[GoogleAuthResource]]
+
     gcp_credentials: Optional[str] = Field(
         default=None,
         description=(
@@ -75,12 +83,19 @@ class BigQueryResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
                     with bigquery.get_client() as client:
                         client.query("SELECT * FROM my_dataset.my_table")
         """
-        if self.gcp_credentials:
-            with setup_gcp_creds(self.gcp_credentials):
-                yield bigquery.Client(project=self.project, location=self.location)
-
+        if self.google_auth_resource is None:
+            if self.gcp_credentials is not None:
+                auth_resource = GoogleAuthResource(service_account_info=self.gcp_credentials)
+            else:
+                auth_resource = GoogleAuthResource()
         else:
-            yield bigquery.Client(project=self.project, location=self.location)
+            auth_resource = self.google_auth_resource
+
+        yield bigquery.Client(
+            project=self.project,
+            location=self.location,
+            credentials=auth_resource.get_credentials(),
+        )
 
     def get_object_to_set_on_execution_context(self) -> Any:
         with self.get_client() as client:
