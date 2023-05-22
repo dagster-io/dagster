@@ -16,7 +16,7 @@ from dagster._core.events import DagsterEvent, EngineEventData
 from dagster._core.execution.compute_logs import create_compute_log_file_key
 from dagster._core.execution.context.system import PlanExecutionContext, StepExecutionContext
 from dagster._core.execution.plan.execute_step import core_dagster_event_sequence_for_step
-from dagster._core.execution.plan.global_concurrency_context import GlobalConcurrencyContext
+from dagster._core.execution.plan.instance_concurrency_context import InstanceConcurrencyContext
 from dagster._core.execution.plan.objects import (
     ErrorSource,
     StepFailureData,
@@ -32,7 +32,7 @@ from dagster._utils.error import SerializableErrorInfo, serializable_error_info_
 def inner_plan_execution_iterator(
     job_context: PlanExecutionContext,
     execution_plan: ExecutionPlan,
-    global_concurrency_context: Optional[GlobalConcurrencyContext] = None,
+    instance_concurrency_context: Optional[InstanceConcurrencyContext] = None,
 ) -> Iterator[DagsterEvent]:
     check.inst_param(job_context, "pipeline_context", PlanExecutionContext)
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
@@ -40,7 +40,7 @@ def inner_plan_execution_iterator(
     step_keys = [step.key for step in execution_plan.get_steps_to_execute_in_topo_order()]
     with execution_plan.start(
         retry_mode=job_context.retry_mode,
-        global_concurrency_context=global_concurrency_context,
+        instance_concurrency_context=instance_concurrency_context,
     ) as active_execution:
         with ExitStack() as capture_stack:
             # begin capturing logs for the whole process if this is a captured log manager

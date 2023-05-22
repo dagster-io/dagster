@@ -7,7 +7,7 @@ from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import PythonFileTarget
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def workspace(instance):
     with WorkspaceProcessContext(
         instance,
@@ -21,7 +21,7 @@ def workspace(instance):
         yield workspace_process_context.create_request_context()
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def instance():
     with tempfile.TemporaryDirectory() as temp_dir:
         with instance_for_test(

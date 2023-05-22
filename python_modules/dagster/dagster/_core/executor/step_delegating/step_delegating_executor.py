@@ -10,7 +10,7 @@ from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData
 from dagster._core.execution.context.system import PlanOrchestrationContext
 from dagster._core.execution.plan.active import ActiveExecution
-from dagster._core.execution.plan.global_concurrency_context import GlobalConcurrencyContext
+from dagster._core.execution.plan.instance_concurrency_context import InstanceConcurrencyContext
 from dagster._core.execution.plan.objects import StepFailureData
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.plan.step import ExecutionStep
@@ -107,15 +107,15 @@ class StepDelegatingExecutor(Executor):
             f"Starting execution with step handler {self._step_handler.name}.",
             EngineEventData(),
         )
-        with GlobalConcurrencyContext(
+        with InstanceConcurrencyContext(
             plan_context.instance, plan_context.run_id
-        ) as global_concurrency_context:
+        ) as instance_concurrency_context:
             with ActiveExecution(
                 execution_plan,
                 retry_mode=self.retries,
                 max_concurrent=self._max_concurrent,
                 tag_concurrency_limits=self._tag_concurrency_limits,
-                global_concurrency_context=global_concurrency_context,
+                instance_concurrency_context=instance_concurrency_context,
             ) as active_execution:
                 running_steps: Dict[str, ExecutionStep] = {}
 
