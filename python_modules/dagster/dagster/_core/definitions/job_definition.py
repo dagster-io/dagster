@@ -918,7 +918,7 @@ class JobDefinition(IHasInternalInit):
             resource_defs=dict(self.resource_defs),
             executor_def=self._executor_def,
             logger_defs=self._loggers,
-            config=self._config_mapping or self._partitioned_config or self._run_config,
+            config=self._run_config or self._config_mapping or self._partitioned_config,
             name=self._name,
             description=self.description,
             tags=self.tags,
