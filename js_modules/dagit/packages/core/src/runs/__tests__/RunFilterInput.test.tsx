@@ -1,6 +1,7 @@
 import {MockedResponse, MockedProvider} from '@apollo/client/testing';
-import {act, fireEvent, render, waitFor} from '@testing-library/react';
+import {act, render, waitFor} from '@testing-library/react';
 import {renderHook} from '@testing-library/react-hooks';
+import userEvent from '@testing-library/user-event';
 import React from 'react';
 
 import {
@@ -140,7 +141,7 @@ function TestRunsFilterInput({
 describe('<RunFilterInput  />', () => {
   // b. Test rendering with all enabledFilters
   // (Include tests for rendering with different combinations of enabledFilters)
-  it('should call onChange with updated tokens when created DATE filter is updated', () => {
+  it('should call onChange with updated tokens when created DATE filter is updated', async () => {
     const onChange = jest.fn();
     const tokens: RunFilterToken[] = [
       {token: 'created_date_before', value: '1609459200'}, // 1/1/2021
@@ -158,9 +159,9 @@ describe('<RunFilterInput  />', () => {
     expect(getByText('1/1/2020')).toBeVisible();
     expect(getByText('1/1/2021')).toBeVisible();
 
-    fireEvent.click(getByText('Filter'));
-    fireEvent.click(getByText('Created date'));
-    fireEvent.click(getByText('Today'));
+    await userEvent.click(getByText('Filter'));
+    await userEvent.click(getByText('Created date'));
+    await userEvent.click(getByText('Today'));
 
     expect(onChange).toHaveBeenCalledWith([
       {
@@ -207,11 +208,11 @@ describe('<RunFilterInput  />', () => {
 
     onChange.mockClear();
 
-    fireEvent.click(getByText('Filter'));
-    fireEvent.click(getByText('Job'));
+    await userEvent.click(getByText('Filter'));
+    await userEvent.click(getByText('Job'));
 
-    await waitFor(() => {
-      fireEvent.click(getByText('some_job'));
+    await waitFor(async () => {
+      await userEvent.click(getByText('some_job'));
     });
 
     expect(onChange).toHaveBeenCalledWith([{token: 'job', value: 'some_job'}]);
@@ -231,11 +232,11 @@ describe('<RunFilterInput  />', () => {
 
     onChange.mockClear();
 
-    fireEvent.click(getByText('Filter'));
-    fireEvent.click(getByText('Backfill ID'));
+    await userEvent.click(getByText('Filter'));
+    await userEvent.click(getByText('Backfill ID'));
 
-    await waitFor(() => {
-      fireEvent.click(getByText('value1'));
+    await waitFor(async () => {
+      await userEvent.click(getByText('value1'));
     });
 
     expect(onChange).toHaveBeenCalledWith([{token: 'tag', value: 'dagster/backfill=value1'}]);
@@ -257,15 +258,15 @@ describe('<RunFilterInput  />', () => {
 
     onChange.mockClear();
 
-    fireEvent.click(getByText('Filter'));
-    fireEvent.click(getByText('Tag'));
+    await userEvent.click(getByText('Filter'));
+    await userEvent.click(getByText('Tag'));
 
-    await waitFor(() => {
-      fireEvent.click(getByText(DagsterTag.Partition));
+    await waitFor(async () => {
+      await userEvent.click(getByText(DagsterTag.Partition));
     });
 
-    await waitFor(() => {
-      fireEvent.click(getByText('partition1'));
+    await waitFor(async () => {
+      await userEvent.click(getByText('partition1'));
     });
 
     expect(onChange).toHaveBeenCalledWith([

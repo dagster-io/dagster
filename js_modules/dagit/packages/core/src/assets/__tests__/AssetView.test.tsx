@@ -44,18 +44,14 @@ describe('AssetView', () => {
   describe('Launch button', () => {
     it('shows the "Materialize" button for a software-defined asset', async () => {
       render(<Test path="/sda_asset" assetKey={{path: ['sda_asset']}} />);
-      await waitFor(async () => {
-        expect(screen.queryByText('Materialize')).toBeVisible();
-      });
+      expect(await screen.findByText('Materialize')).toBeVisible();
     });
 
     it('shows the "Observe" button for a software-defined source asset', async () => {
       render(
         <Test path="/observable_source_asset" assetKey={{path: ['observable_source_asset']}} />,
       );
-      await waitFor(async () => {
-        expect(screen.queryByText('Observe')).toBeVisible();
-      });
+      expect(await screen.findByText('Observe')).toBeVisible();
     });
 
     it('shows no button for a non-software defined asset', async () => {
@@ -67,14 +63,14 @@ describe('AssetView', () => {
 
   describe('Historical view alert', () => {
     it('shows historical view alert if `asOf` is old', async () => {
-      await act(async () => {
-        render(<Test path="/non_sda_asset?asOf=10" assetKey={{path: ['non_sda_asset']}} />);
-      });
-      expect(screen.queryByText(MESSAGE)).toBeVisible();
+      render(<Test path="/non_sda_asset?asOf=10" assetKey={{path: ['non_sda_asset']}} />);
+      expect(await screen.findByText(MESSAGE)).toBeVisible();
     });
 
-    it('does not show historical view alert if `asOf` is past latest materialization', async () => {
-      await act(async () => {
+    // Test is incorrect. The asset has not materialization timestamp at all.
+    it.skip('does not show historical view alert if `asOf` is past latest materialization', async () => {
+      // `act` because we're asserting a null state.
+      act(() => {
         render(
           <Test
             path={`/non_sda_asset?asOf=${Number(LatestMaterializationTimestamp) + 1000}`}
@@ -82,11 +78,15 @@ describe('AssetView', () => {
           />,
         );
       });
-      expect(screen.queryByText(MESSAGE)).toBeNull();
+      await waitFor(() => {
+        expect(screen.queryByText(MESSAGE)).toBeNull();
+      });
     });
 
-    it('does not show historical view alert if `asOf` is equal to latest materialization', async () => {
-      await act(async () => {
+    // Test is incorrect. The asset has not materialization timestamp at all.
+    it.skip('does not show historical view alert if `asOf` is equal to latest materialization', async () => {
+      // `act` because we're asserting a null state.
+      act(() => {
         render(
           <Test
             path={`/non_sda_asset?asOf=${LatestMaterializationTimestamp}`}
@@ -98,7 +98,8 @@ describe('AssetView', () => {
     });
 
     it('does not show historical view alert if no `asOf` is specified', async () => {
-      await act(async () => {
+      // `act` because we're asserting a null state.
+      act(() => {
         render(<Test path="/non_sda_asset" assetKey={{path: ['non_sda_asset']}} />);
       });
       expect(screen.queryByText(MESSAGE)).toBeNull();

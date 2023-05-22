@@ -77,13 +77,13 @@ describe('PipelineRoot', () => {
     });
   });
 
-  describe('Limits Playground based on launch permission', () => {
-    it('renders playground route and tab by default', async () => {
+  describe('Limits launchpad based on launch permission', () => {
+    it('renders launchpad route and tab by default', async () => {
       const routerProps = {
         initialEntries: [`${path}/playground`],
       };
 
-      await act(() => {
+      act(() => {
         render(
           <TestProvider apolloProps={apolloProps} routerProps={routerProps}>
             <PipelineRoot repoAddress={repoAddress} />
@@ -91,12 +91,13 @@ describe('PipelineRoot', () => {
         );
       });
 
-      await waitFor(() => {
-        const selected = screen.getByRole('tab', {selected: true});
+      const selected = await screen.findByRole('tab', {selected: true});
 
-        // Route to Playground, verify that the "New run" tab appears.
-        expect(selected.textContent).toMatch(/launchpad/i);
-        expect(screen.getByText(/new run/i)).toBeVisible();
+      // Route to Playground, verify that the "New run" tab appears.
+      expect(selected.textContent).toMatch(/launchpad/i);
+
+      await waitFor(() => {
+        expect(screen.getByText(/\+ add/i)).toBeVisible();
       });
     });
 
@@ -117,13 +118,13 @@ describe('PipelineRoot', () => {
         </TestProvider>,
       );
 
+      const selected = await screen.findByRole('tab', {selected: true});
+
+      // Redirect to Definition, which has been highlighted in the tabs.
+      expect(selected.textContent).toMatch(/overview/i);
+
+      // Render a disabled "Launchpad" tab.
       await waitFor(() => {
-        const selected = screen.getByRole('tab', {selected: true});
-
-        // Redirect to Definition, which has been highlighted in the tabs.
-        expect(selected.textContent).toMatch(/overview/i);
-
-        // Render a disabled "Launchpad" tab.
         expect(screen.queryByRole('tab', {name: /launchpad/i})).toHaveAttribute(
           'aria-disabled',
           'true',
