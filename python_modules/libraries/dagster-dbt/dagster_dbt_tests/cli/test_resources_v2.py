@@ -1,8 +1,9 @@
-from typing import List
+from typing import List, Optional
 
 import pytest
 from dagster import AssetObservation, Output
 from dagster_dbt.cli import DbtCli, DbtCliEventMessage, DbtManifest
+from pytest_mock import MockerFixture
 
 from ..conftest import TEST_PROJECT_DIR
 
@@ -23,6 +24,63 @@ def test_dbt_cli(global_config: List[str], command: str) -> None:
 
     assert dbt_cli_task.process.args == ["dbt", *global_config, command]
     assert dbt_cli_task.process.returncode == 0
+
+
+def test_dbt_cli_subsetted_execution(mocker: MockerFixture) -> None:
+    mock_context = mocker.MagicMock()
+    mock_selected_output_names = ["least_caloric", "sort_by_calories"]
+
+    type(mock_context.op).tags = mocker.PropertyMock(return_value={})
+    type(mock_context).selected_output_names = mocker.PropertyMock(
+        return_value=mock_selected_output_names
+    )
+
+    dbt = DbtCli(project_dir=TEST_PROJECT_DIR)
+    dbt_cli_task = dbt.cli(["run"], manifest=manifest, context=mock_context)
+
+    dbt_cli_task.wait()
+
+    assert dbt_cli_task.process.args == [
+        "dbt",
+        "run",
+        "--select",
+        (
+            "fqn:dagster_dbt_test_project.subdir.least_caloric"
+            " fqn:dagster_dbt_test_project.sort_by_calories"
+        ),
+    ]
+    assert dbt_cli_task.process.returncode is not None
+
+
+@pytest.mark.parametrize("exclude", [None, "fqn:dagster_dbt_test_project.subdir.least_caloric"])
+def test_dbt_cli_default_selection(mocker: MockerFixture, exclude: Optional[str]) -> None:
+    mock_context = mocker.MagicMock()
+    mock_selected_output_names = ["least_caloric", "sort_by_calories"]
+
+    type(mock_context.op).tags = mocker.PropertyMock(
+        return_value={
+            "dagster-dbt/select": "fqn:*",
+            **({"dagster-dbt/exclude": exclude} if exclude else {}),
+        }
+    )
+    type(mock_context).selected_output_names = mocker.PropertyMock(
+        return_value=mock_selected_output_names
+    )
+    mock_context.assets_def.node_keys_by_output_name.__len__.return_value = len(
+        mock_selected_output_names
+    )
+
+    dbt = DbtCli(project_dir=TEST_PROJECT_DIR)
+    dbt_cli_task = dbt.cli(["run"], manifest=manifest, context=mock_context)
+
+    dbt_cli_task.wait()
+
+    expected_args = ["dbt", "run", "--select", "fqn:*"]
+    if exclude:
+        expected_args += ["--exclude", exclude]
+
+    assert dbt_cli_task.process.args == expected_args
+    assert dbt_cli_task.process.returncode is not None
 
 
 @pytest.mark.parametrize(

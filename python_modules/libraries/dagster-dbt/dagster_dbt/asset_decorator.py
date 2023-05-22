@@ -55,6 +55,10 @@ def dbt_assets(
             non_argument_deps=non_argument_deps,
             compute_kind="dbt",
             can_subset=True,
+            op_tags={
+                **({"dagster-dbt/select": select} if select else {}),
+                **({"dagster-dbt/exclude": exclude} if exclude else {}),
+            },
         )(fn)
 
         return asset_definition
