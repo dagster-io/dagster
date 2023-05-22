@@ -7,7 +7,7 @@ from dagster._core.execution.api import ExecuteRunWithPlanIterable
 from dagster._core.execution.context.system import PlanExecutionContext, PlanOrchestrationContext
 from dagster._core.execution.context_creation_job import PlanExecutionContextManager
 from dagster._core.execution.plan.execute_plan import inner_plan_execution_iterator
-from dagster._core.execution.plan.global_concurrency_context import GlobalConcurrencyContext
+from dagster._core.execution.plan.instance_concurrency_context import InstanceConcurrencyContext
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.retries import RetryMode
 from dagster._utils.timing import format_duration, time_execution_scope
@@ -18,13 +18,13 @@ from .base import Executor
 def inprocess_execution_iterator(
     job_context: PlanExecutionContext,
     execution_plan: ExecutionPlan,
-    global_concurrency_context: Optional[GlobalConcurrencyContext] = None,
+    instance_concurrency_context: Optional[InstanceConcurrencyContext] = None,
 ) -> Iterator[DagsterEvent]:
-    with GlobalConcurrencyContext(
+    with InstanceConcurrencyContext(
         job_context.instance, job_context.run_id
-    ) as global_concurrency_context:
+    ) as instance_concurrency_context:
         yield from inner_plan_execution_iterator(
-            job_context, execution_plan, global_concurrency_context
+            job_context, execution_plan, instance_concurrency_context
         )
 
 
