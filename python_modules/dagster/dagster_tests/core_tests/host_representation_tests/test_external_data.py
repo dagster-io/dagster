@@ -428,13 +428,13 @@ def test_inter_op_dependency():
     def assets(in1, in2):
         pass
 
+    all_assets_job = build_assets_job("assets_job", [in1, in2, assets, downstream])
     subset_job = define_asset_job("subset_job", selection="mixed").resolve(
         [in1, in2, assets, downstream], []
     )
-    all_assets_job = build_assets_job("assets_job", [in1, in2, assets, downstream])
 
     external_asset_nodes = external_asset_graph_from_defs(
-        [subset_job, all_assets_job], source_assets_by_key={}
+        [all_assets_job, subset_job], source_assets_by_key={}
     )
     # sort so that test is deterministic
     sorted_nodes = sorted(
