@@ -11,7 +11,7 @@ from dagster import job, op
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvariantViolationError
 from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.execution.api import create_execution_plan
-from dagster._core.execution.plan.global_concurrency_context import GlobalConcurrencyContext
+from dagster._core.execution.plan.instance_concurrency_context import InstanceConcurrencyContext
 from dagster._core.execution.plan.objects import StepRetryData, StepSuccessData
 from dagster._core.execution.plan.outputs import StepOutputData, StepOutputHandle
 from dagster._core.execution.retries import RetryMode
@@ -203,10 +203,10 @@ def test_active_concurrency():
                 DagsterInvariantViolationError,
                 match="Execution finished without completing the execution plan",
             ):
-                with GlobalConcurrencyContext(instance, run_id) as global_concurrency_context:
+                with InstanceConcurrencyContext(instance, run_id) as instance_concurrency_context:
                     with create_execution_plan(foo_job).start(
                         RetryMode.DISABLED,
-                        global_concurrency_context=global_concurrency_context,
+                        instance_concurrency_context=instance_concurrency_context,
                     ) as active_execution:
                         steps = active_execution.get_steps_to_execute()
                         assert len(steps) == 1
@@ -233,7 +233,7 @@ def test_active_concurrency():
             assert foo_info.assigned_step_count == 1
 
 
-class MockGlobalConcurrencyContext(GlobalConcurrencyContext):
+class MockInstanceConcurrencyContext(InstanceConcurrencyContext):
     def __init__(self, interval: float):
         self._interval = interval
         self._pending_timeouts = defaultdict(float)
@@ -278,12 +278,12 @@ def define_concurrency_retry_job():
 
 
 def test_active_concurrency_sleep():
-    global_concurrency_context = MockGlobalConcurrencyContext(2.0)
+    instance_concurrency_context = MockInstanceConcurrencyContext(2.0)
     foo_job = define_concurrency_retry_job()
     with pytest.raises(DagsterExecutionInterruptedError):
         with create_execution_plan(foo_job).start(
             RetryMode.ENABLED,
-            global_concurrency_context=global_concurrency_context,
+            instance_concurrency_context=instance_concurrency_context,
         ) as active_execution:
             steps = active_execution.get_steps_to_execute()
 
@@ -300,7 +300,7 @@ def test_active_concurrency_sleep():
                 )
             )
 
-            assert global_concurrency_context.has_pending_claims()
+            assert instance_concurrency_context.has_pending_claims()
             assert math.isclose(active_execution.sleep_interval(), 2.0, abs_tol=0.1)
 
             error_info = SerializableErrorInfo("Exception", [], None)
@@ -317,11 +317,11 @@ def test_active_concurrency_sleep():
             assert math.isclose(active_execution.sleep_interval(), 1.0, abs_tol=0.1)
             active_execution.mark_interrupted()
 
-    global_concurrency_context = MockGlobalConcurrencyContext(2.0)
+    instance_concurrency_context = MockInstanceConcurrencyContext(2.0)
     with pytest.raises(DagsterExecutionInterruptedError):
         with create_execution_plan(foo_job).start(
             RetryMode.ENABLED,
-            global_concurrency_context=global_concurrency_context,
+            instance_concurrency_context=instance_concurrency_context,
         ) as active_execution:
             steps = active_execution.get_steps_to_execute()
 
@@ -338,7 +338,7 @@ def test_active_concurrency_sleep():
                 )
             )
 
-            assert global_concurrency_context.has_pending_claims()
+            assert instance_concurrency_context.has_pending_claims()
             assert math.isclose(active_execution.sleep_interval(), 2.0, abs_tol=0.1)
 
             error_info = SerializableErrorInfo("Exception", [], None)

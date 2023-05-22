@@ -35,12 +35,12 @@ from dagster._core.errors import (
     DagsterInvariantViolationError,
     DagsterUnmetExecutorRequirementsError,
 )
-from dagster._core.execution.plan.global_concurrency_context import GlobalConcurrencyContext
 from dagster._core.execution.plan.handle import (
     ResolvedFromDynamicStepHandle,
     StepHandle,
     UnresolvedStepHandle,
 )
+from dagster._core.execution.plan.instance_concurrency_context import InstanceConcurrencyContext
 from dagster._core.execution.retries import RetryMode
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.storage.mem_io_manager import mem_io_manager
@@ -920,7 +920,7 @@ class ExecutionPlan(
         sort_key_fn: Optional[Callable[[ExecutionStep], float]] = None,
         max_concurrent: Optional[int] = None,
         tag_concurrency_limits: Optional[List[Dict[str, Any]]] = None,
-        global_concurrency_context: Optional[GlobalConcurrencyContext] = None,
+        instance_concurrency_context: Optional[InstanceConcurrencyContext] = None,
     ) -> "ActiveExecution":
         from .active import ActiveExecution
 
@@ -930,7 +930,7 @@ class ExecutionPlan(
             sort_key_fn,
             max_concurrent,
             tag_concurrency_limits,
-            global_concurrency_context=global_concurrency_context,
+            instance_concurrency_context=instance_concurrency_context,
         )
 
     def step_handle_for_single_step_plans(

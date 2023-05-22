@@ -3,6 +3,7 @@ from collections import defaultdict
 from types import TracebackType
 from typing import (
     List,
+    Optional,
     Set,
     Type,
 )
@@ -14,7 +15,20 @@ from dagster._core.instance import DagsterInstance
 DEFAULT_CONCURRENCY_CLAIM_BLOCKED_INTERVAL = 1
 
 
-class GlobalConcurrencyContext:
+class InstanceConcurrencyContext:
+    """This class is used to manage instance-scoped concurrency for a given run. It wraps the
+    instance-based storage methods that obtains / releases concurrency slots, and provides a common
+    interface for the active execution to throttle queries to the DB to check for available slots.
+
+    It ensures that pending concurrency claims are freed upon exiting context.  It does not,
+    however, free active slots that have been claimed. This is because the executor (depending on
+    the executor type) may have launched processes that may continue to run even after the current
+    context is exited.
+
+    These active slots may be manually freed via the UI, which calls the event log storage method:
+    `free_concurrency_slots_by_run_id`
+    """
+
     def __init__(self, instance: DagsterInstance, run_id: str):
         self._instance = instance
         self._run_id = run_id
@@ -28,7 +42,10 @@ class GlobalConcurrencyContext:
         return self
 
     def __exit__(
-        self, exc_type: Type[Exception], exc_value: Exception, traceback: TracebackType
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_value: Optional[BaseException],
+        traceback: Optional[TracebackType],
     ) -> None:
         to_clear = []
         for step_key in self._pending_claims:
