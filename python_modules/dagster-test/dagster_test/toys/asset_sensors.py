@@ -6,6 +6,7 @@ from dagster import (
     AssetSelection,
     RunRequest,
     SkipReason,
+    StaticPartitionsDefinition,
     asset,
     build_asset_reconciliation_sensor,
     job,
@@ -157,6 +158,56 @@ def waits(runs_long):
     return runs_long + 1
 
 
+def _build_partitioned_assets():
+    assets = []
+
+    for i in range(10):
+
+        @asset(
+            name=f"partitioned_asset_{i}",
+            group_name="partitioned_assets",
+            partitions_def=StaticPartitionsDefinition([str(i) for i in range(20)]),
+        )
+        def partitioned_asset():
+            return 1
+
+        assets.append(partitioned_asset)
+    return assets
+
+
+partitioned_assets = _build_partitioned_assets()
+
+
+@multi_asset_sensor(
+    monitored_assets=[asset_def.key for asset_def in partitioned_assets],
+    job=log_asset_sensor_job,
+)
+def partitioned_multi_asset_sensor(context):
+    run_requests = []
+    for (
+        partition,
+        materialization_by_asset,
+    ) in context.latest_materialization_records_by_partition_and_asset().items():
+        context.advance_cursor(materialization_by_asset)
+        run_requests.append(
+            RunRequest(
+                run_config={
+                    "ops": {
+                        "log_asset_sensor": {
+                            "config": {
+                                "message": (
+                                    f"Materializations by asset {materialization_by_asset} for"
+                                    f" partition key {partition}"
+                                )
+                            }
+                        }
+                    }
+                },
+            )
+        )
+    return run_requests
+
+
 def get_asset_sensors_repo():
     return [
         asset_a,
@@ -175,4 +226,6 @@ def get_asset_sensors_repo():
         build_asset_reconciliation_sensor(
             asset_selection=AssetSelection.assets(downstream, waits), name="generated_sensor"
         ),
+        *partitioned_assets,
+        partitioned_multi_asset_sensor,
     ]
