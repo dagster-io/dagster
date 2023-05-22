@@ -399,7 +399,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
     filters: [
       !enabledFilters || enabledFilters?.includes('status') ? statusFilter : null,
       useStaticSetFilter({
-        name: 'Created By',
+        name: 'Launched by',
         icon: 'add_circle',
         allValues: createdByValues,
         renderLabel: ({value}) => {

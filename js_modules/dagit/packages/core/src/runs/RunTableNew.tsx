@@ -23,7 +23,6 @@ import {ShortcutHandler} from '../app/ShortcutHandler';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {RunsFilter} from '../graphql/types';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
-import {getPipelineSnapshotLink} from '../pipelines/PipelinePathUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {AnchorButton} from '../ui/AnchorButton';
 import {useRepositoryForRunWithoutSnapshot} from '../workspace/useRepositoryForRun';
@@ -33,7 +32,7 @@ import {AssetKeyTagCollection} from './AssetKeyTagCollection';
 import {RunActionsMenu, RunBulkActionsMenu} from './RunActionsMenu';
 import {RunCreatedByCell} from './RunCreatedByCell';
 import {RunStatusTagWithStats} from './RunStatusTag';
-import {DagsterTag} from './RunTag';
+import {DagsterTag, TagType} from './RunTag';
 import {RunTags} from './RunTags';
 import {
   assetKeysForRun,
@@ -42,7 +41,7 @@ import {
   RUN_TIME_FRAGMENT,
   titleForRun,
 } from './RunUtils';
-import {RunFilterToken} from './RunsFilterInput';
+import {RunFilterToken, runsPathWithFilters} from './RunsFilterInput';
 import {RunTableRunFragment} from './types/RunTable.types';
 
 interface RunTableProps {
@@ -131,7 +130,7 @@ export const RunTable = (props: RunTableProps) => {
               <th style={{width: 90}}>Run ID</th>
               <th style={{width: 180}}>Created date</th>
               <th>Target</th>
-              {hideCreatedBy ? null : <th style={{width: 160}}>Created by</th>}
+              {hideCreatedBy ? null : <th style={{width: 160}}>Launched by</th>}
               <th style={{width: 120}}>Status</th>
               <th style={{width: 190}}>Duration</th>
               {props.additionalColumnHeaders}
@@ -263,10 +262,52 @@ const RunRow: React.FC<{
 
   const isReexecution = run.tags.some((tag) => tag.key === DagsterTag.ParentRunId);
 
+  const targetBackfill = run.tags.find((tag) => tag.key === DagsterTag.Backfill);
+  const targetPartition = run.tags.find((tag) => tag.key === DagsterTag.Partition);
+  const targetPartitionSet = run.tags.find((tag) => tag.key === DagsterTag.PartitionSet);
+  const targetPartitionRangeStart = run.tags.find(
+    (tag) => tag.key === DagsterTag.AssetPartitionRangeStart,
+  );
+  const targetPartitionRangeEnd = run.tags.find(
+    (tag) => tag.key === DagsterTag.AssetPartitionRangeEnd,
+  );
+
   const [showRunTags, setShowRunTags] = React.useState(false);
   const [isHovered, setIsHovered] = React.useState(false);
 
-  const partition = run.tags.find((tag) => tag.key === DagsterTag.Partition);
+  const tagsToShow = React.useMemo(() => {
+    const tags: TagType[] = [];
+    if (targetBackfill) {
+      const link = run.assetSelection?.length
+        ? `/overview/backfills/${targetBackfill.value}`
+        : runsPathWithFilters([
+            {
+              token: 'tag',
+              value: `${DagsterTag.Backfill}=${targetBackfill.value}`,
+            },
+          ]);
+      tags.push({
+        key: targetBackfill.key,
+        value: targetBackfill.value,
+        link,
+      });
+    }
+    if (targetPartition) {
+      tags.push(targetPartition);
+    } else if (targetPartitionSet) {
+      tags.push(targetPartitionSet);
+    } else if (targetPartitionRangeStart !== undefined && targetPartitionRangeEnd !== undefined) {
+      tags.push(targetPartitionRangeStart, targetPartitionRangeEnd);
+    }
+    return tags;
+  }, [
+    run.assetSelection?.length,
+    targetBackfill,
+    targetPartition,
+    targetPartitionRangeEnd,
+    targetPartitionRangeStart,
+    targetPartitionSet,
+  ]);
 
   return (
     <Row
@@ -345,25 +386,11 @@ const RunRow: React.FC<{
               </Box>
             ) : null}
             <RunTagsWrapper>
-              {partition ? (
+              {tagsToShow.length ? (
                 <RunTags
-                  tags={[partition]}
+                  tags={tagsToShow}
                   mode={isJob ? (run.mode !== 'default' ? run.mode : null) : run.mode}
                   onAddTag={onAddTag}
-                />
-              ) : null}
-              {run.pipelineSnapshotId ? (
-                <RunTags
-                  tags={[
-                    {
-                      key: DagsterTag.SnapshotID,
-                      value: run.pipelineSnapshotId?.slice(0, 8) || '',
-                      link: run.pipelineSnapshotId
-                        ? getPipelineSnapshotLink(run.pipelineName, run.pipelineSnapshotId)
-                        : undefined,
-                    },
-                  ]}
-                  mode={isJob ? (run.mode !== 'default' ? run.mode : null) : run.mode}
                 />
               ) : null}
             </RunTagsWrapper>
