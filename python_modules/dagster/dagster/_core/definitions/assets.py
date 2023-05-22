@@ -926,12 +926,18 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         )
 
     def _subset_op_backed_asset(
-        self, asset_subselection: AbstractSet[AssetKey]
+        self, asset_subselection: AbstractSet[AssetKey], selected_asset_keys: AbstractSet[AssetKey]
     ) -> "AssetsDefinition":
         """Creates a new AssetsDefinition which will only materialize the given asset keys. In some
         cases, this subset will have a new set of root assets, which were previously produced within
         the subset itself. In this case, we will create new inputs for those assets, and generate a
         new copy of the op with the new inputs.
+
+        Args:
+            asset_subselection (AbstractSet[AssetKey]): The set of asset keys that should be selected
+                from this AssetsDefinition.
+            selected_asset_keys (AbstractSet[AssetKey]): The total set of asset keys that have been
+                selected from the broader asset graph.
         """
         # the set of keys that are not selected but are upstream of the selected keys
         input_keys = {
@@ -944,17 +950,19 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         op_valid = True
         for input_key in input_keys:
             input_name = input_names_by_key.get(input_key)
-            if input_name is None:
-                # there is no input existing for this key, meaning this is something that is produced
-                # within the op if it is not subsetted. this requires us to create a new input, and
-                # therefore a new copy of the underlying op.
+            if input_name is not None:
+                # just copy over existing input
+                ins[input_name] = self.op.ins[input_name]
+            elif input_key in selected_asset_keys:
+                # There is no input existing for this key, meaning this is something that is produced
+                # within the op if it is not subsetted. If this input is part of the larger
+                # selection that we want to make a job out of, then this would require us to create
+                # a new input such that the dependency would be respected, and therefore a new copy
+                # of the underlying op.
                 op_valid = False
                 output_name = output_names_by_key[input_key]
                 ins[output_name] = In(Nothing)
                 input_names_by_key[input_key] = output_name
-            else:
-                # just copy over existing input
-                ins[input_name] = self.op.ins[input_name]
 
         # must create a new copy of the op
         if op_valid:
@@ -1082,7 +1090,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             )
         else:
             # multi_asset subsetting
-            return self._subset_op_backed_asset(asset_subselection)
+            return self._subset_op_backed_asset(asset_subselection, selected_asset_keys)
 
     @public
     def to_source_assets(self) -> Sequence[SourceAsset]:
