@@ -18,6 +18,7 @@ export type FilterObject<T = any> = {
   }) => void;
   onUnselected?: () => void;
   isLoadingFilters?: boolean;
+  menuWidth?: number | string;
 };
 
 export const FilterTag = ({
@@ -29,7 +30,7 @@ export const FilterTag = ({
   iconName: IconName;
   onRemove: () => void;
 }) => (
-  <div style={{display: 'inline-block', height: '24px'}}>
+  <div>
     <BaseTag
       icon={<Icon name={iconName} color={Colors.Link} />}
       rightIcon={

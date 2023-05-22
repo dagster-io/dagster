@@ -23,7 +23,6 @@ import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
-import {RepoFilterButton} from '../instance/RepoFilterButton';
 import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
 import {UnloadableSchedules} from '../instigation/Unloadable';
 import {filterPermissionedInstigationState} from '../instigation/filterPermissionedInstigationState';
@@ -31,6 +30,9 @@ import {ScheduleBulkActionMenu} from '../schedules/ScheduleBulkActionMenu';
 import {SchedulerInfo} from '../schedules/SchedulerInfo';
 import {makeScheduleKey} from '../schedules/makeScheduleKey';
 import {CheckAllBox} from '../ui/CheckAllBox';
+import {useFilters} from '../ui/Filters';
+import {useCodeLocationFilter} from '../ui/Filters/useCodeLocationFilter';
+import {useInstigationStatusFilter} from '../ui/Filters/useInstigationStatusFilter';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
@@ -60,6 +62,15 @@ export const OverviewSchedulesRoot = () => {
     defaults: {search: ''},
   });
 
+  const codeLocationFilter = useCodeLocationFilter();
+  const runningStateFilter = useInstigationStatusFilter();
+
+  const filters = React.useMemo(() => [codeLocationFilter, runningStateFilter], [
+    codeLocationFilter,
+    runningStateFilter,
+  ]);
+  const {button: filterButton, activeFiltersJsx} = useFilters({filters});
+
   const queryResultOverview = useQuery<OverviewSchedulesQuery, OverviewSchedulesQueryVariables>(
     OVERVIEW_SCHEDULES_QUERY,
     {
@@ -78,18 +89,30 @@ export const OverviewSchedulesRoot = () => {
     );
   }, [data, visibleRepos]);
 
+  const {state: runningState} = runningStateFilter;
+  const filteredBuckets = React.useMemo(() => {
+    return repoBuckets.map(({schedules, ...rest}) => {
+      return {
+        ...rest,
+        schedules: runningState.size
+          ? schedules.filter(({scheduleState}) => runningState.has(scheduleState.status))
+          : schedules,
+      };
+    });
+  }, [repoBuckets, runningState]);
+
   const sanitizedSearch = searchValue.trim().toLocaleLowerCase();
   const anySearch = sanitizedSearch.length > 0;
 
   const filteredBySearch = React.useMemo(() => {
     const searchToLower = sanitizedSearch.toLocaleLowerCase();
-    return repoBuckets
+    return filteredBuckets
       .map(({repoAddress, schedules}) => ({
         repoAddress,
         schedules: schedules.filter(({name}) => name.toLocaleLowerCase().includes(searchToLower)),
       }))
       .filter(({schedules}) => schedules.length > 0);
-  }, [repoBuckets, sanitizedSearch]);
+  }, [filteredBuckets, sanitizedSearch]);
 
   const anySchedulesVisible = React.useMemo(
     () => filteredBySearch.some(({schedules}) => schedules.length > 0),
@@ -196,8 +219,8 @@ export const OverviewSchedulesRoot = () => {
             title="No schedules"
             description={
               anyReposHidden
-                ? 'No schedules were found in the selected code locations'
-                : 'No schedules were found in your definitions'
+                ? 'No matching schedules were found in the selected code locations'
+                : 'No matching schedules were found in your definitions'
             }
           />
         </Box>
@@ -233,7 +256,7 @@ export const OverviewSchedulesRoot = () => {
         flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
       >
         <Box flex={{direction: 'row', gap: 12}}>
-          {repoCount > 0 ? <RepoFilterButton /> : null}
+          {filterButton}
           <TextInput
             icon="search"
             value={searchValue}
@@ -257,6 +280,15 @@ export const OverviewSchedulesRoot = () => {
           />
         </Tooltip>
       </Box>
+      {activeFiltersJsx.length ? (
+        <Box
+          padding={{vertical: 8, horizontal: 24}}
+          border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+          flex={{direction: 'row', gap: 8}}
+        >
+          {activeFiltersJsx}
+        </Box>
+      ) : null}
       {loading && !repoCount ? (
         <Box padding={64}>
           <Spinner purpose="page" />
