@@ -54,6 +54,7 @@ interface RunTableProps {
   additionalColumnsForRow?: (run: RunTableRunFragment) => React.ReactNode[];
   belowActionBarComponents?: React.ReactNode;
   hideCreatedBy?: boolean;
+  additionalActionsForRow?: (run: RunTableRunFragment) => React.ReactNode[];
 }
 
 export const RunTable = (props: RunTableProps) => {
@@ -146,6 +147,7 @@ export const RunTable = (props: RunTableProps) => {
                 onAddTag={onAddTag}
                 checked={checkedIds.has(run.id)}
                 additionalColumns={props.additionalColumnsForRow?.(run)}
+                additionalActions={props.additionalActionsForRow?.(run)}
                 onToggleChecked={onToggleFactory(run.id)}
                 isHighlighted={highlightedIds && highlightedIds.includes(run.id)}
               />
@@ -227,6 +229,7 @@ const RunRow: React.FC<{
   checked?: boolean;
   onToggleChecked?: (values: {checked: boolean; shiftKey: boolean}) => void;
   additionalColumns?: React.ReactNode[];
+  additionalActions?: React.ReactNode[];
   isHighlighted?: boolean;
   hideCreatedBy?: boolean;
 }> = ({
@@ -236,6 +239,7 @@ const RunRow: React.FC<{
   checked,
   onToggleChecked,
   additionalColumns,
+  additionalActions,
   isHighlighted,
   hideCreatedBy,
 }) => {
@@ -422,7 +426,7 @@ const RunRow: React.FC<{
       </td>
       {additionalColumns}
       <td>
-        <RunActionsMenu run={run} onAddTag={onAddTag} />
+        <RunActionsMenu run={run} onAddTag={onAddTag} additionalActions={additionalActions} />
       </td>
       <Dialog
         isOpen={showRunTags}

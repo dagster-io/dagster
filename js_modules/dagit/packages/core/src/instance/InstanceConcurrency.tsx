@@ -17,16 +17,20 @@ import {
   Tag,
   TextInput,
   Button,
+  NonIdealState,
 } from '@dagster-io/ui';
 import * as React from 'react';
-import {Link} from 'react-router-dom';
+import {Redirect} from 'react-router-dom';
 
+import {showSharedToaster} from '../app/DomUtils';
 import {useFeatureFlags} from '../app/Flags';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {doneStatuses} from '../runs/RunStatuses';
 import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
-import {titleForRun} from '../runs/RunUtils';
+import {RunTableRunFragment} from '../runs/types/RunTable.types';
 
 import {InstancePageContext} from './InstancePageContext';
 import {InstanceTabs} from './InstanceTabs';
@@ -36,6 +40,10 @@ import {
   ConcurrencyLimitFragment,
   SetConcurrencyLimitMutation,
   SetConcurrencyLimitMutationVariables,
+  RunsForConcurrencyKeyQuery,
+  RunsForConcurrencyKeyQueryVariables,
+  FreeConcurrencySlotsForRunMutation,
+  FreeConcurrencySlotsForRunMutationVariables,
 } from './types/InstanceConcurrency.types';
 
 const RUNS_LIMIT = 25;
@@ -58,9 +66,15 @@ const InstanceConcurrencyPage = React.memo(() => {
 
   if (!data) {
     return (
-      <Box padding={{vertical: 64}}>
-        <Spinner purpose="section" />
-      </Box>
+      <>
+        <PageHeader
+          title={<Heading>{pageTitle}</Heading>}
+          tabs={<InstanceTabs tab="concurrency" refreshState={refreshState} />}
+        />
+        <Box padding={{vertical: 64}}>
+          <Spinner purpose="section" />
+        </Box>
+      </>
     );
   }
 
@@ -73,7 +87,9 @@ const InstanceConcurrencyPage = React.memo(() => {
       />
       {flagInstanceConcurrencyLimits ? (
         <ConcurrencyLimits limits={limits} refetch={queryResult.refetch} />
-      ) : null}
+      ) : (
+        <Redirect to="/config" />
+      )}
     </>
   );
 });
@@ -150,16 +166,8 @@ const ConcurrencyLimits: React.FC<{
                   <td>{limit.activeSlotCount}</td>
                   <td>{limit.slotCount}</td>
                   <td>
-                    {limit.activeRunIds.length === 0 && false ? (
+                    {limit.activeRunIds.length === 0 ? (
                       <>&mdash;</>
-                    ) : limit.activeRunIds.length === 1 ? (
-                      <Tag intent="primary">
-                        <Link to={`/runs/${limit.activeRunIds[0]}`}>
-                          <Mono style={{fontSize: '14px'}}>
-                            {titleForRun({id: limit.activeRunIds[0]})}
-                          </Mono>
-                        </Link>
-                      </Tag>
                     ) : (
                       <Tag intent="primary" interactive>
                         <ButtonLink
@@ -168,7 +176,8 @@ const ConcurrencyLimits: React.FC<{
                             setSelectedRuns(limit.activeRunIds);
                           }}
                         >
-                          {limit.activeRunIds.length} runs
+                          {limit.activeRunIds.length}{' '}
+                          {limit.activeRunIds.length === 1 ? 'run' : 'runs'}
                         </ButtonLink>
                       </Tag>
                     )}
@@ -187,21 +196,21 @@ const ConcurrencyLimits: React.FC<{
         )}
       </Box>
       <AddConcurrencyLimitDialog
-        open={!!action && action.actionType === 'add'}
+        open={action?.actionType === 'add'}
         onClose={() => setAction(undefined)}
         onComplete={refetch}
       />
       <DeleteConcurrencyLimitDialog
         concurrencyKey={action && action.actionType === 'delete' ? action.concurrencyKey : ''}
-        open={!!action && action.actionType === 'delete'}
+        open={action?.actionType === 'delete'}
         onClose={() => setAction(undefined)}
         onComplete={refetch}
       />
       <EditConcurrencyLimitDialog
-        open={!!action && action.actionType === 'edit'}
+        open={action?.actionType === 'edit'}
         onClose={() => setAction(undefined)}
         onComplete={refetch}
-        concurrencyKey={action && action.actionType === 'edit' ? action.concurrencyKey : ''}
+        concurrencyKey={action?.actionType === 'edit' ? action.concurrencyKey : ''}
       />
       <ConcurrencyRunsDialog
         title={
@@ -280,7 +289,7 @@ const AddConcurrencyLimitDialog: React.FC<{
   const save = async () => {
     setIsSubmitting(true);
     await setConcurrencyLimit({
-      variables: {concurrencyKey: keyInput, limit: parseInt(limitInput!.trim())},
+      variables: {concurrencyKey: keyInput, limit: parseInt(limitInput.trim())},
     });
     setIsSubmitting(false);
     onComplete();
@@ -449,32 +458,79 @@ const ConcurrencyRunsDialog: React.FC<{
   title: string | React.ReactNode;
   onClose: () => void;
 }> = ({runIds, onClose, title}) => {
-  const {data} = useQuery(RUNS_FOR_CONCURRENCY_KEY_QUERY, {
-    variables: {
-      limit: RUNS_LIMIT,
-      filter: {
-        runIds: runIds || [],
+  const {data} = useQuery<RunsForConcurrencyKeyQuery, RunsForConcurrencyKeyQueryVariables>(
+    RUNS_FOR_CONCURRENCY_KEY_QUERY,
+    {
+      variables: {
+        limit: RUNS_LIMIT,
+        filter: {
+          runIds: runIds || [],
+        },
       },
+      skip: !runIds || !runIds.length,
     },
-    skip: !runIds,
-  });
+  );
 
-  if (!data || data.pipelineRunsOrError.__typename !== 'Runs') {
-    return null;
-  }
+  const [freeSlots] = useMutation<
+    FreeConcurrencySlotsForRunMutation,
+    FreeConcurrencySlotsForRunMutationVariables
+  >(FREE_CONCURRENCY_SLOTS_FOR_RUN_MUTATION);
 
-  const runs = data?.pipelineRunsOrError.results;
+  const freeSlotsActionMenuItem = (run: RunTableRunFragment) => {
+    return doneStatuses.has(run.status)
+      ? [
+          <MenuItem
+            key="free-concurrency-slots"
+            icon="status"
+            text="Free concurrency slots for run"
+            onClick={async () => {
+              const resp = await freeSlots({variables: {runId: run.id}});
+              if (resp.data?.freeConcurrencySlotsForRun) {
+                await showSharedToaster({
+                  intent: 'success',
+                  icon: 'copy_to_clipboard_done',
+                  message: 'Freed concurrency slots',
+                });
+              }
+              onClose();
+            }}
+          />,
+        ]
+      : [];
+  };
 
   return (
     <Dialog
-      isOpen={!!runIds}
+      isOpen={!!runIds && runIds.length > 0}
       title={title}
       onClose={onClose}
       style={{width: '60%', minWidth: '400px'}}
     >
-      <DialogBody>
-        <RunTable runs={runs} />
-      </DialogBody>
+      <Box padding={{vertical: 16}}>
+        {!data ? (
+          <Box padding={{vertical: 64}}>
+            <Spinner purpose="section" />
+          </Box>
+        ) : data.pipelineRunsOrError.__typename === 'Runs' ? (
+          <RunTable
+            runs={data.pipelineRunsOrError.results}
+            additionalActionsForRow={freeSlotsActionMenuItem}
+          />
+        ) : (
+          <Box padding={{vertical: 64}}>
+            <NonIdealState
+              icon="error"
+              title="Query Error"
+              description={
+                data.pipelineRunsOrError.__typename === 'PythonError'
+                  ? data.pipelineRunsOrError.message
+                  : 'There was a problem querying for these runs.'
+              }
+            />
+            ;
+          </Box>
+        )}
+      </Box>
       <DialogFooter>
         <Button intent="none" onClick={onClose}>
           Close
@@ -512,6 +568,12 @@ const SET_CONCURRENCY_LIMIT_MUTATION = gql`
   }
 `;
 
+const FREE_CONCURRENCY_SLOTS_FOR_RUN_MUTATION = gql`
+  mutation FreeConcurrencySlotsForRun($runId: String!) {
+    freeConcurrencySlotsForRun(runId: $runId)
+  }
+`;
+
 const RUNS_FOR_CONCURRENCY_KEY_QUERY = gql`
   query RunsForConcurrencyKeyQuery($filter: RunsFilter, $limit: Int) {
     pipelineRunsOrError(filter: $filter, limit: $limit) {
@@ -523,8 +585,12 @@ const RUNS_FOR_CONCURRENCY_KEY_QUERY = gql`
           }
         }
       }
+      ... on PythonError {
+        ...PythonErrorFragment
+      }
     }
   }
 
   ${RUN_TABLE_RUN_FRAGMENT}
+  ${PYTHON_ERROR_FRAGMENT}
 `;
