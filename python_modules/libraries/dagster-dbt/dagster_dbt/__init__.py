@@ -50,18 +50,7 @@ if TYPE_CHECKING:
     # from dagster.some.module import (
     #     Foo as Foo,
     # )
-
-    ##### Deprecating dbt ops
-    from .ops import (
-        dbt_build_op as dbt_build_op,
-        dbt_compile_op as dbt_compile_op,
-        dbt_docs_generate_op as dbt_docs_generate_op,
-        dbt_ls_op as dbt_ls_op,
-        dbt_run_op as dbt_run_op,
-        dbt_seed_op as dbt_seed_op,
-        dbt_snapshot_op as dbt_snapshot_op,
-        dbt_test_op as dbt_test_op,
-    )
+    ...
 
 _DEPRECATED: Final[Mapping[str, Tuple[str, str, str]]] = {
     ##### EXAMPLE
@@ -70,23 +59,6 @@ _DEPRECATED: Final[Mapping[str, Tuple[str, str, str]]] = {
     #     "1.1.0",  # breaking version
     #     "Use Bar instead.",
     # ),
-    **{
-        value: (
-            module,
-            "1.4.0",
-            "Use the `@op` decorator and the `DbtCli` resource.",
-        )
-        for value, module in [
-            ("dbt_build_op", "dagster_dbt.ops"),
-            ("dbt_compile_op", "dagster_dbt.ops"),
-            ("dbt_docs_generate_op", "dagster_dbt.ops"),
-            ("dbt_ls_op", "dagster_dbt.ops"),
-            ("dbt_run_op", "dagster_dbt.ops"),
-            ("dbt_seed_op", "dagster_dbt.ops"),
-            ("dbt_snapshot_op", "dagster_dbt.ops"),
-            ("dbt_test_op", "dagster_dbt.ops"),
-        ]
-    },
 }
 
 

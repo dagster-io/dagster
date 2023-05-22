@@ -28,28 +28,6 @@ Assets (dbt Core)
 
 .. autoclass:: DbtManifestAssetSelection
 
-Ops (dbt Core)
-==============
-
-If you're using asset-based dbt APIs like `load_assets_from_dbt_project`, you usually will not also use the below op-based APIs.
-
-``dagster_dbt`` provides a set of pre-built ops that work with the CLI. For more advanced use cases,
-we suggest building your own ops which directly interact with these resources.
-
-.. autoconfigurable:: dbt_run_op
-
-.. autofunction:: dbt_compile_op
-
-.. autofunction:: dbt_ls_op
-
-.. autofunction:: dbt_test_op
-
-.. autofunction:: dbt_snapshot_op
-
-.. autofunction:: dbt_seed_op
-
-.. autofunction:: dbt_docs_generate_op
-
 Resources (dbt Core)
 ====================
 
