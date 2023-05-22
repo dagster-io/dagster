@@ -3179,6 +3179,7 @@ type DagitMutation {
   ): AddDynamicPartitionResult!
   setAutoMaterializePaused(paused: Boolean!): Boolean!
   setConcurrencyLimit(concurrencyKey: String!, limit: Int!): Boolean!
+  freeConcurrencySlotsForRun(runId: String!): Boolean!
 }
 
 input ReexecutionParams {
