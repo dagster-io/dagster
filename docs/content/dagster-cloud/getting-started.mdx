@@ -397,19 +397,19 @@ Ensure that you have created a `dagster_cloud.yaml` file as described in \[the q
 
    The Docker image should contain a Python environment with `dagster`, `dagster-cloud` and your code. For reference, see the [example Dockerfile](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/Dockerfile) in our quickstart repository. The example uses `pip install .` to install the code including the dependencies specified in [setup.py](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/setup.py).
 
-    It is a good idea to use a unique image tag for each Docker build. You can build one image per code location or a shared image for multiple code locations. As an example image tag, you can use the git commit SHA:
+   It is a good idea to use a unique image tag for each Docker build. You can build one image per code location or a shared image for multiple code locations. As an example image tag, you can use the git commit SHA:
 
    ```shell
    export IMAGE_TAG=`git log --format=format:%H -n 1`
    ```
 
    Use this tag to build and upload your Docker image, for example:
-   
+
    ```shell
    docker build . -t ghcr.io/org/dagster-cloud-image:$IMAGE_TAG
    docker push ghcr.io/org/dagster-cloud-image:$IMAGE_TAG
    ```
-   
+
    The upload step is specific to your Docker container registry and will require authentication. The only requirement is that the registry you upload to must match the registry specified in `dagster_cloud.yaml`.
 
 5. Update the build session with the Docker image tag. For each code location you want to deploy, run the following command passing the `IMAGE_TAG` used in the previous step:
