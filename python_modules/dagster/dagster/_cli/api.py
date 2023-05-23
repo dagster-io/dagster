@@ -30,7 +30,6 @@ from dagster._core.origin import (
 )
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._core.utils import coerce_valid_log_level
 from dagster._grpc import DagsterGrpcClient, DagsterGrpcServer
 from dagster._grpc.impl import core_execute_run
 from dagster._grpc.server import DagsterApiServer
@@ -38,7 +37,7 @@ from dagster._grpc.types import ExecuteRunArgs, ExecuteStepArgs, ResumeRunArgs
 from dagster._serdes import deserialize_value, serialize_value
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.hosted_user_process import recon_job_from_origin
-from dagster._utils.interrupts import capture_interrupts
+from dagster._utils.interrupts import capture_interrupts, setup_interrupt_handlers
 from dagster._utils.log import configure_loggers
 
 
@@ -571,10 +570,11 @@ def _execute_step_command_body(
 )
 @click.option(
     "--log-level",
-    type=click.STRING,
+    type=click.Choice(["critical", "error", "warning", "info", "debug"], case_sensitive=False),
+    show_default=True,
     required=False,
-    default="INFO",
-    help="Level at which to log output from the gRPC server process",
+    default="info",
+    help="Level at which to log output from the code server process",
 )
 @click.option(
     "--container-image",
@@ -653,8 +653,10 @@ def grpc_command(
     if not (port or socket and not (port and socket)):
         raise click.UsageError("You must pass one and only one of --port/-p or --socket/-s.")
 
-    configure_loggers(log_level=coerce_valid_log_level(log_level))
-    logger = logging.getLogger("dagster")
+    setup_interrupt_handlers()
+
+    configure_loggers(log_level=log_level.upper())
+    logger = logging.getLogger("dagster.code_server")
 
     container_image = container_image or os.getenv("DAGSTER_CURRENT_IMAGE")
 
@@ -694,6 +696,7 @@ def grpc_command(
         server_termination_event = threading.Event()
         api_servicer = DagsterApiServer(
             server_termination_event=server_termination_event,
+            logger=logger,
             loadable_target_origin=loadable_target_origin,
             heartbeat=heartbeat,
             heartbeat_timeout=heartbeat_timeout,
