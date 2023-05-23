@@ -1,7 +1,6 @@
 import warnings
 from inspect import Parameter
 from typing import (
-    TYPE_CHECKING,
     AbstractSet,
     Any,
     Callable,
@@ -45,9 +44,6 @@ from ..partition import PartitionsDefinition
 from ..policy import RetryPolicy
 from ..resource_definition import ResourceDefinition
 from ..utils import DEFAULT_IO_MANAGER_KEY, NoValueSentinel
-
-if TYPE_CHECKING:
-    pass
 
 
 @overload
@@ -144,7 +140,7 @@ def asset(
         io_manager_key (Optional[str]): The resource key of the IOManager used
             for storing the output of the op as an asset, and for loading it in downstream ops
             (default: "io_manager"). Only one of io_manager_key and io_manager_def can be provided.
-        io_manager_def (Optional[object]): (Experimental) The definition of the IOManager used for
+        io_manager_def (Optional[object]): (Experimental) The IOManager used for
             storing the output of the op as an asset,  and for loading it in
             downstream ops. Only one of io_manager_def and io_manager_key can be provided.
         compute_kind (Optional[str]): A string to represent the kind of computation that produces
