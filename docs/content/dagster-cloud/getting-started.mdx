@@ -406,15 +406,14 @@ Ensure that you have created a `dagster_cloud.yaml` file as described in [the qu
 5. Update the build session with the Docker image tag. For each code location you want to deploy, run the following command passing the `IMAGE_TAG` used in the previous step:
    ```shell
    dagster-cloud ci set-build-output --location-name=code-location-a --image-tag=IMAGE_TAG
-```
-
-       dagster-cloud ci set-build-output --location-name=code-location-a --image-tag=IMAGE_TAG
+   ```
 
    This command does not deploy the code location but just updates the local state in `DAGSTER_BUILD_STATEDIR`.
 
 6. Deploy to Dagster Cloud:
-
-       dagster-cloud ci deploy
+   ```shell
+   dagster-cloud ci deploy
+   ```
 
    This command updates the code locations in Dagster Cloud.
 
