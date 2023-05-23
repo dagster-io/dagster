@@ -36,7 +36,6 @@ setup(
         f"dagster-pandas{pin}",
         "pandas",
         "great_expectations >=0.11.9, !=0.12.8, !=0.13.17, !=0.13.27",
-        "typing_extensions < 4.6.0",
     ],
     zip_safe=False,
 )
