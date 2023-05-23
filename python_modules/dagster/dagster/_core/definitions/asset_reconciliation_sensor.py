@@ -49,7 +49,7 @@ from .auto_materialize_condition import (
     ParentOutdatedAutoMaterializeCondition,
 )
 from .decorators.sensor_decorator import sensor
-from .partition import PartitionsDefinition, PartitionsSubset
+from .partition import PartitionsDefinition, PartitionsSubset, SerializedPartitionsSubset
 from .run_request import RunRequest
 from .sensor_definition import DefaultSensorStatus, SensorDefinition
 from .utils import check_valid_name
@@ -72,7 +72,9 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
     """
 
     asset_key: AssetKey
-    partition_subsets_by_condition: Sequence[Tuple[AutoMaterializeCondition, Optional[str]]]
+    partition_subsets_by_condition: Sequence[
+        Tuple[AutoMaterializeCondition, Optional[SerializedPartitionsSubset]]
+    ]
     num_requested: int
     num_skipped: int
     num_discarded: int
@@ -84,6 +86,7 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
         conditions_by_asset_partition: Mapping[
             AssetKeyPartitionKey, AbstractSet[AutoMaterializeCondition]
         ],
+        dynamic_partitions_store: "DynamicPartitionsStore",
     ) -> "AutoMaterializeAssetEvaluation":
         num_requested = 0
         num_skipped = 0
@@ -125,9 +128,13 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
                 partition_subsets_by_condition=[
                     (
                         condition,
-                        partitions_def.empty_subset()
-                        .with_partition_keys(partition_keys)
-                        .serialize(),
+                        SerializedPartitionsSubset.from_subset(
+                            subset=partitions_def.empty_subset().with_partition_keys(
+                                partition_keys
+                            ),
+                            partitions_def=partitions_def,
+                            dynamic_partitions_store=dynamic_partitions_store,
+                        ),
                     )
                     for condition, partition_keys in partition_keys_by_condition.items()
                 ],
@@ -1110,7 +1117,9 @@ def reconcile(
             newly_materialized_root_partitions_by_asset_key=newly_materialized_root_partitions_by_asset_key,
             evaluation_id=cursor.evaluation_id + 1 if cursor.evaluation_id is not None else 0,
         ),
-        build_auto_materialize_asset_evaluations(asset_graph, conditions_by_asset_partition),
+        build_auto_materialize_asset_evaluations(
+            asset_graph, conditions_by_asset_partition, dynamic_partitions_store=instance_queryer
+        ),
     )
 
 
@@ -1161,6 +1170,7 @@ def build_auto_materialize_asset_evaluations(
     conditions_by_asset_partition: Mapping[
         AssetKeyPartitionKey, AbstractSet[AutoMaterializeCondition]
     ],
+    dynamic_partitions_store: "DynamicPartitionsStore",
 ) -> Sequence[AutoMaterializeAssetEvaluation]:
     """Bundles up the conditions into AutoMaterializeAssetEvaluations."""
     conditions_by_asset_key: Dict[
@@ -1172,7 +1182,9 @@ def build_auto_materialize_asset_evaluations(
         conditions_by_asset_key[asset_partition.asset_key][asset_partition] = conditions
 
     return [
-        AutoMaterializeAssetEvaluation.from_conditions(asset_graph, asset_key, conditions)
+        AutoMaterializeAssetEvaluation.from_conditions(
+            asset_graph, asset_key, conditions, dynamic_partitions_store
+        )
         for asset_key, conditions in conditions_by_asset_key.items()
     ]
 

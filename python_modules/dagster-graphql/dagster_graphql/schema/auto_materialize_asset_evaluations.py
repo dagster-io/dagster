@@ -1,6 +1,7 @@
 from typing import Optional, Tuple
 
 import dagster._check as check
+from dagster._core.definitions.partition import SerializedPartitionsSubset
 import graphene
 from dagster._core.definitions.auto_materialize_condition import (
     AutoMaterializeCondition,
@@ -68,7 +69,7 @@ class GrapheneAutoMaterializeCondition(graphene.Union):
 
 
 def create_graphene_auto_materialize_condition(
-    condition_tuple: Tuple[AutoMaterializeCondition, Optional[str]]
+    condition_tuple: Tuple[AutoMaterializeCondition, Optional[SerializedPartitionsSubset]]
 ):
     condition, _ = condition_tuple
     if isinstance(condition, FreshnessAutoMaterializeCondition):
