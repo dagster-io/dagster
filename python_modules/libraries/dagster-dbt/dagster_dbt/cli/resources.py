@@ -109,7 +109,7 @@ class ConfigurableResourceWithCliFlags(ConfigurableResource):
         ),
     )
     capture_logs: bool = Field(
-        default=False,
+        default=True,
         description=(
             "When True, dbt will invoked with the `--capture-output` flag, allowing "
             "Dagster to capture the logs and emit them to the event log."
