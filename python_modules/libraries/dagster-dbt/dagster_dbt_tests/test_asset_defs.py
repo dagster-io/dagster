@@ -666,6 +666,7 @@ def test_op_custom_name():
                     manifest_json=json.load(manifest_json),
                     key_prefix=[instance["target"], "duckdb", "test-schema"],
                     op_name=f"{instance['target']}_dbt_op",
+                    select="fqn:* fqn:*",  # just a non-default selection
                 )
             )
     op_names = [asset_group.op.name for asset_group in dbt_assets]
@@ -674,6 +675,7 @@ def test_op_custom_name():
         f"dbt targets were: {instances}\n"
         f"op names generated were: {op_names}"
     )
+    assert set(op_names) == {"target_a_dbt_op", "target_b_dbt_op"}
 
 
 @pytest.mark.parametrize("load_from_manifest", [True, False])
