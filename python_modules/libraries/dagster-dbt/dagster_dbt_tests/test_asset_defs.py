@@ -666,7 +666,7 @@ def test_op_custom_name():
                     manifest_json=json.load(manifest_json),
                     key_prefix=[instance["target"], "duckdb", "test-schema"],
                     op_name=f"{instance['target']}_dbt_op",
-                    select="fqn:* tag:*",
+                    select="fqn:* fqn:*",  # just a non-default selection
                 )
             )
     op_names = [asset_group.op.name for asset_group in dbt_assets]
