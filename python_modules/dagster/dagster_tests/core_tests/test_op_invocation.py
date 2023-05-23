@@ -85,6 +85,18 @@ def test_op_invocation_none_arg():
     assert result == 5
 
 
+def test_op_invocation_lifecycle():
+    @op
+    def basic_op(context):
+        return 5
+
+    with build_op_context() as context:
+        pass
+
+    # Verify dispose was called on the instance
+    assert context.instance.run_storage._held_conn.closed  # noqa
+
+
 def test_op_invocation_context_arg():
     @op
     def basic_op(context):
