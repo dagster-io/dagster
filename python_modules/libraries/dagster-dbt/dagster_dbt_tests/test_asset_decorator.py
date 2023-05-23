@@ -1,7 +1,7 @@
 from typing import AbstractSet, Optional
 
 import pytest
-from dagster import AssetKey, file_relative_path
+from dagster import AssetKey, DailyPartitionsDefinition, PartitionsDefinition, file_relative_path
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.cli import DbtManifest
 
@@ -114,3 +114,14 @@ def test_selections(
     expected_select_tag = "fqn:*" if select is None else select
     assert my_dbt_assets.op.tags.get("dagster-dbt/select") == expected_select_tag
     assert my_dbt_assets.op.tags.get("dagster-dbt/exclude") == exclude
+
+
+@pytest.mark.parametrize(
+    "partitions_def", [None, DailyPartitionsDefinition(start_date="2023-01-01")]
+)
+def test_partitions_def(partitions_def: Optional[PartitionsDefinition]) -> None:
+    @dbt_assets(manifest=manifest, partitions_def=partitions_def)
+    def my_dbt_assets():
+        ...
+
+    assert my_dbt_assets.partitions_def == partitions_def
