@@ -382,9 +382,10 @@ def _dbt_nodes_to_assets(
     )
 
     # prevent op name collisions between multiple dbt multi-assets
-    op_name = op_name or f"run_dbt_{project_id}"
-    if select != "fqn:*" or exclude:
-        op_name += "_" + hashlib.md5(select.encode() + exclude.encode()).hexdigest()[-5:]
+    if not op_name:
+        op_name = f"run_dbt_{project_id}"
+        if select != "fqn:*" or exclude:
+            op_name += "_" + hashlib.md5(select.encode() + exclude.encode()).hexdigest()[-5:]
 
     dbt_op = _get_dbt_op(
         op_name=op_name,
