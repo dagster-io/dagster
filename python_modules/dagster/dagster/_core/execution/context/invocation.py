@@ -120,13 +120,12 @@ class UnboundOpExecutionContext(OpExecutionContext):
 
     def __exit__(self, *exc):
         self._resources_cm.__exit__(*exc)
-        if self._instance_provided:
-            self._instance_cm.__exit__(*exc)
+        self._instance_cm.__exit__(*exc)
 
     def __del__(self):
         if self._resources_contain_cm and not self._cm_scope_entered:
             self._resources_cm.__exit__(None, None, None)
-        if self._instance_provided and not self._cm_scope_entered:
+        if not self._cm_scope_entered:
             self._instance_cm.__exit__(None, None, None)
 
     @property
