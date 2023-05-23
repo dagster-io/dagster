@@ -75,7 +75,7 @@ class DbtManifest:
         return {output_name_fn(node): node for node in self.node_info_by_dbt_unique_id.values()}
 
     @property
-    def output_asset_key_replacements(self) -> Mapping[AssetKey, AssetKey]:
+    def asset_key_replacements(self) -> Mapping[AssetKey, AssetKey]:
         """A mapping of replacement asset keys for a dbt node to the node's dictionary representation in the manifest.
         """
         return {

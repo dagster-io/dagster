@@ -63,6 +63,9 @@ def dbt_assets(
             },
         )(fn)
 
-        return asset_definition
+        return asset_definition.with_attributes(
+            input_asset_key_replacements=manifest.asset_key_replacements,
+            output_asset_key_replacements=manifest.asset_key_replacements,
+        )
 
     return inner
