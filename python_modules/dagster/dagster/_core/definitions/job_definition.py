@@ -209,6 +209,7 @@ class JobDefinition(IHasInternalInit):
         self._partitioned_config = None
         self._run_config = None
         self._run_config_schema = None
+        self._original_config_argument = config
 
         if partitions_def:
             self._partitioned_config = PartitionedConfig.from_flexible_config(
@@ -918,13 +919,7 @@ class JobDefinition(IHasInternalInit):
             resource_defs=dict(self.resource_defs),
             executor_def=self._executor_def,
             logger_defs=self._loggers,
-            # One of the following is true:
-            #   _config_mapping is set, and _partitioned_config and _run_config are None
-            #   _partitioned_config is set, and _config_mapping and _run_config are None
-            #   _run_config is set and _config_mapping is built from it using _config_mapping_with_default_value (and _partitioned_config is None)
-            # In the last case, we want to copy the _run_config, not the _config_mapping, since a new _config_mapping will be built
-            # from the _run_config in the constructor
-            config=self._run_config or self._config_mapping or self._partitioned_config,
+            config=self._original_config_argument,
             name=self._name,
             description=self.description,
             tags=self.tags,
