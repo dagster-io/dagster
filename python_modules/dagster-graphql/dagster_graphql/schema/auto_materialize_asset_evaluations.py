@@ -11,6 +11,7 @@ from dagster._core.definitions.auto_materialize_condition import (
     ParentMaterializedAutoMaterializeCondition,
     ParentOutdatedAutoMaterializeCondition,
 )
+from dagster._core.definitions.partition import SerializedPartitionsSubset
 from dagster._core.scheduler.instigation import AutoMaterializeAssetEvaluationRecord
 
 from .util import non_null_list
@@ -68,7 +69,7 @@ class GrapheneAutoMaterializeCondition(graphene.Union):
 
 
 def create_graphene_auto_materialize_condition(
-    condition_tuple: Tuple[AutoMaterializeCondition, Optional[str]]
+    condition_tuple: Tuple[AutoMaterializeCondition, Optional[SerializedPartitionsSubset]]
 ):
     condition, _ = condition_tuple
     if isinstance(condition, FreshnessAutoMaterializeCondition):
