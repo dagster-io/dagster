@@ -1,6 +1,7 @@
 import json
 import os
 import subprocess
+import sys
 from dataclasses import dataclass
 from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence, Union
 
@@ -253,6 +254,10 @@ class DbtCliTask:
         for raw_line in self.process.stdout or []:
             log: str = raw_line.decode().strip()
             event = DbtCliEventMessage.from_log(log=log)
+
+            # Re-emit the logs from dbt CLI process into stdout.
+            sys.stdout.write(str(event) + "\n")
+            sys.stdout.flush()
 
             yield event
 
