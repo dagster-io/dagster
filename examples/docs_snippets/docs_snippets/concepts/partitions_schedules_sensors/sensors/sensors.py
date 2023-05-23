@@ -16,13 +16,16 @@ from dagster import (
 
 
 # start_sensor_job_marker
-from dagster import op, job
+from dagster import op, job, Config
 
 
-@op(config_schema={"filename": str})
-def process_file(context):
-    filename = context.op_config["filename"]
-    context.log.info(filename)
+class FileConfig(Config):
+    filename: str
+
+
+@op
+def process_file(context, config: FileConfig):
+    context.log.info(config.filename)
 
 
 @job
@@ -36,7 +39,7 @@ MY_DIRECTORY = "./"
 
 # start_directory_sensor_marker
 import os
-from dagster import sensor, RunRequest
+from dagster import sensor, RunRequest, RunConfig
 
 
 @sensor(job=log_file_job)
@@ -46,9 +49,9 @@ def my_directory_sensor():
         if os.path.isfile(filepath):
             yield RunRequest(
                 run_key=filename,
-                run_config={
-                    "ops": {"process_file": {"config": {"filename": filename}}}
-                },
+                run_config=RunConfig(
+                    ops={"process_file": FileConfig(filename=filename)}
+                ),
             )
 
 
