@@ -209,6 +209,7 @@ class JobDefinition(IHasInternalInit):
         self._partitioned_config = None
         self._run_config = None
         self._run_config_schema = None
+        self._original_config_argument = config
 
         if partitions_def:
             self._partitioned_config = PartitionedConfig.from_flexible_config(
@@ -918,7 +919,7 @@ class JobDefinition(IHasInternalInit):
             resource_defs=dict(self.resource_defs),
             executor_def=self._executor_def,
             logger_defs=self._loggers,
-            config=self._config_mapping or self._partitioned_config or self._run_config,
+            config=self._original_config_argument,
             name=self._name,
             description=self.description,
             tags=self.tags,

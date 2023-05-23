@@ -8,9 +8,11 @@ from dagster import (
     Out,
     Output,
     graph,
+    in_process_executor,
     job,
     op,
     usable_as_dagster_type,
+    validate_run_config,
 )
 
 
@@ -305,3 +307,25 @@ def test_bad_positional_input_use():
             # so the two remaining have no positions and this is
             # ambiguous
             add_kw(return_two(), return_two(), return_two())
+
+
+def test_job_recreation_works() -> None:
+    @op(config_schema={"foo": str})
+    def requires_config(_):
+        pass
+
+    @job
+    def job_requires_config():
+        requires_config()
+
+    result = validate_run_config(
+        job_requires_config.with_executor_def(in_process_executor),
+        {"ops": {"requires_config": {"config": {"foo": "bar"}}}},
+    )
+    # Ensure that the validated config has an in_process_executor execution entry
+    assert result == {
+        "ops": {"requires_config": {"config": {"foo": "bar"}, "inputs": {}, "outputs": None}},
+        "execution": {"in_process": {"retries": {"enabled": {}}}},
+        "resources": {"io_manager": {"config": None}},
+        "loggers": {},
+    }
