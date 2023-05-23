@@ -8,6 +8,8 @@ declare module '@vx/responsive';
 
 declare module 'amator';
 
+declare let __webpack_public_path__: string;
+
 // Type declarations for Clipboard API
 // https://developer.mozilla.org/en-US/docs/Web/API/Clipboard_API
 interface Clipboard {
