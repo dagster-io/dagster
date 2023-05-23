@@ -397,7 +397,7 @@ querystring-parser==1.2.4
 ratelimiter==1.2.0.post0
 readme-renderer==37.3
 regex==2023.3.23
-requests==2.29.0
+requests==2.31.0
 requests-file==1.5.1
 requests-mock==1.10.0
 requests-oauthlib==1.3.1
