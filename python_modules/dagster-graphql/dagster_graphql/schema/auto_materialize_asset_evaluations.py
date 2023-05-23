@@ -1,7 +1,6 @@
 from typing import Optional, Tuple
 
 import dagster._check as check
-from dagster._core.definitions.partition import SerializedPartitionsSubset
 import graphene
 from dagster._core.definitions.auto_materialize_condition import (
     AutoMaterializeCondition,
@@ -12,6 +11,7 @@ from dagster._core.definitions.auto_materialize_condition import (
     ParentMaterializedAutoMaterializeCondition,
     ParentOutdatedAutoMaterializeCondition,
 )
+from dagster._core.definitions.partition import SerializedPartitionsSubset
 from dagster._core.scheduler.instigation import AutoMaterializeAssetEvaluationRecord
 
 from .util import non_null_list
