@@ -9,7 +9,6 @@ from dagster._core.definitions.metadata import (
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.source_asset import SourceAsset, SourceAssetObserveFunction
-from dagster._core.storage.io_manager import IOManagerDefinition
 
 
 @overload
@@ -24,7 +23,7 @@ def observable_source_asset(
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     metadata: Optional[MetadataUserInput] = None,
     io_manager_key: Optional[str] = None,
-    io_manager_def: Optional[IOManagerDefinition] = None,
+    io_manager_def: Optional[object] = None,
     description: Optional[str] = None,
     group_name: Optional[str] = None,
     required_resource_keys: Optional[AbstractSet[str]] = None,
@@ -41,7 +40,7 @@ def observable_source_asset(
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     metadata: Optional[MetadataUserInput] = None,
     io_manager_key: Optional[str] = None,
-    io_manager_def: Optional[IOManagerDefinition] = None,
+    io_manager_def: Optional[object] = None,
     description: Optional[str] = None,
     group_name: Optional[str] = None,
     required_resource_keys: Optional[AbstractSet[str]] = None,
@@ -99,7 +98,7 @@ class _ObservableSourceAsset:
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
         metadata: Optional[MetadataUserInput] = None,
         io_manager_key: Optional[str] = None,
-        io_manager_def: Optional[IOManagerDefinition] = None,
+        io_manager_def: Optional[object] = None,
         description: Optional[str] = None,
         group_name: Optional[str] = None,
         required_resource_keys: Optional[AbstractSet[str]] = None,

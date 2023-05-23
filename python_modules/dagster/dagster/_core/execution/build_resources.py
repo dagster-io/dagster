@@ -122,6 +122,8 @@ def wrap_resources_for_execution(
     # Wrap instantiated resource values in a resource definition.
     # If an instantiated IO manager is provided, wrap it in an IO manager definition.
     for resource_key, resource in resources.items():
+        # Wrap instantiated resource values in a resource definition.
+        # If an instantiated IO manager is provided, wrap it in an IO manager definition.
         if isinstance(resource, (ConfigurableResourceFactory, PartialResource)):
             resource_defs[resource_key] = resource.get_resource_definition()
         elif isinstance(resource, ResourceDefinition):
@@ -130,4 +132,5 @@ def wrap_resources_for_execution(
             resource_defs[resource_key] = IOManagerDefinition.hardcoded_io_manager(resource)
         else:
             resource_defs[resource_key] = ResourceDefinition.hardcoded_resource(resource)
+
     return resource_defs

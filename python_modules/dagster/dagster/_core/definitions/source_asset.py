@@ -90,7 +90,7 @@ class SourceAsset(ResourceAddable):
         key: CoercibleToAssetKey,
         metadata: Optional[ArbitraryMetadataMapping] = None,
         io_manager_key: Optional[str] = None,
-        io_manager_def: Optional[IOManagerDefinition] = None,
+        io_manager_def: Optional[object] = None,
         description: Optional[str] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
         group_name: Optional[str] = None,
@@ -104,7 +104,9 @@ class SourceAsset(ResourceAddable):
         _required_resource_keys: Optional[AbstractSet[str]] = None,
         # Add additional fields to with_resources and with_group below
     ):
-        from dagster._core.execution.build_resources import wrap_resources_for_execution
+        from dagster._core.execution.build_resources import (
+            wrap_resources_for_execution,
+        )
 
         if partitions_def is not None and observe_fn is not None:
             raise DagsterInvalidDefinitionError(
@@ -121,26 +123,24 @@ class SourceAsset(ResourceAddable):
         metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
         self.raw_metadata = metadata
         self.metadata = normalize_metadata(metadata, allow_invalid=True)
-        self.resource_defs = wrap_resources_for_execution(
-            dict(check.opt_mapping_param(resource_defs, "resource_defs"))
-        )
-        self._io_manager_def = check.opt_inst_param(
-            io_manager_def, "io_manager_def", IOManagerDefinition
-        )
-        if self._io_manager_def:
+
+        resource_defs_dict = dict(check.opt_mapping_param(resource_defs, "resource_defs"))
+        if io_manager_def:
             if not io_manager_key:
                 io_manager_key = self.key.to_python_identifier("io_manager")
 
             if (
-                io_manager_key in self.resource_defs
-                and self.resource_defs[io_manager_key] != io_manager_def
+                io_manager_key in resource_defs_dict
+                and resource_defs_dict[io_manager_key] != io_manager_def
             ):
                 raise DagsterInvalidDefinitionError(
                     f"Provided conflicting definitions for io manager key '{io_manager_key}'."
                     " Please provide only one definition per key."
                 )
 
-            self.resource_defs[io_manager_key] = self._io_manager_def
+            resource_defs_dict[io_manager_key] = io_manager_def
+
+        self.resource_defs = wrap_resources_for_execution(resource_defs_dict)
 
         self.io_manager_key = check.opt_str_param(io_manager_key, "io_manager_key")
         self.partitions_def = check.opt_inst_param(
