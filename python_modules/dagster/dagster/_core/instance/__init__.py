@@ -812,6 +812,16 @@ class DagsterInstance(DynamicPartitionsStore):
         )
 
     @property
+    def code_server_reload_timeout(self) -> int:
+        return self.code_server_settings.get(
+            "reload_timeout", DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT
+        )
+
+    @property
+    def wait_for_local_code_server_processes_on_shutdown(self) -> bool:
+        return self.code_server_settings.get("wait_for_local_processes_on_shutdown", False)
+
+    @property
     def run_monitoring_max_resume_run_attempts(self) -> int:
         return self.run_monitoring_settings.get("max_resume_run_attempts", 0)
 

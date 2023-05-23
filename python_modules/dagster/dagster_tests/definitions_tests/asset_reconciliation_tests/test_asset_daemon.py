@@ -1,5 +1,4 @@
 import pytest
-from dagster import DagsterInstance
 from dagster._core.instance_for_test import instance_for_test
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import PARTITION_NAME_TAG
@@ -10,14 +9,19 @@ from .multi_code_location_scenarios import multi_code_location_scenarios
 from .scenarios import ASSET_RECONCILIATION_SCENARIOS
 
 
+@pytest.fixture
+def instance():
+    with instance_for_test() as the_instance:
+        yield the_instance
+
+
 @pytest.mark.parametrize(
     "scenario_item",
     list(ASSET_RECONCILIATION_SCENARIOS.items()),
     ids=list(ASSET_RECONCILIATION_SCENARIOS.keys()),
 )
-def test_reconcile_with_external_asset_graph(scenario_item):
+def test_reconcile_with_external_asset_graph(scenario_item, instance):
     scenario_name, scenario = scenario_item
-    instance = DagsterInstance.ephemeral()
     run_requests, _, _ = scenario.do_sensor_scenario(
         instance, scenario_name=scenario_name, with_external_asset_graph=True
     )

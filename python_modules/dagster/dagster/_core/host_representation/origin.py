@@ -13,6 +13,8 @@ from typing import (
     cast,
 )
 
+import grpc
+
 import dagster._check as check
 from dagster._core.definitions.selector import PartitionSetSelector, RepositorySelector
 from dagster._core.errors import DagsterInvariantViolationError, DagsterUserCodeUnreachableError
@@ -109,6 +111,10 @@ class CodeLocationOrigin(ABC, tuple):
     def create_location(self) -> "CodeLocation":
         pass
 
+    @abstractmethod
+    def reload_location(self, instance: "DagsterInstance") -> "CodeLocation":
+        pass
+
 
 # Different storage name for backcompat
 @whitelist_for_serdes(storage_name="RegisteredRepositoryLocationOrigin")
@@ -129,8 +135,14 @@ class RegisteredCodeLocationOrigin(
 
     def create_location(self) -> NoReturn:
         raise DagsterInvariantViolationError(
-            "A RegisteredCodeLocationOrigin does not have enough information to load its "
-            "repository location on its own."
+            "A RegisteredCodeLocationOrigin does not have enough information to create its "
+            "code location on its own."
+        )
+
+    def reload_location(self, instance: "DagsterInstance") -> NoReturn:
+        raise DagsterInvariantViolationError(
+            "A RegisteredCodeLocationOrigin does not have enough information to reload its "
+            "code location on its own."
         )
 
 
@@ -193,6 +205,9 @@ class InProcessCodeLocationOrigin(
 
         return InProcessCodeLocation(self)
 
+    def reload_location(self, instance: "DagsterInstance") -> "InProcessCodeLocation":
+        raise NotImplementedError
+
 
 # Different storage name for backcompat
 @whitelist_for_serdes(storage_name="ManagedGrpcPythonEnvRepositoryLocationOrigin")
@@ -233,8 +248,14 @@ class ManagedGrpcPythonEnvCodeLocationOrigin(
 
     def create_location(self) -> NoReturn:
         raise DagsterInvariantViolationError(
-            "A ManagedGrpcPythonEnvCodeLocationOrigin needs a DynamicWorkspace"
-            " in order to create a handle."
+            "A ManagedGrpcPythonEnvCodeLocationOrigin needs a GrpcServerRegistry"
+            " in order to create a code location."
+        )
+
+    def reload_location(self, instance: "DagsterInstance") -> NoReturn:
+        raise DagsterInvariantViolationError(
+            "A ManagedGrpcPythonEnvCodeLocationOrigin needs a GrpcServerRegistry"
+            " in order to reload a code location."
         )
 
     @contextmanager
@@ -248,12 +269,15 @@ class ManagedGrpcPythonEnvCodeLocationOrigin(
         from .grpc_server_registry import GrpcServerRegistry
 
         with GrpcServerRegistry(
-            instance=instance,
+            instance_ref=instance.get_ref(),
             reload_interval=0,
             heartbeat_ttl=DAGIT_GRPC_SERVER_HEARTBEAT_TTL,
-            startup_timeout=instance.code_server_process_startup_timeout
-            if instance
-            else DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT,
+            startup_timeout=(
+                instance.code_server_process_startup_timeout
+                if instance
+                else DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT
+            ),
+            wait_for_processes_on_shutdown=instance.wait_for_local_code_server_processes_on_shutdown,
         ) as grpc_server_registry:
             endpoint = grpc_server_registry.get_grpc_endpoint(self)
             with GrpcServerCodeLocation(
@@ -316,6 +340,25 @@ class GrpcServerCodeLocationOrigin(
             "socket": self.socket,
         }
         return {key: value for key, value in metadata.items() if value is not None}
+
+    def reload_location(self, instance: "DagsterInstance") -> "GrpcServerCodeLocation":
+        from dagster._core.host_representation.code_location import (
+            GrpcServerCodeLocation,
+        )
+
+        try:
+            self.create_client().reload_code(timeout=instance.code_server_reload_timeout)
+        except Exception as e:
+            # Handle case when this is called against `dagster api grpc` servers that don't have this API method implemented
+            if (
+                isinstance(e.__cause__, grpc.RpcError)
+                and cast(grpc.RpcError, e.__cause__).code() == grpc.StatusCode.UNIMPLEMENTED
+            ):
+                pass
+            else:
+                raise
+
+        return GrpcServerCodeLocation(self)
 
     def create_location(self) -> "GrpcServerCodeLocation":
         from dagster._core.host_representation.code_location import (

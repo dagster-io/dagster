@@ -15,17 +15,23 @@ from dagster._utils import file_relative_path
 from starlette.testclient import TestClient
 
 
-def test_create_app_with_workspace():
+@pytest.fixture
+def instance():
+    with instance_for_test() as the_instance:
+        yield the_instance
+
+
+def test_create_app_with_workspace(instance):
     with load_workspace_process_context_from_yaml_paths(
-        DagsterInstance.ephemeral(),
+        instance,
         [file_relative_path(__file__, "./workspace.yaml")],
     ) as workspace_process_context:
         assert create_app_from_workspace_process_context(workspace_process_context)
 
 
-def test_create_app_with_multiple_workspace_files():
+def test_create_app_with_multiple_workspace_files(instance):
     with load_workspace_process_context_from_yaml_paths(
-        DagsterInstance.ephemeral(),
+        instance,
         [
             file_relative_path(__file__, "./workspace.yaml"),
             file_relative_path(__file__, "./override.yaml"),
@@ -71,9 +77,9 @@ def test_notebook_view():
             assert b"6cac0c38-2c97-49ca-887c-4ac43f141213" in res.content
 
 
-def test_index_view():
+def test_index_view(instance):
     with load_workspace_process_context_from_yaml_paths(
-        DagsterInstance.ephemeral(), [file_relative_path(__file__, "./workspace.yaml")]
+        instance, [file_relative_path(__file__, "./workspace.yaml")]
     ) as workspace_process_context:
         client = TestClient(create_app_from_workspace_process_context(workspace_process_context))
         res = client.get("/")
@@ -82,9 +88,9 @@ def test_index_view():
         assert b"You need to enable JavaScript to run this app" in res.content
 
 
-def test_index_view_at_path_prefix():
+def test_index_view_at_path_prefix(instance):
     with load_workspace_process_context_from_yaml_paths(
-        DagsterInstance.ephemeral(), [file_relative_path(__file__, "./workspace.yaml")]
+        instance, [file_relative_path(__file__, "./workspace.yaml")]
     ) as workspace_process_context:
         client = TestClient(
             create_app_from_workspace_process_context(workspace_process_context, "/dagster-path"),
@@ -101,9 +107,9 @@ def test_index_view_at_path_prefix():
         assert b'{"pathPrefix": "/dagster-path"' in res.content
 
 
-def test_graphql_view():
+def test_graphql_view(instance):
     with load_workspace_process_context_from_yaml_paths(
-        DagsterInstance.ephemeral(), [file_relative_path(__file__, "./workspace.yaml")]
+        instance, [file_relative_path(__file__, "./workspace.yaml")]
     ) as workspace_process_context:
         client = TestClient(
             create_app_from_workspace_process_context(
@@ -114,9 +120,9 @@ def test_graphql_view():
         assert b"No GraphQL query found in the request" in res.content
 
 
-def test_graphql_view_at_path_prefix():
+def test_graphql_view_at_path_prefix(instance):
     with load_workspace_process_context_from_yaml_paths(
-        DagsterInstance.ephemeral(), [file_relative_path(__file__, "./workspace.yaml")]
+        instance, [file_relative_path(__file__, "./workspace.yaml")]
     ) as workspace_process_context:
         client = TestClient(
             create_app_from_workspace_process_context(workspace_process_context, "/dagster-path"),
