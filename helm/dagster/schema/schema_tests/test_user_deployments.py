@@ -1017,6 +1017,45 @@ def test_env(template: HelmTemplate, user_deployment_configmap_template):
     assert dagster_user_deployment.spec.template.spec.containers[0].env[3].value == "test_value"
 
 
+def test_code_server_cli(template: HelmTemplate, user_deployment_configmap_template):
+    deployment = UserDeployment.construct(
+        name="foo",
+        image=kubernetes.Image(repository="repo/foo", tag="tag1", pullPolicy="Always"),
+        codeServerArgs=["-m", "foo"],
+        port=3030,
+        includeConfigInLaunchedRuns=UserDeploymentIncludeConfigInLaunchedRuns(enabled=True),
+    )
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(deployments=[deployment])
+    )
+
+    [dagster_user_deployment] = template.render(helm_values)
+    assert len(dagster_user_deployment.spec.template.spec.containers[0].env) == 3
+
+    assert dagster_user_deployment.spec.template.spec.containers[0].args == [
+        "dagster",
+        "code-server",
+        "start",
+        "-h",
+        "0.0.0.0",
+        "-p",
+        "3030",
+        "-m",
+        "foo",
+    ]
+
+    container_context = dagster_user_deployment.spec.template.spec.containers[0].env[2]
+    assert container_context.name == "DAGSTER_CONTAINER_CONTEXT"
+    assert json.loads(container_context.value) == {
+        "k8s": {
+            "image_pull_policy": "Always",
+            "env_config_maps": ["release-name-dagster-user-deployments-foo-user-env"],
+            "namespace": "default",
+            "service_account_name": "release-name-dagster-user-deployments-user-deployments",
+        }
+    }
+
+
 def test_env_container_context(template: HelmTemplate, user_deployment_configmap_template):
     # new env: list. Gets written to container
     deployment = UserDeployment.construct(
