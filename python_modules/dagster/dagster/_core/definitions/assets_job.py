@@ -1,6 +1,7 @@
 from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
+    AbstractSet,
     Any,
     Dict,
     Iterable,
@@ -16,6 +17,7 @@ from typing import (
 from toposort import CircularDependencyError, toposort
 
 import dagster._check as check
+from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.selector.subset_selector import AssetSelectionData
 from dagster._utils.merger import merge_dicts
@@ -120,6 +122,7 @@ def build_assets_job(
     metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     executor_def: Optional[ExecutorDefinition] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
+    hooks: Optional[AbstractSet[HookDefinition]] = None,
     _asset_selection_data: Optional[AssetSelectionData] = None,
 ) -> JobDefinition:
     """Builds a job that materializes the given assets.
@@ -235,6 +238,7 @@ def build_assets_job(
         executor_def=executor_def,
         partitions_def=partitions_def,
         asset_layer=asset_layer,
+        hooks=hooks,
         _asset_selection_data=_asset_selection_data,
     )
 
