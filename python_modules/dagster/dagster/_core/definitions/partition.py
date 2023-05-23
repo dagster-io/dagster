@@ -898,6 +898,39 @@ class PartitionsSubset(ABC, Generic[T_str]):
         ...
 
 
+@whitelist_for_serdes
+class SerializedPartitionsSubset(NamedTuple):
+    serialized_subset: str
+    serialized_partitions_def_unique_id: str
+    serialized_partitions_def_class_name: str
+
+    @classmethod
+    def from_subset(
+        cls,
+        subset: PartitionsSubset,
+        partitions_def: PartitionsDefinition,
+        dynamic_partitions_store: DynamicPartitionsStore,
+    ):
+        return cls(
+            serialized_subset=subset.serialize(),
+            serialized_partitions_def_unique_id=partitions_def.get_serializable_unique_identifier(
+                dynamic_partitions_store
+            ),
+            serialized_partitions_def_class_name=partitions_def.__class__.__name__,
+        )
+
+    def can_deserialize(self, partitions_def: Optional[PartitionsDefinition]) -> bool:
+        if not partitions_def:
+            # Asset had a partitions definition at storage time, but no longer does
+            return False
+
+        return partitions_def.can_deserialize_subset(
+            self.serialized_subset,
+            serialized_partitions_def_unique_id=self.serialized_partitions_def_unique_id,
+            serialized_partitions_def_class_name=self.serialized_partitions_def_class_name,
+        )
+
+
 class DefaultPartitionsSubset(PartitionsSubset[T_str]):
     # Every time we change the serialization format, we should increment the version number.
     # This will ensure that we can gracefully degrade when deserializing old data.

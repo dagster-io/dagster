@@ -44,7 +44,7 @@ def test_reconciliation(scenario):
         }
         assert sorted(
             build_auto_materialize_asset_evaluations(
-                AssetGraph.from_assets(scenario.assets), reasons
+                AssetGraph.from_assets(scenario.assets), reasons, dynamic_partitions_store=instance
             ),
             key=lambda x: x.asset_key,
         ) == sorted(evaluations, key=lambda x: x.asset_key)
