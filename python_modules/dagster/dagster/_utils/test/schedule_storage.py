@@ -10,6 +10,7 @@ from dagster._core.definitions.asset_reconciliation_sensor import (
 )
 from dagster._core.definitions.auto_materialize_condition import MissingAutoMaterializeCondition
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.partition import SerializedPartitionsSubset
 from dagster._core.host_representation import (
     ExternalRepositoryOrigin,
     ManagedGrpcPythonEnvCodeLocationOrigin,
@@ -764,7 +765,10 @@ class TestScheduleStorage:
                 AutoMaterializeAssetEvaluation(
                     asset_key=AssetKey("asset_two"),
                     partition_subsets_by_condition=[
-                        (MissingAutoMaterializeCondition(), subset.serialize())
+                        (
+                            MissingAutoMaterializeCondition(),
+                            SerializedPartitionsSubset.from_subset(subset, partitions_def, None),
+                        )
                     ],
                     num_requested=1,
                     num_skipped=0,
@@ -786,8 +790,11 @@ class TestScheduleStorage:
             == MissingAutoMaterializeCondition()
         )
         assert (
+            res[0].evaluation.partition_subsets_by_condition[0][1].can_deserialize(partitions_def)
+        )
+        assert (
             partitions_def.deserialize_subset(
-                res[0].evaluation.partition_subsets_by_condition[0][1]
+                res[0].evaluation.partition_subsets_by_condition[0][1].serialized_subset
             )
             == subset
         )
