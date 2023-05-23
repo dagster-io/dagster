@@ -91,7 +91,7 @@ setup(
         "tabulate",
         "tomli",
         "tqdm",
-        "typing_extensions>=4.4.0",
+        "typing_extensions>=4.4.0,<4.6.0",
         "sqlalchemy>=1.0,<2.0.0",
         "toposort>=1.0",
         "watchdog>=0.8.3",
